@@ -1,10 +1,10 @@
 {
     "extName": {
-        "message": "Strava Addons - \"strava sauce\"",
+        "message": "Strava Sauce",
         "description": "Extension name."
     },
     "extDesc": {
-        "message": "Additional functionality for Strava.com, aka \"strava sauce\"",
+        "message": "Additional \"sauce\" to improve Strava.com.",
         "description": "Extension desc."
     }
 }
