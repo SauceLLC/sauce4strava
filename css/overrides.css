@@ -1,0 +1,17 @@
+/* Override Strava CSS for enhanced usability. */
+
+#basic-analysis text.static-label-box.label,
+#basic-analysis text.laps-label,
+#basic-analysis text.segments-label {
+    fill: #555 !important;
+}
+
+#basic-analysis text.static-label-box.detail {
+    fill: #222 !important;
+    font-size: 11px;
+}
+
+#basic-analysis #effort-detail {
+    color: #222 !important;
+}
+

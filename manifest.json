@@ -1,0 +1,60 @@
+{
+    "manifest_version": 2,
+
+    "name": "__MSG_extName__",
+    "description": "__MSG_extDesc__",
+    "version": "0.0.0",
+    "default_locale": "en",
+
+    "permissions": [
+        "storage",
+        "declarativeContent"
+    ],
+
+    "icons": {
+        "16": "assets/icons/icon16.png",
+        "32": "assets/icons/icon32.png",
+        "48": "assets/icons/icon48.png",
+        "64": "assets/icons/icon64.png",
+        "128": "assets/icons/icon128.png",
+        "256": "assets/icons/icon256.png"
+    },
+
+    "background": {
+        "scripts": ["src/page_rules.js"],
+        "persistent": false
+    },
+
+    "page_action": {
+        "default_icon": {
+            "19": "assets/icons/icon19.png",
+            "38": "assets/icons/icon38.png",
+            "48": "assets/icons/icon48.png",
+            "64": "assets/icons/icon64.png",
+            "128": "assets/icons/icon128.png",
+            "256": "assets/icons/icon256.png"
+        },
+        "default_title": "TITS LEEROY",
+        "default_popup": "pages/page_action_popup.html"
+    },
+
+    "options_page": "pages/options.html",
+
+    "content_scripts": [{
+        "run_at": "document_start",
+        "matches": ["*://*.strava.com/*"],
+        "js": ["src/boot.js"]
+    }, {
+        "run_at": "document_idle",
+        "matches": ["*://*.strava.com/*"],
+        "css": [
+            "css/overrides.css",
+            "css/analysis.css"
+        ]
+    }],
+
+    "web_accessible_resources": [
+        "src/*.js",
+        "css/*.css"
+    ]
+}

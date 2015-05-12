@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Strava Addons - Options</title>
+        <script src="/src/options_page.js"></script>
+        <style>
+            table {
+            }
+
+            body {
+                width: 600px;
+                padding: 20px 40px;
+            }
+
+            .section {
+                padding: 20px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            .section h1 {
+                color: #339c3c;
+                font-size: 14px;
+            }
+
+            .section .desc {
+                font-size: 11px;
+                color: #777;
+            }
+
+            .footer {
+                background-color: #FC632B;
+                color: #fff;
+                padding: 10px;
+            }
+
+            .footer button {
+                padding: 4px 20px;
+                background: #fff;
+                border: 1px solid #222;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>Strava Addons - "strava sauce" - Config Options</h1>
+        <div class="section">
+            <h1>Athlete FTP History</h1>
+            <p class="desc">
+                Enter your best estimated functional threshold power in watts.
+                Any time your threshold power changes, you can enter a new value
+                along with the starting date for this new FTP value to be used
+                for TSS, IF and other work related power calculations.
+                <br/><br/>
+                <i>Using this tabulated version of FTP is recommended over Strava's
+                premium feature for FTP because it maintains the proper TSS values for
+                older rides when your FTP changes over time.</i>
+            </p>
+            <div>
+                <b>History</b>
+                <ul id="ftp_history"></ul>
+            </div>
+            <div>
+                <table><tr>
+                    <td>New FTP Value:</td>
+                    <td><input type="text" id="start_date" value="01/01/1970"/></td>
+                    <td><input type="text" id="watts" value="250"/></td>
+                </tr></table>
+            </div>
+        </div>
+        <div class="section">
+            <h1>Something else</h1>
+            <p class="desc">
+                I am style testing alone.  You may replace me when you find my successor.
+            </p>
+
+            <label>
+              <input type="checkbox" id="like">
+              I like colors.
+            </label>
+        </div>
+
+        <div class="footer">
+            <button id="save">Save</button>
+            <span id="status"></span>
+        </div>
+    </body>
+</html>
