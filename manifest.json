@@ -34,7 +34,7 @@
             "128": "assets/icons/icon128.png",
             "256": "assets/icons/icon256.png"
         },
-        "default_title": "TITS LEEROY",
+        "default_title": "__MSG_extName__",
         "default_popup": "pages/page_action_popup.html"
     },
 
@@ -55,6 +55,7 @@
 
     "web_accessible_resources": [
         "src/*.js",
-        "css/*.css"
+        "css/*.css",
+        "pages/*.html"
     ]
 }

@@ -53,7 +53,7 @@ sauce.ns('func', function(ns) {
         function wrap() {
             if (run_after) {
                 var ret = save_fn.apply(this, arguments);
-                var args = Array.prototype.slice.call(arguments)
+                var args = Array.prototype.slice.call(arguments);
                 args.unshift(ret);
                 interceptor.apply(this, args);
                 return ret;
@@ -63,19 +63,19 @@ sauce.ns('func', function(ns) {
             }
         }
         obj.prototype[orig_func_name] = wrap;
-    }
+    };
 
     var run_after = function(obj, orig_func_name, interceptor) {
         _adjunct(true, obj, orig_func_name, interceptor);
-    }
+    };
 
     var run_before = function(obj, orig_func_name, interceptor) {
         _adjunct(false, obj, orig_func_name, interceptor);
-    }
+    };
 
     return {
         run_after: run_after,
-        run_before: run_after
+        run_before: run_before
     };
 });
 
@@ -86,7 +86,7 @@ sauce.ns('power', function(ns) {
 
     var critpower_smart = function(ts_stream, watts_stream, period) {
         var ring = new sauce.data.RollingAvg(period);
-        var max = undefined;
+        var max;
         var range = 0;
         var ts_size = ts_stream.length;
         for (var i = 0; i < ts_size; i++) {

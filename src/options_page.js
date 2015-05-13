@@ -26,7 +26,7 @@ function load_options() {
         options.ftp_history.forEach(function(x) {
             hist.innerHTML += '<li>' + x.start_date +
                          ': ' + x.watts + 'w</li>';
-        })
+        });
         document.getElementById('save').addEventListener('click', function() {
             save_options(options);
         });
