@@ -25,23 +25,23 @@ Requirements
 Installation
 --------
 
-    [Official Version](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
-    from Google Web Store
+[Official Version](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
+from Google Web Store
 
-    *or*
+*or*
 
-    Install the development verssion:
+Install the development verssion:
     
-    1. Download [ZIP file](https://github.com/mayfield/strava-enhancement-suite/archive/master.zip)
-       or clone this repo to your local computer.
+1. Download [ZIP file](https://github.com/mayfield/strava-enhancement-suite/archive/master.zip)
+   or clone this repo to your local computer.
 
-    2. (ZIP only) Unzip the downloaded zip file.
+2. (ZIP only) Unzip the downloaded zip file.
 
-    3. Go to chrome://extensions/ on your Chrome browser.
+3. Go to chrome://extensions/ on your Chrome browser.
 
-    4. Click "Load unpacked extension..."
+4. Click "Load unpacked extension..."
 
-    5. Navigate to the directory where you cloned or unzipped strava-sauce and click "Open."
+5. Navigate to the directoryy  where you cloned or unzipped strava-sauce and click "Open."
     
 
 Compatibility
