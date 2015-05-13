@@ -1,4 +1,4 @@
-strava-sauce - Chrome Extensio
+strava-sauce - Chrome Extension
 ===========
 
 Supplements the web version of Strava.com to add some better power
@@ -25,9 +25,24 @@ Requirements
 Installation
 --------
 
-    TODO: URL to Google Play Store HERE
-    TODO: How to install unpacked extension.
+    [Official Version](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
+    from Google Web Store
 
+    *or*
+
+    Install the development verssion:
+    
+    1. Download [ZIP file](https://github.com/mayfield/strava-enhancement-suite/archive/master.zip)
+       or clone this repo to your local computer.
+
+    2. (ZIP only) Unzip the downloaded zip file.
+
+    3. Go to chrome://extensions/ on your Chrome browser.
+
+    4. Click "Load unpacked extension..."
+
+    5. Navigate to the directory where you cloned or unzipped strava-sauce and click "Open."
+    
 
 Compatibility
 --------
