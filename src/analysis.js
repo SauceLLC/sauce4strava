@@ -4,7 +4,7 @@ sauce.ns('analysis', function(ns) {
     /* TODO: Move to user options. */
     var cp_periods = [
         ['5s', 5],
-        ['15s', 10],
+        ['15s', 15],
         ['30s', 30],
         ['1min', 60],
         ['2min', 120],
