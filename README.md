@@ -32,7 +32,7 @@ from Google Web Store
 
 Install the development version:
     
-1. Download [ZIP file](https://github.com/mayfield/strava-enhancement-suite/archive/master.zip)
+1. Download [ZIP file](https://github.com/mayfield/strava-sauce/archive/master.zip)
    or clone this repo to your local computer.
 
 2. (ZIP only) Unzip the downloaded zip file.
