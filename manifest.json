@@ -6,7 +6,7 @@
     "description": "__MSG_extDesc__",
     "author": "Justin Mayfield",
     "version": "0.0.2",
-    "version_name": "0.0.2 dev",
+    "version_name": "0.0.2 [dev]",
     "minimum_chrome_version": "42",
     
     "default_locale": "en",
@@ -26,7 +26,10 @@
     },
 
     "background": {
-        "scripts": ["src/page_rules.js"],
+        "scripts": [
+            "src/bg/page_rules.js",
+            "src/bg/comm.js"
+        ],
         "persistent": false
     },
 
@@ -58,9 +61,14 @@
         ]
     }],
 
+    "externally_connectable": {
+        "matches": ["*://*.strava.com/*"]
+    },
+
     "web_accessible_resources": [
         "src/*.js",
         "css/*.css",
-        "pages/*.html"
+        "pages/*.html",
+        "templates/*.html"
     ]
 }

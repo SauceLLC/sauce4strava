@@ -37,7 +37,8 @@ chrome.storage.sync.get(null, function(options) {
     insert_script([
         'window.sauce = {};',
         'sauce.options = ', JSON.stringify(options), ';',
-        'sauce.extURL = "', ext_url, '";'
+        'sauce.extURL = "', ext_url, '";',
+        'sauce.extID = "', chrome.runtime.id, '";'
     ].join(''));
 
     loader(src);

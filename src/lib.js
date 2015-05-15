@@ -48,10 +48,11 @@ sauce.ns('data', function(ns) {
 
 
 sauce.ns('func', function(ns) {
-    var _adjunct = function(run_after, obj, orig_func_name, interceptor) {
+
+    var _adjunct = function(runAfter, obj, orig_func_name, interceptor) {
         var save_fn = obj.prototype[orig_func_name];
         function wrap() {
-            if (run_after) {
+            if (runAfter) {
                 var ret = save_fn.apply(this, arguments);
                 var args = Array.prototype.slice.call(arguments);
                 args.unshift(ret);
@@ -65,17 +66,39 @@ sauce.ns('func', function(ns) {
         obj.prototype[orig_func_name] = wrap;
     };
 
-    var run_after = function(obj, orig_func_name, interceptor) {
+    var runAfter = function(obj, orig_func_name, interceptor) {
         _adjunct(true, obj, orig_func_name, interceptor);
     };
 
-    var run_before = function(obj, orig_func_name, interceptor) {
+    var runBefore = function(obj, orig_func_name, interceptor) {
         _adjunct(false, obj, orig_func_name, interceptor);
     };
 
+
+    var IfDone = function(callback) {
+        this.callback = callback;
+        this.refcnt = 0;
+    };
+
+    IfDone.prototype.inc = function() {
+        this.refcnt++;
+        console.debug('+REF', this.refcnt);
+    };
+
+    IfDone.prototype.dec = function() {
+        this.refcnt--;
+        console.debug('-REF', this.refcnt);
+        if (this.refcnt === 0) {
+            console.debug("RUN:", this.callback);
+            this.callback();
+        }
+    };
+
+
     return {
-        run_after: run_after,
-        run_before: run_before
+        runAfter: runAfter,
+        runBefore: runBefore,
+        IfDone: IfDone
     };
 });
 
@@ -84,7 +107,7 @@ sauce.ns('power', function(ns) {
     /* Max gap-seconds to permit without zero-padding. */
     var max_data_gap = 5;
 
-    var critpower_smart = function(ts_stream, watts_stream, period) {
+    var critpowerSmart = function(ts_stream, watts_stream, period) {
         var ring = new sauce.data.RollingAvg(period);
         var max;
         var range = 0;
@@ -106,7 +129,7 @@ sauce.ns('power', function(ns) {
         return max;
     };
 
-    var calc_np = function(watts_stream) {
+    var calcNP = function(watts_stream) {
         var ret = {
             value: 0,
             count: 0
@@ -136,10 +159,7 @@ sauce.ns('power', function(ns) {
         return ret;
     };
 
-    /* NOTES:
-     * zones: pageView.power().
-     */
-    var calc_tss = function(np, if_, ftp) {
+    var calcTSS = function(np, if_, ftp) {
         var norm_work = np.value * np.count;
         var ftp_work_hour = ftp * 3600;
         var raw_tss = norm_work * if_;
@@ -147,9 +167,60 @@ sauce.ns('power', function(ns) {
     };
 
     return {
-        critpower: critpower_smart,
-        calc_np: calc_np,
-        calc_tss: calc_tss
+        critpower: critpowerSmart,
+        calcNP: calcNP,
+        calcTSS: calcTSS
     };
 });
 
+
+sauce.ns('comm', function(ns) {
+
+    var _sendMessage = function(msg, callback) {
+        chrome.runtime.sendMessage(sauce.extID, msg, function(resp) {
+            if (!resp.success) {
+                console.error("RPC sender:", resp.error);
+            } else if (callback) {
+                callback.apply(this, resp.data);
+            } else {
+                console.debug("RPC done:", msg);
+            }
+        });
+    };
+
+    var syncSet = function(key, value, callback) {
+        console.debug('RPC - sync SET: ' + key + ' = ' + value);
+        var data = {};
+        data[key] = value;
+        _sendMessage({
+            system: 'sync',
+            op: 'set',
+            data: data
+        }, callback);
+    };
+
+    var syncGet = function(key, callback) {
+        console.debug('RPC - sync GET - KEY: ' + key);
+        _sendMessage({
+            system: 'sync',
+            op: 'get',
+            data: key
+        }, function(d) {
+            console.log('RPC - sync_get - VALUE: ' + d[key]);
+            callback(d[key]);
+        });
+    };
+
+    var setFTP = function(athlete_id, ftp, callback) {
+        syncSet('athlete_ftp_' + athlete_id, ftp, callback);
+    };
+
+    var getFTP = function(athlete_id, callback) {
+        syncGet('athlete_ftp_' + athlete_id, callback);
+    };
+
+    return {
+        getFTP: getFTP,
+        setFTP: setFTP
+    };
+});

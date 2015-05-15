@@ -1,0 +1,37 @@
+<div title="{{ title }}" class="sauce-critpower-moreinfo">
+    <div class="sauce-sparkline"></div>
+    <table>
+        <tr>
+            <td>Start time</td>
+            <td><a class="start_time_link">{{ start_time }}</a></td>
+        </tr>
+        <tr>
+            <td>Watts/kg</td>
+            <td>{{ w_kg.toFixed(1) }}</td>
+        </tr>
+        <tr>
+            <td>Peak power</td>
+            <td>{{ peak_power }}w</td>
+        </tr>
+        <tr>
+            <td>Average power</td>
+            <td>{{ Math.round(cp_avg) }}w</td>
+        </tr>
+        <% if (np) { %>
+            <tr>
+                <td>Normalized power</td>
+                <td>{{ Math.round(np) }}w</td>
+            </tr>
+        <% } if (if_ !== undefined) { %>
+            <tr>
+                <td>Intensity factor</td>
+                <td>{{ if_.toFixed(2) }}</td>
+            </tr>
+        <% } if (tss !== undefined) { %>
+            <tr>
+                <td>TSS</td>
+                <td>{{ Math.round(tss) }}</td>
+            </tr>
+        <% } %>
+    </table>
+</div>

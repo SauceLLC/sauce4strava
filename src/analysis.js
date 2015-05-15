@@ -1,6 +1,8 @@
 
 sauce.ns('analysis', function(ns) {
 
+    var default_ftp = 250;
+
     /* TODO: Move to user options. */
     var cp_periods = [
         ['5s', 5],
@@ -16,16 +18,16 @@ sauce.ns('analysis', function(ns) {
         ['1hour', 3600]
     ];
 
-    var on_stream_data = function() {
+    var onStreamData = function() {
         console.log("Parsing Watts Stream for Critical Power Chart");
 
+        var ctx = this;
         var streams = pageView.streams();
         var watts_stream = streams.getStream('watts');
         if (!watts_stream) {
             watts_stream = streams.getStream('watts_calc');
             if (!watts_stream) {
-                console.log("NO POWER DATA FOR THIS RIDE");
-                return;
+                console.warn("No power data for this ride.");
             }
             /* Only show large period for watt estimates. */
             var too_small = [];
@@ -36,100 +38,98 @@ sauce.ns('analysis', function(ns) {
             });
             too_small.sort().reverse().forEach(function(i) {
                 delete cp_periods[i];
-            }); }
+            });
+        }
 
+        var np = watts_stream ? sauce.power.calcNP(watts_stream) : undefined;
+        var np_val = np && np.value;
         var ts_stream = streams.getStream('time'); 
-        var athlete = pageView.activityAthlete();
         var weight_norm;
         var weight_kg = pageView.activityAthleteWeight();
-        var weight_unit = athlete.get('weight_measurement_unit');
-        weight_norm = (weight_unit == 'lbs') ? weight_kg * 2.20462 : weight_kg;
+        var weight_unit = ctx.athlete.get('weight_measurement_unit');
+        var if_ = np && np_val / ctx.ftp;
+        var tpl_data = {
+            np: np_val,
+            weight_unit: weight_unit,
+            weight_norm: (weight_unit == 'lbs') ? weight_kg * 2.20462 : weight_kg,
+            ftp: ctx.ftp,
+            if_: if_,
+            tss: np && sauce.power.calcTSS(np, if_, ctx.ftp)
+        };
+        var frag = jQuery(ctx.tertiary_stats_tpl(tpl_data));
+        var link = frag.find('.provide_ftp');
+        var input = link.siblings('input');
 
-        cp_periods.forEach(function(period) {
-            var cp = sauce.power.critpower(ts_stream, watts_stream, period[1]);
-            if (cp !== undefined) {
-                var el = jQuery('#sauce-cp-' + period[1]);
-                el.html(Math.round(cp.avg()));
-                el.parent().click(function(x) {
-                    sauce.analysis.moreinfo_dialog(period, cp, weight_kg);
+        input.keyup(function(ev) {
+            if (ev.keyCode != 13) {
+                return;
+            }
+            var val = Number(input.val());
+            if (!val || val < 0) {
+                jQuery('<div title="Invalid FTP Wattage.">' +
+                       '<b>"' + input.val() + '" is not a valid FTP.</b>' +
+                       '</div>').dialog({modal: true});
+            } else {
+                input.hide();
+                link.html(val).show();
+                jQuery('<div title="Reloading...">' +
+                       '<b>Reloading page to reflect FTP change."' +
+                       '</div>').dialog({modal: true});
+                sauce.comm.setFTP(ctx.athlete.get('id'), val, function() {
+                    location.reload();
                 });
-                jQuery('#sauce-cp-row-' + period[1]).show();
             }
         });
-        jQuery('#sauce-critpower').show();
+            
+        link.click(function() {
+            input.width(link.hide().width()).show();
+        });
 
-        var stats = jQuery('.sauce-stats');
-        var np = sauce.power.calc_np(watts_stream);
+        frag.insertAfter(jQuery('.inline-stats').last());
 
-        if (!np) {
-            stats.find('.sauce-np-li').hide();
-        } else {
-            stats.find('.sauce-np').html(Math.round(np.value));
+        if (watts_stream) {
+            cp_periods.forEach(function(period) {
+                var cp = sauce.power.critpower(ts_stream, watts_stream, period[1]);
+                if (cp !== undefined) {
+                    var el = jQuery('#sauce-cp-' + period[1]);
+                    el.html(Math.round(cp.avg()));
+                    el.parent().click(function(x) {
+                        sauce.analysis.moreinfo_dialog.call(ctx, period, cp, weight_kg);
+                    });
+                    jQuery('#sauce-cp-row-' + period[1]).show();
+                }
+            });
+            jQuery('#sauce-critpower').show();
         }
-
-        var ftp = sauce.analysis.athlete_ftp();
-        if (!ftp) {
-            stats.find('.sauce-if-li').hide();
-            stats.find('.sauce-tss-li').hide();
-        } else {
-            var if_ = np.value / ftp;
-            var tss = sauce.power.calc_tss(np, if_, ftp);
-            stats.find('.sauce-if').html(if_.toFixed(2));
-            stats.find('.sauce-tss').html(Math.round(tss));
-        }
-
-        stats.find('.sauce-weight-label').html(weight_unit);
-        stats.find('.sauce-weight').html(Math.round(weight_norm));
     };
 
     var moreinfo_dialog = function(cp_period, cp_roll, weight) {
+        var ctx = this;
         var cp_avg = cp_roll.avg();
-        var np = sauce.power.calc_np(cp_roll._values);
-        /* XXX: Use routes this hard link is very slow. */
-        /* XXX: the timestamps are not correct with gapped data. */
-        var analysis_link = 'https://www.strava.com/activities/' + 
-                            pageView.activity().get('id') +
-                            '/analysis/' + cp_roll._times[0] + '/' +
-                            cp_roll._times[cp_roll._times.length-1];
-        var f = sauce.analysis.moreinfo_frag.children().clone();
-        f.attr('title', 'Critical power - ' + cp_period[0]);
-        /*f.find('.sauce-sparkline').sparkline(cp_roll._values, {
-            type: 'line',
-            width: '100%',
-            height: 56,
-            lineColor: '#EA400D',
-            fillColor: 'rgba(234, 64, 13, 0.61)',
-            chartRangeMin: 0,
-            normalRangeMin: 0,
-            normalRangeMax: cp_avg,
-            tooltipSuffix: 'w'
-        });*/
+        var np = sauce.power.calcNP(cp_roll._values);
+        var avgpwr = np.value ? np : {value: cp_avg, count: cp_roll._values.length};
+        var if_ = avgpwr.value / ctx.ftp;
+        var data = {
+            title: 'Critical power - ' + cp_period[0],
+            start_time: (new Strava.I18n.TimespanFormatter()).display(cp_roll._times[0]),
+            w_kg: cp_avg / weight,
+            peak_power: Math.max.apply(null, cp_roll._values),
+            cp_avg: cp_avg,
+            np: np.value,
+            tss: sauce.power.calcTSS(avgpwr, if_, ctx.ftp),
+            if_: if_
+        };
 
-        var time_fmt = new Strava.I18n.TimespanFormatter();
-        f.find('.sauce-start_time').html('<a href="' + analysis_link + '">' +
-                                         time_fmt.display(cp_roll._times[0]) +
-                                         '</a>');
-        f.find('.sauce-w_kg').html((cp_avg / weight).toFixed(1) + 'w');
-        f.find('.sauce-peak_power').html(Math.max.apply(null, cp_roll._values) + 'w');
-        f.find('.sauce-cp_avg').html(Math.round(cp_avg) + 'w');
+        var frag = jQuery(ctx.moreinfo_tpl(data));
+        frag.find('.start_time_link').click(function() {
+            pageView.router().changeMenuTo([
+                'analysis',
+                cp_roll._times[0], /* XXX: Use wall time. */
+                cp_roll._times[cp_roll._times.length-1]
+            ].join('/'));
+        });
 
-        if (!np.value) {
-            f.find('.sauce-np-row').hide();
-        } else {
-            f.find('.sauce-np').html(Math.round(np.value) + 'w');
-        }
-
-        var ftp = sauce.analysis.athlete_ftp();
-        if (!ftp) {
-            f.find('.sauce-has_ftp').hide();
-        } else {
-            var avgpwr = np.value ? np : {value: cp_avg, count: cp_roll._values.length};
-            var if_ = avgpwr.value / ftp;
-            f.find('.sauce-if').html(if_.toFixed(2));
-            f.find('.sauce-tss').html(Math.round(sauce.power.calc_tss(avgpwr, if_, ftp)));
-        }
-
-        var dialog = f.dialog({
+        var dialog = frag.dialog({
             resizable: false,
             modal: false,
             buttons: {
@@ -138,7 +138,7 @@ sauce.ns('analysis', function(ns) {
         });
 
         /* Must run after the dialog is open for proper rendering. */
-        f.find('.sauce-sparkline').sparkline(cp_roll._values, {
+        frag.find('.sauce-sparkline').sparkline(cp_roll._values, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -151,21 +151,17 @@ sauce.ns('analysis', function(ns) {
         });
     };
 
-    var athlete_ftp = function() {
-        var power_ctrl = pageView.powerController();
-        return power_ctrl && power_ctrl.get('athlete_ftp');
-    };
-
     var start = function() {
         console.log('Starting Sauce Activity Analysis');
 
         jQuery.getScript('https://cdnjs.cloudflare.com/ajax/libs/' +
                          'jquery-sparklines/2.1.2/jquery.sparkline.min.js');
 
-        sauce.func.run_before(Strava.Labs.Activities.StreamsRequest, 'request', function() {
+        sauce.func.runBefore(Strava.Labs.Activities.StreamsRequest, 'request', function() {
             this.require('watts');
         });
 
+        /* XXX: Make template like the other stuff. */
         var panel = [
             '<ul id="sauce-critpower" style="display: none;" class="pagenav">',
                 '<li class="group">',
@@ -189,21 +185,82 @@ sauce.ns('analysis', function(ns) {
         panel.push('</table></li></ul>');
         jQuery(panel.join('')).insertBefore('.actions-menu');
 
-        var frag = jQuery('<div/>');
-        frag.load(sauce.extURL + 'pages/tertiary-stats.html');
-        frag.insertAfter('.inline-stats.secondary-stats');
+        var IfDone = function(callback) {
+            this.callback = callback;
+            this.refcnt = 0;
+        };
+        IfDone.prototype.inc = function() {
+            this.refcnt++;
+            console.info('+REF', this.refcnt);
+        };
+        IfDone.prototype.dec = function() {
+            this.refcnt--;
+            console.info('-REF', this.refcnt);
+            if (this.refcnt === 0) {
+                console.info("RUN:", this.callback);
+                this.callback();
+            } else {
+                console.warn("NO RUN:", this.callback, this);
+            }
+        };
 
-        var moreinfo_url = sauce.extURL + 'pages/critpower-moreinfo.html';
-        sauce.analysis.moreinfo_frag = jQuery('<div/>').load(moreinfo_url);
+        var done = new sauce.func.IfDone(function() { onStreamData.call(context); });
 
+        var context = {
+            athlete: pageView.activityAthlete(),
+            activity: pageView.activity()
+        };
+        var athlete_id = context.athlete.get('id');
+
+        var tpl_url = sauce.extURL + 'templates/';
+        done.inc();
+        jQuery.ajax(tpl_url + 'tertiary-stats.html').done(function(data) {
+            context.tertiary_stats_tpl = _.template(data);
+            done.dec();
+        });
+
+        done.inc();
+        jQuery.ajax(tpl_url + 'critpower-moreinfo.html').done(function(data) {
+            context.moreinfo_tpl = _.template(data);
+            done.dec();
+        });
+
+        done.inc();
+        sauce.comm.getFTP(athlete_id, function(ftp) {
+            /* Default to strava ftp value, also warn of differences. */
+            var strava_ftp = context.activity.get('ftp');
+            if (!ftp) {
+                if (strava_ftp) {
+                    console.info("Setting FTP override from strava.");
+                    ftp = strava_ftp;
+                    sauce.comm.setFTP(athlete_id, strava_ftp);
+                } else {
+                    console.warn("No FTP value found, using default.");
+                    ftp = default_ftp;
+                }
+                sauce.comm.setFTP(athlete_id, ftp);
+            } else if (strava_ftp && ftp != strava_ftp) {
+                console.warn("Sauce FTP override differs from Strava FTP:",
+                             ftp, strava_ftp);
+                jQuery('<div title="WARNING: FTP Mismatch">' +
+                       'Your Sauce FTP override value of ' + ftp + ' differs from ' +
+                       'your Strava FTP setting of ' + strava_ftp + '. Generally ' +
+                       'these should match.<br/><br/>' +
+                       '<b>Please update your Strava value to match the Sauce ' +
+                       'override value.</b></div>').dialog({ width: 500, modal: true });
+            }
+            context.ftp = ftp;
+            done.dec();
+        });
+
+        done.inc();
         pageView.streamsRequest.deferred.done(function() {
-            on_stream_data();
+            done.dec();
         });
     };
 
     return {
         start: start,
-        athlete_ftp: athlete_ftp,
         moreinfo_dialog: moreinfo_dialog
     };
 });
