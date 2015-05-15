@@ -30,18 +30,20 @@ from Google Web Store
 
 *or*
 
-Install the development verssion:
+Install the development version:
     
-1. Download [ZIP file](https://github.com/mayfield/strava-enhancement-suite/archive/master.zip)
+1. Download [ZIP file](https://github.com/mayfield/strava-sauce/archive/master.zip)
    or clone this repo to your local computer.
 
 2. (ZIP only) Unzip the downloaded zip file.
 
 3. Go to chrome://extensions/ on your Chrome browser.
 
-4. Click "Load unpacked extension..."
+4. Make sure "Developer mode" is checked.
 
-5. Navigate to the directoryy  where you cloned or unzipped strava-sauce and click "Open."
+5. Click "Load unpacked extension..."
+
+6. Navigate to the directory  where you cloned or unzipped strava-sauce and click "Open."
     
 
 Compatibility
