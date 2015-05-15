@@ -5,18 +5,43 @@ sauce.ns('data', function(ns) {
     function RollingAvg(period) {
         this._times = [];
         this._values = [];
+        this.offt = 0;
         this.period = period;
         this.sum = 0;
     }
 
-    RollingAvg.prototype.add = function(ts, value) {
+    RollingAvg.prototype.add = function(ts, value, is_pad) {
         this._times.push(ts);
         this._values.push(value);
         this.sum += value;
+        if (!is_pad) {
+            this.offt++;
+        }
         while (ts - this._times[0] >= this.period) {
             this.sum -= this._values[0];
             this.shift();
         }
+    };
+
+    var Pad = function() {};
+    Pad.prototype.valueOf = function() { return 0; };
+    var pad = new Pad();
+
+    RollingAvg.prototype.pad = function(size) {
+        var last_ts = this._times[this._times.length-1];
+        for (var i = 1; i <= size; i++) {
+            this.add(++last_ts, pad, true);
+        }
+    };
+
+    RollingAvg.prototype.padCount = function() {
+        var count = 0;
+        for (var i = 0; i < this._values.length; i++) {
+            if (this._values[i] instanceof Pad) {
+                count++;
+            }
+        }
+        return count;
     };
 
     RollingAvg.prototype.avg = function() {
@@ -36,6 +61,7 @@ sauce.ns('data', function(ns) {
     RollingAvg.prototype.copy = function() {
         var copy = new RollingAvg(this.period);
         copy.sum = this.sum;
+        copy.offt = this.offt;
         copy._times = this._times.slice(0);
         copy._values = this._values.slice(0);
         return copy;
@@ -117,9 +143,7 @@ sauce.ns('power', function(ns) {
             var ts = ts_stream[i];
             var gap = i > 0 && ts - ts_stream[i-1];
             if (gap > max_data_gap) {
-                for (var ii = 1; ii < gap; ii++) {
-                    ring.add(ts_stream[i-1]+ii, 0);
-                }
+                ring.pad(gap-2);
             }
             ring.add(ts, watts);
             if (ring.full() && (!max || ring.avg() > max.avg())) {

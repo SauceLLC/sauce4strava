@@ -124,8 +124,8 @@ sauce.ns('analysis', function(ns) {
         frag.find('.start_time_link').click(function() {
             pageView.router().changeMenuTo([
                 'analysis',
-                cp_roll._times[0], /* XXX: Use wall time. */
-                cp_roll._times[cp_roll._times.length-1]
+                cp_roll.offt - cp_roll._values.length + cp_roll.padCount(),
+                cp_roll.offt
             ].join('/'));
         });
 
