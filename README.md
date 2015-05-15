@@ -39,9 +39,11 @@ Install the development verssion:
 
 3. Go to chrome://extensions/ on your Chrome browser.
 
-4. Click "Load unpacked extension..."
+4. Make sure "Developer mode" is checked.
 
-5. Navigate to the directoryy  where you cloned or unzipped strava-sauce and click "Open."
+5. Click "Load unpacked extension..."
+
+6. Navigate to the directoryy  where you cloned or unzipped strava-sauce and click "Open."
     
 
 Compatibility
