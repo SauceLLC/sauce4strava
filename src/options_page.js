@@ -27,19 +27,20 @@ function load_options() {
         var ftp_list = document.getElementById('ftp_list');
         ftps.forEach(function(x) {
             ftp_list.innerHTML += [
-                '<li><div><div class="label">', x[0], ':</div>',
-                '<input id="', x[0], '" value="', x[1], '"/></div></li>'
+                '<tr><td class="label">', x[0], ':</td><td>',
+                '<input id="', x[0], '" value="', x[1], '"/></td></tr>'
             ].join('');
         });
         document.getElementById('save').addEventListener('click', function() {
             save_options(ftps);
         });
         document.getElementById('clear').addEventListener('click', function() {
-            if (confirm('Are you sure you want to erase all settings?')) {
+            this.innerText = "Double Click to Confirm Erase";
+            this.addEventListener('dblclick', function() {
                 chrome.storage.sync.clear(function() {
                     location.reload();
                 });
-            }
+            });
         });
     });
 }
