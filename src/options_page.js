@@ -1,34 +1,38 @@
 
-function save_options(options) {
-    var start_date = document.getElementById('start_date').value;
-    var watts = document.getElementById('watts').value;
-    options.ftp_history.push({
-        start_date: start_date,
-        watts: watts
+function save_options(ftps) {
+    toset = {};
+    ftps.forEach(function(x) {
+        toset[x[0]] = Number(document.getElementById(x[0]).value);
     });
-    chrome.storage.sync.set(options, function() {
+    console.log(toset);
+    chrome.storage.sync.set(toset, function() {
         var status = document.getElementById('status');
         status.textContent = 'Options saved.';
         setTimeout(function() {
             status.textContent = '';
-            window.reload();
-        }, 1000);
+        }, 2000);
     });
 }
 
 
 function load_options() {
-    chrome.storage.sync.get(null, function(options) {
-        if (!options.ftp_history) {
-            options.ftp_history = [];
-        }
-        var hist = document.getElementById('ftp_history');
-        options.ftp_history.forEach(function(x) {
-            hist.innerHTML += '<li>' + x.start_date +
-                         ': ' + x.watts + 'w</li>';
+    chrome.storage.sync.get(null, function(data) {
+        /* Comb for athlete ftp.. meh */
+        ftps = [];
+        Object.keys(data).forEach(function(x) {
+            if (x.indexOf('athlete_ftp') === 0) {
+                ftps.push([x, data[x]]);
+            }
+        });
+        var ftp_list = document.getElementById('ftp_list');
+        ftps.forEach(function(x) {
+            ftp_list.innerHTML += [
+                '<li><div><div class="label">', x[0], ':</div>',
+                '<input id="', x[0], '" value="', x[1], '"/></div></li>'
+            ].join('');
         });
         document.getElementById('save').addEventListener('click', function() {
-            save_options(options);
+            save_options(ftps);
         });
     });
 }

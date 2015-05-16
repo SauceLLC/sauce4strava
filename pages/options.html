@@ -38,45 +38,29 @@
                 background: #fff;
                 border: 1px solid #222;
             }
+
+            li .label {
+                width: 140px;
+                float: left;
+                text-align: right;
+                padding: 3px;
+            }
+
+            li {
+                padding: 8px;
+            }
         </style>
     </head>
 
     <body>
-        <h1>Strava Addons - "strava sauce" - Config Options</h1>
+        <h1>Sauce - Advanced Options</h1>
         <div class="section">
-            <h1>Athlete FTP History</h1>
+            <h1>Athletes FTP Values</h1>
             <p class="desc">
-                Enter your best estimated functional threshold power in watts.
-                Any time your threshold power changes, you can enter a new value
-                along with the starting date for this new FTP value to be used
-                for TSS, IF and other work related power calculations.
+                Enter your best estimated functional threshold powers in watts.
                 <br/><br/>
-                <i>Using this tabulated version of FTP is recommended over Strava's
-                premium feature for FTP because it maintains the proper TSS values for
-                older rides when your FTP changes over time.</i>
+                <ol id="ftp_list"></ol>
             </p>
-            <div>
-                <b>History</b>
-                <ul id="ftp_history"></ul>
-            </div>
-            <div>
-                <table><tr>
-                    <td>New FTP Value:</td>
-                    <td><input type="text" id="start_date" value="01/01/1970"/></td>
-                    <td><input type="text" id="watts" value="250"/></td>
-                </tr></table>
-            </div>
-        </div>
-        <div class="section">
-            <h1>Something else</h1>
-            <p class="desc">
-                I am style testing alone.  You may replace me when you find my successor.
-            </p>
-
-            <label>
-              <input type="checkbox" id="like">
-              I like colors.
-            </label>
         </div>
 
         <div class="footer">
