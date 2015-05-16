@@ -108,14 +108,11 @@ sauce.ns('func', function(ns) {
 
     IfDone.prototype.inc = function() {
         this.refcnt++;
-        console.debug('+REF', this.refcnt);
     };
 
     IfDone.prototype.dec = function() {
         this.refcnt--;
-        console.debug('-REF', this.refcnt);
         if (this.refcnt === 0) {
-            console.debug("RUN:", this.callback);
             this.callback();
         }
     };

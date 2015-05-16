@@ -54,3 +54,7 @@
 .sauce-critpower-moreinfo tr:last-child td {
     border-bottom: 0;
 }
+
+.ui-dialog.sauce-freerange-dialog {
+    margin: 0;
+}

@@ -88,13 +88,24 @@ sauce.ns('analysis', function(ns) {
         frag.insertAfter(jQuery('.inline-stats').last());
 
         if (watts_stream) {
+            var open_dialog = [];
             cp_periods.forEach(function(period) {
                 var cp = sauce.power.critpower(ts_stream, watts_stream, period[1]);
                 if (cp !== undefined) {
                     var el = jQuery('#sauce-cp-' + period[1]);
                     el.html(Math.round(cp.avg()));
                     el.parent().click(function(x) {
-                        sauce.analysis.moreinfo_dialog.call(ctx, period, cp, weight_kg);
+                        var existing = open_dialog.shift();
+                        if (existing) {
+                            existing.dialog('close');
+                        }
+                        var dialog = moreinfo_dialog.call(ctx, {
+                            cp_period: period,
+                            cp_roll: cp,
+                            weight: weight_kg,
+                            anchor_to: el.parent()
+                        });
+                        open_dialog.push(dialog);
                     });
                     jQuery('#sauce-cp-row-' + period[1]).show();
                 }
@@ -103,17 +114,18 @@ sauce.ns('analysis', function(ns) {
         }
     };
 
-    var moreinfo_dialog = function(cp_period, cp_roll, weight) {
+    var moreinfo_dialog = function(opts) {
         var ctx = this;
-        var cp_avg = cp_roll.avg();
-        var np = sauce.power.calcNP(cp_roll._values);
-        var avgpwr = np.value ? np : {value: cp_avg, count: cp_roll._values.length};
+        var crit = opts.cp_roll;
+        var cp_avg = crit.avg();
+        var np = sauce.power.calcNP(crit._values);
+        var avgpwr = np.value ? np : {value: cp_avg, count: crit._values.length};
         var if_ = avgpwr.value / ctx.ftp;
         var data = {
-            title: 'Critical power - ' + cp_period[0],
-            start_time: (new Strava.I18n.TimespanFormatter()).display(cp_roll._times[0]),
-            w_kg: cp_avg / weight,
-            peak_power: Math.max.apply(null, cp_roll._values),
+            title: 'Critical power - ' + opts.cp_period[0],
+            start_time: (new Strava.I18n.TimespanFormatter()).display(crit._times[0]),
+            w_kg: cp_avg / opts.weight,
+            peak_power: Math.max.apply(null, crit._values),
             cp_avg: cp_avg,
             np: np.value,
             tss: sauce.power.calcTSS(avgpwr, if_, ctx.ftp),
@@ -124,21 +136,36 @@ sauce.ns('analysis', function(ns) {
         frag.find('.start_time_link').click(function() {
             pageView.router().changeMenuTo([
                 'analysis',
-                cp_roll.offt - cp_roll._values.length + cp_roll.padCount(),
-                cp_roll.offt
+                crit.offt - crit._values.length + crit.padCount(),
+                crit.offt
             ].join('/'));
         });
 
         var dialog = frag.dialog({
             resizable: false,
-            modal: false,
+            dialogClass: 'sauce-freerange-dialog',
+            show: {
+                effect: 'fadeIn',
+                duration: 200
+            },
+            hide: {
+                effect: "fadeOut",
+                duration: 200
+            },
+            position: {
+                my: 'left top',
+                at: 'right center',
+                of: opts.anchor_to
+            },
             buttons: {
-                Close: function() { dialog.dialog('close'); }
+                Close: function() {
+                    dialog.dialog('close');
+                }
             }
         });
 
         /* Must run after the dialog is open for proper rendering. */
-        frag.find('.sauce-sparkline').sparkline(cp_roll._values, {
+        frag.find('.sauce-sparkline').sparkline(crit._values, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -149,6 +176,8 @@ sauce.ns('analysis', function(ns) {
             normalRangeMax: cp_avg,
             tooltipSuffix: 'w'
         });
+
+        return dialog;
     };
 
     var start = function() {
@@ -184,25 +213,6 @@ sauce.ns('analysis', function(ns) {
 
         panel.push('</table></li></ul>');
         jQuery(panel.join('')).insertBefore('.actions-menu');
-
-        var IfDone = function(callback) {
-            this.callback = callback;
-            this.refcnt = 0;
-        };
-        IfDone.prototype.inc = function() {
-            this.refcnt++;
-            console.info('+REF', this.refcnt);
-        };
-        IfDone.prototype.dec = function() {
-            this.refcnt--;
-            console.info('-REF', this.refcnt);
-            if (this.refcnt === 0) {
-                console.info("RUN:", this.callback);
-                this.callback();
-            } else {
-                console.warn("NO RUN:", this.callback, this);
-            }
-        };
 
         var done = new sauce.func.IfDone(function() { onStreamData.call(context); });
 
