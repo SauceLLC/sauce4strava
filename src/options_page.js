@@ -34,6 +34,13 @@ function load_options() {
         document.getElementById('save').addEventListener('click', function() {
             save_options(ftps);
         });
+        document.getElementById('clear').addEventListener('click', function() {
+            if (confirm('Are you sure you want to erase all settings?')) {
+                chrome.storage.sync.clear(function() {
+                    location.reload();
+                });
+            }
+        });
     });
 }
 
