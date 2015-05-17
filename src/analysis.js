@@ -46,7 +46,7 @@ sauce.ns('analysis', function(ns) {
         var ts_stream = streams.getStream('time'); 
         var weight_norm;
         var weight_kg = pageView.activityAthleteWeight();
-        var weight_unit = ctx.athlete.get('weight_measurement_unit');
+        var weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
         var if_ = np && np_val / ctx.ftp;
         var tpl_data = {
             np: np_val,
@@ -75,7 +75,7 @@ sauce.ns('analysis', function(ns) {
                 jQuery('<div title="Reloading...">' +
                        '<b>Reloading page to reflect FTP change."' +
                        '</div>').dialog({modal: true});
-                sauce.comm.setFTP(ctx.athlete.get('id'), val, function() {
+                sauce.comm.setFTP(ctx.athlete_id, val, function() {
                     location.reload();
                 });
             }
@@ -217,10 +217,8 @@ sauce.ns('analysis', function(ns) {
         var done = new sauce.func.IfDone(function() { onStreamData.call(context); });
 
         var context = {
-            athlete: pageView.activityAthlete(),
-            activity: pageView.activity()
+            athlete_id: pageView.activityAthlete().get('id')
         };
-        var athlete_id = context.athlete.get('id');
 
         var tpl_url = sauce.extURL + 'templates/';
         done.inc();
@@ -236,36 +234,31 @@ sauce.ns('analysis', function(ns) {
         });
 
         done.inc();
-        sauce.comm.getFTP(athlete_id, function(ftp) {
-            /* Default to strava ftp value, also warn of differences. */
-            var strava_ftp = context.activity.get('ftp');
-            if (!ftp) {
-                if (strava_ftp) {
-                    console.info("Setting FTP override from strava.");
-                    ftp = strava_ftp;
-                    sauce.comm.setFTP(athlete_id, strava_ftp);
-                } else {
-                    console.warn("No FTP value found, using default.");
-                    ftp = default_ftp;
+        sauce.comm.getFTP(context.athlete_id, function(ftp) {
+            pageView.streamsRequest.deferred.done(function() {
+                var strava_ftp = pageView.powerController().get('athlete_ftp');
+                if (!ftp) {
+                    if (strava_ftp) {
+                        console.info("Setting FTP override from strava.");
+                        ftp = strava_ftp;
+                        sauce.comm.setFTP(context.athlete_id, strava_ftp);
+                    } else {
+                        console.warn("No FTP value found, using default.");
+                        ftp = default_ftp;
+                    }
+                } else if (strava_ftp && ftp != strava_ftp) {
+                    console.warn("Sauce FTP override differs from Strava FTP:",
+                                 ftp, strava_ftp);
+                    jQuery('<div title="WARNING: FTP Mismatch">' +
+                           'The Sauce FTP override value of ' + ftp + ' differs from ' +
+                           'the Strava FTP setting of ' + strava_ftp + '. Generally ' +
+                           'these should match.<br/><br/>' +
+                           '<b>Please update your Strava value to match the Sauce ' +
+                           'override value.</b></div>').dialog({ width: 500, modal: true });
                 }
-                sauce.comm.setFTP(athlete_id, ftp);
-            } else if (strava_ftp && ftp != strava_ftp) {
-                console.warn("Sauce FTP override differs from Strava FTP:",
-                             ftp, strava_ftp);
-                jQuery('<div title="WARNING: FTP Mismatch">' +
-                       'Your Sauce FTP override value of ' + ftp + ' differs from ' +
-                       'your Strava FTP setting of ' + strava_ftp + '. Generally ' +
-                       'these should match.<br/><br/>' +
-                       '<b>Please update your Strava value to match the Sauce ' +
-                       'override value.</b></div>').dialog({ width: 500, modal: true });
-            }
-            context.ftp = ftp;
-            done.dec();
-        });
-
-        done.inc();
-        pageView.streamsRequest.deferred.done(function() {
-            done.dec();
+                context.ftp = ftp;
+                done.dec();
+            });
         });
     };
 
