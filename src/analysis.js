@@ -236,7 +236,11 @@ sauce.ns('analysis', function(ns) {
         done.inc();
         sauce.comm.getFTP(context.athlete_id, function(ftp) {
             pageView.streamsRequest.deferred.done(function() {
-                var strava_ftp = pageView.powerController().get('athlete_ftp');
+                var power = pageView.powerController();
+                /* Sometimes you can get it from the activity.  I think this only
+                 * works when you are the athlete in the activity. */
+                var strava_ftp = power ? power.get('athlete_ftp')
+                                       : pageView.activity().get('ftp');
                 if (!ftp) {
                     if (strava_ftp) {
                         console.info("Setting FTP override from strava.");
