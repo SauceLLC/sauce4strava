@@ -143,9 +143,10 @@ sauce.ns('analysis', function(ns) {
 
         var dialog = frag.dialog({
             resizable: false,
+            width: 250,
             dialogClass: 'sauce-freerange-dialog',
             show: {
-                effect: 'fadeIn',
+                effect: 'slideDown',
                 duration: 200
             },
             hide: {
@@ -153,7 +154,7 @@ sauce.ns('analysis', function(ns) {
                 duration: 200
             },
             position: {
-                my: 'left top',
+                my: 'left center',
                 at: 'right center',
                 of: opts.anchor_to
             },
