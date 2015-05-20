@@ -1,5 +1,7 @@
 
 #sauce-critpower {
+    border-top: 2px solid #ff4400;
+    border-bottom: 2px solid #ff4400;
     margin-top: 10px;
 }
 
@@ -12,7 +14,6 @@
 }
 
 #sauce-critpower td {
-    border: 0;
     padding: 5px 0 5px 20px;
 }
 
@@ -30,7 +31,7 @@
 }
 
 .activity-stats .secondary-stats.inline-stats.sauce-stats {
-    border: 2px solid #fc4c02;
+    border: 2px solid #ff4400;
     border-left: 0;
     border-right: 0;
     background: #fff;
