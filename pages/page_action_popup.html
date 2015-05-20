@@ -3,12 +3,67 @@
         <style>
             body {
                 width: 300px;
+                border-top: 2px solid #ff4000;
+                border-bottom: 2px solid #ff4000;
+                padding: 20px 20px 10px 100px;
+                margin: 20px 20px 20px 20px;
+                
             }
+            #background {
+                transform: rotate(-90deg);
+                background: transparent url(/assets/icons/icon256.png) no-repeat;
+                background-position: 0 -64px;
+                background-size: 200px 200px;
+                width: 200px;
+                height: 200px;
+                position: absolute;
+                z-index: -1;
+                top: 28px;
+                left: 28px;
+                opacity: 1;
+            }
+
+            .actions {
+                border-top: 1px solid #ccc;
+                padding: 14px 14px 4px;
+                font-size: 12px;
+            }
+
+            .footer {
+                border-top: 1px solid #ccc;
+                margin-top: 12px;
+                padding: 8px 4px 4px;
+                font-size: 11px;
+                text-align: center;
+            }
+
+            #details {
+                font-size: 13px;
+                padding: 0 16px 14px;
+            }
+
+            #details .key {
+                width: 120px;
+            }
+
+            .footer a {
+                color: #ff4000;
+            }
+
         </style>
     </head>
     <body>
+        <div id="background"></div>
         <b>Strava Sauce Chrome Extension</b>
-        <p>Your Strava experience is being sauced up.</p>
-        <a href="options.html">Advanced Options</a>
+        <p><i>Your Strava experience is being sauced up.</i></p>
+        <table id="details"><tbody></tbody></table>
+        <div class="actions">
+            <a href="options.html"><button>Advanced Options</button></a>
+        </div>
+        <div class="footer">
+            <a target="_BLANK" href="https://github.com/mayfield/strava-sauce">GitHub Source</a> | 
+            <a target="_BLANK" href="https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha">Official Web Store Page</a>
+        </div>
     </body>
+    <script src="/src/page_action_popup.js"></script>
 </html>
