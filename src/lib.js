@@ -156,7 +156,9 @@ sauce.ns('power', function(ns) {
             count: 0
         };
         var rolling_size = 30;
-        if (watts_stream.length < 120) {
+        /* Coggan doesn't recommend NP for less than 20 mins.  Allow a margin
+         * of error for dropouts. */
+        if (watts_stream.length < 1000) {
             return ret;
         }
         var total = 0;
