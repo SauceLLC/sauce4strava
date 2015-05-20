@@ -5,8 +5,8 @@
     "short_name": "Sauce",
     "description": "__MSG_extDesc__",
     "author": "Justin Mayfield",
-    "version": "0.0.4",
-    "version_name": "0.0.4 [release]",
+    "version": "0.0.5",
+    "version_name": "0.0.5 [dev]",
     "minimum_chrome_version": "42",
     
     "default_locale": "en",
