@@ -1,4 +1,6 @@
 
+window.sauce = window.sauce || {};
+
 sauce.ns = function(ns, callback) {
     var offt = sauce;
     ns.split('.').forEach(function(x) {

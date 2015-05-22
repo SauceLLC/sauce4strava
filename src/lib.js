@@ -1,5 +1,4 @@
 
-
 sauce.ns('data', function(ns) {
 
     function RollingAvg(period) {
@@ -130,6 +129,86 @@ sauce.ns('power', function(ns) {
     /* Max gap-seconds to permit without zero-padding. */
     var max_data_gap = 5;
 
+    /* Based on Andy Coggan's power profile. */
+    var ranking_consts = {
+        male: {
+            high: {
+                slope_factor: 2.82,
+                slope_period: 2500,
+                slope_adjust: 1.4,
+                slope_offset: 3.6,
+                base_offset: 6.08
+            },
+            low: {
+                slope_factor: 2,
+                slope_period: 3000,
+                slope_adjust: 1.3,
+                slope_offset: 1,
+                base_offset: 1.74
+            }
+        },
+        female: {
+            high: {
+                slope_factor: 2.65,
+                slope_period: 2500,
+                slope_adjust: 1,
+                slope_offset: 3.6,
+                base_offset: 5.39
+            },
+            low: {
+                slope_factor: 2.15,
+                slope_period: 300,
+                slope_adjust: 6,
+                slope_offset: 1.5,
+                base_offset: 1.4
+            }
+        }
+    };
+
+    rank_cats = [
+        'Recreational',
+        'Cat 5',
+        'Cat 4',
+        'Cat 3',
+        'Cat 2',
+        'Cat 1',
+        'Professional',
+        'World Class'
+    ];
+
+    var _rankScaler = function(duration, c) {
+        var t = (c.slope_period / duration) * c.slope_adjust;
+        var slope = Math.log10(t + c.slope_offset);
+        var w_kg = Math.pow(slope, c.slope_factor);
+        return w_kg + c.base_offset;
+    };
+
+    var rank = function(duration, w_kg, sex) {
+        var high_consts = ranking_consts[sex].high;
+        var low_consts = ranking_consts[sex].low;
+        var high = _rankScaler(duration, high_consts);
+        var low = _rankScaler(duration, low_consts);
+        return (w_kg - low) / (high - low);
+    };
+
+    var rankCat = function(rank) {
+        if (rank >= 1) {
+            return rank_cats[rank_cats.length-1] + '++';
+        } else if (rank <= 0) {
+            return rank_cats[0] + '--';
+        }
+        var index = rank / (1 / rank_cats.length);
+        var mod = index % 1;
+        if (mod >= 0.8) {
+            mod = '+';
+        } else if (mod < 0.2) {
+            mod = '-';
+        } else {
+            mod = '';
+        }
+        return rank_cats[Math.floor(index)] + mod;
+    };
+
     var critpowerSmart = function(ts_stream, watts_stream, period) {
         var ring = new sauce.data.RollingAvg(period);
         var max;
@@ -192,7 +271,9 @@ sauce.ns('power', function(ns) {
     return {
         critpower: critpowerSmart,
         calcNP: calcNP,
-        calcTSS: calcTSS
+        calcTSS: calcTSS,
+        rank: rank,
+        rankCat: rankCat
     };
 });
 

@@ -121,14 +121,16 @@ sauce.ns('analysis', function(ns) {
         var np = sauce.power.calcNP(crit._values);
         var avgpwr = np.value ? np : {value: cp_avg, count: crit._values.length};
         var if_ = avgpwr.value / ctx.ftp;
+        var w_kg = cp_avg / opts.weight;
         var data = {
             title: 'Critical power - ' + opts.cp_period[0],
             start_time: (new Strava.I18n.TimespanFormatter()).display(crit._times[0]),
-            w_kg: cp_avg / opts.weight,
+            w_kg: w_kg,
             peak_power: Math.max.apply(null, crit._values),
             cp_avg: cp_avg,
             np: np.value,
             tss: sauce.power.calcTSS(avgpwr, if_, ctx.ftp),
+            rank: sauce.power.rank(opts.cp_period[1], w_kg, 'male'),
             if_: if_
         };
 

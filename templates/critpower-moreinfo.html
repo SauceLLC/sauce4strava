@@ -9,6 +9,12 @@
             <td>Watts/kg</td>
             <td>{{ w_kg.toFixed(1) }}</td>
         </tr>
+        <% if (rank > 0) { %>
+            <tr>
+                <td>World Ranking</td>
+                <td>{{ Math.round(rank * 100) }}% ({{ sauce.power.rankCat(rank) }})</td>
+            </tr>
+        <% } %>
         <tr>
             <td>Peak power</td>
             <td>{{ peak_power }}w</td>
