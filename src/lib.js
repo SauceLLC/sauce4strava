@@ -165,7 +165,7 @@ sauce.ns('power', function(ns) {
         }
     };
 
-    rank_cats = [
+    var rank_cats = [
         'Recreational',
         'Cat 5',
         'Cat 4',
