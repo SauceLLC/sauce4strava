@@ -172,7 +172,7 @@ sauce.ns('power', function(ns) {
         'Cat 3',
         'Cat 2',
         'Cat 1',
-        'Professional',
+        'Pro',
         'World Class'
     ];
 

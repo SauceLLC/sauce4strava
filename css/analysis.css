@@ -47,13 +47,28 @@
     padding: 20px 20px 4px 20px;
 }
 
+.sauce-critpower-moreinfo img.rank_badge {
+    position: absolute;
+    top: 1px;
+    right: 0px;
+    height: 28px;
+}
+
 .sauce-critpower-moreinfo td {
     padding: 4px 6px;
+    height: 22px;
+}
+
+.sauce-critpower-moreinfo td:first-child {
     width: 60%;
 }
 
 .sauce-critpower-moreinfo td:last-child {
     width: 40%;
+}
+
+.sauce-critpower-moreinfo td.rank_holder {
+    position: relative;
 }
 
 .sauce-critpower-moreinfo tr:last-child td {

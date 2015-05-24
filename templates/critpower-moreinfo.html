@@ -7,14 +7,13 @@
         </tr>
         <tr>
             <td>Watts/kg</td>
-            <td>{{ w_kg.toFixed(1) }}</td>
+            <td class="rank_holder">
+                {{ w_kg.toFixed(1) }}
+                <% if (rank_image) { %>
+                    <img src="{{ rank_image }}" class="rank_badge" alt="{{ sauce.power.rankCat(rank) }}" title="World Ranking: {{ Math.round(rank * 100) }}%"/>
+                <% } %>
+            </td>
         </tr>
-        <% if (rank > 0) { %>
-            <tr>
-                <td>World Ranking</td>
-                <td>{{ Math.round(rank * 100) }}% ({{ sauce.power.rankCat(rank) }})</td>
-            </tr>
-        <% } %>
         <tr>
             <td>Peak power</td>
             <td>{{ peak_power }}w</td>

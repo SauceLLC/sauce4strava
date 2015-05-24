@@ -69,6 +69,7 @@
         "src/*.js",
         "css/*.css",
         "pages/*.html",
-        "templates/*.html"
+        "templates/*.html",
+        "assets/ranking/*.png"
     ]
 }

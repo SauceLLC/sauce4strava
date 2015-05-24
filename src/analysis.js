@@ -114,6 +114,24 @@ sauce.ns('analysis', function(ns) {
         }
     };
 
+    var rank_map = [
+        [/^World Class.*/, 'world-tour.png'],
+        [/^Pro.?/, 'pro.png'],
+        [/^Cat 1.?/, 'cat1.png'],
+        [/^Cat 2.?/, 'cat2.png'],
+        [/^Cat 3.?/, 'cat3.png'],
+        [/^Cat 4.?/, 'cat4.png'],
+        [/^Cat 5.?/, 'cat5.png']
+    ];
+
+    var rank_image = function(rank_cat) {
+        for (var i = 0; i < rank_map.length; i++) {
+            if (rank_cat.match(rank_map[i][0])) {
+                return sauce.extURL + 'assets/ranking/' + rank_map[i][1];
+            }
+        }
+    };
+
     var moreinfo_dialog = function(opts) {
         var ctx = this;
         var crit = opts.cp_roll;
@@ -122,6 +140,9 @@ sauce.ns('analysis', function(ns) {
         var avgpwr = np.value ? np : {value: cp_avg, count: crit._values.length};
         var if_ = avgpwr.value / ctx.ftp;
         var w_kg = cp_avg / opts.weight;
+        var gender = pageView.activityAthlete().get('gender') === 'M' ? 'male' : 'female';
+        var rank = sauce.power.rank(opts.cp_period[1], w_kg, gender);
+        var rank_cat = rank && sauce.power.rankCat(rank);
         var data = {
             title: 'Critical power - ' + opts.cp_period[0],
             start_time: (new Strava.I18n.TimespanFormatter()).display(crit._times[0]),
@@ -130,7 +151,9 @@ sauce.ns('analysis', function(ns) {
             cp_avg: cp_avg,
             np: np.value,
             tss: sauce.power.calcTSS(avgpwr, if_, ctx.ftp),
-            rank: sauce.power.rank(opts.cp_period[1], w_kg, 'male'),
+            rank: rank,
+            rank_cat: rank_cat,
+            rank_image: rank && rank_image(rank_cat),
             if_: if_
         };
 
@@ -239,7 +262,7 @@ sauce.ns('analysis', function(ns) {
         done.inc();
         sauce.comm.getFTP(context.athlete_id, function(ftp) {
             pageView.streamsRequest.deferred.done(function() {
-                var power = pageView.powerController();
+                var power = pageView.powerController && pageView.powerController();
                 /* Sometimes you can get it from the activity.  I think this only
                  * works when you are the athlete in the activity. */
                 var strava_ftp = power ? power.get('athlete_ftp')
