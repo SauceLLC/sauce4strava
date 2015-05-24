@@ -14,8 +14,8 @@
     </li>
     <% if (if_ !== undefined) { %> 
         <li>
-            <strong>{{ if_.toFixed(2) }}<abbr class="unit" title="Intesity Factor">IF</abbr></strong>
-            <div class="label">Intensity Factor</div>
+            <strong>{{ Math.round(if_ * 100) }}<abbr class="unit" title="Intesity Factor">%</abbr></strong>
+            <div class="label">Intensity</div>
         </li>
     <% } if (tss !== undefined) { %> 
         <li>

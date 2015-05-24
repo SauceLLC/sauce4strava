@@ -105,6 +105,11 @@ sauce.ns('analysis', function(ns) {
                             weight: weight_kg,
                             anchor_to: el.parent()
                         });
+                        var row = el.closest('tr');
+                        dialog.on('dialogclose', function() {
+                            row.removeClass('selected');
+                        });
+                        row.addClass('selected');
                         open_dialog.push(dialog);
                     });
                     jQuery('#sauce-cp-row-' + period[1]).show();
@@ -137,7 +142,8 @@ sauce.ns('analysis', function(ns) {
         var crit = opts.cp_roll;
         var cp_avg = crit.avg();
         var np = sauce.power.calcNP(crit._values);
-        var avgpwr = np.value ? np : {value: cp_avg, count: crit._values.length};
+        var pwr_size = crit._values.length;
+        var avgpwr = np.value ? np : {value: cp_avg, count: pwr_size};
         var if_ = avgpwr.value / ctx.ftp;
         var w_kg = cp_avg / opts.weight;
         var gender = pageView.activityAthlete().get('gender') === 'M' ? 'male' : 'female';
@@ -161,21 +167,17 @@ sauce.ns('analysis', function(ns) {
         frag.find('.start_time_link').click(function() {
             pageView.router().changeMenuTo([
                 'analysis',
-                crit.offt - crit._values.length + crit.padCount(),
+                crit.offt - pwr_size + crit.padCount(),
                 crit.offt
             ].join('/'));
         });
 
         var dialog = frag.dialog({
             resizable: false,
-            width: 250,
+            width: 220,
             dialogClass: 'sauce-freerange-dialog',
             show: {
                 effect: 'slideDown',
-                duration: 200
-            },
-            hide: {
-                effect: "fadeOut",
                 duration: 200
             },
             position: {
@@ -190,8 +192,25 @@ sauce.ns('analysis', function(ns) {
             }
         });
 
+        /* Smooth data for best visaul appearance. */
+        var pwr_stream;
+        if (pwr_size >= 240) {
+            pwr_stream = [];
+            var increment = Math.floor(pwr_size / 120);
+            for (var i = 0; i < pwr_size; i += increment) {
+                var v = 0;
+                var ii;
+                for (ii = 0; ii < increment && i + ii < pwr_size; ii++) {
+                    v += crit._values[i+ii];
+                }
+                pwr_stream.push(Math.round(v / ii));
+            }
+        } else {
+            pwr_stream = crit._values;
+        }
+
         /* Must run after the dialog is open for proper rendering. */
-        frag.find('.sauce-sparkline').sparkline(crit._values, {
+        frag.find('.sauce-sparkline').sparkline(pwr_stream, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -238,7 +257,9 @@ sauce.ns('analysis', function(ns) {
         });
 
         panel.push('</table></li></ul>');
-        jQuery(panel.join('')).insertBefore('.actions-menu');
+
+        panel = jQuery(panel.join(''));
+        panel.insertAfter(jQuery('#pagenav').first());
 
         var done = new sauce.func.IfDone(function() { onStreamData.call(context); });
 

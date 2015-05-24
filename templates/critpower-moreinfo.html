@@ -2,7 +2,7 @@
     <div class="sauce-sparkline"></div>
     <table>
         <tr>
-            <td>Start time</td>
+            <td>Start of effort</td>
             <td><a class="start_time_link">{{ start_time }}</a></td>
         </tr>
         <tr>
@@ -15,22 +15,22 @@
             </td>
         </tr>
         <tr>
-            <td>Peak power</td>
-            <td>{{ peak_power }}w</td>
+            <td>Average</td>
+            <td>{{ Math.round(cp_avg) }}w</td>
         </tr>
         <tr>
-            <td>Average power</td>
-            <td>{{ Math.round(cp_avg) }}w</td>
+            <td>Peak</td>
+            <td>{{ peak_power }}w</td>
         </tr>
         <% if (np) { %>
             <tr>
-                <td>Normalized power</td>
+                <td>Normalized</td>
                 <td>{{ Math.round(np) }}w</td>
             </tr>
         <% } if (if_ !== undefined) { %>
             <tr>
-                <td>Intensity factor</td>
-                <td>{{ if_.toFixed(2) }}</td>
+                <td>Intensity</td>
+                <td>{{ Math.round(if_ * 100) }}%</td>
             </tr>
         <% } if (tss !== undefined) { %>
             <tr>

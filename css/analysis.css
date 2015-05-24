@@ -19,7 +19,13 @@
 
 #sauce-critpower td:last-child {
     padding-left: 10px;
+    color: #007fb6;
 }
+
+.sauce-critpower-moreinfo td a {
+    color: #007fb6;
+}
+
 
 #sauce-critpower td:last-child:hover {
     cursor: pointer;
@@ -28,6 +34,15 @@
 
 #sauce-critpower tr:nth-child(odd) {
     background: #fafafa;
+}
+
+#sauce-critpower tr.selected {
+    background: rgba(0, 0, 0, 0.74);
+    color: #fff;
+}
+
+#sauce-critpower tr.selected td:last-child {
+    color: white;
 }
 
 .activity-stats .secondary-stats.inline-stats.sauce-stats {
@@ -60,11 +75,11 @@
 }
 
 .sauce-critpower-moreinfo td:first-child {
-    width: 60%;
+    width: 50%;
 }
 
 .sauce-critpower-moreinfo td:last-child {
-    width: 40%;
+    width: 50%;
 }
 
 .sauce-critpower-moreinfo td.rank_holder {
