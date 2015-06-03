@@ -50,6 +50,8 @@
     border-left: 0;
     border-right: 0;
     background: #fff;
+    margin-left: -18px;
+    margin-right: -20px;
 }
 
 .ui-dialog .sauce-critpower-moreinfo.ui-dialog-content {
@@ -101,7 +103,6 @@
 .ui-dialog.sauce-freerange-dialog .ui-dialog-title {
     font-size: 16px;
 }
-
 .ui-dialog.sauce-freerange-dialog .ui-dialog-titlebar-close {
     top: 5px;
 }
@@ -110,4 +111,46 @@
 .ui-dialog.sauce-freerange-dialog .ui-dialog-buttonpane button {
     padding-bottom: 0.2em;
     margin: 0;
+}
+
+
+.sauce-inline-comments {
+    max-height: 300px;
+    overflow: auto;
+    padding: 10px 6px 10px;
+    margin-top: 10px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.sauce-comment-holder {
+    padding-bottom: 6px;
+    display: flex;
+    align-items: baseline;
+}
+
+.sauce-comment-holder a.sauce-athlete {
+    display: block;
+    flex: 1 38px;
+}
+
+.sauce-comment-holder a.sauce-athlete img {
+    border-radius: 50% 50% 2px 50%;
+    width: 30px;
+    height: 30px;
+}
+
+.sauce-comment-holder .sauce-comment {
+    flex: 1 100%;
+}
+
+.sauce-comment-holder .sauce-comment p {
+    padding: 6px 10px 6px 6px;
+    margin: 0;
+    border-radius: 0px 3px 3px 3px;
+    box-shadow: 2px 2px 6px #aaa;
+}
+
+.sauce-comment-holder .sauce-footer {
+    font-size: 10px;
+    color: #666;
 }

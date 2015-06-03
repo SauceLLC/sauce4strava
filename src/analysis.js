@@ -280,6 +280,19 @@ sauce.ns('analysis', function(ns) {
             done.dec();
         });
 
+        jQuery.ajax(tpl_url + 'inline-comment.html').done(function(data) {
+            context.comments_tpl = _.template(data);
+            var holder = jQuery('<div class="sauce-inline-comments"></div>');
+            var aid = pageView.activity().get('id');
+            var comments = pageView.commentsController().getFromHash('Activity-' + aid);
+            comments.forEach(function(x) {
+                var dt = new Date(jQuery(x.timestamp).attr('datetime'));
+                x.timeago = sauce.time.ago(dt);
+                holder.append(context.comments_tpl(x));
+            });
+            jQuery('.activity-summary .inset').append(holder);
+        });
+
         done.inc();
         sauce.comm.getFTP(context.athlete_id, function(ftp) {
             pageView.streamsRequest.deferred.done(function() {

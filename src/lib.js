@@ -328,3 +328,49 @@ sauce.ns('comm', function(ns) {
         setFTP: setFTP
     };
 });
+
+
+sauce.ns('time', function(ns) {
+
+    ns.MIN = 60;
+    ns.HOUR = ns.MIN * 60;
+    ns.DAY = ns.HOUR * 24;
+    ns.MONTH = ns.HOUR * 730;
+    ns.YEAR = ns.DAY * 365;
+
+    var ago = function(dateobj, precision) {
+        var now = new Date();
+        var span = (now - dateobj) / 1000;
+        var stack = [];
+        precision = precision || ns.MIN;
+        span = Math.round(span / precision);
+        span *= precision;
+
+        [
+            ['year', ns.YEAR],
+            ['month', ns.MONTH],
+            ['day', ns.DAY],
+            ['hour', ns.HOUR],
+            ['min', ns.MIN],
+            ['sec', 1]
+        ].forEach(function(x) {
+            var suf = x[0], period = x[1];
+            if (precision > period) {
+                return;
+            }
+            if (span >= period) {
+                if (span >= 2 * period) {
+                    suf += 's';
+                }
+                stack.push(Math.floor(span / period) + ' ' + suf);
+                span %= period;
+            }
+        });
+
+        return stack.join(', ');
+    };
+
+    return {
+        ago: ago
+    };
+});
