@@ -123,7 +123,7 @@
 }
 
 .sauce-comment-holder {
-    padding-bottom: 6px;
+    padding-bottom: 4px;
     display: flex;
     align-items: baseline;
 }
@@ -144,13 +144,15 @@
 }
 
 .sauce-comment-holder .sauce-comment p {
-    padding: 6px 10px 6px 6px;
+    padding: 6px 8px 6px 8px;
+    font-size: 11px;
+    color: #555;
     margin: 0;
-    border-radius: 0px 3px 3px 3px;
-    box-shadow: 2px 2px 6px #aaa;
+    border-radius: 0px 2px 2px 2px;
+    box-shadow: 2px 2px 4px #aaa;
 }
 
 .sauce-comment-holder .sauce-footer {
-    font-size: 10px;
+    font-size: 9px;
     color: #666;
 }
