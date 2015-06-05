@@ -1,6 +1,7 @@
 
 sauce.ns('analysis', function(ns) {
 
+    var ctx = {};
     var default_ftp = 250;
 
     /* TODO: Move to user options. */
@@ -19,9 +20,6 @@ sauce.ns('analysis', function(ns) {
     ];
 
     var onStreamData = function() {
-        console.log("Parsing Watts Stream for Critical Power Chart");
-
-        var ctx = this;
         var streams = pageView.streams();
         var watts_stream = streams.getStream('watts');
         if (!watts_stream) {
@@ -99,7 +97,7 @@ sauce.ns('analysis', function(ns) {
                         if (existing) {
                             existing.dialog('close');
                         }
-                        var dialog = moreinfo_dialog.call(ctx, {
+                        var dialog = moreinfoDialog.call(ctx, {
                             cp_period: period,
                             cp_roll: cp,
                             weight: weight_kg,
@@ -137,8 +135,7 @@ sauce.ns('analysis', function(ns) {
         }
     };
 
-    var moreinfo_dialog = function(opts) {
-        var ctx = this;
+    var moreinfoDialog = function(opts) {
         var crit = opts.cp_roll;
         var cp_avg = crit.avg();
         var np = sauce.power.calcNP(crit._values);
@@ -225,11 +222,29 @@ sauce.ns('analysis', function(ns) {
         return dialog;
     };
 
+    var renderComments = function(skip_quote) {
+        var ctrl = pageView.commentsController();
+        var comments = ctrl.getFromHash('Activity-' + ctx.activity_id);
+        var stack = [];
+        comments.forEach(function(x) {
+            var dt = new Date(jQuery(x.timestamp).attr('datetime'));
+            x.timeago = sauce.time.ago(dt);
+            stack.push(ctx.comments_tpl(x));
+        });
+        ctx.comments_holder.html(stack.join(''));
+        if (!skip_quote) {
+            ctx.comment_el.find('input').val(_.sample(ctx.quotes));
+        }
+    };
+ 
     var start = function() {
         console.log('Starting Sauce Activity Analysis');
 
         jQuery.getScript('https://cdnjs.cloudflare.com/ajax/libs/' +
                          'jquery-sparklines/2.1.2/jquery.sparkline.min.js');
+
+        ctx.athlete_id = pageView.activityAthlete().get('id');
+        ctx.activity_id = pageView.activity().get('id');
 
         sauce.func.runBefore(Strava.Labs.Activities.StreamsRequest, 'request', function() {
             this.require('watts');
@@ -261,40 +276,61 @@ sauce.ns('analysis', function(ns) {
         panel = jQuery(panel.join(''));
         panel.insertAfter(jQuery('#pagenav').first());
 
-        var done = new sauce.func.IfDone(function() { onStreamData.call(context); });
-
-        var context = {
-            athlete_id: pageView.activityAthlete().get('id')
-        };
+        var final = new sauce.func.IfDone(onStreamData);
 
         var tpl_url = sauce.extURL + 'templates/';
-        done.inc();
-        jQuery.ajax(tpl_url + 'tertiary-stats.html').done(function(data) {
-            context.tertiary_stats_tpl = _.template(data);
-            done.dec();
-        });
+        jQuery.ajax(tpl_url + 'tertiary-stats.html').done(final.before(function(data) {
+            ctx.tertiary_stats_tpl = _.template(data);
+        }));
 
-        done.inc();
-        jQuery.ajax(tpl_url + 'critpower-moreinfo.html').done(function(data) {
-            context.moreinfo_tpl = _.template(data);
-            done.dec();
+        jQuery.ajax(tpl_url + 'critpower-moreinfo.html').done(final.before(function(data) {
+            ctx.moreinfo_tpl = _.template(data);
+        }));
+
+        ctx.comment_el = jQuery([
+            '<div class="sauce-new-comment">',
+                '<div>',
+                    '<div class="sauce-label">Say something</div>',
+                    '<input type="text"/>',
+                    '<button>Comment</button>',
+                '</div>',
+            '</div>'
+        ].join(''));
+
+        jQuery.getJSON(sauce.extURL + 'src/quotes.json').done(final.before(function(data) {
+            ctx.quotes = data;
+            ctx.comment_el.find('input').val(_.sample(data));
+        }));
+
+        ctx.comments_holder = jQuery('<div class="sauce-inline-comments"></div>');
+        jQuery('.activity-summary .inset').append(ctx.comments_holder);
+
+       var submit_comment = function(comment) {
+            var comment = ctx.comment_el.find('input').val();
+            pageView.commentsController().comment('Activity', ctx.activity_id, comment);
+        };
+
+        ctx.comment_el.find('input').click(function() {
+            jQuery(this).select();
         });
+        ctx.comment_el.find('button').click(submit_comment);
+        ctx.comment_el.find('input').keypress(function(e) {
+            if (e.which == 13) {
+                submit_comment();
+            }
+        });
+        jQuery('.activity-summary .inset').append(ctx.comment_el);
 
         jQuery.ajax(tpl_url + 'inline-comment.html').done(function(data) {
-            context.comments_tpl = _.template(data);
-            var holder = jQuery('<div class="sauce-inline-comments"></div>');
-            var aid = pageView.activity().get('id');
-            var comments = pageView.commentsController().getFromHash('Activity-' + aid);
-            comments.forEach(function(x) {
-                var dt = new Date(jQuery(x.timestamp).attr('datetime'));
-                x.timeago = sauce.time.ago(dt);
-                holder.append(context.comments_tpl(x));
+            ctx.comments_tpl = _.template(data);
+            pageView.commentsController().on('commentCompleted', function() {
+                renderComments();
             });
-            jQuery('.activity-summary .inset').append(holder);
+            renderComments(true);
         });
 
-        done.inc();
-        sauce.comm.getFTP(context.athlete_id, function(ftp) {
+        final.inc();
+        sauce.comm.getFTP(ctx.athlete_id, function(ftp) {
             pageView.streamsRequest.deferred.done(function() {
                 var power = pageView.powerController && pageView.powerController();
                 /* Sometimes you can get it from the activity.  I think this only
@@ -305,7 +341,7 @@ sauce.ns('analysis', function(ns) {
                     if (strava_ftp) {
                         console.info("Setting FTP override from strava.");
                         ftp = strava_ftp;
-                        sauce.comm.setFTP(context.athlete_id, strava_ftp);
+                        sauce.comm.setFTP(ctx.athlete_id, strava_ftp);
                     } else {
                         console.warn("No FTP value found, using default.");
                         ftp = default_ftp;
@@ -320,15 +356,16 @@ sauce.ns('analysis', function(ns) {
                            '<b>Please update your Strava value to match the Sauce ' +
                            'override value.</b></div>').dialog({ width: 500, modal: true });
                 }
-                context.ftp = ftp;
-                done.dec();
+                ctx.ftp = ftp;
+                final.dec();
             });
         });
     };
 
     return {
         start: start,
-        moreinfo_dialog: moreinfo_dialog
+        moreinfoDialog: moreinfoDialog,
+        renderComments: renderComments
     };
 });
 

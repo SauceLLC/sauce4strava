@@ -116,6 +116,19 @@ sauce.ns('func', function(ns) {
         }
     };
 
+    IfDone.prototype.before = function(fn) {
+        var _this = this;
+        _this.inc();
+        return function() {
+            try {
+                fn.apply(this, arguments);
+            } catch(e) {
+                _this.dec();
+                throw e;
+            }
+            _this.dec();
+        };
+    };
 
     return {
         runAfter: runAfter,
@@ -367,7 +380,7 @@ sauce.ns('time', function(ns) {
             }
         });
 
-        return stack.join(', ');
+        return stack.join(', ') || 'just now';
     };
 
     return {

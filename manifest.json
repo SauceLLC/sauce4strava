@@ -67,6 +67,7 @@
 
     "web_accessible_resources": [
         "src/*.js",
+        "src/*.json",
         "css/*.css",
         "pages/*.html",
         "templates/*.html",

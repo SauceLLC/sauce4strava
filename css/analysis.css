@@ -123,14 +123,15 @@
 }
 
 .sauce-comment-holder {
-    padding-bottom: 4px;
+    padding-bottom: 8px;
     display: flex;
-    align-items: baseline;
+    align-items: flex-end;
 }
 
 .sauce-comment-holder a.sauce-athlete {
     display: block;
     flex: 1 38px;
+    margin-bottom: 13px;
 }
 
 .sauce-comment-holder a.sauce-athlete img {
@@ -148,11 +149,36 @@
     font-size: 11px;
     color: #555;
     margin: 0;
-    border-radius: 0px 2px 2px 2px;
-    box-shadow: 2px 2px 4px #aaa;
+    border-radius: 0px 1px 1px 1px;
+    box-shadow: 1px 1px 2px #555;
 }
 
 .sauce-comment-holder .sauce-footer {
     font-size: 9px;
     color: #666;
+    padding-left: 2px;
+}
+
+.sauce-new-comment {
+    border-top: 2px solid rgba(255, 123, 123, 0.46);
+    padding-top: 6px;
+    display: flex;
+    justify-content: center;
+}
+
+.sauce-new-comment input {
+    height: auto !important;
+    font-size: 10px !important;
+    padding: 4px;
+    width: 300px;
+}
+
+.sauce-new-comment .sauce-label {
+    font-size: 9px;
+}
+
+.sauce-new-comment button {
+    padding: 6px 8px;
+    font-size: 10px;
+    min-height: initial;
 }
