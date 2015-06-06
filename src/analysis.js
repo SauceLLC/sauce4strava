@@ -306,8 +306,8 @@ sauce.ns('analysis', function(ns) {
         jQuery('.activity-summary .inset').append(ctx.comments_holder);
 
        var submit_comment = function(comment) {
-            var comment = ctx.comment_el.find('input').val();
-            pageView.commentsController().comment('Activity', ctx.activity_id, comment);
+            pageView.commentsController().comment('Activity', ctx.activity_id,
+                                                  comment);
         };
 
         ctx.comment_el.find('input').click(function() {
