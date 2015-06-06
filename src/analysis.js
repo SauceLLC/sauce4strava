@@ -305,9 +305,9 @@ sauce.ns('analysis', function(ns) {
         ctx.comments_holder = jQuery('<div class="sauce-inline-comments"></div>');
         jQuery('.activity-summary .inset').append(ctx.comments_holder);
 
-       var submit_comment = function(comment) {
-            pageView.commentsController().comment('Activity', ctx.activity_id,
-                                                  comment);
+       var submit_comment = function() {
+            var comment = ctx.comment_el.find('input').val();
+            pageView.commentsController().comment('Activity', ctx.activity_id, comment);
         };
 
         ctx.comment_el.find('input').click(function() {
