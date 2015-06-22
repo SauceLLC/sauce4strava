@@ -387,3 +387,49 @@ sauce.ns('time', function(ns) {
         ago: ago
     };
 });
+
+
+sauce.ns('debug', function(ns) {
+
+    var findSymbol = function(obj, symbol, limit) {
+        limit = limit === undefined ? 6 : limit;
+        var obj_stack = [];
+        var key_stack = [];
+        var looker = function(offt) {
+            if (symbol in offt) {
+                throw "match";
+            }
+            for (var x in offt) {
+                var subject = offt[x];
+                if (obj_stack.indexOf(subject) === -1 &&
+                    obj_stack.length < limit &&
+                    subject !== null && 
+                    !(typeof subject in {'undefined':0, 'string':0, 'number':0,
+                                         'boolean':0, 'function':0}) &&
+                    Object.keys(subject) && subject.length === undefined) {
+                    obj_stack.push(offt);
+                    key_stack.push(x);
+                    looker(subject);
+                    obj_stack.pop();
+                    key_stack.pop();
+                }
+            }
+        };
+        try {
+            looker(obj);
+        } catch(e) {
+            if (e === "match") {
+                return {
+                    keys: key_stack,
+                    objects: obj_stack
+                };
+            } else {
+                throw e;
+            }
+        }
+    };
+
+    return {
+        findSymbol: findSymbol
+    };
+});

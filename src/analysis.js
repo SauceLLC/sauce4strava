@@ -250,6 +250,15 @@ sauce.ns('analysis', function(ns) {
             this.require('watts');
         });
 
+        sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
+                            'displayDetails', function(ret, start, end) {
+            ns.handleSelectionChange(start, end);
+        });
+        sauce.func.runAfter(Strava.Charts.Activities.LabelBox, 'handleStreamHover',
+                            function(ret, _, start, end) {
+            ns.handleSelectionChange(start, end);
+        });
+
         /* XXX: Make template like the other stuff. */
         var panel = [
             '<ul id="sauce-critpower" style="display: none;" class="pagenav">',
@@ -268,7 +277,7 @@ sauce.ns('analysis', function(ns) {
                     '</td>',
                 '</tr>'
             ];
-            panel.push(r.join(''));
+            panel = panel.concat(r);
         });
 
         panel.push('</table></li></ul>');
@@ -305,7 +314,7 @@ sauce.ns('analysis', function(ns) {
         ctx.comments_holder = jQuery('<div class="sauce-inline-comments"></div>');
         jQuery('.activity-summary .inset').append(ctx.comments_holder);
 
-       var submit_comment = function() {
+        var submit_comment = function() {
             var comment = ctx.comment_el.find('input').val();
             pageView.commentsController().comment('Activity', ctx.activity_id, comment);
         };
@@ -332,40 +341,66 @@ sauce.ns('analysis', function(ns) {
         final.inc();
         sauce.comm.getFTP(ctx.athlete_id, function(ftp) {
             pageView.streamsRequest.deferred.done(function() {
-                var power = pageView.powerController && pageView.powerController();
-                /* Sometimes you can get it from the activity.  I think this only
-                 * works when you are the athlete in the activity. */
-                var strava_ftp = power ? power.get('athlete_ftp')
-                                       : pageView.activity().get('ftp');
-                if (!ftp) {
-                    if (strava_ftp) {
-                        console.info("Setting FTP override from strava.");
-                        ftp = strava_ftp;
-                        sauce.comm.setFTP(ctx.athlete_id, strava_ftp);
-                    } else {
-                        console.warn("No FTP value found, using default.");
-                        ftp = default_ftp;
-                    }
-                } else if (strava_ftp && ftp != strava_ftp) {
-                    console.warn("Sauce FTP override differs from Strava FTP:",
-                                 ftp, strava_ftp);
-                    jQuery('<div title="WARNING: FTP Mismatch">' +
-                           'The Sauce FTP override value of ' + ftp + ' differs from ' +
-                           'the Strava FTP setting of ' + strava_ftp + '. Generally ' +
-                           'these should match.<br/><br/>' +
-                           '<b>Please update your Strava value to match the Sauce ' +
-                           'override value.</b></div>').dialog({ width: 500, modal: true });
-                }
-                ctx.ftp = ftp;
+                chooseFTP(ftp);
                 final.dec();
             });
         });
     };
 
+    var chooseFTP = function(ftp) {
+        var power = pageView.powerController && pageView.powerController();
+        /* Sometimes you can get it from the activity.  I think this only
+         * works when you are the athlete in the activity. */
+        var strava_ftp = power ? power.get('athlete_ftp')
+                               : pageView.activity().get('ftp');
+        if (!ftp) {
+            if (strava_ftp) {
+                console.info("Setting FTP override from strava.");
+                ftp = strava_ftp;
+                sauce.comm.setFTP(ctx.athlete_id, strava_ftp);
+            } else {
+                console.warn("No FTP value found, using default.");
+                ftp = default_ftp;
+            }
+        } else if (strava_ftp && ftp != strava_ftp) {
+            console.warn("Sauce FTP override differs from Strava FTP:",
+                         ftp, strava_ftp);
+            jQuery('<div title="WARNING: FTP Mismatch">' +
+                   'The Sauce FTP override value of ' + ftp + ' differs from ' +
+                   'the Strava FTP setting of ' + strava_ftp + '. Generally ' +
+                   'these should match.<br/><br/>' +
+                   '<b>Please update your Strava value to match the Sauce ' +
+                   'override value.</b></div>').dialog({ width: 500, modal: true });
+        }
+        ctx.ftp = ftp;
+    };
+
+    var handleSelectionChange = function(start, end) {
+        var streams = pageView.streams();
+        var watts_stream = streams.getStream('watts');
+        if (!watts_stream) {
+            watts_stream = streams.getStream('watts_calc');
+            if (!watts_stream) {
+                console.warn("XXX No power data for this ride.");
+                return;
+            }
+        }
+        var selection = watts_stream.slice(start, end);
+        var np = sauce.power.calcNP(selection).value;
+        var avg = selection.reduce(function(acc, x) { return acc + x; }) / selection.length;
+        var el = jQuery('text.label:contains(Power)').siblings('.avg-js');
+        var text = ['Avg ', Math.round(avg)];
+        if (np) {
+            text = text.concat([' (', Math.round(np), 'np)']);
+        }
+        el.html(text.join(''));
+    };
+ 
     return {
         start: start,
         moreinfoDialog: moreinfoDialog,
-        renderComments: renderComments
+        renderComments: renderComments,
+        handleSelectionChange: handleSelectionChange
     };
 });
 
