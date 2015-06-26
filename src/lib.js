@@ -380,7 +380,7 @@ sauce.ns('time', function(ns) {
             }
         });
 
-        return stack.join(', ') || 'just now';
+        return stack.slice(0, 2).join(', ') || 'just now';
     };
 
     return {
