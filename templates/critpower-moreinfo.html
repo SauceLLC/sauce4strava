@@ -15,17 +15,14 @@
             </td>
         </tr>
         <tr>
-            <td>Average</td>
-            <td>{{ Math.round(cp_avg) }}w</td>
+            <td>Power</td>
+            <td>{{ Math.round(cp_avg) }}<sup>{{ peak_power }}</sup><% if (np) { %>
+                ({{ Math.round(np) }}np)<% } %></td>
         </tr>
-        <tr>
-            <td>Peak</td>
-            <td>{{ peak_power }}w</td>
-        </tr>
-        <% if (np) { %>
+        <% if (hr_avg !== undefined) { %>
             <tr>
-                <td>Normalized</td>
-                <td>{{ Math.round(np) }}w</td>
+                <td>Heartrate</td>
+                <td><sub>{{ hr_min }}</sub>{{ Math.round(hr_avg) }}<sup>{{ hr_max }}</sup>,
             </tr>
         <% } if (if_ !== undefined) { %>
             <tr>

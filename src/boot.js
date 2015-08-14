@@ -33,13 +33,15 @@ chrome.storage.sync.get(null, function(options) {
         _load_this();
     };
 
-    /* Create namespace and copy options from the sync store. */
-    insert_script([
-        'window.sauce = {};',
-        'sauce.options = ', JSON.stringify(options), ';',
-        'sauce.extURL = "', ext_url, '";',
-        'sauce.extID = "', chrome.runtime.id, '";'
-    ].join(''));
+    if (options.enabled !== false) {
+        /* Create namespace and copy options from the sync store. */
+        insert_script([
+            'window.sauce = {};',
+            'sauce.options = ', JSON.stringify(options), ';',
+            'sauce.extURL = "', ext_url, '";',
+            'sauce.extID = "', chrome.runtime.id, '";'
+        ].join(''));
 
-    loader(src);
+        loader(src);
+    }
 });

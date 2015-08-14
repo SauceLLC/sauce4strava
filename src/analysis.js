@@ -87,9 +87,15 @@ sauce.ns('analysis', function(ns) {
 
         if (watts_stream) {
             var open_dialog = [];
+            var hr_stream = streams.getStream('heartrate');
             cp_periods.forEach(function(period) {
                 var cp = sauce.power.critpower(ts_stream, watts_stream, period[1]);
                 if (cp !== undefined) {
+                    var hr_arr;
+                    if (hr_stream) {
+                        var start = cp.offt - cp._values.length + cp.padCount();
+                        hr_arr = hr_stream.slice(start, cp.offt);
+                    }
                     var el = jQuery('#sauce-cp-' + period[1]);
                     el.html(Math.round(cp.avg()));
                     el.parent().click(function(x) {
@@ -100,6 +106,7 @@ sauce.ns('analysis', function(ns) {
                         var dialog = moreinfoDialog.call(ctx, {
                             cp_period: period,
                             cp_roll: cp,
+                            hr_arr: hr_arr,
                             weight: weight_kg,
                             anchor_to: el.parent()
                         });
@@ -137,6 +144,7 @@ sauce.ns('analysis', function(ns) {
 
     var moreinfoDialog = function(opts) {
         var crit = opts.cp_roll;
+        var hr = opts.hr_arr;
         var cp_avg = crit.avg();
         var np = sauce.power.calcNP(crit._values);
         var pwr_size = crit._values.length;
@@ -157,7 +165,10 @@ sauce.ns('analysis', function(ns) {
             rank: rank,
             rank_cat: rank_cat,
             rank_image: rank && rank_image(rank_cat),
-            if_: if_
+            if_: if_,
+            hr_avg: hr && (_.reduce(hr, function(a, b) { return a + b; }, 0) / hr.length),
+            hr_max: Math.max.apply(null, hr),
+            hr_min: Math.min.apply(null, hr)
         };
 
         var frag = jQuery(ctx.moreinfo_tpl(data));
