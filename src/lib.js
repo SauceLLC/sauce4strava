@@ -140,7 +140,7 @@ sauce.ns('func', function(ns) {
 
 sauce.ns('power', function(ns) {
     /* Max gap-seconds to permit without zero-padding. */
-    var max_data_gap = 5;
+    var max_data_gap = 15;
 
     /* Based on Andy Coggan's power profile. */
     var ranking_consts = {
