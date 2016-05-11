@@ -241,6 +241,17 @@ sauce.ns('analysis', function(ns) {
             var dt = new Date(jQuery(x.timestamp).attr('datetime'));
             x.timeago = sauce.time.ago(dt);
             stack.push(ctx.comments_tpl(x));
+            if (x.comment.length > 1) {
+                console.warn('Unexpected comment array length >1');
+                console.dir(x.comment);
+            }
+            x.comment.forEach(function(xx) {
+                if (xx.type != 'raw_token') {
+                    console.warn('Unhandled comment type:', xx.type);
+                    console.dir(x.comment);
+                }
+            });
+            
         });
         ctx.comments_holder.html(stack.join(''));
         if (!skip_quote) {

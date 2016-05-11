@@ -29,7 +29,7 @@ chrome.storage.sync.get(null, function(data) {
         enabler.innerText = en_state ? 'Disable' : 'Enable';
         enabler.innerText += ' Extension';
         enabler.style.color = en_state ? '#933' : '#393';
-    };
+    }
     toggle(data.enabled !== false);
     enabler.addEventListener('click', function() {
         chrome.storage.sync.set({enabled: !en_state}, function() {

@@ -3,7 +3,9 @@
        alt="{{ athlete.name }}" title="{{ athlete.name }}"
         ><img src="{{ athlete.avatar_url }}"/></a>
     <div class="sauce-comment">
-        {- comment -}
-        <div class="sauce-footer">{{ athlete.firstname }} • {- timeago -}</div>
+        <% _.each(comment, function(c){ %>
+            {{ c.text }}
+        <% }); %>
+        <div class="sauce-footer">{{ athlete.firstname }} • {{ timeago }}</div>
     </div>
 </div>
