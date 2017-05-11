@@ -334,7 +334,7 @@ sauce.ns('analysis', function(ns) {
         }));
 
         ctx.comments_holder = jQuery('<div class="sauce-inline-comments"></div>');
-        jQuery('.activity-summary .inset').append(ctx.comments_holder);
+        jQuery('.activity-summary').append(ctx.comments_holder);
 
         var submit_comment = function() {
             var comment = ctx.comment_el.find('input').val();
@@ -350,7 +350,7 @@ sauce.ns('analysis', function(ns) {
                 submit_comment();
             }
         });
-        jQuery('.activity-summary .inset').append(ctx.comment_el);
+        jQuery('.activity-summary').append(ctx.comment_el);
 
         jQuery.ajax(tpl_url + 'inline-comment.html').done(function(data) {
             ctx.comments_tpl = _.template(data);

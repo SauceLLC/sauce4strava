@@ -50,8 +50,8 @@
     border-left: 0;
     border-right: 0;
     background: #fff;
-    margin-left: -18px;
-    margin-right: -20px;
+    margin-left: -13px;
+    margin-right: -15px;
 }
 
 .ui-dialog .sauce-critpower-moreinfo.ui-dialog-content {
@@ -131,7 +131,7 @@
 .sauce-comment-holder a.sauce-athlete {
     display: block;
     flex: 1 38px;
-    margin-bottom: 13px;
+    margin-bottom: 6px;
 }
 
 .sauce-comment-holder a.sauce-athlete img {
