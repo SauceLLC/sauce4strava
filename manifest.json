@@ -5,8 +5,8 @@
     "short_name": "Sauce",
     "description": "__MSG_extDesc__",
     "author": "Justin Mayfield",
-    "version": "1.1.0",
-    "version_name": "1.1.0 [release]",
+    "version": "1.2.0",
+    "version_name": "1.2.0 [dev]",
     "minimum_chrome_version": "42",
     
     "default_locale": "en",
@@ -49,16 +49,16 @@
     "options_page": "pages/options.html",
 
     "content_scripts": [{
-        "run_at": "document_start",
-        "matches": ["*://*.strava.com/*"],
-        "js": ["src/boot.js"]
-    }, {
         "run_at": "document_idle",
         "matches": ["*://*.strava.com/*"],
         "css": [
             "css/overrides.css",
             "css/analysis.css"
         ]
+    }, {
+        "run_at": "document_end",
+        "matches": ["*://*.strava.com/*"],
+        "js": ["src/boot.js"]
     }],
 
     "externally_connectable": {

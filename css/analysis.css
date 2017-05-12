@@ -54,6 +54,19 @@
     margin-right: -15px;
 }
 
+.activity-stats .inline-stats.sauce-stats .origin-default {
+    text-decoration: underline dotted;
+    color: #aaa;
+}
+
+.activity-stats .inline-stats.sauce-stats .origin-sauce {
+    color: #ff4400;
+}
+
+.activity-stats .inline-stats.sauce-stats .origin-strava {
+}
+
+
 .ui-dialog .sauce-critpower-moreinfo.ui-dialog-content {
     padding: 0px !important;
 }
@@ -103,6 +116,7 @@
 .ui-dialog.sauce-freerange-dialog .ui-dialog-title {
     font-size: 16px;
 }
+
 .ui-dialog.sauce-freerange-dialog .ui-dialog-titlebar-close {
     top: 5px;
 }

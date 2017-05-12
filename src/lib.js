@@ -299,14 +299,11 @@ sauce.ns('comm', function(ns) {
                 console.error("RPC sender:", resp.error);
             } else if (callback) {
                 callback.apply(this, resp.data);
-            } else {
-                console.debug("RPC done:", msg);
             }
         });
     };
 
     var syncSet = function(key, value, callback) {
-        console.debug('RPC - sync SET: ' + key + ' = ' + value);
         var data = {};
         data[key] = value;
         _sendMessage({
@@ -317,13 +314,11 @@ sauce.ns('comm', function(ns) {
     };
 
     var syncGet = function(key, callback) {
-        console.debug('RPC - sync GET - KEY: ' + key);
         _sendMessage({
             system: 'sync',
             op: 'get',
             data: key
         }, function(d) {
-            console.log('RPC - sync_get - VALUE: ' + d[key]);
             callback(d[key]);
         });
     };

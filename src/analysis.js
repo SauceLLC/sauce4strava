@@ -2,7 +2,7 @@
 sauce.ns('analysis', function(ns) {
 
     var ctx = {};
-    var default_ftp = 250;
+    var default_ftp = 200;
 
     /* TODO: Move to user options. */
     var cp_periods = [
@@ -51,36 +51,48 @@ sauce.ns('analysis', function(ns) {
             weight_unit: weight_unit,
             weight_norm: (weight_unit == 'lbs') ? weight_kg * 2.20462 : weight_kg,
             ftp: ctx.ftp,
+            ftp_origin: ctx.ftp_origin,
             if_: if_,
             tss: np && sauce.power.calcTSS(np, if_, ctx.ftp)
         };
         var frag = jQuery(ctx.tertiary_stats_tpl(tpl_data));
-        var link = frag.find('.provide_ftp');
-        var input = link.siblings('input');
+        var ftp_link = frag.find('.provide-ftp');
+        var ftp_input = ftp_link.siblings('input');
 
-        input.keyup(function(ev) {
-            if (ev.keyCode != 13) {
+        ftp_input.keyup(function(ev) {
+            if (ev.keyCode == 27 /* escape */) {
+                ftp_input.hide();
+                ftp_link.html(val).show();
+                return
+            } else if (ev.keyCode != 13 /* enter */) {
                 return;
             }
-            var val = Number(input.val());
-            if (!val || val < 0) {
-                jQuery('<div title="Invalid FTP Wattage.">' +
-                       '<b>"' + input.val() + '" is not a valid FTP.</b>' +
-                       '</div>').dialog({modal: true});
+            var val = ftp_input.val();
+            if (val === '') {
+                val = null;
             } else {
-                input.hide();
-                link.html(val).show();
-                jQuery('<div title="Reloading...">' +
-                       '<b>Reloading page to reflect FTP change."' +
-                       '</div>').dialog({modal: true});
-                sauce.comm.setFTP(ctx.athlete_id, val, function() {
-                    location.reload();
-                });
+                val = Number(ftp_input.val());
+                if (!val || val < 0 || val > 600) {
+                    jQuery('<div title="Invalid FTP Wattage">' +
+                           '<b>"' + ftp_input.val() + '" is not a valid FTP.</b>' +
+                           '<br/><br/>' +
+                           'Acceptable range: 0-600' +
+                           '</div>').dialog({modal: true});
+                    return;
+                }
             }
+            ftp_input.hide();
+            ftp_link.html(val).show();
+            jQuery('<div title="Reloading...">' +
+                   '<b>Reloading page to reflect FTP change."' +
+                   '</div>').dialog({modal: true});
+            sauce.comm.setFTP(ctx.athlete_id, val, function() {
+                location.reload();
+            });
         });
             
-        link.click(function() {
-            input.width(link.hide().width()).show();
+        ftp_link.click(function() {
+            ftp_input.width(ftp_link.hide().width()).show();
         });
 
         frag.insertAfter(jQuery('.inline-stats').last());
@@ -259,18 +271,31 @@ sauce.ns('analysis', function(ns) {
         }
     };
  
+    var load = function() {
+        console.info('Loading Strava Sauce...');
+        var streams = pageView.streams();
+        if (!streams.getStream('watts')) {
+            var resources = ['watts'];
+            if (!streams.getStream('watts_calc')) {
+                resources.push('watts_calc');
+            }
+            console.info("Fetching wattage streams:", resources);
+            streams.fetchStreams(resources, {
+                success: start,
+                error: function() {
+                    console.error("Failed to load wattage streams");
+                }
+            });
+        } else {
+            console.info("Wattage stream already available");
+            start();
+        }
+    };
+
     var start = function() {
-        console.log('Starting Sauce Activity Analysis');
-
-        jQuery.getScript('https://cdnjs.cloudflare.com/ajax/libs/' +
-                         'jquery-sparklines/2.1.2/jquery.sparkline.min.js');
-
+        console.info('Starting Strava Sauce...');
         ctx.athlete_id = pageView.activityAthlete().get('id');
         ctx.activity_id = pageView.activity().get('id');
-
-        sauce.func.runBefore(Strava.Labs.Activities.StreamsRequest, 'request', function() {
-            this.require('watts');
-        });
 
         sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
                             'displayDetails', function(ret, start, end) {
@@ -362,37 +387,35 @@ sauce.ns('analysis', function(ns) {
 
         final.inc();
         sauce.comm.getFTP(ctx.athlete_id, function(ftp) {
-            pageView.streamsRequest.deferred.done(function() {
-                chooseFTP(ftp);
-                final.dec();
-            });
+            assignFTP(ftp);
+            final.dec();
         });
     };
 
-    var chooseFTP = function(ftp) {
+    var assignFTP = function(sauce_ftp) {
         var power = pageView.powerController && pageView.powerController();
         /* Sometimes you can get it from the activity.  I think this only
          * works when you are the athlete in the activity. */
         var strava_ftp = power ? power.get('athlete_ftp')
                                : pageView.activity().get('ftp');
-        if (!ftp) {
+        var ftp;
+        if (!sauce_ftp) {
             if (strava_ftp) {
-                console.info("Setting FTP override from strava.");
+                console.info("Using FTP from strava");
                 ftp = strava_ftp;
-                sauce.comm.setFTP(ctx.athlete_id, strava_ftp);
+                ctx.ftp_origin = 'strava';
             } else {
-                console.warn("No FTP value found, using default.");
+                console.warn("No FTP value found, using default");
                 ftp = default_ftp;
+                ctx.ftp_origin = 'default';
             }
-        } else if (strava_ftp && ftp != strava_ftp) {
-            console.warn("Sauce FTP override differs from Strava FTP:",
-                         ftp, strava_ftp);
-            jQuery('<div title="WARNING: FTP Mismatch">' +
-                   'The Sauce FTP override value of ' + ftp + ' differs from ' +
-                   'the Strava FTP setting of ' + strava_ftp + '. Generally ' +
-                   'these should match.<br/><br/>' +
-                   '<b>Please update your Strava value to match the Sauce ' +
-                   'override value.</b></div>').dialog({ width: 500, modal: true });
+        } else {
+            if (strava_ftp && sauce_ftp != strava_ftp) {
+                console.warn("Sauce FTP override differs from Strava FTP:",
+                             sauce_ftp, strava_ftp);
+            }
+            ftp = sauce_ftp;
+            ctx.ftp_origin = 'sauce';
         }
         ctx.ftp = ftp;
     };
@@ -419,7 +442,7 @@ sauce.ns('analysis', function(ns) {
     };
  
     return {
-        start: start,
+        load: load,
         moreinfoDialog: moreinfoDialog,
         renderComments: renderComments,
         handleSelectionChange: handleSelectionChange
@@ -427,12 +450,8 @@ sauce.ns('analysis', function(ns) {
 });
 
 
-/* We have to aggressively track script loading to jack into Strava's site
- * while it's still worth altering.  E.g. Before it makes ext API calls.
- */ 
-document.head.addEventListener('DOMNodeInserted', function(event) {
-    if (window.pageView) {
-        document.head.removeEventListener(event.type, arguments.callee);
-        sauce.analysis.start();
-    }
-});
+if (!window.pageView) {
+    console.info("No pageView context: Not loading sauce analysis views");
+} else {
+    sauce.analysis.load();
+}

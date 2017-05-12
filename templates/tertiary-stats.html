@@ -7,8 +7,9 @@
     <% } %> 
     <li>
         <strong>
-            <a class="provide_ftp">{{ ftp }}</a><abbr class="unit" title="Watts">W</abbr>
-            <input style="display: none;" type="text" value="{{ ftp }}"/>
+            <a class="provide-ftp origin-{{ftp_origin}}" title="Click to override...">{{ ftp }}</a><abbr class="unit" title="Watts">W</abbr>
+            <input style="display: none;" type="text" value="{{ ftp }}"
+                   title="Enter a &quot;Functional Threshold Power&quot; (FTP) value for this athlete and press enter/return.  The value should be given as the maximum sustainable wattage the athlete can produce for 1 hour.  If the athlete already has a value set in their profile (premium members only) then this will override that setting.  If you want to clear the overridden value, empty this field and press enter."/>
         </strong>
         <div class="label">FTP</div>
     </li>

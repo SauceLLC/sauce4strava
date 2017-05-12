@@ -1,5 +1,6 @@
-chrome.storage.sync.get(null, function(options) {
+"use strict";
 
+chrome.storage.sync.get(null, function(options) {
     var load_script = function(url, callback) {
         console.log("Sauce script load: " + url);
         var script = document.createElement('script');
@@ -17,6 +18,7 @@ chrome.storage.sync.get(null, function(options) {
     var ext_url = chrome.extension.getURL('');
 
     var src = [
+        'https://cdnjs.cloudflare.com/ajax/libs/jquery-sparklines/2.1.2/jquery.sparkline.min.js',
         'src/base.js',
         'src/lib.js',
         'src/analysis.js'
@@ -25,7 +27,14 @@ chrome.storage.sync.get(null, function(options) {
     var loader = function(list, final_callback) {
         var _load_this = function() {
             if (list.length) {
-                load_script(ext_url + list.shift(), _load_this);
+                var script = list.shift();
+                var url;
+                if (script.match(/https?:\/\//i)) {
+                    url = script;
+                } else {
+                    url = ext_url + script;
+                }
+                load_script(url, _load_this);
             } else if (final_callback) {
                 final_callback();
             }
