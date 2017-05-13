@@ -9,18 +9,19 @@
     white-space: nowrap;
 }
 
-#sauce-critpower .title p.watt-estimate {
+#sauce-critpower .title p.watt-estimate-disclaimer {
     color: darkred;
     margin: 4px 0 0 0;
 }
 
-#sauce-critpower .title p.watt-estimate b {
+#sauce-critpower .title p.watt-estimate-disclaimer b {
     font-size: 14px;
 }
 
-#sauce-critpower .title p.watt-estimate small {
+#sauce-critpower .title p.watt-estimate-disclaimer small {
     font-size: 12px;
 }
+
 
 #sauce-critpower .group {
     padding-bottom: 0;
@@ -37,6 +38,9 @@
 #sauce-critpower td:last-child {
     padding-left: 10px;
     color: #007fb6;
+}
+#sauce-critpower.watt-estimate td:last-child span:before {
+    content: "~";
 }
 
 .sauce-critpower-moreinfo td a {
@@ -60,6 +64,20 @@
 
 #sauce-critpower tr.selected td:last-child {
     color: white;
+}
+
+.sauce-critpower-moreinfo sub,
+.sauce-critpower-moreinfo small,
+.sauce-critpower-moreinfo sup {
+    font-size: 75%;
+}
+
+.sauce-critpower-moreinfo sub {
+    color: darkcyan;
+}
+
+.sauce-critpower-moreinfo sup {
+    color: darkred;
 }
 
 .activity-stats .secondary-stats.inline-stats.sauce-stats {
@@ -102,12 +120,14 @@
 }
 
 .sauce-critpower-moreinfo td {
-    padding: 4px 6px;
+    padding: 4px 0px;
     height: 22px;
 }
 
 .sauce-critpower-moreinfo td:first-child {
     width: 50%;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 .sauce-critpower-moreinfo td:last-child {

@@ -3,12 +3,14 @@
     <table>
         <tr>
             <td>Start of effort</td>
-            <td><a class="start_time_link">{{ start_time }}</a></td>
+            <td title="Time offset to the start of this effort.">
+                <a class="start_time_link">{{ start_time }}</a>
+            </td>
         </tr>
         <tr>
             <td>Watts/kg</td>
             <td class="rank_holder">
-                {{ w_kg.toFixed(1) }}
+                <span title="Average watts divided by body weight in kilograms.">{{ w_kg.toFixed(1) }}
                 <% if (rank_image) { %>
                     <img src="{{ rank_image }}" class="rank_badge" alt="{{ sauce.power.rankCat(rank) }}" title="World Ranking: {{ Math.round(rank * 100) }}%"/>
                 <% } %>
@@ -16,23 +18,32 @@
         </tr>
         <tr>
             <td>Power</td>
-            <td>{{ Math.round(cp_avg) }}<sup>{{ peak_power }}</sup><% if (np) { %>
-                ({{ Math.round(np) }}np)<% } %></td>
+            <td>
+                <span title="Average Watts">{{ Math.round(cp_avg) }}</span>
+                <sup title="Peak Watts">{{ peak_power }}</sup>
+                <% if (np) { %>
+                    <small title="Normalized Watts">({{ Math.round(np) }}np)</small>
+                <% } %>
+            </td>
         </tr>
         <% if (hr_avg !== undefined) { %>
             <tr>
                 <td>Heartrate</td>
-                <td><sub>{{ hr_min }}</sub>{{ Math.round(hr_avg) }}<sup>{{ hr_max }}</sup>,
+                <td>
+                    <sub title="Lowest BPM">{{ hr_min }}</sub>
+                    <span title="Average BPM">{{ Math.round(hr_avg) }}</span>
+                    <sup title="Peak BPM">{{ hr_max }}</sup>
+                </td>
             </tr>
         <% } if (if_ !== undefined) { %>
             <tr>
                 <td>Intensity</td>
-                <td>{{ Math.round(if_ * 100) }}%</td>
+                <td title="Percent of FTP">{{ Math.round(if_ * 100) }}%</td>
             </tr>
         <% } if (tss !== undefined) { %>
             <tr>
                 <td>TSS</td>
-                <td>{{ Math.round(tss) }}</td>
+                <td title="Total Stress Score">{{ Math.round(tss) }}</td>
             </tr>
         <% } %>
     </table>

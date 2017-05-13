@@ -1,10 +1,11 @@
-<ul id="sauce-critpower" class="pagenav">
+<ul id="sauce-critpower"
+    class="pagenav <% if (is_watt_estimate) { %>watt-estimate<% } %>">
     <li class="group">
         <div class="title"
              title="Critical Power is the maximum power sustained for a given period of time.">
             Critical Power
             <% if (is_watt_estimate) { %>
-                <p class="watt-estimate"
+                <p class="watt-estimate-disclaimer"
                    title="Using estimated wattage data source.  Expect a high margin of error!">
                     <b>&#9888;</b> <small>(estimated)</small>
                 </p>
@@ -14,9 +15,10 @@
             <% for (let x of cp_periods) { %>
                 <tr style="display: none;" id="sauce-cp-row-{{ x[1] }}">
                     <td>{{ x[0] }}</td>
-                    <td>
-                        <span id="sauce-cp-{{ x[1] }}"></span>
-                        <attr class="unit">W</attr>
+                    <td title="Maximal sustained watt average for {{ x[0] }}.<% if (is_watt_estimate) { %>
+
+NOTE: These values are being calculated from Strava generated watt estimates.  For accurate values you need real power data provided by a power measurement device.<% } %>">
+                        <span id="sauce-cp-{{ x[1] }}"></span><attr class="unit">W</attr>
                     </td>
                 </tr>
             <% } %>
