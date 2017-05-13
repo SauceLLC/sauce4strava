@@ -6,7 +6,7 @@
     "description": "__MSG_extDesc__",
     "author": "Justin Mayfield",
     "version": "1.2.0",
-    "version_name": "1.2.0 [dev]",
+    "version_name": "1.2.0 [release]",
     "minimum_chrome_version": "51",
     
     "default_locale": "en",
