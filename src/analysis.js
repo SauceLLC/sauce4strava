@@ -303,7 +303,7 @@ sauce.ns('analysis', function(ns) {
             streams.fetchStreams(resources, {
                 success: start,
                 error: function() {
-                    console.error("Failed to load wattage streams");
+                    console.warn("Failed to load wattage streams. Load Aborted");
                 }
             });
         } else {
