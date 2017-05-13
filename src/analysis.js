@@ -420,7 +420,6 @@ sauce.ns('analysis', function(ns) {
         if (!watts_stream) {
             watts_stream = streams.getStream('watts_calc');
             if (!watts_stream) {
-                console.warn("XXX No power data for this ride.");
                 return;
             }
         }
