@@ -7,7 +7,7 @@
     "author": "Justin Mayfield",
     "version": "1.2.0",
     "version_name": "1.2.0 [dev]",
-    "minimum_chrome_version": "42",
+    "minimum_chrome_version": "51",
     
     "default_locale": "en",
 

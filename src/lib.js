@@ -1,5 +1,6 @@
 
 sauce.ns('data', function(ns) {
+    'use strict';
 
     function RollingAvg(period) {
         this._times = [];
@@ -73,6 +74,7 @@ sauce.ns('data', function(ns) {
 
 
 sauce.ns('func', function(ns) {
+    'use strict';
 
     var _adjunct = function(runAfter, obj, orig_func_name, interceptor) {
         var save_fn = obj.prototype[orig_func_name];
@@ -139,6 +141,8 @@ sauce.ns('func', function(ns) {
 
 
 sauce.ns('power', function(ns) {
+    'use strict';
+
     /* Max gap-seconds to permit without zero-padding. */
     var max_data_gap = 15;
 
@@ -225,7 +229,6 @@ sauce.ns('power', function(ns) {
     var critpowerSmart = function(ts_stream, watts_stream, period) {
         var ring = new sauce.data.RollingAvg(period);
         var max;
-        var range = 0;
         var ts_size = ts_stream.length;
         for (var i = 0; i < ts_size; i++) {
             var watts = watts_stream[i];
@@ -292,11 +295,13 @@ sauce.ns('power', function(ns) {
 
 
 sauce.ns('comm', function(ns) {
+    'use strict';
 
     var _sendMessage = function(msg, callback) {
         chrome.runtime.sendMessage(sauce.extID, msg, function(resp) {
-            if (!resp.success) {
-                console.error("RPC sender:", resp.error);
+            if (resp === undefined || !resp.success) {
+                var err = resp ? resp.error : 'general error';
+                console.error("RPC sender:", err);
             } else if (callback) {
                 callback.apply(this, resp.data);
             }
@@ -339,6 +344,7 @@ sauce.ns('comm', function(ns) {
 
 
 sauce.ns('time', function(ns) {
+    'use strict';
 
     ns.MIN = 60;
     ns.HOUR = ns.MIN * 60;
@@ -380,51 +386,5 @@ sauce.ns('time', function(ns) {
 
     return {
         ago: ago
-    };
-});
-
-
-sauce.ns('debug', function(ns) {
-
-    var findSymbol = function(obj, symbol, limit) {
-        limit = limit === undefined ? 6 : limit;
-        var obj_stack = [];
-        var key_stack = [];
-        var looker = function(offt) {
-            if (symbol in offt) {
-                throw "match";
-            }
-            for (var x in offt) {
-                var subject = offt[x];
-                if (obj_stack.indexOf(subject) === -1 &&
-                    obj_stack.length < limit &&
-                    subject !== null && 
-                    !(typeof subject in {'undefined':0, 'string':0, 'number':0,
-                                         'boolean':0, 'function':0}) &&
-                    Object.keys(subject) && subject.length === undefined) {
-                    obj_stack.push(offt);
-                    key_stack.push(x);
-                    looker(subject);
-                    obj_stack.pop();
-                    key_stack.pop();
-                }
-            }
-        };
-        try {
-            looker(obj);
-        } catch(e) {
-            if (e === "match") {
-                return {
-                    keys: key_stack,
-                    objects: obj_stack
-                };
-            } else {
-                throw e;
-            }
-        }
-    };
-
-    return {
-        findSymbol: findSymbol
     };
 });

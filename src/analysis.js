@@ -1,52 +1,47 @@
 
 sauce.ns('analysis', function(ns) {
+    'use strict';
 
     var ctx = {};
     var default_ftp = 200;
 
     /* TODO: Move to user options. */
     var cp_periods = [
-        ['5s', 5],
-        ['15s', 15],
-        ['30s', 30],
-        ['1min', 60],
-        ['2min', 120],
-        ['5min', 300],
-        ['10min', 600],
-        ['15min', 900],
-        ['20min', 1200],
-        ['30min', 1800],
-        ['1hour', 3600]
+        ['5 s', 5],
+        ['15 s', 15],
+        ['30 s', 30],
+        ['1 min', 60],
+        ['2 min', 120],
+        ['5 min', 300],
+        ['10 min', 600],
+        ['15 min', 900],
+        ['20 min', 1200],
+        ['30 min', 1800],
+        ['1 hour', 3600]
     ];
 
     var onStreamData = function() {
         var streams = pageView.streams();
         var watts_stream = streams.getStream('watts');
+        var is_watt_estimate = !watts_stream;
         if (!watts_stream) {
             watts_stream = streams.getStream('watts_calc');
             if (!watts_stream) {
-                console.warn("No power data for this ride.");
+                console.info("No power data for this activity.");
             }
             /* Only show large period for watt estimates. */
-            var too_small = [];
-            cp_periods.forEach(function(x, i) {
-                if (x[1] < 300) {
-                    too_small.push(i);
-                }
-            });
-            too_small.sort().reverse().forEach(function(i) {
-                delete cp_periods[i];
-            });
+            while (cp_periods[0][1] < 300) {
+                cp_periods.shift();
+            }
         }
 
         var np = watts_stream ? sauce.power.calcNP(watts_stream) : undefined;
         var np_val = np && np.value;
         var ts_stream = streams.getStream('time'); 
-        var weight_norm;
         var weight_kg = pageView.activityAthleteWeight();
         var weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
         var if_ = np && np_val / ctx.ftp;
-        var tpl_data = {
+        var stats_frag = jQuery(ctx.tertiary_stats_tpl({
             np: np_val,
             weight_unit: weight_unit,
             weight_norm: (weight_unit == 'lbs') ? weight_kg * 2.20462 : weight_kg,
@@ -54,16 +49,15 @@ sauce.ns('analysis', function(ns) {
             ftp_origin: ctx.ftp_origin,
             if_: if_,
             tss: np && sauce.power.calcTSS(np, if_, ctx.ftp)
-        };
-        var frag = jQuery(ctx.tertiary_stats_tpl(tpl_data));
-        var ftp_link = frag.find('.provide-ftp');
+        }));
+        var ftp_link = stats_frag.find('.provide-ftp');
         var ftp_input = ftp_link.siblings('input');
 
         ftp_input.keyup(function(ev) {
             if (ev.keyCode == 27 /* escape */) {
                 ftp_input.hide();
                 ftp_link.html(val).show();
-                return
+                return;
             } else if (ev.keyCode != 13 /* enter */) {
                 return;
             }
@@ -95,11 +89,16 @@ sauce.ns('analysis', function(ns) {
             ftp_input.width(ftp_link.hide().width()).show();
         });
 
-        frag.insertAfter(jQuery('.inline-stats').last());
+        stats_frag.insertAfter(jQuery('.inline-stats').last());
 
         if (watts_stream) {
             var open_dialog = [];
             var hr_stream = streams.getStream('heartrate');
+            var critpower_frag = jQuery(ctx.critpower_tpl({
+                cp_periods: cp_periods,
+                is_watt_estimate: is_watt_estimate
+            }));
+            critpower_frag.insertAfter(jQuery('#pagenav').first());
             cp_periods.forEach(function(period) {
                 var cp = sauce.power.critpower(ts_stream, watts_stream, period[1]);
                 if (cp !== undefined) {
@@ -132,7 +131,6 @@ sauce.ns('analysis', function(ns) {
                     jQuery('#sauce-cp-row-' + period[1]).show();
                 }
             });
-            jQuery('#sauce-critpower').show();
         }
     };
 
@@ -163,11 +161,11 @@ sauce.ns('analysis', function(ns) {
         var avgpwr = np.value ? np : {value: cp_avg, count: pwr_size};
         var if_ = avgpwr.value / ctx.ftp;
         var w_kg = cp_avg / opts.weight;
-        var gender = pageView.activityAthlete().get('gender') === 'M' ? 'male' : 'female';
+        var gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
         var rank = sauce.power.rank(opts.cp_period[1], w_kg, gender);
         var rank_cat = rank && sauce.power.rankCat(rank);
         var data = {
-            title: 'Critical power - ' + opts.cp_period[0],
+            title: 'Critical Power: ' + opts.cp_period[0],
             start_time: (new Strava.I18n.TimespanFormatter()).display(crit._times[0]),
             w_kg: w_kg,
             peak_power: Math.max.apply(null, crit._values),
@@ -183,8 +181,8 @@ sauce.ns('analysis', function(ns) {
             hr_min: Math.min.apply(null, hr)
         };
 
-        var frag = jQuery(ctx.moreinfo_tpl(data));
-        frag.find('.start_time_link').click(function() {
+        var moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
+        moreinfo_frag.find('.start_time_link').click(function() {
             pageView.router().changeMenuTo([
                 'analysis',
                 crit.offt - pwr_size + crit.padCount(),
@@ -192,7 +190,7 @@ sauce.ns('analysis', function(ns) {
             ].join('/'));
         });
 
-        var dialog = frag.dialog({
+        var dialog = moreinfo_frag.dialog({
             resizable: false,
             width: 220,
             dialogClass: 'sauce-freerange-dialog',
@@ -230,7 +228,7 @@ sauce.ns('analysis', function(ns) {
         }
 
         /* Must run after the dialog is open for proper rendering. */
-        frag.find('.sauce-sparkline').sparkline(pwr_stream, {
+        moreinfo_frag.find('.sauce-sparkline').sparkline(pwr_stream, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -272,12 +270,34 @@ sauce.ns('analysis', function(ns) {
     };
  
     var load = function() {
+        console.info('Staging Strava Sauce...');
+        /* Avoid racing with other stream requests...
+         * This strange test tells us the `streamRequest.request` routine is
+         * in-flight because the callbacks associated with that func will
+         * clear the `required` array.  While strange looking, this is the
+         * best way to detect a common condition where network loading of
+         * stream data is currently running and we would do best to wait for
+         * it's finish and thus avoid double loading data. */
+        var streamRequestActive = !!pageView.streamsRequest.required.length;
+        if (streamRequestActive) {
+            console.log("Deferred load of additional streams...");
+            pageView.streamsRequest.deferred.done(load_streams);
+        } else {
+            console.log("Immediate load of additional streams");
+            load_streams();
+        }
+    };
+
+    var load_streams = function() {
         console.info('Loading Strava Sauce...');
         var streams = pageView.streams();
         if (!streams.getStream('watts')) {
             var resources = ['watts'];
             if (!streams.getStream('watts_calc')) {
                 resources.push('watts_calc');
+            }
+            if (!streams.getStream('time')) {
+                resources.push('time');
             }
             console.info("Fetching wattage streams:", resources);
             streams.fetchStreams(resources, {
@@ -306,39 +326,15 @@ sauce.ns('analysis', function(ns) {
             ns.handleSelectionChange(start, end);
         });
 
-        /* XXX: Make template like the other stuff. */
-        var panel = [
-            '<ul id="sauce-critpower" style="display: none;" class="pagenav">',
-                '<li class="group">',
-                    '<div class="title">Critical Power</div>',
-                    '<table>'
-        ];
-
-        cp_periods.forEach(function(x) {
-            var r = [
-                '<tr style="display: none;" id="sauce-cp-row-', x[1], '">',
-                    '<td>', x[0], '</td>',
-                    '<td>',
-                        '<span id="sauce-cp-', x[1], '"></span>',
-                        '<attr class="unit">W</attr>',
-                    '</td>',
-                '</tr>'
-            ];
-            panel = panel.concat(r);
-        });
-
-        panel.push('</table></li></ul>');
-
-        panel = jQuery(panel.join(''));
-        panel.insertAfter(jQuery('#pagenav').first());
-
         var final = new sauce.func.IfDone(onStreamData);
 
         var tpl_url = sauce.extURL + 'templates/';
         jQuery.ajax(tpl_url + 'tertiary-stats.html').done(final.before(function(data) {
             ctx.tertiary_stats_tpl = _.template(data);
         }));
-
+        jQuery.ajax(tpl_url + 'critpower.html').done(final.before(function(data) {
+            ctx.critpower_tpl = _.template(data);
+        }));
         jQuery.ajax(tpl_url + 'critpower-moreinfo.html').done(final.before(function(data) {
             ctx.moreinfo_tpl = _.template(data);
         }));
@@ -401,11 +397,9 @@ sauce.ns('analysis', function(ns) {
         var ftp;
         if (!sauce_ftp) {
             if (strava_ftp) {
-                console.info("Using FTP from strava");
                 ftp = strava_ftp;
                 ctx.ftp_origin = 'strava';
             } else {
-                console.warn("No FTP value found, using default");
                 ftp = default_ftp;
                 ctx.ftp_origin = 'default';
             }

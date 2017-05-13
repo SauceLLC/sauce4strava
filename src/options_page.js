@@ -1,14 +1,13 @@
 
 function save_options(ftps) {
-    toset = {};
+    var toset = {};
     ftps.forEach(function(x) {
         toset[x[0]] = Number(document.getElementById(x[0]).value);
     });
-    console.log(toset);
     chrome.storage.sync.set(toset, function() {
         var status = document.getElementById('status');
         status.textContent = 'Options saved.';
-        setTimeout(function() {
+        window.setTimeout(function() {
             status.textContent = '';
         }, 2000);
     });
@@ -18,7 +17,7 @@ function save_options(ftps) {
 function load_options() {
     chrome.storage.sync.get(null, function(data) {
         /* Comb for athlete ftp.. meh */
-        ftps = [];
+        var ftps = [];
         Object.keys(data).forEach(function(x) {
             if (x.indexOf('athlete_ftp') === 0) {
                 ftps.push([x, data[x]]);
@@ -38,7 +37,7 @@ function load_options() {
             this.innerText = "Double Click to Confirm Erase";
             this.addEventListener('dblclick', function() {
                 chrome.storage.sync.clear(function() {
-                    location.reload();
+                    window.location.reload();
                 });
             });
         });

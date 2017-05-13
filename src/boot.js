@@ -1,6 +1,6 @@
-"use strict";
 
 chrome.storage.sync.get(null, function(options) {
+    "use strict";
     var load_script = function(url, callback) {
         console.log("Sauce script load: " + url);
         var script = document.createElement('script');

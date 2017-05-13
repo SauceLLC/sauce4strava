@@ -5,6 +5,23 @@
     margin-top: 10px;
 }
 
+#sauce-critpower .title {
+    white-space: nowrap;
+}
+
+#sauce-critpower .title p.watt-estimate {
+    color: darkred;
+    margin: 4px 0 0 0;
+}
+
+#sauce-critpower .title p.watt-estimate b {
+    font-size: 14px;
+}
+
+#sauce-critpower .title p.watt-estimate small {
+    font-size: 12px;
+}
+
 #sauce-critpower .group {
     padding-bottom: 0;
 }
