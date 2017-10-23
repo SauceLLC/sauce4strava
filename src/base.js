@@ -1,3 +1,4 @@
+/* global sauce */
 
 window.sauce = window.sauce || {};
 

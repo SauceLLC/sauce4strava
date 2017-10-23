@@ -1,0 +1,19 @@
+<ul id="sauce-critpower"
+    class="pagenav">
+    <li class="group">
+        <div class="title"
+             title="Critical Pace is the maximum pace sustained for a given distance.">
+            Critical Pace
+        </div>
+        <table>
+            <% for (let x of cp_periods) { %>
+                <tr style="display: none;" id="sauce-cp-row-{{ x[1] }}">
+                    <td>{{ x[0] }}</td>
+                    <td title="Maximal sustained pace for {{ x[0] }}">
+                        <span id="sauce-cp-{{ x[1] }}"></span>
+                    </td>
+                </tr>
+            <% } %>
+        </table>
+    </li>
+</ul>

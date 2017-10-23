@@ -1,3 +1,4 @@
+/* global chrome */
 
 function save_options(ftps) {
     var toset = {};

@@ -1,3 +1,4 @@
+/* global chrome */
 
 var rpc_map = {};
 

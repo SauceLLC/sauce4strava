@@ -1,0 +1,38 @@
+{
+    "parserOptions": {
+      "ecmaVersion": 8
+    },
+    "env": {
+        "browser": true,
+        "es6": true
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+        "no-console": "off",
+        "indent": [
+            "error",
+            4,
+            {
+                "FunctionDeclaration": {
+                    "parameters": "first"
+                },
+                "ArrayExpression": "off"
+            }
+        ],
+        "linebreak-style": [
+            "error",
+            "unix"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ],
+        "no-debugger": "off",
+        "no-unused-vars": [
+            "error",
+            {
+                "args": "none"
+            }
+        ]
+    }
+}

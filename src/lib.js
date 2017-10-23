@@ -1,5 +1,6 @@
+/* global sauce chrome */
 
-sauce.ns('data', function(ns) {
+sauce.ns('data', function() {
     'use strict';
 
     function RollingAvg(period) {
@@ -73,7 +74,7 @@ sauce.ns('data', function(ns) {
 });
 
 
-sauce.ns('func', function(ns) {
+sauce.ns('func', function() {
     'use strict';
 
     var _adjunct = function(runAfter, obj, orig_func_name, interceptor) {
@@ -140,7 +141,7 @@ sauce.ns('func', function(ns) {
 });
 
 
-sauce.ns('power', function(ns) {
+sauce.ns('power', function() {
     'use strict';
 
     /* Max gap-seconds to permit without zero-padding. */
@@ -294,7 +295,7 @@ sauce.ns('power', function(ns) {
 });
 
 
-sauce.ns('comm', function(ns) {
+sauce.ns('comm', function() {
     'use strict';
 
     var _sendMessage = function(msg, callback) {

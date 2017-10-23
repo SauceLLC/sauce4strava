@@ -1,3 +1,4 @@
+/* global chrome */
 
 chrome.storage.sync.get(null, function(options) {
     "use strict";
