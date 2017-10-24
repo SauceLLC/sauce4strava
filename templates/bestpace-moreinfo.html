@@ -1,0 +1,35 @@
+<div title="{{ title }}" class="sauce-moreinfo">
+    <div class="sauce-sparkline"></div>
+    <table>
+        <tr>
+            <td>Elapsed Time</td>
+            <td>
+                <span>{{ elapsed }}</span>
+            </td>
+        </tr>
+        <tr>
+            <td title="Minutes / Mile">Pace <small>(min/mile)</small></td>
+            <td>
+                <sub title="Slowest Pace">{{ pace_slowest }}</sub>
+                <span title="Average Pace">{{ pace }}</span>
+                <sup title="Peak Pace">{{ pace_peak }}</sup>
+            </td>
+        </tr>
+        <tr>
+            <td>Start of effort</td>
+            <td title="Time offset to the start of this effort.">
+                <a class="start_time_link">{{ start_time }}</a>
+            </td>
+        </tr>
+        <% if (hr_avg !== undefined) { %>
+            <tr>
+                <td>Heartrate</td>
+                <td>
+                    <sub title="Lowest BPM">{{ hr_min }}</sub>
+                    <span title="Average BPM">{{ Math.round(hr_avg) }}</span>
+                    <sup title="Peak BPM">{{ hr_max }}</sup>
+                </td>
+            </tr>
+        <% } %>
+    </table>
+</div>

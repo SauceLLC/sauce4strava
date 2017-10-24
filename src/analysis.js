@@ -20,16 +20,16 @@ sauce.ns('analysis', function(ns) {
         ['1 hour', 3600]
     ];
 
-    var meters_per_mile = 1609.344;
+    var metersPerMile = 1609.344;
     var run_cp_periods = [
         ['400 m', 400],
         ['1 km', 1000],
-        ['1 mile', meters_per_mile],
+        ['1 mile', Math.round(metersPerMile)],
         ['3 km', 3000],
         ['5 km', 5000],
         ['10 km', 10000],
-        ['13.1 miles', meters_per_mile * 13.1],
-        ['26.2 miles', meters_per_mile * 26.2]
+        ['13.1 miles', Math.round(metersPerMile * 13.1)],
+        ['26.2 miles', Math.round(metersPerMile * 26.2)]
     ];
 
     var rank_map = [
@@ -131,7 +131,7 @@ sauce.ns('analysis', function(ns) {
             }));
             critpower_frag.insertAfter(jQuery('#pagenav').first());
             ride_cp_periods.forEach(function(period) {
-                var cp = sauce.power.critpower(ts_stream, watts_stream, period[1]);
+                var cp = sauce.power.critpower(period[1], ts_stream, watts_stream);
                 if (cp !== undefined) {
                     var hr_arr;
                     if (hr_stream) {
@@ -145,7 +145,7 @@ sauce.ns('analysis', function(ns) {
                         if (existing) {
                             existing.dialog('close');
                         }
-                        var dialog = moreinfoDialog.call(ctx, {
+                        var dialog = moreinfoRideDialog.call(ctx, {
                             cp_period: period,
                             cp_roll: cp,
                             hr_arr: hr_arr,
@@ -167,12 +167,13 @@ sauce.ns('analysis', function(ns) {
 
     var onRunStreamData = function() {
         var streams = pageView.streams();
-        var pace_stream = streams.getStream('pace');
-        if (!pace_stream) {
-            console.warn("No pace data for this activity.");
+        var dist_stream = streams.getStream('distance');
+        if (!dist_stream) {
+            console.warn("No distance data for this activity.");
             return;
         }
         var ts_stream = streams.getStream('time');
+        var pace_stream = streams.getStream('pace');
         var weight_kg = pageView.activityAthleteWeight();
         var weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
         var stats_frag = jQuery(ctx.tertiary_stats_tpl({
@@ -185,28 +186,29 @@ sauce.ns('analysis', function(ns) {
 
         var open_dialog = [];
         var hr_stream = streams.getStream('heartrate');
-        var critpower_frag = jQuery(ctx.critpace_tpl({
+        var bestpace_frag = jQuery(ctx.bestpace_tpl({
             cp_periods: run_cp_periods
         }));
-        critpower_frag.insertAfter(jQuery('#pagenav').first());
+        bestpace_frag.insertAfter(jQuery('#pagenav').first());
         run_cp_periods.forEach(function(period) {
-            var cp = sauce.power.critpower(ts_stream, pace_stream, period[1]);
-            if (cp !== undefined) {
+            var bp = sauce.pace.bestpace(period[1], ts_stream, dist_stream, pace_stream);
+            if (bp !== undefined) {
                 var hr_arr;
                 if (hr_stream) {
-                    var start = cp.offt - cp._values.length + cp.padCount();
-                    hr_arr = hr_stream.slice(start, cp.offt);
+                    hr_arr = hr_stream.slice(bp.offt, bp.offt + bp._distances.length);
                 }
                 var el = jQuery('#sauce-cp-' + period[1]);
-                el.html(Math.round(cp.avg()));
+                el.html(formatMinutes(bp.elapsed() / 60));
                 el.parent().click(function() {
                     var existing = open_dialog.shift();
                     if (existing) {
                         existing.dialog('close');
                     }
-                    var dialog = moreinfoDialog.call(ctx, {
-                        cp_period: period,
-                        cp_roll: cp,
+                    var dialog = moreinfoRunDialog.call(ctx, {
+                        bp_period: period,
+                        bp_window: bp,
+                        elapsed: formatMinutes(bp.elapsed() / 60),
+                        bp_str: formatMinutes(paceToMinPerMile(bp.avg())),
                         hr_arr: hr_arr,
                         weight: weight_kg,
                         anchor_to: el.parent()
@@ -223,7 +225,34 @@ sauce.ns('analysis', function(ns) {
         });
     };
 
-    var moreinfoDialog = function(opts) {
+    var paceToMinPerMile = function(secondsPerMeter) {
+        /* Convert strava pace into minutes per mile */
+        return 60 / ((3600 / secondsPerMeter) / metersPerMile);
+    };
+
+    var formatMinutes = function(minutes) {
+        /* Convert float of minutes per mile to a string */
+        var hours = Math.floor(minutes / 60);
+        var mins = Math.floor(minutes % 60);
+        var seconds = Math.round((minutes % 1) * 60);
+        var result = [];
+        if (hours) {
+            result.push(hours);
+            if (mins < 10) {
+                result.push('0' + mins);
+            }
+        } else {
+            result.push(mins);
+        }
+        if (seconds < 10) {
+            result.push('0' + seconds);
+        } else {
+            result.push(seconds);
+        }
+        return result.join(':');
+    };
+
+    var moreinfoRideDialog = function(opts) {
         var crit = opts.cp_roll;
         var hr = opts.hr_arr;
         var cp_avg = crit.avg();
@@ -314,6 +343,98 @@ sauce.ns('analysis', function(ns) {
         return dialog;
     };
 
+    var moreinfoRunDialog = function(opts) {
+        var bestpace = opts.bp_window;
+        var hr = opts.hr_arr;
+        var pace = formatMinutes(paceToMinPerMile(bestpace.avg()));
+        var elapsed = formatMinutes(bestpace.elapsed() / 60);
+        var dist_size = bestpace._distances.length;
+        var data = {
+            title: 'Best Pace: ' + opts.bp_period[0],
+            start_time: (new Strava.I18n.TimespanFormatter()).display(bestpace._times[0]),
+            pace: pace,
+            pace_slowest: formatMinutes(paceToMinPerMile(Math.max.apply(null, bestpace._paces))),
+            pace_peak: formatMinutes(paceToMinPerMile(Math.min.apply(null, bestpace._paces))),
+            elapsed: elapsed,
+            hr_avg: hr && (_.reduce(hr, function(a, b) { return a + b; }, 0) / hr.length),
+            hr_max: Math.max.apply(null, hr),
+            hr_min: Math.min.apply(null, hr),
+        };
+
+        var moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
+        moreinfo_frag.find('.start_time_link').click(function() {
+            pageView.router().changeMenuTo([
+                'analysis',
+                Math.round(bestpace._distances[0] / 10), // decimeters!?
+                Math.floor(bestpace._distances[dist_size - 1] / 10)
+            ].join('/'));
+        });
+
+        var dialog = moreinfo_frag.dialog({
+            resizable: false,
+            width: 220,
+            dialogClass: 'sauce-freerange-dialog',
+            show: {
+                effect: 'slideDown',
+                duration: 200
+            },
+            position: {
+                my: 'left center',
+                at: 'right center',
+                of: opts.anchor_to
+            },
+            buttons: {
+                Close: function() {
+                    dialog.dialog('close');
+                }
+            }
+        });
+
+        /* Smooth data for best visaul appearance. */
+        var pace_stream;
+        if (dist_size >= 240) {
+            pace_stream = [];
+            var increment = Math.floor(dist_size / 120);
+            for (var i = 0; i < dist_size; i += increment) {
+                var v = 0;
+                var ii;
+                for (ii = 0; ii < increment && i + ii < dist_size; ii++) {
+                    v += bestpace._paces[i+ii];
+                }
+                pace_stream.push(v / ii);
+            }
+        } else {
+            pace_stream = bestpace._paces;
+        }
+
+        /* Must run after the dialog is open for proper rendering. */
+        var maxPace = 0;
+        var minPace = Infinity;
+        var perMilePaceStream = pace_stream.map(function(x) {
+            var pace = paceToMinPerMile(x);
+            if (pace > maxPace) {
+                maxPace = pace;
+            }
+            if (pace < minPace) {
+                minPace = pace;
+            }
+            return Math.round(pace * 100) / 100;
+        });
+        moreinfo_frag.find('.sauce-sparkline').sparkline(perMilePaceStream, {
+            type: 'line',
+            width: '100%',
+            height: 56,
+            lineColor: '#EA400D',
+            fillColor: 'rgba(234, 64, 13, 0.61)',
+            chartRangeMin: 0,
+            normalRangeMin: 0,
+            normalRangeMax: bestpace.avg(),
+            tooltipSuffix: 'min/mile'
+        });
+
+        return dialog;
+    };
+
     var renderComments = function(skip_quote) {
         var ctrl = pageView.commentsController();
         var comments = ctrl.getFromHash('Activity-' + ctx.activity_id);
@@ -330,26 +451,35 @@ sauce.ns('analysis', function(ns) {
     };
 
     var load = function() {
-        console.info('Staging Strava Sauce...');
-        /* Avoid racing with other stream requests...
-         * This strange test tells us the `streamRequest.request` routine is
-         * in-flight because the callbacks associated with that func will
-         * clear the `required` array.  While strange looking, this is the
-         * best way to detect a common condition where network loading of
-         * stream data is currently running and we would do best to wait for
-         * it's finish and thus avoid double loading data. */
-        var streamRequestActive = !!pageView.streamsRequest.required.length;
-        if (streamRequestActive) {
-            console.log("Deferred load of additional streams...");
-            pageView.streamsRequest.deferred.done(load_streams);
+        console.info('Loading Sauce...');
+        var activity = pageView.activity();
+        var type = activity.get('type');
+        ctx.athlete_id = pageView.activityAthlete().get('id');
+        ctx.activity_id = activity.get('id');
+        if (type === 'Run') {
+            startRun();
+        } else if (type === 'Ride') {
+            /* Avoid racing with other stream requests...
+             * This strange test tells us the `streamRequest.request` routine is
+             * in-flight because the callbacks associated with that func will
+             * clear the `required` array.  While strange looking, this is the
+             * best way to detect a common condition where network loading of
+             * stream data is currently running and we would do best to wait for
+             * it's finish and thus avoid double loading data. */
+            var streamRequestActive = !!pageView.streamsRequest.required.length;
+            if (streamRequestActive) {
+                console.log("Deferred load of additional streams...");
+                pageView.streamsRequest.deferred.done(loadWattageStreams);
+            } else {
+                console.log("Immediate load of additional streams");
+                loadWattageStreams();
+            }
         } else {
-            console.log("Immediate load of additional streams");
-            load_streams();
+            console.debug("Unsupported activity type:", type);
         }
     };
 
-    var load_streams = function() {
-        console.info('Loading Strava Sauce...');
+    var loadWattageStreams = function() {
         var streams = pageView.streams();
         if (!streams.getStream('watts')) {
             var resources = ['watts'];
@@ -361,32 +491,14 @@ sauce.ns('analysis', function(ns) {
             }
             console.info("Fetching wattage streams:", resources);
             streams.fetchStreams(resources, {
-                success: start,
+                success: startRide,
                 error: function() {
                     console.warn("Failed to load wattage streams. Load Aborted");
                 }
             });
         } else {
-            console.info("Wattage stream already available");
-            start();
-        }
-    };
-
-    var start = function() {
-        console.info('Starting Strava Sauce...');
-        ctx.athlete_id = pageView.activityAthlete().get('id');
-        var activity = pageView.activity();
-        ctx.activity_id = activity.get('id');
-        var type = activity.get('type');
-        if (type === 'Run') {
-            startRun();
-        } else if (type === 'Ride') {
             startRide();
-        } else {
-            console.info("Not saucing unsupported activity type:", type);
-            return;
         }
-
     };
 
     var startRun = function() {
@@ -405,10 +517,10 @@ sauce.ns('analysis', function(ns) {
         jQuery.ajax(tpl_url + 'tertiary-stats.html').done(final.before(function(data) {
             ctx.tertiary_stats_tpl = _.template(data);
         }));
-        jQuery.ajax(tpl_url + 'critpace.html').done(final.before(function(data) {
-            ctx.critpace_tpl = _.template(data);
+        jQuery.ajax(tpl_url + 'bestpace.html').done(final.before(function(data) {
+            ctx.bestpace_tpl = _.template(data);
         }));
-        jQuery.ajax(tpl_url + 'critpace-moreinfo.html').done(final.before(function(data) {
+        jQuery.ajax(tpl_url + 'bestpace-moreinfo.html').done(final.before(function(data) {
             ctx.moreinfo_tpl = _.template(data);
         }));
 
@@ -579,15 +691,15 @@ sauce.ns('analysis', function(ns) {
 
     return {
         load: load,
-        moreinfoDialog: moreinfoDialog,
+        moreinfoRunDialog: moreinfoRunDialog,
         renderComments: renderComments,
         handleSelectionChange: handleSelectionChange
     };
 });
 
 
-if (!window.pageView) {
-    console.info("No pageView context: Not loading sauce analysis views");
-} else {
-    sauce.analysis.load();
-}
+(function() {
+    if (window.pageView) {
+        sauce.analysis.load();
+    }
+})();

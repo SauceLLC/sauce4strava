@@ -3,6 +3,15 @@
 sauce.ns('data', function() {
     'use strict';
 
+    function Pad(value) {
+        this.value = value;
+    }
+    Pad.prototype.valueOf = function() {
+        return this.value;
+    };
+
+    var pad = new Pad(0);
+
     function RollingAvg(period) {
         this._times = [];
         this._values = [];
@@ -23,10 +32,6 @@ sauce.ns('data', function() {
             this.shift();
         }
     };
-
-    var Pad = function() {};
-    Pad.prototype.valueOf = function() { return 0; };
-    var pad = new Pad();
 
     RollingAvg.prototype.pad = function(size) {
         var last_ts = this._times[this._times.length-1];
@@ -68,8 +73,60 @@ sauce.ns('data', function() {
         return copy;
     };
 
+    function RollingWindow(distance) {
+        this._times = [];
+        this._distances = [];
+        this._paces = [];
+        this.offt = 0;
+        this.distance = distance;
+    }
+
+    RollingWindow.prototype.add = function(ts, distance, pace) {
+        this._times.push(ts);
+        this._distances.push(distance);
+        this._paces.push(pace);
+        this.offt++;
+        while (distance - this._distances[0] >= this.distance) {
+            this.shift();
+        }
+    };
+
+    RollingWindow.prototype.avg = function() {
+        var dist = this._distances[this._distances.length - 1] - this._distances[0];
+        var elapsed = this._times[this._times.length - 1] - this._times[0];
+        if (!dist || !elapsed) {
+            return;
+        }
+        return elapsed / dist;
+    };
+
+    RollingWindow.prototype.elapsed = function() {
+        return this._times[this._times.length - 1] - this._times[0];
+    };
+
+
+    RollingWindow.prototype.full = function() {
+        var d = this._distances;
+        return (d[d.length - 1] - d[0]) / this.distance >= 0.98;
+    };
+
+    RollingWindow.prototype.shift = function() {
+        this._times.shift();
+        this._distances.shift();
+        this._paces.shift();
+    };
+
+    RollingWindow.prototype.copy = function() {
+        var copy = new RollingWindow(this.distance);
+        copy._times = this._times.slice(0);
+        copy._distances = this._distances.slice(0);
+        copy._paces = this._paces.slice(0);
+        return copy;
+    };
+
     return {
-        RollingAvg: RollingAvg
+        RollingAvg: RollingAvg,
+        RollingWindow: RollingWindow
     };
 });
 
@@ -144,7 +201,7 @@ sauce.ns('func', function() {
 sauce.ns('power', function() {
     'use strict';
 
-    /* Max gap-seconds to permit without zero-padding. */
+    /* Max gap-seconds to permit without padding. */
     var max_data_gap = 15;
 
     /* Based on Andy Coggan's power profile. */
@@ -227,7 +284,7 @@ sauce.ns('power', function() {
         return rank_cats[Math.floor(index)] + mod;
     };
 
-    var critpowerSmart = function(ts_stream, watts_stream, period) {
+    var critpowerSmart = function(period, ts_stream, watts_stream) {
         var ring = new sauce.data.RollingAvg(period);
         var max;
         var ts_size = ts_stream.length;
@@ -236,7 +293,7 @@ sauce.ns('power', function() {
             var ts = ts_stream[i];
             var gap = i > 0 && ts - ts_stream[i-1];
             if (gap > max_data_gap) {
-                ring.pad(gap-2);
+                ring.pad(gap - 2);
             }
             ring.add(ts, watts);
             if (ring.full() && (!max || ring.avg() > max.avg())) {
@@ -291,6 +348,31 @@ sauce.ns('power', function() {
         calcTSS: calcTSS,
         rank: rank,
         rankCat: rankCat
+    };
+});
+
+
+sauce.ns('pace', function() {
+    'use strict';
+
+    var bestpace = function(distance, ts_stream, dist_stream, pace_stream) {
+        var ring = new sauce.data.RollingWindow(distance);
+        var min;
+        var ts_size = ts_stream.length;
+        for (var i = 0; i < ts_size; i++) {
+            var dist = dist_stream[i];
+            var ts = ts_stream[i];
+            var pace = pace_stream[i];
+            ring.add(ts, dist, pace);
+            if (ring.full() && (!min || ring.avg() <= min.avg())) {
+                min = ring.copy();
+            }
+        }
+        return min;
+    };
+
+    return {
+        bestpace: bestpace
     };
 });
 

@@ -1,82 +1,82 @@
 
-#sauce-critpower {
+#sauce-infopanel {
     border-top: 2px solid #ff4400;
     border-bottom: 2px solid #ff4400;
     margin-top: 10px;
 }
 
-#sauce-critpower .title {
+#sauce-infopanel .title {
     white-space: nowrap;
 }
 
-#sauce-critpower .title p.watt-estimate-disclaimer {
+#sauce-infopanel .title p.watt-estimate-disclaimer {
     color: darkred;
     margin: 4px 0 0 0;
 }
 
-#sauce-critpower .title p.watt-estimate-disclaimer b {
+#sauce-infopanel .title p.watt-estimate-disclaimer b {
     font-size: 14px;
 }
 
-#sauce-critpower .title p.watt-estimate-disclaimer small {
+#sauce-infopanel .title p.watt-estimate-disclaimer small {
     font-size: 12px;
 }
 
 
-#sauce-critpower .group {
+#sauce-infopanel .group {
     padding-bottom: 0;
 }
 
-#sauce-critpower table {
+#sauce-infopanel table {
     margin: 0;
 }
 
-#sauce-critpower td {
+#sauce-infopanel td {
     padding: 5px 0 5px 20px;
 }
 
-#sauce-critpower td:last-child {
+#sauce-infopanel td:last-child {
     padding-left: 10px;
     color: #007fb6;
 }
-#sauce-critpower.watt-estimate td:last-child span:before {
+#sauce-infopanel.watt-estimate td:last-child span:before {
     content: "~";
 }
 
-.sauce-critpower-moreinfo td a {
+.sauce-moreinfo td a {
     color: #007fb6;
 }
 
 
-#sauce-critpower td:last-child:hover {
+#sauce-infopanel td:last-child:hover {
     cursor: pointer;
     text-decoration: underline;
 }
 
-#sauce-critpower tr:nth-child(odd) {
+#sauce-infopanel tr:nth-child(odd) {
     background: #fafafa;
 }
 
-#sauce-critpower tr.selected {
+#sauce-infopanel tr.selected {
     background: rgba(0, 0, 0, 0.74);
     color: #fff;
 }
 
-#sauce-critpower tr.selected td:last-child {
+#sauce-infopanel tr.selected td:last-child {
     color: white;
 }
 
-.sauce-critpower-moreinfo sub,
-.sauce-critpower-moreinfo small,
-.sauce-critpower-moreinfo sup {
+.sauce-moreinfo sub,
+.sauce-moreinfo small,
+.sauce-moreinfo sup {
     font-size: 75%;
 }
 
-.sauce-critpower-moreinfo sub {
+.sauce-moreinfo sub {
     color: darkcyan;
 }
 
-.sauce-critpower-moreinfo sup {
+.sauce-moreinfo sup {
     color: darkred;
 }
 
@@ -102,43 +102,43 @@
 }
 
 
-.ui-dialog .sauce-critpower-moreinfo.ui-dialog-content {
+.ui-dialog .sauce-moreinfo.ui-dialog-content {
     padding: 0px !important;
 }
 
-.sauce-critpower-moreinfo.ui-dialog-content table {
+.sauce-moreinfo.ui-dialog-content table {
     width: 100% !important;
     margin: 0px 0px 0 0;
     padding: 20px 20px 4px 20px;
 }
 
-.sauce-critpower-moreinfo img.rank_badge {
+.sauce-moreinfo img.rank_badge {
     position: absolute;
     top: 1px;
     right: 0px;
     height: 28px;
 }
 
-.sauce-critpower-moreinfo td {
+.sauce-moreinfo td {
     padding: 4px 0px;
     height: 22px;
 }
 
-.sauce-critpower-moreinfo td:first-child {
+.sauce-moreinfo td:first-child {
     width: 50%;
     padding-left: 2px;
     padding-right: 2px;
 }
 
-.sauce-critpower-moreinfo td:last-child {
+.sauce-moreinfo td:last-child {
     width: 50%;
 }
 
-.sauce-critpower-moreinfo td.rank_holder {
+.sauce-moreinfo td.rank_holder {
     position: relative;
 }
 
-.sauce-critpower-moreinfo tr:last-child td {
+.sauce-moreinfo tr:last-child td {
     border-bottom: 0;
 }
 
