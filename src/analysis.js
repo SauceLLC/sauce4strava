@@ -241,6 +241,8 @@ sauce.ns('analysis', function(ns) {
             result.push(hours);
             if (mins < 10) {
                 result.push('0' + mins);
+            } else {
+                result.push(mins);
             }
         } else {
             result.push(mins);
@@ -469,32 +471,34 @@ sauce.ns('analysis', function(ns) {
         console.info('Loading Sauce...');
         var activity = pageView.activity();
         var type = activity.get('type');
-        ctx.athlete_id = pageView.activityAthlete().get('id');
-        ctx.activity_id = activity.get('id');
+        var loadStreams;
         if (type === 'Run') {
-            startRun();
+            loadStreams = loadRunStreams;
         } else if (type === 'Ride') {
-            /* Avoid racing with other stream requests...
-             * This strange test tells us the `streamRequest.request` routine is
-             * in-flight because the callbacks associated with that func will
-             * clear the `required` array.  While strange looking, this is the
-             * best way to detect a common condition where network loading of
-             * stream data is currently running and we would do best to wait for
-             * it's finish and thus avoid double loading data. */
-            var streamRequestActive = !!pageView.streamsRequest.required.length;
-            if (streamRequestActive) {
-                console.log("Deferred load of additional streams...");
-                pageView.streamsRequest.deferred.done(loadWattageStreams);
-            } else {
-                console.log("Immediate load of additional streams");
-                loadWattageStreams();
-            }
+            loadStreams = loadRideStreams;
         } else {
             console.debug("Unsupported activity type:", type);
+            return;
+        }
+        ctx.athlete_id = pageView.activityAthlete().get('id');
+        ctx.activity_id = activity.get('id');
+        /* Avoid racing with other stream requests...
+         * This strange test tells us the `streamRequest.request` routine is
+         * in-flight because the callbacks associated with that func will
+         * clear the `required` array.  While strange looking, this is the
+         * best way to detect a common condition where network loading of
+         * stream data is currently running and we would do best to wait for
+         * it's finish and thus avoid double loading data. */
+        var streamRequestActive = !!pageView.streamsRequest.required.length;
+        if (streamRequestActive) {
+            console.log("Deferred load of additional streams...");
+            pageView.streamsRequest.deferred.done(loadStreams);
+        } else {
+            loadStreams();
         }
     };
 
-    var loadWattageStreams = function() {
+    var loadRideStreams = function() {
         var streams = pageView.streams();
         if (!streams.getStream('watts')) {
             var resources = ['watts'];
@@ -513,6 +517,16 @@ sauce.ns('analysis', function(ns) {
             });
         } else {
             startRide();
+        }
+    };
+
+    var loadRunStreams = function() {
+        var streams = pageView.streams();
+        if (!streams.getStream('distance')) {
+            console.warn("Run without distance data?");
+            return;
+        } else {
+            startRun();
         }
     };
 
