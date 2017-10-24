@@ -377,7 +377,7 @@ sauce.ns('analysis', function(ns) {
             pageView.router().changeMenuTo([
                 'analysis',
                 bestpace.offt,
-                bestpace.offt + bp_size
+                bestpace.offt + bp_size - 1 // Is inclusive for runs; Must subtract 1.
             ].join('/'));
             dialog.dialog('close');
         };
