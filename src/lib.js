@@ -85,7 +85,6 @@ sauce.ns('data', function() {
         this._times.push(ts);
         this._distances.push(distance);
         this._paces.push(pace);
-        this.offt++;
         while (distance - this._distances[0] >= this.distance) {
             this.shift();
         }
@@ -104,13 +103,13 @@ sauce.ns('data', function() {
         return this._times[this._times.length - 1] - this._times[0];
     };
 
-
     RollingWindow.prototype.full = function() {
         var d = this._distances;
-        return (d[d.length - 1] - d[0]) / this.distance >= 0.98;
+        return (d[d.length - 1] - d[0]) / this.distance >= 0.999;
     };
 
     RollingWindow.prototype.shift = function() {
+        this.offt++;
         this._times.shift();
         this._distances.shift();
         this._paces.shift();
@@ -121,7 +120,12 @@ sauce.ns('data', function() {
         copy._times = this._times.slice(0);
         copy._distances = this._distances.slice(0);
         copy._paces = this._paces.slice(0);
+        copy.offt = this.offt;
         return copy;
+    };
+
+    RollingWindow.prototype.size = function() {
+        return this._distances.length;
     };
 
     return {

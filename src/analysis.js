@@ -195,7 +195,7 @@ sauce.ns('analysis', function(ns) {
             if (bp !== undefined) {
                 var hr_arr;
                 if (hr_stream) {
-                    hr_arr = hr_stream.slice(bp.offt, bp.offt + bp._distances.length);
+                    hr_arr = hr_stream.slice(bp.offt, bp.offt + bp.size());
                 }
                 var el = jQuery('#sauce-cp-' + period[1]);
                 el.html(formatMinutes(bp.elapsed() / 60));
@@ -208,7 +208,7 @@ sauce.ns('analysis', function(ns) {
                         bp_period: period,
                         bp_window: bp,
                         elapsed: formatMinutes(bp.elapsed() / 60),
-                        bp_str: formatMinutes(paceToMinPerMile(bp.avg())),
+                        bp_str: formatMinutes(milePace(bp.avg())),
                         hr_arr: hr_arr,
                         weight: weight_kg,
                         anchor_to: el.parent()
@@ -225,7 +225,7 @@ sauce.ns('analysis', function(ns) {
         });
     };
 
-    var paceToMinPerMile = function(secondsPerMeter) {
+    var milePace = function(secondsPerMeter) {
         /* Convert strava pace into minutes per mile */
         return 60 / ((3600 / secondsPerMeter) / metersPerMile);
     };
@@ -282,15 +282,18 @@ sauce.ns('analysis', function(ns) {
         };
 
         var moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
-        moreinfo_frag.find('.start_time_link').click(function() {
+        var dialog;
+        var showAnalysisView = function() {
             pageView.router().changeMenuTo([
                 'analysis',
                 crit.offt - pwr_size + crit.padCount(),
                 crit.offt
             ].join('/'));
-        });
+            dialog.dialog('close');
+        };
+        moreinfo_frag.find('.start_time_link').click(showAnalysisView);
 
-        var dialog = moreinfo_frag.dialog({
+        dialog = moreinfo_frag.dialog({
             resizable: false,
             width: 220,
             dialogClass: 'sauce-freerange-dialog',
@@ -303,11 +306,15 @@ sauce.ns('analysis', function(ns) {
                 at: 'right center',
                 of: opts.anchor_to
             },
-            buttons: {
-                Close: function() {
+            buttons: [{
+                text: 'Close',
+                click: function() {
                     dialog.dialog('close');
                 }
-            }
+            }, {
+                text: 'Analysis View',
+                click: showAnalysisView
+            }]
         });
 
         /* Smooth data for best visaul appearance. */
@@ -346,15 +353,15 @@ sauce.ns('analysis', function(ns) {
     var moreinfoRunDialog = function(opts) {
         var bestpace = opts.bp_window;
         var hr = opts.hr_arr;
-        var pace = formatMinutes(paceToMinPerMile(bestpace.avg()));
+        var pace = formatMinutes(milePace(bestpace.avg()));
         var elapsed = formatMinutes(bestpace.elapsed() / 60);
-        var dist_size = bestpace._distances.length;
+        var bp_size = bestpace.size();
         var data = {
             title: 'Best Pace: ' + opts.bp_period[0],
             start_time: (new Strava.I18n.TimespanFormatter()).display(bestpace._times[0]),
             pace: pace,
-            pace_slowest: formatMinutes(paceToMinPerMile(Math.max.apply(null, bestpace._paces))),
-            pace_peak: formatMinutes(paceToMinPerMile(Math.min.apply(null, bestpace._paces))),
+            pace_slowest: formatMinutes(milePace(Math.max.apply(null, bestpace._paces))),
+            pace_peak: formatMinutes(milePace(Math.min.apply(null, bestpace._paces))),
             elapsed: elapsed,
             hr_avg: hr && (_.reduce(hr, function(a, b) { return a + b; }, 0) / hr.length),
             hr_max: Math.max.apply(null, hr),
@@ -362,15 +369,18 @@ sauce.ns('analysis', function(ns) {
         };
 
         var moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
-        moreinfo_frag.find('.start_time_link').click(function() {
+        var dialog;
+        var showAnalysisView = function() {
             pageView.router().changeMenuTo([
                 'analysis',
-                Math.round(bestpace._distances[0] / 10), // decimeters!?
-                Math.floor(bestpace._distances[dist_size - 1] / 10)
+                bestpace.offt,
+                bestpace.offt + bp_size
             ].join('/'));
-        });
+            dialog.dialog('close');
+        };
+        moreinfo_frag.find('.start_time_link').click(showAnalysisView);
 
-        var dialog = moreinfo_frag.dialog({
+        dialog = moreinfo_frag.dialog({
             resizable: false,
             width: 220,
             dialogClass: 'sauce-freerange-dialog',
@@ -383,22 +393,26 @@ sauce.ns('analysis', function(ns) {
                 at: 'right center',
                 of: opts.anchor_to
             },
-            buttons: {
-                Close: function() {
+            buttons: [{
+                text: 'Close',
+                click: function() {
                     dialog.dialog('close');
                 }
-            }
+            }, {
+                text: 'Analysis View',
+                click: showAnalysisView
+            }]
         });
 
         /* Smooth data for best visaul appearance. */
         var pace_stream;
-        if (dist_size >= 240) {
+        if (bp_size >= 240) {
             pace_stream = [];
-            var increment = Math.floor(dist_size / 120);
-            for (var i = 0; i < dist_size; i += increment) {
+            var increment = Math.floor(bp_size / 120);
+            for (var i = 0; i < bp_size; i += increment) {
                 var v = 0;
                 var ii;
-                for (ii = 0; ii < increment && i + ii < dist_size; ii++) {
+                for (ii = 0; ii < increment && i + ii < bp_size; ii++) {
                     v += bestpace._paces[i+ii];
                 }
                 pace_stream.push(v / ii);
@@ -411,7 +425,7 @@ sauce.ns('analysis', function(ns) {
         var maxPace = 0;
         var minPace = Infinity;
         var perMilePaceStream = pace_stream.map(function(x) {
-            var pace = paceToMinPerMile(x);
+            var pace = milePace(x);
             if (pace > maxPace) {
                 maxPace = pace;
             }
@@ -428,7 +442,7 @@ sauce.ns('analysis', function(ns) {
             fillColor: 'rgba(234, 64, 13, 0.61)',
             chartRangeMin: 0,
             normalRangeMin: 0,
-            normalRangeMax: bestpace.avg(),
+            normalRangeMax: milePace(bestpace.avg()),
             tooltipSuffix: 'min/mile'
         });
 

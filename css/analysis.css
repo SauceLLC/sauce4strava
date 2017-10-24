@@ -160,8 +160,10 @@
 
 /* Fix strava's dialog button padding. */
 .ui-dialog.sauce-freerange-dialog .ui-dialog-buttonpane button {
-    padding-bottom: 0.2em;
-    margin: 0;
+    min-height: unset;
+    border-radius: 0.25em;
+    padding: 0.4em 0.8em 0.2em 0.8em;
+    margin: 0.3em 0.5em;
 }
 
 

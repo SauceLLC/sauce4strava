@@ -2,23 +2,23 @@
     <div class="sauce-sparkline"></div>
     <table>
         <tr>
+            <td>Start of effort</td>
+            <td title="Time offset to the start of this effort.">
+                <a class="start_time_link">{{ start_time }}</a>
+            </td>
+        </tr>
+        <tr>
             <td>Elapsed Time</td>
-            <td>
+            <td title="Hours:Minutes:Seconds">
                 <span>{{ elapsed }}</span>
             </td>
         </tr>
         <tr>
-            <td title="Minutes / Mile">Pace <small>(min/mile)</small></td>
+            <td title="Minutes per mile">Pace <small>/mi</small></td>
             <td>
                 <sub title="Slowest Pace">{{ pace_slowest }}</sub>
                 <span title="Average Pace">{{ pace }}</span>
                 <sup title="Peak Pace">{{ pace_peak }}</sup>
-            </td>
-        </tr>
-        <tr>
-            <td>Start of effort</td>
-            <td title="Time offset to the start of this effort.">
-                <a class="start_time_link">{{ start_time }}</a>
             </td>
         </tr>
         <% if (hr_avg !== undefined) { %>
