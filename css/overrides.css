@@ -15,3 +15,7 @@
     color: #222 !important;
 }
 
+/* hide broken dialog titlebar button */
+.ui-dialog-titlebar button.ui-dialog-titlebar-close {
+    display: none;
+}
