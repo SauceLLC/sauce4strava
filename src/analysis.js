@@ -204,6 +204,7 @@ sauce.ns('analysis', function(ns) {
                     if (existing) {
                         existing.dialog('close');
                     }
+                    console.debug('Actual distance', bp.distance());
                     var dialog = moreinfoRunDialog.call(ctx, {
                         bp_period: period,
                         bp_window: bp,

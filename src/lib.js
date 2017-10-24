@@ -78,34 +78,39 @@ sauce.ns('data', function() {
         this._distances = [];
         this._paces = [];
         this.offt = 0;
-        this.distance = distance;
+        this._distance = distance;
     }
 
     RollingWindow.prototype.add = function(ts, distance, pace) {
         this._times.push(ts);
         this._distances.push(distance);
         this._paces.push(pace);
-        while (distance - this._distances[0] >= this.distance) {
+        var pad = 5;  // Only shift after they are X meters over.
+        while (distance - this._distances[0] > this._distance + pad) {
             this.shift();
         }
     };
 
-    RollingWindow.prototype.avg = function() {
-        var dist = this._distances[this._distances.length - 1] - this._distances[0];
-        var elapsed = this._times[this._times.length - 1] - this._times[0];
-        if (!dist || !elapsed) {
-            return;
-        }
-        return elapsed / dist;
+    RollingWindow.prototype.distance = function() {
+        return this._distances[this._distances.length - 1] - this._distances[0];
     };
 
     RollingWindow.prototype.elapsed = function() {
         return this._times[this._times.length - 1] - this._times[0];
     };
 
+    RollingWindow.prototype.avg = function() {
+        var dist = this.distance();
+        var elapsed = this.elapsed();
+        if (!dist || !elapsed) {
+            return;
+        }
+        return elapsed / dist;
+    };
+
     RollingWindow.prototype.full = function() {
-        var d = this._distances;
-        return (d[d.length - 1] - d[0]) / this.distance >= 0.999;
+        var pad = 5;  // See add()
+        return this._distance - this.distance() <= pad;
     };
 
     RollingWindow.prototype.shift = function() {
@@ -116,7 +121,7 @@ sauce.ns('data', function() {
     };
 
     RollingWindow.prototype.copy = function() {
-        var copy = new RollingWindow(this.distance);
+        var copy = new RollingWindow(this._distance);
         copy._times = this._times.slice(0);
         copy._distances = this._distances.slice(0);
         copy._paces = this._paces.slice(0);
