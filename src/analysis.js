@@ -198,7 +198,7 @@ sauce.ns('analysis', function(ns) {
                     hr_arr = hr_stream.slice(bp.offt, bp.offt + bp.size());
                 }
                 var el = jQuery('#sauce-cp-' + period[1]);
-                el.html(formatMinutes(bp.elapsed() / 60));
+                el.html(formatPace(bp.elapsed()));
                 el.parent().click(function() {
                     var existing = open_dialog.shift();
                     if (existing) {
@@ -208,8 +208,8 @@ sauce.ns('analysis', function(ns) {
                     var dialog = moreinfoRunDialog.call(ctx, {
                         bp_period: period,
                         bp_window: bp,
-                        elapsed: formatMinutes(bp.elapsed() / 60),
-                        bp_str: formatMinutes(milePace(bp.avg())),
+                        elapsed: formatPace(bp.elapsed()),
+                        bp_str: formatPace(milePace(bp.avg())),
                         hr_arr: hr_arr,
                         weight: weight_kg,
                         anchor_to: el.parent()
@@ -227,15 +227,16 @@ sauce.ns('analysis', function(ns) {
     };
 
     var milePace = function(secondsPerMeter) {
-        /* Convert strava pace into minutes per mile */
-        return 60 / ((3600 / secondsPerMeter) / metersPerMile);
+        /* Convert strava pace into seconds per mile */
+        return  metersPerMile * secondsPerMeter;
     };
 
-    var formatMinutes = function(minutes) {
-        /* Convert float of minutes per mile to a string */
-        var hours = Math.floor(minutes / 60);
-        var mins = Math.floor(minutes % 60);
-        var seconds = Math.round((minutes % 1) * 60);
+    var formatPace = function(pace) {
+        /* Convert float representation seconds/mile to a time string */
+        pace = Math.round(pace);
+        var hours = Math.floor(pace / 3600);
+        var mins = Math.floor(pace / 60 % 60);
+        var seconds = pace % 60;
         var result = [];
         if (hours) {
             result.push(hours);
@@ -356,15 +357,15 @@ sauce.ns('analysis', function(ns) {
     var moreinfoRunDialog = function(opts) {
         var bestpace = opts.bp_window;
         var hr = opts.hr_arr;
-        var pace = formatMinutes(milePace(bestpace.avg()));
-        var elapsed = formatMinutes(bestpace.elapsed() / 60);
+        var pace = formatPace(milePace(bestpace.avg()));
+        var elapsed = formatPace(bestpace.elapsed());
         var bp_size = bestpace.size();
         var data = {
             title: 'Best Pace: ' + opts.bp_period[0],
             start_time: (new Strava.I18n.TimespanFormatter()).display(bestpace._times[0]),
             pace: pace,
-            pace_slowest: formatMinutes(milePace(Math.max.apply(null, bestpace._paces))),
-            pace_peak: formatMinutes(milePace(Math.min.apply(null, bestpace._paces))),
+            pace_slowest: formatPace(milePace(Math.max.apply(null, bestpace._paces))),
+            pace_peak: formatPace(milePace(Math.min.apply(null, bestpace._paces))),
             elapsed: elapsed,
             hr_avg: hr && (_.reduce(hr, function(a, b) { return a + b; }, 0) / hr.length),
             hr_max: Math.max.apply(null, hr),
@@ -428,7 +429,7 @@ sauce.ns('analysis', function(ns) {
         var maxPace = 0;
         var minPace = Infinity;
         var perMilePaceStream = pace_stream.map(function(x) {
-            var pace = milePace(x);
+            var pace = milePace(x) / 60;
             if (pace > maxPace) {
                 maxPace = pace;
             }
@@ -445,8 +446,8 @@ sauce.ns('analysis', function(ns) {
             fillColor: 'rgba(234, 64, 13, 0.61)',
             chartRangeMin: 0,
             normalRangeMin: 0,
-            normalRangeMax: milePace(bestpace.avg()),
-            tooltipSuffix: 'min/mile'
+            normalRangeMax: milePace(bestpace.avg()) / 60,
+            tooltipSuffix: '/mi'
         });
 
         return dialog;
