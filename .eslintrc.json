@@ -1,0 +1,34 @@
+{
+    "parserOptions": {
+        "ecmaVersion": 8
+    },
+    "env": {
+        "browser": true,
+        "es6": true
+    },
+    "globals": {
+        "Strava": true,
+        "jQuery": true,
+        "_": true,
+        "pageView": true
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+        "quotes": "off",
+        "no-console": "off",
+        "linebreak-style": [
+            "error",
+            "unix"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ],
+        "no-unused-vars": [
+            "error",
+            {
+                "args": "none"
+            }
+        ]
+    }
+}
