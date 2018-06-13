@@ -546,7 +546,7 @@ sauce.ns('analysis', function(ns) {
                 submit_comment();
             }
         });
-        $button.on('click', () => submit_comment);
+        $button.on('click', submit_comment);
         $root.append([$commentsEl, $submitEl]);
 
         const renderComments = () => {
