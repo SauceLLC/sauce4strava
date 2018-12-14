@@ -9,6 +9,12 @@
                 margin: 20px 20px 20px 20px;
                 
             }
+
+            body.loading {
+                pointer-events: none;
+                opacity: 0.5;
+            }
+
             #background {
                 transform: rotate(-90deg);
                 background: transparent url(/assets/icons/icon256.png) no-repeat;
@@ -24,8 +30,8 @@
             }
 
             .actions {
-                border-top: 1px solid #ccc;
-                padding: 14px 14px 4px;
+                border-top: 1px solid #eee;
+                padding: 0.4em 0 1em;
                 font-size: 12px;
             }
 
@@ -50,18 +56,78 @@
                 color: #ff4000;
             }
 
+            .actions h4 {
+                color: #333;
+                margin: 0.8em 0;
+            }
+
+            body.disabled .actions {
+                opacity: 0.4;
+                pointer-events: none;
+            }
+
+            body.disabled #background {
+                opacity: 0.2;
+            }
+
+            body.disabled .whenEnabled {
+                display: none;
+            }
+
+            body:not(.disabled) .whenDisabled {
+                display: none;
+            }
+
+            .option {
+            }
         </style>
     </head>
     <body>
         <div id="background"></div>
         <b>Strava Sauce Chrome Extension</b>
-        <p><i>Your Strava experience is being sauced up.</i></p>
+        <p class="whenEnabled"><i>Your Strava experience is being sauced up.</i></p>
+        <p class="whenDisabled"><i>Sauce is disabled.</i></p>
         <table id="details"><tbody></tbody></table>
+
         <div class="actions">
-            <a href="options.html"><button>Advanced Options</button></a>
-            <button id="enabler"></button>
+            <h4>Activity Feed Options:</h4>
+            <div class="option" title="Order activities by start time instead of Strava's fuzzy algo.">
+                <input type="checkbox" id="activity-chronological">
+                    <label for="activity-chronological">Chronological feed</label>
+                </input>
+            </div>
+
+            <div class="option" title="Remove other people's Zwift rides and runs from your activity feed.  Note, your virtual activities will still be shown.">
+                <input type="checkbox" id="activity-hide-virtual">
+                    <label for="activity-hide-virtual">Hide virtual activities <small>(<i>e.g. Zwift</i>)</small></label>
+                </input>
+            </div>
+
+            <div class="option" title="Do not show challenge announcements.">
+                <input type="checkbox" id="activity-hide-challenges">
+                    <label for="activity-hide-challenges">Hide challenges</label>
+                </input>
+            </div>
+        </div>
+
+        <div class="actions">
+            <h4>Analysis Options:</h4>
+            <div class="option" title="Show estimated world ranking for individual segments.  This is the same ranking shown in the Critical Power chart.">
+                <input type="checkbox" id="analysis-segment-badges">
+                    <label for="analysis-segment-badges">Show segment ranking badges <small>(<i>e.g. Cat 2, Pro</i>)</small></label>
+                </input>
+            </div>
+
+            <div class="option" title="Show Critical Power chart in the left column of activities.">
+                <input type="checkbox" id="analysis-cp-chart">
+                    <label for="analysis-cp-chart">Show Critical Power/Pace chart</label>
+                </input>
+            </div>
         </div>
         <div class="footer">
+            <a href="adv_options.html"><button>Advanced Options</button></a>
+            <button id="enabler"></button>
+            <br/><br/>
             <a target="_BLANK" href="https://github.com/mayfield/strava-sauce">GitHub Source</a> | 
             <a target="_BLANK" href="https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha">Official Web Store Page</a>
         </div>

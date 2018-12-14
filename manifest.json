@@ -5,9 +5,9 @@
     "short_name": "Sauce",
     "description": "__MSG_extDesc__",
     "author": "Justin Mayfield",
-    "version": "2.0.3",
-    "version_name": "2.0.3 [dev]",
-    "minimum_chrome_version": "51",
+    "version": "3.0.0",
+    "version_name": "3.0.0 [dev]",
+    "minimum_chrome_version": "60",
     
     "default_locale": "en",
 
@@ -46,7 +46,7 @@
         "default_popup": "pages/page_action_popup.html"
     },
 
-    "options_page": "pages/options.html",
+    "options_page": "pages/adv_options.html",
 
     "content_scripts": [{
         "run_at": "document_idle",

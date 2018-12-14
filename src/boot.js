@@ -1,7 +1,8 @@
 /* global chrome */
 
-chrome.storage.sync.get(null, function(options) {
+chrome.storage.sync.get(null, async config => {
     "use strict";
+
     var load_script = function(url, callback) {
         console.log("Sauce script load: " + url);
         var script = document.createElement('script');
@@ -25,6 +26,25 @@ chrome.storage.sync.get(null, function(options) {
         'src/analysis.js'
     ];
 
+    const defaultOptions = {
+        "analysis-segment-badges": true,
+        "analysis-cp-chart": true
+    };
+
+    if (config.options === undefined) {
+        config.options = {};
+    }
+    let optionsUpdated;
+    for (const [key, value] of Object.entries(defaultOptions)) {
+        if (config.options[key] === undefined) {
+            config.options[key] = value;
+            optionsUpdated = true;
+        }
+    }
+    if (optionsUpdated) {
+        await new Promise(resolve => chrome.storage.sync.set({options: config.options}, resolve));
+    }
+
     var loader = function(list, final_callback) {
         var _load_this = function() {
             if (list.length) {
@@ -43,11 +63,11 @@ chrome.storage.sync.get(null, function(options) {
         _load_this();
     };
 
-    if (options.enabled !== false) {
-        /* Create namespace and copy options from the sync store. */
+    if (config.enabled !== false) {
+        /* Create namespace and copy config from the sync store. */
         insert_script([
             'window.sauce = {};',
-            'sauce.options = ', JSON.stringify(options), ';',
+            'sauce.config = ', JSON.stringify(config), ';',
             'sauce.extURL = "', ext_url, '";',
             'sauce.extID = "', chrome.runtime.id, '";'
         ].join(''));
