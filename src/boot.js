@@ -23,7 +23,8 @@ chrome.storage.sync.get(null, async config => {
         'https://cdnjs.cloudflare.com/ajax/libs/jquery-sparklines/2.1.2/jquery.sparkline.min.js',
         'src/base.js',
         'src/lib.js',
-        'src/analysis.js'
+        'src/analysis.js',
+        'src/dashboard.js'
     ];
 
     const defaultOptions = {

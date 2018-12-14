@@ -19,3 +19,8 @@
 .ui-dialog-titlebar button.ui-dialog-titlebar-close {
     display: none;
 }
+
+.main .feed-container .feed {
+    display: flex;
+    flex-direction: column;
+}

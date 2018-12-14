@@ -428,9 +428,19 @@ sauce.ns('comm', function() {
         syncGet('athlete_ftp_' + athlete_id, callback);
     };
 
+    async function get(key) {
+        return await new Promise(resolve => syncGet(key, resolve));
+    }
+
+    async function set(key, value) {
+        return await new Promise(resolve => syncSet(key, value, resolve));
+    }
+
     return {
         getFTP: getFTP,
-        setFTP: setFTP
+        setFTP: setFTP,
+        get,
+        set,
     };
 });
 
