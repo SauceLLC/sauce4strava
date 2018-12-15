@@ -3,15 +3,32 @@
 sauce.ns('dashboard', function(ns) {
 
     function filterFeed() {
-        if (ns.options['activity-chronological']) {
-            console.info("Ordering feed chronologically");
-            let lastTimestamp;
-            for (const card of document.querySelectorAll('.main .feed-container .feed > .card')) {
-                if (ns.options['activity-hide-promotions'] && card.classList.contains('promo')) {
-                    console.info("Removing promo card:", card);
-                    card.remove();
-                    continue;
+        const feed = document.querySelector('.main .feed-container .feed');
+        if (ns.options['activity-hide-promotions']) {
+            for (const card of feed.querySelectorAll('.card.promo')) {
+                console.info("SAUCE: Hiding promo card:", card.id);
+                card.style.display = 'none';
+            }
+        }
+        if (ns.options['activity-hide-virtual']) {
+            for (const card of feed.querySelectorAll('.card')) {
+                if (card.querySelector(`.entry-owner:not([href="/athletes/${currentAthlete.id}"])`) &&
+                    card.querySelector(`[class^="icon-virtual"], [class*=" icon-virtual"]`)) {
+                    console.info("SAUCE: Hiding Virtual Activity:", card.id);
+                    card.style.display = 'none';
                 }
+            }
+        }
+        if (ns.options['activity-hide-challenges']) {
+            for (const card of feed.querySelectorAll('.card.challenge')) {
+                console.info("SAUCE: Hiding challenge card:", card.id);
+                card.style.display = 'none';
+            }
+        }
+        if (ns.options['activity-chronological']) {
+            console.info("SAUCE: Ordering feed chronologically");
+            let lastTimestamp;
+            for (const card of feed.querySelectorAll('.card')) {
                 if (!card.dataset.updatedAt && lastTimestamp) {
                     lastTimestamp += 1;
                 } else {
@@ -24,7 +41,7 @@ sauce.ns('dashboard', function(ns) {
 
     async function load() {
         ns.options = await sauce.comm.get('options');
-        const feedMutationObserver = new MutationObserver(filterFeed);
+        const feedMutationObserver = new MutationObserver(_.debounce(filterFeed, 200));
         feedMutationObserver.observe(document.querySelector('.main .feed-container .feed'), {
             childList: true,
             attributes: false,
@@ -32,24 +49,6 @@ sauce.ns('dashboard', function(ns) {
             subtree: false,
         });
         filterFeed();
-
-        if (ns.options['activity-chronological']) {
-            console.info("Ordering feed chronologically");
-            let lastTimestamp;
-            for (const card of document.querySelectorAll('.main .feed-container .feed > .card')) {
-                if (ns.options['activity-hide-promotions'] && card.classList.contains('promo')) {
-                    console.info("Removing promo card:", card);
-                    card.remove();
-                    continue;
-                }
-                if (!card.dataset.updatedAt && lastTimestamp) {
-                    lastTimestamp += 1;
-                } else {
-                    lastTimestamp = card.dataset.updatedAt;
-                }
-                card.style.order = -Number(card.dataset.updatedAt);
-            }
-        }
     }
 
     return {

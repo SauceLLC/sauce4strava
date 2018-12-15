@@ -30,7 +30,7 @@ chrome.storage.sync.get(null, async config => {
     const defaultOptions = {
         "analysis-segment-badges": true,
         "analysis-cp-chart": true,
-        "activities-hide-promotions": true
+        "activity-hide-promotions": true
     };
 
     if (config.options === undefined) {
