@@ -51,4 +51,4 @@ Install the development version:
 Compatibility
 --------
 
-* Google Chrome 51+
+* Google Chrome 60+
