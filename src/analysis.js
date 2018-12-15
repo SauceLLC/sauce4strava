@@ -123,7 +123,7 @@ sauce.ns('analysis', function(ns) {
 
         stats_frag.insertAfter(jQuery('.inline-stats').last());
 
-        if (watts_stream) {
+        if (watts_stream && sauce.config.options['analysis-cp-chart']) {
             const open_dialog = [];
             const hr_stream = streams.getStream('heartrate');
             const critpower_frag = jQuery(ctx.critpower_tpl({
@@ -611,6 +611,26 @@ sauce.ns('analysis', function(ns) {
             function(ret, _, start, end) {
                 ns.handleSelectionChange(start, end);
             });
+
+        if (sauce.config.options['analysis-segment-badges']) {
+            const segments = document.querySelector('.ride.segments-list .segments');
+            const weight_kg = pageView.activityAthleteWeight();
+            const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
+            for (const segmentEl of segments.querySelectorAll('tr[data-segment-effort-id]')) {
+                const segment = pageView.segmentEfforts().get(segmentEl.dataset.segmentEffortId);
+                const w_kg = segment.get('avg_watts_raw') / weight_kg;
+                const rank = sauce.power.rank(segment.get('elapsed_time_raw'), w_kg, gender);
+                if (rank > 0) {
+                    const cat = sauce.power.rankCat(rank);
+                    const src = rank_image(cat);
+                    if (src) {
+                        const img = `<img src="${src}" title="World Ranking: ${Math.round(rank * 100)}%" ` +
+                                    `class="sauce-rank"/>`;
+                        segmentEl.querySelector('.effort-intensity').insertAdjacentHTML('beforeend', img);
+                    }
+                }
+            }
+        }
 
         const final = new sauce.func.IfDone(onRideStreamData);
 

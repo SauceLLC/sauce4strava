@@ -24,3 +24,13 @@
     display: flex;
     flex-direction: column;
 }
+
+img.sauce-rank {
+    margin-left: 1em;
+    width: 4em;
+}
+
+table.segments .effort-intensity {
+    display: flex !important;
+    align-items: center;
+}
