@@ -67,6 +67,7 @@ chrome.storage.sync.get(null, async config => {
 
     if (config.enabled !== false) {
         /* Create namespace and copy config from the sync store. */
+        document.body.classList.add('sauce-enabled');
         insert_script([
             'window.sauce = {};',
             'sauce.config = ', JSON.stringify(config), ';',

@@ -1,31 +1,31 @@
 /* Override Strava CSS for enhanced usability. */
 
-#basic-analysis text.static-label-box.label,
-#basic-analysis text.laps-label,
-#basic-analysis text.segments-label {
+.sauce-enabled #basic-analysis text.static-label-box.label,
+.sauce-enabled #basic-analysis text.laps-label,
+.sauce-enabled #basic-analysis text.segments-label {
     fill: #555 !important;
 }
 
-#basic-analysis text.static-label-box.detail {
+.sauce-enabled #basic-analysis text.static-label-box.detail {
     fill: #222 !important;
     font-size: 11px;
 }
 
-#basic-analysis #effort-detail {
+.sauce-enabled #basic-analysis #effort-detail {
     color: #222 !important;
 }
 
 /* hide broken dialog titlebar button */
-.ui-dialog-titlebar button.ui-dialog-titlebar-close {
+.sauce-enabled .ui-dialog-titlebar button.ui-dialog-titlebar-close {
     display: none;
 }
 
-.main .feed-container .feed {
+.sauce-enabled .main .feed-container .feed {
     display: flex;
     flex-direction: column;
 }
 
-img.sauce-rank {
+.sauce-enabled img.sauce-rank {
     margin-left: 0.8em;
     width: 3.5em;
     opacity: 0.8;
@@ -33,11 +33,15 @@ img.sauce-rank {
     transition: opacity 200ms;
 }
 
-img.sauce-rank:hover {
+.sauce-enabled img.sauce-rank:hover {
     opacity: 1;
 }
 
-table.segments .sauce-watts-holder {
+.card.hidden-by-sauce {
+    display: none !important;
+}
+
+.sauce-enabled table.segments .sauce-watts-holder {
     display: flex;
     align-items: center;
     justify-content: space-between;
