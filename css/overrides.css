@@ -26,11 +26,19 @@
 }
 
 img.sauce-rank {
-    margin-left: 1em;
-    width: 4em;
+    margin-left: 0.8em;
+    width: 3.5em;
+    opacity: 0.8;
+    object-fit: contain;
+    transition: opacity 200ms;
 }
 
-table.segments .effort-intensity {
-    display: flex !important;
+img.sauce-rank:hover {
+    opacity: 1;
+}
+
+table.segments .sauce-watts-holder {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
 }

@@ -1,4 +1,4 @@
-/* global Strava sauce jQuery pageView _ */
+/* global Strava sauce jQuery pageView _ currentAthlete */
 
 sauce.ns('dashboard', function(ns) {
 
@@ -12,9 +12,9 @@ sauce.ns('dashboard', function(ns) {
         }
         if (ns.options['activity-hide-virtual']) {
             for (const card of feed.querySelectorAll('.card')) {
-                if (card.querySelector(`.entry-owner:not([href="/athletes/${currentAthlete.id}"])`) &&
+                if (!card.querySelector(`.entry-owner[href="/athletes/${currentAthlete.id}"]`) &&
                     card.querySelector(`[class^="icon-virtual"], [class*=" icon-virtual"]`)) {
-                    console.info("SAUCE: Hiding Virtual Activity:", card.id);
+                    console.info("SAUCE: Hiding Virtual Activity:", card.id || 'group activity');
                     card.style.display = 'none';
                 }
             }
