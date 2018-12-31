@@ -570,30 +570,52 @@ sauce.ns('analysis', function(ns) {
         });
     }
 
-    function addSegmentBadges() {
+    function addBadge(row) {
         const weight_kg = pageView.activityAthleteWeight();
         const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
-        const segmentRows = document.querySelectorAll('table.segments tr[data-segment-effort-id]');
-        for (const row of segmentRows) {
-            const segment = pageView.segmentEfforts().get(row.dataset.segmentEffortId);
-            const w_kg = segment.get('avg_watts_raw') / weight_kg;
-            const rank = sauce.power.rank(segment.get('elapsed_time_raw'), w_kg, gender);
-            if (!rank || rank <= 0) {
-                continue;
+        if (row.querySelector(':scope > td.sauce-mark')) {
+            return;
+        }
+        const segment = pageView.segmentEfforts().getEffort(Number(row.dataset.segmentEffortId));
+        if (!segment) {
+            console.warn("Segment data not found for:", row.dataset.segmentEffortId);
+            return;
+        }
+        const w_kg = segment.get('avg_watts_raw') / weight_kg;
+        const rank = sauce.power.rank(segment.get('elapsed_time_raw'), w_kg, gender);
+        if (!rank || rank <= 0) {
+            return;  // Too slow/weak
+        }
+        const cat = sauce.power.rankCat(rank);
+        const src = rank_image(cat);
+        if (!src) {
+            return;  // Too slow/weak
+        }
+        const locator = row.querySelector(':scope > td > abbr[title="watts"]');
+        if (!locator) {
+            console.error("Watt TD location failed for row:", row);
+            throw new Error("Badge Fail");
+        }
+        const td = locator.closest('td');
+        td.classList.add('sauce-mark');
+        td.innerHTML = [
+            `<div class="sauce-watts-holder">`,
+                `<div class="watts">${td.innerHTML}</div>`,
+                `<img src="${src}" title="World Ranking: ${Math.round(rank * 100)}%\n`,
+                                         `Watts/kg: ${w_kg.toFixed(1)}" class="sauce-rank"/>`,
+            `</div>`
+        ].join('');
+    }
+
+    function addSegmentBadges() {
+        const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
+        rows.push.apply(rows, document.querySelectorAll('table.hidden-segments tr[data-segment-effort-id]'));
+        for (const row of rows) {
+            try {
+                addBadge(row);
+            } catch(e) {
+                console.warn("addBadge failure:", e);
             }
-            const cat = sauce.power.rankCat(rank);
-            const src = rank_image(cat);
-            if (!src) {
-                continue;
-            }
-            const td = row.querySelector('abbr[title="watts"]').closest('td');
-            td.innerHTML = [
-                `<div class="sauce-watts-holder">`,
-                    `<div class="watts">${td.innerHTML}</div>`,
-                    `<img src="${src}" title="World Ranking: ${Math.round(rank * 100)}%\n`,
-                                             `Watts/kg: ${w_kg.toFixed(1)}" class="sauce-rank"/>`,
-                `</div>`
-            ].join('');
         }
     }
 
@@ -640,6 +662,13 @@ sauce.ns('analysis', function(ns) {
             });
 
         if (sauce.config.options['analysis-segment-badges']) {
+            const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
+            segmentsMutationObserver.observe(document.querySelector('table.segments'), {
+                childList: true,
+                attributes: false,
+                characterData: false,
+                subtree: true,
+            });
             try {
                 addSegmentBadges();
             } catch(e) {

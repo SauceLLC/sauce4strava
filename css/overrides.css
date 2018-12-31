@@ -41,7 +41,8 @@
     display: none !important;
 }
 
-.sauce-enabled table.segments .sauce-watts-holder {
+.sauce-enabled table.segments .sauce-watts-holder,
+.sauce-enabled table.hidden-segments .sauce-watts-holder {
     display: flex;
     align-items: center;
     justify-content: space-between;
