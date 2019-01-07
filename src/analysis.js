@@ -661,9 +661,10 @@ sauce.ns('analysis', function(ns) {
                 ns.handleSelectionChange(start, end);
             });
 
-        if (sauce.config.options['analysis-segment-badges']) {
+        const segments = document.querySelector('table.segments');
+        if (segments && sauce.config.options['analysis-segment-badges']) {
             const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
-            segmentsMutationObserver.observe(document.querySelector('table.segments'), {
+            segmentsMutationObserver.observe(segments, {
                 childList: true,
                 attributes: false,
                 characterData: false,
