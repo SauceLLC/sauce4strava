@@ -1,4 +1,4 @@
-/* global Strava sauce jQuery pageView _ */
+/* global Strava sauce jQuery pageView _ currentAthlete */
 
 sauce.ns('analysis', function(ns) {
     'use strict';
@@ -22,7 +22,7 @@ sauce.ns('analysis', function(ns) {
     ];
 
     const metersPerMile = 1609.344;
-    const run_cp_periods = [
+    const run_cp_distances = [
         ['400 m', 400],
         ['1 km', 1000],
         ['1 mile', Math.round(metersPerMile)],
@@ -131,15 +131,15 @@ sauce.ns('analysis', function(ns) {
                 is_watt_estimate: is_watt_estimate
             }));
             critpower_frag.insertAfter(jQuery('#pagenav').first());
-            ride_cp_periods.forEach(function(period) {
-                const cp = sauce.power.critpower(period[1], ts_stream, watts_stream);
+            for (const [label, period] of ride_cp_periods) {
+                const cp = sauce.power.critpower(period, ts_stream, watts_stream);
                 if (cp !== undefined) {
                     let hr_arr;
                     if (hr_stream) {
                         const start = cp.offt - cp._values.length + cp.padCount();
                         hr_arr = hr_stream.slice(start, cp.offt);
                     }
-                    const el = jQuery('#sauce-cp-' + period[1]);
+                    const el = jQuery(`#sauce-cp-${period}`);
                     el.html(Math.round(cp.avg()));
                     el.parent().click(function() {
                         const existing = open_dialog.shift();
@@ -147,6 +147,7 @@ sauce.ns('analysis', function(ns) {
                             existing.dialog('close');
                         }
                         const dialog = moreinfoRideDialog.call(ctx, {
+                            cp_label: label,
                             cp_period: period,
                             cp_roll: cp,
                             hr_arr,
@@ -160,9 +161,9 @@ sauce.ns('analysis', function(ns) {
                         row.addClass('selected');
                         open_dialog.push(dialog);
                     });
-                    jQuery('#sauce-cp-row-' + period[1]).show();
+                    jQuery(`#sauce-cp-row-${period}`).show();
                 }
-            });
+            }
         }
     }
 
@@ -187,19 +188,24 @@ sauce.ns('analysis', function(ns) {
 
         const open_dialog = [];
         const hr_stream = streams.getStream('heartrate');
+        const is_metric = currentAthlete.get('measurement_preference') !== 'feet';
         const bestpace_frag = jQuery(ctx.bestpace_tpl({
-            cp_periods: run_cp_periods
+            is_metric,
+            cp_distances: run_cp_distances
         }));
         bestpace_frag.insertAfter(jQuery('#pagenav').first());
-        run_cp_periods.forEach(function(period) {
-            const bp = sauce.pace.bestpace(period[1], ts_stream, dist_stream, pace_stream);
+        const paceConv = is_metric ? kmPace : milePace;
+        for (const [label, distance] of run_cp_distances) {
+            const bp = sauce.pace.bestpace(distance, ts_stream, dist_stream, pace_stream);
             if (bp !== undefined) {
                 let hr_arr;
                 if (hr_stream) {
                     hr_arr = hr_stream.slice(bp.offt, bp.offt + bp.size());
                 }
-                const el = jQuery('#sauce-cp-' + period[1]);
-                el.html(formatPace(bp.elapsed()));
+                const el = jQuery(`#sauce-cp-${distance}`);
+                el.attr('title', `Elapsed time: ${formatPace(bp.elapsed())}`);
+                const unit = is_metric ? 'k' : 'm';
+                el.html(`${formatPace(paceConv(bp.avg()))}<small>/${unit}</small>`);
                 el.parent().click(function() {
                     const existing = open_dialog.shift();
                     if (existing) {
@@ -207,10 +213,12 @@ sauce.ns('analysis', function(ns) {
                     }
                     console.debug('Actual distance', bp.distance());
                     const dialog = moreinfoRunDialog.call(ctx, {
-                        bp_period: period,
+                        is_metric,
+                        bp_label: label,
+                        bp_distance: distance,
                         bp_window: bp,
                         elapsed: formatPace(bp.elapsed()),
-                        bp_str: formatPace(milePace(bp.avg())),
+                        bp_str: formatPace(paceConv(bp.avg())),
                         hr_arr,
                         weight: weight_kg,
                         anchor_to: el.parent()
@@ -222,9 +230,9 @@ sauce.ns('analysis', function(ns) {
                     row.addClass('selected');
                     open_dialog.push(dialog);
                 });
-                jQuery('#sauce-cp-row-' + period[1]).show();
+                jQuery(`#sauce-cp-row-${distance}`).show();
             }
-        });
+        }
     }
 
     function milePace(secondsPerMeter) {
@@ -232,8 +240,13 @@ sauce.ns('analysis', function(ns) {
         return  metersPerMile * secondsPerMeter;
     }
 
+    function kmPace(secondsPerMeter) {
+        /* Convert strava pace into seconds per kilometer */
+        return  1000 * secondsPerMeter;
+    }
+
     function formatPace(pace) {
-        /* Convert float representation seconds/mile to a time string */
+        /* Convert float representation seconds/unit to a time string */
         pace = Math.round(pace);
         const hours = Math.floor(pace / 3600);
         const mins = Math.floor(pace / 60 % 60);
@@ -267,10 +280,10 @@ sauce.ns('analysis', function(ns) {
         const if_ = avgpwr.value / ctx.ftp;
         const w_kg = cp_avg / opts.weight;
         const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
-        const rank = sauce.power.rank(opts.cp_period[1], w_kg, gender);
+        const rank = sauce.power.rank(opts.cp_period, w_kg, gender);
         const rank_cat = rank && sauce.power.rankCat(rank);
         const data = {
-            title: 'Critical Power: ' + opts.cp_period[0],
+            title: 'Critical Power: ' + opts.cp_label,
             start_time: (new Strava.I18n.TimespanFormatter()).display(crit._times[0]),
             w_kg: w_kg,
             peak_power: Math.max.apply(null, crit._values),
@@ -358,15 +371,17 @@ sauce.ns('analysis', function(ns) {
     function moreinfoRunDialog(opts) {
         const bestpace = opts.bp_window;
         const hr = opts.hr_arr;
-        const pace = formatPace(milePace(bestpace.avg()));
+        const paceConv = opts.is_metric ? kmPace : milePace;
+        const pace = formatPace(paceConv(bestpace.avg()));
         const elapsed = formatPace(bestpace.elapsed());
         const bp_size = bestpace.size();
         const data = {
-            title: 'Best Pace: ' + opts.bp_period[0],
+            is_metric: opts.is_metric,
+            title: 'Best Pace: ' + opts.bp_distance,
             start_time: (new Strava.I18n.TimespanFormatter()).display(bestpace._times[0]),
             pace: pace,
-            pace_slowest: formatPace(milePace(Math.max.apply(null, bestpace._paces))),
-            pace_peak: formatPace(milePace(Math.min.apply(null, bestpace._paces))),
+            pace_slowest: formatPace(paceConv(Math.max.apply(null, bestpace._paces))),
+            pace_peak: formatPace(paceConv(Math.min.apply(null, bestpace._paces))),
             elapsed: elapsed,
             hr_avg: hr && (_.reduce(hr, function(a, b) { return a + b; }, 0) / hr.length),
             hr_max: Math.max.apply(null, hr),
@@ -429,8 +444,8 @@ sauce.ns('analysis', function(ns) {
         /* Must run after the dialog is open for proper rendering. */
         let maxPace = 0;
         let minPace = Infinity;
-        const perMilePaceStream = pace_stream.map(function(x) {
-            const pace = milePace(x) / 60;
+        const perUnitPaceStream = pace_stream.map(function(x) {
+            const pace = paceConv(x) / 60;
             if (pace > maxPace) {
                 maxPace = pace;
             }
@@ -439,7 +454,7 @@ sauce.ns('analysis', function(ns) {
             }
             return Math.round(pace * 100) / 100;
         });
-        moreinfo_frag.find('.sauce-sparkline').sparkline(perMilePaceStream, {
+        moreinfo_frag.find('.sauce-sparkline').sparkline(perUnitPaceStream, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -447,7 +462,7 @@ sauce.ns('analysis', function(ns) {
             fillColor: 'rgba(234, 64, 13, 0.61)',
             chartRangeMin: 0,
             normalRangeMin: 0,
-            normalRangeMax: milePace(bestpace.avg()) / 60,
+            normalRangeMax: paceConv(bestpace.avg()) / 60,
             tooltipSuffix: '/mi'
         });
 

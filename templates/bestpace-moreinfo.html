@@ -1,4 +1,4 @@
-<div title="{{ title }}" class="sauce-moreinfo">
+<div title="{{title}}" class="sauce-moreinfo">
     <div class="sauce-sparkline"></div>
     <table>
         <tr>
@@ -14,20 +14,25 @@
             </td>
         </tr>
         <tr>
-            <td title="Minutes per mile">Pace <small>/mi</small></td>
+            <% if (is_metric) { %>
+                <td title="Minutes per kilometer">Pace <small>/k</small></td>
+            <% } else { %>
+                <td title="Minutes per mile">Pace <small>/mi</small></td>
+            <% } %>
+
             <td>
-                <sub title="Slowest Pace">{{ pace_slowest }}</sub>
-                <span title="Average Pace">{{ pace }}</span>
-                <sup title="Peak Pace">{{ pace_peak }}</sup>
+                <sub title="Slowest Pace">{{pace_slowest}}</sub>
+                <span title="Average Pace">{{pace}}</span>
+                <sup title="Peak Pace">{{pace_peak}}</sup>
             </td>
         </tr>
         <% if (hr_avg !== undefined) { %>
             <tr>
                 <td>Heartrate</td>
                 <td>
-                    <sub title="Lowest BPM">{{ hr_min }}</sub>
-                    <span title="Average BPM">{{ Math.round(hr_avg) }}</span>
-                    <sup title="Peak BPM">{{ hr_max }}</sup>
+                    <sub title="Lowest BPM">{{hr_min}}</sub>
+                    <span title="Average BPM">{{Math.round(hr_avg)}}</span>
+                    <sup title="Peak BPM">{{hr_max}}</sup>
                 </td>
             </tr>
         <% } %>
