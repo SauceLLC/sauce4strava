@@ -1,49 +1,51 @@
-<div title="{{ title }}" class="sauce-moreinfo">
+<div title="{{title}}" class="sauce-moreinfo">
     <div class="sauce-sparkline"></div>
     <table>
         <tr>
             <td>Start of effort</td>
             <td title="Time offset to the start of this effort.">
-                <a class="start_time_link">{{ start_time }}</a>
+                <a class="start_time_link">{{start_time}}</a>
             </td>
         </tr>
         <tr>
             <td>Watts/kg</td>
             <td class="rank_holder">
-                <span title="Average watts divided by body weight in kilograms.">{{ w_kg.toFixed(1) }}
+                <span title="Average watts divided by body weight in kilograms.">{{w_kg.toFixed(1)}}</span>
                 <% if (rank_image) { %>
-                    <img src="{{ rank_image }}" class="rank_badge" alt="{{ sauce.power.rankCat(rank) }}" title="World Ranking: {{ Math.round(rank * 100) }}%"/>
+                    <img src="{{rank_image}}" class="rank_badge"
+                         alt="{{sauce.power.rankCat(rank)}}"
+                         title="World Ranking: {{Math.round(rank * 100)}}%"/>
                 <% } %>
             </td>
         </tr>
         <tr>
             <td>Power</td>
             <td>
-                <span title="Average Watts">{{ Math.round(cp_avg) }}</span>
-                <sup title="Peak Watts">{{ peak_power }}</sup>
-                <% if (np) { %>
-                    <small title="Normalized Watts">({{ Math.round(np) }}np)</small>
+                <span title="Average Watts">{{Math.round(power.avg)}}</span>
+                <sup title="Peak Watts">{{power.max}}</sup>
+                <% if (power.np) { %>
+                    <small title="Normalized Watts">({{Math.round(power.np)}}np)</small>
                 <% } %>
             </td>
         </tr>
-        <% if (hr_avg !== undefined) { %>
+        <% if (hr) { %>
             <tr>
                 <td>Heartrate</td>
                 <td>
-                    <sub title="Lowest BPM">{{ hr_min }}</sub>
-                    <span title="Average BPM">{{ Math.round(hr_avg) }}</span>
-                    <sup title="Peak BPM">{{ hr_max }}</sup>
+                    <sub title="Lowest BPM">{{hr.min}}</sub>
+                    <span title="Average BPM">{{Math.round(hr.avg)}}</span>
+                    <sup title="Peak BPM">{{hr.max}}</sup>
                 </td>
             </tr>
-        <% } if (if_ !== undefined) { %>
+        <% } if (intensity) { %>
             <tr>
                 <td>Intensity</td>
-                <td title="Percent of FTP">{{ Math.round(if_ * 100) }}%</td>
+                <td title="Percent of FTP">{{Math.round(intensity * 100)}}%</td>
             </tr>
-        <% } if (tss !== undefined) { %>
+        <% } if (tss) { %>
             <tr>
                 <td>TSS</td>
-                <td title="Total Stress Score">{{ Math.round(tss) }}</td>
+                <td title="Total Stress Score">{{Math.round(tss)}}</td>
             </tr>
         <% } %>
     </table>

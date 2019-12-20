@@ -1,15 +1,15 @@
 <div class="sauce-comment-holder">
-    <a class="sauce-athlete" href="{{ athlete.url }}" target="_BLANK"
-       alt="{{ athlete.name }}" title="{{ athlete.name }}"
-        ><img src="{{ athlete.avatar_url }}"/></a>
+    <a class="sauce-athlete" href="{{athlete.url}}" target="_BLANK"
+       alt="{{athlete.name}}" title="{{athlete.name}}"
+        ><img src="{{athlete.avatar_url}}"/></a>
     <div class="sauce-comment">
         <% _.each(comment, function(c){ %>
             <% if (c.type === 'mention_token') { %>
-                <a href="{{ c.path }}">{{ c.text }}</a>
+                <a href="{{ c.path }}">{{c.text}}</a>
             <% } else { %>
-                {{ c.text }}
+                {{c.text}}
             <% } %>
         <% }); %>
-        <div class="sauce-footer">{{ athlete.firstname }} • {{ timeago }}</div>
+        <div class="sauce-footer">{{athlete.firstname}} • {{timeago}}</div>
     </div>
 </div>

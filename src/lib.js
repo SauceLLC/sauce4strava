@@ -3,6 +3,47 @@
 sauce.ns('data', function() {
     'use strict';
 
+
+    function avg(data) {
+        if (!data || !data.length) {
+            return;
+        }
+        return data.reduce((tot, x) => tot + x, 0) / data.length;
+    }
+
+
+    function max(data) {
+        // Avoid stack overflow by only use Math.max on small arrays
+        if (!data || data.length < 65535) {
+            return Math.max.apply(null, data);
+        } else {
+            let m = -Infinity;
+            for (const x of data) {
+                if (x > m) {
+                    m = x;
+                }
+            }
+            return m;
+        }
+    }
+
+
+    function min(data) {
+        // Avoid stack overflow by only use Math.min on small arrays
+        if (!data || data.length < 65535) {
+            return Math.min.apply(null, data);
+        } else {
+            let m = Infinity;
+            for (const x of data) {
+                if (x < m) {
+                    m = x;
+                }
+            }
+            return m;
+        }
+    }
+
+
     class Pad {
         constructor(value) {
             this.value = value;
@@ -98,8 +139,7 @@ sauce.ns('data', function() {
         }
 
         avg() {
-            const sum = this._values.reduce((a, b) => a + b);
-            return sum / this._values.length;
+            return avg(this._values);
         }
 
         full() {
@@ -180,7 +220,10 @@ sauce.ns('data', function() {
 
     return {
         RollingAvg,
-        RollingWindow
+        RollingWindow,
+        avg,
+        min,
+        max
     };
 });
 
@@ -212,7 +255,6 @@ sauce.ns('func', function() {
     const runBefore = function(obj, orig_func_name, interceptor) {
         _adjunct(false, obj, orig_func_name, interceptor);
     };
-
 
     const IfDone = function(callback) {
         this.callback = callback;

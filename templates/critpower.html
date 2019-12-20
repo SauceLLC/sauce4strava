@@ -14,7 +14,7 @@
         <table>
             <% for (const [label, period] of cp_periods) { %>
                 <tr style="display: none;" id="sauce-cp-row-{{period}}">
-                    <td>{{ label }}</td>
+                    <td>{{label}}</td>
                     <td title="Maximal sustained watt average for a {{label}} period.<% if (is_watt_estimate) { %>
 
 NOTE: These values are being calculated from Strava generated watt estimates.  For accurate values you need real power data provided by a power measurement device.<% } %>">

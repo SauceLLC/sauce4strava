@@ -113,10 +113,10 @@
 }
 
 .sauce-moreinfo img.rank_badge {
-    position: absolute;
-    top: 1px;
-    right: 0px;
     height: 28px;
+    margin-top: -7px;
+    margin-bottom: -7px;
+    margin-left: 1px;
 }
 
 .sauce-moreinfo td {
@@ -128,10 +128,12 @@
     width: 50%;
     padding-left: 2px;
     padding-right: 2px;
+    text-align: right;
 }
 
 .sauce-moreinfo td:last-child {
     width: 50%;
+    text-align: center;
 }
 
 .sauce-moreinfo td.rank_holder {

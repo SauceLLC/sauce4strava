@@ -1,33 +1,37 @@
-<ul class="inline-stats section secondary-stats sauce-stats">
-    <% if (type === 'ride') { %>
-        <% if (np !== undefined) { %>
+<% if (type === 'ride' || weight_norm) { %>
+    <ul class="inline-stats section secondary-stats sauce-stats">
+        <% if (type === 'ride') { %>
+            <% if (np) { %>
+                <li>
+                    <strong>{{Math.round(np)}}<abbr class="unit" title="Watts">W</abbr></strong>
+                    <div class="label">Normalized Power</div>
+                </li>
+            <% } %>
             <li>
-                <strong>{{ Math.round(np) }}<abbr class="unit" title="Watts">W</abbr></strong>
-                <div class="label">Normalized Power</div>
+                <strong>
+                    <a class="provide-ftp origin-{{ftp_origin}}" title="Click to override...">{{ ftp }}</a><abbr class="unit" title="Watts">W</abbr>
+                    <input style="display: none;" type="text" value="{{ ftp }}"
+                           title="Enter a &quot;Functional Threshold Power&quot; (FTP) value for this athlete and press enter/return.  The value should be given as the maximum sustainable wattage the athlete can produce for 1 hour.  If the athlete already has a value set in their profile (premium members only) then this will override that setting.  If you want to clear the overridden value, empty this field and press enter."/>
+                </strong>
+                <div class="label">FTP</div>
+            </li>
+            <% if (intensity) { %>
+                <li>
+                    <strong>{{Math.round(intensity * 100)}}<abbr class="unit" title="Intensity Factor">%</abbr></strong>
+                    <div class="label">Intensity</div>
+                </li>
+            <% } if (tss) { %>
+                <li>
+                    <strong>{{Math.round(tss)}}</strong>
+                    <div class="label">TSS</div>
+                </li>
+            <% } %>
+        <% } %>
+        <% if (weight_norm) { %>
+            <li>
+                <strong>{{Math.round(weight_norm)}}<abbr class="unit" title="Weight">{{weight_unit}}</abbr></strong>
+                <div class="label">Weight</div>
             </li>
         <% } %>
-        <li>
-            <strong>
-                <a class="provide-ftp origin-{{ftp_origin}}" title="Click to override...">{{ ftp }}</a><abbr class="unit" title="Watts">W</abbr>
-                <input style="display: none;" type="text" value="{{ ftp }}"
-                       title="Enter a &quot;Functional Threshold Power&quot; (FTP) value for this athlete and press enter/return.  The value should be given as the maximum sustainable wattage the athlete can produce for 1 hour.  If the athlete already has a value set in their profile (premium members only) then this will override that setting.  If you want to clear the overridden value, empty this field and press enter."/>
-            </strong>
-            <div class="label">FTP</div>
-        </li>
-        <% if (if_ !== undefined) { %>
-            <li>
-                <strong>{{ Math.round(if_ * 100) }}<abbr class="unit" title="Intensity Factor">%</abbr></strong>
-                <div class="label">Intensity</div>
-            </li>
-        <% } if (tss !== undefined) { %>
-            <li>
-                <strong>{{ Math.round(tss) }}</strong>
-                <div class="label">TSS</div>
-            </li>
-        <% } %>
-    <% } %>
-    <li>
-        <strong>{{ Math.round(weight_norm) }}<abbr class="unit" title="Weight">{{ weight_unit }}</abbr></strong>
-        <div class="label">Weight</div>
-    </li>
-</ul>
+    </ul>
+<% } %>

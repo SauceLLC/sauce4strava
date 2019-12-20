@@ -10,7 +10,7 @@
         <tr>
             <td>Elapsed Time</td>
             <td title="Hours:Minutes:Seconds">
-                <span>{{ elapsed }}</span>
+                <span>{{elapsed}}</span>
             </td>
         </tr>
         <tr>
@@ -19,22 +19,51 @@
             <% } else { %>
                 <td title="Minutes per mile">Pace <small>/mi</small></td>
             <% } %>
-
             <td>
-                <sub title="Slowest Pace">{{pace_slowest}}</sub>
-                <span title="Average Pace">{{pace}}</span>
-                <sup title="Peak Pace">{{pace_peak}}</sup>
+                <sub title="Slowest Pace">{{pace.max}}</sub>
+                <span title="Average Pace">{{pace.avg}}</span>
+                <sup title="Peak Pace">{{pace.min}}</sup>
             </td>
         </tr>
-        <% if (hr_avg !== undefined) { %>
+        <% if (pace.gap) { %>
+            <tr>
+                <% if (is_metric) { %>
+                    <td title="Grade Adjusted Pace (per kilometer)">GAP <small>/k</small></td>
+                <% } else { %>
+                    <td title="Grade Adjusted Pace (per mile)">GAP <small>/mi</small></td>
+                <% } %>
+                <td title="Grade Adjusted Pace">{{pace.gap}}</td>
+            </tr>
+        <% } %>
+
+        <% if (hr) { %>
             <tr>
                 <td>Heartrate</td>
                 <td>
-                    <sub title="Lowest BPM">{{hr_min}}</sub>
-                    <span title="Average BPM">{{Math.round(hr_avg)}}</span>
-                    <sup title="Peak BPM">{{hr_max}}</sup>
+                    <sub title="Lowest BPM">{{hr.min}}</sub>
+                    <span title="Average BPM">{{Math.round(hr.avg)}}</span>
+                    <sup title="Peak BPM">{{hr.max}}</sup>
                 </td>
             </tr>
         <% } %>
+
+        <% if (cadence) { %>
+            <tr>
+                <td title="Steps per minute">Cadence</td>
+                <td title="Steps per minute">{{Math.round(cadence)}}</td>
+            </tr>
+        <% } %>
+
+        <% if (grade) { %>
+            <tr>
+                <td>Elevation</td>
+                <td>
+                    <sub title="Descended">{{grade.loss}}</sub>
+                    <span title="Average Grade">{{Math.round(grade.avg)}}%</span>
+                    <sup title="Climbed">{{grade.gain}}</sup>
+                </td>
+            </tr>
+        <% } %>
+
     </table>
 </div>

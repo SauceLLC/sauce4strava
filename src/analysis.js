@@ -43,6 +43,7 @@ sauce.ns('analysis', function(ns) {
         [/^Cat 5.?/, 'cat5.png']
     ];
 
+
     function rank_image(rank_cat) {
         for (let i = 0; i < rank_map.length; i++) {
             if (rank_cat.match(rank_map[i][0])) {
@@ -51,13 +52,56 @@ sauce.ns('analysis', function(ns) {
         }
     }
 
+
+    function resample(data, maxLen) {
+        // Reduce a data array to maxLen by resampling the numeric values.
+        // This can be useful for smoothing out graphs.
+        if (data.length < maxLen) {
+            return Array.from(data);
+        }
+        const resampled = [];
+        const increment = Math.ceil(data.length / maxLen);
+        for (let i = 0; i < data.length; i += increment) {
+            let v = 0;
+            let ii;
+            for (ii = 0; ii < increment && i + ii < data.length; ii++) {
+                v += data[i + ii];
+            }
+            resampled.push(v / ii);
+        }
+        return resampled;
+    }
+
+
+    function getStream(name, startIndex, endIndex) {
+        const s = pageView.streams().getStream(name);
+        if (s && startIndex != null) {
+            return s.slice(startIndex, endIndex);
+        } else {
+            return s;
+        }
+    }
+
+
+    function getStreamTimeIndex(time) {
+        const timeStream = getStream('time');
+        return timeStream.indexOf(time);
+    }
+
+
+    function getStreamTimeRange(name, startTime, endTime) {
+        const startIndex = getStreamTimeIndex(startTime);
+        const endIndex = getStreamTimeIndex(endTime);
+        return getStream(name, startIndex, endIndex);
+    }
+
+
     function onRideStreamData() {
-        const streams = pageView.streams();
-        let watts_stream = streams.getStream('watts');
-        const is_watt_estimate = !watts_stream;
-        if (!watts_stream) {
-            watts_stream = streams.getStream('watts_calc');
-            if (!watts_stream) {
+        let wattsStream = getStream('watts');
+        const is_watt_estimate = !wattsStream;
+        if (!wattsStream) {
+            wattsStream = getStream('watts_calc');
+            if (!wattsStream) {
                 console.info("No power data for this activity.");
             }
             /* Only show large period for watt estimates. */
@@ -65,22 +109,20 @@ sauce.ns('analysis', function(ns) {
                 ride_cp_periods.shift();
             }
         }
-
-        const np = watts_stream ? sauce.power.calcNP(watts_stream) : undefined;
+        const np = wattsStream ? sauce.power.calcNP(wattsStream) : undefined;
         const np_val = np && np.value;
-        const ts_stream = streams.getStream('time');
-        const weight_kg = pageView.activityAthleteWeight();
+        const weight = pageView.activityAthleteWeight();
         const weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
-        const if_ = np && np_val / ctx.ftp;
+        const intensity = np && np_val / ctx.ftp;
         const stats_frag = jQuery(ctx.tertiary_stats_tpl({
             type: 'ride',
             np: np_val,
-            weight_unit: weight_unit,
-            weight_norm: (weight_unit == 'lbs') ? weight_kg * 2.20462 : weight_kg,
+            weight_unit,
+            weight_norm: (weight_unit == 'lbs') ? weight * 2.20462 : weight,
             ftp: ctx.ftp,
             ftp_origin: ctx.ftp_origin,
-            if_: if_,
-            tss: np && sauce.power.calcTSS(np, if_, ctx.ftp)
+            intensity,
+            tss: np && sauce.power.calcTSS(np, intensity, ctx.ftp)
         }));
         const ftp_link = stats_frag.find('.provide-ftp');
         const ftp_input = ftp_link.siblings('input');
@@ -123,74 +165,65 @@ sauce.ns('analysis', function(ns) {
 
         stats_frag.insertAfter(jQuery('.inline-stats').last());
 
-        if (watts_stream && sauce.config.options['analysis-cp-chart']) {
+        if (wattsStream && sauce.config.options['analysis-cp-chart']) {
+            const _start = performance.now();
             const open_dialog = [];
-            const hr_stream = streams.getStream('heartrate');
             const critpower_frag = jQuery(ctx.critpower_tpl({
                 cp_periods: ride_cp_periods,
                 is_watt_estimate: is_watt_estimate
             }));
             critpower_frag.insertAfter(jQuery('#pagenav').first());
+            const timeStream = getStream('time');
             for (const [label, period] of ride_cp_periods) {
-                const cp = sauce.power.critpower(period, ts_stream, watts_stream);
-                if (cp !== undefined) {
-                    let hr_arr;
-                    if (hr_stream) {
-                        const start = ts_stream.indexOf(cp.firstTimestamp({noPad: true}));
-                        const end = ts_stream.indexOf(cp.lastTimestamp({noPad: true}));
-                        if (start !== -1 && end !== -1) {
-                            hr_arr = hr_stream.slice(start, end);
-                        }
-                    }
-                    const el = jQuery(`#sauce-cp-${period}`);
-                    el.html(Math.round(cp.avg()));
-                    el.parent().click(function() {
-                        const existing = open_dialog.shift();
-                        if (existing) {
-                            existing.dialog('close');
-                        }
-                        const dialog = moreinfoRideDialog.call(ctx, {
-                            cp_label: label,
-                            cp_period: period,
-                            cp_roll: cp,
-                            hr_arr,
-                            weight: weight_kg,
-                            anchor_to: el.parent()
-                        });
-                        const row = el.closest('tr');
-                        dialog.on('dialogclose', function() {
-                            row.removeClass('selected');
-                        });
-                        row.addClass('selected');
-                        open_dialog.push(dialog);
-                    });
-                    jQuery(`#sauce-cp-row-${period}`).show();
+                const roll = sauce.power.critpower(period, timeStream, wattsStream);
+                if (!roll) {
+                    continue;
                 }
+                const el = jQuery(`#sauce-cp-${period}`);
+                el.html(Math.round(roll.avg()));
+                el.parent().click(function() {
+                    const existing = open_dialog.shift();
+                    if (existing) {
+                        existing.dialog('close');
+                    }
+                    const dialog = moreinfoRideDialog.call(ctx, {
+                        label,
+                        roll,
+                        weight,
+                        anchor_to: el.parent()
+                    });
+                    const row = el.closest('tr');
+                    dialog.on('dialogclose', function() {
+                        row.removeClass('selected');
+                    });
+                    row.addClass('selected');
+                    open_dialog.push(dialog);
+                });
+                jQuery(`#sauce-cp-row-${period}`).show();
             }
+            const _done = performance.now();
+            console.warn(`Took: ${_done - _start}`);
         }
     }
 
+
     function onRunStreamData() {
-        const streams = pageView.streams();
-        const dist_stream = streams.getStream('distance');
-        if (!dist_stream) {
+        const distStream = getStream('distance');
+        if (!distStream) {
             console.warn("No distance data for this activity.");
             return;
         }
-        const ts_stream = streams.getStream('time');
-        const pace_stream = streams.getStream('pace');
-        const weight_kg = pageView.activityAthleteWeight();
+        const weight = pageView.activityAthleteWeight();
         const weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
         const stats_frag = jQuery(ctx.tertiary_stats_tpl({
             type: 'run',
             weight_unit: weight_unit,
-            weight_norm: (weight_unit == 'lbs') ? weight_kg * 2.20462 : weight_kg,
+            weight_norm: (weight_unit == 'lbs') ? weight * 2.20462 : weight,
         }));
 
         stats_frag.insertAfter(jQuery('.inline-stats').last());
 
         const open_dialog = [];
-        const hr_stream = streams.getStream('heartrate');
         const is_metric = currentAthlete.get('measurement_preference') !== 'feet';
         const bestpace_frag = jQuery(ctx.bestpace_tpl({
             is_metric,
@@ -198,17 +231,15 @@ sauce.ns('analysis', function(ns) {
         }));
         bestpace_frag.insertAfter(jQuery('#pagenav').first());
         const paceConv = is_metric ? kmPace : milePace;
+        const timeStream = getStream('time');
+        const paceStream = getStream('pace');
         for (const [label, distance] of run_cp_distances) {
-            const bp = sauce.pace.bestpace(distance, ts_stream, dist_stream, pace_stream);
-            if (bp !== undefined) {
-                let hr_arr;
-                if (hr_stream) {
-                    hr_arr = hr_stream.slice(bp.firstTimestamp(), bp.lastTimestamp());
-                }
+            const roll = sauce.pace.bestpace(distance, timeStream, distStream, paceStream);
+            if (roll !== undefined) {
                 const el = jQuery(`#sauce-cp-${distance}`);
-                el.attr('title', `Elapsed time: ${formatPace(bp.elapsed())}`);
+                el.attr('title', `Elapsed time: ${formatPace(roll.elapsed())}`);
                 const unit = is_metric ? 'k' : 'm';
-                el.html(`${formatPace(paceConv(bp.avg()))}<small>/${unit}</small>`);
+                el.html(`${formatPace(paceConv(roll.avg()))}<small>/${unit}</small>`);
                 el.parent().click(function() {
                     const existing = open_dialog.shift();
                     if (existing) {
@@ -216,13 +247,11 @@ sauce.ns('analysis', function(ns) {
                     }
                     const dialog = moreinfoRunDialog.call(ctx, {
                         is_metric,
-                        bp_label: label,
-                        bp_distance: distance,
-                        bp_window: bp,
-                        elapsed: formatPace(bp.elapsed()),
-                        bp_str: formatPace(paceConv(bp.avg())),
-                        hr_arr,
-                        weight: weight_kg,
+                        label,
+                        roll,
+                        elapsed: formatPace(roll.elapsed()),
+                        bp_str: formatPace(paceConv(roll.avg())),
+                        weight,
                         anchor_to: el.parent()
                     });
                     const row = el.closest('tr');
@@ -237,15 +266,18 @@ sauce.ns('analysis', function(ns) {
         }
     }
 
+
     function milePace(secondsPerMeter) {
         /* Convert strava pace into seconds per mile */
         return  metersPerMile * secondsPerMeter;
     }
 
+
     function kmPace(secondsPerMeter) {
         /* Convert strava pace into seconds per kilometer */
         return  1000 * secondsPerMeter;
     }
+
 
     function formatPace(pace) {
         /* Convert seconds to a human string */
@@ -272,41 +304,46 @@ sauce.ns('analysis', function(ns) {
         return result.join(':');
     }
 
+
     function moreinfoRideDialog(opts) {
-        const crit = opts.cp_roll;
-        const hr = opts.hr_arr;
-        const cp_avg = crit.avg();
-        const np = sauce.power.calcNP(crit._values);
-        const pwr_size = crit._values.length;
-        const avgpwr = np.value ? np : {value: cp_avg, count: pwr_size};
-        const if_ = avgpwr.value / ctx.ftp;
-        const w_kg = cp_avg / opts.weight;
+        const roll = opts.roll;
+        const avgPower = roll.avg();
+        const np = sauce.power.calcNP(roll._values);
+        const rollSize = roll.size();
+        const avgpwr = np.value ? np : {value: avgPower, count: rollSize};
+        const intensity = avgpwr.value / ctx.ftp;
+        const w_kg = avgPower / opts.weight;
         const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
-        const rank = sauce.power.rank(opts.cp_period, w_kg, gender);
+        const rank = sauce.power.rank(roll.period, w_kg, gender);
         const rank_cat = rank && sauce.power.rankCat(rank);
-        const firstTS = crit.firstTimestamp({noPad: true});
+        const startTime = roll.firstTimestamp({noPad: true});
+        const endTime = roll.lastTimestamp({noPad: true});
+        const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
         const data = {
-            title: 'Critical Power: ' + opts.cp_label,
-            start_time: (new Strava.I18n.TimespanFormatter()).display(firstTS),
+            title: `Critical Power: ${opts.label}`,
+            start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
             w_kg,
-            peak_power: Math.max.apply(null, crit._values),
-            cp_avg,
-            np: np.value,
-            tss: sauce.power.calcTSS(avgpwr, if_, ctx.ftp),
+            power: {
+                avg: avgPower,
+                max: sauce.data.max(roll._values),
+                np: np.value,
+            },
+            tss: sauce.power.calcTSS(avgpwr, intensity, ctx.ftp),
             rank,
             rank_cat,
             rank_image: rank && rank_image(rank_cat),
-            if_,
-            hr_avg: hr && hr.reduce((a, b) => a + b) / hr.length,
-            hr_max: Math.max.apply(null, hr),
-            hr_min: Math.min.apply(null, hr)
+            intensity,
+            hr: hrStream && {
+                min: sauce.data.min(hrStream),
+                avg: sauce.data.avg(hrStream),
+                max: sauce.data.max(hrStream),
+            }
         };
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
         const showAnalysisView = function() {
-            const ts_stream = pageView.streams().getStream('time');
-            const start = ts_stream.indexOf(firstTS);
-            const end = ts_stream.indexOf(crit.lastTimestamp({noPad: true}));
+            const start = getStreamTimeIndex(startTime);
+            const end = getStreamTimeIndex(endTime);
             pageView.router().changeMenuTo(`analysis/${start}/${end + 1}`);
             dialog.dialog('close');
         };
@@ -314,7 +351,7 @@ sauce.ns('analysis', function(ns) {
 
         dialog = moreinfo_frag.dialog({
             resizable: false,
-            width: 220,
+            width: 240,
             dialogClass: 'sauce-freerange-dialog',
             show: {
                 effect: 'slideDown',
@@ -336,25 +373,9 @@ sauce.ns('analysis', function(ns) {
             }]
         });
 
-        /* Smooth data for best visaul appearance. */
-        let pwr_stream;
-        if (pwr_size >= 240) {
-            pwr_stream = [];
-            const increment = Math.floor(pwr_size / 120);
-            for (let i = 0; i < pwr_size; i += increment) {
-                let v = 0;
-                let ii;
-                for (ii = 0; ii < increment && i + ii < pwr_size; ii++) {
-                    v += crit._values[i+ii];
-                }
-                pwr_stream.push(Math.round(v / ii));
-            }
-        } else {
-            pwr_stream = crit._values;
-        }
-
+        const smoothedData = resample(roll._values, 240);
         /* Must run after the dialog is open for proper rendering. */
-        moreinfo_frag.find('.sauce-sparkline').sparkline(pwr_stream, {
+        moreinfo_frag.find('.sauce-sparkline').sparkline(smoothedData, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -362,39 +383,71 @@ sauce.ns('analysis', function(ns) {
             fillColor: 'rgba(234, 64, 13, 0.61)',
             chartRangeMin: 0,
             normalRangeMin: 0,
-            normalRangeMax: cp_avg,
+            normalRangeMax: avgPower,
             tooltipSuffix: 'w'
         });
 
         return dialog;
     }
 
+
     function moreinfoRunDialog(opts) {
-        const bestpace = opts.bp_window;
-        const hr = opts.hr_arr;
+        const roll = opts.roll;
         const paceConv = opts.is_metric ? kmPace : milePace;
-        const pace = formatPace(paceConv(bestpace.avg()));
-        const elapsed = formatPace(bestpace.elapsed());
-        const bp_size = bestpace.size();
-        const firstTS = bestpace.firstTimestamp();
+        const humanElevation = opts.is_metric ?
+            x => `${x.toLocaleString(undefined, {maximumFractionDigits: 0})} m` :
+            x => `${(x * 3.28084).toLocaleString(undefined, {maximumFractionDigits: 0})} ft`;
+        const elapsed = formatPace(roll.elapsed());
+        const startTime = roll.firstTimestamp();
+        const endTime = roll.lastTimestamp();
+        const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
+        const gapStream = getStreamTimeRange('grade_adjusted_pace', startTime, endTime);
+        const gradeStream = getStreamTimeRange('grade_smooth', startTime, endTime);
+        const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
+        const altStream = getStreamTimeRange('altitude', startTime, endTime);
+        let altGain = 0;
+        let altLoss = 0;
+        if (altStream && altStream.length) {
+            let last = altStream[0];
+            for (const x of altStream) {
+                if (x > last) {
+                    altGain += x - last;
+                } else {
+                    altLoss += last - x;
+                }
+                last = x;
+            }
+        }
         const data = {
             is_metric: opts.is_metric,
-            title: 'Best Pace: ' + opts.bp_label,
-            start_time: (new Strava.I18n.TimespanFormatter()).display(firstTS),
-            pace,
-            pace_slowest: formatPace(paceConv(Math.max.apply(null, bestpace._paces))),
-            pace_peak: formatPace(paceConv(Math.min.apply(null, bestpace._paces))),
+            title: 'Best Pace: ' + opts.label,
+            start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
+            pace: {
+                min: formatPace(paceConv(sauce.data.min(roll._paces))),
+                avg: formatPace(paceConv(roll.avg())),
+                max: formatPace(paceConv(sauce.data.max(roll._paces))),
+                gap: gapStream && formatPace(paceConv(sauce.data.avg(gapStream))),
+            },
             elapsed,
-            hr_avg: hr && hr.reduce((a, b) => a + b) / hr.length,
-            hr_max: Math.max.apply(null, hr),
-            hr_min: Math.min.apply(null, hr)
+            hr: hrStream && {
+                min: sauce.data.min(hrStream),
+                avg: sauce.data.avg(hrStream),
+                max: sauce.data.max(hrStream),
+            },
+            cadence: cadenceStream && sauce.data.avg(cadenceStream) * 2,
+            grade: gradeStream && {
+                min: sauce.data.min(gradeStream),
+                avg: sauce.data.avg(gradeStream),
+                max: sauce.data.max(gradeStream),
+                gain: humanElevation(altGain),
+                loss: humanElevation(altLoss),
+            }
         };
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
         const showAnalysisView = function() {
-            const ts_stream = pageView.streams().getStream('time');
-            const start = ts_stream.indexOf(firstTS);
-            const end = ts_stream.indexOf(bestpace.lastTimestamp());
+            const start = getStreamTimeIndex(startTime);
+            const end = getStreamTimeIndex(endTime);
             pageView.router().changeMenuTo(`analysis/${start}/${end + 1}`);
             dialog.dialog('close');
         };
@@ -402,7 +455,7 @@ sauce.ns('analysis', function(ns) {
 
         dialog = moreinfo_frag.dialog({
             resizable: false,
-            width: 220,
+            width: 240,
             dialogClass: 'sauce-freerange-dialog',
             show: {
                 effect: 'slideDown',
@@ -424,37 +477,10 @@ sauce.ns('analysis', function(ns) {
             }]
         });
 
-        /* Smooth data for best visual appearance. */
-        let pace_stream;
-        if (bp_size >= 240) {
-            pace_stream = [];
-            const increment = Math.floor(bp_size / 120);
-            for (let i = 0; i < bp_size; i += increment) {
-                let v = 0;
-                let ii;
-                for (ii = 0; ii < increment && i + ii < bp_size; ii++) {
-                    v += bestpace._paces[i+ii];
-                }
-                pace_stream.push(v / ii);
-            }
-        } else {
-            pace_stream = bestpace._paces;
-        }
-
+        const smoothedData = resample(roll._paces, 240);
+        const perUnitPaceData = smoothedData.map(x => Math.round((paceConv(x) / 60) * 100) / 100);
         /* Must run after the dialog is open for proper rendering. */
-        let maxPace = 0;
-        let minPace = Infinity;
-        const perUnitPaceStream = pace_stream.map(function(x) {
-            const pace = paceConv(x) / 60;
-            if (pace > maxPace) {
-                maxPace = pace;
-            }
-            if (pace < minPace) {
-                minPace = pace;
-            }
-            return Math.round(pace * 100) / 100;
-        });
-        moreinfo_frag.find('.sauce-sparkline').sparkline(perUnitPaceStream, {
+        moreinfo_frag.find('.sauce-sparkline').sparkline(perUnitPaceData, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -462,12 +488,13 @@ sauce.ns('analysis', function(ns) {
             fillColor: 'rgba(234, 64, 13, 0.61)',
             chartRangeMin: 0,
             normalRangeMin: 0,
-            normalRangeMax: paceConv(bestpace.avg()) / 60,
+            normalRangeMax: paceConv(roll.avg()) / 60,
             tooltipSuffix: '/mi'
         });
 
         return dialog;
     }
+
 
     function load() {
         console.info('Loading Sauce...');
@@ -500,6 +527,7 @@ sauce.ns('analysis', function(ns) {
         }
     }
 
+
     function loadRideStreams() {
         const streams = pageView.streams();
         if (!streams.getStream('watts')) {
@@ -522,15 +550,16 @@ sauce.ns('analysis', function(ns) {
         }
     }
 
+
     function loadRunStreams() {
-        const streams = pageView.streams();
-        if (!streams.getStream('distance')) {
+        if (!getStream('distance')) {
             console.warn("Run without distance data?");
             return;
         } else {
             startRun();
         }
     }
+
 
     function attachComments($root) {
         const $commentsEl = jQuery('<div class="sauce-inline-comments"></div>');
@@ -585,8 +614,9 @@ sauce.ns('analysis', function(ns) {
         });
     }
 
+
     function addBadge(row) {
-        const weight_kg = pageView.activityAthleteWeight();
+        const weight = pageView.activityAthleteWeight();
         const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
         if (row.querySelector(':scope > td.sauce-mark')) {
             return;
@@ -596,7 +626,7 @@ sauce.ns('analysis', function(ns) {
             console.warn("Segment data not found for:", row.dataset.segmentEffortId);
             return;
         }
-        const w_kg = segment.get('avg_watts_raw') / weight_kg;
+        const w_kg = segment.get('avg_watts_raw') / weight;
         const rank = sauce.power.rank(segment.get('elapsed_time_raw'), w_kg, gender);
         if (!rank || rank <= 0) {
             return;  // Too slow/weak
@@ -622,6 +652,7 @@ sauce.ns('analysis', function(ns) {
         ].join('');
     }
 
+
     function addSegmentBadges() {
         const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
         rows.push.apply(rows, document.querySelectorAll('table.hidden-segments tr[data-segment-effort-id]'));
@@ -633,6 +664,7 @@ sauce.ns('analysis', function(ns) {
             }
         }
     }
+
 
     function startRun() {
         attachComments(jQuery('.activity-summary'));
@@ -664,6 +696,7 @@ sauce.ns('analysis', function(ns) {
             final.dec();
         });
     }
+
 
     function startRide() {
         attachComments(jQuery('.activity-summary'));
@@ -712,6 +745,7 @@ sauce.ns('analysis', function(ns) {
         });
     }
 
+
     function assignFTP(sauce_ftp) {
         const power = pageView.powerController && pageView.powerController();
         /* Sometimes you can get it from the activity.  I think this only
@@ -736,18 +770,15 @@ sauce.ns('analysis', function(ns) {
         ctx.ftp = ftp;
     }
 
+
     function handleSelectionChange(start, end) {
-        const streams = pageView.streams();
-        let watts_stream = streams.getStream('watts');
-        if (!watts_stream) {
-            watts_stream = streams.getStream('watts_calc');
-            if (!watts_stream) {
-                return;
-            }
+        const wattsStream = getStream('watts') || getStream('watts_calc');
+        if (!wattsStream) {
+            return;
         }
-        const selection = watts_stream.slice(start, end);
+        const selection = wattsStream.slice(start, end);
         const np = sauce.power.calcNP(selection).value;
-        const avg = selection.reduce((acc, x) => acc + x) / selection.length;
+        const avg = sauce.data.avg(selection);
         const el = jQuery('text.label:contains(Power)').siblings('.avg-js');
         const text = [`Avg ${Math.round(avg)}`];
         if (np) {
@@ -755,6 +786,7 @@ sauce.ns('analysis', function(ns) {
         }
         el.html(text.join(''));
     }
+
 
     return {
         load,
