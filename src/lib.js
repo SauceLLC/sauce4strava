@@ -77,14 +77,14 @@ sauce.ns('data', function() {
                 const gap = ts - last;
                 if (gap > maxTimeGap) {
                     const zero = new Pad(0);
-                    console.warn(`Zero padding big gap: last=${last}, gap=${gap}`);
+                    //console.warn(`Zero padding big gap: last=${last}, gap=${gap}`);
                     for (let i = 1; i < gap; i++) {
                         this.add(last + i, zero);
                     }
                 } else if (gap > 1) {
                     const lastValue = this._values[this._values.length - 1];
                     const avgValue = Math.round((lastValue + value) / 2);
-                    console.warn(`Interpolation padding: last=${last}, gap=${gap} avg=${avgValue}`);
+                    //console.warn(`Interpolation padding: last=${last}, gap=${gap} avg=${avgValue}`);
                     for (let i = 1; i < gap; i++) {
                         this.add(last + i, new Pad(avgValue));
                     }
