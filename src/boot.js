@@ -3,23 +3,23 @@
 chrome.storage.sync.get(null, async config => {
     "use strict";
 
-    var load_script = function(url, callback) {
+    const load_script = function(url, callback) {
         console.log("Sauce script load: " + url);
-        var script = document.createElement('script');
+        const script = document.createElement('script');
         script.src = url;
         script.onload = callback;
         document.head.appendChild(script);
     };
 
-    var insert_script = function(content) {
-        var script = document.createElement('script');
+    const insert_script = function(content) {
+        const script = document.createElement('script');
         script.textContent = content;
         document.head.appendChild(script);
     };
 
-    var ext_url = chrome.extension.getURL('');
+    const ext_url = chrome.extension.getURL('');
 
-    var src = [
+    const src = [
         'https://cdnjs.cloudflare.com/ajax/libs/jquery-sparklines/2.1.2/jquery.sparkline.min.js',
         'src/base.js',
         'src/lib.js',
@@ -47,11 +47,11 @@ chrome.storage.sync.get(null, async config => {
         await new Promise(resolve => chrome.storage.sync.set({options: config.options}, resolve));
     }
 
-    var loader = function(list, final_callback) {
-        var _load_this = function() {
+    const loader = function(list, final_callback) {
+        const _load_this = function() {
             if (list.length) {
-                var script = list.shift();
-                var url;
+                const script = list.shift();
+                let url;
                 if (script.match(/https?:\/\//i)) {
                     url = script;
                 } else {

@@ -1,12 +1,12 @@
 /* global chrome */
 
 function save_options(ftps) {
-    var toset = {};
+    const toset = {};
     ftps.forEach(function(x) {
         toset[x[0]] = Number(document.getElementById(x[0]).value);
     });
     chrome.storage.sync.set(toset, function() {
-        var status = document.getElementById('status');
+        const status = document.getElementById('status');
         status.textContent = 'Options saved.';
         window.setTimeout(function() {
             status.textContent = '';
@@ -18,13 +18,13 @@ function save_options(ftps) {
 function load_options() {
     chrome.storage.sync.get(null, function(data) {
         /* Comb for athlete ftp.. meh */
-        var ftps = [];
+        const ftps = [];
         Object.keys(data).forEach(function(x) {
             if (x.indexOf('athlete_ftp') === 0) {
                 ftps.push([x, data[x]]);
             }
         });
-        var ftp_list = document.getElementById('ftp_list');
+        const ftp_list = document.getElementById('ftp_list');
         ftps.forEach(function(x) {
             ftp_list.innerHTML += [
                 '<tr><td class="label">', x[0], ':</td><td>',

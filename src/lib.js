@@ -3,139 +3,186 @@
 sauce.ns('data', function() {
     'use strict';
 
-    function Pad(value) {
-        this.value = value;
-    }
-    Pad.prototype.valueOf = function() {
-        return this.value;
-    };
+    class Pad {
+        constructor(value) {
+            this.value = value;
+        }
 
-    var pad = new Pad(0);
-
-    function RollingAvg(period) {
-        this._times = [];
-        this._values = [];
-        this.offt = 0;
-        this.period = period;
-        this.sum = 0;
+        valueOf() {
+            return this.value;
+        }
     }
 
-    RollingAvg.prototype.add = function(ts, value, is_pad) {
-        this._times.push(ts);
-        this._values.push(value);
-        this.sum += value;
-        if (!is_pad) {
-            this.offt++;
-        }
-        while (ts - this._times[0] >= this.period) {
-            this.sum -= this._values[0];
-            this.shift();
-        }
-    };
+    const maxTimeGap = 4;  // Any gaps over this will result in zero padding to deflate bad high readings.
 
-    RollingAvg.prototype.pad = function(size) {
-        var last_ts = this._times[this._times.length-1];
-        for (var i = 1; i <= size; i++) {
-            this.add(++last_ts, pad, true);
-        }
-    };
 
-    RollingAvg.prototype.padCount = function() {
-        var count = 0;
-        for (var i = 0; i < this._values.length; i++) {
-            if (this._values[i] instanceof Pad) {
-                count++;
+    class RollingBase {
+        elapsed(options) {
+            options = options || {};
+            const len = this._times.length;
+            const offt = options.offt || 0;
+            if (len - offt < 2) {
+                return 0;
+            }
+            const start = offt ? this._times[offt - 1] : this._head;
+            return this._times[len - 1] - start;
+        }
+
+        firstTimestamp(options) {
+            options = options || {};
+            if (options.noPad) {
+                for (let i = 0; i < this._values.length; i++) {
+                    if (!(this._values[i] instanceof Pad)) {
+                        return this._times[i];
+                    }
+                }
+            } else {
+                return this._times[0];
             }
         }
-        return count;
-    };
 
-    RollingAvg.prototype.avg = function() {
-        return this.sum / this._values.length;
-    };
+        lastTimestamp(options) {
+            options = options || {};
+            if (options.noPad) {
+                for (let i = this._values.length - 1; i >= 0; i--) {
+                    if (!(this._values[i] instanceof Pad)) {
+                        return this._times[i];
+                    }
+                }
+            } else {
+                return this._times[this._times.length - 1];
+            }
+        }
 
-    RollingAvg.prototype.full = function() {
-        var t = this._times;
-        return t[t.length-1] - t[0] == (this.period - 1);
-    };
-
-    RollingAvg.prototype.shift = function() {
-        this._times.shift();
-        this._values.shift();
-    };
-
-    RollingAvg.prototype.copy = function() {
-        var copy = new RollingAvg(this.period);
-        copy.sum = this.sum;
-        copy.offt = this.offt;
-        copy._times = this._times.slice(0);
-        copy._values = this._values.slice(0);
-        return copy;
-    };
-
-    function RollingWindow(distance) {
-        this._times = [];
-        this._distances = [];
-        this._paces = [];
-        this.offt = 0;
-        this._distance = distance;
+        size() {
+            return this._times.length;
+        }
     }
 
-    RollingWindow.prototype.add = function(ts, distance, pace) {
-        this._times.push(ts);
-        this._distances.push(distance);
-        this._paces.push(pace);
-        var pad = 5;  // Only shift after they are X meters over.
-        while (distance - this._distances[0] > this._distance + pad) {
-            this.shift();
+
+    class RollingAvg extends RollingBase {
+        constructor(period) {
+            super();
+            this._times = [];
+            this._values = [];
+            this._head = null;
+            this.period = period;
         }
-    };
 
-    RollingWindow.prototype.distance = function() {
-        return this._distances[this._distances.length - 1] - this._distances[0];
-    };
-
-    RollingWindow.prototype.elapsed = function() {
-        return this._times[this._times.length - 1] - this._times[0];
-    };
-
-    RollingWindow.prototype.avg = function() {
-        var dist = this.distance();
-        var elapsed = this.elapsed();
-        if (!dist || !elapsed) {
-            return;
+        add(ts, value) {
+            if (this._head === null) {
+                this._head = ts;
+            } else {
+                const last = this._times[this._times.length - 1];
+                const gap = ts - last;
+                if (gap > maxTimeGap) {
+                    const zero = new Pad(0);
+                    console.warn(`Zero padding big gap: last=${last}, gap=${gap}`);
+                    for (let i = 1; i < gap; i++) {
+                        this.add(last + i, zero);
+                    }
+                } else if (gap > 1) {
+                    const lastValue = this._values[this._values.length - 1];
+                    const avgValue = Math.round((lastValue + value) / 2);
+                    console.warn(`Interpolation padding: last=${last}, gap=${gap} avg=${avgValue}`);
+                    for (let i = 1; i < gap; i++) {
+                        this.add(last + i, new Pad(avgValue));
+                    }
+                }
+            }
+            this._times.push(ts);
+            this._values.push(value);
+            while (this.elapsed({offt: 1}) >= this.period) {
+                this.shift();
+            }
         }
-        return elapsed / dist;
-    };
 
-    RollingWindow.prototype.full = function() {
-        var pad = 5;  // See add()
-        return this._distance - this.distance() <= pad;
-    };
+        avg() {
+            const sum = this._values.reduce((a, b) => a + b);
+            return sum / this._values.length;
+        }
 
-    RollingWindow.prototype.shift = function() {
-        this.offt++;
-        this._times.shift();
-        this._distances.shift();
-        this._paces.shift();
-    };
+        full() {
+            return this.elapsed() >= this.period;
+        }
 
-    RollingWindow.prototype.copy = function() {
-        var copy = new RollingWindow(this._distance);
-        copy._times = this._times.slice(0);
-        copy._distances = this._distances.slice(0);
-        copy._paces = this._paces.slice(0);
-        copy.offt = this.offt;
-        return copy;
-    };
+        shift() {
+            this._head = this._times[0];
+            this._times.shift();
+            this._values.shift();
+        }
 
-    RollingWindow.prototype.size = function() {
-        return this._distances.length;
-    };
+        copy() {
+            const copy = new this.constructor(this.period);
+            copy._head = this._head;
+            copy._times = this._times.slice(0);
+            copy._values = this._values.slice(0);
+            return copy;
+        }
+    }
+
+
+    class RollingWindow extends RollingBase {
+        constructor(distance) {
+            super();
+            this._times = [];
+            this._distances = [];
+            this._head = null;
+            this._paces = [];
+            this._distance = distance;
+        }
+
+        add(ts, distance, pace) {
+            if (this._head === null) {
+                this._head = ts;
+            }
+            this._times.push(ts);
+            this._distances.push(distance);
+            this._paces.push(pace);
+            const pad = 5;  // Only shift after they are X meters over.
+            while (distance - this._distances[0] > this._distance + pad) {
+                this.shift();
+            }
+        }
+
+        distance() {
+            return this._distances[this._distances.length - 1] - this._distances[0];
+        }
+
+        avg() {
+            const dist = this.distance();
+            const elapsed = this.elapsed();
+            if (!dist || !elapsed) {
+                return;
+            }
+            return elapsed / dist;
+        }
+
+        full() {
+            const pad = 5;  // See add()
+            return this._distance - this.distance() <= pad;
+        }
+
+        shift() {
+            this._head = this._times[0];
+            this._times.shift();
+            this._distances.shift();
+            this._paces.shift();
+        }
+
+        copy() {
+            const copy = new this.constructor(this._distance);
+            copy._head = this._head;
+            copy._times = this._times.slice(0);
+            copy._distances = this._distances.slice(0);
+            copy._paces = this._paces.slice(0);
+            return copy;
+        }
+    }
 
     return {
-        RollingAvg: RollingAvg,
-        RollingWindow: RollingWindow
+        RollingAvg,
+        RollingWindow
     };
 });
 
@@ -143,12 +190,12 @@ sauce.ns('data', function() {
 sauce.ns('func', function() {
     'use strict';
 
-    var _adjunct = function(runAfter, obj, orig_func_name, interceptor) {
-        var save_fn = obj.prototype[orig_func_name];
+    const _adjunct = function(runAfter, obj, orig_func_name, interceptor) {
+        const save_fn = obj.prototype[orig_func_name];
         function wrap() {
             if (runAfter) {
-                var ret = save_fn.apply(this, arguments);
-                var args = Array.prototype.slice.call(arguments);
+                const ret = save_fn.apply(this, arguments);
+                const args = Array.prototype.slice.call(arguments);
                 args.unshift(ret);
                 interceptor.apply(this, args);
                 return ret;
@@ -160,16 +207,16 @@ sauce.ns('func', function() {
         obj.prototype[orig_func_name] = wrap;
     };
 
-    var runAfter = function(obj, orig_func_name, interceptor) {
+    const runAfter = function(obj, orig_func_name, interceptor) {
         _adjunct(true, obj, orig_func_name, interceptor);
     };
 
-    var runBefore = function(obj, orig_func_name, interceptor) {
+    const runBefore = function(obj, orig_func_name, interceptor) {
         _adjunct(false, obj, orig_func_name, interceptor);
     };
 
 
-    var IfDone = function(callback) {
+    const IfDone = function(callback) {
         this.callback = callback;
         this.refcnt = 0;
     };
@@ -186,7 +233,7 @@ sauce.ns('func', function() {
     };
 
     IfDone.prototype.before = function(fn) {
-        var _this = this;
+        const _this = this;
         _this.inc();
         return function() {
             try {
@@ -210,11 +257,8 @@ sauce.ns('func', function() {
 sauce.ns('power', function() {
     'use strict';
 
-    /* Max gap-seconds to permit without padding. */
-    var max_data_gap = 15;
-
     /* Based on Andy Coggan's power profile. */
-    var ranking_consts = {
+    const ranking_consts = {
         male: {
             high: {
                 slope_factor: 2.82,
@@ -249,7 +293,7 @@ sauce.ns('power', function() {
         }
     };
 
-    var rank_cats = [
+    const rank_cats = [
         'Recreational',
         'Cat 5',
         'Cat 4',
@@ -260,29 +304,29 @@ sauce.ns('power', function() {
         'World Class'
     ];
 
-    var _rankScaler = function(duration, c) {
-        var t = (c.slope_period / duration) * c.slope_adjust;
-        var slope = Math.log10(t + c.slope_offset);
-        var w_kg = Math.pow(slope, c.slope_factor);
+    const _rankScaler = function(duration, c) {
+        const t = (c.slope_period / duration) * c.slope_adjust;
+        const slope = Math.log10(t + c.slope_offset);
+        const w_kg = Math.pow(slope, c.slope_factor);
         return w_kg + c.base_offset;
     };
 
-    var rank = function(duration, w_kg, sex) {
-        var high_consts = ranking_consts[sex].high;
-        var low_consts = ranking_consts[sex].low;
-        var high = _rankScaler(duration, high_consts);
-        var low = _rankScaler(duration, low_consts);
+    const rank = function(duration, w_kg, sex) {
+        const high_consts = ranking_consts[sex].high;
+        const low_consts = ranking_consts[sex].low;
+        const high = _rankScaler(duration, high_consts);
+        const low = _rankScaler(duration, low_consts);
         return (w_kg - low) / (high - low);
     };
 
-    var rankCat = function(rank) {
+    const rankCat = function(rank) {
         if (rank >= 1) {
             return rank_cats[rank_cats.length-1] + '++';
         } else if (rank <= 0) {
             return rank_cats[0] + '--';
         }
-        var index = rank / (1 / rank_cats.length);
-        var mod = index % 1;
+        const index = rank / (1 / rank_cats.length);
+        let mod = index % 1;
         if (mod >= 0.8) {
             mod = '+';
         } else if (mod < 0.2) {
@@ -293,18 +337,12 @@ sauce.ns('power', function() {
         return rank_cats[Math.floor(index)] + mod;
     };
 
-    var critpowerSmart = function(period, ts_stream, watts_stream) {
-        var ring = new sauce.data.RollingAvg(period);
-        var max;
-        var ts_size = ts_stream.length;
-        for (var i = 0; i < ts_size; i++) {
-            var watts = watts_stream[i];
-            var ts = ts_stream[i];
-            var gap = i > 0 && ts - ts_stream[i-1];
-            if (gap > max_data_gap) {
-                ring.pad(gap - 2);
-            }
-            ring.add(ts, watts);
+    const critpowerSmart = function(period, ts_stream, watts_stream) {
+        const ring = new sauce.data.RollingAvg(period);
+        let max;
+        const ts_size = ts_stream.length;
+        for (let i = 0; i < ts_size; i++) {
+            ring.add(ts_stream[i], watts_stream[i]);
             if (ring.full() && (!max || ring.avg() > max.avg())) {
                 max = ring.copy();
             }
@@ -312,24 +350,24 @@ sauce.ns('power', function() {
         return max;
     };
 
-    var calcNP = function(watts_stream) {
-        var ret = {
+    const calcNP = function(watts_stream) {
+        const ret = {
             value: 0,
             count: 0
         };
-        var rolling_size = 30;
+        const rolling_size = 30;
         /* Coggan doesn't recommend NP for less than 20 mins.  Allow a margin
          * of error for dropouts. */
         if (watts_stream.length < 1000) {
             return ret;
         }
-        var total = 0;
-        var count = 0;
-        var index = 0;
-        var sum = 0;
-        var rolling = new Uint16Array(rolling_size);
-        for (var i = 0; i < watts_stream.length; i++) {
-            var watts = watts_stream[i];
+        let total = 0;
+        let count = 0;
+        let index = 0;
+        let sum = 0;
+        const rolling = new Uint16Array(rolling_size);
+        for (let i = 0; i < watts_stream.length; i++) {
+            const watts = watts_stream[i];
             sum += watts;
             sum -= rolling[index];
             rolling[index] = watts;
@@ -344,10 +382,10 @@ sauce.ns('power', function() {
         return ret;
     };
 
-    var calcTSS = function(np, if_, ftp) {
-        var norm_work = np.value * np.count;
-        var ftp_work_hour = ftp * 3600;
-        var raw_tss = norm_work * if_;
+    const calcTSS = function(np, if_, ftp) {
+        const norm_work = np.value * np.count;
+        const ftp_work_hour = ftp * 3600;
+        const raw_tss = norm_work * if_;
         return raw_tss / ftp_work_hour * 100;
     };
 
@@ -364,14 +402,14 @@ sauce.ns('power', function() {
 sauce.ns('pace', function() {
     'use strict';
 
-    var bestpace = function(distance, ts_stream, dist_stream, pace_stream) {
-        var ring = new sauce.data.RollingWindow(distance);
-        var min;
-        var ts_size = ts_stream.length;
-        for (var i = 0; i < ts_size; i++) {
-            var dist = dist_stream[i];
-            var ts = ts_stream[i];
-            var pace = pace_stream[i];
+    const bestpace = function(distance, ts_stream, dist_stream, pace_stream) {
+        const ring = new sauce.data.RollingWindow(distance);
+        let min;
+        const ts_size = ts_stream.length;
+        for (let i = 0; i < ts_size; i++) {
+            const dist = dist_stream[i];
+            const ts = ts_stream[i];
+            const pace = pace_stream[i];
             ring.add(ts, dist, pace);
             if (ring.full() && (!min || ring.avg() <= min.avg())) {
                 min = ring.copy();
@@ -389,10 +427,10 @@ sauce.ns('pace', function() {
 sauce.ns('comm', function() {
     'use strict';
 
-    var _sendMessage = function(msg, callback) {
+    const _sendMessage = function(msg, callback) {
         chrome.runtime.sendMessage(sauce.extID, msg, function(resp) {
             if (resp === undefined || !resp.success) {
-                var err = resp ? resp.error : 'general error';
+                const err = resp ? resp.error : 'general error';
                 console.error("RPC sender:", err);
             } else if (callback) {
                 callback.apply(this, resp.data);
@@ -400,8 +438,8 @@ sauce.ns('comm', function() {
         });
     };
 
-    var syncSet = function(key, value, callback) {
-        var data = {};
+    const syncSet = function(key, value, callback) {
+        const data = {};
         data[key] = value;
         _sendMessage({
             system: 'sync',
@@ -410,7 +448,7 @@ sauce.ns('comm', function() {
         }, callback);
     };
 
-    var syncGet = function(key, callback) {
+    const syncGet = function(key, callback) {
         _sendMessage({
             system: 'sync',
             op: 'get',
@@ -420,11 +458,11 @@ sauce.ns('comm', function() {
         });
     };
 
-    var setFTP = function(athlete_id, ftp, callback) {
+    const setFTP = function(athlete_id, ftp, callback) {
         syncSet('athlete_ftp_' + athlete_id, ftp, callback);
     };
 
-    var getFTP = function(athlete_id, callback) {
+    const getFTP = function(athlete_id, callback) {
         syncGet('athlete_ftp_' + athlete_id, callback);
     };
 
@@ -437,8 +475,8 @@ sauce.ns('comm', function() {
     }
 
     return {
-        getFTP: getFTP,
-        setFTP: setFTP,
+        getFTP,
+        setFTP,
         get,
         set,
     };
@@ -454,23 +492,23 @@ sauce.ns('time', function(ns) {
     ns.MONTH = ns.HOUR * 730;
     ns.YEAR = ns.DAY * 365;
 
-    var ago = function(dateobj, precision) {
-        var now = new Date();
-        var span = (now - dateobj) / 1000;
-        var stack = [];
+    const agoUnits = [
+        ['year', ns.YEAR],
+        ['month', ns.MONTH],
+        ['day', ns.DAY],
+        ['hour', ns.HOUR],
+        ['min', ns.MIN],
+        ['sec', 1]
+    ];
+
+    const ago = function(dateobj, precision) {
+        const now = new Date();
+        let span = (now - dateobj) / 1000;
+        const stack = [];
         precision = precision || ns.MIN;
         span = Math.round(span / precision);
         span *= precision;
-
-        [
-            ['year', ns.YEAR],
-            ['month', ns.MONTH],
-            ['day', ns.DAY],
-            ['hour', ns.HOUR],
-            ['min', ns.MIN],
-            ['sec', 1]
-        ].forEach(function(x) {
-            var suf = x[0], period = x[1];
+        for (let [suf, period] of agoUnits) {
             if (precision > period) {
                 return;
             }
@@ -481,12 +519,11 @@ sauce.ns('time', function(ns) {
                 stack.push(Math.floor(span / period) + ' ' + suf);
                 span %= period;
             }
-        });
-
+        }
         return stack.slice(0, 2).join(', ') || 'just now';
     };
 
     return {
-        ago: ago
+        ago
     };
 });

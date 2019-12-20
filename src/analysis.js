@@ -29,8 +29,8 @@ sauce.ns('analysis', function(ns) {
         ['3 km', 3000],
         ['5 km', 5000],
         ['10 km', 10000],
-        ['13.1 miles', Math.round(metersPerMile * 13.1)],
-        ['26.2 miles', Math.round(metersPerMile * 26.2)]
+        ['13.1 mile', Math.round(metersPerMile * 13.1)],
+        ['26.2 mile', Math.round(metersPerMile * 26.2)]
     ];
 
     const rank_map = [
@@ -136,8 +136,11 @@ sauce.ns('analysis', function(ns) {
                 if (cp !== undefined) {
                     let hr_arr;
                     if (hr_stream) {
-                        const start = cp.offt - cp._values.length + cp.padCount();
-                        hr_arr = hr_stream.slice(start, cp.offt);
+                        const start = ts_stream.indexOf(cp.firstTimestamp({noPad: true}));
+                        const end = ts_stream.indexOf(cp.lastTimestamp({noPad: true}));
+                        if (start !== -1 && end !== -1) {
+                            hr_arr = hr_stream.slice(start, end);
+                        }
                     }
                     const el = jQuery(`#sauce-cp-${period}`);
                     el.html(Math.round(cp.avg()));
@@ -200,7 +203,7 @@ sauce.ns('analysis', function(ns) {
             if (bp !== undefined) {
                 let hr_arr;
                 if (hr_stream) {
-                    hr_arr = hr_stream.slice(bp.offt, bp.offt + bp.size());
+                    hr_arr = hr_stream.slice(bp.firstTimestamp(), bp.lastTimestamp());
                 }
                 const el = jQuery(`#sauce-cp-${distance}`);
                 el.attr('title', `Elapsed time: ${formatPace(bp.elapsed())}`);
@@ -246,7 +249,7 @@ sauce.ns('analysis', function(ns) {
     }
 
     function formatPace(pace) {
-        /* Convert float representation seconds/unit to a time string */
+        /* Convert seconds to a human string */
         pace = Math.round(pace);
         const hours = Math.floor(pace / 3600);
         const mins = Math.floor(pace / 60 % 60);
@@ -282,31 +285,30 @@ sauce.ns('analysis', function(ns) {
         const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
         const rank = sauce.power.rank(opts.cp_period, w_kg, gender);
         const rank_cat = rank && sauce.power.rankCat(rank);
+        const firstTS = crit.firstTimestamp({noPad: true});
         const data = {
             title: 'Critical Power: ' + opts.cp_label,
-            start_time: (new Strava.I18n.TimespanFormatter()).display(crit._times[0]),
-            w_kg: w_kg,
+            start_time: (new Strava.I18n.TimespanFormatter()).display(firstTS),
+            w_kg,
             peak_power: Math.max.apply(null, crit._values),
-            cp_avg: cp_avg,
+            cp_avg,
             np: np.value,
             tss: sauce.power.calcTSS(avgpwr, if_, ctx.ftp),
-            rank: rank,
-            rank_cat: rank_cat,
+            rank,
+            rank_cat,
             rank_image: rank && rank_image(rank_cat),
-            if_: if_,
-            hr_avg: hr && (_.reduce(hr, function(a, b) { return a + b; }, 0) / hr.length),
+            if_,
+            hr_avg: hr && hr.reduce((a, b) => a + b) / hr.length,
             hr_max: Math.max.apply(null, hr),
             hr_min: Math.min.apply(null, hr)
         };
-
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
         const showAnalysisView = function() {
-            pageView.router().changeMenuTo([
-                'analysis',
-                crit.offt - pwr_size + crit.padCount(),
-                crit.offt
-            ].join('/'));
+            const ts_stream = pageView.streams().getStream('time');
+            const start = ts_stream.indexOf(firstTS);
+            const end = ts_stream.indexOf(crit.lastTimestamp({noPad: true}));
+            pageView.router().changeMenuTo(`analysis/${start}/${end + 1}`);
             dialog.dialog('close');
         };
         moreinfo_frag.find('.start_time_link').click(showAnalysisView);
@@ -375,27 +377,26 @@ sauce.ns('analysis', function(ns) {
         const pace = formatPace(paceConv(bestpace.avg()));
         const elapsed = formatPace(bestpace.elapsed());
         const bp_size = bestpace.size();
+        const firstTS = bestpace.firstTimestamp();
         const data = {
             is_metric: opts.is_metric,
-            title: 'Best Pace: ' + opts.bp_distance,
-            start_time: (new Strava.I18n.TimespanFormatter()).display(bestpace._times[0]),
-            pace: pace,
+            title: 'Best Pace: ' + opts.bp_label,
+            start_time: (new Strava.I18n.TimespanFormatter()).display(firstTS),
+            pace,
             pace_slowest: formatPace(paceConv(Math.max.apply(null, bestpace._paces))),
             pace_peak: formatPace(paceConv(Math.min.apply(null, bestpace._paces))),
-            elapsed: elapsed,
-            hr_avg: hr && (_.reduce(hr, function(a, b) { return a + b; }, 0) / hr.length),
+            elapsed,
+            hr_avg: hr && hr.reduce((a, b) => a + b) / hr.length,
             hr_max: Math.max.apply(null, hr),
-            hr_min: Math.min.apply(null, hr),
+            hr_min: Math.min.apply(null, hr)
         };
-
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
         const showAnalysisView = function() {
-            pageView.router().changeMenuTo([
-                'analysis',
-                bestpace.offt,
-                bestpace.offt + bp_size - 1 // Is inclusive for runs; Must subtract 1.
-            ].join('/'));
+            const ts_stream = pageView.streams().getStream('time');
+            const start = ts_stream.indexOf(firstTS);
+            const end = ts_stream.indexOf(bestpace.lastTimestamp());
+            pageView.router().changeMenuTo(`analysis/${start}/${end + 1}`);
             dialog.dialog('close');
         };
         moreinfo_frag.find('.start_time_link').click(showAnalysisView);
@@ -424,7 +425,7 @@ sauce.ns('analysis', function(ns) {
             }]
         });
 
-        /* Smooth data for best visaul appearance. */
+        /* Smooth data for best visual appearance. */
         let pace_stream;
         if (bp_size >= 240) {
             pace_stream = [];
@@ -747,11 +748,11 @@ sauce.ns('analysis', function(ns) {
         }
         const selection = watts_stream.slice(start, end);
         const np = sauce.power.calcNP(selection).value;
-        const avg = selection.reduce(function(acc, x) { return acc + x; }) / selection.length;
+        const avg = selection.reduce((acc, x) => acc + x) / selection.length;
         const el = jQuery('text.label:contains(Power)').siblings('.avg-js');
-        let text = ['Avg ', Math.round(avg)];
+        const text = [`Avg ${Math.round(avg)}`];
         if (np) {
-            text = text.concat([' (', Math.round(np), 'np)']);
+            text.push(` (${Math.round(np)} np)`);
         }
         el.html(text.join(''));
     }
