@@ -139,8 +139,7 @@ sauce.ns('data', function() {
             this._times.push(ts);
             this._distances.push(distance);
             this._paces.push(pace);
-            const pad = 5;  // Only shift after they are X meters over.
-            while (distance - this._distances[0] > this._distance + pad) {
+            while (this._distances.length > 2 && distance - this._distances[1] >= this._distance) {
                 this.shift();
             }
         }
@@ -159,8 +158,7 @@ sauce.ns('data', function() {
         }
 
         full() {
-            const pad = 5;  // See add()
-            return this._distance - this.distance() <= pad;
+            return this.distance() >= this._distance;
         }
 
         shift() {
