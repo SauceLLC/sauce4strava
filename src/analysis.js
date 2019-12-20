@@ -214,7 +214,6 @@ sauce.ns('analysis', function(ns) {
                     if (existing) {
                         existing.dialog('close');
                     }
-                    console.debug('Actual distance', bp.distance());
                     const dialog = moreinfoRunDialog.call(ctx, {
                         is_metric,
                         bp_label: label,
