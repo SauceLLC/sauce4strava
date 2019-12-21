@@ -664,7 +664,6 @@ sauce.ns('analysis', function(ns) {
 
 
     async function startRun() {
-        await attachComments(jQuery('.activity-summary'));
         sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
             'displayDetails', function(ret, start, end) {
                 ns.handleSelectionChange(start, end);
@@ -673,6 +672,7 @@ sauce.ns('analysis', function(ns) {
             function(ret, _, start, end) {
                 ns.handleSelectionChange(start, end);
             });
+        await attachComments(jQuery('.activity-summary'));
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.bestpace_tpl = await getTemplate('bestpace.html');
         ctx.moreinfo_tpl = await getTemplate('bestpace-moreinfo.html');
@@ -681,7 +681,6 @@ sauce.ns('analysis', function(ns) {
 
 
     async function startRide() {
-        await attachComments(jQuery('.activity-summary'));
         sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
             'displayDetails', function(ret, start, end) {
                 ns.handleSelectionChange(start, end);
@@ -705,6 +704,7 @@ sauce.ns('analysis', function(ns) {
                 console.error("Problem adding segment badges!", e);
             }
         }
+        await attachComments(jQuery('.activity-summary'));
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.critpower_tpl = await getTemplate('critpower.html');
         ctx.moreinfo_tpl = await getTemplate('critpower-moreinfo.html');
