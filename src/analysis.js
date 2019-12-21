@@ -5,7 +5,7 @@ sauce.ns('analysis', function(ns) {
 
     const ctx = {};
     const default_ftp = 200;
-    const tpl_url = sauce.extURL + 'templates/';
+    const tpl_url = sauce.extURL + 'templates';
 
     const ride_cp_periods = [
         ['5 s', 5],
@@ -96,7 +96,7 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function onRideStreamData() {
+    async function processRideStreams() {
         let wattsStream = getStream('watts');
         const is_watt_estimate = !wattsStream;
         if (!wattsStream) {
@@ -207,7 +207,7 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function onRunStreamData() {
+    async function processRunStreams() {
         const distStream = getStream('distance');
         if (!distStream) {
             console.warn("No distance data for this activity.");
@@ -496,15 +496,18 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function load() {
+    async function load() {
         console.info('Loading Sauce...');
         const activity = pageView.activity();
         const type = activity.get('type');
         let loadStreams;
+        let start;
         if (type === 'Run') {
             loadStreams = loadRunStreams;
+            start = startRun;
         } else if (type === 'Ride') {
             loadStreams = loadRideStreams;
+            start = startRide;
         } else {
             console.debug("Unsupported activity type:", type);
             return;
@@ -517,18 +520,18 @@ sauce.ns('analysis', function(ns) {
          * clear the `required` array.  While strange looking, this is the
          * best way to detect a common condition where network loading of
          * stream data is currently running and we would do best to wait for
-         * it's finish and thus avoid double loading data. */
+         * its finish and thus avoid double loading data. */
         const streamRequestActive = !!pageView.streamsRequest.required.length;
         if (streamRequestActive) {
             console.log("Deferred load of additional streams...");
-            pageView.streamsRequest.deferred.done(loadStreams);
-        } else {
-            loadStreams();
+            await new Promise(resolve => pageView.streamsRequest.deferred.done(resolve));
         }
+        await loadStreams();
+        await start();
     }
 
 
-    function loadRideStreams() {
+    async function loadRideStreams() {
         const streams = pageView.streams();
         if (!streams.getStream('watts')) {
             const resources = ['watts'];
@@ -539,29 +542,27 @@ sauce.ns('analysis', function(ns) {
                 resources.push('time');
             }
             console.info("Fetching wattage streams:", resources);
-            streams.fetchStreams(resources, {
-                success: startRide,
-                error: function() {
-                    console.warn("Failed to load wattage streams. Load Aborted");
-                }
-            });
-        } else {
-            startRide();
+            await new Promise((success, error) => streams.fetchStreams(resources, {success, error}));
         }
     }
 
 
-    function loadRunStreams() {
+    async function loadRunStreams() {
         if (!getStream('distance')) {
             console.warn("Run without distance data?");
             return;
-        } else {
-            startRun();
         }
     }
 
 
-    function attachComments($root) {
+    async function getTemplate(filename) {
+        const resp = await fetch(`${tpl_url}/${filename}`);
+        const tplText = await resp.text();
+        return _.template(tplText);
+    }
+
+
+    async function attachComments($root) {
         const $commentsEl = jQuery('<div class="sauce-inline-comments"></div>');
         const $submitEl = jQuery([
             '<div class="sauce-new-comment">',
@@ -593,6 +594,7 @@ sauce.ns('analysis', function(ns) {
         $button.on('click', submit_comment);
         $root.append([$commentsEl, $submitEl]);
 
+        const commentsTpl = await getTemplate('inline-comment.html');
         const renderComments = () => {
             const ctrl = pageView.commentsController();
             const comments = ctrl.getFromHash('Activity-' + ctx.activity_id);
@@ -600,18 +602,13 @@ sauce.ns('analysis', function(ns) {
             comments.forEach(function(x) {
                 const dt = new Date(jQuery(x.timestamp).attr('datetime'));
                 x.timeago = sauce.time.ago(dt);
-                stack.push(ctx.comments_tpl(x));
+                stack.push(commentsTpl(x));
             });
             $commentsEl.html(stack.join(''));
         };
 
-        jQuery.ajax(tpl_url + 'inline-comment.html').done(function(data) {
-            ctx.comments_tpl = _.template(data);
-            pageView.commentsController().on('commentCompleted', function() {
-                renderComments();
-            });
-            renderComments();
-        });
+        pageView.commentsController().on('commentCompleted', () => renderComments());
+        renderComments();
     }
 
 
@@ -666,8 +663,8 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function startRun() {
-        attachComments(jQuery('.activity-summary'));
+    async function startRun() {
+        await attachComments(jQuery('.activity-summary'));
         sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
             'displayDetails', function(ret, start, end) {
                 ns.handleSelectionChange(start, end);
@@ -676,30 +673,15 @@ sauce.ns('analysis', function(ns) {
             function(ret, _, start, end) {
                 ns.handleSelectionChange(start, end);
             });
-
-        const final = new sauce.func.IfDone(onRunStreamData);
-
-        const tpl_url = sauce.extURL + 'templates/';
-        jQuery.ajax(tpl_url + 'tertiary-stats.html').done(final.before(function(data) {
-            ctx.tertiary_stats_tpl = _.template(data);
-        }));
-        jQuery.ajax(tpl_url + 'bestpace.html').done(final.before(function(data) {
-            ctx.bestpace_tpl = _.template(data);
-        }));
-        jQuery.ajax(tpl_url + 'bestpace-moreinfo.html').done(final.before(function(data) {
-            ctx.moreinfo_tpl = _.template(data);
-        }));
-
-        final.inc();
-        sauce.comm.getFTP(ctx.athlete_id, function(ftp) {
-            assignFTP(ftp);
-            final.dec();
-        });
+        ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
+        ctx.bestpace_tpl = await getTemplate('bestpace.html');
+        ctx.moreinfo_tpl = await getTemplate('bestpace-moreinfo.html');
+        await processRunStreams();
     }
 
 
-    function startRide() {
-        attachComments(jQuery('.activity-summary'));
+    async function startRide() {
+        await attachComments(jQuery('.activity-summary'));
         sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
             'displayDetails', function(ret, start, end) {
                 ns.handleSelectionChange(start, end);
@@ -708,7 +690,6 @@ sauce.ns('analysis', function(ns) {
             function(ret, _, start, end) {
                 ns.handleSelectionChange(start, end);
             });
-
         const segments = document.querySelector('table.segments');
         if (segments && sauce.config.options['analysis-segment-badges']) {
             const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
@@ -724,26 +705,11 @@ sauce.ns('analysis', function(ns) {
                 console.error("Problem adding segment badges!", e);
             }
         }
-
-        window.xxxRideStreamData = onRideStreamData;
-        const final = new sauce.func.IfDone(onRideStreamData);
-
-        const tpl_url = sauce.extURL + 'templates/';
-        jQuery.ajax(tpl_url + 'tertiary-stats.html').done(final.before(function(data) {
-            ctx.tertiary_stats_tpl = _.template(data);
-        }));
-        jQuery.ajax(tpl_url + 'critpower.html').done(final.before(function(data) {
-            ctx.critpower_tpl = _.template(data);
-        }));
-        jQuery.ajax(tpl_url + 'critpower-moreinfo.html').done(final.before(function(data) {
-            ctx.moreinfo_tpl = _.template(data);
-        }));
-
-        final.inc();
-        sauce.comm.getFTP(ctx.athlete_id, function(ftp) {
-            assignFTP(ftp);
-            final.dec();
-        });
+        ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
+        ctx.critpower_tpl = await getTemplate('critpower.html');
+        ctx.moreinfo_tpl = await getTemplate('critpower-moreinfo.html');
+        assignFTP(await sauce.comm.getFTP(ctx.athlete_id));
+        await processRideStreams();
     }
 
 

@@ -1,9 +1,9 @@
 /* global chrome */
 
-var rpc_map = {};
+const rpc_map = {};
 
 function add_rpc_hook(system, op, callback) {
-    var sys = rpc_map[system];
+    let sys = rpc_map[system] || (rpc_map[system] = {});
     if (!sys) {
         sys = rpc_map[system] = {};
     }
@@ -23,7 +23,7 @@ chrome.runtime.onMessageExternal.addListener(function(msg, s, responder) {
     try {
         rpc_map[msg.system][msg.op](msg.data, function() {
             /* "arguments" breaks down in serialization. */
-            var args = Array.prototype.slice.call(arguments);
+            const args = Array.prototype.slice.call(arguments);
             responder({
                 success: true,
                 data: args

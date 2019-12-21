@@ -1,4 +1,4 @@
-/* global sauce chrome */
+/* global sauce */
 
 sauce.ns('data', function() {
     'use strict';
@@ -452,65 +452,6 @@ sauce.ns('pace', function() {
 
     return {
         bestpace: bestpace
-    };
-});
-
-
-sauce.ns('comm', function() {
-    'use strict';
-
-    const _sendMessage = function(msg, callback) {
-        chrome.runtime.sendMessage(sauce.extID, msg, function(resp) {
-            if (resp === undefined || !resp.success) {
-                const err = resp ? resp.error : 'general error';
-                console.error("RPC sender:", err);
-            } else if (callback) {
-                callback.apply(this, resp.data);
-            }
-        });
-    };
-
-    const syncSet = function(key, value, callback) {
-        const data = {};
-        data[key] = value;
-        _sendMessage({
-            system: 'sync',
-            op: 'set',
-            data: data
-        }, callback);
-    };
-
-    const syncGet = function(key, callback) {
-        _sendMessage({
-            system: 'sync',
-            op: 'get',
-            data: key
-        }, function(d) {
-            callback(d[key]);
-        });
-    };
-
-    const setFTP = function(athlete_id, ftp, callback) {
-        syncSet('athlete_ftp_' + athlete_id, ftp, callback);
-    };
-
-    const getFTP = function(athlete_id, callback) {
-        syncGet('athlete_ftp_' + athlete_id, callback);
-    };
-
-    async function get(key) {
-        return await new Promise(resolve => syncGet(key, resolve));
-    }
-
-    async function set(key, value) {
-        return await new Promise(resolve => syncSet(key, value, resolve));
-    }
-
-    return {
-        getFTP,
-        setFTP,
-        get,
-        set,
     };
 });
 
