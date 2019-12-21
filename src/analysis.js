@@ -725,6 +725,7 @@ sauce.ns('analysis', function(ns) {
             }
         }
 
+        window.xxxRideStreamData = onRideStreamData;
         const final = new sauce.func.IfDone(onRideStreamData);
 
         const tpl_url = sauce.extURL + 'templates/';

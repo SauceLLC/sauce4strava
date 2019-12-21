@@ -44,15 +44,7 @@ sauce.ns('data', function() {
     }
 
 
-    class Pad {
-        constructor(value) {
-            this.value = value;
-        }
-
-        valueOf() {
-            return this.value;
-        }
-    }
+    class Pad extends Number {}
 
     const maxTimeGap = 4;  // Any gaps over this will result in zero padding to deflate bad high readings.
 
