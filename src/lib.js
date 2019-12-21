@@ -248,40 +248,9 @@ sauce.ns('func', function() {
         _adjunct(false, obj, orig_func_name, interceptor);
     };
 
-    const IfDone = function(callback) {
-        this.callback = callback;
-        this.refcnt = 0;
-    };
-
-    IfDone.prototype.inc = function() {
-        this.refcnt++;
-    };
-
-    IfDone.prototype.dec = function() {
-        this.refcnt--;
-        if (this.refcnt === 0) {
-            this.callback();
-        }
-    };
-
-    IfDone.prototype.before = function(fn) {
-        const _this = this;
-        _this.inc();
-        return function() {
-            try {
-                fn.apply(this, arguments);
-            } catch(e) {
-                _this.dec();
-                throw e;
-            }
-            _this.dec();
-        };
-    };
-
     return {
         runAfter: runAfter,
-        runBefore: runBefore,
-        IfDone: IfDone
+        runBefore: runBefore
     };
 });
 
