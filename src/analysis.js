@@ -308,7 +308,7 @@ sauce.ns('analysis', function(ns) {
     function moreinfoRideDialog(opts) {
         const roll = opts.roll;
         const avgPower = roll.avg();
-        const np = sauce.power.calcNP(roll._values);
+        const np = sauce.power.calcNP(roll.values());
         const rollSize = roll.size();
         const avgpwr = np.value ? np : {value: avgPower, count: rollSize};
         const intensity = avgpwr.value / ctx.ftp;
@@ -325,7 +325,7 @@ sauce.ns('analysis', function(ns) {
             w_kg,
             power: {
                 avg: avgPower,
-                max: sauce.data.max(roll._values),
+                max: sauce.data.max(roll.values()),
                 np: np.value,
             },
             tss: sauce.power.calcTSS(avgpwr, intensity, ctx.ftp),
@@ -373,7 +373,7 @@ sauce.ns('analysis', function(ns) {
             }]
         });
 
-        const smoothedData = resample(roll._values, 240);
+        const smoothedData = resample(roll.values(), 240);
         /* Must run after the dialog is open for proper rendering. */
         moreinfo_frag.find('.sauce-sparkline').sparkline(smoothedData, {
             type: 'line',
@@ -711,6 +711,7 @@ sauce.ns('analysis', function(ns) {
         assignFTP(await sauce.comm.getFTP(ctx.athlete_id));
         await processRideStreams();
     }
+    window.xxxprs = processRideStreams;
 
 
     function assignFTP(sauce_ftp) {

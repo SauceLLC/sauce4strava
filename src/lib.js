@@ -53,7 +53,7 @@ sauce.ns('data', function() {
         elapsed(options) {
             options = options || {};
             const len = this._times.length;
-            const offt = options.offt || 0;
+            const offt = (options.offt || 0) + this._offt;
             if (len - offt < 2) {
                 return 0;
             }
@@ -64,7 +64,7 @@ sauce.ns('data', function() {
         firstTimestamp(options) {
             options = options || {};
             if (options.noPad) {
-                for (let i = 0; i < this._values.length; i++) {
+                for (let i = this._offt; i < this._values.length; i++) {
                     if (!(this._values[i] instanceof Pad)) {
                         return this._times[i];
                     }
@@ -77,7 +77,7 @@ sauce.ns('data', function() {
         lastTimestamp(options) {
             options = options || {};
             if (options.noPad) {
-                for (let i = this._values.length - 1; i >= 0; i--) {
+                for (let i = this._values.length - 1; i >= this._offt; i--) {
                     if (!(this._values[i] instanceof Pad)) {
                         return this._times[i];
                     }
@@ -99,6 +99,8 @@ sauce.ns('data', function() {
             this._times = [];
             this._values = [];
             this._head = null;
+            this._offt = 0;
+            this._sum = 0;
             this.period = period;
         }
 
@@ -125,30 +127,38 @@ sauce.ns('data', function() {
             }
             this._times.push(ts);
             this._values.push(value);
+            this._sum += value;
             while (this.elapsed({offt: 1}) >= this.period) {
                 this.shift();
             }
         }
 
         avg() {
-            return avg(this._values);
+            return this._sum / (this._values.length - this._offt);
         }
 
         full() {
             return this.elapsed() >= this.period;
         }
 
+        values() {
+            return this._values.slice(this._offt);
+        }
+
         shift() {
-            this._head = this._times[0];
-            this._times.shift();
-            this._values.shift();
+            this._head = this._times[this._offt];
+            //this._times.shift();
+            //this._values.shift();
+            this._sum -= this._values[this._offt];
+            this._offt++;
         }
 
         copy() {
             const copy = new this.constructor(this.period);
             copy._head = this._head;
-            copy._times = this._times.slice(0);
-            copy._values = this._values.slice(0);
+            copy._times = this._times.slice(this._offt);
+            copy._values = this._values.slice(this._offt);
+            copy._sum = this._sum;
             return copy;
         }
     }
