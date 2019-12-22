@@ -5,7 +5,7 @@
     <div class="sauce-comment">
         <% _.each(comment, function(c){ %>
             <% if (c.type === 'mention_token') { %>
-                <a href="{{ c.path }}">{{c.text}}</a>
+                <a href="{{c.path}}">{{c.text}}</a>
             <% } else { %>
                 {{c.text}}
             <% } %>

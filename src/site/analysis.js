@@ -127,7 +127,7 @@ sauce.ns('analysis', function(ns) {
         const ftp_link = stats_frag.find('.provide-ftp');
         const ftp_input = ftp_link.siblings('input');
 
-        ftp_input.keyup(function(ev) {
+        ftp_input.keyup(async ev => {
             if (ev.keyCode == 27 /* escape */) {
                 ftp_input.hide();
                 ftp_link.html(val).show();
@@ -151,12 +151,11 @@ sauce.ns('analysis', function(ns) {
             }
             ftp_input.hide();
             ftp_link.html(val).show();
+            await sauce.comm.setFTP(pageView.activityAthlete(), val);
             jQuery('<div title="Reloading...">' +
                    '<b>Reloading page to reflect FTP change."' +
                    '</div>').dialog({modal: true});
-            sauce.comm.setFTP(ctx.athlete_id, val, function() {
-                location.reload();
-            });
+            location.reload();
         });
 
         ftp_link.click(function() {
@@ -202,7 +201,7 @@ sauce.ns('analysis', function(ns) {
                 jQuery(`#sauce-cp-row-${period}`).show();
             }
             const _done = performance.now();
-            console.warn(`Took: ${_done - _start}`);
+            console.info(`Analysis loaded in: ${_done - _start}ms`);
         }
     }
 
@@ -512,7 +511,6 @@ sauce.ns('analysis', function(ns) {
             console.debug("Unsupported activity type:", type);
             return;
         }
-        ctx.athlete_id = pageView.activityAthlete().get('id');
         ctx.activity_id = activity.get('id');
         /* Avoid racing with other stream requests...
          * This strange test tells us the `streamRequest.request` routine is
@@ -708,7 +706,7 @@ sauce.ns('analysis', function(ns) {
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.critpower_tpl = await getTemplate('critpower.html');
         ctx.moreinfo_tpl = await getTemplate('critpower-moreinfo.html');
-        assignFTP(await sauce.comm.getFTP(ctx.athlete_id));
+        assignFTP(await sauce.comm.getFTP(pageView.activityAthlete().get('id')));
         await processRideStreams();
     }
     window.xxxprs = processRideStreams;

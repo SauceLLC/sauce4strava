@@ -45,8 +45,10 @@ sauce.ns('data', function() {
 
 
     class Pad extends Number {}
+    class Interpolation extends Pad {}
+    class Zero extends Pad {}
 
-    const maxTimeGap = 4;  // Any gaps over this will result in zero padding to deflate bad high readings.
+    const maxTimeGap = 6;  // Any gaps over this will result in zero padding to deflate bad high readings.
 
 
     class RollingBase {
@@ -111,17 +113,20 @@ sauce.ns('data', function() {
                 const last = this._times[this._times.length - 1];
                 const gap = ts - last;
                 if (gap > maxTimeGap) {
-                    const zero = new Pad(0);
-                    //console.warn(`Zero padding big gap: last=${last}, gap=${gap}`);
+                    const zero = new Zero(0);
+                    //console.info(`Zero padding big gap: ts=${last}, gap=${gap}`);
                     for (let i = 1; i < gap; i++) {
                         this.add(last + i, zero);
                     }
                 } else if (gap > 1) {
                     const lastValue = this._values[this._values.length - 1];
-                    const avgValue = Math.round((lastValue + value) / 2);
-                    //console.warn(`Interpolation padding: last=${last}, gap=${gap} avg=${avgValue}`);
+                    const delta = value - lastValue;
                     for (let i = 1; i < gap; i++) {
-                        this.add(last + i, new Pad(avgValue));
+                        const iVal = new Interpolation(Math.round(lastValue + (delta * (i / gap))));
+                        this.add(last + i, iVal);
+                        if (gap > 2 || Math.random() < 0.01) {
+                            //console.info(`Interpolation padding: ts=${last + i}, gap=${gap} iVal=${iVal}`);
+                        }
                     }
                 }
             }
@@ -147,8 +152,6 @@ sauce.ns('data', function() {
 
         shift() {
             this._head = this._times[this._offt];
-            //this._times.shift();
-            //this._values.shift();
             this._sum -= this._values[this._offt];
             this._offt++;
         }
@@ -358,6 +361,7 @@ sauce.ns('power', function() {
                 max = ring.copy();
             }
         }
+        console.log(max);
         return max;
     };
 

@@ -46,19 +46,19 @@
         "default_popup": "pages/page_action_popup.html"
     },
 
-    "options_page": "pages/adv_options.html",
+    "options_page": "pages/page_action_popup.html",
 
     "content_scripts": [{
         "run_at": "document_idle",
         "matches": ["*://*.strava.com/*"],
         "css": [
-            "css/overrides.css",
-            "css/analysis.css"
+            "css/site/overrides.css",
+            "css/site/analysis.css"
         ]
     }, {
         "run_at": "document_end",
         "matches": ["*://*.strava.com/*"],
-        "js": ["src/boot.js"]
+        "js": ["src/ext/boot.js"]
     }],
 
     "externally_connectable": {
@@ -66,10 +66,8 @@
     },
 
     "web_accessible_resources": [
-        "src/*.js",
-        "src/*.json",
-        "css/*.css",
-        "pages/*.html",
+        "src/site/*.js",
+        "css/site/*.css",
         "templates/*.html",
         "assets/ranking/*.png"
     ]
