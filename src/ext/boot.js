@@ -61,11 +61,11 @@
             sauce.extURL = "${extUrl}";
             sauce.extID = "${chrome.runtime.id}";
         `);
-        await Promise.all(siteScripts.map(async url => {
+        for (let url of siteScripts) {
             if (!url.match(/https?:\/\//i)) {
                 url = extUrl + url;
             }
             await loadScript(url);
-        }));
+        }
     }
 })();
