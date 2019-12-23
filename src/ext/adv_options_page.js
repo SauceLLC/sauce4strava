@@ -55,7 +55,7 @@
         document.getElementById('clear').addEventListener('click', function() {
             this.innerText = "Double Click to Confirm Erase";
             this.addEventListener('dblclick', async () => {
-                await sauce.storage.clear();
+                await sauce.storage.remove('ftp_overrides');
                 window.location.reload();
             });
         });
@@ -65,7 +65,8 @@
             ftp_list.innerHTML += `
                 <tr>
                     <td class="label">${x.name}:</td>
-                    <td><input name="ftp" id="${x.id}" value="${x.ftp}"/></td>
+                    <td><input name="ftp" type="number" maxlength="4" size="4" step="10"
+                               id="${x.id}" value="${x.ftp}"/></td>
                 </tr>
             `;
         }
