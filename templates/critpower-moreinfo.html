@@ -7,6 +7,7 @@
                 <a class="start_time_link">{{start_time}}</a>
             </td>
         </tr>
+
         <tr>
             <td>Watts/kg</td>
             <td class="rank_holder">
@@ -18,16 +19,20 @@
                 <% } %>
             </td>
         </tr>
+
         <tr>
             <td>Power</td>
             <td>
-                <span title="Average Watts">{{Math.round(power.avg)}}</span>
-                <sup title="Peak Watts">{{power.max}}</sup>
-                <% if (power.np) { %>
-                    <small title="Normalized Watts">({{Math.round(power.np)}}np)</small>
-                <% } %>
+                <span title="Average Watts">{{Math.round(power.avg)}}<small>w</small></span>
+                <sup title="Peak Watts">{{power.max}}<small>w</small></sup>
             </td>
         </tr>
+
+        <% if (power.np) { %>
+            <td title="Normalized Power">NP</td>
+            <td>{{Math.round(power.np)}}<small>w</small></td>
+        <% } %>
+
         <% if (hr) { %>
             <tr>
                 <td>Heartrate</td>
@@ -37,12 +42,33 @@
                     <sup title="Peak BPM">{{hr.max}}</sup>
                 </td>
             </tr>
+
+        <% if (cadence) { %>
+            <tr>
+                <td title="Steps per minute">Cadence</td>
+                <td title="Steps per minute">{{Math.round(cadence)}}</td>
+            </tr>
+        <% } %>
+
+        <% if (grade) { %>
+            <tr>
+                <td>Elevation</td>
+                <td>
+                    <sub title="Descended">{{grade.loss}}{{elevationUnit}}</sub>
+                    <span title="Average Grade">{{Math.round(grade.avg)}}<small>%</small></span>
+                    <sup title="Climbed">{{grade.gain}}{{elevationUnit}}</sup>
+                </td>
+            </tr>
+        <% } %>
+
         <% } if (intensity) { %>
             <tr>
                 <td>Intensity</td>
                 <td title="Percent of FTP">{{Math.round(intensity * 100)}}%</td>
             </tr>
-        <% } if (tss) { %>
+        <% } %>
+
+        <% if (tss) { %>
             <tr>
                 <td>TSS</td>
                 <td title="Total Stress Score">{{Math.round(tss)}}</td>

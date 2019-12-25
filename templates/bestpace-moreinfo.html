@@ -58,9 +58,9 @@
             <tr>
                 <td>Elevation</td>
                 <td>
-                    <sub title="Descended">{{grade.loss}}</sub>
-                    <span title="Average Grade">{{Math.round(grade.avg)}}%</span>
-                    <sup title="Climbed">{{grade.gain}}</sup>
+                    <sub title="Descended">{{grade.loss}}{{elevationUnit}}</sub>
+                    <span title="Average Grade">{{Math.round(grade.avg)}}<small>%</small></span>
+                    <sup title="Climbed">{{grade.gain}}{{elevationUnit}}</sup>
                 </td>
             </tr>
         <% } %>

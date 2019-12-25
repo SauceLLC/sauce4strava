@@ -223,13 +223,12 @@ sauce.ns('analysis', function(ns) {
         stats_frag.insertAfter(jQuery('.inline-stats').last());
 
         const open_dialog = [];
-        const is_metric = currentAthlete.get('measurement_preference') !== 'feet';
+        const is_metric = prefersMetric();
         const bestpace_frag = jQuery(ctx.bestpace_tpl({
             is_metric,
             cp_distances: run_cp_distances
         }));
         bestpace_frag.insertAfter(jQuery('#pagenav').first());
-        const paceConv = is_metric ? kmPace : milePace;
         const timeStream = getStream('time');
         const paceStream = getStream('pace');
         for (const [label, distance] of run_cp_distances) {
@@ -238,7 +237,7 @@ sauce.ns('analysis', function(ns) {
                 const el = jQuery(`#sauce-cp-${distance}`);
                 el.attr('title', `Elapsed time: ${formatPace(roll.elapsed())}`);
                 const unit = is_metric ? 'k' : 'm';
-                el.html(`${formatPace(paceConv(roll.avg()))}<small>/${unit}</small>`);
+                el.html(`${humanPace(roll.avg())}<small>/${unit}</small>`);
                 el.parent().click(function() {
                     const existing = open_dialog.shift();
                     if (existing) {
@@ -249,7 +248,7 @@ sauce.ns('analysis', function(ns) {
                         label,
                         roll,
                         elapsed: formatPace(roll.elapsed()),
-                        bp_str: formatPace(paceConv(roll.avg())),
+                        bp_str: humanPace(roll.avg()),
                         weight,
                         anchor_to: el.parent()
                     });
@@ -266,6 +265,15 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    let _preferMetric;
+    function prefersMetric() {
+        if (_preferMetric === undefined) {
+            _preferMetric = currentAthlete.get('measurement_preference') !== 'feet';
+        }
+        return _preferMetric;
+    }
+
+
     function milePace(secondsPerMeter) {
         /* Convert strava pace into seconds per mile */
         return  metersPerMile * secondsPerMeter;
@@ -275,6 +283,17 @@ sauce.ns('analysis', function(ns) {
     function kmPace(secondsPerMeter) {
         /* Convert strava pace into seconds per kilometer */
         return  1000 * secondsPerMeter;
+    }
+
+
+    function localePace(secondsPerMeter) {
+        /* Convert seconds per metere (native stream format) to seconds per
+         * the athletes locale based fav unit.  E.g. /km or /mile */
+        if (prefersMetric()) {
+            return kmPace(secondsPerMeter);
+        } else {
+            return milePace(secondsPerMeter);
+        }
     }
 
 
@@ -304,6 +323,38 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    function humanPace(secondsPerMeter) {
+        return formatPace(localePace(secondsPerMeter));
+    }
+
+
+    function altitudeChanges(stream) {
+        let gain = 0;
+        let loss = 0;
+        if (stream && stream.length) {
+            let last = stream[0];
+            for (const x of stream) {
+                if (x > last) {
+                    gain += x - last;
+                } else {
+                    loss += last - x;
+                }
+                last = x;
+            }
+        }
+        return {gain, loss};
+    }
+
+
+    function humanElevation(elevation) {
+        if (prefersMetric()) {
+            return `${elevation.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+        } else {
+            return `${(elevation * 3.28084).toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+        }
+    }
+
+
     function moreinfoRideDialog(opts) {
         const roll = opts.roll;
         const avgPower = roll.avg();
@@ -318,6 +369,10 @@ sauce.ns('analysis', function(ns) {
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
         const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
+        const gradeStream = getStreamTimeRange('grade_smooth', startTime, endTime);
+        const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
+        const altStream = getStreamTimeRange('altitude', startTime, endTime);
+        const altChanges = altitudeChanges(altStream);
         const data = {
             title: `Critical Power: ${opts.label}`,
             start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
@@ -336,7 +391,16 @@ sauce.ns('analysis', function(ns) {
                 min: sauce.data.min(hrStream),
                 avg: sauce.data.avg(hrStream),
                 max: sauce.data.max(hrStream),
-            }
+            },
+            cadence: cadenceStream && sauce.data.avg(cadenceStream) * 2,
+            grade: gradeStream && {
+                min: sauce.data.min(gradeStream),
+                avg: sauce.data.avg(gradeStream),
+                max: sauce.data.max(gradeStream),
+                gain: humanElevation(altChanges.gain),
+                loss: humanElevation(altChanges.loss),
+            },
+            elevationUnit: prefersMetric() ? 'm' : 'ft'
         };
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
@@ -392,10 +456,6 @@ sauce.ns('analysis', function(ns) {
 
     function moreinfoRunDialog(opts) {
         const roll = opts.roll;
-        const paceConv = opts.is_metric ? kmPace : milePace;
-        const humanElevation = opts.is_metric ?
-            x => `${x.toLocaleString(undefined, {maximumFractionDigits: 0})} m` :
-            x => `${(x * 3.28084).toLocaleString(undefined, {maximumFractionDigits: 0})} ft`;
         const elapsed = formatPace(roll.elapsed());
         const startTime = roll.firstTimestamp();
         const endTime = roll.lastTimestamp();
@@ -404,28 +464,16 @@ sauce.ns('analysis', function(ns) {
         const gradeStream = getStreamTimeRange('grade_smooth', startTime, endTime);
         const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
         const altStream = getStreamTimeRange('altitude', startTime, endTime);
-        let altGain = 0;
-        let altLoss = 0;
-        if (altStream && altStream.length) {
-            let last = altStream[0];
-            for (const x of altStream) {
-                if (x > last) {
-                    altGain += x - last;
-                } else {
-                    altLoss += last - x;
-                }
-                last = x;
-            }
-        }
+        const altChanges = altitudeChanges(altStream);
         const data = {
             is_metric: opts.is_metric,
             title: 'Best Pace: ' + opts.label,
             start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
             pace: {
-                min: formatPace(paceConv(sauce.data.min(roll._paces))),
-                avg: formatPace(paceConv(roll.avg())),
-                max: formatPace(paceConv(sauce.data.max(roll._paces))),
-                gap: gapStream && formatPace(paceConv(sauce.data.avg(gapStream))),
+                min: humanPace(sauce.data.min(roll._paces)),
+                avg: humanPace(roll.avg()),
+                max: humanPace(sauce.data.max(roll._paces)),
+                gap: gapStream && humanPace(sauce.data.avg(gapStream)),
             },
             elapsed,
             hr: hrStream && {
@@ -438,9 +486,10 @@ sauce.ns('analysis', function(ns) {
                 min: sauce.data.min(gradeStream),
                 avg: sauce.data.avg(gradeStream),
                 max: sauce.data.max(gradeStream),
-                gain: humanElevation(altGain),
-                loss: humanElevation(altLoss),
-            }
+                gain: humanElevation(altChanges.gain),
+                loss: humanElevation(altChanges.loss),
+            },
+            elevationUnit: prefersMetric() ? 'm' : 'ft'
         };
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
@@ -477,7 +526,7 @@ sauce.ns('analysis', function(ns) {
         });
 
         const smoothedData = resample(roll._paces, 240);
-        const perUnitPaceData = smoothedData.map(x => Math.round((paceConv(x) / 60) * 100) / 100);
+        const perUnitPaceData = smoothedData.map(x => Math.round((localePace(x) / 60) * 100) / 100);
         /* Must run after the dialog is open for proper rendering. */
         moreinfo_frag.find('.sauce-sparkline').sparkline(perUnitPaceData, {
             type: 'line',
@@ -487,7 +536,7 @@ sauce.ns('analysis', function(ns) {
             fillColor: 'rgba(234, 64, 13, 0.61)',
             chartRangeMin: 0,
             normalRangeMin: 0,
-            normalRangeMax: paceConv(roll.avg()) / 60,
+            normalRangeMax: localePace(roll.avg()) / 60,
             tooltipSuffix: '/mi'
         });
 
