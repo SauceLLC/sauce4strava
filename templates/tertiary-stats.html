@@ -7,6 +7,7 @@
                     <div class="label">Normalized Power</div>
                 </li>
             <% } %>
+
             <li>
                 <strong>
                     <a class="provide-ftp origin-{{ftp_origin}}" title="Click to override...">{{ftp}}</a><abbr class="unit" title="Watts">W</abbr>
@@ -15,18 +16,22 @@
                 </strong>
                 <div class="label">FTP</div>
             </li>
+
             <% if (intensity) { %>
                 <li>
                     <strong>{{Math.round(intensity * 100)}}<abbr class="unit" title="Intensity Factor">%</abbr></strong>
                     <div class="label">Intensity</div>
                 </li>
-            <% } if (tss) { %>
+            <% } %>
+
+            <% if (tss) { %>
                 <li>
                     <strong>{{Math.round(tss)}}</strong>
                     <div class="label">TSS</div>
                 </li>
             <% } %>
         <% } %>
+
         <% if (weight_norm) { %>
             <li>
                 <strong>{{Math.round(weight_norm)}}<abbr class="unit" title="Weight">{{weight_unit}}</abbr></strong>

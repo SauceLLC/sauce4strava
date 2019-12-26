@@ -42,11 +42,12 @@
                     <sup title="Peak BPM">{{hr.max}}</sup>
                 </td>
             </tr>
+        <% } %>
 
         <% if (cadence) { %>
             <tr>
-                <td title="Steps per minute">Cadence</td>
-                <td title="Steps per minute">{{Math.round(cadence)}}</td>
+                <td title="Crank RPM">Cadence</td>
+                <td title="Crank RPM">{{Math.round(cadence)}}</td>
             </tr>
         <% } %>
 
@@ -61,18 +62,20 @@
             </tr>
         <% } %>
 
-        <% } if (intensity) { %>
-            <tr>
-                <td>Intensity</td>
-                <td title="Percent of FTP">{{Math.round(intensity * 100)}}%</td>
-            </tr>
-        <% } %>
+        <% if (hasFtp) { %>
+            <% if (intensity) { %>
+                <tr>
+                    <td>Intensity</td>
+                    <td title="Percent of FTP">{{Math.round(intensity * 100)}}%</td>
+                </tr>
+            <% } %>
 
-        <% if (tss) { %>
-            <tr>
-                <td>TSS</td>
-                <td title="Total Stress Score">{{Math.round(tss)}}</td>
-            </tr>
+            <% if (tss) { %>
+                <tr>
+                    <td>TSS</td>
+                    <td title="Total Stress Score">{{Math.round(tss)}}</td>
+                </tr>
+            <% } %>
         <% } %>
     </table>
 </div>

@@ -361,7 +361,6 @@ sauce.ns('power', function() {
                 max = ring.copy();
             }
         }
-        console.log(max);
         return max;
     };
 

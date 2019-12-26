@@ -7,14 +7,16 @@
                 <a class="start_time_link">{{ start_time }}</a>
             </td>
         </tr>
+
         <tr>
             <td>Elapsed Time</td>
             <td title="Hours:Minutes:Seconds">
                 <span>{{elapsed}}</span>
             </td>
         </tr>
+
         <tr>
-            <% if (is_metric) { %>
+            <% if (metric) { %>
                 <td title="Minutes per kilometer">Pace <small>/k</small></td>
             <% } else { %>
                 <td title="Minutes per mile">Pace <small>/mi</small></td>
@@ -25,9 +27,10 @@
                 <sup title="Peak Pace">{{pace.min}}</sup>
             </td>
         </tr>
+
         <% if (pace.gap) { %>
             <tr>
-                <% if (is_metric) { %>
+                <% if (metric) { %>
                     <td title="Grade Adjusted Pace (per kilometer)">GAP <small>/k</small></td>
                 <% } else { %>
                     <td title="Grade Adjusted Pace (per mile)">GAP <small>/mi</small></td>
@@ -64,6 +67,5 @@
                 </td>
             </tr>
         <% } %>
-
     </table>
 </div>

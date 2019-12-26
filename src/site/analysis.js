@@ -185,7 +185,7 @@ sauce.ns('analysis', function(ns) {
                     if (existing) {
                         existing.dialog('close');
                     }
-                    const dialog = moreinfoRideDialog.call(ctx, {
+                    const dialog = moreinfoRideDialog({
                         label,
                         roll,
                         weight,
@@ -223,9 +223,9 @@ sauce.ns('analysis', function(ns) {
         stats_frag.insertAfter(jQuery('.inline-stats').last());
 
         const open_dialog = [];
-        const is_metric = prefersMetric();
+        const metric = prefersMetric();
         const bestpace_frag = jQuery(ctx.bestpace_tpl({
-            is_metric,
+            metric,
             cp_distances: run_cp_distances
         }));
         bestpace_frag.insertAfter(jQuery('#pagenav').first());
@@ -236,15 +236,14 @@ sauce.ns('analysis', function(ns) {
             if (roll !== undefined) {
                 const el = jQuery(`#sauce-cp-${distance}`);
                 el.attr('title', `Elapsed time: ${formatPace(roll.elapsed())}`);
-                const unit = is_metric ? 'k' : 'm';
+                const unit = metric ? 'k' : 'm';
                 el.html(`${humanPace(roll.avg())}<small>/${unit}</small>`);
                 el.parent().click(function() {
                     const existing = open_dialog.shift();
                     if (existing) {
                         existing.dialog('close');
                     }
-                    const dialog = moreinfoRunDialog.call(ctx, {
-                        is_metric,
+                    const dialog = moreinfoRunDialog({
                         label,
                         roll,
                         elapsed: formatPace(roll.elapsed()),
@@ -369,10 +368,10 @@ sauce.ns('analysis', function(ns) {
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
         const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
-        const gradeStream = getStreamTimeRange('grade_smooth', startTime, endTime);
-        const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
         const altStream = getStreamTimeRange('altitude', startTime, endTime);
-        const altChanges = altitudeChanges(altStream);
+        const altChanges = altStream && altitudeChanges(altStream);
+        const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
+        const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
         const data = {
             title: `Critical Power: ${opts.label}`,
             start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
@@ -392,7 +391,7 @@ sauce.ns('analysis', function(ns) {
                 avg: sauce.data.avg(hrStream),
                 max: sauce.data.max(hrStream),
             },
-            cadence: cadenceStream && sauce.data.avg(cadenceStream) * 2,
+            cadence: cadenceStream && sauce.data.avg(cadenceStream),
             grade: gradeStream && {
                 min: sauce.data.min(gradeStream),
                 avg: sauce.data.avg(gradeStream),
@@ -400,7 +399,8 @@ sauce.ns('analysis', function(ns) {
                 gain: humanElevation(altChanges.gain),
                 loss: humanElevation(altChanges.loss),
             },
-            elevationUnit: prefersMetric() ? 'm' : 'ft'
+            elevationUnit: prefersMetric() ? 'm' : 'ft',
+            hasFtp: ctx.ftp_origin !== 'default'
         };
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
@@ -461,14 +461,15 @@ sauce.ns('analysis', function(ns) {
         const endTime = roll.lastTimestamp();
         const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
         const gapStream = getStreamTimeRange('grade_adjusted_pace', startTime, endTime);
-        const gradeStream = getStreamTimeRange('grade_smooth', startTime, endTime);
         const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
         const altStream = getStreamTimeRange('altitude', startTime, endTime);
-        const altChanges = altitudeChanges(altStream);
+        const altChanges = altStream && altitudeChanges(altStream);
+        const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
+        const metric = prefersMetric();
         const data = {
-            is_metric: opts.is_metric,
             title: 'Best Pace: ' + opts.label,
             start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
+            metric,
             pace: {
                 min: humanPace(sauce.data.min(roll._paces)),
                 avg: humanPace(roll.avg()),
@@ -489,7 +490,7 @@ sauce.ns('analysis', function(ns) {
                 gain: humanElevation(altChanges.gain),
                 loss: humanElevation(altChanges.loss),
             },
-            elevationUnit: prefersMetric() ? 'm' : 'ft'
+            elevationUnit: metric ? 'm' : 'ft'
         };
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
@@ -704,7 +705,7 @@ sauce.ns('analysis', function(ns) {
             try {
                 addBadge(row);
             } catch(e) {
-                console.warn("addBadge failure:", e);
+                console.error("addBadge failure:", e);
             }
         }
     }
@@ -802,10 +803,8 @@ sauce.ns('analysis', function(ns) {
         el.html(text.join(''));
     }
 
-
     return {
         load,
-        moreinfoRunDialog,
         handleSelectionChange,
     };
 });
