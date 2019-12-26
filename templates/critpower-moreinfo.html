@@ -60,6 +60,13 @@
                     <sup title="Climbed">{{grade.gain}}{{elevationUnit}}</sup>
                 </td>
             </tr>
+
+            <% if (grade.vam > 0) { %>
+                <tr>
+                    <td title="Vertical Ascent Meters (per hour)">VAM <sup style="color: blue">BETA</sup></td>
+                    <td title="Vertical Ascent Meters (per hour)">{{Math.round(grade.vam).toLocaleString()}}<small>m/hr</small></td>
+                </tr>
+            <% } %>
         <% } %>
 
         <% if (hasFtp) { %>

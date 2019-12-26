@@ -386,6 +386,7 @@ sauce.ns('analysis', function(ns) {
                 max: sauce.data.max(gradeStream),
                 gain: humanElevation(altChanges.gain),
                 loss: humanElevation(altChanges.loss),
+                vam: (altChanges.gain / roll.period) * 3600,
             },
             elevationUnit: prefersMetric() ? 'm' : 'ft',
             hasFtp: ctx.ftp_origin !== 'default'
@@ -705,14 +706,6 @@ sauce.ns('analysis', function(ns) {
 
 
     async function startRun() {
-        sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
-            'displayDetails', function(ret, start, end) {
-                ns.handleSelectionChange(start, end);
-            });
-        sauce.func.runAfter(Strava.Charts.Activities.LabelBox, 'handleStreamHover',
-            function(ret, _, start, end) {
-                ns.handleSelectionChange(start, end);
-            });
         await attachComments(jQuery('.activity-summary'));
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.bestpace_tpl = await getTemplate('bestpace.html');
@@ -722,6 +715,10 @@ sauce.ns('analysis', function(ns) {
 
 
     async function startRide() {
+        const displayDetailsFn = Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails;
+        Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails = function(start, end) {
+            return extendSelectionDisplayDetails(displayDetailsFn.call(this, start, end), start, end);
+        };
         sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
             'displayDetails', function(ret, start, end) {
                 ns.handleSelectionChange(start, end);
@@ -794,6 +791,21 @@ sauce.ns('analysis', function(ns) {
             text.push(` (${Math.round(np)} np)`);
         }
         el.html(text.join(''));
+    }
+
+    function extendSelectionDisplayDetails(value, start, end) {
+        const altStream = getStream('altitude', start, end);
+        if (!altStream) {
+            return value;
+        }
+        const altChanges = altitudeChanges(altStream);
+        const vam = (altChanges.gain / (end - start)) * 3600;
+        if (vam > 0) {
+            const pad = Array(6).join('&nbsp;');
+            return value + `${pad}<span title="Vertical Ascent Meters / hour">VAM: ` +
+                           `${Math.round(vam).toLocaleString()}<small>m/hr</small></span><sup style="color: blue"> BETA</sup>`;
+        }
+        return value;
     }
 
     return {
