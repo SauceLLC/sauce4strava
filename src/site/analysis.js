@@ -563,13 +563,8 @@ sauce.ns('analysis', function(ns) {
             console.log("Deferred load of additional streams...");
             await new Promise(resolve => pageView.streamsRequest.deferred.done(resolve));
         }
-        const s = performance.now();
         await loadStreams();
-        const s1 = performance.now();
-        console.warn("Load stream time:", s1 - s);
         await start();
-        const e = performance.now();
-        console.warn("Start time:", e - s1);
     }
 
 
