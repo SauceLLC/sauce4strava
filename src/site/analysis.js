@@ -95,6 +95,24 @@ sauce.ns('analysis', function(ns) {
         return getStream(name, startIndex, endIndex);
     }
 
+    let _currentOpenDialog;
+    function openDialog(dialog, selectorEl) {
+        if (_currentOpenDialog) {
+            _currentOpenDialog.dialog('close');
+        } else if (_currentOpenDialog === undefined) {
+            /* First usage; wire click-away detection to close open dialog. */
+            jQuery(document).on('click', ev => {
+                if (_currentOpenDialog && !jQuery(ev.target).closest(_currentOpenDialog).length) {
+                    _currentOpenDialog.dialog('close');
+                    _currentOpenDialog = null;
+                }
+            });
+        }
+        _currentOpenDialog = dialog;
+        dialog.on('dialogclose', () => selectorEl.removeClass('selected'));
+        selectorEl.addClass('selected');
+    }
+
 
     async function processRideStreams() {
         let wattsStream = getStream('watts');
@@ -126,7 +144,6 @@ sauce.ns('analysis', function(ns) {
         }));
         const ftp_link = stats_frag.find('.provide-ftp');
         const ftp_input = ftp_link.siblings('input');
-
         ftp_input.keyup(async ev => {
             if (ev.keyCode == 27 /* escape */) {
                 ftp_input.hide();
@@ -157,16 +174,9 @@ sauce.ns('analysis', function(ns) {
                    '</div>').dialog({modal: true});
             location.reload();
         });
-
-        ftp_link.click(function() {
-            ftp_input.width(ftp_link.hide().width()).show();
-        });
-
+        ftp_link.click(() => ftp_input.width(ftp_link.hide().width()).show());
         stats_frag.insertAfter(jQuery('.inline-stats').last());
-
         if (wattsStream && sauce.config.options['analysis-cp-chart']) {
-            const _start = performance.now();
-            const open_dialog = [];
             const critpower_frag = jQuery(ctx.critpower_tpl({
                 cp_periods: ride_cp_periods,
                 is_watt_estimate: is_watt_estimate
@@ -180,28 +190,17 @@ sauce.ns('analysis', function(ns) {
                 }
                 const el = jQuery(`#sauce-cp-${period}`);
                 el.html(Math.round(roll.avg()));
-                el.parent().click(function() {
-                    const existing = open_dialog.shift();
-                    if (existing) {
-                        existing.dialog('close');
-                    }
-                    const dialog = moreinfoRideDialog({
+                el.parent().click(ev => {
+                    openDialog(moreinfoRideDialog({
                         label,
                         roll,
                         weight,
                         anchor_to: el.parent()
-                    });
-                    const row = el.closest('tr');
-                    dialog.on('dialogclose', function() {
-                        row.removeClass('selected');
-                    });
-                    row.addClass('selected');
-                    open_dialog.push(dialog);
+                    }), el.closest('tr'));
+                    ev.stopPropagation();
                 });
                 jQuery(`#sauce-cp-row-${period}`).show();
             }
-            const _done = performance.now();
-            console.info(`Analysis loaded in: ${_done - _start}ms`);
         }
     }
 
@@ -219,10 +218,7 @@ sauce.ns('analysis', function(ns) {
             weight_unit: weight_unit,
             weight_norm: (weight_unit == 'lbs') ? weight * 2.20462 : weight,
         }));
-
         stats_frag.insertAfter(jQuery('.inline-stats').last());
-
-        const open_dialog = [];
         const metric = prefersMetric();
         const bestpace_frag = jQuery(ctx.bestpace_tpl({
             metric,
@@ -233,33 +229,25 @@ sauce.ns('analysis', function(ns) {
         const paceStream = getStream('pace');
         for (const [label, distance] of run_cp_distances) {
             const roll = sauce.pace.bestpace(distance, timeStream, distStream, paceStream);
-            if (roll !== undefined) {
-                const el = jQuery(`#sauce-cp-${distance}`);
-                el.attr('title', `Elapsed time: ${formatPace(roll.elapsed())}`);
-                const unit = metric ? 'k' : 'm';
-                el.html(`${humanPace(roll.avg())}<small>/${unit}</small>`);
-                el.parent().click(function() {
-                    const existing = open_dialog.shift();
-                    if (existing) {
-                        existing.dialog('close');
-                    }
-                    const dialog = moreinfoRunDialog({
-                        label,
-                        roll,
-                        elapsed: formatPace(roll.elapsed()),
-                        bp_str: humanPace(roll.avg()),
-                        weight,
-                        anchor_to: el.parent()
-                    });
-                    const row = el.closest('tr');
-                    dialog.on('dialogclose', function() {
-                        row.removeClass('selected');
-                    });
-                    row.addClass('selected');
-                    open_dialog.push(dialog);
-                });
-                jQuery(`#sauce-cp-row-${distance}`).show();
+            if (roll === undefined) {
+                continue;
             }
+            const el = jQuery(`#sauce-cp-${distance}`);
+            el.attr('title', `Elapsed time: ${formatPace(roll.elapsed())}`);
+            const unit = metric ? 'k' : 'm';
+            el.html(`${humanPace(roll.avg())}<small>/${unit}</small>`);
+            el.parent().click(ev => {
+                openDialog(moreinfoRunDialog({
+                    label,
+                    roll,
+                    elapsed: formatPace(roll.elapsed()),
+                    bp_str: humanPace(roll.avg()),
+                    weight,
+                    anchor_to: el.parent()
+                }), el.closest('tr'));
+                ev.stopPropagation();
+            });
+            jQuery(`#sauce-cp-row-${distance}`).show();
         }
     }
 
@@ -574,8 +562,13 @@ sauce.ns('analysis', function(ns) {
             console.log("Deferred load of additional streams...");
             await new Promise(resolve => pageView.streamsRequest.deferred.done(resolve));
         }
+        const s = performance.now();
         await loadStreams();
+        const s1 = performance.now();
+        console.warn("Load stream time:", s1 - s);
         await start();
+        const e = performance.now();
+        console.warn("Start time:", e - s1);
     }
 
 
