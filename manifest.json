@@ -1,16 +1,14 @@
 {
     "manifest_version": 2,
 
-    "name": "__MSG_extName__",
+    "name": "Strava Sauce",
     "short_name": "Sauce",
-    "description": "__MSG_extDesc__",
+    "description": "Additional \"sauce\" to improve the strava website.",
     "author": "Justin Mayfield",
-    "version": "4.1.0",
-    "version_name": "4.1.0 [release]",
+    "version": "4.1.1",
+    "version_name": "4.1.1 [release]",
     "minimum_chrome_version": "60",
     
-    "default_locale": "en",
-
     "permissions": [
         "storage",
         "declarativeContent"
@@ -42,7 +40,7 @@
             "128": "assets/icons/icon128.png",
             "256": "assets/icons/icon256.png"
         },
-        "default_title": "__MSG_extName__",
+        "default_title": "Strava Sauce",
         "default_popup": "pages/page_action_popup.html"
     },
 
