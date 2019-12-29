@@ -5,8 +5,8 @@
     "short_name": "Sauce",
     "description": "Additional \"sauce\" to improve the strava website.",
     "author": "Justin Mayfield",
-    "version": "4.1.2",
-    "version_name": "4.1.2 [test]",
+    "version": "4.2.0",
+    "version_name": "4.2.0 [testing]",
     "minimum_chrome_version": "60",
     
     "permissions": [
