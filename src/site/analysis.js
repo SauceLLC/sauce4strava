@@ -201,8 +201,7 @@ sauce.ns('analysis', function(ns) {
                     sauce.rpc.ga('send', 'event', {
                         eventCategory: 'MoreInfoDialog',
                         eventAction: 'open',
-                        eventLabel: 'critical-power',
-                        eventValue: period
+                        eventLabel: `critical-power-${period}`
                     });
                 });
                 jQuery(`#sauce-cp-row-${period}`).show();
@@ -255,8 +254,7 @@ sauce.ns('analysis', function(ns) {
                 sauce.rpc.ga('send', 'event', {
                     eventCategory: 'MoreInfoDialog',
                     eventAction: 'open',
-                    eventLabel: 'best-pace',
-                    eventValue: distance
+                    eventLabel: `best-pace-${distance}`
                 });
             });
             jQuery(`#sauce-cp-row-${distance}`).show();
