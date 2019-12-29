@@ -1,6 +1,6 @@
 /* global sauce chrome */
 
-sauce.ns('comm', function() {
+sauce.ns('rpc', function() {
     'use strict';
 
     function _sendMessage(msg) {
@@ -16,27 +16,22 @@ sauce.ns('comm', function() {
         });
     }
 
-    async function set(key, value) {
+    async function storageSet(key, value) {
         let data;
         if (value === undefined && typeof key === 'object') {
             data = key;
         } else {
             data = {[key]: value};
         }
-        return await _sendMessage({system: 'sync', op: 'set', data});
+        return await _sendMessage({system: 'storage', op: 'set', data});
     }
 
-    async function get(key) {
-        const o = await _sendMessage({system: 'sync', op: 'get', data: key});
-        if (typeof key === 'string') {
-            return o[key];
-        } else {
-            return o;
-        }
+    async function storageGet(data) {
+        return await _sendMessage({system: 'storage', op: 'get', data});
     }
 
     async function setFTP(athlete, ftp) {
-        const data = await get(['athlete_info', 'ftp_overrides']);
+        const data = await storageGet(['athlete_info', 'ftp_overrides']);
         if (!data.athlete_info) {
             data.athlete_info = {};
         }
@@ -47,18 +42,24 @@ sauce.ns('comm', function() {
             name: athlete.get('display_name')
         };
         data.ftp_overrides[athlete.id] = ftp;
-        await set(data);
+        await storageSet(data);
     }
 
     async function getFTP(athlete_id) {
-        const ftps = await get('ftp_overrides');
+        const ftps = await storageGet('ftp_overrides');
         return ftps ? ftps[athlete_id] : undefined;
+    }
+
+    async function ga() {
+        const data = Array.from(arguments);
+        return await _sendMessage({system: 'ga', op: 'apply', data});
     }
 
     return {
         getFTP,
         setFTP,
-        set,
-        get,
+        storageSet,
+        storageGet,
+        ga
     };
 });

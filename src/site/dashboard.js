@@ -48,7 +48,7 @@ sauce.ns('dashboard', function(ns) {
     }
 
     async function load() {
-        ns.options = await sauce.comm.get('options');
+        ns.options = await sauce.rpc.storageGet('options');
         const feedMutationObserver = new MutationObserver(_.debounce(filterFeed, 200));
         feedMutationObserver.observe(document.querySelector('.main .feed-container .feed'), {
             childList: true,
@@ -65,8 +65,21 @@ sauce.ns('dashboard', function(ns) {
 });
 
 
-(function() {
+(async function() {
     if (window.location.pathname.startsWith('/dashboard')) {
-        sauce.dashboard.load();
+        try {
+            await sauce.dashboard.load();
+        } catch(e) {
+            sauce.rpc.ga('send', 'exception', {
+                exDescription: e.message,
+                exFatal: true
+            });
+            return;
+        }
+        await sauce.rpc.ga('send', 'event', {
+            eventCategory: 'Dashboard',
+            eventAction: 'load',
+            nonInteraction: true
+        });
     }
 })();

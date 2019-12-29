@@ -5,8 +5,8 @@
     "short_name": "Sauce",
     "description": "Additional \"sauce\" to improve the strava website.",
     "author": "Justin Mayfield",
-    "version": "4.1.1",
-    "version_name": "4.1.1 [release]",
+    "version": "4.1.2",
+    "version_name": "4.1.2 [test]",
     "minimum_chrome_version": "60",
     
     "permissions": [
@@ -25,8 +25,10 @@
 
     "background": {
         "scripts": [
+            "src/ext/ga.js",
+            "src/ext/storage.js",
             "src/bg/page_rules.js",
-            "src/bg/comm.js"
+            "src/bg/rpc.js"
         ],
         "persistent": false
     },
@@ -45,6 +47,8 @@
     },
 
     "options_page": "pages/page_action_popup.html",
+
+    "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
 
     "content_scripts": [{
         "run_at": "document_idle",

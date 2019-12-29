@@ -168,7 +168,7 @@ sauce.ns('analysis', function(ns) {
             }
             ftp_input.hide();
             ftp_link.html(val).show();
-            await sauce.comm.setFTP(pageView.activityAthlete(), val);
+            await sauce.rpc.setFTP(pageView.activityAthlete(), val);
             jQuery('<div title="Reloading...">' +
                    '<b>Reloading page to reflect FTP change."' +
                    '</div>').dialog({modal: true});
@@ -198,6 +198,12 @@ sauce.ns('analysis', function(ns) {
                         anchor_to: el.parent()
                     }), el.closest('tr'));
                     ev.stopPropagation();
+                    sauce.rpc.ga('send', 'event', {
+                        eventCategory: 'MoreInfoDialog',
+                        eventAction: 'open',
+                        eventLabel: 'critical-power',
+                        eventValue: period
+                    });
                 });
                 jQuery(`#sauce-cp-row-${period}`).show();
             }
@@ -246,6 +252,12 @@ sauce.ns('analysis', function(ns) {
                     anchor_to: el.parent()
                 }), el.closest('tr'));
                 ev.stopPropagation();
+                sauce.rpc.ga('send', 'event', {
+                    eventCategory: 'MoreInfoDialog',
+                    eventAction: 'open',
+                    eventLabel: 'best-pace',
+                    eventValue: distance
+                });
             });
             jQuery(`#sauce-cp-row-${distance}`).show();
         }
@@ -548,7 +560,7 @@ sauce.ns('analysis', function(ns) {
             start = startRide;
         } else {
             console.debug("Unsupported activity type:", type);
-            return;
+            return type;
         }
         ctx.activity_id = activity.get('id');
         /* Avoid racing with other stream requests...
@@ -565,6 +577,7 @@ sauce.ns('analysis', function(ns) {
         }
         await loadStreams();
         await start();
+        return type;
     }
 
 
@@ -615,6 +628,10 @@ sauce.ns('analysis', function(ns) {
         const submit_comment = () => {
             pageView.commentsController().comment('Activity', ctx.activity_id, $input.val());
             $input.val('');
+            sauce.rpc.ga('send', 'event', {
+                eventCategory: 'Comment',
+                eventAction: 'submit'
+            });
         };
         $input.on('input', ev => {
             if ($input.val()) {
@@ -741,10 +758,9 @@ sauce.ns('analysis', function(ns) {
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.critpower_tpl = await getTemplate('critpower.html');
         ctx.moreinfo_tpl = await getTemplate('critpower-moreinfo.html');
-        assignFTP(await sauce.comm.getFTP(pageView.activityAthlete().get('id')));
+        assignFTP(await sauce.rpc.getFTP(pageView.activityAthlete().get('id')));
         await processRideStreams();
     }
-    window.xxxprs = processRideStreams;
 
 
     function assignFTP(sauce_ftp) {
@@ -810,8 +826,23 @@ sauce.ns('analysis', function(ns) {
 });
 
 
-(function() {
+(async function() {
     if (window.pageView) {
-        sauce.analysis.load();
+        let type;
+        try {
+            type = await sauce.analysis.load();
+        } catch(e) {
+            sauce.rpc.ga('send', 'exception', {
+                exDescription: e.message,
+                exFatal: true
+            });
+            return;
+        }
+        await sauce.rpc.ga('send', 'event', {
+            eventCategory: 'Analysis',
+            eventAction: 'load',
+            eventLabel: type,
+            nonInteraction: true
+        });
     }
 })();

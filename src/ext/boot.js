@@ -24,9 +24,9 @@
     const extUrl = chrome.extension.getURL('');
 
     const siteScripts = [
-        'https://cdnjs.cloudflare.com/ajax/libs/jquery-sparklines/2.1.2/jquery.sparkline.min.js',
+        'src/site/jquery.sparkline.js',
         'src/site/base.js',
-        'src/site/comm.js',
+        'src/site/rpc.js',
         'src/site/lib.js',
         'src/site/analysis.js',
         'src/site/dashboard.js'
