@@ -6,7 +6,7 @@
     "description": "Additional \"sauce\" to improve the strava website.",
     "author": "Justin Mayfield",
     "version": "4.2.0",
-    "version_name": "4.2.0 [testing]",
+    "version_name": "4.2.0 [release]",
     "minimum_chrome_version": "60",
     
     "permissions": [
