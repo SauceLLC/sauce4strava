@@ -70,9 +70,15 @@ sauce.ns('dashboard', function(ns) {
         try {
             await sauce.dashboard.load();
         } catch(e) {
-            sauce.rpc.ga('send', 'exception', {
+            await sauce.rpc.ga('send', 'exception', {
                 exDescription: e.message,
                 exFatal: true
+            });
+            await sauce.rpc.ga('send', 'event', {
+                eventCategory: 'Error',
+                eventAction: 'exception',
+                eventLabel: e.message,
+                nonInteraction: true
             });
             return;
         }
