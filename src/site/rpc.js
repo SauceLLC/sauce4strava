@@ -10,7 +10,7 @@ sauce.ns('rpc', function() {
                     const err = resp ? resp.error : 'general error';
                     reject(new Error(err));
                 } else {
-                    resolve.apply(null, resp.data);
+                    resolve(resp.data);
                 }
             });
         });
