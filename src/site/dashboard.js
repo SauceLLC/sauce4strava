@@ -8,6 +8,7 @@ sauce.ns('dashboard', function(ns) {
         if (ns.options['activity-hide-promotions']) {
             for (const card of feed.querySelectorAll('.card.promo:not(.hidden-by-sauce)')) {
                 console.info("SAUCE: Hiding promo card:", card.id);
+                sauce.rpc.reportEvent('ActivityFeed', 'hide', 'promo-card');
                 card.classList.add('hidden-by-sauce');
                 resetFeedLoader = true;
             }
@@ -17,6 +18,7 @@ sauce.ns('dashboard', function(ns) {
                 if (!card.querySelector(`.entry-owner[href="/athletes/${currentAthlete.id}"]`) &&
                     card.querySelector(`[class^="icon-virtual"], [class*=" icon-virtual"]`)) {
                     console.info("SAUCE: Hiding Virtual Activity:", card.id || 'group activity');
+                    sauce.rpc.reportEvent('ActivityFeed', 'hide', 'virtual-activity');
                     card.classList.add('hidden-by-sauce');
                     resetFeedLoader = true;
                 }
@@ -25,12 +27,14 @@ sauce.ns('dashboard', function(ns) {
         if (ns.options['activity-hide-challenges']) {
             for (const card of feed.querySelectorAll('.card.challenge:not(.hidden-by-sauce)')) {
                 console.info("SAUCE: Hiding challenge card:", card.id);
+                sauce.rpc.reportEvent('ActivityFeed', 'hide', 'challenge-card');
                 card.classList.add('hidden-by-sauce');
                 resetFeedLoader = true;
             }
         }
         if (ns.options['activity-chronological']) {
             console.info("SAUCE: Ordering feed chronologically");
+            sauce.rpc.reportEvent('ActivityFeed', 'sort-feed', 'chronologically');
             resetFeedLoader = true;
             let lastTimestamp;
             for (const card of feed.querySelectorAll('.card')) {
@@ -48,6 +52,9 @@ sauce.ns('dashboard', function(ns) {
     }
 
     async function load() {
+        await sauce.rpc.ga('set', 'page', `/site/dashboard`);
+        await sauce.rpc.ga('set', 'title', 'Sauce Dashboard');
+        await sauce.rpc.ga('send', 'pageview');
         ns.options = await sauce.rpc.storageGet('options');
         const feedMutationObserver = new MutationObserver(_.debounce(filterFeed, 200));
         feedMutationObserver.observe(document.querySelector('.main .feed-container .feed'), {
@@ -70,22 +77,7 @@ sauce.ns('dashboard', function(ns) {
         try {
             await sauce.dashboard.load();
         } catch(e) {
-            await sauce.rpc.ga('send', 'exception', {
-                exDescription: e.message,
-                exFatal: true
-            });
-            await sauce.rpc.ga('send', 'event', {
-                eventCategory: 'Error',
-                eventAction: 'exception',
-                eventLabel: e.message,
-                nonInteraction: true
-            });
-            return;
+            await sauce.rpc.reportError(e);
         }
-        await sauce.rpc.ga('send', 'event', {
-            eventCategory: 'Dashboard',
-            eventAction: 'load',
-            nonInteraction: true
-        });
     }
 })();

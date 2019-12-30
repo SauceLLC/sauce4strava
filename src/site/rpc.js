@@ -51,8 +51,25 @@ sauce.ns('rpc', function() {
     }
 
     async function ga() {
-        const data = Array.from(arguments);
-        return await _sendMessage({system: 'ga', op: 'apply', data});
+        const args = Array.from(arguments);
+        const meta = {referrer: document.referrer};
+        return await _sendMessage({system: 'ga', op: 'apply', data: {meta, args}});
+    }
+
+    async function reportEvent(eventCategory, eventAction, eventLabel, options) {
+        await sauce.rpc.ga('send', 'event', Object.assign({
+            eventCategory,
+            eventAction,
+            eventLabel,
+        }, options));
+    }
+
+    async function reportError(e) {
+        await sauce.rpc.ga('send', 'exception', {
+            exDescription: e.message,
+            exFatal: true
+        });
+        await reportEvent('Error', 'exception', e.message, {nonInteraction: true});
     }
 
     return {
@@ -60,6 +77,8 @@ sauce.ns('rpc', function() {
         setFTP,
         storageSet,
         storageGet,
-        ga
+        ga,
+        reportEvent,
+        reportError,
     };
 });
