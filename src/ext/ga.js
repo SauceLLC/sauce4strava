@@ -25,7 +25,7 @@
     ns.createTracker = async function(name) {
         ga('create', 'UA-64711223-1', 'auto', name);
         const tracker = await ns.getTracker(name);
-        //tracker.set('transport', 'beacon');
+        tracker.set('transport', 'beacon');
         tracker.set('checkProtocolTask', () => undefined);
         tracker.set('forceSSL', true);
         return tracker;

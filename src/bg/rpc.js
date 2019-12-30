@@ -21,7 +21,7 @@
         }
         tracker.set('referrer', meta.referrer);
         tracker.set('location', url.href.split('#')[0]);
-        tracker.set('screenResolution', `${this.tab.width}x${this.tab.height}`);
+        tracker.set('viewportSize', `${this.tab.width}x${this.tab.height}`);
         const method = args.shift();
         tracker[method].apply(tracker, args);
     });
