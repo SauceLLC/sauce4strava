@@ -102,3 +102,7 @@ can also recommend in conjunction with this extension.  All the information used
 extension is readily available within the Strava.com website.
 
 
+Legal
+--------
+Because lawyers and Google:
+[Privacy Policy](https://mayfield.github.com/strava-sauce/pages/privacy.html)
