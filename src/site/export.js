@@ -22,9 +22,13 @@ sauce.ns('export', function() {
             throw new Error("pure virtual");
         }
 
-        dump() {
+        toFile() {
             const heading = `<?xml version="${this.doc.xmlVersion}" encoding="${this.doc.inputEncoding}"?>\n`;
-            return heading + (new XMLSerializer()).serializeToString(this.doc);
+            return new File(
+                [heading + (new XMLSerializer()).serializeToString(this.doc)],
+                `${this.name}.${this.fileExt}`.replace(/\s/g, '_'),
+                {type: 'text/xml'}
+            );
         }
     }
 
@@ -33,6 +37,7 @@ sauce.ns('export', function() {
 
         constructor(name, type, start) {
             super(name, start);
+            this.fileExt = 'gpx';
             this.rootNode = this.addNodeTo(this.doc, 'gpx');
             this.rootNode.setAttribute('creator', 'Strava Sauce');
             this.rootNode.setAttribute('version', '1.1');
@@ -97,6 +102,7 @@ sauce.ns('export', function() {
 
         constructor(name, type, start) {
             super(name, start);
+            this.fileExt = 'tcx';
             this.rootNode = this.addNodeTo(this.doc, 'TrainingCenterDatabase');
             this.rootNode.setAttribute('xmlns', 'http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2');
             this.rootNode.setAttribute('xmlns:up', 'http://www.garmin.com/xmlschemas/UserProfile/v2');
@@ -180,7 +186,6 @@ sauce.ns('export', function() {
                 }
             }
         }
-
     }
 
 

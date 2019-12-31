@@ -73,6 +73,22 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    async function fetchStreams(names) {
+        const streams = pageView.streams();
+        const missing = names.filter(x => streams.getStream(x) === undefined);
+        if (missing.length) {
+            console.info("Fetching streams:", missing);
+            await new Promise((success, error) => streams.fetchStreams(missing, {success, error}));
+        }
+        return names.map(x => streams.getStream(x));
+    }
+
+
+    async function fetchStream(name) {
+        return (await fetchStreams([name]))[0];
+    }
+
+
     function getStream(name, startIndex, endIndex) {
         const s = pageView.streams().getStream(name);
         if (s && startIndex != null) {
@@ -95,6 +111,7 @@ sauce.ns('analysis', function(ns) {
         return getStream(name, startIndex, endIndex);
     }
 
+
     let _currentOpenDialog;
     function openDialog(dialog, selectorEl) {
         if (_currentOpenDialog) {
@@ -115,10 +132,20 @@ sauce.ns('analysis', function(ns) {
 
 
     async function processRideStreams() {
+        await fetchStreams([
+            'watts',
+            'time',
+            'heartrate',
+            'altitude',
+            'cadence',
+            'latlng',
+            'distance',
+            'grade_smooth',
+        ]);
         let wattsStream = getStream('watts');
         const is_watt_estimate = !wattsStream;
         if (!wattsStream) {
-            wattsStream = getStream('watts_calc');
+            wattsStream = await fetchStream('watts_calc');
             if (!wattsStream) {
                 console.info("No power data for this activity.");
             }
@@ -207,6 +234,12 @@ sauce.ns('analysis', function(ns) {
 
 
     async function processRunStreams() {
+        await fetchStreams([
+            'distance',
+            'time',
+            'pace',
+            'grade_smooth',
+        ]);
         const distStream = getStream('distance');
         if (!distStream || !sauce.config.options['analysis-cp-chart']) {
             return;
@@ -539,60 +572,17 @@ sauce.ns('analysis', function(ns) {
         console.info('Loading Sauce...');
         const activity = pageView.activity();
         const type = activity.get('type');
-        let loadStreams;
         let start;
         if (type === 'Run') {
-            loadStreams = loadRunStreams;
             start = startRun;
         } else if (type === 'Ride') {
-            loadStreams = loadRideStreams;
             start = startRide;
         }
         await sauce.rpc.ga('set', 'page', `/site/analysis/${type}`);
         await sauce.rpc.ga('set', 'title', 'Sauce Analysis');
         await sauce.rpc.ga('send', 'pageview');
-        if (!start) {
-            console.debug("Unsupported activity type:", type);
-            return;
-        }
-        ctx.activity_id = activity.get('id');
-        /* Avoid racing with other stream requests...
-         * This strange test tells us the `streamRequest.request` routine is
-         * in-flight because the callbacks associated with that func will
-         * clear the `required` array.  While strange looking, this is the
-         * best way to detect a common condition where network loading of
-         * stream data is currently running and we would do best to wait for
-         * its finish and thus avoid double loading data. */
-        const streamRequestActive = !!pageView.streamsRequest.required.length;
-        if (streamRequestActive) {
-            console.log("Deferred load of additional streams...");
-            await new Promise(resolve => pageView.streamsRequest.deferred.done(resolve));
-        }
-        await loadStreams();
-        await start();
-    }
-
-
-    async function loadRideStreams() {
-        const streams = pageView.streams();
-        if (!streams.getStream('watts')) {
-            const resources = ['watts'];
-            if (!streams.getStream('watts_calc')) {
-                resources.push('watts_calc');
-            }
-            if (!streams.getStream('time')) {
-                resources.push('time');
-            }
-            console.info("Fetching wattage streams:", resources);
-            await new Promise((success, error) => streams.fetchStreams(resources, {success, error}));
-        }
-    }
-
-
-    async function loadRunStreams() {
-        if (!getStream('distance')) {
-            console.warn("Run without distance data?");
-            return;
+        if (start) {
+            await start();
         }
     }
 
@@ -604,7 +594,47 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    async function attachComments($root) {
+    async function attachExporters() {
+        const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
+        const sauceIcon = `<img class="sauce-icon" src="${sauce.extURL}assets/icons/icon64.png"/>`;
+
+        const gpxLink = document.createElement('li');
+        gpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export GPX <sup style="color: blue;">BETA</sup></a>`;
+        gpxLink.title = 'Generate a GPX file for this activity using Strava Sauce';
+        gpxLink.addEventListener('click', () => exportActivity(sauce.export.GPXSerializer));
+        menuEl.appendChild(gpxLink);
+
+        const tpxLink = document.createElement('li');
+        tpxLink.title = 'Generate a TCX file for this activity using Strava Sauce';
+        tpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export TCX <sup style="color: blue;">BETA</sup></a>`;
+        tpxLink.addEventListener('click', () => exportActivity(sauce.export.TCXSerializer));
+        menuEl.appendChild(tpxLink);
+    }
+
+    async function exportActivity(Serializer) {
+        const streamNames = ['time', 'watts', 'heartrate', 'altitude', 'cadence', 'temp', 'latlng', 'distance'];
+        const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) => (acc[streamNames[i]] = x, acc), {});
+        const tzOfft = new Date().getTimezoneOffset() * 60000;
+        const start = new Date(pageView.activity().get('startDateLocal') * 1000 + tzOfft);
+        const name = document.querySelector('#heading .activity-name').textContent;
+        const serializer = new Serializer(name, 'Ride', start);
+        serializer.loadStreams(streams);
+        const link = document.createElement('a');
+        const f = serializer.toFile();
+        link.href = URL.createObjectURL(f);
+        link.download = f.name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        try {
+            link.click();
+        } finally {
+            link.remove();
+            URL.revokeObjectURL(link.href);
+        }
+    }
+
+    async function attachComments() {
+        const $root = jQuery('.activity-summary');
         const $commentsEl = jQuery('<div class="sauce-inline-comments"></div>');
         const $submitEl = jQuery([
             '<div class="sauce-new-comment">',
@@ -617,8 +647,9 @@ sauce.ns('analysis', function(ns) {
         ].join(''));
         const $input = $submitEl.find('input');
         const $button = $input.next('button');
+        const activityId = pageView.activity().get('id');
         const submit_comment = () => {
-            pageView.commentsController().comment('Activity', ctx.activity_id, $input.val());
+            pageView.commentsController().comment('Activity', activityId, $input.val());
             $input.val('');
             sauce.rpc.reportEvent('Comment', 'submit');
         };
@@ -640,7 +671,7 @@ sauce.ns('analysis', function(ns) {
         const commentsTpl = await getTemplate('inline-comment.html');
         const renderComments = () => {
             const ctrl = pageView.commentsController();
-            const comments = ctrl.getFromHash('Activity-' + ctx.activity_id);
+            const comments = ctrl.getFromHash(`Activity-${activityId}`);
             const stack = [];
             comments.forEach(function(x) {
                 const dt = new Date(jQuery(x.timestamp).attr('datetime'));
@@ -707,7 +738,7 @@ sauce.ns('analysis', function(ns) {
 
 
     async function startRun() {
-        await attachComments(jQuery('.activity-summary'));
+        await attachComments();
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.bestpace_tpl = await getTemplate('bestpace.html');
         ctx.moreinfo_tpl = await getTemplate('bestpace-moreinfo.html');
@@ -743,7 +774,8 @@ sauce.ns('analysis', function(ns) {
                 console.error("Problem adding segment badges!", e);
             }
         }
-        await attachComments(jQuery('.activity-summary'));
+        await attachExporters();
+        await attachComments();
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.critpower_tpl = await getTemplate('critpower.html');
         ctx.moreinfo_tpl = await getTemplate('critpower-moreinfo.html');
@@ -821,6 +853,7 @@ sauce.ns('analysis', function(ns) {
             await sauce.analysis.load();
         } catch(e) {
             await sauce.rpc.reportError(e);
+            throw e;
         }
     }
 })();

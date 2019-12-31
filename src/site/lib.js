@@ -44,11 +44,45 @@ sauce.ns('data', function() {
     }
 
 
-    class Pad extends Number {}
-    class Interpolation extends Pad {}
-    class Zero extends Pad {}
+    function mode(data) {
+        // Calc math mode for a data array.
+        if (!data || !data.length) {
+            return;
+        }
+        const countMap = {};
+        let mostFreq;
+        for (const value of data) {
+            const count = value in countMap ? countMap[value] + 1 : 1;
+            countMap[value] = count;
+            if (!mostFreq || mostFreq.count < count) {
+                mostFreq = {count, value};
+                if (count > data.length / 2) {
+                    console.log("winner before half time");
+                    break;  // Nobody can possibly overtake now.
+                }
+            }
+        }
+        return mostFreq && mostFreq.value;
+    }
 
-    const maxTimeGap = 6;  // Any gaps over this will result in zero padding to deflate bad high readings.
+    function median(data) {
+        // Calc math median for a data array.
+        if (!data || !data.length) {
+            return;
+        }
+        const sorted = Array.from(data).sort();
+        const midPoint = sorted.length / 2;
+        if (sorted.length % 2) {
+            return sorted[Math.floor(midPoint)];
+        } else {
+            // even length calls for avg of middle pair.
+            return (sorted[midPoint - 1] + sorted[midPoint]) / 2;
+        }
+    }
+
+
+    class Pad extends Number {}
+    class Zero extends Pad {}
 
 
     class RollingBase {
@@ -96,13 +130,15 @@ sauce.ns('data', function() {
 
 
     class RollingAvg extends RollingBase {
-        constructor(period) {
+        constructor(period, idealGap, maxGap) {
             super();
             this._times = [];
             this._values = [];
             this._head = null;
             this._offt = 0;
-            this._sum = 0;
+            this._joules = 0;
+            this._idealGap = idealGap;
+            this._maxGap = maxGap;
             this.period = period;
         }
 
@@ -112,34 +148,24 @@ sauce.ns('data', function() {
             } else {
                 const last = this._times[this._times.length - 1];
                 const gap = ts - last;
-                if (gap > maxTimeGap) {
+                if (gap > this._maxGap) {
                     const zero = new Zero(0);
-                    //console.info(`Zero padding big gap: ts=${last}, gap=${gap}`);
-                    for (let i = 1; i < gap; i++) {
-                        this.add(last + i, zero);
-                    }
-                } else if (gap > 1) {
-                    const lastValue = this._values[this._values.length - 1];
-                    const delta = value - lastValue;
-                    for (let i = 1; i < gap; i++) {
-                        const iVal = new Interpolation(Math.round(lastValue + (delta * (i / gap))));
-                        this.add(last + i, iVal);
-                        if (gap > 2 || Math.random() < 0.01) {
-                            //console.info(`Interpolation padding: ts=${last + i}, gap=${gap} iVal=${iVal}`);
-                        }
-                    }
+                    console.info(`Zero padding big gap: ts=${last}, gap=${gap}`);
+                    this.add(last + this._idealGap, zero);
                 }
+                // Credit our joules meter for the last sample.
+                const lastValue = this._values[this._values.length - 1];
+                this._joules += lastValue * gap;
             }
             this._times.push(ts);
             this._values.push(value);
-            this._sum += value;
             while (this.elapsed({offt: 1}) >= this.period) {
                 this.shift();
             }
         }
 
         avg() {
-            return this._sum / (this._values.length - this._offt);
+            return this._joules / this.elapsed();
         }
 
         full() {
@@ -152,7 +178,8 @@ sauce.ns('data', function() {
 
         shift() {
             this._head = this._times[this._offt];
-            this._sum -= this._values[this._offt];
+            this._joules -= this._values[this._offt] * (this._times[this._offt + 1] -
+                                                        this._times[this._offt]);
             this._offt++;
         }
 
@@ -161,7 +188,7 @@ sauce.ns('data', function() {
             copy._head = this._head;
             copy._times = this._times.slice(this._offt);
             copy._values = this._values.slice(this._offt);
-            copy._sum = this._sum;
+            copy._joules = this._joules;
             return copy;
         }
     }
@@ -228,7 +255,9 @@ sauce.ns('data', function() {
         RollingWindow,
         avg,
         min,
-        max
+        max,
+        mode,
+        median
     };
 });
 
@@ -352,9 +381,13 @@ sauce.ns('power', function() {
     };
 
     const critpowerSmart = function(period, ts_stream, watts_stream) {
-        const ring = new sauce.data.RollingAvg(period);
         let max;
         const ts_size = ts_stream.length;
+        const gaps = ts_stream.map((x, i) => ts_stream[i + 1] - x);
+        gaps.pop();  // last entry is not a number (NaN)
+        const idealGap = sauce.data.mode(gaps);
+        const maxGap = sauce.data.median(gaps) * 2; // Zero pad samples over this gap size.
+        const ring = new sauce.data.RollingAvg(period, idealGap, maxGap);
         for (let i = 0; i < ts_size; i++) {
             ring.add(ts_stream[i], watts_stream[i]);
             if (ring.full() && (!max || ring.avg() > max.avg())) {

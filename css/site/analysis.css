@@ -238,3 +238,9 @@
     font-size: 10px;
     min-height: initial;
 }
+
+.actions-menu img.sauce-icon {
+    width: 1.8em;
+    transform: rotate(-90deg);
+    margin: -0.4em 0.2em;
+}

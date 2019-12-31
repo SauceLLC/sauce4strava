@@ -71,6 +71,7 @@
         "src/site/*.js",
         "css/site/*.css",
         "templates/*.html",
-        "assets/ranking/*.png"
+        "assets/ranking/*.png",
+        "assets/icons/*.png"
     ]
 }
