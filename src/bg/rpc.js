@@ -25,8 +25,9 @@
         const method = args.shift();
         tracker[method].apply(tracker, args);
     });
+    addHook('app', 'getDetails', () => chrome.app.getDetails());
 
-    chrome.runtime.onMessageExternal.addListener(async (msg, sender, setResponse) => {
+    async function onMessage(msg, sender, setResponse) {
         try {
             const hook = hooks[msg.system][msg.op];
             const data = await hook.call(sender, msg.data);
@@ -38,5 +39,7 @@
                 error: e.message
             });
         }
-    });
+    }
+    chrome.runtime.onMessageExternal.addListener(onMessage);
+    chrome.runtime.onMessage.addListener(onMessage);
 })();
