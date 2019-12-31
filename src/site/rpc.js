@@ -65,11 +65,13 @@ sauce.ns('rpc', function() {
     }
 
     async function reportError(e) {
+        const page = location.pathname;
         await sauce.rpc.ga('send', 'exception', {
             exDescription: e.message,
-            exFatal: true
+            exFatal: true,
+            page
         });
-        await reportEvent('Error', 'exception', e.message, {nonInteraction: true});
+        await reportEvent('Error', 'exception', e.message, {nonInteraction: true, page});
     }
 
     return {
