@@ -848,12 +848,10 @@ sauce.ns('analysis', function(ns) {
 
 
 (async function() {
-    if (window.pageView) {
-        try {
-            await sauce.analysis.load();
-        } catch(e) {
-            await sauce.rpc.reportError(e);
-            throw e;
-        }
+    try {
+        await sauce.analysis.load();
+    } catch(e) {
+        await sauce.rpc.reportError(e);
+        throw e;
     }
 })();

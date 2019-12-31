@@ -1,4 +1,4 @@
-/* global Strava sauce jQuery pageView _ currentAthlete */
+/* global Strava sauce _ currentAthlete */
 
 sauce.ns('dashboard', function(ns) {
 
@@ -73,11 +73,9 @@ sauce.ns('dashboard', function(ns) {
 
 
 (async function() {
-    if (window.location.pathname.startsWith('/dashboard')) {
-        try {
-            await sauce.dashboard.load();
-        } catch(e) {
-            await sauce.rpc.reportError(e);
-        }
+    try {
+        await sauce.dashboard.load();
+    } catch(e) {
+        await sauce.rpc.reportError(e);
     }
 })();

@@ -3,7 +3,27 @@
 (async function() {
     'use strict';
 
-    const config = await new Promise(resolve => chrome.storage.sync.get(null, resolve));
+    const manifests = [{
+        name: 'Analysis',
+        pathMatch: /^\/activities\/.*/,
+        scripts: [
+            'jquery.sparkline.js',
+            'base.js',
+            'rpc.js',
+            'lib.js',
+            'export.js',
+            'analysis.js',
+        ]
+    }, {
+        name: 'Dashboard',
+        pathMatch: /^\/dashboard(\/.*|\b)/,
+        scripts: [
+            'base.js',
+            'rpc.js',
+            'lib.js',
+            'dashboard.js'
+        ]
+    }];
 
     function sendMessageToBackground(msg) {
         return new Promise((resolve, reject) => {
@@ -19,7 +39,6 @@
     }
 
     function loadScript(url) {
-        console.info(`Sauce script load: ${url}`);
         const script = document.createElement('script');
         script.defer = 'defer';
         const p = new Promise(resolve => script.onload = resolve);
@@ -34,42 +53,39 @@
         document.head.appendChild(script);
     }
 
-    const extUrl = chrome.extension.getURL('');
-
-    const siteScripts = [
-        'src/site/jquery.sparkline.js',
-        'src/site/base.js',
-        'src/site/rpc.js',
-        'src/site/lib.js',
-        'src/site/export.js',
-        'src/site/analysis.js',
-        'src/site/dashboard.js'
-    ];
-
-    const defaultOptions = {
-        "analysis-segment-badges": true,
-        "analysis-cp-chart": true,
-        "activity-hide-promotions": true
-    };
-
-    if (config.options === undefined) {
-        config.options = {};
-    }
-    let optionsUpdated;
-    for (const [key, value] of Object.entries(defaultOptions)) {
-        if (config.options[key] === undefined) {
-            config.options[key] = value;
-            optionsUpdated = true;
+    async function initConfig() {
+        // Perform storage migration/setup here and return config object.
+        const config = await new Promise(resolve => chrome.storage.sync.get(null, resolve));
+        const defaultOptions = {
+            "analysis-segment-badges": true,
+            "analysis-cp-chart": true,
+            "activity-hide-promotions": true
+        };
+        if (config.options === undefined) {
+            config.options = {};
         }
+        let optionsUpdated;
+        for (const [key, value] of Object.entries(defaultOptions)) {
+            if (config.options[key] === undefined) {
+                config.options[key] = value;
+                optionsUpdated = true;
+            }
+        }
+        if (optionsUpdated) {
+            await new Promise(resolve => chrome.storage.sync.set({options: config.options}, resolve));
+        }
+        return config;
     }
-    if (optionsUpdated) {
-        await new Promise(resolve => chrome.storage.sync.set({options: config.options}, resolve));
-    }
-    
-    if (config.enabled !== false) {
-        /* Create namespace and copy config from the sync store. */
+
+    async function load() {
+        const config = await initConfig();
+        if (config.enabled === false) {
+            console.info("Strava sauce is disabled");
+            return;
+        }
         document.body.classList.add('sauce-enabled');
         const appDetails = await sendMessageToBackground({system: 'app', op: 'getDetails'});
+        const extUrl = chrome.extension.getURL('');
         insertScript(`
             window.sauce = {};
             sauce.config = ${JSON.stringify(config)};
@@ -78,11 +94,15 @@
             sauce.name = "${appDetails.name}";
             sauce.version = "${appDetails.version}";
         `);
-        for (let url of siteScripts) {
-            if (!url.match(/https?:\/\//i)) {
-                url = extUrl + url;
+        for (const x of manifests) {
+            if (location.pathname.match(x.pathMatch)) {
+                console.info(`Sauce loading: ${x.name}`);
+                for (const url of x.scripts) {
+                    await loadScript(`${extUrl}src/site/${url}`);
+                }
             }
-            await loadScript(url);
         }
     }
+
+    load();
 })();
