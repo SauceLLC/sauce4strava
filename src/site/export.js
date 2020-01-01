@@ -74,7 +74,7 @@ sauce.ns('export', function() {
                 if (streams.altitude) {
                     this.addNodeTo(point, 'ele', streams.altitude[i]);
                 }
-                const ext = this.addNodeTo(this.trkseg, 'extensions');
+                const ext = this.addNodeTo(point, 'extensions');
                 if (streams.watts) {
                     const watts = streams.watts[i];
                     if (watts !== null) {
