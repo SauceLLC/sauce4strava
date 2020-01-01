@@ -134,13 +134,11 @@ sauce.ns('export', function() {
 
             const activities = this.addNodeTo(this.rootNode, 'Activities');
             const activity = this.addNodeTo(activities, 'Activity');
-            const sport = {
+            const sportEnum = {
                 Ride: 'Biking',
                 Run: 'Running'
-            }[type];
-            if (sport) {
-                activity.setAttribute('Sport', sport);
-            }
+            };
+            activity.setAttribute('Sport', sportEnum[type] || 'Other');
             const startISOString = start.toISOString();
             this.addNodeTo(activity, 'Id', startISOString);  // Garmin does, so we will to.
             const creator = this.addNodeTo(activity, 'Creator');
