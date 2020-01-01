@@ -8,14 +8,15 @@ open source.
 
 Feature Highlights
 --------
- * Critical Power table for cycling activities.
- * Best Pace table for running activities.
- * TSS calculations.
- * FTP overrides for all athletes, regardless of subscription.
- * Normalized Power calculations for selections in Analysis page.
- * Viewing cyclist's weight.
+ * Critical Power table for cycling activities
+ * Best Pace table for running activities
+ * TSS calculations
+ * FTP overrides for all athletes, regardless of subscription
+ * Normalized Power calculations for selections in Analysis page
+ * Viewing cyclist's weight
  * VAM calculations for cycling climbs (BETA)
- * Inline comments system in Activity page.
+ * Inline comments system in Activity page
+ * Export TCX and GPX files for ALL rides and runs (BETA)
 
 
 Installation
@@ -43,6 +44,9 @@ Install the development version:
 
 Release Notes
 --------
+v4.3.0:
+ * Beta support for TCX and GPX export.
+
 v4.1.0:
  * Beta support for VAM (vertical ascent meters / hour).
 
