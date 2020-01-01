@@ -184,10 +184,11 @@ sauce.ns('export', function() {
                 }
                 if (streams.watts) {
                     const ext = this.addNodeTo(point, 'Extensions');
-                    const tpx = this.addNodeTo(ext, 'ax:TPX');
+                    const tpx = this.addNodeTo(ext, 'TPX');
+                    tpx.setAttribute('xmlns', 'http://www.garmin.com/xmlschemas/ActivityExtension/v2');
                     const watts = streams.watts[i];
                     if (watts !== null) {
-                        this.addNodeTo(tpx, 'ax:Watts', watts);
+                        this.addNodeTo(tpx, 'Watts', watts);
                     }
                 }
             }
