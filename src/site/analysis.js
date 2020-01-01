@@ -73,6 +73,31 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    let _activity;
+    async function fetchFullActivity() {
+        // The initial activity object is not fully loaded for owned' activities.  This routine
+        // will return a full activity object if the activity is from the page owner. Note that
+        // we leave the existing pageView.activity() object alone to avoid compatibility issues.
+        if (_activity) {
+            return _activity;
+        }
+        if (pageView.isOwner()) {
+            const activity = new Strava.Labs.Activities.TrainingActivity({id: pageView.activityId()});
+            await new Promise((success, error) => activity.fetch({success, error}));
+            // Move the real type value to fullType and use the Strava modified type instead.
+            // Various functions like `isRide` are broken without this.
+            activity.set({
+                type: pageView.activity().get('type'),  // Is hardcoded to by pageView.
+                fullType: activity.get('type')  // Will be things like VirtualRide (which breaks isRide()).
+            });
+            _activity = activity;
+        } else {
+            _activity = pageView.activity().clone();
+        }
+        return _activity;
+    }
+
+
     async function fetchStreams(names) {
         const streams = pageView.streams();
         const missing = names.filter(x => streams.getStream(x) === undefined);
@@ -569,15 +594,14 @@ sauce.ns('analysis', function(ns) {
 
 
     async function load() {
-        console.info('Loading Sauce...');
-        const activity = pageView.activity();
-        const type = activity.get('type');
+        const activity = await fetchFullActivity();
         let start;
-        if (type === 'Run') {
+        if (activity.isRun()) {
             start = startRun;
-        } else if (type === 'Ride') {
+        } else if (activity.isRide()) {
             start = startRide;
         }
+        const type = activity.get('fullType') || activity.get('type');
         await sauce.rpc.ga('set', 'page', `/site/analysis/${type}`);
         await sauce.rpc.ga('set', 'title', 'Sauce Analysis');
         await sauce.rpc.ga('send', 'pageview');
@@ -611,11 +635,59 @@ sauce.ns('analysis', function(ns) {
         menuEl.appendChild(tpxLink);
     }
 
+
+    function getEstimatedActivityStart() {
+        // Activity start time is sadly complicated.  Despite being visible in the header
+        // for all activities we only have access to it for rides and self-owned runs.  Trying
+        // to parse the html might work for english rides but will fail for non-english users.
+        const localTime = pageView.activity().get('startDateLocal') * 1000;
+        if (localTime) {
+            // Do a very basic tz correction based on the longitude of any geo data we can find.
+            // Using a proper timezone API is too expensive for this use case.
+            const geoStream = getStream('latlng');
+            let longitude;
+            if (geoStream) {
+                for (const [, lng] of geoStream) {
+                    if (lng != null) {
+                        longitude = lng;
+                        console.info("Getting longitude of activity based on latlng stream");
+                        break;
+                    }
+                }
+            }
+            if (longitude == null) {
+                // Take a wild guess that the activity should match the geo location of the athlete.
+                const athleteGeo = pageView.activityAthlete().get('geo');
+                if (athleteGeo && athleteGeo.lat_lng) {
+                    longitude = athleteGeo.lat_lng[1];
+                    console.info("Getting longitude of activity based on athlete's location");
+                }
+            }
+            let offset = 0;
+            if (longitude != null) {
+                offset = Math.round((longitude / 180) * (24 / 2)) * 3600000;
+                console.info("Using laughably bad timezone correction:", offset);
+            }
+            return new Date(localTime - offset);  // Subtract offset to counteract the localtime.
+        }
+        // Sadly we would have to resort to HTML scraping here. Which for now, I won't..
+        console.info("No activity start date could be acquired");
+        return new Date();
+    }
+
+
     async function exportActivity(Serializer) {
         const streamNames = ['time', 'watts', 'heartrate', 'altitude', 'cadence', 'temp', 'latlng', 'distance'];
         const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) => (acc[streamNames[i]] = x, acc), {});
-        const tzOfft = new Date().getTimezoneOffset() * 60000;
-        const start = new Date(pageView.activity().get('startDateLocal') * 1000 + tzOfft);
+        const activity = await fetchFullActivity();
+        const realStartTime = activity.get('start_time');
+        let start;
+        if (realStartTime) {
+            start = new Date(realStartTime);
+        } else {
+            start = getEstimatedActivityStart();
+        }
+        console.info("Setting activity start time to:", start);
         const name = document.querySelector('#heading .activity-name').textContent;
         const serializer = new Serializer(name, 'Ride', start);
         serializer.loadStreams(streams);
@@ -632,6 +704,7 @@ sauce.ns('analysis', function(ns) {
             URL.revokeObjectURL(link.href);
         }
     }
+
 
     async function attachComments() {
         const $root = jQuery('.activity-summary');
@@ -738,6 +811,7 @@ sauce.ns('analysis', function(ns) {
 
 
     async function startRun() {
+        await attachExporters();
         await attachComments();
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.bestpace_tpl = await getTemplate('bestpace.html');
@@ -825,6 +899,7 @@ sauce.ns('analysis', function(ns) {
         el.html(text.join(''));
     }
 
+
     function extendSelectionDisplayDetails(value, start, end) {
         const altStream = getStream('altitude', start, end);
         if (!altStream) {
@@ -839,6 +914,7 @@ sauce.ns('analysis', function(ns) {
         }
         return value;
     }
+
 
     return {
         load,
