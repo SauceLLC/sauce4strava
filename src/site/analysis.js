@@ -401,7 +401,7 @@ sauce.ns('analysis', function(ns) {
 
     function milePace(secondsPerMeter) {
         /* Convert strava pace into seconds per mile */
-        return  metersPerMile * secondsPerMeter;
+        return metersPerMile * secondsPerMeter;
     }
 
 
@@ -593,6 +593,7 @@ sauce.ns('analysis', function(ns) {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
         const metric = prefersMetric();
+        const maxPace = localePace(sauce.data.max(roll._paces));
         const data = {
             title: 'Best Pace: ' + opts.label,
             start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
@@ -600,7 +601,7 @@ sauce.ns('analysis', function(ns) {
             pace: {
                 min: humanPace(sauce.data.min(roll._paces)),
                 avg: humanPace(roll.avg()),
-                max: humanPace(sauce.data.max(roll._paces)),
+                max: maxPace < 3600 ? formatPace(maxPace) : null, // filter out paces over 1 hour
                 gap: gapStream && humanPace(sauce.data.avg(gapStream)),
             },
             elapsed,

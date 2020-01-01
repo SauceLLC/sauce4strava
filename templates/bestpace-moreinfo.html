@@ -22,7 +22,9 @@
                 <td title="Minutes per mile">Pace <small>/mi</small></td>
             <% } %>
             <td>
-                <sub title="Slowest Pace">{{pace.max}}</sub>
+                <% if (pace.max) { %>
+                    <sub title="Slowest Pace">{{pace.max}}</sub>
+                <% } %>
                 <span title="Average Pace">{{pace.avg}}</span>
                 <sup title="Peak Pace">{{pace.min}}</sup>
             </td>
