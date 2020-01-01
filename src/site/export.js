@@ -56,7 +56,13 @@ sauce.ns('export', function() {
             this.addNodeTo(metadata, 'time', start.toISOString());
             const trk = this.addNodeTo(this.rootNode, 'trk');
             this.addNodeTo(trk, 'name', name);
-            this.addNodeTo(trk, 'type', 1);
+            // I can't find any docs on this enum.
+            // I got these values by examining garmin output (strava uses numbers! lol).
+            const trackTypeEnum = {
+                Ride: 'cycling',
+                Run: 'running'
+            };
+            this.addNodeTo(trk, 'type', trackTypeEnum[type]);
             this.trkseg = this.addNodeTo(trk, 'trkseg');
         }
 

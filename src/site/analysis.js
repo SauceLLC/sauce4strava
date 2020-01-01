@@ -689,7 +689,7 @@ sauce.ns('analysis', function(ns) {
         }
         console.info("Setting activity start time to:", start);
         const name = document.querySelector('#heading .activity-name').textContent;
-        const serializer = new Serializer(name, 'Ride', start);
+        const serializer = new Serializer(name, activity.get('type'), start);
         serializer.loadStreams(streams);
         const link = document.createElement('a');
         const f = serializer.toFile();
