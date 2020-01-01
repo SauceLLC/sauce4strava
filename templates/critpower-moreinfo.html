@@ -8,17 +8,19 @@
             </td>
         </tr>
 
-        <tr>
-            <td>Watts/kg</td>
-            <td class="rank_holder">
-                <span title="Average watts divided by body weight in kilograms.">{{w_kg.toFixed(1)}}</span>
-                <% if (rank_image) { %>
-                    <img src="{{rank_image}}" class="rank_badge"
-                         alt="{{sauce.power.rankCat(rank)}}"
-                         title="World Ranking: {{Math.round(rank * 100)}}%"/>
-                <% } %>
-            </td>
-        </tr>
+        <% if (w_kg) { %>
+            <tr>
+                <td>Watts/kg</td>
+                <td class="rank_holder">
+                    <span title="Average watts divided by body weight in kilograms.">{{w_kg.toFixed(1)}}</span>
+                    <% if (rank_image) { %>
+                        <img src="{{rank_image}}" class="rank_badge"
+                             alt="{{sauce.power.rankCat(rank)}}"
+                             title="World Ranking: {{Math.round(rank * 100)}}%"/>
+                    <% } %>
+                </td>
+            </tr>
+        <% } %>
 
         <tr>
             <td>Power</td>

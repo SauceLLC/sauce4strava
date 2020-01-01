@@ -50,6 +50,26 @@ sauce.ns('rpc', function() {
         return ftps ? ftps[athlete_id] : undefined;
     }
 
+    async function setWeight(athlete, weight) {
+        const data = await storageGet(['athlete_info', 'weight_overrides']);
+        if (!data.athlete_info) {
+            data.athlete_info = {};
+        }
+        if (!data.weight_overrides) {
+            data.weight_overrides = {};
+        }
+        data.athlete_info[athlete.id] = {
+            name: athlete.get('display_name')
+        };
+        data.weight_overrides[athlete.id] = weight;
+        await storageSet(data);
+    }
+
+    async function getWeight(athlete_id) {
+        const weights = await storageGet('weight_overrides');
+        return weights ? weights[athlete_id] : undefined;
+    }
+
     async function ga() {
         const args = Array.from(arguments);
         const meta = {referrer: document.referrer};
@@ -77,6 +97,8 @@ sauce.ns('rpc', function() {
     return {
         getFTP,
         setFTP,
+        getWeight,
+        setWeight,
         storageSet,
         storageGet,
         ga,

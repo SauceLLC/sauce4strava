@@ -156,6 +156,108 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    function editableField(displayEl, inputEl, options) {
+        inputEl.keyup(async ev => {
+            if (ev.keyCode == 27 /* escape */) {
+                inputEl.hide();
+                displayEl.show();
+                return;
+            } else if (ev.keyCode != 13 /* enter */) {
+                return;
+            }
+            const rawValue = inputEl.val();
+            let cleanValue;
+            try {
+                cleanValue = options.validator(rawValue);
+            } catch(invalid) {
+                jQuery(`<div title="${invalid.title}">${invalid.message}</div>`).dialog({
+                    modal: true,
+                    buttons: {
+                        Ok: function() {
+                            jQuery(this).dialog('close');
+                        }
+                    }
+                });
+                return;
+            }
+            inputEl.hide();
+            displayEl.html('...').show();
+            if (options.onValid) {
+                await options.onValid(cleanValue);
+            }
+        });
+        displayEl.click(() => inputEl.width(displayEl.hide().width()).show());
+    }
+
+
+    function attachEditableFTP(parentEl) {
+        const link = parentEl.find('.provide-ftp');
+        editableField(link, link.siblings('input'), {
+            validator: rawValue => {
+                if (rawValue === '') {
+                    return null;  // Reset to default value.
+                }
+                const n = parseInt(rawValue);
+                if (!n || n <= 0 || n > 600) {
+                    throw {
+                        title: 'Invalid FTP Wattage',
+                        message: `
+                            <b>${rawValue} is not a valid FTP.</b><br/>
+                            <br/>
+                            Acceptable range: 1 - 600 watts.
+                        `
+                    };
+                } else {
+                    return n;
+                }
+            },
+            onValid: async v => {
+                await sauce.rpc.setFTP(pageView.activityAthlete(), v);
+                jQuery(`
+                    <div title="Reloading...">
+                        <b>Reloading page to reflect FTP change.
+                    </div>
+                `).dialog({modal: true});
+                location.reload();
+            }
+        });
+    }
+
+
+    function attachEditableWeight(parentEl) {
+        const link = parentEl.find('.provide-weight');
+        editableField(link, link.siblings('input'), {
+            validator: rawValue => {
+                if (rawValue === '') {
+                    return null;  // Reset to default value.
+                }
+                const n = Number(rawValue);
+                if (!n || n <= 0 || n > 10000) {
+                    throw {
+                        title: 'Invalid Weight',
+                        message: `
+                            <b>${rawValue} is not a valid weight.</b><br/>
+                            <br/>
+                            Acceptable range: 1 - 10000.
+                        `
+                    };
+                } else {
+                    return n;
+                }
+            },
+            onValid: async v => {
+                await sauce.rpc.setWeight(pageView.activityAthlete(), prefersKg() ? v : v / 2.20462);
+                jQuery(`
+                    <div title="Reloading...">
+                        <b>Reloading page to reflect weight change.
+                    </div>
+                `).dialog({modal: true});
+                location.reload();
+            }
+        });
+    }
+
+
     async function processRideStreams() {
         await fetchStreams([
             'watts',
@@ -181,52 +283,21 @@ sauce.ns('analysis', function(ns) {
         }
         const np = wattsStream ? sauce.power.calcNP(wattsStream) : undefined;
         const np_val = np && np.value;
-        const weight = pageView.activityAthleteWeight();
         const weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
         const intensity = np && np_val / ctx.ftp;
         const stats_frag = jQuery(ctx.tertiary_stats_tpl({
             type: 'ride',
             np: np_val,
             weight_unit,
-            weight_norm: (weight_unit == 'lbs') ? weight * 2.20462 : weight,
+            weight_norm: Math.round(prefersKg() ? ctx.weight: ctx.weight * 2.20462),
+            weight_origin: ctx.weight_origin,
             ftp: ctx.ftp,
             ftp_origin: ctx.ftp_origin,
             intensity,
             tss: np && sauce.power.calcTSS(np, intensity, ctx.ftp)
         }));
-        const ftp_link = stats_frag.find('.provide-ftp');
-        const ftp_input = ftp_link.siblings('input');
-        ftp_input.keyup(async ev => {
-            if (ev.keyCode == 27 /* escape */) {
-                ftp_input.hide();
-                ftp_link.html(val).show();
-                return;
-            } else if (ev.keyCode != 13 /* enter */) {
-                return;
-            }
-            let val = ftp_input.val();
-            if (val === '') {
-                val = null;
-            } else {
-                val = Number(ftp_input.val());
-                if (!val || val < 0 || val > 600) {
-                    jQuery('<div title="Invalid FTP Wattage">' +
-                           '<b>"' + ftp_input.val() + '" is not a valid FTP.</b>' +
-                           '<br/><br/>' +
-                           'Acceptable range: 0-600' +
-                           '</div>').dialog({modal: true});
-                    return;
-                }
-            }
-            ftp_input.hide();
-            ftp_link.html(val).show();
-            await sauce.rpc.setFTP(pageView.activityAthlete(), val);
-            jQuery('<div title="Reloading...">' +
-                   '<b>Reloading page to reflect FTP change."' +
-                   '</div>').dialog({modal: true});
-            location.reload();
-        });
-        ftp_link.click(() => ftp_input.width(ftp_link.hide().width()).show());
+        attachEditableFTP(stats_frag);
+        attachEditableWeight(stats_frag);
         stats_frag.insertAfter(jQuery('.inline-stats').last());
         if (wattsStream && sauce.config.options['analysis-cp-chart']) {
             const critpower_frag = jQuery(ctx.critpower_tpl({
@@ -246,7 +317,6 @@ sauce.ns('analysis', function(ns) {
                     openDialog(moreinfoRideDialog({
                         label,
                         roll,
-                        weight,
                         anchor_to: el.parent()
                     }), el.closest('tr'));
                     ev.stopPropagation();
@@ -269,13 +339,14 @@ sauce.ns('analysis', function(ns) {
         if (!distStream || !sauce.config.options['analysis-cp-chart']) {
             return;
         }
-        const weight = pageView.activityAthleteWeight();
         const weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
         const stats_frag = jQuery(ctx.tertiary_stats_tpl({
             type: 'run',
-            weight_unit: weight_unit,
-            weight_norm: (weight_unit == 'lbs') ? weight * 2.20462 : weight,
+            weight_unit,
+            weight_norm: Math.round(prefersKg() ? ctx.weight: ctx.weight * 2.20462),
+            weight_origin: ctx.weight_origin,
         }));
+        attachEditableWeight(stats_frag);
         stats_frag.insertAfter(jQuery('.inline-stats').last());
         const metric = prefersMetric();
         const bestpace_frag = jQuery(ctx.bestpace_tpl({
@@ -300,7 +371,6 @@ sauce.ns('analysis', function(ns) {
                     roll,
                     elapsed: formatPace(roll.elapsed()),
                     bp_str: humanPace(roll.avg()),
-                    weight,
                     anchor_to: el.parent()
                 }), el.closest('tr'));
                 ev.stopPropagation();
@@ -317,6 +387,15 @@ sauce.ns('analysis', function(ns) {
             _preferMetric = currentAthlete.get('measurement_preference') !== 'feet';
         }
         return _preferMetric;
+    }
+
+
+    let _preferKg;
+    function prefersKg() {
+        if (_preferKg === undefined) {
+            _preferKg = pageView.activityAthlete().get('weight_measurement_unit') !== 'lbs';
+        }
+        return _preferKg;
     }
 
 
@@ -408,7 +487,7 @@ sauce.ns('analysis', function(ns) {
         const rollSize = roll.size();
         const avgpwr = np.value ? np : {value: avgPower, count: rollSize};
         const intensity = avgpwr.value / ctx.ftp;
-        const w_kg = avgPower / opts.weight;
+        const w_kg = ctx.weight ? avgPower / ctx.weight : null;
         const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
         const rank = sauce.power.rank(roll.period, w_kg, gender);
         const rank_cat = rank && sauce.power.rankCat(rank);
@@ -760,7 +839,6 @@ sauce.ns('analysis', function(ns) {
 
 
     function addBadge(row) {
-        const weight = pageView.activityAthleteWeight();
         const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
         if (row.querySelector(':scope > td.sauce-mark')) {
             return;
@@ -770,7 +848,7 @@ sauce.ns('analysis', function(ns) {
             console.warn("Segment data not found for:", row.dataset.segmentEffortId);
             return;
         }
-        const w_kg = segment.get('avg_watts_raw') / weight;
+        const w_kg = segment.get('avg_watts_raw') / ctx.weight;
         const rank = sauce.power.rank(segment.get('elapsed_time_raw'), w_kg, gender);
         if (!rank || rank <= 0) {
             return;  // Too slow/weak
@@ -798,6 +876,9 @@ sauce.ns('analysis', function(ns) {
 
 
     function addSegmentBadges() {
+        if (!ctx.weight) {
+            return;
+        }
         const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
         rows.push.apply(rows, document.querySelectorAll('table.hidden-segments tr[data-segment-effort-id]'));
         for (const row of rows) {
@@ -816,6 +897,7 @@ sauce.ns('analysis', function(ns) {
         ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
         ctx.bestpace_tpl = await getTemplate('bestpace.html');
         ctx.moreinfo_tpl = await getTemplate('bestpace-moreinfo.html');
+        assignWeight(await sauce.rpc.getWeight(pageView.activityAthlete().get('id')));
         await processRunStreams();
     }
 
@@ -854,6 +936,7 @@ sauce.ns('analysis', function(ns) {
         ctx.critpower_tpl = await getTemplate('critpower.html');
         ctx.moreinfo_tpl = await getTemplate('critpower-moreinfo.html');
         assignFTP(await sauce.rpc.getFTP(pageView.activityAthlete().get('id')));
+        assignWeight(await sauce.rpc.getWeight(pageView.activityAthlete().get('id')));
         await processRideStreams();
     }
 
@@ -880,6 +963,28 @@ sauce.ns('analysis', function(ns) {
             ctx.ftp_origin = 'sauce';
         }
         ctx.ftp = ftp;
+    }
+
+
+    function assignWeight(sauce_weight) {
+        const strava_weight = pageView.activityAthleteWeight();
+        let weight;
+        if (!sauce_weight) {
+            if (strava_weight) {
+                weight = strava_weight;
+                ctx.weight_origin = 'strava';
+            } else {
+                weight = 0;
+                ctx.weight_origin = 'default';
+            }
+        } else {
+            if (strava_weight && sauce_weight != strava_weight) {
+                console.warn("Sauce weight override differs from Strava weight:", sauce_weight, strava_weight);
+            }
+            weight = sauce_weight;
+            ctx.weight_origin = 'sauce';
+        }
+        ctx.weight = weight;
     }
 
 
