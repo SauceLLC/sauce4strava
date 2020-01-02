@@ -1,5 +1,5 @@
 
-var tests = [
+addTests([
     function test_fixed_high() {
         assertEqual(Math.round(sauce.power.rank(5, 25.20, 'male') * 100), 100);
         assertGreater(sauce.power.rank(5, 25.20, 'female'), 1);
@@ -15,6 +15,4 @@ var tests = [
     function test_fixed_require_sex() {
         assertException(function() {sauce.power.rank(5, 24.04);}, TypeError);
     }
-];
-
-test_runner(tests);
+]);

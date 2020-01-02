@@ -1029,11 +1029,13 @@ sauce.ns('analysis', function(ns) {
 });
 
 
-(async function() {
-    try {
-        await sauce.analysis.load();
-    } catch(e) {
-        await sauce.rpc.reportError(e);
-        throw e;
-    }
-})();
+if (!sauce.testing) {
+    (async function() {
+        try {
+            await sauce.analysis.load();
+        } catch(e) {
+            await sauce.rpc.reportError(e);
+            throw e;
+        }
+    })();
+}

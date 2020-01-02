@@ -56,8 +56,80 @@ assertLessEqual = function(a, b) {
     }
 };
 
+sauce = self.sauce || {};
+sauce.testing = true;
+sauce.rpc = {};
+sauce.rpc.reportError = function() {};
 
-function test_runner(tests) {
+
+let logEl;
+
+
+infoLog = function(html) {
+    logEl.innerHTML += `<div class="log info">${html}</div>\n`;
+}
+
+errorLog = function(html) {
+    logEl.innerHTML += `<div class="log error">${html}</div>\n`;
+}
+
+
+
+class Runner {
+    constructor() {
+        this._pending = []; 
+        this._finished = []; 
+    }
+
+    async start() {
+        this._starting = false;
+        this._started = true;
+        this._running = true;
+        try {
+            while (this._pending.length) {
+                const test = this._pending.shift();
+                try {
+                    await test();
+                    console.info(test.name + ': %cPASS', 'color: green');
+                    infoLog(`<b>${test.name}</b>: <span style="color: green">PASS</span>`);
+                } catch(e) {
+                    console.error(test.name + ': %cFAIL', 'color: red');
+                    console.error(e.message, e.stack);
+                    errorLog(`<b>${test.name}</b>: <span style="color: red">FAIL</span> - ${e.message} ` +
+                             `<pre class="stack">${e.stack}</pre>`);
+                }
+            }
+        } finally {
+            this._running = false;
+        }
+    }
+
+    addTests(tests) {
+        this._pending.push.apply(this._pending, tests);
+        if (!this._running && this._started && !this._starting) {
+            this._starting = true;
+            setTimeout(0, start);
+        }
+    }
+}
+
+
+let _runner;
+
+function main() {
+    logEl = document.body;
+    if (!_runner) {
+        _runner = new Runner();
+    }
+    _runner.start();
+}
+
+
+function addTests(tests) {
+    if (!_runner) {
+        _runner = new Runner();
+    }
+    _runner.addTests(tests);
     tests.forEach(function(x) {
         try {
             x();
@@ -68,3 +140,7 @@ function test_runner(tests) {
         }
     });
 }
+
+
+addEventListener('load', main);
+

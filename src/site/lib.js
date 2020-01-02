@@ -347,22 +347,25 @@ sauce.ns('power', function() {
         'World Class'
     ];
 
-    const _rankScaler = function(duration, c) {
+
+    function _rankScaler(duration, c) {
         const t = (c.slope_period / duration) * c.slope_adjust;
         const slope = Math.log10(t + c.slope_offset);
         const w_kg = Math.pow(slope, c.slope_factor);
         return w_kg + c.base_offset;
-    };
+    }
 
-    const rank = function(duration, w_kg, sex) {
+
+    function rank(duration, w_kg, sex) {
         const high_consts = ranking_consts[sex].high;
         const low_consts = ranking_consts[sex].low;
         const high = _rankScaler(duration, high_consts);
         const low = _rankScaler(duration, low_consts);
         return (w_kg - low) / (high - low);
-    };
+    }
 
-    const rankCat = function(rank) {
+
+    function rankCat(rank) {
         if (rank >= 1) {
             return rank_cats[rank_cats.length-1] + '++';
         } else if (rank <= 0) {
@@ -378,9 +381,10 @@ sauce.ns('power', function() {
             mod = '';
         }
         return rank_cats[Math.floor(index)] + mod;
-    };
+    }
 
-    const critpowerSmart = function(period, ts_stream, watts_stream) {
+
+    function critpower(period, ts_stream, watts_stream) {
         let max;
         const ts_size = ts_stream.length;
         const gaps = ts_stream.map((x, i) => ts_stream[i + 1] - x);
@@ -395,9 +399,10 @@ sauce.ns('power', function() {
             }
         }
         return max;
-    };
+    }
 
-    const calcNP = function(watts_stream) {
+
+    function calcNP(watts_stream) {
         const ret = {
             value: 0,
             count: 0
@@ -427,21 +432,22 @@ sauce.ns('power', function() {
             ret.count = count;
         }
         return ret;
-    };
+    }
 
-    const calcTSS = function(np, if_, ftp) {
+
+    function calcTSS(np, if_, ftp) {
         const norm_work = np.value * np.count;
         const ftp_work_hour = ftp * 3600;
         const raw_tss = norm_work * if_;
         return raw_tss / ftp_work_hour * 100;
-    };
+    }
 
     return {
-        critpower: critpowerSmart,
-        calcNP: calcNP,
-        calcTSS: calcTSS,
-        rank: rank,
-        rankCat: rankCat
+        critpower,
+        calcNP,
+        calcTSS,
+        rank,
+        rankCat,
     };
 });
 
@@ -449,7 +455,7 @@ sauce.ns('power', function() {
 sauce.ns('pace', function() {
     'use strict';
 
-    const bestpace = function(distance, ts_stream, dist_stream, pace_stream) {
+    function bestpace(distance, ts_stream, dist_stream, pace_stream) {
         const ring = new sauce.data.RollingWindow(distance);
         let min;
         const ts_size = ts_stream.length;
@@ -463,10 +469,10 @@ sauce.ns('pace', function() {
             }
         }
         return min;
-    };
+    }
 
     return {
-        bestpace: bestpace
+        bestpace,
     };
 });
 
@@ -489,7 +495,8 @@ sauce.ns('time', function(ns) {
         ['sec', 1]
     ];
 
-    const ago = function(dateobj, precision) {
+
+    function ago(dateobj, precision) {
         const now = new Date();
         let span = (now - dateobj) / 1000;
         const stack = [];
@@ -509,9 +516,9 @@ sauce.ns('time', function(ns) {
             }
         }
         return stack.slice(0, 2).join(', ') || 'just now';
-    };
+    }
 
     return {
-        ago
+        ago,
     };
 });
