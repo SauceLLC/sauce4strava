@@ -57,7 +57,6 @@ sauce.ns('data', function() {
             if (!mostFreq || mostFreq.count < count) {
                 mostFreq = {count, value};
                 if (count > data.length / 2) {
-                    console.log("winner before half time");
                     break;  // Nobody can possibly overtake now.
                 }
             }
@@ -90,10 +89,10 @@ sauce.ns('data', function() {
             options = options || {};
             const len = this._times.length;
             const offt = (options.offt || 0) + this._offt;
-            if (len - offt < 2) {
+            if (len - offt < 1) {
                 return 0;
             }
-            const start = offt ? this._times[offt - 1] : this._head;
+            const start = this._times[offt - 1];
             return this._times[len - 1] - start;
         }
 
@@ -106,7 +105,7 @@ sauce.ns('data', function() {
                     }
                 }
             } else {
-                return this._times[0];
+                return this._times[this._offt];
             }
         }
 
@@ -134,7 +133,6 @@ sauce.ns('data', function() {
             super();
             this._times = [];
             this._values = [];
-            this._head = null;
             this._offt = 0;
             this._joules = 0;
             this._idealGap = idealGap;
@@ -143,25 +141,23 @@ sauce.ns('data', function() {
         }
 
         add(ts, value) {
-            if (this._head === null) {
-                this._head = ts;
-            } else {
-                const last = this._times[this._times.length - 1];
-                const gap = ts - last;
-                if (gap > this._maxGap) {
-                    const zero = new Zero(0);
-                    console.info(`Zero padding big gap: ts=${last}, gap=${gap}`);
-                    this.add(last + this._idealGap, zero);
-                }
-                // Credit our joules meter for the last sample.
-                const lastValue = this._values[this._values.length - 1];
-                this._joules += lastValue * gap;
+            if (!this._offt) {
+                this._offt = 1;
+                this._times.push(ts - this._idealGap);
+                this._values.push(NaN);
             }
+            const gap = ts - this._times[this._times.length - 1];
+            if (gap > this._maxGap || (gap > this._idealGap && this._values[this._values.length - 1] instanceof Pad)) {
+                const interTS = this._times[this._times.length - 1] + this._idealGap;
+                return this.add(interTS, new Zero(0));
+            }
+            this._joules += value * gap;
             this._times.push(ts);
             this._values.push(value);
             while (this.elapsed({offt: 1}) >= this.period) {
                 this.shift();
             }
+            return value;
         }
 
         avg() {
@@ -177,18 +173,19 @@ sauce.ns('data', function() {
         }
 
         shift() {
-            this._head = this._times[this._offt];
-            this._joules -= this._values[this._offt] * (this._times[this._offt + 1] -
-                                                        this._times[this._offt]);
+            this._joules -= this._values[this._offt] * (this._times[this._offt] -
+                                                        this._times[this._offt - 1]);
             this._offt++;
         }
 
         copy() {
             const copy = new this.constructor(this.period);
-            copy._head = this._head;
-            copy._times = this._times.slice(this._offt);
-            copy._values = this._values.slice(this._offt);
+            copy._offt = 1;
+            copy._times = this._times.slice(this._offt - 1);
+            copy._values = this._values.slice(this._offt - 1);
             copy._joules = this._joules;
+            copy._idealGap = this._idealGap;
+            copy._maxGap = this._maxGap;
             return copy;
         }
     }
@@ -199,15 +196,11 @@ sauce.ns('data', function() {
             super();
             this._times = [];
             this._distances = [];
-            this._head = null;
             this._paces = [];
             this._distance = distance;
         }
 
         add(ts, distance, pace) {
-            if (this._head === null) {
-                this._head = ts;
-            }
             this._times.push(ts);
             this._distances.push(distance);
             this._paces.push(pace);
@@ -234,7 +227,6 @@ sauce.ns('data', function() {
         }
 
         shift() {
-            this._head = this._times[0];
             this._times.shift();
             this._distances.shift();
             this._paces.shift();
@@ -242,7 +234,6 @@ sauce.ns('data', function() {
 
         copy() {
             const copy = new this.constructor(this._distance);
-            copy._head = this._head;
             copy._times = this._times.slice(0);
             copy._distances = this._distances.slice(0);
             copy._paces = this._paces.slice(0);
@@ -253,6 +244,8 @@ sauce.ns('data', function() {
     return {
         RollingAvg,
         RollingWindow,
+        Zero,
+        Pad,
         avg,
         min,
         max,
@@ -387,13 +380,21 @@ sauce.ns('power', function() {
     function critpower(period, ts_stream, watts_stream) {
         let max;
         const ts_size = ts_stream.length;
+        if (ts_size < 2) {
+            return;
+        }
         const gaps = ts_stream.map((x, i) => ts_stream[i + 1] - x);
         gaps.pop();  // last entry is not a number (NaN)
         const idealGap = sauce.data.mode(gaps);
         const maxGap = sauce.data.median(gaps) * 2; // Zero pad samples over this gap size.
         const ring = new sauce.data.RollingAvg(period, idealGap, maxGap);
         for (let i = 0; i < ts_size; i++) {
-            ring.add(ts_stream[i], watts_stream[i]);
+            if (ring.add(ts_stream[i], watts_stream[i]) instanceof sauce.data.Zero) {
+                // Our value wasn't added, instead zero padding was added.  rewind
+                // incrementer and check if ring is our new max, then try again..
+                // This ensures we find CP max when zero padding was required.
+                i--;
+            }
             if (ring.full() && (!max || ring.avg() > max.avg())) {
                 max = ring.copy();
             }

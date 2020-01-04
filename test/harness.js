@@ -1,62 +1,77 @@
+/* global sauce */
+/* exported assertTruthy, assertFalsy, assertEqual, assertException */
+/* exported assertGreater, assertLess, assertGreaterEqual, assertLessEqual */
+/* exported addTests */
+
+class TestError extends Error {}
+
+class AssertionError extends TestError {}
 
 
-TestError = function(msg) {
-    this.message = msg;
-};
-TestError.prototype = new Error();
-TestError.prototype.name = 'TestError';
+function assertTruthy(condition, failMessage) {
+    if (!condition) {
+        throw new AssertionError(failMessage || 'condition is not true');
+    }
+}
 
-assert = console.assert.bind(console);
 
-assertException = function(fn, exc) {
+function assertFalsy(condition, failMessage) {
+    if (condition) {
+        throw new AssertionError(failMessage || 'condition is not false');
+    }
+}
+
+
+function assertException(fn, exc) {
     try {
         fn();
     } catch(e) {
         if (!(e instanceof exc)) {
-            throw new TestError('Invalid Exception: (' + e.name + ' != ' + exc.name + ')');
+            throw new AssertionError(`Invalid Exception: '${e.name}' not instance of '${exc.name}'`);
         } else {
             return;
         }
     }
-    throw new TestError('No Exception Caught');
-};
+    throw new AssertionError('No Exception Caught');
+}
 
 
-assertEqual = function(a, b) {
+function assertEqual(a, b) {
     if (a !== b) {
-        throw new TestError(a + ' !== ' + b);
+        throw new AssertionError(`${a} !== ${b}`);
     }
-};
+}
 
 
-assertGreater = function(a, b) {
+function assertGreater(a, b) {
     if (!(a > b)) {
-        throw new TestError('!(' + a + ' > ' + b + ')');
+        throw new AssertionError(`${a} not greater than ${b}`);
     }
-};
+}
 
 
-assertLess = function(a, b) {
+function assertLess(a, b) {
     if (!(a < b)) {
-        throw new TestError('!(' + a + ' < ' + b + ')');
+        throw new AssertionError(`${a} not less than ${b}`);
     }
-};
+}
 
 
-assertGreaterEqual = function(a, b) {
+function assertGreaterEqual(a, b) {
     if (!(a >= b)) {
-        throw new TestError('!(' + a + ' >= ' + b + ')');
+        throw new AssertionError(`${a} not greater than or equal to ${b}`);
     }
-};
+}
 
 
-assertLessEqual = function(a, b) {
+function assertLessEqual(a, b) {
     if (!(a <= b)) {
-        throw new TestError('!(' + a + ' <= ' + b + ')');
+        throw new AssertionError(`${a} not less than or equal to ${b}`);
     }
-};
+}
 
-sauce = self.sauce || {};
+
+self.sauce = self.sauce || {};
 sauce.testing = true;
 sauce.rpc = {};
 sauce.rpc.reportError = function() {};
@@ -65,11 +80,11 @@ sauce.rpc.reportError = function() {};
 let logEl;
 
 
-infoLog = function(html) {
+function infoLog(html) {
     logEl.innerHTML += `<div class="log info">${html}</div>\n`;
 }
 
-errorLog = function(html) {
+function errorLog(html) {
     logEl.innerHTML += `<div class="log error">${html}</div>\n`;
 }
 
@@ -90,13 +105,13 @@ class Runner {
                 const test = this._pending.shift();
                 try {
                     await test();
-                    console.info(test.name + ': %cPASS', 'color: green');
+                    console.info(`${test.name}: PASS`);
                     infoLog(`<b>${test.name}</b>: <span style="color: green">PASS</span>`);
                 } catch(e) {
-                    console.error(test.name + ': %cFAIL', 'color: red');
-                    console.error(e.message, e.stack);
+                    console.error(`${test.name}: FAIL`);
                     errorLog(`<b>${test.name}</b>: <span style="color: red">FAIL</span> - ${e.message} ` +
                              `<pre class="stack">${e.stack}</pre>`);
+                    throw e;
                 }
             }
         } finally {
@@ -108,7 +123,7 @@ class Runner {
         this._pending.push.apply(this._pending, tests);
         if (!this._running && this._started && !this._starting) {
             this._starting = true;
-            setTimeout(0, start);
+            setTimeout(0, () => this.start());
         }
     }
 }
@@ -130,15 +145,6 @@ function addTests(tests) {
         _runner = new Runner();
     }
     _runner.addTests(tests);
-    tests.forEach(function(x) {
-        try {
-            x();
-            console.log(x.name + ': %cPASS', 'color: green');
-        } catch(e) {
-            console.log(x.name + ': %cFAIL', 'color: red');
-            console.error(e.message, e.stack);
-        }
-    });
 }
 
 

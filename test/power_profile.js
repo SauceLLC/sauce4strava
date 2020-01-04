@@ -1,3 +1,4 @@
+/* global sauce, addTests, assertEqual, assertLess, assertGreater, assertException */
 
 addTests([
     function test_fixed_high() {
@@ -12,7 +13,7 @@ addTests([
         assertLess(sauce.power.rank(5, 8.93, 'male'), 0);
     },
 
-    function test_fixed_require_sex() {
+    function test_fixed_require_gender() {
         assertException(function() {sauce.power.rank(5, 24.04);}, TypeError);
     }
 ]);
