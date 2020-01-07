@@ -85,6 +85,51 @@ sauce.ns('data', function() {
 
 
     class RollingBase {
+
+        constructor(period, options) {
+            options = options || {};
+            this.period = period;
+            this._accumulatedValues = !!options.accumulatedValues;
+            if (this._accumulatedValues) {
+                this._times = [0];
+                this._values = [null];
+                this._offt = null;
+                this._headOfft = 1;
+            } else {
+                this._times = [];
+                this._values = [];
+                this._offt = 0;
+                this._headOfft = 0;
+            }
+        }
+
+        copy() {
+            const instance = new this.constructor(this.period, this._accumulatedValues);
+            instance._times = this._times.slice(this._offt - this._headOfft);
+            instance._values = this._values.slice(this._offt - this._headOfft);
+            instance._offt = this._headOfft;
+            return instance;
+        }
+
+        importReduce(times, values, comparator) {
+            if (times.length !== values.length) {
+                throw new TypeError("times and values not same length");
+            }
+            let leader;
+            for (let i = 0; i < times.length; i++) {
+                if (this.add(times[i], values[i]) instanceof Pad) {
+                    // Our value wasn't added, instead padding was added.  rewind
+                    // incrementer and check if ring is our new leader, then try again..
+                    // This ensures we find leader values when padding was required.
+                    i--;
+                }
+                if (this.full() && (!leader || comparator(this, leader))) {
+                    leader = this.copy();
+                }
+            }
+            return leader;
+        }
+
         elapsed(options) {
             options = options || {};
             const len = this._times.length;
@@ -92,8 +137,29 @@ sauce.ns('data', function() {
             if (len - offt < 1) {
                 return 0;
             }
-            const start = this._times[offt - 1];
+            const start = this._times[offt - this._headOfft];
             return this._times[len - 1] - start;
+        }
+
+        add(ts, value) {
+            if (this._offt === null) {
+                this._times[0] = this.preTimestamp(ts);
+                this._offt = this._headOfft;
+            }
+            this._values.push(this.formatValue(value, ts));
+            this._times.push(ts);
+            while (this.full({offt: 1})) {
+                this.shift();
+            }
+            return value;
+        }
+
+        preTimestamp(ts) {
+            return ts;
+        }
+
+        formatValue(value, ts, gap) {
+            return value;
         }
 
         firstTimestamp(options) {
@@ -123,49 +189,7 @@ sauce.ns('data', function() {
         }
 
         size() {
-            return this._times.length;
-        }
-    }
-
-
-    class RollingAvg extends RollingBase {
-        constructor(period, idealGap, maxGap) {
-            super();
-            this._times = [];
-            this._values = [];
-            this._offt = 0;
-            this._joules = 0;
-            this._idealGap = idealGap;
-            this._maxGap = maxGap;
-            this.period = period;
-        }
-
-        add(ts, value) {
-            if (!this._offt) {
-                this._offt = 1;
-                this._times.push(ts - this._idealGap);
-                this._values.push(NaN);
-            }
-            const gap = ts - this._times[this._times.length - 1];
-            if (gap > this._maxGap || (gap > this._idealGap && this._values[this._values.length - 1] instanceof Pad)) {
-                const interTS = this._times[this._times.length - 1] + this._idealGap;
-                return this.add(interTS, new Zero(0));
-            }
-            this._joules += value * gap;
-            this._times.push(ts);
-            this._values.push(value);
-            while (this.elapsed({offt: 1}) >= this.period) {
-                this.shift();
-            }
-            return value;
-        }
-
-        avg() {
-            return this._joules / this.elapsed();
-        }
-
-        full() {
-            return this.elapsed() >= this.period;
+            return this._times.length - this._offt;
         }
 
         values() {
@@ -173,44 +197,79 @@ sauce.ns('data', function() {
         }
 
         shift() {
-            this._joules -= this._values[this._offt] * (this._times[this._offt] -
-                                                        this._times[this._offt - 1]);
+            this.shiftValue(this._offt);
             this._offt++;
         }
 
+        shiftValue(idx) {
+        }
+    }
+
+
+    class RollingAvg extends RollingBase {
+
+        constructor(period, idealGap, maxGap) {
+            super(period, {accumulatedValues: true});
+            this._joules = 0;
+            this._idealGap = idealGap;
+            this._maxGap = maxGap;
+        }
+
+        add(ts, value) {
+            if (this._offt !== null) {
+                const gap = ts - this._times[this._times.length - 1];
+                if (gap > this._maxGap || (gap > this._idealGap && this._values[this._values.length - 1] instanceof Pad)) {
+                    const padTS = this._times[this._times.length - 1] + this._idealGap;
+                    return this.add(padTS, new Zero());
+                }
+            }
+            return super.add(ts, value);
+        }
+
+        preTimestamp(ts) {
+            return ts - this._idealGap;
+        }
+
+        formatValue(value, ts) {
+            const gap = ts - this._times[this._times.length - 1];
+            this._joules += value * gap;
+            return value;
+        }
+
+        avg() {
+            return this._joules / this.elapsed();
+        }
+
+        full(options) {
+            options = options || {};
+            const offt = options.offt;
+            return this.elapsed({offt}) >= this.period;
+        }
+
+        shiftValue(idx) {
+            this._joules -= this._values[idx] * (this._times[idx] - this._times[idx - 1]);
+        }
+
         copy() {
-            const copy = new this.constructor(this.period);
-            copy._offt = 1;
-            copy._times = this._times.slice(this._offt - 1);
-            copy._values = this._values.slice(this._offt - 1);
-            copy._joules = this._joules;
-            copy._idealGap = this._idealGap;
-            copy._maxGap = this._maxGap;
-            return copy;
+            const instance = super.copy();
+            instance._idealGap = this._idealGap;
+            instance._maxGap = this._maxGap;
+            instance._joules = this._joules;
+            return instance;
         }
     }
 
 
     class RollingWindow extends RollingBase {
-        constructor(distance) {
-            super();
-            this._times = [];
-            this._distances = [];
-            this._paces = [];
-            this._distance = distance;
-        }
 
-        add(ts, distance, pace) {
-            this._times.push(ts);
-            this._distances.push(distance);
-            this._paces.push(pace);
-            while (this._distances.length > 2 && distance - this._distances[1] >= this._distance) {
-                this.shift();
+        distance(options) {
+            options = options || {};
+            const offt = (options.offt || 0) + this._offt;
+            const start = this._values[offt];
+            const end = this._values[this._values.length - 1];
+            if (start != null && end != null) {
+                return end - start;
             }
-        }
-
-        distance() {
-            return this._distances[this._distances.length - 1] - this._distances[0];
         }
 
         avg() {
@@ -222,22 +281,10 @@ sauce.ns('data', function() {
             return elapsed / dist;
         }
 
-        full() {
-            return this.distance() >= this._distance;
-        }
-
-        shift() {
-            this._times.shift();
-            this._distances.shift();
-            this._paces.shift();
-        }
-
-        copy() {
-            const copy = new this.constructor(this._distance);
-            copy._times = this._times.slice(0);
-            copy._distances = this._distances.slice(0);
-            copy._paces = this._paces.slice(0);
-            return copy;
+        full(options) {
+            options = options || {};
+            const offt = options.offt;
+            return this.distance({offt}) >= this.period;
         }
     }
 
@@ -377,29 +424,16 @@ sauce.ns('power', function() {
     }
 
 
-    function critpower(period, ts_stream, watts_stream) {
-        let max;
-        const ts_size = ts_stream.length;
-        if (ts_size < 2) {
+    function critpower(period, timeStream, wattsStream) {
+        if (timeStream.length < 2) {
             return;
         }
-        const gaps = ts_stream.map((x, i) => ts_stream[i + 1] - x);
+        const gaps = timeStream.map((x, i) => timeStream[i + 1] - x);
         gaps.pop();  // last entry is not a number (NaN)
         const idealGap = sauce.data.mode(gaps);
-        const maxGap = sauce.data.median(gaps) * 2; // Zero pad samples over this gap size.
+        const maxGap = sauce.data.median(gaps) * 4; // Zero pad samples over this gap size.
         const ring = new sauce.data.RollingAvg(period, idealGap, maxGap);
-        for (let i = 0; i < ts_size; i++) {
-            if (ring.add(ts_stream[i], watts_stream[i]) instanceof sauce.data.Zero) {
-                // Our value wasn't added, instead zero padding was added.  rewind
-                // incrementer and check if ring is our new max, then try again..
-                // This ensures we find CP max when zero padding was required.
-                i--;
-            }
-            if (ring.full() && (!max || ring.avg() > max.avg())) {
-                max = ring.copy();
-            }
-        }
-        return max;
+        return ring.importReduce(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
     }
 
 
@@ -456,20 +490,12 @@ sauce.ns('power', function() {
 sauce.ns('pace', function() {
     'use strict';
 
-    function bestpace(distance, ts_stream, dist_stream, pace_stream) {
-        const ring = new sauce.data.RollingWindow(distance);
-        let min;
-        const ts_size = ts_stream.length;
-        for (let i = 0; i < ts_size; i++) {
-            const dist = dist_stream[i];
-            const ts = ts_stream[i];
-            const pace = pace_stream[i];
-            ring.add(ts, dist, pace);
-            if (ring.full() && (!min || ring.avg() <= min.avg())) {
-                min = ring.copy();
-            }
+    function bestpace(distance, timeStream, distStream) {
+        if (timeStream.length < 2) {
+            return;
         }
-        return min;
+        const ring = new sauce.data.RollingWindow(distance);
+        return ring.importReduce(timeStream, distStream, (cur, lead) => cur.avg() <= lead.avg());
     }
 
     return {

@@ -18,11 +18,13 @@ sauce.ns('analysis', function(ns) {
         ['15 min', 900],
         ['20 min', 1200],
         ['30 min', 1800],
-        ['1 hour', 3600]
+        ['1 hour', 3600],
     ];
 
     const metersPerMile = 1609.344;
     const run_cp_distances = [
+        ['100 m', 100],
+        ['200 m', 200],
         ['400 m', 400],
         ['1 km', 1000],
         ['1 mile', Math.round(metersPerMile)],
@@ -30,7 +32,8 @@ sauce.ns('analysis', function(ns) {
         ['5 km', 5000],
         ['10 km', 10000],
         ['13.1 mile', Math.round(metersPerMile * 13.1)],
-        ['26.2 mile', Math.round(metersPerMile * 26.2)]
+        ['26.2 mile', Math.round(metersPerMile * 26.2)],
+        ['50 km', 50000],
     ];
 
     const rank_map = [
@@ -355,9 +358,8 @@ sauce.ns('analysis', function(ns) {
         }));
         bestpace_frag.insertAfter(jQuery('#pagenav').first());
         const timeStream = getStream('time');
-        const paceStream = getStream('pace');
         for (const [label, distance] of run_cp_distances) {
-            const roll = sauce.pace.bestpace(distance, timeStream, distStream, paceStream);
+            const roll = sauce.pace.bestpace(distance, timeStream, distStream);
             if (roll === undefined) {
                 continue;
             }
@@ -534,7 +536,7 @@ sauce.ns('analysis', function(ns) {
         const showAnalysisView = function() {
             const start = getStreamTimeIndex(startTime);
             const end = getStreamTimeIndex(endTime);
-            pageView.router().changeMenuTo(`analysis/${start}/${end + 1}`);
+            pageView.router().changeMenuTo(`analysis/${start}/${end}`);
             dialog.dialog('close');
         };
         moreinfo_frag.find('.start_time_link').click(showAnalysisView);
@@ -584,8 +586,9 @@ sauce.ns('analysis', function(ns) {
     function moreinfoRunDialog(opts) {
         const roll = opts.roll;
         const elapsed = formatPace(roll.elapsed());
-        const startTime = roll.firstTimestamp();
-        const endTime = roll.lastTimestamp();
+        const startTime = roll.firstTimestamp({noPad: true});
+        const endTime = roll.lastTimestamp({noPad: true});
+        const paceStream = getStreamTimeRange('pace', startTime, endTime);
         const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
         const gapStream = getStreamTimeRange('grade_adjusted_pace', startTime, endTime);
         const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
@@ -593,13 +596,13 @@ sauce.ns('analysis', function(ns) {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
         const metric = prefersMetric();
-        const maxPace = localePace(sauce.data.max(roll._paces));
+        const maxPace = localePace(sauce.data.max(paceStream));
         const data = {
             title: 'Best Pace: ' + opts.label,
             start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
             metric,
             pace: {
-                min: humanPace(sauce.data.min(roll._paces)),
+                min: humanPace(sauce.data.min(paceStream)),
                 avg: humanPace(roll.avg()),
                 max: maxPace < 3600 ? formatPace(maxPace) : null, // filter out paces over 1 hour
                 gap: gapStream && humanPace(sauce.data.avg(gapStream)),
@@ -625,7 +628,7 @@ sauce.ns('analysis', function(ns) {
         const showAnalysisView = function() {
             const start = getStreamTimeIndex(startTime);
             const end = getStreamTimeIndex(endTime);
-            pageView.router().changeMenuTo(`analysis/${start}/${end + 1}`);
+            pageView.router().changeMenuTo(`analysis/${start}/${end}`);
             dialog.dialog('close');
         };
         moreinfo_frag.find('.start_time_link').click(showAnalysisView);
@@ -654,7 +657,7 @@ sauce.ns('analysis', function(ns) {
             }]
         });
 
-        const smoothedData = resample(roll._paces, 240);
+        const smoothedData = resample(paceStream, 240);
         const perUnitPaceData = smoothedData.map(x => Math.round((localePace(x) / 60) * 100) / 100);
         /* Must run after the dialog is open for proper rendering. */
         moreinfo_frag.find('.sauce-sparkline').sparkline(perUnitPaceData, {
@@ -757,7 +760,8 @@ sauce.ns('analysis', function(ns) {
 
 
     async function exportActivity(Serializer) {
-        const streamNames = ['time', 'watts', 'heartrate', 'altitude', 'cadence', 'temp', 'latlng', 'distance'];
+        const streamNames = ['time', 'watts', 'heartrate', 'altitude',
+                             'cadence', 'temp', 'latlng', 'distance'];
         const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) => (acc[streamNames[i]] = x, acc), {});
         const activity = await fetchFullActivity();
         const realStartTime = activity.get('start_time');
@@ -767,9 +771,12 @@ sauce.ns('analysis', function(ns) {
         } else {
             start = getEstimatedActivityStart();
         }
-        console.info("Setting activity start time to:", start);
+        // Name and description are not available in the activity model for other users..
         const name = document.querySelector('#heading .activity-name').textContent;
-        const serializer = new Serializer(name, activity.get('type'), start);
+        const descEl = document.querySelector('#heading .activity-description .content');
+        const desc = descEl && descEl.textContent;
+        const serializer = new Serializer(name, desc, activity.get('type'), start);
+        serializer.start();
         serializer.loadStreams(streams);
         const link = document.createElement('a');
         const f = serializer.toFile();
