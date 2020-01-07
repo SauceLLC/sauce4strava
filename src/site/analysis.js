@@ -342,6 +342,15 @@ sauce.ns('analysis', function(ns) {
         if (!distStream || !sauce.config.options['analysis-cp-chart']) {
             return;
         }
+        const timeStream = getStream('time');
+        const saucePaceStream = [Infinity];
+        for (let i = 1; i < timeStream.length; i++) {
+            const dist = distStream[i] - distStream[i - 1];
+            const time = timeStream[i] - timeStream[i - 1];
+            saucePaceStream.push(time / dist);
+        }
+        pageView.streams().streamData.add('sauce_pace', saucePaceStream);
+        //pageView.streams().streamData.add('pace', saucePaceStream); // XXX
         const weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
         const stats_frag = jQuery(ctx.tertiary_stats_tpl({
             type: 'run',
@@ -357,12 +366,14 @@ sauce.ns('analysis', function(ns) {
             cp_distances: run_cp_distances
         }));
         bestpace_frag.insertAfter(jQuery('#pagenav').first());
-        const timeStream = getStream('time');
+        //const timeStream = getStream('time');
+        window.xxxrolls = []; // XXX
         for (const [label, distance] of run_cp_distances) {
             const roll = sauce.pace.bestpace(distance, timeStream, distStream);
             if (roll === undefined) {
                 continue;
             }
+            window.xxxrolls.push(roll); // XXX
             const el = jQuery(`#sauce-cp-${distance}`);
             el.attr('title', `Elapsed time: ${formatPace(roll.elapsed())}`);
             const unit = metric ? 'k' : 'm';
@@ -588,7 +599,8 @@ sauce.ns('analysis', function(ns) {
         const elapsed = formatPace(roll.elapsed());
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
-        const paceStream = getStreamTimeRange('pace', startTime, endTime);
+        //const paceStream = getStreamTimeRange('pace', startTime, endTime);
+        const paceStream = getStreamTimeRange('sauce_pace', startTime, endTime);
         const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
         const gapStream = getStreamTimeRange('grade_adjusted_pace', startTime, endTime);
         const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
