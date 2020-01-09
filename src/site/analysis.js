@@ -1,4 +1,4 @@
-/* global Strava sauce jQuery pageView _ currentAthlete */
+/* global Strava sauce jQuery pageView _ */
 
 sauce.ns('analysis', function(ns) {
     'use strict';
@@ -6,6 +6,12 @@ sauce.ns('analysis', function(ns) {
     const ctx = {};
     const default_ftp = 200;
     const tpl_url = sauce.extURL + 'templates';
+
+    const distanceFormatter = new Strava.I18n.DistanceFormatter();
+    const elevationFormatter = new Strava.I18n.ElevationFormatter();
+    const timeFormatter = new Strava.I18n.TimespanFormatter();
+    const paceFormatter = new Strava.I18n.PaceFormatter();
+    const weightFormatter = new Strava.I18n.WeightFormatter();
 
     const ride_cp_periods = [
         ['5 s', 5],
@@ -53,26 +59,6 @@ sauce.ns('analysis', function(ns) {
                 return sauce.extURL + 'assets/ranking/' + rank_map[i][1];
             }
         }
-    }
-
-
-    function resample(data, maxLen) {
-        // Reduce a data array to maxLen by resampling the numeric values.
-        // This can be useful for smoothing out graphs.
-        if (data.length < maxLen) {
-            return Array.from(data);
-        }
-        const resampled = [];
-        const increment = Math.ceil(data.length / maxLen);
-        for (let i = 0; i < data.length; i += increment) {
-            let v = 0;
-            let ii;
-            for (ii = 0; ii < increment && i + ii < data.length; ii++) {
-                v += data[i + ii];
-            }
-            resampled.push(v / ii);
-        }
-        return resampled;
     }
 
 
@@ -154,8 +140,8 @@ sauce.ns('analysis', function(ns) {
             });
         }
         _currentOpenDialog = dialog;
-        dialog.on('dialogclose', () => selectorEl.removeClass('selected'));
-        selectorEl.addClass('selected');
+        dialog.on('dialogclose', () => selectorEl.classList.remove('selected'));
+        selectorEl.classList.add('selected');
     }
 
 
@@ -249,7 +235,8 @@ sauce.ns('analysis', function(ns) {
                 }
             },
             onValid: async v => {
-                await sauce.rpc.setWeight(pageView.activityAthlete(), prefersKg() ? v : v / 2.20462);
+                const kg = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
+                await sauce.rpc.setWeight(pageView.activityAthlete(), kg);
                 jQuery(`
                     <div title="Reloading...">
                         <b>Reloading page to reflect weight change.
@@ -273,7 +260,7 @@ sauce.ns('analysis', function(ns) {
             'grade_smooth',
         ]);
         let wattsStream = getStream('watts');
-        const is_watt_estimate = !wattsStream;
+        const isWattEstimate = !wattsStream;
         if (!wattsStream) {
             wattsStream = await fetchStream('watts_calc');
             if (!wattsStream) {
@@ -286,13 +273,12 @@ sauce.ns('analysis', function(ns) {
         }
         const np = wattsStream ? sauce.power.calcNP(wattsStream) : undefined;
         const np_val = np && np.value;
-        const weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
         const intensity = np && np_val / ctx.ftp;
         const stats_frag = jQuery(ctx.tertiary_stats_tpl({
             type: 'ride',
             np: np_val,
-            weight_unit,
-            weight_norm: Math.round(prefersKg() ? ctx.weight: ctx.weight * 2.20462),
+            weight_unit: weightFormatter.shortUnitKey(),
+            weight_norm: humanWeight(ctx.weight),
             weight_origin: ctx.weight_origin,
             ftp: ctx.ftp,
             ftp_origin: ctx.ftp_origin,
@@ -303,29 +289,33 @@ sauce.ns('analysis', function(ns) {
         attachEditableWeight(stats_frag);
         stats_frag.insertAfter(jQuery('.inline-stats').last());
         if (wattsStream && sauce.config.options['analysis-cp-chart']) {
-            const critpower_frag = jQuery(ctx.critpower_tpl({
-                cp_periods: ride_cp_periods,
-                is_watt_estimate: is_watt_estimate
-            }));
-            critpower_frag.insertAfter(jQuery('#pagenav').first());
             const timeStream = getStream('time');
+            const critPowers = [];
             for (const [label, period] of ride_cp_periods) {
                 const roll = sauce.power.critpower(period, timeStream, wattsStream);
-                if (!roll) {
-                    continue;
-                }
-                const el = jQuery(`#sauce-cp-${period}`);
-                el.html(Math.round(roll.avg()));
-                el.parent().click(ev => {
-                    openDialog(moreinfoRideDialog({
+                if (roll) {
+                    critPowers.push({
                         label,
                         roll,
-                        anchor_to: el.parent()
-                    }), el.closest('tr'));
+                        power: Math.round(roll.avg()).toLocaleString(),
+                    });
+                }
+            }
+            const holderEl = jQuery(ctx.critpower_tpl({
+                critPowers,
+                isWattEstimate
+            })).insertAfter(jQuery('#pagenav').first())[0];
+            for (const {label, roll} of critPowers) {
+                const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
+                row.addEventListener('click', async ev => {
+                    openDialog(await moreinfoRideDialog({
+                        label,
+                        roll,
+                        anchor_to: row
+                    }), row);
                     ev.stopPropagation();
-                    sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${period}`);
+                    sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
                 });
-                jQuery(`#sauce-cp-row-${period}`).show();
             }
         }
     }
@@ -343,126 +333,105 @@ sauce.ns('analysis', function(ns) {
             return;
         }
         const timeStream = getStream('time');
-        const saucePaceStream = [Infinity];
+        const saucePaceStream = [];
+        const saucePaceStream2 = [];
+        let lastDistance = distStream[0];
+        //let lastTime = timeStream[0];
+        const rollAvg = new sauce.data.RollingWindow(10);
         for (let i = 1; i < timeStream.length; i++) {
-            const dist = distStream[i] - distStream[i - 1];
             const time = timeStream[i] - timeStream[i - 1];
-            saucePaceStream.push(time / dist);
+            rollAvg.add(time, distStream[i] - distStream[i - 1]);
+            saucePaceStream2.push(rollAvg.avg());
+            const dist = distStream[i] - lastDistance;
+            if (dist > 1) {
+                let ii = i;
+                const pace = time / dist;
+                do {
+                    saucePaceStream[ii--] = pace;
+                } while(ii >= 0 && saucePaceStream[ii] === undefined);
+                //lastTime = timeStream[i];
+                lastDistance = distStream[i];
+            } else {
+                console.count("Buffering");
+            }
         }
         pageView.streams().streamData.add('sauce_pace', saucePaceStream);
-        //pageView.streams().streamData.add('pace', saucePaceStream); // XXX
-        const weight_unit = pageView.activityAthlete().get('weight_measurement_unit');
+        if (window.location.search.match(/\?s/)) {
+            pageView.streams().streamData.add('pace', saucePaceStream); // XXX
+        }
         const stats_frag = jQuery(ctx.tertiary_stats_tpl({
             type: 'run',
-            weight_unit,
-            weight_norm: Math.round(prefersKg() ? ctx.weight: ctx.weight * 2.20462),
+            weight_unit: weightFormatter.shortUnitKey(),
+            weight_norm: humanWeight(ctx.weight),
             weight_origin: ctx.weight_origin,
         }));
         attachEditableWeight(stats_frag);
         stats_frag.insertAfter(jQuery('.inline-stats').last());
-        const metric = prefersMetric();
-        const bestpace_frag = jQuery(ctx.bestpace_tpl({
-            metric,
-            cp_distances: run_cp_distances
-        }));
-        bestpace_frag.insertAfter(jQuery('#pagenav').first());
-        //const timeStream = getStream('time');
-        window.xxxrolls = []; // XXX
+        const bestPaces = [];
         for (const [label, distance] of run_cp_distances) {
             const roll = sauce.pace.bestpace(distance, timeStream, distStream);
-            if (roll === undefined) {
-                continue;
-            }
-            window.xxxrolls.push(roll); // XXX
-            const el = jQuery(`#sauce-cp-${distance}`);
-            el.attr('title', `Elapsed time: ${formatPace(roll.elapsed())}`);
-            const unit = metric ? 'k' : 'm';
-            el.html(`${humanPace(roll.avg())}<small>/${unit}</small>`);
-            el.parent().click(ev => {
-                openDialog(moreinfoRunDialog({
+            if (roll) {
+                bestPaces.push({
                     label,
                     roll,
-                    elapsed: formatPace(roll.elapsed()),
-                    bp_str: humanPace(roll.avg()),
-                    anchor_to: el.parent()
-                }), el.closest('tr'));
-                ev.stopPropagation();
-                sauce.rpc.reportEvent('MoreInfoDialog', 'open', `best-pace-${distance}`);
-            });
-            jQuery(`#sauce-cp-row-${distance}`).show();
+                    pace: humanPace(roll.avg()),
+                });
+            }
+        }
+        if (bestPaces.length) {
+            const holderEl = jQuery(ctx.bestpace_tpl({
+                bestPaces,
+                distUnit: distanceFormatter.shortUnitKey(),
+            })).insertAfter(jQuery('#pagenav').first())[0];
+            for (const {label, roll} of bestPaces) {
+                const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
+                row.addEventListener('click', async ev => {
+                    openDialog(await moreinfoRunDialog({
+                        label,
+                        roll,
+                        elapsed: humanTime(roll.elapsed()),
+                        bp_str: humanPace(roll.avg()),
+                        anchor_to: row
+                    }), row);
+                    ev.stopPropagation();
+                    sauce.rpc.reportEvent('MoreInfoDialog', 'open', `best-pace-${roll.period}`);
+                });
+            }
         }
     }
 
 
-    let _preferMetric;
-    function prefersMetric() {
-        if (_preferMetric === undefined) {
-            _preferMetric = currentAthlete.get('measurement_preference') !== 'feet';
-        }
-        return _preferMetric;
-    }
-
-
-    let _preferKg;
-    function prefersKg() {
-        if (_preferKg === undefined) {
-            _preferKg = pageView.activityAthlete().get('weight_measurement_unit') !== 'lbs';
-        }
-        return _preferKg;
-    }
-
-
-    function milePace(secondsPerMeter) {
-        /* Convert strava pace into seconds per mile */
-        return metersPerMile * secondsPerMeter;
-    }
-
-
-    function kmPace(secondsPerMeter) {
-        /* Convert strava pace into seconds per kilometer */
-        return  1000 * secondsPerMeter;
-    }
-
-
-    function localePace(secondsPerMeter) {
-        /* Convert seconds per metere (native stream format) to seconds per
-         * the athletes locale based fav unit.  E.g. /km or /mile */
-        if (prefersMetric()) {
-            return kmPace(secondsPerMeter);
-        } else {
-            return milePace(secondsPerMeter);
-        }
-    }
-
-
-    function formatPace(pace) {
-        /* Convert seconds to a human string */
-        pace = Math.round(pace);
-        const hours = Math.floor(pace / 3600);
-        const mins = Math.floor(pace / 60 % 60);
-        const seconds = pace % 60;
-        const result = [];
-        if (hours) {
-            result.push(hours);
-            if (mins < 10) {
-                result.push('0' + mins);
+    function humanWeight(kg, options) {
+        options = options || {};
+        if (options.suffix) {
+            if (options.html) {
+                return weightFormatter.abbreviated(kg);
             } else {
-                result.push(mins);
+                return weightFormatter.formatShort(kg);
             }
         } else {
-            result.push(mins);
+            return weightFormatter.format(kg);
         }
-        if (seconds < 10) {
-            result.push('0' + seconds);
-        } else {
-            result.push(seconds);
-        }
-        return result.join(':');
+    }
+
+    function humanTime(seconds) {
+        /* Convert seconds to a human string */
+        return timeFormatter.display(seconds);
     }
 
 
-    function humanPace(secondsPerMeter) {
-        return formatPace(localePace(secondsPerMeter));
+    function humanPace(secondsPerMeter, options) {
+        options = options || {};
+        const mps = 1 / secondsPerMeter;
+        if (options.suffix) {
+            if (options.html) {
+                return paceFormatter.abbreviated(mps);
+            } else {
+                return paceFormatter.formatShort(mps);
+            }
+        } else {
+            return paceFormatter.format(mps);
+        }
     }
 
 
@@ -484,19 +453,25 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function humanElevation(elevation) {
-        if (prefersMetric()) {
-            return `${elevation.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+    function humanElevation(meters, options) {
+        options = options || {};
+        if (options.suffix) {
+            if (options.longSuffix) {
+                return elevationFormatter.formatLong(meters);
+            } else {
+                return elevationFormatter.formatShort(meters);
+            }
         } else {
-            return `${(elevation * 3.28084).toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            return elevationFormatter.format(meters);
         }
     }
 
 
-    function moreinfoRideDialog(opts) {
+    async function moreinfoRideDialog(opts) {
         const roll = opts.roll;
         const avgPower = roll.avg();
-        const np = sauce.power.calcNP(roll.values());
+        const rollValues = roll.values();
+        const np = sauce.power.calcNP(rollValues);
         const rollSize = roll.size();
         const avgpwr = np.value ? np : {value: avgPower, count: rollSize};
         const intensity = avgpwr.value / ctx.ftp;
@@ -513,11 +488,11 @@ sauce.ns('analysis', function(ns) {
         const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
         const data = {
             title: `Critical Power: ${opts.label}`,
-            start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
+            startsAt: humanTime(startTime),
             w_kg,
             power: {
                 avg: avgPower,
-                max: sauce.data.max(roll.values()),
+                max: sauce.data.max(rollValues),
                 np: np.value,
             },
             tss: sauce.power.calcTSS(avgpwr, intensity, ctx.ftp),
@@ -539,19 +514,20 @@ sauce.ns('analysis', function(ns) {
                 loss: humanElevation(altChanges.loss),
                 vam: (altChanges.gain / roll.period) * 3600,
             },
-            elevationUnit: prefersMetric() ? 'm' : 'ft',
+            elevationUnit: elevationFormatter.shortUnitKey(),
+            distUnit: distanceFormatter.shortUnitKey(),
+            distUnitLong: distanceFormatter.longUnitKey(),
             hasFtp: ctx.ftp_origin !== 'default'
         };
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
-        const showAnalysisView = function() {
+        const showAnalysisView = () => {
             const start = getStreamTimeIndex(startTime);
             const end = getStreamTimeIndex(endTime);
             pageView.router().changeMenuTo(`analysis/${start}/${end}`);
             dialog.dialog('close');
         };
         moreinfo_frag.find('.start_time_link').click(showAnalysisView);
-
         dialog = moreinfo_frag.dialog({
             resizable: false,
             width: 240,
@@ -575,8 +551,7 @@ sauce.ns('analysis', function(ns) {
                 click: showAnalysisView
             }]
         });
-
-        const smoothedData = resample(roll.values(), 240);
+        const smoothedData = rollValues.length > 120 ? await sauce.data.resample(rollValues, 120): rollValues;
         /* Must run after the dialog is open for proper rendering. */
         moreinfo_frag.find('.sauce-sparkline').sparkline(smoothedData, {
             type: 'line',
@@ -587,16 +562,20 @@ sauce.ns('analysis', function(ns) {
             chartRangeMin: 0,
             normalRangeMin: 0,
             normalRangeMax: avgPower,
+            valueSpots: {
+                ':200': 'grey',
+                '200:340': 'yellow',
+                '340:': 'red'
+            },
             tooltipSuffix: 'w'
         });
-
         return dialog;
     }
 
 
-    function moreinfoRunDialog(opts) {
+    async function moreinfoRunDialog(opts) {
         const roll = opts.roll;
-        const elapsed = formatPace(roll.elapsed());
+        const elapsed = humanTime(roll.elapsed());
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
         //const paceStream = getStreamTimeRange('pace', startTime, endTime);
@@ -607,16 +586,14 @@ sauce.ns('analysis', function(ns) {
         const altStream = getStreamTimeRange('altitude', startTime, endTime);
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
-        const metric = prefersMetric();
-        const maxPace = localePace(sauce.data.max(paceStream));
+        const maxPace = sauce.data.max(paceStream);
         const data = {
             title: 'Best Pace: ' + opts.label,
-            start_time: (new Strava.I18n.TimespanFormatter()).display(startTime),
-            metric,
+            startsAt: humanTime(startTime),
             pace: {
                 min: humanPace(sauce.data.min(paceStream)),
                 avg: humanPace(roll.avg()),
-                max: maxPace < 3600 ? formatPace(maxPace) : null, // filter out paces over 1 hour
+                max: maxPace < 2 && humanPace(maxPace), // filter out slow paces
                 gap: gapStream && humanPace(sauce.data.avg(gapStream)),
             },
             elapsed,
@@ -633,18 +610,19 @@ sauce.ns('analysis', function(ns) {
                 gain: humanElevation(altChanges.gain),
                 loss: humanElevation(altChanges.loss),
             },
-            elevationUnit: metric ? 'm' : 'ft'
+            elevationUnit: elevationFormatter.shortUnitKey(),
+            distUnit: distanceFormatter.shortUnitKey(),
+            distUnitLong: distanceFormatter.longUnitKey(),
         };
         const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
         let dialog;
-        const showAnalysisView = function() {
+        const showAnalysisView = () => {
             const start = getStreamTimeIndex(startTime);
             const end = getStreamTimeIndex(endTime);
             pageView.router().changeMenuTo(`analysis/${start}/${end}`);
             dialog.dialog('close');
         };
         moreinfo_frag.find('.start_time_link').click(showAnalysisView);
-
         dialog = moreinfo_frag.dialog({
             resizable: false,
             width: 240,
@@ -668,22 +646,20 @@ sauce.ns('analysis', function(ns) {
                 click: showAnalysisView
             }]
         });
-
-        const smoothedData = resample(paceStream, 240);
-        const perUnitPaceData = smoothedData.map(x => Math.round((localePace(x) / 60) * 100) / 100);
+        const smoothedData = paceStream.length > 120 ? await sauce.data.resample(paceStream, 120) : paceStream;
+        const invertedData = smoothedData.map(x => x < 2 ? 2 - x : null);
         /* Must run after the dialog is open for proper rendering. */
-        moreinfo_frag.find('.sauce-sparkline').sparkline(perUnitPaceData, {
+        moreinfo_frag.find('.sauce-sparkline').sparkline(invertedData, {
             type: 'line',
             width: '100%',
             height: 56,
             lineColor: '#EA400D',
             fillColor: 'rgba(234, 64, 13, 0.61)',
-            chartRangeMin: 0,
-            normalRangeMin: 0,
-            normalRangeMax: localePace(roll.avg()) / 60,
-            tooltipSuffix: '/mi'
+            chartRangeMin: 0, // XXX
+            normalRangeMin: 0, // XXX
+            normalRangeMax: 1, // XXX
+            tooltipFormatter: (_, _2, data) => humanPace(2 - data.y, {html: true, suffix: true})
         });
-
         return dialog;
     }
 

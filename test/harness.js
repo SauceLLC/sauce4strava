@@ -1,72 +1,98 @@
 /* global sauce */
+/* exported addTests */
 /* exported assertTruthy, assertFalsy, assertEqual, assertException */
 /* exported assertGreater, assertLess, assertGreaterEqual, assertLessEqual */
-/* exported addTests */
+/* exported assertEqualArray */
 
 class TestError extends Error {}
 
-class AssertionError extends TestError {}
+class AssertionError extends TestError {
+    constructor(message, extraMessage) {
+        if (extraMessage) {
+            message += ` (${extraMessage})`;
+        }
+        super(message);
+    }
+}
 
 
 function assertTruthy(condition, failMessage) {
     if (!condition) {
-        throw new AssertionError(failMessage || 'condition is not true');
+        throw new AssertionError('condition is not true', failMessage);
     }
 }
 
 
 function assertFalsy(condition, failMessage) {
     if (condition) {
-        throw new AssertionError(failMessage || 'condition is not false');
+        throw new AssertionError('condition is not false', failMessage);
     }
 }
 
 
-function assertException(fn, exc) {
+function assertException(fn, exc, failMessage) {
     try {
         fn();
     } catch(e) {
         if (!(e instanceof exc)) {
-            throw new AssertionError(`Invalid Exception: '${e.name}' not instance of '${exc.name}'`);
+            throw new AssertionError(`Invalid Exception: '${e.name}' not instance of '${exc.name}'`,
+                                     failMessage);
         } else {
             return;
         }
     }
-    throw new AssertionError('No Exception Caught');
+    throw new AssertionError('No Exception Caught', failMessage);
 }
 
 
-function assertEqual(a, b) {
+function assertEqual(a, b, failMessage) {
     if (a !== b) {
-        throw new AssertionError(`${a} !== ${b}`);
+        throw new AssertionError(`${a} !== ${b}`, failMessage);
+    }
+}
+
+function assertEqualArray(a, b, failMessage) {
+    if (!(a instanceof Array)) {
+        throw new AssertionError(`first arg is not array`, failMessage);
+    }
+    if (!(b instanceof Array)) {
+        throw new AssertionError(`second arg is not array`, failMessage);
+    }
+    if (a.length !== b.length) {
+        throw new AssertionError(`arrays different length`, failMessage);
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            throw new AssertionError(`Array index ${i} differs: ${a[i]} !== ${b[i]}a}`, failMessage);
+        }
     }
 }
 
 
-function assertGreater(a, b) {
+function assertGreater(a, b, failMessage) {
     if (!(a > b)) {
-        throw new AssertionError(`${a} not greater than ${b}`);
+        throw new AssertionError(`${a} not greater than ${b}`, failMessage);
     }
 }
 
 
-function assertLess(a, b) {
+function assertLess(a, b, failMessage) {
     if (!(a < b)) {
-        throw new AssertionError(`${a} not less than ${b}`);
+        throw new AssertionError(`${a} not less than ${b}`, failMessage);
     }
 }
 
 
-function assertGreaterEqual(a, b) {
+function assertGreaterEqual(a, b, failMessage) {
     if (!(a >= b)) {
-        throw new AssertionError(`${a} not greater than or equal to ${b}`);
+        throw new AssertionError(`${a} not greater than or equal to ${b}`, failMessage);
     }
 }
 
 
-function assertLessEqual(a, b) {
+function assertLessEqual(a, b, failMessage) {
     if (!(a <= b)) {
-        throw new AssertionError(`${a} not less than or equal to ${b}`);
+        throw new AssertionError(`${a} not less than or equal to ${b}`, failMessage);
     }
 }
 
@@ -100,13 +126,18 @@ class Runner {
         this._starting = false;
         this._started = true;
         this._running = true;
+        let count = 0;
+        const runnerStart = Date.now();
         try {
             while (this._pending.length) {
                 const test = this._pending.shift();
+                const testStart = Date.now();
+                count++;
                 try {
                     await test();
-                    console.info(`${test.name}: PASS`);
-                    infoLog(`<b>${test.name}</b>: <span style="color: green">PASS</span>`);
+                    const elapsed = (Date.now() - testStart).toLocaleString();
+                    console.info(`${test.name}: PASS (${elapsed}ms)`);
+                    infoLog(`<b>${test.name}</b>: <span style="color: green">PASS</span> (${elapsed}ms)`);
                 } catch(e) {
                     console.error(`${test.name}: FAIL`);
                     errorLog(`<b>${test.name}</b>: <span style="color: red">FAIL</span> - ${e.message} ` +
@@ -117,6 +148,9 @@ class Runner {
         } finally {
             this._running = false;
         }
+        const elapsed = (((Date.now() - runnerStart) / 1000).toFixed(2)).toLocaleString();
+        console.info(`Ran ${count} tests in ${elapsed}ms`);
+        infoLog(`<br/><h2>Ran ${count} tests in ${elapsed}s</h2>`);
     }
 
     addTests(tests) {

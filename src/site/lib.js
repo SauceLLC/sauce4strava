@@ -64,6 +64,7 @@ sauce.ns('data', function() {
         return mostFreq && mostFreq.value;
     }
 
+
     function median(data) {
         // Calc math median for a data array.
         if (!data || !data.length) {
@@ -77,6 +78,51 @@ sauce.ns('data', function() {
             // even length calls for avg of middle pair.
             return (sorted[midPoint - 1] + sorted[midPoint]) / 2;
         }
+    }
+
+
+    async function resample(inData, outLen, options) {
+        const minSampleRate = 3000;  // chromium min
+        const maxSampleRate = 300000; // chromium max
+        let outData;
+        let ratio = outLen / inData.length;
+        if (ratio > 1) {
+            let scratch = Float32Array.from(inData);
+            do {
+                const outSampleRate = Math.min(maxSampleRate, ratio * minSampleRate);
+                scratch = await _resample(scratch, minSampleRate, outSampleRate);
+                ratio = outLen / scratch.length;
+            } while (ratio > 1);
+            outData = scratch;
+        } else if (inData.length > outLen) {
+            let scratch = Float32Array.from(inData);
+            do {
+                const outSampleRate = Math.max(minSampleRate, ratio * maxSampleRate);
+                scratch = await _resample(scratch, maxSampleRate, outSampleRate);
+                ratio = outLen / scratch.length;
+            } while (ratio < 1);
+            outData = scratch;
+        } else {
+            outData = inData;
+        }
+        return Array.from(outData);
+    }
+
+
+    async function _resample(inData, inRate, outRate) {
+        if (!(inData instanceof Float32Array)) {
+            throw new TypeError("inData argument must be Float32Array");
+        }
+        const outLen = Math.round(inData.length * (outRate / inRate));
+        const ctx = new OfflineAudioContext(1, outLen, outRate);
+        const inBuf = ctx.createBuffer(1, inData.length, inRate);
+        inBuf.copyToChannel(inData, 0);
+        const outBufNode = ctx.createBufferSource();
+        outBufNode.buffer = inBuf;
+        outBufNode.connect(ctx.destination);
+        outBufNode.start(0);
+        const outBuf = await ctx.startRendering();
+        return outBuf.getChannelData(0);
     }
 
 
@@ -297,7 +343,8 @@ sauce.ns('data', function() {
         min,
         max,
         mode,
-        median
+        median,
+        resample,
     };
 });
 
@@ -547,5 +594,33 @@ sauce.ns('time', function(ns) {
 
     return {
         ago,
+    };
+});
+
+
+sauce.ns('tools', function(ns) {
+    'use strict';
+
+    function sparklineDialog(data, sparklineOptions, dialogOptions) {
+        const draw = () => { 
+            dialog.sparkline(data, Object.assign({
+                type: 'line',
+                width: '100%',
+                height: '100%',
+            }, sparklineOptions));
+        };
+        const dialog = jQuery('<div/>').dialog(Object.assign({
+            title: 'Sparkline Tool',
+            buttons: [{
+                text: 'Close',
+                click: () => dialog.dialog('close')
+            }],
+            resize: draw,
+        }, dialogOptions));
+        draw();
+    }
+
+    return {
+        sparklineDialog
     };
 });

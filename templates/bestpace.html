@@ -5,12 +5,10 @@
             Best Pace
         </div>
         <table>
-            <% for (const [label, distance] of cp_distances) { %>
-                <tr style="display: none;" id="sauce-cp-row-{{distance}}">
+            <% for (const {label, roll, pace} of bestPaces) { %>
+                <tr id="sauce-cp-{{roll.period}}" title="Fastest average pace for {{label}}">
                     <td>{{label}}</td>
-                    <td title="Best sustained pace for {{label}}">
-                        <span id="sauce-cp-{{distance}}"></span>
-                    </td>
+                    <td>{{pace}}<abbr class="unit short">/{{distUnit}}</abbr></td>
                 </tr>
             <% } %>
         </table>

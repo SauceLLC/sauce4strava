@@ -4,7 +4,7 @@
         <tr>
             <td>Start of effort</td>
             <td title="Time offset to the start of this effort.">
-                <a class="start_time_link">{{start_time}}</a>
+                <a class="start_time_link">{{startsAt}}</a>
             </td>
         </tr>
 
@@ -25,14 +25,14 @@
         <tr>
             <td>Power</td>
             <td>
-                <span title="Average Watts">{{Math.round(power.avg)}}<small>w</small></span>
-                <sup title="Peak Watts">{{power.max}}<small>w</small></sup>
+                <span title="Average Watts">{{Math.round(power.avg)}}<abbr class="unit short">w</abbr></span>
+                <sup title="Peak Watts">{{power.max}}<abbr class="unit short">w</abbr></sup>
             </td>
         </tr>
 
         <% if (power.np) { %>
             <td title="Normalized Power">NP</td>
-            <td>{{Math.round(power.np)}}<small>w</small></td>
+            <td>{{Math.round(power.np)}}<abbr class="unit short">w</abbr></td>
         <% } %>
 
         <% if (hr) { %>
@@ -64,9 +64,11 @@
             </tr>
 
             <% if (grade.vam > 0) { %>
-                <tr>
-                    <td title="Vertical Ascent Meters (per hour)">VAM <sup style="color: blue">BETA</sup></td>
-                    <td title="Vertical Ascent Meters (per hour)">{{Math.round(grade.vam).toLocaleString()}}<small>m/hr</small></td>
+                <tr title='"Velocità Ascensionale Media" / average ascent speed in meters / hour'>
+                    <td>VAM <sup style="color: blue">BETA</sup></td>
+                    <td>{{Math.round(grade.vam).toLocaleString()}}
+                        <abbr class="unit short" title="Ascent velocity meters/hour">Vm/h</abbr>
+                    </td>
                 </tr>
             <% } %>
         <% } %>

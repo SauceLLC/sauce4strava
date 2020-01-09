@@ -4,7 +4,7 @@
         <tr>
             <td>Start of effort</td>
             <td title="Time offset to the start of this effort.">
-                <a class="start_time_link">{{ start_time }}</a>
+                <a class="start_time_link">{{startsAt}}</a>
             </td>
         </tr>
 
@@ -16,11 +16,7 @@
         </tr>
 
         <tr>
-            <% if (metric) { %>
-                <td title="Minutes per kilometer">Pace <small>/k</small></td>
-            <% } else { %>
-                <td title="Minutes per mile">Pace <small>/mi</small></td>
-            <% } %>
+            <td>Pace <abbr class="unit short" title="{{distUnitLong}}">/{{distUnit}}</abbr></td>
             <td>
                 <% if (pace.max) { %>
                     <sub title="Slowest Pace">{{pace.max}}</sub>
@@ -32,11 +28,10 @@
 
         <% if (pace.gap) { %>
             <tr>
-                <% if (metric) { %>
-                    <td title="Grade Adjusted Pace (per kilometer)">GAP <small>/k</small></td>
-                <% } else { %>
-                    <td title="Grade Adjusted Pace (per mile)">GAP <small>/mi</small></td>
-                <% } %>
+                <td title="Grade Adjusted Pace / {{distUnit}}">
+                    GAP
+                    <abbr class="unit short" title="{{distUnitLong}}">/{{distUnit}}</abbr>
+                </td>
                 <td title="Grade Adjusted Pace">{{pace.gap}}</td>
             </tr>
         <% } %>

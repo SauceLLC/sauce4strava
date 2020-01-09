@@ -39,18 +39,9 @@
     padding-left: 10px;
     color: #007fb6;
 }
-#sauce-infopanel.watt-estimate td:last-child span:before {
-    content: "~";
-}
 
 .sauce-moreinfo td a {
     color: #007fb6;
-}
-
-
-#sauce-infopanel td:last-child:hover {
-    cursor: pointer;
-    text-decoration: underline;
 }
 
 #sauce-infopanel tr:nth-child(odd) {
@@ -60,6 +51,11 @@
 #sauce-infopanel tr.selected {
     background: rgba(0, 0, 0, 0.74);
     color: #fff;
+}
+
+#sauce-infopanel tr:hover:not(.selected) {
+    background: #ff7d0052;
+    cursor: pointer;
 }
 
 #sauce-infopanel tr.selected td:last-child {
