@@ -579,7 +579,7 @@ sauce.ns('time', function(ns) {
         span *= precision;
         for (let [suf, period] of agoUnits) {
             if (precision > period) {
-                return;
+                break;
             }
             if (span >= period) {
                 if (span >= 2 * period) {
