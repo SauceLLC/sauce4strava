@@ -1,4 +1,4 @@
-<% if (type === 'ride' || weight_norm) { %>
+<% if (type === 'ride' || weightNorm) { %>
     <ul class="inline-stats section secondary-stats sauce-stats">
         <% if (type === 'ride') { %>
             <% if (np) { %>
@@ -10,7 +10,7 @@
 
             <li>
                 <strong>
-                    <a class="provide-ftp origin-{{ftp_origin}}" title="Click to override...">{{ftp}}</a><abbr class="unit" title="Watts">W</abbr>
+                    <a class="provide-ftp origin-{{ftpOrigin}}" title="Click to override...">{{ftp}}</a><abbr class="unit" title="Watts">W</abbr>
                     <input style="display: none;" type="text" value="{{ftp}}"
                            title="Enter a &quot;Functional Threshold Power&quot; (FTP) value for this athlete and press enter/return.  The value should be given as the maximum sustainable wattage the athlete can produce for 1 hour.  If the athlete already has a value set in their profile (premium members only) then this will override that setting.  If you want to clear the overridden value, empty this field and press enter."/>
                 </strong>
@@ -34,8 +34,8 @@
 
         <li>
             <strong>
-                <a class="provide-weight origin-{{weight_origin}}" title="Click to override...">{{weight_norm}}</a><abbr class="unit" title="Weight">{{weight_unit}}</abbr>
-                <input style="display: none;" type="text" value="{{weight_norm}}"
+                <a class="provide-weight origin-{{weightOrigin}}" title="Click to override...">{{weightNorm}}</a><abbr class="unit" title="Weight">{{weightUnit}}</abbr>
+                <input style="display: none;" type="text" value="{{weightNorm}}"
                        title="Enter a weight value for this athlete and press enter/return.  If the athlete already has a weight value set in their profile then this will override that setting.  If you want to clear the overridden value, empty this field and press enter."/>
             </strong>
             <div class="label">Weight</div>

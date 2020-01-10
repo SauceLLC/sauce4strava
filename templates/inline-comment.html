@@ -3,13 +3,13 @@
        alt="{{athlete.name}}" title="{{athlete.name}}"
         ><img src="{{athlete.avatar_url}}"/></a>
     <div class="sauce-comment">
-        <% _.each(comment, function(c){ %>
-            <% if (c.type === 'mention_token') { %>
-                <a href="{{c.path}}">{{c.text}}</a>
+        <% for (const x of tokens) { %>
+            <% if (x.type === "mention_token") { %>
+                <a href="{{x.path}}">{{x.text}}</a>
             <% } else { %>
-                {{c.text}}
+                {{x.text}}
             <% } %>
-        <% }); %>
+        <% } %>
         <div class="sauce-footer">{{athlete.firstname}} • {{timeago}}</div>
     </div>
 </div>

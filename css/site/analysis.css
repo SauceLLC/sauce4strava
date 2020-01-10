@@ -54,7 +54,7 @@
 }
 
 #sauce-infopanel tr:hover:not(.selected) {
-    background: #ff7d0052;
+    background: #9d9d9d87;
     cursor: pointer;
 }
 

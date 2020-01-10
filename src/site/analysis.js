@@ -4,8 +4,7 @@ sauce.ns('analysis', function(ns) {
     'use strict';
 
     const ctx = {};
-    const default_ftp = 200;
-    const tpl_url = sauce.extURL + 'templates';
+    const tplUrl = sauce.extURL + 'templates';
 
     const distanceFormatter = new Strava.I18n.DistanceFormatter();
     const elevationFormatter = new Strava.I18n.ElevationFormatter();
@@ -13,7 +12,7 @@ sauce.ns('analysis', function(ns) {
     const paceFormatter = new Strava.I18n.PaceFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
-    const ride_cp_periods = [
+    const rideCPs = [
         ['5 s', 5],
         ['15 s', 15],
         ['30 s', 30],
@@ -28,7 +27,7 @@ sauce.ns('analysis', function(ns) {
     ];
 
     const metersPerMile = 1609.344;
-    const run_cp_distances = [
+    const runBPs = [
         ['100 m', 100],
         ['200 m', 200],
         ['400 m', 400],
@@ -42,7 +41,7 @@ sauce.ns('analysis', function(ns) {
         ['50 km', 50000],
     ];
 
-    const rank_map = [
+    const rankMap = [
         [/^World Class.*/, 'world-tour.png'],
         [/^Pro.?/, 'pro.png'],
         [/^Cat 1.?/, 'cat1.png'],
@@ -53,10 +52,10 @@ sauce.ns('analysis', function(ns) {
     ];
 
 
-    function rank_image(rank_cat) {
-        for (let i = 0; i < rank_map.length; i++) {
-            if (rank_cat.match(rank_map[i][0])) {
-                return sauce.extURL + 'assets/ranking/' + rank_map[i][1];
+    function rankImage(rankCat) {
+        for (const [expr, image] of rankMap) {
+            if (rankCat.match(expr)) {
+                return `${sauce.extURL}assets/ranking/${image}`;
             }
         }
     }
@@ -267,31 +266,32 @@ sauce.ns('analysis', function(ns) {
                 console.info("No power data for this activity.");
             }
             /* Only show large period for watt estimates. */
-            while (ride_cp_periods[0][1] < 300) {
-                ride_cp_periods.shift();
+            while (rideCPs[0][1] < 300) {
+                rideCPs.shift();
             }
         }
-        const np = wattsStream ? sauce.power.calcNP(wattsStream) : undefined;
-        const np_val = np && np.value;
-        const intensity = np && np_val / ctx.ftp;
-        const stats_frag = jQuery(ctx.tertiary_stats_tpl({
+        const np = sauce.power.calcNP(wattsStream);
+        const adjPowerAvg = np || Infinity; // XXX use unbounded rollingavg 
+        const intensity = ctx.ftp ? adjPowerAvg / ctx.ftp : undefined;
+        const timeStream = getStream('time');
+        const duration = timeStream[timeStream.length - 1] - timeStream[0];
+        const statsFrag = jQuery(ctx.tertiaryStatsTpl({
             type: 'ride',
-            np: np_val,
-            weight_unit: weightFormatter.shortUnitKey(),
-            weight_norm: humanWeight(ctx.weight),
-            weight_origin: ctx.weight_origin,
+            np,
+            weightUnit: weightFormatter.shortUnitKey(),
+            weightNorm: humanWeight(ctx.weight),
+            weightOrigin: ctx.weightOrigin,
             ftp: ctx.ftp,
-            ftp_origin: ctx.ftp_origin,
+            ftpOrigin: ctx.ftpOrigin,
             intensity,
-            tss: np && sauce.power.calcTSS(np, intensity, ctx.ftp)
+            tss: ctx.ftp ? sauce.power.calcTSS(adjPowerAvg, duration, ctx.ftp) : undefined
         }));
-        attachEditableFTP(stats_frag);
-        attachEditableWeight(stats_frag);
-        stats_frag.insertAfter(jQuery('.inline-stats').last());
+        attachEditableFTP(statsFrag);
+        attachEditableWeight(statsFrag);
+        statsFrag.insertAfter(jQuery('.inline-stats').last());
         if (wattsStream && sauce.config.options['analysis-cp-chart']) {
-            const timeStream = getStream('time');
             const critPowers = [];
-            for (const [label, period] of ride_cp_periods) {
+            for (const [label, period] of rideCPs) {
                 const roll = sauce.power.critpower(period, timeStream, wattsStream);
                 if (roll) {
                     critPowers.push({
@@ -301,19 +301,15 @@ sauce.ns('analysis', function(ns) {
                     });
                 }
             }
-            const holderEl = jQuery(ctx.critpower_tpl({
+            const holderEl = jQuery(ctx.critpowerTpl({
                 critPowers,
                 isWattEstimate
             })).insertAfter(jQuery('#pagenav').first())[0];
             for (const {label, roll} of critPowers) {
                 const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
                 row.addEventListener('click', async ev => {
-                    openDialog(await moreinfoRideDialog({
-                        label,
-                        roll,
-                        anchor_to: row
-                    }), row);
-                    ev.stopPropagation();
+                    //ev.stopPropagation();
+                    openDialog(await moreinfoRideDialog({label, roll, anchorEl: row}), row);
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
                 });
             }
@@ -343,7 +339,7 @@ sauce.ns('analysis', function(ns) {
             rollAvg.add(time, distStream[i] - distStream[i - 1]);
             saucePaceStream2.push(rollAvg.avg());
             const dist = distStream[i] - lastDistance;
-            if (dist > 1) {
+            if (dist > 0.1) {
                 let ii = i;
                 const pace = time / dist;
                 do {
@@ -359,16 +355,16 @@ sauce.ns('analysis', function(ns) {
         if (window.location.search.match(/\?s/)) {
             pageView.streams().streamData.add('pace', saucePaceStream); // XXX
         }
-        const stats_frag = jQuery(ctx.tertiary_stats_tpl({
+        const statsFrag = jQuery(ctx.tertiaryStatsTpl({
             type: 'run',
-            weight_unit: weightFormatter.shortUnitKey(),
-            weight_norm: humanWeight(ctx.weight),
-            weight_origin: ctx.weight_origin,
+            weightUnit: weightFormatter.shortUnitKey(),
+            weightNorm: humanWeight(ctx.weight),
+            weightOrigin: ctx.weightOrigin,
         }));
-        attachEditableWeight(stats_frag);
-        stats_frag.insertAfter(jQuery('.inline-stats').last());
+        attachEditableWeight(statsFrag);
+        statsFrag.insertAfter(jQuery('.inline-stats').last());
         const bestPaces = [];
-        for (const [label, distance] of run_cp_distances) {
+        for (const [label, distance] of runBPs) {
             const roll = sauce.pace.bestpace(distance, timeStream, distStream);
             if (roll) {
                 bestPaces.push({
@@ -379,21 +375,15 @@ sauce.ns('analysis', function(ns) {
             }
         }
         if (bestPaces.length) {
-            const holderEl = jQuery(ctx.bestpace_tpl({
+            const holderEl = jQuery(ctx.bestpaceTpl({
                 bestPaces,
                 distUnit: distanceFormatter.shortUnitKey(),
             })).insertAfter(jQuery('#pagenav').first())[0];
             for (const {label, roll} of bestPaces) {
                 const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
                 row.addEventListener('click', async ev => {
-                    openDialog(await moreinfoRunDialog({
-                        label,
-                        roll,
-                        elapsed: humanTime(roll.elapsed()),
-                        bp_str: humanPace(roll.avg()),
-                        anchor_to: row
-                    }), row);
-                    ev.stopPropagation();
+                    //ev.stopPropagation();
+                    openDialog(await moreinfoRunDialog({label, roll, anchorEl: row}), row);
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `best-pace-${roll.period}`);
                 });
             }
@@ -413,6 +403,7 @@ sauce.ns('analysis', function(ns) {
             return weightFormatter.format(kg);
         }
     }
+
 
     function humanTime(seconds) {
         /* Convert seconds to a human string */
@@ -467,18 +458,16 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    async function moreinfoRideDialog(opts) {
-        const roll = opts.roll;
+    async function moreinfoRideDialog({roll, label, anchorEl}) {
         const avgPower = roll.avg();
         const rollValues = roll.values();
         const np = sauce.power.calcNP(rollValues);
-        const rollSize = roll.size();
-        const avgpwr = np.value ? np : {value: avgPower, count: rollSize};
-        const intensity = avgpwr.value / ctx.ftp;
-        const w_kg = ctx.weight ? avgPower / ctx.weight : null;
+        const adjPowerAvg = np || avgPower;
+        const intensity = ctx.ftp ? adjPowerAvg / ctx.ftp : undefined;
+        const tss = ctx.ftp ? sauce.power.calcTSS(adjPowerAvg, roll.elapsed(), ctx.ftp) : undefined;
+        const wKg = ctx.weight ? avgPower / ctx.weight : undefined;
         const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
-        const rank = sauce.power.rank(roll.period, w_kg, gender);
-        const rank_cat = rank && sauce.power.rankCat(rank);
+        const rank = sauce.power.rank(roll.period, wKg, gender);
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
         const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
@@ -486,19 +475,18 @@ sauce.ns('analysis', function(ns) {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
         const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
-        const data = {
-            title: `Critical Power: ${opts.label}`,
+        const moreinfoFrag = jQuery(ctx.moreinfoTpl({
+            title: `Critical Power: ${label}`,
             startsAt: humanTime(startTime),
-            w_kg,
+            wKg,
             power: {
                 avg: avgPower,
                 max: sauce.data.max(rollValues),
-                np: np.value,
+                np,
             },
-            tss: sauce.power.calcTSS(avgpwr, intensity, ctx.ftp),
+            tss,
             rank,
-            rank_cat,
-            rank_image: rank && rank_image(rank_cat),
+            rankImage: rank && sauce.power.rankCat(rank),
             intensity,
             hr: hrStream && {
                 min: sauce.data.min(hrStream),
@@ -517,9 +505,7 @@ sauce.ns('analysis', function(ns) {
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
             distUnitLong: distanceFormatter.longUnitKey(),
-            hasFtp: ctx.ftp_origin !== 'default'
-        };
-        const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
+        }));
         let dialog;
         const showAnalysisView = () => {
             const start = getStreamTimeIndex(startTime);
@@ -527,8 +513,8 @@ sauce.ns('analysis', function(ns) {
             pageView.router().changeMenuTo(`analysis/${start}/${end}`);
             dialog.dialog('close');
         };
-        moreinfo_frag.find('.start_time_link').click(showAnalysisView);
-        dialog = moreinfo_frag.dialog({
+        moreinfoFrag.find('.start_time_link').click(showAnalysisView);
+        dialog = moreinfoFrag.dialog({
             resizable: false,
             width: 240,
             dialogClass: 'sauce-freerange-dialog',
@@ -539,7 +525,7 @@ sauce.ns('analysis', function(ns) {
             position: {
                 my: 'left center',
                 at: 'right center',
-                of: opts.anchor_to
+                of: anchorEl
             },
             buttons: [{
                 text: 'Close',
@@ -553,7 +539,7 @@ sauce.ns('analysis', function(ns) {
         });
         const smoothedData = rollValues.length > 120 ? await sauce.data.resample(rollValues, 120): rollValues;
         /* Must run after the dialog is open for proper rendering. */
-        moreinfo_frag.find('.sauce-sparkline').sparkline(smoothedData, {
+        moreinfoFrag.find('.sauce-sparkline').sparkline(smoothedData, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -562,19 +548,13 @@ sauce.ns('analysis', function(ns) {
             chartRangeMin: 0,
             normalRangeMin: 0,
             normalRangeMax: avgPower,
-            valueSpots: {
-                ':200': 'grey',
-                '200:340': 'yellow',
-                '340:': 'red'
-            },
-            tooltipSuffix: 'w'
+            tooltipFormatter: (_, _2, data) => `${Math.round(data.y)}<abbr class="unit short">w</abbr>`
         });
         return dialog;
     }
 
 
-    async function moreinfoRunDialog(opts) {
-        const roll = opts.roll;
+    async function moreinfoRunDialog({roll, label, anchorEl}) {
         const elapsed = humanTime(roll.elapsed());
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
@@ -588,7 +568,7 @@ sauce.ns('analysis', function(ns) {
         const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
         const maxPace = sauce.data.max(paceStream);
         const data = {
-            title: 'Best Pace: ' + opts.label,
+            title: `Best Pace: ${label}`,
             startsAt: humanTime(startTime),
             pace: {
                 min: humanPace(sauce.data.min(paceStream)),
@@ -614,7 +594,7 @@ sauce.ns('analysis', function(ns) {
             distUnit: distanceFormatter.shortUnitKey(),
             distUnitLong: distanceFormatter.longUnitKey(),
         };
-        const moreinfo_frag = jQuery(ctx.moreinfo_tpl(data));
+        const moreinfoFrag = jQuery(ctx.moreinfoTpl(data));
         let dialog;
         const showAnalysisView = () => {
             const start = getStreamTimeIndex(startTime);
@@ -622,8 +602,8 @@ sauce.ns('analysis', function(ns) {
             pageView.router().changeMenuTo(`analysis/${start}/${end}`);
             dialog.dialog('close');
         };
-        moreinfo_frag.find('.start_time_link').click(showAnalysisView);
-        dialog = moreinfo_frag.dialog({
+        moreinfoFrag.find('.start_time_link').click(showAnalysisView);
+        dialog = moreinfoFrag.dialog({
             resizable: false,
             width: 240,
             dialogClass: 'sauce-freerange-dialog',
@@ -634,7 +614,7 @@ sauce.ns('analysis', function(ns) {
             position: {
                 my: 'left center',
                 at: 'right center',
-                of: opts.anchor_to
+                of: anchorEl
             },
             buttons: [{
                 text: 'Close',
@@ -647,9 +627,10 @@ sauce.ns('analysis', function(ns) {
             }]
         });
         const smoothedData = paceStream.length > 120 ? await sauce.data.resample(paceStream, 120) : paceStream;
-        const invertedData = smoothedData.map(x => x < 2 ? 2 - x : null);
+        //const invertedData = smoothedData.map(x => x < 2 ? 2 - x : null);
+        const invertedData = smoothedData.map(x => x);
         /* Must run after the dialog is open for proper rendering. */
-        moreinfo_frag.find('.sauce-sparkline').sparkline(invertedData, {
+        moreinfoFrag.find('.sauce-sparkline').sparkline(invertedData, {
             type: 'line',
             width: '100%',
             height: 56,
@@ -657,7 +638,7 @@ sauce.ns('analysis', function(ns) {
             fillColor: 'rgba(234, 64, 13, 0.61)',
             chartRangeMin: 0, // XXX
             normalRangeMin: 0, // XXX
-            normalRangeMax: 1, // XXX
+            normalRangeMax: sauce.data.avg(invertedData),
             tooltipFormatter: (_, _2, data) => humanPace(2 - data.y, {html: true, suffix: true})
         });
         return dialog;
@@ -682,10 +663,14 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    let _tplCache = {};
     async function getTemplate(filename) {
-        const resp = await fetch(`${tpl_url}/${filename}`);
-        const tplText = await resp.text();
-        return _.template(tplText);
+        if (!_tplCache[filename]) {
+            const resp = await fetch(`${tplUrl}/${filename}`);
+            const tplText = await resp.text();
+            _tplCache[filename] = _.template(tplText);
+        }
+        return _tplCache[filename];
     }
 
 
@@ -796,7 +781,7 @@ sauce.ns('analysis', function(ns) {
         const $input = $submitEl.find('input');
         const $button = $input.next('button');
         const activityId = pageView.activity().get('id');
-        const submit_comment = () => {
+        const submitComment = () => {
             pageView.commentsController().comment('Activity', activityId, $input.val());
             $input.val('');
             sauce.rpc.reportEvent('Comment', 'submit');
@@ -810,28 +795,28 @@ sauce.ns('analysis', function(ns) {
         });
         $input.on('keypress', ev => {
             if (ev.which == 13 /*Enter*/ && $input.val()) {
-                submit_comment();
+                submitComment();
             }
         });
-        $button.on('click', submit_comment);
+        $button.on('click', submitComment);
         $root.append([$commentsEl, $submitEl]);
-
         const commentsTpl = await getTemplate('inline-comment.html');
-        const renderComments = () => {
-            const ctrl = pageView.commentsController();
-            const comments = ctrl.getFromHash(`Activity-${activityId}`);
-            const stack = [];
-            comments.forEach(function(x) {
-                const dt = new Date(jQuery(x.timestamp).attr('datetime'));
-                x.timeago = sauce.time.ago(dt);
-                stack.push(commentsTpl(x));
-            });
-            $commentsEl.html(stack.join(''));
-        };
-
-        pageView.commentsController().on('commentCompleted', () => renderComments());
+        function renderComments() {
+            const commentsHtml = [];
+            for (const x of pageView.commentsController().getFromHash(`Activity-${activityId}`)) {
+                commentsHtml.push(commentsTpl({
+                    tokens: x.comment,
+                    athlete: x.athlete,
+                    timeago: sauce.time.ago(new Date(jQuery(x.timestamp).attr('datetime'))),
+                }));
+            }
+            $commentsEl.html(commentsHtml.join(''));
+        }
+        pageView.commentsController().on('commentCompleted', renderComments);
         renderComments();
     }
+
+
 
 
     function addBadge(row) {
@@ -844,13 +829,13 @@ sauce.ns('analysis', function(ns) {
             console.warn("Segment data not found for:", row.dataset.segmentEffortId);
             return;
         }
-        const w_kg = segment.get('avg_watts_raw') / ctx.weight;
-        const rank = sauce.power.rank(segment.get('elapsed_time_raw'), w_kg, gender);
+        const wKg = segment.get('avg_watts_raw') / ctx.weight;
+        const rank = sauce.power.rank(segment.get('elapsed_time_raw'), wKg, gender);
         if (!rank || rank <= 0) {
             return;  // Too slow/weak
         }
         const cat = sauce.power.rankCat(rank);
-        const src = rank_image(cat);
+        const src = rankImage(cat);
         if (!src) {
             return;  // Too slow/weak
         }
@@ -865,7 +850,7 @@ sauce.ns('analysis', function(ns) {
             `<div class="sauce-watts-holder">`,
                 `<div class="watts">${td.innerHTML}</div>`,
                 `<img src="${src}" title="World Ranking: ${Math.round(rank * 100)}%\n`,
-                                         `Watts/kg: ${w_kg.toFixed(1)}" class="sauce-rank"/>`,
+                                         `Watts/kg: ${wKg.toFixed(1)}" class="sauce-rank"/>`,
             `</div>`
         ].join('');
     }
@@ -890,9 +875,9 @@ sauce.ns('analysis', function(ns) {
     async function startRun() {
         await attachExporters();
         await attachComments();
-        ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
-        ctx.bestpace_tpl = await getTemplate('bestpace.html');
-        ctx.moreinfo_tpl = await getTemplate('bestpace-moreinfo.html');
+        ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
+        ctx.bestpaceTpl = await getTemplate('bestpace.html');
+        ctx.moreinfoTpl = await getTemplate('bestpace-moreinfo.html');
         assignWeight(await sauce.rpc.getWeight(pageView.activityAthlete().get('id')));
         await processRunStreams();
     }
@@ -903,14 +888,10 @@ sauce.ns('analysis', function(ns) {
         Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails = function(start, end) {
             return extendSelectionDisplayDetails(displayDetailsFn.call(this, start, end), start, end);
         };
-        sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation,
-            'displayDetails', function(ret, start, end) {
-                ns.handleSelectionChange(start, end);
-            });
+        sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation, 'displayDetails',
+            (ret, start, end) => handleSelectionChange(start, end));
         sauce.func.runAfter(Strava.Charts.Activities.LabelBox, 'handleStreamHover',
-            function(ret, _, start, end) {
-                ns.handleSelectionChange(start, end);
-            });
+            (ret, _, start, end) => handleSelectionChange(start, end));
         const segments = document.querySelector('table.segments');
         if (segments && sauce.config.options['analysis-segment-badges']) {
             const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
@@ -928,57 +909,57 @@ sauce.ns('analysis', function(ns) {
         }
         await attachExporters();
         await attachComments();
-        ctx.tertiary_stats_tpl = await getTemplate('tertiary-stats.html');
-        ctx.critpower_tpl = await getTemplate('critpower.html');
-        ctx.moreinfo_tpl = await getTemplate('critpower-moreinfo.html');
+        ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
+        ctx.critpowerTpl = await getTemplate('critpower.html');
+        ctx.moreinfoTpl = await getTemplate('critpower-moreinfo.html');
         assignFTP(await sauce.rpc.getFTP(pageView.activityAthlete().get('id')));
         assignWeight(await sauce.rpc.getWeight(pageView.activityAthlete().get('id')));
         await processRideStreams();
     }
 
 
-    function assignFTP(sauce_ftp) {
+    function assignFTP(sauceFtp) {
         const power = pageView.powerController && pageView.powerController();
         /* Sometimes you can get it from the activity.  I think this only
          * works when you are the athlete in the activity. */
-        const strava_ftp = power ? power.get('athlete_ftp') : pageView.activity().get('ftp');
+        const stravaFtp = power ? power.get('athlete_ftp') : pageView.activity().get('ftp');
         let ftp;
-        if (!sauce_ftp) {
-            if (strava_ftp) {
-                ftp = strava_ftp;
-                ctx.ftp_origin = 'strava';
+        if (!sauceFtp) {
+            if (stravaFtp) {
+                ftp = stravaFtp;
+                ctx.ftpOrigin = 'strava';
             } else {
-                ftp = default_ftp;
-                ctx.ftp_origin = 'default';
+                ftp = 0;
+                ctx.ftpOrigin = 'default';
             }
         } else {
-            if (strava_ftp && sauce_ftp != strava_ftp) {
-                console.warn("Sauce FTP override differs from Strava FTP:", sauce_ftp, strava_ftp);
+            if (stravaFtp && sauceFtp != stravaFtp) {
+                console.warn("Sauce FTP override differs from Strava FTP:", sauceFtp, stravaFtp);
             }
-            ftp = sauce_ftp;
-            ctx.ftp_origin = 'sauce';
+            ftp = sauceFtp;
+            ctx.ftpOrigin = 'sauce';
         }
         ctx.ftp = ftp;
     }
 
 
-    function assignWeight(sauce_weight) {
-        const strava_weight = pageView.activityAthleteWeight();
+    function assignWeight(sauceWeight) {
+        const stravaWeight = pageView.activityAthleteWeight();
         let weight;
-        if (!sauce_weight) {
-            if (strava_weight) {
-                weight = strava_weight;
-                ctx.weight_origin = 'strava';
+        if (!sauceWeight) {
+            if (stravaWeight) {
+                weight = stravaWeight;
+                ctx.weightOrigin = 'strava';
             } else {
                 weight = 0;
-                ctx.weight_origin = 'default';
+                ctx.weightOrigin = 'default';
             }
         } else {
-            if (strava_weight && sauce_weight != strava_weight) {
-                console.warn("Sauce weight override differs from Strava weight:", sauce_weight, strava_weight);
+            if (stravaWeight && sauceWeight != stravaWeight) {
+                console.warn("Sauce weight override differs from Strava weight:", sauceWeight, stravaWeight);
             }
-            weight = sauce_weight;
-            ctx.weight_origin = 'sauce';
+            weight = sauceWeight;
+            ctx.weightOrigin = 'sauce';
         }
         ctx.weight = weight;
     }
@@ -990,7 +971,7 @@ sauce.ns('analysis', function(ns) {
             return;
         }
         const selection = wattsStream.slice(start, end);
-        const np = sauce.power.calcNP(selection).value;
+        const np = sauce.power.calcNP(selection);
         const avg = sauce.data.avg(selection);
         const el = jQuery('text.label:contains(Power)').siblings('.avg-js');
         const text = [`Avg ${Math.round(avg)}`];
@@ -1019,7 +1000,6 @@ sauce.ns('analysis', function(ns) {
 
     return {
         load,
-        handleSelectionChange,
     };
 });
 

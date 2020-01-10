@@ -8,14 +8,13 @@
             </td>
         </tr>
 
-        <% if (w_kg) { %>
+        <% if (wKg) { %>
             <tr>
                 <td>Watts/kg</td>
                 <td class="rank_holder">
-                    <span title="Average watts divided by body weight in kilograms.">{{w_kg.toFixed(1)}}</span>
-                    <% if (rank_image) { %>
-                        <img src="{{rank_image}}" class="rank_badge"
-                             alt="{{sauce.power.rankCat(rank)}}"
+                    <span title="Average watts divided by body weight in kilograms.">{{wKg.toFixed(1)}}</span>
+                    <% if (rank) { %>
+                        <img src="{{rankImage}}" class="rank_badge"
                              title="World Ranking: {{Math.round(rank * 100)}}%"/>
                     <% } %>
                 </td>
@@ -73,20 +72,18 @@
             <% } %>
         <% } %>
 
-        <% if (hasFtp) { %>
-            <% if (intensity) { %>
-                <tr>
-                    <td>Intensity</td>
-                    <td title="Percent of FTP">{{Math.round(intensity * 100)}}%</td>
-                </tr>
-            <% } %>
+        <% if (intensity) { %>
+            <tr>
+                <td>Intensity</td>
+                <td title="Percent of FTP">{{Math.round(intensity * 100)}}%</td>
+            </tr>
+        <% } %>
 
-            <% if (tss) { %>
-                <tr>
-                    <td>TSS</td>
-                    <td title="Total Stress Score">{{Math.round(tss)}}</td>
-                </tr>
-            <% } %>
+        <% if (tss) { %>
+            <tr>
+                <td>TSS</td>
+                <td title="Total Stress Score">{{Math.round(tss)}}</td>
+            </tr>
         <% } %>
     </table>
 </div>

@@ -157,18 +157,29 @@ sauce.ns('data', function() {
             return instance;
         }
 
-        importReduce(times, values, comparator) {
+        *_importIter(times, values) {
             if (times.length !== values.length) {
                 throw new TypeError("times and values not same length");
             }
-            let leader;
             for (let i = 0; i < times.length; i++) {
-                if (this.add(times[i], values[i]) instanceof Pad) {
+                const value = this.add(times[i], values[i]);
+                if (value instanceof Pad) {
                     // Our value wasn't added, instead padding was added.  rewind
-                    // incrementer and check if ring is our new leader, then try again..
-                    // This ensures we find leader values when padding was required.
+                    // incrementer and repeat the last entry until padding is done.
                     i--;
                 }
+                yield value;
+            }
+        }
+
+        import(times, values) {
+            const iter = this._importIter(times, values);
+            while (!iter.next().done) {/* no-pragma */}
+        }
+
+        importReduce(times, values, comparator) {
+            let leader;
+            for (const iter = this._importIter(times, values); !iter.next().done;) {
                 if (this.full() && (!leader || comparator(this, leader))) {
                     leader = this.copy();
                 }
@@ -352,29 +363,29 @@ sauce.ns('data', function() {
 sauce.ns('func', function() {
     'use strict';
 
-    const _adjunct = function(runAfter, obj, orig_func_name, interceptor) {
-        const save_fn = obj.prototype[orig_func_name];
+    const _adjunct = function(runAfter, obj, origFuncName, interceptor) {
+        const saveFunc = obj.prototype[origFuncName];
         function wrap() {
             if (runAfter) {
-                const ret = save_fn.apply(this, arguments);
+                const ret = saveFunc.apply(this, arguments);
                 const args = Array.prototype.slice.call(arguments);
                 args.unshift(ret);
                 interceptor.apply(this, args);
                 return ret;
             } else {
                 interceptor.apply(this, arguments);
-                return save_fn.apply(this, arguments);
+                return saveFunc.apply(this, arguments);
             }
         }
-        obj.prototype[orig_func_name] = wrap;
+        obj.prototype[origFuncName] = wrap;
     };
 
-    const runAfter = function(obj, orig_func_name, interceptor) {
-        _adjunct(true, obj, orig_func_name, interceptor);
+    const runAfter = function(obj, origFuncName, interceptor) {
+        _adjunct(true, obj, origFuncName, interceptor);
     };
 
-    const runBefore = function(obj, orig_func_name, interceptor) {
-        _adjunct(false, obj, orig_func_name, interceptor);
+    const runBefore = function(obj, origFuncName, interceptor) {
+        _adjunct(false, obj, origFuncName, interceptor);
     };
 
     return {
@@ -388,42 +399,42 @@ sauce.ns('power', function() {
     'use strict';
 
     /* Based on Andy Coggan's power profile. */
-    const ranking_consts = {
+    const rankings = {
         male: {
             high: {
-                slope_factor: 2.82,
-                slope_period: 2500,
-                slope_adjust: 1.4,
-                slope_offset: 3.6,
-                base_offset: 6.08
+                slopeFactor: 2.82,
+                slopePeriod: 2500,
+                slopeAdjust: 1.4,
+                slopeOffset: 3.6,
+                baseOffset: 6.08
             },
             low: {
-                slope_factor: 2,
-                slope_period: 3000,
-                slope_adjust: 1.3,
-                slope_offset: 1,
-                base_offset: 1.74
+                slopeFactor: 2,
+                slopePeriod: 3000,
+                slopeAdjust: 1.3,
+                slopeOffset: 1,
+                baseOffset: 1.74
             }
         },
         female: {
             high: {
-                slope_factor: 2.65,
-                slope_period: 2500,
-                slope_adjust: 1,
-                slope_offset: 3.6,
-                base_offset: 5.39
+                slopeFactor: 2.65,
+                slopePeriod: 2500,
+                slopeAdjust: 1,
+                slopeOffset: 3.6,
+                baseOffset: 5.39
             },
             low: {
-                slope_factor: 2.15,
-                slope_period: 300,
-                slope_adjust: 6,
-                slope_offset: 1.5,
-                base_offset: 1.4
+                slopeFactor: 2.15,
+                slopePeriod: 300,
+                slopeAdjust: 6,
+                slopeOffset: 1.5,
+                baseOffset: 1.4
             }
         }
     };
 
-    const rank_cats = [
+    const rankCats = [
         'Recreational',
         'Cat 5',
         'Cat 4',
@@ -436,29 +447,27 @@ sauce.ns('power', function() {
 
 
     function _rankScaler(duration, c) {
-        const t = (c.slope_period / duration) * c.slope_adjust;
-        const slope = Math.log10(t + c.slope_offset);
-        const w_kg = Math.pow(slope, c.slope_factor);
-        return w_kg + c.base_offset;
+        const t = (c.slopePeriod / duration) * c.slopeAdjust;
+        const slope = Math.log10(t + c.slopeOffset);
+        const wKg = Math.pow(slope, c.slopeFactor);
+        return wKg + c.baseOffset;
     }
 
 
-    function rank(duration, w_kg, sex) {
-        const high_consts = ranking_consts[sex].high;
-        const low_consts = ranking_consts[sex].low;
-        const high = _rankScaler(duration, high_consts);
-        const low = _rankScaler(duration, low_consts);
-        return (w_kg - low) / (high - low);
+    function rank(duration, wKg, gender) {
+        const high = _rankScaler(duration, rankings[gender].high);
+        const low = _rankScaler(duration, rankings[gender].low);
+        return (wKg - low) / (high - low);
     }
 
 
     function rankCat(rank) {
         if (rank >= 1) {
-            return rank_cats[rank_cats.length-1] + '++';
+            return rankCats[rankCats.length-1] + '++';
         } else if (rank <= 0) {
-            return rank_cats[0] + '--';
+            return rankCats[0] + '--';
         }
-        const index = rank / (1 / rank_cats.length);
+        const index = rank / (1 / rankCats.length);
         let mod = index % 1;
         if (mod >= 0.8) {
             mod = '+';
@@ -467,7 +476,7 @@ sauce.ns('power', function() {
         } else {
             mod = '';
         }
-        return rank_cats[Math.floor(index)] + mod;
+        return rankCats[Math.floor(index)] + mod;
     }
 
 
@@ -484,44 +493,36 @@ sauce.ns('power', function() {
     }
 
 
-    function calcNP(watts_stream) {
-        const ret = {
-            value: 0,
-            count: 0
-        };
-        const rolling_size = 30;
+    function calcNP(wattsStream) {
         /* Coggan doesn't recommend NP for less than 20 mins.  Allow a margin
          * of error for dropouts. */
-        if (watts_stream.length < 1000) {
-            return ret;
+        // XXX This only works for 1 second power data!!!
+        if (!wattsStream || wattsStream.length < 1000) {
+            return;
         }
+        const rollingSize = 30;
         let total = 0;
         let count = 0;
         let index = 0;
         let sum = 0;
-        const rolling = new Uint16Array(rolling_size);
-        for (let i = 0; i < watts_stream.length; i++) {
-            const watts = watts_stream[i];
+        const rolling = new Uint16Array(rollingSize);
+        for (const watts of wattsStream) {
             sum += watts;
             sum -= rolling[index];
             rolling[index] = watts;
-            total += Math.pow(sum / rolling_size, 4);
+            total += Math.pow(sum / rollingSize, 4);
             count++;
-            index = (index >= rolling_size - 1) ? 0 : index + 1;
+            index = (index >= rollingSize - 1) ? 0 : index + 1;
         }
-        if (count) {
-            ret.value = Math.pow(total / count, 0.25);
-            ret.count = count;
-        }
-        return ret;
+        return Math.pow(total / count, 0.25);
     }
 
 
-    function calcTSS(np, if_, ftp) {
-        const norm_work = np.value * np.count;
-        const ftp_work_hour = ftp * 3600;
-        const raw_tss = norm_work * if_;
-        return raw_tss / ftp_work_hour * 100;
+    function calcTSS(power, duration, ftp) {
+        const joules = power * duration;
+        const ftpHourJoules = ftp * 3600;
+        const intensity = power / ftp;
+        return ((joules * intensity) / ftpHourJoules) * 100;
     }
 
     return {
