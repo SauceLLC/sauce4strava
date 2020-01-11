@@ -41,25 +41,6 @@ sauce.ns('analysis', function(ns) {
         ['50 km', 50000],
     ];
 
-    const rankMap = [
-        [/^World Class.*/, 'world-tour.png'],
-        [/^Pro.?/, 'pro.png'],
-        [/^Cat 1.?/, 'cat1.png'],
-        [/^Cat 2.?/, 'cat2.png'],
-        [/^Cat 3.?/, 'cat3.png'],
-        [/^Cat 4.?/, 'cat4.png'],
-        [/^Cat 5.?/, 'cat5.png']
-    ];
-
-
-    function rankImage(rankCat) {
-        for (const [expr, image] of rankMap) {
-            if (rankCat.match(expr)) {
-                return `${sauce.extURL}assets/ranking/${image}`;
-            }
-        }
-    }
-
 
     let _activity;
     async function fetchFullActivity() {
@@ -70,7 +51,7 @@ sauce.ns('analysis', function(ns) {
             return _activity;
         }
         if (pageView.isOwner()) {
-            const activity = new Strava.Labs.Activities.TrainingActivity({id: pageView.activityId()});
+            const activity = new Strava.Labs.Activities.TrainingActivity({id: pageView.activity().id});
             await new Promise((success, error) => activity.fetch({success, error}));
             // Move the real type value to fullType and use the Strava modified type instead.
             // Various functions like `isRide` are broken without this.
@@ -90,7 +71,7 @@ sauce.ns('analysis', function(ns) {
         const streams = pageView.streams();
         const missing = names.filter(x => streams.getStream(x) === undefined);
         if (missing.length) {
-            console.info("Fetching streams:", missing);
+            console.info("Fetching streams:", missing.join());
             await new Promise((success, error) => streams.fetchStreams(missing, {success, error}));
         }
         return names.map(x => streams.getStream(x));
@@ -158,14 +139,7 @@ sauce.ns('analysis', function(ns) {
             try {
                 cleanValue = options.validator(rawValue);
             } catch(invalid) {
-                jQuery(`<div title="${invalid.title}">${invalid.message}</div>`).dialog({
-                    modal: true,
-                    buttons: {
-                        Ok: function() {
-                            jQuery(this).dialog('close');
-                        }
-                    }
-                });
+                dialogPrompt(invalid.title, invalid.message);
                 return;
             }
             inputEl.hide();
@@ -175,6 +149,19 @@ sauce.ns('analysis', function(ns) {
             }
         });
         displayEl.click(() => inputEl.width(displayEl.hide().width()).show());
+    }
+
+
+    function dialogPrompt(title, body, options) {
+        return jQuery(`<div title="${title}">${body}</div>`).dialog(Object.assign({
+            modal: true,
+            dialogClass: 'sauce-freerange-dialog',  // Fixes move
+            buttons: {
+                Ok: function() {
+                    jQuery(this).dialog('close');
+                }
+            }
+        }, options));
     }
 
 
@@ -200,12 +187,8 @@ sauce.ns('analysis', function(ns) {
                 }
             },
             onValid: async v => {
-                await sauce.rpc.setFTP(pageView.activityAthlete(), v);
-                jQuery(`
-                    <div title="Reloading...">
-                        <b>Reloading page to reflect FTP change.
-                    </div>
-                `).dialog({modal: true});
+                await sauce.rpc.setFTP(ctx.athlete, v);
+                dialogPrompt('Reloading...', '<b>Reloading page to reflect FTP change.</b>');
                 location.reload();
             }
         });
@@ -235,12 +218,8 @@ sauce.ns('analysis', function(ns) {
             },
             onValid: async v => {
                 const kg = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
-                await sauce.rpc.setWeight(pageView.activityAthlete(), kg);
-                jQuery(`
-                    <div title="Reloading...">
-                        <b>Reloading page to reflect weight change.
-                    </div>
-                `).dialog({modal: true});
+                await sauce.rpc.setWeight(ctx.athlete, kg);
+                dialogPrompt('Reloading...', '<b>Reloading page to reflect weight change.</b>');
                 location.reload();
             }
         });
@@ -308,7 +287,7 @@ sauce.ns('analysis', function(ns) {
             for (const {label, roll} of critPowers) {
                 const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
                 row.addEventListener('click', async ev => {
-                    //ev.stopPropagation();
+                    ev.stopPropagation();
                     openDialog(await moreinfoRideDialog({label, roll, anchorEl: row}), row);
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
                 });
@@ -382,7 +361,7 @@ sauce.ns('analysis', function(ns) {
             for (const {label, roll} of bestPaces) {
                 const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
                 row.addEventListener('click', async ev => {
-                    //ev.stopPropagation();
+                    ev.stopPropagation();
                     openDialog(await moreinfoRunDialog({label, roll, anchorEl: row}), row);
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `best-pace-${roll.period}`);
                 });
@@ -466,8 +445,7 @@ sauce.ns('analysis', function(ns) {
         const intensity = ctx.ftp ? adjPowerAvg / ctx.ftp : undefined;
         const tss = ctx.ftp ? sauce.power.calcTSS(adjPowerAvg, roll.elapsed(), ctx.ftp) : undefined;
         const wKg = ctx.weight ? avgPower / ctx.weight : undefined;
-        const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
-        const rank = sauce.power.rank(roll.period, wKg, gender);
+        const rank = sauce.power.rank(roll.period, wKg, ctx.gender);
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
         const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
@@ -486,7 +464,6 @@ sauce.ns('analysis', function(ns) {
             },
             tss,
             rank,
-            rankImage: rank && sauce.power.rankCat(rank),
             intensity,
             hr: hrStream && {
                 min: sauce.data.min(hrStream),
@@ -646,14 +623,16 @@ sauce.ns('analysis', function(ns) {
 
 
     async function load() {
-        const activity = await fetchFullActivity();
+        ctx.athlete = pageView.activityAthlete();
+        ctx.activity = await fetchFullActivity();
+        ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
         let start;
-        if (activity.isRun()) {
+        if (ctx.activity.isRun()) {
             start = startRun;
-        } else if (activity.isRide()) {
+        } else if (ctx.activity.isRide()) {
             start = startRide;
         }
-        const type = activity.get('fullType') || activity.get('type');
+        const type = ctx.activity.get('fullType') || ctx.activity.get('type');
         await sauce.rpc.ga('set', 'page', `/site/analysis/${type}`);
         await sauce.rpc.ga('set', 'title', 'Sauce Analysis');
         await sauce.rpc.ga('send', 'pageview');
@@ -696,7 +675,7 @@ sauce.ns('analysis', function(ns) {
         // Activity start time is sadly complicated.  Despite being visible in the header
         // for all activities we only have access to it for rides and self-owned runs.  Trying
         // to parse the html might work for english rides but will fail for non-english users.
-        const localTime = pageView.activity().get('startDateLocal') * 1000;
+        const localTime = ctx.activity.get('startDateLocal') * 1000;
         if (localTime) {
             // Do a very basic tz correction based on the longitude of any geo data we can find.
             // Using a proper timezone API is too expensive for this use case.
@@ -713,7 +692,7 @@ sauce.ns('analysis', function(ns) {
             }
             if (longitude == null) {
                 // Take a wild guess that the activity should match the geo location of the athlete.
-                const athleteGeo = pageView.activityAthlete().get('geo');
+                const athleteGeo = ctx.athlete.get('geo');
                 if (athleteGeo && athleteGeo.lat_lng) {
                     longitude = athleteGeo.lat_lng[1];
                     console.info("Getting longitude of activity based on athlete's location");
@@ -736,8 +715,7 @@ sauce.ns('analysis', function(ns) {
         const streamNames = ['time', 'watts', 'heartrate', 'altitude',
                              'cadence', 'temp', 'latlng', 'distance'];
         const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) => (acc[streamNames[i]] = x, acc), {});
-        const activity = await fetchFullActivity();
-        const realStartTime = activity.get('start_time');
+        const realStartTime = ctx.activity.get('start_time');
         let start;
         if (realStartTime) {
             start = new Date(realStartTime);
@@ -748,7 +726,7 @@ sauce.ns('analysis', function(ns) {
         const name = document.querySelector('#heading .activity-name').textContent;
         const descEl = document.querySelector('#heading .activity-description .content');
         const desc = descEl && descEl.textContent;
-        const serializer = new Serializer(name, desc, activity.get('type'), start);
+        const serializer = new Serializer(name, desc, ctx.activity.get('type'), start);
         serializer.start();
         serializer.loadStreams(streams);
         const link = document.createElement('a');
@@ -780,9 +758,8 @@ sauce.ns('analysis', function(ns) {
         ].join(''));
         const $input = $submitEl.find('input');
         const $button = $input.next('button');
-        const activityId = pageView.activity().get('id');
         const submitComment = () => {
-            pageView.commentsController().comment('Activity', activityId, $input.val());
+            pageView.commentsController().comment('Activity', ctx.activity.id, $input.val());
             $input.val('');
             sauce.rpc.reportEvent('Comment', 'submit');
         };
@@ -803,7 +780,7 @@ sauce.ns('analysis', function(ns) {
         const commentsTpl = await getTemplate('inline-comment.html');
         function renderComments() {
             const commentsHtml = [];
-            for (const x of pageView.commentsController().getFromHash(`Activity-${activityId}`)) {
+            for (const x of pageView.commentsController().getFromHash(`Activity-${ctx.activity.id}`)) {
                 commentsHtml.push(commentsTpl({
                     tokens: x.comment,
                     athlete: x.athlete,
@@ -820,7 +797,6 @@ sauce.ns('analysis', function(ns) {
 
 
     function addBadge(row) {
-        const gender = pageView.activityAthlete().get('gender') === 'F' ? 'female' : 'male';
         if (row.querySelector(':scope > td.sauce-mark')) {
             return;
         }
@@ -830,27 +806,22 @@ sauce.ns('analysis', function(ns) {
             return;
         }
         const wKg = segment.get('avg_watts_raw') / ctx.weight;
-        const rank = sauce.power.rank(segment.get('elapsed_time_raw'), wKg, gender);
-        if (!rank || rank <= 0) {
+        const rank = sauce.power.rank(segment.get('elapsed_time_raw'), wKg, ctx.gender);
+        if (!rank || !rank.badge) {
             return;  // Too slow/weak
         }
-        const cat = sauce.power.rankCat(rank);
-        const src = rankImage(cat);
-        if (!src) {
-            return;  // Too slow/weak
-        }
+        // XXX suspect, probably only works for english..
         const locator = row.querySelector(':scope > td > abbr[title="watts"]');
         if (!locator) {
-            console.error("Watt TD location failed for row:", row);
-            throw new Error("Badge Fail");
+            throw new Error("Badge Fail: row query selector failed");
         }
         const td = locator.closest('td');
         td.classList.add('sauce-mark');
         td.innerHTML = [
             `<div class="sauce-watts-holder">`,
                 `<div class="watts">${td.innerHTML}</div>`,
-                `<img src="${src}" title="World Ranking: ${Math.round(rank * 100)}%\n`,
-                                         `Watts/kg: ${wKg.toFixed(1)}" class="sauce-rank"/>`,
+                `<img src="${rank.badge}" title="World Ranking: ${Math.round(rank.level * 100)}%\n`,
+                                                 `Watts/kg: ${wKg.toFixed(1)}" class="sauce-rank"/>`,
             `</div>`
         ].join('');
     }
@@ -867,6 +838,7 @@ sauce.ns('analysis', function(ns) {
                 addBadge(row);
             } catch(e) {
                 console.error("addBadge failure:", e);
+                sauce.rpc.reportError(e);
             }
         }
     }
@@ -878,7 +850,7 @@ sauce.ns('analysis', function(ns) {
         ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.bestpaceTpl = await getTemplate('bestpace.html');
         ctx.moreinfoTpl = await getTemplate('bestpace-moreinfo.html');
-        assignWeight(await sauce.rpc.getWeight(pageView.activityAthlete().get('id')));
+        assignWeight(await sauce.rpc.getWeight(ctx.athlete.id));
         await processRunStreams();
     }
 
@@ -892,6 +864,13 @@ sauce.ns('analysis', function(ns) {
             (ret, start, end) => handleSelectionChange(start, end));
         sauce.func.runAfter(Strava.Charts.Activities.LabelBox, 'handleStreamHover',
             (ret, _, start, end) => handleSelectionChange(start, end));
+        await attachExporters();
+        await attachComments();
+        ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
+        ctx.critpowerTpl = await getTemplate('critpower.html');
+        ctx.moreinfoTpl = await getTemplate('critpower-moreinfo.html');
+        assignFTP(await sauce.rpc.getFTP(ctx.athlete.id));
+        assignWeight(await sauce.rpc.getWeight(ctx.athlete.id));
         const segments = document.querySelector('table.segments');
         if (segments && sauce.config.options['analysis-segment-badges']) {
             const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
@@ -905,15 +884,90 @@ sauce.ns('analysis', function(ns) {
                 addSegmentBadges();
             } catch(e) {
                 console.error("Problem adding segment badges!", e);
+                sauce.rpc.reportError(e);
             }
         }
-        await attachExporters();
-        await attachComments();
-        ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
-        ctx.critpowerTpl = await getTemplate('critpower.html');
-        ctx.moreinfoTpl = await getTemplate('critpower-moreinfo.html');
-        assignFTP(await sauce.rpc.getFTP(pageView.activityAthlete().get('id')));
-        assignWeight(await sauce.rpc.getWeight(pageView.activityAthlete().get('id')));
+        jQuery('body').on('click', '.rank_badge', ev => {
+            const dialog = dialogPrompt(
+                'Power Profile Badges Explained',
+                `The concept of power profiling was created by Dr. Andy Coggan.   It is a basic
+                outline of power requirements to be at a certain level of competitiveness.  The levels
+                are articulated as bike racing categories from <i>Cat 5</i> to <i>World Tour Pro</i>.
+
+                <br/><br/>
+
+                These rankings are meant to give you a rough idea of how your best power output would
+                compare to the maximum capability of other racers, so they are most representative when
+                you are working very hard.
+
+                <br/><br/>
+
+
+                <div class="sauce-rank-graph">
+                    Select profile to view required power outputs:
+                    <select id="sauce-rank-level">
+                        <option value="7">World Tour</option>
+                        <option value="6">Pro</option>
+                        <option value="5">Cat 1</option>
+                        <option value="4">Cat 2</option>
+                        <option value="3">Cat 3</option>
+                        <option value="2">Cat 4</option>
+                        <option value="1">Cat 5</option>
+                    </select>
+                    <select id="sauce-rank-gender">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+
+                    <div class="rank-graph"></div>
+                </div>
+
+                <footer>
+                    The Strava Sauce algorithm is a modified from Andy's original spreadsheet
+                    so that it can estimate rankings for any time period.  For an in depth
+                    understanding of these profiles read
+                    <a target="_BLANK" href="https://www.trainingpeaks.com/blog/power-profiling/">
+                    Andy's Power Profiling blog</a>.
+                </footer>`, {width: 600});
+            const times = [];
+            for (let i = 5; i < 3600; i += Math.log(i + 1)) {
+                times.push(i);
+            }
+            times.push(3600);
+            const requirements = {
+                male: times.map(x => sauce.power.rankRequirements(x, 'male')),
+                female: times.map(x => sauce.power.rankRequirements(x, 'female'))
+            };
+            const $levelSelect = dialog.find('.sauce-rank-graph select#sauce-rank-level');
+            const $genderSelect = dialog.find('.sauce-rank-graph select#sauce-rank-gender');
+            const $graph = dialog.find('.rank-graph');
+            function drawGraph() {
+                const gender = $genderSelect.val();
+                const level = Number($levelSelect.val());
+                const pct = level / 8;
+                let tooltipFormatterAbs;
+                if (ctx.weight) {
+                    tooltipFormatterAbs = wKg => `
+                        ${Math.round(wKg * ctx.weight).toLocaleString()}<abbr class="unit short">W</abbr>
+                        (with current athlete's weight)<br/>`;
+                } else {
+                    tooltipFormatterAbs = wKg => ``;
+                }
+                $graph.sparkline(requirements[gender].map(({high, low}) => (pct * (high - low)) + low), {
+                    type: 'line',
+                    width: '100%',
+                    height: 100,
+                    chartRangeMin: 0,
+                    tooltipFormatter: (_, _2, data) => `
+                        ${(data.y).toFixed(1)}<abbr class="unit short">W/kg</abbr><br/>
+                        ${tooltipFormatterAbs(data.y)}
+                        Duration: ${humanTime(times[data.x])}`
+                });
+            }
+            $levelSelect.on('change', drawGraph);
+            $genderSelect.on('change', drawGraph);
+            drawGraph();
+        });
         await processRideStreams();
     }
 
@@ -922,7 +976,7 @@ sauce.ns('analysis', function(ns) {
         const power = pageView.powerController && pageView.powerController();
         /* Sometimes you can get it from the activity.  I think this only
          * works when you are the athlete in the activity. */
-        const stravaFtp = power ? power.get('athlete_ftp') : pageView.activity().get('ftp');
+        const stravaFtp = power ? power.get('athlete_ftp') : ctx.activity.get('ftp');
         let ftp;
         if (!sauceFtp) {
             if (stravaFtp) {
@@ -991,8 +1045,9 @@ sauce.ns('analysis', function(ns) {
         const vam = (altChanges.gain / (end - start)) * 3600;
         if (vam > 0) {
             const pad = Array(6).join('&nbsp;');
-            return value + `${pad}<span title="Vertical Ascent Meters / hour">VAM: ` +
-                           `${Math.round(vam).toLocaleString()}<small>m/hr</small></span><sup style="color: blue"> BETA</sup>`;
+            return value + `${pad}<span title='"Velocità Ascensionale Media" / average ascent speed in meters per hour'>VAM: ` +
+                           `${Math.round(vam).toLocaleString()}<small>Vm/h</small></span>` +
+                           `<sup style="color: blue"> BETA</sup>`;
         }
         return value;
     }

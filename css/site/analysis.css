@@ -240,3 +240,23 @@
     transform: rotate(-90deg);
     margin: -0.4em 0.2em;
 }
+
+.sauce-rank-graph {
+    padding: 1em;
+    margin: 1em;
+    border-radius: 0.25em;
+    background: #c3c3c3;
+}
+
+.sauce-rank-graph .rank-graph {
+    padding-top: 1em;
+}
+
+.ui-dialog footer {
+    margin-top: 1em;
+    font-size: 0.9em;
+}
+
+.rank_badge {
+    cursor: pointer;
+}

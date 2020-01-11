@@ -399,7 +399,7 @@ sauce.ns('power', function() {
     'use strict';
 
     /* Based on Andy Coggan's power profile. */
-    const rankings = {
+    const rankConstants = {
         male: {
             high: {
                 slopeFactor: 2.82,
@@ -434,16 +434,39 @@ sauce.ns('power', function() {
         }
     };
 
-    const rankCats = [
-        'Recreational',
-        'Cat 5',
-        'Cat 4',
-        'Cat 3',
-        'Cat 2',
-        'Cat 1',
-        'Pro',
-        'World Class'
-    ];
+    const badgeURN = `${sauce.extURL}assets/ranking`;
+    const rankLevels = [{
+        levelRequirement: 7 / 8,
+        label: 'World Class',
+        badge: `${badgeURN}/world-tour.png`
+    }, {
+        levelRequirement: 6 / 8,
+        label: 'Pro',
+        badge: `${badgeURN}/pro.png`
+    }, {
+        levelRequirement: 5 / 8,
+        label: 'Cat 1',
+        badge: `${badgeURN}/cat1.png`
+    }, {
+        levelRequirement: 4 / 8,
+        label: 'Cat 2',
+        badge: `${badgeURN}/cat2.png`
+    }, {
+        levelRequirement: 3 / 8,
+        label: 'Cat 3',
+        badge: `${badgeURN}/cat3.png`
+    }, {
+        levelRequirement: 2 / 8,
+        label: 'Cat 4',
+        badge: `${badgeURN}/cat4.png`
+    }, {
+        levelRequirement: 1 / 8,
+        label: 'Cat 5',
+        badge: `${badgeURN}/cat5.png`
+    }, {
+        levelRequirement: -Infinity,
+        label: 'Recreational'
+    }];
 
 
     function _rankScaler(duration, c) {
@@ -454,29 +477,22 @@ sauce.ns('power', function() {
     }
 
 
-    function rank(duration, wKg, gender) {
-        const high = _rankScaler(duration, rankings[gender].high);
-        const low = _rankScaler(duration, rankings[gender].low);
-        return (wKg - low) / (high - low);
+    function rankRequirements(duration, gender) {
+        const high = _rankScaler(duration, rankConstants[gender].high);
+        const low = _rankScaler(duration, rankConstants[gender].low);
+        return {high, low};
     }
 
 
-    function rankCat(rank) {
-        if (rank >= 1) {
-            return rankCats[rankCats.length-1] + '++';
-        } else if (rank <= 0) {
-            return rankCats[0] + '--';
+    function rank(duration, wKg, gender) {
+        const high = _rankScaler(duration, rankConstants[gender].high);
+        const low = _rankScaler(duration, rankConstants[gender].low);
+        const level = (wKg - low) / (high - low);
+        for (const x of rankLevels) {
+            if (level > x.levelRequirement) {
+                return Object.assign({level}, x);
+            }
         }
-        const index = rank / (1 / rankCats.length);
-        let mod = index % 1;
-        if (mod >= 0.8) {
-            mod = '+';
-        } else if (mod < 0.2) {
-            mod = '-';
-        } else {
-            mod = '';
-        }
-        return rankCats[Math.floor(index)] + mod;
     }
 
 
@@ -530,7 +546,7 @@ sauce.ns('power', function() {
         calcNP,
         calcTSS,
         rank,
-        rankCat,
+        rankRequirements,
     };
 });
 

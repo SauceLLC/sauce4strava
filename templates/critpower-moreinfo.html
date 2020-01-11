@@ -13,9 +13,9 @@
                 <td>Watts/kg</td>
                 <td class="rank_holder">
                     <span title="Average watts divided by body weight in kilograms.">{{wKg.toFixed(1)}}</span>
-                    <% if (rank) { %>
-                        <img src="{{rankImage}}" class="rank_badge"
-                             title="World Ranking: {{Math.round(rank * 100)}}%"/>
+                    <% if (rank && rank.badge) { %>
+                        <img src="{{rank.badge}}" class="rank_badge"
+                             title="World Ranking: {{Math.round(rank.level * 100)}}%"/>
                     <% } %>
                 </td>
             </tr>
@@ -47,8 +47,8 @@
 
         <% if (cadence) { %>
             <tr>
-                <td title="Crank RPM">Cadence</td>
-                <td title="Crank RPM">{{Math.round(cadence)}}</td>
+                <td title="Pedal RPM">Cadence</td>
+                <td title="Pedal RPM">{{Math.round(cadence)}}</td>
             </tr>
         <% } %>
 
@@ -63,7 +63,7 @@
             </tr>
 
             <% if (grade.vam > 0) { %>
-                <tr title='"Velocità Ascensionale Media" / average ascent speed in meters / hour'>
+                <tr title='"Velocità Ascensionale Media" / average ascent speed in meters per hour'>
                     <td>VAM <sup style="color: blue">BETA</sup></td>
                     <td>{{Math.round(grade.vam).toLocaleString()}}
                         <abbr class="unit short" title="Ascent velocity meters/hour">Vm/h</abbr>
