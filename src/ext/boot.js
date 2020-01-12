@@ -83,7 +83,7 @@
             console.info("Strava sauce is disabled");
             return;
         }
-        document.body.classList.add('sauce-enabled');
+        document.documentElement.classList.add('sauce-enabled');
         const appDetails = await sendMessageToBackground({system: 'app', op: 'getDetails'});
         const extUrl = chrome.extension.getURL('');
         insertScript(`

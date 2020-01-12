@@ -44,6 +44,10 @@
     color: #007fb6;
 }
 
+.sauce-moreinfo .sauce-sparkline {
+    margin-top: 1em;
+}
+
 #sauce-infopanel tr:nth-child(odd) {
     background: #fafafa;
 }
@@ -140,28 +144,44 @@
     border-bottom: 0;
 }
 
-.ui-dialog.sauce-freerange-dialog {
+.ui-dialog.sauce-dialog {
     margin: 0;
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.33);
+    border-radius: 0.22em;
+    overflow: hidden;
+    background: #f9f9f9;
 }
 
-.ui-dialog.sauce-freerange-dialog .ui-dialog-titlebar {
-    min-height: 10px;
+.ui-dialog.sauce-dialog .ui-dialog-titlebar {
+    min-height: 0;
+    background-image: url('chrome-extension://__MSG_@@extension_id__/assets/icons/icon64.png'),
+                      linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);
+    background-position: right 5% center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    color: #fff;
+    letter-spacing: 0.5px;
+    padding: 0.5em 0.5em;
 }
 
-.ui-dialog.sauce-freerange-dialog .ui-dialog-title {
+.ui-dialog.sauce-dialog .ui-dialog-title {
     font-size: 16px;
 }
 
-.ui-dialog.sauce-freerange-dialog .ui-dialog-titlebar-close {
+.ui-dialog.sauce-dialog .ui-dialog-titlebar-close {
     top: 5px;
 }
 
+.ui-dialog.sauce-dialog .ui-dialog-buttonpane {
+    padding: 0.4em;
+}
+
 /* Fix strava's dialog button padding. */
-.ui-dialog.sauce-freerange-dialog .ui-dialog-buttonpane button {
+.ui-dialog.sauce-dialog .ui-dialog-buttonpane button {
     min-height: unset;
     border-radius: 0.25em;
-    padding: 0.4em 0.8em 0.2em 0.8em;
-    margin: 0.3em 0.5em;
+    padding: 0.3em 0.6em;
+    margin: 0.3em;
     font-size: 0.85em;
 }
 
@@ -241,14 +261,14 @@
     margin: -0.4em 0.2em;
 }
 
-.sauce-rank-graph {
+.sauce-rank-widget {
     padding: 1em;
     margin: 1em;
     border-radius: 0.25em;
     background: #c3c3c3;
 }
 
-.sauce-rank-graph .rank-graph {
+.sauce-rank-widget .rank-graph {
     padding-top: 1em;
 }
 
@@ -259,4 +279,12 @@
 
 .rank_badge {
     cursor: pointer;
+}
+
+.sauce-analysis-stats {
+    font-size: 12px; /* matches effort detail */
+    border-top: 1px dashed #ff4400;
+    border-bottom: 1px solid #ff4400;
+    padding: 0.5em 0;
+    margin-bottom: 0.25em;
 }

@@ -109,18 +109,30 @@ sauce.ns('analysis', function(ns) {
     let _currentOpenDialog;
     function openDialog(dialog, selectorEl) {
         if (_currentOpenDialog) {
+            console.warn("close", _currentOpenDialog);
             _currentOpenDialog.dialog('close');
         } else if (_currentOpenDialog === undefined) {
             /* First usage; wire click-away detection to close open dialog. */
-            jQuery(document).on('click', ev => {
-                if (_currentOpenDialog && !jQuery(ev.target).closest(_currentOpenDialog).length) {
-                    _currentOpenDialog.dialog('close');
-                    _currentOpenDialog = null;
+            jQuery(document).on('pointerdown', ev => {
+                if (_currentOpenDialog && ev.target.isConnected) {
+                    const $root = _currentOpenDialog.closest('.ui-dialog');
+                    if (!jQuery(ev.target).closest($root).length) {
+                        console.warn("close", _currentOpenDialog);
+                        _currentOpenDialog.dialog('close');
+                        _currentOpenDialog = null;
+                    }
                 }
             });
         }
         _currentOpenDialog = dialog;
-        dialog.on('dialogclose', () => selectorEl.classList.remove('selected'));
+        dialog.on('dialogclose', () => {
+            selectorEl.classList.remove('selected');
+            if (dialog === _currentOpenDialog) {
+                console.log("FUN");
+                _currentOpenDialog = null;
+            }
+            dialog.dialog('destroy');
+        });
         selectorEl.classList.add('selected');
     }
 
@@ -155,7 +167,7 @@ sauce.ns('analysis', function(ns) {
     function dialogPrompt(title, body, options) {
         return jQuery(`<div title="${title}">${body}</div>`).dialog(Object.assign({
             modal: true,
-            dialogClass: 'sauce-freerange-dialog',  // Fixes move
+            dialogClass: 'sauce-dialog',
             buttons: {
                 Ok: function() {
                     jQuery(this).dialog('close');
@@ -494,7 +506,7 @@ sauce.ns('analysis', function(ns) {
         dialog = moreinfoFrag.dialog({
             resizable: false,
             width: 240,
-            dialogClass: 'sauce-freerange-dialog',
+            dialogClass: 'sauce-dialog',
             show: {
                 effect: 'slideDown',
                 duration: 200
@@ -507,6 +519,7 @@ sauce.ns('analysis', function(ns) {
             buttons: [{
                 text: 'Close',
                 click: function() {
+                    console.warn("close", dialog);
                     dialog.dialog('close');
                 }
             }, {
@@ -583,7 +596,7 @@ sauce.ns('analysis', function(ns) {
         dialog = moreinfoFrag.dialog({
             resizable: false,
             width: 240,
-            dialogClass: 'sauce-freerange-dialog',
+            dialogClass: 'sauce-dialog',
             show: {
                 effect: 'slideDown',
                 duration: 200
@@ -668,6 +681,19 @@ sauce.ns('analysis', function(ns) {
         tpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export TCX <sup style="color: blue;">BETA</sup></a>`;
         tpxLink.addEventListener('click', () => exportActivity(sauce.export.TCXSerializer));
         menuEl.appendChild(tpxLink);
+    }
+
+
+    function retrofitAnalysisStats() {
+        if (ctx.$analysisStats) {
+            return;  // Already attached
+        }
+        const $el = jQuery('#effort-detail');
+        if (!$el.length) {
+            console.error("No effort detail element to attach to");
+            return;
+        }
+        attachAnalysisStats($el);
     }
 
 
@@ -847,6 +873,7 @@ sauce.ns('analysis', function(ns) {
     async function startRun() {
         await attachExporters();
         await attachComments();
+        retrofitAnalysisStats();
         ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.bestpaceTpl = await getTemplate('bestpace.html');
         ctx.moreinfoTpl = await getTemplate('bestpace-moreinfo.html');
@@ -866,6 +893,7 @@ sauce.ns('analysis', function(ns) {
             (ret, _, start, end) => handleSelectionChange(start, end));
         await attachExporters();
         await attachComments();
+        retrofitAnalysisStats();
         ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.critpowerTpl = await getTemplate('critpower.html');
         ctx.moreinfoTpl = await getTemplate('critpower-moreinfo.html');
@@ -902,8 +930,7 @@ sauce.ns('analysis', function(ns) {
 
                 <br/><br/>
 
-
-                <div class="sauce-rank-graph">
+                <div class="sauce-rank-widget">
                     Select profile to view required power outputs:
                     <select id="sauce-rank-level">
                         <option value="7">World Tour</option>
@@ -938,8 +965,8 @@ sauce.ns('analysis', function(ns) {
                 male: times.map(x => sauce.power.rankRequirements(x, 'male')),
                 female: times.map(x => sauce.power.rankRequirements(x, 'female'))
             };
-            const $levelSelect = dialog.find('.sauce-rank-graph select#sauce-rank-level');
-            const $genderSelect = dialog.find('.sauce-rank-graph select#sauce-rank-gender');
+            const $levelSelect = dialog.find('select#sauce-rank-level');
+            const $genderSelect = dialog.find('select#sauce-rank-gender');
             const $graph = dialog.find('.rank-graph');
             function drawGraph() {
                 const gender = $genderSelect.val();
@@ -1052,6 +1079,40 @@ sauce.ns('analysis', function(ns) {
         return value;
     }
 
+
+    function attachAnalysisStats($el) {
+        if (!ctx.$analysisStats) {
+            ctx.$analysisStats = jQuery(`
+                <div class="sauce-analysis-stats">
+                    VAM: 2000 Vm/h<br/>
+                    Elapsed Watt Avg : 320w
+                    <div class="sauce-vam"></div>
+                    <div class="sauce-elapsed-power-avg"></div>
+                    <div class="sauce-moving-power-avg"></div>
+                    <div class="sauce-elapsed-power-avg"></div>
+                </div>
+            `);
+            // Try to offset by word "Selection" so we appear as extra details to that column.
+            const leftOffset = `calc(9ch + ${Strava.Labs.Activities.BasicAnalysisView.prototype.SIDEBAR_WIDTH}px)`;
+            const width = `calc(${Strava.Labs.Activities.BasicAnalysisView.prototype.CHART_WIDTH}px - 5ch)`;
+            ctx.$analysisStats.css('margin-left', leftOffset);
+            ctx.$analysisStats.css('width', width);
+        }
+        $el.after(ctx.$analysisStats);
+    }
+
+
+    if (Strava.Labs.Activities.BasicAnalysisView) {
+        // Monkey patch the analysis view so we always have our hook for extra stats.
+        const SaveBasicAnalysisView = Strava.Labs.Activities.BasicAnalysisView;
+        Strava.Labs.Activities.BasicAnalysisView = Strava.Labs.Activities.BasicAnalysisView.extend({
+            renderTemplate: function() {
+                const $el = SaveBasicAnalysisView.prototype.renderTemplate.apply(this, arguments);
+                attachAnalysisStats($el.find('#effort-detail'));
+                return $el;
+            }
+        });
+    }
 
     return {
         load,
