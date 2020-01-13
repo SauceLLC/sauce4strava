@@ -86,7 +86,7 @@ sauce.ns('analysis', function(ns) {
     function getStream(name, startIndex, endIndex) {
         const s = pageView.streams().getStream(name);
         if (s && startIndex != null) {
-            return s.slice(startIndex, endIndex);
+            return s.slice(startIndex, endIndex + 1);
         } else {
             return s;
         }
@@ -109,7 +109,6 @@ sauce.ns('analysis', function(ns) {
     let _currentOpenDialog;
     function openDialog(dialog, selectorEl) {
         if (_currentOpenDialog) {
-            console.warn("close", _currentOpenDialog);
             _currentOpenDialog.dialog('close');
         } else if (_currentOpenDialog === undefined) {
             /* First usage; wire click-away detection to close open dialog. */
@@ -117,7 +116,6 @@ sauce.ns('analysis', function(ns) {
                 if (_currentOpenDialog && ev.target.isConnected) {
                     const $root = _currentOpenDialog.closest('.ui-dialog');
                     if (!jQuery(ev.target).closest($root).length) {
-                        console.warn("close", _currentOpenDialog);
                         _currentOpenDialog.dialog('close');
                         _currentOpenDialog = null;
                     }
@@ -128,7 +126,6 @@ sauce.ns('analysis', function(ns) {
         dialog.on('dialogclose', () => {
             selectorEl.classList.remove('selected');
             if (dialog === _currentOpenDialog) {
-                console.log("FUN");
                 _currentOpenDialog = null;
             }
             dialog.dialog('destroy');
@@ -238,6 +235,24 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    async function initAnalysisStats() {
+        if (pageView.router().context.startMenu() !== 'analysis') {
+            return;
+        }
+        let start;
+        let end;
+        // I can not find a better way of doing this at present..
+        const selection = location.pathname.match(/\/activities\/[0-9]+\/analysis\/([0-9]+)\/([0-9]+)/);
+        if (selection) {
+            start = parseInt(selection[1]);
+            end = parseInt(selection[2]);
+            start = isNaN(start) ? undefined : start;
+            end = isNaN(end) ? undefined : end;
+        }
+        await updateAnalysisStats(start, end);
+    }
+
+
     async function processRideStreams() {
         await fetchStreams([
             'watts',
@@ -249,6 +264,7 @@ sauce.ns('analysis', function(ns) {
             'distance',
             'grade_smooth',
         ]);
+        await initAnalysisStats();
         let wattsStream = getStream('watts');
         const isWattEstimate = !wattsStream;
         if (!wattsStream) {
@@ -283,7 +299,7 @@ sauce.ns('analysis', function(ns) {
         if (wattsStream && sauce.config.options['analysis-cp-chart']) {
             const critPowers = [];
             for (const [label, period] of rideCPs) {
-                const roll = sauce.power.critpower(period, timeStream, wattsStream);
+                const roll = sauce.power.critPower(period, timeStream, wattsStream);
                 if (roll) {
                     critPowers.push({
                         label,
@@ -319,6 +335,7 @@ sauce.ns('analysis', function(ns) {
         if (!distStream || !sauce.config.options['analysis-cp-chart']) {
             return;
         }
+        await initAnalysisStats();
         const timeStream = getStream('time');
         const saucePaceStream = [];
         const saucePaceStream2 = [];
@@ -356,7 +373,7 @@ sauce.ns('analysis', function(ns) {
         statsFrag.insertAfter(jQuery('.inline-stats').last());
         const bestPaces = [];
         for (const [label, distance] of runBPs) {
-            const roll = sauce.pace.bestpace(distance, timeStream, distStream);
+            const roll = sauce.pace.bestPace(distance, timeStream, distStream);
             if (roll) {
                 bestPaces.push({
                     label,
@@ -417,12 +434,18 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function altitudeChanges(stream) {
+    function altitudeChanges(stream, minChange) {
+        minChange = minChange || 30;  // Smooth out erroneous readings from bad computers.  e.g. Egan Bernal
         let gain = 0;
         let loss = 0;
         if (stream && stream.length) {
             let last = stream[0];
+            let i = 0;
             for (const x of stream) {
+                i++;
+                if (Math.abs(x - last) < minChange && i < stream.length) {
+                    continue;
+                }
                 if (x > last) {
                     gain += x - last;
                 } else {
@@ -489,7 +512,7 @@ sauce.ns('analysis', function(ns) {
                 max: sauce.data.max(gradeStream),
                 gain: humanElevation(altChanges.gain),
                 loss: humanElevation(altChanges.loss),
-                vam: (altChanges.gain / roll.period) * 3600,
+                vam: roll.period >= 300 && (altChanges.gain / roll.period) * 3600,
             },
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
@@ -497,7 +520,8 @@ sauce.ns('analysis', function(ns) {
         }));
         let dialog;
         const showAnalysisView = () => {
-            const start = getStreamTimeIndex(startTime);
+            // workaround strava off by 1 bug
+            const start = Math.max(0, getStreamTimeIndex(startTime) - 1);
             const end = getStreamTimeIndex(endTime);
             pageView.router().changeMenuTo(`analysis/${start}/${end}`);
             dialog.dialog('close');
@@ -507,10 +531,6 @@ sauce.ns('analysis', function(ns) {
             resizable: false,
             width: 240,
             dialogClass: 'sauce-dialog',
-            show: {
-                effect: 'slideDown',
-                duration: 200
-            },
             position: {
                 my: 'left center',
                 at: 'right center',
@@ -519,7 +539,6 @@ sauce.ns('analysis', function(ns) {
             buttons: [{
                 text: 'Close',
                 click: function() {
-                    console.warn("close", dialog);
                     dialog.dialog('close');
                 }
             }, {
@@ -587,7 +606,9 @@ sauce.ns('analysis', function(ns) {
         const moreinfoFrag = jQuery(ctx.moreinfoTpl(data));
         let dialog;
         const showAnalysisView = () => {
-            const start = getStreamTimeIndex(startTime);
+            // workaround strava off by 1 bug
+            if (startTime === 0) { debugger; }
+            const start = Math.max(0, getStreamTimeIndex(startTime) - 1);
             const end = getStreamTimeIndex(endTime);
             pageView.router().changeMenuTo(`analysis/${start}/${end}`);
             dialog.dialog('close');
@@ -597,10 +618,6 @@ sauce.ns('analysis', function(ns) {
             resizable: false,
             width: 240,
             dialogClass: 'sauce-dialog',
-            show: {
-                effect: 'slideDown',
-                duration: 200
-            },
             position: {
                 my: 'left center',
                 at: 'right center',
@@ -671,29 +688,16 @@ sauce.ns('analysis', function(ns) {
         const sauceIcon = `<img class="sauce-icon" src="${sauce.extURL}assets/icons/icon64.png"/>`;
 
         const gpxLink = document.createElement('li');
-        gpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export GPX <sup style="color: blue;">BETA</sup></a>`;
+        gpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export GPX <sup class="sauce-beta">BETA</sup></a>`;
         gpxLink.title = 'Generate a GPX file for this activity using Strava Sauce';
         gpxLink.addEventListener('click', () => exportActivity(sauce.export.GPXSerializer));
         menuEl.appendChild(gpxLink);
 
         const tpxLink = document.createElement('li');
         tpxLink.title = 'Generate a TCX file for this activity using Strava Sauce';
-        tpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export TCX <sup style="color: blue;">BETA</sup></a>`;
+        tpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export TCX <sup class="sauce-beta">BETA</sup></a>`;
         tpxLink.addEventListener('click', () => exportActivity(sauce.export.TCXSerializer));
         menuEl.appendChild(tpxLink);
-    }
-
-
-    function retrofitAnalysisStats() {
-        if (ctx.$analysisStats) {
-            return;  // Already attached
-        }
-        const $el = jQuery('#effort-detail');
-        if (!$el.length) {
-            console.error("No effort detail element to attach to");
-            return;
-        }
-        attachAnalysisStats($el);
     }
 
 
@@ -873,7 +877,6 @@ sauce.ns('analysis', function(ns) {
     async function startRun() {
         await attachExporters();
         await attachComments();
-        retrofitAnalysisStats();
         ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.bestpaceTpl = await getTemplate('bestpace.html');
         ctx.moreinfoTpl = await getTemplate('bestpace-moreinfo.html');
@@ -883,17 +886,8 @@ sauce.ns('analysis', function(ns) {
 
 
     async function startRide() {
-        const displayDetailsFn = Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails;
-        Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails = function(start, end) {
-            return extendSelectionDisplayDetails(displayDetailsFn.call(this, start, end), start, end);
-        };
-        sauce.func.runAfter(Strava.Charts.Activities.BasicAnalysisElevation, 'displayDetails',
-            (ret, start, end) => handleSelectionChange(start, end));
-        sauce.func.runAfter(Strava.Charts.Activities.LabelBox, 'handleStreamHover',
-            (ret, _, start, end) => handleSelectionChange(start, end));
         await attachExporters();
         await attachComments();
-        retrofitAnalysisStats();
         ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.critpowerTpl = await getTemplate('critpower.html');
         ctx.moreinfoTpl = await getTemplate('critpower-moreinfo.html');
@@ -915,47 +909,9 @@ sauce.ns('analysis', function(ns) {
                 sauce.rpc.reportError(e);
             }
         }
-        jQuery('body').on('click', '.rank_badge', ev => {
-            const dialog = dialogPrompt(
-                'Power Profile Badges Explained',
-                `The concept of power profiling was created by Dr. Andy Coggan.   It is a basic
-                outline of power requirements to be at a certain level of competitiveness.  The levels
-                are articulated as bike racing categories from <i>Cat 5</i> to <i>World Tour Pro</i>.
-
-                <br/><br/>
-
-                These rankings are meant to give you a rough idea of how your best power output would
-                compare to the maximum capability of other racers, so they are most representative when
-                you are working very hard.
-
-                <br/><br/>
-
-                <div class="sauce-rank-widget">
-                    Select profile to view required power outputs:
-                    <select id="sauce-rank-level">
-                        <option value="7">World Tour</option>
-                        <option value="6">Pro</option>
-                        <option value="5">Cat 1</option>
-                        <option value="4">Cat 2</option>
-                        <option value="3">Cat 3</option>
-                        <option value="2">Cat 4</option>
-                        <option value="1">Cat 5</option>
-                    </select>
-                    <select id="sauce-rank-gender">
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-
-                    <div class="rank-graph"></div>
-                </div>
-
-                <footer>
-                    The Strava Sauce algorithm is a modified from Andy's original spreadsheet
-                    so that it can estimate rankings for any time period.  For an in depth
-                    understanding of these profiles read
-                    <a target="_BLANK" href="https://www.trainingpeaks.com/blog/power-profiling/">
-                    Andy's Power Profiling blog</a>.
-                </footer>`, {width: 600});
+        jQuery('body').on('click', '.rank_badge', async ev => {
+            const powerProfileTpl = await getTemplate('power-profile-help.html');
+            const dialog = dialogPrompt('Power Profile Badges Explained', powerProfileTpl(), {width: 600});
             const times = [];
             for (let i = 5; i < 3600; i += Math.log(i + 1)) {
                 times.push(i);
@@ -993,6 +949,7 @@ sauce.ns('analysis', function(ns) {
             }
             $levelSelect.on('change', drawGraph);
             $genderSelect.on('change', drawGraph);
+            dialog.on('dialogresize', drawGraph);
             drawGraph();
         });
         await processRideStreams();
@@ -1046,52 +1003,67 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function handleSelectionChange(start, end) {
-        const wattsStream = getStream('watts') || getStream('watts_calc');
-        if (!wattsStream) {
+    let _lastAnalysisStart = -1;
+    let _lastAnalysisEnd = -1;
+    async function updateAnalysisStats(start, end) {
+        if (start === _lastAnalysisStart && end === _lastAnalysisEnd) {
             return;
         }
-        const selection = wattsStream.slice(start, end);
-        const np = sauce.power.calcNP(selection);
-        const avg = sauce.data.avg(selection);
-        const el = jQuery('text.label:contains(Power)').siblings('.avg-js');
-        const text = [`Avg ${Math.round(avg)}`];
-        if (np) {
-            text.push(` (${Math.round(np)} np)`);
+        if (!ctx.$analysisStats) {
+            const $el = jQuery('#effort-detail');
+            if (!$el.length) {
+                console.error("Could not attach extra stats");
+                return;
+            }
+            attachAnalysisStats($el);
         }
-        el.html(text.join(''));
-    }
-
-
-    function extendSelectionDisplayDetails(value, start, end) {
+        _lastAnalysisStart = start;
+        _lastAnalysisEnd = end;
+        if (start) {
+            start += 1;  // Undo strava workaround
+        }
+        let vam;
+        let movingPower;
+        let movingNP;
+        let elapsedPower;
+        let elapsedNP;
+        let kj;
+        const timeStream = getStream('time', start, end);
+        let elapsed;
+        const wattsStream = getStream('watts', start, end) ||
+                            getStream('watts_calc', start, end);
+        if (wattsStream) {
+            const roll = sauce.power.correctedPower(timeStream, wattsStream);
+            elapsed = roll.elapsed();
+            elapsedPower = roll.avg();
+            elapsedNP = sauce.power.calcNP(roll.values());
+            movingPower = sauce.data.avg(wattsStream);
+            movingNP = sauce.power.calcNP(wattsStream);
+            kj = roll.kj();
+        } else {
+            elapsed = (timeStream[timeStream.length - 1] - timeStream[0]) + 1;
+        }
         const altStream = getStream('altitude', start, end);
-        if (!altStream) {
-            return value;
+        if (altStream && elapsed >= 299) {
+            const altChanges = altitudeChanges(altStream);
+            vam = (altChanges.gain / elapsed) * 3600;
         }
-        const altChanges = altitudeChanges(altStream);
-        const vam = (altChanges.gain / (end - start)) * 3600;
-        if (vam > 0) {
-            const pad = Array(6).join('&nbsp;');
-            return value + `${pad}<span title='"Velocità Ascensionale Media" / average ascent speed in meters per hour'>VAM: ` +
-                           `${Math.round(vam).toLocaleString()}<small>Vm/h</small></span>` +
-                           `<sup style="color: blue"> BETA</sup>`;
-        }
-        return value;
+        const tpl = await getTemplate('analysis-stats.html');
+        ctx.$analysisStats.html(tpl({
+            vam,
+            movingPower,
+            movingNP,
+            elapsedPower,
+            elapsedNP,
+            kj,
+        }));
     }
+    const debouncedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 50);
 
 
     function attachAnalysisStats($el) {
         if (!ctx.$analysisStats) {
-            ctx.$analysisStats = jQuery(`
-                <div class="sauce-analysis-stats">
-                    VAM: 2000 Vm/h<br/>
-                    Elapsed Watt Avg : 320w
-                    <div class="sauce-vam"></div>
-                    <div class="sauce-elapsed-power-avg"></div>
-                    <div class="sauce-moving-power-avg"></div>
-                    <div class="sauce-elapsed-power-avg"></div>
-                </div>
-            `);
+            ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
             // Try to offset by word "Selection" so we appear as extra details to that column.
             const leftOffset = `calc(9ch + ${Strava.Labs.Activities.BasicAnalysisView.prototype.SIDEBAR_WIDTH}px)`;
             const width = `calc(${Strava.Labs.Activities.BasicAnalysisView.prototype.CHART_WIDTH}px - 5ch)`;
@@ -1102,16 +1074,37 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    if (Strava.Labs.Activities.BasicAnalysisView) {
-        // Monkey patch the analysis view so we always have our hook for extra stats.
-        const SaveBasicAnalysisView = Strava.Labs.Activities.BasicAnalysisView;
-        Strava.Labs.Activities.BasicAnalysisView = Strava.Labs.Activities.BasicAnalysisView.extend({
-            renderTemplate: function() {
-                const $el = SaveBasicAnalysisView.prototype.renderTemplate.apply(this, arguments);
+    // Monkey patch analysis views so we can react to selection changes.
+    if (Strava.Charts && Strava.Labs && Strava.Labs.Activities) {
+        if (Strava.Charts.Activities.BasicAnalysisElevation) {
+            const saveFn = Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails;
+            Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails = function(start, end) {
+                debouncedUpdateAnalysisStats(Number(start), Number(end));
+                debouncedUpdateAnalysisStats(
+                    start === undefined ? start : Number(start),
+                    end === undefined ? end : Number(end));
+                return saveFn.apply(this, arguments);
+            };
+        }
+        if (Strava.Charts.Activities.LabelBox) {
+            const saveFn = Strava.Charts.Activities.LabelBox.prototype.handleStreamHover;
+            Strava.Charts.Activities.LabelBox.prototype.handleStreamHover = function(_, start, end) {
+                // This is called when zoom selections change or are unset in the profile graph.
+                debouncedUpdateAnalysisStats(
+                    start === undefined ? start : Number(start),
+                    end === undefined ? end : Number(end));
+                return saveFn.apply(this, arguments);
+            };
+        }
+        if (Strava.Labs.Activities.BasicAnalysisView) {
+            // Monkey patch the analysis view so we always have our hook for extra stats.
+            const saveFn = Strava.Labs.Activities.BasicAnalysisView.prototype.renderTemplate;
+            Strava.Labs.Activities.BasicAnalysisView.prototype.renderTemplate = function() {
+                const $el = saveFn.apply(this, arguments);
                 attachAnalysisStats($el.find('#effort-detail'));
                 return $el;
-            }
-        });
+            };
+        }
     }
 
     return {
@@ -1120,7 +1113,7 @@ sauce.ns('analysis', function(ns) {
 });
 
 
-if (!sauce.testing) {
+if (!sauce.testing && window.pageView) {
     (async function() {
         try {
             await sauce.analysis.load();

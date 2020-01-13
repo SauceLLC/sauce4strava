@@ -1,0 +1,30 @@
+<% if (elapsedPower) { %>
+    <div class="sauce-data-tuple sauce-elapsed-power-avg"
+         title="Elapsed power average (includes zeros for any stops)">
+        Elapsed Power Avg: {{Math.round(elapsedPower).toLocaleString()}}<abbr class="unit short">w</abbr>
+        <% if (elapsedNP) { %>
+            ({{Math.round(elapsedNP).toLocaleString()}}<abbr class="unit short">w NP</abbr>)
+        <% } %>
+    </div>
+<% } %>
+<% if (movingPower) { %>
+    <div class="sauce-data-tuple sauce-moving-power-avg"
+         title="Moving power average (stops are excluded)">
+        Moving Power Avg: {{Math.round(movingPower).toLocaleString()}}<abbr class="unit short">w</abbr>
+        <% if (movingNP) { %>
+            ({{Math.round(movingNP).toLocaleString()}}<abbr class="unit short">w NP</abbr>)
+        <% } %>
+    </div>
+<% } %>
+<% if (kj) { %>
+    <div class="sauce-data-tuple sauce-kj" title="Kilojoules of energy used">
+        Energy: {{Math.round(kj).toLocaleString()}}<abbr class="unit short">kJ</abbr>
+    </div>
+<% } %>
+<% if (vam) { %>
+    <div class="sauce-data-tuple sauce-vam"
+         title='"Velocità Ascensionale Media" i.e. climbing meters per hour'>
+        VAM: {{Math.round(vam).toLocaleString()}}<abbr class="unit">Vm/h</abbr>
+        <sup class="sauce-beta">BETA</sup>
+    </div>
+<% } %>

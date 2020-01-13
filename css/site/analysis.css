@@ -281,10 +281,38 @@
     cursor: pointer;
 }
 
+.sauce-analysis-stats:empty {
+    display: none;
+}
+
 .sauce-analysis-stats {
+    display: flex;
     font-size: 12px; /* matches effort detail */
     border-top: 1px dashed #ff4400;
     border-bottom: 1px solid #ff4400;
     padding: 0.5em 0;
     margin-bottom: 0.25em;
+}
+
+.sauce-analysis-stats .sauce-data-tuple {
+    padding-right: 0.5em;
+}
+
+.sauce-analysis-stats .sauce-data-tuple:not(:last-child) {
+    border-right: 1px solid #ff440080;
+}
+
+.sauce-analysis-stats .sauce-data-tuple:not(:first-child) {
+    margin-left: 0.5em;
+}
+
+.sauce-beta {
+    font-family: sans-serif;
+    font-size: 0.7em;
+    line-height: 1.3em;
+    padding: 0 0.3em;
+    background-color: #3364b6 !important;
+    color: white !important;
+    border-radius: 0.24em;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.20);
 }

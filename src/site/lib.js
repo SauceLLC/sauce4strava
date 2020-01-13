@@ -4,11 +4,15 @@ sauce.ns('data', function() {
     'use strict';
 
 
+    function sum(data) {
+        return data.reduce((acc, x) => acc + x, 0);
+    }
+
     function avg(data) {
         if (!data || !data.length) {
             return;
         }
-        return data.reduce((tot, x) => tot + x, 0) / data.length;
+        return sum(data) / data.length;
     }
 
 
@@ -297,6 +301,10 @@ sauce.ns('data', function() {
             return this._joules / this.elapsed();
         }
 
+        kj() {
+            return this._joules / 1000;
+        }
+
         full(options) {
             options = options || {};
             const offt = options.offt;
@@ -346,51 +354,17 @@ sauce.ns('data', function() {
     }
 
     return {
-        RollingAvg,
-        RollingWindow,
-        Zero,
-        Pad,
+        sum,
         avg,
         min,
         max,
         mode,
         median,
         resample,
-    };
-});
-
-
-sauce.ns('func', function() {
-    'use strict';
-
-    const _adjunct = function(runAfter, obj, origFuncName, interceptor) {
-        const saveFunc = obj.prototype[origFuncName];
-        function wrap() {
-            if (runAfter) {
-                const ret = saveFunc.apply(this, arguments);
-                const args = Array.prototype.slice.call(arguments);
-                args.unshift(ret);
-                interceptor.apply(this, args);
-                return ret;
-            } else {
-                interceptor.apply(this, arguments);
-                return saveFunc.apply(this, arguments);
-            }
-        }
-        obj.prototype[origFuncName] = wrap;
-    };
-
-    const runAfter = function(obj, origFuncName, interceptor) {
-        _adjunct(true, obj, origFuncName, interceptor);
-    };
-
-    const runBefore = function(obj, origFuncName, interceptor) {
-        _adjunct(false, obj, origFuncName, interceptor);
-    };
-
-    return {
-        runAfter: runAfter,
-        runBefore: runBefore
+        RollingAvg,
+        RollingWindow,
+        Zero,
+        Pad,
     };
 });
 
@@ -496,7 +470,7 @@ sauce.ns('power', function() {
     }
 
 
-    function critpower(period, timeStream, wattsStream) {
+    function _correctedRollingAvg(timeStream, wattsStream, period) {
         if (timeStream.length < 2) {
             return;
         }
@@ -504,15 +478,32 @@ sauce.ns('power', function() {
         gaps.pop();  // last entry is not a number (NaN)
         const idealGap = sauce.data.mode(gaps);
         const maxGap = sauce.data.median(gaps) * 4; // Zero pad samples over this gap size.
-        const ring = new sauce.data.RollingAvg(period, idealGap, maxGap);
-        return ring.importReduce(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
+        return new sauce.data.RollingAvg(period, idealGap, maxGap);
+    }
+
+
+    function critPower(period, timeStream, wattsStream) {
+        const roll = _correctedRollingAvg(timeStream, wattsStream, period);
+        if (!roll) {
+            return;
+        }
+        return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
+    }
+
+
+    function correctedPower(timeStream, wattsStream) {
+        const roll = _correctedRollingAvg(timeStream, wattsStream);
+        if (!roll) {
+            return;
+        }
+        roll.import(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
+        return roll;
     }
 
 
     function calcNP(wattsStream) {
         /* Coggan doesn't recommend NP for less than 20 mins.  Allow a margin
          * of error for dropouts. */
-        // XXX This only works for 1 second power data!!!
         if (!wattsStream || wattsStream.length < 1000) {
             return;
         }
@@ -542,7 +533,8 @@ sauce.ns('power', function() {
     }
 
     return {
-        critpower,
+        critPower,
+        correctedPower,
         calcNP,
         calcTSS,
         rank,
@@ -554,16 +546,16 @@ sauce.ns('power', function() {
 sauce.ns('pace', function() {
     'use strict';
 
-    function bestpace(distance, timeStream, distStream) {
+    function bestPace(distance, timeStream, distStream) {
         if (timeStream.length < 2) {
             return;
         }
-        const ring = new sauce.data.RollingWindow(distance);
-        return ring.importReduce(timeStream, distStream, (cur, lead) => cur.avg() <= lead.avg());
+        const roll = new sauce.data.RollingWindow(distance);
+        return roll.importReduce(timeStream, distStream, (cur, lead) => cur.avg() <= lead.avg());
     }
 
     return {
-        bestpace,
+        bestPace,
     };
 });
 
