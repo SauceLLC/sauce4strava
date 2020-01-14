@@ -25,7 +25,7 @@
             <td>Power</td>
             <td>
                 <span title="Average Watts">{{Math.round(power.avg)}}<abbr class="unit short">w</abbr></span>
-                <sup title="Peak Watts">{{power.max}}<abbr class="unit short">w</abbr></sup>
+                <sup class="sauce-positive" title="Peak Watts">{{power.max}}<abbr class="unit short">w</abbr></sup>
             </td>
         </tr>
 
@@ -38,9 +38,9 @@
             <tr>
                 <td>Heartrate</td>
                 <td>
-                    <sub title="Lowest BPM">{{hr.min}}</sub>
+                    <sub class="sauce-positive" title="Lowest BPM">{{hr.min}}</sub>
                     <span title="Average BPM">{{Math.round(hr.avg)}}</span>
-                    <sup title="Peak BPM">{{hr.max}}</sup>
+                    <sup class="sauce-negative" title="Peak BPM">{{hr.max}}</sup>
                 </td>
             </tr>
         <% } %>
@@ -56,9 +56,9 @@
             <tr>
                 <td>Elevation</td>
                 <td>
-                    <sub title="Descended">{{grade.loss}}{{elevationUnit}}</sub>
+                    <sub class="sauce-negative" title="Altitude Loss">{{grade.loss}}{{elevationUnit}}</sub>
                     <span title="Average Grade">{{Math.round(grade.avg)}}<small>%</small></span>
-                    <sup title="Climbed">{{grade.gain}}{{elevationUnit}}</sup>
+                    <sup class="sauce-positive" title="Altitude Gain">{{grade.gain}}{{elevationUnit}}</sup>
                 </td>
             </tr>
 

@@ -9,13 +9,16 @@
         <% if (obj.elapsedPower) { %>
             <div class="sauce-line">
                 Power Avg:
-                {{Math.round(elapsedPower).toLocaleString()}}<abbr class="unit short">w</abbr>
+                {{Math.round(elapsedPower).toLocaleString()}}<abbr class="unit">w</abbr>
+                <% if (obj.weight) { %>
+                    | {{(elapsedPower / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
+                <% } %>
             </div>
         <% } %>
         <% if (obj.elapsedNP) { %>
             <div class="sauce-line">
                 Normalized:
-                {{Math.round(elapsedNP).toLocaleString()}}<abbr class="unit short">np</abbr>
+                {{Math.round(elapsedNP).toLocaleString()}}<abbr class="unit">np</abbr>
             </div>
         <% } %>
     </div>
@@ -27,13 +30,16 @@
         <% if (obj.movingPower) { %>
             <div class="sauce-line">
                 Power Avg:
-                {{Math.round(movingPower).toLocaleString()}}<abbr class="unit short">w</abbr>
+                {{Math.round(movingPower).toLocaleString()}}<abbr class="unit">w</abbr>
+                <% if (obj.weight) { %>
+                    | {{(movingPower / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
+                <% } %>
             </div>
         <% } %>
         <% if (obj.movingNP) { %>
             <div class="sauce-line">
                 Normalized:
-                {{Math.round(movingNP).toLocaleString()}}<abbr class="unit short">np</abbr>
+                {{Math.round(movingNP).toLocaleString()}}<abbr class="unit">np</abbr>
             </div>
         <% } %>
     </div>
@@ -41,31 +47,35 @@
 <% if (obj.kj) { %>
     <div class="sauce-data-tuple" title="Kilojoules of energy used">
         <span class="sauce-heading">Energy:</span>
-        {{Math.round(kj).toLocaleString()}}<abbr class="unit short">kJ</abbr>
+        {{Math.round(kj).toLocaleString()}}<abbr class="unit">kJ</abbr>
         <div class="sauce-line">
             Per Hour:
-            {{Math.round(kjHour).toLocaleString()}}<abbr class="unit short">kJ/h</abbr>
+            {{Math.round(kjHour).toLocaleString()}}<abbr class="unit">kJ/h</abbr>
         </div>
     </div>
 <% } %>
 <% if (obj.altitude) { %>
     <div class="sauce-data-tuple">
         <span class="sauce-heading">Elevation:</span>
+        <% if (altitude.gain || altitude.loss) { %>
+            <% if (altitude.gain && altitude.loss) { %>
+                <span class="sauce-positive" title="Altitude Gain">
+                    +{{altitude.gain}}<abbr class="unit">{{elUnit}}</abbr></span>,
+                <span class="sauce-negative" title="Altitude Loss">
+                    -{{altitude.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
+            <% } else if (altitude.gain) { %>
+                <span class="sauce-positive" title="Altitude Gain">
+                    +{{altitude.gain}}<abbr class="unit">{{elUnit}}</abbr></span>
+            <% } else if (altitude.loss) { %>
+                <span class="sauce-negative" title="Altitude Loss">
+                    +{{altitude.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
+            <% } %>
+        <% } %>
         <% if (altitude.vam) { %>
             <div class="sauce-line"
                  title='"Velocità Ascensionale Media" i.e. climbing meters per hour'>
                 VAM: {{Math.round(altitude.vam).toLocaleString()}}<abbr class="unit">Vm/h</abbr>
                 <sup class="sauce-beta">BETA</sup>
-            </div>
-        <% } %>
-        <% if (altitude.gain) { %>
-             <div class="sauce-line">
-                Gain: {{altitude.gain}}
-            </div>
-        <% } %>
-        <% if (altitude.loss) { %>
-             <div class="sauce-line">
-                Loss: {{altitude.loss}}
             </div>
         <% } %>
     </div>

@@ -19,10 +19,10 @@
             <td>Pace <abbr class="unit short" title="{{distUnitLong}}">/{{distUnit}}</abbr></td>
             <td>
                 <% if (pace.max) { %>
-                    <sub title="Slowest Pace">{{pace.max}}</sub>
+                    <sub class="sauce-negative" title="Slowest Pace">{{pace.max}}</sub>
                 <% } %>
                 <span title="Average Pace">{{pace.avg}}</span>
-                <sup title="Peak Pace">{{pace.min}}</sup>
+                <sup class="sauce-positive" title="Peak Pace">{{pace.min}}</sup>
             </td>
         </tr>
 
@@ -40,9 +40,9 @@
             <tr>
                 <td>Heartrate</td>
                 <td>
-                    <sub title="Lowest BPM">{{hr.min}}</sub>
+                    <sub class="sauce-positive" title="Lowest BPM">{{hr.min}}</sub>
                     <span title="Average BPM">{{Math.round(hr.avg)}}</span>
-                    <sup title="Peak BPM">{{hr.max}}</sup>
+                    <sup class="sauce-negative" title="Peak BPM">{{hr.max}}</sup>
                 </td>
             </tr>
         <% } %>
@@ -58,9 +58,9 @@
             <tr>
                 <td>Elevation</td>
                 <td>
-                    <sub title="Descended">{{grade.loss}}{{elevationUnit}}</sub>
+                    <sub class="sauce-negative" title="Altitude Loss">{{grade.loss}}{{elevationUnit}}</sub>
                     <span title="Average Grade">{{Math.round(grade.avg)}}<small>%</small></span>
-                    <sup title="Climbed">{{grade.gain}}{{elevationUnit}}</sup>
+                    <sup class="sauce-positive" title="Altitude Gain">{{grade.gain}}{{elevationUnit}}</sup>
                 </td>
             </tr>
         <% } %>

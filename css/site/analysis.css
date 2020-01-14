@@ -72,13 +72,18 @@
     font-size: 75%;
 }
 
-.sauce-moreinfo sub {
-    color: darkcyan;
+.sauce-positive {
+    color: #109f10 !important;
 }
 
-.sauce-moreinfo sup {
-    color: darkred;
+.sauce-negative {
+    color: #8b1c1c !important;
 }
+
+.sauce-smaller {
+    font-size: 0.8em;
+}
+
 
 .activity-stats .secondary-stats.inline-stats.sauce-stats {
     border: 1.5px solid #ff4400;
@@ -322,9 +327,8 @@
 }
 
 .sauce-analysis-stats .sauce-data-tuple {
-    padding-right: 0.5em;
+    padding-right: 1em;
     margin: 0.5em 0;
-    font-size: 0.9em;
 }
 
 .sauce-analysis-stats .sauce-data-tuple:not(:last-child) {
@@ -332,7 +336,7 @@
 }
 
 .sauce-analysis-stats .sauce-data-tuple:not(:first-child) {
-    margin-left: 0.5em;
+    margin-left: 1em;
 }
 
 .sauce-analysis-stats .sauce-data-tuple .sauce-heading {
@@ -340,7 +344,11 @@
 }
 
 .sauce-analysis-stats .sauce-data-tuple .sauce-line {
-    line-height: 1.2em;
+}
+
+.sauce-analysis-stats .sauce-data-tuple abbr.unit {
+    font-size: 0.85em;
+    margin-left: 1px;
 }
 
 .sauce-beta {

@@ -135,20 +135,28 @@ sauce.ns('data', function() {
             return 0;
         }
         if (maxGap == null) {
-            const gaps = timeStream.map((x, i) => timeStream[i + 1] - x);
-            gaps.pop();  // last entry is not a number (NaN)
-            maxGap = sauce.data.median(gaps) * 4; // Zero pad samples over this gap size.
+            maxGap = recommendedTimeGaps(timeStream).max;
         }
         let accumulated = 0;
         let last = timeStream[0];
         for (const ts of timeStream) {
             const delta = ts - last;
-            if (delta < maxGap) {
+            if (delta <= maxGap) {
                 accumulated += delta;
             }
             last = ts;
         }
         return accumulated;
+    }
+
+
+    function recommendedTimeGaps(timeStream) {
+        const gaps = timeStream.map((x, i) => timeStream[i + 1] - x);
+        gaps.pop();  // last entry is not a number (NaN)
+        return {
+            ideal: sauce.data.mode(gaps),
+            max: sauce.data.median(gaps) * 4
+        };
     }
 
 
@@ -160,7 +168,7 @@ sauce.ns('data', function() {
 
         constructor(period, options) {
             options = options || {};
-            this.period = period;
+            this.period = period || undefined;
             this._accumulatedValues = !!options.accumulatedValues;
             if (this._accumulatedValues) {
                 this._times = [0];
@@ -294,15 +302,15 @@ sauce.ns('data', function() {
         constructor(period, idealGap, maxGap) {
             super(period, {accumulatedValues: true});
             this._joules = 0;
-            this._idealGap = idealGap;
-            this._maxGap = maxGap;
+            this.idealGap = idealGap;
+            this.maxGap = maxGap;
         }
 
         add(ts, value) {
             if (this._offt !== null) {
                 const gap = ts - this._times[this._times.length - 1];
-                if (gap > this._maxGap || (gap > this._idealGap && this._values[this._values.length - 1] instanceof Pad)) {
-                    const padTS = this._times[this._times.length - 1] + this._idealGap;
+                if (gap > this.maxGap || (gap > this.idealGap && this._values[this._values.length - 1] instanceof Pad)) {
+                    const padTS = this._times[this._times.length - 1] + this.idealGap;
                     return this.add(padTS, new Zero());
                 }
             }
@@ -310,7 +318,7 @@ sauce.ns('data', function() {
         }
 
         preTimestamp(ts) {
-            return ts - this._idealGap;
+            return ts - this.idealGap;
         }
 
         formatValue(value, ts) {
@@ -339,8 +347,8 @@ sauce.ns('data', function() {
 
         copy() {
             const instance = super.copy();
-            instance._idealGap = this._idealGap;
-            instance._maxGap = this._maxGap;
+            instance.idealGap = this.idealGap;
+            instance.maxGap = this.maxGap;
             instance._joules = this._joules;
             return instance;
         }
@@ -384,6 +392,7 @@ sauce.ns('data', function() {
         median,
         resample,
         movingTime,
+        recommendedTimeGaps,
         RollingAvg,
         RollingWindow,
         Zero,
@@ -493,14 +502,19 @@ sauce.ns('power', function() {
     }
 
 
-    function _correctedRollingAvg(timeStream, wattsStream, period) {
+    function _correctedRollingAvg(timeStream, wattsStream, period, idealGap, maxGap) {
         if (timeStream.length < 2) {
             return;
         }
-        const gaps = timeStream.map((x, i) => timeStream[i + 1] - x);
-        gaps.pop();  // last entry is not a number (NaN)
-        const idealGap = sauce.data.mode(gaps);
-        const maxGap = sauce.data.median(gaps) * 4; // Zero pad samples over this gap size.
+        if (idealGap == null || maxGap == null) {
+            const gaps = sauce.data.recommendedTimeGaps(timeStream);
+            if (idealGap == null) {
+                idealGap = gaps.ideal;
+            }
+            if (maxGap == null) {
+                maxGap = gaps.max;
+            }
+        }
         return new sauce.data.RollingAvg(period, idealGap, maxGap);
     }
 
@@ -514,8 +528,8 @@ sauce.ns('power', function() {
     }
 
 
-    function correctedPower(timeStream, wattsStream) {
-        const roll = _correctedRollingAvg(timeStream, wattsStream);
+    function correctedPower(timeStream, wattsStream, idealGap, maxGap) {
+        const roll = _correctedRollingAvg(timeStream, wattsStream, null, idealGap, maxGap);
         if (!roll) {
             return;
         }

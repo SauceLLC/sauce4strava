@@ -272,7 +272,6 @@ sauce.ns('analysis', function(ns) {
             'distance',
             'grade_smooth',
         ]);
-        await initAnalysisStats();
         let wattsStream = getStream('watts');
         const isWattEstimate = !wattsStream;
         if (!wattsStream) {
@@ -285,11 +284,12 @@ sauce.ns('analysis', function(ns) {
                 rideCPs.shift();
             }
         }
-        const np = sauce.power.calcNP(wattsStream);
-        const adjPowerAvg = np || Infinity; // XXX use unbounded rollingavg 
-        const intensity = ctx.ftp ? adjPowerAvg / ctx.ftp : undefined;
+        await initAnalysisStats();
         const timeStream = getStream('time');
-        const duration = timeStream[timeStream.length - 1] - timeStream[0];
+        const corrected = sauce.power.correctedPower(timeStream, wattsStream);
+        const np = sauce.power.calcNP(wattsStream);
+        const movingTime = sauce.data.movingTime(timeStream, corrected.maxGap);
+        const idealPower = np || corrected.kj() * 1000 / movingTime;
         const statsFrag = jQuery(ctx.tertiaryStatsTpl({
             type: 'ride',
             np,
@@ -298,8 +298,8 @@ sauce.ns('analysis', function(ns) {
             weightOrigin: ctx.weightOrigin,
             ftp: ctx.ftp,
             ftpOrigin: ctx.ftpOrigin,
-            intensity,
-            tss: ctx.ftp ? sauce.power.calcTSS(adjPowerAvg, duration, ctx.ftp) : undefined
+            intensity: ctx.ftp ? idealPower / ctx.ftp : undefined,
+            tss: ctx.ftp ? sauce.power.calcTSS(idealPower, corrected.elapsed(), ctx.ftp) : undefined
         }));
         attachEditableFTP(statsFrag);
         attachEditableWeight(statsFrag);
@@ -494,7 +494,6 @@ sauce.ns('analysis', function(ns) {
         const rollValues = roll.values();
         const np = sauce.power.calcNP(rollValues);
         const adjPowerAvg = np || avgPower;
-        const intensity = ctx.ftp ? adjPowerAvg / ctx.ftp : undefined;
         const tss = ctx.ftp ? sauce.power.calcTSS(adjPowerAvg, roll.elapsed(), ctx.ftp) : undefined;
         const wKg = ctx.weight ? avgPower / ctx.weight : undefined;
         const rank = sauce.power.rank(roll.period, wKg, ctx.gender);
@@ -516,7 +515,7 @@ sauce.ns('analysis', function(ns) {
             },
             tss,
             rank,
-            intensity,
+            intensity: ctx.ftp ? adjPowerAvg / ctx.ftp : undefined,
             hr: hrStream && {
                 min: sauce.data.min(hrStream),
                 avg: sauce.data.avg(hrStream),
@@ -671,6 +670,7 @@ sauce.ns('analysis', function(ns) {
         ctx.athlete = pageView.activityAthlete();
         ctx.activity = await fetchFullActivity();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
+        Object.assign(ctx, await getWeightInfo(ctx.athlete.id));
         let start;
         if (ctx.activity.isRun()) {
             start = startRun;
@@ -895,7 +895,6 @@ sauce.ns('analysis', function(ns) {
         ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.bestpaceTpl = await getTemplate('bestpace.html');
         ctx.moreinfoTpl = await getTemplate('bestpace-moreinfo.html');
-        assignWeight(await sauce.rpc.getWeight(ctx.athlete.id));
         await processRunStreams();
     }
 
@@ -906,8 +905,7 @@ sauce.ns('analysis', function(ns) {
         ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.critpowerTpl = await getTemplate('critpower.html');
         ctx.moreinfoTpl = await getTemplate('critpower-moreinfo.html');
-        assignFTP(await sauce.rpc.getFTP(ctx.athlete.id));
-        assignWeight(await sauce.rpc.getWeight(ctx.athlete.id));
+        Object.assign(ctx, await getFTPInfo(ctx.athlete.id));
         const segments = document.querySelector('table.segments');
         if (segments && sauce.config.options['analysis-segment-badges']) {
             const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
@@ -972,50 +970,46 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function assignFTP(sauceFtp) {
-        const power = pageView.powerController && pageView.powerController();
-        /* Sometimes you can get it from the activity.  I think this only
-         * works when you are the athlete in the activity. */
-        const stravaFtp = power ? power.get('athlete_ftp') : ctx.activity.get('ftp');
-        let ftp;
-        if (!sauceFtp) {
-            if (stravaFtp) {
-                ftp = stravaFtp;
-                ctx.ftpOrigin = 'strava';
-            } else {
-                ftp = 0;
-                ctx.ftpOrigin = 'default';
-            }
+    async function getFTPInfo(athleteId) {
+        const info = {};
+        const sauceFtp = await sauce.rpc.getFTP(athleteId);
+        if (sauceFtp) {
+            info.ftp = sauceFtp;
+            info.ftpOrigin = 'sauce';
         } else {
-            if (stravaFtp && sauceFtp != stravaFtp) {
-                console.warn("Sauce FTP override differs from Strava FTP:", sauceFtp, stravaFtp);
+            const power = pageView.powerController && pageView.powerController();
+            /* Sometimes you can get it from the activity.  I think this only
+             * works when you are the athlete in the activity. */
+            const stravaFtp = power ? power.get('athlete_ftp') : ctx.activity.get('ftp');
+            if (stravaFtp) {
+                info.ftp = stravaFtp;
+                info.ftpOrigin = 'strava';
+            } else {
+                info.ftp = 0;
+                info.ftpOrigin = 'default';
             }
-            ftp = sauceFtp;
-            ctx.ftpOrigin = 'sauce';
         }
-        ctx.ftp = ftp;
+        return info;
     }
 
 
-    function assignWeight(sauceWeight) {
-        const stravaWeight = pageView.activityAthleteWeight();
-        let weight;
-        if (!sauceWeight) {
-            if (stravaWeight) {
-                weight = stravaWeight;
-                ctx.weightOrigin = 'strava';
-            } else {
-                weight = 0;
-                ctx.weightOrigin = 'default';
-            }
+    async function getWeightInfo(athleteId) {
+        const info = {};
+        const sauceWeight = await sauce.rpc.getWeight(athleteId);
+        if (sauceWeight) {
+            info.weight = sauceWeight;
+            info.weightOrigin = 'sauce';
         } else {
-            if (stravaWeight && sauceWeight != stravaWeight) {
-                console.warn("Sauce weight override differs from Strava weight:", sauceWeight, stravaWeight);
+            const stravaWeight = pageView.activityAthleteWeight();
+            if (stravaWeight) {
+                info.weight = stravaWeight;
+                info.weightOrigin = 'strava';
+            } else {
+                info.weight = 0;
+                info.weightOrigin = 'default';
             }
-            weight = sauceWeight;
-            ctx.weightOrigin = 'sauce';
         }
-        ctx.weight = weight;
+        return info;
     }
 
 
@@ -1040,13 +1034,22 @@ sauce.ns('analysis', function(ns) {
         const timeStream = getStream('time', preStart, end);
         const wattsStream = getStream('watts', preStart, end) ||
                             getStream('watts_calc', preStart, end);
-        const movingTime = sauce.data.movingTime(timeStream);
+        if (!ctx.idealGap) {
+            // Use gap data from entire activity for accuracy
+            const gaps = sauce.data.recommendedTimeGaps(getStream('time'));
+            ctx.idealGap = gaps.ideal;
+            ctx.maxGap = gaps.max;
+        }
+        const movingTime = sauce.data.movingTime(timeStream, ctx.maxGap);
         const tplData = {
-            moving: humanTime(movingTime)
+            moving: humanTime(movingTime),
+            weight: ctx.weight,
+            elUnit: elevationFormatter.shortUnitKey(),
         };
         let elapsedTime;
         if (wattsStream) {
-            const roll = sauce.power.correctedPower(timeStream, wattsStream);
+            // Use idealGap and maxGap from whole data stream for cleanest results.
+            const roll = sauce.power.correctedPower(timeStream, wattsStream, ctx.idealGap, ctx.maxGap);
             if (preStart !== start) {
                 // Drop the first value;  This is not redundant.  The RollingAvg code
                 // examines the data heuristics during input and produces more accurate
@@ -1059,7 +1062,7 @@ sauce.ns('analysis', function(ns) {
             Object.assign(tplData, {
                 elapsedPower: roll.avg(),
                 elapsedNP: sauce.power.calcNP(roll.values()),
-                movingPower: sauce.data.avg(wattsStream),
+                movingPower: roll.kj() * 1000 / movingTime,
                 movingNP: sauce.power.calcNP(wattsStream),
                 kj: roll.kj(),
                 kjHour: (roll.kj() / elapsedTime) * 3600
@@ -1075,8 +1078,8 @@ sauce.ns('analysis', function(ns) {
         if (altStream) {
             const altChanges = altitudeChanges(altStream);
             tplData.altitude = {
-                gain: humanElevation(altChanges.gain, {suffix: true}),
-                loss: humanElevation(altChanges.loss, {suffix: true}),
+                gain: altChanges.gain && humanElevation(altChanges.gain),
+                loss: altChanges.loss && humanElevation(altChanges.loss),
             };
             if (elapsedTime >= 299) {
                 tplData.altitude.vam = (altChanges.gain / elapsedTime) * 3600;
@@ -1090,9 +1093,9 @@ sauce.ns('analysis', function(ns) {
 
     function attachAnalysisStats($el) {
         if (!ctx.$analysisStats) {
-            ctx.$analysisStats = jQuery(`<section class="sauce-analysis-stats"></section>`);
+            ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
         }
-        $el.after(ctx.$analysisStats);
+        $el.find('#stacked-chart').before(ctx.$analysisStats);
     }
 
 
