@@ -106,31 +106,39 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    let _currentOpenDialog;
-    function openDialog(dialog, selectorEl) {
-        if (_currentOpenDialog) {
-            _currentOpenDialog.dialog('close');
-        } else if (_currentOpenDialog === undefined) {
+    let _currentMoreinfoDialog;
+    function openMoreinfoDialog($dialog, selectorEl) {
+        if (_currentMoreinfoDialog) {
+            closeCurrentMoreinfoDialog();
+        } else if (_currentMoreinfoDialog === undefined) {
             /* First usage; wire click-away detection to close open dialog. */
             jQuery(document).on('pointerdown', ev => {
-                if (_currentOpenDialog && ev.target.isConnected) {
-                    const $root = _currentOpenDialog.closest('.ui-dialog');
+                if (_currentMoreinfoDialog && ev.target.isConnected) {
+                    const $root = _currentMoreinfoDialog.closest('.ui-dialog');
                     if (!jQuery(ev.target).closest($root).length) {
-                        _currentOpenDialog.dialog('close');
-                        _currentOpenDialog = null;
+                        closeCurrentMoreinfoDialog();
                     }
                 }
             });
         }
-        _currentOpenDialog = dialog;
-        dialog.on('dialogclose', () => {
+        $dialog.on('dialogclose', () => {
             selectorEl.classList.remove('selected');
-            if (dialog === _currentOpenDialog) {
-                _currentOpenDialog = null;
+            if ($dialog === _currentMoreinfoDialog) {
+                _currentMoreinfoDialog = null;
             }
-            dialog.dialog('destroy');
+            $dialog.dialog('destroy');
         });
+        _currentMoreinfoDialog = $dialog;
         selectorEl.classList.add('selected');
+    }
+
+
+    function closeCurrentMoreinfoDialog() {
+        const $d = _currentMoreinfoDialog;
+        if ($d) {
+            _currentMoreinfoDialog = null;
+            $d.dialog('close');
+        }
     }
 
 
@@ -162,15 +170,15 @@ sauce.ns('analysis', function(ns) {
 
 
     function dialogPrompt(title, body, options) {
-        return jQuery(`<div title="${title}">${body}</div>`).dialog(Object.assign({
+        const $dialog = jQuery(`<div title="${title}">${body}</div>`);
+        $dialog.dialog(Object.assign({
             modal: true,
             dialogClass: 'sauce-dialog',
             buttons: {
-                Ok: function() {
-                    jQuery(this).dialog('close');
-                }
+                "Ok": () => $dialog.dialog('close')
             }
         }, options));
+        return $dialog;
     }
 
 
@@ -316,7 +324,7 @@ sauce.ns('analysis', function(ns) {
                 const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
                 row.addEventListener('click', async ev => {
                     ev.stopPropagation();
-                    openDialog(await moreinfoRideDialog({label, roll, anchorEl: row}), row);
+                    openMoreinfoDialog(await moreinfoRideDialog({label, roll, anchorEl: row}), row);
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
                 });
             }
@@ -391,7 +399,7 @@ sauce.ns('analysis', function(ns) {
                 const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
                 row.addEventListener('click', async ev => {
                     ev.stopPropagation();
-                    openDialog(await moreinfoRunDialog({label, roll, anchorEl: row}), row);
+                    openMoreinfoDialog(await moreinfoRunDialog({label, roll, anchorEl: row}), row);
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `best-pace-${roll.period}`);
                 });
             }
@@ -472,6 +480,15 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    function changeToAnalysisView(startTime, endTime) {
+        // Workaround strava off by 1 bug.  If the start is 0 then
+        // there is nothing we can do. :(
+        const preStart = Math.max(0, getStreamTimeIndex(startTime) - 1);
+        const end = getStreamTimeIndex(endTime);
+        pageView.router().changeMenuTo(`analysis/${preStart}/${end}`);
+    }
+
+
     async function moreinfoRideDialog({roll, label, anchorEl}) {
         const avgPower = roll.avg();
         const rollValues = roll.values();
@@ -488,7 +505,7 @@ sauce.ns('analysis', function(ns) {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
         const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
-        const moreinfoFrag = jQuery(ctx.moreinfoTpl({
+        const $dialog = jQuery(ctx.moreinfoTpl({
             title: `Critical Power: ${label}`,
             startsAt: humanTime(startTime),
             wKg,
@@ -518,16 +535,7 @@ sauce.ns('analysis', function(ns) {
             distUnit: distanceFormatter.shortUnitKey(),
             distUnitLong: distanceFormatter.longUnitKey(),
         }));
-        let dialog;
-        const showAnalysisView = () => {
-            // workaround strava off by 1 bug
-            const start = Math.max(0, getStreamTimeIndex(startTime) - 1);
-            const end = getStreamTimeIndex(endTime);
-            pageView.router().changeMenuTo(`analysis/${start}/${end}`);
-            dialog.dialog('close');
-        };
-        moreinfoFrag.find('.start_time_link').click(showAnalysisView);
-        dialog = moreinfoFrag.dialog({
+        $dialog.dialog({
             resizable: false,
             width: 240,
             dialogClass: 'sauce-dialog',
@@ -536,30 +544,39 @@ sauce.ns('analysis', function(ns) {
                 at: 'right center',
                 of: anchorEl
             },
-            buttons: [{
-                text: 'Close',
-                click: function() {
-                    dialog.dialog('close');
+            buttons: {
+                "Close": () => $dialog.dialog('close'),
+                "Analysis View": () => {
+                    changeToAnalysisView(startTime, endTime);
+                    $dialog.dialog('close');
                 }
-            }, {
-                text: 'Analysis View',
-                click: showAnalysisView
-            }]
+            }
         });
-        const smoothedData = rollValues.length > 120 ? await sauce.data.resample(rollValues, 120): rollValues;
-        /* Must run after the dialog is open for proper rendering. */
-        moreinfoFrag.find('.sauce-sparkline').sparkline(smoothedData, {
-            type: 'line',
-            width: '100%',
-            height: 56,
-            lineColor: '#EA400D',
-            fillColor: 'rgba(234, 64, 13, 0.61)',
-            chartRangeMin: 0,
-            normalRangeMin: 0,
-            normalRangeMax: avgPower,
-            tooltipFormatter: (_, _2, data) => `${Math.round(data.y)}<abbr class="unit short">w</abbr>`
+        let graphData;
+        if (rollValues.length > 120) {
+            graphData = await sauce.data.resample(rollValues, 120);
+        } else if (rollValues.length > 1) {
+            graphData = rollValues;
+        }
+        if (graphData) {
+            /* Must run after the dialog is open for proper rendering. */
+            $dialog.find('.sauce-sparkline').sparkline(graphData, {
+                type: 'line',
+                width: '100%',
+                height: 56,
+                lineColor: '#EA400D',
+                fillColor: 'rgba(234, 64, 13, 0.61)',
+                chartRangeMin: 0,
+                normalRangeMin: 0,
+                normalRangeMax: avgPower,
+                tooltipFormatter: (_, _2, data) => `${Math.round(data.y)}<abbr class="unit short">w</abbr>`
+            });
+        }
+        $dialog.find('.start_time_link').on('click',() => {
+            changeToAnalysisView(startTime, endTime);
+            $dialog.dialog('close');
         });
-        return dialog;
+        return $dialog;
     }
 
 
@@ -576,7 +593,7 @@ sauce.ns('analysis', function(ns) {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
         const maxPace = sauce.data.max(paceStream);
-        const data = {
+        const $dialog = jQuery(ctx.moreinfoTpl({
             title: `Best Pace: ${label}`,
             startsAt: humanTime(startTime),
             pace: {
@@ -602,19 +619,8 @@ sauce.ns('analysis', function(ns) {
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
             distUnitLong: distanceFormatter.longUnitKey(),
-        };
-        const moreinfoFrag = jQuery(ctx.moreinfoTpl(data));
-        let dialog;
-        const showAnalysisView = () => {
-            // workaround strava off by 1 bug
-            if (startTime === 0) { debugger; }
-            const start = Math.max(0, getStreamTimeIndex(startTime) - 1);
-            const end = getStreamTimeIndex(endTime);
-            pageView.router().changeMenuTo(`analysis/${start}/${end}`);
-            dialog.dialog('close');
-        };
-        moreinfoFrag.find('.start_time_link').click(showAnalysisView);
-        dialog = moreinfoFrag.dialog({
+        }));
+        $dialog.dialog({
             resizable: false,
             width: 240,
             dialogClass: 'sauce-dialog',
@@ -623,32 +629,41 @@ sauce.ns('analysis', function(ns) {
                 at: 'right center',
                 of: anchorEl
             },
-            buttons: [{
-                text: 'Close',
-                click: function() {
-                    dialog.dialog('close');
+            buttons: {
+                "Close": () => $dialog.dialog('close'),
+                "Analysis View": () => {
+                    changeToAnalysisView(startTime, endTime);
+                    $dialog.dialog('close');
                 }
-            }, {
-                text: 'Analysis View',
-                click: showAnalysisView
-            }]
+            }
         });
-        const smoothedData = paceStream.length > 120 ? await sauce.data.resample(paceStream, 120) : paceStream;
-        //const invertedData = smoothedData.map(x => x < 2 ? 2 - x : null);
-        const invertedData = smoothedData.map(x => x);
-        /* Must run after the dialog is open for proper rendering. */
-        moreinfoFrag.find('.sauce-sparkline').sparkline(invertedData, {
-            type: 'line',
-            width: '100%',
-            height: 56,
-            lineColor: '#EA400D',
-            fillColor: 'rgba(234, 64, 13, 0.61)',
-            chartRangeMin: 0, // XXX
-            normalRangeMin: 0, // XXX
-            normalRangeMax: sauce.data.avg(invertedData),
-            tooltipFormatter: (_, _2, data) => humanPace(2 - data.y, {html: true, suffix: true})
+        let graphData;
+        if (paceStream.length > 120) {
+            graphData = await sauce.data.resample(paceStream, 120);
+        } else if (paceStream.length > 1) {
+            graphData = paceStream;
+        }
+        if (graphData) {
+            //const invertedData = graphData.map(x => x < 2 ? 2 - x : null);
+            const invertedData = graphData.map(x => x);
+            /* Must run after the dialog is open for proper rendering. */
+            $dialog.find('.sauce-sparkline').sparkline(invertedData, {
+                type: 'line',
+                width: '100%',
+                height: 56,
+                lineColor: '#EA400D',
+                fillColor: 'rgba(234, 64, 13, 0.61)',
+                chartRangeMin: 0, // XXX
+                normalRangeMin: 0, // XXX
+                normalRangeMax: sauce.data.avg(invertedData),
+                tooltipFormatter: (_, _2, data) => humanPace(2 - data.y, {html: true, suffix: true})
+            });
+        }
+        $dialog.find('.start_time_link').on('click',() => {
+            changeToAnalysisView(startTime, endTime);
+            $dialog.dialog('close');
         });
-        return dialog;
+        return $dialog;
     }
 
 
@@ -910,8 +925,9 @@ sauce.ns('analysis', function(ns) {
             }
         }
         jQuery('body').on('click', '.rank_badge', async ev => {
+            closeCurrentMoreinfoDialog();
             const powerProfileTpl = await getTemplate('power-profile-help.html');
-            const dialog = dialogPrompt('Power Profile Badges Explained', powerProfileTpl(), {width: 600});
+            const $dialog = dialogPrompt('Power Profile Badges Explained', powerProfileTpl(), {width: 600});
             const times = [];
             for (let i = 5; i < 3600; i += Math.log(i + 1)) {
                 times.push(i);
@@ -921,9 +937,9 @@ sauce.ns('analysis', function(ns) {
                 male: times.map(x => sauce.power.rankRequirements(x, 'male')),
                 female: times.map(x => sauce.power.rankRequirements(x, 'female'))
             };
-            const $levelSelect = dialog.find('select#sauce-rank-level');
-            const $genderSelect = dialog.find('select#sauce-rank-gender');
-            const $graph = dialog.find('.rank-graph');
+            const $levelSelect = $dialog.find('select#sauce-rank-level');
+            const $genderSelect = $dialog.find('select#sauce-rank-gender');
+            const $graph = $dialog.find('.rank-graph');
             function drawGraph() {
                 const gender = $genderSelect.val();
                 const level = Number($levelSelect.val());
@@ -949,7 +965,7 @@ sauce.ns('analysis', function(ns) {
             }
             $levelSelect.on('change', drawGraph);
             $genderSelect.on('change', drawGraph);
-            dialog.on('dialogresize', drawGraph);
+            $dialog.on('dialogresize', drawGraph);
             drawGraph();
         });
         await processRideStreams();
@@ -1003,72 +1019,78 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    let _lastAnalysisStart = -1;
-    let _lastAnalysisEnd = -1;
-    async function updateAnalysisStats(start, end) {
-        if (start === _lastAnalysisStart && end === _lastAnalysisEnd) {
-            return;
+    let _lastAnalysisHash = -1;
+    async function updateAnalysisStats(preStart, end) {
+        const hash = `${preStart}-${end}`;
+        if (_lastAnalysisHash === hash) {
+            return;  // Debounce redundant calls.
         }
+        _lastAnalysisHash = hash;
         if (!ctx.$analysisStats) {
-            const $el = jQuery('#effort-detail');
+            const $el = jQuery('.chart');
             if (!$el.length) {
                 console.error("Could not attach extra stats");
                 return;
             }
             attachAnalysisStats($el);
         }
-        _lastAnalysisStart = start;
-        _lastAnalysisEnd = end;
-        if (start) {
-            start += 1;  // Undo strava workaround
-        }
-        let vam;
-        let movingPower;
-        let movingNP;
-        let elapsedPower;
-        let elapsedNP;
-        let kj;
-        const timeStream = getStream('time', start, end);
-        let elapsed;
-        const wattsStream = getStream('watts', start, end) ||
-                            getStream('watts_calc', start, end);
+        // Get the oversampled stream first, then shift.  This lets RollingAvg
+        // perform the most accurate measurements.
+        const start = preStart ? preStart - 1 : preStart;
+        const timeStream = getStream('time', preStart, end);
+        const wattsStream = getStream('watts', preStart, end) ||
+                            getStream('watts_calc', preStart, end);
+        const movingTime = sauce.data.movingTime(timeStream);
+        const tplData = {
+            moving: humanTime(movingTime)
+        };
+        let elapsedTime;
         if (wattsStream) {
             const roll = sauce.power.correctedPower(timeStream, wattsStream);
-            elapsed = roll.elapsed();
-            elapsedPower = roll.avg();
-            elapsedNP = sauce.power.calcNP(roll.values());
-            movingPower = sauce.data.avg(wattsStream);
-            movingNP = sauce.power.calcNP(wattsStream);
-            kj = roll.kj();
+            if (preStart !== start) {
+                // Drop the first value;  This is not redundant.  The RollingAvg code
+                // examines the data heuristics during input and produces more accurate
+                // results based on time gaps.
+                roll.shift();
+                wattsStream.shift();
+                timeStream.shift();
+            }
+            elapsedTime = roll.elapsed();
+            Object.assign(tplData, {
+                elapsedPower: roll.avg(),
+                elapsedNP: sauce.power.calcNP(roll.values()),
+                movingPower: sauce.data.avg(wattsStream),
+                movingNP: sauce.power.calcNP(wattsStream),
+                kj: roll.kj(),
+                kjHour: (roll.kj() / elapsedTime) * 3600
+            });
         } else {
-            elapsed = (timeStream[timeStream.length - 1] - timeStream[0]) + 1;
+            if (preStart !== start) {
+                timeStream.shift();
+            }
+            elapsedTime = (timeStream[timeStream.length - 1] - timeStream[0]) + 1;
         }
+        tplData.elapsed = humanTime(elapsedTime);
         const altStream = getStream('altitude', start, end);
-        if (altStream && elapsed >= 299) {
+        if (altStream) {
             const altChanges = altitudeChanges(altStream);
-            vam = (altChanges.gain / elapsed) * 3600;
+            tplData.altitude = {
+                gain: humanElevation(altChanges.gain, {suffix: true}),
+                loss: humanElevation(altChanges.loss, {suffix: true}),
+            };
+            if (elapsedTime >= 299) {
+                tplData.altitude.vam = (altChanges.gain / elapsedTime) * 3600;
+            }
         }
         const tpl = await getTemplate('analysis-stats.html');
-        ctx.$analysisStats.html(tpl({
-            vam,
-            movingPower,
-            movingNP,
-            elapsedPower,
-            elapsedNP,
-            kj,
-        }));
+        ctx.$analysisStats.html(tpl(tplData));
     }
     const debouncedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 50);
 
 
     function attachAnalysisStats($el) {
         if (!ctx.$analysisStats) {
-            ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
-            // Try to offset by word "Selection" so we appear as extra details to that column.
-            const leftOffset = `calc(9ch + ${Strava.Labs.Activities.BasicAnalysisView.prototype.SIDEBAR_WIDTH}px)`;
-            const width = `calc(${Strava.Labs.Activities.BasicAnalysisView.prototype.CHART_WIDTH}px - 5ch)`;
-            ctx.$analysisStats.css('margin-left', leftOffset);
-            ctx.$analysisStats.css('width', width);
+            ctx.$analysisStats = jQuery(`<section class="sauce-analysis-stats"></section>`);
         }
         $el.after(ctx.$analysisStats);
     }
@@ -1101,7 +1123,7 @@ sauce.ns('analysis', function(ns) {
             const saveFn = Strava.Labs.Activities.BasicAnalysisView.prototype.renderTemplate;
             Strava.Labs.Activities.BasicAnalysisView.prototype.renderTemplate = function() {
                 const $el = saveFn.apply(this, arguments);
-                attachAnalysisStats($el.find('#effort-detail'));
+                attachAnalysisStats($el.find('.chart'));
                 return $el;
             };
         }

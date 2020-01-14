@@ -1,30 +1,72 @@
-<% if (elapsedPower) { %>
-    <div class="sauce-data-tuple sauce-elapsed-power-avg"
-         title="Elapsed power average (includes zeros for any stops)">
-        Elapsed Power Avg: {{Math.round(elapsedPower).toLocaleString()}}<abbr class="unit short">w</abbr>
-        <% if (elapsedNP) { %>
-            ({{Math.round(elapsedNP).toLocaleString()}}<abbr class="unit short">w NP</abbr>)
+<div class="sauce-brand-sidebar">
+    <div class="sauce-logo"></div>
+    <div class="sauce-label">Sauce<br/>Stats</div>
+</div>
+<% if (obj.elapsed) { %>
+    <div class="sauce-data-tuple"
+         title="Elapsed time includes stops.  It is the full duration.">
+        <span class="sauce-heading">Elapsed:</span> {{elapsed}}
+        <% if (obj.elapsedPower) { %>
+            <div class="sauce-line">
+                Power Avg:
+                {{Math.round(elapsedPower).toLocaleString()}}<abbr class="unit short">w</abbr>
+            </div>
+        <% } %>
+        <% if (obj.elapsedNP) { %>
+            <div class="sauce-line">
+                Normalized:
+                {{Math.round(elapsedNP).toLocaleString()}}<abbr class="unit short">np</abbr>
+            </div>
         <% } %>
     </div>
 <% } %>
-<% if (movingPower) { %>
-    <div class="sauce-data-tuple sauce-moving-power-avg"
-         title="Moving power average (stops are excluded)">
-        Moving Power Avg: {{Math.round(movingPower).toLocaleString()}}<abbr class="unit short">w</abbr>
-        <% if (movingNP) { %>
-            ({{Math.round(movingNP).toLocaleString()}}<abbr class="unit short">w NP</abbr>)
+<% if (obj.moving) { %>
+    <div class="sauce-data-tuple"
+         title="Moving time excludes stops.  It is only the active time.">
+        <span class="sauce-heading">Moving:</span> {{moving}}
+        <% if (obj.movingPower) { %>
+            <div class="sauce-line">
+                Power Avg:
+                {{Math.round(movingPower).toLocaleString()}}<abbr class="unit short">w</abbr>
+            </div>
+        <% } %>
+        <% if (obj.movingNP) { %>
+            <div class="sauce-line">
+                Normalized:
+                {{Math.round(movingNP).toLocaleString()}}<abbr class="unit short">np</abbr>
+            </div>
         <% } %>
     </div>
 <% } %>
-<% if (kj) { %>
-    <div class="sauce-data-tuple sauce-kj" title="Kilojoules of energy used">
-        Energy: {{Math.round(kj).toLocaleString()}}<abbr class="unit short">kJ</abbr>
+<% if (obj.kj) { %>
+    <div class="sauce-data-tuple" title="Kilojoules of energy used">
+        <span class="sauce-heading">Energy:</span>
+        {{Math.round(kj).toLocaleString()}}<abbr class="unit short">kJ</abbr>
+        <div class="sauce-line">
+            Per Hour:
+            {{Math.round(kjHour).toLocaleString()}}<abbr class="unit short">kJ/h</abbr>
+        </div>
     </div>
 <% } %>
-<% if (vam) { %>
-    <div class="sauce-data-tuple sauce-vam"
-         title='"Velocità Ascensionale Media" i.e. climbing meters per hour'>
-        VAM: {{Math.round(vam).toLocaleString()}}<abbr class="unit">Vm/h</abbr>
-        <sup class="sauce-beta">BETA</sup>
+<% if (obj.altitude) { %>
+    <div class="sauce-data-tuple">
+        <span class="sauce-heading">Elevation:</span>
+        <% if (altitude.vam) { %>
+            <div class="sauce-line"
+                 title='"Velocità Ascensionale Media" i.e. climbing meters per hour'>
+                VAM: {{Math.round(altitude.vam).toLocaleString()}}<abbr class="unit">Vm/h</abbr>
+                <sup class="sauce-beta">BETA</sup>
+            </div>
+        <% } %>
+        <% if (altitude.gain) { %>
+             <div class="sauce-line">
+                Gain: {{altitude.gain}}
+            </div>
+        <% } %>
+        <% if (altitude.loss) { %>
+             <div class="sauce-line">
+                Loss: {{altitude.loss}}
+            </div>
+        <% } %>
     </div>
 <% } %>

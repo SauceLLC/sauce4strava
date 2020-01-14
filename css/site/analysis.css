@@ -1,7 +1,7 @@
 
 #sauce-infopanel {
-    border-top: 2px solid #ff4400;
-    border-bottom: 2px solid #ff4400;
+    border-top: 1.5px solid #ff4400;
+    border-bottom: 1.5px solid #ff4400;
     margin-top: 10px;
 }
 
@@ -81,7 +81,7 @@
 }
 
 .activity-stats .secondary-stats.inline-stats.sauce-stats {
-    border: 2px solid #ff4400;
+    border: 1.5px solid #ff4400;
     border-left: 0;
     border-right: 0;
     background: #fff;
@@ -232,7 +232,7 @@
 }
 
 .sauce-new-comment {
-    border-top: 2px solid rgba(255, 123, 123, 0.46);
+    border-top: 1.5px solid rgba(255, 123, 123, 0.46);
     padding-top: 6px;
     display: flex;
     justify-content: center;
@@ -282,20 +282,49 @@
 }
 
 .sauce-analysis-stats:empty {
+    box-sizing: border-box;
+}
+
+.sauce-analysis-stats:empty {
     display: none;
+}
+
+.sauce-analysis-stats .sauce-brand-sidebar {
+    width: 120px; /* Must match hard code chart SIDEBAR_WIDTH */
+    display: flex;
+}
+
+.sauce-analysis-stats .sauce-brand-sidebar .sauce-logo {
+    flex-basis: 3em;
+    margin-left: 0.8em;
+    background-image: url('chrome-extension://__MSG_@@extension_id__/assets/icons/icon64.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.sauce-analysis-stats .sauce-brand-sidebar .sauce-label {
+    flex: 1 1 auto;
+    align-self: center;
+    text-align: center;
+    font-size: 1.1em;
+    text-shadow: 1px 1px 3px #0002;
+    line-height: 1.2em;
+    color: #222;
 }
 
 .sauce-analysis-stats {
     display: flex;
-    font-size: 12px; /* matches effort detail */
-    border-top: 1px dashed #ff4400;
-    border-bottom: 1px solid #ff4400;
-    padding: 0.5em 0;
-    margin-bottom: 0.25em;
+    font-size: 0.9em;
+    border-top: 1.5px solid #ff4400;
+    border-bottom: 1.5px solid #ff4400;
+    margin-right: 68px; /* Match strava's hard coded values */
 }
 
 .sauce-analysis-stats .sauce-data-tuple {
     padding-right: 0.5em;
+    margin: 0.5em 0;
+    font-size: 0.9em;
 }
 
 .sauce-analysis-stats .sauce-data-tuple:not(:last-child) {
@@ -304,6 +333,14 @@
 
 .sauce-analysis-stats .sauce-data-tuple:not(:first-child) {
     margin-left: 0.5em;
+}
+
+.sauce-analysis-stats .sauce-data-tuple .sauce-heading {
+    font-weight: bold;
+}
+
+.sauce-analysis-stats .sauce-data-tuple .sauce-line {
+    line-height: 1.2em;
 }
 
 .sauce-beta {

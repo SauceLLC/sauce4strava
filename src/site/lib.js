@@ -130,6 +130,28 @@ sauce.ns('data', function() {
     }
 
 
+    function movingTime(timeStream, maxGap) {
+        if (timeStream.length < 2) {
+            return 0;
+        }
+        if (maxGap == null) {
+            const gaps = timeStream.map((x, i) => timeStream[i + 1] - x);
+            gaps.pop();  // last entry is not a number (NaN)
+            maxGap = sauce.data.median(gaps) * 4; // Zero pad samples over this gap size.
+        }
+        let accumulated = 0;
+        let last = timeStream[0];
+        for (const ts of timeStream) {
+            const delta = ts - last;
+            if (delta < maxGap) {
+                accumulated += delta;
+            }
+            last = ts;
+        }
+        return accumulated;
+    }
+
+
     class Pad extends Number {}
     class Zero extends Pad {}
 
@@ -361,6 +383,7 @@ sauce.ns('data', function() {
         mode,
         median,
         resample,
+        movingTime,
         RollingAvg,
         RollingWindow,
         Zero,
@@ -531,6 +554,7 @@ sauce.ns('power', function() {
         const intensity = power / ftp;
         return ((joules * intensity) / ftpHourJoules) * 100;
     }
+
 
     return {
         critPower,
