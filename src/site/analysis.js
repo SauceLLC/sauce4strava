@@ -1045,6 +1045,7 @@ sauce.ns('analysis', function(ns) {
             moving: humanTime(movingTime),
             weight: ctx.weight,
             elUnit: elevationFormatter.shortUnitKey(),
+            samples: timeStream.length,
         };
         let elapsedTime;
         if (wattsStream) {
@@ -1086,9 +1087,16 @@ sauce.ns('analysis', function(ns) {
             }
         }
         const tpl = await getTemplate('analysis-stats.html');
+        ctx.$analysisStats.data('rawSamples', {timeStream, wattsStream, altStream});
         ctx.$analysisStats.html(tpl(tplData));
     }
     const debouncedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 50);
+
+
+    function showRawData() {
+        const rawSamples = ctx.$analysisStats.data('rawSamples');
+        dialogPrompt('Raw Data', `<pre>${JSON.stringify(rawSamples, null, 4)}</pre>`);
+    }
 
 
     function attachAnalysisStats($el) {
@@ -1096,6 +1104,7 @@ sauce.ns('analysis', function(ns) {
             ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
         }
         $el.find('#stacked-chart').before(ctx.$analysisStats);
+        $el.on('click', 'a.sauce-raw-data', () => showRawData());
     }
 
 
