@@ -137,10 +137,10 @@ class Runner {
                     await test();
                     const elapsed = (Date.now() - testStart).toLocaleString();
                     console.info(`${test.name}: PASS (${elapsed}ms)`);
-                    infoLog(`<b>${test.name}</b>: <span style="color: green">PASS</span> (${elapsed}ms)`);
+                    infoLog(`<b>[${count}] ${test.name}</b>: <span style="color: green">PASS</span> (${elapsed}ms)`);
                 } catch(e) {
                     console.error(`${test.name}: FAIL`);
-                    errorLog(`<b>${test.name}</b>: <span style="color: red">FAIL</span> - ${e.message} ` +
+                    errorLog(`<b>[${count}] ${test.name}</b>: <span style="color: red">FAIL</span> - ${e.message} ` +
                              `<pre class="stack">${e.stack}</pre>`);
                     throw e;
                 }

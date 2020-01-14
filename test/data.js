@@ -22,7 +22,7 @@ addTests([
         assertEqual(10, sauce.data.movingTime([0, 1, 3, 5, 6, 10]));
     },
     function test_data_movingtime_with_gaps() {
-        assertEqual(4, sauce.data.movingTime([0, 1, 2, 6, 7, 8]));
+        assertEqual(8, sauce.data.movingTime([0, 1, 2, 6, 7, 8]));
         assertEqual(4, sauce.data.movingTime([0, 1, 2, 10, 11, 12]));
         assertEqual(6, sauce.data.movingTime([0, 1, 2, 10, 11, 12, 100, 101, 102]));
     },
