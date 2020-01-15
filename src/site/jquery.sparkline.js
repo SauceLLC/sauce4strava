@@ -218,7 +218,7 @@
         remove, isNumber, all, sum, addCSS, ensureArray, formatNumber, RangeMap,
         MouseHandler, Tooltip, barHighlightMixin,
         line, bar, tristate, discrete, bullet, pie, box, defaultStyles, initStyles,
-        VShape, VCanvas_base, VCanvas_canvas, VCanvas_vml, pending, shapeCount = 0;
+        VShape, VCanvas_base, VCanvas_canvas, pending, shapeCount = 0;
 
     /**
      * Default configuration settings
@@ -599,25 +599,17 @@
         }
 
         if ($.fn.sparkline.canvas === false) {
-            // We've already determined that neither Canvas nor VML are available
             return false;
 
         } else if ($.fn.sparkline.canvas === undefined) {
-            // No function defined yet -- need to see if we support Canvas or VML
+            // No function defined yet -- need to see if we support Canvas
             var el = document.createElement('canvas');
             if (!!(el.getContext && el.getContext('2d'))) {
                 // Canvas is available
                 $.fn.sparkline.canvas = function(width, height, target, interact) {
                     return new VCanvas_canvas(width, height, target, interact);
                 };
-            } else if (document.namespaces && !document.namespaces.v) {
-                // VML is available
-                document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
-                $.fn.sparkline.canvas = function(width, height, target, interact) {
-                    return new VCanvas_vml(width, height, target);
-                };
             } else {
-                // Neither Canvas nor VML are available
                 $.fn.sparkline.canvas = false;
                 return false;
             }
@@ -783,21 +775,16 @@
 
         updateDisplay: function () {
             var splist = this.splist,
-                 spcount = splist.length,
                  needsRefresh = false,
                  offset = this.$canvas.offset(),
                  localX = this.currentPageX - offset.left,
                  localY = this.currentPageY - offset.top,
-                 tooltiphtml, sp, i, result, changeEvent;
+                 tooltiphtml, sp, i, changeEvent;
             if (!this.over) {
                 return;
             }
-            for (i = 0; i < spcount; i++) {
-                sp = splist[i];
-                result = sp.setRegionHighlight(this.currentEl, localX, localY);
-                if (result) {
-                    needsRefresh = true;
-                }
+            for (const sp of splist) {
+                needsRefresh |= sp.setRegionHighlight(this.currentEl, localX, localY);
             }
             if (needsRefresh) {
                 changeEvent = $.Event('sparklineRegionChange');
@@ -805,8 +792,7 @@
                 this.$el.trigger(changeEvent);
                 if (this.tooltip) {
                     tooltiphtml = '';
-                    for (i = 0; i < spcount; i++) {
-                        sp = splist[i];
+                    for (const sp of splist) {
                         tooltiphtml += sp.getCurrentRegionTooltip();
                     }
                     this.tooltip.setContent(tooltiphtml);
@@ -814,9 +800,6 @@
                 if (!this.disableHighlight) {
                     this.canvas.render();
                 }
-            }
-            if (result === null) {
-                this.mouseleave();
             }
         }
     });
@@ -849,6 +832,8 @@
             }).appendTo(this.container);
             // account for the container's location
             offset = this.tooltip.offset();
+            // NOTE: Chrome returns floats for these, but mousemove events are seemingly floored.
+            // This will lead to occasional mouse events outside our region.
             this.offsetLeft = offset.left;
             this.offsetTop = offset.top;
             this.hidden = true;
@@ -1156,11 +1141,18 @@
          * Highlight an item based on the moused-over x,y co-ordinate
          */
         setRegionHighlight: function (el, x, y) {
+            const $canvas = $(this.target.canvas);
+            x *= (this.canvasWidth /$canvas.width());
+            y *= (this.canvasHeight /$canvas.height());
             var currentRegion = this.currentRegion,
                 highlightEnabled = !this.options.get('disableHighlight'),
                 newRegion;
+            // NOTE: Chrome returns floats for element offsets but on my device (linux with dpr of 1.39)
+            // mouse events are always floored (not rounded).  This leads to mouse events that can be off by
+            // up to 1.  So sadly some mouse events (typically coming in from the top down) will be out of 
+            // bounds.  We assume the pointer will continue to move and recover from this...
             if (x > this.canvasWidth || y > this.canvasHeight || x < 0 || y < 0) {
-                return null;
+                return false;
             }
             newRegion = this.getRegion(el, x, y);
             if (currentRegion !== newRegion) {
@@ -2625,20 +2617,13 @@
          * Calculate the pixel dimensions of the canvas
          */
         _calculatePixelDims: function (width, height, canvas) {
-            // XXX This should probably be a configurable option
-            var match;
-            match = this._pxregex.exec(height);
-            if (match) {
-                this.pixelHeight = match[1];
-            } else {
-                this.pixelHeight = $(canvas).height();
-            }
-            match = this._pxregex.exec(width);
-            if (match) {
-                this.pixelWidth = match[1];
-            } else {
-                this.pixelWidth = $(canvas).width();
-            }
+            const heightMatch = this._pxregex.exec(height);
+            const pixelHeight = heightMatch ?  Number(heightMatch[1]) : $(canvas).height();
+            const widthMatch = this._pxregex.exec(width);
+            const pixelWidth = widthMatch ?  Number(widthMatch[1]) : $(canvas).width();
+            const dpr = window.devicePixelRatio || 1;
+            this.pixelHeight = Math.round(pixelHeight * dpr);
+            this.pixelWidth = Math.round(pixelWidth * dpr);
         },
 
         /**
@@ -2710,7 +2695,6 @@
             this.shapes = {};
             this.shapeseq = [];
             this.currentTargetShapeId = undefined;
-            $(this.canvas).css({width: this.pixelWidth, height: this.pixelHeight});
         },
 
         _getContext: function (lineColor, fillColor, lineWidth) {
@@ -2884,171 +2868,6 @@
             }
         }
 
-    });
-
-    VCanvas_vml = createClass(VCanvas_base, {
-        init: function (width, height, target) {
-            var groupel;
-            VCanvas_vml._super.init.call(this, width, height, target);
-            if (target[0]) {
-                target = target[0];
-            }
-            $.data(target, '_jqs_vcanvas', this);
-            this.canvas = document.createElement('span');
-            $(this.canvas).css({ display: 'inline-block', position: 'relative', overflow: 'hidden', width: width, height: height, margin: '0px', padding: '0px', verticalAlign: 'top'});
-            this._insert(this.canvas, target);
-            this._calculatePixelDims(width, height, this.canvas);
-            this.canvas.width = this.pixelWidth;
-            this.canvas.height = this.pixelHeight;
-            groupel = '<v:group coordorigin="0 0" coordsize="' + this.pixelWidth + ' ' + this.pixelHeight + '"' +
-                    ' style="position:absolute;top:0;left:0;width:' + this.pixelWidth + 'px;height=' + this.pixelHeight + 'px;"></v:group>';
-            this.canvas.insertAdjacentHTML('beforeEnd', groupel);
-            this.group = $(this.canvas).children()[0];
-            this.rendered = false;
-            this.prerender = '';
-        },
-
-        _drawShape: function (shapeid, path, lineColor, fillColor, lineWidth) {
-            var vpath = [],
-                initial, stroke, fill, closed, vel, plen, i;
-            for (i = 0, plen = path.length; i < plen; i++) {
-                vpath[i] = '' + (path[i][0]) + ',' + (path[i][1]);
-            }
-            initial = vpath.splice(0, 1);
-            lineWidth = lineWidth === undefined ? 1 : lineWidth;
-            stroke = lineColor === undefined ? ' stroked="false" ' : ' strokeWeight="' + lineWidth + 'px" strokeColor="' + lineColor + '" ';
-            fill = fillColor === undefined ? ' filled="false"' : ' fillColor="' + fillColor + '" filled="true" ';
-            closed = vpath[0] === vpath[vpath.length - 1] ? 'x ' : '';
-            vel = '<v:shape coordorigin="0 0" coordsize="' + this.pixelWidth + ' ' + this.pixelHeight + '" ' +
-                 ' id="jqsshape' + shapeid + '" ' +
-                 stroke +
-                 fill +
-                ' style="position:absolute;left:0px;top:0px;height:' + this.pixelHeight + 'px;width:' + this.pixelWidth + 'px;padding:0px;margin:0px;" ' +
-                ' path="m ' + initial + ' l ' + vpath.join(', ') + ' ' + closed + 'e">' +
-                ' </v:shape>';
-            return vel;
-        },
-
-        _drawCircle: function (shapeid, x, y, radius, lineColor, fillColor, lineWidth) {
-            var stroke, fill, vel;
-            x -= radius;
-            y -= radius;
-            stroke = lineColor === undefined ? ' stroked="false" ' : ' strokeWeight="' + lineWidth + 'px" strokeColor="' + lineColor + '" ';
-            fill = fillColor === undefined ? ' filled="false"' : ' fillColor="' + fillColor + '" filled="true" ';
-            vel = '<v:oval ' +
-                 ' id="jqsshape' + shapeid + '" ' +
-                stroke +
-                fill +
-                ' style="position:absolute;top:' + y + 'px; left:' + x + 'px; width:' + (radius * 2) + 'px; height:' + (radius * 2) + 'px"></v:oval>';
-            return vel;
-
-        },
-
-        _drawPieSlice: function (shapeid, x, y, radius, startAngle, endAngle, lineColor, fillColor) {
-            var vpath, startx, starty, endx, endy, stroke, fill, vel;
-            if (startAngle === endAngle) {
-                return '';  // VML seems to have problem when start angle equals end angle.
-            }
-            if ((endAngle - startAngle) === (2 * Math.PI)) {
-                startAngle = 0.0;  // VML seems to have a problem when drawing a full circle that doesn't start 0
-                endAngle = (2 * Math.PI);
-            }
-
-            startx = x + Math.round(Math.cos(startAngle) * radius);
-            starty = y + Math.round(Math.sin(startAngle) * radius);
-            endx = x + Math.round(Math.cos(endAngle) * radius);
-            endy = y + Math.round(Math.sin(endAngle) * radius);
-
-            if (startx === endx && starty === endy) {
-                if ((endAngle - startAngle) < Math.PI) {
-                    // Prevent very small slices from being mistaken as a whole pie
-                    return '';
-                }
-                // essentially going to be the entire circle, so ignore startAngle
-                startx = endx = x + radius;
-                starty = endy = y;
-            }
-
-            if (startx === endx && starty === endy && (endAngle - startAngle) < Math.PI) {
-                return '';
-            }
-
-            vpath = [x - radius, y - radius, x + radius, y + radius, startx, starty, endx, endy];
-            stroke = lineColor === undefined ? ' stroked="false" ' : ' strokeWeight="1px" strokeColor="' + lineColor + '" ';
-            fill = fillColor === undefined ? ' filled="false"' : ' fillColor="' + fillColor + '" filled="true" ';
-            vel = '<v:shape coordorigin="0 0" coordsize="' + this.pixelWidth + ' ' + this.pixelHeight + '" ' +
-                 ' id="jqsshape' + shapeid + '" ' +
-                 stroke +
-                 fill +
-                ' style="position:absolute;left:0px;top:0px;height:' + this.pixelHeight + 'px;width:' + this.pixelWidth + 'px;padding:0px;margin:0px;" ' +
-                ' path="m ' + x + ',' + y + ' wa ' + vpath.join(', ') + ' x e">' +
-                ' </v:shape>';
-            return vel;
-        },
-
-        _drawRect: function (shapeid, x, y, width, height, lineColor, fillColor) {
-            return this._drawShape(shapeid, [[x, y], [x, y + height], [x + width, y + height], [x + width, y], [x, y]], lineColor, fillColor);
-        },
-
-        reset: function () {
-            this.group.innerHTML = '';
-        },
-
-        appendShape: function (shape) {
-            var vel = this['_draw' + shape.type].apply(this, shape.args);
-            if (this.rendered) {
-                this.group.insertAdjacentHTML('beforeEnd', vel);
-            } else {
-                this.prerender += vel;
-            }
-            this.lastShapeId = shape.id;
-            return shape.id;
-        },
-
-        replaceWithShape: function (shapeid, shape) {
-            var existing = $('#jqsshape' + shapeid),
-                vel = this['_draw' + shape.type].apply(this, shape.args);
-            existing[0].outerHTML = vel;
-        },
-
-        replaceWithShapes: function (shapeids, shapes) {
-            // replace the first shapeid with all the new shapes then toast the remaining old shapes
-            var existing = $('#jqsshape' + shapeids[0]),
-                replace = '',
-                slen = shapes.length,
-                i;
-            for (i = 0; i < slen; i++) {
-                replace += this['_draw' + shapes[i].type].apply(this, shapes[i].args);
-            }
-            existing[0].outerHTML = replace;
-            for (i = 1; i < shapeids.length; i++) {
-                $('#jqsshape' + shapeids[i]).remove();
-            }
-        },
-
-        insertAfterShape: function (shapeid, shape) {
-            var existing = $('#jqsshape' + shapeid),
-                 vel = this['_draw' + shape.type].apply(this, shape.args);
-            existing[0].insertAdjacentHTML('afterEnd', vel);
-        },
-
-        removeShapeId: function (shapeid) {
-            var existing = $('#jqsshape' + shapeid);
-            this.group.removeChild(existing[0]);
-        },
-
-        getShapeAt: function (el, x, y) {
-            var shapeid = el.id.substr(8);
-            return shapeid;
-        },
-
-        render: function () {
-            if (!this.rendered) {
-                // batch the intial render into a single repaint
-                this.group.innerHTML = this.prerender;
-                this.rendered = true;
-            }
-        }
     });
 
 }))}(document, Math));
