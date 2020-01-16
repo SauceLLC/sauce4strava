@@ -1462,7 +1462,6 @@
             this.xvalues = xvalues;
             this.yvalues = yvalues;
             this.yminmax = yminmax;
-
         },
 
         processRangeOptions: function () {
@@ -1521,6 +1520,7 @@
 
             this.scanValues();
             this.processRangeOptions();
+            this.target.setMinMax(this.miny, this.maxy);
 
             xvalues = this.xvalues;
             yvalues = this.yvalues;
@@ -2704,7 +2704,18 @@
             }
             context.lineWidth = lineWidth === undefined ? 1 : lineWidth;
             if (fillColor !== undefined) {
-                context.fillStyle = fillColor;
+                if (fillColor.type === 'gradient') {
+                    const gradient = context.createLinearGradient(0, this.pixelHeight, 0, 0);
+                    for (const step of fillColor.steps) {
+                        const pct = (step.value - this._minValue) / (this._maxValue - this._minValue);
+                        if (pct >= 0 && pct <= 1) {
+                            gradient.addColorStop(pct, step.color);
+                        }
+                    }
+                    context.fillStyle = gradient;
+                } else {
+                    context.fillStyle = fillColor;
+                }
             }
             return context;
         },
@@ -2866,8 +2877,12 @@
                 this.shapes = {};
                 this.shapeseq = [];
             }
-        }
+        },
 
+        setMinMax: function(min, max) {
+            this._minValue = min;
+            this._maxValue = max;
+        }
     });
 
 }))}(document, Math));
