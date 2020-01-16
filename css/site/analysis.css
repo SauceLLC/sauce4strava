@@ -180,7 +180,7 @@
 
 .ui-dialog.sauce-dialog.sauce-big-data {
     max-width: 90vw;
-    max-height: calc(90vh - 8em);
+    max-height: calc(100vh - 4em);
 }
 
 .ui-dialog.sauce-dialog.sauce-big-data .ui-dialog-content {

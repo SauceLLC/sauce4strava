@@ -75,7 +75,7 @@ sauce.ns('analysis', function(ns) {
         const fetched = new Set(streams.requestedTypes);
         const unfetched = names.filter(x => !attempted.has(x) && !available.has(x) && !fetched.has(x));
         if (unfetched.length) {
-            console.info("Fetching streams:", unfetched.join());
+            console.info("Fetching streams:", unfetched.join(', '));
             await new Promise((success, error) => streams.fetchStreams(unfetched, {success, error}));
             for (const x of unfetched) {
                 attempted.add(x);
@@ -1105,85 +1105,110 @@ sauce.ns('analysis', function(ns) {
     const debouncedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 50);
 
 
-    async function _fetchAllDataSamples(start, end) {
-        const streams = [
-            'time',
-            'timer_time',
-            'moving',
-            'outlier',
-            'distance',
+    function _rawStreamsInfo() {
+        return [
+            {name: 'time'},
+            {name: 'timer_time'},
+            {name: 'moving'},
+            {name: 'outlier'},
+            {name: 'distance'},
             {name: 'grade_adjusted_distance', label: 'gap_distance'},
-            'watts',
-            'watts_calc',
-            'heartrate',
+            {name: 'watts'},
+            {name: 'watts_calc'},
+            {name: 'heartrate'},
             {name: 'cadence', formatter: ctx.activity.isRun() ? x => x * 2 : null},
             {name: 'velocity_smooth', label: 'velocity'},
-            'pace',
+            {name: 'pace'},
             {name: 'grade_adjusted_pace', label: 'gap'},
             {name: 'latlng', label: 'lat', formatter: x => x[0]},
             {name: 'latlng', label: 'lng', formatter: x => x[1]},
-            'temp',
-            'altitude',
+            {name: 'temp'},
+            {name: 'altitude'},
             {name: 'grade_smooth', label: 'grade'}
-        ];
+        ].map(x => ({
+            name: x.name,
+            label: x.label || x.name,
+            formatter: x.formatter,
+        }));
+    }
+
+
+    async function _fetchDataSamples(skip, start, end) {
+        const streams = _rawStreamsInfo();
         const samples = {};
-        for (const x of streams) {
-            const name = x.name || x;
-            const label = x.label || name;
-            const data = await fetchStream(name, start, end);
+        const filtered = streams.filter(x => !skip || !skip.has(x.label));
+        await fetchStreams(filtered.map(x => x.name));  // bulk prefetch for perf
+        for (const x of filtered) {
+            const data = await fetchStream(x.name, start, end);
             if (!data) {
-                continue;
+                samples[x.label] = null;
+            } else {
+                samples[x.label] = x.formatter ? data.map(x.formatter) : data;
             }
-            samples[label] = x.formatter ? data.map(x.formatter) : data;
         }
         return samples;
+    }
+
+
+    async function _dataViewStreamSelector() {
+        const prefetch = await _fetchDataSamples();
+        const unavailable = new Set(Object.keys(prefetch).filter(x => !prefetch[x]));
+        const defaultSkip = new Set(['watts_calc', 'lat', 'lng', 'pace', 'gap', 'timer_time',
+                                     'gap_distance', 'grade', 'outlier', 'moving']);
+        const streams = _rawStreamsInfo();
+        const checks = streams.filter(x => !unavailable.has(x.label)).map(x => `
+            <label>
+                <input ${defaultSkip.has(x.label) ? '' : 'checked'}
+                       type="checkbox" name="samples"
+                       value="${x.label}"/>
+                ${x.label}
+            </label>
+        `);
+        const $header = jQuery(`<header>${checks.join(' ')}</header>`);
+        const $checks = $header.find('input[name="samples"]');
+        let skip = defaultSkip;
+        $checks.on('change', () => {
+            skip = new Set($checks.filter(':not(:checked)').map((_, x) => x.value));
+            $header.trigger('update', skip);
+        });
+        $header.skip = () => {
+            for (const x of unavailable) {
+                skip.add(x);
+            }
+            return skip;
+        };
+        return $header;
     }
 
 
     async function showRawData() {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
-        const samples = await _fetchAllDataSamples(start, end);
-        const defaultSkip = new Set(['watts_calc', 'lat', 'lng', 'pace', 'gap', 'gap_distance',
-                                     'grade', 'outlier', 'moving']);
-        const checks = Object.keys(samples).map(x => `
-            <label><input ${defaultSkip.has(x) ? '' : 'checked'}
-                          type="checkbox" name="samples" value="${x}"/>${x}</label>`);
-        function renderData(skip) {
-            const filtered = {};
-            for (const [key, value] of Object.entries(samples)) {
-                if (!skip.has(key)) {
-                    filtered[key] = value;
-                }
-            }
-            const csvData = sauce.data.tabulate(filtered, {pretty: true});
+        const $selector = await _dataViewStreamSelector();
+        async function renderData() {
+            const samples = await _fetchDataSamples($selector.skip(), start, end);
+            const csvData = sauce.data.tabulate(samples, {pretty: true});
             const sep = ', ';
             const width = Math.max(sauce.data.sum(csvData[0].map(x => x.length + sep.length)), 68);
             return [csvData.map(x => x.join(sep)).join('\n'), width];
         }
-        const [initialData, initialWidth] = renderData(defaultSkip);
+        const [initialData, initialWidth] = await renderData();
         let currentData = initialData;
-        const $dialog = dialogPrompt(
-            'Raw Data',
-            `<header>${checks.join(' ')}</header>
-             <pre>${initialData}</pre>`,
-            {
-                width: `calc(${initialWidth}ch + 4em)`,
-                dialogClass: 'sauce-big-data',
-                buttons: {
-                    "Ok": () => $dialog.dialog('close'),
-                    "Download": () => {
-                        const range = start && end ? `-${start}-${end}` : '';
-                        const name = `${ctx.activity.id}${range}.csv`;
-                        download(new Blob([currentData], {type: 'text/csv'}), name);
-                    }
+        const $dialog = dialogPrompt('Raw Data', `<pre>${initialData}</pre>`, {
+            width: `calc(${initialWidth}ch + 4em)`,
+            dialogClass: 'sauce-big-data',
+            buttons: {
+                "Ok": () => $dialog.dialog('close'),
+                "Download": () => {
+                    const range = start && end ? `-${start}-${end}` : '';
+                    const name = `${ctx.activity.id}${range}.csv`;
+                    download(new Blob([currentData], {type: 'text/csv'}), name);
                 }
             }
-        );
-        const $checks = $dialog.find('input[name="samples"]');
-        $checks.on('change', () => {
-            const skip = new Set($checks.filter(':not(:checked)').map((_, x) => x.value));
-            const [data, width] = renderData(skip);
+        });
+        $dialog.prepend($selector);
+        $selector.on('update', async () => {
+            const [data, width] = await renderData();
             currentData = data;
             $dialog.find('pre').html(data);
             $dialog.dialog('option', 'width', `calc(${width}ch + 4em)`);
@@ -1194,23 +1219,34 @@ sauce.ns('analysis', function(ns) {
     async function showGraphData() {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
-        const samples = await _fetchAllDataSamples(start, end);
-        const $dialog = dialogPrompt('Graph Data', '', {width: '80vw', position: {at: 'center top+100'}});
-        for (const [label, data] of Object.entries(samples)) {
-            const $row = jQuery(`<div><small><b>${label}</b></small><div class="graph"></div><div/>`);
-            $dialog.append($row);
-            $row.find('.graph').sparkline(data, {
-                type: 'line',
-                width: '100%',
-                height: 40,
-                //lineColor: '#EA400D',
-                //fillColor: 'rgba(234, 64, 13, 0.61)',
-                //chartRangeMin: 0,
-                //normalRangeMin: 0,
-                //normalRangeMax: avgPower,
-                //tooltipFormatter: (_, _2, data) => `${Math.round(data.y)}<abbr class="unit short">w</abbr>`
-            });
+        const $selector = await _dataViewStreamSelector();
+        const $dialog = dialogPrompt('Graph Data', '<div style="padding: 0.5em" class="graphs"></div>', {
+            width: '80vw',
+            dialogClass: 'sauce-big-data',
+            position: {at: 'center top+100'}
+        });
+        $dialog.prepend($selector);
+        const $graphs = $dialog.find('.graphs');
+        async function renderGraphs() {
+            const samples = await _fetchDataSamples($selector.skip(), start, end);
+            $graphs.empty();
+            for (const [label, data] of Object.entries(samples)) {
+                const $row = jQuery(`
+                    <div>
+                        <small><b>${label}</b></small>
+                        <div class="graph"></div>
+                    <div/>
+                `);
+                $graphs.append($row);
+                $row.find('.graph').sparkline(data, {
+                    type: 'line',
+                    width: '100%',
+                    height: 40,
+                });
+            }
         }
+        $selector.on('update', renderGraphs);
+        await renderGraphs();
     }
 
 
