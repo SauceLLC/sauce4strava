@@ -78,12 +78,13 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    async function fetchStream(name) {
-        return (await fetchStreams([name]))[0];
+    async function fetchStream(name, start, end) {
+        await fetchStreams([name]);
+        return _getStream(name, start, end);
     }
 
 
-    function getStream(name, startIndex, endIndex) {
+    function _getStream(name, startIndex, endIndex) {
         const s = pageView.streams().getStream(name);
         if (s && startIndex != null) {
             return s.slice(startIndex, endIndex + 1);
@@ -94,15 +95,15 @@ sauce.ns('analysis', function(ns) {
 
 
     function getStreamTimeIndex(time) {
-        const timeStream = getStream('time');
+        const timeStream = _getStream('time');
         return timeStream.indexOf(time);
     }
 
 
-    function getStreamTimeRange(name, startTime, endTime) {
+    async function fetchStreamTimeRange(name, startTime, endTime) {
         const startIndex = getStreamTimeIndex(startTime);
         const endIndex = getStreamTimeIndex(endTime);
-        return getStream(name, startIndex, endIndex);
+        return await fetchStream(name, startIndex, endIndex);
     }
 
 
@@ -276,17 +277,7 @@ sauce.ns('analysis', function(ns) {
 
 
     async function processRideStreams() {
-        await fetchStreams([
-            'watts',
-            'time',
-            'heartrate',
-            'altitude',
-            'cadence',
-            'latlng',
-            'distance',
-            'grade_smooth',
-        ]);
-        let wattsStream = getStream('watts');
+        let wattsStream = await fetchStream('watts');
         const isWattEstimate = !wattsStream;
         if (!wattsStream) {
             wattsStream = await fetchStream('watts_calc');
@@ -299,10 +290,10 @@ sauce.ns('analysis', function(ns) {
             }
         }
         await initAnalysisStats();
-        const timeStream = getStream('time');
+        const timeStream = await fetchStream('time');
         const corrected = sauce.power.correctedPower(timeStream, wattsStream);
         const np = sauce.power.calcNP(wattsStream);
-        const movingTime = sauce.data.movingTime(timeStream, corrected.maxGap);
+        const movingTime = sauce.data.movingTime(timeStream, await fetchStream('moving'));
         const idealPower = np || corrected.kj() * 1000 / movingTime;
         const statsFrag = jQuery(ctx.tertiaryStatsTpl({
             type: 'ride',
@@ -348,18 +339,12 @@ sauce.ns('analysis', function(ns) {
 
 
     async function processRunStreams() {
-        await fetchStreams([
-            'distance',
-            'time',
-            'pace',
-            'grade_smooth',
-        ]);
-        const distStream = getStream('distance');
+        const distStream = await fetchStream('distance');
         if (!distStream || !sauce.config.options['analysis-cp-chart']) {
             return;
         }
         await initAnalysisStats();
-        const timeStream = getStream('time');
+        const timeStream = await fetchStream('time');
         const saucePaceStream = [];
         const saucePaceStream2 = [];
         let lastDistance = distStream[0];
@@ -515,11 +500,11 @@ sauce.ns('analysis', function(ns) {
         const rank = sauce.power.rank(roll.period, wKg, ctx.gender);
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
-        const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
-        const altStream = getStreamTimeRange('altitude', startTime, endTime);
+        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
+        const altStream = await fetchStreamTimeRange('altitude', startTime, endTime);
         const altChanges = altStream && altitudeChanges(altStream);
-        const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
-        const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
+        const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
+        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const $dialog = jQuery(ctx.moreinfoTpl({
             title: `Critical Power: ${label}`,
             startsAt: humanTime(startTime),
@@ -599,14 +584,14 @@ sauce.ns('analysis', function(ns) {
         const elapsed = humanTime(roll.elapsed());
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
-        //const paceStream = getStreamTimeRange('pace', startTime, endTime);
-        const paceStream = getStreamTimeRange('sauce_pace', startTime, endTime);
-        const hrStream = getStreamTimeRange('heartrate', startTime, endTime);
-        const gapStream = getStreamTimeRange('grade_adjusted_pace', startTime, endTime);
-        const cadenceStream = getStreamTimeRange('cadence', startTime, endTime);
-        const altStream = getStreamTimeRange('altitude', startTime, endTime);
+        //const paceStream = await fetchStreamTimeRange('pace', startTime, endTime);
+        const paceStream = await fetchStreamTimeRange('sauce_pace', startTime, endTime);
+        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
+        const gapStream = await fetchStreamTimeRange('grade_adjusted_pace', startTime, endTime);
+        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
+        const altStream = await fetchStreamTimeRange('altitude', startTime, endTime);
         const altChanges = altStream && altitudeChanges(altStream);
-        const gradeStream = altStream && getStreamTimeRange('grade_smooth', startTime, endTime);
+        const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
         const maxPace = sauce.data.max(paceStream);
         const $dialog = jQuery(ctx.moreinfoTpl({
             title: `Best Pace: ${label}`,
@@ -732,7 +717,7 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function getEstimatedActivityStart() {
+    async function getEstimatedActivityStart() {
         // Activity start time is sadly complicated.  Despite being visible in the header
         // for all activities we only have access to it for rides and self-owned runs.  Trying
         // to parse the html might work for english rides but will fail for non-english users.
@@ -740,7 +725,7 @@ sauce.ns('analysis', function(ns) {
         if (localTime) {
             // Do a very basic tz correction based on the longitude of any geo data we can find.
             // Using a proper timezone API is too expensive for this use case.
-            const geoStream = getStream('latlng');
+            const geoStream = await fetchStream('latlng');
             let longitude;
             if (geoStream) {
                 for (const [, lng] of geoStream) {
@@ -796,7 +781,7 @@ sauce.ns('analysis', function(ns) {
         if (realStartTime) {
             start = new Date(realStartTime);
         } else {
-            start = getEstimatedActivityStart();
+            start = await getEstimatedActivityStart();
         }
         // Name and description are not available in the activity model for other users..
         const name = document.querySelector('#heading .activity-name').textContent;
@@ -1051,16 +1036,16 @@ sauce.ns('analysis', function(ns) {
         // Get the oversampled stream first, then shift.  This lets RollingAvg
         // perform the most accurate measurements.
         const start = preStart ? preStart - 1 : preStart;
-        const timeStream = getStream('time', preStart, end);
-        const wattsStream = getStream('watts', preStart, end) ||
-                            getStream('watts_calc', preStart, end);
+        const timeStream = await fetchStream('time', preStart, end);
+        const wattsStream = await fetchStream('watts', preStart, end) ||
+                            await fetchStream('watts_calc', preStart, end);
         if (!ctx.idealGap) {
             // Use gap data from entire activity for accuracy
-            const gaps = sauce.data.recommendedTimeGaps(getStream('time'));
+            const gaps = sauce.data.recommendedTimeGaps(await fetchStream('time'));
             ctx.idealGap = gaps.ideal;
             ctx.maxGap = gaps.max;
         }
-        const movingTime = sauce.data.movingTime(timeStream, ctx.maxGap);
+        const movingTime = sauce.data.movingTime(timeStream, await fetchStream('moving'));
         const tplData = {
             moving: humanTime(movingTime),
             weight: ctx.weight,
@@ -1095,7 +1080,7 @@ sauce.ns('analysis', function(ns) {
             elapsedTime = (timeStream[timeStream.length - 1] - timeStream[0]) + 1;
         }
         tplData.elapsed = humanTime(elapsedTime);
-        const altStream = getStream('altitude', start, end);
+        const altStream = await fetchStream('altitude', start, end);
         if (altStream) {
             const altChanges = altitudeChanges(altStream);
             tplData.altitude = {
@@ -1118,27 +1103,26 @@ sauce.ns('analysis', function(ns) {
             'time',
             'moving',
             'distance',
-            {name: 'grade_adjusted_distance', label: 'gad'},
+            {name: 'grade_adjusted_distance', label: 'gap_distance'},
             'watts',
             'watts_calc',
             'heartrate',
             {name: 'cadence', formatter: ctx.activity.isRun() ? x => x * 2 : null},
             {name: 'velocity_smooth', label: 'velocity'},
-            {name: 'pace', formatter: x => x.toFixed(3)},
-            {name: 'sauce_pace', formatter: x => x.toFixed(3)},
-            {name: 'grade_adjusted_pace', label: 'gap', formatter: x => x.toFixed(3)},
+            {name: 'pace', formatter: x => x.toFixed(3)}, // XXX
+            {name: 'sauce_pace', formatter: x => x.toFixed(3)}, // XXX
+            {name: 'grade_adjusted_pace', label: 'gap', formatter: x => x.toFixed(3)}, // XXX
             {name: 'latlng', label: 'lat', formatter: x => x[0]},
             {name: 'latlng', label: 'lng', formatter: x => x[1]},
             'temp',
             'altitude',
             {name: 'grade_smooth', label: 'grade'}
         ];
-        await fetchStreams(streams.map(x => x.name || x));
         const samples = {};
         for (const x of streams) {
             const name = x.name || x;
             const label = x.label || name;
-            const data = getStream(name, start, end);
+            const data = await fetchStream(name, start, end);
             if (!data) {
                 continue;
             }

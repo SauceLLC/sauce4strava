@@ -130,19 +130,27 @@ sauce.ns('data', function() {
     }
 
 
-    function movingTime(timeStream, maxGap) {
+    function movingTime(timeStream, movingStream) {
         if (timeStream.length < 2) {
             return 0;
         }
-        if (maxGap == null) {
+        let maxGap;
+        if (movingStream == null) {
             maxGap = recommendedTimeGaps(timeStream).max;
         }
         let accumulated = 0;
         let last = timeStream[0];
-        for (const ts of timeStream) {
+        for (let i = 0; i < timeStream.length; i++) {
+            const ts = timeStream[i];
             const delta = ts - last;
-            if (delta <= maxGap) {
-                accumulated += delta;
+            if (maxGap != null) {
+                if (delta <= maxGap) {
+                    accumulated += delta;
+                }
+            } else {
+                if (movingStream[i]) {
+                    accumulated += delta;
+                }
             }
             last = ts;
         }
