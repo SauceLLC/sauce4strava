@@ -112,7 +112,7 @@
 }
 
 .sauce-moreinfo.ui-dialog-content table {
-    width: 100% !important;
+    box-sizing: border-box;
     margin: 0px 0px 0 0;
     padding: 20px 20px 4px 20px;
 }
@@ -155,6 +155,56 @@
     border-radius: 0.22em;
     overflow: hidden;
     background: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-titlebar,
+.ui-dialog.sauce-dialog .ui-dialog-buttonpane {
+    flex: 0 0 auto;
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-content {
+    flex: 1 1 auto;
+    overflow: auto;
+    display: flex !important;
+    flex-direction: column;
+    width: auto !important; /* override element styling during moves */
+}
+
+.ui-dialog.sauce-dialog header {
+    margin: 0.5em 1em;
+    border-bottom: 1px solid #ff4400cc;
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data {
+    max-width: 90vw;
+    max-height: calc(90vh - 8em);
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data .ui-dialog-content {
+    padding: 0;
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data pre {
+    background: white;
+    color: #761f00;
+    padding: 1em 2em;
+    white-space: pre;
+    letter-spacing: 0;
+    overflow: auto;
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data label {
+    display: inline-block;
+    margin: 0 0.3em 0.5em;
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data label input {
+    margin-right: 0.15em;
+    margin-top: 0.2em;
+    zoom: 1.2;
 }
 
 .ui-dialog.sauce-dialog .ui-dialog-titlebar {
@@ -178,6 +228,7 @@
 }
 
 .ui-dialog.sauce-dialog .ui-dialog-buttonpane {
+    margin: 0;
     padding: 0.4em;
 }
 

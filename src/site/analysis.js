@@ -67,12 +67,19 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    const _attemptedFetch = new Set();
     async function fetchStreams(names) {
         const streams = pageView.streams();
-        const missing = names.filter(x => streams.getStream(x) === undefined);
-        if (missing.length) {
-            console.info("Fetching streams:", missing.join());
-            await new Promise((success, error) => streams.fetchStreams(missing, {success, error}));
+        const attempted = _attemptedFetch;
+        const available = new Set(Object.keys(streams.availableStreams()));
+        const fetched = new Set(streams.requestedTypes);
+        const unfetched = names.filter(x => !attempted.has(x) && !available.has(x) && !fetched.has(x));
+        if (unfetched.length) {
+            console.info("Fetching streams:", unfetched.join());
+            await new Promise((success, error) => streams.fetchStreams(unfetched, {success, error}));
+            for (const x of unfetched) {
+                attempted.add(x);
+            }
         }
         return names.map(x => streams.getStream(x));
     }
@@ -172,13 +179,14 @@ sauce.ns('analysis', function(ns) {
 
     function dialogPrompt(title, body, options) {
         const $dialog = jQuery(`<div title="${title}">${body}</div>`);
+        options = options || {};
+        const dialogClass = `${options.dialogClass || ''} sauce-dialog`;
         $dialog.dialog(Object.assign({
             modal: true,
-            dialogClass: 'sauce-dialog',
             buttons: {
                 "Ok": () => $dialog.dialog('close')
             }
-        }, options));
+        }, options, {dialogClass}));
         return $dialog;
     }
 
@@ -1028,7 +1036,6 @@ sauce.ns('analysis', function(ns) {
         if (!ctx.$analysisStats) {
             const $el = jQuery('.chart');
             if (!$el.length) {
-                console.error("Could not attach extra stats");
                 return;
             }
             attachAnalysisStats($el);
@@ -1101,7 +1108,9 @@ sauce.ns('analysis', function(ns) {
     async function _fetchAllDataSamples(start, end) {
         const streams = [
             'time',
+            'timer_time',
             'moving',
+            'outlier',
             'distance',
             {name: 'grade_adjusted_distance', label: 'gap_distance'},
             'watts',
@@ -1109,9 +1118,8 @@ sauce.ns('analysis', function(ns) {
             'heartrate',
             {name: 'cadence', formatter: ctx.activity.isRun() ? x => x * 2 : null},
             {name: 'velocity_smooth', label: 'velocity'},
-            {name: 'pace', formatter: x => x.toFixed(3)}, // XXX
-            {name: 'sauce_pace', formatter: x => x.toFixed(3)}, // XXX
-            {name: 'grade_adjusted_pace', label: 'gap', formatter: x => x.toFixed(3)}, // XXX
+            'pace',
+            {name: 'grade_adjusted_pace', label: 'gap'},
             {name: 'latlng', label: 'lat', formatter: x => x[0]},
             {name: 'latlng', label: 'lng', formatter: x => x[1]},
             'temp',
@@ -1136,20 +1144,49 @@ sauce.ns('analysis', function(ns) {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
         const samples = await _fetchAllDataSamples(start, end);
-        const csvData = sauce.data.tabulate(samples, {pretty: true});
-        const sep = ', ';
-        const width = sauce.data.sum(csvData[0].map(x => x.length + sep.length));
-        const csv = csvData.map(x => x.join(sep)).join('\n');
-        const $dialog = dialogPrompt('Raw Data', `<pre style="max-height: 50vh">${csv}</pre>`, {
-            width: `calc(${width}ch + 4em)`,
-            buttons: {
-                "Ok": () => $dialog.dialog('close'),
-                "Download": () => {
-                    const range = start && end ? `-${start}-${end}` : '';
-                    const name = `${ctx.activity.id}${range}.csv`;
-                    download(new Blob([csv], {type: 'text/csv'}), name);
+        const defaultSkip = new Set(['watts_calc', 'lat', 'lng', 'pace', 'gap', 'gap_distance',
+                                     'grade', 'outlier', 'moving']);
+        const checks = Object.keys(samples).map(x => `
+            <label><input ${defaultSkip.has(x) ? '' : 'checked'}
+                          type="checkbox" name="samples" value="${x}"/>${x}</label>`);
+        function renderData(skip) {
+            const filtered = {};
+            for (const [key, value] of Object.entries(samples)) {
+                if (!skip.has(key)) {
+                    filtered[key] = value;
                 }
             }
+            const csvData = sauce.data.tabulate(filtered, {pretty: true});
+            const sep = ', ';
+            const width = Math.max(sauce.data.sum(csvData[0].map(x => x.length + sep.length)), 68);
+            return [csvData.map(x => x.join(sep)).join('\n'), width];
+        }
+        const [initialData, initialWidth] = renderData(defaultSkip);
+        let currentData = initialData;
+        const $dialog = dialogPrompt(
+            'Raw Data',
+            `<header>${checks.join(' ')}</header>
+             <pre>${initialData}</pre>`,
+            {
+                width: `calc(${initialWidth}ch + 4em)`,
+                dialogClass: 'sauce-big-data',
+                buttons: {
+                    "Ok": () => $dialog.dialog('close'),
+                    "Download": () => {
+                        const range = start && end ? `-${start}-${end}` : '';
+                        const name = `${ctx.activity.id}${range}.csv`;
+                        download(new Blob([currentData], {type: 'text/csv'}), name);
+                    }
+                }
+            }
+        );
+        const $checks = $dialog.find('input[name="samples"]');
+        $checks.on('change', () => {
+            const skip = new Set($checks.filter(':not(:checked)').map((_, x) => x.value));
+            const [data, width] = renderData(skip);
+            currentData = data;
+            $dialog.find('pre').html(data);
+            $dialog.dialog('option', 'width', `calc(${width}ch + 4em)`);
         });
     }
 
@@ -1158,7 +1195,7 @@ sauce.ns('analysis', function(ns) {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
         const samples = await _fetchAllDataSamples(start, end);
-        const $dialog = dialogPrompt('Graph Data', '', {width: '80vw'});
+        const $dialog = dialogPrompt('Graph Data', '', {width: '80vw', position: {at: 'center top+100'}});
         for (const [label, data] of Object.entries(samples)) {
             const $row = jQuery(`<div><small><b>${label}</b></small><div class="graph"></div><div/>`);
             $dialog.append($row);
@@ -1237,6 +1274,13 @@ sauce.ns('analysis', function(ns) {
 
     return {
         load,
+        fetchStream,
+        fetchStreams,
+        dialogPrompt,
+        humanWeight,
+        humanTime,
+        humanPace,
+        humanElevation,
     };
 });
 
