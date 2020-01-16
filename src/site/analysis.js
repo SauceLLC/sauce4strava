@@ -261,6 +261,20 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    function navHeightAdjustments() {
+        // The main site's side nav is absolute positioned, so if the primary view is too short
+        // the footer will overflow and mess everything up.  Add a min-height to the view to
+        // prevent the footer from doing this.
+        const $sidenav = jQuery('nav.sidenav');
+        const $view = jQuery('#view');
+        void($sidenav[0].offsetHeight);  // force reflow to be safe
+        const margin = $view.outerHeight(/*includeMargin*/ true) - $view.outerHeight();
+        const minHeight = $sidenav.height() - ($view.position().top + margin);
+        $view.css('min-height', `${minHeight}px`);
+        Strava.Activities.Ui.prepareSlideMenu();  // Fixes ... menu in some cases
+    }
+
+
     async function processRideStreams() {
         await fetchStreams([
             'watts',
@@ -328,6 +342,7 @@ sauce.ns('analysis', function(ns) {
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
                 });
             }
+            requestAnimationFrame(navHeightAdjustments);
         }
     }
 
@@ -403,6 +418,7 @@ sauce.ns('analysis', function(ns) {
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `best-pace-${roll.period}`);
                 });
             }
+            requestAnimationFrame(navHeightAdjustments);
         }
     }
 
@@ -756,6 +772,21 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    function download(blob, name) {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = blob.name || name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        try {
+            link.click();
+        } finally {
+            link.remove();
+            URL.revokeObjectURL(link.href);
+        }
+    }
+
+
     async function exportActivity(Serializer) {
         const streamNames = ['time', 'watts', 'heartrate', 'altitude',
                              'cadence', 'temp', 'latlng', 'distance'];
@@ -774,18 +805,7 @@ sauce.ns('analysis', function(ns) {
         const serializer = new Serializer(name, desc, ctx.activity.get('type'), start);
         serializer.start();
         serializer.loadStreams(streams);
-        const link = document.createElement('a');
-        const f = serializer.toFile();
-        link.href = URL.createObjectURL(f);
-        link.download = f.name;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        try {
-            link.click();
-        } finally {
-            link.remove();
-            URL.revokeObjectURL(link.href);
-        }
+        download(serializer.toFile());
     }
 
 
@@ -1087,15 +1107,89 @@ sauce.ns('analysis', function(ns) {
             }
         }
         const tpl = await getTemplate('analysis-stats.html');
-        ctx.$analysisStats.data('rawSamples', {timeStream, wattsStream, altStream});
+        ctx.$analysisStats.data({start, end});
         ctx.$analysisStats.html(tpl(tplData));
     }
     const debouncedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 50);
 
 
-    function showRawData() {
-        const rawSamples = ctx.$analysisStats.data('rawSamples');
-        dialogPrompt('Raw Data', `<pre>${JSON.stringify(rawSamples, null, 4)}</pre>`);
+    async function _fetchAllDataSamples(start, end) {
+        const streams = [
+            'time',
+            'moving',
+            'distance',
+            {name: 'grade_adjusted_distance', label: 'gad'},
+            'watts',
+            'watts_calc',
+            'heartrate',
+            {name: 'cadence', formatter: ctx.activity.isRun() ? x => x * 2 : null},
+            {name: 'velocity_smooth', label: 'velocity'},
+            {name: 'pace', formatter: x => x.toFixed(3)},
+            {name: 'sauce_pace', formatter: x => x.toFixed(3)},
+            {name: 'grade_adjusted_pace', label: 'gap', formatter: x => x.toFixed(3)},
+            {name: 'latlng', label: 'lat', formatter: x => x[0]},
+            {name: 'latlng', label: 'lng', formatter: x => x[1]},
+            'temp',
+            'altitude',
+            {name: 'grade_smooth', label: 'grade'}
+        ];
+        await fetchStreams(streams.map(x => x.name || x));
+        const samples = {};
+        for (const x of streams) {
+            const name = x.name || x;
+            const label = x.label || name;
+            const data = getStream(name, start, end);
+            if (!data) {
+                continue;
+            }
+            samples[label] = x.formatter ? data.map(x.formatter) : data;
+        }
+        return samples;
+    }
+
+
+    async function showRawData() {
+        const start = ctx.$analysisStats.data('start');
+        const end = ctx.$analysisStats.data('end');
+        const samples = await _fetchAllDataSamples(start, end);
+        const csvData = sauce.data.tabulate(samples, {pretty: true});
+        const sep = ', ';
+        const width = sauce.data.sum(csvData[0].map(x => x.length + sep.length));
+        const csv = csvData.map(x => x.join(sep)).join('\n');
+        const $dialog = dialogPrompt('Raw Data', `<pre style="max-height: 50vh">${csv}</pre>`, {
+            width: `calc(${width}ch + 4em)`,
+            buttons: {
+                "Ok": () => $dialog.dialog('close'),
+                "Download": () => {
+                    const range = start && end ? `-${start}-${end}` : '';
+                    const name = `${ctx.activity.id}${range}.csv`;
+                    download(new Blob([csv], {type: 'text/csv'}), name);
+                }
+            }
+        });
+    }
+
+
+    async function showGraphData() {
+        const start = ctx.$analysisStats.data('start');
+        const end = ctx.$analysisStats.data('end');
+        const samples = await _fetchAllDataSamples(start, end);
+        const $dialog = dialogPrompt('Graph Data', '', {width: '80vw'});
+        for (const [label, data] of Object.entries(samples)) {
+            const $row = jQuery(`<div><small><b>${label}</b></small><div class="graph"></div><div/>`);
+            $dialog.append($row);
+            $row.find('.graph').sparkline(data, {
+                type: 'line',
+                width: '100%',
+                height: 40,
+                //lineColor: '#EA400D',
+                //fillColor: 'rgba(234, 64, 13, 0.61)',
+                //chartRangeMin: 0,
+                //normalRangeMin: 0,
+                //normalRangeMax: avgPower,
+                //tooltipFormatter: (_, _2, data) => `${Math.round(data.y)}<abbr class="unit short">w</abbr>`
+            });
+        }
     }
 
 
@@ -1105,6 +1199,7 @@ sauce.ns('analysis', function(ns) {
         }
         $el.find('#stacked-chart').before(ctx.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData());
+        $el.on('click', 'a.sauce-graph-data', () => showGraphData());
     }
 
 
@@ -1139,6 +1234,21 @@ sauce.ns('analysis', function(ns) {
                 return $el;
             };
         }
+    }
+
+    if (Strava.Activities && Strava.Activities.Ui && Strava.Activities.Ui.prepareSlideMenu) {
+        Strava.Activities.Ui.prepareSlideMenu = function() {
+            // We extend the nav sidebar, so we need to modify this routine to make the menu
+            // work properly in all conditions.
+            const $slideMenu = jQuery(".slide-menu");
+            const navHeight = jQuery("nav.sidenav").height() || 0;
+            const menuHeight = $slideMenu.find(".options").height();
+            if (navHeight > 240 /*copied*/ && menuHeight > navHeight) {
+                $slideMenu.removeClass("align-bottom").addClass("align-top");
+            } else if (navHeight > menuHeight) {
+                $slideMenu.removeClass("align-top").addClass("align-bottom");
+            }
+        };
     }
 
     return {

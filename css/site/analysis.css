@@ -161,7 +161,7 @@
     min-height: 0;
     background-image: url('chrome-extension://__MSG_@@extension_id__/assets/icons/icon64.png'),
                       linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);
-    background-position: right 5% center;
+    background-position: right 1em center, center;
     background-size: contain;
     background-repeat: no-repeat;
     color: #fff;
