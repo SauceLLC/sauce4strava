@@ -160,6 +160,51 @@ sauce.ns('data', function() {
     }
 
 
+    function tabulate(rawMapping, options) {
+        /* This is basically CSV format, but in JS arrays format. */
+        options = options || {};
+        let size;
+        const mapping = new Map(Object.entries(rawMapping).filter(([k, v]) => v != null));
+        for (const arr of mapping.values()) {
+            if (size === undefined) {
+                size = arr.length;
+            } else if (arr.length !== size) {
+                throw new TypeError("streams must be same size");
+            }
+        }
+        const rows = [Array.from(mapping.keys())];
+        for (let i = 0; i < size; i++) {
+            const row = [];
+            for (const arr of mapping.values()) {
+                row.push(arr[i] == null ? '' : arr[i].toString());
+            }
+            rows.push(row);
+        }
+        if (options.pretty) {
+            const widths = [];
+            const colCount = rows[0].length;
+            for (let colIdx = 0; colIdx < colCount; colIdx++) {
+                let widest = 0;
+                for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+                    const colLen = rows[rowIdx][colIdx].length;
+                    if (colLen > widest) {
+                        widest = colLen;
+                    }
+                }
+                widths.push(widest);
+            }
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                for (let ii = 0; ii < row.length; ii++) {
+                    const width = widths[ii];
+                    row[ii] = row[ii].padStart(width);
+                }
+            }
+        }
+        return rows;
+    }
+
+
     class Pad extends Number {}
     class Zero extends Pad {}
 
@@ -393,6 +438,7 @@ sauce.ns('data', function() {
         resample,
         movingTime,
         recommendedTimeGaps,
+        tabulate,
         RollingAvg,
         RollingWindow,
         Zero,
