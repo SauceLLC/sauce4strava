@@ -222,25 +222,17 @@ sauce.ns('data', function() {
         constructor(period, options) {
             options = options || {};
             this.period = period || undefined;
-            this._accumulatedValues = !!options.accumulatedValues;
-            if (this._accumulatedValues) {
-                this._times = [0];
-                this._values = [null];
-                this._offt = null;
-                this._headOfft = 1;
-            } else {
-                this._times = [];
-                this._values = [];
-                this._offt = 0;
-                this._headOfft = 0;
-            }
+            this._times = [];
+            this._values = [];
+            this._offt = 0;
         }
 
         copy() {
-            const instance = new this.constructor(this.period, this._accumulatedValues);
-            instance._times = this._times.slice(this._offt - this._headOfft);
-            instance._values = this._values.slice(this._offt - this._headOfft);
-            instance._offt = this._headOfft;
+            const instance = new this.constructor(this.period);
+            const safeOffset = this._offt > 0 ? this._offt - 1 : 0;
+            instance._times = this._times.slice(safeOffset);
+            instance._values = this._values.slice(safeOffset);
+            instance._offt = this._offt > 0 ? 1 : 0;
             return instance;
         }
 
@@ -278,18 +270,13 @@ sauce.ns('data', function() {
             options = options || {};
             const len = this._times.length;
             const offt = (options.offt || 0) + this._offt;
-            if (len - offt < 1) {
+            if (len - offt <= 1) {
                 return 0;
             }
-            const start = this._times[offt - this._headOfft];
-            return this._times[len - 1] - start;
+            return this._times[len - 1] - this._times[offt];
         }
 
         add(ts, value) {
-            if (this._offt === null) {
-                this._times[0] = this.preTimestamp(ts);
-                this._offt = this._headOfft;
-            }
             this._values.push(this.formatValue(value, ts));
             this._times.push(ts);
             while (this.full({offt: 1})) {
@@ -298,11 +285,7 @@ sauce.ns('data', function() {
             return value;
         }
 
-        preTimestamp(ts) {
-            return ts;
-        }
-
-        formatValue(value, ts, gap) {
+        formatValue(value) {
             return value;
         }
 
@@ -341,11 +324,11 @@ sauce.ns('data', function() {
         }
 
         shift() {
-            this.shiftValue(this._offt);
+            this.shiftValue();
             this._offt++;
         }
 
-        shiftValue(idx) {
+        shiftValue() {
         }
     }
 
@@ -360,7 +343,7 @@ sauce.ns('data', function() {
         }
 
         add(ts, value) {
-            if (this._offt !== null) {
+            if (this._times.length) {
                 const gap = ts - this._times[this._times.length - 1];
                 if (gap > this.maxGap || (gap > this.idealGap && this._values[this._values.length - 1] instanceof Pad)) {
                     const padTS = this._times[this._times.length - 1] + this.idealGap;
@@ -370,12 +353,9 @@ sauce.ns('data', function() {
             return super.add(ts, value);
         }
 
-        preTimestamp(ts) {
-            return ts - this.idealGap;
-        }
-
         formatValue(value, ts) {
-            const gap = ts - this._times[this._times.length - 1];
+            const i = this._times.length;
+            const gap = i ? ts - this._times[i - 1] : 0;
             this._joules += value * gap;
             return value;
         }
@@ -394,8 +374,10 @@ sauce.ns('data', function() {
             return this.elapsed({offt}) >= this.period;
         }
 
-        shiftValue(idx) {
-            this._joules -= this._values[idx] * (this._times[idx] - this._times[idx - 1]);
+        shiftValue() {
+            const i = this._offt;
+            const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
+            this._joules -= this._values[i + 1] * gap;
         }
 
         copy() {

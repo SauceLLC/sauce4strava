@@ -490,11 +490,9 @@ sauce.ns('analysis', function(ns) {
 
 
     function changeToAnalysisView(startTime, endTime) {
-        // Workaround strava off by 1 bug.  If the start is 0 then
-        // there is nothing we can do. :(
-        const preStart = Math.max(0, getStreamTimeIndex(startTime) - 1);
+        const start = getStreamTimeIndex(startTime);
         const end = getStreamTimeIndex(endTime);
-        pageView.router().changeMenuTo(`analysis/${preStart}/${end}`);
+        pageView.router().changeMenuTo(`analysis/${start}/${end}`);
     }
 
 
@@ -1027,8 +1025,8 @@ sauce.ns('analysis', function(ns) {
 
 
     let _lastAnalysisHash = -1;
-    async function updateAnalysisStats(preStart, end) {
-        const hash = `${preStart}-${end}`;
+    async function updateAnalysisStats(start, end) {
+        const hash = `${start}-${end}`;
         if (_lastAnalysisHash === hash) {
             return;  // Debounce redundant calls.
         }
@@ -1040,19 +1038,12 @@ sauce.ns('analysis', function(ns) {
             }
             attachAnalysisStats($el);
         }
-        // Get the oversampled stream first, then shift.  This lets RollingAvg
-        // perform the most accurate measurements.
-        const start = preStart ? preStart - 1 : preStart;
-        const timeStream = await fetchStream('time', preStart, end);
-        const wattsStream = await fetchStream('watts', preStart, end) ||
-                            await fetchStream('watts_calc', preStart, end);
-        if (!ctx.idealGap) {
-            // Use gap data from entire activity for accuracy
-            const gaps = sauce.data.recommendedTimeGaps(await fetchStream('time'));
-            ctx.idealGap = gaps.ideal;
-            ctx.maxGap = gaps.max;
-        }
-        const movingTime = sauce.data.movingTime(timeStream, await fetchStream('moving'));
+        const isRide = ctx.activity.isRide();
+        const timeStream = await fetchStream('time', start, end);
+        const wattsStream = isRide && (await fetchStream('watts', start, end) ||
+                                       await fetchStream('watts_calc', start, end));
+        const movingStream = await fetchStream('moving', start, end);
+        const movingTime = sauce.data.movingTime(timeStream, movingStream);
         const tplData = {
             moving: humanTime(movingTime),
             weight: ctx.weight,
@@ -1062,15 +1053,12 @@ sauce.ns('analysis', function(ns) {
         let elapsedTime;
         if (wattsStream) {
             // Use idealGap and maxGap from whole data stream for cleanest results.
-            const roll = sauce.power.correctedPower(timeStream, wattsStream, ctx.idealGap, ctx.maxGap);
-            if (preStart !== start) {
-                // Drop the first value;  This is not redundant.  The RollingAvg code
-                // examines the data heuristics during input and produces more accurate
-                // results based on time gaps.
-                roll.shift();
-                wattsStream.shift();
-                timeStream.shift();
+            if (!ctx.idealGap) {
+                const gaps = sauce.data.recommendedTimeGaps(await fetchStream('time'));
+                ctx.idealGap = gaps.ideal;
+                ctx.maxGap = gaps.max;
             }
+            const roll = sauce.power.correctedPower(timeStream, wattsStream, ctx.idealGap, ctx.maxGap);
             elapsedTime = roll.elapsed();
             Object.assign(tplData, {
                 elapsedPower: roll.avg(),
@@ -1081,10 +1069,7 @@ sauce.ns('analysis', function(ns) {
                 kjHour: (roll.kj() / elapsedTime) * 3600
             });
         } else {
-            if (preStart !== start) {
-                timeStream.shift();
-            }
-            elapsedTime = (timeStream[timeStream.length - 1] - timeStream[0]) + 1;
+            elapsedTime = (timeStream[timeStream.length - 1] - timeStream[0]);
         }
         tplData.elapsed = humanTime(elapsedTime);
         const altStream = await fetchStream('altitude', start, end);
