@@ -68,17 +68,42 @@ sauce.ns('analysis', function(ns) {
 
 
     const _attemptedFetch = new Set();
+    const _pendingFetches = new Map();
     async function fetchStreams(names) {
         const streams = pageView.streams();
         const attempted = _attemptedFetch;
+        const pending = _pendingFetches;
         const available = new Set(Object.keys(streams.availableStreams()));
         const fetched = new Set(streams.requestedTypes);
-        const unfetched = names.filter(x => !attempted.has(x) && !available.has(x) && !fetched.has(x));
-        if (unfetched.length) {
-            console.info("Fetching streams:", unfetched.join(', '));
-            await new Promise((success, error) => streams.fetchStreams(unfetched, {success, error}));
-            for (const x of unfetched) {
-                attempted.add(x);
+        const todo = names.filter(x => !attempted.has(x) && !available.has(x) && !fetched.has(x));
+        if (todo.length) {
+            const waitfor = [];
+            const fetching = [];
+            for (const x of todo) {
+                if (pending.has(x)) {
+                    // This stream is inflight, wait for existing promise.
+                    waitfor.push(pending.get(x));
+                } else {
+                    fetching.push(x);
+                }
+            }
+            if (fetching.length) {
+                console.info("Fetching streams:", fetching.join(', '));
+                const p = new Promise((success, error) => {
+                    streams.fetchStreams(fetching, {success, error});
+                });
+                for (const x of fetching) {
+                    pending.set(x, p);
+                }
+                await p;
+                for (const x of fetching) {
+                    pending.delete(x);
+                    attempted.add(x);
+                }
+            }
+            if (waitfor.length) {
+                console.warn("Waiting for existing stream fetch(es) to finish");
+                await Promise.all(waitfor);
             }
         }
         return names.map(x => streams.getStream(x));
