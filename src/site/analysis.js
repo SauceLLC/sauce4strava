@@ -1024,6 +1024,11 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    function streamDelta(stream, options) {
+        return stream[stream.length - 1] - stream[0];
+    }
+
+
     let _lastAnalysisHash = -1;
     async function updateAnalysisStats(start, end) {
         const hash = `${start}-${end}`;
@@ -1039,19 +1044,29 @@ sauce.ns('analysis', function(ns) {
             attachAnalysisStats($el);
         }
         const isRide = ctx.activity.isRide();
+        const isRun = ctx.activity.isRun();
         const timeStream = await fetchStream('time', start, end);
-        const wattsStream = isRide && (await fetchStream('watts', start, end) ||
-                                       await fetchStream('watts_calc', start, end));
-        const movingStream = await fetchStream('moving', start, end);
-        const movingTime = sauce.data.movingTime(timeStream, movingStream);
+        const timerTimeStream = await fetchStream('timer_time', start, end);
+        const elapsedTime = streamDelta(timeStream);
+        let movingTime;
+        if (timerTimeStream) {
+            // most likely a run
+            movingTime = streamDelta(timerTimeStream);
+        } else {
+            const movingStream = await fetchStream('moving', start, end);
+            movingTime = sauce.data.movingTime(timeStream, movingStream);
+        }
         const tplData = {
+            elapsed: humanTime(elapsedTime),
             moving: humanTime(movingTime),
             weight: ctx.weight,
             elUnit: elevationFormatter.shortUnitKey(),
+            distUnit: distanceFormatter.shortUnitKey(),
             samples: timeStream.length,
         };
-        let elapsedTime;
-        if (wattsStream) {
+        if (isRide) {
+            const wattsStream = isRide && (await fetchStream('watts', start, end) ||
+                                           await fetchStream('watts_calc', start, end));
             // Use idealGap and maxGap from whole data stream for cleanest results.
             if (!ctx.idealGap) {
                 const gaps = sauce.data.recommendedTimeGaps(await fetchStream('time'));
@@ -1059,7 +1074,7 @@ sauce.ns('analysis', function(ns) {
                 ctx.maxGap = gaps.max;
             }
             const roll = sauce.power.correctedPower(timeStream, wattsStream, ctx.idealGap, ctx.maxGap);
-            elapsedTime = roll.elapsed();
+            console.assert(roll.elapsed() === elapsedTime);
             Object.assign(tplData, {
                 elapsedPower: roll.avg(),
                 elapsedNP: sauce.power.calcNP(roll.values()),
@@ -1068,10 +1083,18 @@ sauce.ns('analysis', function(ns) {
                 kj: roll.kj(),
                 kjHour: (roll.kj() / elapsedTime) * 3600
             });
-        } else {
-            elapsedTime = (timeStream[timeStream.length - 1] - timeStream[0]);
+        } else if (isRun) {
+            const distanceStream = await fetchStream('distance', start, end);
+            const gradeAdjDistanceStream = await fetchStream('grade_adjusted_distance', start, end);
+            const distance = streamDelta(distanceStream);
+            const gradeAdjDistance = streamDelta(gradeAdjDistanceStream);
+            Object.assign(tplData, {
+                elapsedPace: humanPace(1 / (distance / elapsedTime)),
+                elapsedGAP: humanPace(1 / (gradeAdjDistance / elapsedTime)),
+                movingPace: humanPace(1 / (distance / movingTime)),
+                movingGAP: humanPace(1 / (gradeAdjDistance / movingTime)),
+            });
         }
-        tplData.elapsed = humanTime(elapsedTime);
         const altStream = await fetchStream('altitude', start, end);
         if (altStream) {
             const altChanges = altitudeChanges(altStream);

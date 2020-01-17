@@ -21,6 +21,18 @@
                 {{Math.round(elapsedNP).toLocaleString()}}<abbr class="unit">np</abbr>
             </div>
         <% } %>
+        <% if (obj.elapsedPace) { %>
+            <div class="sauce-line">
+                Pace:
+                {{elapsedPace}}<abbr class="unit">/{{distUnit}}</abbr>
+            </div>
+        <% } %>
+        <% if (obj.elapsedGAP) { %>
+            <div class="sauce-line">
+                GAP:
+                {{elapsedGAP}}<abbr class="unit">/{{distUnit}}</abbr>
+            </div>
+        <% } %>
     </div>
 <% } %>
 <% if (obj.moving) { %>
@@ -40,6 +52,18 @@
             <div class="sauce-line">
                 Normalized:
                 {{Math.round(movingNP).toLocaleString()}}<abbr class="unit">np</abbr>
+            </div>
+        <% } %>
+        <% if (obj.movingPace) { %>
+            <div class="sauce-line">
+                Pace:
+                {{movingPace}}<abbr class="unit">/{{distUnit}}</abbr>
+            </div>
+        <% } %>
+        <% if (obj.movingGAP) { %>
+            <div class="sauce-line">
+                GAP:
+                {{movingGAP}}<abbr class="unit">/{{distUnit}}</abbr>
             </div>
         <% } %>
     </div>
