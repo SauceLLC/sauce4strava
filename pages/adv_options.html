@@ -7,11 +7,14 @@
         <script defer src="/src/ext/adv_options_page.js"></script>
         <style>
             table {
+                background: #a78b7f1a;
+                border-collapse: collapse;
+                border: 1.5px solid #c83813;
             }
 
             body {
                 width: 600px;
-                padding: 20px 40px;
+                padding: 1em;
             }
 
             .section {
@@ -41,9 +44,30 @@
                 border: 1px solid #222;
             }
 
+            tr:nth-child(odd) {
+                background: #fafafa;
+            }
+
             td.label {
                 text-align: right;
                 padding: 8px 4px;
+                font-size: 1.1em;
+            }
+
+            td .error:empty {
+                display: none;
+            }
+
+            td .error {
+                color: darkred;
+            }
+
+            textarea.athlete-info {
+                background: #fff5;
+                padding: 0.8em;
+                margin: 0.8em;
+                width: 34em;
+                font-size: 1em;
             }
 
         </style>
@@ -52,11 +76,11 @@
     <body>
         <h1>Sauce - Advanced Options</h1>
         <div class="section">
-            <h1>Athletes FTP Values</h1>
+            <h1>Athlete Info</h1>
             <p class="desc">
-                Enter the best estimated functional threshold powers in watts for an athlete.
+                This is the raw JSON data Sauce uses for athletes.  USE CAUTION if editing!
             </p>
-            <table><tbody id="ftp_list"></tbody></table>
+            <table><tbody id="athlete-list"></tbody></table>
         </div>
 
         <div class="footer">

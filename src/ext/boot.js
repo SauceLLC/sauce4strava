@@ -65,6 +65,35 @@
             }
             await sauce.storage.set({ftp_overrides, athlete_info});
         }
+    }, {
+        // Note this marks the first migration that will only run once in the new system.
+        version: 3,
+        name: 'athlete_info_for_ftp_overrides',
+        migrate: async config => {
+            const athlete_info = config.athlete_info || {};
+            if (config.ftp_overrides) {
+                for (const [id, ftp] of Object.entries(config.ftp_overrides)) {
+                    const athlete = athlete_info[id] || {name: `Athlete ID: ${id}`};
+                    athlete.ftp_override = ftp;
+                }
+                await sauce.storage.set({athlete_info});
+                await sauce.storage.remove('ftp_overrides');
+            }
+        }
+    }, {
+        version: 4,
+        name: 'athlete_info_for_weight_overrides',
+        migrate: async config => {
+            const athlete_info = config.athlete_info || {};
+            if (config.weight_overrides) {
+                for (const [id, weight] of Object.entries(config.weight_overrides)) {
+                    const athlete = athlete_info[id] || {name: `Athlete ID: ${id}`};
+                    athlete.weight_override = weight;
+                }
+                await sauce.storage.set({athlete_info});
+                await sauce.storage.remove('weight_overrides');
+            }
+        }
     }];
 
 
@@ -104,7 +133,6 @@
         const initialVersion = await sauce.storage.get('migrationVersion');
         for (const x of migrations) {
             if (initialVersion && initialVersion >= x.version) {
-                console.info("Skipping completed migration:", x.name, x.version);
                 continue;
             }
             console.warn("Running migration:", x.name, x.version);

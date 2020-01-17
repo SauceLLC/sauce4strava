@@ -8,28 +8,49 @@
         return new Promise(resolve => setTimeout(resolve, seconds * 1000));
     }
 
-    async function saveFtps(ftps) {
-        const ftpInputs = document.querySelectorAll('#ftp_list input[name="ftp"]');
-        const overrides = await sauce.storage.get('ftp_overrides');
-        for (const el of ftpInputs) {
-            const id = Number(el.id);
-            overrides[id] = Number(el.value);
-        }
-        await sauce.storage.set('ftp_overrides', overrides);
+    async function saveAthleteInfo(el, info) {
+        const textareas = el.querySelectorAll('textarea.athlete-info');
         const status = document.getElementById('status');
-        status.textContent = 'Options saved.';
-        await sleep(2);
+        const errors = el.querySelectorAll('.error');
+        for (const x of errors) {
+            x.textContent = '';
+        }
+        for (const x of textareas) {
+            const athlete = info[x.id];
+            try {
+                Object.assign(athlete, JSON.parse(x.value));
+            } catch(e) {
+                x.parentNode.querySelector('.error').textContent = e.toString();
+                status.textContent = `Error updating ${athlete.name} (${x.id})`;
+                return;
+            }
+        }
+        await sauce.storage.set('athlete_info', info);
+        status.textContent = 'Athlete options saved';
+        await renderAthleteInfo(el);
+        await sleep(8);
         status.textContent = '';
     }
 
 
-    async function getFtps() {
-        const data = await sauce.storage.get(['ftp_overrides', 'athlete_info']);
-        const ftps = [];
-        for (const id of Object.keys(data.ftp_overrides)) {
-            ftps.push({id, name: data.athlete_info[id].name, ftp: data.ftp_overrides[id]});
+    async function renderAthleteInfo(el) {
+        const info = await sauce.storage.get('athlete_info');
+        const html = [];
+        for (const [id, athlete] of Object.entries(info)) {
+            const json = JSON.stringify(athlete, null, 2);
+            const lines = json.split('\n');
+            html.push(`
+                <tr>
+                    <td class="label">${athlete.name}<br/>(ID: ${id})</td>
+                    <td>
+                        <textarea rows="${lines.length}" class="athlete-info"
+                                  id="${id}">${json}</textarea>
+                        <div class="error"></div>
+                    </td>
+                </tr>
+            `);
         }
-        return ftps;
+        el.innerHTML = html.join('');
     }
 
 
@@ -37,25 +58,14 @@
         document.getElementById('clear').addEventListener('click', function() {
             this.innerText = "Double Click to Confirm Erase";
             this.addEventListener('dblclick', async () => {
-                await sauce.storage.remove('ftp_overrides');
+                await sauce.storage.remove('athlete_info');
                 window.location.reload();
             });
         });
-        const ftps = await getFtps();
-        const ftp_list = document.getElementById('ftp_list');
-        for (const x of ftps) {
-            if (x.ftp == null) {
-                continue;
-            }
-            ftp_list.innerHTML += `
-                <tr>
-                    <td class="label">${x.name}:</td>
-                    <td><input name="ftp" type="number" maxlength="4" size="4" step="10"
-                               id="${x.id}" value="${x.ftp}"/></td>
-                </tr>
-            `;
-        }
-        document.getElementById('save').addEventListener('click', saveFtps);
+        const info = await sauce.storage.get('athlete_info');
+        const el = document.getElementById('athlete-list');
+        await renderAthleteInfo(el);
+        document.getElementById('save').addEventListener('click', () => saveAthleteInfo(el, info));
     }
 
     document.addEventListener('DOMContentLoaded', main);
