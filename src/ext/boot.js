@@ -1,4 +1,4 @@
-/* global chrome */
+/* global chrome, sauce */
 
 (async function() {
     'use strict';
@@ -25,6 +25,49 @@
         ]
     }];
 
+    const migrations = [{
+        version: 1,
+        name: 'options',
+        migrate: async config => {
+            const defaultOptions = {
+                "analysis-segment-badges": true,
+                "analysis-cp-chart": true,
+                "activity-hide-promotions": true
+            };
+            const options = config.options || {};
+            for (const [key, value] of Object.entries(defaultOptions)) {
+                if (options[key] === undefined) {
+                    options[key] = value;
+                }
+            }
+            await sauce.storage.set({options});
+        }
+    }, {
+        version: 2,
+        name: 'ftp_overrides',
+        migrate: async config => {
+            if (config.ftp_overrides) {
+                return;  // already applied (probably pre migration sys release).
+            }
+            const ftp_overrides = {};
+            const athlete_info = config.athlete_info || {};
+            for (const [key, value] of Object.entries(config)) {
+                if (key.indexOf('athlete_ftp_') === 0) {
+                    // XXX Add migration in future that does:
+                    //     `await sauce.storage.remove(key)`
+                    const id = Number(key.substr(12));
+                    console.info("Migrating athlete FTP override for:", id);
+                    ftp_overrides[id] = value;
+                    athlete_info[id] = {
+                        name: `Athlete ID: ${id}`
+                    };
+                }
+            }
+            await sauce.storage.set({ftp_overrides, athlete_info});
+        }
+    }];
+
+
     function sendMessageToBackground(msg) {
         return new Promise((resolve, reject) => {
             chrome.runtime.sendMessage(undefined, msg, undefined, resp => {
@@ -38,6 +81,7 @@
         });
     }
 
+
     function loadScript(url) {
         const script = document.createElement('script');
         script.defer = 'defer';
@@ -47,35 +91,35 @@
         return p;
     }
 
+
     function insertScript(content) {
         const script = document.createElement('script');
         script.textContent = content;
         document.head.appendChild(script);
     }
 
+
     async function initConfig() {
         // Perform storage migration/setup here and return config object.
-        const config = await new Promise(resolve => chrome.storage.sync.get(null, resolve));
-        const defaultOptions = {
-            "analysis-segment-badges": true,
-            "analysis-cp-chart": true,
-            "activity-hide-promotions": true
-        };
-        if (config.options === undefined) {
-            config.options = {};
-        }
-        let optionsUpdated;
-        for (const [key, value] of Object.entries(defaultOptions)) {
-            if (config.options[key] === undefined) {
-                config.options[key] = value;
-                optionsUpdated = true;
+        const initialVersion = await sauce.storage.get('migrationVersion');
+        for (const x of migrations) {
+            if (initialVersion && initialVersion >= x.version) {
+                console.info("Skipping completed migration:", x.name, x.version);
+                continue;
             }
+            console.warn("Running migration:", x.name, x.version);
+            try {
+                await x.migrate(await sauce.storage.get(null));
+            } catch(e) {
+                // XXX While this system is new prevent death by exception.
+                console.error("Migration Error:", e);
+                break;
+            }
+            await sauce.storage.set('migrationVersion', x.version);
         }
-        if (optionsUpdated) {
-            await new Promise(resolve => chrome.storage.sync.set({options: config.options}, resolve));
-        }
-        return config;
+        return await sauce.storage.get(null);
     }
+
 
     async function load() {
         const config = await initConfig();
@@ -88,7 +132,7 @@
         const extUrl = chrome.extension.getURL('');
         insertScript(`
             window.sauce = {};
-            sauce.config = ${JSON.stringify(config)};
+            sauce.options = ${JSON.stringify(config.options)};
             sauce.extURL = "${extUrl}";
             sauce.extID = "${chrome.runtime.id}";
             sauce.name = "${appDetails.name}";

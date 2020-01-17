@@ -342,7 +342,7 @@ sauce.ns('analysis', function(ns) {
         attachEditableFTP(statsFrag);
         attachEditableWeight(statsFrag);
         statsFrag.insertAfter(jQuery('.inline-stats').last());
-        if (wattsStream && sauce.config.options['analysis-cp-chart']) {
+        if (wattsStream && sauce.options['analysis-cp-chart']) {
             const critPowers = [];
             for (const [label, period] of rideCPs) {
                 const roll = sauce.power.critPower(period, timeStream, wattsStream);
@@ -373,7 +373,7 @@ sauce.ns('analysis', function(ns) {
 
     async function processRunStreams() {
         const distStream = await fetchStream('distance');
-        if (!distStream || !sauce.config.options['analysis-cp-chart']) {
+        if (!distStream || !sauce.options['analysis-cp-chart']) {
             return;
         }
         await initAnalysisStats();
@@ -943,7 +943,7 @@ sauce.ns('analysis', function(ns) {
         ctx.moreinfoTpl = await getTemplate('critpower-moreinfo.html');
         Object.assign(ctx, await getFTPInfo(ctx.athlete.id));
         const segments = document.querySelector('table.segments');
-        if (segments && sauce.config.options['analysis-segment-badges']) {
+        if (segments && sauce.options['analysis-segment-badges']) {
             const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
             segmentsMutationObserver.observe(segments, {
                 childList: true,

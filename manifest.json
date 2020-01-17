@@ -60,7 +60,7 @@
     }, {
         "run_at": "document_end",
         "matches": ["*://*.strava.com/*"],
-        "js": ["src/ext/boot.js"]
+        "js": ["src/ext/storage.js", "src/ext/boot.js"]
     }],
 
     "externally_connectable": {

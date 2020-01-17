@@ -25,24 +25,6 @@
 
     async function getFtps() {
         const data = await sauce.storage.get(['ftp_overrides', 'athlete_info']);
-        if (!data.ftp_overrides) {
-            // Migrate old entries to new system..
-            data.ftp_overrides = {};
-            data.athlete_info = data.athlete_info || {};
-            const all = await sauce.storage.get(null);
-            for (const [key, value] of Object.entries(all)) {
-                if (key.indexOf('athlete_ftp_') === 0) {
-                    // await sauce.storage.remove(key);  // XXX turn on in a future release
-                    const id = Number(key.substr(12));
-                    console.info("Migrating athlete FTP override for:", id);
-                    data.ftp_overrides[id] = value;
-                    data.athlete_info[id] = {
-                        name: `Athlete ID: ${id}`
-                    };
-                }
-            }
-            await sauce.storage.set(data);
-        }
         const ftps = [];
         for (const id of Object.keys(data.ftp_overrides)) {
             ftps.push({id, name: data.athlete_info[id].name, ftp: data.ftp_overrides[id]});
@@ -62,6 +44,9 @@
         const ftps = await getFtps();
         const ftp_list = document.getElementById('ftp_list');
         for (const x of ftps) {
+            if (x.ftp == null) {
+                continue;
+            }
             ftp_list.innerHTML += `
                 <tr>
                     <td class="label">${x.name}:</td>
