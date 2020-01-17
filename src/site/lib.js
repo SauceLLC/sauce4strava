@@ -628,8 +628,33 @@ sauce.ns('pace', function() {
         return roll.importReduce(timeStream, distStream, (cur, lead) => cur.avg() <= lead.avg());
     }
 
+
+    function runningPower(weight, dist, time) {
+        //This only works for 0% grades.
+
+        // Estimates..
+        const metabolicCalKgSecond = .92 / 3600;  // very rough.
+        const calKgKm = 1.02613;  // Calories for each kg of weight per km
+        const humanMechFactor = 0.24;  // Human being mechanical efficiency percentage
+
+        // True constants...
+        const joulesPerCal = 4.184;
+
+        const metabolicKcals = weight * metabolicCalKgSecond * time;
+        const workoutKcals = weight * calKgKm * (dist / 1000);
+        const netKcals = workoutKcals - metabolicKcals;
+        const wattAvg = (netKcals * ((joulesPerCal * 1000) * humanMechFactor)) / time;
+
+        return {
+            wattAvg,
+            netKcals,
+            metabolicKcals,
+        };
+    }
+
     return {
         bestPace,
+        runningPower,
     };
 });
 

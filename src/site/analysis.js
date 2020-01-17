@@ -1043,6 +1043,9 @@ sauce.ns('analysis', function(ns) {
             }
             attachAnalysisStats($el);
         }
+        if (!ctx.activity) {
+            return;  // not ready yet
+        }
         const isRide = ctx.activity.isRide();
         const isRun = ctx.activity.isRun();
         const timeStream = await fetchStream('time', start, end);
@@ -1088,6 +1091,15 @@ sauce.ns('analysis', function(ns) {
             const gradeAdjDistanceStream = await fetchStream('grade_adjusted_distance', start, end);
             const distance = streamDelta(distanceStream);
             const gradeAdjDistance = streamDelta(gradeAdjDistanceStream);
+            if (ctx.weight) {
+                const movingPower = sauce.pace.runningPower(ctx.weight, gradeAdjDistance, movingTime);
+                tplData.kj = movingPower.netKcals * .25;
+                tplData.kjHour = 1;
+                tplData.movingPower = movingPower.wattAvg;
+                const elapsedPower = sauce.pace.runningPower(ctx.weight, gradeAdjDistance, elapsedTime);
+                tplData.kj2 = elapsedPower.netKcals * .25;
+                tplData.elapsedPower = elapsedPower.wattAvg;
+            }
             Object.assign(tplData, {
                 elapsedPace: humanPace(1 / (distance / elapsedTime)),
                 elapsedGAP: humanPace(1 / (gradeAdjDistance / elapsedTime)),
