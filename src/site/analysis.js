@@ -216,6 +216,12 @@ sauce.ns('analysis', function(ns) {
     }
 
 
+    async function rememberAthleteInfo(athlete) {
+        // This is just for display purposes, but it helps keep things clear in the options.
+        await sauce.rpc.updateAthleteInfo(athlete.id, {name: athlete.get('display_name')});
+    }
+
+
     function attachEditableFTP(parentEl) {
         const link = parentEl.find('.provide-ftp');
         editableField(link, link.siblings('input'), {
@@ -238,7 +244,8 @@ sauce.ns('analysis', function(ns) {
                 }
             },
             onValid: async v => {
-                await sauce.rpc.setFTP(ctx.athlete, v);
+                await sauce.rpc.setFTPOverride(ctx.athlete.id, v);
+                await rememberAthleteInfo(ctx.athlete);
                 dialogPrompt('Reloading...', '<b>Reloading page to reflect FTP change.</b>');
                 location.reload();
             }
@@ -269,7 +276,8 @@ sauce.ns('analysis', function(ns) {
             },
             onValid: async v => {
                 const kg = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
-                await sauce.rpc.setWeight(ctx.athlete, kg);
+                await sauce.rpc.setWeightOverride(ctx.athlete.id, kg);
+                await rememberAthleteInfo(ctx.athlete);
                 dialogPrompt('Reloading...', '<b>Reloading page to reflect weight change.</b>');
                 location.reload();
             }
@@ -1008,9 +1016,9 @@ sauce.ns('analysis', function(ns) {
 
     async function getFTPInfo(athleteId) {
         const info = {};
-        const sauceFtp = await sauce.rpc.getFTP(athleteId);
-        if (sauceFtp) {
-            info.ftp = sauceFtp;
+        const override = await sauce.rpc.getFTPOverride(athleteId);
+        if (override) {
+            info.ftp = override;
             info.ftpOrigin = 'sauce';
         } else {
             const power = pageView.powerController && pageView.powerController();
@@ -1031,18 +1039,31 @@ sauce.ns('analysis', function(ns) {
 
     async function getWeightInfo(athleteId) {
         const info = {};
-        const sauceWeight = await sauce.rpc.getWeight(athleteId);
-        if (sauceWeight) {
-            info.weight = sauceWeight;
+        const override = await sauce.rpc.getWeightOverride(athleteId);
+        if (override) {
+            info.weight = override;
             info.weightOrigin = 'sauce';
         } else {
             const stravaWeight = pageView.activityAthleteWeight();
             if (stravaWeight) {
                 info.weight = stravaWeight;
                 info.weightOrigin = 'strava';
+                // Runs never display weight, so if the athlete is multisport and
+                // we've seen one activity (ride) with weight, remember it for looking
+                // at runs later.
+                await sauce.rpc.setWeightLastKnown(athleteId, stravaWeight);
+                if (athleteId === ctx.athlete.id) {
+                    await rememberAthleteInfo(ctx.athlete);
+                }
             } else {
-                info.weight = 0;
-                info.weightOrigin = 'default';
+                const lastKnown = await sauce.rpc.getWeightLastKnown(athleteId);
+                if (lastKnown) {
+                    info.weight = lastKnown;
+                    info.weightOrigin = 'sauce';
+                } else {
+                    info.weight = 0;
+                    info.weightOrigin = 'default';
+                }
             }
         }
         return info;

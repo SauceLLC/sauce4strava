@@ -3,6 +3,7 @@
 sauce.ns('rpc', function() {
     'use strict';
 
+
     function _sendMessage(msg) {
         return new Promise((resolve, reject) => {
             chrome.runtime.sendMessage(sauce.extID, msg, resp => {
@@ -16,6 +17,7 @@ sauce.ns('rpc', function() {
         });
     }
 
+
     async function storageSet(key, value) {
         let data;
         if (value === undefined && typeof key === 'object') {
@@ -26,55 +28,70 @@ sauce.ns('rpc', function() {
         return await _sendMessage({system: 'storage', op: 'set', data});
     }
 
+
     async function storageGet(data) {
         return await _sendMessage({system: 'storage', op: 'get', data});
     }
 
-    async function setFTP(athlete, ftp) {
-        const data = await storageGet(['athlete_info', 'ftp_overrides']);
-        if (!data.athlete_info) {
-            data.athlete_info = {};
+
+    async function getAthleteInfo(id) {
+        const athlete_info = await storageGet('athlete_info');
+        if (athlete_info && athlete_info[id]) {
+            return athlete_info[id];
         }
-        if (!data.ftp_overrides) {
-            data.ftp_overrides = {};
-        }
-        data.athlete_info[athlete.id] = {
-            name: athlete.get('display_name')
-        };
-        data.ftp_overrides[athlete.id] = ftp;
-        await storageSet(data);
     }
 
-    async function getFTP(athlete_id) {
-        const ftps = await storageGet('ftp_overrides');
-        return ftps ? ftps[athlete_id] : undefined;
+
+    async function updateAthleteInfo(id, updates) {
+        const athlete_info = (await storageGet('athlete_info')) || {};
+        if (!athlete_info[id]) {
+            athlete_info[id] = {};
+        }
+        Object.assign(athlete_info[id], updates);
+        await storageSet({athlete_info});
     }
 
-    async function setWeight(athlete, weight) {
-        const data = await storageGet(['athlete_info', 'weight_overrides']);
-        if (!data.athlete_info) {
-            data.athlete_info = {};
-        }
-        if (!data.weight_overrides) {
-            data.weight_overrides = {};
-        }
-        data.athlete_info[athlete.id] = {
-            name: athlete.get('display_name')
-        };
-        data.weight_overrides[athlete.id] = weight;
-        await storageSet(data);
+
+    async function setFTPOverride(id, ftp_override) {
+        await updateAthleteInfo(id, {ftp_override});
     }
 
-    async function getWeight(athlete_id) {
-        const weights = await storageGet('weight_overrides');
-        return weights ? weights[athlete_id] : undefined;
+
+    async function getFTPOverride(id) {
+        const info = await getAthleteInfo(id);
+        return info && info.ftp_override;
     }
+
+
+
+    async function setWeightOverride(id, weight_override) {
+        await updateAthleteInfo(id, {weight_override});
+    }
+
+
+    async function getWeightOverride(id) {
+        const info = await getAthleteInfo(id);
+        return info && info.weight_override;
+    }
+
+
+    async function setWeightLastKnown(id, weight_lastknown) {
+        await updateAthleteInfo(id, {weight_lastknown});
+    }
+
+
+    async function getWeightLastKnown(id) {
+        const info = await getAthleteInfo(id);
+        return info && info.weight_lastknown;
+    }
+
 
     async function ga() {
         const args = Array.from(arguments);
         const meta = {referrer: document.referrer};
         return await _sendMessage({system: 'ga', op: 'apply', data: {meta, args}});
     }
+
 
     async function reportEvent(eventCategory, eventAction, eventLabel, options) {
         await sauce.rpc.ga('send', 'event', Object.assign({
@@ -83,6 +100,7 @@ sauce.ns('rpc', function() {
             eventLabel,
         }, options));
     }
+
 
     async function reportError(e) {
         const page = location.pathname;
@@ -94,11 +112,16 @@ sauce.ns('rpc', function() {
         await reportEvent('Error', 'exception', e.message, {nonInteraction: true, page});
     }
 
+
     return {
-        getFTP,
-        setFTP,
-        getWeight,
-        setWeight,
+        getAthleteInfo,
+        updateAthleteInfo,
+        getFTPOverride,
+        setFTPOverride,
+        getWeightOverride,
+        setWeightOverride,
+        getWeightLastKnown,
+        setWeightLastKnown,
         storageSet,
         storageGet,
         ga,
