@@ -629,76 +629,10 @@ sauce.ns('pace', function() {
     }
 
 
-    function runningPower(weight, dist, time) {
-        //This only works for 0% grades.
-
-        // Estimates..
-        const metabolicCalKgSecond = .92 / 3600;  // very rough.
-        const calKgKm = 1.02613;  // Calories for each kg of weight per km
-        const humanMechFactor = 0.24;  // Human being mechanical efficiency percentage
-
-        // True constants...
-        const joulesPerCal = 4.184;
-
-        const metabolicKcals = weight * metabolicCalKgSecond * time;
-        const workoutKcals = weight * calKgKm * (dist / 1000);
-        const netKcals = workoutKcals - metabolicKcals;
-        const wattAvg = (netKcals * ((joulesPerCal * 1000) * humanMechFactor)) / time;
-
-        return {
-            wattAvg,
-            netKcals,
-            metabolicKcals,
-        };
-    }
-
-    function runningWork(weight, dist, slope, isWalking) {
-        // Loosely based on https://www.physiology.org/doi/pdf/10.1152/japplphysiol.01177.2001
-        /*const mechCost = [
-            {slope: -0.45, running: 3.92,  walking: 3.46},
-            {slope: -0.40, running: 3.49,  walking: 3.23},
-            {slope: -0.35, running: 2.81,  walking: 2.65},
-            {slope: -0.30, running: 2.43,  walking: 2.18},
-            {slope: -0.20, running: 1.73,  walking: 1.30},
-            {slope: -0.10, running: 1.93,  walking: 0.81},
-            {slope:  0.00, running: 3.40,  walking: 1.64},
-            {slope:  0.10, running: 5.77,  walking: 4.68},
-            {slope:  0.20, running: 8.92,  walking: 8.07},
-            {slope:  0.30, running: 12.52, walking: 11.29},
-            {slope:  0.35, running: 14.43, walking: 12.72},
-            {slope:  0.40, running: 16.83, walking: 14.75},
-            {slope:  0.45, running: 18.93, walking: 17.33},
-        ];*/
-        const mechCost = [
-            {slope: -0.20, running: 3.92,  walking: 3.46},
-            {slope: -0.10, running: 2.81,  walking: 2.65},
-            {slope: -0.05, running: 1.73,  walking: 1.30},
-            {slope:  0.00, running: 3.40,  walking: 1.64},
-            {slope:  0.10, running: 5.77,  walking: 4.68},
-            {slope:  0.20, running: 8.92,  walking: 8.07},
-            {slope:  0.30, running: 12.52, walking: 11.29},
-            {slope:  0.35, running: 14.43, walking: 12.72},
-            {slope:  0.40, running: 16.83, walking: 14.75},
-            {slope:  0.45, running: 18.93, walking: 17.33},
-        ];
-
-        const costType = isWalking ? 'walking' : 'running';
-
-        let cost;
-        for (let i = 1; i < mechCost.length; i++) {
-            const c1 = mechCost[i - 1];
-            const c2 = mechCost[i];
-            if (slope <= c2.slope || i === mechCost.length) {
-                // Do simple linear aproximation between entries.
-                const slopeRange = c2.slope - c1.slope;
-                const costRange = c2[costType] - c1[costType];
-                const pctOfSlope = (c2.slope - slope) / slopeRange;
-                cost = c2[costType] - (costRange * pctOfSlope);
-                break;
-            }
-        }
+    function work(weight, dist, isWalking) {
+        const cost = isWalking ? 2 : 4.35;  // Hand tuned by intuition
         const j = cost / ((1 / weight) * (1 / dist));
-        const humanMechFactor = 0.25;  // Human being mechanical efficiency percentage
+        const humanMechFactor = 0.24;  // Human mechanical efficiency percentage
         const kj = j * humanMechFactor / 1000;
         return kj;
     }
@@ -706,8 +640,7 @@ sauce.ns('pace', function() {
 
     return {
         bestPace,
-        runningPower,
-        runningWork,
+        work,
     };
 });
 

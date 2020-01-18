@@ -1113,6 +1113,17 @@ sauce.ns('analysis', function(ns) {
             distUnit: distanceFormatter.shortUnitKey(),
             samples: timeStream.length,
         };
+        const altStream = await fetchStream('altitude', start, end);
+        if (altStream) {
+            const altChanges = altitudeChanges(altStream);
+            tplData.altitude = {
+                gain: altChanges.gain && humanElevation(altChanges.gain),
+                loss: altChanges.loss && humanElevation(altChanges.loss),
+            };
+            if (elapsedTime >= 299) {
+                tplData.altitude.vam = (altChanges.gain / elapsedTime) * 3600;
+            }
+        }
         if (isRide) {
             const wattsStream = isRide && (await fetchStream('watts', start, end) ||
                                            await fetchStream('watts_calc', start, end));
@@ -1134,47 +1145,28 @@ sauce.ns('analysis', function(ns) {
             });
         } else if (isRun) {
             const distanceStream = await fetchStream('distance', start, end);
-            const gradeAdjDistanceStream = await fetchStream('grade_adjusted_distance', start, end);
-            const distance = streamDelta(distanceStream);
-            const gradeAdjDistance = streamDelta(gradeAdjDistanceStream);
+            const powerDistanceStream = !altStream ? distanceStream :
+                await fetchStream('grade_adjusted_distance', start, end);
+            const powerDistance = streamDelta(powerDistanceStream);
             if (ctx.weight) {
-                const gradeStream = await fetchStream('grade_smooth', start, end);
-                let kj = 0;
-                for (let i = 1; i < distanceStream.length; i++) {
-                    const dist = distanceStream[i] - distanceStream[i - 1];
-                    kj += sauce.pace.runningWork(ctx.weight, dist, gradeStream[i] / 100);
-                }
-                tplData.kj = kj;
-                tplData.movingPowerAlt = kj * 1000 / movingTime;
-                const movingPower = sauce.pace.runningPower(ctx.weight, gradeAdjDistance, movingTime);
-                tplData.movingPower = movingPower.wattAvg;
-                const elapsedPower = sauce.pace.runningPower(ctx.weight, gradeAdjDistance, elapsedTime);
-                tplData.elapsedPower = elapsedPower.wattAvg;
+                tplData.kj = sauce.pace.work(ctx.weight, powerDistance);
+                tplData.movingPower = tplData.kj * 1000 / movingTime;
+                tplData.elapsedPower = tplData.kj * 1000 / elapsedTime;
             }
+            const distance = streamDelta(distanceStream);
             Object.assign(tplData, {
                 elapsedPace: humanPace(1 / (distance / elapsedTime)),
-                elapsedGAP: humanPace(1 / (gradeAdjDistance / elapsedTime)),
+                elapsedGAP: altStream && humanPace(1 / (powerDistance / elapsedTime)),
                 movingPace: humanPace(1 / (distance / movingTime)),
-                movingGAP: humanPace(1 / (gradeAdjDistance / movingTime)),
+                movingGAP: altStream && humanPace(1 / (powerDistance / movingTime)),
                 kjHour: tplData.kj && (tplData.kj / movingTime) * 3600,
             });
-        }
-        const altStream = await fetchStream('altitude', start, end);
-        if (altStream) {
-            const altChanges = altitudeChanges(altStream);
-            tplData.altitude = {
-                gain: altChanges.gain && humanElevation(altChanges.gain),
-                loss: altChanges.loss && humanElevation(altChanges.loss),
-            };
-            if (elapsedTime >= 299) {
-                tplData.altitude.vam = (altChanges.gain / elapsedTime) * 3600;
-            }
         }
         const tpl = await getTemplate('analysis-stats.html');
         ctx.$analysisStats.data({start, end});
         ctx.$analysisStats.html(tpl(tplData));
     }
-    const debouncedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 50);
+    const debouncedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 5);
 
 
     function _rawStreamsInfo() {

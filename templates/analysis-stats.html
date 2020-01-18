@@ -48,16 +48,6 @@
                 <% } %>
             </div>
         <% } %>
-        <% if (obj.movingPowerAlt) { %>
-            <div class="sauce-line">
-                Power Avg:
-                {{Math.round(movingPowerAlt).toLocaleString()}}<abbr class="unit">w</abbr>
-                <% if (obj.weight) { %>
-                    | {{(movingPowerAlt / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
-                <% } %>
-            </div>
-        <% } %>
-
         <% if (obj.movingNP) { %>
             <div class="sauce-line">
                 Normalized:
