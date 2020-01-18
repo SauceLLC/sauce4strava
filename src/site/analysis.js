@@ -1130,7 +1130,7 @@ sauce.ns('analysis', function(ns) {
                 movingPower: roll.kj() * 1000 / movingTime,
                 movingNP: sauce.power.calcNP(wattsStream),
                 kj: roll.kj(),
-                kjHour: (roll.kj() / elapsedTime) * 3600
+                kjHour: (roll.kj() / movingTime) * 3600
             });
         } else if (isRun) {
             const distanceStream = await fetchStream('distance', start, end);
@@ -1138,12 +1138,17 @@ sauce.ns('analysis', function(ns) {
             const distance = streamDelta(distanceStream);
             const gradeAdjDistance = streamDelta(gradeAdjDistanceStream);
             if (ctx.weight) {
+                const gradeStream = await fetchStream('grade_smooth', start, end);
+                let kj = 0;
+                for (let i = 1; i < distanceStream.length; i++) {
+                    const dist = distanceStream[i] - distanceStream[i - 1];
+                    kj += sauce.pace.runningWork(ctx.weight, dist, gradeStream[i] / 100);
+                }
+                tplData.kj = kj;
+                tplData.movingPowerAlt = kj * 1000 / movingTime;
                 const movingPower = sauce.pace.runningPower(ctx.weight, gradeAdjDistance, movingTime);
-                tplData.kj = movingPower.netKcals * .25;
-                tplData.kjHour = 1;
                 tplData.movingPower = movingPower.wattAvg;
                 const elapsedPower = sauce.pace.runningPower(ctx.weight, gradeAdjDistance, elapsedTime);
-                tplData.kj2 = elapsedPower.netKcals * .25;
                 tplData.elapsedPower = elapsedPower.wattAvg;
             }
             Object.assign(tplData, {
@@ -1151,6 +1156,7 @@ sauce.ns('analysis', function(ns) {
                 elapsedGAP: humanPace(1 / (gradeAdjDistance / elapsedTime)),
                 movingPace: humanPace(1 / (distance / movingTime)),
                 movingGAP: humanPace(1 / (gradeAdjDistance / movingTime)),
+                kjHour: tplData.kj && (tplData.kj / movingTime) * 3600,
             });
         }
         const altStream = await fetchStream('altitude', start, end);

@@ -48,6 +48,16 @@
                 <% } %>
             </div>
         <% } %>
+        <% if (obj.movingPowerAlt) { %>
+            <div class="sauce-line">
+                Power Avg:
+                {{Math.round(movingPowerAlt).toLocaleString()}}<abbr class="unit">w</abbr>
+                <% if (obj.weight) { %>
+                    | {{(movingPowerAlt / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
+                <% } %>
+            </div>
+        <% } %>
+
         <% if (obj.movingNP) { %>
             <div class="sauce-line">
                 Normalized:
@@ -74,7 +84,7 @@
         {{Math.round(kj).toLocaleString()}}<abbr class="unit">kJ</abbr>
         <div class="sauce-line">
             Per Hour:
-            {{Math.round(kjHour).toLocaleString()}}{{obj.kj2}}<abbr class="unit">kJ/h</abbr>
+            {{Math.round(kjHour).toLocaleString()}}<abbr class="unit">kJ/h</abbr>
         </div>
     </div>
 <% } %>
@@ -92,7 +102,7 @@
                     +{{altitude.gain}}<abbr class="unit">{{elUnit}}</abbr></span>
             <% } else if (altitude.loss) { %>
                 <span class="sauce-negative" title="Altitude Loss">
-                    +{{altitude.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
+                    -{{altitude.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
             <% } %>
         <% } %>
         <% if (altitude.vam) { %>
