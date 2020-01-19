@@ -2,7 +2,7 @@
 
 sauce
 ===========
-### A Chrome Extension 
+#### A Chrome Extension 
 The Sauce extension supplements athletic websites like https://strava.com with better
 cycling and running information.  It's a simple, lightweight and pure client-side javascript
 addition.  There are no external API calls made with this extension and it is open source.
@@ -15,21 +15,23 @@ Feature Highlights
  * Critical Power table for cycling activities
  * Best Pace table for running activities
  * TSS calculations
- * FTP overrides for all athletes, regardless of subscription
+ * FTP overrides for all athletes (regardless of subscription)
  * Normalized Power calculations for selections in Analysis page
- * Viewing cyclist's weight
- * VAM calculations for cycling climbs (BETA)
+ * Viewing and overriding an athlete's weight
+ * VAM calculations for climbs *[BETA]*
  * Inline comments system in Activity page
- * Export TCX and GPX files for ALL rides and runs (BETA)
+ * Export TCX and GPX files for ALL rides and runs *[BETA]*
+ * Running power estimation *[BETA]*
 
 
 Installation
 --------
+#### Official version:
 [![chrome web store](images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
 
 *or*
 
-Install the development version:
+#### Development version:
  1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
     or clone this repo to your local computer.
  2. (ZIP only) Unzip the downloaded zip file.
@@ -47,17 +49,17 @@ v5.0.0
    * Kilojoule field
    * Moving vs elapsed time stats.
    * Improved placement on page.
- * Running power (watts) estimate [BETA].
+ * Running power (watts) estimate *[BETA]*.
  * Raw data views; CSV table and graphs.
  * Kilojoules in analysis view.
  * Updated algo for VAM calculations (smoothing).
  * Support for HiDPI graphs.
 
 v4.3.0:
- * Beta support for TCX and GPX export.
+ * TCX and GPX export *[BETA]*.
 
 v4.1.0:
- * Support for VAM (vertical ascent meters / hour) [BETA].
+ * Support for VAM (vertical ascent meters / hour) *[BETA]*.
 
 v4.0.0:
  * Critical power calculations now support irregular recording intervals (non 1 sample / second).
