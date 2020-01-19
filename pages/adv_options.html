@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Sauce - Advanced Options</title>
+        <title>Sauce Advanced Options</title>
         <script defer src="/src/ext/ga.js"></script>
         <script defer src="/src/ext/storage.js"></script>
         <script defer src="/src/ext/adv_options_page.js"></script>
@@ -13,32 +13,30 @@
             }
 
             body {
-                width: 600px;
+                width: 38em;
+                border-top: 1.5px solid #ff4000;
                 padding: 1em;
+                margin: 2em;
             }
 
-            .section {
+
+            main {
                 padding: 20px;
                 border-bottom: 1px solid #ddd;
             }
 
-            .section h1 {
-                color: #339c3c;
-                font-size: 14px;
+            main .desc {
+                color: #555;
             }
 
-            .section .desc {
-                font-size: 11px;
-                color: #777;
-            }
-
-            .footer {
-                background-color: #FC632B;
+            footer {
+                background-color: #da4f1c;
+                border-radius: 0.22em;
                 color: #fff;
                 padding: 10px;
             }
 
-            .footer button {
+            footer button {
                 padding: 4px 20px;
                 background: #fff;
                 border: 1px solid #222;
@@ -69,24 +67,22 @@
                 width: 34em;
                 font-size: 1em;
             }
-
         </style>
     </head>
-
     <body>
-        <h1>Sauce - Advanced Options</h1>
-        <div class="section">
-            <h1>Athlete Info</h1>
+        <h2>Sauce Advanced Options</h2>
+        <main>
+            <h3>Athlete Info</h3>
             <p class="desc">
-                This is the raw JSON data Sauce uses for athletes.  USE CAUTION if editing!
+                This is the raw JSON data Sauce uses for athletes.
             </p>
+            <b>Use caution when editing!</b>
             <table><tbody id="athlete-list"></tbody></table>
-        </div>
-
-        <div class="footer">
+        </main>
+        <footer>
             <button id="save">Save</button>
-            <button id="clear">Clear All</button>
+            <button id="clear">Erase All Data</button>
             <span id="status"></span>
-        </div>
+        </footer>
     </body>
 </html>
