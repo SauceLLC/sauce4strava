@@ -1,8 +1,10 @@
-sauce - Chrome Extension
+sauce - Chrome Extension ![logo](https://github.com/mayfield/sauce/raw/master/assets/icons/icon64.png "Sauce")
 ===========
 The Sauce extension supplements athletic websites like https://strava.com with better
 cycling and running information.  It's a simple, lightweight and pure client-side javascript
 addition.  There are no external API calls made with this extension and it is open source.
+
+[![intro](http://img.youtube.com/vi/ySEDoexDyXU/0.jpg)](http://www.youtube.com/watch?v=ySEDoexDyXU)
 
 
 Feature Highlights
