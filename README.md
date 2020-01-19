@@ -1,6 +1,4 @@
-![logo](images/logo_horiz_320x120.png)
-
-sauce
+![Sauce](images/logo_horiz_320x120.png)
 ===========
 #### A Chrome Extension 
 The Sauce extension supplements athletic websites like https://strava.com with better
