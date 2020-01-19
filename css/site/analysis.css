@@ -209,7 +209,7 @@
 
 .ui-dialog.sauce-dialog .ui-dialog-titlebar {
     min-height: 0;
-    background-image: url('chrome-extension://__MSG_@@extension_id__/assets/icons/icon64.png'),
+    background-image: url('chrome-extension://__MSG_@@extension_id__/images/icon64.png'),
                       linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);
     background-position: right 1em center, center;
     background-size: contain;
@@ -353,7 +353,7 @@
 .sauce-analysis-stats .sauce-brand-sidebar .sauce-logo {
     flex-basis: 3em;
     margin-left: 0.8em;
-    background-image: url('chrome-extension://__MSG_@@extension_id__/assets/icons/icon64.png');
+    background-image: url('chrome-extension://__MSG_@@extension_id__/images/icon64.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;

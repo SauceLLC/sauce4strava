@@ -476,7 +476,7 @@ sauce.ns('power', function() {
         }
     };
 
-    const badgeURN = `${sauce.extURL}assets/ranking`;
+    const badgeURN = `${sauce.extURL}images/ranking`;
     const rankLevels = [{
         levelRequirement: 7 / 8,
         label: 'World Class',

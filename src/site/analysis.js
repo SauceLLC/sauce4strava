@@ -740,7 +740,7 @@ sauce.ns('analysis', function(ns) {
 
     async function attachExporters() {
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
-        const sauceIcon = `<img class="sauce-icon" src="${sauce.extURL}assets/icons/icon64.png"/>`;
+        const sauceIcon = `<img class="sauce-icon" src="${sauce.extURL}images/icon64.png"/>`;
 
         const gpxLink = document.createElement('li');
         gpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export GPX <sup class="sauce-beta">BETA</sup></a>`;

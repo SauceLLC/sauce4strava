@@ -15,12 +15,12 @@
     ],
 
     "icons": {
-        "16": "assets/icons/icon16.png",
-        "32": "assets/icons/icon32.png",
-        "48": "assets/icons/icon48.png",
-        "64": "assets/icons/icon64.png",
-        "128": "assets/icons/icon128.png",
-        "256": "assets/icons/icon256.png"
+        "16": "images/icon16.png",
+        "32": "images/icon32.png",
+        "48": "images/icon48.png",
+        "64": "images/icon64.png",
+        "128": "images/icon128.png",
+        "256": "images/icon256.png"
     },
 
     "background": {
@@ -35,12 +35,12 @@
 
     "page_action": {
         "default_icon": {
-            "19": "assets/icons/icon19.png",
-            "38": "assets/icons/icon38.png",
-            "48": "assets/icons/icon48.png",
-            "64": "assets/icons/icon64.png",
-            "128": "assets/icons/icon128.png",
-            "256": "assets/icons/icon256.png"
+            "19": "images/icon19.png",
+            "38": "images/icon38.png",
+            "48": "images/icon48.png",
+            "64": "images/icon64.png",
+            "128": "images/icon128.png",
+            "256": "images/icon256.png"
         },
         "default_title": "Sauce",
         "default_popup": "pages/page_action_popup.html"
@@ -68,10 +68,9 @@
     },
 
     "web_accessible_resources": [
-        "src/site/*.js",
-        "css/site/*.css",
-        "templates/*.html",
-        "assets/ranking/*.png",
-        "assets/icons/*.png"
+        "src/site/*",
+        "css/site/*",
+        "templates/*",
+        "images/*"
     ]
 }

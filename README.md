@@ -1,4 +1,4 @@
-sauce - Chrome Extension ![logo](https://github.com/mayfield/sauce/raw/master/assets/icons/icon64.png "Sauce")
+sauce - Chrome Extension ![logo](https://github.com/mayfield/sauce/raw/master/images/logo_vert_120x320.png "Sauce")
 ===========
 The Sauce extension supplements athletic websites like https://strava.com with better
 cycling and running information.  It's a simple, lightweight and pure client-side javascript
@@ -22,25 +22,19 @@ Feature Highlights
 
 Installation
 --------
-[Official Version](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
+[![Official Version](https://github.com/mayfield/sauce/raw/master/images/ChromeWebStore_Badge_v2_340x96.png)](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
 from Google Web Store
 
 *or*
 
 Install the development version:
-
-1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
-   or clone this repo to your local computer.
-
-2. (ZIP only) Unzip the downloaded zip file.
-
-3. Go to chrome://extensions/ on your Chrome browser.
-
-4. Make sure "Developer mode" is checked.
-
-5. Click "Load unpacked extension..."
-
-6. Navigate to the directory  where you cloned or unzipped sauce and click "Open."
+ 1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
+    or clone this repo to your local computer.
+ 2. (ZIP only) Unzip the downloaded zip file.
+ 3. Go to chrome://extensions/ on your Chrome browser.
+ 4. Make sure "Developer mode" is checked.
+ 5. Click "Load unpacked extension..."
+ 6. Navigate to the directory  where you cloned or unzipped sauce and click "Open."
 
 
 Release Notes
