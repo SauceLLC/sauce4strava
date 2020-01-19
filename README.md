@@ -39,7 +39,7 @@ Installation
 
 Release Notes
 --------
-v5.0.0
+#### v5.0.0
  * Upgraded algo for power data.
  * Upgraded analysis view that works in all locales (finally!).
    * Kilojoule field
@@ -51,13 +51,13 @@ v5.0.0
  * Updated algo for VAM calculations (smoothing).
  * Support for HiDPI graphs.
 
-v4.3.0:
+#### v4.3.0:
  * TCX and GPX export **[BETA]**.
 
-v4.1.0:
+#### v4.1.0:
  * Support for VAM (vertical ascent meters / hour) **[BETA]**.
 
-v4.0.0:
+#### v4.0.0:
  * Critical power calculations now support irregular recording intervals (non 1 sample / second).
  * Fixes to running pace calculations.
  * Add elevation stats to critical power and best pace dialogs.
@@ -66,42 +66,42 @@ v4.0.0:
  * Much needed code cleanup.
  * Add name information to Advanced menu's FTP overrides table.
 
-v3.2.0:
+#### v3.2.0:
  * Show average pace in running "Best Pace" chart instead of elapsed time.
  * Use kilometer based pace for metric loving athletes.
 
-v3.0.0:
+#### v3.0.0:
  * Activity Feed Filtering (click the sauce bottle to change):
    * Show/hide virtual runs and rides (e.g. Zwift)
    * Show/hide promotions
    * Show/hide challenges
  * World Ranking badges for segments
 
-v2.0.0:
+#### v2.0.0:
  * Running support.
 
-v1.2.0:
+#### v1.2.0:
  * Fixes for several loading glitches.
  * Smoother FTP override handling;  Added clearing support.
  * Fix for ranking badges when gender is unspecified.
  * Style and tooltip additions to better explain critical power.
 
-v1.1.0:
+#### v1.1.0:
  * Fix analysis view's inline comments to accommodate site changes.
  * Minor style tweak for analysis view.
 
-v1.0.0:
+#### v1.0.0:
  * Fix for updated strava comment data structure
  * Improved device compatibility of critical power analysis
 
-v0.1.0:
+#### v0.1.0:
  * Heartrate stats in Critical Power table
  * Promise of reasonable stability
 
-v0.0.7:
+#### v0.0.7:
  * Normalized power for selections in Analysis tab.
 
-v0.0.6:
+#### v0.0.6:
  * Inline comments
 
 
