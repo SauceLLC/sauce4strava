@@ -222,8 +222,8 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function attachEditableFTP(parentEl) {
-        const link = parentEl.find('.provide-ftp');
+    function attachEditableFTP($parent) {
+        const link = $parent.find('.provide-ftp');
         editableField(link, link.siblings('input'), {
             validator: rawValue => {
                 if (rawValue === '') {
@@ -253,8 +253,8 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    function attachEditableWeight(parentEl) {
-        const link = parentEl.find('.provide-weight');
+    function attachEditableWeight($parent) {
+        const link = $parent.find('.provide-weight');
         editableField(link, link.siblings('input'), {
             validator: rawValue => {
                 if (rawValue === '') {
@@ -287,6 +287,7 @@ sauce.ns('analysis', function(ns) {
 
     async function initAnalysisStats() {
         if (pageView.router().context.startMenu() !== 'analysis') {
+            console.warn("Analysis stats inactive");
             return;
         }
         let start;
@@ -308,11 +309,9 @@ sauce.ns('analysis', function(ns) {
         // the footer will overflow and mess everything up.  Add a min-height to the view to
         // prevent the footer from doing this.
         const $sidenav = jQuery('nav.sidenav');
-        const $view = jQuery('#view');
-        void($sidenav[0].offsetHeight);  // force reflow to be safe
-        const margin = $view.outerHeight(/*includeMargin*/ true) - $view.outerHeight();
-        const minHeight = $sidenav.height() - ($view.position().top + margin);
-        $view.css('min-height', `${minHeight}px`);
+        void($sidenav[0].offsetHeight);  // force reflow to be safe  // XXX Redudant with outerHeight()?
+        const minHeight = $sidenav.outerHeight(/*includeMargin*/ true);
+        jQuery('.view > .page.container').css('min-height', `${minHeight}px`);
         Strava.Activities.Ui.prepareSlideMenu();  // Fixes ... menu in some cases
     }
 
@@ -336,7 +335,7 @@ sauce.ns('analysis', function(ns) {
         const np = sauce.power.calcNP(wattsStream);
         const movingTime = sauce.data.movingTime(timeStream, await fetchStream('moving'));
         const idealPower = np || corrected.kj() * 1000 / movingTime;
-        const statsFrag = jQuery(ctx.tertiaryStatsTpl({
+        const $stats = jQuery(ctx.tertiaryStatsTpl({
             type: 'ride',
             np,
             weightUnit: weightFormatter.shortUnitKey(),
@@ -347,9 +346,9 @@ sauce.ns('analysis', function(ns) {
             intensity: ctx.ftp ? idealPower / ctx.ftp : undefined,
             tss: ctx.ftp ? sauce.power.calcTSS(idealPower, corrected.elapsed(), ctx.ftp) : undefined
         }));
-        attachEditableFTP(statsFrag);
-        attachEditableWeight(statsFrag);
-        statsFrag.insertAfter(jQuery('.inline-stats').last());
+        attachEditableFTP($stats);
+        attachEditableWeight($stats);
+        jQuery('.activity-stats .inline-stats').last().after($stats);
         if (wattsStream && sauce.options['analysis-cp-chart']) {
             const critPowers = [];
             for (const [label, period] of rideCPs) {
@@ -374,7 +373,8 @@ sauce.ns('analysis', function(ns) {
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
                 });
             }
-            requestAnimationFrame(navHeightAdjustments);
+            navHeightAdjustments();
+            //requestAnimationFrame(navHeightAdjustments);
         }
     }
 
@@ -1085,12 +1085,14 @@ sauce.ns('analysis', function(ns) {
         if (!ctx.$analysisStats) {
             const $el = jQuery('.chart');
             if (!$el.length) {
+                console.warn("Update analysis aborted due to DOM unreadiness.");
                 return;
             }
             attachAnalysisStats($el);
         }
         if (!ctx.activity) {
-            return;  // not ready yet
+            console.warn("Update analysis aborted due to early execution.");
+            return;
         }
         const isRide = ctx.activity.isRide();
         const isRun = ctx.activity.isRun();

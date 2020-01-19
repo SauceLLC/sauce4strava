@@ -1,9 +1,8 @@
-strava-sauce - Chrome Extension
+sauce - Chrome Extension
 ===========
-The Sauce extension supplements the strava.com website with better cycling power and
-running pace information.  It's a simple, lightweight and pure client-side javascript
-addition.  There are no external API calls made with this extension and it is
-open source.
+The Sauce extension supplements athletic websites like https://strava.com with better
+cycling and running information.  It's a simple, lightweight and pure client-side javascript
+addition.  There are no external API calls made with this extension and it is open source.
 
 
 Feature Highlights
@@ -28,7 +27,7 @@ from Google Web Store
 
 Install the development version:
 
-1. Download [ZIP file](https://github.com/mayfield/strava-sauce/archive/master.zip)
+1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
    or clone this repo to your local computer.
 
 2. (ZIP only) Unzip the downloaded zip file.
@@ -39,16 +38,28 @@ Install the development version:
 
 5. Click "Load unpacked extension..."
 
-6. Navigate to the directory  where you cloned or unzipped strava-sauce and click "Open."
+6. Navigate to the directory  where you cloned or unzipped sauce and click "Open."
 
 
 Release Notes
 --------
+v5.0.0
+ * Upgraded algo for power data.
+ * Upgraded analysis view that works in all locales (finally!).
+   * Kilojoule field
+   * Moving vs elapsed time stats.
+   * Improved placement on page.
+ * Running power (watts) estimate [BETA].
+ * Raw data views; CSV table and graphs.
+ * Kilojoules in analysis view.
+ * Updated algo for VAM calculations (smoothing).
+ * Support for HiDPI graphs.
+
 v4.3.0:
  * Beta support for TCX and GPX export.
 
 v4.1.0:
- * Beta support for VAM (vertical ascent meters / hour).
+ * Support for VAM (vertical ascent meters / hour) [BETA].
 
 v4.0.0:
  * Critical power calculations now support irregular recording intervals (non 1 sample / second).
