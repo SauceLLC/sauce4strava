@@ -16,18 +16,16 @@ Feature Highlights
  * FTP overrides for all athletes (regardless of subscription)
  * Normalized Power calculations for selections in Analysis page
  * Viewing and overriding an athlete's weight
- * VAM calculations for climbs *[BETA]*
+ * VAM calculations for climbs **[BETA]**
  * Inline comments system in Activity page
- * Export TCX and GPX files for ALL rides and runs *[BETA]*
- * Running power estimation *[BETA]*
+ * Export TCX and GPX files for ALL rides and runs **[BETA]**
+ * Running power estimation **[BETA]**
 
 
 Installation
 --------
 #### Official version:
 [![chrome web store](images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
-
-*or*
 
 #### Development version:
  1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
@@ -47,17 +45,17 @@ v5.0.0
    * Kilojoule field
    * Moving vs elapsed time stats.
    * Improved placement on page.
- * Running power (watts) estimate *[BETA]*.
+ * Running power (watts) estimate **[BETA]**.
  * Raw data views; CSV table and graphs.
  * Kilojoules in analysis view.
  * Updated algo for VAM calculations (smoothing).
  * Support for HiDPI graphs.
 
 v4.3.0:
- * TCX and GPX export *[BETA]*.
+ * TCX and GPX export **[BETA]**.
 
 v4.1.0:
- * Support for VAM (vertical ascent meters / hour) *[BETA]*.
+ * Support for VAM (vertical ascent meters / hour) **[BETA]**.
 
 v4.0.0:
  * Critical power calculations now support irregular recording intervals (non 1 sample / second).
