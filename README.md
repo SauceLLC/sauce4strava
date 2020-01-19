@@ -116,4 +116,4 @@ extension is readily available within the Strava.com website.
 Legal
 --------
 Because lawyers and Google:
-[Privacy Policy](https://mayfield.github.com/strava-sauce/pages/privacy.html)
+[Privacy Policy](pages/privacy.html)
