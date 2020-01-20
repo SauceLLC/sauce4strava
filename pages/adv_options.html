@@ -2,87 +2,66 @@
 <html>
     <head>
         <title>Sauce Advanced Options</title>
+        <link rel="stylesheet" href="/css/ext/options.css"/>
         <script defer src="/src/ext/ga.js"></script>
         <script defer src="/src/ext/storage.js"></script>
-        <script defer src="/src/ext/adv_options_page.js"></script>
+        <script defer src="/src/ext/adv_options.js"></script>
         <style>
-            table {
-                background: #a78b7f1a;
-                border-collapse: collapse;
-                border: 1.5px solid #c83813;
-            }
-
-            body {
-                width: 38em;
-                border-top: 1.5px solid #ff4000;
-                padding: 1em;
-                margin: 2em;
-            }
-
-
-            main {
-                padding: 20px;
-                border-bottom: 1px solid #ddd;
-            }
-
-            main .desc {
-                color: #555;
-            }
-
-            footer {
-                background-color: #da4f1c;
-                border-radius: 0.22em;
-                color: #fff;
-                padding: 10px;
-            }
-
-            footer button {
-                padding: 4px 20px;
-                background: #fff;
-                border: 1px solid #222;
-            }
-
-            tr:nth-child(odd) {
-                background: #fafafa;
-            }
-
-            td.label {
-                text-align: right;
-                padding: 8px 4px;
-                font-size: 1.1em;
-            }
-
-            td .error:empty {
-                display: none;
-            }
-
-            td .error {
-                color: darkred;
-            }
-
             textarea.athlete-info {
                 background: #fff5;
                 padding: 0.8em;
-                margin: 0.8em;
-                width: 34em;
+                margin: 0.8em 0;
+                width: 100%;
                 font-size: 1em;
+                border-radius: 0.22em;
+            }
+
+            #status {
+                padding-top: 1em;
+            }
+
+            #status:empty {
+                display: none;
+            }
+
+            .error {
+                color: darkred;
+            }
+
+            .athlete-box {
+                padding: 1em;
+            }
+
+            .athlete-box:not(:last-child) {
+                border-bottom: 1px solid #0001;
+            }
+
+            .athlete-box .label {
+                font-weight: bold;
             }
         </style>
     </head>
     <body>
-        <h2>Sauce Advanced Options</h2>
+        <header>
+            <h2>Sauce Advanced Options</h2>
+        </header>
         <main>
-            <h3>Athlete Info</h3>
-            <p class="desc">
-                This is the raw JSON data Sauce uses for athletes.
-            </p>
-            <b>Use caution when editing!</b>
-            <table><tbody id="athlete-list"></tbody></table>
+            <section>
+                <h4>Athlete Info</h4>
+                <p class="desc">
+                    This is the raw JSON data Sauce uses for athletes.
+                    <b>Use caution when editing!</b>
+                </p>
+                <div id="athlete-list"></div>
+            </section>
         </main>
         <footer>
-            <button id="save">Save</button>
-            <button id="clear">Erase All Data</button>
-            <span id="status"></span>
+            <div class="buttons">
+                <a href="options.html"><button>Back</button></a>
+                <button id="clear" class="red">Erase All Data</button>
+                <button id="save" class="green">Save</button>
+            </div>
+            <div id="status"></div>
         </footer>
     </body>
 </html>

@@ -43,10 +43,10 @@
             "256": "images/icon256.png"
         },
         "default_title": "Sauce",
-        "default_popup": "pages/page_action_popup.html"
+        "default_popup": "pages/options.html"
     },
 
-    "options_page": "pages/page_action_popup.html",
+    "options_page": "pages/options.html",
 
     "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
 

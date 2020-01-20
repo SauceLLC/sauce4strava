@@ -3,27 +3,24 @@
 (function() {
     'use strict';
 
-    function manageEnabler(initialState) {
-        const enabler = document.getElementById("enabler");
-        let en_state = null;
-
-        function toggle(state) {
-            en_state = state;
-            enabler.innerText = en_state ? 'Disable' : 'Enable';
-            enabler.innerText += ' Extension';
-            enabler.style.color = en_state ? '#933' : '#393';
-            if (state) {
+    function manageEnabler(enabled) {
+        function toggle(en) {
+            enabled = en;
+            if (enabled) {
                 document.body.classList.remove('disabled');
             } else {
                 document.body.classList.add('disabled');
             }
         }
-        toggle(initialState !== false);
-        enabler.addEventListener('click', async () => {
-            await sauce.storage.set('enabled', !en_state);
-            toggle(!en_state);
-            chrome.tabs.reload();
-        });
+        const enablers = document.querySelectorAll("button.enabler");
+        for (const x of enablers) {
+            x.addEventListener('click', async () => {
+                await sauce.storage.set('enabled', !enabled);
+                toggle(!enabled);
+                chrome.tabs.reload();
+            });
+        }
+        toggle(enabled);
     }
 
     function manageOptions(options) {
@@ -54,7 +51,7 @@
         });
 
         const config = await sauce.storage.get();
-        manageEnabler(config.enabled);
+        manageEnabler(config.enabled !== false);
         manageOptions(config.options);
     }
 

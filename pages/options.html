@@ -1,23 +1,13 @@
 <html>
     <head>
         <title>Sauce Options</title>
+        <link rel="stylesheet" href="/css/ext/options.css"/>
         <script defer src="/src/ext/ga.js"></script>
         <script defer src="/src/ext/storage.js"></script>
-        <script defer src="/src/ext/page_action_popup.js"></script>
+        <script defer src="/src/ext/options.js"></script>
         <style>
-            body {
-                width: 38em;
-                border-top: 1.5px solid #ff4000;
-                padding: 1em;
-                margin: 2em;
-            }
-
-            main {
-                display: flex;
-            }
-
             main > #left {
-                flex: 0 0 7em;
+                flex: 0 0 8em;
                 padding-right: 2em;
                 align-self: center;
             }
@@ -27,39 +17,9 @@
                 max-height: 100%;
             }
 
-            body.loading {
-                pointer-events: none;
-                opacity: 0.5;
-            }
-
-            #background {
-                /* XXX */
-                background: transparent url(/images/logo_vert_240x640.png) no-repeat;
-                background-size: contain;
-                width: 200px;
-                height: 200px;
-                position: absolute;
-                z-index: -1;
-                top: 28px;
-                left: 28px;
-                opacity: 1;
-            }
-
-            .actions {
-                border-top: 1px solid #eee;
-                padding: 0.4em 0 1em;
-            }
-
-            footer {
-                border-top: 1px solid #ccc;
-                margin-top: 2em;
-                padding: 1em;
-                text-align: center;
-            }
-
-            #details {
+            table#details {
                 font-size: 1em;
-                padding: 0 2em 2em;
+                margin: 0 1.8em 1em;
             }
 
             #details .key {
@@ -71,44 +31,21 @@
                 content: ':';
             }
 
-            footer a {
-                color: #ff4000;
-            }
-
-            .actions h4 {
-                color: #333;
-                margin: 0.8em 0;
-            }
-
-            body.disabled .actions {
-                opacity: 0.4;
-                pointer-events: none;
-            }
-
-            body.disabled #background {
-                opacity: 0.2;
-            }
-
-            body.disabled .whenEnabled {
-                display: none;
-            }
-
-            body:not(.disabled) .whenDisabled {
-                display: none;
-            }
-
-            .option {
+            footer .links {
+                margin-top: 1em;
             }
         </style>
     </head>
     <body>
-        <main>
+        <header>
+            <h2>Sauce Chrome Extension</h2>
+        </header>
+        <main class="columns">
             <div id="left">
                 <img class="logo" src="/images/logo_vert_240x640.png"/>
             </div>
             <div id="right">
-                <h2>Sauce Chrome Extension</h2>
-                <p class="whenEnabled"><i>Your https://strava.com experience is being sauced up.</i></p>
+                <p class="whenEnabled"><i>Sauce is enabled.  May the sauce be with you.</i></p>
                 <p class="whenDisabled"><i>Sauce is disabled.</i></p>
                 <table id="details"><tbody></tbody></table>
 
@@ -143,7 +80,7 @@
                     <h4>Analysis Options:</h4>
                     <div class="option" title="Show estimated world ranking for individual segments.  This is the same ranking shown in the Critical Power chart.">
                         <input type="checkbox" id="analysis-segment-badges">
-                            <label for="analysis-segment-badges">Show segment ranking badges <small>(<i>e.g. Cat 2, Pro</i>)</small></label>
+                            <label for="analysis-segment-badges">Show segment badges <small>(<i>e.g. Cat 2, Pro</i>)</small></label>
                         </input>
                     </div>
 
@@ -156,12 +93,16 @@
             </div>
         </main>
         <footer>
-            <a href="adv_options.html"><button>Advanced Options</button></a>
-            <button id="enabler"></button>
-            <br/><br/>
-            <a target="_BLANK" href="https://github.com/mayfield/sauce">GitHub Source</a> | 
-            <a target="_BLANK" href="https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha">Official Web Store Page</a> |
-            <a target="_BLANK" href="privacy.html">Privacy Policy</a>
+            <div class="buttons">
+                <a href="adv_options.html"><button>Advanced Options</button></a>
+                <button class="enabler whenDisabled green">Enable Sauce</button>
+                <button class="enabler whenEnabled red">Disable Sauce</button>
+            </div>
+            <div class="links">
+                <a target="_BLANK" href="https://github.com/mayfield/sauce">GitHub Source</a> |
+                <a target="_BLANK" href="https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha">Official Web Store Page</a> |
+                <a target="_BLANK" href="privacy.html">Privacy Policy</a>
+            </div>
         </footer>
     </body>
 </html>

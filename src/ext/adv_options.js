@@ -1,12 +1,12 @@
 /* global sauce */
 
-
 (function() {
     'use strict';
 
     function sleep(seconds) {
         return new Promise(resolve => setTimeout(resolve, seconds * 1000));
     }
+
 
     async function saveAthleteInfo(el, info) {
         const textareas = el.querySelectorAll('textarea.athlete-info');
@@ -40,14 +40,12 @@
             const json = JSON.stringify(athlete, null, 2);
             const lines = json.split('\n');
             html.push(`
-                <tr>
-                    <td class="label">${athlete.name}<br/>(ID: ${id})</td>
-                    <td>
-                        <textarea rows="${lines.length}" class="athlete-info"
-                                  id="${id}">${json}</textarea>
-                        <div class="error"></div>
-                    </td>
-                </tr>
+                <div class="athlete-box">
+                    <div class="label">${athlete.name} (ID: ${id})</div>
+                    <textarea rows="${lines.length}" class="athlete-info"
+                              id="${id}">${json}</textarea>
+                    <div class="error"></div>
+                </div>
             `);
         }
         el.innerHTML = html.join('');
