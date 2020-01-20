@@ -6,7 +6,8 @@
     ns.propDefined = function(propertyAccessor, callback, root) {
         return new Promise(resolve => {
             let done;
-            const jobs = [];
+            let run;
+            let jobs;
             function *runner() {
                 let val;
                 while (jobs.length) {
@@ -20,7 +21,6 @@
                     callback(val);
                 }
             }
-            const run = runner();
             const props = propertyAccessor.split('.');
             let objRef = root || self;
 
@@ -50,9 +50,13 @@
 
             const firstObj = walkProps();
             if (!props.length) {
-                return firstObj;  // already defined
+                resolve(firstObj);
+                if (callback) {
+                    callback(firstObj);
+                }
             } else {
-                jobs.push(() => catchDefine(firstObj, props[0]));
+                run = runner();
+                jobs = [() => catchDefine(firstObj, props[0])];
                 run.next();
             }
         });
