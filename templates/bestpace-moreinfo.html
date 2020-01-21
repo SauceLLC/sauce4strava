@@ -18,11 +18,11 @@
         <tr>
             <td>Pace <abbr class="unit short" title="{{distUnitLong}}">/{{distUnit}}</abbr></td>
             <td>
-                <% if (pace.max) { %>
-                    <sub class="sauce-negative" title="Slowest Pace">{{pace.max}}</sub>
+                <% if (pace.min) { %>
+                    <sub class="sauce-negative" title="Slowest Pace">{{pace.min}}</sub>
                 <% } %>
                 <span title="Average Pace">{{pace.avg}}</span>
-                <sup class="sauce-positive" title="Peak Pace">{{pace.min}}</sup>
+                <sup class="sauce-positive" title="Peak Pace">{{pace.max}}</sup>
             </td>
         </tr>
 
@@ -50,8 +50,9 @@
         <% if (cadence) { %>
             <tr>
                 <td title="Steps per minute">Cadence</td>
-                <td title="Steps per minute">{{Math.round(cadence)}}</td>
-            </tr>
+                <td title="Steps per minute">
+                    {{Math.round(cadence)}}<abbr class="unit short">spm</abbr>
+                </tr>
         <% } %>
 
         <% if (grade) { %>

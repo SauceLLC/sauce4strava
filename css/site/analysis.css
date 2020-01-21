@@ -314,8 +314,20 @@
 
 .actions-menu img.sauce-icon {
     width: 1.8em;
-    transform: rotate(-90deg);
-    margin: -0.4em 0.2em;
+    margin-right: 0.3em;
+    vertical-align: bottom;
+    opacity: 0.7;
+    transition: opacity 100ms;
+}
+.actions-menu li:hover img.sauce-icon {
+    opacity: 1;
+}
+
+.actions-menu li.sauce.first {
+    border-top: 1.5px solid #ff4400;
+}
+.actions-menu li.sauce.last {
+    border-bottom: 1.5px solid #ff4400;
 }
 
 .sauce-rank-widget {

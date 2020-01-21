@@ -48,11 +48,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     ];
 
 
-    function sleep(seconds) {
-        return new Promise(resolve => setTimeout(resolve, seconds * 1000));
-    }
-
-
     let _activity;
     async function fetchFullActivity() {
         // The initial activity object is not fully loaded for owned' activities.  This routine
@@ -92,7 +87,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             const fetching = [];
             for (const x of todo) {
                 if (pending.has(x)) {
-                    // This stream is inflight, wait for existing promise.
+                    // This stream is in flight, wait for existing promise.
                     waitfor.push(pending.get(x));
                 } else {
                     fetching.push(x);
@@ -113,7 +108,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 }
             }
             if (waitfor.length) {
-                console.warn("Waiting for existing stream fetch(es) to finish");
+                console.info("Waiting for existing stream fetch(es) to finish");
                 await Promise.all(waitfor);
             }
         }
@@ -296,21 +291,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
-    async function initAnalysisStats() {
-        let start;
-        let end;
-        // I can not find a better way of doing this at present..
-        const selection = location.pathname.match(/\/activities\/[0-9]+\/analysis\/([0-9]+)\/([0-9]+)/);
-        if (selection) {
-            start = parseInt(selection[1]);
-            end = parseInt(selection[2]);
-            start = isNaN(start) ? undefined : start;
-            end = isNaN(end) ? undefined : end;
-        }
-        await updateAnalysisStats(start, end);
-    }
-
-
     function navHeightAdjustments() {
         // The main site's side nav is absolute positioned, so if the primary view is too short
         // the footer will overflow and mess everything up.  Add a min-height to the view to
@@ -323,8 +303,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     async function processRideStreams() {
-        let wattsStream = await fetchStream('watts');
-        const isWattEstimate = !wattsStream;
+        const [realWattsStream, timeStream, movingStream] = await fetchStreams(['watts', 'time', 'moving']);
+        const isWattEstimate = !realWattsStream;
+        let wattsStream = realWattsStream;
         if (!wattsStream) {
             wattsStream = await fetchStream('watts_calc');
             if (!wattsStream) {
@@ -335,10 +316,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 rideCPs.shift();
             }
         }
-        const timeStream = await fetchStream('time');
         const corrected = sauce.power.correctedPower(timeStream, wattsStream);
         const np = sauce.power.calcNP(wattsStream);
-        const movingTime = sauce.data.movingTime(timeStream, await fetchStream('moving'));
+        const movingTime = sauce.data.movingTime(timeStream, movingStream);
         const idealPower = np || corrected.kj() * 1000 / movingTime;
         const $stats = jQuery(ctx.tertiaryStatsTpl({
             type: 'ride',
@@ -380,13 +360,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             }
             requestAnimationFrame(navHeightAdjustments);
         }
-        try {
-            await initAnalysisStats();
-        } catch(e) {
-            // It's bad, but we can survive without it here.
-            console.error("initAnalysisStats failure:", e);
-            sauce.rpc.reportError(e);
-        }
     }
 
 
@@ -396,32 +369,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             return;
         }
         const timeStream = await fetchStream('time');
-        const saucePaceStream = [];
-        const saucePaceStream2 = [];
-        let lastDistance = distStream[0];
-        //let lastTime = timeStream[0];
-        const rollAvg = new sauce.data.RollingWindow(10);
-        for (let i = 1; i < timeStream.length; i++) {
-            const time = timeStream[i] - timeStream[i - 1];
-            rollAvg.add(time, distStream[i] - distStream[i - 1]);
-            saucePaceStream2.push(rollAvg.avg());
-            const dist = distStream[i] - lastDistance;
-            if (dist > 0.1) {
-                let ii = i;
-                const pace = time / dist;
-                do {
-                    saucePaceStream[ii--] = pace;
-                } while(ii >= 0 && saucePaceStream[ii] === undefined);
-                //lastTime = timeStream[i];
-                lastDistance = distStream[i];
-            } else {
-                console.count("Buffering");
-            }
-        }
-        pageView.streams().streamData.add('sauce_pace', saucePaceStream);
-        if (window.location.search.match(/\?s/)) {
-            pageView.streams().streamData.add('pace', saucePaceStream); // XXX
-        }
         const statsFrag = jQuery(ctx.tertiaryStatsTpl({
             type: 'run',
             weightUnit: weightFormatter.shortUnitKey(),
@@ -456,13 +403,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             }
             requestAnimationFrame(navHeightAdjustments);
         }
-        try {
-            await initAnalysisStats();
-        } catch(e) {
-            // It's bad, but we can survive without it here.
-            console.error("initAnalysisStats failure:", e);
-            sauce.rpc.reportError(e);
-        }
     }
 
 
@@ -486,9 +426,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
-    function humanPace(secondsPerMeter, options) {
+    function humanPace(speed, options) {
         options = options || {};
-        const mps = 1 / secondsPerMeter;
+        const mps = options.velocity ? speed : (1 / speed);
         if (options.suffix) {
             if (options.html) {
                 return paceFormatter.abbreviated(mps);
@@ -556,6 +496,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const rank = sauce.power.rank(roll.period, wKg, ctx.gender);
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
+        await fetchStreams(['heartrate', 'altitude', 'grade_smooth', 'cadence']);  // better load perf
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const altStream = await fetchStreamTimeRange('altitude', startTime, endTime);
         const altChanges = altStream && altitudeChanges(altStream);
@@ -640,22 +581,23 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const elapsed = humanTime(roll.elapsed());
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
-        //const paceStream = await fetchStreamTimeRange('pace', startTime, endTime);
-        const paceStream = await fetchStreamTimeRange('sauce_pace', startTime, endTime);
+        await fetchStreams(['heartrate', 'grade_adjusted_pace', 'altitude',
+                            'grade_smooth', 'cadence', 'velocity']);  // better load perf
+        const velocityStream = await fetchStreamTimeRange('velocity', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const gapStream = await fetchStreamTimeRange('grade_adjusted_pace', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const altStream = await fetchStreamTimeRange('altitude', startTime, endTime);
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
-        const maxPace = sauce.data.max(paceStream);
+        const maxVelocity = sauce.data.max(velocityStream);
         const $dialog = jQuery(ctx.moreinfoTpl({
             title: `Best Pace: ${label}`,
             startsAt: humanTime(startTime),
             pace: {
-                min: humanPace(sauce.data.min(paceStream)),
+                min: humanPace(sauce.data.min(velocityStream), {velocity: true}),
                 avg: humanPace(roll.avg()),
-                max: maxPace < 2 && humanPace(maxPace), // filter out slow paces
+                max: humanPace(maxVelocity, {velocity: true}),
                 gap: gapStream && humanPace(sauce.data.avg(gapStream)),
             },
             elapsed,
@@ -694,25 +636,23 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             }
         });
         let graphData;
-        if (paceStream.length > 120) {
-            graphData = await sauce.data.resample(paceStream, 120);
-        } else if (paceStream.length > 1) {
-            graphData = paceStream;
+        if (velocityStream.length > 120) {
+            graphData = await sauce.data.resample(velocityStream, 120);
+        } else if (velocityStream.length > 1) {
+            graphData = velocityStream;
         }
         if (graphData) {
-            //const invertedData = graphData.map(x => x < 2 ? 2 - x : null);
-            const invertedData = graphData.map(x => x);
-            /* Must run after the dialog is open for proper rendering. */
-            $dialog.find('.sauce-sparkline').sparkline(invertedData, {
+            $dialog.find('.sauce-sparkline').sparkline(graphData, {
                 type: 'line',
                 width: '100%',
                 height: 56,
                 lineColor: '#EA400D',
                 fillColor: 'rgba(234, 64, 13, 0.61)',
-                chartRangeMin: 0, // XXX
-                normalRangeMin: 0, // XXX
-                normalRangeMax: sauce.data.avg(invertedData),
-                tooltipFormatter: (_, _2, data) => humanPace(2 - data.y, {html: true, suffix: true})
+                chartRangeMin: 0,
+                normalRangeMin: 0,
+                normalRangeMax: sauce.data.avg(graphData),
+                tooltipFormatter: (_, _2, data) =>
+                    humanPace(data.y, {velocity: true, html: true, suffix: true})
             });
         }
         $dialog.find('.start_time_link').on('click',() => {
@@ -760,17 +700,20 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
     async function attachExporters() {
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
-        const sauceIcon = `<img class="sauce-icon" src="${sauce.extURL}images/icon64.png"/>`;
-
+        const sauceIcon = `<img title="Powered by Sauce" class="sauce-icon"
+                                src="${sauce.extURL}images/icon64.png"/>`;
         const gpxLink = document.createElement('li');
-        gpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export GPX <sup class="sauce-beta">BETA</sup></a>`;
-        gpxLink.title = 'Generate a GPX file for this activity using Strava Sauce';
+        gpxLink.classList.add('sauce', 'first');
+        gpxLink.innerHTML = `<a title="NOTE: GPX files do not support power data (watts)."
+                                href="javascript:void(0)">${sauceIcon}Export GPX
+                             <sup class="sauce-beta">BETA</sup></a>`;
         gpxLink.addEventListener('click', () => exportActivity(sauce.export.GPXSerializer));
         menuEl.appendChild(gpxLink);
-
         const tpxLink = document.createElement('li');
-        tpxLink.title = 'Generate a TCX file for this activity using Strava Sauce';
-        tpxLink.innerHTML = `<a href="javascript:void(0)">${sauceIcon}Export TCX <sup class="sauce-beta">BETA</sup></a>`;
+        tpxLink.classList.add('sauce', 'last');
+        tpxLink.innerHTML = `<a title="TCX files are best for activities with power data (watts)."
+                                href="javascript:void(0)">${sauceIcon}Export TCX
+                             <sup class="sauce-beta">BETA</sup></a>`;
         tpxLink.addEventListener('click', () => exportActivity(sauce.export.TCXSerializer));
         menuEl.appendChild(tpxLink);
     }
@@ -1093,27 +1036,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
-    let _lastAnalysisHash = -1;
-    async function updateAnalysisStats(start, end) {
-        const hash = `${start}-${end}`;
-        if (_lastAnalysisHash === hash) {
-            return;  // Debounce redundant calls.
-        }
-        _lastAnalysisHash = hash;
-        if (!ctx.$analysisStats) {
-            const $el = jQuery('.chart');
-            if (!$el.length) {
-                console.warn("Update analysis rescheduled due to DOM unreadiness.");
-                schedUpdateAnalysisStats(start, end);
-                return;
-            }
-            attachAnalysisStats($el);
-        }
-        if (!ctx.activity) {
-            console.warn("activity not ready yet, rescheduling analysis stats update");
-            schedUpdateAnalysisStats(start, end);
-            return;
-        }
+    async function _updateAnalysisStats(start, end) {
         const isRide = ctx.activity.isRide();
         const isRun = ctx.activity.isRun();
         const timeStream = await fetchStream('time', start, end);
@@ -1188,7 +1111,51 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         ctx.$analysisStats.data({start, end});
         ctx.$analysisStats.html(tpl(tplData));
     }
-    const schedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 10);
+
+
+    let _schedUpdateAnalysisPromise;
+    let _schedUpdateAnalysisHash = null;
+    let _schedUpdateAnalysisPending = null;
+    let _schedUpdateAnalysisId = 0;
+    function schedUpdateAnalysisStats(start, end) {
+        if (start === null) {
+            // rescheduled invocation.
+            [start, end] = _schedUpdateAnalysisPending;
+        }
+        const hash = `${start}-${end}`;
+        if (_schedUpdateAnalysisHash === hash) {
+            return;  // dedup
+        }
+        _schedUpdateAnalysisPending = [start, end];
+        if (!ctx.$analysisStats) {
+            const $el = jQuery('.chart');
+            if (!$el.length) {
+                console.warn("Update analysis rescheduled due to DOM unreadiness.");
+                setTimeout(() => schedUpdateAnalysisStats(null), 100);
+                return;
+            }
+            attachAnalysisStats($el);
+        }
+        if (!ctx.activity) {
+            console.warn("activity not ready yet, rescheduling analysis stats update");
+            setTimeout(() => schedUpdateAnalysisStats(null), 100);
+            return;
+        }
+        const id = ++_schedUpdateAnalysisId;
+        (async () => {
+            const ts = Date.now();
+            try {
+                await _schedUpdateAnalysisPromise;
+            } catch(e) {/*no-pragma*/}
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            if (id !== _schedUpdateAnalysisId) {
+                return; // debounce
+            }
+            _schedUpdateAnalysisPromise = _updateAnalysisStats(start, end);
+            await _schedUpdateAnalysisPromise;
+            _schedUpdateAnalysisHash = hash;
+        })();
+    }
 
 
     function _rawStreamsInfo() {
