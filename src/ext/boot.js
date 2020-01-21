@@ -7,9 +7,9 @@
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
         scripts: [
-            'jquery.sparkline.js',
             'base.js',
             'rpc.js',
+            'sparkline.js',
             'lib.js',
             'export.js',
             'analysis.js',
@@ -111,12 +111,30 @@
     }
 
 
-    function loadScript(url) {
+    function addScriptElement(script, top) {
+        const rootElement = document.head || document.documentElement;
+        if (top) {
+            const first = rootElement.firstChild;
+            if (first) {
+                rootElement.insertBefore(script, first);
+            } else {
+                rootElement.appendChild(script);
+            }
+        } else {
+            document.head.appendChild(script);
+        }
+    }
+
+
+    function loadScript(url, options) {
+        options = options || {};
         const script = document.createElement('script');
-        script.defer = 'defer';
+        if (!options.blocking) {
+            script.defer = 'defer';
+        }
         const p = new Promise(resolve => script.onload = resolve);
         script.src = url;
-        document.head.appendChild(script);
+        addScriptElement(script, options.top);
         return p;
     }
 
@@ -124,7 +142,7 @@
     function insertScript(content) {
         const script = document.createElement('script');
         script.textContent = content;
-        document.head.appendChild(script);
+        addScriptElement(script, true);
     }
 
 
@@ -150,16 +168,17 @@
 
 
     async function load() {
+        const extUrl = chrome.extension.getURL('');
+        await loadScript(`${extUrl}src/site/preloader.js`, {blocking: true, top: true});
         const config = await initConfig();
         if (config.enabled === false) {
-            console.info("Strava sauce is disabled");
+            console.info("Sauce is disabled");
             return;
         }
         document.documentElement.classList.add('sauce-enabled');
         const appDetails = await sendMessageToBackground({system: 'app', op: 'getDetails'});
-        const extUrl = chrome.extension.getURL('');
         insertScript(`
-            window.sauce = {};
+            self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(config.options)};
             sauce.extURL = "${extUrl}";
             sauce.extID = "${chrome.runtime.id}";

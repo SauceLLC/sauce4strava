@@ -1,7 +1,13 @@
 /* global Strava sauce jQuery pageView _ */
 
-sauce.ns('analysis', function(ns) {
+sauce.analysisReady = sauce.ns('analysis', async ns => {
     'use strict';
+
+    await Promise.all([
+        sauce.propDefined('pageView'),
+        sauce.propDefined('Strava.I18n'),
+        sauce.propDefined('_')
+    ]);
 
     const ctx = {};
     const tplUrl = sauce.extURL + 'templates';
@@ -40,6 +46,11 @@ sauce.ns('analysis', function(ns) {
         ['26.2 mile', Math.round(metersPerMile * 26.2)],
         ['50 km', 50000],
     ];
+
+
+    function sleep(seconds) {
+        return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+    }
 
 
     let _activity;
@@ -286,10 +297,6 @@ sauce.ns('analysis', function(ns) {
 
 
     async function initAnalysisStats() {
-        if (pageView.router().context.startMenu() !== 'analysis') {
-            console.warn("Analysis stats inactive");
-            return;
-        }
         let start;
         let end;
         // I can not find a better way of doing this at present..
@@ -309,7 +316,6 @@ sauce.ns('analysis', function(ns) {
         // the footer will overflow and mess everything up.  Add a min-height to the view to
         // prevent the footer from doing this.
         const $sidenav = jQuery('nav.sidenav');
-        void($sidenav[0].offsetHeight);  // force reflow to be safe  // XXX Redudant with outerHeight()?
         const minHeight = $sidenav.outerHeight(/*includeMargin*/ true);
         jQuery('.view > .page.container').css('min-height', `${minHeight}px`);
         Strava.Activities.Ui.prepareSlideMenu();  // Fixes ... menu in some cases
@@ -329,7 +335,6 @@ sauce.ns('analysis', function(ns) {
                 rideCPs.shift();
             }
         }
-        await initAnalysisStats();
         const timeStream = await fetchStream('time');
         const corrected = sauce.power.correctedPower(timeStream, wattsStream);
         const np = sauce.power.calcNP(wattsStream);
@@ -373,8 +378,14 @@ sauce.ns('analysis', function(ns) {
                     sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
                 });
             }
-            navHeightAdjustments();
-            //requestAnimationFrame(navHeightAdjustments);
+            requestAnimationFrame(navHeightAdjustments);
+        }
+        try {
+            await initAnalysisStats();
+        } catch(e) {
+            // It's bad, but we can survive without it here.
+            console.error("initAnalysisStats failure:", e);
+            sauce.rpc.reportError(e);
         }
     }
 
@@ -384,7 +395,6 @@ sauce.ns('analysis', function(ns) {
         if (!distStream || !sauce.options['analysis-cp-chart']) {
             return;
         }
-        await initAnalysisStats();
         const timeStream = await fetchStream('time');
         const saucePaceStream = [];
         const saucePaceStream2 = [];
@@ -445,6 +455,13 @@ sauce.ns('analysis', function(ns) {
                 });
             }
             requestAnimationFrame(navHeightAdjustments);
+        }
+        try {
+            await initAnalysisStats();
+        } catch(e) {
+            // It's bad, but we can survive without it here.
+            console.error("initAnalysisStats failure:", e);
+            sauce.rpc.reportError(e);
         }
     }
 
@@ -707,6 +724,9 @@ sauce.ns('analysis', function(ns) {
 
 
     async function load() {
+        if (!self.pageView) {
+            return;
+        }
         ctx.athlete = pageView.activityAthlete();
         ctx.activity = await fetchFullActivity();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
@@ -881,8 +901,6 @@ sauce.ns('analysis', function(ns) {
         pageView.commentsController().on('commentCompleted', renderComments);
         renderComments();
     }
-
-
 
 
     function addBadge(row) {
@@ -1085,13 +1103,15 @@ sauce.ns('analysis', function(ns) {
         if (!ctx.$analysisStats) {
             const $el = jQuery('.chart');
             if (!$el.length) {
-                console.warn("Update analysis aborted due to DOM unreadiness.");
+                console.warn("Update analysis rescheduled due to DOM unreadiness.");
+                schedUpdateAnalysisStats(start, end);
                 return;
             }
             attachAnalysisStats($el);
         }
         if (!ctx.activity) {
-            console.warn("Update analysis aborted due to early execution.");
+            console.warn("activity not ready yet, rescheduling analysis stats update");
+            schedUpdateAnalysisStats(start, end);
             return;
         }
         const isRide = ctx.activity.isRide();
@@ -1168,7 +1188,7 @@ sauce.ns('analysis', function(ns) {
         ctx.$analysisStats.data({start, end});
         ctx.$analysisStats.html(tpl(tplData));
     }
-    const debouncedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 5);
+    const schedUpdateAnalysisStats = _.debounce(updateAnalysisStats, 10);
 
 
     function _rawStreamsInfo() {
@@ -1326,39 +1346,6 @@ sauce.ns('analysis', function(ns) {
     }
 
 
-    // Monkey patch analysis views so we can react to selection changes.
-    if (Strava.Charts && Strava.Labs && Strava.Labs.Activities) {
-        if (Strava.Charts.Activities.BasicAnalysisElevation) {
-            const saveFn = Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails;
-            Strava.Charts.Activities.BasicAnalysisElevation.prototype.displayDetails = function(start, end) {
-                debouncedUpdateAnalysisStats(Number(start), Number(end));
-                debouncedUpdateAnalysisStats(
-                    start === undefined ? start : Number(start),
-                    end === undefined ? end : Number(end));
-                return saveFn.apply(this, arguments);
-            };
-        }
-        if (Strava.Charts.Activities.LabelBox) {
-            const saveFn = Strava.Charts.Activities.LabelBox.prototype.handleStreamHover;
-            Strava.Charts.Activities.LabelBox.prototype.handleStreamHover = function(_, start, end) {
-                // This is called when zoom selections change or are unset in the profile graph.
-                debouncedUpdateAnalysisStats(
-                    start === undefined ? start : Number(start),
-                    end === undefined ? end : Number(end));
-                return saveFn.apply(this, arguments);
-            };
-        }
-        if (Strava.Labs.Activities.BasicAnalysisView) {
-            // Monkey patch the analysis view so we always have our hook for extra stats.
-            const saveFn = Strava.Labs.Activities.BasicAnalysisView.prototype.renderTemplate;
-            Strava.Labs.Activities.BasicAnalysisView.prototype.renderTemplate = function() {
-                const $el = saveFn.apply(this, arguments);
-                attachAnalysisStats($el.find('.chart'));
-                return $el;
-            };
-        }
-    }
-
     if (Strava.Activities && Strava.Activities.Ui && Strava.Activities.Ui.prepareSlideMenu) {
         Strava.Activities.Ui.prepareSlideMenu = function() {
             // We extend the nav sidebar, so we need to modify this routine to make the menu
@@ -1374,6 +1361,8 @@ sauce.ns('analysis', function(ns) {
         };
     }
 
+
+
     return {
         load,
         fetchStream,
@@ -1383,12 +1372,15 @@ sauce.ns('analysis', function(ns) {
         humanTime,
         humanPace,
         humanElevation,
+        schedUpdateAnalysisStats,
+        attachAnalysisStats,
     };
 });
 
 
-if (!sauce.testing && window.pageView) {
+if (!sauce.testing) {
     (async function() {
+        await sauce.analysisReady;
         try {
             await sauce.analysis.load();
         } catch(e) {

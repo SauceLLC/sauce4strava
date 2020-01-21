@@ -2,7 +2,7 @@
 
 window.sauce = window.sauce || {};
 
-sauce.ns = function(ns, callback) {
+sauce.ns = async function(ns, callback) {
     let offt = sauce;
     ns.split('.').forEach(function(x) {
         if (!offt[x]) {
@@ -11,6 +11,6 @@ sauce.ns = function(ns, callback) {
     });
 
     if (callback) {
-        Object.assign(offt, callback(offt));
+        Object.assign(offt, await callback(offt));
     }
 };
