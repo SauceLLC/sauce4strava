@@ -1,0 +1,14 @@
+{
+    "appName": {
+        "message": "Sauce for Strava™",
+        "description": "Store name (45 char limit)"
+    },
+    "appShortName": {
+        "message": "Sauce",
+        "description": "Used when appName won't fit (12 char limit)."
+    },
+    "appDesc": {
+        "message": "Additional functionality for your cycling and running analysis.  This extension upgrades the Strava™ website.",
+        "description":"The description of the application, displayed in the web store."
+    }
+}

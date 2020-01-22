@@ -1,9 +1,10 @@
 {
     "manifest_version": 2,
+    "default_locale": "en",
 
-    "name": "Sauce",
-    "short_name": "Sauce",
-    "description": "Additional \"sauce\" to improve https://strava.com.",
+    "name": "__MSG_appName__",
+    "short_name": "__MSG_appShortName__",
+    "description": "__MSG_appDesc__",
     "author": "Justin Mayfield",
     "version": "5.0.0",
     "version_name": "5.0.0 [dev]",
@@ -42,11 +43,15 @@
             "128": "images/icon128.png",
             "256": "images/icon256.png"
         },
-        "default_title": "Sauce",
+        "default_title": "__MSG_appName__",
         "default_popup": "pages/options.html"
     },
 
     "options_page": "pages/options.html",
+    "options_ui": {
+        "page": "pages/options.html",
+        "open_in_tab": false
+    },
 
     "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
 

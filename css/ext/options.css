@@ -10,10 +10,11 @@ html {
 
 body {
     width: 38em;
-    padding: 1em;
+    padding: 1.2em;
     margin: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 button {
