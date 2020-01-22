@@ -1143,7 +1143,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         }
         const id = ++_schedUpdateAnalysisId;
         (async () => {
-            const ts = Date.now();
             try {
                 await _schedUpdateAnalysisPromise;
             } catch(e) {/*no-pragma*/}

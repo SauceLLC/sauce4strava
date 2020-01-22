@@ -113,6 +113,17 @@ sauce.ns('rpc', function() {
     }
 
 
+    async function localeGetMessage() {
+        const data = Array.from(arguments);
+        return await _sendMessage({system: 'locale', op: 'getMessage', data});
+    }
+
+    async function localeGetMessages() {
+        const data = Array.from(arguments);
+        return await _sendMessage({system: 'locale', op: 'getMessages', data});
+    }
+
+
     return {
         getAthleteInfo,
         updateAthleteInfo,
@@ -127,5 +138,7 @@ sauce.ns('rpc', function() {
         ga,
         reportEvent,
         reportError,
+        localeGetMessage,
+        localeGetMessages,
     };
 });

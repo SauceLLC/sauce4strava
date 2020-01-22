@@ -26,6 +26,10 @@
         tracker[method].apply(tracker, args);
     });
     addHook('app', 'getDetails', () => chrome.app.getDetails());
+    addHook('locale', 'getMessage', args => chrome.i18n.getMessage.apply(null, args));
+    addHook('locale', 'getMessages', batch => batch.map(args =>
+        chrome.i18n.getMessage.apply(null, args)));
+
 
     async function onMessage(msg, sender, setResponse) {
         try {
@@ -40,6 +44,7 @@
             });
         }
     }
+
     chrome.runtime.onMessageExternal.addListener(onMessage);
     chrome.runtime.onMessage.addListener(onMessage);
 })();
