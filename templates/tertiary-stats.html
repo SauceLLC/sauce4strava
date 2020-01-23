@@ -4,7 +4,7 @@
             <% if (np) { %>
                 <li>
                     <strong>{{Math.round(np)}}<abbr class="unit" title="Watts">W</abbr></strong>
-                    <div class="label">Normalized Power</div>
+                    <div class="label">{{{normalized}}} {{{power}}}</div>
                 </li>
             <% } %>
 
@@ -20,7 +20,7 @@
             <% if (intensity) { %>
                 <li>
                     <strong>{{Math.round(intensity * 100)}}<abbr class="unit" title="Intensity Factor">%</abbr></strong>
-                    <div class="label">Intensity</div>
+                    <div class="label">{{{intensity}}}</div>
                 </li>
             <% } %>
 
@@ -38,7 +38,7 @@
                 <input style="display: none;" type="text" value="{{weightNorm}}"
                        title="Enter a weight value for this athlete and press enter/return.  If the athlete already has a weight value set in their profile then this will override that setting.  If you want to clear the overridden value, empty this field and press enter."/>
             </strong>
-            <div class="label">Weight</div>
+            <div class="label">{{{weight}}}</div>
         </li>
     </ul>
 <% } %>

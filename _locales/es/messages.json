@@ -11,46 +11,79 @@
         "message": "Funcionalidad adicional para su análisis de ciclismo y carrera. Esta extensión actualiza el sitio web de Strava ™.",
         "description": "La descripción de la aplicación, que se muestra en la tienda web."
     },
-    "analysis_stats_elapsed": {
+    "analysis_elapsed": {
         "message": "Transcurrido"
     },
-    "analysis_stats_elapsed_title": {
+    "analysis_elapsed_title": {
         "message": "El tiempo transcurrido incluye paradas. Es la duración completa."
     },
-    "analysis_stats_moving": {
+    "analysis_moving": {
         "message": "Moviente"
     },
-    "analysis_stats_stats": {
+    "analysis_stats": {
         "message": "Estadísticas"
     },
-    "analysis_stats_power_avg": {
+    "analysis_power_avg": {
         "message": "Promedio de potencia"
     },
-    "analysis_stats_normalized": {
+    "analysis_normalized": {
         "message": "Normalizado"
     },
-    "analysis_stats_energy": {
+    "analysis_energy": {
         "message": "Energía"
     },
-    "analysis_stats_per_hour": {
+    "analysis_per_hour": {
         "message": "Por hora"
     },
-    "analysis_stats_elevation": {
+    "analysis_elevation": {
         "message": "Elevación"
     },
-    "analysis_stats_data": {
+    "analysis_data": {
         "message": "Datos"
     },
-    "analysis_stats_view_raw_data": {
+    "analysis_view_raw_data": {
         "message": "Ver datos sin procesar"
     },
-    "analysis_stats_view_graph_data": {
+    "analysis_view_graph_data": {
         "message": "Ver datos del gráfico"
     },
-    "analysis_stats_pace": {
+    "analysis_pace": {
         "message": "Paso"
     },
-    "analysis_stats_samples": {
+    "analysis_samples": {
         "message": "muestras"
+    },
+    "analysis_beta": {
+        "message": "BETA"
+    },
+    "analysis_best_pace": {
+        "message": "Mejor ritmo"
+    },
+    "analysis_start_of_effort": {
+        "message": "Comienzo de esfuerzo"
+    },
+    "analysis_elapsed_time": {
+        "message": "Tiempo transcurrido"
+    },
+    "analysis_heartrate": {
+        "message": "Ritmo cardiaco"
+    },
+    "analysis_cadence": {
+        "message": "Cadencia"
+    },
+    "analysis_critical_power": {
+        "message": "Poder critico"
+    },
+    "analysis_watts": {
+        "message": "Vatios"
+    },
+    "analysis_power": {
+        "message": "Poder"
+    },
+    "analysis_intensity": {
+        "message": "Intensidad"
+    },
+    "analysis_weight": {
+        "message": "Peso"
     }
 }

@@ -18,33 +18,37 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     const paceFormatter = new Strava.I18n.PaceFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
+    const secLabel = timeFormatter.shortSecondsLabel();
+    const minLabel = timeFormatter.shortMinutesLabel();
+    const hourLabel = timeFormatter.shortHoursLabel();
     const rideCPs = [
-        ['5 s', 5],
-        ['15 s', 15],
-        ['30 s', 30],
-        ['1 min', 60],
-        ['2 min', 120],
-        ['5 min', 300],
-        ['10 min', 600],
-        ['15 min', 900],
-        ['20 min', 1200],
-        ['30 min', 1800],
-        ['1 hour', 3600],
+        [`5 ${secLabel}`, 5],
+        [`15 ${secLabel}`, 15],
+        [`30 ${secLabel}`, 30],
+        [`1 ${minLabel}`, 60],
+        [`2 ${minLabel}`, 120],
+        [`5 ${minLabel}`, 300],
+        [`10 ${minLabel}`, 600],
+        [`15 ${minLabel}`, 900],
+        [`20 ${minLabel}`, 1200],
+        [`30 ${minLabel}`, 1800],
+        [`1 ${hourLabel}`, 3600],
     ];
 
     const metersPerMile = 1609.344;
+    // TODO find good way to get translated miles and kilometers for these.
     const runBPs = [
-        ['100 m', 100],
-        ['200 m', 200],
-        ['400 m', 400],
-        ['1 km', 1000],
-        ['1 mile', Math.round(metersPerMile)],
-        ['3 km', 3000],
-        ['5 km', 5000],
-        ['10 km', 10000],
-        ['13.1 mile', Math.round(metersPerMile * 13.1)],
-        ['26.2 mile', Math.round(metersPerMile * 26.2)],
-        ['50 km', 50000],
+        [`100 m`, 100],
+        [`200 m`, 200],
+        [`400 m`, 400],
+        [`1 km`, 1000],
+        [`1 mile`, Math.round(metersPerMile)],
+        [`3 km`, 3000],
+        [`5 km`, 5000],
+        [`10 km`, 10000],
+        [`13.1 mile`, Math.round(metersPerMile * 13.1)],
+        [`26.2 mile`, Math.round(metersPerMile * 26.2)],
+        [`50 km`, 50000],
     ];
 
 
@@ -510,8 +514,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
+        const heading = await sauce.locale.getMessage('analysis_critical_power');
         const $dialog = jQuery(await ctx.moreinfoTpl({
-            title: `Critical Power: ${label}`,
+            title: `${heading}: ${label}`,
             startsAt: humanTime(startTime),
             wKg,
             power: {
@@ -599,8 +604,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
         const maxVelocity = sauce.data.max(velocityStream);
+        const heading = await sauce.locale.getMessage('analysis_best_pace');
         const $dialog = jQuery(await ctx.moreinfoTpl({
-            title: `Best Pace: ${label}`,
+            title: `${heading}: ${label}`,
             startsAt: humanTime(startTime),
             pace: {
                 min: humanPace(sauce.data.min(velocityStream), {velocity: true}),
@@ -696,11 +702,11 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     let _tplCache = {};
-    async function getTemplate(filename, options) {
+    async function getTemplate(filename) {
         if (!_tplCache[filename]) {
             const resp = await fetch(`${tplUrl}/${filename}`);
             const tplText = await resp.text();
-            _tplCache[filename] = sauce.template.compile(tplText, options);
+            _tplCache[filename] = sauce.template.compile(tplText, {localePrefix: 'analysis_'});
         }
         return _tplCache[filename];
     }
@@ -1118,7 +1124,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 kjHour: tplData.kj && (tplData.kj / movingTime) * 3600,
             });
         }
-        const tpl = await getTemplate('analysis-stats.html', {localePrefix: 'analysis_stats_'});
+        const tpl = await getTemplate('analysis-stats.html');
         ctx.$analysisStats.data({start, end});
         ctx.$analysisStats.html(await tpl(tplData));
     }

@@ -2,21 +2,21 @@
     <div class="sauce-sparkline"></div>
     <table>
         <tr>
-            <td>Start of effort</td>
+            <td>{{{start_of_effort}}}</td>
             <td title="Time offset to the start of this effort.">
                 <a class="start_time_link">{{startsAt}}</a>
             </td>
         </tr>
 
         <tr>
-            <td>Elapsed Time</td>
+            <td>{{{elapsed_time}}}</td>
             <td title="Hours:Minutes:Seconds">
                 <span>{{elapsed}}</span>
             </td>
         </tr>
 
         <tr>
-            <td>Pace <abbr class="unit short" title="{{distUnitLong}}">/{{distUnit}}</abbr></td>
+            <td>{{{pace}}} <abbr class="unit short" title="{{distUnitLong}}">/{{distUnit}}</abbr></td>
             <td>
                 <% if (pace.min) { %>
                     <sub class="sauce-negative" title="Slowest Pace">{{pace.min}}</sub>
@@ -38,7 +38,7 @@
 
         <% if (hr) { %>
             <tr>
-                <td>Heartrate</td>
+                <td>{{{heartrate}}}</td>
                 <td>
                     <sub class="sauce-positive" title="Lowest BPM">{{hr.min}}</sub>
                     <span title="Average BPM">{{Math.round(hr.avg)}}</span>
@@ -49,7 +49,7 @@
 
         <% if (cadence) { %>
             <tr>
-                <td title="Steps per minute">Cadence</td>
+                <td title="Steps per minute">{{{cadence}}}</td>
                 <td title="Steps per minute">
                     {{Math.round(cadence)}}<abbr class="unit short">spm</abbr>
                 </tr>
@@ -57,7 +57,7 @@
 
         <% if (grade) { %>
             <tr>
-                <td>Elevation</td>
+                <td>{{{elevation}}}</td>
                 <td>
                     <sub class="sauce-negative" title="Altitude Loss">{{grade.loss}}{{elevationUnit}}</sub>
                     <span title="Average Grade">{{Math.round(grade.avg)}}<small>%</small></span>
