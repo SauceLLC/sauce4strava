@@ -352,28 +352,28 @@ sauce.propDefined('jQuery', function() {
     };
 
     // You can have tooltips use a css class other than jqstooltip by specifying tooltipClassname
-    defaultStyles = '.jqstooltip { ' +
-            'position: absolute;' +
-            'left: 0px;' +
-            'top: 0px;' +
-            'visibility: hidden;' +
-            'background: rgb(0, 0, 0) transparent;' +
-            'background-color: rgba(0,0,0,0.6);' +
-            'filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);' +
-            '-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";' +
-            'color: white;' +
-            'font: 10px arial, san serif;' +
-            'text-align: left;' +
-            'white-space: nowrap;' +
-            'padding: 5px;' +
-            'border: 1px solid white;' +
-            'z-index: 10000;' +
-            '}' +
-            '.jqsfield { ' +
-            'color: white;' +
-            'font: 10px arial, san serif;' +
-            'text-align: left;' +
-            '}';
+    defaultStyles = `
+        .jqstooltip {
+            position: absolute;
+            left: 0;
+            top: 0;
+            visibility: hidden;
+            background-color: #000a;
+            color: white;
+            font-size: 0.85em;
+            text-align: left;
+            white-space: nowrap;
+            padding: 0.3em 0.5em;
+            border: 1px solid #eee;
+            border-radius: 0.25em;
+            z-index: 10000;
+        }
+        .jqsfield {
+            color: white;
+            font-size: 0.85em;
+            text-align: left;
+        }
+    `;
 
     /**
      * Utilities
@@ -1630,8 +1630,7 @@ sauce.propDefined('jQuery', function() {
             // draw the fill first, then optionally the normal range, then the line on top of that
             plen = fillShapes.length;
             for (i = 0; i < plen; i++) {
-                target.drawShape(fillShapes[i],
-                    options.get('fillColor'), options.get('fillColor')).append();
+                target.drawShape(fillShapes[i], undefined, options.get('fillColor')).append();
             }
 
             if (options.get('normalRangeMin') !== undefined && options.get('drawNormalOnTop')) {
@@ -2697,22 +2696,56 @@ sauce.propDefined('jQuery', function() {
             this.currentTargetShapeId = undefined;
         },
 
+        _buildFillGradient: function(context, spec) {
+            // Render gradient into detached context first, then use that for ref.
+            // We need to rebuild a gradient using the subset of ranges.
+            const stepCount = spec.steps.length;
+            const size = stepCount * 100;
+            const refCanvas = document.createElement('canvas');
+            refCanvas.width = size;
+            refCanvas.height = 2;
+            const refContext = refCanvas.getContext('2d');
+            const refGradient = refContext.createLinearGradient(0, 0, size, 0);
+            const refMin = Math.min.apply(null, spec.steps.map(x => x.value));
+            const refMax = Math.max.apply(null, spec.steps.map(x => x.value));
+            const refRange = refMax - refMin;
+            for (const step of spec.steps) {
+                const pct = Math.min(1, Math.max(0, (step.value - refMin) / refRange));
+                refGradient.addColorStop(pct, step.color);
+            }
+            refContext.fillStyle = refGradient;
+            refContext.fillRect(0, 0, size, 2); // make 1
+            const gradient = context.createLinearGradient(0, this.pixelHeight, 0, 0);
+            const range = this._maxValue - this._minValue;
+            const samples = stepCount * 5;  // Slightly more bands than the orig.
+            const alpha = spec.opacity || 1;
+            let over;
+            for (let i = 0; i < samples && !over; i++) {
+                const pct = i / samples;
+                const valOfft = (pct * range) + this._minValue;
+                const refPct = (valOfft - refMin) / refRange;
+                if (refPct > 1) {
+                    over = true;
+                }
+                const refOffset = Math.max(0, Math.min(size - 1, Math.round(refPct * size)));
+                const [r, g, b] = refContext.getImageData(refOffset, 0, refOffset + 1, 1).data;
+                gradient.addColorStop(pct, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+            }
+            return gradient;
+        },
+
         _getContext: function (lineColor, fillColor, lineWidth) {
-            var context = this.canvas.getContext('2d');
+            const context = this.canvas.getContext('2d');
             if (lineColor !== undefined) {
                 context.strokeStyle = lineColor;
             }
             context.lineWidth = lineWidth === undefined ? 1 : lineWidth;
             if (fillColor !== undefined) {
                 if (fillColor.type === 'gradient') {
-                    const gradient = context.createLinearGradient(0, this.pixelHeight, 0, 0);
-                    for (const step of fillColor.steps) {
-                        const pct = (step.value - this._minValue) / (this._maxValue - this._minValue);
-                        if (pct >= 0 && pct <= 1) {
-                            gradient.addColorStop(pct, step.color);
-                        }
+                    if (this._fillGradient == null) {
+                        this._fillGradient = this._buildFillGradient(context, fillColor);
                     }
-                    context.fillStyle = gradient;
+                    context.fillStyle = this._fillGradient;
                 } else {
                     context.fillStyle = fillColor;
                 }
@@ -2729,8 +2762,7 @@ sauce.propDefined('jQuery', function() {
         },
 
         _drawShape: function (shapeid, path, lineColor, fillColor, lineWidth) {
-            var context = this._getContext(lineColor, fillColor, lineWidth),
-                i, plen;
+            var context = this._getContext(lineColor, fillColor, lineWidth), i, plen;
             context.beginPath();
             context.moveTo(path[0][0] + 0.5, path[0][1] + 0.5);
             for (i = 1, plen = path.length; i < plen; i++) {
