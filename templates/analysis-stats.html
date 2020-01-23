@@ -1,14 +1,14 @@
 <div class="sauce-brand-sidebar">
     <div class="sauce-logo"></div>
-    <div class="sauce-label">Sauce<br/>Stats</div>
+    <div class="sauce-label">Sauce<br/>{{{stats}}}</div>
 </div>
 <% if (obj.elapsed) { %>
     <div class="sauce-data-tuple"
-         title="Elapsed time includes stops.  It is the full duration.">
-        <span class="sauce-heading">Elapsed:</span> {{elapsed}}
+         title="{{{elapsed_title}}}">
+        <span class="sauce-heading">{{{elapsed}}}:</span> {{elapsed}}
         <% if (obj.elapsedPower) { %>
             <div class="sauce-line">
-                Power Avg:
+                {{{power_avg}}}:
                 {{Math.round(elapsedPower).toLocaleString()}}<abbr class="unit">w</abbr>
                 <% if (obj.weight) { %>
                     | {{(elapsedPower / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
@@ -17,13 +17,13 @@
         <% } %>
         <% if (obj.elapsedNP) { %>
             <div class="sauce-line">
-                Normalized:
+                {{{normalized}}}:
                 {{Math.round(elapsedNP).toLocaleString()}}<abbr class="unit">np</abbr>
             </div>
         <% } %>
         <% if (obj.elapsedPace) { %>
             <div class="sauce-line">
-                Pace:
+                {{{pace}}}:
                 {{elapsedPace}}<abbr class="unit">/{{distUnit}}</abbr>
             </div>
         <% } %>
@@ -38,10 +38,10 @@
 <% if (obj.moving) { %>
     <div class="sauce-data-tuple"
          title="Moving time excludes stops.  It is only the active time.">
-        <span class="sauce-heading">Moving:</span> {{moving}}
+        <span class="sauce-heading">{{{moving}}}:</span> {{moving}}
         <% if (obj.movingPower) { %>
             <div class="sauce-line">
-                Power Avg:
+                {{{power_avg}}}:
                 {{Math.round(movingPower).toLocaleString()}}<abbr class="unit">w</abbr>
                 <% if (obj.weight) { %>
                     | {{(movingPower / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
@@ -50,13 +50,13 @@
         <% } %>
         <% if (obj.movingNP) { %>
             <div class="sauce-line">
-                Normalized:
+                {{{normalized}}}:
                 {{Math.round(movingNP).toLocaleString()}}<abbr class="unit">np</abbr>
             </div>
         <% } %>
         <% if (obj.movingPace) { %>
             <div class="sauce-line">
-                Pace:
+                {{{pace}}}:
                 {{movingPace}}<abbr class="unit">/{{distUnit}}</abbr>
             </div>
         <% } %>
@@ -70,17 +70,17 @@
 <% } %>
 <% if (obj.kj) { %>
     <div class="sauce-data-tuple" title="Kilojoules of energy used">
-        <span class="sauce-heading">Energy:</span>
+        <span class="sauce-heading">{{{energy}}}:</span>
         {{Math.round(kj).toLocaleString()}}<abbr class="unit">kJ</abbr>
         <div class="sauce-line">
-            Per Hour:
+            {{{per_hour}}}:
             {{Math.round(kjHour).toLocaleString()}}<abbr class="unit">kJ/h</abbr>
         </div>
     </div>
 <% } %>
 <% if (obj.altitude) { %>
     <div class="sauce-data-tuple">
-        <span class="sauce-heading">Elevation:</span>
+        <span class="sauce-heading">{{{elevation}}}:</span>
         <% if (altitude.gain || altitude.loss) { %>
             <% if (altitude.gain && altitude.loss) { %>
                 <span class="sauce-positive" title="Altitude Gain">
@@ -105,12 +105,12 @@
     </div>
 <% } %>
 <div class="sauce-data-tuple">
-    <span class="sauce-heading">Data:</span>
-    {{samples.toLocaleString()}} samples
+    <span class="sauce-heading">{{{data}}}:</span>
+    {{samples.toLocaleString()}} {{{samples}}}
     <div class="sauce-line">
-        <a class="sauce-raw-data" href="javascript:void(0);">View raw data</a>
+        <a class="sauce-raw-data" href="javascript:void(0);">{{{view_raw_data}}}</a>
     </div>
     <div class="sauce-line">
-        <a class="sauce-graph-data" href="javascript:void(0);">View graph data</a>
+        <a class="sauce-graph-data" href="javascript:void(0);">{{{view_graph_data}}}</a>
     </div>
 </div>

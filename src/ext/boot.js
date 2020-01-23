@@ -7,21 +7,25 @@
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
         scripts: [
-            'base.js',
-            'rpc.js',
-            'sparkline.js',
-            'lib.js',
-            'export.js',
-            'analysis.js',
+            'site/base.js',
+            'site/rpc.js',
+            'site/locale.js',
+            'common/template.js',
+            'site/sparkline.js',
+            'site/lib.js',
+            'site/export.js',
+            'site/analysis.js',
         ]
     }, {
         name: 'Dashboard',
         pathMatch: /^\/dashboard(\/.*|\b)/,
         scripts: [
-            'base.js',
-            'rpc.js',
-            'lib.js',
-            'dashboard.js'
+            'site/base.js',
+            'site/rpc.js',
+            'site/locale.js',
+            'common/template.js',
+            'site/lib.js',
+            'site/dashboard.js'
         ]
     }];
 
@@ -189,7 +193,7 @@
             if (location.pathname.match(x.pathMatch)) {
                 console.info(`Sauce loading: ${x.name}`);
                 for (const url of x.scripts) {
-                    await loadScript(`${extUrl}src/site/${url}`);
+                    await loadScript(`${extUrl}src/${url}`);
                 }
             }
         }

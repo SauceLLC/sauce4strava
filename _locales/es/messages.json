@@ -1,0 +1,56 @@
+{
+    "app_name": {
+        "message": "Salsa para Strava ™",
+        "description": "Nombre de la tienda (límite de 45 caracteres)"
+    },
+    "app_short_name": {
+        "message": "Salsa",
+        "description": "Se usa cuando app_name no cabe (límite de 12 caracteres)."
+    },
+    "app_desc": {
+        "message": "Funcionalidad adicional para su análisis de ciclismo y carrera. Esta extensión actualiza el sitio web de Strava ™.",
+        "description": "La descripción de la aplicación, que se muestra en la tienda web."
+    },
+    "analysis_stats_elapsed": {
+        "message": "Transcurrido"
+    },
+    "analysis_stats_elapsed_title": {
+        "message": "El tiempo transcurrido incluye paradas. Es la duración completa."
+    },
+    "analysis_stats_moving": {
+        "message": "Moviente"
+    },
+    "analysis_stats_stats": {
+        "message": "Estadísticas"
+    },
+    "analysis_stats_power_avg": {
+        "message": "Promedio de potencia"
+    },
+    "analysis_stats_normalized": {
+        "message": "Normalizado"
+    },
+    "analysis_stats_energy": {
+        "message": "Energía"
+    },
+    "analysis_stats_per_hour": {
+        "message": "Por hora"
+    },
+    "analysis_stats_elevation": {
+        "message": "Elevación"
+    },
+    "analysis_stats_data": {
+        "message": "Datos"
+    },
+    "analysis_stats_view_raw_data": {
+        "message": "Ver datos sin procesar"
+    },
+    "analysis_stats_view_graph_data": {
+        "message": "Ver datos del gráfico"
+    },
+    "analysis_stats_pace": {
+        "message": "Paso"
+    },
+    "analysis_stats_samples": {
+        "message": "muestras"
+    }
+}

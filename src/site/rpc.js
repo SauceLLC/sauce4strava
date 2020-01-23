@@ -113,13 +113,13 @@ sauce.ns('rpc', function() {
     }
 
 
-    async function localeGetMessage() {
+    async function getLocaleMessage() {
         const data = Array.from(arguments);
         return await _sendMessage({system: 'locale', op: 'getMessage', data});
     }
 
-    async function localeGetMessages() {
-        const data = Array.from(arguments);
+
+    async function getLocaleMessages(data) {
         return await _sendMessage({system: 'locale', op: 'getMessages', data});
     }
 
@@ -138,7 +138,7 @@ sauce.ns('rpc', function() {
         ga,
         reportEvent,
         reportError,
-        localeGetMessage,
-        localeGetMessages,
+        getLocaleMessage,
+        getLocaleMessages,
     };
 });

@@ -5,10 +5,21 @@
 
     const hooks = {};
 
+
     function addHook(system, op, callback) {
         const sysTable = hooks[system] || (hooks[system] = {});
         sysTable[op] = callback;
     }
+
+
+    function _getI18nMessage(args) {
+        try {
+            return chrome.i18n.getMessage.apply(null, args);
+        } catch(e) {
+            console.warn(`Failed to get i18n message for: ${args[0]}: ${e.message}`);
+        }
+    }
+
 
     addHook('storage', 'set', sauce.storage.set);
     addHook('storage', 'get', sauce.storage.get);
@@ -26,9 +37,8 @@
         tracker[method].apply(tracker, args);
     });
     addHook('app', 'getDetails', () => chrome.app.getDetails());
-    addHook('locale', 'getMessage', args => chrome.i18n.getMessage.apply(null, args));
-    addHook('locale', 'getMessages', batch => batch.map(args =>
-        chrome.i18n.getMessage.apply(null, args)));
+    addHook('locale', 'getMessage', _getI18nMessage);
+    addHook('locale', 'getMessages', batch => batch.map(x => _getI18nMessage(x)));
 
 
     async function onMessage(msg, sender, setResponse) {

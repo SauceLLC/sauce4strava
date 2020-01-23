@@ -1,14 +1,28 @@
 {
-    "appName": {
+    "app_name": {
         "message": "Sauce for Strava™",
         "description": "Store name (45 char limit)"
     },
-    "appShortName": {
+    "app_short_name": {
         "message": "Sauce",
-        "description": "Used when appName won't fit (12 char limit)."
+        "description": "Used when app_name won't fit (12 char limit)."
     },
-    "appDesc": {
+    "app_desc": {
         "message": "Additional functionality for your cycling and running analysis.  This extension upgrades the Strava™ website.",
-        "description":"The description of the application, displayed in the web store."
-    }
+        "description": "The description of the application, displayed in the web store."
+    },
+    "analysis_stats_elapsed": {"message": "Elapsed"},
+    "analysis_stats_elapsed_title": {"message": "Elapsed time includes stops.  It is the full duration."},
+    "analysis_stats_moving": {"message": "Moving"},
+    "analysis_stats_stats": {"message": "Stats"},
+    "analysis_stats_power_avg": {"message": "Power Avg"},
+    "analysis_stats_normalized": {"message": "Normalized"},
+    "analysis_stats_energy": {"message": "Energy"},
+    "analysis_stats_per_hour": {"message": "Per Hour"},
+    "analysis_stats_elevation": {"message": "Elevation"},
+    "analysis_stats_data": {"message": "Data"},
+    "analysis_stats_view_raw_data": {"message": "View raw data"},
+    "analysis_stats_view_graph_data": {"message": "View graph data"},
+    "analysis_stats_pace": {"message": "Pace"},
+    "analysis_stats_samples": {"message": "samples"}
 }

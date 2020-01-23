@@ -306,6 +306,10 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const [realWattsStream, timeStream, movingStream] = await fetchStreams(['watts', 'time', 'moving']);
         const isWattEstimate = !realWattsStream;
         let wattsStream = realWattsStream;
+        const elapsedTime = streamDelta(timeStream);
+        const movingTime = sauce.data.movingTime(timeStream, movingStream);
+        let power;
+        let np;
         if (!wattsStream) {
             wattsStream = await fetchStream('watts_calc');
             if (!wattsStream) {
@@ -316,11 +320,15 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 rideCPs.shift();
             }
         }
-        const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-        const np = sauce.power.calcNP(wattsStream);
-        const movingTime = sauce.data.movingTime(timeStream, movingStream);
-        const idealPower = np || corrected.kj() * 1000 / movingTime;
-        const $stats = jQuery(ctx.tertiaryStatsTpl({
+        if (wattsStream) {
+            // XXX This may be wrong.  np is based on moving time, corrected power is maybe zero padded
+            // Then we do TSS calcs based on elapsed time.   FIX THIS and also only report this for real watt
+            // stream.  So perhaps make an else clause to the above if (watts).
+            const corrected = sauce.power.correctedPower(timeStream, wattsStream);
+            const np = sauce.power.calcNP(wattsStream);
+            power = np || corrected.kj() * 1000 / movingTime;
+        }
+        const $stats = jQuery(await ctx.tertiaryStatsTpl({
             type: 'ride',
             np,
             weightUnit: weightFormatter.shortUnitKey(),
@@ -328,8 +336,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             weightOrigin: ctx.weightOrigin,
             ftp: ctx.ftp,
             ftpOrigin: ctx.ftpOrigin,
-            intensity: ctx.ftp ? idealPower / ctx.ftp : undefined,
-            tss: ctx.ftp ? sauce.power.calcTSS(idealPower, corrected.elapsed(), ctx.ftp) : undefined
+            intensity: (power && ctx.ftp) ? power / ctx.ftp : undefined,
+            tss: (power && ctx.ftp) ? sauce.power.calcTSS(power, elapsedTime, ctx.ftp) : undefined
         }));
         attachEditableFTP($stats);
         attachEditableWeight($stats);
@@ -346,7 +354,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     });
                 }
             }
-            const holderEl = jQuery(ctx.critpowerTpl({
+            const holderEl = jQuery(await ctx.critpowerTpl({
                 critPowers,
                 isWattEstimate
             })).insertAfter(jQuery('#pagenav').first())[0];
@@ -369,7 +377,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             return;
         }
         const timeStream = await fetchStream('time');
-        const statsFrag = jQuery(ctx.tertiaryStatsTpl({
+        const statsFrag = jQuery(await ctx.tertiaryStatsTpl({
             type: 'run',
             weightUnit: weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
@@ -389,7 +397,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             }
         }
         if (bestPaces.length) {
-            const holderEl = jQuery(ctx.bestpaceTpl({
+            const holderEl = jQuery(await ctx.bestpaceTpl({
                 bestPaces,
                 distUnit: distanceFormatter.shortUnitKey(),
             })).insertAfter(jQuery('#pagenav').first())[0];
@@ -502,7 +510,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
-        const $dialog = jQuery(ctx.moreinfoTpl({
+        const $dialog = jQuery(await ctx.moreinfoTpl({
             title: `Critical Power: ${label}`,
             startsAt: humanTime(startTime),
             wKg,
@@ -591,7 +599,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
         const maxVelocity = sauce.data.max(velocityStream);
-        const $dialog = jQuery(ctx.moreinfoTpl({
+        const $dialog = jQuery(await ctx.moreinfoTpl({
             title: `Best Pace: ${label}`,
             startsAt: humanTime(startTime),
             pace: {
@@ -688,11 +696,11 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     let _tplCache = {};
-    async function getTemplate(filename) {
+    async function getTemplate(filename, options) {
         if (!_tplCache[filename]) {
             const resp = await fetch(`${tplUrl}/${filename}`);
             const tplText = await resp.text();
-            _tplCache[filename] = _.template(tplText);
+            _tplCache[filename] = sauce.template.compile(tplText, options);
         }
         return _tplCache[filename];
     }
@@ -830,10 +838,10 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         $button.on('click', submitComment);
         $root.append([$commentsEl, $submitEl]);
         const commentsTpl = await getTemplate('inline-comment.html');
-        function renderComments() {
+        async function renderComments() {
             const commentsHtml = [];
             for (const x of pageView.commentsController().getFromHash(`Activity-${ctx.activity.id}`)) {
-                commentsHtml.push(commentsTpl({
+                commentsHtml.push(await commentsTpl({
                     tokens: x.comment,
                     athlete: x.athlete,
                     timeago: sauce.time.ago(new Date(jQuery(x.timestamp).attr('datetime'))),
@@ -842,7 +850,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             $commentsEl.html(commentsHtml.join(''));
         }
         pageView.commentsController().on('commentCompleted', renderComments);
-        renderComments();
+        await renderComments();
     }
 
 
@@ -930,7 +938,10 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         jQuery('body').on('click', '.rank_badge', async ev => {
             closeCurrentMoreinfoDialog();
             const powerProfileTpl = await getTemplate('power-profile-help.html');
-            const $dialog = dialogPrompt('Power Profile Badges Explained', powerProfileTpl(), {width: 600});
+            const $dialog = dialogPrompt(
+                'Power Profile Badges Explained',
+                await powerProfileTpl(),
+                {width: 600});
             const times = [];
             for (let i = 5; i < 3600; i += Math.log(i + 1)) {
                 times.push(i);
@@ -1107,9 +1118,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 kjHour: tplData.kj && (tplData.kj / movingTime) * 3600,
             });
         }
-        const tpl = await getTemplate('analysis-stats.html');
+        const tpl = await getTemplate('analysis-stats.html', {localePrefix: 'analysis_stats_'});
         ctx.$analysisStats.data({start, end});
-        ctx.$analysisStats.html(tpl(tplData));
+        ctx.$analysisStats.html(await tpl(tplData));
     }
 
 
