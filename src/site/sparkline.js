@@ -1,8 +1,8 @@
+/* global sauce */
 /**
 *
-* jquery.sparkline.js
+* Sauce sparkline: Hard fork of jquery.sparkline.js v2.1.2
 *
-* v2.1.2
 * (c) Splunk, Inc
 * Contact: Gareth Watts (gareth@splunk.com)
 * http://omnipotent.net/jquery.sparkline/
@@ -200,22 +200,12 @@
 *   $('#pie').sparkline([1,1,2], { type:'pie' });
 */
 
-/*jslint regexp: true, browser: true, jquery: true, white: true, nomen: false, plusplus: false, maxerr: 500, indent: 4 */
-
-sauce.propDefined('jQuery', function() {
-(function(factory) {
-    if(typeof define === 'function' && define.amd) {
-        define(['jquery'], factory);
-    } else if (jQuery && !jQuery.fn.sparkline) {
-        factory(jQuery);
-    }
-}
-(function($) {
+sauce.propDefined('jQuery', function($) {
     'use strict';
 
     var UNSET_OPTION = {},
         getDefaults, createClass, SPFormat, clipval, quartile, normalizeValue, normalizeValues,
-        remove, isNumber, all, sum, addCSS, ensureArray, formatNumber, RangeMap,
+        remove, isNumber, all, addCSS, ensureArray, formatNumber, RangeMap,
         MouseHandler, Tooltip, barHighlightMixin,
         line, bar, tristate, discrete, bullet, pie, box, defaultStyles, initStyles,
         VShape, VCanvas_base, VCanvas_canvas, pending, shapeCount = 0;
@@ -495,23 +485,23 @@ sauce.propDefined('jQuery', function() {
     normalizeValue = function (val) {
         var nf;
         switch (val) {
-            case 'undefined':
-                val = undefined;
-                break;
-            case 'null':
-                val = null;
-                break;
-            case 'true':
-                val = true;
-                break;
-            case 'false':
-                val = false;
-                break;
-            default:
-                nf = parseFloat(val);
-                if (val == nf) {
-                    val = nf;
-                }
+        case 'undefined':
+            val = undefined;
+            break;
+        case 'null':
+            val = null;
+            break;
+        case 'true':
+            val = true;
+            break;
+        case 'false':
+            val = false;
+            break;
+        default:
+            nf = parseFloat(val);
+            if (val == nf) {
+                val = nf;
+            }
         }
         return val;
     };
@@ -564,15 +554,6 @@ sauce.propDefined('jQuery', function() {
         return true;
     };
 
-    // sums the numeric values in an array, ignoring other values
-    sum = function (vals) {
-        var total = 0, i;
-        for (i = vals.length; i--;) {
-            total += typeof vals[i] === 'number' ? vals[i] : 0;
-        }
-        return total;
-    };
-
     ensureArray = function (val) {
         return $.isArray(val) ? val : [val];
     };
@@ -604,7 +585,7 @@ sauce.propDefined('jQuery', function() {
         } else if ($.fn.sparkline.canvas === undefined) {
             // No function defined yet -- need to see if we support Canvas
             var el = document.createElement('canvas');
-            if (!!(el.getContext && el.getContext('2d'))) {
+            if (el.getContext && el.getContext('2d')) {
                 // Canvas is available
                 $.fn.sparkline.canvas = function(width, height, target, interact) {
                     return new VCanvas_canvas(width, height, target, interact);
@@ -740,9 +721,9 @@ sauce.propDefined('jQuery', function() {
         mouseleave: function () {
             $(document.body).unbind('mousemove.jqs');
             var splist = this.splist,
-                 spcount = splist.length,
-                 needsRefresh = false,
-                 sp, i;
+                spcount = splist.length,
+                needsRefresh = false,
+                sp, i;
             this.over = false;
             this.currentEl = null;
 
@@ -775,11 +756,11 @@ sauce.propDefined('jQuery', function() {
 
         updateDisplay: function () {
             var splist = this.splist,
-                 needsRefresh = false,
-                 offset = this.$canvas.offset(),
-                 localX = this.currentPageX - offset.left,
-                 localY = this.currentPageY - offset.top,
-                 tooltiphtml, sp, i, changeEvent;
+                needsRefresh = false,
+                offset = this.$canvas.offset(),
+                localX = this.currentPageX - offset.left,
+                localY = this.currentPageY - offset.top,
+                tooltiphtml, changeEvent;
             if (!this.over) {
                 return;
             }
@@ -927,8 +908,8 @@ sauce.propDefined('jQuery', function() {
     $.fn.sparkline = function (userValues, userOptions) {
         return this.each(function () {
             var options = new $.fn.sparkline.options(this, userOptions),
-                 $this = $(this),
-                 render, i;
+                $this = $(this),
+                render;
             render = function () {
                 var values, width, height, tmp, mhandler, sp, vals;
                 if (userValues === 'html' || userValues === undefined) {
@@ -987,7 +968,7 @@ sauce.propDefined('jQuery', function() {
             if (($(this).html() && !options.get('disableHiddenCheck') && $(this).is(':hidden')) || !$(this).parents('body').length) {
                 if (!options.get('composite') && $.data(this, '_jqs_pending')) {
                     // remove any existing references to the element
-                    for (i = pending.length; i; i--) {
+                    for (let i = pending.length; i; i--) {
                         if (pending[i - 1][0] == this) {
                             pending.splice(i - 1, 1);
                         }
@@ -1704,7 +1685,7 @@ sauce.propDefined('jQuery', function() {
                 stackMax = -Infinity,
                 isStackString, groupMin, groupMax, stackRanges,
                 numValues, i, vlen, range, zeroAxis, xaxisOffset, min, max, clipMin, clipMax,
-                stacked, vlist, j, slen, svals, val, yoffset, yMaxCalc, canvasHeightEf;
+                stacked, vlist, j, slen, svals, val, yoffset, yMaxCalc;
             bar._super.init.call(this, el, values, options, width, height);
 
             // scan values to determine whether to stack bars
@@ -2165,15 +2146,15 @@ sauce.propDefined('jQuery', function() {
                 shape;
             delete this.shapes[shapeid];
             switch (currentRegion.substr(0, 1)) {
-                case 'r':
-                    shape = this.renderRange(currentRegion.substr(1), highlight);
-                    break;
-                case 'p':
-                    shape = this.renderPerformance(highlight);
-                    break;
-                case 't':
-                    shape = this.renderTarget(highlight);
-                    break;
+            case 'r':
+                shape = this.renderRange(currentRegion.substr(1), highlight);
+                break;
+            case 'p':
+                shape = this.renderPerformance(highlight);
+                break;
+            case 't':
+                shape = this.renderTarget(highlight);
+                break;
             }
             this.valueShapes[currentRegion] = shape.id;
             this.shapes[shape.id] = currentRegion;
@@ -2286,8 +2267,8 @@ sauce.propDefined('jQuery', function() {
 
         changeHighlight: function (highlight) {
             var currentRegion = this.currentRegion,
-                 newslice = this.renderSlice(currentRegion, highlight),
-                 shapeid = this.valueShapes[currentRegion];
+                newslice = this.renderSlice(currentRegion, highlight),
+                shapeid = this.valueShapes[currentRegion];
             delete this.shapes[shapeid];
             this.target.replaceWithShape(shapeid, newslice);
             this.valueShapes[currentRegion] = newslice.id;
@@ -2916,4 +2897,4 @@ sauce.propDefined('jQuery', function() {
             this._maxValue = max;
         }
     });
-}))});
+});
