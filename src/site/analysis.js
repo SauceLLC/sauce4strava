@@ -569,15 +569,32 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             graphData = rollValues;
         }
         if (graphData) {
-            /* Must run after the dialog is open for proper rendering. */
+            const minPower = sauce.data.min(graphData);
+            const chartMin = Math.max(0, minPower * 0.75);
             $dialog.find('.sauce-sparkline').sparkline(graphData, {
                 type: 'line',
                 width: '100%',
                 height: 56,
-                lineColor: '#EA400D',
-                fillColor: 'rgba(234, 64, 13, 0.61)',
-                chartRangeMin: 0,
-                normalRangeMin: 0,
+                lineColor: '#EA400DA0',
+                fillColor: {
+                    type: 'gradient',
+                    opacity: 0.6,  // use this instead of rgba colors (it's technical)
+                    steps: [{
+                        value: 0,
+                        color: '#f0f0f0'
+                    }, {
+                        value: 100,  // ~easy
+                        color: '#fd6d1d'
+                    }, {
+                        value: 400,  // ~hard
+                        color: '#780271'
+                    }, {
+                        value: 1200,  // ~sprint
+                        color: '#000'
+                    }]
+                },
+                chartRangeMin: chartMin,
+                normalRangeMin: chartMin,
                 normalRangeMax: avgPower,
                 tooltipFormatter: (_, _2, data) => `${Math.round(data.y)}<abbr class="unit short">w</abbr>`
             });
@@ -595,8 +612,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const startTime = roll.firstTimestamp({noPad: true});
         const endTime = roll.lastTimestamp({noPad: true});
         await fetchStreams(['heartrate', 'grade_adjusted_pace', 'altitude',
-                            'grade_smooth', 'cadence', 'velocity']);  // better load perf
-        const velocityStream = await fetchStreamTimeRange('velocity', startTime, endTime);
+                            'grade_smooth', 'cadence', 'velocity_smooth']);  // better load perf
+        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const gapStream = await fetchStreamTimeRange('grade_adjusted_pace', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
@@ -656,14 +673,32 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             graphData = velocityStream;
         }
         if (graphData) {
+            const minVelocity = sauce.data.min(graphData);
+            const chartMin = Math.max(0, minVelocity * 0.75);
             $dialog.find('.sauce-sparkline').sparkline(graphData, {
                 type: 'line',
                 width: '100%',
                 height: 56,
-                lineColor: '#EA400D',
-                fillColor: 'rgba(234, 64, 13, 0.61)',
-                chartRangeMin: 0,
-                normalRangeMin: 0,
+                lineColor: '#EA400DA0',
+                fillColor: {
+                    type: 'gradient',
+                    opacity: 0.6,  // use this instead of rgba colors (it's technical)
+                    steps: [{
+                        value: 0.5,  // Slow Walking
+                        color: '#f0f0f0'
+                    }, {
+                        value: 2,  // Running slow
+                        color: '#fd6d1d'
+                    }, {
+                        value: 5,  // Running fast
+                        color: '#780271'
+                    }, {
+                        value: 10,  // Usain bolt!
+                        color: '#000'
+                    }]
+                },
+                chartRangeMin: chartMin,
+                normalRangeMin: chartMin,
                 normalRangeMax: sauce.data.avg(graphData),
                 tooltipFormatter: (_, _2, data) =>
                     humanPace(data.y, {velocity: true, html: true, suffix: true})
