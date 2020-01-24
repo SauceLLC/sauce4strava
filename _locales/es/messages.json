@@ -11,6 +11,9 @@
         "message": "Funcionalidad adicional para su análisis de ciclismo y carrera. Esta extensión actualiza el sitio web de Strava ™.",
         "description": "La descripción de la aplicación, que se muestra en la tienda web."
     },
+    "analysis_timing": {
+        "message": "Sincronización"
+    },
     "analysis_elapsed": {
         "message": "Transcurrido"
     },

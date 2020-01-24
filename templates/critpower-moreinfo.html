@@ -52,38 +52,24 @@
             </tr>
         <% } %>
 
-        <% if (grade) { %>
+        <% if (elevation) { %>
             <tr>
                 <td>{{{elevation}}}</td>
                 <td>
-                    <sub class="sauce-negative" title="Altitude Loss">{{grade.loss}}{{elevationUnit}}</sub>
-                    <span title="Average Grade">{{Math.round(grade.avg)}}<small>%</small></span>
-                    <sup class="sauce-positive" title="Altitude Gain">{{grade.gain}}{{elevationUnit}}</sup>
+                    <sub class="sauce-negative" title="Altitude Loss">{{elevation.loss}}{{elevationUnit}}</sub>
+                    <span title="Average Grade">{{Math.round(elevation.grade)}}<small>%</small></span>
+                    <sup class="sauce-positive" title="Altitude Gain">{{elevation.gain}}{{elevationUnit}}</sup>
                 </td>
             </tr>
 
-            <% if (grade.vam > 0) { %>
+            <% if (elevation.vam && elevation.vam > 0) { %>
                 <tr title='"Velocità Ascensionale Media" i.e. climbing meters per hour'>
                     <td>VAM <sup class="sauce-beta">{{{BETA}}}</sup></td>
-                    <td>{{Math.round(grade.vam).toLocaleString()}}
+                    <td>{{Math.round(elevation.vam).toLocaleString()}}
                         <abbr class="unit short" title="Ascent velocity meters/hour">Vm/h</abbr>
                     </td>
                 </tr>
             <% } %>
-        <% } %>
-
-        <% if (intensity) { %>
-            <tr>
-                <td>{{{Intensity}}}</td>
-                <td title="Percent of FTP">{{Math.round(intensity * 100)}}%</td>
-            </tr>
-        <% } %>
-
-        <% if (tss) { %>
-            <tr>
-                <td>TSS</td>
-                <td title="Total Stress Score">{{Math.round(tss)}}</td>
-            </tr>
         <% } %>
     </table>
 </div>

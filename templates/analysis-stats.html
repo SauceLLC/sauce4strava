@@ -2,111 +2,128 @@
     <div class="sauce-logo"></div>
     <div class="sauce-label">Sauce<br/>{{{stats}}}</div>
 </div>
-<% if (obj.elapsed) { %>
-    <div class="sauce-data-tuple"
-         title="{{{elapsed_title}}}">
-        <span class="sauce-heading">{{{elapsed}}}:</span> {{elapsed}}
-        <% if (obj.elapsedPower) { %>
-            <div class="sauce-line">
-                {{{power_avg}}}:
-                {{Math.round(elapsedPower).toLocaleString()}}<abbr class="unit">w</abbr>
+
+<div class="sauce-data-tuple">
+    <span class="sauce-heading">{{{timing}}}</span>
+    <div class="sauce-line" title="{{{elapsed_tooltip}}}">
+       {{{elapsed}}}: {{elapsed}}
+    </div>
+    <div class="sauce-line" title="{{{moving_tooltip}}}">
+       {{{moving}}}: {{moving}}
+    </div>
+</div>
+
+<% if (obj.power) { %>
+    <div class="sauce-data-tuple">
+        <span class="sauce-heading">{{{power}}}</span>
+
+        <% if (power.elapsed) { %>
+            <div class="sauce-line" title="{{{elapsed_tooltip}}}">
+                {{{elapsed}}}:
+                {{Math.round(power.elapsed).toLocaleString()}}<abbr class="unit">w</abbr>
                 <% if (obj.weight) { %>
-                    | {{(elapsedPower / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
+                    | {{(power.elapsed / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
                 <% } %>
             </div>
         <% } %>
-        <% if (obj.elapsedNP) { %>
+
+        <% if (power.moving) { %>
+            <div class="sauce-line" title="{{{moving_tooltip}}}">
+                {{{moving}}}:
+                {{Math.round(power.moving).toLocaleString()}}<abbr class="unit">w</abbr>
+                <% if (obj.weight) { %>
+                    | {{(power.moving / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
+                <% } %>
+            </div>
+        <% } %>
+
+        <% if (obj.power.np) { %>
             <div class="sauce-line">
                 {{{normalized}}}:
-                {{Math.round(elapsedNP).toLocaleString()}}<abbr class="unit">np</abbr>
-            </div>
-        <% } %>
-        <% if (obj.elapsedPace) { %>
-            <div class="sauce-line">
-                {{{pace}}}:
-                {{elapsedPace}}<abbr class="unit">/{{distUnit}}</abbr>
-            </div>
-        <% } %>
-        <% if (obj.elapsedGAP) { %>
-            <div class="sauce-line">
-                GAP:
-                {{elapsedGAP}}<abbr class="unit">/{{distUnit}}</abbr>
+                {{Math.round(power.np).toLocaleString()}}<abbr class="unit">np</abbr>
             </div>
         <% } %>
     </div>
 <% } %>
-<% if (obj.moving) { %>
-    <div class="sauce-data-tuple"
-         title="Moving time excludes stops.  It is only the active time.">
-        <span class="sauce-heading">{{{moving}}}:</span> {{moving}}
-        <% if (obj.movingPower) { %>
-            <div class="sauce-line">
-                {{{power_avg}}}:
-                {{Math.round(movingPower).toLocaleString()}}<abbr class="unit">w</abbr>
-                <% if (obj.weight) { %>
-                    | {{(movingPower / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
-                <% } %>
+
+<% if (obj.pace) { %>
+    <div class="sauce-data-tuple">
+        <span class="sauce-heading">{{{pace}}}:</span>
+
+        <% if (pace.elapsed) { %>
+            <div class="sauce-line" title="{{{elapsed_tooltip}}}">
+                {{{elapsed}}}:
+                {{pace.elapsed}}<abbr class="unit">/{{distUnit}}</abbr>
             </div>
         <% } %>
-        <% if (obj.movingNP) { %>
-            <div class="sauce-line">
-                {{{normalized}}}:
-                {{Math.round(movingNP).toLocaleString()}}<abbr class="unit">np</abbr>
+
+        <% if (pace.moving) { %>
+            <div class="sauce-line" title="{{{moving_tooltip}}}">
+                {{{moving}}}:
+                {{pace.moving}}<abbr class="unit">/{{distUnit}}</abbr>
             </div>
         <% } %>
-        <% if (obj.movingPace) { %>
-            <div class="sauce-line">
-                {{{pace}}}:
-                {{movingPace}}<abbr class="unit">/{{distUnit}}</abbr>
-            </div>
-        <% } %>
-        <% if (obj.movingGAP) { %>
+
+        <% if (pace.gap) { %>
             <div class="sauce-line">
                 GAP:
-                {{movingGAP}}<abbr class="unit">/{{distUnit}}</abbr>
+                {{pace.gap}}<abbr class="unit">/{{distUnit}}</abbr>
             </div>
         <% } %>
     </div>
 <% } %>
-<% if (obj.kj) { %>
-    <div class="sauce-data-tuple" title="Kilojoules of energy used">
-        <span class="sauce-heading">{{{energy}}}:</span>
-        {{Math.round(kj).toLocaleString()}}<abbr class="unit">kJ</abbr>
+
+<% if (obj.energy) { %>
+    <div class="sauce-data-tuple">
+        <span class="sauce-heading">{{{energy}}}</span>
         <div class="sauce-line">
-            {{{per_hour}}}:
-            {{Math.round(kjHour).toLocaleString()}}<abbr class="unit">kJ/h</abbr>
+            {{{total}}}:
+            {{Math.round(energy.kj).toLocaleString()}}<abbr class="unit">kJ</abbr>
+        </div>
+        <div class="sauce-line">
+            {{{hourly}}}:
+            {{Math.round(energy.kjHour).toLocaleString()}}<abbr class="unit">kJ/h</abbr>
         </div>
     </div>
 <% } %>
-<% if (obj.altitude) { %>
+
+<% if (obj.elevation) { %>
     <div class="sauce-data-tuple">
-        <span class="sauce-heading">{{{elevation}}}:</span>
-        <% if (altitude.gain || altitude.loss) { %>
-            <% if (altitude.gain && altitude.loss) { %>
-                <span class="sauce-positive" title="Altitude Gain">
-                    +{{altitude.gain}}<abbr class="unit">{{elUnit}}</abbr></span>,
-                <span class="sauce-negative" title="Altitude Loss">
-                    -{{altitude.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
-            <% } else if (altitude.gain) { %>
-                <span class="sauce-positive" title="Altitude Gain">
-                    +{{altitude.gain}}<abbr class="unit">{{elUnit}}</abbr></span>
-            <% } else if (altitude.loss) { %>
-                <span class="sauce-negative" title="Altitude Loss">
-                    -{{altitude.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
-            <% } %>
+        <span class="sauce-heading">{{{elevation}}}</span>
+
+        <% if (elevation.gain || elevation.loss) { %>
+            <div class="sauce-line">
+                {{{change}}}:
+                <% if (elevation.gain && elevation.loss) { %>
+                    <span class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
+                        +{{elevation.gain}}<abbr class="unit">{{elUnit}}</abbr></span>,
+                    <span class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
+                        -{{elevation.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
+                <% } else if (elevation.gain) { %>
+                    <span class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
+                        +{{elevation.gain}}<abbr class="unit">{{elUnit}}</abbr></span>
+                <% } else if (elevation.loss) { %>
+                    <span class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
+                        -{{elevation.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
+                <% } %>
+            </div>
         <% } %>
-        <% if (altitude.vam) { %>
+
+        <% if (elevation.vam) { %>
             <div class="sauce-line"
-                 title='"Velocità Ascensionale Media" i.e. climbing meters per hour'>
-                VAM: {{Math.round(altitude.vam).toLocaleString()}}<abbr class="unit">Vm/h</abbr>
+                 title='"Velocità Ascensionale Media" ({{{vam_tooltip}}})'>
+                VAM: {{Math.round(elevation.vam).toLocaleString()}}<abbr class="unit">Vm/h</abbr>
                 <sup class="sauce-beta">{{{beta}}}</sup>
             </div>
         <% } %>
     </div>
 <% } %>
+
 <div class="sauce-data-tuple">
-    <span class="sauce-heading">{{{data}}}:</span>
-    {{samples.toLocaleString()}} {{{samples}}}
+    <span class="sauce-heading">{{{data}}}</span>
+    <div class="sauce-line">
+        {{{samples}}}: {{samples.toLocaleString()}}
+    </div>
     <div class="sauce-line">
         <a class="sauce-raw-data" href="javascript:void(0);">{{{view_raw_data}}}</a>
     </div>

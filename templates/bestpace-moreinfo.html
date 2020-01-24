@@ -55,13 +55,13 @@
                 </tr>
         <% } %>
 
-        <% if (grade) { %>
+        <% if (elevation) { %>
             <tr>
                 <td>{{{elevation}}}</td>
                 <td>
-                    <sub class="sauce-negative" title="Altitude Loss">{{grade.loss}}{{elevationUnit}}</sub>
-                    <span title="Average Grade">{{Math.round(grade.avg)}}<small>%</small></span>
-                    <sup class="sauce-positive" title="Altitude Gain">{{grade.gain}}{{elevationUnit}}</sup>
+                    <sub class="sauce-negative" title="Altitude Loss">{{elevation.loss}}{{elevationUnit}}</sub>
+                    <span title="Average Grade">{{Math.round(elevation.grade)}}<small>%</small></span>
+                    <sup class="sauce-positive" title="Altitude Gain">{{elevation.gain}}{{elevationUnit}}</sup>
                 </td>
             </tr>
         <% } %>
