@@ -250,31 +250,41 @@
     font-size: 0.85em;
 }
 
-
 .sauce-inline-comments {
     max-height: 300px;
     overflow: auto;
-    padding: 10px 6px 10px;
-    margin-top: 10px;
+}
+
+.sauce-inline-comments:not(:empty) {
+    margin-top: 0.5em;
     border-top: 1px solid #e5e5e5;
 }
 
 .sauce-comment-holder {
-    padding-bottom: 8px;
+    padding: 0.4em 0.6em;
+    margin-bottom: 0.2em;
     display: flex;
-    align-items: flex-end;
+    border-radius: 0.28em;  /* for hover */
+}
+
+.sauce-comment-holder:last-child {
+    margin-bottom: 0;
+}
+
+.sauce-comment-holder:hover {
+    background-color: #00000009;
 }
 
 .sauce-comment-holder a.sauce-athlete {
     display: block;
-    flex: 1 38px;
-    margin-bottom: 6px;
+    margin-top: 0.2em;
+    margin-right: 0.5em;
 }
 
 .sauce-comment-holder a.sauce-athlete img {
-    border-radius: 50% 50% 2px 50%;
-    width: 30px;
-    height: 30px;
+    border-radius: 50%;
+    width: 3em;
+    height: 3em;
 }
 
 .sauce-comment-holder .sauce-comment {
@@ -282,23 +292,19 @@
 }
 
 .sauce-comment-holder .sauce-comment p {
-    padding: 6px 8px 6px 8px;
-    font-size: 11px;
-    color: #555;
+    font-size: .85em;
     margin: 0;
-    border-radius: 0px 1px 1px 1px;
-    box-shadow: 1px 1px 2px #555;
 }
 
-.sauce-comment-holder .sauce-footer {
-    font-size: 9px;
+.sauce-comment-holder .sauce-header {
+    font-size: 0.75em;
     color: #666;
-    padding-left: 2px;
 }
 
 .sauce-new-comment {
-    border-top: 1.5px solid rgba(255, 123, 123, 0.46);
-    padding-top: 6px;
+    margin-top: 0.5em;
+    border-top: 1px solid rgba(255, 123, 123, 0.46);
+    padding-top: 0.5em;
     display: flex;
     justify-content: center;
 }
@@ -311,7 +317,7 @@
 }
 
 .sauce-new-comment .sauce-label {
-    font-size: 9px;
+    font-size: 0.8em;
 }
 
 .sauce-new-comment button {

@@ -882,53 +882,54 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
+    function submitComment(comment) {
+        pageView.commentsController().comment('Activity', ctx.activity.id, comment);
+        sauce.rpc.reportEvent('Comment', 'submit');
+    }
+
+
     async function attachComments() {
-        const $root = jQuery('.activity-summary');
-        const $commentsEl = jQuery('<div class="sauce-inline-comments"></div>');
-        const $submitEl = jQuery([
-            '<div class="sauce-new-comment">',
-                '<div>',
-                    '<div class="sauce-label">Say something</div>',
-                    '<input type="text" placeholder="Your comment here..."/>',
-                    '<button disabled>Comment</button>',
-                '</div>',
-            '</div>'
-        ].join(''));
-        const $input = $submitEl.find('input');
-        const $button = $input.next('button');
-        const submitComment = () => {
-            pageView.commentsController().comment('Activity', ctx.activity.id, $input.val());
-            $input.val('');
-            sauce.rpc.reportEvent('Comment', 'submit');
-        };
-        $input.on('input', ev => {
-            if ($input.val()) {
-                $button.removeAttr('disabled');
-            } else {
-                $button.attr('disabled', 'disabled');
-            }
-        });
-        $input.on('keypress', ev => {
-            if (ev.which == 13 /*Enter*/ && $input.val()) {
-                submitComment();
-            }
-        });
-        $button.on('click', submitComment);
-        $root.append([$commentsEl, $submitEl]);
-        const commentsTpl = await getTemplate('inline-comment.html');
-        async function renderComments() {
-            const commentsHtml = [];
+        const commentsTpl = await getTemplate('comments.html');
+        const submitCommentTpl = await getTemplate('submit-comment.html');
+        const $section = jQuery(`
+            <div>
+                <div class="sauce-inline-comments"></div>
+                <div class="sauce-new-comment"></div>
+            </div>
+        `);
+        jQuery('.activity-summary').append($section);
+        async function render() {
+            const comments = [];
             for (const x of pageView.commentsController().getFromHash(`Activity-${ctx.activity.id}`)) {
-                commentsHtml.push(await commentsTpl({
+                comments.push({
                     tokens: x.comment,
                     athlete: x.athlete,
                     timeago: sauce.time.ago(new Date(jQuery(x.timestamp).attr('datetime'))),
-                }));
+                });
             }
-            $commentsEl.html(commentsHtml.join(''));
+            $section.find('.sauce-inline-comments').html((await commentsTpl({comments})).trim());
+            $section.find('.sauce-new-comment').html(await submitCommentTpl());
         }
-        pageView.commentsController().on('commentCompleted', renderComments);
-        await renderComments();
+        $section.on('input', '.sauce-new-comment input', ev => {
+            const $input = jQuery(ev.currentTarget);
+            if ($input.val()) {
+                $input.next('button').removeAttr('disabled');
+            } else {
+                $input.next('button').attr('disabled', 'disabled');
+            }
+        });
+        $section.on('keypress', '.sauce-new-comment input', ev => {
+            const $input = jQuery(ev.currentTarget);
+            if (ev.which == 13 /*Enter*/ && $input.val()) {
+                submitComment($input.val());
+            }
+        });
+        $section.on('click', '.sauce-new-comment button', ev => {
+            const $input = jQuery(ev.currentTarget).prev('input');
+            submitComment($input.val());
+        });
+        pageView.commentsController().on('commentCompleted', render);
+        await render();
     }
 
 
