@@ -42,47 +42,40 @@ sauce.ns('rpc', function() {
     }
 
 
+    let _activeAthleteUpdate;
     async function updateAthleteInfo(id, updates) {
-        const athlete_info = (await storageGet('athlete_info')) || {};
-        if (!athlete_info[id]) {
-            athlete_info[id] = {};
+        const priorUpdate = _activeAthleteUpdate;
+        const ourUpdate = (async () => {
+            if (priorUpdate) {
+                await priorUpdate;
+            }
+            const athlete_info = (await storageGet('athlete_info')) || {};
+            if (!athlete_info[id]) {
+                athlete_info[id] = {};
+            }
+            Object.assign(athlete_info[id], updates);
+            await storageSet({athlete_info});
+            return athlete_info[id];
+        })();
+        _activeAthleteUpdate = ourUpdate;
+        try {
+            return await ourUpdate;
+        } finally {
+            if (ourUpdate === _activeAthleteUpdate) {
+                _activeAthleteUpdate = null;
+            }
         }
-        Object.assign(athlete_info[id], updates);
-        await storageSet({athlete_info});
     }
 
 
-    async function setFTPOverride(id, ftp_override) {
-        await updateAthleteInfo(id, {ftp_override});
+    async function setAthleteProp(id, key, value) {
+        await updateAthleteInfo(id, {[key]: value});
     }
 
 
-    async function getFTPOverride(id) {
+    async function getAthleteProp(id, key) {
         const info = await getAthleteInfo(id);
-        return info && info.ftp_override;
-    }
-
-
-
-    async function setWeightOverride(id, weight_override) {
-        await updateAthleteInfo(id, {weight_override});
-    }
-
-
-    async function getWeightOverride(id) {
-        const info = await getAthleteInfo(id);
-        return info && info.weight_override;
-    }
-
-
-    async function setWeightLastKnown(id, weight_lastknown) {
-        await updateAthleteInfo(id, {weight_lastknown});
-    }
-
-
-    async function getWeightLastKnown(id) {
-        const info = await getAthleteInfo(id);
-        return info && info.weight_lastknown;
+        return info && info[key];
     }
 
 
@@ -127,12 +120,8 @@ sauce.ns('rpc', function() {
     return {
         getAthleteInfo,
         updateAthleteInfo,
-        getFTPOverride,
-        setFTPOverride,
-        getWeightOverride,
-        setWeightOverride,
-        getWeightLastKnown,
-        setWeightLastKnown,
+        getAthleteProp,
+        setAthleteProp,
         storageSet,
         storageGet,
         ga,
