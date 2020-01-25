@@ -358,6 +358,11 @@
     cursor: pointer;
 }
 
+abbr.unit {
+    margin-left: 0.1em;
+    font-size: 0.88em;
+}
+
 .sauce-analysis-stats:empty {
     box-sizing: border-box;
 }
@@ -462,11 +467,6 @@
     display: block;
     margin-left: 0.2em;
     white-space: nowrap;
-}
-
-.sauce-analysis-stats .sauce-data-tuple abbr.unit {
-    font-size: 0.85em;
-    margin-left: 0.1em;
 }
 
 .sauce-beta {

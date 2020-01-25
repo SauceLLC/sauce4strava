@@ -22,8 +22,10 @@
         <tr title="{{{elapsed_power_tooltip}}}">
             <td>{{{power}}}</td>
             <td>
-                <span>{{Math.round(power.avg)}}<abbr class="unit short">w</abbr></span>
-                <sup class="sauce-positive" title="{{{peak_power_tooltip}}}">{{power.max}}<abbr class="unit short">w</abbr></sup>
+                {{Math.round(power.avg)}}<abbr class="unit short">w</abbr>
+                <sup class="sauce-positive" title="{{{peak_power_tooltip}}}">
+                    {{power.max}}<abbr class="unit short">w</abbr>
+                </sup>
             </td>
         </tr>
 
@@ -39,7 +41,7 @@
                 <td>{{{heartrate}}}</td>
                 <td>
                     <sub class="sauce-positive" title="{{{low_hr_tooltip}}}">{{hr.min}}</sub>
-                    <span>{{Math.round(hr.avg)}}</span>
+                    {{Math.round(hr.avg)}}
                     <sup class="sauce-negative" title="{{{high_hr_tooltip}}}">{{hr.max}}</sup>
                 </td>
             </tr>
@@ -56,17 +58,23 @@
             <tr>
                 <td>{{{elevation}}}</td>
                 <td>
-                    <sub class="sauce-negative" title="{{{elevation_loss_tooltip}}}">{{elevation.loss}}{{elevationUnit}}</sub>
-                    <span title="{{{grade_tooltip}}}">{{Math.round(elevation.grade)}}<small>%</small></span>
-                    <sup class="sauce-positive" title="{{{elevation_gain_tooltip}}}">{{elevation.gain}}{{elevationUnit}}</sup>
+                    <sub class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
+                        {{elevation.loss}}<abbr class="unit short">{{elevationUnit}}</abbr>
+                    </sub>
+                    <span title="{{{grade_tooltip}}}">
+                        {{Math.round(elevation.grade)}}<abbr class="unit short">%</abbr>
+                    </span>
+                    <sup class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
+                        {{elevation.gain}}<abbr class="unit short">{{elevationUnit}}</abbr>
+                    </sup>
                 </td>
             </tr>
 
             <% if (elevation.vam && elevation.vam > 0) { %>
                 <tr title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                     <td>VAM</td>
-                    <td>{{Math.round(elevation.vam).toLocaleString()}}
-                        <abbr class="unit short">Vm/h</abbr>
+                    <td>
+                        {{Math.round(elevation.vam).toLocaleString()}}<abbr class="unit short">Vm/h</abbr>
                     </td>
                 </tr>
             <% } %>
