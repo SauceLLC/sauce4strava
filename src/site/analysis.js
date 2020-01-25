@@ -489,7 +489,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     function altitudeChanges(stream, minChange) {
-        minChange = minChange || 30;  // Smooth out erroneous readings from bad computers.  e.g. Egan Bernal
+        minChange = minChange || 15;  // Smooth out erroneous readings from bad computers.  e.g. Egan Bernal
         let gain = 0;
         let loss = 0;
         if (stream && stream.length) {
