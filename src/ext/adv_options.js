@@ -36,7 +36,7 @@
     async function renderAthleteInfo(el) {
         const info = await sauce.storage.get('athlete_info');
         const html = [];
-        for (const [id, athlete] of Object.entries(info)) {
+        for (const [id, athlete] of Object.entries(info || {})) {
             const json = JSON.stringify(athlete, null, 2);
             const lines = json.split('\n');
             html.push(`

@@ -28,7 +28,7 @@
             let objRef = root || self;
 
             function walkProps() {
-                while (props.length && objRef.hasOwnProperty(props[0])) {
+                while (props.length && Object.prototype.hasOwnProperty.call(objRef, props[0])) {
                     const desc = Object.getOwnPropertyDescriptor(objRef, props[0]);
                     if (desc && desc.set &&
                         (!desc.set.hasValue ||

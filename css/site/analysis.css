@@ -94,7 +94,7 @@
     margin-right: -15px;
 }
 
-.activity-stats .secondary-stats.inline-stats.sauce-stats .divider {
+.activity-stats .secondary-stats.inline-stats.sauce-stats .divider:not(:first-child) {
     border-left: 1px solid #ff440080;
     width: 20px;
     height: 2.2em;
@@ -369,6 +369,13 @@
 .sauce-analysis-stats .sauce-brand-sidebar {
     width: 120px; /* Must match hard code chart SIDEBAR_WIDTH */
     display: flex;
+    position: relative;
+}
+
+.sauce-analysis-stats .sauce-brand-sidebar .sauce-beta {
+    position: absolute;
+    top: -0.6em;
+    left: -0.4em;
 }
 
 .sauce-analysis-stats .sauce-brand-sidebar .sauce-logo {
@@ -401,6 +408,7 @@
 }
 
 .sauce-analysis-stats .sauce-data-tuple {
+    position: relative;
     padding-right: 1em;
     margin: 0.5em 0;
 }

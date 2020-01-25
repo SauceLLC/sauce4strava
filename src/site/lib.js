@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, jQuery */
 
 sauce.ns('data', function() {
     'use strict';

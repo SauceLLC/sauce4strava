@@ -1,6 +1,10 @@
 <div class="sauce-brand-sidebar">
+    <div class="sauce-beta">{{{beta}}}</div>
     <div class="sauce-logo"></div>
-    <div class="sauce-label">Sauce<br/>{{{stats}}}</div>
+    <div class="sauce-label">
+        Sauce<br/>
+        {{{stats}}}
+    </div>
 </div>
 
 <div class="sauce-data-tuple">
@@ -9,41 +13,13 @@
         <value>{{elapsed}}</value>
     </line>
 
-    <% if (obj.inactive) { %>
-        <line title="{{{inactive_time_tooltip}}}">
-            <key>{{{inactive}}}</key>
-            <value>{{inactive}}</value>
+    <% if (obj.paused) { %>
+        <line title="{{{paused_time_tooltip}}}">
+            <key>{{{paused}}}</key>
+            <value>{{paused}}</value>
         </line>
     <% } %>
 </div>
-
-<% if (obj.power) { %>
-    <div class="sauce-data-tuple">
-        <line class="heading" title="{{{moving_power_tooltip}}}">
-            <key>{{{power}}}</key>
-            <value>
-                {{Math.round(power.moving).toLocaleString()}}<abbr class="unit">w</abbr>
-                <% if (obj.weight) { %>
-                    | {{(power.moving / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
-                <% } %>
-            </value>
-        </line>
-
-        <% if (power.elapsed) { %>
-            <line title="{{{elapsed_power_tooltip}}}">
-                <key>{{{elapsed}}}</key>
-                <value>{{Math.round(power.elapsed).toLocaleString()}}<abbr class="unit">w</abbr></value>
-            </line>
-        <% } %>
-
-        <% if (obj.power.np) { %>
-            <line title="{{{np_tooltip}}}">
-                <key>NP®</key>
-                <value>{{Math.round(power.np).toLocaleString()}}<abbr class="unit">w</abbr></value>
-            </line>
-        <% } %>
-    </div>
-<% } %>
 
 <% if (obj.pace) { %>
     <div class="sauce-data-tuple">
@@ -63,6 +39,38 @@
             <line title="{{{gap_tooltip}}}">
                 <key>GAP</key>
                 <value>{{pace.gap}}<abbr class="unit">/{{distUnit}}</abbr></value>
+            </line>
+        <% } %>
+    </div>
+<% } %>
+
+<% if (obj.power) { %>
+    <div class="sauce-data-tuple">
+        <line class="heading" title="{{{moving_power_tooltip}}}">
+            <% if (isRun) { %>
+                <key>{{{run_power}}}</key>
+            <% } else { %>
+                <key>{{{power}}}</key>
+            <% } %>
+            <value>
+                {{Math.round(power.moving).toLocaleString()}}<abbr class="unit">w</abbr>
+                <% if (obj.weight && !isRun) { %>
+                    | {{(power.moving / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
+                <% } %>
+            </value>
+        </line>
+
+        <% if (power.elapsed) { %>
+            <line title="{{{elapsed_power_tooltip}}}">
+                <key>{{{elapsed}}}</key>
+                <value>{{Math.round(power.elapsed).toLocaleString()}}<abbr class="unit">w</abbr></value>
+            </line>
+        <% } %>
+
+        <% if (obj.power.np) { %>
+            <line title="{{{np_tooltip}}}">
+                <key>NP®</key>
+                <value>{{Math.round(power.np).toLocaleString()}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
     </div>
@@ -114,7 +122,6 @@
                 <key>VAM</key>
                 <value>
                     {{Math.round(elevation.vam).toLocaleString()}}<abbr class="unit">Vm/h</abbr>
-                    <sup class="sauce-beta">{{{beta}}}</sup>
                 </value>
             </line>
         <% } %>

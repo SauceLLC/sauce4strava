@@ -14,9 +14,6 @@
         <tr title="{{{elapsed_pace_tooltip}}}">
             <td>{{{pace}}} <abbr class="unit short" title="{{distUnitLong}}">/{{distUnit}}</abbr></td>
             <td>
-                <% if (pace.min) { %>
-                    <sub class="sauce-negative" title="Slowest Pace">{{pace.min}}</sub>
-                <% } %>
                 <span>{{pace.avg}}</span>
                 <sup class="sauce-positive" title="Peak Pace">{{pace.max}}</sup>
             </td>
@@ -59,6 +56,15 @@
                     <sup class="sauce-positive" title="{{{elevation_gain_tooltip}}}">{{elevation.gain}}{{elevationUnit}}</sup>
                 </td>
             </tr>
+
+            <% if (elevation.vam && elevation.vam > 0) { %>
+                <tr title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
+                    <td>VAM</td>
+                    <td>{{Math.round(elevation.vam).toLocaleString()}}
+                        <abbr class="unit short">Vm/h</abbr>
+                    </td>
+                </tr>
+            <% } %>
         <% } %>
     </table>
 </div>

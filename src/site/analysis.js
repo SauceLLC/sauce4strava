@@ -656,7 +656,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             title: `${heading}: ${label}`,
             startsAt: humanTime(startTime),
             pace: {
-                min: humanPace(sauce.data.min(velocityStream), {velocity: true}),
                 avg: humanPace(roll.avg()),
                 max: humanPace(maxVelocity, {velocity: true}),
                 gap: gapStream && humanPace(sauce.data.avg(gapStream)),
@@ -1167,11 +1166,12 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const timeStream = await fetchStream('time', start, end);
         const movingTime = await getMovingTime(start, end);
         const elapsedTime = streamDelta(timeStream);
-        const inactiveTime = elapsedTime - movingTime;
+        const pausedTime = elapsedTime - movingTime;
         const tplData = {
+            isRun,
             elapsed: humanTime(elapsedTime),
             moving: humanTime(movingTime),
-            inactive: timeFormatter.abbreviatedNoTags(inactiveTime, null, false),
+            paused: timeFormatter.abbreviatedNoTags(pausedTime, null, false),
             weight: ctx.weight,
             elUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),

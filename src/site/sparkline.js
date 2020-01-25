@@ -623,7 +623,7 @@ sauce.propDefined('jQuery', function($) {
         init: function (map) {
             var key, range, rangelist = [];
             for (key in map) {
-                if (map.hasOwnProperty(key) && typeof key === 'string' && key.indexOf(':') > -1) {
+                if (Object.prototype.hasOwnProperty.call(map, key) && typeof key === 'string' && key.indexOf(':') > -1) {
                     range = key.split(':');
                     range[0] = range[0].length === 0 ? -Infinity : parseFloat(range[0]);
                     range[1] = range[1].length === 0 ? Infinity : parseFloat(range[1]);
@@ -1038,7 +1038,7 @@ sauce.propDefined('jQuery', function($) {
             if (prefix === false || prefix === undefined) {
                 return UNSET_OPTION;
             }
-            if (this.tagValCache.hasOwnProperty(key)) {
+            if (Object.prototype.hasOwnProperty.call(this.tagValCache, key)) {
                 val = this.tagValCache.key;
             } else {
                 val = this.tag.getAttribute(prefix + key);

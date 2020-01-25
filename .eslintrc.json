@@ -6,12 +6,6 @@
         "browser": true,
         "es6": true
     },
-    "globals": {
-        "Strava": true,
-        "jQuery": true,
-        "_": true,
-        "pageView": true
-    },
     "extends": "eslint:recommended",
     "rules": {
         "quotes": "off",

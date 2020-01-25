@@ -1,4 +1,4 @@
-/* global Strava sauce jQuery pageView _ */
+/* global sauce */
 
 sauce.ns('locale', ns => {
     'use strict';
