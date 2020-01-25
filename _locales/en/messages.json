@@ -21,7 +21,7 @@
     "analysis_moving_power_tooltip": {"message": "Average moving power: Only active time"},
     "analysis_moving_pace_tooltip": {"message": "Average moving pace: Only active time"},
     "analysis_gap_tooltip": {"message": "Grade Adjusted Pace: Estimated pace for flat terrain"},
-    "analysis_normalized_tooltip": {"message": "Normalized Power®"},
+    "analysis_np_tooltip": {"message": "Normalized Power®: An estimate of potential average power"},
     "analysis_energy_tooltip": {"message": "Energy expended in kilojoules: Humans are only about 24-25% efficient at converting stored energy to work, so 1kj is roughly equivalent to 1 food calorie (kcal)"},
     "analysis_energy_rate_tooltip": {"message": "Kilojoules per hour"},
     "analysis_elevation_gain_tooltip": {"message": "Elevation gained: climbing"},
