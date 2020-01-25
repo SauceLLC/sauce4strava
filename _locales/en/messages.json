@@ -42,6 +42,11 @@
     "analysis_ftp_input_tooltip": {"message": "Enter the estimated FTP (Functional Threshold Power) for this athlete and press Enter.  FTP is the maximum watt average sustained for 1 hour.  If the athlete already has a value set in their profile then this will override that setting.  To reset the value enter a blank value."},
     "analysis_weight_input_tooltip": {"message": "Enter the estimated weight for this athlete and press Enter.  If the athlete already has a value set in their profile then this will override that setting.  To reset the value enter a blank value."},
     "analysis_intensity_tooltip": {"message": "Intensity Factor®"},
+    "analysis_cp_tooltip": {"message": "Critical Power: Maximum power sustained for a time period"},
+    "analysis_bp_tooltip": {"message": "Best Pace: Maximum pace sustained over a distance"},
+    "analysis_cp_period_tooltip": {"message": "Maximum power sustained for"},
+    "analysis_bp_period_tooltip": {"message": "Maximum pace sustained for"},
+    "analysis_watt_estimate_tooltip": {"message": "These values are being calculated from wattage estimates.  For accurate values you need a real power measurement device."},
     "analysis_paused": {"message": "Paused"},
     "analysis_idle": {"message": "Idle"},
     "analysis_moving": {"message": "Moving"},
@@ -51,6 +56,7 @@
     "analysis_expended": {"message": "Expended"},
     "analysis_rate": {"message": "Rate"},
     "analysis_elevation": {"message": "Elevation"},
+    "analysis_estimated": {"message": "estimated"},
     "analysis_data": {"message": "Data"},
     "analysis_raw_data": {"message": "raw data"},
     "analysis_graphs": {"message": "graphs"},
@@ -68,5 +74,11 @@
     "analysis_run_power": {"message": "Run Power"},
     "analysis_weight": {"message": "Weight"},
     "analysis_change": {"message": "Change"},
-    "analysis_view": {"message": "View"}
+    "analysis_view": {"message": "View"},
+    "analysis_male": {"message": "Male"},
+    "analysis_female": {"message": "Female"},
+    "analysis_power_profile_about1": {"message": "The concept of power profiling was created by Dr. Andy Coggan.  It is a basic outline of the power requirements to be at a specific level of racing competitiveness."},
+    "analysis_power_profile_about2": {"message": "These rankings are meant to give you a rough idea of how your best power output would compare to the maximum capability of other racers.   They are most representative when you are working very hard."},
+    "analysis_power_profile_select": {"message": "Select a profile to view required power outputs"},
+    "analysis_power_profile_footer_leadin": {"message": "The Sauce algorithm is a modified from Andy's original spreadsheet so that it can estimate rankings for any time period.  For an in depth understanding of these profiles read"}
 }

@@ -1069,10 +1069,15 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             info.ftpOrigin = 'sauce';
         } else {
             const power = pageView.powerController && pageView.powerController();
-            await new Promise(resolve => power.deferred.done(resolve));
-            /* Sometimes you can get it from the activity.  I think this only
-             * works when you are the athlete in the activity. */
-            const stravaFtp = power ? power.get('athlete_ftp') : ctx.activity.get('ftp');
+            let stravaFtp;
+            if (power) {
+                await new Promise(resolve => power.deferred.done(resolve));
+                stravaFtp = power.get('athlete_ftp');
+            } else {
+                /* Sometimes you can get it from the activity.  I think this only
+                 * works when you are the athlete in the activity. */
+                stravaFtp = ctx.activity.get('ftp');
+            }
             if (stravaFtp) {
                 info.ftp = stravaFtp;
                 info.ftpOrigin = 'strava';

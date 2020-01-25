@@ -1,12 +1,9 @@
 <ul id="sauce-infopanel" class="pagenav">
     <li class="group">
-        <div class="title"
-             title="Best Pace sustained for a given distance.">
-            {{{best_pace}}}
-        </div>
+        <div class="title" title="{{{bp_tooltip}}}">{{{best_pace}}}</div>
         <table>
             <% for (const {label, roll, pace} of bestPaces) { %>
-                <tr id="sauce-cp-{{roll.period}}" title="Fastest average pace for {{label}}">
+                <tr id="sauce-cp-{{roll.period}}" title="{{{bp_period_tooltip}}} {{label}}">
                     <td>{{label}}</td>
                     <td>{{pace}}<abbr class="unit short">/{{distUnit}}</abbr></td>
                 </tr>
