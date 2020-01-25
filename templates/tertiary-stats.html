@@ -1,44 +1,52 @@
-<% if (type === 'ride' || weightNorm) { %>
-    <ul class="inline-stats section secondary-stats sauce-stats">
-        <% if (type === 'ride') { %>
-            <% if (np) { %>
-                <li>
-                    <strong>{{Math.round(np)}}<abbr class="unit" title="Watts">W</abbr></strong>
-                    <div class="label">{{{normalized}}} {{{power}}}</div>
-                </li>
-            <% } %>
-
-            <li>
-                <strong>
-                    <a class="provide-ftp origin-{{ftpOrigin}}" title="Click to override...">{{ftp}}</a><abbr class="unit" title="Watts">W</abbr>
-                    <input style="display: none;" type="text" value="{{ftp}}"
-                           title="Enter a &quot;Functional Threshold Power&quot; (FTP) value for this athlete and press enter/return.  The value should be given as the maximum sustainable wattage the athlete can produce for 1 hour.  If the athlete already has a value set in their profile (premium members only) then this will override that setting.  If you want to clear the overridden value, empty this field and press enter."/>
-                </strong>
-                <div class="label">FTP</div>
-            </li>
-
-            <% if (intensity) { %>
-                <li>
-                    <strong>{{Math.round(intensity * 100)}}<abbr class="unit" title="Intensity Factor">%</abbr></strong>
-                    <div class="label">{{{intensity}}}</div>
-                </li>
-            <% } %>
-
-            <% if (tss) { %>
-                <li>
-                    <strong>{{Math.round(tss)}}</strong>
-                    <div class="label">TSS</div>
-                </li>
-            <% } %>
-        <% } %>
-
+<ul class="inline-stats section secondary-stats sauce-stats">
+    <% if (obj.np) { %>
         <li>
-            <strong>
-                <a class="provide-weight origin-{{weightOrigin}}" title="Click to override...">{{weightNorm}}</a><abbr class="unit" title="Weight">{{weightUnit}}</abbr>
-                <input style="display: none;" type="text" value="{{weightNorm}}"
-                       title="Enter a weight value for this athlete and press enter/return.  If the athlete already has a weight value set in their profile then this will override that setting.  If you want to clear the overridden value, empty this field and press enter."/>
-            </strong>
-            <div class="label">{{{weight}}}</div>
+            <strong>{{Math.round(np).toLocaleString()}}<abbr class="unit">w</abbr></strong>
+            <div class="label">NP®</div>
         </li>
-    </ul>
-<% } %>
+    <% } else if (obj.power) { %>
+        <li>
+            <strong>{{Math.round(power).toLocaleString()}}<abbr class="unit">w</abbr></strong>
+            <div class="label">Power</div>
+        </li>
+    <% } %>
+
+
+    <% if (intensity) { %>
+        <li title="{{{intensity_tooltip}}}">
+            <strong>{{Math.round(intensity * 100)}}<abbr class="unit">%</abbr></strong>
+            <div class="label">IF®</div>
+        </li>
+    <% } %>
+
+    <% if (tss) { %>
+        <li title="{{{tss_tooltip}}}">
+            <strong>{{Math.round(tss)}}</strong>
+            <div class="label">TSS®</div>
+        </li>
+    <% } %>
+
+    <div class="divider"></div>
+
+    <li>
+        <strong>
+            <a class="provide-ftp origin-{{ftpOrigin}}"
+               title="{{{ftp_link_tooltip}}}">{{Math.round(ftp).toLocaleString()}}</a><!--
+            --><input style="display: none;" type="text" value="{{ftp}}"
+                   title="{{{ftp_input_tooltip}}}"/><!--
+            --><abbr class="unit" title="Watts">W</abbr>
+        </strong>
+        <div class="label">FTP</div>
+    </li>
+
+    <li>
+        <strong>
+            <a class="provide-weight origin-{{weightOrigin}}"
+               title="{{{weight_link_tooltip}}}">{{weightNorm}}</a><!--
+            --><input style="display: none;" type="text" value="{{weightNorm}}"
+                   title="{{{weight_input_tooltip}}}"/><!--
+            --><abbr class="unit" title="Weight">{{weightUnit}}</abbr>
+        </strong>
+        <div class="label">{{{weight}}}</div>
+    </li>
+</ul>

@@ -1,27 +1,23 @@
 <div title="{{title}}" class="sauce-moreinfo">
     <div class="sauce-sparkline"></div>
     <table>
-        <tr>
+        <tr title="{{{start_of_effort_tooltip}}}">
             <td>{{{start_of_effort}}}</td>
-            <td title="Time offset to the start of this effort.">
-                <a class="start_time_link">{{startsAt}}</a>
-            </td>
+            <td><a class="start_time_link">{{startsAt}}</a></td>
         </tr>
 
-        <tr>
+        <tr title="{{{elapsed_time_tooltip}}}">
             <td>{{{elapsed_time}}}</td>
-            <td title="Hours:Minutes:Seconds">
-                <span>{{elapsed}}</span>
-            </td>
+            <td>{{elapsed}}</td>
         </tr>
 
-        <tr>
+        <tr title="{{{elapsed_pace_tooltip}}}">
             <td>{{{pace}}} <abbr class="unit short" title="{{distUnitLong}}">/{{distUnit}}</abbr></td>
             <td>
                 <% if (pace.min) { %>
                     <sub class="sauce-negative" title="Slowest Pace">{{pace.min}}</sub>
                 <% } %>
-                <span title="Average Pace">{{pace.avg}}</span>
+                <span>{{pace.avg}}</span>
                 <sup class="sauce-positive" title="Peak Pace">{{pace.max}}</sup>
             </td>
         </tr>
@@ -40,28 +36,27 @@
             <tr>
                 <td>{{{heartrate}}}</td>
                 <td>
-                    <sub class="sauce-positive" title="Lowest BPM">{{hr.min}}</sub>
-                    <span title="Average BPM">{{Math.round(hr.avg)}}</span>
-                    <sup class="sauce-negative" title="Peak BPM">{{hr.max}}</sup>
+                    <sub class="sauce-positive" title="{{{low_hr_tooltip}}}">{{hr.min}}</sub>
+                    <span>{{Math.round(hr.avg)}}</span>
+                    <sup class="sauce-negative" title="{{{high_hr_tooltip}}}">{{hr.max}}</sup>
                 </td>
             </tr>
         <% } %>
 
         <% if (cadence) { %>
-            <tr>
-                <td title="Steps per minute">{{{cadence}}}</td>
-                <td title="Steps per minute">
-                    {{Math.round(cadence)}}<abbr class="unit short">spm</abbr>
-                </tr>
+            <tr title="{{{running_cadence_tooltip}}}">
+                <td>{{{cadence}}}</td>
+                <td>{{Math.round(cadence)}}<abbr class="unit short">spm</abbr>
+            </tr>
         <% } %>
 
         <% if (elevation) { %>
             <tr>
                 <td>{{{elevation}}}</td>
                 <td>
-                    <sub class="sauce-negative" title="Altitude Loss">{{elevation.loss}}{{elevationUnit}}</sub>
-                    <span title="Average Grade">{{Math.round(elevation.grade)}}<small>%</small></span>
-                    <sup class="sauce-positive" title="Altitude Gain">{{elevation.gain}}{{elevationUnit}}</sup>
+                    <sub class="sauce-negative" title="{{{elevation_loss_tooltip}}}">{{elevation.loss}}{{elevationUnit}}</sub>
+                    <span title="{{{grade_tooltip}}}">{{Math.round(elevation.grade)}}<small>%</small></span>
+                    <sup class="sauce-positive" title="{{{elevation_gain_tooltip}}}">{{elevation.gain}}{{elevationUnit}}</sup>
                 </td>
             </tr>
         <% } %>

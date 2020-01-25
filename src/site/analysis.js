@@ -227,9 +227,10 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
-    async function rememberAthleteInfo(athlete) {
+    async function updateAthleteInfo(athlete, extra) {
         // This is just for display purposes, but it helps keep things clear in the options.
-        await sauce.rpc.updateAthleteInfo(athlete.id, {name: athlete.get('display_name')});
+        const updates = Object.assign({name: athlete.get('display_name')}, extra);
+        await sauce.rpc.updateAthleteInfo(athlete.id, updates);
     }
 
 
@@ -254,9 +255,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     return n;
                 }
             },
-            onValid: async v => {
-                await sauce.rpc.setFTPOverride(ctx.athlete.id, v);
-                await rememberAthleteInfo(ctx.athlete);
+            onValid: async ftp_override => {
+                await updateAthleteInfo(ctx.athlete, {ftp_override});
                 dialogPrompt('Reloading...', '<b>Reloading page to reflect FTP change.</b>');
                 location.reload();
             }
@@ -286,9 +286,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 }
             },
             onValid: async v => {
-                const kg = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
-                await sauce.rpc.setWeightOverride(ctx.athlete.id, kg);
-                await rememberAthleteInfo(ctx.athlete);
+                const weight_override = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
+                await updateAthleteInfo(ctx.athlete, {weight_override});
                 dialogPrompt('Reloading...', '<b>Reloading page to reflect weight change.</b>');
                 location.reload();
             }
@@ -307,6 +306,14 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
+    async function renderTertiaryStats(attrs) {
+        const $stats = jQuery(await ctx.tertiaryStatsTpl(attrs));
+        attachEditableFTP($stats);
+        attachEditableWeight($stats);
+        jQuery('.activity-stats .inline-stats').last().after($stats);
+    }
+
+
     async function processRideStreams() {
         const [realWattsStream, timeStream] = await fetchStreams(['watts', 'time']);
         const isWattEstimate = !realWattsStream;
@@ -321,27 +328,36 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 rideCPs.shift();
             }
         }
-        let powerish;
+        let tss;
         let np;
+        let intensity;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             np = sauce.power.calcNP(corrected.values());
-            powerish = np || corrected.avg();
+            if (ctx.ftp) {
+                if (np) {
+                    // Calculate TSS based on elapsed time when NP is being used.
+                    tss = sauce.power.calcTSS(np, corrected.elapsed(), ctx.ftp);
+                    intensity = np / ctx.ftp;
+                } else {
+                    // Calculate TSS based on moving time when just avg is available.
+                    const power = corrected.kj() * 1000 / movingTime;
+                    const movingTime = await getMovingTime();
+                    tss = sauce.power.calcTSS(power, movingTime, ctx.ftp);
+                    intensity = power / ctx.ftp;
+                }
+            }
         }
-        const $stats = jQuery(await ctx.tertiaryStatsTpl({
-            type: 'ride',
-            np,
+        await renderTertiaryStats({
             weightUnit: weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
             ftp: ctx.ftp,
             ftpOrigin: ctx.ftpOrigin,
-            intensity: (powerish && ctx.ftp) && powerish / ctx.ftp,
-            tss: (powerish && ctx.ftp) && sauce.power.calcTSS(powerish, streamDelta(timeStream), ctx.ftp)
-        }));
-        attachEditableFTP($stats);
-        attachEditableWeight($stats);
-        jQuery('.activity-stats .inline-stats').last().after($stats);
+            intensity,
+            tss,
+            np,
+        });
         if (wattsStream && sauce.options['analysis-cp-chart']) {
             const critPowers = [];
             for (const [label, period] of rideCPs) {
@@ -354,62 +370,85 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     });
                 }
             }
-            const holderEl = jQuery(await ctx.critpowerTpl({
-                critPowers,
-                isWattEstimate
-            })).insertAfter(jQuery('#pagenav').first())[0];
-            for (const {label, roll} of critPowers) {
-                const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
-                row.addEventListener('click', async ev => {
-                    ev.stopPropagation();
-                    openMoreinfoDialog(await moreinfoRideDialog({label, roll, anchorEl: row}), row);
-                    sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
-                });
+            if (critPowers.length) {
+                const holderEl = jQuery(await ctx.critpowerTpl({
+                    critPowers,
+                    isWattEstimate
+                })).insertAfter(jQuery('#pagenav').first())[0];
+                for (const {label, roll} of critPowers) {
+                    const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
+                    row.addEventListener('click', async ev => {
+                        ev.stopPropagation();
+                        openMoreinfoDialog(await moreinfoRideDialog({label, roll, anchorEl: row}), row);
+                        sauce.rpc.reportEvent('MoreInfoDialog', 'open', `critical-power-${roll.period}`);
+                    });
+                }
+                requestAnimationFrame(navHeightAdjustments);
             }
-            requestAnimationFrame(navHeightAdjustments);
         }
     }
 
 
     async function processRunStreams() {
-        const distStream = await fetchStream('distance');
-        if (!distStream || !sauce.options['analysis-cp-chart']) {
-            return;
-        }
+        const wattsStream = await fetchStream('watts');
+        const movingTime = await getMovingTime();
         const timeStream = await fetchStream('time');
-        const $stats = jQuery(await ctx.tertiaryStatsTpl({
-            type: 'run',
+        let power;
+        if (wattsStream) {
+            const corrected = sauce.power.correctedPower(timeStream, wattsStream);
+            power = corrected.kj() * 1000 / movingTime;
+        } else if (ctx.weight) {
+            const gradeDistanceStream = await fetchStream('grade_adjusted_distance');
+            if (gradeDistanceStream) {
+                const gradeDistance = streamDelta(gradeDistanceStream);
+                const kj = sauce.pace.work(ctx.weight, gradeDistance);
+                power = kj * 1000 / movingTime;
+            }
+        }
+        let tss;
+        let intensity;
+        if (power && ctx.ftp) {
+            tss = sauce.power.calcTSS(power, movingTime, ctx.ftp);
+            intensity = power / ctx.ftp;
+        }
+        await renderTertiaryStats({
             weightUnit: weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
-        }));
-        attachEditableWeight($stats);
-        jQuery('.activity-stats .inline-stats').last().after($stats);
-        const bestPaces = [];
-        for (const [label, distance] of runBPs) {
-            const roll = sauce.pace.bestPace(distance, timeStream, distStream);
-            if (roll) {
-                bestPaces.push({
-                    label,
-                    roll,
-                    pace: humanPace(roll.avg()),
-                });
+            ftp: ctx.ftp,
+            ftpOrigin: ctx.ftpOrigin,
+            intensity,
+            tss,
+            power
+        });
+        const distStream = await fetchStream('distance');
+        if (distStream && sauce.options['analysis-cp-chart']) {
+            const bestPaces = [];
+            for (const [label, distance] of runBPs) {
+                const roll = sauce.pace.bestPace(distance, timeStream, distStream);
+                if (roll) {
+                    bestPaces.push({
+                        label,
+                        roll,
+                        pace: humanPace(roll.avg()),
+                    });
+                }
             }
-        }
-        if (bestPaces.length) {
-            const holderEl = jQuery(await ctx.bestpaceTpl({
-                bestPaces,
-                distUnit: distanceFormatter.shortUnitKey(),
-            })).insertAfter(jQuery('#pagenav').first())[0];
-            for (const {label, roll} of bestPaces) {
-                const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
-                row.addEventListener('click', async ev => {
-                    ev.stopPropagation();
-                    openMoreinfoDialog(await moreinfoRunDialog({label, roll, anchorEl: row}), row);
-                    sauce.rpc.reportEvent('MoreInfoDialog', 'open', `best-pace-${roll.period}`);
-                });
+            if (bestPaces.length) {
+                const holderEl = jQuery(await ctx.bestpaceTpl({
+                    bestPaces,
+                    distUnit: distanceFormatter.shortUnitKey(),
+                })).insertAfter(jQuery('#pagenav').first())[0];
+                for (const {label, roll} of bestPaces) {
+                    const row = holderEl.querySelector(`#sauce-cp-${roll.period}`);
+                    row.addEventListener('click', async ev => {
+                        ev.stopPropagation();
+                        openMoreinfoDialog(await moreinfoRunDialog({label, roll, anchorEl: row}), row);
+                        sauce.rpc.reportEvent('MoreInfoDialog', 'open', `best-pace-${roll.period}`);
+                    });
+                }
+                requestAnimationFrame(navHeightAdjustments);
             }
-            requestAnimationFrame(navHeightAdjustments);
         }
     }
 
@@ -703,26 +742,35 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     async function load() {
-        if (!self.pageView) {
+        const activity = pageView && pageView.activity();
+        if (!activity) {
             return;
         }
-        ctx.athlete = pageView.activityAthlete();
-        ctx.activity = await fetchFullActivity();
-        ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
-        Object.assign(ctx, await getWeightInfo(ctx.athlete.id));
         let start;
-        if (ctx.activity.isRun()) {
+        if (activity.isRun()) {
             start = startRun;
-        } else if (ctx.activity.isRide()) {
+        } else if (activity.isRide()) {
             start = startRide;
         }
-        const type = ctx.activity.get('fullType') || ctx.activity.get('type');
+        const type = activity.get('type');
+        sendGAPageView(type);  // bg okay
+        if (start) {
+            ctx.athlete = pageView.activityAthlete();
+            ctx.activity = await fetchFullActivity();
+            ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
+            Object.assign(ctx, await getWeightInfo(ctx.athlete.id), await getFTPInfo(ctx.athlete.id));
+            ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
+            await start();
+        } else {
+            console.info("Unsupported activity type:", type);
+        }
+    }
+
+
+    async function sendGAPageView(type) {
         await sauce.rpc.ga('set', 'page', `/site/analysis/${type}`);
         await sauce.rpc.ga('set', 'title', 'Sauce Analysis');
         await sauce.rpc.ga('send', 'pageview');
-        if (start) {
-            await start();
-        }
     }
 
 
@@ -936,7 +984,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     async function startRun() {
         await attachExporters();
         await attachComments();
-        ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.bestpaceTpl = await getTemplate('bestpace.html');
         ctx.moreinfoTpl = await getTemplate('bestpace-moreinfo.html');
         await processRunStreams();
@@ -946,10 +993,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     async function startRide() {
         await attachExporters();
         await attachComments();
-        ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
         ctx.critpowerTpl = await getTemplate('critpower.html');
         ctx.moreinfoTpl = await getTemplate('critpower-moreinfo.html');
-        Object.assign(ctx, await getFTPInfo(ctx.athlete.id));
         const segments = document.querySelector('table.segments');
         if (segments && sauce.options['analysis-segment-badges']) {
             const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
@@ -1019,7 +1064,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
     async function getFTPInfo(athleteId) {
         const info = {};
-        const override = await sauce.rpc.getFTPOverride(athleteId);
+        const override = await sauce.rpc.getAthleteProp(athleteId, 'ftp_override');
         if (override) {
             info.ftp = override;
             info.ftpOrigin = 'sauce';
@@ -1031,9 +1076,23 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             if (stravaFtp) {
                 info.ftp = stravaFtp;
                 info.ftpOrigin = 'strava';
+                // Runs never display ftp, so if the athlete is multisport and
+                // we've seen one activity (ride) with ftp, remember it for looking
+                // at runs later.
+                if (athleteId === ctx.athlete.id) {
+                    await updateAthleteInfo(ctx.athlete, {ftp_lastknown: stravaFtp});
+                } else {
+                    await sauce.rpc.setAthleteProp(athleteId, 'ftp_lastknown', stravaFtp);
+                }
             } else {
-                info.ftp = 0;
-                info.ftpOrigin = 'default';
+                const lastKnown = await sauce.rpc.getAthleteProp(athleteId, 'ftp_lastknown');
+                if (lastKnown) {
+                    info.ftp = lastKnown;
+                    info.ftpOrigin = 'sauce';
+                } else {
+                    info.ftp = 0;
+                    info.ftpOrigin = 'default';
+                }
             }
         }
         return info;
@@ -1042,7 +1101,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
     async function getWeightInfo(athleteId) {
         const info = {};
-        const override = await sauce.rpc.getWeightOverride(athleteId);
+        const override = await sauce.rpc.getAthleteProp(athleteId, 'weight_override');
         if (override) {
             info.weight = override;
             info.weightOrigin = 'sauce';
@@ -1054,12 +1113,13 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 // Runs never display weight, so if the athlete is multisport and
                 // we've seen one activity (ride) with weight, remember it for looking
                 // at runs later.
-                await sauce.rpc.setWeightLastKnown(athleteId, stravaWeight);
                 if (athleteId === ctx.athlete.id) {
-                    await rememberAthleteInfo(ctx.athlete);
+                    await updateAthleteInfo(ctx.athlete, {weight_lastknown: stravaWeight});
+                } else {
+                    await sauce.rpc.setAthleteProp(athleteId, 'weight_lastknown', stravaWeight);
                 }
             } else {
-                const lastKnown = await sauce.rpc.getWeightLastKnown(athleteId);
+                const lastKnown = await sauce.rpc.getAthleteProp(athleteId, 'weight_lastknown');
                 if (lastKnown) {
                     info.weight = lastKnown;
                     info.weightOrigin = 'sauce';
@@ -1084,6 +1144,19 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
+    async function getMovingTime(start, end) {
+        const timerTimeStream = await fetchStream('timer_time', start, end);
+        if (timerTimeStream) {
+            // This is good data, but only available on some runs.  Might be new.
+            return streamDelta(timerTimeStream);
+        } else {
+            const timeStream = await fetchStream('time', start, end);
+            const movingStream = await fetchStream('moving', start, end);
+            return sauce.data.movingTime(timeStream, movingStream);
+        }
+    }
+
+
     async function _updateAnalysisStats(start, end) {
         const isRun = ctx.activity.isRun();
         const prefetchStreams = ['time', 'timer_time', 'moving', 'altitude', 'watts', 'grade_smooth'];
@@ -1092,19 +1165,13 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         }
         await fetchStreams(prefetchStreams);  // better load perf
         const timeStream = await fetchStream('time', start, end);
-        const timerTimeStream = await fetchStream('timer_time', start, end);
+        const movingTime = await getMovingTime(start, end);
         const elapsedTime = streamDelta(timeStream);
-        let movingTime;
-        if (timerTimeStream) {
-            // This is good data, but only available on some runs.  Might be new.
-            movingTime = streamDelta(timerTimeStream);
-        } else {
-            const movingStream = await fetchStream('moving', start, end);
-            movingTime = sauce.data.movingTime(timeStream, movingStream);
-        }
+        const inactiveTime = elapsedTime - movingTime;
         const tplData = {
             elapsed: humanTime(elapsedTime),
             moving: humanTime(movingTime),
+            inactive: timeFormatter.abbreviatedNoTags(inactiveTime, null, false),
             weight: ctx.weight,
             elUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
@@ -1166,6 +1233,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const tpl = await getTemplate('analysis-stats.html');
         ctx.$analysisStats.data({start, end});
         ctx.$analysisStats.html(await tpl(tplData));
+        jQuery('#sauce-menu').menu();
     }
 
 
