@@ -64,6 +64,7 @@
     "analysis_weight": {"message": "Weight"},
     "analysis_change": {"message": "Change"},
     "analysis_view": {"message": "View"},
+    "analysis_export": {"message": "Export"},
     "analysis_male": {"message": "Male"},
     "analysis_female": {"message": "Female"},
     "analysis_power_profile_about1": {"message": "The concept of power profiling was created by Dr. Andy Coggan.  It is a basic outline of the power requirements to be at a specific level of racing competitiveness."},

@@ -828,21 +828,23 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     async function attachExporters() {
+        const exportLocale = await sauce.locale.getMessage('analysis_export');
+        const betaLocale = await sauce.locale.getMessage('analysis_beta');
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
         const sauceIcon = `<img title="Powered by Sauce" class="sauce-icon"
                                 src="${sauce.extURL}images/icon64.png"/>`;
         const gpxLink = document.createElement('li');
         gpxLink.classList.add('sauce', 'first');
         gpxLink.innerHTML = `<a title="NOTE: GPX files do not support power data (watts)."
-                                href="javascript:void(0)">${sauceIcon}Export GPX
-                             <sup class="sauce-beta">BETA</sup></a>`;
+                                href="javascript:void(0)">${sauceIcon}${exportLocale} GPX
+                             <sup class="sauce-beta">${betaLocale}</sup></a>`;
         gpxLink.addEventListener('click', () => exportActivity(sauce.export.GPXSerializer));
         menuEl.appendChild(gpxLink);
         const tpxLink = document.createElement('li');
         tpxLink.classList.add('sauce', 'last');
         tpxLink.innerHTML = `<a title="TCX files are best for activities with power data (watts)."
-                                href="javascript:void(0)">${sauceIcon}Export TCX
-                             <sup class="sauce-beta">BETA</sup></a>`;
+                                href="javascript:void(0)">${sauceIcon}${exportLocale} TCX
+                             <sup class="sauce-beta">${betaLocale}</sup></a>`;
         tpxLink.addEventListener('click', () => exportActivity(sauce.export.TCXSerializer));
         menuEl.appendChild(tpxLink);
     }

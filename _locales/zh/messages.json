@@ -194,6 +194,9 @@
     "analysis_view": {
         "message": "视图"
     },
+    "analysis_export": {
+        "message": "出口"
+    },
     "analysis_male": {
         "message": "男"
     },

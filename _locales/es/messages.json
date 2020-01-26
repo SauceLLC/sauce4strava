@@ -194,6 +194,9 @@
     "analysis_view": {
         "message": "Ver"
     },
+    "analysis_export": {
+        "message": "Exportar"
+    },
     "analysis_male": {
         "message": "Masculino"
     },
