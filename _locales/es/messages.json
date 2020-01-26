@@ -1,24 +1,120 @@
 {
-    "app_name": {
-        "message": "Salsa para Strava ™",
-        "description": "Nombre de la tienda (límite de 45 caracteres)"
-    },
-    "app_short_name": {
-        "message": "Salsa",
-        "description": "Se usa cuando app_name no cabe (límite de 12 caracteres)."
-    },
     "app_desc": {
-        "message": "Funcionalidad adicional para su análisis de ciclismo y carrera. Esta extensión actualiza el sitio web de Strava ™.",
-        "description": "La descripción de la aplicación, que se muestra en la tienda web."
+        "message": "Funcionalidad adicional para su análisis de ciclismo y carrera. Esta extensión actualiza el sitio web de Strava ™."
     },
-    "analysis_timing": {
-        "message": "Sincronización"
+    "analysis_time": {
+        "message": "Hora"
     },
     "analysis_elapsed": {
         "message": "Transcurrido"
     },
-    "analysis_elapsed_title": {
-        "message": "El tiempo transcurrido incluye paradas. Es la duración completa."
+    "analysis_elapsed_time_tooltip": {
+        "message": "Tiempo transcurrido: tiempo desde el inicio hasta el final de la actividad."
+    },
+    "analysis_elapsed_power_tooltip": {
+        "message": "Potencia media transcurrida: las paradas son de relleno cero"
+    },
+    "analysis_elapsed_pace_tooltip": {
+        "message": "Ritmo promedio transcurrido: las paradas se incluyen en el intervalo de tiempo"
+    },
+    "analysis_paused_time_tooltip": {
+        "message": "Tiempo en pausa: el tiempo se detuvo o no se movió"
+    },
+    "analysis_moving_time_tooltip": {
+        "message": "Tiempo de movimiento: solo tiempo activo"
+    },
+    "analysis_moving_power_tooltip": {
+        "message": "Potencia de movimiento promedio: solo tiempo activo"
+    },
+    "analysis_moving_pace_tooltip": {
+        "message": "Ritmo de movimiento promedio: solo tiempo activo"
+    },
+    "analysis_gap_tooltip": {
+        "message": "Ritmo ajustado de pendiente: ritmo estimado para terreno plano"
+    },
+    "analysis_np_tooltip": {
+        "message": "Normalized Power®: una estimación de la potencia media potencial"
+    },
+    "analysis_energy_tooltip": {
+        "message": "Energía gastada en kilojulios"
+    },
+    "analysis_energy_rate_tooltip": {
+        "message": "Kilojulios por hora"
+    },
+    "analysis_elevation_gain_tooltip": {
+        "message": "Elevación ganada: escalada"
+    },
+    "analysis_elevation_loss_tooltip": {
+        "message": "Elevación perdida: descendente"
+    },
+    "analysis_grade_tooltip": {
+        "message": "Grado porcentaje de ascenso o descenso"
+    },
+    "analysis_vam_tooltip": {
+        "message": "Metros de escalada por hora"
+    },
+    "analysis_tss_tooltip": {
+        "message": "Training Stress Score®: 100 = esfuerzo máximo de 1 hora"
+    },
+    "analysis_start_of_effort_tooltip": {
+        "message": "Tiempo compensado al inicio de este esfuerzo"
+    },
+    "analysis_wkg_tooltip": {
+        "message": "Vatios por kilogramo de peso corporal"
+    },
+    "analysis_ranking_tooltip": {
+        "message": "Ranking mundial"
+    },
+    "analysis_peak_power_tooltip": {
+        "message": "La punta del Poder"
+    },
+    "analysis_low_hr_tooltip": {
+        "message": "Frecuencia cardíaca más baja"
+    },
+    "analysis_high_hr_tooltip": {
+        "message": "Frecuencia cardíaca más alta"
+    },
+    "analysis_running_cadence_tooltip": {
+        "message": "Pasos por minuto"
+    },
+    "analysis_cycling_cadence_tooltip": {
+        "message": "Revoluciones de pedal por minuto"
+    },
+    "analysis_ftp_link_tooltip": {
+        "message": "Haga clic para establecer el valor"
+    },
+    "analysis_weight_link_tooltip": {
+        "message": "Haga clic para establecer el valor"
+    },
+    "analysis_ftp_input_tooltip": {
+        "message": "Ingrese el FTP estimado (Potencia de umbral funcional) para este atleta y presione Entrar. FTP es el promedio de vatios máximo sostenido durante 1 hora. Si el atleta ya tiene un valor establecido en su perfil, esto anulará esa configuración. Para restablecer el valor, ingrese un valor en blanco."
+    },
+    "analysis_weight_input_tooltip": {
+        "message": "Ingrese el peso estimado para este atleta y presione Entrar. Si el atleta ya tiene un valor establecido en su perfil, esto anulará esa configuración. Para restablecer el valor, ingrese un valor en blanco."
+    },
+    "analysis_intensity_tooltip": {
+        "message": "Intensity Factor®"
+    },
+    "analysis_cp_tooltip": {
+        "message": "Poder crítico: poder máximo sostenido por un período de tiempo"
+    },
+    "analysis_bp_tooltip": {
+        "message": "Mejor ritmo: ritmo máximo sostenido en una distancia"
+    },
+    "analysis_cp_period_tooltip": {
+        "message": "Potencia máxima sostenida por"
+    },
+    "analysis_bp_period_tooltip": {
+        "message": "Ritmo máximo sostenido por"
+    },
+    "analysis_watt_estimate_tooltip": {
+        "message": "Estos valores se calculan a partir de estimaciones de potencia. Para valores precisos necesita un dispositivo de medición de potencia real."
+    },
+    "analysis_paused": {
+        "message": "Pausado"
+    },
+    "analysis_idle": {
+        "message": "Ocioso"
     },
     "analysis_moving": {
         "message": "Moviente"
@@ -29,32 +125,35 @@
     "analysis_power_avg": {
         "message": "Promedio de potencia"
     },
-    "analysis_normalized": {
-        "message": "Normalizado"
-    },
     "analysis_energy": {
         "message": "Energía"
     },
-    "analysis_per_hour": {
-        "message": "Por hora"
+    "analysis_expended": {
+        "message": "Gastado"
+    },
+    "analysis_rate": {
+        "message": "Velocidad"
     },
     "analysis_elevation": {
         "message": "Elevación"
     },
+    "analysis_estimated": {
+        "message": "estimado"
+    },
     "analysis_data": {
         "message": "Datos"
     },
-    "analysis_view_raw_data": {
-        "message": "Ver datos sin procesar"
+    "analysis_raw_data": {
+        "message": "datos en bruto"
     },
-    "analysis_view_graph_data": {
-        "message": "Ver datos del gráfico"
+    "analysis_graphs": {
+        "message": "gráficos"
     },
     "analysis_pace": {
         "message": "Paso"
     },
     "analysis_samples": {
-        "message": "muestras"
+        "message": "Muestras"
     },
     "analysis_beta": {
         "message": "BETA"
@@ -83,10 +182,46 @@
     "analysis_power": {
         "message": "Poder"
     },
-    "analysis_intensity": {
-        "message": "Intensidad"
+    "analysis_run_power": {
+        "message": "Run Power"
     },
     "analysis_weight": {
         "message": "Peso"
+    },
+    "analysis_change": {
+        "message": "Cambio"
+    },
+    "analysis_view": {
+        "message": "Ver"
+    },
+    "analysis_male": {
+        "message": "Masculino"
+    },
+    "analysis_female": {
+        "message": "Hembra"
+    },
+    "analysis_power_profile_about1": {
+        "message": "El concepto de perfil de poder fue creado por el Dr. Andy Coggan. Es un resumen básico de los requisitos de potencia para estar en un nivel específico de competitividad en las carreras."
+    },
+    "analysis_power_profile_about2": {
+        "message": "Estas clasificaciones están destinadas a darle una idea aproximada de cómo su mejor rendimiento de potencia se compararía con la capacidad máxima de otros corredores. Son más representativos cuando trabajas muy duro."
+    },
+    "analysis_power_profile_select": {
+        "message": "Seleccione un perfil para ver las salidas de potencia requeridas"
+    },
+    "analysis_power_profile_footer_leadin": {
+        "message": "El algoritmo Sauce se modifica de la hoja de cálculo original de Andy para que pueda estimar clasificaciones para cualquier período de tiempo. Para una comprensión profunda de estos perfiles, lea"
+    },
+    "analysis_comment_label": {
+        "message": "Di algo"
+    },
+    "analysis_comment_placeholder": {
+        "message": "Tu comentario aqui"
+    },
+    "analysis_comment": {
+        "message": "Comentario"
+    },
+    "analysis_title": {
+        "message": "Análisis"
     }
 }

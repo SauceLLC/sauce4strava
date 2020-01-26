@@ -1,0 +1,227 @@
+{
+    "app_desc": {
+        "message": "循环和运行分析的附加功能。该扩展程序升级了Strava™网站。"
+    },
+    "analysis_time": {
+        "message": "时间"
+    },
+    "analysis_elapsed": {
+        "message": "过去"
+    },
+    "analysis_elapsed_time_tooltip": {
+        "message": "经过时间：从活动开始到结束的时间"
+    },
+    "analysis_elapsed_power_tooltip": {
+        "message": "平均耗电量：停靠点为零填充"
+    },
+    "analysis_elapsed_pace_tooltip": {
+        "message": "平均经过的速度：时间范围内包括停止"
+    },
+    "analysis_paused_time_tooltip": {
+        "message": "暂停时间：时间停止或不动"
+    },
+    "analysis_moving_time_tooltip": {
+        "message": "移动时间：仅活动时间"
+    },
+    "analysis_moving_power_tooltip": {
+        "message": "平均移动功率：仅活动时间"
+    },
+    "analysis_moving_pace_tooltip": {
+        "message": "平均移动速度：仅活动时间"
+    },
+    "analysis_gap_tooltip": {
+        "message": "坡度调整步幅：平坦地形的估计步速"
+    },
+    "analysis_np_tooltip": {
+        "message": "归一化功率®：潜在平均功率的估计"
+    },
+    "analysis_energy_tooltip": {
+        "message": "能量消耗以千焦耳为单位"
+    },
+    "analysis_energy_rate_tooltip": {
+        "message": "每小时千焦"
+    },
+    "analysis_elevation_gain_tooltip": {
+        "message": "获得的海拔：攀爬"
+    },
+    "analysis_elevation_loss_tooltip": {
+        "message": "海拔高度下降：下降"
+    },
+    "analysis_grade_tooltip": {
+        "message": "爬升或下降的坡度百分比"
+    },
+    "analysis_vam_tooltip": {
+        "message": "每小时攀登米"
+    },
+    "analysis_tss_tooltip": {
+        "message": "训练压力评分®：100 =最多1小时的努力"
+    },
+    "analysis_start_of_effort_tooltip": {
+        "message": "开始工作的时间偏移"
+    },
+    "analysis_wkg_tooltip": {
+        "message": "每公斤体重的瓦数"
+    },
+    "analysis_ranking_tooltip": {
+        "message": "世界排名"
+    },
+    "analysis_peak_power_tooltip": {
+        "message": "峰值功率"
+    },
+    "analysis_low_hr_tooltip": {
+        "message": "最低心率"
+    },
+    "analysis_high_hr_tooltip": {
+        "message": "最高心率"
+    },
+    "analysis_running_cadence_tooltip": {
+        "message": "每分钟步数"
+    },
+    "analysis_cycling_cadence_tooltip": {
+        "message": "每分钟踏板转速"
+    },
+    "analysis_ftp_link_tooltip": {
+        "message": "点击设置值"
+    },
+    "analysis_weight_link_tooltip": {
+        "message": "点击设置值"
+    },
+    "analysis_ftp_input_tooltip": {
+        "message": "输入该运动员的估计FTP（功能阈值功率），然后按Enter。 FTP是持续1小时的平均最大功率。如果运动员的个人资料中已经设置了一个值，那么它将覆盖该设置。要重置该值，请输入一个空白值。"
+    },
+    "analysis_weight_input_tooltip": {
+        "message": "输入该运动员的估计体重，然后按Enter。如果运动员的个人资料中已经设置了一个值，那么它将覆盖该设置。要重置该值，请输入一个空白值。"
+    },
+    "analysis_intensity_tooltip": {
+        "message": "强度因子®"
+    },
+    "analysis_cp_tooltip": {
+        "message": "临界功率：一段时间内维持的最大功率"
+    },
+    "analysis_bp_tooltip": {
+        "message": "最佳步伐：在一定距离上保持最大步伐"
+    },
+    "analysis_cp_period_tooltip": {
+        "message": "维持的最大功率"
+    },
+    "analysis_bp_period_tooltip": {
+        "message": "保持最大速度"
+    },
+    "analysis_watt_estimate_tooltip": {
+        "message": "这些值是根据瓦特数估算得出的。为了获得准确的值，您需要一个有效的功率测量设备。"
+    },
+    "analysis_paused": {
+        "message": "已暂停"
+    },
+    "analysis_idle": {
+        "message": "闲"
+    },
+    "analysis_moving": {
+        "message": "移动"
+    },
+    "analysis_stats": {
+        "message": "统计资料"
+    },
+    "analysis_power_avg": {
+        "message": "功率平均值"
+    },
+    "analysis_energy": {
+        "message": "能源"
+    },
+    "analysis_expended": {
+        "message": "已支出"
+    },
+    "analysis_rate": {
+        "message": "率"
+    },
+    "analysis_elevation": {
+        "message": "海拔"
+    },
+    "analysis_estimated": {
+        "message": "估计的"
+    },
+    "analysis_data": {
+        "message": "数据"
+    },
+    "analysis_raw_data": {
+        "message": "原始数据"
+    },
+    "analysis_graphs": {
+        "message": "图表"
+    },
+    "analysis_pace": {
+        "message": "步伐"
+    },
+    "analysis_samples": {
+        "message": "样品"
+    },
+    "analysis_beta": {
+        "message": "测试版"
+    },
+    "analysis_best_pace": {
+        "message": "最佳节奏"
+    },
+    "analysis_start_of_effort": {
+        "message": "开始努力"
+    },
+    "analysis_elapsed_time": {
+        "message": "经过时间"
+    },
+    "analysis_heartrate": {
+        "message": "心率"
+    },
+    "analysis_cadence": {
+        "message": "韵律"
+    },
+    "analysis_critical_power": {
+        "message": "关键力量"
+    },
+    "analysis_watts": {
+        "message": "瓦数"
+    },
+    "analysis_power": {
+        "message": "功率"
+    },
+    "analysis_run_power": {
+        "message": "运行功率"
+    },
+    "analysis_weight": {
+        "message": "重量"
+    },
+    "analysis_change": {
+        "message": "更改"
+    },
+    "analysis_view": {
+        "message": "视图"
+    },
+    "analysis_male": {
+        "message": "男"
+    },
+    "analysis_female": {
+        "message": "女"
+    },
+    "analysis_power_profile_about1": {
+        "message": "功率分析的概念是由Andy Coggan博士创建的。这是在特定水平的赛车竞争力上对动力要求的基本概述。"
+    },
+    "analysis_power_profile_about2": {
+        "message": "这些排名旨在让您大致了解最佳功率输出与其他赛车的最大功率相比。当您努力工作时，它们最具代表性。"
+    },
+    "analysis_power_profile_select": {
+        "message": "选择一个配置文件以查看所需的功率输出"
+    },
+    "analysis_power_profile_footer_leadin": {
+        "message": "Sauce算法是对Andy原始电子表格的修改，因此它可以估算任何时间段的排名。要深入了解这些配置文件，请阅读"
+    },
+    "analysis_comment_label": {
+        "message": "说些什么"
+    },
+    "analysis_comment_placeholder": {
+        "message": "您的评论在这里"
+    },
+    "analysis_comment": {
+        "message": "评论"
+    },
+    "analysis_title": {
+        "message": "分析"
+    }
+}

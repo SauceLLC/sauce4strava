@@ -72,5 +72,6 @@
     "analysis_power_profile_footer_leadin": {"message": "The Sauce algorithm is a modified from Andy's original spreadsheet so that it can estimate rankings for any time period.  For an in depth understanding of these profiles read"},
     "analysis_comment_label": {"message": "Say something"},
     "analysis_comment_placeholder": {"message": "Your comment here"},
-    "analysis_comment": {"message": "Comment"}
+    "analysis_comment": {"message": "Comment"},
+    "analysis_title": {"message": "Analysis"}
 }
