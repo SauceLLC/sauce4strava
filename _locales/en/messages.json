@@ -1,16 +1,5 @@
 {
-    "app_name": {
-        "message": "Sauce for Strava™",
-        "description": "Store name (45 char limit)"
-    },
-    "app_short_name": {
-        "message": "Sauce",
-        "description": "Used when app_name won't fit (12 char limit)."
-    },
-    "app_desc": {
-        "message": "Additional functionality for your cycling and running analysis.  This extension upgrades the Strava™ website.",
-        "description": "The description of the application, displayed in the web store."
-    },
+    "app_desc": {"message": "Additional functionality for your cycling and running analysis.  This extension upgrades the Strava™ website."},
     "analysis_time": {"message": "Time"},
     "analysis_elapsed": {"message": "Elapsed"},
     "analysis_elapsed_time_tooltip": {"message": "Elapsed time: Time from start to end of activity"},
