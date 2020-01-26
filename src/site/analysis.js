@@ -740,6 +740,44 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
+    async function updateSideNav() {
+        const pageNav = document.querySelector('ul#pagenav');
+        // Add an analysis link to the nav if not there already.
+        if (pageNav.querySelector('[data-menu="analysis"]')) {
+            return;
+        }
+        const id = ctx.activity.id;
+        const analysisTitle = await sauce.locale.getMessage('analysis_title');
+        const analysisLink = document.createElement('li');
+        analysisLink.innerHTML = `<a data-menu="analysis" href="/activities/${id}/analysis">${analysisTitle}</a>`;
+        const overview = pageNav.querySelector('[data-menu="overview"]').closest('li');
+        pageNav.insertBefore(analysisLink, overview.nextSibling);
+        const premiumGroup = pageNav.querySelector('#premium-views');
+        if (premiumGroup) {
+            // This is were things get tricky...
+            // Strava shows the word "Summit" (never translated) for the menu heading of
+            // premium member's activities only for rides.  For runs, it uses the locale
+            // translation of "Analysis".  This makes our job of re-adding the analysis
+            // link more difficult because we don't want the menu to repeat the word "Analysis".
+            // So for Runs we make their menu structure look like a rides, and add our analysis
+            // menu entry as if it was born there.  If Strava changes their menu structure this will
+            // surely be a problem.
+            if (ctx.activity.isRun()) {
+                const titleEl = premiumGroup.querySelector('.title');
+                // Walk the contents, clearing leading text node(s) and then replacing the text.
+                for (const node of Array.from(titleEl.childNodes)) {
+                    if (node instanceof Text) {
+                        titleEl.removeChild(node);
+                    } else {
+                        titleEl.insertBefore(new Text('Summit'), node);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+
     async function load() {
         const activity = pageView && pageView.activity();
         if (!activity) {
@@ -759,6 +797,11 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
             Object.assign(ctx, await getWeightInfo(ctx.athlete.id), await getFTPInfo(ctx.athlete.id));
             ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
+            try {
+                await updateSideNav();
+            } catch(e) {
+                console.warn("Experimental side nav update failed:", e);
+            }
             await start();
         } else {
             console.info("Unsupported activity type:", type);
