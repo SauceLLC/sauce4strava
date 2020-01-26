@@ -41,30 +41,40 @@ sauce.ns('rpc', function() {
         }
     }
 
-
-    let _activeAthleteUpdate;
-    async function updateAthleteInfo(id, updates) {
-        const priorUpdate = _activeAthleteUpdate;
+    let _activeUpdate;
+    async function storageUpdate(keyPath, updates) {
+        // keyPath can be dot.notation.
+        const priorUpdate = _activeUpdate;
         const ourUpdate = (async () => {
             if (priorUpdate) {
                 await priorUpdate;
             }
-            const athlete_info = (await storageGet('athlete_info')) || {};
-            if (!athlete_info[id]) {
-                athlete_info[id] = {};
+            const keys = keyPath.split('.');
+            const rootKey = keys.shift();
+            const rootRef = await storageGet(rootKey) || {};
+            let ref = rootRef;
+            for (const key of keys) {
+                if (ref[key] == null) {
+                    ref[key] = {};
+                }
+                ref = ref[key];
             }
-            Object.assign(athlete_info[id], updates);
-            await storageSet({athlete_info});
-            return athlete_info[id];
+            Object.assign(ref, updates);
+            await storageSet({[rootKey]: rootRef});
+            return ref;
         })();
-        _activeAthleteUpdate = ourUpdate;
+        _activeUpdate = ourUpdate;
         try {
             return await ourUpdate;
         } finally {
-            if (ourUpdate === _activeAthleteUpdate) {
-                _activeAthleteUpdate = null;
+            if (ourUpdate === _activeUpdate) {
+                _activeUpdate = null;
             }
         }
+    }
+
+    async function updateAthleteInfo(id, updates) {
+        return await storageUpdate(`athlete_info.${id}`, updates);
     }
 
 
@@ -124,6 +134,7 @@ sauce.ns('rpc', function() {
         setAthleteProp,
         storageSet,
         storageGet,
+        storageUpdate,
         ga,
         reportEvent,
         reportError,
