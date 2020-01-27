@@ -317,7 +317,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         constructor({type, menu, unit, criticalsFactory, moreinfoDialog}) {
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
             this.$el.insertAfter(jQuery('#pagenav').first());
-            this.datasets = null;
+            this.type = type;
             this.menu = menu;
             this.unit = unit;
             this.sourceKey = `${type}_source`;
@@ -327,34 +327,54 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 const row = ev.currentTarget;
                 const key = row.dataset.key;
                 const data = this.criticals.filter(x => x.zone.value == key)[0];
-                openMoreinfoDialog(await moreinfoDialog({data, source: this.source, anchorEl: row}), row);
+                openMoreinfoDialog(await moreinfoDialog({
+                    data,
+                    source: this._selectedSource,
+                    anchorEl: row
+                }), row);
                 sauce.rpc.reportEvent('MoreInfoDialog', 'open', `${this.source}-${key}`);
             });
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
-                this.source = ev.currentTarget.dataset.source;
-                await sauce.rpc.storageUpdate('analysis_critical_zones', {[this.sourceKey]: this.source});
+                await this.setSelectedSource(ev.currentTarget.dataset.source);
                 await this.render();
             });
 
         }
 
         async render() {
-            if (!this.source) {
-                this.source = (await sauce.rpc.storageGet('analysis_critical_zones'))[this.sourceKey];
-            }
-            if (!this.source || this.menu.indexOf(this.source) === -1) {
-                this.source = this.menu[0];
-            }
-            this.criticals = await this.criticalsFactory(this.source);
+            const source = await this.getSelectedSource();
+            this.criticals = await this.criticalsFactory(source);
             const template = await getTemplate('criticals.html');
             this.$el.html(await template({
                 menu: this.menu.map(x => ({source: x, tooltip: x + '_tooltip'})),
-                source: this.source,
-                sourceTooltip: this.source + '_tooltip',
+                source,
+                sourceTooltip: source + '_tooltip',
                 criticals: this.criticals,
                 unit: this.unit,
             }));
             requestAnimationFrame(navHeightAdjustments);
+        }
+
+        async getSelectedSource() {
+            let lastKnown;
+            if (!this._selectedSource) {
+                const zonesSettings = await sauce.rpc.storageGet('analysis_critical_zones');
+                lastKnown = zonesSettings && zonesSettings[`${this.type}_source`];
+            } else {
+                lastKnown = this._selectedSource;
+            }
+            if (!lastKnown || this.menu.indexOf(lastKnown) === -1) {
+                this._selectedSource = this.menu[0];
+            } else {
+                this._selectedSource = lastKnown;
+            }
+            return this._selectedSource;
+        }
+
+        async setSelectedSource(source) {
+            const key = `${this.type}_source`; 
+            this._selectedSource = source;
+            await sauce.rpc.storageUpdate('analysis_critical_zones', {[key]: source});
         }
     }
 
@@ -529,17 +549,18 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             for (const zone of zones) {
                 if (!zone.label) {
                     if (zone.value < 1000) {
-                        zone.label = `${zone.value}<abbr class="unit short" title="meters">m</abbr>`;
+                        zone.label = `${zone.value} <abbr class="unit short" title="meters">m</abbr>`;
                     } else {
                         const miles = zone.value / metersPerMile;
                         if (isRoughlyEqual(miles, 13.1) ||
                             isRoughlyEqual(miles, 26.2) ||
-                            isRoughlyEqual(miles % 1, 0)) {
+                            isRoughlyEqual(miles, Math.round(miles))) {
                             zone.label = imperialDistanceFormatter.abbreviated(zone.value);
                         } else {
                             zone.label = metricDistanceFormatter.abbreviated(zone.value);
                         }
                     }
+                    zone.label = zone.label.replace(/\.0 <abbr/, ' <abbr');
                 }
             }
             const criticalsFactory = async source => {
