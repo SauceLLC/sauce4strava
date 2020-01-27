@@ -3,7 +3,7 @@
         <a title="{{{[sourceTooltip]}}}" class="selection">{{{[source]}}}</a>
         <ul class="options">
             <% for (const x of menu.filter(x => x.source !== source)) { %>
-                <li data-source="{{x.source}}" title="{{{[x.tooltipKey]}}}">
+                <li data-source="{{x.source}}" title="{{{[x.tooltip]}}}">
                     <a>{{{[x.source]}}}</a>
                 </li>
             <% } %>
