@@ -95,17 +95,23 @@
     "analysis_intensity_tooltip": {
         "message": "Intensity Factor®"
     },
-    "analysis_cp_tooltip": {
+    "analysis_critical_power_tooltip": {
         "message": "Poder crítico: poder máximo sostenido por un período de tiempo"
     },
-    "analysis_bp_tooltip": {
+    "analysis_critical_np_tooltip": {
+        "message": "Critical NP®: potencia normalizada máxima sostenida durante un período de tiempo"
+    },
+    "analysis_critical_hr_tooltip": {
+        "message": "Frecuencia cardíaca más alta: FC máxima sostenida durante un período de tiempo"
+    },
+    "analysis_critical_vam_tooltip": {
+        "message": "VAM más rápido: velocidad de ascenso sostenida máxima durante un período de tiempo"
+    },
+    "analysis_critical_pace_tooltip": {
         "message": "Mejor ritmo: ritmo máximo sostenido en una distancia"
     },
-    "analysis_cp_period_tooltip": {
-        "message": "Potencia máxima sostenida por"
-    },
-    "analysis_bp_period_tooltip": {
-        "message": "Ritmo máximo sostenido por"
+    "analysis_critical_gap_tooltip": {
+        "message": "Mejor GAP: ritmo ajustado máximo de grado sostenido a distancia"
     },
     "analysis_watt_estimate_tooltip": {
         "message": "Estos valores se calculan a partir de estimaciones de potencia. Para valores precisos necesita un dispositivo de medición de potencia real."
@@ -175,6 +181,21 @@
     },
     "analysis_critical_power": {
         "message": "Poder critico"
+    },
+    "analysis_critical_np": {
+        "message": "Critical NP®"
+    },
+    "analysis_critical_hr": {
+        "message": "HR más alta"
+    },
+    "analysis_critical_vam": {
+        "message": "VAM más rápido"
+    },
+    "analysis_critical_pace": {
+        "message": "Mejor ritmo"
+    },
+    "analysis_critical_gap": {
+        "message": "Mejor brecha"
     },
     "analysis_watts": {
         "message": "Vatios"
