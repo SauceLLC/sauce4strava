@@ -50,7 +50,7 @@
     "options_page": "pages/options.html",
     "options_ui": {
         "page": "pages/options.html",
-        "open_in_tab": false
+        "open_in_tab": true
     },
 
     "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",

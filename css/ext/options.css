@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css?family=Lato:300,400,400i,700,900&display=swap');
+
 html {
     box-sizing: border-box;
 }
@@ -9,12 +11,15 @@ html {
 }
 
 body {
-    width: 38em;
+    width: 36em;
+    height: 580px; /* chrome seems to have a max size of 600px */
     padding: 1.2em;
     margin: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.85em;
 }
 
 button {
@@ -65,11 +70,10 @@ body.disabled main {
 }
 
 main {
-    max-height: 34em;
+    flex: 1 1 100%;
     display: flex;
     flex-direction: column;
-    padding: 1em;
-    border-bottom: 1px solid #ddd;
+    padding: 1em 1.5em;
     overflow: auto;
 }
 
@@ -77,8 +81,20 @@ main.columns {
     flex-direction: row;
 }
 
+section {
+    display: flex;
+    flex-direction: column;
+}
+
+section:not(:last-child) {
+    padding-bottom: 1em;
+    margin-bottom: 1em;
+    border-bottom: 1px solid #ddd;
+}
+
 .desc {
     color: #555;
+    margin: 0.4em 0 0.5em;
 }
 
 a {
@@ -86,16 +102,18 @@ a {
 }
 
 header {
-    padding: 1em;
     text-align: center;
     border-bottom: 1.5px solid #ff4000;
+}
+
+h4, h3 {
+    margin: 0.5em 0;
 }
 
 footer {
     background-color: #e1e1e1;
     border-radius: 0.22em;
     border-top: 1px solid #ccc;
-    margin-top: 1em;
     padding: 1em;
     text-align: center;
 }

@@ -8,10 +8,10 @@
         <script defer src="/src/ext/adv_options.js"></script>
         <style>
             textarea {
+                display: block;
                 background: #fff5;
                 padding: 0.8em;
                 margin: 0.8em 0;
-                width: 22.8rem; /* use rem because font sizes vary on platforms */
                 font-size: 1em;
                 border-radius: 0.22em;
             }
@@ -41,6 +41,8 @@
 
             .athlete-box {
                 padding: 1em;
+                display: flex;
+                flex-direction: column;
             }
 
             .athlete-box:not(:last-child) {
@@ -53,15 +55,19 @@
 
             .athlete-box .label button {
                 float: right;
-                font-size: 1em;
+                font-size: 0.9em;
                 margin: 0;
                 padding: 0.1em 0.3em;
             }
 
             label {
-                margin: 1em;
+                margin: 0.4em 1em;
                 display: block;
                 min-width: 15ch;
+            }
+            label > span {
+                min-width: 11ch;
+                display: inline-block;
             }
         </style>
     </head>
@@ -71,24 +77,24 @@
         </header>
         <main>
             <section>
-                <h4>Options</h4>
+                <h3>Options</h3>
                 <textarea id="options"></textarea>
             </section>
 
             <section class="zones">
-                <h4>Custom Critical Zones</h4>
+                <h3>Custom Critical Zones</h3>
                 <p class="desc">
                     You can update the time periods and distances used for critical power, best pace, etc.
                     Enter numeric values seperated by commas to override the default settings.
                 </p>
                 <label>
-                    Periods:
+                    <span>Periods:</span>
                     <input type="text" data-key="periods"
                            placeholder="e.g. 5,10,15,300,3600"/>
                     <small>(seconds)</small>
                 </label>
                 <label>
-                    Distances:
+                    <span>Distances:</span>
                     <input type="text" data-key="distances"
                            placeholder="e.g. 100,400,1609.344,10000"/>
                     <small>(meters)</small>
@@ -96,7 +102,7 @@
             </section>
 
             <section>
-                <h4>Athlete Info</h4>
+                <h3>Athlete Info</h3>
                 <div id="athlete-list"></div>
             </section>
         </main>
