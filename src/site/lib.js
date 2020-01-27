@@ -238,6 +238,17 @@ sauce.ns('data', function() {
             return instance;
         }
 
+        slice(startTime, endTime) {
+            const copy = this.copy();
+            while (copy.firstTimestamp() < startTime) {
+                copy.shift();
+            }
+            while (copy.lastTimestamp() > endTime) {
+                copy.pop();
+            }
+            return copy;
+        }
+
         *_importIter(times, values) {
             if (times.length !== values.length) {
                 throw new TypeError("times and values not same length");
@@ -334,13 +345,60 @@ sauce.ns('data', function() {
 
         shiftValue() {
         }
+
+        pop() {
+            this._cache.clear();
+            this.popValue(this._values.pop());
+            this._times.pop();
+        }
+
+        popValue() {
+        }
     }
 
 
-    class RollingAvg extends RollingBase {
+    class RollingAverage extends RollingBase {
+
+        constructor(period) {
+            super(period);
+            this._sum = 0;
+        }
+
+        formatValue(value, ts) {
+            this._sum += value;
+            return value;
+        }
+
+        avg() {
+            return this._sum / (this._values.length - this._offt);
+        }
+
+        full(options) {
+            options = options || {};
+            const offt = options.offt;
+            return this.elapsed({offt}) >= this.period;
+        }
+
+        shiftValue() {
+            this._sum -= this._values[this._offt];
+        }
+
+        popValue(value) {
+            this._sum -= value;
+        }
+
+        copy() {
+            const instance = super.copy();
+            instance._sum = this._sum;
+            return instance;
+        }
+    }
+
+
+    class RollingPower extends RollingBase {
 
         constructor(period, idealGap, maxGap) {
-            super(period, {accumulatedValues: true});
+            super(period);
             this._joules = 0;
             this.idealGap = idealGap;
             this.maxGap = maxGap;
@@ -391,6 +449,12 @@ sauce.ns('data', function() {
             this._joules -= this._values[i + 1] * gap;
         }
 
+        popValue(value) {
+            const lastIdx = this._times.length - 1;
+            const gap = lastIdx >= 1 ? this._times[lastIdx] - this._times[lastIdx - 1] : 0;
+            this._joules -= value * gap;
+        }
+
         copy() {
             const instance = super.copy();
             instance.idealGap = this.idealGap;
@@ -401,7 +465,7 @@ sauce.ns('data', function() {
     }
 
 
-    class RollingWindow extends RollingBase {
+    class RollingPace extends RollingBase {
 
         distance(options) {
             options = options || {};
@@ -440,8 +504,9 @@ sauce.ns('data', function() {
         movingTime,
         recommendedTimeGaps,
         tabulate,
-        RollingAvg,
-        RollingWindow,
+        RollingAverage,
+        RollingPower,
+        RollingPace,
         Zero,
         Pad,
     };
@@ -549,7 +614,7 @@ sauce.ns('power', function() {
     }
 
 
-    function _correctedRollingAvg(timeStream, wattsStream, period, idealGap, maxGap) {
+    function _correctedRollingPower(timeStream, wattsStream, period, idealGap, maxGap) {
         if (timeStream.length < 2) {
             return;
         }
@@ -562,12 +627,21 @@ sauce.ns('power', function() {
                 maxGap = gaps.max;
             }
         }
-        return new sauce.data.RollingAvg(period, idealGap, maxGap);
+        return new sauce.data.RollingPower(period, idealGap, maxGap);
+    }
+
+
+    function critAverage(period, timeStream, valuesStream) {
+        const roll = _correctedRollingPower(timeStream, valuesStream, period);
+        if (!roll) {
+            return;
+        }
+        return roll.importReduce(timeStream, valuesStream, (cur, lead) => cur.avg() >= lead.avg());
     }
 
 
     function critPower(period, timeStream, wattsStream) {
-        const roll = _correctedRollingAvg(timeStream, wattsStream, period);
+        const roll = _correctedRollingPower(timeStream, wattsStream, period);
         if (!roll) {
             return;
         }
@@ -576,7 +650,7 @@ sauce.ns('power', function() {
 
 
     function critNP(period, timeStream, wattsStream) {
-        const roll = _correctedRollingAvg(timeStream, wattsStream, period);
+        const roll = _correctedRollingPower(timeStream, wattsStream, period);
         if (!roll) {
             return;
         }
@@ -585,7 +659,7 @@ sauce.ns('power', function() {
 
 
     function correctedPower(timeStream, wattsStream, idealGap, maxGap) {
-        const roll = _correctedRollingAvg(timeStream, wattsStream, null, idealGap, maxGap);
+        const roll = _correctedRollingPower(timeStream, wattsStream, null, idealGap, maxGap);
         if (!roll) {
             return;
         }
@@ -628,6 +702,7 @@ sauce.ns('power', function() {
 
 
     return {
+        critAverage,
         critPower,
         critNP,
         correctedPower,
@@ -646,7 +721,7 @@ sauce.ns('pace', function() {
         if (timeStream.length < 2) {
             return;
         }
-        const roll = new sauce.data.RollingWindow(distance);
+        const roll = new sauce.data.RollingPace(distance);
         return roll.importReduce(timeStream, distStream, (cur, lead) => cur.avg() <= lead.avg());
     }
 

@@ -2,23 +2,27 @@
     <div class="drop-down-menu sauce-title-menu">
         <a title="{{{[sourceTooltip]}}}" class="selection">{{{[source]}}}</a>
         <ul class="options">
-            <% for (const x of menu.filter(x => x.source !== source)) { %>
-                <li data-source="{{x.source}}" title="{{{[x.tooltip]}}}">
-                    <a>{{{[x.source]}}}</a>
+            <% for (const menuEntry of menuInfo.filter(x => x.source !== source)) { %>
+                <li data-source="{{menuEntry.source}}" title="{{{[menuEntry.tooltip]}}}">
+                    <a>{{{[menuEntry.source]}}}</a>
                 </li>
             <% } %>
         </ul>
     </div>
-    <div class="watt-estimate-disclaimer" title="{{{watt_estimate_tooltip}}}">
-        <b>&#9888;</b> <small>({{{estimated}}})</small>
-    </div>
+
+    <% if (obj.isWattEstimate) { %>
+        <div class="watt-estimate-disclaimer" title="{{{watt_estimate_tooltip}}}">
+            <b>&#9888;</b> <small>({{{estimated}}})</small>
+        </div>
+    <% } %>
+
     <table>
-        <% for (const {zone, value} of criticals) { %>
-            <tr data-source="{{source}}" data-key="{{zone.value}}">
-                <td>{-zone.label-}</td>
-                <td>
-                    {{value}}<abbr class="unit short">{{unit}}</abbr>
-                </td>
+        <% for (const row of rows) { %>
+            <tr data-source="{{source}}" data-zone-value="{{row.zoneValue}}"
+                data-start-time="{{row.startTime}}"
+                data-end-time="{{row.endTime}}">
+                <td>{-row.label-}</td>
+                <td>{{row.value}}<% if (row.unit) { %><abbr class="unit short">{{row.unit}}</abbr><% } %></td>
             </tr>
         <% } %>
     </table>

@@ -37,7 +37,7 @@
     "analysis_critical_vam_tooltip": {"message": "Fastest VAM: Maximum sustained climbing speed for a time period"},
     "analysis_critical_pace_tooltip": {"message": "Best Pace: Maximum pace sustained over a distance"},
     "analysis_critical_gap_tooltip": {"message": "Best GAP: Maximum grade adjusted pace sustained over a distance"},
-    "analysis_watt_estimate_tooltip": {"message": "These values are being calculated from wattage estimates.  For accurate values you need a real power measurement device."},
+    "analysis_watt_estimate_tooltip": {"message": "These values are being calculated from wattage estimates.  For accurate values a real power measurement device is requried."},
     "analysis_paused": {"message": "Paused"},
     "analysis_idle": {"message": "Idle"},
     "analysis_moving": {"message": "Moving"},

@@ -19,21 +19,23 @@
             </tr>
         <% } %>
 
-        <tr title="{{{elapsed_power_tooltip}}}">
-            <td>{{{power}}}</td>
-            <td>
-                {{Math.round(power.avg)}}<abbr class="unit short">w</abbr>
-                <sup class="sauce-positive" title="{{{peak_power_tooltip}}}">
-                    {{power.max}}<abbr class="unit short">w</abbr>
-                </sup>
-            </td>
-        </tr>
-
-        <% if (power.np) { %>
-            <tr title="{{{np_tooltip}}}">
-                <td>NP®</td>
-                <td>{{Math.round(power.np)}}<abbr class="unit short">w</abbr></td>
+        <% if (power) { %>
+            <tr title="{{{elapsed_power_tooltip}}}">
+                <td>{{{power}}}</td>
+                <td>
+                    {{Math.round(power.avg)}}<abbr class="unit short">w</abbr>
+                    <sup class="sauce-positive" title="{{{peak_power_tooltip}}}">
+                        {{power.max}}<abbr class="unit short">w</abbr>
+                    </sup>
+                </td>
             </tr>
+
+            <% if (power.np) { %>
+                <tr title="{{{np_tooltip}}}">
+                    <td>NP®</td>
+                    <td>{{Math.round(power.np)}}<abbr class="unit short">w</abbr></td>
+                </tr>
+            <% } %>
         <% } %>
 
         <% if (hr) { %>

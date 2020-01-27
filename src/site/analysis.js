@@ -314,25 +314,25 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     class CriticalsPanel {
-        constructor({type, menu, unit, criticalsFactory, moreinfoDialog}) {
+        constructor({type, menu, zones, renderAttrs, moreinfoDialog}) {
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
             this.$el.insertAfter(jQuery('#pagenav').first());
             this.type = type;
             this.menu = menu;
-            this.unit = unit;
             this.sourceKey = `${type}_source`;
-            this.criticalsFactory = criticalsFactory;
-            this.$el.on('click', '.group tr[data-key]', async ev => {
+            this.renderAttrs = renderAttrs;
+            this.$el.on('click', '.group tr[data-zone-value]', async ev => {
                 ev.stopPropagation();  // prevent click-away detection from closing dialog.
                 const row = ev.currentTarget;
-                const key = row.dataset.key;
-                const data = this.criticals.filter(x => x.zone.value == key)[0];
                 openMoreinfoDialog(await moreinfoDialog({
-                    data,
+                    startTime: Number(row.dataset.startTime),
+                    endTime: Number(row.dataset.endTime),
+                    zone: zones.filter(x => x.value == row.dataset.zoneValue)[0],
                     source: this._selectedSource,
                     anchorEl: row
                 }), row);
-                sauce.rpc.reportEvent('MoreInfoDialog', 'open', `${this.source}-${key}`);
+                sauce.rpc.reportEvent('MoreInfoDialog', 'open',
+                    `${this.source}-${row.dataset.zoneValue}`);
             });
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
                 await this.setSelectedSource(ev.currentTarget.dataset.source);
@@ -343,15 +343,12 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
         async render() {
             const source = await this.getSelectedSource();
-            this.criticals = await this.criticalsFactory(source);
             const template = await getTemplate('criticals.html');
-            this.$el.html(await template({
-                menu: this.menu.map(x => ({source: x, tooltip: x + '_tooltip'})),
+            this.$el.html(await template(Object.assign({
+                menuInfo: this.menu.map(x => ({source: x, tooltip: x + '_tooltip'})),
                 source,
                 sourceTooltip: source + '_tooltip',
-                criticals: this.criticals,
-                unit: this.unit,
-            }));
+            }, await this.renderAttrs.call(this, source))));
             requestAnimationFrame(navHeightAdjustments);
         }
 
@@ -382,6 +379,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     async function processRideStreams() {
         const [realWattsStream, timeStream, hrStream, altStream] = await fetchStreams(
             ['watts', 'time', 'heartrate', 'altitude']);
+        const elapsedTime = streamDelta(timeStream);
         const isWattEstimate = !realWattsStream;
         let wattsStream = realWattsStream;
         if (!wattsStream) {
@@ -399,7 +397,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             if (ctx.ftp) {
                 if (np) {
                     // Calculate TSS based on elapsed time when NP is being used.
-                    tss = sauce.power.calcTSS(np, corrected.elapsed(), ctx.ftp);
+                    tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
                     intensity = np / ctx.ftp;
                 } else {
                     // Calculate TSS based on moving time when just avg is available.
@@ -438,48 +436,78 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 return;
             }
             const savedZones = await sauce.rpc.storageGet('analysis_critical_zones');
-            const zones = (savedZones && savedZones.periods) || defaultCritPeriods;
+            const allZones = (savedZones && savedZones.periods) || defaultCritPeriods;
+            const zones = allZones.filter(x => x.value <= elapsedTime);
             for (const zone of zones) {
                 if (!zone.label) {
                     zone.label = timeFormatter.abbreviated(zone.value).replace(/ 0<abbr.*?>s<\/abbr>/, '');
                 }
             }
-            const criticalsFactory = source => {
-                const criticals = [];
-                if (source === 'critical_power') {
-                    for (const zone of zones) {
-                        const roll = sauce.power.critPower(zone.value, timeStream, wattsStream);
-                        if (!roll) {
-                            break;  // No longer filling, so discontinue searching.
-                        }
-                        const prefix = isWattEstimate ? '~' : '';
-                        const value = prefix + Math.round(roll.avg()).toLocaleString();
-                        criticals.push({zone, roll, value});
-                    }
-                } else if (source === 'critical_np') {
-                    for (const zone of zones) {
-                        if (zone.value < 900) {
-                            // Don't even bother for small values.  critNP will have it's own restrictions too.
-                            continue;
-                        }
-                        const roll = sauce.power.critNP(zone.value, timeStream, wattsStream);
-                        if (!roll) {
-                            break;  // No longer filling, so discontinue searching.
-                        }
-                        if (!roll.np()) {
-                            continue;  // Not enough data for NP
-                        }
-                        criticals.push({zone, roll, value: Math.round(roll.np()).toLocaleString()});
-                    }
-                }
-                return criticals;
-            };
             const critPanel = new CriticalsPanel({
                 type: 'ride',
                 menu,
-                criticalsFactory,
-                unit: 'w',
-                moreinfoDialog: moreinfoRideDialog
+                zones,
+                moreinfoDialog: moreinfoRideDialog,
+                renderAttrs: source => {
+                    const rows = [];
+                    const attrs = {};
+                    if (source === 'critical_power') {
+                        const prefix = isWattEstimate ? '~' : '';
+                        attrs.isWattEstimate = isWattEstimate;
+                        for (const zone of zones) {
+                            if (isWattEstimate && zone.value < 300) {
+                                continue;
+                            }
+                            const roll = sauce.power.critPower(zone.value, timeStream, wattsStream);
+                            if (roll) {
+                                const value = prefix + Math.round(roll.avg()).toLocaleString();
+                                rows.push({
+                                    zoneValue: zone.value,
+                                    label: zone.label,
+                                    value,
+                                    unit: 'w',
+                                    startTime: roll.firstTimestamp(),
+                                    endTime: roll.lastTimestamp(),
+                                });
+                            }
+                        }
+                    } else if (source === 'critical_np') {
+                        for (const zone of zones) {
+                            if (zone.value < 900) {
+                                continue;  // NP is only valid for ~20min+.
+                            }
+                            const roll = sauce.power.critNP(zone.value, timeStream, wattsStream);
+                            if (roll && roll.np()) {
+                                rows.push({
+                                    zoneValue: zone.value,
+                                    label: zone.label,
+                                    value: Math.round(roll.np()).toLocaleString(),
+                                    unit: 'w',
+                                    startTime: roll.firstTimestamp(),
+                                    endTime: roll.lastTimestamp(),
+                                });
+                            }
+                        }
+                    } else if (source === 'critical_hr') {
+                        for (const zone of zones) {
+                            const roll = sauce.power.critAverage(zone.value, timeStream, hrStream);
+                            if (!roll) {
+                                break;  // No longer filling, so discontinue searching.
+                            }
+                            if (roll) {
+                                rows.push({
+                                    zoneValue: zone.value,
+                                    label: zone.label,
+                                    value: Math.round(roll.avg()).toLocaleString(),
+                                    unit: 'bpm',
+                                    startTime: roll.firstTimestamp(),
+                                    endTime: roll.lastTimestamp(),
+                                });
+                            }
+                        }
+                    }
+                    return Object.assign(attrs, {rows});
+                }
             });
             jQuery('#pagenav').first().after(critPanel.$el);
             await critPanel.render();
@@ -563,39 +591,54 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     zone.label = zone.label.replace(/\.0 <abbr/, ' <abbr');
                 }
             }
-            const criticalsFactory = async source => {
-                const criticals = [];
-                if (source === 'critical_pace') {
-                    for (const zone of zones) {
-                        const roll = sauce.pace.bestPace(zone.value, timeStream, distStream);
-                        if (!roll) {
-                            break;  // No longer filling, so discontinue searching.
-                        }
-                        criticals.push({zone, roll, value: humanPace(roll.avg())});
-                    }
-                } else if (source === 'critical_gap') {
-                    for (const zone of zones) {
-                        const gapRoll = sauce.pace.bestPace(zone.value, timeStream, gradeDistStream);
-                        if (!gapRoll) {
-                            break;  // No longer filling, so discontinue searching.
-                        }
-                        const roll = new sauce.data.RollingWindow(null);
-                        const timeStreamSlice = await fetchStreamTimeRange('time',
-                            gapRoll.firstTimestamp(), gapRoll.lastTimestamp());
-                        const distStreamSlice = await fetchStreamTimeRange('distance',
-                            gapRoll.firstTimestamp(), gapRoll.lastTimestamp());
-                        roll.import(timeStreamSlice, distStreamSlice);
-                        criticals.push({zone, roll, value: humanPace(gapRoll.avg())});
-                    }
-                }
-                return criticals;
-            };
             const critPanel = new CriticalsPanel({
                 type: 'run',
                 menu,
-                criticalsFactory,
-                unit: distanceFormatter.shortUnitKey(),
-                moreinfoDialog: moreinfoRunDialog
+                zones,
+                moreinfoDialog: moreinfoRunDialog,
+                renderAttrs: async source => {
+                    const rows = [];
+                    const attrs = {};
+                    if (source === 'critical_pace') {
+                        const unit = distanceFormatter.shortUnitKey();
+                        for (const zone of zones) {
+                            const roll = sauce.pace.bestPace(zone.value, timeStream, distStream);
+                            if (roll) {
+                                rows.push({
+                                    zoneValue: zone.value,
+                                    label: zone.label,
+                                    value: humanPace(roll.avg()),
+                                    unit,
+                                    startTime: roll.firstTimestamp(),
+                                    endTime: roll.lastTimestamp(),
+                                });
+                            }
+                        }
+                    } else if (source === 'critical_gap') {
+                        const unit = distanceFormatter.shortUnitKey();
+                        for (const zone of zones) {
+                            const roll = sauce.pace.bestPace(zone.value, timeStream, gradeDistStream);
+                            if (roll) {
+                                rows.push({
+                                    zoneValue: zone.value,
+                                    label: zone.label,
+                                    value: humanPace(roll.avg()),
+                                    unit,
+                                    startTime: roll.firstTimestamp(),
+                                    endTime: roll.lastTimestamp(),
+                                });
+                            }
+                            /*const roll = new sauce.data.RollingPace(null);
+                            const timeStreamSlice = await fetchStreamTimeRange('time',
+                                gapRoll.firstTimestamp(), gapRoll.lastTimestamp());
+                            const distStreamSlice = await fetchStreamTimeRange('distance',
+                                gapRoll.firstTimestamp(), gapRoll.lastTimestamp());
+                            roll.import(timeStreamSlice, distStreamSlice);
+                            rows.push({zone, roll, value: humanPace(gapRoll.avg())});*/
+                        }
+                    }
+                    return Object.assign(attrs, {rows});
+                }
             });
             jQuery('#pagenav').first().after(critPanel.$el);
             await critPanel.render();
@@ -683,29 +726,39 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
-    async function moreinfoRideDialog({data, source, anchorEl}) {
-        const roll = data.roll;
-        const avgPower = roll.avg();
-        const rollValues = roll.values();
+    async function moreinfoRideDialog({startTime, endTime, zone, source, anchorEl}) {
+        let fullWattsStream = await fetchStream('watts');
+        if (!fullWattsStream) {
+            fullWattsStream = await fetchStream('watts_calc');
+        }
+        let roll;
+        if (fullWattsStream) {
+            const power = sauce.power.correctedPower(await fetchStream('time'), fullWattsStream);
+            roll = power.slice(startTime, endTime);
+        }
+        const avgPower = roll && roll.avg();
+        const rollValues = roll && roll.values();
         const wKg = ctx.weight && avgPower / ctx.weight;
-        const elapsedTime = roll.elapsed();
+        const elapsedTime = endTime - startTime;
         const rank = sauce.power.rank(elapsedTime, wKg, ctx.gender);
-        const startTime = roll.firstTimestamp({noPad: true});
-        const endTime = roll.lastTimestamp({noPad: true});
+        // startTime and endTime can be pad based values with corrected power sources.
+        // Use non padded values for other streams.
+        const startTS = roll ? roll.firstTimestamp({noPad: true}) : startTime;
+        const endTS = roll ? roll.lastTimestamp({noPad: true}) : endTime;
         await fetchStreams(['heartrate', 'altitude', 'grade_smooth', 'cadence']);  // better load perf
-        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
-        const altStream = await fetchStreamTimeRange('altitude', startTime, endTime);
+        const hrStream = await fetchStreamTimeRange('heartrate', startTS, endTS);
+        const altStream = await fetchStreamTimeRange('altitude', startTS, endTS);
         const altChanges = altStream && altitudeChanges(altStream);
-        const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
-        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
+        const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTS, endTS);
+        const cadenceStream = await fetchStreamTimeRange('cadence', startTS, endTS);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
-        const textLabel = jQuery(`<div>${data.zone.label}</div>`).text();
+        const textLabel = jQuery(`<div>${zone.label}</div>`).text();
         const template = await getTemplate('criticals-ride-moreinfo.html');
         const $dialog = jQuery(await template({
             title: `${heading}: ${textLabel}`,
             startsAt: humanTime(startTime),
             wKg,
-            power: {
+            power: roll && {
                 avg: avgPower,
                 max: sauce.data.max(rollValues),
                 np: sauce.power.calcNP(rollValues),
@@ -739,7 +792,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             buttons: {
                 "Close": () => $dialog.dialog('close'),
                 "Analysis View": () => {
-                    changeToAnalysisView(startTime, endTime);
+                    changeToAnalysisView(startTS, endTS);
                     $dialog.dialog('close');
                 }
             }
@@ -782,20 +835,21 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             });
         }
         $dialog.find('.start_time_link').on('click',() => {
-            changeToAnalysisView(startTime, endTime);
+            changeToAnalysisView(startTS, endTS);
             $dialog.dialog('close');
         });
         return $dialog;
     }
 
 
-    async function moreinfoRunDialog({data, source, anchorEl}) {
-        const roll = data.roll;
-        const elapsedTime = roll.elapsed();
+    async function moreinfoRunDialog({startTime, endTime, zone, source, anchorEl}) {
+        const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
+        const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
+        const roll = new sauce.data.RollingPace(null);
+        roll.import(timeStream, distStream);
+        const elapsedTime = endTime - startTime;
         const elapsed = humanTime(elapsedTime);
-        const startTime = roll.firstTimestamp({noPad: true});
-        const endTime = roll.lastTimestamp({noPad: true});
-        await fetchStreams(['heartrate', 'grade_adjusted_pace', 'altitude',
+        await fetchStreams(['time', 'heartrate', 'grade_adjusted_pace', 'altitude',
                             'grade_smooth', 'cadence', 'velocity_smooth']);  // better load perf
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
@@ -806,7 +860,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
         const maxVelocity = sauce.data.max(velocityStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
-        const textLabel = jQuery(`<div>${data.zone.label}</div>`).text();
+        const textLabel = jQuery(`<div>${zone.label}</div>`).text();
         const template = await getTemplate('bestpace-moreinfo.html');
         const gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
         const $dialog = jQuery(await template({

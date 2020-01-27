@@ -32,10 +32,6 @@
     font-size: 1.4em;
 }
 
-#sauce-infopanel:not(.watt-estimate) .watt-estimate-disclaimer {
-    display: none;
-}
-
 #sauce-infopanel .watt-estimate-disclaimer > * {
     padding: 0 0.2em;
 }
