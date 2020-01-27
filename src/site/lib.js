@@ -8,6 +8,7 @@ sauce.ns('data', function() {
         return data.reduce((acc, x) => acc + x, 0);
     }
 
+
     function avg(data) {
         if (!data || !data.length) {
             return;
@@ -225,6 +226,7 @@ sauce.ns('data', function() {
             this._times = [];
             this._values = [];
             this._offt = 0;
+            this._cache = new Map();
         }
 
         copy() {
@@ -277,6 +279,7 @@ sauce.ns('data', function() {
         }
 
         add(ts, value) {
+            this._cache.clear();
             this._values.push(this.formatValue(value, ts));
             this._times.push(ts);
             while (this.full({offt: 1})) {
@@ -324,6 +327,7 @@ sauce.ns('data', function() {
         }
 
         shift() {
+            this._cache.clear();
             this.shiftValue();
             this._offt++;
         }
@@ -362,6 +366,13 @@ sauce.ns('data', function() {
 
         avg() {
             return this._joules / this.elapsed();
+        }
+
+        np() {
+            if (!this._cache.has('np')) {
+                this._cache.set('np', sauce.power.calcNP(this._values, this._offt));
+            }
+            return this._cache.get('np');
         }
 
         kj() {
@@ -564,6 +575,15 @@ sauce.ns('power', function() {
     }
 
 
+    function critNP(period, timeStream, wattsStream) {
+        const roll = _correctedRollingAvg(timeStream, wattsStream, period);
+        if (!roll) {
+            return;
+        }
+        return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.np() >= lead.np());
+    }
+
+
     function correctedPower(timeStream, wattsStream, idealGap, maxGap) {
         const roll = _correctedRollingAvg(timeStream, wattsStream, null, idealGap, maxGap);
         if (!roll) {
@@ -574,27 +594,28 @@ sauce.ns('power', function() {
     }
 
 
-    function calcNP(wattsStream) {
+    function calcNP(stream, _offset) {
         /* Coggan doesn't recommend NP for less than 20 mins.  Allow a margin
          * of error for dropouts. */
-        if (!wattsStream || wattsStream.length < 1000) {
+        _offset = _offset || 0;
+        const len = stream.length;
+        if (!stream || len - _offset < 1000) {
             return;
         }
         const rollingSize = 30;
+        const rolling = new Array(rollingSize);
         let total = 0;
         let count = 0;
-        let index = 0;
-        let sum = 0;
-        const rolling = new Uint16Array(rollingSize);
-        for (const watts of wattsStream) {
+        for (let i = _offset, sum = 0; i < len; i++, count++) {
+            const index = count % rollingSize;
+            const watts = stream[i];
             sum += watts;
-            sum -= rolling[index];
+            sum -= rolling[index] || 0;
+            const avg = sum / rollingSize;
+            total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
             rolling[index] = watts;
-            total += Math.pow(sum / rollingSize, 4);
-            count++;
-            index = (index >= rollingSize - 1) ? 0 : index + 1;
         }
-        return Math.pow(total / count, 0.25);
+        return (total / count) ** 0.25;
     }
 
 
@@ -608,6 +629,7 @@ sauce.ns('power', function() {
 
     return {
         critPower,
+        critNP,
         correctedPower,
         calcNP,
         calcTSS,
