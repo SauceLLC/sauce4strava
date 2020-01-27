@@ -47,12 +47,14 @@
             interpolate: /\{-(.+?)-\}/g,
             escape: /\{\{(.+?)\}\}/g,
             locale: /\{\{\{(.+?)\}\}\}/g,
+            localeLookup: /\{\{\{\[(.+?)\]\}\}\}/g,
             localePrefix: ''
         }, settingsOverrides);
         const noMatch = /(.)^/;
 
         // Combine delimiters into one regular expression via alternation.
         const matcher = RegExp([
+            (settings.localeLookup || noMatch).source,
             (settings.locale || noMatch).source,
             (settings.escape || noMatch).source,
             (settings.interpolate || noMatch).source,
@@ -66,10 +68,12 @@
             with(obj || {}) {
         `);
         let index = 0;
-        text.replace(matcher, (match, locale, escape, interpolate, evaluate, offset) => {
+        text.replace(matcher, (match, localeLookup, locale, escape, interpolate, evaluate, offset) => {
             code.push(`__p.push('${text.slice(index, offset).replace(escapeRegExp, escapeChar)}');\n`);
             index = offset + match.length;
-            if (locale) {
+            if (localeLookup) {
+                code.push(`__p.push(await sauce.locale.getMessage('${settings.localePrefix}' + ${localeLookup}));\n`);
+            } else if (locale) {
                 code.push(`__p.push(await sauce.locale.getMessage('${settings.localePrefix}${locale}'));\n`);
             } else if (escape) {
                 code.push(`

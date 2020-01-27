@@ -10,7 +10,6 @@
 
     async function saveAthleteInfo(el) {
         const textareas = el.querySelectorAll('textarea.athlete-info');
-        const status = document.getElementById('status');
         const errors = el.querySelectorAll('.error');
         for (const x of errors) {
             x.textContent = '';
@@ -25,15 +24,30 @@
                 athlete_info[x.id] = JSON.parse(val);
             } catch(e) {
                 x.parentNode.querySelector('.error').textContent = e.toString();
-                status.textContent = `Error updating ${x.id}`;
-                return;
+                throw new Error(`Error updating ${x.id}`);
             }
         }
         await sauce.storage.set({athlete_info});
-        status.textContent = 'Athlete options saved';
-        await renderAthleteInfo(el);
-        await sleep(8);
-        status.textContent = '';
+    }
+
+
+    async function saveOptions(el) {
+        const options = JSON.parse(el.value.trim());
+        await sauce.storage.set({options});
+    }
+
+
+    async function saveZones(el) {
+        const zones = (await sauce.storage.get('analysis_critical_zones')) || {};
+        for (const input of el.querySelectorAll('input')) {
+            if (input.value.trim()) {
+                const values = input.value.split(',').map(x => Number(x)).filter(x => x);
+                zones[input.dataset.key] = values.map(value => ({value}));
+            } else {
+                zones[input.dataset.key] = null;
+            }
+        }
+        await sauce.storage.set({analysis_critical_zones: zones});
     }
 
 
@@ -59,6 +73,27 @@
     }
 
 
+    async function renderOptions(el) {
+        const options = await sauce.storage.get('options');
+        const json = JSON.stringify(options, null, 2);
+        el.setAttribute('rows', json.split('\n').length);
+        el.innerHTML = json;
+    }
+
+
+    async function renderZones(el) {
+        const zones = (await sauce.storage.get('analysis_critical_zones')) || {};
+        for (const input of el.querySelectorAll('input')) {
+            const value = zones[input.dataset.key];
+            if (value) {
+                input.value = value.map(x => x.value).join();
+            } else {
+                input.value = '';
+            }
+        }
+    }
+
+
     function onEventDelegate(rootElement, evName, selector, callback) {
         // redneck event delegation..
         rootElement.addEventListener(evName, ev => {
@@ -81,16 +116,36 @@
                 window.location.reload();
             });
         });
-        const el = document.getElementById('athlete-list');
-        await renderAthleteInfo(el);
-        onEventDelegate(el, 'click', '.label > button.remove', async ev => {
+        const optionsEl = document.getElementById('options');
+        const zonesEl = document.querySelector('.zones');
+        const athleteEl = document.getElementById('athlete-list');
+        await renderOptions(optionsEl);
+        await renderZones(zonesEl);
+        await renderAthleteInfo(athleteEl);
+        onEventDelegate(athleteEl, 'click', '.label > button.remove', async ev => {
             const id = ev.delegateTarget.closest('.athlete-box').dataset.athleteId;
             const athlete_info = await sauce.storage.get('athlete_info');
             delete athlete_info[id];
             await sauce.storage.set({athlete_info});
-            await renderAthleteInfo(el);
+            await renderAthleteInfo(athleteEl);
         });
-        document.getElementById('save').addEventListener('click', () => saveAthleteInfo(el));
+        document.getElementById('save').addEventListener('click', async () => {
+            const status = document.getElementById('status');
+            try {
+                await saveAthleteInfo(athleteEl);
+                await saveOptions(optionsEl);
+                await saveZones(zonesEl);
+            } catch(e) {
+                status.textContent = e.message;
+                return;
+            }
+            await renderOptions(optionsEl);
+            await renderZones(zonesEl);
+            await renderAthleteInfo(athleteEl);
+            status.textContent = 'Saved';
+            await sleep(8);
+            status.textContent = '';
+        });
     }
 
     document.addEventListener('DOMContentLoaded', main);

@@ -5,21 +5,39 @@
     margin-top: 10px;
 }
 
-#sauce-infopanel .title {
+#sauce-infopanel .title,
+#sauce-infopanel .sauce-title-menu {
     white-space: nowrap;
 }
 
-#sauce-infopanel .title p.watt-estimate-disclaimer {
+#sauce-infopanel .sauce-title-menu {
+    width: 100%;
+}
+
+#sauce-infopanel .sauce-title-menu .selection {
+    justify-content: center;
+    border: none;
+}
+
+#sauce-infopanel .sauce-title-menu .options li > a {
+    text-align: center;
+}
+
+#sauce-infopanel .watt-estimate-disclaimer {
     color: darkred;
-    margin: 4px 0 0 0;
+    margin: 0.3em 0 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4em;
 }
 
-#sauce-infopanel .title p.watt-estimate-disclaimer b {
-    font-size: 14px;
+#sauce-infopanel:not(.watt-estimate) .watt-estimate-disclaimer {
+    display: none;
 }
 
-#sauce-infopanel .title p.watt-estimate-disclaimer small {
-    font-size: 12px;
+#sauce-infopanel .watt-estimate-disclaimer > * {
+    padding: 0 0.2em;
 }
 
 

@@ -7,13 +7,17 @@
         <script defer src="/src/ext/storage.js"></script>
         <script defer src="/src/ext/adv_options.js"></script>
         <style>
-            textarea.athlete-info {
+            textarea {
                 background: #fff5;
                 padding: 0.8em;
                 margin: 0.8em 0;
-                width: 100%;
+                width: 38em;
                 font-size: 1em;
                 border-radius: 0.22em;
+            }
+
+            textarea#options {
+                margin: 1em;
             }
 
             #status {
@@ -46,6 +50,12 @@
                 margin: 0;
                 padding: 0.1em 0.3em;
             }
+
+            label {
+                margin: 1em;
+                display: block;
+                min-width: 15ch;
+            }
         </style>
     </head>
     <body>
@@ -54,11 +64,32 @@
         </header>
         <main>
             <section>
-                <h4>Athlete Info</h4>
+                <h4>Options</h4>
+                <textarea id="options"></textarea>
+            </section>
+
+            <section class="zones">
+                <h4>Custom Critical Zones</h4>
                 <p class="desc">
-                    This is the raw JSON data Sauce uses for athletes.
-                    <b>Use caution when editing!</b>
+                    You can update the time periods and distances used for critical power, best pace, etc.
+                    Enter numeric values seperated by commas to override the default settings.
                 </p>
+                <label>
+                    Periods:
+                    <input type="text" data-key="periods"
+                           placeholder="e.g. 5,10,15,300,3600"/>
+                    <small>(seconds)</small>
+                </label>
+                <label>
+                    Distances:
+                    <input type="text" data-key="distances"
+                           placeholder="e.g. 100,400,1609.344,10000"/>
+                    <small>(meters)</small>
+                </label>
+            </section>
+
+            <section>
+                <h4>Athlete Info</h4>
                 <div id="athlete-list"></div>
             </section>
         </main>
