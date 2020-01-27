@@ -1149,20 +1149,32 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         if (!rank || !rank.badge) {
             return;  // Too slow/weak
         }
-        // XXX suspect, probably only works for english..
-        const locator = row.querySelector(':scope > td > abbr[title="watts"]');
-        if (!locator) {
+        let targetTD;
+        for (const td of row.querySelectorAll(':scope > td')) {
+            const unit = td.querySelector('abbr.unit');
+            if (unit && unit.innerText.toLowerCase() === 'w') {
+                // This is the highest pref for placement.  The TD doesn't have any other indications besides
+                // the watts unit abbr tag.  The title value is translated, so we have to look for this.
+                targetTD = td;
+                break;
+            }
+        }
+        if (!targetTD) {
+            // Use fallback strategy of using a TD column with a real identifier.
+            targetTD = row.querySelector('.time-col');
+        }
+        if (!targetTD) {
             throw new Error("Badge Fail: row query selector failed");
         }
-        const td = locator.closest('td');
-        td.classList.add('sauce-mark');
-        td.innerHTML = [
-            `<div class="sauce-watts-holder">`,
-                `<div class="watts">${td.innerHTML}</div>`,
-                `<img src="${rank.badge}" title="World Ranking: ${Math.round(rank.level * 100)}%\n`,
-                                                 `Watts/kg: ${wKg.toFixed(1)}" class="sauce-rank"/>`,
-            `</div>`
-        ].join('');
+        targetTD.classList.add('sauce-mark');
+        const levelPct = Math.round(rank.level * 100);
+        targetTD.innerHTML = `
+            <div class="sauce-rank-holder">
+                <div>${targetTD.innerHTML}</div>
+                <img src="${rank.badge}" class="sauce-rank"
+                     title="World Ranking: ${levelPct}%\nWatts/kg: ${wKg.toFixed(1)}"/>
+            </div>
+        `;
     }
 
 
