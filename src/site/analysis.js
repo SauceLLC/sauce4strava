@@ -22,7 +22,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     const paceFormatter = new Strava.I18n.PaceFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
-    const minVAMTime = 120;
+    const minVAMTime = 60;
     const metersPerMile = 1609.344;
     const defaultCritPeriods = [
         {value: 5},
@@ -448,7 +448,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 menu,
                 zones,
                 moreinfoDialog: moreinfoRideDialog,
-                renderAttrs: source => {
+                renderAttrs: async source => {
                     const rows = [];
                     const attrs = {};
                     if (source === 'critical_power') {
@@ -490,7 +490,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                         }
                     } else if (source === 'critical_hr') {
                         for (const zone of zones) {
-                            const roll = sauce.power.critAverage(zone.value, timeStream, hrStream);
+                            const roll = sauce.data.critAverage(zone.value, timeStream, hrStream, {moving: true});
                             if (!roll) {
                                 break;  // No longer filling, so discontinue searching.
                             }
@@ -498,14 +498,37 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                                 rows.push({
                                     zoneValue: zone.value,
                                     label: zone.label,
-                                    value: Math.round(roll.avg()).toLocaleString(),
+                                    value: Math.round(roll.avg({moving: true})).toLocaleString(),
                                     unit: 'bpm',
                                     startTime: roll.firstTimestamp(),
                                     endTime: roll.lastTimestamp(),
                                 });
                             }
                         }
+                    } else if (source === 'critical_vam') {
+                        const vamStream = await createVAMStream(timeStream, altStream);
+                        const smooth = sauce.data.smooth(30, timeStream, altStream);
+                        const vamStream2 = await createVAMStream(timeStream, smooth);
+                        //sauce.tools.sparklineDialog(altStream);
+                        sauce.tools.sparklineDialog(smooth);
+                        for (const zone of zones) {
+                            if (zone.value < minVAMTime) {
+                                continue;
+                            }
+                            const roll = sauce.data.critAverage(zone.value, timeStream, vamStream2, {moving: true});
+                            if (roll) {
+                                rows.push({
+                                    zoneValue: zone.value,
+                                    label: zone.label,
+                                    value: Math.round(roll.avg()).toLocaleString(),
+                                    unit: 'Vm/h',
+                                    startTime: roll.firstTimestamp(),
+                                    endTime: roll.lastTimestamp(),
+                                });
+                            }
+                        }
                     }
+
                     return Object.assign(attrs, {rows});
                 }
             });
@@ -600,7 +623,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     const rows = [];
                     const attrs = {};
                     if (source === 'critical_pace') {
-                        const unit = distanceFormatter.shortUnitKey();
+                        const unit = '/' + distanceFormatter.shortUnitKey();
                         for (const zone of zones) {
                             const roll = sauce.pace.bestPace(zone.value, timeStream, distStream);
                             if (roll) {
@@ -615,7 +638,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                             }
                         }
                     } else if (source === 'critical_gap') {
-                        const unit = distanceFormatter.shortUnitKey();
+                        const unit = '/' + distanceFormatter.shortUnitKey();
                         for (const zone of zones) {
                             const roll = sauce.pace.bestPace(zone.value, timeStream, gradeDistStream);
                             if (roll) {
@@ -628,13 +651,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                                     endTime: roll.lastTimestamp(),
                                 });
                             }
-                            /*const roll = new sauce.data.RollingPace(null);
-                            const timeStreamSlice = await fetchStreamTimeRange('time',
-                                gapRoll.firstTimestamp(), gapRoll.lastTimestamp());
-                            const distStreamSlice = await fetchStreamTimeRange('distance',
-                                gapRoll.firstTimestamp(), gapRoll.lastTimestamp());
-                            roll.import(timeStreamSlice, distStreamSlice);
-                            rows.push({zone, roll, value: humanPace(gapRoll.avg())});*/
                         }
                     }
                     return Object.assign(attrs, {rows});
@@ -681,8 +697,51 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
+    async function _createVAMStream(timeStream, altStream) {
+        const stride = 2;
+        const vams = [];
+        for (let i = 0; i < timeStream.length; i += stride) {
+            const chunk = altStream.slice(i, i + stride);
+            const changes = altitudeChanges(chunk, 0);
+            const elapsed = timeStream[i + chunk.length - 1] - timeStream[i];
+            vams.push((changes.gain / elapsed) * 3600);
+        }
+        return await sauce.data.resample(vams, timeStream.length);
+    }
+
+
+    function __createVAMStream(timeStream, altStream) {
+        const vams = [];
+        let lastAlt = altStream[0];
+        let lastTime = timeStream[0];
+        for (let i = 1; i < timeStream.length; i++) {
+            const gain = Math.max(0, altStream[i] - lastAlt);
+            if (gain < 15 && i < altStream.length - 1) {
+                continue;
+            }
+            const elapsed = timeStream[i] - lastTime;
+            while (vams.length <= i) {
+                vams.push((gain / elapsed) * 3600);
+            }
+            lastAlt = altStream[i];
+            lastTime = timeStream[i];
+        }
+        return vams;
+    }
+
+
+    function createVAMStream(timeStream, altStream) {
+        const vams = [0];
+        for (let i = 1; i < timeStream.length; i++) {
+            const gain = Math.max(0, altStream[i] - altStream[i - 1]);
+            vams.push((gain / (timeStream[i] - timeStream[i - 1])) * 3600);
+        }
+        return vams;
+    }
+
+
     function altitudeChanges(stream, minChange) {
-        minChange = minChange || 15;  // Smooth out erroneous readings from bad computers.  e.g. Egan Bernal
+        minChange = minChange || 5;  // Smooth out erroneous readings.
         let gain = 0;
         let loss = 0;
         if (stream && stream.length) {
@@ -774,7 +833,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 grade: sauce.data.avg(gradeStream),
                 gain: humanElevation(altChanges.gain),
                 loss: humanElevation(altChanges.loss),
-                vam: elapsedTime > minVAMTime && (altChanges.gain / elapsedTime) * 3600,
+                vam: elapsedTime >= minVAMTime && (altChanges.gain / elapsedTime) * 3600,
             },
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
@@ -882,7 +941,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 grade: sauce.data.avg(gradeStream),
                 gain: humanElevation(altChanges.gain),
                 loss: humanElevation(altChanges.loss),
-                vam: elapsedTime > minVAMTime && (altChanges.gain / elapsedTime) * 3600,
+                vam: elapsedTime >= minVAMTime && (altChanges.gain / elapsedTime) * 3600,
             },
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
@@ -1456,7 +1515,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 gain: altChanges.gain && humanElevation(altChanges.gain),
                 grade: gradeStream && sauce.data.avg(gradeStream),
                 loss: altChanges.loss && humanElevation(altChanges.loss),
-                vam: elapsedTime > minVAMTime && (altChanges.gain / elapsedTime) * 3600
+                vam: elapsedTime >= minVAMTime && (altChanges.gain / elapsedTime) * 3600
             };
         }
         let kj;

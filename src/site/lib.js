@@ -291,7 +291,7 @@ sauce.ns('data', function() {
 
         add(ts, value) {
             this._cache.clear();
-            this._values.push(this.formatValue(value, ts));
+            this._values.push(this.addValue(value, ts));
             this._times.push(ts);
             while (this.full({offt: 1})) {
                 this.shift();
@@ -299,8 +299,14 @@ sauce.ns('data', function() {
             return value;
         }
 
-        formatValue(value) {
+        addValue(value) {
             return value;
+        }
+
+        shiftValue() {
+        }
+
+        popValue() {
         }
 
         firstTimestamp(options) {
@@ -339,20 +345,13 @@ sauce.ns('data', function() {
 
         shift() {
             this._cache.clear();
-            this.shiftValue();
-            this._offt++;
-        }
-
-        shiftValue() {
+            this.shiftValue(this._values[this._offt++]);
         }
 
         pop() {
             this._cache.clear();
             this.popValue(this._values.pop());
             this._times.pop();
-        }
-
-        popValue() {
         }
     }
 
@@ -364,13 +363,13 @@ sauce.ns('data', function() {
             this._sum = 0;
         }
 
-        formatValue(value, ts) {
-            this._sum += value;
-            return value;
-        }
-
-        avg() {
-            return this._sum / (this._values.length - this._offt);
+        avg(options) {
+            options = options || {};
+            if (options.moving) {
+                return this._sum / (this._values.length - this._offt);
+            } else {
+                return this._sum / this.elapsed();
+            }
         }
 
         full(options) {
@@ -379,8 +378,13 @@ sauce.ns('data', function() {
             return this.elapsed({offt}) >= this.period;
         }
 
-        shiftValue() {
-            this._sum -= this._values[this._offt];
+        addValue(value, ts) {
+            this._sum += value;
+            return value;
+        }
+
+        shiftValue(value) {
+            this._sum -= value;
         }
 
         popValue(value) {
@@ -415,11 +419,23 @@ sauce.ns('data', function() {
             return super.add(ts, value);
         }
 
-        formatValue(value, ts) {
+        addValue(value, ts) {
             const i = this._times.length;
             const gap = i ? ts - this._times[i - 1] : 0;
             this._joules += value * gap;
             return value;
+        }
+
+        shiftValue(value) {
+            const i = this._offt - 1;
+            const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
+            this._joules -= this._values[i + 1] * gap;
+        }
+
+        popValue(value) {
+            const lastIdx = this._times.length - 1;
+            const gap = lastIdx >= 1 ? this._times[lastIdx] - this._times[lastIdx - 1] : 0;
+            this._joules -= value * gap;
         }
 
         avg() {
@@ -441,18 +457,6 @@ sauce.ns('data', function() {
             options = options || {};
             const offt = options.offt;
             return this.elapsed({offt}) >= this.period;
-        }
-
-        shiftValue() {
-            const i = this._offt;
-            const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
-            this._joules -= this._values[i + 1] * gap;
-        }
-
-        popValue(value) {
-            const lastIdx = this._times.length - 1;
-            const gap = lastIdx >= 1 ? this._times[lastIdx] - this._times[lastIdx - 1] : 0;
-            this._joules -= value * gap;
         }
 
         copy() {
@@ -493,6 +497,36 @@ sauce.ns('data', function() {
         }
     }
 
+
+    function critAverage(period, timeStream, valuesStream, options) {
+        options = options || {};
+        const moving = options.moving == null ? true : options.moving;
+        const roll = new RollingAverage(period);
+        return roll.importReduce(timeStream, valuesStream,
+            (cur, lead) => cur.avg({moving}) >= lead.avg({moving}));
+    }
+
+
+    function smooth(period, timeStream, valuesStream) {
+        const values = [];
+        const roll = new sauce.data.RollingAverage(period);
+        for (let i = 0; i < timeStream.length; i++) {
+            roll.add(timeStream[i], valuesStream[i]);
+            const v = roll.avg({moving: true});
+            if (i < period) {
+                // soften the leading edge by unweighting the first values.
+                const weighted = valuesStream.slice(i, period).concat(values);
+                weighted.push(v);
+                values.push(avg(weighted));
+            } else {
+                values.push(v);
+            }
+            values.push(roll.avg({moving: true}));
+        }
+        return values;
+    }
+
+
     return {
         sum,
         avg,
@@ -509,6 +543,8 @@ sauce.ns('data', function() {
         RollingPace,
         Zero,
         Pad,
+        critAverage,
+        smooth
     };
 });
 
@@ -631,15 +667,6 @@ sauce.ns('power', function() {
     }
 
 
-    function critAverage(period, timeStream, valuesStream) {
-        const roll = _correctedRollingPower(timeStream, valuesStream, period);
-        if (!roll) {
-            return;
-        }
-        return roll.importReduce(timeStream, valuesStream, (cur, lead) => cur.avg() >= lead.avg());
-    }
-
-
     function critPower(period, timeStream, wattsStream) {
         const roll = _correctedRollingPower(timeStream, wattsStream, period);
         if (!roll) {
@@ -702,7 +729,6 @@ sauce.ns('power', function() {
 
 
     return {
-        critAverage,
         critPower,
         critNP,
         correctedPower,
