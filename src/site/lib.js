@@ -265,13 +265,12 @@ sauce.ns('data', function() {
         }
 
         import(times, values) {
-            const iter = this._importIter(times, values);
-            while (!iter.next().done) {/* no-pragma */}
+            for (const _ of this._importIter(times, values)) {/* no-pragma */}
         }
 
         importReduce(times, values, comparator) {
             let leader;
-            for (const iter = this._importIter(times, values); !iter.next().done;) {
+            for (const _ of this._importIter(times, values)) {
                 if (this.full() && (!leader || comparator(this, leader))) {
                     leader = this.copy();
                 }
@@ -379,7 +378,9 @@ sauce.ns('data', function() {
         }
 
         addValue(value, ts) {
-            this._sum += value;
+            if (this._times.length) {
+                this._sum += value;
+            }
             return value;
         }
 
@@ -500,7 +501,7 @@ sauce.ns('data', function() {
 
     function critAverage(period, timeStream, valuesStream, options) {
         options = options || {};
-        const moving = options.moving == null ? true : options.moving;
+        const moving = options.moving;
         const roll = new RollingAverage(period);
         return roll.importReduce(timeStream, valuesStream,
             (cur, lead) => cur.avg({moving}) >= lead.avg({moving}));
@@ -510,18 +511,18 @@ sauce.ns('data', function() {
     function smooth(period, timeStream, valuesStream) {
         const values = [];
         const roll = new sauce.data.RollingAverage(period);
-        for (let i = 0; i < timeStream.length; i++) {
-            roll.add(timeStream[i], valuesStream[i]);
+        for (let i = 0; i < valuesStream.length; i++) {
+            const ts = timeStream == null ? i : timeStream[i];
+            roll.add(ts, valuesStream[i]);
             const v = roll.avg({moving: true});
-            if (i < period) {
+            if (i < period - 1) {
                 // soften the leading edge by unweighting the first values.
-                const weighted = valuesStream.slice(i, period).concat(values);
+                const weighted = valuesStream.slice(i, period - 1);
                 weighted.push(v);
                 values.push(avg(weighted));
             } else {
                 values.push(v);
             }
-            values.push(roll.avg({moving: true}));
         }
         return values;
     }

@@ -22,7 +22,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     const paceFormatter = new Strava.I18n.PaceFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
-    const minVAMTime = 60;
+    const minVAMTime = 1;
     const metersPerMile = 1609.344;
     const defaultCritPeriods = [
         {value: 5},
@@ -126,6 +126,23 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
+    async function fetchSmoothStream(name, period, start, end) {
+        period = period || 30;
+        const fqName = `${name}_smooth_${period}`;
+        const stream = _getStream(fqName, start, end);
+        if (stream) {
+            return stream;
+        }
+        await fetchStreams([name]);
+        const rawStream = _getStream(name);
+        if (rawStream) {
+            const smooth = sauce.data.smooth(period, null, rawStream);
+            pageView.streams().streamData.add(fqName, smooth);
+            return _getStream(fqName, start, end);
+        }
+    }
+
+
     function _getStream(name, startIndex, endIndex) {
         const s = pageView.streams().getStream(name);
         if (s && startIndex != null) {
@@ -146,6 +163,13 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const startIndex = getStreamTimeIndex(startTime);
         const endIndex = getStreamTimeIndex(endTime);
         return await fetchStream(name, startIndex, endIndex);
+    }
+
+
+    async function fetchSmoothStreamTimeRange(name, period, startTime, endTime) {
+        const startIndex = getStreamTimeIndex(startTime);
+        const endIndex = getStreamTimeIndex(endTime);
+        return await fetchSmoothStream(name, period, startIndex, endIndex);
     }
 
 
@@ -306,7 +330,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     async function renderTertiaryStats(attrs) {
-        const $stats = jQuery(await ctx.tertiaryStatsTpl(attrs));
+        const template = await getTemplate('tertiary-stats.html');
+        const $stats = jQuery(await template(attrs));
         attachEditableFTP($stats);
         attachEditableWeight($stats);
         jQuery('.activity-stats .inline-stats').last().after($stats);
@@ -377,8 +402,11 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     async function processRideStreams() {
-        const [realWattsStream, timeStream, hrStream, altStream] = await fetchStreams(
-            ['watts', 'time', 'heartrate', 'altitude']);
+        await fetchStreams(['watts', 'time', 'heartrate', 'altitude']);  // load perf
+        const realWattsStream = await fetchStream('watts');
+        const timeStream = await fetchStream('time');
+        const hrStream = await fetchStream('heartrate');
+        const altStream = await fetchSmoothStream('altitude');
         const elapsedTime = streamDelta(timeStream);
         const isWattEstimate = !realWattsStream;
         let wattsStream = realWattsStream;
@@ -506,16 +534,14 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                             }
                         }
                     } else if (source === 'critical_vam') {
-                        const vamStream = await createVAMStream(timeStream, altStream);
-                        const smooth = sauce.data.smooth(30, timeStream, altStream);
-                        const vamStream2 = await createVAMStream(timeStream, smooth);
-                        //sauce.tools.sparklineDialog(altStream);
-                        sauce.tools.sparklineDialog(smooth);
+                        const vamStream = createVAMStream(timeStream, altStream);
+                        console.warn(altStream);
+                        console.warn(vamStream);
                         for (const zone of zones) {
                             if (zone.value < minVAMTime) {
                                 continue;
                             }
-                            const roll = sauce.data.critAverage(zone.value, timeStream, vamStream2, {moving: true});
+                            const roll = sauce.data.critAverage(zone.value, timeStream, vamStream);
                             if (roll) {
                                 rows.push({
                                     zoneValue: zone.value,
@@ -528,7 +554,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                             }
                         }
                     }
-
                     return Object.assign(attrs, {rows});
                 }
             });
@@ -550,7 +575,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const movingTime = await getMovingTime();
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
-        const altStream = await fetchStream('altitude');
+        const altStream = await fetchSmoothStream('altitude');
         const distStream = await fetchStream('distance');
         const gradeDistStream = await fetchStream('grade_adjusted_distance');
         let power;
@@ -740,8 +765,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
-    function altitudeChanges(stream, minChange) {
-        minChange = minChange || 5;  // Smooth out erroneous readings.
+    function _altitudeChanges(stream, minChange) {
+        minChange = minChange || 15;  // Smooth out erroneous readings.
         let gain = 0;
         let loss = 0;
         if (stream && stream.length) {
@@ -752,6 +777,24 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 if (Math.abs(x - last) < minChange && i < stream.length) {
                     continue;
                 }
+                if (x > last) {
+                    gain += x - last;
+                } else {
+                    loss += last - x;
+                }
+                last = x;
+            }
+        }
+        return {gain, loss};
+    }
+
+
+    function altitudeChanges(stream) {
+        let gain = 0;
+        let loss = 0;
+        if (stream && stream.length) {
+            let last = stream[0];
+            for (const x of stream) {
                 if (x > last) {
                     gain += x - last;
                 } else {
@@ -806,7 +849,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const endTS = roll ? roll.lastTimestamp({noPad: true}) : endTime;
         await fetchStreams(['heartrate', 'altitude', 'grade_smooth', 'cadence']);  // better load perf
         const hrStream = await fetchStreamTimeRange('heartrate', startTS, endTS);
-        const altStream = await fetchStreamTimeRange('altitude', startTS, endTS);
+        const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTS, endTS);
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTS, endTS);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTS, endTS);
@@ -914,7 +957,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const gradeDistStream = await fetchStreamTimeRange('grade_adjusted_distance', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
-        const altStream = await fetchStreamTimeRange('altitude', startTime, endTime);
+        const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
         const altChanges = altStream && altitudeChanges(altStream);
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
         const maxVelocity = sauce.data.max(velocityStream);
@@ -1065,14 +1108,14 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             ctx.athlete = pageView.activityAthlete();
             ctx.activity = await fetchFullActivity();
             ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
-            Object.assign(ctx, await getWeightInfo(ctx.athlete.id), await getFTPInfo(ctx.athlete.id));
-            ctx.tertiaryStatsTpl = await getTemplate('tertiary-stats.html');
-            try {
-                await updateSideNav();
-            } catch(e) {
-                console.warn("Experimental side nav update failed:", e);
-            }
-            await start();
+            await Promise.all([
+                getWeightInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
+                getFTPInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
+            ]);
+            updateSideNav();  //bg okay
+            attachExporters();  // bg okay
+            attachComments();  // bg okay
+            await start()
         } else {
             console.info("Unsupported activity type:", type);
         }
@@ -1309,15 +1352,11 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     async function startRun() {
-        await attachExporters();
-        await attachComments();
         await processRunStreams();
     }
 
 
     async function startRide() {
-        await attachExporters();
-        await attachComments();
         const segments = document.querySelector('table.segments');
         if (segments && sauce.options['analysis-segment-badges']) {
             const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
@@ -1507,7 +1546,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             distUnit: distanceFormatter.shortUnitKey(),
             samples: timeStream.length,
         };
-        const altStream = await fetchStream('altitude', start, end);
+        const altStream = await fetchSmoothStream('altitude', null, start, end);
         if (altStream) {
             const altChanges = altitudeChanges(altStream);
             const gradeStream = await fetchStream('grade_smooth', start, end);
@@ -1623,14 +1662,15 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             {name: 'watts_calc'},
             {name: 'heartrate'},
             {name: 'cadence', formatter: ctx.activity.isRun() ? x => x * 2 : null},
-            {name: 'velocity_smooth', label: 'velocity'},
+            {name: 'velocity_smooth'},
             {name: 'pace'},
             {name: 'grade_adjusted_pace', label: 'gap'},
             {name: 'latlng', label: 'lat', formatter: x => x[0]},
             {name: 'latlng', label: 'lng', formatter: x => x[1]},
             {name: 'temp'},
             {name: 'altitude'},
-            {name: 'grade_smooth', label: 'grade'}
+            {name: 'altitude_smooth_30', label: 'altitude_smooth'},
+            {name: 'grade_smooth'}
         ].map(x => ({
             name: x.name,
             label: x.label || x.name,
@@ -1660,7 +1700,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const prefetch = await _fetchDataSamples();
         const unavailable = new Set(Object.keys(prefetch).filter(x => !prefetch[x]));
         const defaultSkip = new Set(['watts_calc', 'lat', 'lng', 'pace', 'gap', 'timer_time',
-                                     'gap_distance', 'grade', 'outlier', 'moving']);
+                                     'gap_distance', 'grade_smooth', 'outlier', 'moving',
+                                     'altitude_smooth', 'temp']);
         const streams = _rawStreamsInfo();
         const checks = streams.filter(x => !unavailable.has(x.label)).map(x => `
             <label>
