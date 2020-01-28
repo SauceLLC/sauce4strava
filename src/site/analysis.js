@@ -22,7 +22,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     const paceFormatter = new Strava.I18n.PaceFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
-    const minVAMTime = 1;
+    const minVAMTime = 60;
+    const minHRTime = 60;
     const metersPerMile = 1609.344;
     const defaultCritPeriods = [
         {value: 5},
@@ -518,6 +519,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                         }
                     } else if (source === 'critical_hr') {
                         for (const zone of zones) {
+                            if (zone.value < minHRTime) {
+                                continue;
+                            }
                             const roll = sauce.data.critAverage(zone.value, timeStream, hrStream, {moving: true});
                             if (!roll) {
                                 break;  // No longer filling, so discontinue searching.
@@ -535,8 +539,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                         }
                     } else if (source === 'critical_vam') {
                         const vamStream = createVAMStream(timeStream, altStream);
-                        console.warn(altStream);
-                        console.warn(vamStream);
                         for (const zone of zones) {
                             if (zone.value < minVAMTime) {
                                 continue;
@@ -722,39 +724,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
-    async function _createVAMStream(timeStream, altStream) {
-        const stride = 2;
-        const vams = [];
-        for (let i = 0; i < timeStream.length; i += stride) {
-            const chunk = altStream.slice(i, i + stride);
-            const changes = altitudeChanges(chunk, 0);
-            const elapsed = timeStream[i + chunk.length - 1] - timeStream[i];
-            vams.push((changes.gain / elapsed) * 3600);
-        }
-        return await sauce.data.resample(vams, timeStream.length);
-    }
-
-
-    function __createVAMStream(timeStream, altStream) {
-        const vams = [];
-        let lastAlt = altStream[0];
-        let lastTime = timeStream[0];
-        for (let i = 1; i < timeStream.length; i++) {
-            const gain = Math.max(0, altStream[i] - lastAlt);
-            if (gain < 15 && i < altStream.length - 1) {
-                continue;
-            }
-            const elapsed = timeStream[i] - lastTime;
-            while (vams.length <= i) {
-                vams.push((gain / elapsed) * 3600);
-            }
-            lastAlt = altStream[i];
-            lastTime = timeStream[i];
-        }
-        return vams;
-    }
-
-
     function createVAMStream(timeStream, altStream) {
         const vams = [0];
         for (let i = 1; i < timeStream.length; i++) {
@@ -762,30 +731,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             vams.push((gain / (timeStream[i] - timeStream[i - 1])) * 3600);
         }
         return vams;
-    }
-
-
-    function _altitudeChanges(stream, minChange) {
-        minChange = minChange || 15;  // Smooth out erroneous readings.
-        let gain = 0;
-        let loss = 0;
-        if (stream && stream.length) {
-            let last = stream[0];
-            let i = 0;
-            for (const x of stream) {
-                i++;
-                if (Math.abs(x - last) < minChange && i < stream.length) {
-                    continue;
-                }
-                if (x > last) {
-                    gain += x - last;
-                } else {
-                    loss += last - x;
-                }
-                last = x;
-            }
-        }
-        return {gain, loss};
     }
 
 
@@ -847,7 +792,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         // Use non padded values for other streams.
         const startTS = roll ? roll.firstTimestamp({noPad: true}) : startTime;
         const endTS = roll ? roll.lastTimestamp({noPad: true}) : endTime;
-        await fetchStreams(['heartrate', 'altitude', 'grade_smooth', 'cadence']);  // better load perf
+        const timeStream = await fetchStreamTimeRange('time', startTS, endTS);
         const hrStream = await fetchStreamTimeRange('heartrate', startTS, endTS);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTS, endTS);
         const altChanges = altStream && altitudeChanges(altStream);
@@ -900,14 +845,27 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             }
         });
         let graphData;
-        if (rollValues.length > 120) {
-            graphData = await sauce.data.resample(rollValues, 120);
-        } else if (rollValues.length > 1) {
+        let graphFormatter;
+        let graphColorSteps;
+        if (source === 'critical_power' || source === 'critical_np') {
             graphData = rollValues;
+            graphFormatter = x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`;
+            graphColorSteps = [0, 100, 400, 1200];
+        } else if (source === 'critical_hr') {
+            graphData = hrStream;
+            graphFormatter = x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`;
+            graphColorSteps = [40, 100, 150, 200];
+        } else if (source === 'critical_vam') {
+            graphData = createVAMStream(timeStream, altStream);
+            graphFormatter = x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`;
+            graphColorSteps = [-500, 500, 1000, 2000];
         }
-        if (graphData) {
-            const minPower = sauce.data.min(graphData);
-            const chartMin = Math.max(0, minPower * 0.75);
+
+        if (graphData && graphData.length) {
+            if (graphData.length > 120) {
+                graphData = await sauce.data.resample(graphData, 120);
+            }
+            const graphMin = Math.max(0, sauce.data.min(graphData) * 0.75);
             $dialog.find('.sauce-sparkline').sparkline(graphData, {
                 type: 'line',
                 width: '100%',
@@ -917,23 +875,23 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     type: 'gradient',
                     opacity: 0.6,  // use this instead of rgba colors (it's technical)
                     steps: [{
-                        value: 0,
+                        value: graphColorSteps[0],
                         color: '#f0f0f0'
                     }, {
-                        value: 100,  // ~easy
+                        value: graphColorSteps[1],  // ~easy
                         color: '#fd6d1d'
                     }, {
-                        value: 400,  // ~hard
+                        value: graphColorSteps[2],  // ~hard
                         color: '#780271'
                     }, {
-                        value: 1200,  // ~sprint
+                        value: graphColorSteps[3],  // ~sprint
                         color: '#000'
                     }]
                 },
-                chartRangeMin: chartMin,
-                normalRangeMin: chartMin,
-                normalRangeMax: avgPower,
-                tooltipFormatter: (_, _2, data) => `${Math.round(data.y)}<abbr class="unit short">w</abbr>`
+                chartRangeMin: graphMin,
+                normalRangeMin: graphMin,
+                normalRangeMax: sauce.data.avg(graphData),
+                tooltipFormatter: (_, _2, data) => graphFormatter(data.y)
             });
         }
         $dialog.find('.start_time_link').on('click',() => {
@@ -951,8 +909,6 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         roll.import(timeStream, distStream);
         const elapsedTime = endTime - startTime;
         const elapsed = humanTime(elapsedTime);
-        await fetchStreams(['time', 'heartrate', 'grade_adjusted_pace', 'altitude',
-                            'grade_smooth', 'cadence', 'velocity_smooth']);  // better load perf
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const gradeDistStream = await fetchStreamTimeRange('grade_adjusted_distance', startTime, endTime);
