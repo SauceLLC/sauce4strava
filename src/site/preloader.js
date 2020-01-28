@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, jQuery */
 
 (async function() {
     'use strict';
@@ -39,7 +39,7 @@
                 }
                 return objRef;
             }
-                
+
             function catchDefine(obj, prop) {
                 function onSet(value) {
                     if (done) {
@@ -98,14 +98,6 @@
                 addCustomRoutes.call(view, menuRouter);
                 // Fix for reload hang on /analysis page
                 if (!('route:analysis' in menuRouter._events)) {
-                    //const pageNav = document.querySelector('ul#pagenav');
-                    // Add an analysis link to the nav if not there already.
-                    //if (!pageNav.querySelector('[data-menu="analysis"]')) {
-                    //    const analysisLink = document.createElement('li');
-                    //    const id = view.activity().id;
-                    //    analysisLink.innerHTML = `<a data-menu="analysis" href="/activities/${id}/analysis">Analysis S</a>`;
-                    //    pageNav.appendChild(analysisLink);
-                    //}
                     menuRouter.addRoute('/analysis', 'analysis');
                     menuRouter.on('route:analysis', () => {
                         view.handleAnalysisClicked();
@@ -122,6 +114,8 @@
                     sauce.analysis.schedUpdateAnalysisStats(
                         start === undefined ? start : Number(start),
                         end === undefined ? end : Number(end));
+                } else {
+                    console.warn("Could not schedule analysis update due to early start");
                 }
                 return saveFn.apply(this, arguments);
             };
@@ -135,6 +129,8 @@
                     sauce.analysis.schedUpdateAnalysisStats(
                         start === undefined ? start : Number(start),
                         end === undefined ? end : Number(end));
+                } else {
+                    console.warn("Could not schedule analysis update due to early start");
                 }
                 return saveFn.apply(this, arguments);
             };
@@ -147,9 +143,113 @@
                 const $el = saveFn.apply(this, arguments);
                 if (sauce.analysis) {
                     sauce.analysis.attachAnalysisStats($el.find('.chart'));
+                } else {
+                    console.warn("Could not attach analysis stats due to early start");
                 }
                 return $el;
             };
+        });
+
+        /* Patch dragging bug when scrolled in this old jquery ui code.
+         * NOTE: We must use Promise.then instead of a callback because the
+         * draggable widget isn't fully baked when it's first defined.  The
+         * promise resolution won't execute until the assignment is completed.
+         */
+        sauce.propDefined('jQuery.ui.draggable').then(draggable => {
+            const $ = jQuery;
+            jQuery.widget('ui.draggable', draggable, {
+                _convertPositionTo: function(d, pos) {
+                    pos = pos || this.position;
+                    const mod = d === "absolute" ? 1 : -1;
+                    const useOffsetParent = this.cssPosition === "absolute" &&
+                        (this.scrollParent[0] === this.document[0] || !$.contains(this.scrollParent[0], this.offsetParent[0]));
+                    const scroll = useOffsetParent ? this.offsetParent : this.scrollParent;
+                    const scrollIsRootNode = useOffsetParent && (/(html|body)/i).test(scroll[0].nodeName);
+                    if (!this.offset.scroll) {
+                        this.offset.scroll = {top: scroll.scrollTop(), left: scroll.scrollLeft()};
+                    }
+                    const scrollTop = mod * this.cssPosition === "fixed" ?
+                        -this.scrollParent.scrollTop() :
+                        (scrollIsRootNode ? 0 : this.offset.scroll.top);
+                    const scrollLeft = mod * this.cssPosition === "fixed" ?
+                        -this.scrollParent.scrollLeft() :
+                        (scrollIsRootNode ? 0 : this.offset.scroll.left);
+                    return {
+                        top: pos.top + this.offset.relative.top * mod + this.offset.parent.top * mod - scrollTop,
+                        left: pos.left + this.offset.relative.left * mod + this.offset.parent.left * mod - scrollLeft
+                    };
+                },
+                _generatePosition: function(ev) {
+                    let top;
+                    let left;
+                    const useOffsetParent = this.cssPosition === "absolute" &&
+                        (this.scrollParent[0] === this.document[0] || !$.contains(this.scrollParent[0], this.offsetParent[0]));
+                    const scroll = useOffsetParent ? this.offsetParent : this.scrollParent;
+                    const scrollIsRootNode = useOffsetParent && (/(html|body)/i).test(scroll[0].nodeName);
+                    let pageX = ev.pageX;
+                    let pageY = ev.pageY;
+                    if (!this.offset.scroll) {
+                        this.offset.scroll = {top : scroll.scrollTop(), left : scroll.scrollLeft()};
+                    }
+                    if (this.originalPosition) {
+                        let containment;
+                        if (this.containment) {
+                            if (this.relative_container){
+                                const co = this.relative_container.offset();
+                                containment = [
+                                    this.containment[0] + co.left,
+                                    this.containment[1] + co.top,
+                                    this.containment[2] + co.left,
+                                    this.containment[3] + co.top
+                                ];
+                            } else {
+                                containment = this.containment;
+                            }
+                            if(ev.pageX - this.offset.click.left < containment[0]) {
+                                pageX = containment[0] + this.offset.click.left;
+                            }
+                            if(ev.pageY - this.offset.click.top < containment[1]) {
+                                pageY = containment[1] + this.offset.click.top;
+                            }
+                            if(ev.pageX - this.offset.click.left > containment[2]) {
+                                pageX = containment[2] + this.offset.click.left;
+                            }
+                            if(ev.pageY - this.offset.click.top > containment[3]) {
+                                pageY = containment[3] + this.offset.click.top;
+                            }
+                        }
+                        const o = this.options;
+                        if (o.grid) {
+                            top = o.grid[1] ?
+                                this.originalPageY + Math.round((pageY - this.originalPageY) / o.grid[1]) * o.grid[1] :
+                                this.originalPageY;
+                            pageY = containment ?
+                                ((top - this.offset.click.top >= containment[1] || top - this.offset.click.top > containment[3]) ?
+                                    top :
+                                    ((top - this.offset.click.top >= containment[1]) ? top - o.grid[1] : top + o.grid[1])) :
+                                top;
+                            left = o.grid[0] ?
+                                this.originalPageX + Math.round((pageX - this.originalPageX) / o.grid[0]) * o.grid[0] :
+                                this.originalPageX;
+                            pageX = containment ?
+                                ((left - this.offset.click.left >= containment[0] || left - this.offset.click.left > containment[2]) ?
+                                    left :
+                                    ((left - this.offset.click.left >= containment[0]) ? left - o.grid[0] : left + o.grid[0])) :
+                                left;
+                        }
+                    }
+                    const scrollTop = this.cssPosition === "fixed" ?
+                        -this.scrollParent.scrollTop() :
+                        (scrollIsRootNode ? 0 : this.offset.scroll.top);
+                    const scrollLeft = this.cssPosition === "fixed" ?
+                        -this.scrollParent.scrollLeft() :
+                        (scrollIsRootNode ? 0 : this.offset.scroll.left);
+                    return {
+                        top: pageY - this.offset.click.top - this.offset.relative.top - this.offset.parent.top + scrollTop,
+                        left: pageX - this.offset.click.left - this.offset.relative.left - this.offset.parent.left + scrollLeft
+                    };
+                }
+            });
         });
     }
 })();

@@ -395,7 +395,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         }
 
         async setSelectedSource(source) {
-            const key = `${this.type}_source`; 
+            const key = `${this.type}_source`;
             this._selectedSource = source;
             await sauce.rpc.storageUpdate('analysis_critical_zones', {[key]: source});
         }

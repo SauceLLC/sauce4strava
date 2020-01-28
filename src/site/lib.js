@@ -820,7 +820,7 @@ sauce.ns('tools', function(ns) {
     'use strict';
 
     function sparklineDialog(data, sparklineOptions, dialogOptions) {
-        const draw = () => { 
+        const draw = () => {
             dialog.sparkline(data, Object.assign({
                 type: 'line',
                 width: '100%',
@@ -829,6 +829,7 @@ sauce.ns('tools', function(ns) {
         };
         const dialog = jQuery('<div/>').dialog(Object.assign({
             title: 'Sparkline Tool',
+            dialogClass: 'sauce-dialog',
             buttons: [{
                 text: 'Close',
                 click: () => dialog.dialog('close')
