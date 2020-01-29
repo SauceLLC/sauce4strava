@@ -265,12 +265,13 @@ sauce.ns('data', function() {
         }
 
         import(times, values) {
-            for (const _ of this._importIter(times, values)) {/* no-pragma */}
+            for (const x of this._importIter(times, values)) {void x;}
         }
 
         importReduce(times, values, comparator) {
             let leader;
-            for (const _ of this._importIter(times, values)) {
+            for (const x of this._importIter(times, values)) {
+                void x;
                 if (this.full() && (!leader || comparator(this, leader))) {
                     leader = this.copy();
                 }
@@ -308,30 +309,38 @@ sauce.ns('data', function() {
         popValue() {
         }
 
-        firstTimestamp(options) {
+        firstIndex(options) {
             options = options || {};
             if (options.noPad) {
                 for (let i = this._offt; i < this._values.length; i++) {
                     if (!(this._values[i] instanceof Pad)) {
-                        return this._times[i];
+                        return i;
                     }
                 }
             } else {
-                return this._times[this._offt];
+                return this._offt;
             }
         }
 
-        lastTimestamp(options) {
+        firstTimestamp(options) {
+            return this._times[this.firstIndex(options)];
+        }
+
+        lastIndex(options) {
             options = options || {};
             if (options.noPad) {
                 for (let i = this._values.length - 1; i >= this._offt; i--) {
                     if (!(this._values[i] instanceof Pad)) {
-                        return this._times[i];
+                        return i;
                     }
                 }
             } else {
-                return this._times[this._times.length - 1];
+                return this._times.length - 1;
             }
+        }
+
+        lastTimestamp(options) {
+            return this._times[this.lastIndex(options)];
         }
 
         size() {
@@ -367,7 +376,7 @@ sauce.ns('data', function() {
             if (options.moving) {
                 return this._sum / (this._values.length - this._offt);
             } else {
-                return this._sum / this.elapsed();
+                return (this._sum - this._values[this._offt]) / this.elapsed();
             }
         }
 
@@ -378,9 +387,7 @@ sauce.ns('data', function() {
         }
 
         addValue(value, ts) {
-            if (this._times.length) {
-                this._sum += value;
-            }
+            this._sum += value;
             return value;
         }
 

@@ -22,8 +22,11 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     const paceFormatter = new Strava.I18n.PaceFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
-    const minVAMTime = 60;
-    const minHRTime = 60;
+    const minVAMTime = 5; // XXX make ~60
+    const minHRTime = 5; // XXX make ~60
+    const minNPTime = 900;
+    const minWattEstTime = 300;
+
     const metersPerMile = 1609.344;
     const defaultCritPeriods = [
         {value: 5},
@@ -402,6 +405,18 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
+    function _zoneRollToRow({zone, roll, value, unit}) {
+        return {
+            zoneValue: zone.value,
+            label: zone.label,
+            value,
+            unit,
+            startTime: roll.firstTimestamp(),
+            endTime: roll.lastTimestamp(),
+        };
+    }
+
+
     async function processRideStreams() {
         await fetchStreams(['watts', 'time', 'heartrate', 'altitude']);  // load perf
         const realWattsStream = await fetchStream('watts');
@@ -413,6 +428,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         let wattsStream = realWattsStream;
         if (!wattsStream) {
             wattsStream = await fetchStream('watts_calc');
+            wattsStream.estimate = true;
             if (!wattsStream) {
                 console.info("No power data for this activity.");
             }
@@ -483,76 +499,38 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     if (source === 'critical_power') {
                         const prefix = isWattEstimate ? '~' : '';
                         attrs.isWattEstimate = isWattEstimate;
-                        for (const zone of zones) {
-                            if (isWattEstimate && zone.value < 300) {
-                                continue;
-                            }
+                        for (const zone of zones.filter(x => !isWattEstimate || x.value >= minWattEstTime)) {
                             const roll = sauce.power.critPower(zone.value, timeStream, wattsStream);
                             if (roll) {
                                 const value = prefix + Math.round(roll.avg()).toLocaleString();
-                                rows.push({
-                                    zoneValue: zone.value,
-                                    label: zone.label,
-                                    value,
-                                    unit: 'w',
-                                    startTime: roll.firstTimestamp(),
-                                    endTime: roll.lastTimestamp(),
-                                });
+                                rows.push(_zoneRollToRow({zone, roll, value, unit: 'w'}));
                             }
                         }
                     } else if (source === 'critical_np') {
-                        for (const zone of zones) {
-                            if (zone.value < 900) {
-                                continue;  // NP is only valid for ~20min+.
-                            }
+                        for (const zone of zones.filter(x => x.value >= minNPTime)) {
                             const roll = sauce.power.critNP(zone.value, timeStream, wattsStream);
                             if (roll && roll.np()) {
-                                rows.push({
-                                    zoneValue: zone.value,
-                                    label: zone.label,
-                                    value: Math.round(roll.np()).toLocaleString(),
-                                    unit: 'w',
-                                    startTime: roll.firstTimestamp(),
-                                    endTime: roll.lastTimestamp(),
-                                });
+                                const value = Math.round(roll.np()).toLocaleString();
+                                rows.push(_zoneRollToRow({zone, roll, value, unit: 'w'}));
                             }
                         }
                     } else if (source === 'critical_hr') {
-                        for (const zone of zones) {
-                            if (zone.value < minHRTime) {
-                                continue;
-                            }
+                        for (const zone of zones.filter(x => x.value >= minHRTime)) {
                             const roll = sauce.data.critAverage(zone.value, timeStream, hrStream, {moving: true});
-                            if (!roll) {
-                                break;  // No longer filling, so discontinue searching.
-                            }
                             if (roll) {
-                                rows.push({
-                                    zoneValue: zone.value,
-                                    label: zone.label,
-                                    value: Math.round(roll.avg({moving: true})).toLocaleString(),
-                                    unit: 'bpm',
-                                    startTime: roll.firstTimestamp(),
-                                    endTime: roll.lastTimestamp(),
-                                });
+                                const value = Math.round(roll.avg({moving: true})).toLocaleString();
+                                rows.push(_zoneRollToRow({zone, roll, value, unit: 'bpm'}));
                             }
                         }
                     } else if (source === 'critical_vam') {
                         const vamStream = createVAMStream(timeStream, altStream);
-                        for (const zone of zones) {
-                            if (zone.value < minVAMTime) {
-                                continue;
-                            }
+                        for (const zone of zones.filter(x => x.value >= minVAMTime)) {
                             const roll = sauce.data.critAverage(zone.value, timeStream, vamStream);
                             if (roll) {
-                                rows.push({
-                                    zoneValue: zone.value,
-                                    label: zone.label,
-                                    value: Math.round(roll.avg()).toLocaleString(),
-                                    unit: 'Vm/h',
-                                    startTime: roll.firstTimestamp(),
-                                    endTime: roll.lastTimestamp(),
-                                });
+                                const altStreamSlice = altStream.slice(roll.firstIndex(), roll.lastIndex());
+                                const altChanges = altitudeChanges(altStreamSlice);
+                                const value = Math.round(altChanges.gain).toLocaleString();
+                                rows.push(_zoneRollToRow({zone, roll, value, unit: 'Vm/h'}));
                             }
                         }
                     }
@@ -1071,7 +1049,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             updateSideNav();  //bg okay
             attachExporters();  // bg okay
             attachComments();  // bg okay
-            await start()
+            await start();
         } else {
             console.info("Unsupported activity type:", type);
         }
