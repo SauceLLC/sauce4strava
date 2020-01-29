@@ -251,5 +251,18 @@
                 }
             });
         });
+
+        // Allow html titles for dialogs.
+        sauce.propDefined('jQuery.ui.dialog').then(dialog => {
+            jQuery.widget('ui.dialog', dialog, {
+                _title: function(title) {
+                    if (!this.options.title) {
+                        title.html('&nbsp;');
+                    } else {
+                        title.html(this.options.title);
+                    }
+                }
+            });
+        });
     }
 })();
