@@ -240,10 +240,10 @@ sauce.ns('data', function() {
 
         slice(startTime, endTime) {
             const copy = this.copy();
-            while (copy.firstTimestamp() < startTime) {
+            while (copy.firstTime() < startTime) {
                 copy.shift();
             }
-            while (copy.lastTimestamp() > endTime) {
+            while (copy.lastTime() > endTime) {
                 copy.pop();
             }
             return copy;
@@ -309,38 +309,30 @@ sauce.ns('data', function() {
         popValue() {
         }
 
-        firstIndex(options) {
+        firstTime(options) {
             options = options || {};
             if (options.noPad) {
                 for (let i = this._offt; i < this._values.length; i++) {
                     if (!(this._values[i] instanceof Pad)) {
-                        return i;
+                        return this._times[i];
                     }
                 }
             } else {
-                return this._offt;
+                return this._times[this._offt];
             }
         }
 
-        firstTimestamp(options) {
-            return this._times[this.firstIndex(options)];
-        }
-
-        lastIndex(options) {
+        lastTime(options) {
             options = options || {};
             if (options.noPad) {
                 for (let i = this._values.length - 1; i >= this._offt; i--) {
                     if (!(this._values[i] instanceof Pad)) {
-                        return i;
+                        return this._times[i];
                     }
                 }
             } else {
-                return this._times.length - 1;
+                return this._times[this._times.length - 1];
             }
-        }
-
-        lastTimestamp(options) {
-            return this._times[this.lastIndex(options)];
         }
 
         size() {
@@ -520,16 +512,16 @@ sauce.ns('data', function() {
         const roll = new sauce.data.RollingAverage(period);
         for (let i = 0; i < valuesStream.length; i++) {
             const ts = timeStream == null ? i : timeStream[i];
-            roll.add(ts, valuesStream[i]);
-            const v = roll.avg({moving: true});
+            const v = valuesStream[i];
             if (i < period - 1) {
                 // soften the leading edge by unweighting the first values.
                 const weighted = valuesStream.slice(i, period - 1);
                 weighted.push(v);
-                values.push(avg(weighted));
+                roll.add(ts, avg(weighted));
             } else {
-                values.push(v);
+                roll.add(ts, v);
             }
+            values.push(roll.avg({moving: true}));
         }
         return values;
     }

@@ -18,10 +18,12 @@
 
     <table>
         <% for (const row of rows) { %>
-            <tr data-source="{{source}}" data-zone-value="{{row.zoneValue}}"
+            <tr data-source="{{source}}"
+                data-zone-value="{{row.zoneValue}}"
+                data-zone-label="{{row.zoneLabel}}"
                 data-start-time="{{row.startTime}}"
                 data-end-time="{{row.endTime}}">
-                <td>{-row.label-}</td>
+                <td>{-row.zoneLabel-}</td>
                 <td>{{row.value}}<% if (row.unit) { %><abbr class="unit short">{{row.unit}}</abbr><% } %></td>
             </tr>
         <% } %>

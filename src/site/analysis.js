@@ -22,8 +22,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     const paceFormatter = new Strava.I18n.PaceFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
-    const minVAMTime = 5; // XXX make ~60
-    const minHRTime = 5; // XXX make ~60
+    const minVAMTime = 60;
+    const minHRTime = 60;
     const minNPTime = 900;
     const minWattEstTime = 300;
 
@@ -343,7 +343,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
 
 
     class CriticalsPanel {
-        constructor({type, menu, zones, renderAttrs, moreinfoDialog}) {
+        constructor({type, menu, renderAttrs, moreinfoDialog}) {
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
             this.$el.insertAfter(jQuery('#pagenav').first());
             this.type = type;
@@ -356,7 +356,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 openMoreinfoDialog(await moreinfoDialog({
                     startTime: Number(row.dataset.startTime),
                     endTime: Number(row.dataset.endTime),
-                    zone: zones.filter(x => x.value == row.dataset.zoneValue)[0],
+                    label: row.dataset.zoneLabel,
                     source: this._selectedSource,
                     anchorEl: row
                 }), row);
@@ -408,12 +408,56 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     function _zoneRollToRow({zone, roll, value, unit}) {
         return {
             zoneValue: zone.value,
-            label: zone.label,
+            zoneLabel: zone.label,
             value,
             unit,
-            startTime: roll.firstTimestamp(),
-            endTime: roll.lastTimestamp(),
+            startTime: roll.firstTime(),
+            endTime: roll.lastTime(),
         };
+    }
+
+
+    function hrZonesToRows(zones, timeStream, hrStream) {
+        const rows = [];
+        for (const zone of zones.filter(x => x.value >= minHRTime)) {
+            const roll = sauce.data.critAverage(zone.value, timeStream, hrStream, {moving: true});
+            if (roll) {
+                const value = Math.round(roll.avg({moving: true})).toLocaleString();
+                rows.push(_zoneRollToRow({zone, roll, value, unit: 'bpm'}));
+            }
+        }
+        return rows;
+    }
+
+
+    function paceVelocityZonesToRows(zones, timeStream, distStream) {
+        const unit = '/' + distanceFormatter.shortUnitKey();
+        const rows = [];
+        for (const zone of zones) {
+            const roll = sauce.pace.bestPace(zone.value, timeStream, distStream);
+            if (roll) {
+                const value = humanPace(roll.avg());
+                rows.push(_zoneRollToRow({zone, roll, value, unit}));
+            }
+        }
+        return rows;
+    }
+
+
+    function vamZonesToRows(zones, timeStream, altStream) {
+        const vamStream = createVAMStream(timeStream, altStream);
+        const rows = [];
+        for (const zone of zones.filter(x => x.value >= minVAMTime)) {
+            const roll = sauce.data.critAverage(zone.value, timeStream, vamStream);
+            if (roll) {
+                const start = getStreamTimeIndex(roll.firstTime());
+                const end = getStreamTimeIndex(roll.lastTime());
+                const gain = altitudeChanges(altStream.slice(start, end + 1)).gain;
+                const value = Math.round((gain / roll.elapsed()) * 3600).toLocaleString();
+                rows.push(_zoneRollToRow({zone, roll, value, unit: 'Vm/h'}));
+            }
+        }
+        return rows;
     }
 
 
@@ -480,26 +524,19 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             if (!menu.length) {
                 return;
             }
-            const savedZones = await sauce.rpc.storageGet('analysis_critical_zones');
-            const allZones = (savedZones && savedZones.periods) || defaultCritPeriods;
-            const zones = allZones.filter(x => x.value <= elapsedTime);
-            for (const zone of zones) {
-                if (!zone.label) {
-                    zone.label = timeFormatter.abbreviated(zone.value).replace(/ 0<abbr.*?>s<\/abbr>/, '');
-                }
-            }
+            const periodZones = ctx.allPeriodZones.filter(x => x.value <= elapsedTime);
             const critPanel = new CriticalsPanel({
                 type: 'ride',
                 menu,
-                zones,
                 moreinfoDialog: moreinfoRideDialog,
                 renderAttrs: async source => {
-                    const rows = [];
+                    let rows;
                     const attrs = {};
                     if (source === 'critical_power') {
                         const prefix = isWattEstimate ? '~' : '';
                         attrs.isWattEstimate = isWattEstimate;
-                        for (const zone of zones.filter(x => !isWattEstimate || x.value >= minWattEstTime)) {
+                        rows = [];
+                        for (const zone of periodZones.filter(x => !isWattEstimate || x.value >= minWattEstTime)) {
                             const roll = sauce.power.critPower(zone.value, timeStream, wattsStream);
                             if (roll) {
                                 const value = prefix + Math.round(roll.avg()).toLocaleString();
@@ -507,7 +544,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                             }
                         }
                     } else if (source === 'critical_np') {
-                        for (const zone of zones.filter(x => x.value >= minNPTime)) {
+                        rows = [];
+                        for (const zone of periodZones.filter(x => x.value >= minNPTime)) {
                             const roll = sauce.power.critNP(zone.value, timeStream, wattsStream);
                             if (roll && roll.np()) {
                                 const value = Math.round(roll.np()).toLocaleString();
@@ -515,24 +553,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                             }
                         }
                     } else if (source === 'critical_hr') {
-                        for (const zone of zones.filter(x => x.value >= minHRTime)) {
-                            const roll = sauce.data.critAverage(zone.value, timeStream, hrStream, {moving: true});
-                            if (roll) {
-                                const value = Math.round(roll.avg({moving: true})).toLocaleString();
-                                rows.push(_zoneRollToRow({zone, roll, value, unit: 'bpm'}));
-                            }
-                        }
+                        rows = hrZonesToRows(periodZones, timeStream, hrStream);
                     } else if (source === 'critical_vam') {
-                        const vamStream = createVAMStream(timeStream, altStream);
-                        for (const zone of zones.filter(x => x.value >= minVAMTime)) {
-                            const roll = sauce.data.critAverage(zone.value, timeStream, vamStream);
-                            if (roll) {
-                                const altStreamSlice = altStream.slice(roll.firstIndex(), roll.lastIndex());
-                                const altChanges = altitudeChanges(altStreamSlice);
-                                const value = Math.round(altChanges.gain).toLocaleString();
-                                rows.push(_zoneRollToRow({zone, roll, value, unit: 'Vm/h'}));
-                            }
-                        }
+                        rows = vamZonesToRows(periodZones, timeStream, altStream);
                     }
                     return Object.assign(attrs, {rows});
                 }
@@ -558,6 +581,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const altStream = await fetchSmoothStream('altitude');
         const distStream = await fetchStream('distance');
         const gradeDistStream = await fetchStream('grade_adjusted_distance');
+        const elapsedTime = streamDelta(timeStream);
         let power;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
@@ -600,65 +624,24 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             if (!menu.length) {
                 return;
             }
-            const savedZones = await sauce.rpc.storageGet('analysis_critical_zones');
-            const zones = (savedZones && savedZones.distances) || defaultCritDistances;
-            for (const zone of zones) {
-                if (!zone.label) {
-                    if (zone.value < 1000) {
-                        zone.label = `${zone.value} <abbr class="unit short" title="meters">m</abbr>`;
-                    } else {
-                        const miles = zone.value / metersPerMile;
-                        if (isRoughlyEqual(miles, 13.1) ||
-                            isRoughlyEqual(miles, 26.2) ||
-                            isRoughlyEqual(miles, Math.round(miles))) {
-                            zone.label = imperialDistanceFormatter.abbreviated(zone.value);
-                        } else {
-                            zone.label = metricDistanceFormatter.abbreviated(zone.value);
-                        }
-                    }
-                    zone.label = zone.label.replace(/\.0 <abbr/, ' <abbr');
-                }
-            }
+            const periodZones = ctx.allPeriodZones.filter(x => x.value <= elapsedTime);
+            const distZones = ctx.allDistZones.filter(x => x.value <= elapsedTime);
             const critPanel = new CriticalsPanel({
                 type: 'run',
                 menu,
-                zones,
                 moreinfoDialog: moreinfoRunDialog,
                 renderAttrs: async source => {
-                    const rows = [];
-                    const attrs = {};
+                    let rows;
                     if (source === 'critical_pace') {
-                        const unit = '/' + distanceFormatter.shortUnitKey();
-                        for (const zone of zones) {
-                            const roll = sauce.pace.bestPace(zone.value, timeStream, distStream);
-                            if (roll) {
-                                rows.push({
-                                    zoneValue: zone.value,
-                                    label: zone.label,
-                                    value: humanPace(roll.avg()),
-                                    unit,
-                                    startTime: roll.firstTimestamp(),
-                                    endTime: roll.lastTimestamp(),
-                                });
-                            }
-                        }
+                        rows = paceVelocityZonesToRows(distZones, timeStream, distStream);
                     } else if (source === 'critical_gap') {
-                        const unit = '/' + distanceFormatter.shortUnitKey();
-                        for (const zone of zones) {
-                            const roll = sauce.pace.bestPace(zone.value, timeStream, gradeDistStream);
-                            if (roll) {
-                                rows.push({
-                                    zoneValue: zone.value,
-                                    label: zone.label,
-                                    value: humanPace(roll.avg()),
-                                    unit,
-                                    startTime: roll.firstTimestamp(),
-                                    endTime: roll.lastTimestamp(),
-                                });
-                            }
-                        }
+                        rows = paceVelocityZonesToRows(distZones, timeStream, gradeDistStream);
+                    } else if (source === 'critical_hr') {
+                        rows = hrZonesToRows(periodZones, timeStream, hrStream);
+                    } else if (source === 'critical_vam') {
+                        rows = vamZonesToRows(periodZones, timeStream, altStream);
                     }
-                    return Object.assign(attrs, {rows});
+                    return {rows};
                 }
             });
             jQuery('#pagenav').first().after(critPanel.$el);
@@ -751,7 +734,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     }
 
 
-    async function moreinfoRideDialog({startTime, endTime, zone, source, anchorEl}) {
+    async function moreinfoRideDialog({startTime, endTime, label, source, anchorEl}) {
         let fullWattsStream = await fetchStream('watts');
         if (!fullWattsStream) {
             fullWattsStream = await fetchStream('watts_calc');
@@ -768,8 +751,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const rank = sauce.power.rank(elapsedTime, wKg, ctx.gender);
         // startTime and endTime can be pad based values with corrected power sources.
         // Use non padded values for other streams.
-        const startTS = roll ? roll.firstTimestamp({noPad: true}) : startTime;
-        const endTS = roll ? roll.lastTimestamp({noPad: true}) : endTime;
+        const startTS = roll ? roll.firstTime({noPad: true}) : startTime;
+        const endTS = roll ? roll.lastTime({noPad: true}) : endTime;
         const timeStream = await fetchStreamTimeRange('time', startTS, endTS);
         const hrStream = await fetchStreamTimeRange('heartrate', startTS, endTS);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTS, endTS);
@@ -777,7 +760,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTS, endTS);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTS, endTS);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
-        const textLabel = jQuery(`<div>${zone.label}</div>`).text();
+        const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('criticals-ride-moreinfo.html');
         const $dialog = jQuery(await template({
             title: `${heading}: ${textLabel}`,
@@ -822,65 +805,73 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 }
             }
         });
-        let graphData;
-        let graphFormatter;
-        let graphColorSteps;
-        if (source === 'critical_power' || source === 'critical_np') {
-            graphData = rollValues;
-            graphFormatter = x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`;
-            graphColorSteps = [0, 100, 400, 1200];
-        } else if (source === 'critical_hr') {
-            graphData = hrStream;
-            graphFormatter = x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`;
-            graphColorSteps = [40, 100, 150, 200];
-        } else if (source === 'critical_vam') {
-            graphData = createVAMStream(timeStream, altStream);
-            graphFormatter = x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`;
-            graphColorSteps = [-500, 500, 1000, 2000];
-        }
-
-        if (graphData && graphData.length) {
-            if (graphData.length > 120) {
-                graphData = await sauce.data.resample(graphData, 120);
-            }
-            const graphMin = Math.max(0, sauce.data.min(graphData) * 0.75);
-            $dialog.find('.sauce-sparkline').sparkline(graphData, {
-                type: 'line',
-                width: '100%',
-                height: 56,
-                lineColor: '#EA400DA0',
-                fillColor: {
-                    type: 'gradient',
-                    opacity: 0.6,  // use this instead of rgba colors (it's technical)
-                    steps: [{
-                        value: graphColorSteps[0],
-                        color: '#f0f0f0'
-                    }, {
-                        value: graphColorSteps[1],  // ~easy
-                        color: '#fd6d1d'
-                    }, {
-                        value: graphColorSteps[2],  // ~hard
-                        color: '#780271'
-                    }, {
-                        value: graphColorSteps[3],  // ~sprint
-                        color: '#000'
-                    }]
-                },
-                chartRangeMin: graphMin,
-                normalRangeMin: graphMin,
-                normalRangeMax: sauce.data.avg(graphData),
-                tooltipFormatter: (_, _2, data) => graphFormatter(data.y)
-            });
-        }
         $dialog.find('.start_time_link').on('click',() => {
             changeToAnalysisView(startTS, endTS);
             $dialog.dialog('close');
         });
+        const $sparkline = $dialog.find('.sauce-sparkline');
+        if (source === 'critical_power' || source === 'critical_np') {
+            await moreinfoGraph($sparkline, {
+                data: rollValues,
+                formatter: x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`,
+                colorSteps: [0, 100, 400, 1200]
+            });
+        } else if (source === 'critical_hr') {
+            await moreinfoGraph($sparkline, {
+                data: hrStream,
+                formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
+                colorSteps: [40, 100, 150, 200]
+            });
+        } else if (source === 'critical_vam') {
+            await moreinfoGraph($sparkline, {
+                data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
+                formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
+                colorSteps: [-500, 500, 1000, 2000]
+            });
+        }
         return $dialog;
     }
 
 
-    async function moreinfoRunDialog({startTime, endTime, zone, source, anchorEl}) {
+    async function moreinfoGraph($el, {data, colorSteps, formatter}) {
+        if (!data) {
+            return;
+        }
+        if (data.length > 120) {
+            data = await sauce.data.resample(data, 120);
+        }
+        const min = Math.max(0, sauce.data.min(data) * 0.75);
+        $el.sparkline(data, {
+            type: 'line',
+            width: '100%',
+            height: 56,
+            lineColor: '#EA400DA0',
+            fillColor: {
+                type: 'gradient',
+                opacity: 0.6,  // use this instead of rgba colors (it's technical)
+                steps: [{
+                    value: colorSteps[0],
+                    color: '#f0f0f0'
+                }, {
+                    value: colorSteps[1],  // ~easy
+                    color: '#fd6d1d'
+                }, {
+                    value: colorSteps[2],  // ~hard
+                    color: '#780271'
+                }, {
+                    value: colorSteps[3],  // ~sprint
+                    color: '#000'
+                }]
+            },
+            chartRangeMin: min,
+            normalRangeMin: min,
+            normalRangeMax: sauce.data.avg(data),
+            tooltipFormatter: (_, _2, data) => formatter(data.y)
+        });
+    }
+
+
+    async function moreinfoRunDialog({startTime, endTime, label, source, anchorEl}) {
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
         const roll = new sauce.data.RollingPace(null);
@@ -896,7 +887,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
         const maxVelocity = sauce.data.max(velocityStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
-        const textLabel = jQuery(`<div>${zone.label}</div>`).text();
+        const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('bestpace-moreinfo.html');
         const gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
         const $dialog = jQuery(await template({
@@ -941,48 +932,42 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 }
             }
         });
-        let graphData;
-        if (velocityStream.length > 120) {
-            graphData = await sauce.data.resample(velocityStream, 120);
-        } else if (velocityStream.length > 1) {
-            graphData = velocityStream;
-        }
-        if (graphData) {
-            const minVelocity = sauce.data.min(graphData);
-            const chartMin = Math.max(0, minVelocity * 0.75);
-            $dialog.find('.sauce-sparkline').sparkline(graphData, {
-                type: 'line',
-                width: '100%',
-                height: 56,
-                lineColor: '#EA400DA0',
-                fillColor: {
-                    type: 'gradient',
-                    opacity: 0.6,  // use this instead of rgba colors (it's technical)
-                    steps: [{
-                        value: 0.5,  // Slow Walking
-                        color: '#f0f0f0'
-                    }, {
-                        value: 2,  // Running slow
-                        color: '#fd6d1d'
-                    }, {
-                        value: 5,  // Running fast
-                        color: '#780271'
-                    }, {
-                        value: 10,  // Usain bolt!
-                        color: '#000'
-                    }]
-                },
-                chartRangeMin: chartMin,
-                normalRangeMin: chartMin,
-                normalRangeMax: sauce.data.avg(graphData),
-                tooltipFormatter: (_, _2, data) =>
-                    humanPace(data.y, {velocity: true, html: true, suffix: true})
-            });
-        }
         $dialog.find('.start_time_link').on('click',() => {
             changeToAnalysisView(startTime, endTime);
             $dialog.dialog('close');
         });
+        const $sparkline = $dialog.find('.sauce-sparkline');
+        if (source === 'critical_pace') {
+            await moreinfoGraph($sparkline, {
+                data: velocityStream,
+                formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
+                colorSteps: [0.5, 2, 5, 10]
+            });
+        } else if (source === 'critical_gap') {
+            const gradeVelocity = [];
+            for (let i = 1; i < gradeDistStream.length; i++) {
+                const dist = gradeDistStream[i] - gradeDistStream[i - 1];
+                const elapsed = timeStream[i] - timeStream[i - 1];
+                gradeVelocity.push(dist / elapsed);
+            }
+            await moreinfoGraph($sparkline, {
+                data: gradeVelocity,
+                formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
+                colorSteps: [0.5, 2, 5, 10]
+            });
+        } else if (source === 'critical_hr') {
+            await moreinfoGraph($sparkline, {
+                data: hrStream,
+                formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
+                colorSteps: [40, 100, 150, 200]
+            });
+        } else if (source === 'critical_vam') {
+            await moreinfoGraph($sparkline, {
+                data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
+                formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
+                colorSteps: [-500, 500, 1000, 2000]
+            });
+        }
         return $dialog;
     }
 
@@ -1049,6 +1034,27 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             updateSideNav();  //bg okay
             attachExporters();  // bg okay
             attachComments();  // bg okay
+            const savedZones = await sauce.rpc.storageGet('analysis_critical_zones');
+            ctx.allPeriodZones = (savedZones && savedZones.periods) || defaultCritPeriods;
+            for (const zone of ctx.allPeriodZones) {
+                zone.label = timeFormatter.abbreviatedNoTags(zone.value).replace(/ 0s/, '');
+            }
+            ctx.allDistZones = (savedZones && savedZones.distances) || defaultCritDistances;
+            for (const zone of ctx.allDistZones) {
+                if (zone.value < 1000) {
+                    zone.label = `${zone.value} m`;
+                } else {
+                    const miles = zone.value / metersPerMile;
+                    if (isRoughlyEqual(miles, 13.1) ||
+                        isRoughlyEqual(miles, 26.2) ||
+                        isRoughlyEqual(miles, Math.round(miles))) {
+                        zone.label = imperialDistanceFormatter.formatShort(zone.value);
+                    } else {
+                        zone.label = metricDistanceFormatter.formatShort(zone.value);
+                    }
+                }
+                zone.label = zone.label.replace(/\.0 /, ' ');
+            }
             await start();
         } else {
             console.info("Unsupported activity type:", type);
@@ -1482,13 +1488,13 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         };
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         if (altStream) {
-            const altChanges = altitudeChanges(altStream);
+            const {gain, loss} = altitudeChanges(altStream);
             const gradeStream = await fetchStream('grade_smooth', start, end);
             tplData.elevation = {
-                gain: altChanges.gain && humanElevation(altChanges.gain),
+                gain: gain && humanElevation(gain),
                 grade: gradeStream && sauce.data.avg(gradeStream),
-                loss: altChanges.loss && humanElevation(altChanges.loss),
-                vam: elapsedTime >= minVAMTime && (altChanges.gain / elapsedTime) * 3600
+                loss: loss && humanElevation(loss),
+                vam: elapsedTime >= minVAMTime && (gain / elapsedTime) * 3600
             };
         }
         let kj;
@@ -1500,7 +1506,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 ctx.idealGap = gaps.ideal;
                 ctx.maxGap = gaps.max;
             }
-            const roll = sauce.power.correctedPower(timeStream, wattsStream, ctx.idealGap, ctx.maxGap);
+            const roll = sauce.power.correctedPower(timeStream, wattsStream,
+                ctx.idealGap, ctx.maxGap);
             tplData.power = {
                 elapsed: roll.avg(),
                 np: sauce.power.calcNP(roll.values()),
