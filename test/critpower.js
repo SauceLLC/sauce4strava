@@ -72,46 +72,46 @@ addTests([
         let cp = sauce.power.critPower(5, timeStream(7), [6, 5, 4, 3, 2, 1, 0]);
         assertEqual(cp.avg(), 3);
         assertEqual(cp.elapsed(), 5);
-        assertEqual(cp.firstTimestamp(), 0);
+        assertEqual(cp.firstTime(), 0);
     },
     function test_critpower_correct_avg_with_one_more_sample_high_at_end() {
         let cp = sauce.power.critPower(5, timeStream(7), [0, 0, 1, 2, 3, 4, 5]);
         assertEqual(cp.avg(), 3);
         assertEqual(cp.elapsed(), 5);
-        assertEqual(cp.firstTimestamp(), 1);
+        assertEqual(cp.firstTime(), 1);
     },
     function test_critpower_correct_avg_with_irregular_times() {
         let cp = sauce.power.critPower(5, timeStream(0, 10, 2), valueStream(1, 5));
         assertEqual(cp.avg(), 1);
         assertGreaterEqual(cp.elapsed(), 5);
         assertLessEqual(cp.elapsed(), 6);
-        assertEqual(cp.firstTimestamp(), 2);
+        assertEqual(cp.firstTime(), 2);
     },
     function test_critpower_correct_avg_with_offset_start_exact_size() {
         let cp = sauce.power.critPower(5, timeStream(5, 11), valueStream(1, 6));
         assertEqual(cp.avg(), 1);
         assertEqual(cp.elapsed(), 5);
-        assertEqual(cp.firstTimestamp(), 5);
+        assertEqual(cp.firstTime(), 5);
     },
     function test_critpower_correct_avg_with_offset_start_larger_size_by_one() {
         let cp = sauce.power.critPower(4, timeStream(5, 10), valueStream(1, 5));
         assertEqual(cp.avg(), 1);
         assertEqual(cp.elapsed(), 4);
-        assertEqual(cp.firstTimestamp(), 5);
+        assertEqual(cp.firstTime(), 5);
     },
     function test_critpower_huge_gaps() {
         let cp = sauce.power.critPower(5, [0, 240, 420, 600, 1200, 1800],
                                        [200, 300, 400, 600, 800, 1000]);
         assertEqual(cp.avg(), 1000);
         assertEqual(cp.elapsed(), 600);
-        assertEqual(cp.firstTimestamp(), 1200);
+        assertEqual(cp.firstTime(), 1200);
     },
     function test_critpower_correct_avg_with_gaps() {
         let cp = sauce.power.critPower(5, [0, 1, 2, 3, 100, 101, 102, 103], valueStream(1, 8));
         assertEqual(cp.avg(), 4 / 5);
         assertEqual(cp.elapsed(), 5);
-        assertEqual(cp.firstTimestamp(), 98);
-        assertEqual(cp.firstTimestamp({noPad:true}), 100);
+        assertEqual(cp.firstTime(), 98);
+        assertEqual(cp.firstTime({noPad:true}), 100);
     },
     function test_correctedpower_size_2() {
         let cp = sauce.power.correctedPower([0, 1], [100, 200]);

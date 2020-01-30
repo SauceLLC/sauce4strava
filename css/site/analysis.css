@@ -22,12 +22,12 @@
 #sauce-infopanel .sauce-title-menu .options li > a {
     display: flex;
     align-items: center;
-    justify-content: space-around;
 }
 
 #sauce-infopanel .sauce-title-menu .sauce-svg-icon {
     max-width: 1em;
     max-height: 1em;
+    margin: 0 0.5em;
     width: 100%;
     height: 100%;
     display: inline-flex;  /* contrain svg */

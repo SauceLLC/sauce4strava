@@ -823,8 +823,13 @@ sauce.ns('images', function(ns) {
 
     async function asText(path) {
         if (!textCache.has(path)) {
-            const resp = await fetch(`${sauce.extURL}images/${path.replace(/^\/+/, '')}`);
-            textCache.set(path, await resp.text());
+            try {
+                const resp = await fetch(`${sauce.extURL}images/${path.replace(/^\/+/, '')}`);
+                textCache.set(path, await resp.text());
+            } catch(e) {
+                console.warn("Failed to fetch image:", path, e);
+                textCache.set(path, '');
+            }
         }
         return textCache.get(path);
     }

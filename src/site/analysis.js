@@ -59,8 +59,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         critical_np: 'fa/bolt-duotone.svg',
         critical_hr: 'fa/heartbeat-duotone.svg',
         critical_vam: 'fa/rocket-launch-duotone.svg',
-        critical_pace: 'fa/running-launch-duotone.svg',
-        critical_gap: 'fa/running-launch-duotone.svg',
+        critical_pace: 'fa/running-duotone.svg',
+        critical_gap: 'fa/running-duotone.svg',
     };
 
 
@@ -946,7 +946,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         });
         const $dialog = dialog({
             title: `${heading}: ${textLabel}`,
-            icon: await sauce.images.asText(critIcons(source)),
+            icon: await sauce.images.asText(critIcons[source]),
             dialogClass: 'sauce-moreinfo',
             body,
             resizable: false,

@@ -78,40 +78,40 @@ addTests([
         assertEqual(cp.avg(), 1);
         assertEqual(cp.elapsed(), 5);
         assertEqual(cp.distance(), 5);
-        assertEqual(cp.firstTimestamp(), 0);
+        assertEqual(cp.firstTime(), 0);
     },
     function test_bestpace_correct_avg_with_one_more_sample_high_at_end() {
         let cp = sauce.pace.bestPace(5, timeStream(6), [0, 1, 2, 3, 4, 6]);
         assertEqual(cp.avg(), 0.8);
         assertEqual(cp.elapsed(), 4);
         assertEqual(cp.distance(), 5);
-        assertEqual(cp.firstTimestamp(), 1);
+        assertEqual(cp.firstTime(), 1);
     },
     function test_bestpace_correct_avg_with_irregular_times() {
         let cp = sauce.pace.bestPace(5, timeStream(0, 12, 2), valueStream(i => i, 6));
         assertEqual(cp.avg(), 2);
         assertEqual(cp.elapsed(), 10);
-        assertEqual(cp.firstTimestamp(), 0);
+        assertEqual(cp.firstTime(), 0);
     },
     function test_bestpace_correct_avg_with_offset_start_exact_size() {
         let cp = sauce.pace.bestPace(5, timeStream(5, 11), valueStream(i => i, 6));
         assertEqual(cp.avg(), 1);
         assertEqual(cp.elapsed(), 5);
         assertEqual(cp.distance(), 5);
-        assertEqual(cp.firstTimestamp(), 5);
+        assertEqual(cp.firstTime(), 5);
     },
     function test_bestpace_correct_avg_with_offset_start_larger_size_by_one() {
         let cp = sauce.pace.bestPace(5, timeStream(5, 11), valueStream(i => i, 6));
         assertEqual(cp.avg(), 1);
         assertEqual(cp.elapsed(), 5);
         assertEqual(cp.distance(), 5);
-        assertEqual(cp.firstTimestamp(), 5);
+        assertEqual(cp.firstTime(), 5);
     },
     function test_bestpace_correct_avg_with_gaps() {
         let cp = sauce.pace.bestPace(5, [0, 1, 2, 3, 100, 101, 102, 103], valueStream(i => i, 8));
         assertEqual(cp.avg(), 101 / 5);
         assertEqual(cp.elapsed(), 101);
         assertEqual(cp.distance(), 5);
-        assertEqual(cp.firstTimestamp(), 2);
+        assertEqual(cp.firstTime(), 2);
     },
 ]);
