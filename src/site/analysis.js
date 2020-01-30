@@ -54,6 +54,14 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         {value: Math.round(metersPerMile * 26.2)},
         {value: 50000},
     ];
+    const critIcons = {
+        critical_power: 'fa/bolt-duotone.svg',
+        critical_np: 'fa/bolt-duotone.svg',
+        critical_hr: 'fa/heartbeat-duotone.svg',
+        critical_vam: 'fa/rocket-launch-duotone.svg',
+        critical_pace: 'fa/running-launch-duotone.svg',
+        critical_gap: 'fa/running-launch-duotone.svg',
+    };
 
 
     let _activity;
@@ -227,7 +235,10 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             try {
                 cleanValue = options.validator(rawValue);
             } catch(invalid) {
-                dialogPrompt(invalid.title, invalid.message);
+                modal({
+                    title: invalid.title,
+                    body: invalid.message
+                });
                 return;
             }
             inputEl.hide();
@@ -236,21 +247,28 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 await options.onValid(cleanValue);
             }
         });
-        displayEl.click(() => inputEl.width(displayEl.hide().width()).show());
+        displayEl.click(() => inputEl.width(displayEl.hide().width() + 20).show());
     }
 
 
-    function dialogPrompt(title, body, options) {
-        const $dialog = jQuery(`<div title="${title}">${body}</div>`);
+    function dialog(options) {
+        const $dialog = jQuery(`<div>${options.body}</div>`);
         options = options || {};
         const dialogClass = `${options.dialogClass || ''} sauce-dialog`;
+        const buttons = Object.assign({
+            "Close": () => $dialog.dialog('close')
+        }, options.extraButtons);
         $dialog.dialog(Object.assign({
-            modal: true,
-            buttons: {
-                "Ok": () => $dialog.dialog('close')
-            }
+            buttons
         }, options, {dialogClass}));
         return $dialog;
+    }
+
+
+    function modal(options) {
+        return dialog(Object.assign({
+            modal: true,
+        }, options));
     }
 
 
@@ -284,7 +302,10 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             },
             onValid: async ftp_override => {
                 await updateAthleteInfo(ctx.athlete, {ftp_override});
-                dialogPrompt('Reloading...', '<b>Reloading page to reflect FTP change.</b>');
+                modal({
+                    title: 'Reloading...',
+                    body: '<b>Reloading page to reflect FTP change.</b>'
+                });
                 location.reload();
             }
         });
@@ -315,7 +336,10 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             onValid: async v => {
                 const weight_override = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
                 await updateAthleteInfo(ctx.athlete, {weight_override});
-                dialogPrompt('Reloading...', '<b>Reloading page to reflect weight change.</b>');
+                modal({
+                    title: 'Reloading...',
+                    body: '<b>Reloading page to reflect weight change.</b>'
+                });
                 location.reload();
             }
         });
@@ -357,6 +381,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     startTime: Number(row.dataset.startTime),
                     endTime: Number(row.dataset.endTime),
                     label: row.dataset.zoneLabel,
+                    icon: row.dataset.zoneIcon,
                     source: this._selectedSource,
                     anchorEl: row
                 }), row);
@@ -367,16 +392,20 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 await this.setSelectedSource(ev.currentTarget.dataset.source);
                 await this.render();
             });
-
         }
 
         async render() {
             const source = await this.getSelectedSource();
             const template = await getTemplate('criticals.html');
             this.$el.html(await template(Object.assign({
-                menuInfo: this.menu.map(x => ({source: x, tooltip: x + '_tooltip'})),
+                menuInfo: await Promise.all(this.menu.map(async x => ({
+                    source: x,
+                    icon: await sauce.images.asText(critIcons[x]),
+                    tooltip: x + '_tooltip'
+                }))),
                 source,
                 sourceTooltip: source + '_tooltip',
+                sourceIcon: await sauce.images.asText(critIcons[source]),
             }, await this.renderAttrs.call(this, source))));
             requestAnimationFrame(navHeightAdjustments);
         }
@@ -762,8 +791,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('criticals-ride-moreinfo.html');
-        const $dialog = jQuery(await template({
-            title: `${heading}: ${textLabel}`,
+        const body = await template({
             startsAt: humanTime(startTime),
             wKg,
             power: roll && {
@@ -787,18 +815,20 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
             distUnitLong: distanceFormatter.longUnitKey(),
-        }));
-        $dialog.dialog({
+        });
+        const $dialog = dialog({
+            title: `${heading}: ${textLabel}`,
+            icon: await sauce.images.asText(critIcons[source]),
+            dialogClass: 'sauce-moreinfo',
+            body,
             resizable: false,
             width: 240,
-            dialogClass: 'sauce-dialog',
             position: {
                 my: 'left center',
                 at: 'right center',
                 of: anchorEl
             },
-            buttons: {
-                "Close": () => $dialog.dialog('close'),
+            extraButtons: {
                 "Analysis View": () => {
                     changeToAnalysisView(startTS, endTS);
                     $dialog.dialog('close');
@@ -888,10 +918,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const maxVelocity = sauce.data.max(velocityStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
-        const template = await getTemplate('bestpace-moreinfo.html');
+        const template = await getTemplate('criticals-run-moreinfo.html');
         const gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
-        const $dialog = jQuery(await template({
-            title: `${heading}: ${textLabel}`,
+        const body = await template({
             startsAt: humanTime(startTime),
             pace: {
                 avg: humanPace(roll.avg()),
@@ -914,18 +943,20 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
             distUnitLong: distanceFormatter.longUnitKey(),
-        }));
-        $dialog.dialog({
+        });
+        const $dialog = dialog({
+            title: `${heading}: ${textLabel}`,
+            icon: await sauce.images.asText(critIcons(source)),
+            dialogClass: 'sauce-moreinfo',
+            body,
             resizable: false,
             width: 240,
-            dialogClass: 'sauce-dialog',
             position: {
                 my: 'left center',
                 at: 'right center',
                 of: anchorEl
             },
-            buttons: {
-                "Close": () => $dialog.dialog('close'),
+            extraButtons: {
                 "Analysis View": () => {
                     changeToAnalysisView(startTime, endTime);
                     $dialog.dialog('close');
@@ -1316,10 +1347,11 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         jQuery('body').on('click', '.rank_badge', async ev => {
             closeCurrentMoreinfoDialog();
             const powerProfileTpl = await getTemplate('power-profile-help.html');
-            const $dialog = dialogPrompt(
-                'Power Profile Badges Explained',
-                await powerProfileTpl(),
-                {width: 600});
+            const $dialog = modal({
+                title: 'Power Profile Badges Explained',
+                body: await powerProfileTpl(),
+                width: 600
+            });
             const times = [];
             for (let i = 5; i < 3600; i += Math.log(i + 1)) {
                 times.push(i);
@@ -1682,11 +1714,12 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         }
         const [initialData, initialWidth] = await renderData();
         let currentData = initialData;
-        const $dialog = dialogPrompt('Raw Data', `<pre>${initialData}</pre>`, {
+        const $dialog = modal({
+            title: 'Raw Data',
+            body: `<pre>${initialData}</pre>`,
             width: `calc(${initialWidth}ch + 4em)`,
             dialogClass: 'sauce-big-data',
-            buttons: {
-                "Ok": () => $dialog.dialog('close'),
+            extraButtons: {
                 "Download": () => {
                     const range = start && end ? `-${start}-${end}` : '';
                     const name = `${ctx.activity.id}${range}.csv`;
@@ -1708,7 +1741,9 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
         const $selector = await _dataViewStreamSelector();
-        const $dialog = dialogPrompt('Graph Data', '<div style="padding: 0.5em" class="graphs"></div>', {
+        const $dialog = modal({
+            title: 'Graph Data',
+            body: '<div style="padding: 0.5em" class="graphs"></div>',
             width: '80vw',
             dialogClass: 'sauce-big-data',
             position: {at: 'center top+100'}
@@ -1769,7 +1804,8 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         load,
         fetchStream,
         fetchStreams,
-        dialogPrompt,
+        dialog,
+        modal,
         humanWeight,
         humanTime,
         humanPace,

@@ -14,14 +14,26 @@
     width: 100%;
 }
 
-#sauce-infopanel .sauce-title-menu .selection {
-    justify-content: center;
+#sauce-infopanel .sauce-title-menu a.selection {
     border: none;
 }
 
+#sauce-infopanel .sauce-title-menu a.selection,
 #sauce-infopanel .sauce-title-menu .options li > a {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
 }
+
+#sauce-infopanel .sauce-title-menu .sauce-svg-icon {
+    max-width: 1em;
+    max-height: 1em;
+    width: 100%;
+    height: 100%;
+    display: inline-flex;  /* contrain svg */
+    flex-direction: column;
+}
+
 
 #sauce-infopanel .watt-estimate-disclaimer {
     color: darkred;
@@ -129,11 +141,11 @@
 }
 
 
-.ui-dialog .sauce-moreinfo.ui-dialog-content {
+.sauce-moreinfo .ui-dialog-content {
     padding: 0px !important;
 }
 
-.sauce-moreinfo.ui-dialog-content table {
+.sauce-moreinfo .ui-dialog-content table {
     box-sizing: border-box;
     margin: 0px 0px 0 0;
     padding: 20px 20px 4px 20px;
@@ -232,14 +244,12 @@
 
 .ui-dialog.sauce-dialog .ui-dialog-titlebar {
     min-height: 0;
-    background-image: url('chrome-extension://__MSG_@@extension_id__/images/icon64.png'),
-                      linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);
-    background-position: right center, center;
-    background-origin: content-box, border-box;
-    background-size: contain;
-    background-repeat: no-repeat;
+    background-image: linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);
     color: #fff;
     padding: 0.5em 0.5em;
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-titlebar .ui-dialog-title svg {
 }
 
 .ui-dialog.sauce-dialog .ui-dialog-title {

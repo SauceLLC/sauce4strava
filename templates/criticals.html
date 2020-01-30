@@ -1,10 +1,18 @@
 <li class="group">
     <div class="drop-down-menu sauce-title-menu">
-        <a title="{{{[sourceTooltip]}}}" class="selection">{{{[source]}}}</a>
+        <a title="{{{[sourceTooltip]}}}" class="selection">
+            <div class="sauce-svg-icon">{-sourceIcon-}</div>
+            {{{[source]}}}
+        </a>
         <ul class="options">
-            <% for (const menuEntry of menuInfo.filter(x => x.source !== source)) { %>
-                <li data-source="{{menuEntry.source}}" title="{{{[menuEntry.tooltip]}}}">
-                    <a>{{{[menuEntry.source]}}}</a>
+            <% for (const menuEntry of menuInfo) { %>
+                <li data-source="{{menuEntry.source}}"
+                    class="{{menuEntry.source === source ? 'selected' : ''}}"
+                    title="{{{[menuEntry.tooltip]}}}">
+                    <a>
+                        <div class="sauce-svg-icon">{-menuEntry.icon-}</div>
+                        {{{[menuEntry.source]}}}
+                    </a>
                 </li>
             <% } %>
         </ul>

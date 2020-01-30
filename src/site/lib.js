@@ -815,6 +815,26 @@ sauce.ns('time', function(ns) {
 });
 
 
+sauce.ns('images', function(ns) {
+    'use strict';
+
+    const textCache = new Map();
+
+
+    async function asText(path) {
+        if (!textCache.has(path)) {
+            const resp = await fetch(`${sauce.extURL}images/${path.replace(/^\/+/, '')}`);
+            textCache.set(path, await resp.text());
+        }
+        return textCache.get(path);
+    }
+
+    return {
+        asText
+    };
+});
+
+
 sauce.ns('tools', function(ns) {
     'use strict';
 

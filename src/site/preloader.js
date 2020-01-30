@@ -252,14 +252,19 @@
             });
         });
 
-        // Allow html titles for dialogs.
+        // Allow html titles and icons for dialogs.
         sauce.propDefined('jQuery.ui.dialog').then(dialog => {
             jQuery.widget('ui.dialog', dialog, {
                 _title: function(title) {
                     if (!this.options.title) {
                         title.html('&nbsp;');
                     } else {
-                        title.html(this.options.title);
+                        title.replaceWith(`
+                            <div class="ui-dialog-title">
+                                <div class="title-label">${this.options.title}</div>
+                                <div class="title-icon">${this.options.icon || ''}</div>
+                            </div>
+                        `);
                     }
                 }
             });
