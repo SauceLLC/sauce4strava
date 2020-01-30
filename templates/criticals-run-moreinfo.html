@@ -10,24 +10,26 @@
         <td>{{elapsed}}</td>
     </tr>
 
-    <tr title="{{{elapsed_pace_tooltip}}}">
-        <td>{{{pace}}}</td>
-        <td>
-            {{pace.avg}}<abbr class="unit short">/{{distUnit}}</abbr>
-            <sup class="sauce-positive" title="Peak Pace">
-                {{pace.max}}<abbr class="unit short">/{{distUnit}}</abbr>
-            </sup>
-        </td>
-    </tr>
-
-    <% if (pace.gap) { %>
-        <tr title="{{{gap_tooltip}}}">
-            <td>GAP</td>
-            <td>{{pace.gap}}<abbr class="unit short">/{{distUnit}}</abbr></td>
+    <% if (obj.pace) { %>
+        <tr title="{{{elapsed_pace_tooltip}}}">
+            <td>{{{pace}}}</td>
+            <td>
+                {{pace.avg}}<abbr class="unit short">/{{distUnit}}</abbr>
+                <sup class="sauce-positive" title="Peak Pace">
+                    {{pace.max}}<abbr class="unit short">/{{distUnit}}</abbr>
+                </sup>
+            </td>
         </tr>
+
+        <% if (pace.gap) { %>
+            <tr title="{{{gap_tooltip}}}">
+                <td>GAP</td>
+                <td>{{pace.gap}}<abbr class="unit short">/{{distUnit}}</abbr></td>
+            </tr>
+        <% } %>
     <% } %>
 
-    <% if (hr) { %>
+    <% if (obj.hr) { %>
         <tr>
             <td>{{{heartrate}}}</td>
             <td>
@@ -38,14 +40,14 @@
         </tr>
     <% } %>
 
-    <% if (cadence) { %>
+    <% if (obj.cadence) { %>
         <tr title="{{{running_cadence_tooltip}}}">
             <td>{{{cadence}}}</td>
             <td>{{Math.round(cadence)}}<abbr class="unit short">spm</abbr>
         </tr>
     <% } %>
 
-    <% if (elevation) { %>
+    <% if (obj.elevation) { %>
         <tr>
             <td>{{{elevation}}}</td>
             <td>

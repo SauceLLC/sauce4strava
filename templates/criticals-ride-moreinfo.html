@@ -5,7 +5,7 @@
         <td><a class="start_time_link">{{startsAt}}</a></td>
     </tr>
 
-    <% if (wKg) { %>
+    <% if (obj.wKg) { %>
         <tr title="{{{wkg_tooltip}}}">
             <td>{{{Watts}}}/kg</td>
             <td class="rank_holder">
@@ -18,7 +18,7 @@
         </tr>
     <% } %>
 
-    <% if (power) { %>
+    <% if (obj.power) { %>
         <tr title="{{{elapsed_power_tooltip}}}">
             <td>{{{power}}}</td>
             <td>
@@ -37,7 +37,7 @@
         <% } %>
     <% } %>
 
-    <% if (hr) { %>
+    <% if (obj.hr) { %>
         <tr>
             <td>{{{heartrate}}}</td>
             <td>
@@ -48,14 +48,14 @@
         </tr>
     <% } %>
 
-    <% if (cadence) { %>
+    <% if (obj.cadence) { %>
         <tr title="{{{cycling_cadence_tooltip}}}">
             <td>{{{cadence}}}</td>
             <td>{{Math.round(cadence)}}<abbr class="unit short">rpm</abbr>
         </tr>
     <% } %>
 
-    <% if (elevation) { %>
+    <% if (obj.elevation) { %>
         <tr>
             <td>{{{elevation}}}</td>
             <td>

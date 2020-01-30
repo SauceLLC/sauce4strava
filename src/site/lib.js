@@ -444,7 +444,7 @@ sauce.ns('data', function() {
 
         np() {
             if (!this._cache.has('np')) {
-                this._cache.set('np', sauce.power.calcNP(this._values, this._offt));
+                this._cache.set('np', sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt));
             }
             return this._cache.get('np');
         }
@@ -695,19 +695,24 @@ sauce.ns('power', function() {
     }
 
 
-    function calcNP(stream, _offset) {
-        /* Coggan doesn't recommend NP for less than 20 mins.  Allow a margin
-         * of error for dropouts. */
+    function calcNP(stream, sampleRate, _offset) {
+        /* Coggan doesn't recommend NP for less than 20 mins. */
+        sampleRate = sampleRate || 1;
         _offset = _offset || 0;
-        const len = stream.length;
-        if (!stream || len - _offset < 1000) {
+        const size = stream.length - _offset;
+        const elapsed = size / sampleRate;
+        if (!stream || elapsed < 1200) {
             return;
         }
-        const rollingSize = 30;
+        const rollingSize = Math.round(30 * sampleRate);
+        if (rollingSize < 2) {
+            // Sample rate is too low for meaningful data.
+            return;
+        }
         const rolling = new Array(rollingSize);
         let total = 0;
         let count = 0;
-        for (let i = _offset, sum = 0; i < len; i++, count++) {
+        for (let i = _offset, sum = 0; i < stream.length; i++, count++) {
             const index = count % rollingSize;
             const watts = stream[i];
             sum += watts;

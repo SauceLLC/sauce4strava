@@ -511,7 +511,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         let intensity;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            np = sauce.power.calcNP(corrected.values());
+            np = corrected.np();
             if (ctx.ftp) {
                 if (np) {
                     // Calculate TSS based on elapsed time when NP is being used.
@@ -609,7 +609,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const hrStream = await fetchStream('heartrate');
         const altStream = await fetchSmoothStream('altitude');
         const distStream = await fetchStream('distance');
-        const gradeDistStream = await fetchStream('grade_adjusted_distance');
+        const gradeDistStream = distStream && await fetchStream('grade_adjusted_distance');
         const elapsedTime = streamDelta(timeStream);
         let power;
         if (wattsStream) {
@@ -797,7 +797,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             power: roll && {
                 avg: avgPower,
                 max: sauce.data.max(rollValues),
-                np: sauce.power.calcNP(rollValues),
+                np: roll.np(),
             },
             rank,
             hr: hrStream && {
@@ -904,13 +904,15 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
     async function moreinfoRunDialog({startTime, endTime, label, source, anchorEl}) {
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
-        const roll = new sauce.data.RollingPace(null);
-        roll.import(timeStream, distStream);
+        let roll;
+        if (distStream) {
+            roll = new sauce.data.RollingPace(null);
+            roll.import(timeStream, distStream);
+        }
         const elapsedTime = endTime - startTime;
         const elapsed = humanTime(elapsedTime);
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
-        const gradeDistStream = await fetchStreamTimeRange('grade_adjusted_distance', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
         const altChanges = altStream && altitudeChanges(altStream);
@@ -918,11 +920,13 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         const maxVelocity = sauce.data.max(velocityStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
-        const template = await getTemplate('criticals-run-moreinfo.html');
+        const gradeDistStream = distStream && await fetchStreamTimeRange('grade_adjusted_distance',
+            startTime, endTime);
         const gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
+        const template = await getTemplate('criticals-run-moreinfo.html');
         const body = await template({
             startsAt: humanTime(startTime),
-            pace: {
+            pace: roll && {
                 avg: humanPace(roll.avg()),
                 max: humanPace(maxVelocity, {velocity: true}),
                 gap: gap && humanPace(gap, {velocity: true}),
@@ -1088,6 +1092,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             }
             await start();
         } else {
+            ctx.activity = false;  // signal to preloader hooks that there is no work to do.
             console.info("Unsupported activity type:", type);
         }
     }
@@ -1542,14 +1547,14 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                 ctx.idealGap, ctx.maxGap);
             tplData.power = {
                 elapsed: roll.avg(),
-                np: sauce.power.calcNP(roll.values()),
+                np: roll.np(),
                 moving: roll.kj() * 1000 / movingTime
             };
             kj = roll.kj();
         }
         if (isRun) {
-            const gradeDistStream = await fetchStream('grade_adjusted_distance', start, end);
             const distStream = await fetchStream('distance', start, end);
+            const gradeDistStream = distStream && await fetchStream('grade_adjusted_distance', start, end);
             const gradeDistance = streamDelta(gradeDistStream);
             const distance = streamDelta(distStream);
             if (!wattsStream && gradeDistance && ctx.weight) {
@@ -1559,7 +1564,7 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
                     elapsed: kj * 1000 / elapsedTime
                 };
             }
-            tplData.pace = {
+            tplData.pace = gradeDistance && {
                 elapsed: humanPace(distance / elapsedTime, {velocity: true}),
                 moving: humanPace(1 / (distance / movingTime)),
                 gap: gradeDistance && humanPace(gradeDistance / movingTime, {velocity: true}),
@@ -1593,19 +1598,23 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
             return;  // dedup
         }
         _schedUpdateAnalysisPending = [start, end];
+        if (!ctx.activity) {
+            if (ctx.activity !== false) {
+                console.warn("Activity not ready yet, rescheduling analysis stats update");
+                setTimeout(() => schedUpdateAnalysisStats(null), 200);
+            }
+            return;
+        }
         if (!ctx.$analysisStats) {
             const $el = jQuery('.chart');
             if (!$el.length) {
-                console.warn("Update analysis rescheduled due to DOM unreadiness.");
-                setTimeout(() => schedUpdateAnalysisStats(null), 100);
+                if (ctx.activity !== false) {
+                    console.warn("Update analysis rescheduled due to DOM unreadiness.");
+                    setTimeout(() => schedUpdateAnalysisStats(null), 200);
+                }
                 return;
             }
             attachAnalysisStats($el);
-        }
-        if (!ctx.activity) {
-            console.warn("activity not ready yet, rescheduling analysis stats update");
-            setTimeout(() => schedUpdateAnalysisStats(null), 100);
-            return;
         }
         const id = ++_schedUpdateAnalysisId;
         (async () => {
