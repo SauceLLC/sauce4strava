@@ -114,7 +114,7 @@
         "message": "最佳GAP：在一段距离内持续保持的最高坡度调整速度"
     },
     "analysis_watt_estimate_tooltip": {
-        "message": "这些值是根据瓦特数估算得出的。为了获得准确的值，您需要一个有效的功率测量设备。"
+        "message": "这些值是根据瓦特数估算得出的。为了获得准确的值，需要使用有功功率测量设备。"
     },
     "analysis_paused": {
         "message": "已暂停"

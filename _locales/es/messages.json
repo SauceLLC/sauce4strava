@@ -114,7 +114,7 @@
         "message": "Mejor GAP: ritmo ajustado máximo de grado sostenido a distancia"
     },
     "analysis_watt_estimate_tooltip": {
-        "message": "Estos valores se calculan a partir de estimaciones de potencia. Para valores precisos necesita un dispositivo de medición de potencia real."
+        "message": "Estos valores se calculan a partir de estimaciones de potencia. Para valores precisos se requiere un dispositivo de medición de potencia real."
     },
     "analysis_paused": {
         "message": "Pausado"
