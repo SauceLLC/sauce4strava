@@ -13,4 +13,5 @@ sauce.ns = async function(ns, callback) {
     if (callback) {
         Object.assign(offt, await callback(offt));
     }
+    return offt;
 };

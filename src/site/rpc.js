@@ -107,6 +107,7 @@ sauce.ns('rpc', function() {
 
     async function reportError(e) {
         const page = location.pathname;
+        console.warn('Reporting error:', e.message);
         await sauce.rpc.ga('send', 'exception', {
             exDescription: e.message,
             exFatal: true,

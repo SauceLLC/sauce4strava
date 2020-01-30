@@ -1,6 +1,6 @@
 /* global Strava sauce jQuery pageView _ */
 
-sauce.analysisReady = sauce.ns('analysis', async ns => {
+sauce.ns('analysis', async ns => {
     'use strict';
 
     await Promise.all([
@@ -1822,17 +1822,14 @@ sauce.analysisReady = sauce.ns('analysis', async ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
     };
+}).then(async ns => {
+    if (sauce.testing) {
+        return;
+    }
+    try {
+        await ns.load();
+    } catch(e) {
+        await sauce.rpc.reportError(e);
+        throw e;
+    }
 });
-
-
-if (!sauce.testing) {
-    (async function() {
-        await sauce.analysisReady;
-        try {
-            await sauce.analysis.load();
-        } catch(e) {
-            await sauce.rpc.reportError(e);
-            throw e;
-        }
-    })();
-}

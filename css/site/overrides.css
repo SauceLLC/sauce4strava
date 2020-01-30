@@ -25,6 +25,14 @@
     flex-direction: column;
 }
 
+.sauce-enabled.sauce-hide-dashboard-media .main .feed-container .feed .card .entry-media {
+    display: none !important;
+}
+
+.sauce-enabled.sauce-hide-dashboard-images .main .feed-container .feed .card .entry-images {
+    display: none !important;
+}
+
 .sauce-enabled img.sauce-rank {
     margin-left: 0.8em;
     width: 3.5em;
