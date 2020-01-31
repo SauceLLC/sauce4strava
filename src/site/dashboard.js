@@ -145,8 +145,8 @@ sauce.ns('dashboard', function(ns) {
         if (sauce.options['activity-hide-images']) {
             document.documentElement.classList.add('sauce-hide-dashboard-images');
         }
-        if (sauce.options['activity-hide-maps']) {
-            document.documentElement.classList.add('sauce-hide-dashboard-images');
+        if (sauce.options['activity-dense-mode']) {
+            document.documentElement.classList.add('sauce-dense-dashboard');
         }
     }
 

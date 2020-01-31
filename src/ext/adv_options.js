@@ -113,6 +113,13 @@
             this.innerText = "Double Click to Confirm Erase";
             this.addEventListener('dblclick', async () => {
                 await sauce.storage.remove('athlete_info');
+                await sauce.storage.remove('analysis_critical_zones');
+                await sauce.storage.set('options', {
+                    "analysis-segment-badges": true,
+                    "analysis-cp-chart": true,
+                    "activity-hide-promotions": true
+                });
+                chrome.tabs.reload();
                 window.location.reload();
             });
         });
@@ -143,7 +150,8 @@
             await renderZones(zonesEl);
             await renderAthleteInfo(athleteEl);
             status.textContent = 'Saved';
-            await sleep(8);
+            chrome.tabs.reload();
+            await sleep(5);
             status.textContent = '';
         });
     }
