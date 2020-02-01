@@ -1,6 +1,6 @@
 ![Sauce](images/logo_horiz_320x120.png)
 ===========
-#### A Chrome Extension 
+#### A browser extension for Chrome
 The Sauce extension supplements athletic websites like https://strava.com with better
 cycling and running information.  It's a simple, lightweight and pure client-side javascript
 addition.  There are no external API calls made with this extension and it is open source.
@@ -10,16 +10,29 @@ addition.  There are no external API calls made with this extension and it is op
 
 Feature Highlights
 --------
- * Critical Power table for cycling activities
- * Best Pace table for running activities
- * TSS calculations
- * FTP overrides for all athletes (regardless of subscription)
- * Normalized Power calculations for selections in Analysis page
- * Viewing and overriding an athlete's weight
- * VAM calculations for climbs **[BETA]**
- * Inline comments system in Activity page
- * Export TCX and GPX files for ALL rides and runs **[BETA]**
- * Running power estimation **[BETA]**
+ * Peak performance table:
+   * Critical Power
+   * Critical Normalized Power
+   * Best Pace
+   * Best Grade Adjusted Pace
+   * Fastest VAM
+   * Peak Heartrate
+ * Export any activity to a TCX or GPX file
+ * Running Power estimation
+ * Analysis page stats are extended to include:
+   * Elapsed power average, normalized power, moving power average and watts/kg.
+   * Grade adjusted pace
+   * TSS
+   * Intensity Factory
+   * VAM
+   * Elevation gain/loss
+   * Raw data and graph views
+ * Weight and FTP overrides for all athletes
+ * Inline comments system for activity page
+ * Dashboard features:
+   * Chronological ordering
+   * Hide virtual activities (except your own)
+   * Hide promotions and challenges
 
 
 Installation
@@ -40,8 +53,16 @@ Installation
 Release Notes
 --------
 #### v5.0.0
+ * Multi category critical charts.
+   * Critical Power
+   * Critical NP
+   * Fastest VAM
+   * Highest HR
+   * Best Pace
+   * Best GAP
+ * Settable Critical time periods and distances (Advanced Options).
  * Upgraded algo for power data.
- * Upgraded analysis view that works in all locales (finally!).
+ * Upgraded analysis view that works in all locales.
    * Kilojoule field
    * Moving vs elapsed time stats.
    * Improved placement on page.
@@ -49,6 +70,7 @@ Release Notes
  * Raw data views; CSV table and graphs.
  * Kilojoules in analysis view.
  * Updated algo for VAM calculations (smoothing).
+ * Rank badges for analysis selections.
  * Support for HiDPI graphs.
 
 #### v4.3.0:
