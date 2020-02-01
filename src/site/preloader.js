@@ -101,7 +101,20 @@
                     menuRouter.addRoute('/analysis', 'analysis');
                     menuRouter.on('route:analysis', () => {
                         view.handleAnalysisClicked();
+                        view.menuView.handleRouteChange('analysis');
                     });
+                }
+                if (!document.querySelector('#pagenav li [data-menu="analysis"]')) {
+                    // Create stub element for analysis menu, but hide it until analysis
+                    // can do the right thing with it.  It needs to exist early so initial
+                    // routes can set classes on this element.
+                    const li = document.createElement('li');
+                    li.style.display = 'none';
+                    li.classList.add('sauce-stub');
+                    li.innerHTML = `<a data-menu="analysis"></a>`;
+                    const pageNav = document.querySelector('#pagenav');
+                    const overview = pageNav.querySelector('[data-menu="overview"]').closest('li');
+                    pageNav.insertBefore(li, overview.nextSibling);
                 }
             };
         });

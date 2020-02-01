@@ -467,7 +467,6 @@ sauce.ns('analysis', async ns => {
         let wattsStream = realWattsStream;
         if (!wattsStream) {
             wattsStream = await fetchStream('watts_calc');
-            wattsStream.estimate = true;
             if (!wattsStream) {
                 console.info("No power data for this activity.");
             }
@@ -988,15 +987,15 @@ sauce.ns('analysis', async ns => {
     async function updateSideNav() {
         const pageNav = document.querySelector('ul#pagenav');
         // Add an analysis link to the nav if not there already.
-        if (pageNav.querySelector('[data-menu="analysis"]')) {
+        if (pageNav.querySelector('li:not(.sauce-stub) [data-menu="analysis"]')) {
             return;
         }
         const id = ctx.activity.id;
-        const analysisTitle = await sauce.locale.getMessage('analysis_title');
-        const analysisLink = document.createElement('li');
-        analysisLink.innerHTML = `<a data-menu="analysis" href="/activities/${id}/analysis">${analysisTitle}</a>`;
-        const overview = pageNav.querySelector('[data-menu="overview"]').closest('li');
-        pageNav.insertBefore(analysisLink, overview.nextSibling);
+        const a = pageNav.querySelector('[data-menu="analysis"]');
+        a.setAttribute('href', `/activities/${id}/analysis`);
+        a.textContent = await sauce.locale.getMessage('analysis_title');
+        a.parentNode.classList.remove('sauce-stub');
+        a.parentNode.style.display = null;
         const premiumGroup = pageNav.querySelector('#premium-views');
         if (premiumGroup) {
             // This is were things get tricky...
