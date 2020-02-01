@@ -1046,7 +1046,7 @@ sauce.ns('analysis', async ns => {
             const savedZones = await sauce.rpc.storageGet('analysis_critical_zones');
             ctx.allPeriodZones = (savedZones && savedZones.periods) || defaultCritPeriods;
             for (const zone of ctx.allPeriodZones) {
-                zone.label = timeFormatter.abbreviatedNoTags(zone.value).replace(/ 0s/, '');
+                zone.label = await sauce.locale.humanDuration(zone.value);
             }
             ctx.allDistZones = (savedZones && savedZones.distances) || defaultCritDistances;
             for (const zone of ctx.allDistZones) {
@@ -1213,10 +1213,11 @@ sauce.ns('analysis', async ns => {
         async function render() {
             const comments = [];
             for (const x of pageView.commentsController().getFromHash(`Activity-${ctx.activity.id}`)) {
+                const date = new Date(jQuery(x.timestamp).attr('datetime'));
                 comments.push({
                     tokens: x.comment,
                     athlete: x.athlete,
-                    timeago: sauce.time.ago(new Date(jQuery(x.timestamp).attr('datetime'))),
+                    timeago: await sauce.locale.humanTimeAgo(date, {precision: 60}),
                 });
             }
             $section.find('.sauce-inline-comments').html((await commentsTpl({comments})).trim());

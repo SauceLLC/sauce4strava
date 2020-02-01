@@ -773,53 +773,6 @@ sauce.ns('pace', function() {
 });
 
 
-sauce.ns('time', function(ns) {
-    'use strict';
-
-    ns.MIN = 60;
-    ns.HOUR = ns.MIN * 60;
-    ns.DAY = ns.HOUR * 24;
-    ns.MONTH = ns.HOUR * 730;
-    ns.YEAR = ns.DAY * 365;
-
-    const agoUnits = [
-        ['year', ns.YEAR],
-        ['month', ns.MONTH],
-        ['day', ns.DAY],
-        ['hour', ns.HOUR],
-        ['min', ns.MIN],
-        ['sec', 1]
-    ];
-
-
-    function ago(dateobj, precision) {
-        const now = new Date();
-        let span = (now - dateobj) / 1000;
-        const stack = [];
-        precision = precision || ns.MIN;
-        span = Math.round(span / precision);
-        span *= precision;
-        for (let [suf, period] of agoUnits) {
-            if (precision > period) {
-                break;
-            }
-            if (span >= period) {
-                if (span >= 2 * period) {
-                    suf += 's';
-                }
-                stack.push(Math.floor(span / period) + ' ' + suf);
-                span %= period;
-            }
-        }
-        return stack.slice(0, 2).join(', ') || 'just now';
-    }
-
-    return {
-        ago,
-    };
-});
-
-
 sauce.ns('images', function(ns) {
     'use strict';
 

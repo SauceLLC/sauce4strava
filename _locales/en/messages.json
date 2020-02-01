@@ -85,12 +85,16 @@
     "analysis_title": {"message": "Analysis"},
     "time_sec": {"message": "sec"},
     "time_secs": {"message": "secs"},
-    "time_second": {"message": "second"},
-    "time_seconds": {"message": "seconds"},
     "time_min": {"message": "min"},
     "time_mins": {"message": "mins"},
-    "time_minute": {"message": "minute"},
-    "time_minutes": {"message": "minutes"},
     "time_hour": {"message": "hour"},
-    "time_hours": {"message": "hours"}
+    "time_hours": {"message": "hours"},
+    "time_day": {"message": "day"},
+    "time_days": {"message": "days"},
+    "time_week": {"message": "week"},
+    "time_weeks": {"message": "weeks"},
+    "time_year": {"message": "year"},
+    "time_years": {"message": "years"},
+    "time_ago": {"message": "ago"},
+    "time_now": {"message": "now"}
 }

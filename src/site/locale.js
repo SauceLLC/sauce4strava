@@ -76,8 +76,55 @@ sauce.ns('locale', ns => {
     }
 
 
+    async function humanDuration(elapsed, options) {
+        options = options || {};
+        const min = 60;
+        const hour = min * 60;
+        const day = hour * 24;
+        const week = day * 7;
+        const year = day * 365;
+        const units = [
+            ['year', year],
+            ['week', week],
+            ['day', day],
+            ['hour', hour],
+            ['min', min],
+            ['sec', 1]
+        ];
+        const stack = [];
+        const precision = options.precision || 1;
+        elapsed = Math.round(elapsed / precision) * precision;
+        for (let [key, period] of units) {
+            if (precision > period) {
+                break;
+            }
+            if (elapsed >= period) {
+                if (elapsed >= 2 * period) {
+                    key += 's';
+                }
+                const suffix = await getMessage(`time_${key}`);
+                stack.push(`${Math.floor(elapsed / period)} ${suffix}`);
+                elapsed %= period;
+            }
+        }
+        return stack.slice(0, 2).join(', ');
+    }
+
+
+    async function humanTimeAgo(date, options) {
+        const elapsed = (Date.now() - date) / 1000;
+        const duration = await humanDuration(elapsed, options);
+        if (duration) {
+            return `${duration} ${await getMessage('time_ago')}`;
+        } else {
+            return getMessage('time_now');
+        }
+    }
+
     return {
         getMessage,
         getMessages,
+        humanDuration,
+        humanTimeAgo
     };
 });
