@@ -60,7 +60,7 @@ sauce.ns('analysis', async ns => {
         critical_hr: 'fa/heartbeat-duotone.svg',
         critical_vam: 'fa/rocket-launch-duotone.svg',
         critical_pace: 'fa/running-duotone.svg',
-        critical_gap: 'fa/running-duotone.svg',
+        critical_gap: 'fa/hiking-duotone.svg',
     };
 
 
