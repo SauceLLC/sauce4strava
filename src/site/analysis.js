@@ -56,7 +56,7 @@ sauce.ns('analysis', async ns => {
     ];
     const critIcons = {
         critical_power: 'fa/bolt-duotone.svg',
-        critical_np: 'fa/bolt-duotone.svg',
+        critical_np: 'fa/atom-alt-duotone.svg',
         critical_hr: 'fa/heartbeat-duotone.svg',
         critical_vam: 'fa/rocket-launch-duotone.svg',
         critical_pace: 'fa/running-duotone.svg',
@@ -542,8 +542,12 @@ sauce.ns('analysis', async ns => {
                         rows = [];
                         for (const zone of periodZones.filter(x => x.value >= minNPTime)) {
                             const roll = sauce.power.critNP(zone.value, timeStream, wattsStream);
-                            if (roll && roll.np()) {
-                                const value = Math.round(roll.np()).toLocaleString();
+                            // Use external NP method for consistency.  There are tiny differences because
+                            // the critNP function is a continous rolling avg vs the external method that
+                            // only examines the trimmed dateset.
+                            const np = roll && roll.np({external: true});
+                            if (np) {
+                                const value = Math.round(np).toLocaleString();
                                 rows.push(_zoneRollToRow({zone, roll, value, unit: 'w'}));
                             }
                         }

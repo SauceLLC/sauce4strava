@@ -4,16 +4,20 @@ sauce.ns('data', function() {
     'use strict';
 
 
-    function sum(data) {
-        return data.reduce((acc, x) => acc + x, 0);
+    function sum(data, offt) {
+        let total = 0;
+        for (let i = offt || 0, len = data.length; i < len; i++) {
+            total += data[i];
+        }
+        return total;
     }
 
 
-    function avg(data) {
+    function avg(data, offt) {
         if (!data || !data.length) {
             return;
         }
-        return sum(data) / data.length;
+        return sum(data, offt) / (data.length - (offt || 0));
     }
 
 
@@ -159,13 +163,21 @@ sauce.ns('data', function() {
     }
 
 
+    let _timeGapsCache = new Map();
     function recommendedTimeGaps(timeStream) {
-        const gaps = timeStream.map((x, i) => timeStream[i + 1] - x);
-        gaps.pop();  // last entry is not a number (NaN)
-        return {
-            ideal: sauce.data.mode(gaps),
-            max: sauce.data.median(gaps) * 4
-        };
+        const hash = `${timeStream.length}-${timeStream[0]}-${timeStream[timeStream.length - 1]}`;
+        if (!_timeGapsCache.has(timeStream) || _timeGapsCache.get(timeStream).hash !== hash) {
+            const gaps = timeStream.map((x, i) => timeStream[i + 1] - x);
+            gaps.pop();  // last entry is not a number (NaN)
+            _timeGapsCache.set(timeStream, {
+                hash,
+                value: {
+                    ideal: sauce.data.mode(gaps),
+                    max: sauce.data.median(gaps) * 4
+                }
+            });
+        }
+        return _timeGapsCache.get(timeStream).value;
     }
 
 
@@ -226,7 +238,6 @@ sauce.ns('data', function() {
             this._times = [];
             this._values = [];
             this._offt = 0;
-            this._cache = new Map();
         }
 
         copy() {
@@ -290,7 +301,6 @@ sauce.ns('data', function() {
         }
 
         add(ts, value) {
-            this._cache.clear();
             this._values.push(this.addValue(value, ts));
             this._times.push(ts);
             while (this.full({offt: 1})) {
@@ -344,12 +354,10 @@ sauce.ns('data', function() {
         }
 
         shift() {
-            this._cache.clear();
             this.shiftValue(this._values[this._offt++]);
         }
 
         pop() {
-            this._cache.clear();
             this.popValue(this._values.pop());
             this._times.pop();
         }
@@ -401,11 +409,23 @@ sauce.ns('data', function() {
 
     class RollingPower extends RollingBase {
 
-        constructor(period, idealGap, maxGap) {
+        constructor(period, idealGap, maxGap, options) {
             super(period);
             this._joules = 0;
             this.idealGap = idealGap;
             this.maxGap = maxGap;
+            if (options && options.inlineNP) {
+                const sampleRate = 1 / (idealGap || 1);
+                const rollSize = Math.round(30 * sampleRate);
+                this._inlineNP = {
+                    rollSize,
+                    slot: 0,
+                    roll: new Array(rollSize),
+                    rollSum: 0,
+                    stream: [],
+                    total: 0,
+                };
+            }
         }
 
         add(ts, value) {
@@ -423,6 +443,17 @@ sauce.ns('data', function() {
             const i = this._times.length;
             const gap = i ? ts - this._times[i - 1] : 0;
             this._joules += value * gap;
+            if (this._inlineNP) {
+                const inp = this._inlineNP;
+                inp.slot = (inp.slot + 1) % inp.rollSize;
+                inp.rollSum += value;
+                inp.rollSum -= inp.roll[inp.slot] || 0;
+                inp.roll[inp.slot] = value;
+                const npa = inp.rollSum / Math.min(inp.rollSize, i + 1);
+                const qnpa = npa * npa * npa * npa;  // unrolled for perf
+                inp.total += qnpa;
+                inp.stream.push(qnpa);
+            }
             return value;
         }
 
@@ -430,23 +461,35 @@ sauce.ns('data', function() {
             const i = this._offt - 1;
             const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
             this._joules -= this._values[i + 1] * gap;
+            if (this._inlineNP) {
+                const inp = this._inlineNP;
+                inp.total -= inp.stream[i];
+            }
         }
 
         popValue(value) {
             const lastIdx = this._times.length - 1;
             const gap = lastIdx >= 1 ? this._times[lastIdx] - this._times[lastIdx - 1] : 0;
             this._joules -= value * gap;
+            if (this._inlineNP) {
+                throw new Error("Unsupported");
+            }
         }
 
         avg() {
             return this._joules / this.elapsed();
         }
 
-        np() {
-            if (!this._cache.has('np')) {
-                this._cache.set('np', sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt));
+        np(options) {
+            if (this._inlineNP && (!options || !options.external)) {
+                if (this.elapsed() < 1200) {
+                    return;
+                }
+                const inp = this._inlineNP;
+                return (inp.total / this.size()) ** 0.25;
+            } else {
+                return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt);
             }
-            return this._cache.get('np');
         }
 
         kj() {
@@ -464,6 +507,11 @@ sauce.ns('data', function() {
             instance.idealGap = this.idealGap;
             instance.maxGap = this.maxGap;
             instance._joules = this._joules;
+            if (this._inlineNP) {
+                const stream = this._inlineNP.stream;
+                instance._inlineNP = Object.assign({}, this._inlineNP);
+                instance._inlineNP.stream = stream.slice(stream.length - instance._times.length);
+            }
             return instance;
         }
     }
@@ -650,7 +698,7 @@ sauce.ns('power', function() {
     }
 
 
-    function _correctedRollingPower(timeStream, wattsStream, period, idealGap, maxGap) {
+    function _correctedRollingPower(timeStream, wattsStream, period, idealGap, maxGap, options) {
         if (timeStream.length < 2) {
             return;
         }
@@ -663,7 +711,7 @@ sauce.ns('power', function() {
                 maxGap = gaps.max;
             }
         }
-        return new sauce.data.RollingPower(period, idealGap, maxGap);
+        return new sauce.data.RollingPower(period, idealGap, maxGap, options);
     }
 
 
@@ -677,7 +725,7 @@ sauce.ns('power', function() {
 
 
     function critNP(period, timeStream, wattsStream) {
-        const roll = _correctedRollingPower(timeStream, wattsStream, period);
+        const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null, {inlineNP: true});
         if (!roll) {
             return;
         }
@@ -712,14 +760,14 @@ sauce.ns('power', function() {
         const rolling = new Array(rollingSize);
         let total = 0;
         let count = 0;
-        for (let i = _offset, sum = 0; i < stream.length; i++, count++) {
+        for (let i = _offset, sum = 0, len = stream.length; i < len; i++, count++) {
             const index = count % rollingSize;
             const watts = stream[i];
             sum += watts;
             sum -= rolling[index] || 0;
-            const avg = sum / rollingSize;
-            total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
             rolling[index] = watts;
+            const avg = sum / Math.min(rollingSize, count + 1);
+            total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
         }
         return (total / count) ** 0.25;
     }
