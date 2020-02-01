@@ -252,16 +252,19 @@
         "message": "Análisis"
     },
     "time_sec": {
-        "message": "segundo"
+        "message": "sec",
+        "description": "IMMUTABLE"
     },
     "time_secs": {
-        "message": "segundos"
+        "message": "secs",
+        "description": "IMMUTABLE"
     },
     "time_min": {
         "message": "min"
     },
     "time_mins": {
-        "message": "minutos"
+        "message": "mins",
+        "description": "IMMUTABLE"
     },
     "time_hour": {
         "message": "hora"
