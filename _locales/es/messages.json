@@ -48,7 +48,7 @@
         "message": "Elevación perdida: descendente"
     },
     "analysis_grade_tooltip": {
-        "message": "Grado porcentaje de ascenso o descenso"
+        "message": "Grado de colina"
     },
     "analysis_vam_tooltip": {
         "message": "Metros de escalada por hora"
@@ -119,6 +119,9 @@
     "analysis_paused": {
         "message": "Pausado"
     },
+    "analysis_stops": {
+        "message": "Paradas"
+    },
     "analysis_idle": {
         "message": "Ocioso"
     },
@@ -142,6 +145,9 @@
     },
     "analysis_elevation": {
         "message": "Elevación"
+    },
+    "analysis_grade": {
+        "message": "Grado"
     },
     "analysis_estimated": {
         "message": "estimado"
@@ -203,9 +209,6 @@
     "analysis_power": {
         "message": "Poder"
     },
-    "analysis_run_power": {
-        "message": "Run Power"
-    },
     "analysis_weight": {
         "message": "Peso"
     },
@@ -247,5 +250,47 @@
     },
     "analysis_title": {
         "message": "Análisis"
+    },
+    "time_sec": {
+        "message": "segundo"
+    },
+    "time_secs": {
+        "message": "segundos"
+    },
+    "time_min": {
+        "message": "min"
+    },
+    "time_mins": {
+        "message": "minutos"
+    },
+    "time_hour": {
+        "message": "hora"
+    },
+    "time_hours": {
+        "message": "horas"
+    },
+    "time_day": {
+        "message": "día"
+    },
+    "time_days": {
+        "message": "dias"
+    },
+    "time_week": {
+        "message": "semana"
+    },
+    "time_weeks": {
+        "message": "semanas"
+    },
+    "time_year": {
+        "message": "año"
+    },
+    "time_years": {
+        "message": "años"
+    },
+    "time_ago": {
+        "message": "hace"
+    },
+    "time_now": {
+        "message": "ahora"
     }
 }

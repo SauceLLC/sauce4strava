@@ -48,7 +48,7 @@
         "message": "海拔高度下降：下降"
     },
     "analysis_grade_tooltip": {
-        "message": "爬升或下降的坡度百分比"
+        "message": "坡度"
     },
     "analysis_vam_tooltip": {
         "message": "每小时攀登米"
@@ -119,6 +119,9 @@
     "analysis_paused": {
         "message": "已暂停"
     },
+    "analysis_stops": {
+        "message": "停止"
+    },
     "analysis_idle": {
         "message": "闲"
     },
@@ -142,6 +145,9 @@
     },
     "analysis_elevation": {
         "message": "海拔"
+    },
+    "analysis_grade": {
+        "message": "年级"
     },
     "analysis_estimated": {
         "message": "估计的"
@@ -203,9 +209,6 @@
     "analysis_power": {
         "message": "功率"
     },
-    "analysis_run_power": {
-        "message": "运行功率"
-    },
     "analysis_weight": {
         "message": "重量"
     },
@@ -247,5 +250,47 @@
     },
     "analysis_title": {
         "message": "分析"
+    },
+    "time_sec": {
+        "message": "秒"
+    },
+    "time_secs": {
+        "message": "秒"
+    },
+    "time_min": {
+        "message": "分"
+    },
+    "time_mins": {
+        "message": "分钟"
+    },
+    "time_hour": {
+        "message": "小时"
+    },
+    "time_hours": {
+        "message": "小时"
+    },
+    "time_day": {
+        "message": "天"
+    },
+    "time_days": {
+        "message": "天"
+    },
+    "time_week": {
+        "message": "周"
+    },
+    "time_weeks": {
+        "message": "周"
+    },
+    "time_year": {
+        "message": "年"
+    },
+    "time_years": {
+        "message": "年份"
+    },
+    "time_ago": {
+        "message": "前"
+    },
+    "time_now": {
+        "message": "现在"
     }
 }
