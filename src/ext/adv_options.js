@@ -37,17 +37,17 @@
     }
 
 
-    async function saveZones(el) {
-        const zones = (await sauce.storage.get('analysis_critical_zones')) || {};
+    async function saveRanges(el) {
+        const ranges = (await sauce.storage.get('analysis_peak_ranges')) || {};
         for (const input of el.querySelectorAll('input')) {
             if (input.value.trim()) {
                 const values = input.value.split(',').map(x => Number(x)).filter(x => x);
-                zones[input.dataset.key] = values.map(value => ({value}));
+                ranges[input.dataset.key] = values.map(value => ({value}));
             } else {
-                zones[input.dataset.key] = null;
+                ranges[input.dataset.key] = null;
             }
         }
-        await sauce.storage.set({analysis_critical_zones: zones});
+        await sauce.storage.set({analysis_peak_ranges: ranges});
     }
 
 
@@ -81,10 +81,10 @@
     }
 
 
-    async function renderZones(el) {
-        const zones = (await sauce.storage.get('analysis_critical_zones')) || {};
+    async function renderRanges(el) {
+        const ranges = (await sauce.storage.get('analysis_peak_ranges')) || {};
         for (const input of el.querySelectorAll('input')) {
-            const value = zones[input.dataset.key];
+            const value = ranges[input.dataset.key];
             if (value) {
                 input.value = value.map(x => x.value).join();
             } else {
@@ -113,7 +113,7 @@
             this.innerText = "Double Click to Confirm Erase";
             this.addEventListener('dblclick', async () => {
                 await sauce.storage.remove('athlete_info');
-                await sauce.storage.remove('analysis_critical_zones');
+                await sauce.storage.remove('analysis_peak_ranges');
                 await sauce.storage.set('options', {
                     "analysis-segment-badges": true,
                     "analysis-cp-chart": true,
@@ -124,10 +124,10 @@
             });
         });
         const optionsEl = document.getElementById('options');
-        const zonesEl = document.querySelector('.zones');
+        const rangesEl = document.querySelector('.ranges');
         const athleteEl = document.getElementById('athlete-list');
         await renderOptions(optionsEl);
-        await renderZones(zonesEl);
+        await renderRanges(rangesEl);
         await renderAthleteInfo(athleteEl);
         onEventDelegate(athleteEl, 'click', '.label > button.remove', async ev => {
             const id = ev.delegateTarget.closest('.athlete-box').dataset.athleteId;
@@ -141,13 +141,13 @@
             try {
                 await saveAthleteInfo(athleteEl);
                 await saveOptions(optionsEl);
-                await saveZones(zonesEl);
+                await saveRanges(rangesEl);
             } catch(e) {
                 status.textContent = e.message;
                 return;
             }
             await renderOptions(optionsEl);
-            await renderZones(zonesEl);
+            await renderRanges(rangesEl);
             await renderAthleteInfo(athleteEl);
             status.textContent = 'Saved';
             chrome.tabs.reload();

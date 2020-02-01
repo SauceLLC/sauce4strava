@@ -28,7 +28,7 @@ sauce.ns('analysis', async ns => {
     const minWattEstTime = 300;
 
     const metersPerMile = 1609.344;
-    const defaultCritPeriods = [
+    const defaultPeakPeriods = [
         {value: 5},
         {value: 15},
         {value: 30},
@@ -41,7 +41,7 @@ sauce.ns('analysis', async ns => {
         {value: 1800},
         {value: 3600},
     ];
-    const defaultCritDistances = [
+    const defaultPeakDistances = [
         {value: 100},
         {value: 200},
         {value: 400},
@@ -54,13 +54,13 @@ sauce.ns('analysis', async ns => {
         {value: Math.round(metersPerMile * 26.2)},
         {value: 50000},
     ];
-    const critIcons = {
-        critical_power: 'fa/bolt-duotone.svg',
-        critical_np: 'fa/atom-alt-duotone.svg',
-        critical_hr: 'fa/heartbeat-duotone.svg',
-        critical_vam: 'fa/rocket-launch-duotone.svg',
-        critical_pace: 'fa/running-duotone.svg',
-        critical_gap: 'fa/hiking-duotone.svg',
+    const peakIcons = {
+        peak_power: 'fa/bolt-duotone.svg',
+        peak_np: 'fa/atom-alt-duotone.svg',
+        peak_hr: 'fa/heartbeat-duotone.svg',
+        peak_vam: 'fa/rocket-launch-duotone.svg',
+        peak_pace: 'fa/running-duotone.svg',
+        peak_gap: 'fa/hiking-duotone.svg',
     };
 
 
@@ -332,7 +332,7 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    class CriticalsPanel {
+    class PeakEffortsPanel {
         constructor({type, menu, renderAttrs, infoDialog}) {
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
             this.$el.insertAfter(jQuery('#pagenav').first());
@@ -340,19 +340,19 @@ sauce.ns('analysis', async ns => {
             this.menu = menu;
             this.sourceKey = `${type}_source`;
             this.renderAttrs = renderAttrs;
-            this.$el.on('click', '.group tr[data-zone-value]', async ev => {
+            this.$el.on('click', '.group tr[data-range-value]', async ev => {
                 ev.stopPropagation();  // prevent click-away detection from closing dialog.
                 const row = ev.currentTarget;
                 await infoDialog({
                     startTime: Number(row.dataset.startTime),
                     endTime: Number(row.dataset.endTime),
-                    label: row.dataset.zoneLabel,
-                    icon: row.dataset.zoneIcon,
+                    label: row.dataset.rangeLabel,
+                    icon: row.dataset.rangeIcon,
                     source: this._selectedSource,
                     originEl: row
                 });
                 sauce.rpc.reportEvent('InfoDialog', 'open',
-                    `${this._selectedSource}-${row.dataset.zoneValue}`);
+                    `${this._selectedSource}-${row.dataset.rangeValue}`);
             });
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
                 await this.setSelectedSource(ev.currentTarget.dataset.source);
@@ -362,16 +362,16 @@ sauce.ns('analysis', async ns => {
 
         async render() {
             const source = await this.getSelectedSource();
-            const template = await getTemplate('criticals.html');
+            const template = await getTemplate('peak-efforts.html');
             this.$el.html(await template(Object.assign({
                 menuInfo: await Promise.all(this.menu.map(async x => ({
                     source: x,
-                    icon: await sauce.images.asText(critIcons[x]),
+                    icon: await sauce.images.asText(peakIcons[x]),
                     tooltip: x + '_tooltip'
                 }))),
                 source,
                 sourceTooltip: source + '_tooltip',
-                sourceIcon: await sauce.images.asText(critIcons[source]),
+                sourceIcon: await sauce.images.asText(peakIcons[source]),
             }, await this.renderAttrs.call(this, source))));
             requestAnimationFrame(navHeightAdjustments);
         }
@@ -379,8 +379,8 @@ sauce.ns('analysis', async ns => {
         async getSelectedSource() {
             let lastKnown;
             if (!this._selectedSource) {
-                const zonesSettings = await sauce.rpc.storageGet('analysis_critical_zones');
-                lastKnown = zonesSettings && zonesSettings[`${this.type}_source`];
+                const ranges = await sauce.rpc.storageGet('analysis_peak_ranges');
+                lastKnown = ranges && ranges[`${this.type}_source`];
             } else {
                 lastKnown = this._selectedSource;
             }
@@ -395,15 +395,15 @@ sauce.ns('analysis', async ns => {
         async setSelectedSource(source) {
             const key = `${this.type}_source`;
             this._selectedSource = source;
-            await sauce.rpc.storageUpdate('analysis_critical_zones', {[key]: source});
+            await sauce.rpc.storageUpdate('analysis_peak_ranges', {[key]: source});
         }
     }
 
 
-    function _zoneRollToRow({zone, roll, value, unit}) {
+    function _rangeRollToRow({range, roll, value, unit}) {
         return {
-            zoneValue: zone.value,
-            zoneLabel: zone.label,
+            rangeValue: range.value,
+            rangeLabel: range.label,
             value,
             unit,
             startTime: roll.firstTime(),
@@ -412,44 +412,44 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    function hrZonesToRows(zones, timeStream, hrStream) {
+    function hrRangesToRows(ranges, timeStream, hrStream) {
         const rows = [];
-        for (const zone of zones.filter(x => x.value >= minHRTime)) {
-            const roll = sauce.data.critAverage(zone.value, timeStream, hrStream, {moving: true});
+        for (const range of ranges.filter(x => x.value >= minHRTime)) {
+            const roll = sauce.data.peakAverage(range.value, timeStream, hrStream, {moving: true});
             if (roll) {
                 const value = Math.round(roll.avg({moving: true})).toLocaleString();
-                rows.push(_zoneRollToRow({zone, roll, value, unit: 'bpm'}));
+                rows.push(_rangeRollToRow({range, roll, value, unit: 'bpm'}));
             }
         }
         return rows;
     }
 
 
-    function paceVelocityZonesToRows(zones, timeStream, distStream) {
+    function paceVelocityRangesToRows(ranges, timeStream, distStream) {
         const unit = '/' + distanceFormatter.shortUnitKey();
         const rows = [];
-        for (const zone of zones) {
-            const roll = sauce.pace.bestPace(zone.value, timeStream, distStream);
+        for (const range of ranges) {
+            const roll = sauce.pace.bestPace(range.value, timeStream, distStream);
             if (roll) {
                 const value = humanPace(roll.avg());
-                rows.push(_zoneRollToRow({zone, roll, value, unit}));
+                rows.push(_rangeRollToRow({range, roll, value, unit}));
             }
         }
         return rows;
     }
 
 
-    function vamZonesToRows(zones, timeStream, altStream) {
+    function vamRangesToRows(ranges, timeStream, altStream) {
         const vamStream = createVAMStream(timeStream, altStream);
         const rows = [];
-        for (const zone of zones.filter(x => x.value >= minVAMTime)) {
-            const roll = sauce.data.critAverage(zone.value, timeStream, vamStream);
+        for (const range of ranges.filter(x => x.value >= minVAMTime)) {
+            const roll = sauce.data.peakAverage(range.value, timeStream, vamStream);
             if (roll) {
                 const start = getStreamTimeIndex(roll.firstTime());
                 const end = getStreamTimeIndex(roll.lastTime());
                 const gain = altitudeChanges(altStream.slice(start, end + 1)).gain;
                 const value = Math.round((gain / roll.elapsed()) * 3600).toLocaleString();
-                rows.push(_zoneRollToRow({zone, roll, value, unit: 'Vm/h'}));
+                rows.push(_rangeRollToRow({range, roll, value, unit: 'Vm/h'}));
             }
         }
         return rows;
@@ -504,62 +504,62 @@ sauce.ns('analysis', async ns => {
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
-                menu.push('critical_power');
+                menu.push('peak_power');
                 if (!isWattEstimate) {
-                    menu.push('critical_np');
+                    menu.push('peak_np');
                 }
             }
             if (hrStream) {
-                menu.push('critical_hr');
+                menu.push('peak_hr');
             }
             if (altStream) {
-                menu.push('critical_vam');
+                menu.push('peak_vam');
             }
             if (!menu.length) {
                 return;
             }
-            const periodZones = ctx.allPeriodZones.filter(x => x.value <= elapsedTime);
-            const critPanel = new CriticalsPanel({
+            const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
+            const panel = new PeakEffortsPanel({
                 type: 'ride',
                 menu,
                 infoDialog: rideInfoDialog,
                 renderAttrs: async source => {
                     let rows;
                     const attrs = {};
-                    if (source === 'critical_power') {
+                    if (source === 'peak_power') {
                         const prefix = isWattEstimate ? '~' : '';
                         attrs.isWattEstimate = isWattEstimate;
                         rows = [];
-                        for (const zone of periodZones.filter(x => !isWattEstimate || x.value >= minWattEstTime)) {
-                            const roll = sauce.power.critPower(zone.value, timeStream, wattsStream);
+                        for (const range of periodRanges.filter(x => !isWattEstimate || x.value >= minWattEstTime)) {
+                            const roll = sauce.power.peakPower(range.value, timeStream, wattsStream);
                             if (roll) {
                                 const value = prefix + Math.round(roll.avg()).toLocaleString();
-                                rows.push(_zoneRollToRow({zone, roll, value, unit: 'w'}));
+                                rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
                             }
                         }
-                    } else if (source === 'critical_np') {
+                    } else if (source === 'peak_np') {
                         rows = [];
-                        for (const zone of periodZones.filter(x => x.value >= minNPTime)) {
-                            const roll = sauce.power.critNP(zone.value, timeStream, wattsStream);
+                        for (const range of periodRanges.filter(x => x.value >= minNPTime)) {
+                            const roll = sauce.power.peakNP(range.value, timeStream, wattsStream);
                             // Use external NP method for consistency.  There are tiny differences because
-                            // the critNP function is a continous rolling avg vs the external method that
+                            // the peakNP function is a continous rolling avg vs the external method that
                             // only examines the trimmed dateset.
                             const np = roll && roll.np({external: true});
                             if (np) {
                                 const value = Math.round(np).toLocaleString();
-                                rows.push(_zoneRollToRow({zone, roll, value, unit: 'w'}));
+                                rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
                             }
                         }
-                    } else if (source === 'critical_hr') {
-                        rows = hrZonesToRows(periodZones, timeStream, hrStream);
-                    } else if (source === 'critical_vam') {
-                        rows = vamZonesToRows(periodZones, timeStream, altStream);
+                    } else if (source === 'peak_hr') {
+                        rows = hrRangesToRows(periodRanges, timeStream, hrStream);
+                    } else if (source === 'peak_vam') {
+                        rows = vamRangesToRows(periodRanges, timeStream, altStream);
                     }
                     return Object.assign(attrs, {rows});
                 }
             });
-            jQuery('#pagenav').first().after(critPanel.$el);
-            await critPanel.render();
+            jQuery('#pagenav').first().after(panel.$el);
+            await panel.render();
         }
     }
 
@@ -608,42 +608,42 @@ sauce.ns('analysis', async ns => {
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (distStream) {
-                menu.push('critical_pace');
+                menu.push('peak_pace');
             }
             if (gradeDistStream) {
-                menu.push('critical_gap');
+                menu.push('peak_gap');
             }
             if (hrStream) {
-                menu.push('critical_hr');
+                menu.push('peak_hr');
             }
             if (altStream) {
-                menu.push('critical_vam');
+                menu.push('peak_vam');
             }
             if (!menu.length) {
                 return;
             }
-            const periodZones = ctx.allPeriodZones.filter(x => x.value <= elapsedTime);
-            const distZones = ctx.allDistZones.filter(x => x.value <= elapsedTime);
-            const critPanel = new CriticalsPanel({
+            const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
+            const distRanges = ctx.allDistRanges.filter(x => x.value <= elapsedTime);
+            const panel = new PeakEffortsPanel({
                 type: 'run',
                 menu,
                 infoDialog: runInfoDialog,
                 renderAttrs: async source => {
                     let rows;
-                    if (source === 'critical_pace') {
-                        rows = paceVelocityZonesToRows(distZones, timeStream, distStream);
-                    } else if (source === 'critical_gap') {
-                        rows = paceVelocityZonesToRows(distZones, timeStream, gradeDistStream);
-                    } else if (source === 'critical_hr') {
-                        rows = hrZonesToRows(periodZones, timeStream, hrStream);
-                    } else if (source === 'critical_vam') {
-                        rows = vamZonesToRows(periodZones, timeStream, altStream);
+                    if (source === 'peak_pace') {
+                        rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
+                    } else if (source === 'peak_gap') {
+                        rows = paceVelocityRangesToRows(distRanges, timeStream, gradeDistStream);
+                    } else if (source === 'peak_hr') {
+                        rows = hrRangesToRows(periodRanges, timeStream, hrStream);
+                    } else if (source === 'peak_vam') {
+                        rows = vamRangesToRows(periodRanges, timeStream, altStream);
                     }
                     return {rows};
                 }
             });
-            jQuery('#pagenav').first().after(critPanel.$el);
-            await critPanel.render();
+            jQuery('#pagenav').first().after(panel.$el);
+            await panel.render();
         }
     }
 
@@ -753,7 +753,7 @@ sauce.ns('analysis', async ns => {
         }
         const $dialog = dialog({
             title: `${options.heading}: ${options.textLabel}`,
-            icon: await sauce.images.asText(critIcons[options.source]),
+            icon: await sauce.images.asText(peakIcons[options.source]),
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             resizable: false,
@@ -843,19 +843,19 @@ sauce.ns('analysis', async ns => {
             end: endTS,
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
-        if (source === 'critical_power' || source === 'critical_np') {
+        if (source === 'peak_power' || source === 'peak_np') {
             await infoDialogGraph($sparkline, {
                 data: rollValues,
                 formatter: x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
-        } else if (source === 'critical_hr') {
+        } else if (source === 'peak_hr') {
             await infoDialogGraph($sparkline, {
                 data: hrStream,
                 formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
                 colorSteps: [40, 100, 150, 200]
             });
-        } else if (source === 'critical_vam') {
+        } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
                 data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
                 formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
@@ -949,13 +949,13 @@ sauce.ns('analysis', async ns => {
             end: endTime
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
-        if (source === 'critical_pace') {
+        if (source === 'peak_pace') {
             await infoDialogGraph($sparkline, {
                 data: velocityStream,
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
                 colorSteps: [0.5, 2, 5, 10]
             });
-        } else if (source === 'critical_gap') {
+        } else if (source === 'peak_gap') {
             const gradeVelocity = [];
             for (let i = 1; i < gradeDistStream.length; i++) {
                 const dist = gradeDistStream[i] - gradeDistStream[i - 1];
@@ -967,13 +967,13 @@ sauce.ns('analysis', async ns => {
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
                 colorSteps: [0.5, 2, 5, 10]
             });
-        } else if (source === 'critical_hr') {
+        } else if (source === 'peak_hr') {
             await infoDialogGraph($sparkline, {
                 data: hrStream,
                 formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
                 colorSteps: [40, 100, 150, 200]
             });
-        } else if (source === 'critical_vam') {
+        } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
                 data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
                 formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
@@ -1046,26 +1046,26 @@ sauce.ns('analysis', async ns => {
             updateSideNav();  //bg okay
             attachExporters();  // bg okay
             attachComments();  // bg okay
-            const savedZones = await sauce.rpc.storageGet('analysis_critical_zones');
-            ctx.allPeriodZones = (savedZones && savedZones.periods) || defaultCritPeriods;
-            for (const zone of ctx.allPeriodZones) {
-                zone.label = await sauce.locale.humanDuration(zone.value);
+            const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');
+            ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
+            for (const range of ctx.allPeriodRanges) {
+                range.label = await sauce.locale.humanDuration(range.value);
             }
-            ctx.allDistZones = (savedZones && savedZones.distances) || defaultCritDistances;
-            for (const zone of ctx.allDistZones) {
-                if (zone.value < 1000) {
-                    zone.label = `${zone.value} m`;
+            ctx.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
+            for (const range of ctx.allDistRanges) {
+                if (range.value < 1000) {
+                    range.label = `${range.value} m`;
                 } else {
-                    const miles = zone.value / metersPerMile;
+                    const miles = range.value / metersPerMile;
                     if (isRoughlyEqual(miles, 13.1) ||
                         isRoughlyEqual(miles, 26.2) ||
                         isRoughlyEqual(miles, Math.round(miles))) {
-                        zone.label = imperialDistanceFormatter.formatShort(zone.value);
+                        range.label = imperialDistanceFormatter.formatShort(range.value);
                     } else {
-                        zone.label = metricDistanceFormatter.formatShort(zone.value);
+                        range.label = metricDistanceFormatter.formatShort(range.value);
                     }
                 }
-                zone.label = zone.label.replace(/\.0 /, ' ');
+                range.label = range.label.replace(/\.0 /, ' ');
             }
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;

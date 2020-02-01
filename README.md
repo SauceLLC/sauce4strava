@@ -11,12 +11,12 @@ addition.  There are no external API calls made with this extension and it is op
 Feature Highlights
 --------
  * Peak performance table:
-   * Critical Power
-   * Critical Normalized Power
-   * Best Pace
-   * Best Grade Adjusted Pace
-   * Fastest VAM
-   * Peak Heartrate
+   * Power
+   * Normalized Power
+   * Heartrate
+   * Pace
+   * Grade Adjusted Pace
+   * VAM (climbing speed)
  * Export any activity to a TCX or GPX file
  * Running Power estimation
  * Analysis page stats are extended to include:
@@ -53,14 +53,9 @@ Installation
 Release Notes
 --------
 #### v5.0.0
- * Multi category critical charts.
-   * Critical Power
-   * Critical NP
-   * Fastest VAM
-   * Highest HR
-   * Best Pace
-   * Best GAP
- * Settable Critical time periods and distances (Advanced Options).
+ * Multi category peak effort chart:
+   * Power, NP, VAM, HR, Pace, GAP
+ * Settable peak effort ranges: time periods and distances (Advanced Options).
  * Upgraded algo for power data.
  * Upgraded analysis view that works in all locales.
    * Kilojoule field
@@ -80,10 +75,10 @@ Release Notes
  * Support for VAM (vertical ascent meters / hour) **[BETA]**.
 
 #### v4.0.0:
- * Critical power calculations now support irregular recording intervals (non 1 sample / second).
+ * Peak power calculations now support irregular recording intervals (non 1 sample / second).
  * Fixes to running pace calculations.
- * Add elevation stats to critical power and best pace dialogs.
- * Add cadence stat to critical power and best pace dialogs.
+ * Add elevation stats to peak power and best pace dialogs.
+ * Add cadence stat to peak power and best pace dialogs.
  * Support auto closing dialogs when clicking away from them.
  * Much needed code cleanup.
  * Add name information to Advanced menu's FTP overrides table.
@@ -106,7 +101,7 @@ Release Notes
  * Fixes for several loading glitches.
  * Smoother FTP override handling;  Added clearing support.
  * Fix for ranking badges when gender is unspecified.
- * Style and tooltip additions to better explain critical power.
+ * Style and tooltip additions to better explain peak power.
 
 #### v1.1.0:
  * Fix analysis view's inline comments to accommodate site changes.
@@ -114,10 +109,10 @@ Release Notes
 
 #### v1.0.0:
  * Fix for updated strava comment data structure
- * Improved device compatibility of critical power analysis
+ * Improved device compatibility of peak power analysis
 
 #### v0.1.0:
- * Heartrate stats in Critical Power table
+ * Heartrate stats in Peak Power table
  * Promise of reasonable stability
 
 #### v0.0.7:

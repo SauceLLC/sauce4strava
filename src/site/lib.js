@@ -546,7 +546,7 @@ sauce.ns('data', function() {
     }
 
 
-    function critAverage(period, timeStream, valuesStream, options) {
+    function peakAverage(period, timeStream, valuesStream, options) {
         options = options || {};
         const moving = options.moving;
         const roll = new RollingAverage(period);
@@ -591,7 +591,7 @@ sauce.ns('data', function() {
         RollingPace,
         Zero,
         Pad,
-        critAverage,
+        peakAverage,
         smooth
     };
 });
@@ -715,7 +715,7 @@ sauce.ns('power', function() {
     }
 
 
-    function critPower(period, timeStream, wattsStream) {
+    function peakPower(period, timeStream, wattsStream) {
         const roll = _correctedRollingPower(timeStream, wattsStream, period);
         if (!roll) {
             return;
@@ -724,7 +724,7 @@ sauce.ns('power', function() {
     }
 
 
-    function critNP(period, timeStream, wattsStream) {
+    function peakNP(period, timeStream, wattsStream) {
         const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null, {inlineNP: true});
         if (!roll) {
             return;
@@ -782,8 +782,8 @@ sauce.ns('power', function() {
 
 
     return {
-        critPower,
-        critNP,
+        peakPower,
+        peakNP,
         correctedPower,
         calcNP,
         calcTSS,
