@@ -352,7 +352,7 @@ sauce.ns('analysis', async ns => {
                     originEl: row
                 });
                 sauce.rpc.reportEvent('InfoDialog', 'open',
-                    `${this.source}-${row.dataset.zoneValue}`);
+                    `${this._selectedSource}-${row.dataset.zoneValue}`);
             });
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
                 await this.setSelectedSource(ev.currentTarget.dataset.source);
