@@ -6,8 +6,8 @@
     "short_name": "Sauce",
     "description": "__MSG_app_desc__",
     "author": "Justin Mayfield",
-    "version": "5.0.0.2",
-    "version_name": "5.0.0 [rc2]",
+    "version": "5.0.0.3",
+    "version_name": "5.0.0 [rc3]",
     "minimum_chrome_version": "60",
     
     "permissions": [
