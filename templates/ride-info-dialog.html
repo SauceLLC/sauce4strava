@@ -5,24 +5,24 @@
         <td><a class="start_time_link">{{startsAt}}</a></td>
     </tr>
 
-    <% if (obj.wKg) { %>
-        <tr title="{{{wkg_tooltip}}}">
-            <td>{{{Watts}}}/kg</td>
-            <td class="rank_holder">
-                <span>{{wKg.toFixed(1)}}</span>
-                <% if (rank && rank.badge) { %>
-                    <img src="{{rank.badge}}" class="rank_badge"
-                         title="{{{ranking_tooltip}}}: {{Math.round(rank.level * 100)}}%"/>
-                <% } %>
-            </td>
-        </tr>
-    <% } %>
-
     <% if (obj.power) { %>
+        <% if (power.elapsedWKg) { %>
+            <tr title="{{{wkg_tooltip}}}">
+                <td>{{{Watts}}}/kg</td>
+                <td class="rank_holder">
+                    <span>{{power.elapsedWKg.toFixed(1)}}</span>
+                    <% if (power.rank && power.rank.badge) { %>
+                        <img src="{{power.rank.badge}}" class="rank_badge"
+                             title="{{{ranking_tooltip}}}: {{Math.round(power.rank.level * 100)}}%"/>
+                    <% } %>
+                </td>
+            </tr>
+        <% } %>
+
         <tr title="{{{elapsed_power_tooltip}}}">
             <td>{{{power}}}</td>
             <td>
-                {{Math.round(power.avg)}}<abbr class="unit short">w</abbr>
+                {{Math.round(power.elapsedAvg)}}<abbr class="unit short">w</abbr>
                 <sup class="sauce-positive" title="{{{peak_power_tooltip}}}">
                     {{power.max}}<abbr class="unit short">w</abbr>
                 </sup>

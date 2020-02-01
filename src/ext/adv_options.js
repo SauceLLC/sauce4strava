@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, chrome */
 
 (function() {
     'use strict';

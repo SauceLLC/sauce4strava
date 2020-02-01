@@ -110,12 +110,12 @@
             // Monkey patch analysis views so we can react to selection changes.
             const saveFn = Klass.prototype.displayDetails;
             Klass.prototype.displayDetails = function(start, end) {
+                start = start === undefined ? start : Number(start);
+                end = end === undefined ? end : Number(end);
                 if (sauce.analysis) {
-                    sauce.analysis.schedUpdateAnalysisStats(
-                        start === undefined ? start : Number(start),
-                        end === undefined ? end : Number(end));
+                    sauce.analysis.schedUpdateAnalysisStats(start, end);
                 } else {
-                    console.warn("Could not schedule analysis update due to early start");
+                    sauce.analysisStatsIntent = {start, end};
                 }
                 return saveFn.apply(this, arguments);
             };
@@ -125,12 +125,12 @@
             // This is called when zoom selections change or are unset in the profile graph.
             const saveFn = Klass.prototype.handleStreamHover;
             Klass.prototype.handleStreamHover = function(_, start, end) {
+                start = start === undefined ? start : Number(start);
+                end = end === undefined ? end : Number(end);
                 if (sauce.analysis) {
-                    sauce.analysis.schedUpdateAnalysisStats(
-                        start === undefined ? start : Number(start),
-                        end === undefined ? end : Number(end));
+                    sauce.analysis.schedUpdateAnalysisStats(start, end);
                 } else {
-                    console.warn("Could not schedule analysis update due to early start");
+                    sauce.analysisStatsIntent = {start, end};
                 }
                 return saveFn.apply(this, arguments);
             };
@@ -142,9 +142,9 @@
             Klass.prototype.renderTemplate = function() {
                 const $el = saveFn.apply(this, arguments);
                 if (sauce.analysis) {
-                    sauce.analysis.attachAnalysisStats($el.find('.chart'));
+                    sauce.analysis.attachAnalysisStats($el);
                 } else {
-                    console.warn("Could not attach analysis stats due to early start");
+                    sauce.analysisStatsIntent = {start: undefined, end: undefined};
                 }
                 return $el;
             };

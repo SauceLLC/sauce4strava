@@ -19,6 +19,14 @@
             <value>{{paused}}</value>
         </line>
     <% } %>
+
+    <% if (obj.stops) { %>
+        <line>
+            <key>{{{stops}}}</key>
+            <value>{{stops}}</value>
+        </line>
+    <% } %>
+
 </div>
 
 <% if (obj.pace) { %>
@@ -47,23 +55,19 @@
 <% if (obj.power) { %>
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{moving_power_tooltip}}}">
-            <% if (isRun) { %>
-                <key>{{{run_power}}}</key>
-            <% } else { %>
-                <key>{{{power}}}</key>
-            <% } %>
+            <key>{{{power}}}</key>
             <value>
-                {{Math.round(power.moving).toLocaleString()}}<abbr class="unit">w</abbr>
-                <% if (obj.weight && !isRun) { %>
-                    | {{(power.moving / weight).toFixed(1)}}<abbr class="unit">w/kg</abbr>
+                {{power.estimate ? '~' : ''}}{{Math.round(power.movingAvg).toLocaleString()}}<abbr class="unit">w</abbr>
+                <% if (power.movingWKg) { %>
+                    | {{power.movingWKg.toFixed(1)}}<abbr class="unit">w/kg</abbr>
                 <% } %>
             </value>
         </line>
 
-        <% if (power.elapsed) { %>
+        <% if (power.elapsedAvg) { %>
             <line title="{{{elapsed_power_tooltip}}}">
                 <key>{{{elapsed}}}</key>
-                <value>{{Math.round(power.elapsed).toLocaleString()}}<abbr class="unit">w</abbr></value>
+                <value>{{power.estimate ? '~' : ''}}{{Math.round(power.elapsedAvg).toLocaleString()}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
 
@@ -97,7 +101,7 @@
     </div>
 <% } %>
 
-<% if (obj.elevation && (elevation.gain || elevation.loss)) { %>
+<% if (obj.elevation && (elevation.gain || elevation.loss || elevation.grade || elevation.vam)) { %>
     <div class="sauce-data-tuple">
         <line class="heading">
             <key>{{{elevation}}}</key>
@@ -117,7 +121,14 @@
             </value>
         </line>
 
-        <% if (elevation.vam) { %>
+        <% if (elevation.grade && Math.abs(elevation.grade) >= 1) { %>
+            <line title="{{{grade_tooltip}}}">
+                <key>{{{grade}}}</key>
+                <value>{{elevation.grade.toFixed(1)}}<abbr class="unit">%</abbr></value>
+            </line>
+        <% } %>
+
+        <% if (elevation.vam && elevation.vam >= 1) { %>
             <line title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                 <key>VAM</key>
                 <value>
@@ -144,3 +155,10 @@
         <value><a class="sauce-graph-data" href="javascript:void(0);">{{{view}}} {{{graphs}}}</a></value>
     </line>
 </div>
+
+<% if (!isRun && obj.power && power.rank && power.rank.badge && !power.estimate) { %>
+    <div class="sauce-data-tuple vcentered">
+        <img src="{{power.rank.badge}}" class="rank_badge"
+             title="{{{ranking_tooltip}}}: {{Math.round(power.rank.level * 100)}}%"/>
+    </div>
+<% } %>

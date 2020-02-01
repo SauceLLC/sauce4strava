@@ -66,11 +66,11 @@
     color: #007fb6;
 }
 
-.sauce-moreinfo td a {
+.sauce-info-dialog td a {
     color: #007fb6;
 }
 
-.sauce-moreinfo .sauce-sparkline {
+.sauce-info-dialog .sauce-sparkline {
     margin-top: 1em;
 }
 
@@ -92,9 +92,9 @@
     color: white;
 }
 
-.sauce-moreinfo sub,
-.sauce-moreinfo small,
-.sauce-moreinfo sup {
+.sauce-info-dialog sub,
+.sauce-info-dialog small,
+.sauce-info-dialog sup {
     font-size: 75%;
 }
 
@@ -141,45 +141,45 @@
 }
 
 
-.sauce-moreinfo .ui-dialog-content {
+.sauce-info-dialog .ui-dialog-content {
     padding: 0px !important;
 }
 
-.sauce-moreinfo .ui-dialog-content table {
+.sauce-info-dialog .ui-dialog-content table {
     box-sizing: border-box;
     margin: 0px 0px 0 0;
     padding: 20px 20px 4px 20px;
 }
 
-.sauce-moreinfo img.rank_badge {
+.sauce-info-dialog img.rank_badge {
     height: 28px;
     margin-top: -7px;
     margin-bottom: -7px;
     margin-left: 1px;
 }
 
-.sauce-moreinfo td {
+.sauce-info-dialog td {
     padding: 4px 0px;
     height: 22px;
 }
 
-.sauce-moreinfo td:first-child {
+.sauce-info-dialog td:first-child {
     width: 50%;
     padding-left: 2px;
     padding-right: 2px;
     text-align: right;
 }
 
-.sauce-moreinfo td:last-child {
+.sauce-info-dialog td:last-child {
     width: 50%;
     text-align: center;
 }
 
-.sauce-moreinfo td.rank_holder {
+.sauce-info-dialog td.rank_holder {
     position: relative;
 }
 
-.sauce-moreinfo tr:last-child td {
+.sauce-info-dialog tr:last-child td {
     border-bottom: 0;
 }
 
@@ -427,9 +427,8 @@ abbr.unit {
 .sauce-analysis-stats .sauce-brand-sidebar .sauce-label {
     flex: 1 1 auto;
     align-self: center;
-    text-align: center;
     font-size: 1.1em;
-    text-shadow: 1px 1px 3px #0002;
+    text-shadow: 1px 1px 3px #0001;
     line-height: 1.2em;
     color: #222;
 }
@@ -443,9 +442,14 @@ abbr.unit {
 }
 
 .sauce-analysis-stats .sauce-data-tuple {
-    position: relative;
+    display: flex;
+    flex-direction: column;
     padding-right: 1em;
     margin: 0.5em 0;
+}
+
+.sauce-analysis-stats .sauce-data-tuple.vcentered {
+    justify-content: center;
 }
 
 .sauce-analysis-stats .sauce-data-tuple:not(:last-child) {
@@ -497,6 +501,10 @@ abbr.unit {
     display: block;
     margin-left: 0.2em;
     white-space: nowrap;
+}
+
+.sauce-analysis-stats .sauce-data-tuple .rank_badge {
+    max-height: 3em;
 }
 
 .sauce-beta {

@@ -124,7 +124,6 @@ sauce.ns('analysis', async ns => {
                 }
             }
             if (waitfor.length) {
-                console.info("Waiting for existing stream fetch(es) to finish");
                 await Promise.all(waitfor);
             }
         }
@@ -167,7 +166,10 @@ sauce.ns('analysis', async ns => {
 
     function getStreamTimeIndex(time) {
         const timeStream = _getStream('time');
-        return timeStream.indexOf(time);
+        const idx = timeStream.indexOf(time);
+        if (idx !== -1) {
+            return idx;
+        }
     }
 
 
@@ -182,42 +184,6 @@ sauce.ns('analysis', async ns => {
         const startIndex = getStreamTimeIndex(startTime);
         const endIndex = getStreamTimeIndex(endTime);
         return await fetchSmoothStream(name, period, startIndex, endIndex);
-    }
-
-
-    let _currentMoreinfoDialog;
-    function openMoreinfoDialog($dialog, selectorEl) {
-        if (_currentMoreinfoDialog) {
-            closeCurrentMoreinfoDialog();
-        } else if (_currentMoreinfoDialog === undefined) {
-            /* First usage; wire click-away detection to close open dialog. */
-            jQuery(document).on('pointerdown', ev => {
-                if (_currentMoreinfoDialog && ev.target.isConnected) {
-                    const $root = _currentMoreinfoDialog.closest('.ui-dialog');
-                    if (!jQuery(ev.target).closest($root).length) {
-                        closeCurrentMoreinfoDialog();
-                    }
-                }
-            });
-        }
-        $dialog.on('dialogclose', () => {
-            selectorEl.classList.remove('selected');
-            if ($dialog === _currentMoreinfoDialog) {
-                _currentMoreinfoDialog = null;
-            }
-            $dialog.dialog('destroy');
-        });
-        _currentMoreinfoDialog = $dialog;
-        selectorEl.classList.add('selected');
-    }
-
-
-    function closeCurrentMoreinfoDialog() {
-        const $d = _currentMoreinfoDialog;
-        if ($d) {
-            _currentMoreinfoDialog = null;
-            $d.dialog('close');
-        }
     }
 
 
@@ -367,7 +333,7 @@ sauce.ns('analysis', async ns => {
 
 
     class CriticalsPanel {
-        constructor({type, menu, renderAttrs, moreinfoDialog}) {
+        constructor({type, menu, renderAttrs, infoDialog}) {
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
             this.$el.insertAfter(jQuery('#pagenav').first());
             this.type = type;
@@ -377,15 +343,15 @@ sauce.ns('analysis', async ns => {
             this.$el.on('click', '.group tr[data-zone-value]', async ev => {
                 ev.stopPropagation();  // prevent click-away detection from closing dialog.
                 const row = ev.currentTarget;
-                openMoreinfoDialog(await moreinfoDialog({
+                await infoDialog({
                     startTime: Number(row.dataset.startTime),
                     endTime: Number(row.dataset.endTime),
                     label: row.dataset.zoneLabel,
                     icon: row.dataset.zoneIcon,
                     source: this._selectedSource,
-                    anchorEl: row
-                }), row);
-                sauce.rpc.reportEvent('MoreInfoDialog', 'open',
+                    originEl: row
+                });
+                sauce.rpc.reportEvent('InfoDialog', 'open',
                     `${this.source}-${row.dataset.zoneValue}`);
             });
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
@@ -557,7 +523,7 @@ sauce.ns('analysis', async ns => {
             const critPanel = new CriticalsPanel({
                 type: 'ride',
                 menu,
-                moreinfoDialog: moreinfoRideDialog,
+                infoDialog: rideInfoDialog,
                 renderAttrs: async source => {
                     let rows;
                     const attrs = {};
@@ -658,7 +624,7 @@ sauce.ns('analysis', async ns => {
             const critPanel = new CriticalsPanel({
                 type: 'run',
                 menu,
-                moreinfoDialog: moreinfoRunDialog,
+                infoDialog: runInfoDialog,
                 renderAttrs: async source => {
                     let rows;
                     if (source === 'critical_pace') {
@@ -757,13 +723,77 @@ sauce.ns('analysis', async ns => {
 
 
     function changeToAnalysisView(startTime, endTime) {
-        const start = getStreamTimeIndex(startTime);
-        const end = getStreamTimeIndex(endTime);
-        pageView.router().changeMenuTo(`analysis/${start}/${end}`);
+        const startIdx = getStreamTimeIndex(startTime);
+        const endIdx = getStreamTimeIndex(endTime);
+        if (startIdx != null && endIdx != null) {
+            pageView.router().changeMenuTo(`analysis/${startIdx}/${endIdx}`);
+        } else {
+            pageView.router().changeMenuTo(`analysis`);
+        }
     }
 
 
-    async function moreinfoRideDialog({startTime, endTime, label, source, anchorEl}) {
+    let _currentInfoDialog;
+    async function createInfoDialog(options) {
+        if (_currentInfoDialog) {
+            closeCurrentInfoDialog();
+        } else if (_currentInfoDialog === undefined) {
+            /* First usage; wire click-away detection to close open dialog. */
+            jQuery(document).on('pointerdown', ev => {
+                if (_currentInfoDialog && ev.target.isConnected) {
+                    const $root = _currentInfoDialog.closest('.ui-dialog');
+                    if (!jQuery(ev.target).closest($root).length) {
+                        closeCurrentInfoDialog();
+                    }
+                }
+            });
+        }
+        const $dialog = dialog({
+            title: `${options.heading}: ${options.textLabel}`,
+            icon: await sauce.images.asText(critIcons[options.source]),
+            dialogClass: 'sauce-info-dialog',
+            body: options.body,
+            resizable: false,
+            width: 240,
+            position: {
+                my: 'left center',
+                at: 'right center',
+                of: options.originEl
+            },
+            extraButtons: {
+                "Analysis View": () => {
+                    changeToAnalysisView(options.start, options.end);
+                    $dialog.dialog('close');
+                }
+            }
+        });
+        $dialog.find('.start_time_link').on('click',() => {
+            changeToAnalysisView(options.start, options.end);
+            $dialog.dialog('close');
+        });
+        $dialog.on('dialogclose', () => {
+            options.originEl.classList.remove('selected');
+            if ($dialog === _currentInfoDialog) {
+                _currentInfoDialog = null;
+            }
+            $dialog.dialog('destroy');
+        });
+        _currentInfoDialog = $dialog;
+        options.originEl.classList.add('selected');
+        return $dialog;
+    }
+
+
+    function closeCurrentInfoDialog() {
+        const $d = _currentInfoDialog;
+        if ($d) {
+            _currentInfoDialog = null;
+            $d.dialog('close');
+        }
+    }
+
+
+    async function rideInfoDialog({startTime, endTime, label, source, originEl}) {
         let fullWattsStream = await fetchStream('watts');
         if (!fullWattsStream) {
             fullWattsStream = await fetchStream('watts_calc');
@@ -773,87 +803,57 @@ sauce.ns('analysis', async ns => {
             const power = sauce.power.correctedPower(await fetchStream('time'), fullWattsStream);
             roll = power.slice(startTime, endTime);
         }
-        const avgPower = roll && roll.avg();
         const rollValues = roll && roll.values();
-        const wKg = ctx.weight && avgPower / ctx.weight;
         const elapsedTime = endTime - startTime;
-        const rank = sauce.power.rank(elapsedTime, wKg, ctx.gender);
         // startTime and endTime can be pad based values with corrected power sources.
         // Use non padded values for other streams.
         const startTS = roll ? roll.firstTime({noPad: true}) : startTime;
         const endTS = roll ? roll.lastTime({noPad: true}) : endTime;
         const timeStream = await fetchStreamTimeRange('time', startTS, endTS);
+        const distStream = await fetchStreamTimeRange('distance', startTS, endTS);
         const hrStream = await fetchStreamTimeRange('heartrate', startTS, endTS);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTS, endTS);
-        const altChanges = altStream && altitudeChanges(altStream);
-        const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTS, endTS);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTS, endTS);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
-        const template = await getTemplate('criticals-ride-moreinfo.html');
+        const template = await getTemplate('ride-info-dialog.html');
         const body = await template({
             startsAt: humanTime(startTime),
-            wKg,
-            power: roll && {
-                avg: avgPower,
+            power: roll && powerData(null, roll.avg(), null, elapsedTime,{
                 max: sauce.data.max(rollValues),
-                np: roll.np(),
-            },
-            rank,
-            hr: hrStream && {
-                min: sauce.data.min(hrStream),
-                avg: sauce.data.avg(hrStream),
-                max: sauce.data.max(hrStream),
-            },
+                np: roll.np()
+            }),
+            hr: hrData(hrStream),
             cadence: cadenceStream && sauce.data.avg(cadenceStream),
-            elevation: (gradeStream && altChanges) && {
-                grade: sauce.data.avg(gradeStream),
-                gain: humanElevation(altChanges.gain),
-                loss: humanElevation(altChanges.loss),
-                vam: elapsedTime >= minVAMTime && (altChanges.gain / elapsedTime) * 3600,
-            },
+            elevation: elevationData(altStream, elapsedTime, streamDelta(distStream)),
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
             distUnitLong: distanceFormatter.longUnitKey(),
         });
-        const $dialog = dialog({
-            title: `${heading}: ${textLabel}`,
-            icon: await sauce.images.asText(critIcons[source]),
-            dialogClass: 'sauce-moreinfo',
+        const $dialog = await createInfoDialog({
+            heading,
+            textLabel,
+            source,
             body,
-            resizable: false,
-            width: 240,
-            position: {
-                my: 'left center',
-                at: 'right center',
-                of: anchorEl
-            },
-            extraButtons: {
-                "Analysis View": () => {
-                    changeToAnalysisView(startTS, endTS);
-                    $dialog.dialog('close');
-                }
-            }
-        });
-        $dialog.find('.start_time_link').on('click',() => {
-            changeToAnalysisView(startTS, endTS);
-            $dialog.dialog('close');
+            originEl,
+            start: startTS,
+            end: endTS,
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
         if (source === 'critical_power' || source === 'critical_np') {
-            await moreinfoGraph($sparkline, {
+            await infoDialogGraph($sparkline, {
                 data: rollValues,
                 formatter: x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'critical_hr') {
-            await moreinfoGraph($sparkline, {
+            await infoDialogGraph($sparkline, {
                 data: hrStream,
                 formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
                 colorSteps: [40, 100, 150, 200]
             });
         } else if (source === 'critical_vam') {
-            await moreinfoGraph($sparkline, {
+            await infoDialogGraph($sparkline, {
                 data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
                 formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
                 colorSteps: [-500, 500, 1000, 2000]
@@ -863,7 +863,7 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    async function moreinfoGraph($el, {data, colorSteps, formatter}) {
+    async function infoDialogGraph($el, {data, colorSteps, formatter}) {
         if (!data) {
             return;
         }
@@ -901,7 +901,7 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    async function moreinfoRunDialog({startTime, endTime, label, source, anchorEl}) {
+    async function runInfoDialog({startTime, endTime, label, source, originEl}) {
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
         let roll;
@@ -910,20 +910,17 @@ sauce.ns('analysis', async ns => {
             roll.import(timeStream, distStream);
         }
         const elapsedTime = endTime - startTime;
-        const elapsed = humanTime(elapsedTime);
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
-        const altChanges = altStream && altitudeChanges(altStream);
-        const gradeStream = altStream && await fetchStreamTimeRange('grade_smooth', startTime, endTime);
+        const gradeDistStream = distStream && await fetchStreamTimeRange('grade_adjusted_distance',
+            startTime, endTime);
         const maxVelocity = sauce.data.max(velocityStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
-        const gradeDistStream = distStream && await fetchStreamTimeRange('grade_adjusted_distance',
-            startTime, endTime);
         const gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
-        const template = await getTemplate('criticals-run-moreinfo.html');
+        const template = await getTemplate('run-info-dialog.html');
         const body = await template({
             startsAt: humanTime(startTime),
             pace: roll && {
@@ -931,49 +928,26 @@ sauce.ns('analysis', async ns => {
                 max: humanPace(maxVelocity, {velocity: true}),
                 gap: gap && humanPace(gap, {velocity: true}),
             },
-            elapsed,
-            hr: hrStream && {
-                min: sauce.data.min(hrStream),
-                avg: sauce.data.avg(hrStream),
-                max: sauce.data.max(hrStream),
-            },
+            elapsed: humanTime(elapsedTime),
+            hr: hrData(hrStream),
             cadence: cadenceStream && sauce.data.avg(cadenceStream) * 2,
-            elevation: (gradeStream && altChanges) && {
-                grade: sauce.data.avg(gradeStream),
-                gain: humanElevation(altChanges.gain),
-                loss: humanElevation(altChanges.loss),
-                vam: elapsedTime >= minVAMTime && (altChanges.gain / elapsedTime) * 3600,
-            },
+            elevation: elevationData(altStream, elapsedTime, streamDelta(distStream)),
             elevationUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
             distUnitLong: distanceFormatter.longUnitKey(),
         });
-        const $dialog = dialog({
-            title: `${heading}: ${textLabel}`,
-            icon: await sauce.images.asText(critIcons[source]),
-            dialogClass: 'sauce-moreinfo',
+        const $dialog = await createInfoDialog({
+            heading,
+            textLabel,
+            source,
             body,
-            resizable: false,
-            width: 240,
-            position: {
-                my: 'left center',
-                at: 'right center',
-                of: anchorEl
-            },
-            extraButtons: {
-                "Analysis View": () => {
-                    changeToAnalysisView(startTime, endTime);
-                    $dialog.dialog('close');
-                }
-            }
-        });
-        $dialog.find('.start_time_link').on('click',() => {
-            changeToAnalysisView(startTime, endTime);
-            $dialog.dialog('close');
+            originEl,
+            start: startTime,
+            end: endTime
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
         if (source === 'critical_pace') {
-            await moreinfoGraph($sparkline, {
+            await infoDialogGraph($sparkline, {
                 data: velocityStream,
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
                 colorSteps: [0.5, 2, 5, 10]
@@ -985,19 +959,19 @@ sauce.ns('analysis', async ns => {
                 const elapsed = timeStream[i] - timeStream[i - 1];
                 gradeVelocity.push(dist / elapsed);
             }
-            await moreinfoGraph($sparkline, {
+            await infoDialogGraph($sparkline, {
                 data: gradeVelocity,
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
                 colorSteps: [0.5, 2, 5, 10]
             });
         } else if (source === 'critical_hr') {
-            await moreinfoGraph($sparkline, {
+            await infoDialogGraph($sparkline, {
                 data: hrStream,
                 formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
                 colorSteps: [40, 100, 150, 200]
             });
         } else if (source === 'critical_vam') {
-            await moreinfoGraph($sparkline, {
+            await infoDialogGraph($sparkline, {
                 data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
                 formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
                 colorSteps: [-500, 500, 1000, 2000]
@@ -1089,6 +1063,10 @@ sauce.ns('analysis', async ns => {
                     }
                 }
                 zone.label = zone.label.replace(/\.0 /, ' ');
+            }
+            if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
+                const {start, end} = sauce.analysisStatsIntent;
+                schedUpdateAnalysisStats(start, end);
             }
             await start();
         } else {
@@ -1268,7 +1246,7 @@ sauce.ns('analysis', async ns => {
 
 
     function addBadge(row) {
-        if (row.querySelector(':scope > td.sauce-mark')) {
+        if (!ctx.weight || row.querySelector(':scope > td.sauce-mark')) {
             return;
         }
         const segment = pageView.segmentEfforts().getEffort(Number(row.dataset.segmentEffortId));
@@ -1350,7 +1328,7 @@ sauce.ns('analysis', async ns => {
             }
         }
         jQuery('body').on('click', '.rank_badge', async ev => {
-            closeCurrentMoreinfoDialog();
+            closeCurrentInfoDialog();
             const powerProfileTpl = await getTemplate('power-profile-help.html');
             const $dialog = modal({
                 title: 'Power Profile Badges Explained',
@@ -1502,38 +1480,95 @@ sauce.ns('analysis', async ns => {
     }
 
 
+    function elevationData(altStream, elapsed, distance) {
+        if (altStream && elapsed && distance) {
+            const {gain, loss} = altitudeChanges(altStream);
+            return {
+                gain: gain > 1 ? humanElevation(gain) : 0,
+                loss: loss && humanElevation(loss),
+                grade: ((gain - loss) / distance) * 100,
+                vam: elapsed >= minVAMTime ? (gain / elapsed) * 3600 : 0
+            };
+        }
+    }
+
+
+    function hrData(hrStream) {
+        if (hrStream) {
+            return {
+                min: sauce.data.min(hrStream),
+                avg: sauce.data.avg(hrStream),
+                max: sauce.data.max(hrStream),
+            };
+        }
+    }
+
+
+    function powerData(movingAvg, elapsedAvg, moving, elapsed, extra) {
+        return Object.assign({
+            movingAvg,
+            elapsedAvg,
+            movingWKg: (ctx.weight && movingAvg != null) && movingAvg / ctx.weight,
+            elapsedWKg: (ctx.weight && elapsedAvg != null) && elapsedAvg / ctx.weight,
+            rank: (ctx.weight && elapsedAvg != null) &&
+                sauce.power.rank(elapsed, elapsedAvg / ctx.weight, ctx.gender)
+        }, extra);
+    }
+
+
+    function countStops(movingStream) {
+        let stops = 0;
+        const movingIter = movingStream.values();
+        const consumeStops = () => {
+            while(movingIter.next().value === false) {/*no-pragma*/}
+            for (let i = 0; i < 4; i++) {
+                const v = movingIter.next();
+                if (v.done) {
+                    return;
+                }
+                if (v.value === false) {
+                    return consumeStops();
+                }
+            }
+        };
+        consumeStops();
+        for (const x of movingIter) {
+            if (!x) {
+                stops++;
+                consumeStops();
+            }
+        }
+        return stops;
+    }
+
+
     async function _updateAnalysisStats(start, end) {
         const isRun = ctx.activity.isRun();
-        const prefetchStreams = ['time', 'timer_time', 'moving', 'altitude', 'watts', 'grade_smooth'];
+        const prefetchStreams = ['time', 'timer_time', 'moving', 'altitude', 'watts',
+                                 'grade_smooth', 'distance'];
         if (isRun) {
-            Array.prototype.push.apply(prefetchStreams, ['grade_adjusted_distance', 'distance']);
+            prefetchStreams.push('grade_adjusted_distance');
         }
         await fetchStreams(prefetchStreams);  // better load perf
         const timeStream = await fetchStream('time', start, end);
+        const distStream = await fetchStream('distance', start, end);
+        const altStream = await fetchSmoothStream('altitude', null, start, end);
         const movingTime = await getMovingTime(start, end);
         const elapsedTime = streamDelta(timeStream);
+        const distance = streamDelta(distStream);
         const pausedTime = elapsedTime - movingTime;
         const tplData = {
             isRun,
             elapsed: humanTime(elapsedTime),
             moving: humanTime(movingTime),
             paused: timeFormatter.abbreviatedNoTags(pausedTime, null, false),
+            stops: countStops(await fetchStream('moving', start, end)),
             weight: ctx.weight,
             elUnit: elevationFormatter.shortUnitKey(),
             distUnit: distanceFormatter.shortUnitKey(),
             samples: timeStream.length,
+            elevation: elevationData(altStream, elapsedTime, distance),
         };
-        const altStream = await fetchSmoothStream('altitude', null, start, end);
-        if (altStream) {
-            const {gain, loss} = altitudeChanges(altStream);
-            const gradeStream = await fetchStream('grade_smooth', start, end);
-            tplData.elevation = {
-                gain: gain && humanElevation(gain),
-                grade: gradeStream && sauce.data.avg(gradeStream),
-                loss: loss && humanElevation(loss),
-                vam: elapsedTime >= minVAMTime && (gain / elapsedTime) * 3600
-            };
-        }
         let kj;
         const wattsStream = await fetchStream('watts', start, end);
         if (wattsStream) {
@@ -1545,24 +1580,17 @@ sauce.ns('analysis', async ns => {
             }
             const roll = sauce.power.correctedPower(timeStream, wattsStream,
                 ctx.idealGap, ctx.maxGap);
-            tplData.power = {
-                elapsed: roll.avg(),
-                np: roll.np(),
-                moving: roll.kj() * 1000 / movingTime
-            };
             kj = roll.kj();
+            tplData.power = powerData(kj * 1000 / movingTime, roll.avg(),
+                movingTime, elapsedTime, {np: roll.np()});
         }
         if (isRun) {
-            const distStream = await fetchStream('distance', start, end);
             const gradeDistStream = distStream && await fetchStream('grade_adjusted_distance', start, end);
             const gradeDistance = streamDelta(gradeDistStream);
-            const distance = streamDelta(distStream);
             if (!wattsStream && gradeDistance && ctx.weight) {
                 kj = sauce.pace.work(ctx.weight, gradeDistance);
-                tplData.power = {
-                    moving: kj * 1000 / movingTime,
-                    elapsed: kj * 1000 / elapsedTime
-                };
+                tplData.power = powerData(kj * 1000 / movingTime, kj * 1000 / elapsedTime,
+                    movingTime, elapsedTime, {estimate: true});
             }
             tplData.pace = gradeDistance && {
                 elapsed: humanPace(distance / elapsedTime, {velocity: true}),
@@ -1600,16 +1628,14 @@ sauce.ns('analysis', async ns => {
         _schedUpdateAnalysisPending = [start, end];
         if (!ctx.activity) {
             if (ctx.activity !== false) {
-                console.warn("Activity not ready yet, rescheduling analysis stats update");
                 setTimeout(() => schedUpdateAnalysisStats(null), 200);
             }
             return;
         }
         if (!ctx.$analysisStats) {
-            const $el = jQuery('.chart');
+            const $el = jQuery('#basic-analysis section.chart');
             if (!$el.length) {
                 if (ctx.activity !== false) {
-                    console.warn("Update analysis rescheduled due to DOM unreadiness.");
                     setTimeout(() => schedUpdateAnalysisStats(null), 200);
                 }
                 return;
@@ -1617,6 +1643,7 @@ sauce.ns('analysis', async ns => {
             attachAnalysisStats($el);
         }
         const id = ++_schedUpdateAnalysisId;
+        _schedUpdateAnalysisHash = hash;
         (async () => {
             try {
                 await _schedUpdateAnalysisPromise;
@@ -1627,7 +1654,6 @@ sauce.ns('analysis', async ns => {
             }
             _schedUpdateAnalysisPromise = _updateAnalysisStats(start, end);
             await _schedUpdateAnalysisPromise;
-            _schedUpdateAnalysisHash = hash;
         })();
     }
 
