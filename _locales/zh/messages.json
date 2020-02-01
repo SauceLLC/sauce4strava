@@ -54,7 +54,7 @@
         "message": "每小时攀登米"
     },
     "analysis_tss_tooltip": {
-        "message": "训练压力评分®：100 =最多1小时的努力"
+        "message": "训练压力评分®：基于功率的压力负荷指示器"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "开始工作的时间偏移"
@@ -66,7 +66,7 @@
         "message": "世界排名"
     },
     "analysis_peak_power_tooltip": {
-        "message": "峰值功率"
+        "message": "最大持续功率范围"
     },
     "analysis_low_hr_tooltip": {
         "message": "最低心率"
@@ -95,23 +95,20 @@
     "analysis_intensity_tooltip": {
         "message": "强度因子®"
     },
-    "analysis_critical_power_tooltip": {
-        "message": "临界功率：一段时间内维持的最大功率"
+    "analysis_peak_np_tooltip": {
+        "message": "最大归一化功率范围"
     },
-    "analysis_critical_np_tooltip": {
-        "message": "关键NP®：一段时间内维持的最大归一化功率"
+    "analysis_peak_hr_tooltip": {
+        "message": "最大持续心率范围"
     },
-    "analysis_critical_hr_tooltip": {
-        "message": "最高心率：一段时间内的最大持续心率"
+    "analysis_peak_vam_tooltip": {
+        "message": "最大持续爬升速度范围"
     },
-    "analysis_critical_vam_tooltip": {
-        "message": "VAM最快：一段时间内最大的持续爬升速度"
+    "analysis_peak_pace_tooltip": {
+        "message": "最大持续步伐范围"
     },
-    "analysis_critical_pace_tooltip": {
-        "message": "最佳步伐：在一定距离上保持最大步伐"
-    },
-    "analysis_critical_gap_tooltip": {
-        "message": "最佳GAP：在一段距离内持续保持的最高坡度调整速度"
+    "analysis_peak_gap_tooltip": {
+        "message": "最大持续成绩调整步幅范围"
     },
     "analysis_watt_estimate_tooltip": {
         "message": "这些值是根据瓦特数估算得出的。为了获得准确的值，需要使用有功功率测量设备。"
@@ -185,23 +182,23 @@
     "analysis_cadence": {
         "message": "韵律"
     },
-    "analysis_critical_power": {
-        "message": "关键力量"
+    "analysis_peak_power": {
+        "message": "峰值功率"
     },
-    "analysis_critical_np": {
-        "message": "关键NP®"
+    "analysis_peak_np": {
+        "message": "PeakNP®"
     },
-    "analysis_critical_hr": {
-        "message": "最高人力资源"
+    "analysis_peak_hr": {
+        "message": "高峰HR"
     },
-    "analysis_critical_vam": {
-        "message": "最快的VAM"
+    "analysis_peak_vam": {
+        "message": "高峰VAM"
     },
-    "analysis_critical_pace": {
-        "message": "最佳节奏"
+    "analysis_peak_pace": {
+        "message": "高峰步伐"
     },
-    "analysis_critical_gap": {
-        "message": "最佳GAP"
+    "analysis_peak_gap": {
+        "message": "峰值GAP"
     },
     "analysis_watts": {
         "message": "瓦数"

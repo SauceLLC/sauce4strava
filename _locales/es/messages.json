@@ -54,7 +54,7 @@
         "message": "Metros de escalada por hora"
     },
     "analysis_tss_tooltip": {
-        "message": "Training Stress Score®: 100 = esfuerzo máximo de 1 hora"
+        "message": "Training Stress Score®: un indicador de carga de estrés basado en potencia"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "Tiempo compensado al inicio de este esfuerzo"
@@ -66,7 +66,7 @@
         "message": "Ranking mundial"
     },
     "analysis_peak_power_tooltip": {
-        "message": "La punta del Poder"
+        "message": "Rangos máximos de potencia sostenida"
     },
     "analysis_low_hr_tooltip": {
         "message": "Frecuencia cardíaca más baja"
@@ -95,23 +95,20 @@
     "analysis_intensity_tooltip": {
         "message": "Intensity Factor®"
     },
-    "analysis_critical_power_tooltip": {
-        "message": "Poder crítico: poder máximo sostenido por un período de tiempo"
+    "analysis_peak_np_tooltip": {
+        "message": "Gamas de potencia normalizada máxima"
     },
-    "analysis_critical_np_tooltip": {
-        "message": "Critical NP®: potencia normalizada máxima sostenida durante un período de tiempo"
+    "analysis_peak_hr_tooltip": {
+        "message": "Rangos máximos sostenidos de frecuencia cardíaca"
     },
-    "analysis_critical_hr_tooltip": {
-        "message": "Frecuencia cardíaca más alta: FC máxima sostenida durante un período de tiempo"
+    "analysis_peak_vam_tooltip": {
+        "message": "Rangos máximos sostenidos de velocidad de escalada"
     },
-    "analysis_critical_vam_tooltip": {
-        "message": "VAM más rápido: velocidad de ascenso sostenida máxima durante un período de tiempo"
+    "analysis_peak_pace_tooltip": {
+        "message": "Rangos máximos de ritmo sostenido"
     },
-    "analysis_critical_pace_tooltip": {
-        "message": "Mejor ritmo: ritmo máximo sostenido en una distancia"
-    },
-    "analysis_critical_gap_tooltip": {
-        "message": "Mejor GAP: ritmo ajustado máximo de grado sostenido a distancia"
+    "analysis_peak_gap_tooltip": {
+        "message": "Rango de ritmo ajustado máximo sostenido"
     },
     "analysis_watt_estimate_tooltip": {
         "message": "Estos valores se calculan a partir de estimaciones de potencia. Para valores precisos se requiere un dispositivo de medición de potencia real."
@@ -185,23 +182,29 @@
     "analysis_cadence": {
         "message": "Cadencia"
     },
-    "analysis_critical_power": {
-        "message": "Poder critico"
+    "analysis_peak_power": {
+        "message": "Potencia Pico",
+        "description": "IMMUTABLE"
     },
-    "analysis_critical_np": {
-        "message": "Critical NP®"
+    "analysis_peak_np": {
+        "message": "NP® Pico",
+        "description": "IMMUTABLE"
     },
-    "analysis_critical_hr": {
-        "message": "HR más alta"
+    "analysis_peak_hr": {
+        "message": "Pulso Pico",
+        "description": "IMMUTABLE"
     },
-    "analysis_critical_vam": {
-        "message": "VAM más rápido"
+    "analysis_peak_vam": {
+        "message": "VAM Pico",
+        "description": "IMMUTABLE"
     },
-    "analysis_critical_pace": {
-        "message": "Mejor ritmo"
+    "analysis_peak_pace": {
+        "message": "Ritmo Pico",
+        "description": "IMMUTABLE"
     },
-    "analysis_critical_gap": {
-        "message": "Mejor brecha"
+    "analysis_peak_gap": {
+        "message": "RAP Pico",
+        "description": "IMMUTABLE"
     },
     "analysis_watts": {
         "message": "Vatios"
