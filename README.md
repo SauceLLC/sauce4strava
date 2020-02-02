@@ -5,8 +5,6 @@ The Sauce extension supplements athletic websites like https://strava.com with b
 cycling and running information.  It's a simple, lightweight and pure client-side javascript
 addition.  There are no external API calls made with this extension and it is open source.
 
-[![intro](http://img.youtube.com/vi/ySEDoexDyXU/0.jpg)](http://www.youtube.com/watch?v=ySEDoexDyXU)
-
 
 Feature Highlights
 --------
@@ -35,10 +33,8 @@ Feature Highlights
    * Hide promotions and challenges
 
 
-Screenshots
---------
-![screenshot1](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/peakpower_and_comments.jpg)
-![screenshot2](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/overview_stats.jpg)
+![slideshow](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/slideshow.gif)
+[![intro](http://img.youtube.com/vi/ySEDoexDyXU/0.jpg)](http://www.youtube.com/watch?v=ySEDoexDyXU)
 
 
 Installation
