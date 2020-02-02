@@ -35,10 +35,16 @@ Feature Highlights
    * Hide promotions and challenges
 
 
+Screenshots
+--------
+![screenshot1](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/peakpower_and_comments.jpg)
+![screenshot2](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/overview_stats.jpg)
+
+
 Installation
 --------
 #### Official version:
-[![chrome web store](images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
+[![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
 
 #### Development version:
  1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
