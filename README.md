@@ -11,7 +11,7 @@ Feature Highlights
  * Peak performance table:
    * Power
    * Normalized Power
-   * Heartrate
+   * Heart Rate
    * Pace
    * Grade Adjusted Pace
    * VAM (climbing speed)
