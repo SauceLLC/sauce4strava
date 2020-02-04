@@ -40,7 +40,7 @@ Feature Highlights
 Installation
 --------
 #### Official version:
-[![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/strava-sauce/eigiefcapdcdmncdghkeahgfmnobigha)
+[![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha) 
 
 #### Development version:
  1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
@@ -126,10 +126,9 @@ Release Notes
 
 Disclaimer
 --------
-I don't work for Strava nor have I interacted with any persons from Strava in the writing
-of this extension.  Much of the work is inspired by the Strava Enhancement Suite, which I
-can also recommend in conjunction with this extension.  All the information used in this
-extension is readily available within the Strava.com website.
+I don't work for Strava nor have I interacted with any persons from Strava in
+the writing of this extension.  All the information used in this extension is
+readily available within the Strava.com website.
 
 
 Legal
