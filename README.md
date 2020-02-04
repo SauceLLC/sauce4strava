@@ -34,7 +34,7 @@ Feature Highlights
 
 
 ![slideshow](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/slideshow.gif)
-[![intro](http://img.youtube.com/vi/ySEDoexDyXU/0.jpg)](http://www.youtube.com/watch?v=ySEDoexDyXU)
+[![intro](http://img.youtube.com/vi/VkxEnBb1YhA/0.jpg)](http://www.youtube.com/watch?v=VkxEnBb1YhA)
 
 
 Installation
