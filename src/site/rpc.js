@@ -1,20 +1,55 @@
-/* global sauce chrome */
+/* global sauce */
 
 sauce.ns('rpc', function() {
     'use strict';
 
+    self.browser = self.browser || self.chrome;
 
-    function _sendMessage(msg) {
-        return new Promise((resolve, reject) => {
-            chrome.runtime.sendMessage(sauce.extID, msg, resp => {
-                if (resp === undefined || !resp.success) {
-                    const err = resp ? resp.error : 'general error';
-                    reject(new Error(err));
-                } else {
-                    resolve(resp.data);
-                }
+
+    let _sendMessage;
+
+    if (self.browser && false) {
+        _sendMessage = function(msg) {
+            return new Promise((resolve, reject) => {
+                browser.runtime.sendMessage(sauce.extID, msg, resp => {
+                    if (resp === undefined || !resp.success) {
+                        const err = resp ? resp.error : 'general error';
+                        reject(new Error(err));
+                    } else {
+                        resolve(resp.data);
+                    }
+                });
             });
+        }
+    } else {
+        let rpcId = 0;
+        let rpcCallbacks = new Map();
+
+        document.addEventListener('saucerpcresponse', ev => {
+            debugger;
         });
+
+        _sendMessage = function(msg) {
+            return new Promise((resolve, reject) => {
+                const id = rpcId++;
+                const request = new CustomEvent('saucerpcrequest', {
+                    detail: {
+                        id,
+                        msg,
+                        extId: sauce.extID,
+                    }
+                });
+                rpcCallbacks.set(id, resp => {
+                    if (resp === undefined || !resp.success) {
+                        const err = resp ? resp.error : 'general error';
+                        reject(new Error(err));
+                    } else {
+                        resolve(resp.data);
+                    }
+                });
+                document.dispatchEvent(request);
+            });
+        }
     }
 
 

@@ -1,7 +1,9 @@
-/* global sauce, chrome */
+/* global sauce */
 
 (function() {
     'use strict';
+
+    self.browser = self.browser || self.chrome;
 
     function sleep(seconds) {
         return new Promise(resolve => setTimeout(resolve, seconds * 1000));
@@ -119,7 +121,7 @@
                     "analysis-cp-chart": true,
                     "activity-hide-promotions": true
                 });
-                chrome.tabs.reload();
+                browser.tabs.reload();
                 window.location.reload();
             });
         });
@@ -150,7 +152,7 @@
             await renderRanges(rangesEl);
             await renderAthleteInfo(athleteEl);
             status.textContent = 'Saved';
-            chrome.tabs.reload();
+            browser.tabs.reload();
             await sleep(5);
             status.textContent = '';
         });

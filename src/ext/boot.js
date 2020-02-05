@@ -1,7 +1,9 @@
-/* global chrome, sauce */
+/* global sauce */
 
 (async function() {
     'use strict';
+
+    self.browser = self.browser || self.chrome;
 
     const manifests = [{
         name: 'Analysis',
@@ -103,7 +105,7 @@
 
     function sendMessageToBackground(msg) {
         return new Promise((resolve, reject) => {
-            chrome.runtime.sendMessage(undefined, msg, undefined, resp => {
+            browser.runtime.sendMessage(undefined, msg, undefined, resp => {
                 if (resp === undefined || !resp.success) {
                     const err = resp ? resp.error : 'general error';
                     reject(new Error(err));
@@ -172,7 +174,7 @@
 
 
     async function load() {
-        const extUrl = chrome.extension.getURL('');
+        const extUrl = browser.extension.getURL('');
         await loadScript(`${extUrl}src/site/preloader.js`, {blocking: true, top: true});
         const config = await initConfig();
         if (config.enabled === false) {
@@ -180,14 +182,14 @@
             return;
         }
         document.documentElement.classList.add('sauce-enabled');
-        const appDetails = await sendMessageToBackground({system: 'app', op: 'getDetails'});
+        const manifest = browser.runtime.getManifest();
         insertScript(`
             self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(config.options)};
             sauce.extURL = "${extUrl}";
-            sauce.extID = "${chrome.runtime.id}";
-            sauce.name = "${appDetails.name}";
-            sauce.version = "${appDetails.version}";
+            sauce.extID = "${browser.runtime.id}";
+            sauce.name = "${manifest.name}";
+            sauce.version = "${manifest.version}";
         `);
         for (const x of manifests) {
             if (location.pathname.match(x.pathMatch)) {
@@ -199,5 +201,5 @@
         }
     }
 
-    load();
+    load().catch(e => {console.error(e); debugger;});
 })();

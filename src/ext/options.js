@@ -1,7 +1,9 @@
-/* global sauce chrome */
+/* global sauce */
 
 (function() {
     'use strict';
+
+    self.browser = self.browser || self.chrome;
 
     function manageEnabler(enabled) {
         function toggle(en) {
@@ -17,7 +19,7 @@
             x.addEventListener('click', async () => {
                 await sauce.storage.set('enabled', !enabled);
                 toggle(!enabled);
-                chrome.tabs.reload();
+                browser.tabs.reload();
             });
         }
         toggle(enabled);
@@ -31,17 +33,17 @@
             input.addEventListener('change', async ev => {
                 options[input.id] = input.checked;
                 await sauce.storage.set('options', options);
-                chrome.tabs.reload();
+                browser.tabs.reload();
             });
         }
     }
 
     async function main() {
         const details_el = document.querySelector('#details > tbody');
-        const appDetail = chrome.app.getDetails();
+        const manifest = browser.runtime.getManifest();
         const details_list = [
-            ['Version', appDetail.version_name || appDetail.version],
-            ['Author', appDetail.author]
+            ['Version', manifest.version_name || manifest.version],
+            ['Author', manifest.author]
         ];
         details_list.forEach(function(x) {
             details_el.innerHTML += [

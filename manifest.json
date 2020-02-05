@@ -12,7 +12,7 @@
     
     "permissions": [
         "storage",
-        "declarativeContent"
+        "tabs"
     ],
 
     "icons": {
@@ -28,8 +28,8 @@
         "scripts": [
             "src/ext/ga.js",
             "src/ext/storage.js",
-            "src/bg/page_rules.js",
-            "src/bg/rpc.js"
+            "src/ext/rpc.js",
+            "src/bg/page_rules.js"
         ],
         "persistent": false
     },
@@ -47,10 +47,8 @@
         "default_popup": "pages/options.html"
     },
 
-    "options_page": "pages/options.html",
     "options_ui": {
-        "page": "pages/options.html",
-        "open_in_tab": true
+        "page": "pages/options.html"
     },
 
     "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
@@ -65,7 +63,12 @@
     }, {
         "run_at": "document_start",
         "matches": ["*://*.strava.com/*"],
-        "js": ["src/ext/storage.js", "src/ext/boot.js"]
+        "js": [
+            "src/ext/ga.js",
+            "src/ext/storage.js",
+            "src/ext/rpc.js",
+            "src/ext/boot.js"
+        ]
     }],
 
     "externally_connectable": {

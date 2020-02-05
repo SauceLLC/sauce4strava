@@ -26,7 +26,7 @@
         ga('create', 'UA-64711223-1', 'auto', name);
         const tracker = await ns.getTracker(name);
         tracker.set('transport', 'beacon');
-        tracker.set('checkProtocolTask', () => undefined);  // needed when used in chrome ext.
+        tracker.set('checkProtocolTask', () => undefined);  // needed when used in an ext.
         return tracker;
     };
 
