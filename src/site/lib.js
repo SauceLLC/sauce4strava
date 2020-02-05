@@ -90,16 +90,30 @@ sauce.ns('data', function() {
     }
 
 
+    let _useSafeSampleRate = false;
     async function resample(inData, outLen, options) {
-        const minSampleRate = 3000;  // chromium min
-        const maxSampleRate = 300000; // chromium max
+        const minBestSampleRate = 3000;  // chromium min
+        const maxBestSampleRate = 300000; // chromium max
+        const minSafeSampleRate = 8000;  // spec min
+        const maxSafeSampleRate = 96000; // spec max
+        const minSampleRate = _useSafeSampleRate ? minSafeSampleRate : minBestSampleRate;
+        const maxSampleRate = _useSafeSampleRate ? maxSafeSampleRate : maxBestSampleRate;
         let outData;
         let ratio = outLen / inData.length;
         if (ratio > 1) {
             let scratch = Float32Array.from(inData);
             do {
                 const outSampleRate = Math.min(maxSampleRate, ratio * minSampleRate);
-                scratch = await _resample(scratch, minSampleRate, outSampleRate);
+                try {
+                    scratch = await _resample(scratch, minSampleRate, outSampleRate);
+                } catch(e) {
+                    if (!_useSafeSampleRate && e.name === 'NotSupportedError') {
+                        _useSafeSampleRate = true;
+                        return await resample(inData, outLen, options);
+                    } else {
+                        throw e;
+                    }
+                }
                 ratio = outLen / scratch.length;
             } while (ratio > 1);
             outData = scratch;
@@ -107,7 +121,16 @@ sauce.ns('data', function() {
             let scratch = Float32Array.from(inData);
             do {
                 const outSampleRate = Math.max(minSampleRate, ratio * maxSampleRate);
-                scratch = await _resample(scratch, maxSampleRate, outSampleRate);
+                try {
+                    scratch = await _resample(scratch, maxSampleRate, outSampleRate);
+                } catch(e) {
+                    if (!_useSafeSampleRate && e.name === 'NotSupportedError') {
+                        _useSafeSampleRate = true;
+                        return await resample(inData, outLen, options);
+                    } else {
+                        throw e;
+                    }
+                }
                 ratio = outLen / scratch.length;
             } while (ratio < 1);
             outData = scratch;
