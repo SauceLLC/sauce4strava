@@ -892,7 +892,30 @@ sauce.ns('tools', function(ns) {
         draw();
     }
 
+
+    async function benchRPC(iterations, options) {
+        iterations = iterations || 100;
+        options = options || {};
+        const jobs = [];
+        const start = Date.now();
+        for (let i = 0; i < iterations; i++) {
+            if (options.concurrent) {
+                jobs.push(sauce.rpc.ping(i, options.payload));
+            } else {
+                await sauce.rpc.ping(i, options.payload);
+            }
+        }
+        if (options.concurrent) {
+            await Promise.all(jobs);
+        }
+        const done = Date.now();
+        const elapsed = (done - start) / 1000;
+        const payloadSize = options.payload ? JSON.stringify(options.payload).length : 0;
+        console.warn(`Bench RPC: ${(iterations / elapsed).toFixed(2)} iter/sec, ${elapsed.toFixed(3)} elapsed, payload-size-est: ${payloadSize}`);
+    }
+
     return {
-        sparklineDialog
+        sparklineDialog,
+        benchRPC
     };
 });

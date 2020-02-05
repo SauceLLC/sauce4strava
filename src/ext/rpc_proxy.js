@@ -1,17 +1,33 @@
-/* global browser */
+/* global sauce, browser */
 
 (function() {
     'use strict';
 
+    self.sauce = self.sauce || {};
+    sauce.rpc = sauce.rpc || {};
+
+
+    async function messageHandler(msg) {
+        const hook = sauce.rpc.hooks[msg.system][msg.op];
+        if (hook.options && hook.options.backgroundOnly) {
+            console.error("forward this one");
+            return await browser.runtime.sendMessage(msg);
+        } else {
+            console.error("locally handle this one");
+            return await hook.callback(msg.data);
+        }
+    }
+
+
     window.addEventListener('message', async ev => {
         if (ev.source !== window || !ev.data || ev.data.extId !== browser.runtime.id ||
             ev.data.type !== 'sauce-rpc-request') {
-            console.error("DROP EVENT", ev, ev.data, browser.runtime.id, ev.source, window);
+            //console.error("DROP EVENT", ev, ev.data, browser.runtime.id, ev.source, window);
             return;
         }
         let data;
         try {
-            const result = await browser.runtime.sendMessage(ev.data.msg);
+            const result = await messageHandler(ev.data.msg);
             data = {success: true, rid: ev.data.rid, result};
         } catch(e) {
             console.error('RPC Listener:', e);
@@ -20,23 +36,5 @@
         data.extId = browser.runtime.id;
         data.type = 'sauce-rpc-response';
         ev.source.postMessage(data);
-    });
-
-    document.addEventListener('saucerpcrequest', async ev => {
-        const req = ev.detail;
-        if (!req || req.extId != browser.runtime.id) {
-            console.warn("ignore event", ev);
-            return;
-        }
-        const view = document.defaultView;
-        let respEv;
-        try {
-            const data = await browser.runtime.sendMessage(req.msg);
-            respEv = new view.CustomEvent('saucerpcresponsesuccess', {detail: {rid: req.rid, data, foo: 'bar'}});
-        } catch(e) {
-            console.error('RPC Listener:', e);
-            respEv = new view.CustomEvent('saucerpcresponseerror', {detail: {rid: req.rid, error: e.message}});
-        }
-        document.dispatchEvent(respEv);
     });
 })();
