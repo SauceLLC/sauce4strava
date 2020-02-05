@@ -26,9 +26,11 @@
 
     "background": {
         "scripts": [
+            "src/ext/webext.js",
             "src/ext/ga.js",
             "src/ext/storage.js",
             "src/ext/rpc.js",
+            "src/bg/migrate.js",
             "src/bg/main_declaritive.js"
         ],
         "persistent": false
@@ -64,6 +66,7 @@
         "run_at": "document_start",
         "matches": ["*://*.strava.com/*"],
         "js": [
+            "src/ext/webext.js",
             "src/ext/storage.js",
             "src/ext/boot.js"
         ]

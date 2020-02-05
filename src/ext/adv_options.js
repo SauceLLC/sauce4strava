@@ -1,9 +1,8 @@
-/* global sauce */
+/* global sauce, browser */
 
 (function() {
     'use strict';
 
-    self.browser = self.browser || self.chrome;
 
     function sleep(seconds) {
         return new Promise(resolve => setTimeout(resolve, seconds * 1000));

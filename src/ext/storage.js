@@ -1,10 +1,8 @@
-/* global */
+/* global browser */
 
 
 (function () {
     "use strict";
-
-    self.browser = self.browser || self.chrome;
 
     self.sauce = self.sauce || {};
     const ns = self.sauce.storage = {};
@@ -21,21 +19,6 @@
     }
 
 
-    function promiseStorage(method, ...args) {
-        const iface = getStorageInterface();
-        return new Promise((resolve, reject) => {
-            args.push(x => {
-                if (browser.runtime.lastError) {
-                    reject(lastError);
-                } else {
-                    resolve(x);
-                }
-            });
-            iface[method].apply(iface, args);
-        });
-    }
-   
-
     ns.set = async function(key, value) {
         let data;
         if (typeof key === 'object' && value === undefined) {
@@ -43,19 +26,23 @@
         } else {
             data = {[key]: value};
         }
-        return await promiseStorage('set', data);
+        const storage = getStorageInterface();
+        return await storage.set(data);
     };
 
     ns.get = async function(key) {
-        const o = await promiseStorage('get', key);
+        const storage = getStorageInterface();
+        const o = await storage.get(key);
         return typeof key === 'string' ? o[key] : o;
     };
 
     ns.remove = async function(key) {
-        return await promiseStorage('remove', key);
+        const storage = getStorageInterface();
+        return await storage.remove(key);
     };
 
     ns.clear = async function() {
-        return await promiseStorage('clear');
+        const storage = getStorageInterface();
+        return await storage.clear();
     };
 })();

@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, browser */
 
 sauce.ns('rpc', function() {
     'use strict';
@@ -7,51 +7,69 @@ sauce.ns('rpc', function() {
 
     let _sendMessage;
 
-    if (self.browser && false) {
-        _sendMessage = function(msg) {
-            return new Promise((resolve, reject) => {
-                browser.runtime.sendMessage(sauce.extID, msg, resp => {
-                    if (resp === undefined || !resp.success) {
-                        const err = resp ? resp.error : 'general error';
-                        reject(new Error(err));
-                    } else {
-                        resolve(resp.data);
-                    }
-                });
-            });
-        }
-    } else {
+    if (self.browser && Math.random() < 0) {
+        _sendMessage = async function(msg) {
+            // Requires message support from page script to background script (chrome only)
+            return await browser.runtime.sendMessage(sauce.extId, msg);
+        };
+    } else if (Math.random() < 0) {
         let rpcId = 0;
         let rpcCallbacks = new Map();
-
-        document.addEventListener('saucerpcresponse', ev => {
+        document.addEventListener('saucerpcresponsesuccess', ev => {
             const rid = ev.detail.rid;
-            const resp = rpcCallbacks.get(rid);
+            const {resolve} = rpcCallbacks.get(rid);
             rpcCallbacks.delete(rid);
-            resp(ev.detail);
+            resolve(ev.detail.data);
         });
-
+        document.addEventListener('saucerpcresponseerror', ev => {
+            const rid = ev.detail.rid;
+            const {reject} = rpcCallbacks.get(rid);
+            rpcCallbacks.delete(rid);
+            reject(new Error(ev.detail.error || 'unknown rpc error'));
+        });
         _sendMessage = function(msg) {
             return new Promise((resolve, reject) => {
                 const rid = rpcId++;
-                const request = new CustomEvent('saucerpcrequest', {
-                    detail: {
-                        rid,
-                        msg,
-                        extId: sauce.extID,
-                    }
-                });
-                rpcCallbacks.set(rid, resp => {
-                    if (resp === undefined || !resp.success) {
-                        const err = resp ? resp.error : 'general error';
-                        reject(new Error(err));
-                    } else {
-                        resolve(resp.data ? JSON.parse(resp.data) : resp.data);
-                    }
-                });
-                document.dispatchEvent(request);
+                const ev = new CustomEvent('saucerpcrequest', {detail: {rid, msg, extId: sauce.extId}});
+                rpcCallbacks.set(rid, {resolve, reject});
+                document.dispatchEvent(ev);
             });
-        }
+        };
+    } else {
+        let rpcId = 0;
+        let rpcCallbacks = new Map();
+        window.addEventListener('message', ev => {
+            if (ev.source !== window || !ev.data || ev.data.extId !== sauce.extId ||
+                ev.data.type !== 'sauce-rpc-response') {
+                console.error("DROP EV FROM EXT", ev, ev.data, ev.source, window);
+                return;
+            }
+            if (ev.data.success === true) {
+                const rid = ev.data.rid;
+                const {resolve} = rpcCallbacks.get(rid);
+                rpcCallbacks.delete(rid);
+                resolve(ev.data.result);
+            } else if (ev.data.success === false) {
+                const rid = ev.data.rid;
+                const {reject} = rpcCallbacks.get(rid);
+                rpcCallbacks.delete(rid);
+                reject(new Error(ev.data.result || 'unknown rpc error'));
+            } else {
+                throw new TypeError("RPC protocol violation");
+            }
+        });
+        _sendMessage = function(msg) {
+            return new Promise((resolve, reject) => {
+                const rid = rpcId++;
+                rpcCallbacks.set(rid, {resolve, reject});
+                window.postMessage({
+                    type: 'sauce-rpc-request',
+                    rid,
+                    msg,
+                    extId: sauce.extId
+                }, /* sauce.extUrl */);
+            });
+        };
     }
 
 

@@ -1,9 +1,7 @@
-/* global chrome, ga */
+/* global ga, browser, sauce */
 
 (function() {
     'use strict';
-
-    self.browser = self.browser || self.chrome;
 
 
     function reportLifecycleEvent(action, label) {
@@ -11,7 +9,7 @@
     }
 
 
-    browser.runtime.onInstalled.addListener(details => {
+    browser.runtime.onInstalled.addListener(async details => {
         browser.declarativeContent.onPageChanged.removeRules(undefined, () => {
             browser.declarativeContent.onPageChanged.addRules([{
                 actions: [new browser.declarativeContent.ShowPageAction()],
@@ -23,8 +21,7 @@
                 })],
             }]);
         });
-        if (details.reason === 'install') {
-            reportLifecycleEvent('install');
-        }
+        reportLifecycleEvent('installed', details.reason);
+        await sauce.migrate.runMigrations();
     });
 })();

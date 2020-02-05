@@ -10,7 +10,7 @@ sauce.ns('analysis', async ns => {
     ]);
 
     const ctx = {};
-    const tplUrl = sauce.extURL + 'templates';
+    const tplUrl = sauce.extUrl + 'templates';
 
     const distanceFormatter = new Strava.I18n.DistanceFormatter();
     const metricDistanceFormatter = new Strava.I18n.DistanceFormatter(
@@ -1102,7 +1102,7 @@ sauce.ns('analysis', async ns => {
         const betaLocale = await sauce.locale.getMessage('analysis_beta');
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
         const sauceIcon = `<img title="Powered by Sauce" class="sauce-icon"
-                                src="${sauce.extURL}images/icon64.png"/>`;
+                                src="${sauce.extUrl}images/icon64.png"/>`;
         const gpxLink = document.createElement('li');
         gpxLink.classList.add('sauce', 'first');
         gpxLink.innerHTML = `<a title="NOTE: GPX files do not support power data (watts)."

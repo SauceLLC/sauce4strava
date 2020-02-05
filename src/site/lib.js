@@ -636,7 +636,7 @@ sauce.ns('power', function() {
         }
     };
 
-    const badgeURN = `${sauce.extURL}images/ranking`;
+    const badgeURN = `${sauce.extUrl}images/ranking`;
     const rankLevels = [{
         levelRequirement: 7 / 8,
         label: 'World Class',
@@ -830,7 +830,7 @@ sauce.ns('images', function(ns) {
     async function asText(path) {
         if (!textCache.has(path)) {
             try {
-                const resp = await fetch(`${sauce.extURL}images/${path.replace(/^\/+/, '')}`);
+                const resp = await fetch(`${sauce.extUrl}images/${path.replace(/^\/+/, '')}`);
                 textCache.set(path, await resp.text());
             } catch(e) {
                 console.warn("Failed to fetch image:", path, e);

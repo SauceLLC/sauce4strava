@@ -1,11 +1,10 @@
-/* global sauce */
+/* global sauce, browser */
 
 (function() {
     'use strict';
 
     const hooks = {};
 
-    self.browser = self.browser || self.chrome;
 
     function addHook(system, op, callback) {
         const sysTable = hooks[system] || (hooks[system] = {});
@@ -42,18 +41,9 @@
     addHook('locale', 'getMessages', batch => batch.map(x => _getI18nMessage(x)));
 
 
-    async function onMessage(msg, sender, setResponse) {
-        try {
-            const hook = hooks[msg.system][msg.op];
-            const data = await hook.call(sender, msg.data);
-            setResponse({success: true, data});
-        } catch(e) {
-            console.error('RPC Listener:', e);
-            setResponse({
-                success: false,
-                error: e.message
-            });
-        }
+    async function onMessage(msg, sender) {
+        const hook = hooks[msg.system][msg.op];
+        return await hook.call(sender, msg.data);
     }
 
     browser.runtime.onMessageExternal.addListener(onMessage);

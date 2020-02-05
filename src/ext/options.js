@@ -1,9 +1,8 @@
-/* global sauce */
+/* global sauce, browser */
 
 (function() {
     'use strict';
 
-    self.browser = self.browser || self.chrome;
 
     function manageEnabler(enabled) {
         function toggle(en) {
