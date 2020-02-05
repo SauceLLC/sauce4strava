@@ -623,7 +623,7 @@ sauce.ns('analysis', async ns => {
                 return;
             }
             const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
-            const distRanges = ctx.allDistRanges.filter(x => x.value <= elapsedTime);
+            const distRanges = ctx.allDistRanges;
             const panel = new PeakEffortsPanel({
                 type: 'run',
                 menu,
@@ -1836,8 +1836,6 @@ sauce.ns('analysis', async ns => {
             }
         };
     }
-
-
 
     return {
         load,

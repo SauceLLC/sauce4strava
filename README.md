@@ -40,7 +40,7 @@ Feature Highlights
 Installation
 --------
 #### Official version:
-[![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha) 
+[![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
 
 #### Development version:
  1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
