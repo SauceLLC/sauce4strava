@@ -3,19 +3,6 @@
 sauce.ns('rpc', function() {
     'use strict';
 
-    function invoke(msg) {
-        return new Promise((resolve, reject) => {
-            const rid = rpcId++;
-            rpcCallbacks.set(rid, {resolve, reject});
-            window.postMessage({
-                type: 'sauce-rpc-request',
-                rid,
-                msg,
-                extId: sauce.extId
-            }, /* sauce.extUrl */);
-        });
-    }
-
 
     async function storageSet(key, value) {
         let data;
@@ -106,28 +93,76 @@ sauce.ns('rpc', function() {
     }
 
 
-    let rpcId = 0;
-    let rpcCallbacks = new Map();
-    window.addEventListener('message', ev => {
-        if (ev.source !== window || !ev.data || ev.data.extId !== sauce.extId ||
-            ev.data.type !== 'sauce-rpc-response') {
-            //console.error("DROP EV FROM EXT", ev, ev.data, ev.source, window);
-            return;
-        }
-        if (ev.data.success === true) {
-            const rid = ev.data.rid;
-            const {resolve} = rpcCallbacks.get(rid);
-            rpcCallbacks.delete(rid);
-            resolve(ev.data.result);
-        } else if (ev.data.success === false) {
-            const rid = ev.data.rid;
-            const {reject} = rpcCallbacks.get(rid);
-            rpcCallbacks.delete(rid);
-            reject(new Error(ev.data.result || 'unknown rpc error'));
-        } else {
-            throw new TypeError("RPC protocol violation");
-        }
-    });
+    async function bgping(...data) {
+        return await invoke({system: 'util', op: 'bgping', data});
+    }
+
+
+    const _invokePromise = (async () => {
+        // Instead of just broadcasting all RPC over window 'message' events, create a channel
+        // which is like a unix pipe pair and transfer one of the ports to the ext for us
+        // to securely and performantly talk over.
+        const rpcCallbacks = new Map();
+        const reqChannel = new MessageChannel();
+        const reqPort = reqChannel.port1;
+        await new Promise((resolve, reject) => {
+            function onMessageEstablishChannelAck(ev) {
+                reqPort.removeEventListener('message', onMessageEstablishChannelAck);
+                if (!ev.data || ev.data.extId !== sauce.extId ||
+                    ev.data.type !== 'sauce-rpc-establish-channel-ack') {
+                    reject(new Error('RPC PROTOCOL VIOLATION FROM CONTENT [ACK]!'));
+                    return;
+                }
+                const respPort = ev.ports[0];
+                respPort.addEventListener('message', ev => {
+                    if (!ev.data || ev.data.extId !== sauce.extId || ev.data.type !== 'sauce-rpc-response') {
+                        throw new Error('RPC PROTOCOL VIOLATION FROM CONTENT [RESP]!');
+                    }
+                    if (ev.data.success === true) {
+                        const rid = ev.data.rid;
+                        const {resolve} = rpcCallbacks.get(rid);
+                        rpcCallbacks.delete(rid);
+                        resolve(ev.data.result);
+                    } else if (ev.data.success === false) {
+                        const rid = ev.data.rid;
+                        const {reject} = rpcCallbacks.get(rid);
+                        rpcCallbacks.delete(rid);
+                        reject(new Error(ev.data.result || 'unknown rpc error'));
+                    } else {
+                        throw new TypeError("RPC protocol violation");
+                    }
+                });
+                respPort.start();
+                console.info("Established secure RPC channel");
+                resolve();
+            }
+            reqPort.addEventListener('message', onMessageEstablishChannelAck);
+            reqPort.addEventListener('messageerror', ev => console.error('Message Error:', ev));
+            reqPort.start();
+            window.postMessage({
+                type: 'sauce-rpc-establish-channel',
+                extId: sauce.extId,
+            }, self.origin, [reqChannel.port2]);
+        });
+        let rpcId = 0;
+        return msg => {
+            return new Promise((resolve, reject) => {
+                const rid = rpcId++;
+                rpcCallbacks.set(rid, {resolve, reject});
+                reqPort.postMessage({
+                    type: 'sauce-rpc-request',  // XXX redundant
+                    rid,
+                    msg,
+                    extId: sauce.extId  // XXX redundant
+                });
+            });
+        };
+    })();
+
+    let invoke = async msg => {
+        invoke = await _invokePromise;
+        return await invoke(msg);
+    };
 
     return {
         getAthleteInfo,
@@ -143,5 +178,6 @@ sauce.ns('rpc', function() {
         getLocaleMessage,
         getLocaleMessages,
         ping,
+        bgping,
     };
 });

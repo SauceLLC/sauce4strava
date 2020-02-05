@@ -898,11 +898,12 @@ sauce.ns('tools', function(ns) {
         options = options || {};
         const jobs = [];
         const start = Date.now();
+        const ping = options.bg ? sauce.rpc.bgping : sauce.rpc.ping;
         for (let i = 0; i < iterations; i++) {
             if (options.concurrent) {
-                jobs.push(sauce.rpc.ping(i, options.payload));
+                jobs.push(ping(i, options.payload));
             } else {
-                await sauce.rpc.ping(i, options.payload);
+                await ping(i, options.payload);
             }
         }
         if (options.concurrent) {
