@@ -45,6 +45,7 @@
     addHook('locale', 'getMessage', _getI18nMessage);
     addHook('locale', 'getMessages', batch => batch.map(x => _getI18nMessage(x)));
     addHook('util', 'ping', x => x);
+    addHook('util', 'pingBackground', x => x, {backgroundOnly: true});
     addHook('storage', 'update', (() => {
         let _activeUpdate;
         return async ({keyPath, updates}) => {

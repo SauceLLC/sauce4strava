@@ -85,7 +85,7 @@
             if (initialVersion && initialVersion >= x.version) {
                 continue;
             }
-            console.warn("Running migration:", x.name, x.version);
+            console.info("Running migration:", x.name, x.version);
             try {
                 await x.migrate(await sauce.storage.get(null));
             } catch(e) {

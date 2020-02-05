@@ -10,10 +10,8 @@
     async function messageHandler(msg) {
         const hook = sauce.rpc.hooks[msg.system][msg.op];
         if (hook.options && hook.options.backgroundOnly) {
-            console.error("forward this one");
             return await browser.runtime.sendMessage(msg);
         } else {
-            console.error("locally handle this one");
             return await hook.callback(msg.data);
         }
     }

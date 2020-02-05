@@ -1,4 +1,4 @@
-/* global ga */
+/* global ga, browser */
 
 (async function () {
     "use strict";
@@ -25,12 +25,15 @@
     ns.createTracker = async function(name) {
         ga('create', 'UA-64711223-1', 'auto', name);
         const tracker = await ns.getTracker(name);
-        tracker.set('transport', 'beacon');
+        if (navigator.sendBeacon) {
+            tracker.set('transport', 'beacon');
+        }
         tracker.set('checkProtocolTask', () => undefined);  // needed when used in an ext.
         return tracker;
     };
 
-    /* Create default tracker automatically */
-    const t = await ns.createTracker();
-    t.send('pageview', location.pathname);
+    if (await browser.runtime.getBackgroundPage() !== self) {
+        const t = await ns.createTracker();
+        t.send('pageview', location.pathname);
+    }
 })();
