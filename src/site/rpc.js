@@ -5,7 +5,6 @@ sauce.ns('rpc', function() {
 
     self.browser = self.browser || self.chrome;
 
-
     let _sendMessage;
 
     if (self.browser && false) {
@@ -26,25 +25,28 @@ sauce.ns('rpc', function() {
         let rpcCallbacks = new Map();
 
         document.addEventListener('saucerpcresponse', ev => {
-            debugger;
+            const rid = ev.detail.rid;
+            const resp = rpcCallbacks.get(rid);
+            rpcCallbacks.delete(rid);
+            resp(ev.detail);
         });
 
         _sendMessage = function(msg) {
             return new Promise((resolve, reject) => {
-                const id = rpcId++;
+                const rid = rpcId++;
                 const request = new CustomEvent('saucerpcrequest', {
                     detail: {
-                        id,
+                        rid,
                         msg,
                         extId: sauce.extID,
                     }
                 });
-                rpcCallbacks.set(id, resp => {
+                rpcCallbacks.set(rid, resp => {
                     if (resp === undefined || !resp.success) {
                         const err = resp ? resp.error : 'general error';
                         reject(new Error(err));
                     } else {
-                        resolve(resp.data);
+                        resolve(resp.data ? JSON.parse(resp.data) : resp.data);
                     }
                 });
                 document.dispatchEvent(request);
