@@ -1,82 +1,16 @@
 {
-    "manifest_version": 2,
-    "default_locale": "en",
-
-    "name": "Sauce for Strava™",
-    "short_name": "Sauce",
-    "description": "__MSG_app_desc__",
-    "author": "Justin Mayfield",
-    "version": "5.1.0",
-    "minimum_chrome_version": "60",
-    
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "sauce-for-strava-by-justin-mayfield",
+            "strict_min_version": "68"
+        }
+    },
     "permissions": [
-        "storage",
         "tabs"
     ],
-
-    "icons": {
-        "16": "images/icon16.png",
-        "32": "images/icon32.png",
-        "48": "images/icon48.png",
-        "64": "images/icon64.png",
-        "128": "images/icon128.png",
-        "256": "images/icon256.png"
-    },
-
     "background": {
         "scripts": [
-            "src/ext/webext.js",
-            "src/ext/ga.js",
-            "src/ext/storage.js",
-            "src/ext/rpc_hooks.js",
-            "src/bg/rpc.js",
-            "src/bg/migrate.js",
             "src/bg/main_legacy.js"
         ]
-    },
-
-    "page_action": {
-        "default_icon": {
-            "19": "images/icon19.png",
-            "38": "images/icon38.png",
-            "48": "images/icon48.png",
-            "64": "images/icon64.png",
-            "128": "images/icon128.png",
-            "256": "images/icon256.png"
-        },
-        "default_title": "Sauce for Strava™",
-        "default_popup": "pages/options.html"
-    },
-
-    "options_ui": {
-        "page": "pages/options.html"
-    },
-
-    "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
-
-    "content_scripts": [{
-        "run_at": "document_idle",
-        "matches": ["*://*.strava.com/*"],
-        "css": [
-            "css/site/overrides.css",
-            "css/site/analysis.css"
-        ]
-    }, {
-        "run_at": "document_start",
-        "matches": ["*://*.strava.com/*"],
-        "js": [
-            "src/ext/webext.js",
-            "src/ext/storage.js",
-            "src/ext/rpc_hooks.js",
-            "src/ext/rpc_proxy.js",
-            "src/ext/boot.js"
-        ]
-    }],
-
-    "web_accessible_resources": [
-        "src/common/*",
-        "src/site/*",
-        "templates/*",
-        "images/*"
-    ]
+    }
 }
