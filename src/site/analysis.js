@@ -1,4 +1,4 @@
-/* global Strava sauce jQuery pageView _ */
+/* global Strava, sauce, jQuery, pageView, _ */
 
 sauce.ns('analysis', async ns => {
     'use strict';
@@ -9,7 +9,11 @@ sauce.ns('analysis', async ns => {
         sauce.propDefined('_')
     ]);
 
-    const ctx = {};
+    let _resolvePrepared;
+    const ctx = {
+        prepared: new Promise(resolve => void (_resolvePrepared = resolve))
+    };
+
     const tplUrl = sauce.extUrl + 'templates';
 
     const distanceFormatter = new Strava.I18n.DistanceFormatter();
@@ -64,28 +68,22 @@ sauce.ns('analysis', async ns => {
     };
 
 
-    let _activity;
+    let _fullActivity;
     async function fetchFullActivity() {
         // The initial activity object is not fully loaded for owned' activities.  This routine
         // will return a full activity object if the activity is from the page owner. Note that
-        // we leave the existing pageView.activity() object alone to avoid compatibility issues.
-        if (_activity) {
-            return _activity;
+        // there are small diffrences, so only use this if needed.
+        if (_fullActivity !== undefined) {
+            return _fullActivity;
         }
         if (pageView.isOwner()) {
             const activity = new Strava.Labs.Activities.TrainingActivity({id: pageView.activity().id});
             await new Promise((success, error) => activity.fetch({success, error}));
-            // Move the real type value to fullType and use the Strava modified type instead.
-            // Various functions like `isRide` are broken without this.
-            activity.set({
-                type: pageView.activity().get('type'),  // Is hardcoded to by pageView.
-                fullType: activity.get('type')  // Will be things like VirtualRide (which breaks isRide()).
-            });
-            _activity = activity;
+            _fullActivity = activity;
         } else {
-            _activity = pageView.activity().clone();
+            _fullActivity = null;
         }
-        return _activity;
+        return _fullActivity;
     }
 
 
@@ -990,7 +988,7 @@ sauce.ns('analysis', async ns => {
         if (pageNav.querySelector('li:not(.sauce-stub) [data-menu="analysis"]')) {
             return;
         }
-        const id = ctx.activity.id;
+        const id = pageView.activity().id;
         const a = pageNav.querySelector('[data-menu="analysis"]');
         a.setAttribute('href', `/activities/${id}/analysis`);
         a.textContent = await sauce.locale.getMessage('analysis_title');
@@ -1006,7 +1004,7 @@ sauce.ns('analysis', async ns => {
             // So for Runs we make their menu structure look like a rides, and add our analysis
             // menu entry as if it was born there.  If Strava changes their menu structure this will
             // surely be a problem.
-            if (ctx.activity.isRun()) {
+            if (pageView.activity().isRun()) {
                 const titleEl = premiumGroup.querySelector('.title');
                 // Walk the contents, clearing leading text node(s) and then replacing the text.
                 for (const node of Array.from(titleEl.childNodes)) {
@@ -1018,63 +1016,6 @@ sauce.ns('analysis', async ns => {
                     }
                 }
             }
-        }
-    }
-
-
-    async function load() {
-        const activity = pageView && pageView.activity();
-        if (!activity) {
-            return;
-        }
-        let start;
-        if (activity.isRun()) {
-            start = startRun;
-        } else if (activity.isRide()) {
-            start = startRide;
-        }
-        const type = activity.get('type');
-        sendGAPageView(type);  // bg okay
-        if (start) {
-            ctx.athlete = pageView.activityAthlete();
-            ctx.activity = await fetchFullActivity();
-            ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
-            await Promise.all([
-                getWeightInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
-                getFTPInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
-            ]);
-            updateSideNav();  //bg okay
-            attachExporters();  // bg okay
-            attachComments();  // bg okay
-            const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');
-            ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
-            for (const range of ctx.allPeriodRanges) {
-                range.label = await sauce.locale.humanDuration(range.value);
-            }
-            ctx.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
-            for (const range of ctx.allDistRanges) {
-                if (range.value < 1000) {
-                    range.label = `${range.value} m`;
-                } else {
-                    const miles = range.value / metersPerMile;
-                    if (isRoughlyEqual(miles, 13.1) ||
-                        isRoughlyEqual(miles, 26.2) ||
-                        isRoughlyEqual(miles, Math.round(miles))) {
-                        range.label = imperialDistanceFormatter.formatShort(range.value);
-                    } else {
-                        range.label = metricDistanceFormatter.formatShort(range.value);
-                    }
-                }
-                range.label = range.label.replace(/\.0 /, ' ');
-            }
-            if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
-                const {start, end} = sauce.analysisStatsIntent;
-                schedUpdateAnalysisStats(start, end);
-            }
-            await start();
-        } else {
-            ctx.activity = false;  // signal to preloader hooks that there is no work to do.
-            console.info("Unsupported activity type:", type);
         }
     }
 
@@ -1124,7 +1065,7 @@ sauce.ns('analysis', async ns => {
         // Activity start time is sadly complicated.  Despite being visible in the header
         // for all activities we only have access to it for rides and self-owned runs.  Trying
         // to parse the html might work for english rides but will fail for non-english users.
-        const localTime = ctx.activity.get('startDateLocal') * 1000;
+        const localTime = pageView.activity().get('startDateLocal') * 1000;
         if (localTime) {
             // Do a very basic tz correction based on the longitude of any geo data we can find.
             // Using a proper timezone API is too expensive for this use case.
@@ -1179,7 +1120,8 @@ sauce.ns('analysis', async ns => {
         const streamNames = ['time', 'watts', 'heartrate', 'altitude',
                              'cadence', 'temp', 'latlng', 'distance'];
         const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) => (acc[streamNames[i]] = x, acc), {});
-        const realStartTime = ctx.activity.get('start_time');
+        const fullActivity = await fetchFullActivity();
+        const realStartTime = fullActivity && fullActivity.get('start_time');
         let start;
         if (realStartTime) {
             start = new Date(realStartTime);
@@ -1190,7 +1132,7 @@ sauce.ns('analysis', async ns => {
         const name = document.querySelector('#heading .activity-name').textContent;
         const descEl = document.querySelector('#heading .activity-description .content');
         const desc = descEl && descEl.textContent;
-        const serializer = new Serializer(name, desc, ctx.activity.get('type'), start);
+        const serializer = new Serializer(name, desc, pageView.activity().get('type'), start);
         serializer.start();
         serializer.loadStreams(streams);
         download(serializer.toFile());
@@ -1198,7 +1140,7 @@ sauce.ns('analysis', async ns => {
 
 
     function submitComment(comment) {
-        pageView.commentsController().comment('Activity', ctx.activity.id, comment);
+        pageView.commentsController().comment('Activity', pageView.activity().id, comment);
         sauce.rpc.reportEvent('Comment', 'submit');
     }
 
@@ -1215,7 +1157,8 @@ sauce.ns('analysis', async ns => {
         jQuery('.activity-summary').append($section);
         async function render() {
             const comments = [];
-            for (const x of pageView.commentsController().getFromHash(`Activity-${ctx.activity.id}`)) {
+            const commentsHash = `Activity-${pageView.activity().id}`;
+            for (const x of pageView.commentsController().getFromHash(commentsHash)) {
                 const date = new Date(jQuery(x.timestamp).attr('datetime'));
                 comments.push({
                     tokens: x.comment,
@@ -1396,9 +1339,9 @@ sauce.ns('analysis', async ns => {
                 await new Promise(resolve => power.deferred.done(resolve));
                 stravaFtp = power.get('athlete_ftp');
             } else {
-                /* Sometimes you can get it from the activity.  I think this only
-                 * works when you are the athlete in the activity. */
-                stravaFtp = ctx.activity.get('ftp');
+                /* This fallback is for athletes that once had premium, set their FTP, then let
+                 * their subscription pass.  It only works for them, but it's a nice to have. */
+                stravaFtp = pageView.activity().get('ftp');
             }
             if (stravaFtp) {
                 info.ftp = stravaFtp;
@@ -1547,7 +1490,7 @@ sauce.ns('analysis', async ns => {
 
 
     async function _updateAnalysisStats(start, end) {
-        const isRun = ctx.activity.isRun();
+        const isRun = pageView.activity().isRun();
         const prefetchStreams = ['time', 'timer_time', 'moving', 'altitude', 'watts',
                                  'grade_smooth', 'distance'];
         if (isRun) {
@@ -1612,7 +1555,6 @@ sauce.ns('analysis', async ns => {
         const tpl = await getTemplate('analysis-stats.html');
         ctx.$analysisStats.data({start, end});
         ctx.$analysisStats.html(await tpl(tplData));
-        jQuery('#sauce-menu').menu();
     }
 
 
@@ -1630,18 +1572,16 @@ sauce.ns('analysis', async ns => {
             return;  // dedup
         }
         _schedUpdateAnalysisPending = [start, end];
-        if (!ctx.activity) {
-            if (ctx.activity !== false) {
-                setTimeout(() => schedUpdateAnalysisStats(null), 200);
+        if (!ctx.supportedActivity) {
+            if (ctx.supportedActivity === undefined) {
+                ctx.prepared.then(() => schedUpdateAnalysisStats(null));
             }
             return;
         }
         if (!ctx.$analysisStats) {
             const $el = jQuery('#basic-analysis section.chart');
             if (!$el.length) {
-                if (ctx.activity !== false) {
-                    setTimeout(() => schedUpdateAnalysisStats(null), 200);
-                }
+                setTimeout(() => schedUpdateAnalysisStats(null), 200);
                 return;
             }
             attachAnalysisStats($el);
@@ -1673,7 +1613,7 @@ sauce.ns('analysis', async ns => {
             {name: 'watts'},
             {name: 'watts_calc'},
             {name: 'heartrate'},
-            {name: 'cadence', formatter: ctx.activity.isRun() ? x => x * 2 : null},
+            {name: 'cadence', formatter: pageView.activity().isRun() ? x => x * 2 : null},
             {name: 'velocity_smooth'},
             {name: 'pace'},
             {name: 'grade_adjusted_pace', label: 'gap'},
@@ -1761,7 +1701,7 @@ sauce.ns('analysis', async ns => {
             extraButtons: {
                 "Download": () => {
                     const range = start && end ? `-${start}-${end}` : '';
-                    const name = `${ctx.activity.id}${range}.csv`;
+                    const name = `${pageView.activity().id}${range}.csv`;
                     download(new Blob([currentData], {type: 'text/csv'}), name);
                 }
             }
@@ -1836,6 +1776,70 @@ sauce.ns('analysis', async ns => {
             }
         };
     }
+
+
+    async function prepareContext() {
+        ctx.athlete = pageView.activityAthlete();
+        ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
+        await Promise.all([
+            getWeightInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
+            getFTPInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
+        ]);
+        updateSideNav();  //bg okay
+        attachExporters();  // bg okay
+        attachComments();  // bg okay
+        const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');
+        ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
+        for (const range of ctx.allPeriodRanges) {
+            range.label = await sauce.locale.humanDuration(range.value);
+        }
+        ctx.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
+        for (const range of ctx.allDistRanges) {
+            if (range.value < 1000) {
+                range.label = `${range.value} m`;
+            } else {
+                const miles = range.value / metersPerMile;
+                if (isRoughlyEqual(miles, 13.1) ||
+                    isRoughlyEqual(miles, 26.2) ||
+                    isRoughlyEqual(miles, Math.round(miles))) {
+                    range.label = imperialDistanceFormatter.formatShort(range.value);
+                } else {
+                    range.label = metricDistanceFormatter.formatShort(range.value);
+                }
+            }
+            range.label = range.label.replace(/\.0 /, ' ');
+        }
+        _resolvePrepared();
+    }
+
+
+    async function load() {
+        const activity = pageView && pageView.activity();
+        if (!activity) {
+            return;
+        }
+        let start;
+        if (activity.isRun()) {
+            start = startRun;
+        } else if (activity.isRide()) {
+            start = startRide;
+        }
+        const type = activity.get('type');
+        if (start) {
+            ctx.supportedActivity = true;
+            await prepareContext();
+            if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
+                const {start, end} = sauce.analysisStatsIntent;
+                schedUpdateAnalysisStats(start, end);
+            }
+            await start();
+        } else {
+            ctx.supportedActivity = false;
+            console.info("Unsupported activity type:", type);
+        }
+        sendGAPageView(type);  // bg okay
+    }
+
 
     return {
         load,

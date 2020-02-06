@@ -4,14 +4,14 @@ window.sauce = window.sauce || {};
 
 sauce.ns = async function(ns, callback) {
     let offt = sauce;
-    ns.split('.').forEach(function(x) {
+    const assignments = callback && await callback(offt);
+    for (const x of ns.split('.')) {
         if (!offt[x]) {
             offt = (offt[x] = {});
         }
-    });
-
-    if (callback) {
-        Object.assign(offt, await callback(offt));
+    }
+    if (assignments) {
+        Object.assign(offt, assignments);
     }
     return offt;
 };

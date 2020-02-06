@@ -99,7 +99,7 @@ sauce.ns('rpc', function() {
 
 
     const _invokePromise = (async () => {
-        // Instead of just broadcasting all RPC over window 'message' events, create a channel
+        // Instead of just broadcasting all RPC over generic 'message' events, create a channel
         // which is like a unix pipe pair and transfer one of the ports to the ext for us
         // to securely and performantly talk over.
         const rpcCallbacks = new Map();
@@ -110,13 +110,14 @@ sauce.ns('rpc', function() {
                 reqPort.removeEventListener('message', onMessageEstablishChannelAck);
                 if (!ev.data || ev.data.extId !== sauce.extId ||
                     ev.data.type !== 'sauce-rpc-establish-channel-ack') {
-                    reject(new Error('RPC PROTOCOL VIOLATION FROM CONTENT [ACK]!'));
+                    reject(new Error('RPC Protocol Violation [CONTENT] [ACK]!'));
                     return;
                 }
                 const respPort = ev.ports[0];
                 respPort.addEventListener('message', ev => {
+                    // DEBUG checks; remove at some point.
                     if (!ev.data || ev.data.extId !== sauce.extId || ev.data.type !== 'sauce-rpc-response') {
-                        throw new Error('RPC PROTOCOL VIOLATION FROM CONTENT [RESP]!');
+                        throw new Error('RPC Protocol Vilation [CONTENT] [RESP]!');
                     }
                     if (ev.data.success === true) {
                         const rid = ev.data.rid;
@@ -129,7 +130,7 @@ sauce.ns('rpc', function() {
                         rpcCallbacks.delete(rid);
                         reject(new Error(ev.data.result || 'unknown rpc error'));
                     } else {
-                        throw new TypeError("RPC protocol violation");
+                        throw new TypeError("RPC Protocol Violation [DATA]");
                     }
                 });
                 respPort.start();
@@ -150,10 +151,10 @@ sauce.ns('rpc', function() {
                 const rid = rpcId++;
                 rpcCallbacks.set(rid, {resolve, reject});
                 reqPort.postMessage({
-                    type: 'sauce-rpc-request',  // XXX redundant
                     rid,
                     msg,
-                    extId: sauce.extId  // XXX redundant
+                    type: 'sauce-rpc-request',  // DEBUG only; remove later
+                    extId: sauce.extId  // DEBUG only; remove later
                 });
             });
         };
