@@ -65,8 +65,8 @@
     "analysis_ranking_tooltip": {
         "message": "世界排名"
     },
-    "analysis_peak_power_tooltip": {
-        "message": "最大持续功率范围"
+    "analysis_max_power_tooltip": {
+        "message": "最大功率"
     },
     "analysis_low_hr_tooltip": {
         "message": "最低心率"
@@ -94,6 +94,9 @@
     },
     "analysis_intensity_tooltip": {
         "message": "强度因子®"
+    },
+    "analysis_peak_power_tooltip": {
+        "message": "最大持续功率范围"
     },
     "analysis_peak_np_tooltip": {
         "message": "最大归一化功率范围"

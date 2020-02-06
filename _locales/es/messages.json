@@ -65,8 +65,8 @@
     "analysis_ranking_tooltip": {
         "message": "Ranking mundial"
     },
-    "analysis_peak_power_tooltip": {
-        "message": "Rangos máximos de potencia sostenida"
+    "analysis_max_power_tooltip": {
+        "message": "máximo poder"
     },
     "analysis_low_hr_tooltip": {
         "message": "Frecuencia cardíaca más baja"
@@ -94,6 +94,9 @@
     },
     "analysis_intensity_tooltip": {
         "message": "Intensity Factor®"
+    },
+    "analysis_peak_power_tooltip": {
+        "message": "Rangos máximos de potencia sostenida"
     },
     "analysis_peak_np_tooltip": {
         "message": "Gamas de potencia normalizada máxima"
