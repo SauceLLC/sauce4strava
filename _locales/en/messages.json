@@ -21,7 +21,7 @@
     "analysis_start_of_effort_tooltip": {"message": "Time offset to the start of this effort"},
     "analysis_wkg_tooltip": {"message": "Watts per kilogram of body weight"},
     "analysis_ranking_tooltip": {"message": "World ranking"},
-    "analysis_peak_power_tooltip": {"message": "Peak power"},
+    "analysis_max_power_tooltip": {"message": "Max power"},
     "analysis_low_hr_tooltip": {"message": "Lowest heart rate"},
     "analysis_high_hr_tooltip": {"message": "Highest heart rate"},
     "analysis_running_cadence_tooltip": {"message": "Steps Per Minute"},

@@ -41,7 +41,6 @@
         const method = args.shift();
         tracker[method].apply(tracker, args);
     }, {backgroundOnly: true});
-    addHook('app', 'getDetails', () => browser.app.getDetails());
     addHook('locale', 'getMessage', _getI18nMessage);
     addHook('locale', 'getMessages', batch => batch.map(x => _getI18nMessage(x)));
     addHook('util', 'ping', x => x);
