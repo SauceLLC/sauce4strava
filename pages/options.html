@@ -36,12 +36,23 @@
 
             footer .links {
                 margin-top: 1em;
+                display: flex;
+                justify-content: center;
+            }
+
+            footer .links > * {
+                padding: 0 0.5em;
+            }
+
+            body:not(.moz-extension) .moz-only,
+            body:not(.chrome-extension) .chrome-only {
+                display: none;
             }
         </style>
     </head>
     <body>
         <header>
-            <h2>Sauce Browser Extension</h2>
+            <h2>Sauce Options</h2>
         </header>
         <main class="columns">
             <div id="left">
@@ -104,12 +115,13 @@
             <div class="links">
                 <a target="_BLANK" href="https://github.com/mayfield/sauce">GitHub Source</a>
                 |
-                <a target="_BLANK" class="official-store chromium"
+                <a target="_BLANK" class="chrome-only"
                    href="https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha">Chrome Web Store Page</a>
-                <a target="_BLANK" class="official-store gecko"
+                <a target="_BLANK" class="moz-only"
                    href="https://addons.mozilla.org/addon/sauce">Firefox Add-On Page</a>
                 |
-                <a target="_BLANK" href="privacy.html">Privacy Policy</a>
+                <a class="moz-only" href="privacy.html">Privacy Policy</a><!--Gecko can't do BLANK for ext based pages-->
+                <a target="_BLANK" class="chrome-only" href="privacy.html">Privacy Policy</a>
             </div>
         </footer>
     </body>

@@ -39,6 +39,8 @@
 
     async function main() {
         const details_el = document.querySelector('#details > tbody');
+        const type = browser.runtime.getURL('').split(':')[0];
+        document.body.classList.add(type);
         const manifest = browser.runtime.getManifest();
         const details_list = [
             ['Version', manifest.version_name || manifest.version],
