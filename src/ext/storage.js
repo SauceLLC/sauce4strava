@@ -8,12 +8,14 @@
     const ns = self.sauce.storage = {};
 
     let _storageIface;
-    function getStorageInterface() {
+    async function getStorageInterface() {
         if (_storageIface === undefined) {
-            // Just disable sync for firefox for now.
-            _storageIface = navigator.userAgent.match(/Firefox/) ?
-                browser.storage.local :
-                browser.storage.sync;
+            try {
+                browser.storage.sync.get('irrelevant');
+                _storageIface = browser.storage.sync;
+            } catch(e) {
+                _storageIface = browser.storage.local;
+            }
         }
         return _storageIface;
     }
@@ -26,23 +28,23 @@
         } else {
             data = {[key]: value};
         }
-        const storage = getStorageInterface();
+        const storage = await getStorageInterface();
         return await storage.set(data);
     };
 
     ns.get = async function(key) {
-        const storage = getStorageInterface();
+        const storage = await getStorageInterface();
         const o = await storage.get(key);
         return typeof key === 'string' ? o[key] : o;
     };
 
     ns.remove = async function(key) {
-        const storage = getStorageInterface();
+        const storage = await getStorageInterface();
         return await storage.remove(key);
     };
 
     ns.clear = async function() {
-        const storage = getStorageInterface();
+        const storage = await getStorageInterface();
         return await storage.clear();
     };
 })();
