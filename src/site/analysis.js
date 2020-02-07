@@ -1505,6 +1505,7 @@ sauce.ns('analysis', async ns => {
         const distance = streamDelta(distStream);
         const pausedTime = elapsedTime - movingTime;
         const tplData = {
+            logo: sauce.extUrl + 'images/logo_vert_48x128.png',
             isRun,
             elapsed: humanTime(elapsedTime),
             moving: humanTime(movingTime),

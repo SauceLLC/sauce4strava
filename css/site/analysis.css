@@ -414,14 +414,16 @@ abbr.unit {
 }
 
 .sauce-analysis-stats .sauce-brand-sidebar .sauce-logo {
-    flex-basis: 3em;
-    margin-left: 0.8em;
-    background-image: url('chrome-extension://__MSG_@@extension_id__/images/logo_vert_48x128.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-origin: content-box;
-    padding: 1em 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.3em 0.8em;
+    margin-left: 1em;
+}
+
+.sauce-analysis-stats .sauce-brand-sidebar .sauce-logo img {
+    max-width: 4.5em;
+    max-height: 4.5em;
 }
 
 .sauce-analysis-stats .sauce-brand-sidebar .sauce-label {
