@@ -23,12 +23,18 @@
     };
 
     ns.createTracker = async function(name) {
-        ga('create', 'UA-64711223-1', 'auto', name);
+        const gaClientIdKey = 'ga:clientId';
+        ga('create', 'UA-64711223-1', {
+            name,
+            storage: 'none',  // cookies dont work in firefox bg page
+            clientId: localStorage.getItem(gaClientIdKey)
+        });
         const tracker = await ns.getTracker(name);
         if (navigator.sendBeacon) {
             tracker.set('transport', 'beacon');
         }
         tracker.set('checkProtocolTask', () => undefined);  // needed when used in an ext.
+        localStorage.setItem(gaClientIdKey, tracker.get('clientId'));
         return tracker;
     };
 
