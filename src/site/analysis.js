@@ -1329,12 +1329,18 @@ sauce.ns('analysis', async ns => {
             info.ftp = override;
             info.ftpOrigin = 'sauce';
         } else {
-            const power = pageView.powerController && pageView.powerController();
             let stravaFtp;
-            if (power) {
-                await new Promise(resolve => power.deferred.done(resolve));
-                stravaFtp = power.get('athlete_ftp');
-            } else {
+            const powerCtrl = pageView.powerController && pageView.powerController();
+            if (powerCtrl) {
+                try {
+                    await new Promise((resolve, reject) => {
+                        powerCtrl.deferred.done(resolve);
+                        powerCtrl.deferred.fail(reject);
+                    });
+                    stravaFtp = powerCtrl.get('athlete_ftp');
+                } catch(e) {/*no-pragma*/}
+            }
+            if (stravaFtp == null) {
                 /* This fallback is for athletes that once had premium, set their FTP, then let
                  * their subscription pass.  It only works for them, but it's a nice to have. */
                 stravaFtp = pageView.activity().get('ftp');
