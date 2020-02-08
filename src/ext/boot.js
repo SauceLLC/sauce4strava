@@ -40,7 +40,7 @@
                 rootElement.appendChild(script);
             }
         } else {
-            document.head.appendChild(script);
+            rootElement.appendChild(script);
         }
     }
 
