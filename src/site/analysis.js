@@ -3,7 +3,7 @@
 sauce.ns('analysis', async ns => {
     'use strict';
 
-    await sauce.propDefined('Strava.I18n');
+    await sauce.propDefined('pageView');
 
     let _resolvePrepared;
     const ctx = {
@@ -470,8 +470,8 @@ sauce.ns('analysis', async ns => {
         let intensity;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            np = corrected.np();
-            if (ctx.ftp) {
+            np = corrected && corrected.np();
+            if (corrected && ctx.ftp) {
                 if (np) {
                     // Calculate TSS based on elapsed time when NP is being used.
                     tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
@@ -577,7 +577,7 @@ sauce.ns('analysis', async ns => {
         let power;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            power = corrected.kj() * 1000 / movingTime;
+            power = corrected && corrected.kj() * 1000 / movingTime;
         } else if (ctx.weight && gradeDistStream) {
             const gradeDistance = streamDelta(gradeDistStream);
             const kj = sauce.pace.work(ctx.weight, gradeDistance);
@@ -798,7 +798,7 @@ sauce.ns('analysis', async ns => {
         let roll;
         if (fullWattsStream) {
             const power = sauce.power.correctedPower(await fetchStream('time'), fullWattsStream);
-            roll = power.slice(startTime, endTime);
+            roll = power && power.slice(startTime, endTime);
         }
         const rollValues = roll && roll.values();
         const elapsedTime = endTime - startTime;
@@ -1524,8 +1524,8 @@ sauce.ns('analysis', async ns => {
             }
             const roll = sauce.power.correctedPower(timeStream, wattsStream,
                 ctx.idealGap, ctx.maxGap);
-            kj = roll.kj();
-            tplData.power = powerData(kj * 1000 / movingTime, roll.avg(),
+            kj = roll && roll.kj();
+            tplData.power = roll && powerData(kj * 1000 / movingTime, roll.avg(),
                 movingTime, elapsedTime, {np: roll.np()});
         }
         if (isRun) {
@@ -1811,14 +1811,13 @@ sauce.ns('analysis', async ns => {
 
 
     async function streamsReady() {
-        await sauce.propDefined('pageView');
         if (!pageView.streams()) {
             const save = pageView.streams;
             await new Promise(resolve => {
                 pageView.streams = function(set) {
                     if (set) {
-                        resolve();
                         pageView.streams = save;
+                        resolve();
                     }
                     return save.apply(this, arguments);
                 };
