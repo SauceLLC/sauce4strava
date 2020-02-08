@@ -3,11 +3,7 @@
 sauce.ns('analysis', async ns => {
     'use strict';
 
-    await Promise.all([
-        sauce.propDefined('pageView'),
-        sauce.propDefined('Strava.I18n'),
-        sauce.propDefined('_')
-    ]);
+    await sauce.propDefined('Strava.I18n');
 
     let _resolvePrepared;
     const ctx = {
@@ -1814,8 +1810,26 @@ sauce.ns('analysis', async ns => {
     }
 
 
+    async function streamsReady() {
+        await sauce.propDefined('pageView');
+        if (!pageView.streams()) {
+            const save = pageView.streams;
+            await new Promise(resolve => {
+                pageView.streams = function(set) {
+                    if (set) {
+                        resolve();
+                        pageView.streams = save;
+                    }
+                    return save.apply(this, arguments);
+                };
+            });
+        }
+    }
+
+
     async function load() {
-        const activity = pageView && pageView.activity();
+        await streamsReady();
+        const activity = pageView.activity();
         if (!activity) {
             return;
         }
