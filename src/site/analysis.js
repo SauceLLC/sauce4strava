@@ -816,7 +816,7 @@ sauce.ns('analysis', async ns => {
         const template = await getTemplate('ride-info-dialog.html');
         const body = await template({
             startsAt: humanTime(startTime),
-            power: roll && powerData(null, roll.avg(), null, elapsedTime,{
+            power: roll && powerData(null, roll.avg(), null, elapsedTime, {
                 max: sauce.data.max(rollValues),
                 np: roll.np()
             }),
