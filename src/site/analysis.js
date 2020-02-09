@@ -1,4 +1,4 @@
-/* global Strava, sauce, jQuery, pageView, _ */
+/* global Strava, sauce, jQuery, pageView */
 
 sauce.ns('analysis', async ns => {
     'use strict';
@@ -1253,23 +1253,8 @@ sauce.ns('analysis', async ns => {
     }
 
 
+
     async function startRide() {
-        const segments = document.querySelector('table.segments');
-        if (segments && sauce.options['analysis-segment-badges']) {
-            const segmentsMutationObserver = new MutationObserver(_.debounce(addSegmentBadges, 200));
-            segmentsMutationObserver.observe(segments, {
-                childList: true,
-                attributes: false,
-                characterData: false,
-                subtree: true,
-            });
-            try {
-                addSegmentBadges();
-            } catch(e) {
-                console.error("Problem adding segment badges!", e);
-                sauce.rpc.reportError(e);
-            }
-        }
         jQuery('body').on('click', '.rank_badge', async ev => {
             closeCurrentInfoDialog();
             const powerProfileTpl = await getTemplate('power-profile-help.html');
@@ -1832,6 +1817,52 @@ sauce.ns('analysis', async ns => {
     }
 
 
+    // Using mutation observers on the entire document leads to perf issues in chrome.
+    let _pageMonitorsBackoff = 10;
+    let _pageMonitorsTimeout;
+    async function startPageMonitors() {
+        if (sauce.options['analysis-segment-badges']) {
+            maintainSegmentBadges();
+        }
+        maintainScalableSVG();
+        _pageMonitorsBackoff *= 1.25;
+        _pageMonitorsTimeout = setTimeout(startPageMonitors, _pageMonitorsBackoff);
+    }
+
+
+    function resetPageMonitors() {
+        _pageMonitorsBackoff = 10;
+        clearTimeout(_pageMonitorsTimeout);
+        startPageMonitors();
+    }
+
+
+    function maintainSegmentBadges() {
+        const segments = document.querySelector('table.segments');
+        if (segments) {
+            addSegmentBadges();
+        }
+    }
+
+
+    function maintainScalableSVG() {
+        const candidates = document.querySelectorAll('svg[width][height]:not([data-sauce-mark])');
+        for (const el of candidates) {
+            el.dataset.sauceMark = true;
+            if (!el.hasAttribute('viewBox') && el.parentNode &&
+                el.parentNode.classList.contains('base-chart')) {
+                const width = Number(el.getAttribute('width'));
+                const height = Number(el.getAttribute('height'));
+                if (!isNaN(width) && !isNaN(height)) {
+                    el.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                    el.removeAttribute('width');
+                    el.removeAttribute('height');
+                }
+            }
+        }
+    }
+
+
     async function load() {
         await streamsReady();
         const activity = pageView.activity();
@@ -1848,6 +1879,10 @@ sauce.ns('analysis', async ns => {
         if (start) {
             ctx.supportedActivity = true;
             await prepareContext();
+            pageView.router().on('route', () => {
+                resetPageMonitors();
+            });
+            startPageMonitors();
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;
                 schedUpdateAnalysisStats(start, end);
