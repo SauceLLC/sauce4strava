@@ -55,8 +55,7 @@
         "run_at": "document_idle",
         "matches": ["*://*.strava.com/*"],
         "css": [
-            "css/site/overrides.css",
-            "css/site/analysis.css"
+            "css/site/overrides.css"
         ]
     }, {
         "run_at": "document_start",
@@ -73,6 +72,7 @@
     "web_accessible_resources": [
         "src/common/*",
         "src/site/*",
+        "css/site/*",
         "templates/*",
         "images/*"
     ]

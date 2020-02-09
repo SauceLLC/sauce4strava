@@ -6,6 +6,10 @@
     const manifests = [{
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
+        stylesheets: [
+            'site/analysis.css',
+            'site/mobile.css',
+        ],
         scripts: [
             'site/base.js',
             'site/rpc.js',
@@ -15,7 +19,26 @@
             'site/lib.js',
             'site/export.js',
             'site/analysis.js',
-        ]
+        ],
+        callbacks: [() => {
+            function attachViewportMeta() {
+                const viewport = document.createElement('meta');
+                viewport.setAttribute('name', 'viewport');
+                viewport.setAttribute('content', Object.entries({
+                    'width': 'device-width',
+                    'initial-scale': '1.0',
+                    'maximum-scale': '1.0',
+                    'user-scalable': 'no'
+                }).map(([k, v]) => `${k}=${v}`).join(', '));
+                const charset = document.querySelector('head meta[charset]');
+                charset.insertAdjacentElement('afterend', viewport);
+            }
+            if (document.head) {
+                attachViewportMeta();
+            } else {
+                addEventListener('DOMContentLoaded', attachViewportMeta, {capture: true});
+            }
+        }]
     }, {
         name: 'Dashboard',
         pathMatch: /^\/dashboard(\/.*|\b)/,
@@ -30,7 +53,7 @@
     }];
 
 
-    function addScriptElement(script, top) {
+    function addHeadElement(script, top) {
         const rootElement = document.head || document.documentElement;
         if (top) {
             const first = rootElement.firstChild;
@@ -53,15 +76,25 @@
         }
         const p = new Promise(resolve => script.onload = resolve);
         script.src = url;
-        addScriptElement(script, options.top);
+        addHeadElement(script, options.top);
         return p;
+    }
+
+
+    function loadStylesheet(url, options) {
+        options = options || {};
+        const link = document.createElement('link');
+        link.setAttribute('rel', 'stylesheet');
+        link.setAttribute('type', 'text/css');
+        link.setAttribute('href', url);
+        addHeadElement(link, options.top);
     }
 
 
     function insertScript(content) {
         const script = document.createElement('script');
         script.textContent = content;
-        addScriptElement(script, true);
+        addHeadElement(script, true);
     }
 
 
@@ -74,19 +107,29 @@
             return;
         }
         document.documentElement.classList.add('sauce-enabled');
-        const manifest = browser.runtime.getManifest();
+        const ext = browser.runtime.getManifest();
         insertScript(`
             self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(config.options)};
             sauce.extUrl = "${extUrl}";
             sauce.extId = "${browser.runtime.id}";
-            sauce.name = "${manifest.name}";
-            sauce.version = "${manifest.version}";
+            sauce.name = "${ext.name}";
+            sauce.version = "${ext.version}";
         `);
-        for (const x of manifests) {
-            if (location.pathname.match(x.pathMatch)) {
-                console.info(`Sauce loading: ${x.name}`);
-                for (const url of x.scripts) {
+        for (const m of manifests.filter(x => location.pathname.match(x.pathMatch))) {
+            console.info(`Sauce loading: ${m.name}`);
+            if (m.callbacks) {
+                for (const cb of m.callbacks) {
+                    cb();
+                }
+            }
+            if (m.stylesheets) {
+                for (const url of m.stylesheets) {
+                    loadStylesheet(`${extUrl}css/${url}`);
+                }
+            }
+            if (m.scripts) {
+                for (const url of m.scripts) {
                     await loadScript(`${extUrl}src/${url}`);
                 }
             }

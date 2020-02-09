@@ -1,0 +1,113 @@
+@media only screen and (max-width: 768px) {
+    #smartbanner-orion {
+        display: none !important;
+    }
+
+    body > .view {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    body > .view > .page.container {
+        width: 100%;
+        flex: 1 1 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 0;
+        min-height: inherit !important;
+    }
+
+    body > .view > .page.container nav.sidenav {
+        position: static;
+    }
+
+    body > .view > footer {
+        display: none;
+    }
+        
+
+/* revalidat... */
+    header#global-header nav.nav-bar {
+        min-width: inherit;
+        display: flex;
+        margin: 0;
+        padding: 0;
+    }
+
+    header#global-header nav.nav-bar .branding {
+        margin-left: 1em;
+    }
+    header#global-header nav.nav-bar.search-mode .branding {
+        display: none;
+    }
+
+    header#global-header nav.nav-bar .btn-mobile-menu {
+        display: none !important;
+    }
+
+    header#global-header nav.nav-bar #global-search-filter {
+        display: none;
+    }
+    header#global-header nav.nav-bar.search-mode #global-search-filter {
+        display: inherit;
+    }
+
+    header#global-header nav.nav-bar #global-search-field {
+        width: 3em; /* must have some width becaues it's a click target */
+    }
+    header#global-header nav.nav-bar.search-mode #global-search-field {
+        width: 100%;
+    }
+
+    header#global-header nav.nav-bar.search-mode .user-nav {
+        display: none;
+    }
+
+    header#global-header nav.nav-bar.search-mode #global-search-button {
+        right: 32px;
+    }
+
+    header#global-header nav.nav-bar #global-search-bar {
+        position: static;
+        float: inherit;
+    }
+    header#global-header nav.nav-bar.search-mode #global-search-bar {
+        flex: 1 1 100%;
+    }
+
+    header#global-header nav.nav-bar.search-mode #global-search-bar .input-group {
+        overflow: hidden;
+        max-width: 30em;
+    }
+
+    header#global-header nav.nav-bar #global-search-cancel {
+        position: static;
+        transform: inherit;
+    }
+
+    header#global-header nav.nav-bar #global-search-bar .dropdown button {
+        padding: 0 0.8em;
+        min-width: inherit;
+    }
+
+    header#global-header nav.nav-bar #container-nav {
+        display: flex;
+        flex: 1 1 100%;
+        justify-content: space-between;
+    }
+
+    header#global-header nav.nav-bar .global-nav.nav-group {
+        display: none;
+    }
+
+    header#global-header .user-nav {
+        float: inherit;
+    }
+
+    header#global-header .user-nav .upload-menu {
+        display: none;
+    }
+}
