@@ -79,3 +79,9 @@ svg.svg-inline--fa .fa-primary {
 
 svg.svg-inline--fa .fa-secondary {
 }
+
+@media only screen and (max-width: 768px) {
+    .sauce-enabled #smartbanner-orion {
+        display: none !important;
+    }
+}
