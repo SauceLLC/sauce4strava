@@ -1857,6 +1857,19 @@ sauce.ns('analysis', async ns => {
                     el.setAttribute('viewBox', `0 0 ${width} ${height}`);
                     el.removeAttribute('width');
                     el.removeAttribute('height');
+                    const mo = new MutationObserver(mutations => {
+                        for (const m of mutations) {
+                            if (m.attributeName === 'width') {
+                                console.error("NO!width");
+                                el.removeAttribute('width');
+                            }
+                            if (m.attributeName === 'height') {
+                                console.error("NO hthe!");
+                                el.removeAttribute('height');
+                            }
+                        }
+                    });
+                    mo.observe(el, {attributes: true});
                 }
             }
         }

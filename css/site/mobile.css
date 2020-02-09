@@ -110,52 +110,12 @@
         display: none;
     }
 
-    header#global-header nav.nav-bar {
-        min-width: initial;
-        display: flex;
-        margin: 0;
-        padding: 0;
-    }
-
-    header#global-header nav.nav-bar .branding {
-        margin-left: 1em;
-    }
     header#global-header nav.nav-bar.search-mode .branding {
         display: none;
     }
 
-    header#global-header nav.nav-bar .btn-mobile-menu {
-        display: none !important;
-    }
-
-    header#global-header nav.nav-bar #global-search-filter {
-        display: none;
-    }
-    header#global-header nav.nav-bar.search-mode #global-search-filter {
-        display: initial;
-    }
-
-    header#global-header nav.nav-bar #global-search-field {
-        width: 3em; /* must have some width becaues it's a click target */
-    }
-    header#global-header nav.nav-bar.search-mode #global-search-field {
-        width: 100%;
-    }
-
     header#global-header nav.nav-bar.search-mode .user-nav {
         display: none;
-    }
-
-    header#global-header nav.nav-bar.search-mode #global-search-button {
-        right: 32px;
-    }
-
-    header#global-header nav.nav-bar #global-search-bar {
-        position: static;
-        float: initial;
-    }
-    header#global-header nav.nav-bar.search-mode #global-search-bar {
-        flex: 1 1 100%;
     }
 
     header#global-header nav.nav-bar.search-mode #global-search-bar .input-group {
@@ -163,34 +123,13 @@
         max-width: 30em;
     }
 
-    header#global-header nav.nav-bar #global-search-cancel {
-        position: static;
-        transform: initial;
-    }
-
-    header#global-header nav.nav-bar #global-search-bar .dropdown button {
-        padding: 0 0.8em;
-        min-width: initial;
-    }
-
-    header#global-header nav.nav-bar #container-nav {
-        display: flex;
-        flex: 1 1 100%;
-        justify-content: space-between;
-    }
-
     header#global-header nav.nav-bar .global-nav.nav-group {
         display: none;
-    }
-
-    header#global-header .user-nav {
-        float: initial;
     }
 
     header#global-header .user-nav .upload-menu {
         display: none;
     }
-
 
     #heading > header {
         padding: 0;
