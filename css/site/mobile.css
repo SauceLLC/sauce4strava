@@ -51,7 +51,8 @@
     }
 
     .ui-dialog.sauce-dialog.sauce-info-dialog table td {
-        padding-bottom: 1.3em;
+        padding-top: 0.85em;
+        padding-bottom: 0.85em;
     }
 
     body > .view > .page.container #pagenav {

@@ -137,18 +137,13 @@
     color: #ff4400;
 }
 
-.activity-stats .inline-stats.sauce-stats .origin-strava {
-}
-
-
 .sauce-info-dialog .ui-dialog-content {
     padding: 0px !important;
 }
 
 .sauce-info-dialog .ui-dialog-content table {
     box-sizing: border-box;
-    margin: 0px 0px 0 0;
-    padding: 20px 20px 4px 20px;
+    margin: 0;
 }
 
 .sauce-info-dialog img.rank_badge {
@@ -159,20 +154,29 @@
 }
 
 .sauce-info-dialog td {
-    padding: 4px 0px;
-    height: 22px;
+    padding: 0.65em 0.15em;
+    width: 50%;
+    text-align: center;
 }
 
 .sauce-info-dialog td:first-child {
-    width: 50%;
-    padding-left: 2px;
-    padding-right: 2px;
-    text-align: right;
+    padding-left: 1em;
 }
 
 .sauce-info-dialog td:last-child {
-    width: 50%;
-    text-align: center;
+    padding-right: 1em;
+}
+
+.sauce-info-dialog sub {
+    vertical-align: sub; /* undo override from strava that made this too low */
+}
+
+.sauce-info-dialog tr:nth-child(odd) {
+    background-color: #fff8;
+}
+
+.sauce-info-dialog tr:hover {
+    background: #fffe;
 }
 
 .sauce-info-dialog td.rank_holder {
@@ -252,8 +256,12 @@
 .ui-dialog.sauce-dialog .ui-dialog-titlebar .ui-dialog-title svg {
 }
 
+.ui-dialog.sauce-dialog .ui-widget-header {
+    font-size: 1.1em;
+}
+
 .ui-dialog.sauce-dialog .ui-dialog-title {
-    font-size: 16px;
+    font-size: 1em;
 }
 
 .ui-dialog.sauce-dialog .ui-dialog-titlebar-close {
