@@ -56,12 +56,11 @@
 
     body > .view > .page.container #pagenav {
         display: flex;
-        justify-content: space-around;
         margin: 0;
     }
 
     body > .view > .page.container #pagenav li {
-        flex: 1 1 0;
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         justify-content: center;
