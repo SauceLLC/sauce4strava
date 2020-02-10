@@ -597,7 +597,7 @@ input:checked + .sauce-slider::before {
 
 #basic-analysis #laps-chart,
 #basic-analysis #segments-chart {
-    margin-right: 30px;  /* compensate for scalable SVG change, these need to be offset for alignment (966-936) */
+    margin-right: 3.10559%;  /* compensate for scalable SVG change, these need to be offset for alignment (966-936) */
 }
 
 .view .page.container {

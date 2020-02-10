@@ -52,7 +52,7 @@
     "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
 
     "content_scripts": [{
-        "run_at": "document_idle",
+        "run_at": "document_start",
         "matches": ["*://*.strava.com/*"],
         "css": [
             "css/site/overrides.css"

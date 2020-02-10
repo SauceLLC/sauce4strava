@@ -864,7 +864,8 @@ sauce.ns('analysis', async ns => {
         if (!data) {
             return;
         }
-        if (data.length > 120) {
+        // Firefox Mobile doesn't support audiocontext based resampling.
+        if (data.length > 120 && !navigator.userAgent.match(/Mobile/)) {
             data = await sauce.data.resample(data, 120);
         }
         const min = Math.max(0, sauce.data.min(data) * 0.75);

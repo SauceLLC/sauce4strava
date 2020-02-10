@@ -127,7 +127,8 @@
         display: none;
     }
 
-    header#global-header .user-nav .upload-menu {
+    header#global-header .user-nav .upload-menu,
+    header#global-header .user-nav .upgrade {
         display: none;
     }
 
