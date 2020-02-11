@@ -19,10 +19,13 @@ rsync -av \
     --exclude 'node_modules' \
     --exclude 'tools' \
     --exclude 'assets' \
-    --exclude 'sass' \
+    --exclude 'scss' \
+    --exclude 'css' \
     --exclude 'builds' \
-    --exclude 'test'
+    --exclude 'test' \
     ./* $TMPDIR
+
+node_modules/.bin/sass scss:$TMPDIR/css
 
 $(dirname $0)/mergejson "./manifest_base.json" "./manifest_${KIND}.json" > $TMPDIR/manifest.json
 
@@ -38,6 +41,8 @@ GIT_COMMIT=$(git rev-parse --short HEAD)
 BUILDS=$(pwd)/builds
 mkdir -p $BUILDS
 cd $TMPDIR
-OUTFILE="${BUILDS}/sauce-${2}-${GIT_COMMIT}.${EXT}"
+OUTFILE="${BUILDS}/sauce-${KIND}-${GIT_COMMIT}.${EXT}"
 zip -r -FS "$OUTFILE" *
+cd -
+rm -rf $TMPDIR
 echo Wrote $OUTFILE

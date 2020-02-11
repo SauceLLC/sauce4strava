@@ -3,3 +3,5 @@
 *.crx
 manifest.json
 node_modules
+builds
+css
