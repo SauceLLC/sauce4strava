@@ -1,0 +1,39 @@
+<html>
+    <head>
+        <style>
+            body {
+                display: flex;
+                flex-direction: column-reverse;
+                justify-content: flex-end;
+            }
+
+            .log {
+                padding: 0.4em 1em;
+            }
+            .log:not(:last-child) {
+                border-bottom: 1px solid #eee;
+            }
+
+            pre.stack {
+                font-family: monospace;
+                background: #ddd;
+                margin: 1em 4em;
+                padding: 1em;
+                border: 1px solid #aaa;
+            }
+        </style>
+        <script src="harness.js"></script>
+
+        <script src="../../sauce/src/site/preloader.js"></script>
+        <script src="../../sauce/src/site/base.js"></script>
+        <script src="../../sauce/src/site/lib.js"></script>
+
+        <script src="preloader.js"></script>
+        <script src="power_profile.js"></script>
+        <script src="peakpower.js"></script>
+        <script src="bestpace.js"></script>
+        <script src="sampling.js"></script>
+        <script src="data.js"></script>
+    </head>
+    <body></body>
+</html>

@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+
+const [origFile, updatesFile] = process.argv.slice(2);
+
+orig = JSON.parse(fs.readFileSync(origFile));
+updates = JSON.parse(fs.readFileSync(updatesFile));
+
+function merge(a, b) {
+    if (a instanceof Array) {
+        if (!(b instanceof Array)) {
+            throw new TypeError("expected array");
+        }
+        for (const x of b) {
+            a.push(x);
+        }
+    } else {
+        for (const [key, val] of Object.entries(b)) {
+            if (Object.isExtensible(val)) {
+                if (a[key]) {
+                    merge(a[key], val);
+                } else {
+                    a[key] = val;
+                }
+            } else {
+                a[key] = val;
+            }
+        }
+    }
+}
+
+merge(orig, updates);
+console.log(JSON.stringify(orig, null, 4));

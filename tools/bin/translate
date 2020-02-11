@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+TARGETS="es zh"
+
+for x in $TARGETS; do
+    echo Translating to $x...
+    webextension-locale-translator _locales/en/messages.json $x _locales/$x/messages.json
+done

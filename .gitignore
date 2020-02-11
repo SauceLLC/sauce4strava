@@ -2,3 +2,4 @@
 *.pem
 *.crx
 manifest.json
+node_modules

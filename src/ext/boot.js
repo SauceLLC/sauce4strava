@@ -8,6 +8,7 @@
         pathMatch: /^\/activities\/.*/,
         pathExclude: /^\/activities\/.*?\/edit/,
         stylesheets: [
+            'site/responsive.css',
             'site/analysis.css',
             'site/mobile.css',
         ],
@@ -21,7 +22,11 @@
             'site/export.js',
             'site/analysis.js',
         ],
-        callbacks: [() => {
+        callbacks: [config => {
+            if (!config.options.responsive) {
+                return;
+            }
+            document.documentElement.classList.add('sauce-responsive');
             function attachViewportMeta() {
                 const viewport = document.createElement('meta');
                 viewport.setAttribute('name', 'viewport');
@@ -104,6 +109,7 @@
         await loadScript(`${extUrl}src/site/preloader.js`, {blocking: true, top: true});
         const config = await sauce.storage.get(null);
         if (config.enabled === false) {
+            document.documentElement.classList.add('sauce-disabled');
             console.info("Sauce is disabled");
             return;
         }
@@ -125,7 +131,7 @@
             console.info(`Sauce loading: ${m.name}`);
             if (m.callbacks) {
                 for (const cb of m.callbacks) {
-                    cb();
+                    cb(config);
                 }
             }
             if (m.stylesheets) {

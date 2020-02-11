@@ -1,0 +1,43 @@
+#!/bin/sh -e
+
+if [ ! -f "./manifest_${1}.json" ] ; then
+    echo Usage: $0 MANIFEST_KIND 1>&2
+    exit 1
+fi
+
+KIND=$1
+
+TMPDIR=$(mktemp -d)
+rsync -av \
+    --exclude '.git*' \
+    --exclude 'manifest*.json' \
+    --exclude 'README.md' \
+    --exclude '.eslint*' \
+    --exclude '*.swp*' \
+    --exclude 'package.json' \
+    --exclude '.npmrc' \
+    --exclude 'node_modules' \
+    --exclude 'tools' \
+    --exclude 'assets' \
+    --exclude 'sass' \
+    --exclude 'builds' \
+    --exclude 'test'
+    ./* $TMPDIR
+
+$(dirname $0)/mergejson "./manifest_base.json" "./manifest_${KIND}.json" > $TMPDIR/manifest.json
+
+if [ "${KIND}" == "gecko" ]; then
+    rm "$TMPDIR/src/bg/main_declaritive.js"
+    EXT=xpi
+else
+    rm "$TMPDIR/src/bg/main_legacy.js"
+    EXT=zip
+fi
+
+GIT_COMMIT=$(git rev-parse --short HEAD)
+BUILDS=$(pwd)/builds
+mkdir -p $BUILDS
+cd $TMPDIR
+OUTFILE="${BUILDS}/sauce-${2}-${GIT_COMMIT}.${EXT}"
+zip -r -FS "$OUTFILE" *
+echo Wrote $OUTFILE

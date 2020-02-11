@@ -1,0 +1,23 @@
+{
+  "name": "sauce-builder",
+  "version": "0.0.0",
+  "description": "Build tools for sauce browser ext",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mayfield/sauce.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mayfield/sauce/issues"
+  },
+  "homepage": "https://github.com/mayfield/sauce#readme",
+  "devDependencies": {
+    "sass": "1.25.0",
+    "webextension-locale-translator": "0.0.0"
+  }
+}
