@@ -336,9 +336,7 @@
 .sauce-new-comment {
     margin-top: 0.5em;
     border-top: 1px solid rgba(255, 123, 123, 0.46);
-    padding-top: 0.5em;
-    display: flex;
-    justify-content: center;
+    padding: 0.5em 0.5em 0;
 }
 
 .sauce-new-comment input {
@@ -346,6 +344,7 @@
     font-size: 10px !important;
     padding: 4px;
     width: 300px;
+    max-width: calc(100% - 10em);  /* leave room for comment button */
 }
 
 .sauce-new-comment .sauce-label {
@@ -686,4 +685,25 @@ header#global-header .user-nav {
     float: initial;
     flex: 1 0 auto;
     justify-content: flex-end;
+}
+
+#heading .activity-summary-container {
+    flex-wrap: wrap;
+}
+
+#heading .activity-summary-container::before {
+    content: none;  /* disable the 50% absolute border */
+    display: none;
+}
+#heading .activity-summary-container > *:first-child {
+    border-right: 1px solid #f0f0f5;  /* replicate the above border */
+}
+
+#heading .activity-summary-container .activity-summary,
+#heading .activity-summary-container .activity-stats {
+    flex: 1 1 50%;
+    width: initial;
+    margin: 0;
+    padding-top: 1.4em;
+    padding-bottom: 1.4em;
 }

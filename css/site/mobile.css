@@ -25,6 +25,10 @@
         width: 100%;
     }
 
+    body:not([data-route="analysis"]) nav.sidenav #sauce-infopanel {
+        display: none;
+    }
+
     body > .view > .page.container nav.sidenav #sauce-infopanel {
         margin: 0;
         font-size: 1.2em;
@@ -55,9 +59,27 @@
         padding-bottom: 0.85em;
     }
 
+    body > .view > .page.container nav.sidenav .actions-menu {
+        position: absolute; /* move into the location of the pagenav */
+        top: 0;
+        right: 0;
+        border: none;
+    }
+
+    body > .view > .page.container nav.sidenav .actions-menu > * {
+        padding: 0 0.5em;
+        height: 4rem;
+    }
+
+    body > .view > .page.container nav.sidenav .actions-menu .slide-menu,
+    body > .view > .page.container nav.sidenav .actions-menu .slide-menu > .selection {
+        height: 4rem;
+    }
+
     body > .view > .page.container #pagenav {
         display: flex;
-        margin: 0;
+        margin: 0 7.8rem 0 0; /* leave room for actions-menu */
+        border: none;
     }
 
     body > .view > .page.container #pagenav li {
@@ -68,6 +90,8 @@
         align-items: center;
         padding: 0;
         text-align: center; /*for submenus*/
+        height: 4rem;
+        border: none;
     }
 
     body > .view > .page.container #pagenav li > * {
@@ -78,6 +102,9 @@
         display: none;
     }
 
+    body > .view > .page.container #pagenav li.group:hover {
+        margin-bottom: 5.2rem;
+    }
     body > .view > .page.container #pagenav li.group:hover > ul {
         display: flex;
         position: absolute;
@@ -85,7 +112,7 @@
         z-index: 100;
         box-shadow: 1px 1px 5px #0004;
         padding: 0 0.8em;
-        top: 3em;
+        top: 4rem;
         right: 0;
         width: 100vw;
         box-sizing: border-box;
@@ -145,12 +172,14 @@
         margin-right: 0;
     }
 
-    #heading > header .give-kudos span.kudo.title {
+    #heading > header .social .sharing,
+    #heading > header .social .view-comments.button,
+    #heading > header .social .collapse.button {
         display: none;
     }
 
-    #heading .activity-summary-container {
-        flex-direction: column;
+    #heading > header .give-kudos span.kudo.title {
+        display: none;
     }
 
     #heading .activity-summary-container .details-container .avatar {
@@ -167,16 +196,6 @@
         font-size: 1.3em;
         line-height: 1.2em;
         margin-top: 0.6em;
-    }
-
-    #heading .activity-summary-container::before {
-        content: none;
-        display: none;
-    }
-
-    #heading .activity-summary-container .activity-summary,
-    #heading .activity-summary-container .activity-stats {
-        width: 100%;
     }
 
     #heading footer .footer-achievements-title {
@@ -228,5 +247,20 @@
 
     #pace-analysis-section .main {
         min-height: initial;
+    }
+
+    .activity-stats .inline-stats strong {
+        font-size: 1.8em;
+    }
+    .activity-stats .secondary-stats.inline-stats strong {
+        font-size: 1.5em;
+    }
+
+    .activity-stats .inline-stats .label {
+        font-size: 0.9em;
+    }
+
+    .ride.segments-list > .row .align-right {
+        display: none;
     }
 }

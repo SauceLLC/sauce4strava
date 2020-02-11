@@ -1861,11 +1861,9 @@ sauce.ns('analysis', async ns => {
                     const mo = new MutationObserver(mutations => {
                         for (const m of mutations) {
                             if (m.attributeName === 'width') {
-                                console.error("NO!width");
                                 el.removeAttribute('width');
                             }
                             if (m.attributeName === 'height') {
-                                console.error("NO hthe!");
                                 el.removeAttribute('height');
                             }
                         }
@@ -1893,9 +1891,12 @@ sauce.ns('analysis', async ns => {
         if (start) {
             ctx.supportedActivity = true;
             await prepareContext();
-            pageView.router().on('route', () => {
+            const pageRouter = pageView.router();
+            pageRouter.on('route', page => {
+                document.body.dataset.route = page;
                 resetPageMonitors();
             });
+            document.body.dataset.route = pageRouter.context.startMenu();
             startPageMonitors();
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;

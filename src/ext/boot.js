@@ -6,6 +6,7 @@
     const manifests = [{
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
+        pathExclude: /^\/activities\/.*?\/edit/,
         stylesheets: [
             'site/analysis.css',
             'site/mobile.css',
@@ -116,7 +117,11 @@
             sauce.name = "${ext.name}";
             sauce.version = "${ext.version}";
         `);
-        for (const m of manifests.filter(x => location.pathname.match(x.pathMatch))) {
+        for (const m of manifests) {
+            if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||
+                (m.pathExclude && location.pathname.match(m.pathExclude))) {
+                continue;
+            }
             console.info(`Sauce loading: ${m.name}`);
             if (m.callbacks) {
                 for (const cb of m.callbacks) {
