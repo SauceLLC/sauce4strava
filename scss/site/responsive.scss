@@ -1,0 +1,116 @@
+.sauce-responsive {
+    #basic-analysis #elevation-chart {
+        height: initial;
+    }
+
+    #basic-analysis #laps-chart,
+    #basic-analysis #segments-chart {
+        margin-right: 3.10559%;  /* compensate for scalable SVG change, these need to be offset for alignment (966-936) */
+    }
+
+    .view .page.container {
+        width: auto;
+    }
+
+    header#global-header nav.nav-bar {
+        min-width: initial;
+        width: auto;
+    }
+
+    header#global-header nav.nav-bar .btn-mobile-menu {
+        display: none !important;
+    }
+
+    footer .footer-global.container {
+        overflow: hidden;
+        min-width: initial;
+        width: initial;
+    }
+
+    .container {
+        min-width: initial;
+    }
+
+    header#global-header nav.nav-bar {
+        display: flex;
+        margin: 0;
+        padding: 0;
+    }
+
+    header#global-header nav.nav-bar .branding {
+        margin-left: 1em;
+    }
+
+    header#global-header nav.nav-bar #global-search-filter {
+        display: none;
+    }
+    header#global-header nav.nav-bar.search-mode #global-search-filter {
+        display: initial;
+    }
+
+    header#global-header nav.nav-bar #global-search-field {
+        width: 3em; /* must have some width becaues it's a click target */
+    }
+    header#global-header nav.nav-bar.search-mode #global-search-field {
+        width: 100%;
+    }
+
+    header#global-header nav.nav-bar.search-mode #global-search-button {
+        right: 32px;
+    }
+
+    header#global-header nav.nav-bar #global-search-bar {
+        position: static;
+        float: initial;
+    }
+    header#global-header nav.nav-bar.search-mode #global-search-bar {
+        flex: 1 1 100%;
+    }
+
+    header#global-header nav.nav-bar.search-mode #global-search-bar .input-group {
+        overflow: hidden;
+        max-width: 30em;
+    }
+
+    header#global-header nav.nav-bar #global-search-cancel {
+        position: static;
+        transform: initial;
+    }
+
+    header#global-header nav.nav-bar #global-search-bar .dropdown button {
+        padding: 0 0.8em;
+        min-width: initial;
+    }
+
+    header#global-header nav.nav-bar #container-nav {
+        display: flex;
+        flex: 1 1 100%;
+    }
+
+    header#global-header .user-nav {
+        float: initial;
+        flex: 1 0 auto;
+        justify-content: flex-end;
+    }
+
+    #heading .activity-summary-container {
+        flex-wrap: wrap;
+    }
+
+    #heading .activity-summary-container::before {
+        content: none;  /* disable the 50% absolute border */
+        display: none;
+    }
+    #heading .activity-summary-container > *:first-child {
+        border-right: 1px solid #f0f0f5;  /* replicate the above border */
+    }
+
+    #heading .activity-summary-container .activity-summary,
+    #heading .activity-summary-container .activity-stats {
+        flex: 1 1 50%;
+        width: initial;
+        margin: 0;
+        padding-top: 1.4em;
+        padding-bottom: 1.4em;
+    }
+}
