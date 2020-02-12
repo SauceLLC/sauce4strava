@@ -8,9 +8,7 @@
         pathMatch: /^\/activities\/.*/,
         pathExclude: /^\/activities\/.*?\/edit/,
         stylesheets: [
-            'site/responsive.css',
             'site/analysis.css',
-            'site/mobile.css',
         ],
         scripts: [
             'site/base.js',

@@ -1,6 +1,9 @@
+@use 'theme';
+
+
 #sauce-infopanel {
-    border-top: $sauce-border;
-    border-bottom: $sauce-border;
+    border-top: theme.$border;
+    border-bottom: theme.$border;
     margin-top: 10px; // XXX
 
     .title,

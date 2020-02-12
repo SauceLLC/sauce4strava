@@ -1,3 +1,6 @@
+@use 'theme';
+
+
 .ui-dialog.sauce-dialog {
     margin: 0;
     box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.33);
@@ -25,7 +28,7 @@
 
 .ui-dialog.sauce-dialog header {
     margin: 0.5em 1em;
-    border-bottom: $sauce-thin-border;
+    border-bottom: theme.$thin-border;
 }
 
 .ui-dialog.sauce-dialog.sauce-big-data {

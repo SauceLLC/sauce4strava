@@ -1,8 +1,9 @@
-@import 'variables'; 
-@import 'dialog'; 
-@import 'comments'; 
-@import 'analysis_stats'; 
-@import 'peakinfo'; 
+@use 'theme';
+@use 'dialog';
+@use 'comments';
+@use 'analysis_stats';
+@use 'peakinfo';
+
 
 .sauce-positive {
     color: #109f10 !important;
@@ -14,7 +15,7 @@
 
 .activity-stats {
     .secondary-stats.inline-stats.sauce-stats {
-        border: $sauce-thin-border;
+        border: theme.$thin-border;
         border-left: 0;
         border-right: 0;
         background: #fff;
@@ -22,7 +23,7 @@
         margin-right: -15px;
 
         .divider:not(:first-child) {
-            border-left: $sauce-thin-border;
+            border-left: theme.$thin-border;
             width: 20px;
             height: 2.2em;
             display: inline-block;
@@ -37,7 +38,7 @@
         }
 
         .origin-sauce {
-            color: $sauce-primary;
+            color: theme.$primary;
         }
     }
 }
@@ -57,11 +58,11 @@
     }
 
     li.sauce.first {
-        border-top: $sauce-border;
+        border-top: theme.$border;
     }
 
     li.sauce.last {
-        border-bottom: $sauce-border;
+        border-bottom: theme.$border;
     }
 }
 

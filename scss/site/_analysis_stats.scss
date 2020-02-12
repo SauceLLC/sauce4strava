@@ -1,9 +1,12 @@
+@use 'theme';
+
+
 .sauce-analysis-stats {
     display: flex;
     overflow: hidden;
     font-size: 0.9em;
-    border-top: $sauce-border;
-    border-bottom: $sauce-border;
+    border-top: theme.$border;
+    border-bottom: theme.$border;
 
     &:empty {
         box-sizing: border-box; // this is a bug  maybe root element? XXX
@@ -50,7 +53,7 @@
         }
 
         &:not(:last-child) {
-            border-right: $sauce-thin-border;
+            border-right: theme.$thin-border;
         }
 
         &:not(:first-child) {

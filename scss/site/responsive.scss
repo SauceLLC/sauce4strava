@@ -89,7 +89,7 @@
                     min-width: initial;
                 }
             }
-            
+
             #global-search-cancel {
                 position: static;
                 transform: initial;
@@ -162,4 +162,6 @@
             padding-bottom: 1.4em;
         }
     }
+
+    @import 'mobile';
 }
