@@ -24,7 +24,7 @@ $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile
 	echo '{"git_commit": "$(or $(SOURCE_VERSION),$(shell git rev-parse HEAD))"}' > $@
 
 sass:
-	$(TOOLPATH)/sassrender --no-source-map
+	$(TOOLPATH)/sassrender
 
 clean:
 	rm -rf $(PACKAGES) builds css
@@ -53,7 +53,7 @@ package:
 # Runtime-only targets
 ########################################################
 sass-watch:
-	$(TOOLPATH)/sassrender --watch --no-source-map
+	$(TOOLPATH)/sassrender --watch
 
 
 .PHONY: lint sass clean realclean package manifest build
