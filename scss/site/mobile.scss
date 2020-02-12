@@ -39,9 +39,11 @@
                         .give-kudos span.kudo.title {
                             display: none;
                         }
+                    }
 
-                        .activity-summary-container {
-                            .details-container .avatar {
+                    .activity-summary-container {
+                        .details-container {
+                            .avatar {
                                 width: 6rem;
                                 height: 6rem;
                             }
@@ -55,6 +57,10 @@
                                     line-height: 1.2em;
                                     margin-top: 0.6em;
                                 }
+
+                                .activity-description {
+                                    font-size: 0.9em;
+                                }
                             }
                         }
                     }
@@ -67,6 +73,8 @@
                         .footer-achievements-list {
                             float: none;
                             width: 100%;
+                            padding: 0.5em 1em 0.25em;
+                            margin: 0;
                         }
                     }
                 }
@@ -317,6 +325,7 @@
         }
     }
 
+    // XXX all this is in testing...
     #basic-analysis {
         #effort-detail {
             margin-left: 0.5em;

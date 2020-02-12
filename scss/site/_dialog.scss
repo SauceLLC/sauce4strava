@@ -1,0 +1,97 @@
+.ui-dialog.sauce-dialog {
+    margin: 0;
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.33);
+    border-radius: 0.22em;
+    overflow: hidden;
+    background: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    font-family: inherit;  /* use strava font, not jquery */
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-titlebar,
+.ui-dialog.sauce-dialog .ui-dialog-buttonpane {
+    flex: 0 0 auto;
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-content {
+    flex: 1 1 auto;
+    overflow: auto;
+    display: flex !important;
+    flex-direction: column;
+    width: auto !important; /* override element styling during moves */
+}
+
+.ui-dialog.sauce-dialog header {
+    margin: 0.5em 1em;
+    border-bottom: $sauce-thin-border;
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data {
+    max-width: 90vw;
+    max-height: calc(100vh - 4em);
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data .ui-dialog-content {
+    padding: 0;
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data pre {
+    background: white;
+    color: #761f00;
+    padding: 1em 2em;
+    white-space: pre;
+    letter-spacing: 0;
+    overflow: auto;
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data label {
+    display: inline-block;
+    margin: 0 0.3em 0.5em;
+}
+
+.ui-dialog.sauce-dialog.sauce-big-data label input {
+    margin-right: 0.15em;
+    margin-top: 0.2em;
+    zoom: 1.2;
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-titlebar {
+    min-height: 0;
+    background-image: linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);
+    color: #fff;
+    padding: 0.5em 0.5em;
+}
+
+.ui-dialog.sauce-dialog .ui-widget-header {
+    font-size: 1.1em;
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-title {
+    font-size: 1em;
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-titlebar-close {
+    top: 5px;
+}
+
+.ui-dialog.sauce-dialog .ui-dialog-buttonpane {
+    margin: 0;
+    padding: 0.4em;
+}
+
+// Fix strava's dialog button padding.
+.ui-dialog.sauce-dialog .ui-dialog-buttonpane button {
+    min-height: unset;
+    border-radius: 0.25em;
+    padding: 0.3em 0.6em;
+    margin: 0.3em;
+    font-size: 0.85em;
+}
+
+.ui-dialog footer {
+    margin-top: 1em;
+    font-size: 0.9em;
+}
+

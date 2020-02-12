@@ -40,8 +40,10 @@ lint:
 translate:
 	$(TOOLPATH)/translate
 
-$(MANIFEST): manifest_base.json manifest_$(TARGET).json
+$(MANIFEST): manifest_base.json manifest_$(TARGET).json Makefile
 	$(TOOLPATH)/mergejson manifest_base.json manifest_$(TARGET).json > $@
+
+manifest: $(MANIFEST)
 
 package:
 	$(TOOLPATH)/package $(TARGET)
@@ -54,4 +56,4 @@ sass-watch:
 	$(TOOLPATH)/sassrender --watch --no-source-map
 
 
-.PHONY: lint sass clean realclean package
+.PHONY: lint sass clean realclean package manifest build

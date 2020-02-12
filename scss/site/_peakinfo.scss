@@ -1,0 +1,151 @@
+#sauce-infopanel {
+    border-top: $sauce-border;
+    border-bottom: $sauce-border;
+    margin-top: 10px; // XXX
+
+    .title,
+    .sauce-title-menu {
+        white-space: nowrap;
+    }
+
+    .sauce-title-menu {
+        width: 100%;
+
+        a.selection {
+            border: none;
+        }
+
+        a.selection,
+        .options li > a {
+            display: flex;
+            align-items: center;
+        }
+
+        .sauce-svg-icon {
+            max-width: 1em;
+            max-height: 1em;
+            margin: 0 0.5em;
+            width: 100%;
+            height: 100%;
+            display: inline-flex;  // contrain svg
+            flex-direction: column;
+        }
+    }
+
+    .watt-estimate-disclaimer {
+        color: darkred;
+        margin: 0.3em 0 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4em;
+
+        > * {
+            padding: 0 0.2em;
+        }
+    }
+
+    .group {
+        padding-bottom: 0;
+    }
+
+    table {
+        margin: 0;
+
+        tr:nth-child(odd) {
+            background: #fafafa;
+        }
+
+        tr.selected {
+            background: rgba(0, 0, 0, 0.74);
+            color: #fff;
+        }
+
+        tr:hover:not(.selected) {
+            background: #9d9d9d87;
+            cursor: pointer;
+        }
+
+        tr.selected td:last-child {
+            color: white;
+        }
+
+        td {
+            padding: 5px 0 5px 12px; // XXX no px
+        }
+
+        td:last-child {
+            padding-left: 10px; // XXX no px
+            color: #007fb6;
+        }
+    }
+}
+
+.sauce-info-dialog {
+    .sauce-sparkline {
+        margin-top: 1em;
+    }
+
+    sub,
+    small,
+    sup {
+        font-size: 75%;
+    }
+
+    .ui-dialog-content {
+        padding: 0 !important;
+    }
+
+    .ui-dialog-content table {
+        box-sizing: border-box;
+        margin: 0;
+    }
+
+    img.rank_badge {
+        height: 28px; // XXX no pix
+        margin-top: -7px;  // XXX no pix
+        margin-bottom: -7px;  // XXX no pix
+        margin-left: 1px;  // XXX no pix
+    }
+
+    table {
+        sub {
+            vertical-align: sub; // undo override from strava that made this too low
+        }
+
+        tr:nth-child(odd) {
+            background-color: #fff8;
+        }
+
+        tr:hover {
+            background: #fffe;
+        }
+
+        td.rank_holder {
+            position: relative;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        td {
+            padding: 0.65em 0.15em;
+            width: 50%;
+            text-align: center;
+
+            a {
+                color: #007fb6;
+            }
+        }
+
+        td:first-child {
+            padding-left: 1em;
+        }
+
+        td:last-child {
+            padding-right: 1em;
+        }
+    }
+}
+
