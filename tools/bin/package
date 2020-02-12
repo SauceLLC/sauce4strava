@@ -12,6 +12,7 @@ rsync -av \
     --exclude '.git*' \
     --exclude 'manifest*.json' \
     --exclude 'README.md' \
+    --exclude 'Makefile' \
     --exclude '.eslint*' \
     --exclude '*.swp*' \
     --exclude 'package.json' \
