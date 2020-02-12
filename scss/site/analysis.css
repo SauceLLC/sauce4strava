@@ -428,6 +428,7 @@ abbr.unit {
 .sauce-analysis-stats .sauce-brand-sidebar .sauce-logo img {
     max-width: 4.5em;
     max-height: 4.5em;
+    font-size: inherit;
 }
 
 .sauce-analysis-stats .sauce-brand-sidebar .sauce-label {
@@ -511,6 +512,7 @@ abbr.unit {
 
 .sauce-analysis-stats .sauce-data-tuple .rank_badge {
     max-height: 3em;
+    object-fit: contain;
 }
 
 .sauce-beta {

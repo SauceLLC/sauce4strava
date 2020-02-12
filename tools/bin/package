@@ -25,7 +25,7 @@ rsync -av \
     --exclude 'test' \
     ./* $TMPDIR
 
-node_modules/.bin/sass scss:$TMPDIR/css
+node_modules/.bin/sass scss:$TMPDIR/css --no-source-map
 
 $(dirname $0)/mergejson "./manifest_base.json" "./manifest_${KIND}.json" > $TMPDIR/manifest.json
 

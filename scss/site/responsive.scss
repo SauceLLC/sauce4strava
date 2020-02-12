@@ -12,6 +12,48 @@
 
     .view .page.container {
         width: auto;
+
+        #view {
+            > section header {
+                display: flex !important;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                padding: 0.75em;
+
+                > ul.inline-stats {
+                    float: initial;
+                    flex-basis: 0;
+                    display: flex;
+                    margin: 0 0 0.6em;
+                    padding: 0.5em 1em;
+
+                    li {
+                        margin-right: 2em;
+                        flex-basis: 0;
+
+                        strong {
+                            font-size: 2em;
+                        }
+
+                        .label {
+                            font-size: 0.85em;
+                        }
+
+                        &:last-child {
+                            margin-right: 0;
+                        }
+                    }
+
+                    &.float-right {
+                        //justify-content: flex-end;
+                    }
+                }
+
+                &::after {
+                    content: none;
+                }
+            }
+        }
     }
 
     header#global-header {
