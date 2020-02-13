@@ -12,48 +12,57 @@
         }
     }
 
-    .view .page.container {
-        width: auto;
+    .sauce-analysis-stats {
+        width: 100%;
+    }
 
-        #view {
-            > section header {
-                display: flex !important;
-                flex-wrap: wrap;
-                justify-content: space-between;
-                padding: 0.75em;
+    .view {
+        .page.container,
+        .footer-promos .container,
+        .footer-global.container {
+            min-width: initial;
+            width: initial;
+        }
+    }
 
-                > ul.inline-stats {
-                    float: initial;
+    .view .page.container #view {
+        > section header {
+            display: flex !important;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 0.75em;
+
+            > ul.inline-stats {
+                float: initial;
+                flex-basis: 0;
+                display: flex;
+                margin: 0 0 0.6em;
+                padding: 0.5em 1em;
+
+                li {
+                    margin-right: 2em;
                     flex-basis: 0;
-                    display: flex;
-                    margin: 0 0 0.6em;
-                    padding: 0.5em 1em;
 
-                    li {
-                        margin-right: 2em;
-                        flex-basis: 0;
-
-                        strong {
-                            font-size: 2em;
-                        }
-
-                        .label {
-                            font-size: 0.85em;
-                        }
-
-                        &:last-child {
-                            margin-right: 0;
-                        }
+                    strong {
+                        font-size: 2em;
                     }
 
-                    &.float-right {
-                        //justify-content: flex-end;
+                    .label {
+                        font-size: 0.85em;
+                    }
+
+                    &:last-child {
+                        margin-right: 0;
                     }
                 }
 
-                &::after {
-                    content: none;
+                &.float-right {
+                    //justify-content: flex-end;
                 }
+            }
+
+            &::after {
+                content: none;
             }
         }
     }
@@ -135,12 +144,6 @@
 
     footer .footer-global.container {
         overflow: hidden;
-        min-width: initial;
-        width: initial;
-    }
-
-    .container {
-        min-width: initial;
     }
 
     #heading .activity-summary-container {

@@ -1,4 +1,5 @@
 @use 'theme';
+@use 'defines';
 
 @keyframes pournshake {
     0%,
@@ -21,9 +22,9 @@
     font-size: 0.9em;
     border-top: theme.$border;
     border-bottom: theme.$border;
+    width: defines.$basic-analysis-width;
 
     &:empty {
-        box-sizing: border-box; // this is a bug  maybe root element? XXX
         display: none;
     }
 

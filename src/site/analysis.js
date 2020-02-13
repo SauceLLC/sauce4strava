@@ -641,15 +641,30 @@ sauce.ns('analysis', async ns => {
     }
 
 
+    function toggleMobileNavMenu() {
+        const pageContainer = document.querySelector('.view > .page.container');
+        const expandedClass = 'sauce-nav-expanded';
+        const expanded = pageContainer.classList.contains(expandedClass);
+        if (expanded) {
+            pageContainer.classList.remove(expandedClass);
+        } else {
+            pageContainer.classList.add(expandedClass);
+        }
+    }
+
+
     function attachInfoPanel(panel) {
         const infoEl = panel.$el[0];
-        function placeInfo(isMobile) {
+        const sidenav = document.querySelector('nav.sidenav');
+        async function placeInfo(isMobile) {
             if (isMobile) {
-                const parent = document.getElementById('view');
-                parent.insertAdjacentElement('afterbegin', infoEl);
+                const parent = document.getElementById('heading');
+                parent.insertAdjacentElement('afterend', infoEl);
+                sidenav.addEventListener('click', toggleMobileNavMenu);
             } else {
                 const before = document.getElementById('pagenav');
                 before.insertAdjacentElement('afterend', infoEl);
+                sidenav.removeEventListener('click', toggleMobileNavMenu);
             }
         }
         if (!sauce.options['responsive']) {
@@ -1899,6 +1914,15 @@ sauce.ns('analysis', async ns => {
     }
 
 
+    async function attachMobileMenuExpander() {
+        const svg = await sauce.images.asText('fa/bars-solid.svg');
+        const header = document.querySelector('#heading header');
+        header.insertAdjacentHTML('afterbegin',
+            `<div style="display: none" class="menu-expander">${svg}</div>`);
+        header.querySelector('.menu-expander').addEventListener('click', toggleMobileNavMenu);
+    }
+
+
     async function load() {
         await streamsReady();
         const activity = pageView.activity();
@@ -1921,6 +1945,9 @@ sauce.ns('analysis', async ns => {
                 resetPageMonitors();
             });
             document.body.dataset.route = pageRouter.context.startMenu();
+            if (sauce.options['responsive']) {
+                await attachMobileMenuExpander();
+            }
             startPageMonitors();
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;

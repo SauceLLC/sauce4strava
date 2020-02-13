@@ -1,3 +1,6 @@
+@use 'defines';
+
+
 @mixin chartScaleY {
     $scale: 2;
 
@@ -10,6 +13,7 @@
         }
     }
 }
+
 
 @mixin analysis {
     body > .view {
@@ -29,16 +33,44 @@
             padding: 0;
             min-height: initial !important;
 
+            &.sauce-nav-expanded {
+                header > .menu-expander {
+                    background: white;
+                }
+
+                nav.sidenav {
+                    max-width: 90vw;
+                    box-shadow: 8px 8px 10px #0003;
+                }
+            }
+
             #heading {
+                .menu-expander {
+                    display: flex !important;
+                    flex-direction: column;
+                    justify-content: center;
+                    width: 1.4em;
+                    opacity: 0.8;
+                    cursor: pointer;
+                    padding: 0 0.8em;
+                    transition: opacity 100ms;
+
+                    &:hover {
+                        opacity: 1;
+                    }
+                }
+
                 > header {
+                    justify-content: initial;
                     padding: 0;
 
                     h2 {
                         font-size: 1.1em;
-                        padding: 0 0.5em;
+                        padding: 0 0.5em 0 0;
                     }
 
                     .social {
+                        flex: 1 0 auto;
                         margin-right: 0;
 
                         .sharing,
@@ -136,10 +168,33 @@
             }
 
             nav.sidenav {
-                order: -1; // place at top
-                position: static;
+                box-sizing: border-box;
+                transition: max-width 200ms;
                 margin: 0;
-                width: 100%;
+                top: defines.$analysis-heading-height;
+                max-width: 0;
+                width: initial;
+                overflow: hidden auto;
+                max-height: calc(100vh - 8em);
+                background: white;
+
+                #pagenav,
+                .actions-menu {
+                    min-width: 180px;
+                }
+
+                #pagenav {
+                    margin: 0;
+
+                    li > a,
+                    li.group > .title {
+                        padding: 1rem 2rem 1rem 3rem;
+                    }
+
+                    li.group > ul li a {
+                        padding: 0.8rem 2rem 0.8rem 3.8rem;
+                    }
+                }
 
                 #sauce-infopanel {
                     margin: 0;
@@ -161,88 +216,6 @@
                         padding: 0.8em;
                     }
                 }
-
-                .actions-menu {
-                    position: absolute; /* move into the location of the pagenav */
-                    top: 0;
-                    right: 0;
-                    border: none;
-
-                    > * {
-                        padding: 0 0.65em;
-                        height: 5rem;
-                    }
-
-                    .slide-menu,
-                    .slide-menu > .selection {
-                        height: 5rem;
-                    }
-                }
-            }
-
-            #pagenav {
-                display: flex;
-                margin: 0 7.8rem 0 0; /* leave room for actions-menu */
-                border: none;
-
-                li {
-                    flex: 1 1 auto;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    padding: 0;
-                    text-align: center; /*for submenus*/
-                    height: 5rem;
-                    border: none;
-
-                    > * {
-                        padding: 0.25em;
-                        font-size: 0.85em;
-                    }
-
-                    .premium.badge {
-                        margin-left: 0.15em;
-                        height: 1em;
-                        width: 1em;
-                    }
-
-                    &.group {
-                        > ul {
-                            display: none;
-                            li {
-                                padding: 0.4em 0;
-                            }
-                        }
-
-                        &:hover {
-                            margin-bottom: 6rem;
-
-                            > ul {
-                                display: flex;
-                                position: absolute;
-                                background: white;
-                                z-index: 100;
-                                box-shadow: 1px 1px 5px #0004;
-                                padding: 0;
-                                top: 5rem;
-                                right: 0;
-                                width: 100vw;
-                                box-sizing: border-box;
-                            }
-                        }
-                    }
-
-                    &.selected {
-                        box-shadow: inset 0 0 10px #0004;
-                        background: #fc5200;
-                        > a {
-                            box-shadow: initial;
-                            background: none;
-                            color: white;
-                        }
-                    }
-                }
             }
         }
 
@@ -252,7 +225,7 @@
     }
 
     // Use "starts-with" css selector to match "analysis" and "analysis-range"
-    body:not([data-route|="analysis"]) nav.sidenav #sauce-infopanel {
+    body:not([data-route|="analysis"]) #sauce-infopanel {
         display: none;
     }
 
