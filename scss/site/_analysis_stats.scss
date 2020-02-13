@@ -1,27 +1,18 @@
 @use 'theme';
 
-@keyframes shakeanim {
-    0% {
-        transform: translateX(0) rotate(0);
-    }
-    15% {
-        transform: translateX(-0.2em) rotate(-10deg);
-    }
-    30% {
-        transform: translateX(0.2em) rotate(10deg);
-    }
-    45% {
-        transform: translateX(-0.2em) rotate(-10deg);
-    }
-    60% {
-        transform: translateX(-0.2em) rotate(10deg);
-    }
-    75% {
-        transform: translateX(-0.2em) rotate(-10deg);
-    }
-    100% {
-        transform: translateX(0) rotate(0);
-    }
+@keyframes pournshake {
+    0%,
+    60%,
+    100% { transform: translate(0, 0)           rotate(0)      scale(1);   }
+    30%  { transform: translate(0, 0)           rotate(180deg) scale(1.2); }
+    32%  { transform: translate(0.2em, 0.2em)   rotate(185deg) scale(1.2); }
+    34%  { transform: translate(-0.2em, 0)      rotate(175deg) scale(0.8); }
+    36%  { transform: translate(0.2em, 0.1em)   rotate(180deg) scale(1.2); }
+    38%  { transform: translate(-0.2em, -0.2em) rotate(185deg) scale(0.8); }
+    40%  { transform: translate(0.2em, 0.2em)   rotate(185deg) scale(1.2); }
+    42%  { transform: translate(-0.2em, 0)      rotate(175deg) scale(0.8); }
+    44%  { transform: translate(0.2em, 0.1em)   rotate(180deg) scale(1.2); }
+    46%  { transform: translate(-0.2em, -0.2em) rotate(185deg) scale(0.8); }
 }
 
 .sauce-analysis-stats {
@@ -55,8 +46,8 @@
                 font-size: inherit;
             }
 
-            &:active {
-                animation: shakeanim 600ms infinite;
+            &:hover {
+                animation: pournshake 6s infinite ;
             }
         }
 
