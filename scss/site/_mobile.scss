@@ -1,4 +1,17 @@
-@media only screen and (max-width: 768px) {
+@mixin chartScaleY {
+    $scale: 2;
+
+    svg {
+        overflow: visible;
+        margin-bottom: 1em; // XXX so wrong
+
+        g.chartGroup {
+            transform: scaleY($scale) translate(150px, 2px) !important;
+        }
+    }
+}
+
+@mixin analysis {
     body > .view {
         height: 100%;
         display: flex;
@@ -124,7 +137,7 @@
             }
 
             nav.sidenav {
-                order: -1; /* place at top */
+                order: -1; // place at top
                 position: static;
                 margin: 0;
                 width: 100%;
@@ -239,7 +252,8 @@
         }
     }
 
-    body:not([data-route="analysis"]) nav.sidenav #sauce-infopanel {
+    // Use "starts-with" css selector to match "analysis" and "analysis-range"
+    body:not([data-route|="analysis"]) nav.sidenav #sauce-infopanel {
         display: none;
     }
 
@@ -330,22 +344,33 @@
             font-size: 0.8em;
         }
 
-        #segments-chart:not(.empty) {
-            margin-bottom: 2em;
-            overflow: visible;
-
-            svg g.chartGroup {
-                transform: scaleY(2) translate(150px, 2px);
-            }
+        #segments-chart {
+            //@include chartScaleY();
         }
 
-        #laps-chart:not(.empty) {
-            margin-bottom: 2em;
-            overflow: visible;
+        #laps-chart {
+            //@include chartScaleY();
+        }
 
-            svg g.chartGroup {
-                transform: scaleY(2) translate(150px, 2px);
+        #stacked-chart {
+            .xaxis-container text {
+                fill: black;
+            }
+
+            .labelGroup {
+                text.label {
+                    fill: black !important;
+                    font-size: 15px;
+                    transform: translateY(-17px);
+                }
+
+                text.detail {
+                    fill: black !important;
+                    font-size: 14px;
+                    transform: translateY(-23px);
+                }
             }
         }
     }
 }
+
