@@ -329,7 +329,6 @@ sauce.ns('analysis', async ns => {
     class PeakEffortsPanel {
         constructor({type, menu, renderAttrs, infoDialog}) {
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
-            this.$el.insertAfter(jQuery('#pagenav').first());
             this.type = type;
             this.menu = menu;
             this.sourceKey = `${type}_source`;
@@ -552,7 +551,7 @@ sauce.ns('analysis', async ns => {
                     return Object.assign(attrs, {rows});
                 }
             });
-            jQuery('#pagenav').first().after(panel.$el);
+            attachInfoPanel(panel);
             await panel.render();
         }
     }
@@ -636,8 +635,31 @@ sauce.ns('analysis', async ns => {
                     return {rows};
                 }
             });
-            jQuery('#pagenav').first().after(panel.$el);
+            attachInfoPanel(panel);
             await panel.render();
+        }
+    }
+
+
+    function attachInfoPanel(panel) {
+        const infoEl = panel.$el[0];
+        function placeInfo(isMobile) {
+            if (isMobile) {
+                const parent = document.getElementById('view');
+                parent.insertAdjacentElement('afterbegin', infoEl);
+            } else {
+                const before = document.getElementById('pagenav');
+                before.insertAdjacentElement('afterend', infoEl);
+            }
+        }
+        if (!sauce.options['responsive']) {
+            placeInfo(false);
+        } else {
+            // Monitor for window resize with a media query that matches the mobile
+            // css media query..
+            const mobileMedia = window.matchMedia('(max-width: 768px)');
+            mobileMedia.addListener(ev => void placeInfo(ev.matches));
+            placeInfo(mobileMedia.matches);
         }
     }
 
@@ -1825,7 +1847,9 @@ sauce.ns('analysis', async ns => {
         if (sauce.options['analysis-segment-badges']) {
             maintainSegmentBadges();
         }
-        maintainScalableSVG();
+        if (sauce.options['responsive']) {
+            maintainScalableSVG();
+        }
         _pageMonitorsBackoff *= 1.25;
         _pageMonitorsTimeout = setTimeout(startPageMonitors, _pageMonitorsBackoff);
     }
