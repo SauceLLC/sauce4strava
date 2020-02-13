@@ -1,5 +1,28 @@
 @use 'theme';
 
+@keyframes shakeanim {
+    0% {
+        transform: translateX(0) rotate(0);
+    }
+    15% {
+        transform: translateX(-0.2em) rotate(-10deg);
+    }
+    30% {
+        transform: translateX(0.2em) rotate(10deg);
+    }
+    45% {
+        transform: translateX(-0.2em) rotate(-10deg);
+    }
+    60% {
+        transform: translateX(-0.2em) rotate(10deg);
+    }
+    75% {
+        transform: translateX(-0.2em) rotate(-10deg);
+    }
+    100% {
+        transform: translateX(0) rotate(0);
+    }
+}
 
 .sauce-analysis-stats {
     display: flex;
@@ -26,9 +49,14 @@
             margin-left: 1em;
 
             img {
-                max-width: 4.5em;
-                max-height: 4.5em;
+                transform: rotate(-20deg);
+                max-width: 3.5em;
+                max-height: 3.5em;
                 font-size: inherit;
+            }
+
+            &:active {
+                animation: shakeanim 600ms infinite;
             }
         }
 
