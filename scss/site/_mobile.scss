@@ -129,6 +129,11 @@
                             }
                         }
                     }
+
+                    .other-athletes div[data-react-class="ActivityTagging"],
+                    .flybys {
+                        display: none;
+                    }
                 }
 
                 footer {

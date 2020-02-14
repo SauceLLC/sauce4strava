@@ -163,25 +163,57 @@
         overflow: hidden;
     }
 
-    #heading .activity-summary-container {
-        flex-wrap: wrap;
-
-        &::before {
-            content: none;  // disable the 50% absolute border
-            display: none;
-        }
-
-        > *:first-child {
-            border-right: 1px solid #f0f0f5;  // replicate the above border
-        }
-
-        .activity-summary,
-        .activity-stats {
-            flex: 1 1 50%;
-            width: initial;
+    #heading {
+        > .container-fluid {
             margin: 0;
-            padding-top: 1.4em;
-            padding-bottom: 1.4em;
+            padding: 0;
+
+            > .row {
+                margin: 0;
+            }
+        }
+
+        .activity-summary-container {
+            flex-wrap: wrap;
+
+            &::before {
+                content: none;  // disable the 50% absolute border
+                display: none;
+            }
+
+            > *:first-child {
+                border-right: 1px solid #f0f0f5;  // replicate the above border
+            }
+
+            .activity-summary,
+            .activity-stats {
+                flex: 1 1 50%;
+                max-width: 100%;
+                width: initial;
+                float: initial;
+                margin: 0;
+                padding-top: 1.4em;
+                padding-bottom: 1.4em;
+            }
+
+            .others-section-v2 .other-athletes {
+                flex-wrap: wrap;
+            }
+
+            .activity-stats {
+                padding-left: 0;
+                padding-right: 0;
+
+                > * {
+                    padding-left: 1em;
+                    padding-right: 1em;
+                    margin: 0;
+                }
+
+                > ul.section {
+                    display: flex;
+                }
+            }
         }
     }
 

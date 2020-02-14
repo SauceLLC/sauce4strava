@@ -24,7 +24,7 @@
 
         .divider:not(:first-child) {
             border-left: theme.$thin-border;
-            width: 20px;
+            margin-right: 20px;
             height: 2.2em;
             display: inline-block;
             margin-top: 0.3em;
