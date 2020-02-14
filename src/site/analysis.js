@@ -366,7 +366,6 @@ sauce.ns('analysis', async ns => {
                 sourceTooltip: source + '_tooltip',
                 sourceIcon: await sauce.images.asText(peakIcons[source]),
             }, await this.renderAttrs.call(this, source))));
-            requestAnimationFrame(navHeightAdjustments);
         }
 
         async getSelectedSource() {
@@ -666,6 +665,7 @@ sauce.ns('analysis', async ns => {
                 before.insertAdjacentElement('afterend', infoEl);
                 sidenav.removeEventListener('click', toggleMobileNavMenu);
             }
+            requestAnimationFrame(navHeightAdjustments);
         }
         if (!sauce.options['responsive']) {
             placeInfo(false);

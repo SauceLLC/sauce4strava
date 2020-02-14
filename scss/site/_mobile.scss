@@ -39,8 +39,9 @@
                 }
 
                 nav.sidenav {
-                    max-width: 90vw;
                     box-shadow: 8px 8px 10px #0003;
+                    left: 0;
+                    visibility: visible;
                 }
             }
 
@@ -169,26 +170,23 @@
 
             nav.sidenav {
                 box-sizing: border-box;
-                transition: max-width 200ms;
+                transition: left 200ms, visibility 200ms;
                 margin: 0;
                 top: defines.$analysis-heading-height;
-                max-width: 0;
+                left: -100vw;
+                max-width: 90vw;
+                visibility: hidden;
                 width: initial;
                 overflow: hidden auto;
                 max-height: calc(100vh - 8em);
                 background: white;
-
-                #pagenav,
-                .actions-menu {
-                    min-width: 180px;
-                }
 
                 #pagenav {
                     margin: 0;
 
                     li > a,
                     li.group > .title {
-                        padding: 1rem 2rem 1rem 3rem;
+                        padding: 1rem 3rem;
                     }
 
                     li.group > ul li a {
