@@ -180,6 +180,8 @@
 
                     .sauce-data-tuple {
                         font-size: 1em;
+                        justify-content: center;
+                        align-items: center;
 
                         &.sauce-rank-badge {
                             grid-row: 1;
@@ -330,6 +332,10 @@
             .upgrade {
                 display: none;
             }
+
+            a.nav-link.selection {
+                pointer-events: none;  // Let touch open the menu instead of navigating
+            }
         }
     }
 
@@ -366,6 +372,28 @@
     }
 
     .lightbox-window {
+        width: initial;
+
+        .invite-lightbox {
+            .sidenav,
+            .invite-container {
+                float: initial;
+                width: initial;
+            }
+
+            .invite-container {
+                .email {
+                    > * {
+                        float: initial;
+                        width: initial;
+                    }
+                }
+
+                #email-invite-load-contacts {
+                    margin-top: 1em;
+                }
+            }
+        }
     }
 
     // XXX all this is in testing...
