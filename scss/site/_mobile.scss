@@ -71,10 +71,10 @@
                     display: flex !important;
                     flex-direction: column;
                     justify-content: center;
-                    width: 1.4em;
-                    opacity: 0.8;
+                    width: 1.6em;
+                    opacity: 0.75;
                     cursor: pointer;
-                    padding: 0 0.8em;
+                    padding: 0 1em;
                     transition: opacity 100ms;
 
                     &:hover {
@@ -88,7 +88,7 @@
 
                     h2 {
                         font-size: 1.1em;
-                        padding: 0 0.5em 0 0;
+                        padding: 0 0.5em;
                     }
 
                     .social {
@@ -199,25 +199,28 @@
                 visibility: hidden;
                 width: initial;
                 overflow: hidden auto;
-                max-height: calc(100vh - 8em);
+                max-height: calc(100vh - #{defines.$global-header-height} - #{defines.$analysis-heading-height});
                 background: white;
 
 
 
                 #pagenav {
                     margin: 0;
+                    padding: 0.5em 0;
 
                     li > a,
                     li.group > .title {
-                        padding: 1rem 3rem;
+                        padding: 1.2rem 3.5rem;
                     }
 
                     li.group > ul li a {
-                        padding: 0.8rem 2rem 0.8rem 3.8rem;
+                        padding: 1rem 4rem 1rem 4.5rem;
                     }
                 }
 
                 .actions-menu {
+                    border: none;
+
                     > a.button {
                         position: absolute;
                         z-index: 2;  // Must be over drop down menu
@@ -230,13 +233,13 @@
                         min-width: 100%;
                         max-width: 14em;
                         float: initial;
+                        display: block;
 
                         &.active {
-                            .options,
-                            .selection {
-                                background: #555;
-                                border: none;
-                                border-radius: 0;
+                            background: #333;
+
+                            .selection .app-icon {
+                                filter: invert(1);
                             }
 
                             li > * {
@@ -249,10 +252,16 @@
                         }
                     }
 
+                    .selection,
+                    ul.options {
+                        background: transparent;
+                    }
+
                     ul.options {
                         position: static;
                         min-width: initial;
                         max-height: initial;
+                        border: none;
                         margin: 0;
 
                         li > * {

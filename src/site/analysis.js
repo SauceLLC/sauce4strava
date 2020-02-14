@@ -640,18 +640,28 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    function toggleMobileNavMenu(ev) {
-        if (ev && ev.target && ev.target.closest('.drop-down-menu .selection')) {
-            console.warn("ignore dropdown menu click");
-            return;
+    function onMobileNavClickaway(ev) {
+        if (!ev.target.closest('nav.sidenav')) {
+            ev.stopImmediatePropagation();  // noops menu-expander listener.
+            ev.preventDefault();  // Prevent background page from taking action
+        } else if (!ev.target.closest('a')) {
+            return;  // ignore non link clicks in the menu.
         }
+        toggleMobileNavMenu(ev);
+    }
+
+
+    function toggleMobileNavMenu(ev) {
         const pageContainer = document.querySelector('.view > .page.container');
         const expandedClass = 'sauce-nav-expanded';
         const expanded = pageContainer.classList.contains(expandedClass);
+        const evOptions = {capture: true, passive: false};
         if (expanded) {
+            document.removeEventListener('click', onMobileNavClickaway, evOptions);
             pageContainer.classList.remove(expandedClass);
         } else {
             pageContainer.classList.add(expandedClass);
+            document.addEventListener('click', onMobileNavClickaway, evOptions);
         }
     }
 
@@ -1791,7 +1801,7 @@ sauce.ns('analysis', async ns => {
 
     if (Strava.Activities && Strava.Activities.Ui && Strava.Activities.Ui.prepareSlideMenu) {
         Strava.Activities.Ui.prepareSlideMenu = function() {
-            // We extend the nav sidebar, so we need to modify this routine to make the menu
+            // We extend the sidenav, so we need to modify this routine to make the menu
             // work properly in all conditions.
             const $slideMenu = jQuery(".slide-menu");
             const navHeight = jQuery("nav.sidenav").height() || 0;
@@ -1921,13 +1931,6 @@ sauce.ns('analysis', async ns => {
         header.insertAdjacentHTML('afterbegin',
             `<div style="display: none" class="menu-expander">${svg}</div>`);
         header.querySelector('.menu-expander').addEventListener('click', toggleMobileNavMenu);
-        document.querySelector('nav.sidenav').addEventListener('click', ev => {
-            if (ev.target.closest('.drop-down-menu .selection')) {
-                console.warn("ignore dropdown menu click");
-                return;
-            }
-            toggleMobileNavMenu();
-        });
     }
 
 
