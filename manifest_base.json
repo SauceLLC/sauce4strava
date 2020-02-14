@@ -55,8 +55,7 @@
         "run_at": "document_start",
         "matches": ["*://*.strava.com/*"],
         "css": [
-            "css/site/common.css",
-            "css/site/responsive.css"
+            "css/site/common.css"
         ]
     }, {
         "run_at": "document_start",

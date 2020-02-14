@@ -204,8 +204,6 @@
                 max-height: calc(100vh - #{defines.$global-header-height} - #{defines.$analysis-heading-height});
                 background: white;
 
-
-
                 #pagenav {
                     margin: 0;
                     padding: 0.5em 0;
@@ -394,6 +392,24 @@
                 }
             }
         }
+    }
+
+    // Edit page..
+    body > .container.mb-xl > .row {
+        flex-direction: column;
+
+        form > .row {
+            flex-direction: column;
+        }
+
+        .edit-activity-rpe-input input[name="activity[perceived_exertion]"] + div {
+            flex-direction: column;
+        }
+    }
+
+    footer > .footer-promos,
+    footer > .footer-global {
+        display: none;
     }
 
     // XXX all this is in testing...

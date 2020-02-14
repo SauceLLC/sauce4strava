@@ -67,7 +67,7 @@
         }
     }
 
-    header#global-header {
+    &:not(.responsive) header#global-header {
         nav.nav-bar {
             min-width: initial;
             width: auto;

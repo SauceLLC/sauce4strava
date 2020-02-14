@@ -66,6 +66,18 @@
     }
 }
 
+img.sauce-rank {
+    margin-left: 0.8em;
+    width: 3.5em;
+    opacity: 0.8;
+    object-fit: contain;
+    transition: opacity 200ms;
+}
+
+img.sauce-rank:hover {
+    opacity: 1;
+}
+
 .sauce-rank-widget {
     padding: 1em;
     margin: 1em;
@@ -95,3 +107,28 @@ abbr.unit {
     border-radius: 0.24em;
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.20);
 }
+
+#basic-analysis {
+    text.static-label-box.label,
+    text.laps-label,
+    text.segments-label {
+        fill: #555 !important;
+    }
+
+    text.static-label-box.detail {
+        fill: #222 !important;
+        font-size: 11px;
+    }
+
+    #effort-detail {
+        color: #222 !important;
+    }
+
+    table.segments .sauce-rank-holder,
+    table.hidden-segments .sauce-rank-holder {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+

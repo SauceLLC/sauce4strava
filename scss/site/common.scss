@@ -1,79 +1,22 @@
-/* Override Strava CSS for enhanced usability. */
+.sauce-enabled {
+    .main .feed-container .feed {
+        display: flex;
+        flex-direction: column;
+    }
 
-.sauce-enabled #basic-analysis text.static-label-box.label,
-.sauce-enabled #basic-analysis text.laps-label,
-.sauce-enabled #basic-analysis text.segments-label {
-    fill: #555 !important;
-}
+    &.sauce-hide-dashboard-media .main .feed-container .feed .card .entry-media {
+        display: none !important;
+    }
 
-.sauce-enabled #basic-analysis text.static-label-box.detail {
-    fill: #222 !important;
-    font-size: 11px;
-}
+    &.sauce-hide-dashboard-images .main .feed-container .feed .card .entry-images {
+        display: none !important;
+    }
 
-.sauce-enabled #basic-analysis #effort-detail {
-    color: #222 !important;
-}
+    .card.hidden-by-sauce {
+        display: none !important;
+    }
 
-/* hide broken dialog titlebar button */
-.sauce-enabled .ui-dialog-titlebar button.ui-dialog-titlebar-close {
-    display: none;
-}
-
-.sauce-enabled .main .feed-container .feed {
-    display: flex;
-    flex-direction: column;
-}
-
-.sauce-enabled.sauce-hide-dashboard-media .main .feed-container .feed .card .entry-media {
-    display: none !important;
-}
-
-.sauce-enabled.sauce-hide-dashboard-images .main .feed-container .feed .card .entry-images {
-    display: none !important;
-}
-
-.sauce-enabled img.sauce-rank {
-    margin-left: 0.8em;
-    width: 3.5em;
-    opacity: 0.8;
-    object-fit: contain;
-    transition: opacity 200ms;
-}
-
-.sauce-enabled img.sauce-rank:hover {
-    opacity: 1;
-}
-
-.card.hidden-by-sauce {
-    display: none !important;
-}
-
-.sauce-enabled table.segments .sauce-rank-holder,
-.sauce-enabled table.hidden-segments .sauce-rank-holder {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.ui-dialog-titlebar div.ui-dialog-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.ui-dialog-titlebar div.ui-dialog-title .title-label {
-    flex: 1 1 auto;
-}
-
-.ui-dialog-titlebar div.ui-dialog-title .title-icon {
-    max-width: 1.8em;
-    max-height: 1.8em;
-    flex: 0 1 1.8em;
-    display: flex; /* constrains inner svg icons */
-    flex-direction: column;
-}
-
-.sauce-enabled #smartbanner-orion {
-    display: none !important;
+    #smartbanner-orion {
+        display: none !important;
+    }
 }

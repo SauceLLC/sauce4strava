@@ -6,9 +6,9 @@
     const manifests = [{
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
-        pathExclude: /^\/activities\/.*?\/edit/,
         stylesheets: [
             'site/analysis.css',
+            'site/responsive.css',
         ],
         scripts: [
             'site/base.js',
