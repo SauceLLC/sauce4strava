@@ -124,11 +124,11 @@ abbr.unit {
         color: #222 !important;
     }
 
-    table.segments .sauce-rank-holder,
-    table.hidden-segments .sauce-rank-holder {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
 }
 
+table.segments .sauce-rank-holder,
+table.hidden-segments .sauce-rank-holder {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}

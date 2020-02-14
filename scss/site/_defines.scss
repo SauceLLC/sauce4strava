@@ -1,4 +1,7 @@
-$global-header-height: 55px; // Strava's hard coded value
-$analysis-heading-height: 45px; // Strava's hard coded value
-$analysis-sidenav-width: 154px; // Strava's hard coded value
-$basic-analysis-width: 966px; // Strava's hard coded width (overriden in responsive mode)
+// Hard coded strava values.
+$global-header-height: 55px;
+$analysis-heading-height: 45px;
+$analysis-sidenav-width: 154px;
+$analysis-page-left-pad: 195px;
+$analysis-page-right-pad: 16px;
+$basic-analysis-width: 966px;

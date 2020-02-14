@@ -1,4 +1,5 @@
 @use 'mobile';
+@use 'defines';
 
 .sauce-responsive {
     #basic-analysis {
@@ -63,6 +64,22 @@
 
             &::after {
                 content: none;
+            }
+        }
+
+        #ride-overview {
+            &.pinned {
+
+                // Reset strava's own reset for narrow screens (strange because it's dead css to them, but we expose it).
+                .pinnable {
+                    position: fixed;
+                    width: calc((100vw - (100vw - 100%)) -
+                                (#{defines.$analysis-page-left-pad} + #{defines.$analysis-page-right-pad} + 2px));
+                    height: initial;
+                    background: white;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                    z-index: 11;
+                }
             }
         }
     }
