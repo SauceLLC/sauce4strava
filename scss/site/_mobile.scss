@@ -45,6 +45,31 @@
                 }
             }
 
+            #sauce-infopanel {
+                font-size: 10em;
+                background: pink;
+                margin: 1em;
+
+                margin: 0;
+
+                td {
+                    padding: 0.6em 0;
+                    width: 50%;
+                    text-align: center;
+                }
+
+                .sauce-title-menu .selection {
+                    background-color: #f7f7fa; // match other headings
+                    border-bottom: 1px solid #dfdfe8;
+                }
+
+                .sauce-title-menu .selection,
+                .sauce-title-menu ul li a {
+                    font-size: 1.1em;
+                    padding: 0.8em;
+                }
+            }
+
             #heading {
                 .menu-expander {
                     display: flex !important;
@@ -181,6 +206,8 @@
                 max-height: calc(100vh - 8em);
                 background: white;
 
+
+
                 #pagenav {
                     margin: 0;
 
@@ -194,24 +221,47 @@
                     }
                 }
 
-                #sauce-infopanel {
-                    margin: 0;
-
-                    td {
-                        padding: 0.6em 0;
+                .actions-menu {
+                    > a.button {
+                        position: absolute;
+                        z-index: 2;  // Must be over drop down menu
                         width: 50%;
-                        text-align: center;
+                        background: white;
+                        border-radius: 0;
                     }
 
-                    .sauce-title-menu .selection {
-                        background-color: #f7f7fa; // match other headings
-                        border-bottom: 1px solid #dfdfe8;
+                    .drop-down-menu {
+                        min-width: 100%;
+                        max-width: 14em;
+                        float: initial;
+
+                        &.active {
+                            .options,
+                            .selection {
+                                background: #555;
+                                border: none;
+                                border-radius: 0;
+                            }
+
+                            li > * {
+                                color: white;
+                            }
+                        }
+
+                        .app-icon-wrapper {
+                            margin-left: 50%;
+                        }
                     }
 
-                    .sauce-title-menu .selection,
-                    .sauce-title-menu ul li a {
-                        font-size: 1.1em;
-                        padding: 0.8em;
+                    ul.options {
+                        position: static;
+                        min-width: initial;
+                        max-height: initial;
+                        margin: 0;
+
+                        li > * {
+                            padding: 1rem 3rem;
+                        }
                     }
                 }
             }

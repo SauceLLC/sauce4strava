@@ -640,7 +640,11 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    function toggleMobileNavMenu() {
+    function toggleMobileNavMenu(ev) {
+        if (ev && ev.target && ev.target.closest('.drop-down-menu .selection')) {
+            console.warn("ignore dropdown menu click");
+            return;
+        }
         const pageContainer = document.querySelector('.view > .page.container');
         const expandedClass = 'sauce-nav-expanded';
         const expanded = pageContainer.classList.contains(expandedClass);
@@ -654,16 +658,13 @@ sauce.ns('analysis', async ns => {
 
     function attachInfoPanel(panel) {
         const infoEl = panel.$el[0];
-        const sidenav = document.querySelector('nav.sidenav');
         async function placeInfo(isMobile) {
             if (isMobile) {
                 const parent = document.getElementById('heading');
                 parent.insertAdjacentElement('afterend', infoEl);
-                sidenav.addEventListener('click', toggleMobileNavMenu);
             } else {
                 const before = document.getElementById('pagenav');
                 before.insertAdjacentElement('afterend', infoEl);
-                sidenav.removeEventListener('click', toggleMobileNavMenu);
             }
             requestAnimationFrame(navHeightAdjustments);
         }
@@ -1920,6 +1921,13 @@ sauce.ns('analysis', async ns => {
         header.insertAdjacentHTML('afterbegin',
             `<div style="display: none" class="menu-expander">${svg}</div>`);
         header.querySelector('.menu-expander').addEventListener('click', toggleMobileNavMenu);
+        document.querySelector('nav.sidenav').addEventListener('click', ev => {
+            if (ev.target.closest('.drop-down-menu .selection')) {
+                console.warn("ignore dropdown menu click");
+                return;
+            }
+            toggleMobileNavMenu();
+        });
     }
 
 
