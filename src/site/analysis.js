@@ -775,6 +775,10 @@ sauce.ns('analysis', async ns => {
         } else {
             pageView.router().changeMenuTo(`analysis`);
         }
+        const chart = document.querySelector('#basic-analysis section.chart');
+        if (chart) {
+            chart.scrollIntoView({behavior: 'smooth', block: 'center'});
+        }
     }
 
 
@@ -807,14 +811,14 @@ sauce.ns('analysis', async ns => {
             },
             extraButtons: {
                 "Analysis View": () => {
-                    changeToAnalysisView(options.start, options.end);
                     $dialog.dialog('close');
+                    changeToAnalysisView(options.start, options.end);
                 }
             }
         });
         $dialog.find('.start_time_link').on('click',() => {
-            changeToAnalysisView(options.start, options.end);
             $dialog.dialog('close');
+            changeToAnalysisView(options.start, options.end);
         });
         $dialog.on('dialogclose', () => {
             options.originEl.classList.remove('selected');

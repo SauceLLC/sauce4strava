@@ -288,10 +288,16 @@
         top: 0 !important;
         left: 0 !important;
         font-size: 1.2em;
+        border: none;
+        border-radius: 0;
 
         table td {
             padding-top: 0.85em;
             padding-bottom: 0.85em;
+        }
+
+        .ui-dialog-buttonpane {
+            font-size: 1.1em;
         }
     }
 
