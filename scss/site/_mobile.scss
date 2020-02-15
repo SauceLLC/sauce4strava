@@ -14,6 +14,31 @@
     }
 }
 
+@keyframes clickoutline {
+    $size: 3em;
+
+    0%   {
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        box-shadow: 0 0 0 0.1em transparent;
+    }
+    20% {
+        top: calc(50% - #{$size / 2});
+        left: calc(50% - #{$size / 2});
+        width: $size;
+        height: $size;
+        box-shadow: 0 0 0 0.2em #0003;
+    }
+    100% {
+        top: calc(50% - #{$size / 2});
+        left: calc(50% - #{$size / 2});
+        width: $size;
+        height: $size;
+        box-shadow: 0 0 3em 0.2em #0000;
+    }
+}
 
 @mixin analysis {
     body > .view {
@@ -247,6 +272,26 @@
                         padding: 1.2rem 3.5rem;
                     }
 
+                    li > a {
+                        position: relative;
+
+                        &:active::after {
+                            animation: clickoutline 2s;
+                        }
+
+                        &::after {
+                            content: '';
+                            position: absolute;
+                            pointer-events: none;
+                            width: 0;
+                            height: 0;
+                            display: block;
+                            border-radius: 100%;
+                            top: 50%;
+                            left: 50%;
+                        }
+                    }
+
                     li.group > ul li a {
                         padding: 1rem 4rem 1rem 4.5rem;
                     }
@@ -278,6 +323,13 @@
 
                             li > * {
                                 color: white;
+                            }
+
+                            li > a:hover {
+                                background: black;
+                            }
+                            li > a:active {
+                                background: orange;
                             }
                         }
 
