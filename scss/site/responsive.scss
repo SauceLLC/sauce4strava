@@ -254,4 +254,27 @@
     @media only screen and (max-width: 768px) {
         @include mobile.analysis;
     }
+
+    // Fix the panel in the top right corner since the calcs are all bad.
+    .pace-info-box {
+        top: 1em !important;
+        right: 1em !important;
+        left: initial !important;
+    }
+
+    #run-pace-chart .base-chart {
+        padding-top: 2em; // leave more room for info box
+    }
+
+    #pace-analysis-section + .row {
+        display: flex;
+        flex-wrap: wrap;
+
+        > .spans8 {
+            width: initial;
+            float: initial;
+            flex: 1 0 auto;
+            min-width: 300px;
+        }
+    }
 }

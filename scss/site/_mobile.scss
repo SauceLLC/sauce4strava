@@ -158,8 +158,15 @@
                     flex-wrap: wrap;
                     justify-content: space-between;
 
-                    > ul.inline-stats {
-                        font-size: 0.5em;
+                    ul.inline-stats {
+                        li {
+                            strong {
+                                font-size: 1.5em;
+                            }
+                            .label {
+                                font-size: 0.7em;
+                            }
+                        }
                     }
                 }
 
@@ -202,6 +209,19 @@
                 #map-canvas {
                     min-height: initial;
                     max-height: 25vh;
+                }
+
+                #run-efforts-table .laps {
+                    min-height: initial;
+                }
+
+                table.distribution-chart {
+                    font-size: 0.9em;
+                    td {
+                        padding: 0.8em;
+                        height: initial;
+                        width: initial;
+                    }
                 }
             }
 
