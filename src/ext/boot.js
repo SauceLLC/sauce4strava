@@ -26,6 +26,9 @@
             }
             document.documentElement.classList.add('sauce-responsive');
             function attachViewportMeta() {
+                if (document.querySelector('head meta[name="viewport"]')) {
+                    return;
+                }
                 const viewport = document.createElement('meta');
                 viewport.setAttribute('name', 'viewport');
                 viewport.setAttribute('content', Object.entries({
@@ -35,7 +38,11 @@
                     'user-scalable': 'no'
                 }).map(([k, v]) => `${k}=${v}`).join(', '));
                 const charset = document.querySelector('head meta[charset]');
-                charset.insertAdjacentElement('afterend', viewport);
+                if (charset) {
+                    charset.insertAdjacentElement('afterend', viewport);
+                } else {
+                    document.head.insertAdjacentElement('afterbegin', viewport);
+                }
             }
             if (document.head) {
                 attachViewportMeta();
