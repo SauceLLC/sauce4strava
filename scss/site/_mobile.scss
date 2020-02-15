@@ -194,6 +194,15 @@
                         }
                     }
                 }
+
+                #chart-controls {
+                    font-size: 0.82em;
+                }
+
+                #map-canvas {
+                    min-height: initial;
+                    max-height: 25vh;
+                }
             }
 
             nav.sidenav {
@@ -252,7 +261,7 @@
                             }
                         }
 
-                        .app-icon-wrapper {
+                        &:not(:first-child) .app-icon-wrapper {
                             margin-left: 50%;
                         }
                     }

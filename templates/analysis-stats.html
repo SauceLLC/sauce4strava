@@ -35,17 +35,17 @@
             <value>{{pace.moving}}<abbr class="unit">/{{distUnit}}</abbr></value>
         </line>
 
-        <% if (pace.elapsed) { %>
-            <line title="{{{elapsed_pace_tooltip}}}">
-                <key>{{{elapsed}}}</key>
-                <value>{{pace.elapsed}}<abbr class="unit">/{{distUnit}}</abbr></value>
-            </line>
-        <% } %>
-
         <% if (pace.gap) { %>
             <line title="{{{gap_tooltip}}}">
                 <key>GAP</key>
                 <value>{{pace.gap}}<abbr class="unit">/{{distUnit}}</abbr></value>
+            </line>
+        <% } %>
+
+        <% if (pace.elapsed && pace.elapsed !== pace.moving) { %>
+            <line title="{{{elapsed_pace_tooltip}}}">
+                <key>{{{elapsed}}}</key>
+                <value>{{pace.elapsed}}<abbr class="unit">/{{distUnit}}</abbr></value>
             </line>
         <% } %>
     </div>
@@ -63,17 +63,17 @@
             </value>
         </line>
 
-        <% if (power.elapsedAvg) { %>
-            <line title="{{{elapsed_power_tooltip}}}">
-                <key>{{{elapsed}}}</key>
-                <value>{{power.estimate ? '~' : ''}}{{Math.round(power.elapsedAvg).toLocaleString()}}<abbr class="unit">w</abbr></value>
-            </line>
-        <% } %>
-
         <% if (obj.power.np) { %>
             <line title="{{{np_tooltip}}}">
                 <key>NP®</key>
                 <value>{{Math.round(power.np).toLocaleString()}}<abbr class="unit">w</abbr></value>
+            </line>
+        <% } %>
+
+        <% if (power.elapsedAvg && power.elapsedAvg !== power.movingAvg) { %>
+            <line title="{{{elapsed_power_tooltip}}}">
+                <key>{{{elapsed}}}</key>
+                <value>{{power.estimate ? '~' : ''}}{{Math.round(power.elapsedAvg).toLocaleString()}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
     </div>
@@ -100,7 +100,11 @@
     </div>
 <% } %>
 
-<% if (obj.elevation && (elevation.gain || elevation.loss || elevation.grade || elevation.vam)) { %>
+<% if (obj.elevation &&
+       (elevation.gain ||
+        elevation.loss ||
+        (elevation.grade && Math.abs(elevation.grade) >= 1) ||
+        (elevation.vam && elevation.vam >= 1))) { %>
     <div class="sauce-data-tuple">
         <line class="heading">
             <key>{{{elevation}}}</key>

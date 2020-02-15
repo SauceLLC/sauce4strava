@@ -777,7 +777,16 @@ sauce.ns('analysis', async ns => {
         }
         const chart = document.querySelector('#basic-analysis section.chart');
         if (chart) {
-            chart.scrollIntoView({behavior: 'smooth', block: 'center'});
+            const $collapsables = jQuery('.collapsable');
+            if ($collapsables.queue().length) {
+                // Run after animation completes..
+                $collapsables.queue(next => {
+                    next();
+                    chart.scrollIntoView({behavior: 'smooth', block: 'center'});
+                });
+            } else {
+                chart.scrollIntoView({behavior: 'smooth', block: 'center'});
+            }
         }
     }
 
