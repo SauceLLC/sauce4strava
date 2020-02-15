@@ -230,8 +230,12 @@
                 padding-bottom: 1.4em;
             }
 
-            .others-section-v2 .other-athletes {
-                flex-wrap: wrap;
+            .others-section-v2 {
+                padding: 0;
+
+                .other-athletes {
+                    flex-wrap: wrap;
+                }
             }
 
             .activity-stats {
@@ -242,6 +246,10 @@
                     padding-left: 1em;
                     padding-right: 1em;
                     margin: 0;
+                }
+
+                .more-stats {
+                    margin-right: 1em; // pad more/less buttons
                 }
 
                 > ul.section {
