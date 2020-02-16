@@ -438,17 +438,105 @@
                 font-size: 1.8em;
             }
             .label {
-                font-size: 0.9em;
+                font-size: 0.8em;
             }
-        }
-
-        .secondary-stats.inline-stats strong {
-            font-size: 1.5em;
         }
     }
 
-    .ride.segments-list > .row .align-right {
-        display: none;
+    .ride.segments-list {
+        > .row .align-right {
+            display: none;
+        }
+
+        table.segments,
+        table.hidden-segments {
+            td.time-col + td + td + td {
+                display: none;
+            }
+        }
+    }
+
+    #segments {
+        table.segments,
+        table.hidden-segments {
+            > thead {
+                display: none;
+            }
+
+            > tbody > tr:nth-child(odd) {
+                background-color: #fafafa;
+            }
+
+            > tbody > tr > td {
+                $star-width: 5rem;
+                width: initial;
+                padding: 5rem 0.5rem 0.4rem 0;
+
+                &.starred-col {
+                    padding: 0;
+                    width: $star-width;
+                }
+
+                &.achievement-col {
+                    position: absolute;
+                    border: none;
+                    right: 0;
+                    padding: 0.2rem;
+                }
+
+                &.name-col {
+                    box-sizing: border-box;
+                    position: absolute;
+                    width: 100%;
+                    left: 0;
+                    padding: 0.4rem 0 0 $star-width;
+                    border: none;
+                    pointer-events: none;
+                }
+
+                &.climb-cat-col {
+                    display: none;
+                }
+
+                button.toggle-effort-visibility {
+                    display: none;
+                }
+
+                .segment-effort-detail {
+                    pointer-events: auto;
+                    margin-top: 3rem;
+
+                    > .content {
+                        margin: 0;
+                    }
+
+                    .segment-effort-detail-view .row {
+                        display: flex;
+                        flex-wrap: wrap;
+                        margin: 0;
+
+                        > * {
+                            float: initial;
+                            width: initial;
+                            flex: 1 1 auto;
+                            min-width: 300px;
+                        }
+
+                        .leader-board-container {
+                            padding-top: 1.5em;
+
+                            .leaderboard-filter {
+                                top: 0.5em;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        > footer {
+            display: none;
+        }
     }
 
     .page-status-message {
