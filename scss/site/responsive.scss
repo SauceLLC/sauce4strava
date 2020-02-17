@@ -2,6 +2,51 @@
 @use 'defines';
 
 .sauce-responsive {
+    @media only screen and (max-width: 768px) and (min-width: 601px) {
+        &.html, body {
+            font-size: 18px;
+        }
+    }
+
+    @media only screen and (max-width: 600px) and (min-width: 501px) {
+        &.html, body {
+            font-size: 17px;
+        }
+    }
+
+    @media only screen and (max-width: 500px) and (min-width: 415px) {
+        &.html, body {
+            font-size: 16px;
+        }
+    }
+
+    @media only screen and (max-width: 414px) and (min-width: 376px){
+        &.html, body {
+            font-size: 15px;
+        }
+    }
+
+    @media only screen and (max-width: 375px) and (min-width: 321px){
+        &.html, body {
+            font-size: 14px;
+        }
+    }
+
+    @media only screen and (max-width: 320px) {
+        &.html, body {
+            font-size: 13px;
+        }
+    }
+
+    h2 {
+        line-height: initial;
+    }
+
+    .btn, .button, button, input[type='submit'], input[type='button'] {
+        font-size: 0.9em;
+        min-height: 2em;
+    }
+
     #basic-analysis {
         #elevation-chart {
             height: initial;
@@ -85,6 +130,34 @@
         width: 100%;
     }
 
+    ul.inline-stats {
+        float: initial;
+        display: flex;
+        margin: 0 0 0.6em;
+        padding: 0.8em 1em;
+        font-size: inherit;
+
+        &.secondary-stats {
+            font-size: 0.8em;
+        }
+
+        li {
+            margin-right: 1.65em;
+
+            > strong {
+                font-size: 1.8em !important;
+            }
+
+            > .label {
+                font-size: 0.80em !important;
+            }
+
+            &:last-child {
+                margin-right: 0;
+            }
+        }
+    }
+
     .view {
         .page.container,
         .footer-promos .container,
@@ -100,31 +173,6 @@
             flex-wrap: wrap;
             justify-content: space-between;
             padding: 0.75em;
-
-            > ul.inline-stats {
-                float: initial;
-                flex-basis: 0;
-                display: flex;
-                margin: 0 0 0.6em;
-                padding: 0.5em 1em;
-
-                li {
-                    margin-right: 2em;
-                    flex-basis: 0;
-
-                    strong {
-                        font-size: 2em;
-                    }
-
-                    .label {
-                        font-size: 0.85em;
-                    }
-
-                    &:last-child {
-                        margin-right: 0;
-                    }
-                }
-            }
 
             &::after {
                 content: none;
@@ -190,6 +238,7 @@
             align-items: center;
             margin: 0;
             padding: 0;
+            font-size: 14px; // Must used absolute font sizes due to hard coded height.
 
             .btn-mobile-menu {
                 display: none !important;
@@ -277,11 +326,20 @@
     }
 
     #heading {
+        header {
+            padding: 0.2em 0.3em;
+            height: initial;
+        }
+
+        .social {
+            height: initial;
+        }
+
         > .container-fluid {
             margin: 0;
             padding: 0;
 
-            > .row {
+            .row {
                 margin: 0;
             }
         }
@@ -321,22 +379,40 @@
                 padding-left: 0;
                 padding-right: 0;
 
+                .section:not(.inline-stats) {
+                    font-size: inherit;  // disable fixed sizing.
+                }
+
                 > * {
                     padding-left: 1em;
                     padding-right: 1em;
                     margin: 0;
                 }
 
-                .more-stats {
-                    margin-right: 1em; // pad more/less buttons
+                .sauce-stats {
+                    flex-wrap: wrap;
                 }
 
-                > ul.section {
-                    display: flex;
+                .show-more-js button {
+                    margin-right: 1em;
+                }
+
+                .device-section,
+                .more-stats {
+                    > .row > * {
+                        padding-left: 0;
+                    }
                 }
             }
         }
+
+        footer.achievements.row {
+            .footer-achievements-title {
+                background-origin: content-box;
+            }
+        }
     }
+
 
     @media only screen and (max-width: 768px) {
         @include mobile.analysis;
@@ -362,6 +438,76 @@
             float: initial;
             flex: 1 0 auto;
             min-width: 300px;
+        }
+    }
+
+    #relative-effort {
+        [class|="RelativeEffort--container"] {
+            flex-wrap: wrap;
+
+            [class|="ActivitySummary--base"] {
+                padding: 1em;
+                min-width: 300px;
+            }
+
+            [class|="WeeklySummary--base"] {
+                max-width: 100%;
+                padding: 0;
+
+                table[class|="Activities--table"] {
+                    > tbody > tr > td {
+                        padding: 1em 0.4em;
+                        font-size: 0.85em;
+
+                        &:first-child {
+                            padding-left: 1em;
+                        }
+                        &:last-child {
+                            padding-right: 1em;
+                        }
+                    }
+                }
+            }
+
+            [class|="WeeklySummary--week-details"] {
+                padding: 0.5em;
+
+                > * {
+                    flex: 1 1 auto;
+                }
+            }
+        }
+    }
+
+    #similar-activities-teaser {
+        > .row {
+            flex-wrap: wrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            > * {
+                float: initial;
+                width: initial;
+                flex: 1 1 auto;
+                padding: 0.5em !important;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            > :nth-child(2) {
+                flex: 1 0 auto;
+            }
+
+            .pace {
+                font-size: 1em;
+            }
+
+            .js-similar-activities {
+                margin: 0;
+            }
         }
     }
 }

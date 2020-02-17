@@ -1,19 +1,6 @@
 @use 'defines';
 
 
-@mixin chartScaleY {
-    $scale: 2;
-
-    svg {
-        overflow: visible;
-        margin-bottom: 1em; // XXX so wrong
-
-        g.chartGroup {
-            transform: scaleY($scale) translate(150px, 2px) !important;
-        }
-    }
-}
-
 @keyframes clickoutline {
     $size: 3em;
 
@@ -96,9 +83,6 @@
                 }
 
                 > header {
-                    justify-content: initial;
-                    padding: 0;
-
                     h2 {
                         font-size: 1.1em;
                         padding: 0 0.5em;
@@ -170,17 +154,6 @@
                     display: flex !important;
                     flex-wrap: wrap;
                     justify-content: space-between;
-
-                    ul.inline-stats {
-                        li {
-                            strong {
-                                font-size: 1.5em;
-                            }
-                            .label {
-                                font-size: 0.7em;
-                            }
-                        }
-                    }
                 }
 
                 .sauce-analysis-stats {
@@ -387,6 +360,7 @@
             cursor: pointer;
             padding: 0 1em;
             transition: opacity 100ms;
+            max-height: 70%;
 
             &:hover {
                 opacity: 1;
@@ -412,15 +386,8 @@
                 }
 
                 #global-search-bar {
-                    width: 60px;
-
-                    .input-group {
-                        overflow: hidden;
-                        max-width: 30em;
-                    }
-
                     .dropdown button {
-                        font-size: 0.9em;
+                        font-size: 1em;
                         padding: 0 1em;
                         min-width: initial;
                     }
@@ -455,17 +422,6 @@
 
     #pace-analysis-section .main {
         min-height: initial;
-    }
-
-    .activity-stats {
-        .inline-stats {
-            strong {
-                font-size: 1.8em;
-            }
-            .label {
-                font-size: 0.8em;
-            }
-        }
     }
 
     #segments {
@@ -507,6 +463,13 @@
                     padding: 0.4rem 0 0 $star-width !important;
                     border: none;
                     pointer-events: none;
+
+                    > .name {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        margin-right: 3em;
+                        white-space: nowrap;
+                    }
                 }
 
                 &.climb-cat-col {
@@ -614,19 +577,10 @@
         display: none;
     }
 
-    // XXX all this is in testing...
     #basic-analysis {
         #effort-detail {
             margin-left: 0.5em;
             font-size: 0.8em;
-        }
-
-        #segments-chart {
-            //@include chartScaleY();
-        }
-
-        #laps-chart {
-            //@include chartScaleY();
         }
 
         #stacked-chart {
@@ -634,6 +588,7 @@
                 fill: black;
             }
 
+            // XXX all this is in testing...
             .labelGroup {
                 text.label {
                     fill: black !important;
@@ -655,44 +610,6 @@
 
         .mapbox-container {
             pointer-events: auto;
-        }
-    }
-
-    #relative-effort {
-        [class|="RelativeEffort--container"] {
-            flex-wrap: wrap;
-
-            [class|="ActivitySummary--base"] {
-                padding: 1em;
-                min-width: 300px;
-            }
-
-            [class|="WeeklySummary--base"] {
-                max-width: 100%;
-                padding: 0;
-
-                table[class|="Activities--table"] {
-                    > tbody > tr > td {
-                        padding: 1em 0.4em;
-                        font-size: 0.85em;
-
-                        &:first-child {
-                            padding-left: 1em;
-                        }
-                        &:last-child {
-                            padding-right: 1em;
-                        }
-                    }
-                }
-            }
-
-            [class|="WeeklySummary--week-details"] {
-                padding: 0.5em;
-
-                > * {
-                    flex: 1 1 auto;
-                }
-            }
         }
     }
 }

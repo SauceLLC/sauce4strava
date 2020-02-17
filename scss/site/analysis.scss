@@ -19,12 +19,10 @@
         border-left: 0;
         border-right: 0;
         background: #fff;
-        margin-left: -13px;
-        margin-right: -15px;
 
         .divider:not(:first-child) {
             border-left: theme.$thin-border;
-            margin-right: 20px;
+            margin-right: 1.5em;
             height: 2.2em;
             display: inline-block;
             margin-top: 0.3em;

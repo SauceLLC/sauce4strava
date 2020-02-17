@@ -53,22 +53,23 @@
     margin-top: 0.5em;
     border-top: 1px solid rgba(255, 123, 123, 0.46);
     padding: 0.5em 0.5em 0;
+    font-size: 0.85em;
 
     input {
         height: auto !important;
-        font-size: 10px !important;
-        padding: 4px;
+        font-size: 1em !important;
+        padding: 0.4em;
+        border-radius: 0.28em;
         width: 300px;
         max-width: calc(100% - 10em);  // leave room for comment button
     }
 
     .sauce-label {
-        font-size: 0.8em;
+        font-size: 0.85em;
     }
 
     button {
-        padding: 6px 8px;
-        font-size: 10px;
+        font-size: 1em;
         min-height: initial;
     }
 }
