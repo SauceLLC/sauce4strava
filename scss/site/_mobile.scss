@@ -657,5 +657,43 @@
             pointer-events: auto;
         }
     }
+
+    #relative-effort {
+        [class|="RelativeEffort--container"] {
+            flex-wrap: wrap;
+
+            [class|="ActivitySummary--base"] {
+                padding: 1em;
+                min-width: 300px;
+            }
+
+            [class|="WeeklySummary--base"] {
+                max-width: 100%;
+                padding: 0;
+
+                table[class|="Activities--table"] {
+                    > tbody > tr > td {
+                        padding: 1em 0.4em;
+                        font-size: 0.85em;
+
+                        &:first-child {
+                            padding-left: 1em;
+                        }
+                        &:last-child {
+                            padding-right: 1em;
+                        }
+                    }
+                }
+            }
+
+            [class|="WeeklySummary--week-details"] {
+                padding: 0.5em;
+
+                > * {
+                    flex: 1 1 auto;
+                }
+            }
+        }
+    }
 }
 
