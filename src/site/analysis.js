@@ -652,15 +652,14 @@ sauce.ns('analysis', async ns => {
 
 
     function toggleMobileNavMenu(ev) {
-        const pageContainer = document.querySelector('.view > .page.container');
         const expandedClass = 'sauce-nav-expanded';
-        const expanded = pageContainer.classList.contains(expandedClass);
+        const expanded = document.body.classList.contains(expandedClass);
         const evOptions = {capture: true, passive: false};
         if (expanded) {
             document.removeEventListener('click', onMobileNavClickaway, evOptions);
-            pageContainer.classList.remove(expandedClass);
+            document.body.classList.remove(expandedClass);
         } else {
-            pageContainer.classList.add(expandedClass);
+            document.body.classList.add(expandedClass);
             document.addEventListener('click', onMobileNavClickaway, evOptions);
         }
     }
@@ -1940,10 +1939,10 @@ sauce.ns('analysis', async ns => {
 
     async function attachMobileMenuExpander() {
         const svg = await sauce.images.asText('fa/bars-solid.svg');
-        const header = document.querySelector('#heading header');
-        header.insertAdjacentHTML('afterbegin',
+        const navHeader = document.querySelector('#global-header > nav');
+        navHeader.insertAdjacentHTML('afterbegin',
             `<div style="display: none" class="menu-expander">${svg}</div>`);
-        header.querySelector('.menu-expander').addEventListener('click', toggleMobileNavMenu);
+        navHeader.querySelector('.menu-expander').addEventListener('click', toggleMobileNavMenu);
     }
 
 

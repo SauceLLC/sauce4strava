@@ -187,6 +187,7 @@
             min-width: initial;
             width: auto;
             display: flex;
+            align-items: center;
             margin: 0;
             padding: 0;
 
@@ -195,24 +196,22 @@
             }
 
             .branding {
-                margin-left: 1em;
+                margin: 0 0 0 1em;
+                flex: 0 0 auto;
             }
 
             #global-search-filter {
                 display: none;
             }
 
-            #global-search-field {
-                width: 3em; // XXX use form actually !!!must have some width becaues it's a click target */
-            }
-
             #global-search-bar {
                 position: static;
                 float: initial;
+                width: initial;
+                padding: 0 0.5em;
 
-                .dropdown button {
-                    padding: 0 0.8em;
-                    min-width: initial;
+                .icon-search {
+                    margin-top: 0.3em;
                 }
             }
 
@@ -224,6 +223,21 @@
             #container-nav {
                 display: flex;
                 flex: 1 1 100%;
+
+                .global-nav {
+                    margin: 0;
+                }
+            }
+
+            #global-search-button {
+                position: initial;
+            }
+
+            &:not(.search-mode) {
+                #global-search-field {
+                    width: 0;
+                    padding: 0;
+                }
             }
 
             &.search-mode {
@@ -236,7 +250,8 @@
                 }
 
                 #global-search-button {
-                    right: 32px;  // XXX no pix
+                    right: 2.4em;
+                    position: absolute;
                 }
 
                 #global-search-bar {

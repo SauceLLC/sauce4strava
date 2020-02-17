@@ -58,18 +58,6 @@
             padding: 0;
             min-height: initial !important;
 
-            &.sauce-nav-expanded {
-                header > .menu-expander {
-                    background: white;
-                }
-
-                nav.sidenav {
-                    box-shadow: 8px 8px 10px #0003;
-                    left: 0;
-                    visibility: visible;
-                }
-            }
-
             #sauce-infopanel {
                 margin: 0;
 
@@ -253,14 +241,15 @@
             nav.sidenav {
                 box-sizing: border-box;
                 transition: left 200ms, visibility 200ms;
+                position: fixed;
                 margin: 0;
-                top: defines.$analysis-heading-height;
+                top: defines.$global-header-height;
                 left: -100vw;
                 max-width: 90vw;
                 visibility: hidden;
                 width: initial;
                 overflow: hidden auto;
-                max-height: calc(100vh - #{defines.$global-header-height} - #{defines.$analysis-heading-height});
+                max-height: calc(100vh - #{defines.$global-header-height});
                 background: white;
 
                 #pagenav,
@@ -388,27 +377,55 @@
     }
 
     #global-header {
-        nav.nav-bar.search-mode {
-            .branding {
-                display: none;
-            }
+        .menu-expander {
+            display: flex !important;
+            flex: 0 0 auto;
+            flex-direction: column;
+            justify-content: center;
+            width: 4em;
+            opacity: 0.75;
+            cursor: pointer;
+            padding: 0 1em;
+            transition: opacity 100ms;
 
-            .user-nav {
-                display: none;
-            }
-
-            #global-search-bar {
-                width: 60px;
-
-                .input-group {
-                    overflow: hidden;
-                    max-width: 30em;
-                }
+            &:hover {
+                opacity: 1;
             }
         }
 
-        nav.nav-bar .global-nav.nav-group {
-            display: none;
+        nav.nav-bar {
+            .branding {
+                margin-left: 0 !important;
+            }
+
+            .global-nav.nav-group {
+                display: none;
+            }
+
+            &.search-mode {
+                .branding {
+                    display: none;
+                }
+
+                .user-nav {
+                    display: none;
+                }
+
+                #global-search-bar {
+                    width: 60px;
+
+                    .input-group {
+                        overflow: hidden;
+                        max-width: 30em;
+                    }
+
+                    .dropdown button {
+                        font-size: 0.9em;
+                        padding: 0 1em;
+                        min-width: initial;
+                    }
+                }
+            }
         }
 
         .user-nav {
@@ -420,6 +437,14 @@
             a.nav-link.selection {
                 pointer-events: none;  // Let touch open the menu instead of navigating
             }
+        }
+    }
+
+    .sauce-nav-expanded {
+        .view > .page.container nav.sidenav {
+            box-shadow: 8px 8px 10px #0002;
+            left: 0;
+            visibility: visible;
         }
     }
 
@@ -622,6 +647,14 @@
                     transform: translateY(-23px);
                 }
             }
+        }
+    }
+
+    .leaflet-container {
+        pointer-events: none;
+
+        .mapbox-container {
+            pointer-events: auto;
         }
     }
 }

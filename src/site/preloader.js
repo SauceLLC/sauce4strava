@@ -313,7 +313,8 @@
             const renderSave = View.prototype.render;
             View.prototype.render = function() {
                 renderSave.apply(this, arguments);
-                if (pageView.isRun() && this.pageView.isRide() && sauce.options['analysis-detailed-run-segments']) {
+                if (self.pageView.isRun() && this.pageView.isRide() &&
+                    sauce.options['analysis-detailed-run-segments']) {
                     this.$el.prepend(`<div id="map-canvas" class="leaflet-container leaflet-retina
                                                                   leaflet-fade-anim leaflet-touch"></div>`);
                 }
