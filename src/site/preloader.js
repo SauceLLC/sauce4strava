@@ -285,5 +285,40 @@
                 }
             });
         });
+
+        // Allow html titles and icons for dialogs.
+        sauce.propDefined('Strava.Labs.Activities.SegmentEffortsTableView', View => {
+            self.Strava.Labs.Activities.SegmentEffortsTableView = function(_, options) {
+                const activity = options.context.chartContext.activity().clone();
+                if (activity.isRun() && sauce.options['analysis-detailed-run-segments']) {
+                    activity.set('type', 'Ride');
+                    options.context.chartContext.activity(activity);
+                }
+                View.prototype.constructor.apply(this, arguments);
+            };
+            self.Strava.Labs.Activities.SegmentEffortsTableView.prototype = View.prototype;
+        });
+
+        sauce.propDefined('Strava.Labs.Activities.SegmentsView', View => {
+            const initSave = View.prototype.initialize;
+            View.prototype.initialize = function(pageView) {
+                if (pageView.isRun() && sauce.options['analysis-detailed-run-segments']) {
+                    pageView = Object.create(pageView);
+                    pageView.activity(pageView.activity().clone());
+                    pageView.activity().set('type', 'Ride');
+                }
+                return initSave.call(this, pageView);
+            };
+
+            const renderSave = View.prototype.render;
+            View.prototype.render = function() {
+                renderSave.apply(this, arguments);
+                if (pageView.isRun() && this.pageView.isRide() && sauce.options['analysis-detailed-run-segments']) {
+                    this.$el.prepend(`<div id="map-canvas" class="leaflet-container leaflet-retina
+                                                                  leaflet-fade-anim leaflet-touch"></div>`);
+                }
+                return this;
+            };
+        });
     }
 })();

@@ -13,6 +13,74 @@
         }
     }
 
+    .segments-list {
+        .segment-effort-detail-view .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0;
+
+            > * {
+                flex: 1 1 0;
+            }
+            > [class*="spans"] {
+                float: initial;
+                width: initial;
+                margin-bottom: 0.5em;
+            }
+            > .spans7, > .spans8, > .spans9 {
+                min-width: 320px;
+            }
+            > .spans7 {
+                flex-shrink: 1.2;
+            }
+            > .spans9 {
+                flex-grow: 1.2;
+            }
+
+            &.charts {
+                flex-wrap: nowrap;
+                flex-direction: column;
+
+                > * {
+                    flex: initial;
+                }
+            }
+
+        }
+
+        .leader-board-container {
+            padding-top: 1.5em;
+
+            .leaderboard-filter {
+                top: 0.5em;
+            }
+        }
+
+        &.run .segment-effort-detail-view {
+            .row.pr-comparison {
+                margin-top: 1em;
+            }
+
+            .row.effort-details,
+            .row.compare-records,
+            .row.link-menu {
+                > * {
+                    min-width: 50%;
+                    margin-bottom: 0;
+                }
+            }
+
+            .row.effort-details {
+                padding: 0;
+                align-items: center;
+            }
+
+            .row.compare-records {
+                margin-top: 1em;
+            }
+        }
+    }
+
     .sauce-analysis-stats {
         width: 100%;
     }
@@ -55,10 +123,6 @@
                     &:last-child {
                         margin-right: 0;
                     }
-                }
-
-                &.float-right {
-                    //justify-content: flex-end;
                 }
             }
 

@@ -443,19 +443,6 @@
         }
     }
 
-    .ride.segments-list {
-        > .row .align-right {
-            display: none;
-        }
-
-        table.segments,
-        table.hidden-segments {
-            td.time-col + td + td + td {
-                display: none;
-            }
-        }
-    }
-
     #segments {
         table.segments,
         table.hidden-segments {
@@ -473,7 +460,10 @@
                 padding: 5rem 0.5rem 0.4rem 0;
 
                 &.starred-col {
-                    padding: 0;
+                    padding-top: 0 !important;
+                    padding-left: 0;
+                    padding-right: 0;
+                    padding-bottom: 0;
                     width: $star-width;
                 }
 
@@ -481,7 +471,7 @@
                     position: absolute;
                     border: none;
                     right: 0;
-                    padding: 0.2rem;
+                    padding: 0.4rem !important;
                 }
 
                 &.name-col {
@@ -489,7 +479,7 @@
                     position: absolute;
                     width: 100%;
                     left: 0;
-                    padding: 0.4rem 0 0 $star-width;
+                    padding: 0.4rem 0 0 $star-width !important;
                     border: none;
                     pointer-events: none;
                 }
@@ -509,27 +499,40 @@
                     > .content {
                         margin: 0;
                     }
+                }
+            }
+        }
 
-                    .segment-effort-detail-view .row {
-                        display: flex;
-                        flex-wrap: wrap;
-                        margin: 0;
+        .ride.segments-list {
+            > .row .align-right {
+                display: none;
+            }
 
-                        > * {
-                            float: initial;
-                            width: initial;
-                            flex: 1 1 auto;
-                            min-width: 300px;
-                        }
+            table.segments,
+            table.hidden-segments {
+                td.time-col + td + td + td {
+                    display: none;
+                }
+            }
+        }
 
-                        .leader-board-container {
-                            padding-top: 1.5em;
+        .run.segments-list {
+            table.segments,
+            table.hidden-segments {
+                > tbody > tr > td {
+                    padding-top: 3rem; // name col is single row for runs.
+                }
+            }
 
-                            .leaderboard-filter {
-                                top: 0.5em;
-                            }
-                        }
-                    }
+            .segment-effort-detail {
+                width: 100%;
+
+                .dismiss {
+                    top: 1em;
+                    right: 1em;
+                    width: 2em;
+                    height: 2em;
+                    opacity: 1;
                 }
             }
         }
