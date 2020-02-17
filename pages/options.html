@@ -10,17 +10,6 @@
         <script defer src="/src/ext/storage.js"></script>
         <script defer src="/src/ext/options.js"></script>
         <style>
-            main > #left {
-                flex: 0 0 8em;
-                padding-right: 2em;
-                align-self: center;
-            }
-
-            #left img.logo {
-                max-width: 100%;
-                max-height: 100%;
-            }
-
             table#details {
                 font-size: 1em;
                 margin: 0 1.8em 1em;
@@ -53,72 +42,67 @@
     </head>
     <body>
         <header>
-            <h2>Sauce Options</h2>
+            <h3>Sauce Options</h3>
         </header>
-        <main class="columns">
-            <div id="left">
-                <img class="logo" src="/images/logo_vert_240x640.png"/>
+        <main>
+            <p class="whenEnabled"><i>Sauce is enabled.  May the sauce be with you.</i></p>
+            <p class="whenDisabled"><i>Sauce is disabled.</i></p>
+            <table id="details"><tbody></tbody></table>
+
+            <div class="actions">
+                <h4>General Options:</h4>
+                <div class="option" title="Make most pages work with any screen size.  Also adds BETA support for mobile Firefox!">
+                    <input type="checkbox" id="responsive">
+                        <label for="responsive">Responsive/Mobile Layout</label>
+                    </input>
+                </div>
             </div>
-            <div id="right">
-                <p class="whenEnabled"><i>Sauce is enabled.  May the sauce be with you.</i></p>
-                <p class="whenDisabled"><i>Sauce is disabled.</i></p>
-                <table id="details"><tbody></tbody></table>
 
-                <div class="actions">
-                    <h4>General Options:</h4>
-                    <div class="option" title="Make most pages work with any screen size.  Also adds BETA support for mobile Firefox!">
-                        <input type="checkbox" id="responsive">
-                            <label for="responsive">Responsive/Mobile Layout</label>
-                        </input>
-                    </div>
+            <div class="actions">
+                <h4>Activity Feed Options:</h4>
+                <div class="option" title="Order activities by start time.">
+                    <input type="checkbox" id="activity-chronological">
+                        <label for="activity-chronological">Chronological feed</label>
+                    </input>
                 </div>
 
-                <div class="actions">
-                    <h4>Activity Feed Options:</h4>
-                    <div class="option" title="Order activities by start time.">
-                        <input type="checkbox" id="activity-chronological">
-                            <label for="activity-chronological">Chronological feed</label>
-                        </input>
-                    </div>
-
-                    <div class="option" title="Remove other people's Zwift rides and runs from your activity feed.  Note, your virtual activities will still be shown.">
-                        <input type="checkbox" id="activity-hide-virtual">
-                            <label for="activity-hide-virtual">Hide virtual activities <small>(<i>e.g. Zwift</i>)</small></label>
-                        </input>
-                    </div>
-
-                    <div class="option" title="Do not show challenge announcements.">
-                        <input type="checkbox" id="activity-hide-challenges">
-                            <label for="activity-hide-challenges">Hide challenges</label>
-                        </input>
-                    </div>
-
-                    <div class="option" title="Do not show promotional content.">
-                        <input type="checkbox" id="activity-hide-promotions">
-                            <label for="activity-hide-promotions">Hide promotions</label>
-                        </input>
-                    </div>
+                <div class="option" title="Remove other people's Zwift rides and runs from your activity feed.  Note, your virtual activities will still be shown.">
+                    <input type="checkbox" id="activity-hide-virtual">
+                        <label for="activity-hide-virtual">Hide virtual activities <small>(<i>e.g. Zwift</i>)</small></label>
+                    </input>
                 </div>
 
-                <div class="actions">
-                    <h4>Analysis Options:</h4>
-                    <div class="option" title="Show estimated world ranking for individual segments.  This is the same ranking shown in the Peak Power chart.">
-                        <input type="checkbox" id="analysis-segment-badges">
-                            <label for="analysis-segment-badges">Show segment badges <small>(<i>e.g. Cat 2, Pro</i>)</small></label>
-                        </input>
-                    </div>
+                <div class="option" title="Do not show challenge announcements.">
+                    <input type="checkbox" id="activity-hide-challenges">
+                        <label for="activity-hide-challenges">Hide challenges</label>
+                    </input>
+                </div>
 
-                    <div class="option" title="Show peak efforts chart in the left column of activities.">
-                        <input type="checkbox" id="analysis-cp-chart">
-                            <label for="analysis-cp-chart">Show peak efforts chart</label>
-                        </input>
-                    </div>
+                <div class="option" title="Do not show promotional content.">
+                    <input type="checkbox" id="activity-hide-promotions">
+                        <label for="activity-hide-promotions">Hide promotions</label>
+                    </input>
+                </div>
+            </div>
 
-                    <div class="option" title="Use detailed segments view for runs">
-                        <input type="checkbox" id="analysis-detailed-run-segments">
-                            <label for="analysis-detailed-run-segments">Use detailed run segments</label>
-                        </input>
-                    </div>
+            <div class="actions">
+                <h4>Analysis Options:</h4>
+                <div class="option" title="Show estimated world ranking for individual segments.  This is the same ranking shown in the Peak Power chart.">
+                    <input type="checkbox" id="analysis-segment-badges">
+                        <label for="analysis-segment-badges">Show segment badges <small>(<i>e.g. Cat 2, Pro</i>)</small></label>
+                    </input>
+                </div>
+
+                <div class="option" title="Show peak efforts chart in the left column of activities.">
+                    <input type="checkbox" id="analysis-cp-chart">
+                        <label for="analysis-cp-chart">Show peak efforts chart</label>
+                    </input>
+                </div>
+
+                <div class="option" title="Use detailed segments view for runs">
+                    <input type="checkbox" id="analysis-detailed-run-segments">
+                        <label for="analysis-detailed-run-segments">Use detailed run segments</label>
+                    </input>
                 </div>
             </div>
         </main>
