@@ -145,7 +145,7 @@
             margin-right: 1.65em;
 
             > strong {
-                font-size: 1.8em !important;
+                font-size: 1.7em !important;
             }
 
             > .label {
@@ -507,6 +507,27 @@
 
             .js-similar-activities {
                 margin: 0;
+            }
+        }
+    }
+
+    #laps {
+        > .row {
+            flex-wrap: wrap;
+            display: flex;
+
+            > * {
+                float: initial;
+                width: initial;
+                flex: 1 0 auto;
+                min-width: 300px;
+            }
+        }
+
+        table {
+            td, th {
+                padding-left: 0.5em;
+                padding-right: 0.5em;
             }
         }
     }
