@@ -83,11 +83,6 @@
                 }
 
                 > header {
-                    h2 {
-                        font-size: 1.1em;
-                        padding: 0 0.5em;
-                    }
-
                     .social {
                         flex: 1 0 auto;
                         margin-right: 0;
@@ -149,12 +144,6 @@
 
             #view {
                 margin: 0;
-
-                > section header {
-                    display: flex !important;
-                    flex-wrap: wrap;
-                    justify-content: space-between;
-                }
 
                 .sauce-analysis-stats {
                     display: grid;
@@ -420,8 +409,31 @@
         width: 100%;
     }
 
-    #pace-analysis-section .main {
-        min-height: initial;
+    #pace-analysis-section,
+    body[data-route="pace-zones"] #view > section,
+    body[data-route="heartrate-zones"] #view > section {
+        header {
+            .inline-stats {
+                font-size: 0.8em;
+                width: initial;
+
+                li.suffer-score {
+                    margin-left: inherit;
+                }
+            }
+
+            > .row {
+                margin: 0;
+                max-width: 100%;
+                overflow: hidden;
+            }
+        }
+    }
+
+    #pace-analysis-section {
+        .main {
+            min-height: initial;
+        }
     }
 
     #segments {

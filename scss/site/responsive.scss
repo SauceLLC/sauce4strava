@@ -28,13 +28,13 @@
 
     @media only screen and (max-width: 375px) and (min-width: 321px){
         &.html, body {
-            font-size: 14px;
+            font-size: 13px;
         }
     }
 
     @media only screen and (max-width: 320px) {
         &.html, body {
-            font-size: 13px;
+            font-size: 11px;
         }
     }
 
@@ -73,7 +73,7 @@
                 margin-bottom: 0.5em;
             }
             > .spans7, > .spans8, > .spans9 {
-                min-width: 320px;
+                min-width: 290px;
             }
             > .spans7 {
                 flex-shrink: 1.2;
@@ -91,6 +91,12 @@
                 }
             }
 
+            .this-effort {
+                .button {
+                    padding-top: 0.4em;
+                    padding-bottom: 0.4em;
+                }
+            }
         }
 
         .leader-board-container {
@@ -128,6 +134,7 @@
 
     .sauce-analysis-stats {
         width: 100%;
+        flex-wrap: wrap; // XXX looks terrible but needed to prevent overflow between 768px and 1000+ widths.
     }
 
     ul.inline-stats {
@@ -172,7 +179,7 @@
             display: flex !important;
             flex-wrap: wrap;
             justify-content: space-between;
-            padding: 0.75em;
+            padding: 0.5em;
 
             &::after {
                 content: none;
@@ -327,12 +334,18 @@
 
     #heading {
         header {
-            padding: 0.2em 0.3em;
+            padding: 0;
             height: initial;
+
+            > h2 {
+                margin-left: 0.5em;
+                font-size: 1.2em;
+            }
         }
 
         .social {
             height: initial;
+            margin-right: 0;
         }
 
         > .container-fluid {
@@ -511,7 +524,8 @@
         }
     }
 
-    #laps {
+    #laps,
+    #critical-power {
         > .row {
             flex-wrap: wrap;
             display: flex;
@@ -523,12 +537,23 @@
                 min-width: 300px;
             }
         }
+    }
 
+    #laps,
+    #run-efforts-table {
         table {
             td, th {
-                padding-left: 0.5em;
-                padding-right: 0.5em;
+                padding-left: 0.25em;
+                padding-right: 0.25em;
             }
+        }
+    }
+
+    #others {
+        flex-wrap: wrap;
+
+        > li {
+            margin-bottom: 0.2em;
         }
     }
 }
