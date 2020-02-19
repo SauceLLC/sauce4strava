@@ -2,6 +2,7 @@
 
 html {
     box-sizing: border-box;
+    color: #111;
 }
 
 *,
@@ -104,12 +105,34 @@ header {
     background-size: contain;
     background-position: center left;
     background-origin: content-box;
-    padding: 0.5em;
+    padding: 1em;
     border-bottom: 1.5px solid #ff4000;
+    display: flex;
+    align-items: center;
 }
 
-header > :first-child {
+header > .title {
     padding-left: 1.5rem;
+    flex: 1 0 auto;
+    text-align: center;
+    color: #222;
+    margin: 0.5em;
+}
+
+.dismiss {
+    background-image: url(/images/fa/window-close-regular.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 1.25em;
+    height: 1.25em;
+    opacity: 0.6;
+    cursor: pointer;
+    position: absolute;
+    top: 1.2em;
+    right: 1.2em;
+}
+.dismiss:hover {
+    opacity: 1;
 }
 
 h4, h3 {
