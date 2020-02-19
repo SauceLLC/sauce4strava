@@ -24,26 +24,56 @@
         toggle(enabled);
     }
 
+    function resetSuboptions(input) {
+        for (const suboption of input.closest('.option').querySelectorAll('.suboption')) {
+            suboption.classList.toggle('disabled', !input.checked);
+            suboption.querySelector('input').disabled = !input.checked;
+        }
+    }
+
     function manageOptions(options) {
         options = options || {};
-        const inputs = document.querySelectorAll('.option > input');
-        for (const input of inputs) {
-            input.checked = !!options[input.id];
+        const checkboxes = document.querySelectorAll('.option input[type="checkbox"]');
+        for (const input of checkboxes) {
+            input.checked = !!options[input.name];
             input.addEventListener('change', async ev => {
-                options[input.id] = input.checked;
+                options[input.name] = input.checked;
+                resetSuboptions(input);
+                await sauce.storage.set('options', options);
+                browser.tabs.reload();
+            });
+            resetSuboptions(input);
+        }
+        const radios = document.querySelectorAll('.option input[type="radio"]');
+        for (const input of radios) {
+            input.checked = options[input.name] === input.value;
+            input.addEventListener('change', async ev => {
+                options[input.name] = input.value;
                 await sauce.storage.set('options', options);
                 browser.tabs.reload();
             });
         }
+
+    }
+
+    async function getBuildInfo() {
+        const resp = await fetch('/build.json');
+        return await resp.json();
     }
 
     async function main() {
+        document.querySelector('a.dismiss').addEventListener('click', () => {
+            browser.tabs.update({active: true});  // required to allow self.close()
+            self.close();
+        });
         const details_el = document.querySelector('#details > tbody');
         const type = browser.runtime.getURL('').split(':')[0];
         document.body.classList.add(type);
         const manifest = browser.runtime.getManifest();
+        const build = await getBuildInfo();
+        const commit = build.git_commit.slice(0, 10);
         const details_list = [
-            ['Version', manifest.version_name || manifest.version],
+            ['Version', `${manifest.version_name || manifest.version} <small>(commit:${commit})</small>`],
             ['Author', manifest.author]
         ];
         details_list.forEach(function(x) {

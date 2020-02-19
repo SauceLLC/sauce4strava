@@ -75,6 +75,13 @@
                 await sauce.storage.remove('weight_overrides');
             }
         }
+    }, {
+        version: 5,
+        name: 'set_default_dashboard_chrono_mode',
+        migrate: async config => {
+            config.options['activity-chronological-mode'] = 'updated';
+            await sauce.storage.set({options: config.options});
+        }
     }];
 
 
