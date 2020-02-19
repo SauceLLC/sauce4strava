@@ -29,10 +29,10 @@
     <div class="divider"></div>
 
     <li>
-        <strong>
-            <a class="provide-ftp origin-{{ftpOrigin}}"
+        <strong class="sauce-editable-field ftp">
+            <a class="origin-{{ftpOrigin}}"
                title="{{{ftp_link_tooltip}}}">{{Math.round(ftp).toLocaleString()}}</a><!--
-            --><input style="display: none;" type="text" value="{{ftp}}"
+            --><input data-width="5ch" type="text" value="{{ftp}}"
                    title="{{{ftp_input_tooltip}}}"/><!--
             --><abbr class="unit" title="Watts">W</abbr>
         </strong>
@@ -40,10 +40,10 @@
     </li>
 
     <li>
-        <strong>
-            <a class="provide-weight origin-{{weightOrigin}}"
+        <strong class="sauce-editable-field weight">
+            <a class="origin-{{weightOrigin}}"
                title="{{{weight_link_tooltip}}}">{{weightNorm}}</a><!--
-            --><input style="display: none;" type="text" value="{{weightNorm}}"
+            --><input data-width="4ch" type="text" value="{{weightNorm}}"
                    title="{{{weight_input_tooltip}}}"/><!--
             --><abbr class="unit" title="Weight">{{weightUnit}}</abbr>
         </strong>

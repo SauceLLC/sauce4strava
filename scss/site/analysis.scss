@@ -134,3 +134,49 @@ table.hidden-segments .sauce-rank-holder {
 .segment-effort-detail .leaderboard .activity-sprite {
     margin-right: 0.5em;
 }
+
+.sauce-editable-field {
+    white-space: collapse;
+
+    &.editing {
+        a {
+            display: none;
+        }
+    }
+    &:not(.editing) {
+        input {
+            display: none;
+        }
+    }
+
+    &.dirty {
+        &::before {
+            font-size: 0.8em;
+            font-weight: bold;
+            color: darkred;
+            content: '!';
+        }
+
+        &:hover {
+            &::after {
+                position: absolute;
+                z-index: 100;
+                right: calc(100% + 1em);
+                content: 'Page reload requried';
+                font-size: 1rem;
+                background: #333e;
+                color: #f0f0f0;
+                border-radius: 0.2rem;
+                box-shadow: 1px 1px 10px 0 #0003;
+                padding: 0.5rem 1rem;
+            }
+        }
+    }
+
+    input {
+        height: initial;
+        color: black;
+        border-radius: 0.22em;
+        padding: 0.2em 0.25em;
+    }
+}

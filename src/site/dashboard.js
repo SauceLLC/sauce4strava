@@ -68,8 +68,10 @@ sauce.ns('dashboard', function(ns) {
         if (mode === 'started') {
             const timeEl = card.querySelector('time[datetime]');
             return timeEl && (new Date(timeEl.dateTime)).getTime() / 1000;
-        } else {
+        } else if (!mode || mode === 'updated') {
             return card.dataset.updatedAt && Number(card.dataset.updatedAt);
+        } else {
+            throw new TypeError("Invalid sort mode");
         }
     }
 

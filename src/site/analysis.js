@@ -181,19 +181,19 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    function editableField(displayEl, inputEl, options) {
-        inputEl.keyup(async ev => {
+    function editableField($field, options) {
+        const $input = $field.find('input');
+        const $link = $field.find('a');
+        $input.on('keyup', async ev => {
             if (ev.keyCode == 27 /* escape */) {
-                inputEl.hide();
-                displayEl.show();
+                $field.removeClass('editing');
                 return;
             } else if (ev.keyCode != 13 /* enter */) {
                 return;
             }
-            const rawValue = inputEl.val();
             let cleanValue;
             try {
-                cleanValue = options.validator(rawValue);
+                cleanValue = options.validator($input.val());
             } catch(invalid) {
                 modal({
                     title: invalid.title,
@@ -201,13 +201,35 @@ sauce.ns('analysis', async ns => {
                 });
                 return;
             }
-            inputEl.hide();
-            displayEl.html('...').show();
-            if (options.onValid) {
-                await options.onValid(cleanValue);
+            $link.text('...');
+            $field.removeClass('editing');
+            if (options.onSubmit) {
+                await options.onSubmit(cleanValue);
             }
         });
-        displayEl.click(() => inputEl.width(displayEl.hide().width() + 20).show());
+        $input.on('blur', async ev => {
+            if (!$field.hasClass('editing')) {
+                return;  // ignore if not editing (e.g. escape key was pressed)
+            }
+            // Save valid value but don't reload page..
+            let cleanValue;
+            try {
+                cleanValue = options.validator($input.val());
+            } catch(e) {
+                return;
+            }
+            if (options.onBlur) {
+                await options.onBlur(cleanValue);
+            }
+            $link.text(cleanValue);
+            $field.addClass('dirty');
+        });
+        $link.on('click', () => {
+            $field.addClass('editing');
+            const padding = $input.outerWidth() - $input.innerWidth();
+            $input.css('width', `calc(${padding}px + ${$input.data('width')})`);
+            $input.focus();
+        });
     }
 
 
@@ -240,8 +262,11 @@ sauce.ns('analysis', async ns => {
 
 
     function attachEditableFTP($parent) {
-        const link = $parent.find('.provide-ftp');
-        editableField(link, link.siblings('input'), {
+        const $field = $parent.find('.sauce-editable-field.ftp');
+        async function save(ftp_override) {
+            await updateAthleteInfo(ctx.athlete, {ftp_override});
+        }
+        editableField($field, {
             validator: rawValue => {
                 if (rawValue === '') {
                     return null;  // Reset to default value.
@@ -260,8 +285,9 @@ sauce.ns('analysis', async ns => {
                     return n;
                 }
             },
-            onValid: async ftp_override => {
-                await updateAthleteInfo(ctx.athlete, {ftp_override});
+            onBlur: save,
+            onSubmit: async v => {
+                await save(v);
                 modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect FTP change.</b>'
@@ -273,8 +299,12 @@ sauce.ns('analysis', async ns => {
 
 
     function attachEditableWeight($parent) {
-        const link = $parent.find('.provide-weight');
-        editableField(link, link.siblings('input'), {
+        const $field = $parent.find('.sauce-editable-field.weight');
+        async function save(v) {
+            const weight_override = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
+            await updateAthleteInfo(ctx.athlete, {weight_override});
+        }
+        editableField($field, {
             validator: rawValue => {
                 if (rawValue === '') {
                     return null;  // Reset to default value.
@@ -293,9 +323,9 @@ sauce.ns('analysis', async ns => {
                     return n;
                 }
             },
-            onValid: async v => {
-                const weight_override = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
-                await updateAthleteInfo(ctx.athlete, {weight_override});
+            onBlur: save,
+            onSubmit: async v => {
+                await save(v);
                 modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect weight change.</b>'
@@ -1253,7 +1283,7 @@ sauce.ns('analysis', async ns => {
         if (!ctx.weight || row.querySelector(':scope > td.sauce-mark')) {
             return;
         }
-        const segment = pageView.segmentEfforts().getEffort(Number(row.dataset.segmentEffortId));
+        const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
         if (!segment) {
             console.warn("Segment data not found for:", row.dataset.segmentEffortId);
             return;
@@ -1834,7 +1864,7 @@ sauce.ns('analysis', async ns => {
             getWeightInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
             getFTPInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
         ]);
-        updateSideNav();  //bg okay
+        updateSideNav();  // bg okay
         attachExporters();  // bg okay
         attachComments();  // bg okay
         const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');
@@ -1864,6 +1894,7 @@ sauce.ns('analysis', async ns => {
 
     async function streamsReady() {
         if (!pageView.streams()) {
+            debugger;
             const save = pageView.streams;
             await new Promise(resolve => {
                 pageView.streams = function(set) {
@@ -1947,7 +1978,6 @@ sauce.ns('analysis', async ns => {
 
 
     async function load() {
-        await streamsReady();
         const activity = pageView.activity();
         if (!activity) {
             return;
@@ -1959,6 +1989,14 @@ sauce.ns('analysis', async ns => {
             start = startRide;
         }
         const type = activity.get('type');
+        if (sauce.options['responsive']) {
+            await attachMobileMenuExpander();
+            pageView.unbindScrollListener();
+            document.body.classList.add('sauce-disabled-scroll-listener');
+            pageView.handlePageScroll = function() {
+                console.warn("SCUIAK!");
+            };
+        }
         if (start) {
             ctx.supportedActivity = true;
             await prepareContext();
@@ -1968,9 +2006,7 @@ sauce.ns('analysis', async ns => {
                 resetPageMonitors();
             });
             document.body.dataset.route = pageRouter.context.startMenu();
-            if (sauce.options['responsive']) {
-                await attachMobileMenuExpander();
-            }
+            await streamsReady();
             startPageMonitors();
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;
