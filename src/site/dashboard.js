@@ -63,18 +63,30 @@ sauce.ns('dashboard', function(ns) {
         return !!count;
     }
 
+    function getCardTimestamp(card) {
+        const mode = sauce.options['activity-chronological-mode'];
+        if (mode === 'started') {
+            const timeEl = card.querySelector('time[datetime]');
+            return timeEl && (new Date(timeEl.dateTime)).getTime() / 1000;
+        } else {
+            return card.dataset.updatedAt && Number(card.dataset.updatedAt);
+        }
+    }
 
-    let lastTimestamp;
+
+    let _lastTimestamp;
+    const _orderOfft = Math.round(Date.now() / 1000);
     function orderChronological(feedEl) {
         let count = 0;
         for (const card of feedEl.querySelectorAll('.card:not(.ordered-by-sauce)')) {
-            if (!card.dataset.updatedAt && lastTimestamp) {
-                lastTimestamp += 1;
+            const ts = getCardTimestamp(card);
+            if (!ts && _lastTimestamp) {
+                _lastTimestamp += 1;
             } else {
-                lastTimestamp = Number(card.dataset.updatedAt);
+                _lastTimestamp = ts;
             }
             card.classList.add('ordered-by-sauce');
-            card.style.order = `-${card.dataset.updatedAt}`;
+            card.style.order = -Math.round(ts - _orderOfft);
             count++;
         }
         console.info(`Ordered ${count} cards chronologically`);
@@ -123,7 +135,6 @@ sauce.ns('dashboard', function(ns) {
 
 
     async function load() {
-        sendGAPageView();  // bg okay
         const feedSelector = '.main .feed-container .feed';
         const feedEl = document.querySelector(feedSelector);
         if (!feedEl) {
@@ -148,6 +159,7 @@ sauce.ns('dashboard', function(ns) {
         if (sauce.options['activity-dense-mode']) {
             document.documentElement.classList.add('sauce-dense-dashboard');
         }
+        sendGAPageView();  // bg okay
     }
 
 
