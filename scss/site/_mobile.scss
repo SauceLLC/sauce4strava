@@ -632,7 +632,20 @@
     #similar-activities-section {
         table.efforts-table {
             th, td {
-                font-size: 0.8em;
+                padding-top: 2.4em !important;
+                padding-bottom: 1em !important;
+                vertical-align: top;
+            }
+
+            .date-column {
+                width: 13%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .pace-column {
+                width: 12%;
             }
 
             th.name-column {
@@ -642,8 +655,35 @@
             td.name-column {
                 position: relative;
                 width: 0;
+                overflow: visible;
+                padding: 1em 0 0 0 !important;
+                vertical-align: initial;
+
                 > .name {
-                    width: 90%;
+                    width: 70vw;
+                    left: -15vw;
+                    position: absolute;
+                    color: black;
+                }
+                > svg {
+                    position: absolute;
+                    left: 72vw;
+                }
+            }
+
+            td:first-column {
+                padding-left: 0.5em !important;
+            }
+
+            td.activity-column {
+                padding-right: 0.4em !important;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+
+                a {
+                    font-size: inherit;
+                    opacity: 0.9;
                 }
             }
         }
