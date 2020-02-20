@@ -19,7 +19,7 @@ $(PACKAGES): package.json
 	npm install
 	touch $@
 
-$(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile
+$(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git
 	$(MAKE) sass
 	echo '{"git_commit": "$(or $(SOURCE_VERSION),$(shell git rev-parse HEAD))"}' > $@
 
