@@ -1,45 +1,35 @@
 @use 'mobile';
 @use 'defines';
 
-.sauce-responsive {
+html.sauce-responsive,
+.sauce-responsive body {
     @media only screen and (max-width: 768px) and (min-width: 601px) {
-        &.html, body {
-            font-size: 18px;
-        }
+        font-size: 18px;
     }
-
     @media only screen and (max-width: 600px) and (min-width: 501px) {
-        &.html, body {
-            font-size: 17px;
-        }
+        font-size: 17px;
     }
-
     @media only screen and (max-width: 500px) and (min-width: 415px) {
-        &.html, body {
-            font-size: 16px;
-        }
+        font-size: 16px;
     }
-
     @media only screen and (max-width: 414px) and (min-width: 376px){
-        &.html, body {
-            font-size: 15px;
-        }
+        font-size: 15px;
     }
-
     @media only screen and (max-width: 375px) and (min-width: 321px){
-        &.html, body {
-            font-size: 13px;
-        }
+        font-size: 13px;
     }
-
     @media only screen and (max-width: 320px) {
-        &.html, body {
-            font-size: 11px;
-        }
+        font-size: 11px;
     }
+}
 
+.sauce-responsive {
     h2 {
         line-height: initial;
+    }
+
+    .inset {
+        padding: 1.5em !important;
     }
 
     :not(.toggle-button) {
@@ -52,6 +42,18 @@
             min-height: 2em;
         }
     }
+
+    .pagenav > li {
+        > a,
+        > .title {
+            font-size: 1.1em;
+        }
+
+        li a {
+            font-size: 1em;
+        }
+    }
+
 
     #basic-analysis {
         #elevation-chart {
@@ -115,7 +117,7 @@
 
         &.run .segment-effort-detail-view {
             a.dismiss + .inset h2 {
-                margin-right: 2.5rem;  // leave room for dismiss icon
+                margin-right: 2rem;  // leave room for dismiss icon
             }
             .row.pr-comparison {
                 margin-top: 1em;
@@ -392,8 +394,8 @@
                 }
 
                 > * {
-                    padding-left: 1em;
-                    padding-right: 1em;
+                    padding-left: 1rem;
+                    padding-right: 0.8rem;
                     margin: 0;
                 }
 
@@ -426,15 +428,32 @@
         @include mobile.analysis;
     }
 
-    // Fix the panel in the top right corner since the calcs are all bad.
-    .pace-info-box {
-        top: 1em !important;
-        right: 1em !important;
-        left: initial !important;
+
+    #run-pace-chart {
+        margin: 0;
+
+        .base-chart {
+            padding-top: 2em; // leave more room for info box
+
+            svg #g-bar-box {
+                display: none;
+            }
+
+            // Fix the panel in the top right corner since the calcs are all bad.
+            .pace-info-box {
+                font-size: 0.8em;
+                top: -3em !important;
+                right: 0 !important;
+                left: initial !important;
+            }
+        }
     }
 
-    #run-pace-chart .base-chart {
-        padding-top: 2em; // leave more room for info box
+    #pace-analysis-section {
+        > header > .row {
+            margin-left: 0;
+            margin-right: 0;
+        }
     }
 
     #pace-analysis-section + .row {
@@ -606,7 +625,7 @@
                 position: sticky;
                 top: 0;
                 background: white;
-                z-index: 50;
+                z-index: 1;
             }
         }
     }

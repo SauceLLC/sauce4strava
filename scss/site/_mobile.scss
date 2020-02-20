@@ -243,20 +243,25 @@
 
                 #pagenav {
                     margin: 0;
-                    padding: 0.5em 0;
 
                     li > a,
                     li.group > .title {
-                        padding: 1.2rem 3.5rem;
+                        padding: 1rem 2.5rem;
                     }
 
                     li.group > ul li a {
-                        padding: 1rem 4rem 1rem 4.5rem;
+                        padding: 0.65rem 3rem 0.65rem 3.5rem;
                     }
                 }
 
                 .actions-menu {
                     border: none;
+
+                    > a.button,
+                    > .slide-menu .selection {
+                        height: initial;
+                        padding: 0.85rem 0;
+                    }
 
                     > a.button {
                         position: absolute;
@@ -268,7 +273,7 @@
 
                     .drop-down-menu {
                         min-width: 100%;
-                        max-width: 14em;
+                        max-width: 16rem;
                         float: initial;
                         display: block;
 
@@ -307,6 +312,7 @@
 
                         li > * {
                             padding: 1rem 3rem;
+                            font-size: 1.1em;
                         }
                     }
                 }
