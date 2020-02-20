@@ -49,8 +49,8 @@ html.sauce-responsive,
             font-size: 1.1em;
         }
 
-        li a {
-            font-size: 1em;
+        &.group ul li a {
+            font-size: 0.86em;
         }
     }
 
@@ -625,7 +625,7 @@ html.sauce-responsive,
                 position: sticky;
                 top: 0;
                 background: white;
-                z-index: 1;
+                z-index: 11; // > segment-effort-detail (10) < menus (30)
             }
         }
     }

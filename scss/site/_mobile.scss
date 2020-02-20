@@ -221,12 +221,15 @@
                 ul#pagenav,
                 .actions-menu .drop-down-menu > ul.options {
                     > li > a,
-                    > li.group > .title {
+                    > li.group > .title,
+                    > li.sauce-group > .sauce-header,
+                    > li.sauce-group > ul > li > a {
                         padding: 1rem 2.5rem;
                     }
 
                     li.group > ul li a {
                         padding: 0.65rem 3rem 0.65rem 3.5rem;
+                        font-size: 1em;  // shrink less than desktop
                     }
 
                     li > a {
@@ -311,8 +314,7 @@
                         margin: 0;
 
                         li > a {
-                            font-size: 1.1em;
-                            --xxx: 'validate fontsize';
+                            font-size: 1em;
                         }
                     }
                 }
@@ -458,9 +460,9 @@
             }
 
             > tbody > tr > td {
-                $star-width: 5rem;
+                $star-width: 4rem;
                 width: initial;
-                padding: 5rem 0.5rem 0.4rem 0;
+                padding: 3.5rem 0.5rem 0.4rem 0;
 
                 &.starred-col {
                     padding-top: 0 !important;
@@ -693,6 +695,10 @@
                 }
             }
         }
+    }
+
+    #laps #efforts-table {
+        font-size: 0.85em;
     }
 }
 

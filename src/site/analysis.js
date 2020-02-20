@@ -340,9 +340,9 @@ sauce.ns('analysis', async ns => {
         // The main site's side nav is absolute positioned, so if the primary view is too short
         // the footer will overflow and mess everything up.  Add a min-height to the view to
         // prevent the footer from doing this.
-        const $sidenav = jQuery('nav.sidenav');
-        const minHeight = $sidenav.outerHeight(/*includeMargin*/ true);
-        jQuery('.view > .page.container').css('min-height', `${minHeight}px`);
+        const sidenav = document.querySelector('nav.sidenav');
+        const minHeight = sidenav.offsetHeight;
+        document.querySelector('.view > .page.container').style.minHeight = `${minHeight}px`;
         Strava.Activities.Ui.prepareSlideMenu();  // Fixes ... menu in some cases
     }
 
@@ -396,6 +396,7 @@ sauce.ns('analysis', async ns => {
                 sourceTooltip: source + '_tooltip',
                 sourceIcon: await sauce.images.asText(peakIcons[source]),
             }, await this.renderAttrs.call(this, source))));
+            navHeightAdjustments();
         }
 
         async getSelectedSource() {
@@ -705,7 +706,6 @@ sauce.ns('analysis', async ns => {
                 const before = document.getElementById('pagenav');
                 before.insertAdjacentElement('afterend', infoEl);
             }
-            requestAnimationFrame(navHeightAdjustments);
         }
         if (!sauce.options['responsive']) {
             placeInfo(false);
@@ -1129,16 +1129,23 @@ sauce.ns('analysis', async ns => {
         const exportLocale = await sauce.locale.getMessage('analysis_export');
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
         menuEl.insertAdjacentHTML('beforeend', `
-            <div class="sauce-divider"></div>
-            <li><a title="TCX files are best for activities with power data (watts)."
-                   class="tcx">${exportLocale} TCX</a></li>
+            <li class="sauce-group">
+                <div class="sauce-header">
+                    <div class="sauce-title">SAUCE</div>
+                    <img src="${sauce.extUrl}images/logo_horiz_320x120.png"/>
+                </div>
+                <ul>
+                    <li><a title="TCX files are best for activities with power data (watts)."
+                           class="tcx">${exportLocale} TCX</a></li>
+                </ul>
+            </li>
         `);
         menuEl.querySelector('a.tcx').addEventListener('click', () => {
             sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
             exportActivity(sauce.export.TCXSerializer);
         });
         if (!menuEl.querySelector('a[href$="/export_gpx"')) {
-            menuEl.insertAdjacentHTML('beforeend', `
+            menuEl.querySelector('.sauce-options ul').insertAdjacentHTML('beforeend', `
                 <li><a title="NOTE: GPX files do not support power data (watts)."
                        class="gpx">${exportLocale} GPX</a></li>
             `);
@@ -1847,14 +1854,20 @@ sauce.ns('analysis', async ns => {
         Strava.Activities.Ui.prepareSlideMenu = function() {
             // We extend the sidenav, so we need to modify this routine to make the menu
             // work properly in all conditions.
-            const $slideMenu = jQuery(".slide-menu");
-            const navHeight = jQuery("nav.sidenav").height() || 0;
-            const menuHeight = $slideMenu.find(".options").height();
-            if (navHeight > 240 /*copied*/ && menuHeight > navHeight) {
-                $slideMenu.removeClass("align-bottom").addClass("align-top");
-            } else if (navHeight > menuHeight) {
-                $slideMenu.removeClass("align-top").addClass("align-bottom");
+            const sidenav = document.querySelector('nav.sidenav');
+            if (!sidenav) {
+                return;
             }
+            const navHeight = sidenav.offsetHeight;
+            const slideMenu = document.querySelector('.slide-menu');
+            // Must use jQuery since it's hidden and they do magic..
+            const slideMenuHeight = jQuery(slideMenu.querySelector(".options")).height();
+            const top = slideMenuHeight > navHeight;
+            console.log("align:", top ? 'top' : 'bottom');
+            requestAnimationFrame(() => {
+                slideMenu.classList.remove("align-top");  // Never seems to be a good idea.
+                slideMenu.classList.toggle("align-bottom", !top);
+            });
         };
     }
 

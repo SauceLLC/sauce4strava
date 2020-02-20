@@ -46,8 +46,41 @@
         max-height: 75vh;
     }
 
-    .sauce-divider {
+    .sauce-group {
         border-top: theme.$border;
+        background-image: linear-gradient(180deg, darken(theme.$primary, 10%), darken(theme.$primary, 2%));
+
+        .sauce-header {
+            display: flex;
+            opacity: 0.95;
+            align-items: center;
+            justify-content: space-between;
+            color: white;
+            padding: 0.8em;
+            cursor: default;
+
+            .sauce-title {
+                font-weight: 900;
+                font-size: 1em;
+                letter-spacing: -0.06em;
+                transform: scaleY(0.8);
+            }
+
+            > img {
+                max-height: 1.2em;
+                transform: rotate(-63deg);
+            }
+        }
+
+        ul li {
+            > * {
+                color: white !important;
+
+                &:hover {
+                    background: #0004 !important;
+                }
+            }
+        }
     }
 }
 
