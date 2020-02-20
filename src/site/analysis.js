@@ -1127,24 +1127,26 @@ sauce.ns('analysis', async ns => {
 
     async function attachExporters() {
         const exportLocale = await sauce.locale.getMessage('analysis_export');
-        const betaLocale = await sauce.locale.getMessage('analysis_beta');
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
-        const sauceIcon = `<img title="Powered by Sauce" class="sauce-icon"
-                                src="${sauce.extUrl}images/icon64.png"/>`;
-        const gpxLink = document.createElement('li');
-        gpxLink.classList.add('sauce', 'first');
-        gpxLink.innerHTML = `<a title="NOTE: GPX files do not support power data (watts)."
-                                href="javascript:void(0)">${sauceIcon}${exportLocale} GPX
-                             <sup class="sauce-beta">${betaLocale}</sup></a>`;
-        gpxLink.addEventListener('click', () => exportActivity(sauce.export.GPXSerializer));
-        menuEl.appendChild(gpxLink);
-        const tpxLink = document.createElement('li');
-        tpxLink.classList.add('sauce', 'last');
-        tpxLink.innerHTML = `<a title="TCX files are best for activities with power data (watts)."
-                                href="javascript:void(0)">${sauceIcon}${exportLocale} TCX
-                             <sup class="sauce-beta">${betaLocale}</sup></a>`;
-        tpxLink.addEventListener('click', () => exportActivity(sauce.export.TCXSerializer));
-        menuEl.appendChild(tpxLink);
+        menuEl.insertAdjacentHTML('beforeend', `
+            <div class="sauce-divider"></div>
+            <li><a title="TCX files are best for activities with power data (watts)."
+                   class="tcx">${exportLocale} TCX</a></li>
+        `);
+        menuEl.querySelector('a.tcx').addEventListener('click', () => {
+            sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
+            exportActivity(sauce.export.TCXSerializer);
+        });
+        if (!menuEl.querySelector('a[href$="/export_gpx"')) {
+            menuEl.insertAdjacentHTML('beforeend', `
+                <li><a title="NOTE: GPX files do not support power data (watts)."
+                       class="gpx">${exportLocale} GPX</a></li>
+            `);
+            menuEl.querySelector('a.gpx').addEventListener('click', () => {
+                sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
+                exportActivity(sauce.export.GPXSerializer);
+            });
+        }
     }
 
 

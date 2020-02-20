@@ -218,8 +218,17 @@
                 max-height: calc(100vh - #{defines.$global-header-height});
                 background: white;
 
-                #pagenav,
-                .actions-menu {
+                ul#pagenav,
+                .actions-menu .drop-down-menu > ul.options {
+                    > li > a,
+                    > li.group > .title {
+                        padding: 1rem 2.5rem;
+                    }
+
+                    li.group > ul li a {
+                        padding: 0.65rem 3rem 0.65rem 3.5rem;
+                    }
+
                     li > a {
                         position: relative;
 
@@ -243,15 +252,6 @@
 
                 #pagenav {
                     margin: 0;
-
-                    li > a,
-                    li.group > .title {
-                        padding: 1rem 2.5rem;
-                    }
-
-                    li.group > ul li a {
-                        padding: 0.65rem 3rem 0.65rem 3.5rem;
-                    }
                 }
 
                 .actions-menu {
@@ -310,9 +310,9 @@
                         border: none;
                         margin: 0;
 
-                        li > * {
-                            padding: 1rem 3rem;
+                        li > a {
                             font-size: 1.1em;
+                            --xxx: 'validate fontsize';
                         }
                     }
                 }

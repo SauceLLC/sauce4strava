@@ -41,26 +41,13 @@
     }
 }
 
-
 .actions-menu {
-    img.sauce-icon {
-        width: 1.8em;
-        margin-right: 0.3em;
-        vertical-align: bottom;
-        opacity: 0.7;
-        transition: opacity 100ms;
+    .slide-menu .options {
+        max-height: 75vh;
     }
 
-    li:hover img.sauce-icon {
-        opacity: 1;
-    }
-
-    li.sauce.first {
+    .sauce-divider {
         border-top: theme.$border;
-    }
-
-    li.sauce.last {
-        border-bottom: theme.$border;
     }
 }
 
