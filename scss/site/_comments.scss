@@ -3,7 +3,8 @@
     overflow: auto;
 
     &:not(:empty) {
-        margin-top: 0.5em;
+        margin-top: 1em;
+        padding-top: 0.5em;
         border-top: 1px solid #e5e5e5;
     }
 }
@@ -73,4 +74,3 @@
         min-height: initial;
     }
 }
-

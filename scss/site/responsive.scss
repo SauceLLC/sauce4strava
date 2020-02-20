@@ -42,9 +42,15 @@
         line-height: initial;
     }
 
-    .btn, .button, button, input[type='submit'], input[type='button'] {
-        font-size: 0.9em;
-        min-height: 2em;
+    :not(.toggle-button) {
+        > .btn,
+        > .button,
+        > button,
+        > input[type='submit'],
+        > input[type='button'] {
+            font-size: 0.9em;
+            min-height: 2em;
+        }
     }
 
     #basic-analysis {
@@ -108,6 +114,9 @@
         }
 
         &.run .segment-effort-detail-view {
+            a.dismiss + .inset h2 {
+                margin-right: 2.5rem;  // leave room for dismiss icon
+            }
             .row.pr-comparison {
                 margin-top: 1em;
             }
@@ -219,22 +228,6 @@
             margin: 0 auto;
             max-width: 700px;
         }
-
-        #ride-overview {
-            &.pinned {
-
-                // Reset strava's own reset for narrow screens (strange because it's dead css to them, but we expose it).
-                .pinnable {
-                    position: fixed;
-                    width: calc((100vw - (100vw - 100%)) -
-                                (#{defines.$analysis-page-left-pad} + #{defines.$analysis-page-right-pad} + 2px));
-                    height: initial;
-                    background: white;
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-                    z-index: 11;
-                }
-            }
-        }
     }
 
     &:not(.responsive) header#global-header {
@@ -274,6 +267,8 @@
             #global-search-cancel {
                 position: static;
                 transform: initial;
+                flex: 0 0 auto;
+                padding: 0.5em 1.5em;
             }
 
             #container-nav {
@@ -306,7 +301,7 @@
                 }
 
                 #global-search-button {
-                    right: 2.4em;
+                    right: 3.5em;
                     position: absolute;
                 }
 
@@ -524,6 +519,48 @@
         }
     }
 
+    #similar-activities-section {
+        > .main > .row {
+            margin: 0;
+
+            > * {
+                width: initial;
+                float: initial;
+            }
+        }
+
+        #similar-activities-chart-container,
+        #similar-activities-chart {
+            height: initial !important;
+        }
+        #similar-activities-chart-container #similar-activities-chart {
+            max-height: 20vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        table.efforts-table {
+            table-layout: fixed;
+
+            thead.vh {
+                display: none;
+            }
+
+            th, td {
+                padding: 1em 0.4em;
+                overflow: hidden;
+                word-break: break-word;
+
+                &:first-child {
+                    padding-left: 1em;
+                }
+                &:last-child {
+                    padding-right: 1em;
+                }
+            }
+        }
+    }
+
     #laps,
     #critical-power {
         > .row {
@@ -554,6 +591,23 @@
 
         > li {
             margin-bottom: 0.2em;
+        }
+    }
+
+    // pageView's scroll listener hooks must be disabled.
+    .sauce-disabled-scroll-listener {
+        // Use pure CSS pinning that works everywhere.
+        .pinnable-view {
+            position: relative;
+
+            // Must make anchor and child pinnable sticky due to inconsistent nesting.
+            > .pinnable-anchor,
+            > .pinnable-anchor .pinnable {
+                position: sticky;
+                top: 0;
+                background: white;
+                z-index: 50;
+            }
         }
     }
 }

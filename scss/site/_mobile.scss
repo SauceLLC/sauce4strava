@@ -122,9 +122,13 @@
                         }
                     }
 
-                    .other-athletes div[data-react-class="ActivityTagging"],
-                    .flybys {
-                        display: none;
+                    .others-section-v2 {
+                        border: none;
+
+                        .other-athletes div[data-react-class="ActivityTagging"],
+                        .flybys {
+                            display: none;
+                        }
                     }
                 }
 
@@ -183,7 +187,7 @@
 
                 #map-canvas {
                     min-height: initial;
-                    max-height: 25vh;
+                    max-height: 20vh;
                 }
 
                 #run-efforts-table .laps {
@@ -622,6 +626,26 @@
 
         .mapbox-container {
             pointer-events: auto;
+        }
+    }
+
+    #similar-activities-section {
+        table.efforts-table {
+            th, td {
+                font-size: 0.8em;
+            }
+
+            th.name-column {
+                display: none;
+            };
+
+            td.name-column {
+                position: relative;
+                width: 0;
+                > .name {
+                    width: 90%;
+                }
+            }
         }
     }
 }
