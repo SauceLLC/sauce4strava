@@ -1145,7 +1145,7 @@ sauce.ns('analysis', async ns => {
             exportActivity(sauce.export.TCXSerializer);
         });
         if (!menuEl.querySelector('a[href$="/export_gpx"')) {
-            menuEl.querySelector('.sauce-options ul').insertAdjacentHTML('beforeend', `
+            menuEl.querySelector('.sauce-group ul').insertAdjacentHTML('beforeend', `
                 <li><a title="NOTE: GPX files do not support power data (watts)."
                        class="gpx">${exportLocale} GPX</a></li>
             `);
