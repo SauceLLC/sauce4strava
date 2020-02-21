@@ -201,12 +201,7 @@
                 }
 
                 table.distribution-chart {
-                    font-size: 0.9em;
-                    td {
-                        padding: 0.8em;
-                        height: initial;
-                        width: initial;
-                    }
+                    font-size: 0.8em;
                 }
             }
 
@@ -438,12 +433,6 @@
                 li.suffer-score {
                     margin-left: inherit;
                 }
-            }
-
-            > .row {
-                margin: 0;
-                max-width: 100%;
-                overflow: hidden;
             }
         }
     }

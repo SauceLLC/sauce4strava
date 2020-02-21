@@ -158,7 +158,7 @@ html.sauce-responsive,
     ul.inline-stats {
         float: initial;
         display: flex;
-        margin: 0 0 0.6em;
+        margin: 0;
         padding: 0.8em 1em;
         font-size: inherit;
 
@@ -170,11 +170,11 @@ html.sauce-responsive,
             margin-right: 1.65em;
 
             > strong {
-                font-size: 1.7em !important;
+                font-size: 2.1em !important;
             }
 
             > .label {
-                font-size: 0.80em !important;
+                font-size: 0.9em !important;
             }
 
             &:last-child {
@@ -198,6 +198,12 @@ html.sauce-responsive,
             flex-wrap: wrap;
             justify-content: space-between;
             padding: 0.5em;
+
+            > .row {
+                margin: 0;
+                max-width: 100%;
+                overflow: hidden;
+            }
 
             &::after {
                 content: none;
@@ -236,6 +242,23 @@ html.sauce-responsive,
         #chart-controls {
             margin: 0 auto;
             max-width: 700px;
+        }
+
+        table.distribution-chart {
+            td {
+                padding: 1em 0.5em;
+                height: initial;
+                width: initial;
+                text-align: center;
+                white-space: nowrap;
+
+                &:last-child {
+                    min-width: 30vw;
+                    max-width: 60vw;
+                    height: 0;
+                    padding: 0;
+                }
+            }
         }
     }
 
