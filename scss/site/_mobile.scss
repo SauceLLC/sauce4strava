@@ -532,7 +532,7 @@
             table.segments,
             table.hidden-segments {
                 > tbody > tr > td {
-                    padding-top: 3rem; // name col is single row for runs.
+                    padding-top: 2rem; // name col is single row for runs.
                 }
             }
 
@@ -639,21 +639,19 @@
 
     #similar-activities-section {
         table.efforts-table {
+            $left-pad: 0.5rem;
+
             th, td {
-                padding-top: 2.4em !important;
+                padding-top: 2.8rem !important;
                 padding-bottom: 1em !important;
                 vertical-align: top;
+                width: initial;
             }
 
             .date-column {
-                width: 13%;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
-            }
-
-            .pace-column {
-                width: 12%;
             }
 
             th.name-column {
@@ -661,26 +659,26 @@
             };
 
             td.name-column {
-                position: relative;
-                width: 0;
-                overflow: visible;
-                padding: 1em 0 0 0 !important;
-                vertical-align: initial;
+                position: absolute;
+                box-sizing: border-box;
+                padding: 1em 4rem 0 $left-pad !important;
+                display: flex;
+                left: 0;
+                width: 100%;
+                justify-content: space-between;
+                border: none;
 
                 > .name {
-                    width: 70vw;
-                    left: -15vw;
-                    position: absolute;
                     color: black;
+                    order: 1;
                 }
                 > svg {
-                    position: absolute;
-                    left: 72vw;
+                    order: 2;
                 }
             }
 
-            td:first-column {
-                padding-left: 0.5em !important;
+            td:first-child {
+                padding-left: $left-pad !important;
             }
 
             td.activity-column {
