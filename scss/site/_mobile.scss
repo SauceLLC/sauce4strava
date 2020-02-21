@@ -192,6 +192,12 @@
 
                 #run-efforts-table .laps {
                     min-height: initial;
+
+                    table.laps {
+                        th, td {
+                            width: initial;
+                        }
+                    }
                 }
 
                 table.distribution-chart {
@@ -460,7 +466,7 @@
             }
 
             > tbody > tr > td {
-                $star-width: 4rem;
+                $star-width: 3rem;
                 width: initial;
                 padding: 3.5rem 0.5rem 0.4rem 0;
 
@@ -638,14 +644,37 @@
     }
 
     #similar-activities-section {
+        #similar-activities-pinnable {
+            table.efforts-table {
+                display: none;  // Non-fixed widths make alignment impossible.
+            }
+        }
+
         table.efforts-table {
             $left-pad: 0.5rem;
 
+            thead.vh {
+                // Resets...
+                position: initial !important;
+                clip: initial;
+                width: initial !important;
+                height: initial !important;
+                padding: inherit !important;
+                margin: inherit !important;
+                overflow: inherit;
+                border: initial;
+            }
+
             th, td {
-                padding-top: 2.8rem !important;
-                padding-bottom: 1em !important;
+                padding-bottom: 1rem !important;
                 vertical-align: top;
                 width: initial;
+            }
+            td {
+                padding-top: 2.8rem !important;
+            }
+            th {
+                max-width: 0;  // Disable use in col width calculations.
             }
 
             .date-column {
@@ -654,42 +683,60 @@
                 white-space: nowrap;
             }
 
-            th.name-column {
-                display: none;
-            };
-
-            td.name-column {
+            .name-column {
                 position: absolute;
                 box-sizing: border-box;
-                padding: 1em 4rem 0 $left-pad !important;
+                border: none;
+            }
+            td.name-column {
+                padding: 1rem 3rem 0 $left-pad !important;
                 display: flex;
                 left: 0;
                 width: 100%;
-                justify-content: space-between;
-                border: none;
 
                 > .name {
                     color: black;
-                    order: 1;
+                    max-width: 100%;
                 }
                 > svg {
-                    order: 2;
+                    float: initial;
+                    margin: 0 0.5em 0 0;
                 }
             }
+            th.name-column {
+                visibility: hidden;
+            }
 
-            td:first-child {
-                padding-left: $left-pad !important;
+            td, th {
+                &:first-child {
+                    padding-left: $left-pad !important;
+                }
             }
 
             td.activity-column {
-                padding-right: 0.4em !important;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
+                padding: 0 !important;
+                vertical-align: middle;
 
                 a {
-                    font-size: inherit;
+                    display: block;
+                    font-size: 0;  // hide it and just use sprite.
                     opacity: 0.9;
+
+                    &::after {
+                        content: '>';
+                        font-size: 1.1rem;
+                        font-weight: bold;
+                        line-height: 1;
+                        color: #3671ff;
+                        width: initial;
+                        height: initial;
+                        background: none;
+                        margin: 0.5em;
+                    }
+
+                    &:active::after {
+                        color: darkred;
+                    }
                 }
             }
         }

@@ -3,24 +3,31 @@
 
 html.sauce-responsive,
 .sauce-responsive body {
-    @media only screen and (max-width: 768px) and (min-width: 601px) {
+    @media only screen and (min-width: 515px) and (max-width: 768px) {
         font-size: 18px;
     }
-    @media only screen and (max-width: 600px) and (min-width: 501px) {
+    @media only screen and (min-width: 488px) and (max-width: 515px) {
         font-size: 17px;
     }
-    @media only screen and (max-width: 500px) and (min-width: 415px) {
+    @media only screen and (min-width: 458px) and (max-width: 488px) {
         font-size: 16px;
     }
-    @media only screen and (max-width: 414px) and (min-width: 376px){
+    @media only screen and (min-width: 430px) and (max-width: 458px) {
         font-size: 15px;
     }
-    @media only screen and (max-width: 375px) and (min-width: 321px){
+    @media only screen and (min-width: 400px) and (max-width: 430px) {
+        font-size: 14px;
+    }
+    @media only screen and (min-width: 372px) and (max-width: 400px) {
         font-size: 13px;
     }
-    @media only screen and (max-width: 320px) {
+    @media only screen and (min-width: 350px) and (max-width: 372px) {
+        font-size: 12px;
+    }
+    @media only screen and (max-width: 350px) {
         font-size: 11px;
     }
+    font-size: 13px;
 }
 
 .sauce-responsive {
@@ -559,12 +566,8 @@ html.sauce-responsive,
         }
 
         table.efforts-table {
-            thead.vh {
-                display: none;
-            }
-
             th, td {
-                padding: 1em 0.4em;
+                padding: 1em 0.25em;
                 overflow: hidden;
                 word-break: break-word;
 
