@@ -343,9 +343,17 @@
         }
     }
 
-    // Use "starts-with" css selector to match "analysis" and "analysis-range"
-    body:not([data-route|="analysis"]) #sauce-infopanel {
-        display: none;
+    // Starts-with match for "analysis" and "analysis-range"
+    body:not([data-route|="analysis"]) {
+        #sauce-infopanel {
+            display: none;
+        }
+    }
+    body[data-route|="analysis"] {
+        // Only needed for swims, but works in all cases.
+        #heading .collapsable.container-fluid {
+            display: none !important;
+        }
     }
 
     .ui-dialog.sauce-dialog.sauce-info-dialog {

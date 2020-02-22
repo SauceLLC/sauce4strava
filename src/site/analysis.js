@@ -87,6 +87,12 @@ sauce.ns('analysis', async ns => {
     const _attemptedFetch = new Set();
     const _pendingFetches = new Map();
     async function fetchStreams(names) {
+        if (pageView.streamsRequest.required.length) {
+            // We must wait until the pageView.streamsRequest has completed.
+            // Stream transform functions fail otherwise.
+            console.info('Waiting for in-flight streams request to complete.');
+            await new Promise(resolve => pageView.streamsRequest.deferred.done(resolve));
+        }
         const streams = pageView.streams();
         const attempted = _attemptedFetch;
         const pending = _pendingFetches;
@@ -2146,6 +2152,10 @@ sauce.ns('analysis', async ns => {
             pageView.unbindScrollListener();
             document.body.classList.add('sauce-disabled-scroll-listener');
             pageView.handlePageScroll = function() {};
+            // Disable animations for mobile screens (reduces jank and works better for some nav changes)
+            const mobileMedia = window.matchMedia('(max-width: 768px)');
+            mobileMedia.addListener(ev => void (jQuery.fx.off = ev.matches));
+            jQuery.fx.off = mobileMedia.matches;
         }
         if (start) {
             ctx.supportedActivity = true;
