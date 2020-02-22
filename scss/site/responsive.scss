@@ -160,6 +160,7 @@ html.sauce-responsive,
 
         float: initial;
         display: flex;
+        width: initial;
         flex-wrap: wrap;  // Only for extreme cases
         margin: 0;
         padding: $vert-pad 1em 0;
@@ -249,7 +250,7 @@ html.sauce-responsive,
         }
 
         table.distribution-chart {
-            td {
+            tbody td {
                 padding: 1em 0.5em;
                 height: initial;
                 width: initial;
@@ -259,7 +260,7 @@ html.sauce-responsive,
                 &:last-child {
                     min-width: 30vw;
                     max-width: 60vw;
-                    height: 0;
+                    height: 3.4em;  // XXX 0 works for chrome but not firefox
                     padding: 0;
                 }
             }
