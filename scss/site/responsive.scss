@@ -156,10 +156,13 @@ html.sauce-responsive,
     }
 
     ul.inline-stats {
+        $vert-pad: 0.8em;
+
         float: initial;
         display: flex;
+        flex-wrap: wrap;  // Only for extreme cases
         margin: 0;
-        padding: 0.8em 1em;
+        padding: $vert-pad 1em 0;
         font-size: inherit;
 
         &.secondary-stats {
@@ -167,7 +170,8 @@ html.sauce-responsive,
         }
 
         li {
-            margin-right: 1.65em;
+            margin-right: 1.5em;
+            margin-bottom: $vert-pad;
 
             > strong {
                 font-size: 2.1em !important;
