@@ -20,6 +20,7 @@ sauce.ns('analysis', async ns => {
     const elevationFormatter = new Strava.I18n.ElevationFormatter();
     const timeFormatter = new Strava.I18n.TimespanFormatter();
     const paceFormatter = new Strava.I18n.PaceFormatter();
+    const swimPaceFormatter = new Strava.I18n.SwimPaceFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
     const minVAMTime = 60;
@@ -1995,7 +1996,6 @@ sauce.ns('analysis', async ns => {
             // Must use jQuery since it's hidden and they do magic..
             const slideMenuHeight = jQuery(slideMenu.querySelector(".options")).height();
             const top = slideMenuHeight > navHeight;
-            console.log("align:", top ? 'top' : 'bottom');
             requestAnimationFrame(() => {
                 slideMenu.classList.remove("align-top");  // Never seems to be a good idea.
                 slideMenu.classList.toggle("align-bottom", !top);
@@ -2005,6 +2005,23 @@ sauce.ns('analysis', async ns => {
 
 
     async function prepareContext() {
+        if (!pageView.factory().page()) {
+            // Wait for page to assemble() first..  Only on slow connections.
+            const pf = pageView.factory();
+            const setget = pf.page;
+            await new Promise(resolve => {
+                pf.page = function(v) {
+                    try {
+                        return setget.apply(this, arguments);
+                    } finally {
+                        if (v) {
+                            pf.page = setget;
+                            resolve();
+                        }
+                    }
+                };
+            });
+        }
         ctx.athlete = pageView.activityAthlete();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
         await Promise.all([
@@ -2036,23 +2053,6 @@ sauce.ns('analysis', async ns => {
             range.label = range.label.replace(/\.0 /, ' ');
         }
         _resolvePrepared();
-    }
-
-
-    async function streamsReady() {
-        if (!pageView.streams()) {
-            debugger;
-            const save = pageView.streams;
-            await new Promise(resolve => {
-                pageView.streams = function(set) {
-                    if (set) {
-                        pageView.streams = save;
-                        resolve();
-                    }
-                    return save.apply(this, arguments);
-                };
-            });
-        }
     }
 
 
@@ -2116,7 +2116,7 @@ sauce.ns('analysis', async ns => {
 
 
     async function attachMobileMenuExpander() {
-        const svg = await sauce.images.asText('fa/bars-solid.svg');
+        const svg = await sauce.images.asText('fa/bars-regular.svg');
         const navHeader = document.querySelector('#global-header > nav');
         navHeader.insertAdjacentHTML('afterbegin',
             `<div style="display: none" class="menu-expander">${svg}</div>`);
@@ -2156,7 +2156,6 @@ sauce.ns('analysis', async ns => {
                 resetPageMonitors();
             });
             document.body.dataset.route = pageRouter.context.startMenu();
-            await streamsReady();
             startPageMonitors();
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;
