@@ -12,14 +12,14 @@
     <% } %>
 
 
-    <% if (intensity) { %>
+    <% if (obj.intensity) { %>
         <li title="{{{intensity_tooltip}}}">
             <strong>{{Math.round(intensity * 100)}}<abbr class="unit">%</abbr></strong>
             <div class="label">IF®</div>
         </li>
     <% } %>
 
-    <% if (tss) { %>
+    <% if (obj.tss) { %>
         <li title="{{{tss_tooltip}}}">
             <strong>{{Math.round(tss)}}</strong>
             <div class="label">TSS®</div>
@@ -28,16 +28,18 @@
 
     <div class="divider"></div>
 
-    <li>
-        <strong class="sauce-editable-field ftp">
-            <a class="origin-{{ftpOrigin}}"
-               title="{{{ftp_link_tooltip}}}">{{Math.round(ftp).toLocaleString()}}</a><!--
-            --><input data-width="5ch" type="text" value="{{ftp}}"
-                   title="{{{ftp_input_tooltip}}}"/><!--
-            --><abbr class="unit" title="Watts">W</abbr>
-        </strong>
-        <div class="label">FTP</div>
-    </li>
+    <% if (obj.ftpOrigin) { %>
+        <li>
+            <strong class="sauce-editable-field ftp">
+                <a class="origin-{{ftpOrigin}}"
+                   title="{{{ftp_link_tooltip}}}">{{Math.round(ftp).toLocaleString()}}</a><!--
+                --><input data-width="5ch" type="text" value="{{ftp}}"
+                       title="{{{ftp_input_tooltip}}}"/><!--
+                --><abbr class="unit" title="Watts">W</abbr>
+            </strong>
+            <div class="label">FTP</div>
+        </li>
+    <% } %>
 
     <li>
         <strong class="sauce-editable-field weight">

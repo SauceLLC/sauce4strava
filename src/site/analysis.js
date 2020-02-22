@@ -595,22 +595,60 @@ sauce.ns('analysis', async ns => {
 
 
     async function processSwimStreams() {
+        const timeStream = await fetchStream('time');
+        const hrStream = await fetchStream('heartrate');
+        const distStream = await fetchStream('distance');
+        const elapsedTime = streamDelta(timeStream);
+        await renderTertiaryStats({
+            weightUnit: weightFormatter.shortUnitKey(),
+            weightNorm: humanWeight(ctx.weight),
+            weightOrigin: ctx.weightOrigin
+        });
+        if (sauce.options['analysis-cp-chart']) {
+            const menu = [/*locale keys*/];
+            if (distStream) {
+                menu.push('peak_pace');
+            }
+            if (hrStream) {
+                menu.push('peak_hr');
+            }
+            if (!menu.length) {
+                return;
+            }
+            const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
+            const distRanges = ctx.allDistRanges;
+            const panel = new PeakEffortsPanel({
+                type: 'run',
+                menu,
+                infoDialog: runInfoDialog,
+                renderAttrs: async source => {
+                    let rows;
+                    if (source === 'peak_pace') {
+                        rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
+                    } else if (source === 'peak_hr') {
+                        rows = hrRangesToRows(periodRanges, timeStream, hrStream);
+                    }
+                    return {rows};
+                }
+            });
+            attachInfoPanel(panel);
+            await panel.render();
+        }
+    }
+
+
+    async function processOtherStreams() {
         const wattsStream = await fetchStream('watts');
         const movingTime = await getMovingTime();
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
         const altStream = await fetchSmoothStream('altitude');
         const distStream = await fetchStream('distance');
-        const gradeDistStream = distStream && await fetchStream('grade_adjusted_distance');
         const elapsedTime = streamDelta(timeStream);
         let power;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             power = corrected && corrected.kj() * 1000 / movingTime;
-        } else if (ctx.weight && gradeDistStream) {
-            const gradeDistance = streamDelta(gradeDistStream);
-            const kj = sauce.pace.work(ctx.weight, gradeDistance);
-            power = kj * 1000 / movingTime;
         }
         let tss;
         let intensity;
@@ -633,9 +671,6 @@ sauce.ns('analysis', async ns => {
             if (distStream) {
                 menu.push('peak_pace');
             }
-            if (gradeDistStream) {
-                menu.push('peak_gap');
-            }
             if (hrStream) {
                 menu.push('peak_hr');
             }
@@ -655,8 +690,6 @@ sauce.ns('analysis', async ns => {
                     let rows;
                     if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
-                    } else if (source === 'peak_gap') {
-                        rows = paceVelocityRangesToRows(distRanges, timeStream, gradeDistStream);
                     } else if (source === 'peak_hr') {
                         rows = hrRangesToRows(periodRanges, timeStream, hrStream);
                     } else if (source === 'peak_vam') {
@@ -678,7 +711,7 @@ sauce.ns('analysis', async ns => {
         const hrStream = await fetchStream('heartrate');
         const altStream = await fetchSmoothStream('altitude');
         const distStream = await fetchStream('distance');
-        const gradeDistStream = distStream && await fetchStream('grade_adjusted_distance');
+        const gradeDistStream = distStream && await fetchGradeDistStream();
         const elapsedTime = streamDelta(timeStream);
         let power;
         if (wattsStream) {
@@ -1066,6 +1099,20 @@ sauce.ns('analysis', async ns => {
     }
 
 
+    async function fetchGradeDistStream(options) {
+        options = options || {};
+        if (!pageView.supportsGap()) {
+            return;
+        }
+        if (options.startTime != null && options.endTime != null) {
+            return await fetchStreamTimeRange('grade_adjusted_distance', options.startTime,
+                options.endTime);
+        } else {
+            return await fetchStream('grade_adjusted_distance', options.start, options.end);
+        }
+    }
+
+
     async function runInfoDialog({startTime, endTime, label, source, originEl}) {
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
@@ -1079,8 +1126,7 @@ sauce.ns('analysis', async ns => {
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
-        const gradeDistStream = distStream && await fetchStreamTimeRange('grade_adjusted_distance',
-            startTime, endTime);
+        const gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
         const maxVelocity = sauce.data.max(velocityStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
@@ -1431,7 +1477,12 @@ sauce.ns('analysis', async ns => {
 
 
     async function startSwim() {
-        await processRunStreams();
+        await processSwimStreams();
+    }
+
+
+    async function startOther() {
+        await processOtherStreams();
     }
 
 
@@ -1701,7 +1752,7 @@ sauce.ns('analysis', async ns => {
                 movingTime, elapsedTime, {np: roll.np()});
         }
         if (isRun) {
-            const gradeDistStream = distStream && await fetchStream('grade_adjusted_distance', start, end);
+            const gradeDistStream = distStream && await fetchGradeDistStream({start, end});
             const gradeDistance = streamDelta(gradeDistStream);
             if (!wattsStream && gradeDistance && ctx.weight) {
                 kj = sauce.pace.work(ctx.weight, gradeDistance);
@@ -2078,6 +2129,7 @@ sauce.ns('analysis', async ns => {
         if (!activity) {
             return;
         }
+        const type = activity.get('type');
         let start;
         if (activity.isRun()) {
             start = startRun;
@@ -2085,15 +2137,15 @@ sauce.ns('analysis', async ns => {
             start = startRide;
         } else if (activity.isSwim()) {
             start = startSwim;
-        }
-        const type = activity.get('type');
+        } else if (type === 'Other') {
+            // This covers most snow sports and misc workouts..
+            start = startOther;
+        } // else probably Manual or something super odd.
         if (sauce.options['responsive']) {
             await attachMobileMenuExpander();
             pageView.unbindScrollListener();
             document.body.classList.add('sauce-disabled-scroll-listener');
-            pageView.handlePageScroll = function() {
-                console.warn("SCUIAK!");
-            };
+            pageView.handlePageScroll = function() {};
         }
         if (start) {
             ctx.supportedActivity = true;
