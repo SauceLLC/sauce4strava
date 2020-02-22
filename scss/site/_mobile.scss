@@ -349,8 +349,7 @@
             display: none;
         }
     }
-    body[data-route|="analysis"] {
-        // Only needed for swims, but works in all cases.
+    body:not([data-route="overview"]) {
         #heading .collapsable.container-fluid {
             display: none !important;
         }
