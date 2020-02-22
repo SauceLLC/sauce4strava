@@ -100,6 +100,10 @@
                 }
 
                 .activity-summary-container {
+                    .activity-stats {
+                        font-size: 0.9em;  // prevent some overflow of inline stats.
+                    }
+
                     .details-container {
                         .avatar {
                             width: 6rem;
@@ -280,6 +284,7 @@
                         max-width: 16rem;
                         float: initial;
                         display: block;
+                        transition: background 200ms;
 
                         &.active {
                             background: #333;
@@ -287,35 +292,46 @@
                             .selection .app-icon {
                                 filter: invert(1);
                             }
-
-                            li > * {
-                                color: white;
-                            }
-
-                            li > a:hover {
-                                background: black;
-                            }
                         }
 
                         &:not(:first-child) .app-icon-wrapper {
                             margin-left: 50%;
                         }
-                    }
 
-                    .selection,
-                    ul.options {
-                        background: transparent;
-                    }
+                        .selection,
+                        ul.options {
+                            background: transparent;
+                        }
 
-                    ul.options {
-                        position: static;
-                        min-width: initial;
-                        max-height: initial;
-                        border: none;
-                        margin: 0;
+                        > ul.options {
+                            position: static;
+                            min-width: initial;
+                            border: none;
+                            margin: 0;
+                            display: block;
+                            overflow: hidden;
+                            transition: max-height, visibility, color;
+                            transition-duration: 200ms;
 
-                        li > a {
-                            font-size: 1em;
+                            &:not(.open-menu) {
+                                max-height: 0;
+                                visibility: hidden;
+                            }
+                            &.open-menu {
+                                color: white;
+                                transition-duration: 400ms;
+                                max-height: 200vh;  // must exceed max content height
+                            }
+
+                            li > a {
+                                font-size: 1em;
+                                color: inherit;
+                                transition: initial;
+
+                                &:hover {
+                                    background: black;
+                                }
+                            }
                         }
                     }
                 }
@@ -357,8 +373,8 @@
             flex: 0 0 auto;
             flex-direction: column;
             justify-content: center;
-            width: 4em;
-            opacity: 0.75;
+            width: 3.75em;
+            opacity: 0.8;
             cursor: pointer;
             padding: 0 1em;
             transition: opacity 100ms;
