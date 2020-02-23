@@ -1,92 +1,57 @@
 /* global sauce, jQuery */
 
-(async function() {
+(function() {
     'use strict';
 
     self.sauce = self.sauce || {};
 
 
-    sauce.propDefined = function(propertyAccessor, callback, root) {
+    sauce.propDefined = function(propertyAccessor, callback, options) {
+        options = options || {};
         return new Promise(resolve => {
-            let done;
-            let run;
-            let jobs;
-            function *runner() {
-                let val;
-                while (jobs.length) {
-                    const job = jobs.shift();
-                    job();
-                    val = yield;
-                }
-                done = true;
-                resolve(val);
-                if (callback) {
-                    callback(val);
-                }
-            }
-            const props = propertyAccessor.split('.');
-            let objRef = root || self;
-
-            function walkProps() {
-                while (props.length && Object.prototype.hasOwnProperty.call(objRef, props[0])) {
-                    const desc = Object.getOwnPropertyDescriptor(objRef, props[0]);
-                    if (desc && desc.set &&
-                        (!desc.set.hasValue ||
-                         (props.length > 1 && !Object.isExtensible(objRef[props[0]])))) {
-                        break;
-                    }
-                    objRef = objRef[props.shift()];
-                }
-                return objRef;
-            }
-
-            function catchDefine(obj, prop) {
+            function catchDefine(obj, props) {
                 function onSet(value) {
-                    if (done) {
-                        return;
-                    }
-                    const lastObj = objRef;
-                    const nextObj = walkProps();
-                    if (!Object.is(nextObj, lastObj)) {
-                        if (props.length) {
-                            jobs.push(() => catchDefine(nextObj, props[0]));
+                    if (props.length > 1) {
+                        if (Object.isExtensible(value)) {
+                            catchDefine(value, props.slice(1));
                         }
-                        run.next(nextObj);
+                    } else {
+                        if (callback) {
+                            callback(value);
+                        }
+                        resolve(value);
                     }
                 }
+                const prop = props[0];
                 const existing = Object.getOwnPropertyDescriptor(obj, prop);
-                if (existing) {
+                if (existing && existing.set && existing.set.listeners) {
                     existing.set.listeners.push(onSet);
+                    console.assert(existing.set.listeners.length < 1000);
                 } else {
-                    let internalValue;
+                    let internalValue = existing ? existing.value : undefined;
                     const set = function(value) {
+                        if (Object.is(internalValue, value)) {
+                            return;
+                        }
                         internalValue = value;
-                        set.hasValue = true;
-                        for (const x of set.listeners) {
-                            x.call(this, value);
+                        for (const fn of set.listeners) {
+                            fn(value);
                         }
                     };
                     set.listeners = [onSet];
-                    set.isExtensible = false;
                     Object.defineProperty(obj, prop, {
                         enumerable: true,
                         get: () => internalValue,
                         set
                     });
+                    if (existing) {
+                        for (const fn of set.listeners) {
+                            fn(internalValue);
+                        }
+                    }
                 }
             }
-
-            const firstObj = walkProps();
-            if (!props.length) {
-                resolve(firstObj);
-                if (callback) {
-                    callback(firstObj);
-                }
-            } else {
-                run = runner();
-                jobs = [() => catchDefine(firstObj, props[0])];
-                run.next();
-            }
+            catchDefine(options.root || self, propertyAccessor.split('.'));
         });
     };
 
@@ -287,16 +252,21 @@
         });
 
         // Allow html titles and icons for dialogs.
+        let _SegmentEffortsTableView;
         sauce.propDefined('Strava.Labs.Activities.SegmentEffortsTableView', View => {
-            self.Strava.Labs.Activities.SegmentEffortsTableView = function(_, options) {
-                const activity = options.context.chartContext.activity().clone();
-                if (activity.isRun() && sauce.options && sauce.options['analysis-detailed-run-segments']) {
-                    activity.set('type', 'Ride');
-                    options.context.chartContext.activity(activity);
-                }
-                View.prototype.constructor.apply(this, arguments);
-            };
-            self.Strava.Labs.Activities.SegmentEffortsTableView.prototype = View.prototype;
+            // Our reassignment will cause a recursive loop without a short circuit.
+            if (!_SegmentEffortsTableView) {
+                _SegmentEffortsTableView = function(_, options) {
+                    const activity = options.context.chartContext.activity().clone();
+                    if (activity.isRun() && sauce.options && sauce.options['analysis-detailed-run-segments']) {
+                        activity.set('type', 'Ride');
+                        options.context.chartContext.activity(activity);
+                    }
+                    View.prototype.constructor.apply(this, arguments);
+                };
+                _SegmentEffortsTableView.prototype = View.prototype;
+                self.Strava.Labs.Activities.SegmentEffortsTableView = _SegmentEffortsTableView;
+            }
         });
 
         sauce.propDefined('Strava.Labs.Activities.SegmentsView', View => {
@@ -319,6 +289,22 @@
                                                                   leaflet-fade-anim leaflet-touch"></div>`);
                 }
                 return this;
+            };
+        });
+
+        // Provide race-free detection of pending requests.
+        sauce.propDefined('Strava.Labs.Activities.StreamsRequest', Model => {
+            const requireSave = Model.prototype.require;
+            Model.prototype.require = function() {
+                if (!this.pending) {
+                    this.pending = new Promise(resolve => {
+                        this.deferred.always(() => {
+                            this.pending = false;
+                            resolve();
+                        });
+                    });
+                }
+                return requireSave.apply(this, arguments);
             };
         });
     }
