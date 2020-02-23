@@ -315,7 +315,7 @@ addTests([
         sauce.propDefined(props.join('.') + '.end', x => {
             done.push(x);
         }, {root: obj});
-        for (let i = 0; i < 1000; i++) {
+        for (let i = 0; i < 100; i++) {
             let o = obj;
             for (const p of props) {
                 o = (o[p] = (o[p] || {}));
@@ -327,10 +327,39 @@ addTests([
             o = (o[p] = (o[p] || {}));
         }
         assertEqual(done.length, 0);
-        for (let i = 0; i < 1000; i++) {
+        for (let i = 0; i < 100; i++) {
             o.end = i;
             assertEqual(done.length, i + 1);
             assertEqual(done[i], i);
         }
     },
+    async function test_prop_defined_preexisting_simple() {
+        const obj = {a: 1};
+        const done = [];
+        sauce.propDefined('a', x => done.push(x), {root: obj});
+        assertEqual(done[0], 1);
+    },
+    async function test_prop_defined_preexisting_object() {
+        const val = {b: 1};
+        const obj = {a: val};
+        const done = [];
+        sauce.propDefined('a', x => done.push(x), {root: obj});
+        assertEqual(done[0], val);
+    },
+    async function test_prop_defined_preexisting_listener_simple() {
+        const obj = {a: 1};
+        const done = [];
+        sauce.propDefined('a', null, {root: obj});
+        sauce.propDefined('a', x => done.push(x), {root: obj});
+        assertEqual(done[0], 1);
+    },
+    async function test_prop_defined_preexisting_object() {
+        const val = {b: 1};
+        const obj = {a: val};
+        const done = [];
+        sauce.propDefined('a', null, {root: obj});
+        sauce.propDefined('a', x => done.push(x), {root: obj});
+        assertEqual(done[0], val);
+    },
+
 ]);
