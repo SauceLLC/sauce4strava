@@ -11,7 +11,7 @@
     async function getStorageInterface() {
         if (_storageIface === undefined) {
             try {
-                browser.storage.sync.get('irrelevant');
+                await browser.storage.sync.get('irrelevant');
                 _storageIface = browser.storage.sync;
             } catch(e) {
                 _storageIface = browser.storage.local;
