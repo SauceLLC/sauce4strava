@@ -23,12 +23,12 @@
                     }
                 }
                 const prop = props[0];
-                const existing = Object.getOwnPropertyDescriptor(obj, prop);
-                if (existing && existing.set && existing.set.listeners) {
-                    existing.set.listeners.push(onSet);
-                    console.assert(existing.set.listeners.length < 1000);
+                const propDesc = Object.getOwnPropertyDescriptor(obj, prop);
+                if (propDesc && propDesc.set && propDesc.set.listeners) {
+                    propDesc.set.listeners.push(onSet);
+                    console.assert(propDesc.set.listeners.length < 1000);
                 } else {
-                    let internalValue = existing ? existing.value : undefined;
+                    let internalValue = propDesc ? propDesc.value : undefined;
                     const set = function(value) {
                         if (Object.is(internalValue, value)) {
                             return;
@@ -44,10 +44,14 @@
                         get: () => internalValue,
                         set
                     });
-                    if (existing) {
-                        for (const fn of set.listeners) {
-                            fn(internalValue);
-                        }
+                }
+                const curValue = obj[prop];
+                if (curValue !== undefined) {  // Not stoaked on this test.
+                    const listeners = propDesc && propDesc.set && propDesc.set.listeners ?
+                        propDesc.set.listeners :
+                        Object.getOwnPropertyDescriptor(obj, prop).set.listeners;
+                    for (const fn of listeners) {
+                        fn(curValue);
                     }
                 }
             }
