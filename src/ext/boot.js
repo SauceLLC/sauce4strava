@@ -82,10 +82,13 @@
     function loadScript(url, options) {
         options = options || {};
         const script = document.createElement('script');
-        if (!options.blocking) {
+        if (options.defer) {
             script.defer = 'defer';
         }
-        const p = new Promise(resolve => script.onload = resolve);
+        if (!options.async) {
+            script.async = false;  // default is true
+        }
+        const p = new Promise(resolve => script.addEventListener('load', resolve));
         script.src = url;
         addHeadElement(script, options.top);
         return p;
@@ -111,7 +114,7 @@
 
     async function load() {
         const extUrl = browser.extension.getURL('');
-        await loadScript(`${extUrl}src/site/preloader.js`, {blocking: true, top: true});
+        await loadScript(`${extUrl}src/site/preloader.js`, {top: true});
         const config = await sauce.storage.get(null);
         if (config.enabled === false) {
             document.documentElement.classList.add('sauce-disabled');
@@ -146,7 +149,7 @@
             }
             if (m.scripts) {
                 for (const url of m.scripts) {
-                    await loadScript(`${extUrl}src/${url}`);
+                    loadScript(`${extUrl}src/${url}`, {});
                 }
             }
         }
