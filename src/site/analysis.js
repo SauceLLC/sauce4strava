@@ -3,6 +3,29 @@
 sauce.ns('analysis', async ns => {
     'use strict';
 
+    const commonStreams = [
+        'time', 'timer_time', 'heartrate', 'altitude', 'distance', 'moving',
+        'grade_smooth', 'velocity_smooth'
+    ];
+    const manifests = {
+        'Ride': {
+            start: startRide,
+            streams: new Set(commonStreams.concat(['watts', 'watts_calc'])),
+        },
+        'Run': {
+            start: startRun,
+            streams: new Set(commonStreams.concat(['watts', 'grade_adjusted_distance'])),
+        },
+        'Swim': {
+            start: startSwim,
+            streams: new Set(commonStreams),
+        },
+        'Other': {
+            start: startOther,
+            streams: new Set(commonStreams.concat(['watts'])),
+        }
+    };
+
     await sauce.propDefined('pageView');
 
     let _resolvePrepared;
@@ -21,6 +44,7 @@ sauce.ns('analysis', async ns => {
     const timeFormatter = new Strava.I18n.TimespanFormatter();
     const paceFormatter = new Strava.I18n.PaceFormatter();
     const swimPaceFormatter = new Strava.I18n.SwimPaceFormatter();
+    const speedFormatter = new Strava.I18n.DistancePerTimeFormatter();
     const weightFormatter = new Strava.I18n.WeightFormatter();
 
     const minVAMTime = 60;
@@ -87,11 +111,10 @@ sauce.ns('analysis', async ns => {
     const _attemptedFetch = new Set();
     const _pendingFetches = new Map();
     async function fetchStreams(names) {
-        if (pageView.streamsRequest.required.length) {
+        if (pageView.streamsRequest.pending) {
             // We must wait until the pageView.streamsRequest has completed.
             // Stream transform functions fail otherwise.
-            console.info('Waiting for in-flight streams request to complete.');
-            await new Promise(resolve => pageView.streamsRequest.deferred.done(resolve));
+            await pageView.streamsRequest.pending;
         }
         const streams = pageView.streams();
         const attempted = _attemptedFetch;
@@ -487,7 +510,6 @@ sauce.ns('analysis', async ns => {
 
 
     async function processRideStreams() {
-        await fetchStreams(['watts', 'time', 'heartrate', 'altitude']);  // load perf
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
@@ -1715,14 +1737,13 @@ sauce.ns('analysis', async ns => {
     }
 
 
+    function supportsStream(type) {
+        return !!(ctx.manifest && ctx.manifest.streams && ctx.manifest.streams.has(type));
+    }
+
+
     async function _updateAnalysisStats(start, end) {
         const isRun = pageView.activity().isRun();
-        const prefetchStreams = ['time', 'timer_time', 'moving', 'altitude', 'watts',
-                                 'grade_smooth', 'distance'];
-        if (isRun) {
-            prefetchStreams.push('grade_adjusted_distance');
-        }
-        await fetchStreams(prefetchStreams);  // better load perf
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
@@ -1744,7 +1765,7 @@ sauce.ns('analysis', async ns => {
             elevation: elevationData(altStream, elapsedTime, distance),
         };
         let kj;
-        const wattsStream = await fetchStream('watts', start, end);
+        const wattsStream = supportsStream('watts') && await fetchStream('watts', start, end);
         if (wattsStream) {
             // Use idealGap and maxGap from whole data stream for cleanest results.
             if (!ctx.idealGap) {
@@ -2010,9 +2031,8 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    async function prepareContext() {
+    async function pageViewAssembled() {
         if (!pageView.factory().page()) {
-            // Wait for page to assemble() first..  Only on slow connections.
             const pf = pageView.factory();
             const setget = pf.page;
             await new Promise(resolve => {
@@ -2028,6 +2048,10 @@ sauce.ns('analysis', async ns => {
                 };
             });
         }
+    }
+
+
+    async function prepareContext() {
         ctx.athlete = pageView.activityAthlete();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
         await Promise.all([
@@ -2131,24 +2155,8 @@ sauce.ns('analysis', async ns => {
 
 
     async function load() {
-        const activity = pageView.activity();
-        if (!activity) {
-            return;
-        }
-        const type = activity.get('type');
-        let start;
-        if (activity.isRun()) {
-            start = startRun;
-        } else if (activity.isRide()) {
-            start = startRide;
-        } else if (activity.isSwim()) {
-            start = startSwim;
-        } else if (type === 'Other') {
-            // This covers most snow sports and misc workouts..
-            start = startOther;
-        } // else probably Manual or something super odd.
         if (sauce.options['responsive']) {
-            await attachMobileMenuExpander();
+            attachMobileMenuExpander();  // bg okay
             pageView.unbindScrollListener();
             document.body.classList.add('sauce-disabled-scroll-listener');
             pageView.handlePageScroll = function() {};
@@ -2157,9 +2165,15 @@ sauce.ns('analysis', async ns => {
             mobileMedia.addListener(ev => void (jQuery.fx.off = ev.matches));
             jQuery.fx.off = mobileMedia.matches;
         }
-        if (start) {
+        await pageViewAssembled();
+        const activity = pageView.activity();
+        const type = activity.get('type');
+        ctx.manifest = manifests[type];
+        if (ctx.manifest) {
             ctx.supportedActivity = true;
-            await prepareContext();
+            if (ctx.manifest.streams) {
+                fetchStreams(Array.from(ctx.manifest.streams));  // bg okay
+            }
             const pageRouter = pageView.router();
             pageRouter.on('route', page => {
                 document.body.dataset.route = page;
@@ -2167,16 +2181,19 @@ sauce.ns('analysis', async ns => {
             });
             document.body.dataset.route = pageRouter.context.startMenu();
             startPageMonitors();
+            await prepareContext();
+            // Make sure this is last thing before start..
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;
                 schedUpdateAnalysisStats(start, end);
             }
-            await start();
+            await ctx.manifest.start();
         } else {
             ctx.supportedActivity = false;
             console.info("Unsupported activity type:", type);
         }
         sendGAPageView(type);  // bg okay
+        console.info(`Page load time: ${Math.round(performance.now()).toLocaleString()}ms`);
     }
 
 
