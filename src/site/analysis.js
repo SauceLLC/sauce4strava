@@ -1,6 +1,6 @@
 /* global Strava, sauce, jQuery, pageView */
 
-sauce.ns('analysis', async ns => {
+sauce.ns('analysis', ns => {
     'use strict';
 
     const commonStreams = [
@@ -26,26 +26,12 @@ sauce.ns('analysis', async ns => {
         }
     };
 
-    await sauce.propDefined('pageView');
-
     let _resolvePrepared;
     const ctx = {
         prepared: new Promise(resolve => void (_resolvePrepared = resolve))
     };
 
     const tplUrl = sauce.extUrl + 'templates';
-
-    const distanceFormatter = new Strava.I18n.DistanceFormatter();
-    const metricDistanceFormatter = new Strava.I18n.DistanceFormatter(
-        Strava.I18n.UnitSystemSource.METRIC);
-    const imperialDistanceFormatter = new Strava.I18n.DistanceFormatter(
-        Strava.I18n.UnitSystemSource.IMPERIAL);
-    const elevationFormatter = new Strava.I18n.ElevationFormatter();
-    const timeFormatter = new Strava.I18n.TimespanFormatter();
-    const paceFormatter = new Strava.I18n.PaceFormatter();
-    const swimPaceFormatter = new Strava.I18n.SwimPaceFormatter();
-    const speedFormatter = new Strava.I18n.DistancePerTimeFormatter();
-    const weightFormatter = new Strava.I18n.WeightFormatter();
 
     const minVAMTime = 60;
     const minHRTime = 60;
@@ -331,7 +317,7 @@ sauce.ns('analysis', async ns => {
     function attachEditableWeight($parent) {
         const $field = $parent.find('.sauce-editable-field.weight');
         async function save(v) {
-            const weight_override = weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
+            const weight_override = ctx.weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
             await updateAthleteInfo(ctx.athlete, {weight_override});
         }
         editableField($field, {
@@ -373,7 +359,7 @@ sauce.ns('analysis', async ns => {
         const sidenav = document.querySelector('nav.sidenav');
         const minHeight = sidenav.offsetHeight;
         document.querySelector('.view > .page.container').style.minHeight = `${minHeight}px`;
-        Strava.Activities.Ui.prepareSlideMenu();  // Fixes ... menu in some cases
+        adjustSlideMenu();
     }
 
 
@@ -479,7 +465,7 @@ sauce.ns('analysis', async ns => {
 
 
     function paceVelocityRangesToRows(ranges, timeStream, distStream) {
-        const unit = '/' + distanceFormatter.shortUnitKey();
+        const unit = ctx.paceFormatter.shortUnitKey();
         const rows = [];
         for (const range of ranges) {
             const roll = sauce.pace.bestPace(range.value, timeStream, distStream);
@@ -544,7 +530,7 @@ sauce.ns('analysis', async ns => {
             }
         }
         await renderTertiaryStats({
-            weightUnit: weightFormatter.shortUnitKey(),
+            weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
             ftp: ctx.ftp,
@@ -629,7 +615,7 @@ sauce.ns('analysis', async ns => {
         const distStream = await fetchStream('distance');
         const elapsedTime = streamDelta(timeStream);
         await renderTertiaryStats({
-            weightUnit: weightFormatter.shortUnitKey(),
+            weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin
         });
@@ -647,7 +633,7 @@ sauce.ns('analysis', async ns => {
             const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
             const distRanges = ctx.allDistRanges;
             const panel = new PeakEffortsPanel({
-                type: 'run',
+                type: 'swim',
                 menu,
                 infoDialog: runInfoDialog,
                 renderAttrs: async source => {
@@ -686,7 +672,7 @@ sauce.ns('analysis', async ns => {
             intensity = power / ctx.ftp;
         }
         await renderTertiaryStats({
-            weightUnit: weightFormatter.shortUnitKey(),
+            weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
             ftp: ctx.ftp,
@@ -758,7 +744,7 @@ sauce.ns('analysis', async ns => {
             intensity = power / ctx.ftp;
         }
         await renderTertiaryStats({
-            weightUnit: weightFormatter.shortUnitKey(),
+            weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
             ftp: ctx.ftp,
@@ -862,33 +848,38 @@ sauce.ns('analysis', async ns => {
         options = options || {};
         if (options.suffix) {
             if (options.html) {
-                return weightFormatter.abbreviated(kg);
+                return ctx.weightFormatter.abbreviated(kg);
             } else {
-                return weightFormatter.formatShort(kg);
+                return ctx.weightFormatter.formatShort(kg);
             }
         } else {
-            return weightFormatter.format(kg);
+            return ctx.weightFormatter.format(kg);
         }
     }
 
 
     function humanTime(seconds) {
         /* Convert seconds to a human string */
-        return timeFormatter.display(seconds);
+        return ctx.timeFormatter.display(seconds);
     }
 
 
-    function humanPace(speed, options) {
+    function humanPace(raw, options) {
         options = options || {};
-        const mps = options.velocity ? speed : (1 / speed);
+        let value;
+        if (options.velocity) {
+            value = ctx.paceFormatter.key === 'distance_per_time' ? raw * 3600 : raw;
+        } else {
+            value = 1 / raw;
+        }
         if (options.suffix) {
             if (options.html) {
-                return paceFormatter.abbreviated(mps);
+                return ctx.paceFormatter.abbreviated(value);
             } else {
-                return paceFormatter.formatShort(mps);
+                return ctx.paceFormatter.formatShort(value);
             }
         } else {
-            return paceFormatter.format(mps);
+            return ctx.paceFormatter.format(value);
         }
     }
 
@@ -925,12 +916,12 @@ sauce.ns('analysis', async ns => {
         options = options || {};
         if (options.suffix) {
             if (options.longSuffix) {
-                return elevationFormatter.formatLong(meters);
+                return ctx.elevationFormatter.formatLong(meters);
             } else {
-                return elevationFormatter.formatShort(meters);
+                return ctx.elevationFormatter.formatShort(meters);
             }
         } else {
-            return elevationFormatter.format(meters);
+            return ctx.elevationFormatter.format(meters);
         }
     }
 
@@ -1040,21 +1031,29 @@ sauce.ns('analysis', async ns => {
         const hrStream = await fetchStreamTimeRange('heartrate', startTS, endTS);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTS, endTS);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTS, endTS);
+        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTS, endTS);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('ride-info-dialog.html');
+        const distance = streamDelta(distStream);
         const body = await template({
             startsAt: humanTime(startTime),
             power: roll && powerData(null, roll.avg(), null, elapsedTime, {
                 max: sauce.data.max(rollValues),
                 np: roll.np()
             }),
-            hr: hrData(hrStream),
-            cadence: cadenceStream && sauce.data.avg(cadenceStream),
-            elevation: elevationData(altStream, elapsedTime, streamDelta(distStream)),
-            elevationUnit: elevationFormatter.shortUnitKey(),
-            distUnit: distanceFormatter.shortUnitKey(),
-            distUnitLong: distanceFormatter.longUnitKey(),
+            pace: distStream && {
+                avg: humanPace(distance / elapsedTime, {velocity: true}),
+                min: humanPace(sauce.data.min(velocityStream), {velocity: true}),
+                max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
+            },
+            hr: hrInfo(hrStream),
+            hrUnit: ctx.hrFormatter.shortUnitKey(),
+            cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
+            cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
+            elevation: elevationData(altStream, elapsedTime, distance),
+            elevationUnit: ctx.elevationFormatter.shortUnitKey(),
+            paceUnit: ctx.paceFormatter.shortUnitKey(),
         });
         const $dialog = await createInfoDialog({
             heading,
@@ -1169,12 +1168,13 @@ sauce.ns('analysis', async ns => {
                 gap: gap && humanPace(gap, {velocity: true}),
             },
             elapsed: humanTime(elapsedTime),
-            hr: hrData(hrStream),
-            cadence: cadenceStream && sauce.data.avg(cadenceStream) * 2,
+            hr: hrInfo(hrStream),
+            hrUnit: ctx.hrFormatter.shortUnitKey(),
+            cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
+            cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
             elevation: elevationData(altStream, elapsedTime, streamDelta(distStream)),
-            elevationUnit: elevationFormatter.shortUnitKey(),
-            distUnit: distanceFormatter.shortUnitKey(),
-            distUnitLong: distanceFormatter.longUnitKey(),
+            elevationUnit: ctx.elevationFormatter.shortUnitKey(),
+            paceUnit: ctx.paceFormatter.shortUnitKey()
         });
         const $dialog = await createInfoDialog({
             heading,
@@ -1688,12 +1688,13 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    function hrData(hrStream) {
+    function hrInfo(hrStream) {
         if (hrStream) {
+            const fmt = ctx.hrFormatter;
             return {
-                min: sauce.data.min(hrStream),
-                avg: sauce.data.avg(hrStream),
-                max: sauce.data.max(hrStream),
+                min: fmt.format(sauce.data.min(hrStream)),
+                avg: fmt.format(sauce.data.avg(hrStream)),
+                max: fmt.format(sauce.data.max(hrStream)),
             };
         }
     }
@@ -1756,11 +1757,11 @@ sauce.ns('analysis', async ns => {
             isRun,
             elapsed: humanTime(elapsedTime),
             moving: humanTime(movingTime),
-            paused: timeFormatter.abbreviatedNoTags(pausedTime, null, false),
+            paused: ctx.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
             stops: countStops(await fetchStream('moving', start, end)),
             weight: ctx.weight,
-            elUnit: elevationFormatter.shortUnitKey(),
-            distUnit: distanceFormatter.shortUnitKey(),
+            elUnit: ctx.elevationFormatter.shortUnitKey(),
+            paceUnit: ctx.paceFormatter.shortUnitKey(),
             samples: timeStream.length,
             elevation: elevationData(altStream, elapsedTime, distance),
         };
@@ -2010,24 +2011,22 @@ sauce.ns('analysis', async ns => {
     }
 
 
-    if (Strava.Activities && Strava.Activities.Ui && Strava.Activities.Ui.prepareSlideMenu) {
-        Strava.Activities.Ui.prepareSlideMenu = function() {
-            // We extend the sidenav, so we need to modify this routine to make the menu
-            // work properly in all conditions.
-            const sidenav = document.querySelector('nav.sidenav');
-            if (!sidenav) {
-                return;
-            }
-            const navHeight = sidenav.offsetHeight;
-            const slideMenu = document.querySelector('.slide-menu');
-            // Must use jQuery since it's hidden and they do magic..
-            const slideMenuHeight = jQuery(slideMenu.querySelector(".options")).height();
-            const top = slideMenuHeight > navHeight;
-            requestAnimationFrame(() => {
-                slideMenu.classList.remove("align-top");  // Never seems to be a good idea.
-                slideMenu.classList.toggle("align-bottom", !top);
-            });
-        };
+    function adjustSlideMenu() {
+        // We expand the sidenav, so we need to modify this routine to make the menu
+        // work properly in all conditions.
+        const sidenav = document.querySelector('nav.sidenav');
+        if (!sidenav) {
+            return;
+        }
+        const navHeight = sidenav.offsetHeight;
+        const slideMenu = document.querySelector('.slide-menu');
+        // Must use jQuery since it's hidden and they do the magic..
+        const slideMenuHeight = jQuery(slideMenu.querySelector(".options")).height();
+        const top = slideMenuHeight > navHeight;
+        requestAnimationFrame(() => {
+            slideMenu.classList.remove("align-top");  // Never seems to be a good idea.
+            slideMenu.classList.toggle("align-bottom", !top);
+        });
     }
 
 
@@ -2052,12 +2051,32 @@ sauce.ns('analysis', async ns => {
 
 
     async function prepareContext() {
+        const activity = pageView.activity();
         ctx.athlete = pageView.activityAthlete();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
         await Promise.all([
             getWeightInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
             getFTPInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
         ]);
+        ctx.elevationFormatter = new Strava.I18n.ElevationFormatter();
+        ctx.hrFormatter = new Strava.I18n.HeartRateFormatter();
+        ctx.cadenceFormatter = activity.isRun() ?
+            new Strava.I18n.DoubledStepCadenceFormatter() :
+            new Strava.I18n.CadenceFormatter();
+        ctx.timeFormatter = new Strava.I18n.TimespanFormatter();
+        ctx.weightFormatter = new Strava.I18n.WeightFormatter();
+        const speedUnit = activity.get('speedUnit');
+        const PaceFormatter = {
+            mp100m: Strava.I18n.SwimPaceFormatter,
+            mph: Strava.I18n.DistancePerTimeFormatter,
+            mpm: Strava.I18n.PaceFormatter,
+        }[speedUnit];
+        if (!PaceFormatter) {
+            console.error("Unhandled speed unit:", speedUnit);
+            ctx.paceFormatter = new Strava.I18n.PaceFormatter();
+        } else {
+            ctx.paceFormatter = new PaceFormatter();
+        }
         updateSideNav();  // bg okay
         attachExporters();  // bg okay
         attachComments();  // bg okay
@@ -2067,6 +2086,10 @@ sauce.ns('analysis', async ns => {
             range.label = await sauce.locale.humanDuration(range.value);
         }
         ctx.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
+        const imperialDistanceFormatter = new Strava.I18n.DistanceFormatter(
+            Strava.I18n.UnitSystemSource.IMPERIAL);
+        const metricDistanceFormatter = new Strava.I18n.DistanceFormatter(
+            Strava.I18n.UnitSystemSource.METRIC);
         for (const range of ctx.allDistRanges) {
             if (range.value < 1000) {
                 range.label = `${range.value} m`;
@@ -2155,6 +2178,8 @@ sauce.ns('analysis', async ns => {
 
 
     async function load() {
+        const start = Date.now();
+        await sauce.propDefined('pageView');
         if (sauce.options['responsive']) {
             attachMobileMenuExpander();  // bg okay
             pageView.unbindScrollListener();
@@ -2193,7 +2218,7 @@ sauce.ns('analysis', async ns => {
             console.info("Unsupported activity type:", type);
         }
         sendGAPageView(type);  // bg okay
-        console.info(`Page load time: ${Math.round(performance.now()).toLocaleString()}ms`);
+        console.info(`Analysis load time: ${(Date.now() - start).toLocaleString()}ms`);
     }
 
 
@@ -2210,14 +2235,17 @@ sauce.ns('analysis', async ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
     };
-}).then(async ns => {
+});
+
+
+(async function() {
     if (sauce.testing) {
         return;
     }
     try {
-        await ns.load();
+        await sauce.analysis.load();
     } catch(e) {
         await sauce.rpc.reportError(e);
         throw e;
     }
-});
+})();

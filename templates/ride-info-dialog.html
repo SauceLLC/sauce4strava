@@ -24,7 +24,7 @@
             <td>
                 {{Math.round(power.elapsedAvg)}}<abbr class="unit short">w</abbr>
                 <sup class="sauce-positive" title="{{{max_power_tooltip}}}">
-                    {{power.max}}<abbr class="unit short">w</abbr>
+                    {{power.max}}
                 </sup>
             </td>
         </tr>
@@ -42,7 +42,7 @@
             <td>{{{heartrate}}}</td>
             <td>
                 <sub class="sauce-positive" title="{{{low_hr_tooltip}}}">{{hr.min}}</sub>
-                {{Math.round(hr.avg)}}
+                {{hr.avg}}<abbr class="unit short">{{hrUnit}}</abbr>
                 <sup class="sauce-negative" title="{{{high_hr_tooltip}}}">{{hr.max}}</sup>
             </td>
         </tr>
@@ -51,7 +51,17 @@
     <% if (obj.cadence) { %>
         <tr title="{{{cycling_cadence_tooltip}}}">
             <td>{{{cadence}}}</td>
-            <td>{{Math.round(cadence)}}<abbr class="unit short">rpm</abbr>
+            <td>{{cadence}}<abbr class="unit short">{{cadenceUnit}}</abbr>
+        </tr>
+    <% } %>
+
+    <% if (obj.pace) { %>
+        <tr>
+            <td>{{{speed}}}</td>
+            <td>
+                {{pace.avg}}<abbr class="unit short">{{paceUnit}}</abbr>
+                <sup class="sauce-positive" title="{{{high_speed_tooltip}}}">{{pace.max}}</sup>
+            </td>
         </tr>
     <% } %>
 

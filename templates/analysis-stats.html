@@ -32,20 +32,20 @@
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{moving_pace_tooltip}}}">
             <key>{{{pace}}}</key>
-            <value>{{pace.moving}}<abbr class="unit">/{{distUnit}}</abbr></value>
+            <value>{{pace.moving}}<abbr class="unit">{{paceUnit}}</abbr></value>
         </line>
 
         <% if (pace.gap) { %>
             <line title="{{{gap_tooltip}}}">
                 <key>GAP</key>
-                <value>{{pace.gap}}<abbr class="unit">/{{distUnit}}</abbr></value>
+                <value>{{pace.gap}}<abbr class="unit">{{paceUnit}}</abbr></value>
             </line>
         <% } %>
 
         <% if (pace.elapsed && pace.elapsed !== pace.moving) { %>
             <line title="{{{elapsed_pace_tooltip}}}">
                 <key>{{{elapsed}}}</key>
-                <value>{{pace.elapsed}}<abbr class="unit">/{{distUnit}}</abbr></value>
+                <value>{{pace.elapsed}}<abbr class="unit">{{paceUnit}}</abbr></value>
             </line>
         <% } %>
     </div>
