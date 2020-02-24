@@ -1,0 +1,73 @@
+<div class="sauce-sparkline"></div>
+<table>
+    <tr title="{{{start_of_effort_tooltip}}}">
+        <td>{{{start_of_effort}}}</td>
+        <td><a class="start_time_link">{{startsAt}}</a></td>
+    </tr>
+
+    <tr title="{{{elapsed_time_tooltip}}}">
+        <td>{{{elapsed_time}}}</td>
+        <td>{{elapsed}}</td>
+    </tr>
+
+    <% if (obj.pace) { %>
+        <tr title="{{{elapsed_pace_tooltip}}}">
+            <td>{{{pace}}}</td>
+            <td>
+                {{pace.avg}}<abbr class="unit short">{{paceUnit}}</abbr>
+                <sup class="sauce-positive" title="Peak Pace">
+                    {{pace.max}}
+                </sup>
+            </td>
+        </tr>
+
+        <% if (pace.gap) { %>
+            <tr title="{{{gap_tooltip}}}">
+                <td>GAP</td>
+                <td>{{pace.gap}}<abbr class="unit short">{{paceUnit}}</abbr></td>
+            </tr>
+        <% } %>
+    <% } %>
+
+    <% if (obj.hr) { %>
+        <tr>
+            <td>{{{heartrate}}}</td>
+            <td>
+                <sub class="sauce-positive" title="{{{low_hr_tooltip}}}">{{hr.min}}</sub>
+                {{hr.avg}}<abbr class="unit short">{{hrUnit}}</abbr>
+                <sup class="sauce-negative" title="{{{high_hr_tooltip}}}">{{hr.max}}</sup>
+            </td>
+        </tr>
+    <% } %>
+
+    <% if (obj.cadence) { %>
+        <tr title="{{{swim_cadence_tooltip}}}">
+            <td>{{{cadence}}}</td>
+            <td>{{cadence}}<abbr class="unit short">{{cadenceUnit}}</abbr>
+        </tr>
+    <% } %>
+
+    <% if (obj.elevation) { %>
+        <tr>
+            <td>{{{elevation}}}</td>
+            <td>
+                <sub class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
+                    {{elevation.loss}}{{elevationUnit}}
+                </sub>
+                <span title="{{{grade_tooltip}}}">{{Math.round(elevation.grade)}}<small>%</small></span>
+                <sup class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
+                    {{elevation.gain}}{{elevationUnit}}
+                </sup>
+            </td>
+        </tr>
+
+        <% if (elevation.vam && elevation.vam > 0) { %>
+            <tr title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
+                <td>VAM</td>
+                <td>
+                    {{Math.round(elevation.vam).toLocaleString()}}<abbr class="unit short">Vm/h</abbr>
+                </td>
+            </tr>
+        <% } %>
+    <% } %>
+</table>
