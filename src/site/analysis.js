@@ -65,15 +65,6 @@ sauce.ns('analysis', ns => {
         {value: Math.round(metersPerMile * 26.2)},
         {value: 50000},
     ];
-    const peakIcons = {
-        peak_power: 'fa/bolt-duotone.svg',
-        peak_np: 'fa/atom-alt-duotone.svg',
-        peak_hr: 'fa/heartbeat-duotone.svg',
-        peak_vam: 'fa/rocket-launch-duotone.svg',
-        peak_pace: 'fa/running-duotone.svg',
-        peak_gap: 'fa/hiking-duotone.svg',
-    };
-
 
     let _fullActivity;
     async function fetchFullActivity() {
@@ -405,12 +396,12 @@ sauce.ns('analysis', ns => {
             this.$el.html(await template(Object.assign({
                 menuInfo: await Promise.all(this.menu.map(async x => ({
                     source: x,
-                    icon: await sauce.images.asText(peakIcons[x]),
+                    icon: await sauce.images.asText(ctx.peakIcons[x]),
                     tooltip: x + '_tooltip'
                 }))),
                 source,
                 sourceTooltip: source + '_tooltip',
-                sourceIcon: await sauce.images.asText(peakIcons[source]),
+                sourceIcon: await sauce.images.asText(ctx.peakIcons[source]),
             }, await this.renderAttrs.call(this, source))));
             navHeightAdjustments();
         }
@@ -635,7 +626,7 @@ sauce.ns('analysis', ns => {
             const panel = new PeakEffortsPanel({
                 type: 'swim',
                 menu,
-                infoDialog: runInfoDialog,
+                infoDialog: swimInfoDialog,
                 renderAttrs: async source => {
                     let rows;
                     if (source === 'peak_pace') {
@@ -700,7 +691,7 @@ sauce.ns('analysis', ns => {
             const panel = new PeakEffortsPanel({
                 type: 'run',
                 menu,
-                infoDialog: runInfoDialog,
+                infoDialog: otherInfoDialog,
                 renderAttrs: async source => {
                     let rows;
                     if (source === 'peak_pace') {
@@ -866,12 +857,8 @@ sauce.ns('analysis', ns => {
 
     function humanPace(raw, options) {
         options = options || {};
-        let value;
-        if (options.velocity) {
-            value = ctx.paceFormatter.key === 'distance_per_time' ? raw * 3600 : raw;
-        } else {
-            value = 1 / raw;
-        }
+        const mps = options.velocity ? raw : 1 / raw;
+        const value = ctx.paceFormatter.key === 'distance_per_time' ? mps * 3600 : mps;
         if (options.suffix) {
             if (options.html) {
                 return ctx.paceFormatter.abbreviated(value);
@@ -967,7 +954,7 @@ sauce.ns('analysis', ns => {
         }
         const $dialog = dialog({
             title: `${options.heading}: ${options.textLabel}`,
-            icon: await sauce.images.asText(peakIcons[options.source]),
+            icon: await sauce.images.asText(ctx.peakIcons[options.source]),
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             resizable: false,
@@ -1201,6 +1188,128 @@ sauce.ns('analysis', ns => {
             }
             await infoDialogGraph($sparkline, {
                 data: gradeVelocity,
+                formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
+                colorSteps: [0.5, 2, 5, 10]
+            });
+        } else if (source === 'peak_hr') {
+            await infoDialogGraph($sparkline, {
+                data: hrStream,
+                formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
+                colorSteps: [40, 100, 150, 200]
+            });
+        } else if (source === 'peak_vam') {
+            await infoDialogGraph($sparkline, {
+                data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
+                formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
+                colorSteps: [-500, 500, 1000, 2000]
+            });
+        }
+        return $dialog;
+    }
+
+
+    // XXX more DRY...
+    async function swimInfoDialog({startTime, endTime, label, source, originEl}) {
+        const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
+        const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
+        let roll;
+        if (distStream) {
+            roll = new sauce.data.RollingPace(null);
+            roll.import(timeStream, distStream);
+        }
+        const elapsedTime = endTime - startTime;
+        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
+        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
+        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
+        const maxVelocity = sauce.data.max(velocityStream);
+        const heading = await sauce.locale.getMessage(`analysis_${source}`);
+        const textLabel = jQuery(`<div>${label}</div>`).text();
+        const template = await getTemplate('swim-info-dialog.html');
+        const body = await template({
+            startsAt: humanTime(startTime),
+            pace: roll && {
+                avg: humanPace(roll.avg()),
+                max: humanPace(maxVelocity, {velocity: true}),
+            },
+            elapsed: humanTime(elapsedTime),
+            hr: hrInfo(hrStream),
+            hrUnit: ctx.hrFormatter.shortUnitKey(),
+            cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
+            cadenceUnit: 'spm',  // XXX Haven't found a localized string for strokes / min.
+            paceUnit: ctx.paceFormatter.shortUnitKey()
+        });
+        const $dialog = await createInfoDialog({
+            heading,
+            textLabel,
+            source,
+            body,
+            originEl,
+            start: startTime,
+            end: endTime
+        });
+        const $sparkline = $dialog.find('.sauce-sparkline');
+        if (source === 'peak_pace') {
+            await infoDialogGraph($sparkline, {
+                data: velocityStream,
+                formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
+                colorSteps: [0.5, 2, 5, 10]
+            });
+        } else if (source === 'peak_hr') {
+            await infoDialogGraph($sparkline, {
+                data: hrStream,
+                formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
+                colorSteps: [40, 100, 150, 200]
+            });
+        }
+        return $dialog;
+    }
+
+
+    async function otherInfoDialog({startTime, endTime, label, source, originEl}) {
+        const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
+        const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
+        let roll;
+        if (distStream) {
+            roll = new sauce.data.RollingPace(null);
+            roll.import(timeStream, distStream);
+        }
+        const elapsedTime = endTime - startTime;
+        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
+        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
+        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
+        const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
+        const maxVelocity = sauce.data.max(velocityStream);
+        const heading = await sauce.locale.getMessage(`analysis_${source}`);
+        const textLabel = jQuery(`<div>${label}</div>`).text();
+        const template = await getTemplate('other-info-dialog.html');
+        const body = await template({
+            startsAt: humanTime(startTime),
+            pace: roll && {
+                avg: humanPace(roll.avg()),
+                max: humanPace(maxVelocity, {velocity: true}),
+            },
+            elapsed: humanTime(elapsedTime),
+            hr: hrInfo(hrStream),
+            hrUnit: ctx.hrFormatter.shortUnitKey(),
+            cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
+            cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
+            elevation: elevationData(altStream, elapsedTime, streamDelta(distStream)),
+            elevationUnit: ctx.elevationFormatter.shortUnitKey(),
+            paceUnit: ctx.paceFormatter.shortUnitKey()
+        });
+        const $dialog = await createInfoDialog({
+            heading,
+            textLabel,
+            source,
+            body,
+            originEl,
+            start: startTime,
+            end: endTime
+        });
+        const $sparkline = $dialog.find('.sauce-sparkline');
+        if (source === 'peak_pace') {
+            await infoDialogGraph($sparkline, {
+                data: velocityStream,
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
                 colorSteps: [0.5, 2, 5, 10]
             });
@@ -2076,6 +2185,19 @@ sauce.ns('analysis', ns => {
             ctx.paceFormatter = new Strava.I18n.PaceFormatter();
         } else {
             ctx.paceFormatter = new PaceFormatter();
+        }
+        ctx.peakIcons = {
+            peak_power: 'fa/bolt-duotone.svg',
+            peak_np: 'fa/atom-alt-duotone.svg',
+            peak_hr: 'fa/heartbeat-duotone.svg',
+            peak_vam: 'fa/rocket-launch-duotone.svg',
+            peak_gap: 'fa/hiking-duotone.svg',
+            peak_pace: 'fa/rabbit-fast-duotone.svg'
+        };
+        if (activity.isRun()) {
+            ctx.peakIcons.peak_pace = 'fa/running-duotone.svg';
+        } else if (activity.isSwim()) {
+            ctx.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
         updateSideNav();  // bg okay
         attachExporters();  // bg okay

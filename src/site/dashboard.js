@@ -168,11 +168,13 @@ sauce.ns('dashboard', function(ns) {
     return {
         load,
     };
-}).then(async ns => {
+});
+
+(async function() {
     try {
-        await ns.load();
+        await sauce.dashboard.load();
     } catch(e) {
         await sauce.rpc.reportError(e);
         throw e;
     }
-});
+})();

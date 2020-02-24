@@ -28,6 +28,7 @@
     "analysis_high_speed_tooltip": {"message": "Highest speed"},
     "analysis_running_cadence_tooltip": {"message": "Steps Per Minute"},
     "analysis_cycling_cadence_tooltip": {"message": "Pedal Revolutions Per Minute"},
+    "analysis_swim_cadence_tooltip": {"message": "Strokes Per Minute"},
     "analysis_ftp_link_tooltip": {"message": "Click to set value"},
     "analysis_weight_link_tooltip": {"message": "Click to set value"},
     "analysis_ftp_input_tooltip": {"message": "Enter the estimated FTP (Functional Threshold Power) for this athlete and press Enter.  FTP is the maximum watt average sustained for 1 hour.  If the athlete already has a value set in their profile then this will override that setting.  To reset the value enter a blank value."},
