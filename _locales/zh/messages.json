@@ -74,11 +74,20 @@
     "analysis_high_hr_tooltip": {
         "message": "最高心率"
     },
+    "analysis_low_speed_tooltip": {
+        "message": "最低速度"
+    },
+    "analysis_high_speed_tooltip": {
+        "message": "最高速度"
+    },
     "analysis_running_cadence_tooltip": {
         "message": "每分钟步数"
     },
     "analysis_cycling_cadence_tooltip": {
         "message": "每分钟踏板转速"
+    },
+    "analysis_swim_cadence_tooltip": {
+        "message": "每分钟行程"
     },
     "analysis_ftp_link_tooltip": {
         "message": "点击设置值"
@@ -163,6 +172,9 @@
     },
     "analysis_pace": {
         "message": "步伐"
+    },
+    "analysis_speed": {
+        "message": "速度"
     },
     "analysis_samples": {
         "message": "样品"

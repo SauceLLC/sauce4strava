@@ -74,11 +74,20 @@
     "analysis_high_hr_tooltip": {
         "message": "Frecuencia cardíaca más alta"
     },
+    "analysis_low_speed_tooltip": {
+        "message": "Velocidad más baja"
+    },
+    "analysis_high_speed_tooltip": {
+        "message": "Mayor velocidad"
+    },
     "analysis_running_cadence_tooltip": {
         "message": "Pasos por minuto"
     },
     "analysis_cycling_cadence_tooltip": {
         "message": "Revoluciones de pedal por minuto"
+    },
+    "analysis_swim_cadence_tooltip": {
+        "message": "Golpes por minuto"
     },
     "analysis_ftp_link_tooltip": {
         "message": "Haga clic para establecer el valor"
@@ -163,6 +172,9 @@
     },
     "analysis_pace": {
         "message": "Paso"
+    },
+    "analysis_speed": {
+        "message": "Velocidad"
     },
     "analysis_samples": {
         "message": "Muestras"
