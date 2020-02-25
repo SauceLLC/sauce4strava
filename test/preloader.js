@@ -361,5 +361,4 @@ addTests([
         sauce.propDefined('a', x => done.push(x), {root: obj});
         assertEqual(done[0], val);
     },
-
 ]);

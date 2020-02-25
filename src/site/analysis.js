@@ -23,6 +23,10 @@ sauce.ns('analysis', ns => {
         'Other': {
             start: startOtherActivity,
             streams: new Set(commonStreams.concat(['watts'])),
+        },
+        'StationaryOther': {
+            start: startOtherActivity,
+            streams: new Set(commonStreams.concat(['watts'])),
         }
     };
 
@@ -1804,15 +1808,9 @@ sauce.ns('analysis', ns => {
 
 
     async function getMovingTime(start, end) {
-        const timerTimeStream = await fetchStream('timer_time', start, end);
-        if (timerTimeStream) {
-            // This is good data, but only available on some runs.  Might be new.
-            return streamDelta(timerTimeStream);
-        } else {
-            const timeStream = await fetchStream('time', start, end);
-            const movingStream = await fetchStream('moving', start, end);
-            return sauce.data.movingTime(timeStream, movingStream);
-        }
+        const timeStream = await fetchStream('time', start, end);
+        const movingStream = await fetchStream('moving', start, end);
+        return sauce.data.movingTime(timeStream, movingStream);
     }
 
 
@@ -1982,7 +1980,6 @@ sauce.ns('analysis', ns => {
             {name: 'time'},
             {name: 'timer_time'},
             {name: 'moving'},
-            {name: 'outlier'},
             {name: 'distance'},
             {name: 'grade_adjusted_distance', label: 'gap_distance'},
             {name: 'watts'},
@@ -2027,8 +2024,7 @@ sauce.ns('analysis', ns => {
         const prefetch = await _fetchDataSamples();
         const unavailable = new Set(Object.keys(prefetch).filter(x => !prefetch[x]));
         const defaultSkip = new Set(['watts_calc', 'lat', 'lng', 'pace', 'gap', 'timer_time',
-                                     'gap_distance', 'grade_smooth', 'outlier', 'moving',
-                                     'altitude_smooth', 'temp']);
+                                     'gap_distance', 'grade_smooth', 'moving', 'altitude_smooth', 'temp']);
         const streams = _rawStreamsInfo();
         const checks = streams.filter(x => !unavailable.has(x.label)).map(x => `
             <label>
@@ -2191,18 +2187,13 @@ sauce.ns('analysis', ns => {
             new Strava.I18n.CadenceFormatter();
         ctx.timeFormatter = new Strava.I18n.TimespanFormatter();
         ctx.weightFormatter = new Strava.I18n.WeightFormatter();
-        const speedUnit = activity.get('speedUnit');
+        const speedUnit = activity.get('speedUnit') || activity.isRide() ? 'mph' : 'mpm';
         const PaceFormatter = {
             mp100m: Strava.I18n.SwimPaceFormatter,
             mph: Strava.I18n.DistancePerTimeFormatter,
             mpm: Strava.I18n.PaceFormatter,
         }[speedUnit];
-        if (!PaceFormatter) {
-            console.error("Unhandled speed unit:", speedUnit);
-            ctx.paceFormatter = new Strava.I18n.PaceFormatter();
-        } else {
-            ctx.paceFormatter = new PaceFormatter();
-        }
+        ctx.paceFormatter = new PaceFormatter();
         ctx.peakIcons = {
             peak_power: 'fa/bolt-duotone.svg',
             peak_np: 'fa/atom-alt-duotone.svg',
