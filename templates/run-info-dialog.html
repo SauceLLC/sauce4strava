@@ -5,10 +5,12 @@
         <td><a class="start_time_link">{{startsAt}}</a></td>
     </tr>
 
-    <tr title="{{{elapsed_time_tooltip}}}">
-        <td>{{{elapsed_time}}}</td>
-        <td>{{elapsed}}</td>
-    </tr>
+    <% if (source !== 'peak_power') { %>
+        <tr title="{{{elapsed_time_tooltip}}}">
+            <td>{{{elapsed_time}}}</td>
+            <td>{{elapsed}}</td>
+        </tr>
+    <% } %>
 
     <% if (obj.pace) { %>
         <tr title="{{{elapsed_pace_tooltip}}}">
@@ -28,6 +30,21 @@
             </tr>
         <% } %>
     <% } %>
+
+    <% if (obj.power) { %>
+        <tr title="{{{elapsed_power_tooltip}}}">
+            <td>{{{power}}}</td>
+            <td>
+                {{power.estimate ? '~' : ''}}{{Math.round(power.elapsedAvg).toLocaleString()}}<abbr class="unit short">w</abbr>
+                <% if (!power.estimate) { %>
+                    <sup class="sauce-positive" title="{{{max_power_tooltip}}}">
+                        {{Math.round(power.max).toLocaleString()}}
+                    </sup>
+                <% } %>
+            </td>
+        </tr>
+    <% } %>
+
 
     <% if (obj.hr) { %>
         <tr>

@@ -159,7 +159,7 @@
     </line>
 </div>
 
-<% if (!isRun && obj.power && power.rank && power.rank.badge && !power.estimate) { %>
+<% if (supportsRankBadge && obj.power && power.rank && power.rank.badge && !power.estimate) { %>
     <div class="sauce-data-tuple vcentered sauce-rank-badge">
         <img src="{{power.rank.badge}}" class="rank_badge"
              title="{{{ranking_tooltip}}}: {{Math.round(power.rank.level * 100)}}%"/>

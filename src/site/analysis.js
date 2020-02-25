@@ -9,19 +9,19 @@ sauce.ns('analysis', ns => {
     ];
     const manifests = {
         'Ride': {
-            start: startRide,
+            start: startRideActivity,
             streams: new Set(commonStreams.concat(['watts', 'watts_calc'])),
         },
         'Run': {
-            start: startRun,
+            start: startRunActivity,
             streams: new Set(commonStreams.concat(['watts', 'grade_adjusted_distance'])),
         },
         'Swim': {
-            start: startSwim,
+            start: startSwimActivity,
             streams: new Set(commonStreams),
         },
         'Other': {
-            start: startOther,
+            start: startOtherActivity,
             streams: new Set(commonStreams.concat(['watts'])),
         }
     };
@@ -171,6 +171,12 @@ sauce.ns('analysis', ns => {
         if (idx !== -1) {
             return idx;
         }
+    }
+
+
+    function getStreamIndexTime(index) {
+        const timeStream = _getStream('time');
+        return timeStream[index];
     }
 
 
@@ -376,6 +382,8 @@ sauce.ns('analysis', ns => {
                 await infoDialog({
                     startTime: Number(row.dataset.startTime),
                     endTime: Number(row.dataset.endTime),
+                    wallStartTime: Number(row.dataset.wallStartTime),
+                    wallEndTime: Number(row.dataset.wallEndTime),
                     label: row.dataset.rangeLabel,
                     icon: row.dataset.rangeIcon,
                     source: this._selectedSource,
@@ -410,7 +418,7 @@ sauce.ns('analysis', ns => {
             let lastKnown;
             if (!this._selectedSource) {
                 const ranges = await sauce.rpc.storageGet('analysis_peak_ranges');
-                lastKnown = ranges && ranges[`${this.type}_source`];
+                lastKnown = ranges && ranges[this.sourceKey];
             } else {
                 lastKnown = this._selectedSource;
             }
@@ -423,9 +431,8 @@ sauce.ns('analysis', ns => {
         }
 
         async setSelectedSource(source) {
-            const key = `${this.type}_source`;
             this._selectedSource = source;
-            await sauce.rpc.storageUpdate('analysis_peak_ranges', {[key]: source});
+            await sauce.rpc.storageUpdate('analysis_peak_ranges', {[this.sourceKey]: source});
         }
     }
 
@@ -436,8 +443,10 @@ sauce.ns('analysis', ns => {
             rangeLabel: range.label,
             value,
             unit,
-            startTime: roll.firstTime(),
-            endTime: roll.lastTime(),
+            startTime: roll.firstTime({noPad: true}),
+            endTime: roll.lastTime({noPad: true}),
+            wallStartTime: roll.firstTime(),
+            wallEndTime: roll.lastTime(),
         };
     }
 
@@ -449,6 +458,20 @@ sauce.ns('analysis', ns => {
             if (roll) {
                 const value = Math.round(roll.avg({moving: true})).toLocaleString();
                 rows.push(_rangeRollToRow({range, roll, value, unit: 'bpm'}));
+            }
+        }
+        return rows;
+    }
+
+
+    function powerRangesToRows(ranges, timeStream, wattsStream, estimate) {
+        const rows = [];
+        const prefix = estimate ? '~' : '';
+        for (const range of ranges.filter(x => !estimate || x.value >= minWattEstTime)) {
+            const roll = sauce.power.peakPower(range.value, timeStream, wattsStream);
+            if (roll) {
+                const value = prefix + Math.round(roll.avg()).toLocaleString();
+                rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
             }
         }
         return rows;
@@ -486,7 +509,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function processRideStreams() {
+    async function startRideActivity() {
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
@@ -556,16 +579,8 @@ sauce.ns('analysis', ns => {
                     let rows;
                     const attrs = {};
                     if (source === 'peak_power') {
-                        const prefix = isWattEstimate ? '~' : '';
                         attrs.isWattEstimate = isWattEstimate;
-                        rows = [];
-                        for (const range of periodRanges.filter(x => !isWattEstimate || x.value >= minWattEstTime)) {
-                            const roll = sauce.power.peakPower(range.value, timeStream, wattsStream);
-                            if (roll) {
-                                const value = prefix + Math.round(roll.avg()).toLocaleString();
-                                rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
-                            }
-                        }
+                        rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
                     } else if (source === 'peak_np') {
                         rows = [];
                         for (const range of periodRanges.filter(x => x.value >= minNPTime)) {
@@ -600,7 +615,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function processSwimStreams() {
+    async function startSwimActivity() {
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
         const distStream = await fetchStream('distance');
@@ -643,7 +658,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function processOtherStreams() {
+    async function startOtherActivity() {
         const wattsStream = await fetchStream('watts');
         const movingTime = await getMovingTime();
         const timeStream = await fetchStream('time');
@@ -710,8 +725,8 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function processRunStreams() {
-        const wattsStream = await fetchStream('watts');
+    async function startRunActivity() {
+        let wattsStream = await fetchStream('watts');
         const movingTime = await getMovingTime();
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
@@ -719,6 +734,7 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance');
         const gradeDistStream = distStream && await fetchGradeDistStream();
         const elapsedTime = streamDelta(timeStream);
+        const isWattEstimate = !wattsStream;
         let power;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
@@ -727,6 +743,14 @@ sauce.ns('analysis', ns => {
             const gradeDistance = streamDelta(gradeDistStream);
             const kj = sauce.pace.work(ctx.weight, gradeDistance);
             power = kj * 1000 / movingTime;
+            wattsStream = [0];
+            for (let i = 1; i < gradeDistStream.length; i++) {
+                const dist = gradeDistStream[i] - gradeDistStream[i - 1];
+                const time = timeStream[i] - timeStream[i - 1];
+                const kj = sauce.pace.work(ctx.weight, dist);
+                wattsStream.push(kj * 1000 / time);
+            }
+            pageView.streams().streamData.add('watts_calc', wattsStream);
         }
         let tss;
         let intensity;
@@ -752,6 +776,9 @@ sauce.ns('analysis', ns => {
             if (gradeDistStream) {
                 menu.push('peak_gap');
             }
+            if (wattsStream) {
+                menu.push('peak_power');
+            }
             if (hrStream) {
                 menu.push('peak_hr');
             }
@@ -769,16 +796,20 @@ sauce.ns('analysis', ns => {
                 infoDialog: runInfoDialog,
                 renderAttrs: async source => {
                     let rows;
+                    const attrs = {};
                     if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
                     } else if (source === 'peak_gap') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, gradeDistStream);
+                    } else if (source === 'peak_power') {
+                        attrs.isWattEstimate = isWattEstimate;
+                        rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
                     } else if (source === 'peak_hr') {
                         rows = hrRangesToRows(periodRanges, timeStream, hrStream);
                     } else if (source === 'peak_vam') {
                         rows = vamRangesToRows(periodRanges, timeStream, altStream);
                     }
-                    return {rows};
+                    return Object.assign(attrs, {rows});
                 }
             });
             attachInfoPanel(panel);
@@ -1050,44 +1081,57 @@ sauce.ns('analysis', ns => {
     }
 
 
-    // XXX more DRY...
-    async function rideInfoDialog({startTime, endTime, label, source, originEl}) {
-        let fullWattsStream = await fetchStream('watts');
-        const isWattEstimate = !fullWattsStream;
-        if (isWattEstimate) {
-            fullWattsStream = await fetchStream('watts_calc');
-        }
-        let roll;
-        if (fullWattsStream) {
-            const power = sauce.power.correctedPower(await fetchStream('time'), fullWattsStream);
-            roll = power && power.slice(startTime, endTime);
-        }
-        const rollValues = roll && roll.values();
-        const elapsedTime = endTime - startTime;
+    let _correctedPower;
+    async function correctedPowerTimeRange(wallStartTime, wallEndTime) {
         // startTime and endTime can be pad based values with corrected power sources.
-        // Use non padded values for other streams.
-        const startTS = roll ? roll.firstTime({noPad: true}) : startTime;
-        const endTS = roll ? roll.lastTime({noPad: true}) : endTime;
-        const timeStream = await fetchStreamTimeRange('time', startTS, endTS);
-        const distStream = await fetchStreamTimeRange('distance', startTS, endTS);
-        const hrStream = await fetchStreamTimeRange('heartrate', startTS, endTS);
-        const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTS, endTS);
-        const cadenceStream = await fetchStreamTimeRange('cadence', startTS, endTS);
-        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTS, endTS);
+        // Using wall time values and starting with full streams gives us the correct
+        // padding as the source.
+        if (_correctedPower === undefined) {
+            _correctedPower = null;
+            let fullStream = await fetchStream('watts');
+            const isEstimate = !fullStream;
+            if (isEstimate) {
+                fullStream = await fetchStream('watts_calc');
+            }
+            if (fullStream) {
+                const power = sauce.power.correctedPower(await fetchStream('time'), fullStream);
+                if (power) {
+                    power.isEstimate = isEstimate;
+                    _correctedPower = power;
+                }
+            }
+        }
+        if (_correctedPower) {
+            const range = _correctedPower.slice(wallStartTime, wallEndTime);
+            range.isEstimate = _correctedPower.isEstimate;
+            return range;
+        }
+    }
+
+
+    // XXX more DRY...
+    async function rideInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
+        const elapsedTime = wallEndTime - wallStartTime;
+        const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
+        const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
+        const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
+        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
+        const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
+        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
+        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
+        const distance = streamDelta(distStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('ride-info-dialog.html');
-        const distance = streamDelta(distStream);
         const body = await template({
-            startsAt: humanTime(startTime),
-            power: roll && powerData(null, roll.avg(), null, elapsedTime, {
-                max: sauce.data.max(rollValues),
-                np: roll.np(),
-                estimate: isWattEstimate
+            startsAt: humanTime(wallStartTime),
+            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, {
+                max: sauce.data.max(correctedPower.values()),
+                np: correctedPower.np(),
+                estimate: correctedPower.isEstimate
             }),
-            pace: distStream && {
+            pace: distance && {
                 avg: humanPace(distance / elapsedTime, {velocity: true}),
-                min: humanPace(sauce.data.min(velocityStream), {velocity: true}),
                 max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
             },
             hr: hrInfo(hrStream),
@@ -1097,6 +1141,7 @@ sauce.ns('analysis', ns => {
             elevation: elevationData(altStream, elapsedTime, distance),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
             paceUnit: ctx.paceFormatter.shortUnitKey(),
+            source,
         });
         const $dialog = await createInfoDialog({
             heading,
@@ -1104,13 +1149,13 @@ sauce.ns('analysis', ns => {
             source,
             body,
             originEl,
-            start: startTS,
-            end: endTS,
+            start: startTime,
+            end: endTime,
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
         if (source === 'peak_power' || source === 'peak_np') {
             await infoDialogGraph($sparkline, {
-                data: rollValues,
+                data: correctedPower.values(),
                 formatter: x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
@@ -1132,30 +1177,30 @@ sauce.ns('analysis', ns => {
 
 
     // XXX more DRY...
-    async function runInfoDialog({startTime, endTime, label, source, originEl}) {
+    async function runInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
+        const elapsedTime = wallEndTime - wallStartTime;
+        const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
-        let roll;
-        if (distStream) {
-            roll = new sauce.data.RollingPace(null);
-            roll.import(timeStream, distStream);
-        }
-        const elapsedTime = endTime - startTime;
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
         const gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
-        const maxVelocity = sauce.data.max(velocityStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
         const template = await getTemplate('run-info-dialog.html');
+        const distance = streamDelta(distStream);
         const body = await template({
-            startsAt: humanTime(startTime),
-            pace: roll && {
-                avg: humanPace(roll.avg()),
-                max: humanPace(maxVelocity, {velocity: true}),
+            startsAt: humanTime(wallStartTime),
+            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, {
+                max: sauce.data.max(correctedPower.values()),
+                estimate: correctedPower.isEstimate
+            }),
+            pace: distance && {
+                avg: humanPace(distance / elapsedTime, {velocity: true}),
+                max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
                 gap: gap && humanPace(gap, {velocity: true}),
             },
             elapsed: humanTime(elapsedTime),
@@ -1163,9 +1208,10 @@ sauce.ns('analysis', ns => {
             hrUnit: ctx.hrFormatter.shortUnitKey(),
             cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
             cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
-            elevation: elevationData(altStream, elapsedTime, streamDelta(distStream)),
+            elevation: elevationData(altStream, elapsedTime, distance),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
-            paceUnit: ctx.paceFormatter.shortUnitKey()
+            paceUnit: ctx.paceFormatter.shortUnitKey(),
+            source,
         });
         const $dialog = await createInfoDialog({
             heading,
@@ -1195,6 +1241,12 @@ sauce.ns('analysis', ns => {
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
                 colorSteps: [0.5, 2, 5, 10]
             });
+        } else if (source === 'peak_power') {
+            await infoDialogGraph($sparkline, {
+                data: correctedPower.values(),
+                formatter: x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`,
+                colorSteps: [0, 100, 400, 1200]
+            });
         } else if (source === 'peak_hr') {
             await infoDialogGraph($sparkline, {
                 data: hrStream,
@@ -1213,34 +1265,29 @@ sauce.ns('analysis', ns => {
 
 
     // XXX more DRY...
-    async function swimInfoDialog({startTime, endTime, label, source, originEl}) {
-        const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
+    async function swimInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
+        const elapsedTime = wallEndTime - wallStartTime;
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
-        let roll;
-        if (distStream) {
-            roll = new sauce.data.RollingPace(null);
-            roll.import(timeStream, distStream);
-        }
-        const elapsedTime = endTime - startTime;
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
-        const maxVelocity = sauce.data.max(velocityStream);
+        const distance = streamDelta(distStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('swim-info-dialog.html');
         const body = await template({
-            startsAt: humanTime(startTime),
-            pace: roll && {
-                avg: humanPace(roll.avg()),
-                max: humanPace(maxVelocity, {velocity: true}),
+            startsAt: humanTime(wallStartTime),
+            pace: distance && {
+                avg: humanPace(distance / elapsedTime, {velocity: true}),
+                max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
             },
             elapsed: humanTime(elapsedTime),
             hr: hrInfo(hrStream),
             hrUnit: ctx.hrFormatter.shortUnitKey(),
             cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
             cadenceUnit: 'spm',  // XXX Haven't found a localized string for strokes / min.
-            paceUnit: ctx.paceFormatter.shortUnitKey()
+            paceUnit: ctx.paceFormatter.shortUnitKey(),
+            source,
         });
         const $dialog = await createInfoDialog({
             heading,
@@ -1270,28 +1317,23 @@ sauce.ns('analysis', ns => {
 
 
     // XXX more DRY...
-    async function otherInfoDialog({startTime, endTime, label, source, originEl}) {
+    async function otherInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
+        const elapsedTime = wallEndTime - wallStartTime;
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
-        let roll;
-        if (distStream) {
-            roll = new sauce.data.RollingPace(null);
-            roll.import(timeStream, distStream);
-        }
-        const elapsedTime = endTime - startTime;
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
-        const maxVelocity = sauce.data.max(velocityStream);
+        const distance = streamDelta(distStream);
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('other-info-dialog.html');
         const body = await template({
-            startsAt: humanTime(startTime),
-            pace: roll && {
-                avg: humanPace(roll.avg()),
-                max: humanPace(maxVelocity, {velocity: true}),
+            startsAt: humanTime(wallStartTime),
+            pace: distance && {
+                avg: humanPace(distance / elapsedTime, {velocity: true}),
+                max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
             },
             elapsed: humanTime(elapsedTime),
             hr: hrInfo(hrStream),
@@ -1300,7 +1342,8 @@ sauce.ns('analysis', ns => {
             cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
             elevation: elevationData(altStream, elapsedTime, streamDelta(distStream)),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
-            paceUnit: ctx.paceFormatter.shortUnitKey()
+            paceUnit: ctx.paceFormatter.shortUnitKey(),
+            source,
         });
         const $dialog = await createInfoDialog({
             heading,
@@ -1420,6 +1463,58 @@ sauce.ns('analysis', ns => {
                 exportActivity(sauce.export.GPXSerializer);
             });
         }
+    }
+
+
+    function attachRankBadgeDialog() {
+        jQuery('body').on('click', '.rank_badge', async ev => {
+            closeCurrentInfoDialog();
+            const powerProfileTpl = await getTemplate('power-profile-help.html');
+            const $dialog = modal({
+                title: 'Power Profile Badges Explained',
+                body: await powerProfileTpl(),
+                width: 600
+            });
+            const times = [];
+            for (let i = 5; i < 3600; i += Math.log(i + 1)) {
+                times.push(i);
+            }
+            times.push(3600);
+            const requirements = {
+                male: times.map(x => sauce.power.rankRequirements(x, 'male')),
+                female: times.map(x => sauce.power.rankRequirements(x, 'female'))
+            };
+            const $levelSelect = $dialog.find('select#sauce-rank-level');
+            const $genderSelect = $dialog.find('select#sauce-rank-gender');
+            const $graph = $dialog.find('.rank-graph');
+            function drawGraph() {
+                const gender = $genderSelect.val();
+                const level = Number($levelSelect.val());
+                const pct = level / 8;
+                let tooltipFormatterAbs;
+                if (ctx.weight) {
+                    tooltipFormatterAbs = wKg => `
+                        ${Math.round(wKg * ctx.weight).toLocaleString()}<abbr class="unit short">W</abbr>
+                        (with current athlete's weight)<br/>`;
+                } else {
+                    tooltipFormatterAbs = wKg => ``;
+                }
+                $graph.sparkline(requirements[gender].map(({high, low}) => (pct * (high - low)) + low), {
+                    type: 'line',
+                    width: '100%',
+                    height: 100,
+                    chartRangeMin: 0,
+                    tooltipFormatter: (_, _2, data) => `
+                        ${(data.y).toFixed(1)}<abbr class="unit short">W/kg</abbr><br/>
+                        ${tooltipFormatterAbs(data.y)}
+                        Duration: ${humanTime(times[data.x])}`
+                });
+            }
+            $levelSelect.on('change', drawGraph);
+            $genderSelect.on('change', drawGraph);
+            $dialog.on('dialogresize', drawGraph);
+            drawGraph();
+        });
     }
 
 
@@ -1614,74 +1709,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function startRun() {
-        await processRunStreams();
-    }
-
-
-    async function startSwim() {
-        await processSwimStreams();
-    }
-
-
-    async function startOther() {
-        await processOtherStreams();
-    }
-
-
-    async function startRide() {
-        jQuery('body').on('click', '.rank_badge', async ev => {
-            closeCurrentInfoDialog();
-            const powerProfileTpl = await getTemplate('power-profile-help.html');
-            const $dialog = modal({
-                title: 'Power Profile Badges Explained',
-                body: await powerProfileTpl(),
-                width: 600
-            });
-            const times = [];
-            for (let i = 5; i < 3600; i += Math.log(i + 1)) {
-                times.push(i);
-            }
-            times.push(3600);
-            const requirements = {
-                male: times.map(x => sauce.power.rankRequirements(x, 'male')),
-                female: times.map(x => sauce.power.rankRequirements(x, 'female'))
-            };
-            const $levelSelect = $dialog.find('select#sauce-rank-level');
-            const $genderSelect = $dialog.find('select#sauce-rank-gender');
-            const $graph = $dialog.find('.rank-graph');
-            function drawGraph() {
-                const gender = $genderSelect.val();
-                const level = Number($levelSelect.val());
-                const pct = level / 8;
-                let tooltipFormatterAbs;
-                if (ctx.weight) {
-                    tooltipFormatterAbs = wKg => `
-                        ${Math.round(wKg * ctx.weight).toLocaleString()}<abbr class="unit short">W</abbr>
-                        (with current athlete's weight)<br/>`;
-                } else {
-                    tooltipFormatterAbs = wKg => ``;
-                }
-                $graph.sparkline(requirements[gender].map(({high, low}) => (pct * (high - low)) + low), {
-                    type: 'line',
-                    width: '100%',
-                    height: 100,
-                    chartRangeMin: 0,
-                    tooltipFormatter: (_, _2, data) => `
-                        ${(data.y).toFixed(1)}<abbr class="unit short">W/kg</abbr><br/>
-                        ${tooltipFormatterAbs(data.y)}
-                        Duration: ${humanTime(times[data.x])}`
-                });
-            }
-            $levelSelect.on('change', drawGraph);
-            $genderSelect.on('change', drawGraph);
-            $dialog.on('dialogresize', drawGraph);
-            drawGraph();
-        });
-        await processRideStreams();
-    }
-
-
     async function getFTPInfo(athleteId) {
         const info = {};
         const override = await sauce.rpc.getAthleteProp(athleteId, 'ftp_override');
@@ -1814,7 +1841,9 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function powerData(movingAvg, elapsedAvg, moving, elapsed, extra) {
+    function powerData(kj, moving, elapsed, extra) {
+        const movingAvg = moving ? kj * 1000 / moving : null;
+        const elapsedAvg = elapsed ? kj * 1000 / elapsed : null;
         return Object.assign({
             movingAvg,
             elapsedAvg,
@@ -1858,17 +1887,18 @@ sauce.ns('analysis', ns => {
 
 
     async function _updateAnalysisStats(start, end) {
-        const isRun = pageView.activity().isRun();
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const movingTime = await getMovingTime(start, end);
+        const correctedPower = supportsStream('watts') && await correctedPowerTimeRange(
+            getStreamIndexTime(start),getStreamIndexTime(end));
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
         const pausedTime = elapsedTime - movingTime;
         const tplData = {
             logo: sauce.extUrl + 'images/logo_vert_48x128.png',
-            isRun,
+            supportsRankBadge: pageView.activity().isRide(),
             elapsed: humanTime(elapsedTime),
             moving: humanTime(movingTime),
             paused: ctx.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
@@ -1879,40 +1909,22 @@ sauce.ns('analysis', ns => {
             samples: timeStream.length,
             elevation: elevationData(altStream, elapsedTime, distance),
         };
-        let kj;
-        const wattsStream = supportsStream('watts') && await fetchStream('watts', start, end);
-        if (wattsStream) {
-            // Use idealGap and maxGap from whole data stream for cleanest results.
-            if (!ctx.idealGap) {
-                const gaps = sauce.data.recommendedTimeGaps(await fetchStream('time'));
-                ctx.idealGap = gaps.ideal;
-                ctx.maxGap = gaps.max;
-            }
-            const roll = sauce.power.correctedPower(timeStream, wattsStream,
-                ctx.idealGap, ctx.maxGap);
-            kj = roll && roll.kj();
-            tplData.power = roll && powerData(kj * 1000 / movingTime, roll.avg(),
-                movingTime, elapsedTime, {np: roll.np()});
-        }
-        if (isRun) {
-            const gradeDistStream = distStream && await fetchGradeDistStream({start, end});
-            const gradeDistance = streamDelta(gradeDistStream);
-            if (!wattsStream && gradeDistance && ctx.weight) {
-                kj = sauce.pace.work(ctx.weight, gradeDistance);
-                tplData.power = powerData(kj * 1000 / movingTime, kj * 1000 / elapsedTime,
-                    movingTime, elapsedTime, {estimate: true});
-            }
-            tplData.pace = gradeDistance && {
-                elapsed: humanPace(distance / elapsedTime, {velocity: true}),
-                moving: humanPace(1 / (distance / movingTime)),
-                gap: gradeDistance && humanPace(gradeDistance / movingTime, {velocity: true}),
-            };
-        }
-        if (kj) {
+        if (correctedPower) {
+            const kj = correctedPower.kj();
+            tplData.power = powerData(kj, movingTime, elapsedTime, {np: correctedPower.np()});
             tplData.energy = {
                 kj,
                 kjHour: (kj / movingTime) * 3600,
                 tss: ctx.ftp && sauce.power.calcTSS(tplData.power.moving, movingTime, ctx.ftp)
+            };
+        }
+        if (distance) {
+            const gradeDistStream = await fetchGradeDistStream({start, end});
+            const gradeDistance = streamDelta(gradeDistStream);
+            tplData.pace = {
+                elapsed: humanPace(distance / elapsedTime, {velocity: true}),
+                moving: humanPace(distance / movingTime, {velocity: true}),
+                gap: gradeDistance && humanPace(gradeDistance / movingTime, {velocity: true}),
             };
         }
         const tpl = await getTemplate('analysis-stats.html');
@@ -2333,6 +2345,7 @@ sauce.ns('analysis', ns => {
             });
             document.body.dataset.route = pageRouter.context.startMenu();
             startPageMonitors();
+            attachRankBadgeDialog();
             await prepareContext();
             // Make sure this is last thing before start..
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {

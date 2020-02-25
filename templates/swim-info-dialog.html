@@ -20,13 +20,6 @@
                 </sup>
             </td>
         </tr>
-
-        <% if (pace.gap) { %>
-            <tr title="{{{gap_tooltip}}}">
-                <td>GAP</td>
-                <td>{{pace.gap}}<abbr class="unit short">{{paceUnit}}</abbr></td>
-            </tr>
-        <% } %>
     <% } %>
 
     <% if (obj.hr) { %>
@@ -45,29 +38,5 @@
             <td>{{{cadence}}}</td>
             <td>{{cadence}}<abbr class="unit short">{{cadenceUnit}}</abbr>
         </tr>
-    <% } %>
-
-    <% if (obj.elevation) { %>
-        <tr>
-            <td>{{{elevation}}}</td>
-            <td>
-                <sub class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
-                    {{elevation.loss}}{{elevationUnit}}
-                </sub>
-                <span title="{{{grade_tooltip}}}">{{Math.round(elevation.grade)}}<small>%</small></span>
-                <sup class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
-                    {{elevation.gain}}{{elevationUnit}}
-                </sup>
-            </td>
-        </tr>
-
-        <% if (elevation.vam && elevation.vam > 0) { %>
-            <tr title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
-                <td>VAM</td>
-                <td>
-                    {{Math.round(elevation.vam).toLocaleString()}}<abbr class="unit short">Vm/h</abbr>
-                </td>
-            </tr>
-        <% } %>
     <% } %>
 </table>
