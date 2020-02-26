@@ -5,54 +5,79 @@
 
     self.sauce = self.sauce || {};
 
-
     sauce.propDefined = function(propertyAccessor, callback, options) {
-        options = options || {};
+        if (typeof callback === 'object' && options === undefined) {
+            options = callback;
+            callback = null;
+        } else {
+            options = options || {};
+        }
+        const ourListeners = [];
+        function addListener(propDesc, fn) {
+            propDesc.set.listeners.push(fn);
+            ourListeners.push({fn, propDesc});
+        }
         return new Promise(resolve => {
             function catchDefine(obj, props) {
+                const prop = props[0];
                 function onSet(value) {
                     if (props.length > 1) {
                         if (Object.isExtensible(value)) {
                             catchDefine(value, props.slice(1));
                         }
                     } else {
+                        if (options.once) {
+                            for (const {fn, propDesc} of ourListeners) {
+                                const idx = propDesc.set.listeners.indexOf(fn);
+                                propDesc.set.listeners.splice(idx, 1);
+                                if (!propDesc.set.listeners.length) {
+                                    Object.defineProperty(obj, prop, {
+                                        value: obj[prop],
+                                        configurable: true,
+                                        writable: true,
+                                        enumerable: propDesc.enumerable
+                                    });
+                                }
+                            }
+                        }
                         if (callback) {
                             callback(value);
                         }
                         resolve(value);
                     }
                 }
-                const prop = props[0];
+                const curValue = obj[prop];
+                if (curValue !== undefined) {  // Not stoked on this test.
+                    onSet(curValue);
+                    if (options.once) {
+                        return;  // Just walk the props.
+                    }
+                }
                 const propDesc = Object.getOwnPropertyDescriptor(obj, prop);
                 if (propDesc && propDesc.set && propDesc.set.listeners) {
-                    propDesc.set.listeners.push(onSet);
-                    console.assert(propDesc.set.listeners.length < 1000);
-                } else {
+                    addListener(propDesc, onSet);
+                } else if (!propDesc || (propDesc.configurable && !propDesc.set)) {
                     let internalValue = propDesc ? propDesc.value : undefined;
                     const set = function(value) {
                         if (Object.is(internalValue, value)) {
                             return;
                         }
                         internalValue = value;
-                        for (const fn of set.listeners) {
+                        for (const fn of Array.from(set.listeners)) {
                             fn(value);
                         }
                     };
-                    set.listeners = [onSet];
+                    set.listeners = [];
                     Object.defineProperty(obj, prop, {
                         enumerable: true,
+                        configurable: true,
                         get: () => internalValue,
                         set
                     });
-                }
-                const curValue = obj[prop];
-                if (curValue !== undefined) {  // Not stoaked on this test.
-                    const listeners = propDesc && propDesc.set && propDesc.set.listeners ?
-                        propDesc.set.listeners :
-                        Object.getOwnPropertyDescriptor(obj, prop).set.listeners;
-                    for (const fn of listeners) {
-                        fn(curValue);
-                    }
+                    addListener(Object.getOwnPropertyDescriptor(obj, prop), onSet);
+                } else if (!options.once) {
+                    console.error("Value already exists, consider using `once` option");
+                    throw new TypeError("Unconfigurable");
                 }
             }
             catchDefine(options.root || self, propertyAccessor.split('.'));
@@ -89,7 +114,7 @@
                     pageNav.insertBefore(li, overview.nextSibling);
                 }
             }
-        });
+        }, {once: true});
 
         sauce.propDefined('Strava.Charts.Activities.BasicAnalysisElevation', Klass => {
             // Monkey patch analysis views so we can react to selection changes.
@@ -104,7 +129,7 @@
                 }
                 return saveFn.apply(this, arguments);
             };
-        });
+        }, {once: true});
 
         sauce.propDefined('Strava.Charts.Activities.LabelBox', Klass => {
             // This is called when zoom selections change or are unset in the profile graph.
@@ -119,7 +144,7 @@
                 }
                 return saveFn.apply(this, arguments);
             };
-        });
+        }, {once: true});
 
         sauce.propDefined('Strava.Labs.Activities.BasicAnalysisView', Klass => {
             // Monkey patch the analysis view so we always have our hook for extra stats.
@@ -133,14 +158,14 @@
                 }
                 return $el;
             };
-        });
+        }, {once: true});
 
         /* Patch dragging bug when scrolled in this old jquery ui code.
          * NOTE: We must use Promise.then instead of a callback because the
          * draggable widget isn't fully baked when it's first defined.  The
          * promise resolution won't execute until the assignment is completed.
          */
-        sauce.propDefined('jQuery.ui.draggable').then(draggable => {
+        sauce.propDefined('jQuery.ui.draggable', {once: true}).then(draggable => {
             const $ = jQuery;
             jQuery.widget('ui.draggable', draggable, {
                 _convertPositionTo: function(d, pos) {
@@ -238,7 +263,7 @@
         });
 
         // Allow html titles and icons for dialogs.
-        sauce.propDefined('jQuery.ui.dialog').then(dialog => {
+        sauce.propDefined('jQuery.ui.dialog', {once: true}).then(dialog => {
             jQuery.widget('ui.dialog', dialog, {
                 _title: function(title) {
                     if (!this.options.title) {
@@ -256,22 +281,17 @@
         });
 
         // Allow html titles and icons for dialogs.
-        let _SegmentEffortsTableView;
         sauce.propDefined('Strava.Labs.Activities.SegmentEffortsTableView', View => {
-            // Our reassignment will cause a recursive loop without a short circuit.
-            if (!_SegmentEffortsTableView) {
-                _SegmentEffortsTableView = function(_, options) {
-                    const activity = options.context.chartContext.activity().clone();
-                    if (activity.isRun() && sauce.options && sauce.options['analysis-detailed-run-segments']) {
-                        activity.set('type', 'Ride');
-                        options.context.chartContext.activity(activity);
-                    }
-                    View.prototype.constructor.apply(this, arguments);
-                };
-                _SegmentEffortsTableView.prototype = View.prototype;
-                self.Strava.Labs.Activities.SegmentEffortsTableView = _SegmentEffortsTableView;
-            }
-        });
+            self.Strava.Labs.Activities.SegmentEffortsTableView = function(_, options) {
+                const activity = options.context.chartContext.activity().clone();
+                if (activity.isRun() && sauce.options && sauce.options['analysis-detailed-run-segments']) {
+                    activity.set('type', 'Ride');
+                    options.context.chartContext.activity(activity);
+                }
+                View.prototype.constructor.apply(this, arguments);
+            };
+            self.Strava.Labs.Activities.SegmentEffortsTableView.prototype = View.prototype;
+        }, {once: true});
 
         sauce.propDefined('Strava.Labs.Activities.SegmentsView', View => {
             const initSave = View.prototype.initialize;
@@ -294,7 +314,7 @@
                 }
                 return this;
             };
-        });
+        }, {once: true});
 
         // Provide race-free detection of pending requests.
         sauce.propDefined('Strava.Labs.Activities.StreamsRequest', Model => {

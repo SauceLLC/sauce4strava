@@ -2897,4 +2897,4 @@ sauce.propDefined('jQuery', function($) {
             this._maxValue = max;
         }
     });
-});
+}, {once: true});

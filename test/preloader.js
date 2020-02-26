@@ -354,11 +354,23 @@ addTests([
         assertEqual(done[0], 1);
     },
     async function test_prop_defined_preexisting_object() {
-        const val = {b: 1};
+        const val = {b: {c:{}}};
         const obj = {a: val};
         const done = [];
-        sauce.propDefined('a', null, {root: obj});
         sauce.propDefined('a', x => done.push(x), {root: obj});
         assertEqual(done[0], val);
+        sauce.propDefined('a.b.c', x => done.push(x), {root: obj});
+        sauce.propDefined('a.b.c', x => done.push(x), {root: obj});
+        sauce.propDefined('a.b.c', x => done.push(x), {root: obj});
+    },
+    async function test_prop_defined_preexisting_leaky() {
+        const val = {b: {c:{}}};
+        const obj = {a: val};
+        const done = [];
+        sauce.propDefined('a', x => done.push(x), {root: obj});
+        assertEqual(done[0], val);
+        for (let i = 0; i < 100; i++) {
+            sauce.propDefined('a.b.c', x => done.push(x), {root: obj});
+        }
     },
 ]);

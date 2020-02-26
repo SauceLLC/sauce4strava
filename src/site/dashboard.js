@@ -19,7 +19,7 @@ sauce.ns('dashboard', function(ns) {
             // Too early in page load to filter out virtual activities.
             if (!scheduledAthleteDefined) {
                 console.info("Defering hide of virtual activities until currentAthlete info available.");
-                sauce.propDefined('currentAthlete').then(() => filterFeed(feedEl));
+                sauce.propDefined('currentAthlete', {once: true}).then(() => filterFeed(feedEl));
                 scheduledAthleteDefined = true;
             }
             return false;

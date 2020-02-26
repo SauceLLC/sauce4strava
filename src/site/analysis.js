@@ -32,7 +32,13 @@ sauce.ns('analysis', ns => {
 
     let _resolvePrepared;
     const ctx = {
-        prepared: new Promise(resolve => void (_resolvePrepared = resolve))
+        ready: false,
+        prepared: new Promise(resolve => {
+            _resolvePrepared = () => {
+                ctx.ready = true;
+                resolve();
+            };
+        })
     };
 
     const tplUrl = sauce.extUrl + 'templates';
@@ -1945,8 +1951,8 @@ sauce.ns('analysis', ns => {
             return;  // dedup
         }
         _schedUpdateAnalysisPending = [start, end];
-        if (!ctx.supportedActivity) {
-            if (ctx.supportedActivity === undefined) {
+        if (!ctx.ready) {
+            if (!ctx.unsupported) {
                 ctx.prepared.then(() => schedUpdateAnalysisStats(null));
             }
             return;
@@ -2309,7 +2315,7 @@ sauce.ns('analysis', ns => {
 
     async function load() {
         const start = Date.now();
-        await sauce.propDefined('pageView');
+        await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
             attachMobileMenuExpander();  // bg okay
             pageView.unbindScrollListener();
@@ -2325,7 +2331,6 @@ sauce.ns('analysis', ns => {
         const type = activity.get('type');
         ctx.manifest = manifests[type];
         if (ctx.manifest) {
-            ctx.supportedActivity = true;
             if (ctx.manifest.streams) {
                 fetchStreams(Array.from(ctx.manifest.streams));  // bg okay
             }
@@ -2345,7 +2350,7 @@ sauce.ns('analysis', ns => {
             }
             await ctx.manifest.start();
         } else {
-            ctx.supportedActivity = false;
+            ctx.unsupported = true;
             console.info("Unsupported activity type:", type);
         }
         sendGAPageView(type);  // bg okay
