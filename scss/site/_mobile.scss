@@ -28,6 +28,11 @@
 }
 
 @mixin analysis {
+
+    .inset {
+        padding: 0.8rem !important;
+    }
+
     body > .view {
         height: 100%;
         display: flex;
@@ -206,6 +211,21 @@
 
                 table.distribution-chart {
                     font-size: 0.8em;
+
+                    tbody {
+                        td {
+                            padding: 0.8em 0.2em;
+                        }
+
+                        td:first-child {
+                            padding-left: 0.86em;
+                            padding-right: 0.86em;
+                        }
+
+                        td.name {
+                            display: none;
+                        }
+                    }
                 }
             }
 
@@ -349,7 +369,7 @@
             display: none;
         }
     }
-    body:not([data-route="overview"]) {
+    body[data-route]:not([data-route="overview"]) {
         #heading .collapsable.container-fluid {
             display: none !important;
         }
