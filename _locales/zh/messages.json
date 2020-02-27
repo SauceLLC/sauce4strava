@@ -113,6 +113,9 @@
     "analysis_peak_hr_tooltip": {
         "message": "最大持续心率范围"
     },
+    "analysis_peak_cadence_tooltip": {
+        "message": "最大持续节奏范围"
+    },
     "analysis_peak_vam_tooltip": {
         "message": "最大持续爬升速度范围"
     },
@@ -205,6 +208,9 @@
     },
     "analysis_peak_hr": {
         "message": "高峰HR"
+    },
+    "analysis_peak_cadence": {
+        "message": "高峰踏频"
     },
     "analysis_peak_vam": {
         "message": "高峰VAM"

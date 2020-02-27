@@ -113,6 +113,9 @@
     "analysis_peak_hr_tooltip": {
         "message": "Rangos máximos sostenidos de frecuencia cardíaca"
     },
+    "analysis_peak_cadence_tooltip": {
+        "message": "Rangos máximos de cadencia sostenida"
+    },
     "analysis_peak_vam_tooltip": {
         "message": "Rangos máximos sostenidos de velocidad de escalada"
     },
@@ -207,6 +210,10 @@
     },
     "analysis_peak_hr": {
         "message": "Pulso Pico",
+        "description": "IMMUTABLE"
+    },
+    "analysis_peak_cadence": {
+        "message": "Cadencia Pico",
         "description": "IMMUTABLE"
     },
     "analysis_peak_vam": {
