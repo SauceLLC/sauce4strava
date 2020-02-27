@@ -16,6 +16,10 @@
 
         a.selection {
             border: none;
+            padding-right: 1.5rem;
+        }
+        a.selection::after {
+            right: 0.8rem;
         }
 
         a.selection,
@@ -27,7 +31,7 @@
         .sauce-svg-icon {
             max-width: 1em;
             max-height: 1em;
-            margin: 0 0.5em;
+            margin: 0 0.5em 0 0.25em;
             width: 100%;
             height: 100%;
             display: inline-flex;  // contrain svg
@@ -151,4 +155,3 @@
         }
     }
 }
-

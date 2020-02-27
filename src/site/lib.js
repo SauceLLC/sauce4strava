@@ -389,16 +389,24 @@ sauce.ns('data', function() {
 
     class RollingAverage extends RollingBase {
 
-        constructor(period) {
+        constructor(period, options) {
             super(period);
+            options = options || {};
+            this._ignoreZeros = options.ignoreZeros;
+            if (this._ignoreZeros) {
+                this._zeros = 0;
+            }
             this._sum = 0;
         }
 
         avg(options) {
             options = options || {};
             if (options.moving) {
-                return this._sum / (this._values.length - this._offt);
+                return this._sum / (this._values.length - this._offt - (this._zeros || 0));
             } else {
+                if (this._ignoreZeros) {
+                    throw new TypeError("Elasped avg unsupported when ignoreZeros=true");
+                }
                 return (this._sum - this._values[this._offt]) / this.elapsed();
             }
         }
@@ -411,20 +419,31 @@ sauce.ns('data', function() {
 
         addValue(value, ts) {
             this._sum += value;
+            if (this._ignoreZeros && !value) {
+                this._zeros++;
+            }
             return value;
         }
 
         shiftValue(value) {
             this._sum -= value;
+            if (this._ignoreZeros && !value) {
+                this._zeros--;
+            }
         }
 
         popValue(value) {
             this._sum -= value;
+            if (this._ignoreZeros && !value) {
+                this._zeros--;
+            }
         }
 
         copy() {
             const instance = super.copy();
             instance._sum = this._sum;
+            instance._ignoreZeros = this._ignoreZeros;
+            instance._zeros = this._zeros;
             return instance;
         }
     }
@@ -572,7 +591,8 @@ sauce.ns('data', function() {
     function peakAverage(period, timeStream, valuesStream, options) {
         options = options || {};
         const moving = options.moving;
-        const roll = new RollingAverage(period);
+        const ignoreZeros = options.ignoreZeros;
+        const roll = new RollingAverage(period, {ignoreZeros});
         return roll.importReduce(timeStream, valuesStream,
             (cur, lead) => cur.avg({moving}) >= lead.avg({moving}));
     }

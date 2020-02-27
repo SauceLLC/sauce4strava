@@ -5,7 +5,7 @@ sauce.ns('analysis', ns => {
 
     const commonStreams = [
         'time', 'timer_time', 'heartrate', 'altitude', 'distance', 'moving',
-        'grade_smooth', 'velocity_smooth'
+        'grade_smooth', 'velocity_smooth', 'cadence'
     ];
     const manifests = {
         'Ride': {
@@ -61,6 +61,8 @@ sauce.ns('analysis', ns => {
         {value: 1200},
         {value: 1800},
         {value: 3600},
+        {value: 7200},
+        {value: 14400},
     ];
     const defaultPeakDistances = [
         {value: 100},
@@ -74,6 +76,9 @@ sauce.ns('analysis', ns => {
         {value: Math.round(metersPerMile * 13.1)},
         {value: Math.round(metersPerMile * 26.2)},
         {value: 50000},
+        {value: 100000},
+        {value: Math.round(metersPerMile * 100)},
+        {value: 200000},
     ];
 
     let _fullActivity;
@@ -462,12 +467,28 @@ sauce.ns('analysis', ns => {
 
 
     function hrRangesToRows(ranges, timeStream, hrStream) {
+        const unit = ctx.hrFormatter.shortUnitKey();
         const rows = [];
         for (const range of ranges.filter(x => x.value >= minHRTime)) {
             const roll = sauce.data.peakAverage(range.value, timeStream, hrStream, {moving: true});
             if (roll) {
                 const value = Math.round(roll.avg({moving: true})).toLocaleString();
-                rows.push(_rangeRollToRow({range, roll, value, unit: 'bpm'}));
+                rows.push(_rangeRollToRow({range, roll, value, unit}));
+            }
+        }
+        return rows;
+    }
+
+
+    function cadenceRangesToRows(ranges, timeStream, cadenceStream) {
+        const unit = ctx.cadenceFormatter.shortUnitKey();
+        const rows = [];
+        for (const range of ranges.filter(x => x.value >= minHRTime)) {
+            const roll = sauce.data.peakAverage(range.value, timeStream, cadenceStream,
+                {moving: true, ignoreZeros: true});
+            if (roll) {
+                const value = ctx.cadenceFormatter.format(roll.avg({moving: true}));
+                rows.push(_rangeRollToRow({range, roll, value, unit}));
             }
         }
         return rows;
@@ -523,6 +544,8 @@ sauce.ns('analysis', ns => {
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
+        const distStream = await fetchStream('distance');
+        const cadenceStream = await fetchStream('cadence');
         const altStream = await fetchSmoothStream('altitude');
         const elapsedTime = streamDelta(timeStream);
         const isWattEstimate = !realWattsStream;
@@ -571,8 +594,14 @@ sauce.ns('analysis', ns => {
                     menu.push('peak_np');
                 }
             }
+            if (distStream) {
+                menu.push('peak_pace');
+            }
             if (hrStream) {
                 menu.push('peak_hr');
+            }
+            if (cadenceStream) {
+                menu.push('peak_cadence');
             }
             if (altStream) {
                 menu.push('peak_vam');
@@ -581,6 +610,7 @@ sauce.ns('analysis', ns => {
                 return;
             }
             const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
+            const distRanges = ctx.allDistRanges;
             const panel = new PeakEffortsPanel({
                 type: 'ride',
                 menu,
@@ -591,6 +621,8 @@ sauce.ns('analysis', ns => {
                     if (source === 'peak_power') {
                         attrs.isWattEstimate = isWattEstimate;
                         rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
+                    } else if (source === 'peak_pace') {
+                        rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
                     } else if (source === 'peak_np') {
                         rows = [];
                         for (const range of periodRanges.filter(x => x.value >= minNPTime)) {
@@ -606,6 +638,8 @@ sauce.ns('analysis', ns => {
                         }
                     } else if (source === 'peak_hr') {
                         rows = hrRangesToRows(periodRanges, timeStream, hrStream);
+                    } else if (source === 'peak_cadence') {
+                        rows = cadenceRangesToRows(periodRanges, timeStream, cadenceStream);
                     } else if (source === 'peak_vam') {
                         rows = vamRangesToRows(periodRanges, timeStream, altStream);
                     }
@@ -629,6 +663,7 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
         const distStream = await fetchStream('distance');
+        const cadenceStream = await fetchStream('cadence');
         const elapsedTime = streamDelta(timeStream);
         await renderTertiaryStats({
             weightUnit: ctx.weightFormatter.shortUnitKey(),
@@ -642,6 +677,9 @@ sauce.ns('analysis', ns => {
             }
             if (hrStream) {
                 menu.push('peak_hr');
+            }
+            if (cadenceStream) {
+                menu.push('peak_cadence');
             }
             if (!menu.length) {
                 return;
@@ -658,6 +696,8 @@ sauce.ns('analysis', ns => {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
                     } else if (source === 'peak_hr') {
                         rows = hrRangesToRows(periodRanges, timeStream, hrStream);
+                    } else if (source === 'peak_cadence') {
+                        rows = cadenceRangesToRows(periodRanges, timeStream, cadenceStream);
                     }
                     return {rows};
                 }
@@ -675,6 +715,7 @@ sauce.ns('analysis', ns => {
         const hrStream = await fetchStream('heartrate');
         const altStream = await fetchSmoothStream('altitude');
         const distStream = await fetchStream('distance');
+        const cadenceStream = await fetchStream('cadence');
         const elapsedTime = streamDelta(timeStream);
         let power;
         if (wattsStream) {
@@ -705,6 +746,9 @@ sauce.ns('analysis', ns => {
             if (hrStream) {
                 menu.push('peak_hr');
             }
+            if (cadenceStream) {
+                menu.push('peak_cadence');
+            }
             if (altStream) {
                 menu.push('peak_vam');
             }
@@ -723,6 +767,8 @@ sauce.ns('analysis', ns => {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
                     } else if (source === 'peak_hr') {
                         rows = hrRangesToRows(periodRanges, timeStream, hrStream);
+                    } else if (source === 'peak_cadence') {
+                        rows = cadenceRangesToRows(periodRanges, timeStream, cadenceStream);
                     } else if (source === 'peak_vam') {
                         rows = vamRangesToRows(periodRanges, timeStream, altStream);
                     }
@@ -742,6 +788,7 @@ sauce.ns('analysis', ns => {
         const hrStream = await fetchStream('heartrate');
         const altStream = await fetchSmoothStream('altitude');
         const distStream = await fetchStream('distance');
+        const cadenceStream = await fetchStream('cadence');
         const gradeDistStream = distStream && await fetchGradeDistStream();
         const elapsedTime = streamDelta(timeStream);
         const isWattEstimate = !wattsStream;
@@ -792,6 +839,9 @@ sauce.ns('analysis', ns => {
             if (hrStream) {
                 menu.push('peak_hr');
             }
+            if (cadenceStream) {
+                menu.push('peak_cadence');
+            }
             if (altStream) {
                 menu.push('peak_vam');
             }
@@ -816,6 +866,8 @@ sauce.ns('analysis', ns => {
                         rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
                     } else if (source === 'peak_hr') {
                         rows = hrRangesToRows(periodRanges, timeStream, hrStream);
+                    } else if (source === 'peak_cadence') {
+                        rows = cadenceRangesToRows(periodRanges, timeStream, cadenceStream);
                     } else if (source === 'peak_vam') {
                         rows = vamRangesToRows(periodRanges, timeStream, altStream);
                     }
@@ -1169,11 +1221,26 @@ sauce.ns('analysis', ns => {
                 formatter: x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
+        } else if (source === 'peak_pace') {
+            await infoDialogGraph($sparkline, {
+                data: velocityStream,
+                formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
+                colorSteps: [4, 12, 20, 28]
+            });
         } else if (source === 'peak_hr') {
+            const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
                 data: hrStream,
-                formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
+                formatter: x => `${Math.round(x)}<abbr class="unit short">${unit}</abbr>`,
                 colorSteps: [40, 100, 150, 200]
+            });
+        } else if (source === 'peak_cadence') {
+            const unit = ctx.cadenceFormatter.shortUnitKey();
+            const format = x => ctx.cadenceFormatter.format(x);
+            await infoDialogGraph($sparkline, {
+                data: cadenceStream,
+                formatter: x => `${format(x)}<abbr class="unit short">${unit}</abbr>`,
+                colorSteps: [40, 80, 120, 150]
             });
         } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
@@ -1258,10 +1325,19 @@ sauce.ns('analysis', ns => {
                 colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'peak_hr') {
+            const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
                 data: hrStream,
-                formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
+                formatter: x => `${Math.round(x)}<abbr class="unit short">${unit}</abbr>`,
                 colorSteps: [40, 100, 150, 200]
+            });
+        } else if (source === 'peak_cadence') {
+            const unit = ctx.cadenceFormatter.shortUnitKey();
+            const format = x => ctx.cadenceFormatter.format(x);
+            await infoDialogGraph($sparkline, {
+                data: cadenceStream,
+                formatter: x => `${format(x)}<abbr class="unit short">${unit}</abbr>`,
+                colorSteps: [50, 80, 90, 100]
             });
         } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
@@ -1295,7 +1371,7 @@ sauce.ns('analysis', ns => {
             hr: hrInfo(hrStream),
             hrUnit: ctx.hrFormatter.shortUnitKey(),
             cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
-            cadenceUnit: 'spm',  // XXX Haven't found a localized string for strokes / min.
+            cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
             paceUnit: ctx.paceFormatter.shortUnitKey(),
             source,
         });
@@ -1313,13 +1389,22 @@ sauce.ns('analysis', ns => {
             await infoDialogGraph($sparkline, {
                 data: velocityStream,
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
-                colorSteps: [0.5, 2, 5, 10]
+                colorSteps: [0.5, 0.85, 1.1, 1.75]
             });
         } else if (source === 'peak_hr') {
+            const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
                 data: hrStream,
-                formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
+                formatter: x => `${Math.round(x)}<abbr class="unit short">${unit}</abbr>`,
                 colorSteps: [40, 100, 150, 200]
+            });
+        } else if (source === 'peak_cadence') {
+            const unit = ctx.cadenceFormatter.shortUnitKey();
+            const format = x => ctx.cadenceFormatter.format(x);
+            await infoDialogGraph($sparkline, {
+                data: cadenceStream,
+                formatter: x => `${format(x)}<abbr class="unit short">${unit}</abbr>`,
+                colorSteps: [20, 25, 30, 35]
             });
         }
         return $dialog;
@@ -1369,13 +1454,22 @@ sauce.ns('analysis', ns => {
             await infoDialogGraph($sparkline, {
                 data: velocityStream,
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
-                colorSteps: [0.5, 2, 5, 10]
+                colorSteps: [0.5, 10, 15, 30]
             });
         } else if (source === 'peak_hr') {
+            const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
                 data: hrStream,
-                formatter: x => `${Math.round(x)}<abbr class="unit short">bpm</abbr>`,
+                formatter: x => `${Math.round(x)}<abbr class="unit short">${unit}</abbr>`,
                 colorSteps: [40, 100, 150, 200]
+            });
+        } else if (source === 'peak_cadence') {
+            const unit = ctx.cadenceFormatter.shortUnitKey();
+            const format = x => ctx.cadenceFormatter.format(x);
+            await infoDialogGraph($sparkline, {
+                data: cadenceStream,
+                formatter: x => `${format(x)}<abbr class="unit short">${unit}</abbr>`,
+                colorSteps: [10, 50, 100, 160]
             });
         } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
@@ -1991,7 +2085,7 @@ sauce.ns('analysis', ns => {
             {name: 'watts'},
             {name: 'watts_calc'},
             {name: 'heartrate'},
-            {name: 'cadence', formatter: pageView.activity().isRun() ? x => x * 2 : null},
+            {name: 'cadence', formatter: x => ctx.cadenceFormatter.format(x)},
             {name: 'velocity_smooth'},
             {name: 'pace'},
             {name: 'grade_adjusted_pace', label: 'gap'},
@@ -2193,7 +2287,7 @@ sauce.ns('analysis', ns => {
             new Strava.I18n.CadenceFormatter();
         ctx.timeFormatter = new Strava.I18n.TimespanFormatter();
         ctx.weightFormatter = new Strava.I18n.WeightFormatter();
-        const speedUnit = activity.get('speedUnit') || activity.isRide() ? 'mph' : 'mpm';
+        const speedUnit = activity.get('speedUnit') || (activity.isRide() ? 'mph' : 'mpm');
         const PaceFormatter = {
             mp100m: Strava.I18n.SwimPaceFormatter,
             mph: Strava.I18n.DistancePerTimeFormatter,
@@ -2206,10 +2300,12 @@ sauce.ns('analysis', ns => {
             peak_hr: 'fa/heartbeat-duotone.svg',
             peak_vam: 'fa/rocket-launch-duotone.svg',
             peak_gap: 'fa/hiking-duotone.svg',
-            peak_pace: 'fa/rabbit-fast-duotone.svg'
+            peak_pace: 'fa/rabbit-fast-duotone.svg',
+            peak_cadence: 'fa/solar-system-duotone.svg'
         };
         if (activity.isRun()) {
             ctx.peakIcons.peak_pace = 'fa/running-duotone.svg';
+            ctx.peakIcons.peak_cadence = 'fa/shoe-prints-duotone.svg';
         } else if (activity.isSwim()) {
             ctx.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
