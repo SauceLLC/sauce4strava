@@ -61,8 +61,7 @@ sauce.ns('analysis', ns => {
         {value: 1200},
         {value: 1800},
         {value: 3600},
-        {value: 7200},
-        {value: 14400},
+        {value: 10800},
     ];
     const defaultPeakDistances = [
         {value: 100},
@@ -73,8 +72,8 @@ sauce.ns('analysis', ns => {
         {value: 3000},
         {value: 5000},
         {value: 10000},
-        {value: Math.round(metersPerMile * 13.1)},
-        {value: Math.round(metersPerMile * 26.2)},
+        {value: Math.round(metersPerMile * 13.1), filter: a => a.isRun()},
+        {value: Math.round(metersPerMile * 26.2), filter: a => a.isRun()},
         {value: 50000},
         {value: 100000},
         {value: Math.round(metersPerMile * 100)},
@@ -540,6 +539,16 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function filterPeriodRanges(elapsed, ...filterArgs) {
+        return ctx.allPeriodRanges.filter(x => x.value <= elapsed && (!x.filter || x.filter.apply(x, filterArgs)));
+    }
+
+
+    function filterDistRanges(distance, ...filterArgs) {
+        return ctx.allDistRanges.filter(x => x.value <= distance && (!x.filter || x.filter.apply(x, filterArgs)));
+    }
+
+
     async function startRideActivity() {
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
@@ -548,6 +557,7 @@ sauce.ns('analysis', ns => {
         const cadenceStream = await fetchStream('cadence');
         const altStream = await fetchSmoothStream('altitude');
         const elapsedTime = streamDelta(timeStream);
+        const distance = streamDelta(distStream);
         const isWattEstimate = !realWattsStream;
         let wattsStream = realWattsStream;
         if (!wattsStream) {
@@ -609,8 +619,6 @@ sauce.ns('analysis', ns => {
             if (!menu.length) {
                 return;
             }
-            const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
-            const distRanges = ctx.allDistRanges;
             const panel = new PeakEffortsPanel({
                 type: 'ride',
                 menu,
@@ -618,6 +626,9 @@ sauce.ns('analysis', ns => {
                 renderAttrs: async source => {
                     let rows;
                     const attrs = {};
+                    const activity = pageView.activity();
+                    const periodRanges = filterPeriodRanges(elapsedTime, activity);
+                    const distRanges = filterDistRanges(distance, activity);
                     if (source === 'peak_power') {
                         attrs.isWattEstimate = isWattEstimate;
                         rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
@@ -665,6 +676,7 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance');
         const cadenceStream = await fetchStream('cadence');
         const elapsedTime = streamDelta(timeStream);
+        const distance = streamDelta(distStream);
         await renderTertiaryStats({
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
@@ -684,13 +696,14 @@ sauce.ns('analysis', ns => {
             if (!menu.length) {
                 return;
             }
-            const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
-            const distRanges = ctx.allDistRanges;
             const panel = new PeakEffortsPanel({
                 type: 'swim',
                 menu,
                 infoDialog: swimInfoDialog,
                 renderAttrs: async source => {
+                    const activity = pageView.activity();
+                    const periodRanges = filterPeriodRanges(elapsedTime, activity);
+                    const distRanges = filterDistRanges(distance, activity);
                     let rows;
                     if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
@@ -717,6 +730,7 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance');
         const cadenceStream = await fetchStream('cadence');
         const elapsedTime = streamDelta(timeStream);
+        const distance = streamDelta(distStream);
         let power;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
@@ -755,13 +769,14 @@ sauce.ns('analysis', ns => {
             if (!menu.length) {
                 return;
             }
-            const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
-            const distRanges = ctx.allDistRanges;
             const panel = new PeakEffortsPanel({
                 type: 'other',
                 menu,
                 infoDialog: otherInfoDialog,
                 renderAttrs: async source => {
+                    const activity = pageView.activity();
+                    const periodRanges = filterPeriodRanges(elapsedTime, activity);
+                    const distRanges = filterDistRanges(distance, activity);
                     let rows;
                     if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
@@ -791,6 +806,7 @@ sauce.ns('analysis', ns => {
         const cadenceStream = await fetchStream('cadence');
         const gradeDistStream = distStream && await fetchGradeDistStream();
         const elapsedTime = streamDelta(timeStream);
+        const distance = streamDelta(distStream);
         const isWattEstimate = !wattsStream;
         let power;
         if (wattsStream) {
@@ -848,13 +864,14 @@ sauce.ns('analysis', ns => {
             if (!menu.length) {
                 return;
             }
-            const periodRanges = ctx.allPeriodRanges.filter(x => x.value <= elapsedTime);
-            const distRanges = ctx.allDistRanges;
             const panel = new PeakEffortsPanel({
                 type: 'run',
                 menu,
                 infoDialog: runInfoDialog,
                 renderAttrs: async source => {
+                    const activity = pageView.activity();
+                    const periodRanges = filterPeriodRanges(elapsedTime, activity);
+                    const distRanges = filterDistRanges(distance, activity);
                     let rows;
                     const attrs = {};
                     if (source === 'peak_pace') {
