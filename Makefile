@@ -48,6 +48,10 @@ manifest: $(MANIFEST)
 package:
 	$(TOOLPATH)/package $(TARGET)
 
+packages:
+	$(TOOLPATH)/package gecko
+	$(TOOLPATH)/package chromium
+
 
 ########################################################
 # Runtime-only targets
@@ -56,4 +60,4 @@ sass-watch:
 	$(TOOLPATH)/sassrender --watch
 
 
-.PHONY: lint sass clean realclean package manifest build
+.PHONY: lint sass clean realclean package packages manifest build
