@@ -220,6 +220,7 @@ html.sauce-responsive,
             // We try to be super minimal here..
             display: flex;
             flex-wrap: wrap;
+            margin: 0;
         }
 
         #splits-container {
@@ -238,10 +239,8 @@ html.sauce-responsive,
             float: initial;
             width: initial;
             flex: 1 0 auto;
-        }
-
-        #splits-container + .map {
-            min-width: 300px;  // force wrap for mobile
+            padding: 0;
+            min-width: 300px;  // force wrap for mobile (firefox friendly)
         }
 
         #chart-controls {
