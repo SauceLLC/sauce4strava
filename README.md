@@ -57,7 +57,7 @@ Installation
 
 Release Notes
 --------
-#### v5.1.0
+#### v5.1.0:
  * Responsive layout
  * Mobile support (Firefox only)
  * Additional Peak information tables:
@@ -69,40 +69,40 @@ Release Notes
  * Bug fixes a plenty
  * Detailed Run segments (using segment support of rides but for runs)
 
-#### v5.0.0
+#### v5.0.0:
  * Multi category peak effort chart:
    * Power, NP, VAM, HR, Pace, GAP
- * Settable peak effort ranges: time periods and distances (Advanced Options).
- * Upgraded algo for power data.
- * Upgraded analysis view that works in all locales.
+ * Settable peak effort ranges: time periods and distances (Advanced Options)
+ * Upgraded algo for power data
+ * Upgraded analysis view that works in all locales:
    * Kilojoule field
-   * Moving vs elapsed time stats.
-   * Improved placement on page.
- * Running power (watts) estimate **[BETA]**.
- * Raw data views; CSV table and graphs.
- * Kilojoules in analysis view.
- * Updated algo for VAM calculations (smoothing).
- * Rank badges for analysis selections.
- * Support for HiDPI graphs.
+   * Moving vs elapsed time stats
+   * Improved placement on page
+ * Running power (watts) estimate **[BETA]**
+ * Raw data views; CSV table and graphs
+ * Kilojoules in analysis view
+ * Updated algo for VAM calculations (smoothing)
+ * Rank badges for analysis selections
+ * Support for HiDPI graphs
 
 #### v4.3.0:
- * TCX and GPX export **[BETA]**.
+ * TCX and GPX export **[BETA]**
 
 #### v4.1.0:
- * Support for VAM (vertical ascent meters / hour) **[BETA]**.
+ * Support for VAM **[BETA]**
 
 #### v4.0.0:
- * Peak power calculations now support irregular recording intervals (non 1 sample / second).
- * Fixes to running pace calculations.
- * Add elevation stats to peak power and best pace dialogs.
- * Add cadence stat to peak power and best pace dialogs.
- * Support auto closing dialogs when clicking away from them.
- * Much needed code cleanup.
- * Add name information to Advanced menu's FTP overrides table.
+ * Peak power calculations now support irregular recording intervals (non 1 sample / second)
+ * Fixes to running pace calculations
+ * Add elevation stats to peak power and best pace dialogs
+ * Add cadence stat to peak power and best pace dialogs
+ * Support auto closing dialogs when clicking away from them
+ * Much needed code cleanup
+ * Add name information to Advanced menu's FTP overrides table
 
 #### v3.2.0:
- * Show average pace in running "Best Pace" chart instead of elapsed time.
- * Use kilometer based pace for metric loving athletes.
+ * Show average pace in running "Best Pace" chart instead of elapsed time
+ * Use kilometer based pace for metric loving athletes
 
 #### v3.0.0:
  * Activity Feed Filtering (click the sauce bottle to change):
@@ -112,17 +112,17 @@ Release Notes
  * World Ranking badges for segments
 
 #### v2.0.0:
- * Running support.
+ * Running support
 
 #### v1.2.0:
- * Fixes for several loading glitches.
- * Smoother FTP override handling;  Added clearing support.
- * Fix for ranking badges when gender is unspecified.
- * Style and tooltip additions to better explain peak power.
+ * Fixes for several loading glitches
+ * Smoother FTP override handling;  Added clearing support
+ * Fix for ranking badges when gender is unspecified
+ * Style and tooltip additions to better explain peak power
 
 #### v1.1.0:
- * Fix analysis view's inline comments to accommodate site changes.
- * Minor style tweak for analysis view.
+ * Fix analysis view's inline comments to accommodate site changes
+ * Minor style tweak for analysis view
 
 #### v1.0.0:
  * Fix for updated strava comment data structure
@@ -133,7 +133,7 @@ Release Notes
  * Promise of reasonable stability
 
 #### v0.0.7:
- * Normalized power for selections in Analysis tab.
+ * Normalized power for selections in Analysis tab
 
 #### v0.0.6:
  * Inline comments
