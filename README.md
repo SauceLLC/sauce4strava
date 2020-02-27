@@ -15,6 +15,7 @@ Feature Highlights
    * Pace
    * Grade Adjusted Pace
    * VAM (climbing speed)
+   * Cadence
  * Export any activity to a TCX or GPX file
  * Running Power estimation
  * Analysis page stats are extended to include:
@@ -28,9 +29,11 @@ Feature Highlights
  * Weight and FTP overrides for all athletes
  * Inline comments system for activity page
  * Dashboard features:
-   * Chronological ordering
-   * Hide virtual activities (except your own)
-   * Hide promotions and challenges
+   * Chronological ordering *OPTION*
+   * Hide virtual activities (except your own) *OPTION*
+   * Hide promotions and challenges *OPTION*
+ * Responsive layout (mobile support for Firefox) *OPTION*
+ * Detailed Running segments *OPTION*
 
 
 ![slideshow](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/slideshow.gif)
@@ -43,10 +46,9 @@ Installation
 [![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
 [![firefox add on](https://github.com/mayfield/sauce-assets/raw/master/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
 
-#### Development version - **Chromium**:
- 1. Download [ZIP file](https://github.com/mayfield/sauce/archive/master.zip)
-    or clone this repo to your local computer.
- 2. (ZIP only) Unzip the downloaded zip file.
+#### Development:
+ 1. Clone this repo to your local computer.
+ 2. Run `make`
  3. Go to chrome://extensions/ on your Chrome browser.
  4. Make sure "Developer mode" is checked.
  5. Click "Load unpacked extension..."
@@ -55,6 +57,18 @@ Installation
 
 Release Notes
 --------
+#### v5.1.0
+ * Responsive layout
+ * Mobile support (Firefox only)
+ * Additional Peak information tables:
+   * Cadence
+   * Pace for cycling
+   * Power for running
+ * Swim activity support
+ * Other activity support (XC ski, Alpine ski, etc)
+ * Bug fixes a plenty
+ * Detailed Run segments (using segment support of rides but for runs)
+
 #### v5.0.0
  * Multi category peak effort chart:
    * Power, NP, VAM, HR, Pace, GAP
