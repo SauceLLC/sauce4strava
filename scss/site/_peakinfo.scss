@@ -4,7 +4,7 @@
 #sauce-infopanel {
     border-top: theme.$border;
     border-bottom: theme.$border;
-    margin-top: 10px; // XXX
+    margin-top: 10px;
 
     .title,
     .sauce-title-menu {
@@ -78,11 +78,11 @@
         }
 
         td {
-            padding: 5px 0 5px 12px; // XXX no px
+            padding: 0.5em 0.4em;
+            text-align: center;
         }
 
         td:last-child {
-            padding-left: 10px; // XXX no px
             color: #007fb6;
         }
     }
