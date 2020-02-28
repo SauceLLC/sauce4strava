@@ -467,7 +467,7 @@ html.sauce-responsive,
             $hmargin: 1rem;
             display: grid;
             grid-template-columns: minmax(calc(#{defines.$analysis-page-sidenav-width} + (2 * #{$hmargin})), 1fr)
-                                   minmax(0, 6fr);
+                                   minmax(0, 10fr);
             grid-template-rows: auto;
             grid-auto-flow: row;
             padding: 0 2vw;
