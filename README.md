@@ -1,5 +1,11 @@
 ![Sauce](images/logo_horiz_320x120.png)
 ===========
+
+### Moved to https://github.com/SauceLLC/sauce
+
+--------
+
+
 #### A browser extension for Strava.com
 The Sauce extension supplements athletic websites like https://strava.com with better
 cycling and running information.  It's a simple, lightweight and pure client-side javascript
