@@ -153,4 +153,4 @@ readily available within the Strava.com website.
 Legal
 --------
 Because lawyers and Google:
-[Privacy Policy](pages/privacy.html)
+[Privacy Policy](https://SauceLLC.github.io/sauce4strava/pages/privacy.html)
