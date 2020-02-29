@@ -1,0 +1,314 @@
+{
+    "app_desc": {
+        "message": "Zusätzliche Funktionen für Ihre Rad- und Laufanalyse. Diese Erweiterung aktualisiert die Strava ™ Website."
+    },
+    "analysis_time": {
+        "message": "Zeit"
+    },
+    "analysis_elapsed": {
+        "message": "Abgelaufen"
+    },
+    "analysis_elapsed_time_tooltip": {
+        "message": "Verstrichene Zeit: Zeit vom Beginn bis zum Ende der Aktivität"
+    },
+    "analysis_elapsed_power_tooltip": {
+        "message": "Durchschnittliche verstrichene Leistung: Stopps sind mit Nullen aufgefüllt"
+    },
+    "analysis_elapsed_pace_tooltip": {
+        "message": "Durchschnittliches verstrichenes Tempo: Stopps sind in der Zeitspanne enthalten"
+    },
+    "analysis_paused_time_tooltip": {
+        "message": "Angehaltene Zeit: Die Zeit ist angehalten oder bewegt sich nicht"
+    },
+    "analysis_moving_time_tooltip": {
+        "message": "Bewegungszeit: Nur aktive Zeit"
+    },
+    "analysis_moving_power_tooltip": {
+        "message": "Durchschnittliche Bewegungsleistung: Nur aktive Zeit"
+    },
+    "analysis_moving_pace_tooltip": {
+        "message": "Durchschnittliches Bewegungstempo: Nur aktive Zeit"
+    },
+    "analysis_gap_tooltip": {
+        "message": "Gradangepasstes Tempo: Geschätztes Tempo für flaches Gelände"
+    },
+    "analysis_np_tooltip": {
+        "message": "Normalized Power®: Eine Schätzung der potenziellen Durchschnittsleistung"
+    },
+    "analysis_energy_tooltip": {
+        "message": "Energieverbrauch in Kilojoule"
+    },
+    "analysis_energy_rate_tooltip": {
+        "message": "Kilojoule pro Stunde"
+    },
+    "analysis_elevation_gain_tooltip": {
+        "message": "Höhe gewonnen: Klettern"
+    },
+    "analysis_elevation_loss_tooltip": {
+        "message": "Elevation Lost: absteigend"
+    },
+    "analysis_grade_tooltip": {
+        "message": "Grad des Hügels"
+    },
+    "analysis_vam_tooltip": {
+        "message": "Klettermeter pro Stunde"
+    },
+    "analysis_tss_tooltip": {
+        "message": "Training Stress Score®: Ein leistungsbasierter Stresslastindikator"
+    },
+    "analysis_start_of_effort_tooltip": {
+        "message": "Zeitversatz bis zum Beginn dieser Bemühungen"
+    },
+    "analysis_wkg_tooltip": {
+        "message": "Watt pro Kilogramm Körpergewicht"
+    },
+    "analysis_ranking_tooltip": {
+        "message": "Weltrangliste"
+    },
+    "analysis_max_power_tooltip": {
+        "message": "maximale Kraft"
+    },
+    "analysis_low_hr_tooltip": {
+        "message": "Niedrigste Herzfrequenz"
+    },
+    "analysis_high_hr_tooltip": {
+        "message": "Höchste Herzfrequenz"
+    },
+    "analysis_low_speed_tooltip": {
+        "message": "Niedrigste Geschwindigkeit"
+    },
+    "analysis_high_speed_tooltip": {
+        "message": "Höchste Geschwindigkeit"
+    },
+    "analysis_running_cadence_tooltip": {
+        "message": "Schritte pro Minute"
+    },
+    "analysis_cycling_cadence_tooltip": {
+        "message": "Pedalumdrehungen pro Minute"
+    },
+    "analysis_swim_cadence_tooltip": {
+        "message": "Striche pro Minute"
+    },
+    "analysis_ftp_link_tooltip": {
+        "message": "Klicken Sie hier, um den Wert festzulegen"
+    },
+    "analysis_weight_link_tooltip": {
+        "message": "Klicken Sie hier, um den Wert festzulegen"
+    },
+    "analysis_ftp_input_tooltip": {
+        "message": "Geben Sie die geschätzte FTP (Functional Threshold Power) für diesen Athleten ein und drücken Sie die Eingabetaste. FTP ist der maximale Wattdurchschnitt, der 1 Stunde lang aufrechterhalten wird. Wenn der Athlet bereits einen Wert in seinem Profil festgelegt hat, überschreibt dies diese Einstellung. Um den Wert zurückzusetzen, geben Sie einen leeren Wert ein."
+    },
+    "analysis_weight_input_tooltip": {
+        "message": "Geben Sie das geschätzte Gewicht für diesen Athleten ein und drücken Sie die Eingabetaste. Wenn der Athlet bereits einen Wert in seinem Profil festgelegt hat, überschreibt dies diese Einstellung. Um den Wert zurückzusetzen, geben Sie einen leeren Wert ein."
+    },
+    "analysis_intensity_tooltip": {
+        "message": "Intensity Factor®"
+    },
+    "analysis_peak_power_tooltip": {
+        "message": "Maximale Dauerleistungsbereiche"
+    },
+    "analysis_peak_np_tooltip": {
+        "message": "Maximale normalisierte Power®-Bereiche"
+    },
+    "analysis_peak_hr_tooltip": {
+        "message": "Maximal anhaltende Herzfrequenzbereiche"
+    },
+    "analysis_peak_cadence_tooltip": {
+        "message": "Maximal anhaltende Trittfrequenzbereiche"
+    },
+    "analysis_peak_vam_tooltip": {
+        "message": "Maximal anhaltende Steiggeschwindigkeitsbereiche"
+    },
+    "analysis_peak_pace_tooltip": {
+        "message": "Maximal anhaltende Tempobereiche"
+    },
+    "analysis_peak_gap_tooltip": {
+        "message": "Maximaler, an die Steigung angepasster Tempobereich"
+    },
+    "analysis_watt_estimate_tooltip": {
+        "message": "Diese Werte werden aus Leistungsschätzungen berechnet. Für genaue Werte ist ein reales Leistungsmessgerät erforderlich."
+    },
+    "analysis_paused": {
+        "message": "Pause"
+    },
+    "analysis_stops": {
+        "message": "Stopps"
+    },
+    "analysis_idle": {
+        "message": "Leerlauf"
+    },
+    "analysis_moving": {
+        "message": "Ziehen um"
+    },
+    "analysis_stats": {
+        "message": "Statistiken"
+    },
+    "analysis_power_avg": {
+        "message": "Leistung Durchschn"
+    },
+    "analysis_energy": {
+        "message": "Energie"
+    },
+    "analysis_expended": {
+        "message": "Verbraucht"
+    },
+    "analysis_rate": {
+        "message": "Bewertung"
+    },
+    "analysis_elevation": {
+        "message": "Elevation"
+    },
+    "analysis_grade": {
+        "message": "Klasse"
+    },
+    "analysis_estimated": {
+        "message": "geschätzt"
+    },
+    "analysis_data": {
+        "message": "Daten"
+    },
+    "analysis_raw_data": {
+        "message": "Rohdaten"
+    },
+    "analysis_graphs": {
+        "message": "Grafiken"
+    },
+    "analysis_pace": {
+        "message": "Tempo"
+    },
+    "analysis_speed": {
+        "message": "Geschwindigkeit"
+    },
+    "analysis_samples": {
+        "message": "Proben"
+    },
+    "analysis_beta": {
+        "message": "BETA"
+    },
+    "analysis_best_pace": {
+        "message": "Bestes Tempo"
+    },
+    "analysis_start_of_effort": {
+        "message": "Beginn der Bemühungen"
+    },
+    "analysis_elapsed_time": {
+        "message": "Verstrichene Zeit"
+    },
+    "analysis_heartrate": {
+        "message": "Pulsschlag"
+    },
+    "analysis_cadence": {
+        "message": "Kadenz"
+    },
+    "analysis_peak_power": {
+        "message": "Spitzenleistung"
+    },
+    "analysis_peak_np": {
+        "message": "Peak NP®"
+    },
+    "analysis_peak_hr": {
+        "message": "Peak HR"
+    },
+    "analysis_peak_cadence": {
+        "message": "Spitzenkadenz"
+    },
+    "analysis_peak_vam": {
+        "message": "Peak VAM"
+    },
+    "analysis_peak_pace": {
+        "message": "Höchstgeschwindigkeit"
+    },
+    "analysis_peak_gap": {
+        "message": "Peak GAP"
+    },
+    "analysis_watts": {
+        "message": "Watt"
+    },
+    "analysis_power": {
+        "message": "Leistung"
+    },
+    "analysis_weight": {
+        "message": "Gewicht"
+    },
+    "analysis_change": {
+        "message": "Veränderung"
+    },
+    "analysis_view": {
+        "message": "Aussicht"
+    },
+    "analysis_export": {
+        "message": "Export"
+    },
+    "analysis_male": {
+        "message": "Männlich"
+    },
+    "analysis_female": {
+        "message": "Weiblich"
+    },
+    "analysis_power_profile_about1": {
+        "message": "Das Konzept der Leistungsprofilerstellung wurde von Dr. Andy Coggan entwickelt. Es ist ein grundlegender Überblick über die Leistungsanforderungen, um auf einem bestimmten Niveau der Wettbewerbsfähigkeit im Rennsport zu sein."
+    },
+    "analysis_power_profile_about2": {
+        "message": "Diese Rangliste soll Ihnen eine ungefähre Vorstellung davon geben, wie sich Ihre beste Leistung im Vergleich zur maximalen Leistungsfähigkeit anderer Rennfahrer verhält. Sie sind am repräsentativsten, wenn Sie sehr hart arbeiten."
+    },
+    "analysis_power_profile_select": {
+        "message": "Wählen Sie ein Profil aus, um die erforderlichen Leistungsabgaben anzuzeigen"
+    },
+    "analysis_power_profile_footer_leadin": {
+        "message": "Der Sauce-Algorithmus ist eine Modifikation von Andys ursprünglicher Tabelle, sodass er die Rangfolge für jeden Zeitraum schätzen kann. Für ein detailliertes Verständnis dieser Profile lesen Sie"
+    },
+    "analysis_comment_label": {
+        "message": "Sag etwas"
+    },
+    "analysis_comment_placeholder": {
+        "message": "Dein Kommentar hier"
+    },
+    "analysis_comment": {
+        "message": "Kommentar"
+    },
+    "analysis_title": {
+        "message": "Analyse"
+    },
+    "time_sec": {
+        "message": "sek"
+    },
+    "time_secs": {
+        "message": "sek"
+    },
+    "time_min": {
+        "message": "Mindest"
+    },
+    "time_mins": {
+        "message": "min"
+    },
+    "time_hour": {
+        "message": "Stunde"
+    },
+    "time_hours": {
+        "message": "Std"
+    },
+    "time_day": {
+        "message": "Tag"
+    },
+    "time_days": {
+        "message": "Tage"
+    },
+    "time_week": {
+        "message": "Woche"
+    },
+    "time_weeks": {
+        "message": "Wochen"
+    },
+    "time_year": {
+        "message": "Jahr"
+    },
+    "time_years": {
+        "message": "Jahre"
+    },
+    "time_ago": {
+        "message": "vor"
+    },
+    "time_now": {
+        "message": "jetzt"
+    }
+}
