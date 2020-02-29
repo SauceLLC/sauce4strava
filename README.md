@@ -1,11 +1,5 @@
 ![Sauce](images/logo_horiz_320x120.png)
 ===========
-
-### Moved to https://github.com/SauceLLC/sauce
-
---------
-
-
 #### A browser extension for Strava.com
 The Sauce extension supplements athletic websites like https://strava.com with better
 cycling and running information.  It's a simple, lightweight and pure client-side javascript
@@ -15,11 +9,11 @@ addition.  There are no external API calls made with this extension and it is op
 Installation
 --------
 #### Official versions:
-[![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
-[![firefox add on](https://github.com/mayfield/sauce-assets/raw/master/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
+[![chrome web store](https://github.com/saucellc/sauce/raw/master/assets/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
+[![firefox add on](https://github.com/saucellc/sauce/raw/master/assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
 
 
-![slideshow](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/slideshow.gif)
+![slideshow](https://github.com/saucellc/sauce/raw/master/assets/images/screenshots/slideshow.gif)
 
 
 Feature Highlights
@@ -158,4 +152,4 @@ readily available within the Strava.com website.
 Legal
 --------
 Because lawyers and Google:
-[Privacy Policy](https://mayfield.github.com/sauce/pages/privacy.html)
+[Privacy Policy](https://saucellc.github.com/sauce/pages/privacy.html)
