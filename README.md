@@ -6,6 +6,16 @@ cycling and running information.  It's a simple, lightweight and pure client-sid
 addition.  There are no external API calls made with this extension and it is open source.
 
 
+Installation
+--------
+#### Official versions:
+[![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
+[![firefox add on](https://github.com/mayfield/sauce-assets/raw/master/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
+
+
+![slideshow](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/slideshow.gif)
+
+
 Feature Highlights
 --------
  * Peak performance table:
@@ -36,15 +46,8 @@ Feature Highlights
  * Detailed Running segments *OPTION*
 
 
-![slideshow](https://github.com/mayfield/sauce-assets/raw/master/images/screenshots/slideshow.gif)
 [![intro](http://img.youtube.com/vi/VkxEnBb1YhA/0.jpg)](http://www.youtube.com/watch?v=VkxEnBb1YhA)
 
-
-Installation
---------
-#### Official versions:
-[![chrome web store](https://github.com/mayfield/sauce-assets/raw/master/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
-[![firefox add on](https://github.com/mayfield/sauce-assets/raw/master/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
 
 #### Development:
  1. Clone this repo to your local computer.
