@@ -10,11 +10,11 @@ addition.  There are no external API calls made with this extension and it is op
 Installation
 --------
 #### Official versions:
-[![chrome web store](https://saucellc.github.io/sauce/assets/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
-[![firefox add on](https://saucellc.github.io/sauce/assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
+[![chrome web store](assets/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
+[![firefox add on](assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
 
 
-![slideshow](https://saucellc.github.io/sauce/assets/images/screenshots/slideshow.gif)
+![slideshow](images/screenshots/slideshow.gif)
 
 
 Feature Highlights
@@ -153,4 +153,4 @@ readily available within the Strava.com website.
 Legal
 --------
 Because lawyers and Google:
-[Privacy Policy](https://saucellc.github.io/sauce/pages/privacy.html)
+[Privacy Policy](pages/privacy.html)
