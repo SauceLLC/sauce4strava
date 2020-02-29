@@ -14,7 +14,7 @@ Installation
 [![firefox add on](assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
 
 
-![slideshow](images/screenshots/slideshow.gif)
+![slideshow](assets/images/screenshots/slideshow.gif)
 
 
 Feature Highlights
