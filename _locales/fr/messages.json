@@ -5,6 +5,10 @@
     "analysis_time": {
         "message": "Temps"
     },
+    "analysis_gap": {
+        "message": "VAP",
+        "description": "IMMUTABLE"
+    },
     "analysis_elapsed": {
         "message": "Écoulé"
     },

@@ -5,6 +5,10 @@
     "analysis_time": {
         "message": "时间"
     },
+    "analysis_gap": {
+        "message": "GAP",
+        "description": "IMMUTABLE"
+    },
     "analysis_elapsed": {
         "message": "过去"
     },

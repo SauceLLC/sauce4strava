@@ -1,6 +1,7 @@
 {
     "app_desc": {"message": "Additional functionality for your cycling and running analysis.  This extension upgrades the Strava™ website."},
     "analysis_time": {"message": "Time"},
+    "analysis_gap": {"message": "GAP"},
     "analysis_elapsed": {"message": "Elapsed"},
     "analysis_elapsed_time_tooltip": {"message": "Elapsed time: Time from start to end of activity"},
     "analysis_elapsed_power_tooltip": {"message": "Average elapsed power: Stops are zero padded"},

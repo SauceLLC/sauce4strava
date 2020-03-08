@@ -5,6 +5,10 @@
     "analysis_time": {
         "message": "Tempo"
     },
+    "analysis_gap": {
+        "message": "PBP",
+        "description": "IMMUTABLE"
+    },
     "analysis_elapsed": {
         "message": "trascorso"
     },

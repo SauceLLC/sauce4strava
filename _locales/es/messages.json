@@ -5,6 +5,10 @@
     "analysis_time": {
         "message": "Hora"
     },
+    "analysis_gap": {
+        "message": "RAP",
+        "description": "IMMUTABLE"
+    },
     "analysis_elapsed": {
         "message": "Transcurrido"
     },
