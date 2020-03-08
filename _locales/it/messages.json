@@ -15,7 +15,8 @@
         "message": "Potenza media trascorsa: le fermate sono a zero"
     },
     "analysis_elapsed_pace_tooltip": {
-        "message": "Ritmo medio trascorso: le soste sono incluse nell'intervallo di tempo"
+        "message": "Velocità medio trascorso: le soste sono incluse nell'intervallo di tempo",
+        "description": "IMMUTABLE"
     },
     "analysis_active_time_tooltip": {
         "message": "Solo tempo attivo"
@@ -24,13 +25,15 @@
         "message": "Potenza attiva media"
     },
     "analysis_active_pace_tooltip": {
-        "message": "Ritmo attivo medio"
+        "message": "Velocità media attiva",
+        "description": "IMMUTABLE"
     },
     "analysis_active_speed_tooltip": {
         "message": "Velocità media attiva"
     },
     "analysis_gap_tooltip": {
-        "message": "Andatura corretta del grado: andatura stimata per terreni pianeggianti"
+        "message": "Passo in base alla pendenza: andatura stimata per terreni pianeggianti",
+        "description": "IMMUTABLE"
     },
     "analysis_np_tooltip": {
         "message": "Normalized Power®: una stima della potenza media potenziale"
@@ -69,7 +72,8 @@
         "message": "Classifica mondiale"
     },
     "analysis_max_power_tooltip": {
-        "message": "massima potenza"
+        "message": "Massima potenza",
+        "description": "IMMUTABLE"
     },
     "analysis_low_hr_tooltip": {
         "message": "Frequenza cardiaca più bassa"
@@ -120,13 +124,16 @@
         "message": "Intervalli di cadenza massimi sostenuti"
     },
     "analysis_peak_vam_tooltip": {
-        "message": "Intervalli di velocità di arrampicata massima sostenuta"
+        "message": "Intervalli di VAM massima sostenuta",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_pace_tooltip": {
-        "message": "Gamme di ritmo massime sostenute"
+        "message": "Intervalli di velocità massimi sostenuti",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_gap_tooltip": {
-        "message": "Gamme di passo regolate di grado massimo sostenuto"
+        "message": "Intervalli di PBP massimi sostenuti",
+        "description": "IMMUTABLE"
     },
     "analysis_watt_estimate_tooltip": {
         "message": "Questi valori vengono calcolati dalle stime della potenza. Per valori precisi è necessario un dispositivo di misurazione della potenza reale."
@@ -177,7 +184,8 @@
         "message": "grafici"
     },
     "analysis_pace": {
-        "message": "Ritmo"
+        "message": "Passo",
+        "description": "IMMUTABLE"
     },
     "analysis_speed": {
         "message": "Velocità"
@@ -201,25 +209,32 @@
         "message": "Cadenza"
     },
     "analysis_peak_power": {
-        "message": "Picco di potenza"
+        "message": "Picco Potenza",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_np": {
-        "message": "Peak NP®"
+        "message": "Picco NP®",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
-        "message": "Peak HR"
+        "message": "Picco Frequenza Cardiaca",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_cadence": {
-        "message": "Picco di cadenza"
+        "message": "Picco Cadenza",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_vam": {
-        "message": "Peak VAM"
+        "message": "Picco VAM",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_pace": {
-        "message": "Picco Pace"
+        "message": "Picco Velocità",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_gap": {
-        "message": "Peak GAP"
+        "message": "Picco PBP",
+        "description": "IMMUTABLE"
     },
     "analysis_watts": {
         "message": "Watts"
