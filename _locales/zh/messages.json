@@ -15,7 +15,8 @@
         "message": "平均耗电量：停靠点为零填充"
     },
     "analysis_elapsed_pace_tooltip": {
-        "message": "平均经过的速度：时间范围内包括停止"
+        "message": "平均经过速度：时间范围内包括停止",
+        "description": "IMMUTABLE"
     },
     "analysis_active_time_tooltip": {
         "message": "仅活动时间"
@@ -24,7 +25,8 @@
         "message": "平均有功功率"
     },
     "analysis_active_pace_tooltip": {
-        "message": "平均活跃步伐"
+        "message": "平均活动速度",
+        "description": "IMMUTABLE"
     },
     "analysis_active_speed_tooltip": {
         "message": "平均活动速度"
@@ -105,7 +107,7 @@
         "message": "输入该运动员的估计体重，然后按Enter。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。"
     },
     "analysis_intensity_tooltip": {
-        "message": "强度因子®"
+        "message": "强度因子"
     },
     "analysis_peak_power_tooltip": {
         "message": "最大持续功率范围"
@@ -123,7 +125,8 @@
         "message": "最大持续爬升速度范围"
     },
     "analysis_peak_pace_tooltip": {
-        "message": "最大持续步伐范围"
+        "message": "最大持续速度范围",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_gap_tooltip": {
         "message": "最大持续成绩调整步幅范围"
@@ -177,7 +180,8 @@
         "message": "图表"
     },
     "analysis_pace": {
-        "message": "步伐"
+        "message": "配速",
+        "description": "IMMUTABLE"
     },
     "analysis_speed": {
         "message": "速度"
@@ -198,28 +202,36 @@
         "message": "心率"
     },
     "analysis_cadence": {
-        "message": "韵律"
+        "message": "踏频",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_power": {
-        "message": "峰值功率"
+        "message": "最佳功率",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_np": {
-        "message": "PeakNP®"
+        "message": "最佳NP®",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
-        "message": "高峰HR"
+        "message": "最大心率",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_cadence": {
-        "message": "高峰踏频"
+        "message": "最大踏频",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_vam": {
-        "message": "高峰VAM"
+        "message": "最佳VAM",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_pace": {
-        "message": "高峰步伐"
+        "message": "最佳速度",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_gap": {
-        "message": "峰值GAP"
+        "message": "最佳GAP",
+        "description": "IMMUTABLE"
     },
     "analysis_watts": {
         "message": "瓦数"
