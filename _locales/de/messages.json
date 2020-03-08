@@ -69,7 +69,8 @@
         "message": "Weltrangliste"
     },
     "analysis_max_power_tooltip": {
-        "message": "maximale Kraft"
+        "message": "Maximale Kraft",
+        "description": "IMMUTABLE"
     },
     "analysis_low_hr_tooltip": {
         "message": "Niedrigste Herzfrequenz"
@@ -111,7 +112,8 @@
         "message": "Maximale Dauerleistungsbereiche"
     },
     "analysis_peak_np_tooltip": {
-        "message": "Maximale normalisierte Power®-Bereiche"
+        "message": "Maximale Normalized Power®",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_hr_tooltip": {
         "message": "Maximal anhaltende Herzfrequenzbereiche"
@@ -126,7 +128,8 @@
         "message": "Maximal anhaltende Tempobereiche"
     },
     "analysis_peak_gap_tooltip": {
-        "message": "Maximaler, an die Steigung angepasster Tempobereich"
+        "message": "Maximaler Auf Steigung angepasstes Tempo",
+        "description": "IMMUTABLE"
     },
     "analysis_watt_estimate_tooltip": {
         "message": "Diese Werte werden aus Leistungsschätzungen berechnet. Für genaue Werte ist ein reales Leistungsmessgerät erforderlich."
@@ -180,16 +183,13 @@
         "message": "Tempo"
     },
     "analysis_speed": {
-        "message": "Geschwindigkeit"
+        "message": "Speed"
     },
     "analysis_samples": {
         "message": "Proben"
     },
     "analysis_beta": {
         "message": "BETA"
-    },
-    "analysis_best_pace": {
-        "message": "Bestes Tempo"
     },
     "analysis_start_of_effort": {
         "message": "Beginn der Bemühungen"
@@ -204,25 +204,32 @@
         "message": "Kadenz"
     },
     "analysis_peak_power": {
-        "message": "Spitzenleistung"
+        "message": "Beste Leistung",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_np": {
-        "message": "Peak NP®"
+        "message": "Beste NP®",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
-        "message": "Peak HR"
+        "message": "Max Puls",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_cadence": {
-        "message": "Spitzenkadenz"
+        "message": "Max Trittfrequenz",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_vam": {
-        "message": "Peak VAM"
+        "message": "Beste VAM",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_pace": {
-        "message": "Höchstgeschwindigkeit"
+        "message": "Bestes Tempo",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_gap": {
-        "message": "Peak GAP"
+        "message": "Beste SAT",
+        "description": "IMMUTABLE"
     },
     "analysis_watts": {
         "message": "Watt"
@@ -234,7 +241,8 @@
         "message": "Gewicht"
     },
     "analysis_change": {
-        "message": "Veränderung"
+        "message": "Variation",
+        "description": "IMMUTABLE"
     },
     "analysis_view": {
         "message": "Aussicht"

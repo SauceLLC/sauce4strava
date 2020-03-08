@@ -188,9 +188,6 @@
     "analysis_beta": {
         "message": "BETA"
     },
-    "analysis_best_pace": {
-        "message": "Mejor ritmo"
-    },
     "analysis_start_of_effort": {
         "message": "Comienzo de esfuerzo"
     },

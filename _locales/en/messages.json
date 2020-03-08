@@ -62,7 +62,6 @@
     "analysis_speed": {"message": "Speed"},
     "analysis_samples": {"message": "Samples"},
     "analysis_beta": {"message": "BETA"},
-    "analysis_best_pace": {"message": "Best Pace"},
     "analysis_start_of_effort": {"message": "Start of effort"},
     "analysis_elapsed_time": {"message": "Elapsed Time"},
     "analysis_heartrate": {"message": "Heart Rate"},
