@@ -17,17 +17,17 @@
     "analysis_elapsed_pace_tooltip": {
         "message": "平均经过的速度：时间范围内包括停止"
     },
-    "analysis_paused_time_tooltip": {
-        "message": "暂停时间：时间停止或不动"
+    "analysis_active_time_tooltip": {
+        "message": "仅活动时间"
     },
-    "analysis_moving_time_tooltip": {
-        "message": "移动时间：仅活动时间"
+    "analysis_active_power_tooltip": {
+        "message": "平均有功功率"
     },
-    "analysis_moving_power_tooltip": {
-        "message": "平均移动功率：仅活动时间"
+    "analysis_active_pace_tooltip": {
+        "message": "平均活跃步伐"
     },
-    "analysis_moving_pace_tooltip": {
-        "message": "平均移动速度：仅活动时间"
+    "analysis_active_speed_tooltip": {
+        "message": "平均活动速度"
     },
     "analysis_gap_tooltip": {
         "message": "坡度调整步幅：平坦地形的估计步速"
@@ -46,6 +46,9 @@
     },
     "analysis_elevation_loss_tooltip": {
         "message": "海拔高度下降：下降"
+    },
+    "analysis_elevation_avg_tooltip": {
+        "message": "平均海拔"
     },
     "analysis_grade_tooltip": {
         "message": "坡度"
@@ -128,17 +131,14 @@
     "analysis_watt_estimate_tooltip": {
         "message": "这些值是根据瓦特数估算得出的。为了获得准确的值，需要使用有功功率测量设备。"
     },
-    "analysis_paused": {
-        "message": "已暂停"
-    },
     "analysis_stops": {
         "message": "停止"
     },
     "analysis_idle": {
         "message": "闲"
     },
-    "analysis_moving": {
-        "message": "移动"
+    "analysis_active": {
+        "message": "活性"
     },
     "analysis_stats": {
         "message": "统计资料"
@@ -166,6 +166,9 @@
     },
     "analysis_data": {
         "message": "数据"
+    },
+    "analysis_rank": {
+        "message": "秩"
     },
     "analysis_raw_data": {
         "message": "原始数据"

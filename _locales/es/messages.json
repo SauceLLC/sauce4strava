@@ -17,17 +17,17 @@
     "analysis_elapsed_pace_tooltip": {
         "message": "Ritmo promedio transcurrido: las paradas se incluyen en el intervalo de tiempo"
     },
-    "analysis_paused_time_tooltip": {
-        "message": "Tiempo en pausa: el tiempo se detuvo o no se movió"
+    "analysis_active_time_tooltip": {
+        "message": "Solo tiempo activo"
     },
-    "analysis_moving_time_tooltip": {
-        "message": "Tiempo de movimiento: solo tiempo activo"
+    "analysis_active_power_tooltip": {
+        "message": "Potencia activa media"
     },
-    "analysis_moving_power_tooltip": {
-        "message": "Potencia de movimiento promedio: solo tiempo activo"
+    "analysis_active_pace_tooltip": {
+        "message": "Ritmo activo medio"
     },
-    "analysis_moving_pace_tooltip": {
-        "message": "Ritmo de movimiento promedio: solo tiempo activo"
+    "analysis_active_speed_tooltip": {
+        "message": "Velocidad activa media"
     },
     "analysis_gap_tooltip": {
         "message": "Ritmo ajustado de pendiente: ritmo estimado para terreno plano"
@@ -46,6 +46,9 @@
     },
     "analysis_elevation_loss_tooltip": {
         "message": "Elevación perdida: descendente"
+    },
+    "analysis_elevation_avg_tooltip": {
+        "message": "Elevación promedio"
     },
     "analysis_grade_tooltip": {
         "message": "Grado de colina"
@@ -128,17 +131,14 @@
     "analysis_watt_estimate_tooltip": {
         "message": "Estos valores se calculan a partir de estimaciones de potencia. Para valores precisos se requiere un dispositivo de medición de potencia real."
     },
-    "analysis_paused": {
-        "message": "Pausado"
-    },
     "analysis_stops": {
         "message": "Paradas"
     },
     "analysis_idle": {
         "message": "Ocioso"
     },
-    "analysis_moving": {
-        "message": "Moviente"
+    "analysis_active": {
+        "message": "Activo"
     },
     "analysis_stats": {
         "message": "Estadísticas"
@@ -166,6 +166,9 @@
     },
     "analysis_data": {
         "message": "Datos"
+    },
+    "analysis_rank": {
+        "message": "Rango"
     },
     "analysis_raw_data": {
         "message": "datos en bruto"

@@ -17,17 +17,17 @@
     "analysis_elapsed_pace_tooltip": {
         "message": "Durchschnittliches verstrichenes Tempo: Stopps sind in der Zeitspanne enthalten"
     },
-    "analysis_paused_time_tooltip": {
-        "message": "Angehaltene Zeit: Die Zeit ist angehalten oder bewegt sich nicht"
+    "analysis_active_time_tooltip": {
+        "message": "Nur aktive Zeit"
     },
-    "analysis_moving_time_tooltip": {
-        "message": "Bewegungszeit: Nur aktive Zeit"
+    "analysis_active_power_tooltip": {
+        "message": "Durchschnittliche Wirkleistung"
     },
-    "analysis_moving_power_tooltip": {
-        "message": "Durchschnittliche Bewegungsleistung: Nur aktive Zeit"
+    "analysis_active_pace_tooltip": {
+        "message": "Durchschnittliches aktives Tempo"
     },
-    "analysis_moving_pace_tooltip": {
-        "message": "Durchschnittliches Bewegungstempo: Nur aktive Zeit"
+    "analysis_active_speed_tooltip": {
+        "message": "Durchschnittliche aktive Geschwindigkeit"
     },
     "analysis_gap_tooltip": {
         "message": "Gradangepasstes Tempo: Geschätztes Tempo für flaches Gelände"
@@ -46,6 +46,9 @@
     },
     "analysis_elevation_loss_tooltip": {
         "message": "Elevation Lost: absteigend"
+    },
+    "analysis_elevation_avg_tooltip": {
+        "message": "Durchschnittliche Höhe"
     },
     "analysis_grade_tooltip": {
         "message": "Grad des Hügels"
@@ -128,17 +131,14 @@
     "analysis_watt_estimate_tooltip": {
         "message": "Diese Werte werden aus Leistungsschätzungen berechnet. Für genaue Werte ist ein reales Leistungsmessgerät erforderlich."
     },
-    "analysis_paused": {
-        "message": "Pause"
-    },
     "analysis_stops": {
         "message": "Stopps"
     },
     "analysis_idle": {
         "message": "Leerlauf"
     },
-    "analysis_moving": {
-        "message": "Ziehen um"
+    "analysis_active": {
+        "message": "Aktiv"
     },
     "analysis_stats": {
         "message": "Statistiken"
@@ -166,6 +166,9 @@
     },
     "analysis_data": {
         "message": "Daten"
+    },
+    "analysis_rank": {
+        "message": "Rang"
     },
     "analysis_raw_data": {
         "message": "Rohdaten"
