@@ -183,10 +183,12 @@
         "message": "graphiques"
     },
     "analysis_pace": {
-        "message": "Allure"
+        "message": "Allure",
+        "description": "IMMUTABLE"
     },
     "analysis_speed": {
-        "message": "Vitesse"
+        "message": "Vitesse",
+        "description": "IMMUTABLE"
     },
     "analysis_samples": {
         "message": "Échantillons"

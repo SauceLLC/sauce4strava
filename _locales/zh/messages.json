@@ -107,7 +107,8 @@
         "message": "输入该运动员的估计体重，然后按Enter。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。"
     },
     "analysis_intensity_tooltip": {
-        "message": "强度因子"
+        "message": "强度因子",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_power_tooltip": {
         "message": "最大持续功率范围"
