@@ -1,27 +1,27 @@
 <ul class="inline-stats section secondary-stats sauce-stats">
     <% if (obj.np) { %>
         <li title="{{{np_tooltip}}}">
-            <strong>{{Math.round(np).toLocaleString()}}<abbr class="unit">w</abbr></strong>
+            <strong>{{formatNumber(np, 0)}}<abbr class="unit">w</abbr></strong>
             <div class="label">NP®</div>
         </li>
     <% } else if (obj.power) { %>
         <li>
-            <strong>{{Math.round(power).toLocaleString()}}<abbr class="unit">w</abbr></strong>
-            <div class="label">Power</div>
+            <strong>{{formatNumber(power, 0)}}<abbr class="unit">w</abbr></strong>
+            <div class="label">{{{power}}}</div>
         </li>
     <% } %>
 
 
     <% if (obj.intensity) { %>
         <li title="{{{intensity_tooltip}}}">
-            <strong>{{Math.round(intensity * 100)}}<abbr class="unit">%</abbr></strong>
+            <strong>{{formatNumber(intensity * 100, 0)}}<abbr class="unit">%</abbr></strong>
             <div class="label">IF®</div>
         </li>
     <% } %>
 
     <% if (obj.tss) { %>
         <li title="{{{tss_tooltip}}}">
-            <strong>{{Math.round(tss)}}</strong>
+            <strong>{{formatNumber(tss, 0)}}</strong>
             <div class="label">TSS®</div>
         </li>
     <% } %>
@@ -32,7 +32,7 @@
         <li>
             <strong class="sauce-editable-field ftp">
                 <a class="origin-{{ftpOrigin}}"
-                   title="{{{ftp_link_tooltip}}}">{{Math.round(ftp).toLocaleString()}}</a><!--
+                   title="{{{ftp_link_tooltip}}}">{{formatNumber(ftp, 0)}}</a><!--
                 --><input data-width="5ch" type="text" value="{{ftp}}"
                        title="{{{ftp_input_tooltip}}}"/><!--
                 --><abbr class="unit" title="Watts">W</abbr>

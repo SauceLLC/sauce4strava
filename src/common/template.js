@@ -41,6 +41,18 @@
     const escapeChar = match => '\\' + escapes[match];
     const escapeRegExp = /\\|'|\r|\n|\u2028|\u2029/g;
 
+    ns.helpers = {
+        formatNumber: function(value, decimalPlaces) {
+            if (decimalPlaces == null) {
+                return value.toLocaleString();
+            } else if (decimalPlaces === 0) {
+                return Math.round(value).toLocaleString();
+            } else {
+                return Number(value.toFixed(decimalPlaces)).toLocaleString();
+            }
+        }
+    };
+
     ns.compile = (text, settingsOverrides) => {
         const settings = Object.assign({}, {
             evaluate: /<%([\s\S]+?)%>/g,
@@ -48,7 +60,8 @@
             escape: /\{\{(.+?)\}\}/g,
             locale: /\{\{\{(.+?)\}\}\}/g,
             localeLookup: /\{\{\{\[(.+?)\]\}\}\}/g,
-            localePrefix: ''
+            localePrefix: '',
+            helpers: ns.helpers,
         }, settingsOverrides);
         const noMatch = /(.)^/;
 
@@ -65,7 +78,8 @@
         code.push(`
             let __t;
             const __p = [];
-            with(obj || {}) {
+            const context = Object.assign({}, helpers, obj);
+            with(context) {
         `);
         let index = 0;
         text.replace(matcher, (match, localeLookup, locale, escape, interpolate, evaluate, offset) => {
@@ -101,14 +115,14 @@
         const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
         const source = code.join('');
         try {
-            render = new AsyncFunction('obj', 'sauce', source);
+            render = new AsyncFunction('obj', 'sauce', 'helpers', source);
         } catch (e) {
             e.source = source;
             throw e;
         }
 
         const template = function(data) {
-            return render.call(this, data, sauce);
+            return render.call(this, data, sauce, settings.helpers);
         };
 
         // Provide the compiled source as a convenience for precompilation.

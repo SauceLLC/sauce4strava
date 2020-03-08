@@ -10,10 +10,10 @@
             <tr title="{{{wkg_tooltip}}}">
                 <td>{{{Watts}}}/kg</td>
                 <td class="rank_holder">
-                    <span>{{power.estimate ? '~' : ''}}{{power.elapsedWKg.toFixed(1)}}</span>
+                    <span>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}</span>
                     <% if (power.rank && power.rank.badge && !power.estimate) { %>
                         <img src="{{power.rank.badge}}" class="rank_badge"
-                             title="{{{ranking_tooltip}}}: {{Math.round(power.rank.level * 100)}}%"/>
+                             title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 0)}}%"/>
                     <% } %>
                 </td>
             </tr>
@@ -22,10 +22,10 @@
         <tr title="{{{elapsed_power_tooltip}}}">
             <td>{{{power}}}</td>
             <td>
-                {{power.estimate ? '~' : ''}}{{Math.round(power.elapsedAvg).toLocaleString()}}<abbr class="unit short">w</abbr>
+                {{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedAvg, 0)}}<abbr class="unit short">w</abbr>
                 <% if (!power.estimate) { %>
                     <sup class="sauce-positive" title="{{{max_power_tooltip}}}">
-                        {{Math.round(power.max).toLocaleString()}}
+                        {{formatNumber(power.max, 0)}}
                     </sup>
                 <% } %>
             </td>
@@ -34,7 +34,7 @@
         <% if (power.np && !power.estimate) { %>
             <tr title="{{{np_tooltip}}}">
                 <td>NP®</td>
-                <td>{{Math.round(power.np).toLocaleString()}}<abbr class="unit short">w</abbr></td>
+                <td>{{formatNumber(power.np, 0)}}<abbr class="unit short">w</abbr></td>
             </tr>
         <% } %>
     <% } %>
@@ -75,7 +75,7 @@
                     {{elevation.loss}}<abbr class="unit short">{{elevationUnit}}</abbr>
                 </sub>
                 <span title="{{{grade_tooltip}}}">
-                    {{Math.round(elevation.grade)}}<abbr class="unit short">%</abbr>
+                    {{formatNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
                 </span>
                 <sup class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
                     {{elevation.gain}}<abbr class="unit short">{{elevationUnit}}</abbr>
@@ -87,7 +87,7 @@
             <tr title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                 <td>VAM</td>
                 <td>
-                    {{Math.round(elevation.vam).toLocaleString()}}<abbr class="unit short">Vm/h</abbr>
+                    {{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr>
                 </td>
             </tr>
         <% } %>

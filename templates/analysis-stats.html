@@ -41,28 +41,28 @@
         <line class="heading" title="{{{active_power_tooltip}}}">
             <key>{{{power}}}</key>
             <value>
-                {{power.estimate ? '~' : ''}}{{Math.round(power.activeAvg).toLocaleString()}}<abbr class="unit">w</abbr>
+                {{power.estimate ? '~' : ''}}{{formatNumber(power.activeAvg, 0)}}<abbr class="unit">w</abbr>
             </value>
         </line>
 
         <% if (power.elapsedAvg && Math.round(power.elapsedAvg) !== Math.round(power.activeAvg)) { %>
             <line title="{{{elapsed_power_tooltip}}}">
                 <key>{{{elapsed}}}</key>
-                <value>{{power.estimate ? '~' : ''}}{{Math.round(power.elapsedAvg).toLocaleString()}}<abbr class="unit">w</abbr></value>
+                <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedAvg, 0)}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
 
         <% if (power.activeWKg) { %>
             <line title="{{{wkg_tooltip}}}">
                 <key>{{{watts}}}/kg</key>
-                <value>{{power.activeWKg.toFixed(1)}}</value>
+                <value>{{formatNumber(power.activeWKg, 1)}}</value>
             </line>
         <% } %>
 
         <% if (obj.power.np) { %>
             <line title="{{{np_tooltip}}}">
                 <key>NP®</key>
-                <value>{{Math.round(power.np).toLocaleString()}}<abbr class="unit">w</abbr></value>
+                <value>{{formatNumber(power.np, 0)}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
     </div>
@@ -72,18 +72,18 @@
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{energy_tooltip}}}">
             <key>{{{energy}}}</key>
-            <value>{{Math.round(energy.kj).toLocaleString()}}<abbr class="unit">kJ</abbr></value>
+            <value>{{formatNumber(energy.kj, 0)}}<abbr class="unit">kJ</abbr></value>
         </line>
 
         <line title="{{{energy_rate_tooltip}}}">
             <key>{{{rate}}}</key>
-            <value>{{Math.round(energy.kjHour).toLocaleString()}}<abbr class="unit">kJ/h</abbr></value>
+            <value>{{formatNumber(energy.kjHour, 0)}}<abbr class="unit">kJ/h</abbr></value>
         </line>
 
         <% if (energy.tss) { %>
             <line title="{{{tss_tooltip}}}">
                 <key>TSS®</key>
-                <value>{{Math.round(energy.tss).toLocaleString()}}</value>
+                <value>{{formatNumber(energy.tss, 0)}}</value>
             </line>
         <% } %>
     </div>
@@ -121,7 +121,7 @@
         <% if (elevation.grade && Math.abs(elevation.grade) >= 1) { %>
             <line title="{{{grade_tooltip}}}">
                 <key>{{{grade}}}</key>
-                <value>{{elevation.grade.toFixed(1)}}<abbr class="unit">%</abbr></value>
+                <value>{{formatNumber(elevation.grade, 1)}}<abbr class="unit">%</abbr></value>
             </line>
         <% } %>
 
@@ -129,7 +129,7 @@
             <line title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                 <key>VAM</key>
                 <value>
-                    {{Math.round(elevation.vam).toLocaleString()}}<abbr class="unit">Vm/h</abbr>
+                    {{formatNumber(elevation.vam, 0)}}<abbr class="unit">Vm/h</abbr>
                 </value>
             </line>
         <% } %>
@@ -157,11 +157,11 @@
     <div class="sauce-data-tuple sauce-rank-badge">
         <line class="heading">
             <key>{{{rank}}}</key>
-            <value>{{Math.round(power.rank.level * 100)}}%</value>
+            <value>{{formatNumber(power.rank.level * 100, 1)}}%</value>
         </line>
         <% if (power.rank.badge) { %>
             <img src="{{power.rank.badge}}" class="rank_badge"
-                 title="{{{ranking_tooltip}}}: {{Math.round(power.rank.level * 100)}}%"/>
+                 title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 1)}}%"/>
         <% } %>
     </div>
 <% } %>

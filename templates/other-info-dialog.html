@@ -47,7 +47,7 @@
                 <sub class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
                     {{elevation.loss}}{{elevationUnit}}
                 </sub>
-                <span title="{{{grade_tooltip}}}">{{Math.round(elevation.grade)}}<small>%</small></span>
+                <span title="{{{grade_tooltip}}}">{{formatNumber(elevation.grade, 1)}}<small>%</small></span>
                 <sup class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
                     {{elevation.gain}}{{elevationUnit}}
                 </sup>
@@ -58,7 +58,7 @@
             <tr title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                 <td>VAM</td>
                 <td>
-                    {{Math.round(elevation.vam).toLocaleString()}}<abbr class="unit short">Vm/h</abbr>
+                    {{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr>
                 </td>
             </tr>
         <% } %>
