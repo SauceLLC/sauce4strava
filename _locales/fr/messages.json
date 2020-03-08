@@ -24,13 +24,15 @@
         "message": "Puissance active moyenne"
     },
     "analysis_active_pace_tooltip": {
-        "message": "Rythme actif moyen"
+        "message": "Allure actif moyen",
+        "description": "IMMUTABLE"
     },
     "analysis_active_speed_tooltip": {
         "message": "Vitesse active moyenne"
     },
     "analysis_gap_tooltip": {
-        "message": "Allure ajustée en pente: allure estimée pour un terrain plat"
+        "message": "Vitesse ajustée selon la pente: allure estimée pour un terrain plat",
+        "description": "IMMUTABLE"
     },
     "analysis_np_tooltip": {
         "message": "Normalized Power®: une estimation de la puissance moyenne potentielle"
@@ -123,10 +125,12 @@
         "message": "Plages de vitesse de montée maximales soutenues"
     },
     "analysis_peak_pace_tooltip": {
-        "message": "Plages de rythme soutenu maximum"
+        "message": "Plages de vitesses soutenues maximales",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_gap_tooltip": {
-        "message": "Gammes de cadence ajustées en pente maximale"
+        "message": "Vitesse max ajustée selon la pente",
+        "description": "IMMUTABLE"
     },
     "analysis_watt_estimate_tooltip": {
         "message": "Ces valeurs sont calculées à partir des estimations de puissance. Pour des valeurs précises, un appareil de mesure de la puissance réelle est requis."
@@ -138,7 +142,8 @@
         "message": "Tourner au ralenti"
     },
     "analysis_active": {
-        "message": "actif"
+        "message": "Actif",
+        "description": "IMMUTABLE"
     },
     "analysis_stats": {
         "message": "Statistiques"
@@ -165,7 +170,8 @@
         "message": "estimé"
     },
     "analysis_data": {
-        "message": "Les données"
+        "message": "Données",
+        "description": "IMMUTABLE"
     },
     "analysis_rank": {
         "message": "Rang"
@@ -177,10 +183,10 @@
         "message": "graphiques"
     },
     "analysis_pace": {
-        "message": "Rythme"
+        "message": "Allure"
     },
     "analysis_speed": {
-        "message": "La vitesse"
+        "message": "Vitesse"
     },
     "analysis_samples": {
         "message": "Échantillons"
@@ -195,31 +201,39 @@
         "message": "Temps écoulé"
     },
     "analysis_heartrate": {
-        "message": "Rythme cardiaque"
+        "message": "Fréquence Cardiaque",
+        "description": "IMMUTABLE"
     },
     "analysis_cadence": {
         "message": "Cadence"
     },
     "analysis_peak_power": {
-        "message": "Puissance de crête"
+        "message": "Puissance Apogée",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_np": {
-        "message": "Peak NP®"
+        "message": "NP® Apogée",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
-        "message": "Peak HR"
+        "message": "Fréquence Cardiaque Apogée",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_cadence": {
-        "message": "Cadence maximale"
+        "message": "Cadence Apogée",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_vam": {
-        "message": "Peak VAM"
+        "message": "VAM Apogée",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_pace": {
-        "message": "Peak Pace"
+        "message": "Vitesse Apogée",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_gap": {
-        "message": "Peak GAP"
+        "message": "VAP Apogée",
+        "description": "IMMUTABLE"
     },
     "analysis_watts": {
         "message": "Watts"
@@ -231,7 +245,8 @@
         "message": "Poids"
     },
     "analysis_change": {
-        "message": "Changement"
+        "message": "Ècart",
+        "description": "IMMUTABLE"
     },
     "analysis_view": {
         "message": "Vue"
@@ -270,10 +285,12 @@
         "message": "Une analyse"
     },
     "time_sec": {
-        "message": "seconde"
+        "message": "sec",
+        "description": "IMMUTABLE"
     },
     "time_secs": {
-        "message": "secondes"
+        "message": "sec",
+        "description": "IMMUTABLE"
     },
     "time_min": {
         "message": "min"
@@ -294,7 +311,8 @@
         "message": "journées"
     },
     "time_week": {
-        "message": "la semaine"
+        "message": "semaine",
+        "description": "IMMUTABLE"
     },
     "time_weeks": {
         "message": "semaines"
