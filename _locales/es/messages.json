@@ -181,7 +181,8 @@
         "message": "gráficos"
     },
     "analysis_pace": {
-        "message": "Paso"
+        "message": "Ritmo",
+        "description": "IMMUTABLE"
     },
     "analysis_speed": {
         "message": "Velocidad"

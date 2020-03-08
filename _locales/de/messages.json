@@ -10,7 +10,8 @@
         "description": "IMMUTABLE"
     },
     "analysis_elapsed": {
-        "message": "Abgelaufen"
+        "message": "Verstrichen",
+        "description": "IMMUTABLE"
     },
     "analysis_elapsed_time_tooltip": {
         "message": "Verstrichene Zeit: Zeit vom Beginn bis zum Ende der Aktivität"
