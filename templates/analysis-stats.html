@@ -1,79 +1,68 @@
 <div class="sauce-brand-sidebar">
+    <div class="sauce-label sauce-title">Sauce</div>
     <div class="sauce-logo"><img src="{{logo}}"/></div>
-    <div class="sauce-label">
-        Sauce<br/>
-        {{{stats}}}
-    </div>
 </div>
 
 <div class="sauce-data-tuple">
-    <line class="heading" title="{{{moving_time_tooltip}}}">
-        <key>{{{moving}}}</key>
-        <value>{{moving}}</value>
+    <line class="heading" title="{{{active_time_tooltip}}}">
+        <key>{{{active}}}</key>
+        <value>{{active}}</value>
     </line>
 
-    <% if (obj.paused) { %>
-        <line title="{{{paused_time_tooltip}}}">
-            <key>{{{paused}}}</key>
-            <value>{{paused}}</value>
+    <% if (elapsed !== active) { %>
+        <line title="{{{elapsed_time_tooltip}}}">
+            <key>{{{elapsed}}}</key>
+            <value>{{elapsed}}</value>
         </line>
     <% } %>
 
-    <% if (obj.stops) { %>
-        <line>
-            <key>{{{stops}}}</key>
-            <value>{{stops}}</value>
+    <% if (obj.pace) { %>
+        <% if (isSpeed) { %>
+            <line title="{{{active_speed_tooltip}}}">
+                <key>{{{speed}}}</key>
+        <% } else { %>
+            <line title="{{{active_pace_tooltip}}}">
+                <key>{{{pace}}}</key>
+        <% } %>
+            <value>{{pace.active}}<abbr class="unit">{{paceUnit}}</abbr></value>
         </line>
-    <% } %>
-
-</div>
-
-<% if (obj.pace) { %>
-    <div class="sauce-data-tuple">
-        <line class="heading" title="{{{moving_pace_tooltip}}}">
-            <key>{{{pace}}}</key>
-            <value>{{pace.moving}}<abbr class="unit">{{paceUnit}}</abbr></value>
-        </line>
-
+    
         <% if (pace.gap) { %>
             <line title="{{{gap_tooltip}}}">
                 <key>GAP</key>
                 <value>{{pace.gap}}<abbr class="unit">{{paceUnit}}</abbr></value>
             </line>
         <% } %>
-
-        <% if (pace.elapsed && pace.elapsed !== pace.moving) { %>
-            <line title="{{{elapsed_pace_tooltip}}}">
-                <key>{{{elapsed}}}</key>
-                <value>{{pace.elapsed}}<abbr class="unit">{{paceUnit}}</abbr></value>
-            </line>
-        <% } %>
-    </div>
-<% } %>
+    <% } %>
+</div>
 
 <% if (obj.power) { %>
     <div class="sauce-data-tuple">
-        <line class="heading" title="{{{moving_power_tooltip}}}">
+        <line class="heading" title="{{{active_power_tooltip}}}">
             <key>{{{power}}}</key>
             <value>
-                {{power.estimate ? '~' : ''}}{{Math.round(power.movingAvg).toLocaleString()}}<abbr class="unit">w</abbr>
-                <% if (power.movingWKg) { %>
-                    | {{power.movingWKg.toFixed(1)}}<abbr class="unit">w/kg</abbr>
-                <% } %>
+                {{power.estimate ? '~' : ''}}{{Math.round(power.activeAvg).toLocaleString()}}<abbr class="unit">w</abbr>
             </value>
         </line>
+
+        <% if (power.elapsedAvg && Math.round(power.elapsedAvg) !== Math.round(power.activeAvg)) { %>
+            <line title="{{{elapsed_power_tooltip}}}">
+                <key>{{{elapsed}}}</key>
+                <value>{{power.estimate ? '~' : ''}}{{Math.round(power.elapsedAvg).toLocaleString()}}<abbr class="unit">w</abbr></value>
+            </line>
+        <% } %>
+
+        <% if (power.activeWKg) { %>
+            <line title="{{{wkg_tooltip}}}">
+                <key>{{{watts}}}/kg</key>
+                <value>{{power.activeWKg.toFixed(1)}}</value>
+            </line>
+        <% } %>
 
         <% if (obj.power.np) { %>
             <line title="{{{np_tooltip}}}">
                 <key>NP®</key>
                 <value>{{Math.round(power.np).toLocaleString()}}<abbr class="unit">w</abbr></value>
-            </line>
-        <% } %>
-
-        <% if (power.elapsedAvg && power.elapsedAvg !== power.movingAvg) { %>
-            <line title="{{{elapsed_power_tooltip}}}">
-                <key>{{{elapsed}}}</key>
-                <value>{{power.estimate ? '~' : ''}}{{Math.round(power.elapsedAvg).toLocaleString()}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
     </div>
@@ -108,6 +97,11 @@
     <div class="sauce-data-tuple">
         <line class="heading">
             <key>{{{elevation}}}</key>
+            <value title="{{{elevation_avg_tooltip}}}">~{{elevation.avg}}<abbr class="unit">{{elUnit}}</abbr></value>
+        </line>
+
+        <line>
+            <key>{{{change}}}</key>
             <value>
                 <% if (elevation.gain && elevation.loss) { %>
                     <span class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
@@ -159,9 +153,15 @@
     </line>
 </div>
 
-<% if (supportsRankBadge && obj.power && power.rank && power.rank.badge && !power.estimate) { %>
-    <div class="sauce-data-tuple vcentered sauce-rank-badge">
-        <img src="{{power.rank.badge}}" class="rank_badge"
-             title="{{{ranking_tooltip}}}: {{Math.round(power.rank.level * 100)}}%"/>
+<% if (supportsRankBadge && obj.power && !power.estimate && power.rank && power.rank.level > 0) { %>
+    <div class="sauce-data-tuple sauce-rank-badge">
+        <line class="heading">
+            <key>{{{rank}}}</key>
+            <value>{{Math.round(power.rank.level * 100)}}%</value>
+        </line>
+        <% if (power.rank.badge) { %>
+            <img src="{{power.rank.badge}}" class="rank_badge"
+                 title="{{{ranking_tooltip}}}: {{Math.round(power.rank.level * 100)}}%"/>
+        <% } %>
     </div>
 <% } %>

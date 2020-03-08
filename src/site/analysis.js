@@ -469,9 +469,9 @@ sauce.ns('analysis', ns => {
         const unit = ctx.hrFormatter.shortUnitKey();
         const rows = [];
         for (const range of ranges.filter(x => x.value >= minHRTime)) {
-            const roll = sauce.data.peakAverage(range.value, timeStream, hrStream, {moving: true});
+            const roll = sauce.data.peakAverage(range.value, timeStream, hrStream, {active: true});
             if (roll) {
-                const value = Math.round(roll.avg({moving: true})).toLocaleString();
+                const value = Math.round(roll.avg({active: true})).toLocaleString();
                 rows.push(_rangeRollToRow({range, roll, value, unit}));
             }
         }
@@ -484,9 +484,9 @@ sauce.ns('analysis', ns => {
         const rows = [];
         for (const range of ranges.filter(x => x.value >= minHRTime)) {
             const roll = sauce.data.peakAverage(range.value, timeStream, cadenceStream,
-                {moving: true, ignoreZeros: true});
+                {active: true, ignoreZeros: true});
             if (roll) {
-                const value = ctx.cadenceFormatter.format(roll.avg({moving: true}));
+                const value = ctx.cadenceFormatter.format(roll.avg({active: true}));
                 rows.push(_rangeRollToRow({range, roll, value, unit}));
             }
         }
@@ -569,19 +569,19 @@ sauce.ns('analysis', ns => {
         let tss;
         let np;
         let intensity;
-        if (wattsStream && !isWattEstimate) {
+        if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            np = corrected && corrected.np();
+            np = corrected && supportsNP() && corrected.np();
             if (corrected && ctx.ftp) {
                 if (np) {
                     // Calculate TSS based on elapsed time when NP is being used.
                     tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
                     intensity = np / ctx.ftp;
                 } else {
-                    // Calculate TSS based on moving time when just avg is available.
-                    const movingTime = await getMovingTime();
-                    const power = corrected.kj() * 1000 / movingTime;
-                    tss = sauce.power.calcTSS(power, movingTime, ctx.ftp);
+                    // Calculate TSS based on active time when just avg is available.
+                    const activeTime = await getActiveTime();
+                    const power = corrected.kj() * 1000 / activeTime;
+                    tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
                     intensity = power / ctx.ftp;
                 }
             }
@@ -723,7 +723,7 @@ sauce.ns('analysis', ns => {
 
     async function startOtherActivity() {
         const wattsStream = await fetchStream('watts');
-        const movingTime = await getMovingTime();
+        const activeTime = await getActiveTime();
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
         const altStream = await fetchSmoothStream('altitude');
@@ -734,12 +734,12 @@ sauce.ns('analysis', ns => {
         let power;
         if (wattsStream) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            power = corrected && corrected.kj() * 1000 / movingTime;
+            power = corrected && corrected.kj() * 1000 / activeTime;
         }
         let tss;
         let intensity;
         if (power && ctx.ftp) {
-            tss = sauce.power.calcTSS(power, movingTime, ctx.ftp);
+            tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
             intensity = power / ctx.ftp;
         }
         await renderTertiaryStats({
@@ -798,7 +798,7 @@ sauce.ns('analysis', ns => {
 
     async function startRunActivity() {
         let wattsStream = await fetchStream('watts');
-        const movingTime = await getMovingTime();
+        const activeTime = await getActiveTime();
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
         const altStream = await fetchSmoothStream('altitude');
@@ -809,13 +809,7 @@ sauce.ns('analysis', ns => {
         const distance = streamDelta(distStream);
         const isWattEstimate = !wattsStream;
         let power;
-        if (wattsStream) {
-            const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            power = corrected && corrected.kj() * 1000 / movingTime;
-        } else if (ctx.weight && gradeDistStream) {
-            const gradeDistance = streamDelta(gradeDistStream);
-            const kj = sauce.pace.work(ctx.weight, gradeDistance);
-            power = kj * 1000 / movingTime;
+        if (!wattsStream && ctx.weight && gradeDistStream) {
             wattsStream = [0];
             for (let i = 1; i < gradeDistStream.length; i++) {
                 const dist = gradeDistStream[i] - gradeDistStream[i - 1];
@@ -825,10 +819,14 @@ sauce.ns('analysis', ns => {
             }
             pageView.streams().streamData.add('watts_calc', wattsStream);
         }
+        if (wattsStream) {
+            const corrected = sauce.power.correctedPower(timeStream, wattsStream);
+            power = corrected && corrected.kj() * 1000 / activeTime;
+        }
         let tss;
         let intensity;
         if (power && ctx.ftp) {
-            tss = sauce.power.calcTSS(power, movingTime, ctx.ftp);
+            tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
             intensity = power / ctx.ftp;
         }
         await renderTertiaryStats({
@@ -1924,10 +1922,18 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function getMovingTime(start, end) {
+    async function getActiveTime(start, end) {
         const timeStream = await fetchStream('time', start, end);
         const movingStream = await fetchStream('moving', start, end);
-        return sauce.data.movingTime(timeStream, movingStream);
+        const cadenceStream = await fetchStream('cadence', start, end);
+        const wattsStream = await fetchStream('watts', start, end);
+        const activeStream = [];
+        for (let i = 0; i < movingStream.length; i++) {
+            activeStream.push(movingStream[i] ||
+                !!(cadenceStream && cadenceStream[i]) ||
+                !!(wattsStream && wattsStream[i]));
+        }
+        return sauce.data.activeTime(timeStream, activeStream);
     }
 
 
@@ -1938,7 +1944,8 @@ sauce.ns('analysis', ns => {
                 gain: gain > 1 ? humanElevation(gain) : 0,
                 loss: loss && humanElevation(loss),
                 grade: ((gain - loss) / distance) * 100,
-                vam: elapsed >= minVAMTime ? (gain / elapsed) * 3600 : 0
+                vam: elapsed >= minVAMTime ? (gain / elapsed) * 3600 : 0,
+                avg: humanElevation(sauce.data.avg(altStream))
             };
         }
     }
@@ -1956,43 +1963,17 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function powerData(kj, moving, elapsed, extra) {
-        const movingAvg = moving ? kj * 1000 / moving : null;
+    function powerData(kj, active, elapsed, extra) {
+        const activeAvg = active ? kj * 1000 / active : null;
         const elapsedAvg = elapsed ? kj * 1000 / elapsed : null;
         return Object.assign({
-            movingAvg,
+            activeAvg,
             elapsedAvg,
-            movingWKg: (ctx.weight && movingAvg != null) && movingAvg / ctx.weight,
+            activeWKg: (ctx.weight && activeAvg != null) && activeAvg / ctx.weight,
             elapsedWKg: (ctx.weight && elapsedAvg != null) && elapsedAvg / ctx.weight,
             rank: (ctx.weight && elapsedAvg != null) &&
                 sauce.power.rank(elapsed, elapsedAvg / ctx.weight, ctx.gender)
         }, extra);
-    }
-
-
-    function countStops(movingStream) {
-        let stops = 0;
-        const movingIter = movingStream.values();
-        const consumeStops = () => {
-            while(movingIter.next().value === false) {/*no-pragma*/}
-            for (let i = 0; i < 4; i++) {
-                const v = movingIter.next();
-                if (v.done) {
-                    return;
-                }
-                if (v.value === false) {
-                    return consumeStops();
-                }
-            }
-        };
-        consumeStops();
-        for (const x of movingIter) {
-            if (!x) {
-                stops++;
-                consumeStops();
-            }
-        }
-        return stops;
     }
 
 
@@ -2001,36 +1982,50 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function supportsNP() {
+        return pageView.activity().isRide() && !!pageView.streams().getStream('watts');
+    }
+
+
     async function _updateAnalysisStats(start, end) {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
-        const movingTime = await getMovingTime(start, end);
+        const activeTime = await getActiveTime(start, end);
         const correctedPower = supportsStream('watts') && await correctedPowerTimeRange(
-            getStreamIndexTime(start),getStreamIndexTime(end));
+            getStreamIndexTime(start), getStreamIndexTime(end));
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
-        const pausedTime = elapsedTime - movingTime;
+        const pausedTime = elapsedTime - activeTime;
         const tplData = {
             logo: sauce.extUrl + 'images/logo_vert_48x128.png',
             supportsRankBadge: pageView.activity().isRide(),
             elapsed: humanTime(elapsedTime),
-            moving: humanTime(movingTime),
+            active: humanTime(activeTime),
             paused: ctx.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
-            stops: countStops(await fetchStream('moving', start, end)),
             weight: ctx.weight,
             elUnit: ctx.elevationFormatter.shortUnitKey(),
+            isSpeed: ctx.paceMode === 'speed',
             paceUnit: ctx.paceFormatter.shortUnitKey(),
             samples: timeStream.length,
             elevation: elevationData(altStream, elapsedTime, distance),
         };
         if (correctedPower) {
             const kj = correctedPower.kj();
-            tplData.power = powerData(kj, movingTime, elapsedTime, {np: correctedPower.np()});
+            const np = supportsNP() && correctedPower.np();
+            tplData.power = powerData(kj, activeTime, elapsedTime, {np});
+            let tss;
+            if (ctx.ftp) {
+                if (np) {
+                    tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
+                } else {
+                    tss = sauce.power.calcTSS(tplData.power.activeAvg, activeTime, ctx.ftp);
+                }
+            }
             tplData.energy = {
                 kj,
-                kjHour: (kj / movingTime) * 3600,
-                tss: ctx.ftp && sauce.power.calcTSS(tplData.power.moving, movingTime, ctx.ftp)
+                kjHour: (kj / activeTime) * 3600,
+                tss
             };
         }
         if (distance) {
@@ -2038,8 +2033,8 @@ sauce.ns('analysis', ns => {
             const gradeDistance = streamDelta(gradeDistStream);
             tplData.pace = {
                 elapsed: humanPace(distance / elapsedTime, {velocity: true}),
-                moving: humanPace(distance / movingTime, {velocity: true}),
-                gap: gradeDistance && humanPace(gradeDistance / movingTime, {velocity: true}),
+                active: humanPace(distance / activeTime, {velocity: true}),
+                gap: gradeDistance && humanPace(gradeDistance / activeTime, {velocity: true}),
             };
         }
         const tpl = await getTemplate('analysis-stats.html');
@@ -2311,6 +2306,7 @@ sauce.ns('analysis', ns => {
             mpm: Strava.I18n.PaceFormatter,
         }[speedUnit];
         ctx.paceFormatter = new PaceFormatter();
+        ctx.paceMode = speedUnit === 'mph' ? 'speed' : 'pace';
         ctx.peakIcons = {
             peak_power: 'fa/bolt-duotone.svg',
             peak_np: 'fa/atom-alt-duotone.svg',

@@ -19,46 +19,45 @@
 .sauce-analysis-stats {
     display: flex;
     overflow: hidden;
-    font-size: 0.9em;
+    font-size: 0.96em;
     border-top: theme.$border;
     border-bottom: theme.$border;
     width: defines.$basic-analysis-width;
+
+    $vpad: 0.5rem;
 
     &:empty {
         display: none;
     }
 
     .sauce-brand-sidebar {
-        padding-right: 1.5em;
+        padding: $vpad 1.2em;
         display: flex;
-        position: relative;
+        flex-direction: column;
 
         .sauce-logo {
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 0.3em 0.8em;
-            margin-left: 1em;
+            opacity: 0.85;
 
             img {
                 transform: rotate(-20deg);
-                max-width: 3.5em;
-                max-height: 3.5em;
+                max-width: 3.2em;
+                max-height: 3.2em;
                 font-size: inherit;
             }
 
             &:hover {
                 animation: pournshake 6s infinite ;
+                opacity: 1;
             }
         }
 
         .sauce-label {
-            flex: 1 1 auto;
-            align-self: center;
             font-size: 1.1em;
             text-shadow: 1px 1px 3px #0001;
-            line-height: 1.2em;
-            color: #222;
+            line-height: 1.2;
+            color: theme.$primary;
         }
     }
 
@@ -66,11 +65,7 @@
         display: flex;
         flex-direction: column;
         padding-right: 1em;
-        margin: 0.5em 0;
-
-        &.vcentered {
-            justify-content: center;
-        }
+        margin: $vpad 0;
 
         &:not(:last-child) {
             border-right: theme.$thin-border;
@@ -106,7 +101,7 @@
 
             key:not(:empty)::after {
                 content: ':';
-                margin: 0 0.1em;
+                margin: 0 0.05em;
             }
 
             key {
@@ -126,6 +121,7 @@
         .rank_badge {
             max-height: 3em;
             object-fit: contain;
+            padding: 0.5em;
         }
     }
 }

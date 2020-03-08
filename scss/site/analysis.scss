@@ -41,6 +41,14 @@
     }
 }
 
+.sauce-title {
+    font-weight: 900;
+    font-size: 1em;
+    letter-spacing: -0.04em;
+    transform: scaleY(0.8);
+    text-transform: uppercase;
+}
+
 .actions-menu {
     .slide-menu .options {
         max-height: 75vh;
@@ -58,13 +66,6 @@
             color: white;
             padding: 0.8em;
             cursor: default;
-
-            .sauce-title {
-                font-weight: 900;
-                font-size: 1em;
-                letter-spacing: -0.06em;
-                transform: scaleY(0.8);
-            }
 
             > img {
                 max-height: 1.2em;

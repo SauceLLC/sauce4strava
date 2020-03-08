@@ -158,12 +158,12 @@ sauce.ns('data', function() {
     }
 
 
-    function movingTime(timeStream, movingStream) {
+    function activeTime(timeStream, activeStream) {
         if (timeStream.length < 2) {
             return 0;
         }
         let maxGap;
-        if (movingStream == null) {
+        if (activeStream == null) {
             maxGap = recommendedTimeGaps(timeStream).max;
         }
         let accumulated = 0;
@@ -176,7 +176,7 @@ sauce.ns('data', function() {
                     accumulated += delta;
                 }
             } else {
-                if (movingStream[i]) {
+                if (activeStream[i]) {
                     accumulated += delta;
                 }
             }
@@ -401,7 +401,7 @@ sauce.ns('data', function() {
 
         avg(options) {
             options = options || {};
-            if (options.moving) {
+            if (options.active) {
                 return this._sum / (this._values.length - this._offt - (this._zeros || 0));
             } else {
                 if (this._ignoreZeros) {
@@ -590,11 +590,11 @@ sauce.ns('data', function() {
 
     function peakAverage(period, timeStream, valuesStream, options) {
         options = options || {};
-        const moving = options.moving;
+        const active = options.active;
         const ignoreZeros = options.ignoreZeros;
         const roll = new RollingAverage(period, {ignoreZeros});
         return roll.importReduce(timeStream, valuesStream,
-            (cur, lead) => cur.avg({moving}) >= lead.avg({moving}));
+            (cur, lead) => cur.avg({active}) >= lead.avg({active}));
     }
 
 
@@ -612,7 +612,7 @@ sauce.ns('data', function() {
             } else {
                 roll.add(ts, v);
             }
-            values.push(roll.avg({moving: true}));
+            values.push(roll.avg({active: true}));
         }
         return values;
     }
@@ -626,7 +626,7 @@ sauce.ns('data', function() {
         mode,
         median,
         resample,
-        movingTime,
+        activeTime,
         recommendedTimeGaps,
         tabulate,
         RollingAverage,
