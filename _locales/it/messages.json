@@ -1,0 +1,314 @@
+{
+    "app_desc": {
+        "message": "Funzionalità aggiuntiva per le tue analisi di ciclismo e corsa. Questa estensione aggiorna il sito Web Strava ™."
+    },
+    "analysis_time": {
+        "message": "Tempo"
+    },
+    "analysis_elapsed": {
+        "message": "trascorso"
+    },
+    "analysis_elapsed_time_tooltip": {
+        "message": "Tempo trascorso: tempo dall'inizio alla fine dell'attività"
+    },
+    "analysis_elapsed_power_tooltip": {
+        "message": "Potenza media trascorsa: le fermate sono a zero"
+    },
+    "analysis_elapsed_pace_tooltip": {
+        "message": "Ritmo medio trascorso: le soste sono incluse nell'intervallo di tempo"
+    },
+    "analysis_active_time_tooltip": {
+        "message": "Solo tempo attivo"
+    },
+    "analysis_active_power_tooltip": {
+        "message": "Potenza attiva media"
+    },
+    "analysis_active_pace_tooltip": {
+        "message": "Ritmo attivo medio"
+    },
+    "analysis_active_speed_tooltip": {
+        "message": "Velocità media attiva"
+    },
+    "analysis_gap_tooltip": {
+        "message": "Andatura corretta del grado: andatura stimata per terreni pianeggianti"
+    },
+    "analysis_np_tooltip": {
+        "message": "Normalized Power®: una stima della potenza media potenziale"
+    },
+    "analysis_energy_tooltip": {
+        "message": "Energia spesa in kilojoule"
+    },
+    "analysis_energy_rate_tooltip": {
+        "message": "Kilojoule all'ora"
+    },
+    "analysis_elevation_gain_tooltip": {
+        "message": "Altitudine acquisita: arrampicata"
+    },
+    "analysis_elevation_loss_tooltip": {
+        "message": "Elevazione persa: decrescente"
+    },
+    "analysis_elevation_avg_tooltip": {
+        "message": "Elevazione media"
+    },
+    "analysis_grade_tooltip": {
+        "message": "Grado di collina"
+    },
+    "analysis_vam_tooltip": {
+        "message": "Metri rampicanti all'ora"
+    },
+    "analysis_tss_tooltip": {
+        "message": "Training Stress Score®: un indicatore di carico di stress basato sulla potenza"
+    },
+    "analysis_start_of_effort_tooltip": {
+        "message": "Tempo compensato all'inizio di questo sforzo"
+    },
+    "analysis_wkg_tooltip": {
+        "message": "Watt per chilogrammo di peso corporeo"
+    },
+    "analysis_ranking_tooltip": {
+        "message": "Classifica mondiale"
+    },
+    "analysis_max_power_tooltip": {
+        "message": "massima potenza"
+    },
+    "analysis_low_hr_tooltip": {
+        "message": "Frequenza cardiaca più bassa"
+    },
+    "analysis_high_hr_tooltip": {
+        "message": "Frequenza cardiaca massima"
+    },
+    "analysis_low_speed_tooltip": {
+        "message": "Velocità più bassa"
+    },
+    "analysis_high_speed_tooltip": {
+        "message": "Massima velocità"
+    },
+    "analysis_running_cadence_tooltip": {
+        "message": "Passaggi al minuto"
+    },
+    "analysis_cycling_cadence_tooltip": {
+        "message": "Giri al pedale al minuto"
+    },
+    "analysis_swim_cadence_tooltip": {
+        "message": "Colpi al minuto"
+    },
+    "analysis_ftp_link_tooltip": {
+        "message": "Fare clic per impostare il valore"
+    },
+    "analysis_weight_link_tooltip": {
+        "message": "Fare clic per impostare il valore"
+    },
+    "analysis_ftp_input_tooltip": {
+        "message": "Immettere l'FTP stimato (Functional Threshold Power) per questo atleta e premere Invio. FTP è la media massima di watt sostenuta per 1 ora. Se l'atleta ha già un valore impostato nel proprio profilo, questo annullerà tale impostazione. Per ripristinare il valore, immettere un valore vuoto."
+    },
+    "analysis_weight_input_tooltip": {
+        "message": "Inserisci il peso stimato per questo atleta e premi Invio. Se l'atleta ha già un valore impostato nel proprio profilo, questo annullerà tale impostazione. Per ripristinare il valore, immettere un valore vuoto."
+    },
+    "analysis_intensity_tooltip": {
+        "message": "Intensity Factor®"
+    },
+    "analysis_peak_power_tooltip": {
+        "message": "Range di potenza massima sostenuta"
+    },
+    "analysis_peak_np_tooltip": {
+        "message": "Range di potenza massima normalizzata®"
+    },
+    "analysis_peak_hr_tooltip": {
+        "message": "Intervalli di frequenza cardiaca sostenuti massimi"
+    },
+    "analysis_peak_cadence_tooltip": {
+        "message": "Intervalli di cadenza massimi sostenuti"
+    },
+    "analysis_peak_vam_tooltip": {
+        "message": "Intervalli di velocità di arrampicata massima sostenuta"
+    },
+    "analysis_peak_pace_tooltip": {
+        "message": "Gamme di ritmo massime sostenute"
+    },
+    "analysis_peak_gap_tooltip": {
+        "message": "Gamme di passo regolate di grado massimo sostenuto"
+    },
+    "analysis_watt_estimate_tooltip": {
+        "message": "Questi valori vengono calcolati dalle stime della potenza. Per valori precisi è necessario un dispositivo di misurazione della potenza reale."
+    },
+    "analysis_stops": {
+        "message": "Fermate"
+    },
+    "analysis_idle": {
+        "message": "Inattivo"
+    },
+    "analysis_active": {
+        "message": "Attivo"
+    },
+    "analysis_stats": {
+        "message": "Statistiche"
+    },
+    "analysis_power_avg": {
+        "message": "Potenza media"
+    },
+    "analysis_energy": {
+        "message": "Energia"
+    },
+    "analysis_expended": {
+        "message": "speso"
+    },
+    "analysis_rate": {
+        "message": "Vota"
+    },
+    "analysis_elevation": {
+        "message": "Elevazione"
+    },
+    "analysis_grade": {
+        "message": "Grado"
+    },
+    "analysis_estimated": {
+        "message": "stimato"
+    },
+    "analysis_data": {
+        "message": "Dati"
+    },
+    "analysis_rank": {
+        "message": "Rango"
+    },
+    "analysis_raw_data": {
+        "message": "dati non elaborati"
+    },
+    "analysis_graphs": {
+        "message": "grafici"
+    },
+    "analysis_pace": {
+        "message": "Ritmo"
+    },
+    "analysis_speed": {
+        "message": "Velocità"
+    },
+    "analysis_samples": {
+        "message": "Campioni"
+    },
+    "analysis_beta": {
+        "message": "BETA"
+    },
+    "analysis_start_of_effort": {
+        "message": "Inizio dello sforzo"
+    },
+    "analysis_elapsed_time": {
+        "message": "Tempo trascorso"
+    },
+    "analysis_heartrate": {
+        "message": "Frequenza cardiaca"
+    },
+    "analysis_cadence": {
+        "message": "Cadenza"
+    },
+    "analysis_peak_power": {
+        "message": "Picco di potenza"
+    },
+    "analysis_peak_np": {
+        "message": "Peak NP®"
+    },
+    "analysis_peak_hr": {
+        "message": "Peak HR"
+    },
+    "analysis_peak_cadence": {
+        "message": "Picco di cadenza"
+    },
+    "analysis_peak_vam": {
+        "message": "Peak VAM"
+    },
+    "analysis_peak_pace": {
+        "message": "Picco Pace"
+    },
+    "analysis_peak_gap": {
+        "message": "Peak GAP"
+    },
+    "analysis_watts": {
+        "message": "Watts"
+    },
+    "analysis_power": {
+        "message": "Energia"
+    },
+    "analysis_weight": {
+        "message": "Peso"
+    },
+    "analysis_change": {
+        "message": "Modificare"
+    },
+    "analysis_view": {
+        "message": "Visualizza"
+    },
+    "analysis_export": {
+        "message": "Esportare"
+    },
+    "analysis_male": {
+        "message": "Maschio"
+    },
+    "analysis_female": {
+        "message": "Femmina"
+    },
+    "analysis_power_profile_about1": {
+        "message": "Il concetto di power profiling è stato creato dal Dr. Andy Coggan. È un profilo di base dei requisiti di potenza per essere ad un livello specifico di competitività delle corse."
+    },
+    "analysis_power_profile_about2": {
+        "message": "Queste classifiche hanno lo scopo di darti un'idea approssimativa di come la tua migliore potenza paragonerebbe alla massima capacità degli altri piloti. Sono i più rappresentativi quando lavori molto duramente."
+    },
+    "analysis_power_profile_select": {
+        "message": "Selezionare un profilo per visualizzare le uscite di potenza richieste"
+    },
+    "analysis_power_profile_footer_leadin": {
+        "message": "L'algoritmo Sauce è stato modificato dal foglio di calcolo originale di Andy in modo da poter stimare le classifiche per qualsiasi periodo di tempo. Per una comprensione approfondita di questi profili leggi"
+    },
+    "analysis_comment_label": {
+        "message": "Di 'qualcosa"
+    },
+    "analysis_comment_placeholder": {
+        "message": "Il tuo commento qui"
+    },
+    "analysis_comment": {
+        "message": "Commento"
+    },
+    "analysis_title": {
+        "message": "Analisi"
+    },
+    "time_sec": {
+        "message": "secondo"
+    },
+    "time_secs": {
+        "message": "secondi"
+    },
+    "time_min": {
+        "message": "min"
+    },
+    "time_mins": {
+        "message": "min"
+    },
+    "time_hour": {
+        "message": "ora"
+    },
+    "time_hours": {
+        "message": "ore"
+    },
+    "time_day": {
+        "message": "giorno"
+    },
+    "time_days": {
+        "message": "giorni"
+    },
+    "time_week": {
+        "message": "settimana"
+    },
+    "time_weeks": {
+        "message": "settimane"
+    },
+    "time_year": {
+        "message": "anno"
+    },
+    "time_years": {
+        "message": "anni"
+    },
+    "time_ago": {
+        "message": "fa"
+    },
+    "time_now": {
+        "message": "adesso"
+    }
+}
