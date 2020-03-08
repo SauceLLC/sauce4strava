@@ -201,7 +201,8 @@
         "message": "Pulsschlag"
     },
     "analysis_cadence": {
-        "message": "Kadenz"
+        "message": "Trittfrequenz",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_power": {
         "message": "Beste Leistung",
@@ -248,7 +249,8 @@
         "message": "Aussicht"
     },
     "analysis_export": {
-        "message": "Export"
+        "message": "Exportieren",
+        "description": "IMMUTABLE"
     },
     "analysis_male": {
         "message": "Männlich"
@@ -287,34 +289,43 @@
         "message": "sek"
     },
     "time_min": {
-        "message": "Mindest"
+        "message": "min",
+        "description": "IMMUTABLE"
     },
     "time_mins": {
         "message": "min"
     },
     "time_hour": {
-        "message": "Stunde"
+        "message": "stunde",
+        "description": "IMMUTABLE"
     },
     "time_hours": {
-        "message": "Std"
+        "message": "std",
+        "description": "IMMUTABLE"
     },
     "time_day": {
-        "message": "Tag"
+        "message": "tag",
+        "description": "IMMUTABLE"
     },
     "time_days": {
-        "message": "Tage"
+        "message": "tage",
+        "description": "IMMUTABLE"
     },
     "time_week": {
-        "message": "Woche"
+        "message": "woche",
+        "description": "IMMUTABLE"
     },
     "time_weeks": {
-        "message": "Wochen"
+        "message": "wochen",
+        "description": "IMMUTABLE"
     },
     "time_year": {
-        "message": "Jahr"
+        "message": "jahr",
+        "description": "IMMUTABLE"
     },
     "time_years": {
-        "message": "Jahre"
+        "message": "jahre",
+        "description": "IMMUTABLE"
     },
     "time_ago": {
         "message": "vor"
