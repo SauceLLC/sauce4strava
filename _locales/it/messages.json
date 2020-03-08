@@ -10,7 +10,8 @@
         "description": "IMMUTABLE"
     },
     "analysis_elapsed": {
-        "message": "trascorso"
+        "message": "Trascorso",
+        "description": "IMMUTABLE"
     },
     "analysis_elapsed_time_tooltip": {
         "message": "Tempo trascorso: tempo dall'inizio alla fine dell'attività"
