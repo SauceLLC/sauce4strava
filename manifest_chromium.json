@@ -1,5 +1,5 @@
 {
-    "version_name": "5.2.0 [rc]",
+    "version_name": "5.2.0 [release]",
     "minimum_chrome_version": "60",
     "permissions": [
         "declarativeContent"
