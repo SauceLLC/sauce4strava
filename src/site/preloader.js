@@ -331,5 +331,23 @@
                 return requireSave.apply(this, arguments);
             };
         });
+
+        sauce.propDefined('Strava.Labs.Activities.MenuRouter', Klass => {
+            const changeMenuToSave = Klass.prototype.changeMenuTo;
+            Klass.prototype.changeMenuTo = function(page, trigger) {
+                if (sauce.options && sauce.options['analysis-menu-nav-history']) {
+                    if (trigger == null) {
+                        trigger = true;
+                    }
+                    if (this.context.fullscreen()) {
+                        this.trigger(`route:${page}`);
+                    } else {
+                        this.navigate(`/${this.baseUrl}/${this.id}/${page}`, {trigger});
+                    }
+                } else {
+                    return changeMenuToSave.apply(this, arguments);
+                }
+            };
+        }, {once: true});
     }
 })();
