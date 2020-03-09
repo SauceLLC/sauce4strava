@@ -63,6 +63,7 @@ Release Notes
 --------
 #### v5.2.0:
  * Added French, Italian, Polish and German translations.
+ * Analysis page menu navigation history *OPTION*
 
 #### v5.1.0:
  * Responsive layout

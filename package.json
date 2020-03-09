@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mayfield/sauce.git"
+    "url": "git+https://github.com/SauceLLC/sauce4strava.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mayfield/sauce/issues"
+    "url": "https://github.com/SacueLLC/sauce4strava/issues"
   },
-  "homepage": "https://github.com/mayfield/sauce#readme",
+  "homepage": "https://github.com/SauceLLC/sauce4strava#readme",
   "devDependencies": {
     "eslint": "6.8.0",
     "sass": "1.25.0",
