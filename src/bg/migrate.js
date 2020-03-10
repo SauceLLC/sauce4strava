@@ -87,15 +87,19 @@
 
     ns.runMigrations = async function() {
         // Perform storage migration/setup here and return config object.
-        try {
-            const o = await browser.storage.sync.get(null);
-            if (o && Object.keys(o).length) {
-                console.info("Migrating from sync storage to local storage");
-                await browser.storage.local.set(o);
-                await browser.storage.sync.clear();
+        const local = await browser.storage.local.get('migrationVersion');
+        if (!local || local.migrationVersion == null) {
+            // Possibly this is an upgrade from sync -> local, but might also
+            // just be a new install.
+            try {
+                const o = await browser.storage.sync.get(null);
+                if (o && Object.keys(o).length) {
+                    console.info("Migrating from sync-storage to local-storage");
+                    await browser.storage.local.set(o);
+                }
+            } catch(e) {
+                // Sync storage not supported.
             }
-        } catch(e) {
-            // Sync storage not supported.
         }
         const initialVersion = await sauce.storage.get('migrationVersion');
         for (const x of migrations) {
