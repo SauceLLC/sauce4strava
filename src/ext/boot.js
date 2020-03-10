@@ -6,10 +6,7 @@
     const manifests = [{
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
-        stylesheets: [
-            'site/analysis.css',
-            'site/responsive.css',
-        ],
+        stylesheets: ['site/analysis.css'],
         scripts: [
             'site/base.js',
             'site/rpc.js',
@@ -20,36 +17,65 @@
             'site/export.js',
             'site/analysis.js',
         ],
-        callbacks: [config => {
-            if (!config.options.responsive) {
-                return;
-            }
-            document.documentElement.classList.add('sauce-responsive');
-            function attachViewportMeta() {
-                if (document.querySelector('head meta[name="viewport"]')) {
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-analysis')
+        ]
+    }, {
+        name: 'Segment Compare',
+        pathMatch: /^\/segments\/[0-9]+\/compare\b/,
+        scripts: [
+            'site/base.js',
+            'site/rpc.js',
+            'site/segment-compare.js',
+        ],
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-segment-compare')
+        ]
+    }, {
+        name: 'responsive',
+        stylesheets: ['site/responsive.css'],
+        callbacks: [
+            config => {
+                if (!config.options.responsive) {
                     return;
                 }
-                const viewport = document.createElement('meta');
-                viewport.setAttribute('name', 'viewport');
-                viewport.setAttribute('content', Object.entries({
-                    'width': 'device-width',
-                    'initial-scale': '1.0',
-                    'maximum-scale': '1.0',
-                    'user-scalable': 'no'
-                }).map(([k, v]) => `${k}=${v}`).join(', '));
-                const charset = document.querySelector('head meta[charset]');
-                if (charset) {
-                    charset.insertAdjacentElement('afterend', viewport);
+                document.documentElement.classList.add('sauce-responsive');
+                function attachViewportMeta() {
+                    if (document.querySelector('head meta[name="viewport"]')) {
+                        return;
+                    }
+                    const viewport = document.createElement('meta');
+                    viewport.setAttribute('name', 'viewport');
+                    viewport.setAttribute('content', Object.entries({
+                        'width': 'device-width',
+                        'initial-scale': '1.0',
+                        'maximum-scale': '1.0',
+                        'user-scalable': 'no'
+                    }).map(([k, v]) => `${k}=${v}`).join(', '));
+                    const charset = document.querySelector('head meta[charset]');
+                    if (charset) {
+                        charset.insertAdjacentElement('afterend', viewport);
+                    } else {
+                        document.head.insertAdjacentElement('afterbegin', viewport);
+                    }
+                }
+                if (document.head) {
+                    attachViewportMeta();
                 } else {
-                    document.head.insertAdjacentElement('afterbegin', viewport);
+                    addEventListener('DOMContentLoaded', attachViewportMeta, {capture: true});
                 }
             }
-            if (document.head) {
-                attachViewportMeta();
-            } else {
-                addEventListener('DOMContentLoaded', attachViewportMeta, {capture: true});
+        ]
+    }, {
+        name: 'theme',
+        stylesheets: ['site/theme.css'],
+        callbacks: [
+            config => {
+                if (config.options['dark-mode']) {
+                    document.documentElement.classList.add('sauce-dark-mode');
+                }
             }
-        }]
+        ]
     }, {
         name: 'Dashboard',
         pathMatch: /^\/dashboard(\/.*|\b)/,

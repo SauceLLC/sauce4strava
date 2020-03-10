@@ -1,4 +1,4 @@
-@use 'theme';
+@use 'defines';
 
 
 .ui-dialog.sauce-dialog {
@@ -29,7 +29,7 @@
 
     header {
         margin: 0.5em 1em;
-        border-bottom: theme.$thin-border;
+        border-bottom: defines.$sauce-thin-border;
     }
 
     &.sauce-big-data {

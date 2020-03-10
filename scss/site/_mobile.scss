@@ -27,10 +27,78 @@
     }
 }
 
+
+@mixin global {
+    #global-header {
+        .menu-expander {
+            display: flex !important;
+            flex: 0 0 auto;
+            flex-direction: column;
+            justify-content: center;
+            width: 3.75em;
+            opacity: 0.8;
+            cursor: pointer;
+            padding: 0 1em;
+            transition: opacity 100ms;
+            max-height: 70%;
+
+            &:hover {
+                opacity: 1;
+            }
+        }
+
+        nav.nav-bar {
+            margin: 0 !important;
+
+            .global-nav.nav-group {
+                display: none;
+            }
+
+            &.search-mode {
+                .branding {
+                    display: none;
+                }
+
+                .user-nav {
+                    display: none;
+                }
+
+                #global-search-bar {
+                    .dropdown button {
+                        font-size: 1em;
+                        padding: 0 1em;
+                        min-width: initial;
+                    }
+                }
+            }
+        }
+
+        .user-nav {
+            .upload-menu,
+            .upgrade {
+                display: none;
+            }
+
+            a.nav-link.selection {
+                pointer-events: none;  // Let touch open the menu instead of navigating
+            }
+        }
+    }
+}
+
+
 @mixin analysis {
 
     .inset {
         padding: 0.8rem !important;
+    }
+
+    #global-header {
+        nav.nav-bar {
+            .branding {
+                margin-left: 0 !important;
+            }
+        }
     }
 
     body > .view {
@@ -388,66 +456,6 @@
         }
     }
 
-    #global-header {
-        .menu-expander {
-            display: flex !important;
-            flex: 0 0 auto;
-            flex-direction: column;
-            justify-content: center;
-            width: 3.75em;
-            opacity: 0.8;
-            cursor: pointer;
-            padding: 0 1em;
-            transition: opacity 100ms;
-            max-height: 70%;
-
-            &:hover {
-                opacity: 1;
-            }
-        }
-
-        nav.nav-bar {
-            margin: 0 !important;
-
-            .branding {
-                margin-left: 0 !important;
-            }
-
-            .global-nav.nav-group {
-                display: none;
-            }
-
-            &.search-mode {
-                .branding {
-                    display: none;
-                }
-
-                .user-nav {
-                    display: none;
-                }
-
-                #global-search-bar {
-                    .dropdown button {
-                        font-size: 1em;
-                        padding: 0 1em;
-                        min-width: initial;
-                    }
-                }
-            }
-        }
-
-        .user-nav {
-            .upload-menu,
-            .upgrade {
-                display: none;
-            }
-
-            a.nav-link.selection {
-                pointer-events: none;  // Let touch open the menu instead of navigating
-            }
-        }
-    }
-
     .sauce-nav-expanded {
         .view > .page.container nav.sidenav {
             box-shadow: 8px 8px 10px #0002;
@@ -775,3 +783,77 @@
     }
 }
 
+@mixin segment-compare {
+    .page.container {
+        width: 100%;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+    }
+
+    #leaderboard-table {
+        th, td {
+            padding-left: 0.4em;
+            padding-right: 0.2em;
+            font-size: 0.85em;
+        }
+
+        td[class*="avatar-"] {
+            white-space: nowrap;
+
+            > .minimal {
+                white-space: nowrap;
+            }
+        }
+    }
+
+    #leaderboard-container {
+        ul.tabs {
+            > li {
+                border: 1px solid #aaa;
+                border-radius: 0.28em;
+                margin: 0.2em 0.4em;
+
+                &.selected {
+                    background: #dfdfe8;
+                }
+
+                > .tab {
+                    padding: 0.3em 0.8em;
+                    border: none;
+                    background: none;
+                }
+            }
+        }
+    }
+
+    #leaderboard-content {
+        .btn-group {
+            margin: 0.5em 0;
+
+            button {
+                font-size: 0.85em;
+                padding: 0.4em 0.7em;
+            }
+        }
+    }
+
+    #roster {
+        table {
+            td, th {
+                padding-left: 0.5em;
+                padding-right: 0.3em;
+            }
+        }
+    }
+
+    #scrubber {
+        --action-button-width: 25px;
+
+        .scrubber-action {
+            width: 15px;
+            height: 15px;
+            line-height: 15px;
+            font-size: 0.5em;
+        }
+    }
+}

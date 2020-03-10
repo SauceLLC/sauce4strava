@@ -1,4 +1,4 @@
-@use 'theme';
+@use 'defines';
 @use 'dialog';
 @use 'comments';
 @use 'analysis_stats';
@@ -15,13 +15,13 @@
 
 .activity-stats {
     .secondary-stats.inline-stats.sauce-stats {
-        border: theme.$thin-border;
+        border: defines.$sauce-thin-border;
         border-left: 0;
         border-right: 0;
         background: #fff;
 
         .divider:not(:first-child) {
-            border-left: theme.$thin-border;
+            border-left: defines.$sauce-thin-border;
             margin-right: 1.5em;
             height: 2.2em;
             display: inline-block;
@@ -36,7 +36,7 @@
         }
 
         .origin-sauce {
-            color: theme.$primary;
+            color: defines.$sauce-primary-color;
         }
     }
 }
@@ -55,8 +55,8 @@
     }
 
     .sauce-group {
-        border-top: theme.$border;
-        background-image: linear-gradient(180deg, darken(theme.$primary, 10%), darken(theme.$primary, 2%));
+        border-top: defines.$sauce-border;
+        background-image: linear-gradient(180deg, darken(defines.$sauce-primary-color, 10%), darken(defines.$sauce-primary-color, 2%));
 
         .sauce-header {
             display: flex;

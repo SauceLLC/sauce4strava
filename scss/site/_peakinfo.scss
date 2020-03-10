@@ -1,9 +1,9 @@
-@use 'theme';
+@use 'defines';
 
 
 #sauce-infopanel {
-    border-top: theme.$border;
-    border-bottom: theme.$border;
+    border-top: defines.$sauce-border;
+    border-bottom: defines.$sauce-border;
     margin-top: 10px;
 
     .title,
