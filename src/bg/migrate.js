@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, browser */
 
 (async function() {
     'use strict';
@@ -87,6 +87,16 @@
 
     ns.runMigrations = async function() {
         // Perform storage migration/setup here and return config object.
+        try {
+            const o = await browser.storage.sync.get(null);
+            if (o && Object.keys(o).length) {
+                console.info("Migrating from sync storage to local storage");
+                await browser.storage.local.set(o);
+                await browser.storage.sync.clear();
+            }
+        } catch(e) {
+            // Sync storage not supported.
+        }
         const initialVersion = await sauce.storage.get('migrationVersion');
         for (const x of migrations) {
             if (initialVersion && initialVersion >= x.version) {
