@@ -61,8 +61,12 @@ Feature Highlights
 
 Release Notes
 --------
+#### v5.2.1:
+ * Disable Polish translations until they can be improved
+ * Switch from "sync" storage to "local" storage (has more space)
+
 #### v5.2.0:
- * Added French, Italian, Polish and German translations.
+ * Added French, Italian, Polish and German translations
  * Analysis page menu navigation history *OPTION*
 
 #### v5.1.0:
