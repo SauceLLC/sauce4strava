@@ -1,0 +1,124 @@
+$bg: white;
+$fg: black;
+
+:root {
+    --sauce-bg: $bg;
+    --sauce-fg: $fg;
+}
+
+.sauce-dark-mode {
+    $bg: black;
+    $fg: white;
+    --sauce-bg: $bg;
+    --sauce-fg: $fg;
+
+    body {
+        background: $bg;
+        color: $fg;
+    }
+
+    .btn,
+    .button,
+    button,
+    input[type="submit"],
+    input[type="button"],
+    input[type="reset"],
+    .selection,
+    .pagination a,
+    .pagination span,
+    .pagination em {
+        background-color: lighten($bg, 4);
+        color: darken($fg, 2);
+
+        &:active,
+        &.active {
+            background-color: lighten($bg, 10);
+        }
+    }
+    .drop-down-menu.active .selection {
+        background-color: lighten($bg, 10);
+    }
+
+    .drop-down-menu .options {
+        background: lighten($bg, 10);
+        color: darken($fg, 10);
+    }
+
+    .drop-down-menu .options a:hover,
+    .slide-menu .options a:hover,
+    .drop-down-menu .options .clickable:hover,
+    .slide-menu .options .clickable:hover,
+    .drop-down-menu .options .btn:hover,
+    .slide-menu .options .btn:hover {
+        background: lighten($bg, 20);
+    }
+
+    .ui-dialog {
+        .ui-widget-content,
+        .ui-dialog-content {
+            background: lighten($bg, 20);
+        }
+    }
+
+    .pagenav li > a {
+        &:hover,
+        &:active {
+            background-color: lighten($bg, 30);
+        }
+    }
+
+    #basic-analysis {
+        .chart {
+            background-color: lighten($bg, 10);
+        }
+
+        rect.static-info-box {
+            fill: lighten($bg, 20);
+        }
+
+        #stacked-chart {
+            background-color: lighten($bg, 20);
+        }
+
+        .xaxis-container .background,
+        rect.static-label-box {
+            fill: lighten($bg, 25);
+        }
+    }
+
+    #global-header {
+        background: lighten($bg, 20);
+
+        .nav-group .drop-down-menu {
+            &.active,
+            &:hover {
+                .nav-link {
+                    background: lighten($bg, 30);
+                }
+            }
+        }
+        .nav-bar .nav-link:visited {
+            color: darken($fg, 20);
+        }
+    }
+
+    section,
+    .section {
+        header,
+        .header {
+            background: lighten($bg, 30);
+        }
+    }
+
+    footer.achievements {
+        background: lighten($bg, 30);
+    }
+
+    thead tr {
+        background: lighten($bg, 40);
+    }
+
+    .grabber {
+        background: lighten($bg, 40);
+    }
+}

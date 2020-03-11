@@ -59,7 +59,7 @@
         margin: 0;
 
         tr:nth-child(odd) {
-            background: #fafafa;
+            background: rgba(128, 128, 128, 0.04);
         }
 
         tr.selected {

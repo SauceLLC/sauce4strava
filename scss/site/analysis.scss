@@ -18,7 +18,7 @@
         border: defines.$sauce-thin-border;
         border-left: 0;
         border-right: 0;
-        background: #fff;
+        background: var(--sauce-bg);
 
         .divider:not(:first-child) {
             border-left: defines.$sauce-thin-border;
