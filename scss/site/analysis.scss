@@ -3,6 +3,7 @@
 @use 'comments';
 @use 'analysis_stats';
 @use 'peakinfo';
+@use 'color';
 
 
 .sauce-positive {
@@ -18,7 +19,7 @@
         border: defines.$sauce-thin-border;
         border-left: 0;
         border-right: 0;
-        background: var(--sauce-bg);
+        background: color.get(bg);
 
         .divider:not(:first-child) {
             border-left: defines.$sauce-thin-border;

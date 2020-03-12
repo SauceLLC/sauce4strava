@@ -1,0 +1,7 @@
+@function get($key) {
+    @return hsl(var(--sauce-#{$key}-hue), var(--sauce-#{$key}-sat), var(--sauce-#{$key}-light));
+}
+
+@function darken($key, $amount, $alpha: 100%) {
+    @return hsla(var(--sauce-#{$key}-hue), var(--sauce-#{$key}-sat), calc(var(--sauce-#{$key}-light) - #{$amount}), $alpha);
+}

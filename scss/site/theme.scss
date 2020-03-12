@@ -1,20 +1,27 @@
-$bg: white;
-$fg: black;
+@use 'color';
 
 :root {
-    --sauce-bg: $bg;
-    --sauce-fg: $fg;
+    --sauce-bg-hue: 0;
+    --sauce-bg-sat: 0%;
+    --sauce-bg-light: 100%;
+
+    --sauce-fg-hue: 0;
+    --sauce-fg-sat: 0%;
+    --sauce-fg-light: 0%;
+
+    --sauce-accent-hue: 16;
+    --sauce-accent-sat: 100%;
+    --sauce-accent-light: 50%;
 }
 
+
 .sauce-dark-mode {
-    $bg: black;
-    $fg: white;
-    --sauce-bg: $bg;
-    --sauce-fg: $fg;
+    --sauce-bg-light: 0%;
+    --sauce-fg-light: 100%;
 
     body {
-        background: $bg;
-        color: $fg;
+        background-color: color.get(bg);
+        color: color.get(fg);
     }
 
     .btn,
@@ -27,21 +34,21 @@ $fg: black;
     .pagination a,
     .pagination span,
     .pagination em {
-        background-color: lighten($bg, 4);
-        color: darken($fg, 2);
+        background-color: color.darken(bg, -4%);
+        color: color.darken(fg, 2%);
 
         &:active,
         &.active {
-            background-color: lighten($bg, 10);
+            background-color: color.darken(bg, -10%);
         }
     }
     .drop-down-menu.active .selection {
-        background-color: lighten($bg, 10);
+        background-color: color.darken(bg, -10%);
     }
 
     .drop-down-menu .options {
-        background: lighten($bg, 10);
-        color: darken($fg, 10);
+        background: color.darken(bg, -10%);
+        color: color.darken(fg, 10%);
     }
 
     .drop-down-menu .options a:hover,
@@ -50,55 +57,71 @@ $fg: black;
     .slide-menu .options .clickable:hover,
     .drop-down-menu .options .btn:hover,
     .slide-menu .options .btn:hover {
-        background: lighten($bg, 20);
+        background: color.darken(bg, -20%);
     }
 
     .ui-dialog {
         .ui-widget-content,
         .ui-dialog-content {
-            background: lighten($bg, 20);
+            background: color.darken(bg, -20%);
         }
     }
 
     .pagenav li > a {
         &:hover,
         &:active {
-            background-color: lighten($bg, 30);
+            background-color: color.darken(bg, -30%);
         }
     }
 
     #basic-analysis {
         .chart {
-            background-color: lighten($bg, 10);
+            background-color: color.darken(bg, -10%);
         }
 
         rect.static-info-box {
-            fill: lighten($bg, 20);
+            fill: color.darken(bg, -20%);
         }
 
         #stacked-chart {
-            background-color: lighten($bg, 20);
+            background-color: color.darken(bg, -20%);
         }
 
         .xaxis-container .background,
         rect.static-label-box {
-            fill: lighten($bg, 25);
+            fill: color.darken(bg, -25%);
         }
     }
 
     #global-header {
-        background: lighten($bg, 20);
+        background: color.darken(accent, 20%);
+        border: none;
 
         .nav-group .drop-down-menu {
             &.active,
             &:hover {
+                background: transparent;
+
                 .nav-link {
-                    background: lighten($bg, 30);
+                    background: transparent;
+                    color: color.get(fg);
+                }
+            }
+
+            .selection {
+                border: none;
+
+                &::after {
+                    filter: invert(1) saturate(0) brightness(2);
                 }
             }
         }
-        .nav-bar .nav-link:visited {
-            color: darken($fg, 20);
+
+        .nav-bar {
+            .nav-link,
+            .nav-link:visited {
+                color: color.darken(fg, 10%);
+            }
         }
     }
 
@@ -106,19 +129,23 @@ $fg: black;
     .section {
         header,
         .header {
-            background: lighten($bg, 30);
+            background: color.darken(bg, -30%);
         }
     }
 
     footer.achievements {
-        background: lighten($bg, 30);
+        background: color.darken(bg, -30%);
     }
 
-    thead tr {
-        background: lighten($bg, 40);
+    table:not(.unstyled) thead tr {
+        background: color.darken(bg, -40%);
     }
 
     .grabber {
-        background: lighten($bg, 40);
+        background: color.darken(bg, -40%);
+    }
+
+    .leaflet-container img.leaflet-tile {
+        filter: invert(1) hue-rotate(320deg);
     }
 }

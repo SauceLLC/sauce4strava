@@ -349,5 +349,29 @@
                 }
             };
         }, {once: true});
+
+        /*sauce.propDefined('Strava.Maps.Mapbox.Base', Klass => {
+            const setMapIdsSave = Klass.setMapIds;
+            Klass.setMapIds = function(obj) {
+                //obj.standard_id = 'mapbox.mapbox-streets-v8,mapbox.mapbox-terrain-v2/11/1166/644.vector.pbf?sku=1016eWbIcugXva';
+                obj.standard_id = 'mapbox.mapbox-streets-v8';
+                const darkid = 'mapbox.mapbox-streets-v8';
+                const sku = '1016eWbIcugXva';
+                obj.standard_template = `https://api.tiles.mapbox.com/v4/${darkid}/{z}/{x}/{y}.png?sku=${sku}&access_token=${window._maps_api}`;
+                //obj.standard_template = `https://api.tiles.mapbox.com/v4/${obj.standard_id}/{z}/{x}/{y}.png?access_token=${window._maps_api}`;
+                return setMapIdsSave.call(this, obj);
+            };
+            
+        });
+
+        sauce.propDefined('L.mapbox.TileLayer', Klass => {
+            const _setTileJSONSave = Klass.prototype._setTileJSON;
+            Klass.prototype._setTileJSON = function(t) {
+                //this.options.format = this.options.format || t.tiles[0].match(r)[1];
+                this.options.format = 'pbf';
+                debugger;
+                return _setTileJSONSave.apply(this, arguments);
+            };
+        });*/
     }
 })();
