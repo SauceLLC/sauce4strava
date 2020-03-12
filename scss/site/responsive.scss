@@ -78,6 +78,13 @@ html.sauce-responsive,
                 display: flex;
                 flex: 1 1 100%;
 
+                &:hover {
+                    // Prevent bug exposed by this nav being .collapsible
+                    // When display is not flex this container is hidden so strava didn't get exposed to it.
+                    cursor: initial;
+                    background-color: initial;
+                }
+
                 .global-nav {
                     margin: 0;
                 }
