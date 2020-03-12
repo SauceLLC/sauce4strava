@@ -16,8 +16,8 @@
 
 
 .sauce-dark-mode {
-    --sauce-bg-light: 0%;
-    --sauce-fg-light: 100%;
+    --sauce-bg-light: 8%;
+    --sauce-fg-light: 92%;
 
     body {
         background-color: color.get(bg);
@@ -34,14 +34,49 @@
     .pagination a,
     .pagination span,
     .pagination em {
-        background-color: color.darken(bg, -4%);
+        background-color: #5554;
+        border-color: #5559;
         color: color.darken(fg, 2%);
 
         &:active,
         &.active {
-            background-color: color.darken(bg, -10%);
+            background-color: #5559;
+            border-color: #555c;
+            color: color.darken(fg, -6%);
+        }
+
+        &:hover,
+        &:focus {
+            background-color: #5556;
+            border-color: #555a;
+            color: color.darken(fg, -2%);
+        }
+
+        &[disabled],
+        &.disabled {
+            background-color: #5551;
+            border-color: #5555;
+            color: color.darken(fg, 10%);
         }
     }
+
+    .btn,
+    .button,
+    button,
+    input[type='submit'],
+    input[type='button'],
+    input[type='reset'] {
+        &.btn-minimal,
+        &.minimal {
+            &:hover,
+            &:focus {
+                background-color: pink;
+                //border-color: #555a;
+                //color: color.darken(fg, -2%);
+            }
+        }
+    }
+
     .drop-down-menu.active .selection {
         background-color: color.darken(bg, -10%);
     }
@@ -94,7 +129,7 @@
     }
 
     #global-header {
-        background: color.darken(accent, 20%);
+        background: color.darken(accent, 15%);
         border: none;
 
         .nav-group .drop-down-menu {
@@ -123,6 +158,10 @@
                 color: color.darken(fg, 10%);
             }
         }
+
+        .app-icon.icon-search {
+            filter: invert(1);
+        }
     }
 
     section,
@@ -147,5 +186,13 @@
 
     .leaflet-container img.leaflet-tile {
         filter: invert(1) hue-rotate(320deg);
+    }
+
+    .ReactModal__Content [class|="Modal--content"] {
+        background-color: color.darken(bg, -5%);
+    }
+
+    .activity-stats .secondary-stats.inline-stats {
+        background-color: color.darken(bg, -5%);
     }
 }
