@@ -133,16 +133,16 @@ abbr.unit {
     text.static-label-box.label,
     text.laps-label,
     text.segments-label {
-        fill: #555 !important;
+        fill: color.shade(fg, 30%) !important;
     }
 
     text.static-label-box.detail {
-        fill: #222 !important;
+        fill: color.shade(fg, 10%) !important;
         font-size: 11px;
     }
 
     #effort-detail {
-        color: #222 !important;
+        color: color.shade(fg, 10%) !important;
     }
 
 }

@@ -4,20 +4,28 @@
     --sauce-bg-hue: 0;
     --sauce-bg-sat: 0%;
     --sauce-bg-light: 100%;
+    --sauce-bg-shade-dir: -1;
 
     --sauce-fg-hue: 0;
     --sauce-fg-sat: 0%;
     --sauce-fg-light: 0%;
+    --sauce-fg-shade-dir: 1;
 
     --sauce-accent-hue: 16;
     --sauce-accent-sat: 100%;
     --sauce-accent-light: 50%;
+    --sauce-accent-shade-dir: -1;
 }
 
 
 .sauce-dark-mode {
     --sauce-bg-light: 8%;
-    --sauce-fg-light: 92%;
+    --sauce-bg-shade-dir: 1;
+    --sauce-fg-light: 80%;
+    --sauce-fg-shade-dir: -1;
+
+    $hard-border-color: color.shade(bg, 20%);
+    $soft-border-color: color.shade(bg, 5%);
 
     body {
         background-color: color.get(bg);
@@ -42,14 +50,14 @@
         &.active {
             background-color: #5559;
             border-color: #555c;
-            color: color.darken(fg, -6%);
+            color: color.lighten(fg, 6%);
         }
 
         &:hover,
         &:focus {
             background-color: #5556;
             border-color: #555a;
-            color: color.darken(fg, -2%);
+            color: color.lighten(fg, 2%);
         }
 
         &[disabled],
@@ -60,30 +68,20 @@
         }
     }
 
-    .btn,
-    .button,
-    button,
-    input[type='submit'],
-    input[type='button'],
-    input[type='reset'] {
-        &.btn-minimal,
-        &.minimal {
-            &:hover,
-            &:focus {
-                background-color: pink;
-                //border-color: #555a;
-                //color: color.darken(fg, -2%);
+    .drop-down-menu {
+        &.active .selection {
+            background-color: color.lighten(bg, 10%);
+        }
+
+        .options {
+            background: color.lighten(bg, 10%);
+            color: color.darken(fg, 10%);
+            border-color: $hard-border-color;
+
+            li > * {
+                color: inherit;
             }
         }
-    }
-
-    .drop-down-menu.active .selection {
-        background-color: color.darken(bg, -10%);
-    }
-
-    .drop-down-menu .options {
-        background: color.darken(bg, -10%);
-        color: color.darken(fg, 10%);
     }
 
     .drop-down-menu .options a:hover,
@@ -92,39 +90,78 @@
     .slide-menu .options .clickable:hover,
     .drop-down-menu .options .btn:hover,
     .slide-menu .options .btn:hover {
-        background: color.darken(bg, -20%);
+        background: color.lighten(bg, 20%);
+    }
+
+    .slide-menu {
+        box-shadow: none;
+
+        &:not(:first-child) .selection {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .active {
+            background: transparent;
+        }
+
+        .selection:hover {
+        }
     }
 
     .ui-dialog {
         .ui-widget-content,
         .ui-dialog-content {
-            background: color.darken(bg, -20%);
+            background: color.lighten(bg, 8%);
         }
     }
 
-    .pagenav li > a {
-        &:hover,
-        &:active {
-            background-color: color.darken(bg, -30%);
+    .pagenav {
+        border: none;
+        background: color.lighten(bg, 5%);
+
+        li {
+            border-color: $hard-border-color;
+
+            > a {
+                color: color.darken(fg, 10%);
+
+                &:hover,
+                &:active {
+                    background-color: color.lighten(bg, 10%);
+                }
+
+                &:focus {
+                    outline: none;
+                }
+            }
+
+            &.selected a {
+                color: color.lighten(fg, 10%);
+            }
         }
     }
 
     #basic-analysis {
         .chart {
-            background-color: color.darken(bg, -10%);
+            background-color: color.lighten(bg, 10%);
         }
 
         rect.static-info-box {
-            fill: color.darken(bg, -20%);
+            fill: color.lighten(bg, 20%);
         }
 
         #stacked-chart {
-            background-color: color.darken(bg, -20%);
+            background-color: color.lighten(bg, 20%);
         }
 
         .xaxis-container .background,
         rect.static-label-box {
-            fill: color.darken(bg, -25%);
+            fill: color.lighten(bg, 25%);
+        }
+
+        text.static-info-box.value {
+            fill: color.shade(fg, 0%);
         }
     }
 
@@ -132,14 +169,36 @@
         background: color.darken(accent, 15%);
         border: none;
 
+        .branding {
+            filter: saturate(0) contrast(5) drop-shadow(2px 2px 1px #0005);
+        }
+
+        #notifications-button {
+            background: transparent;
+            filter: invert(1);
+        }
+
+        #notifications-drop-down {
+            background-color: color.lighten(bg, 10%);
+            color: color.darken(fg, 10%);
+
+            li a {
+                color: color.darken(fg, 10%);
+
+                &:hover {
+                    background-color: color.lighten(bg, 5%);
+                }
+            }
+        }
+
         .nav-group .drop-down-menu {
             &.active,
             &:hover {
-                background: transparent;
+                background: #0006;
 
                 .nav-link {
                     background: transparent;
-                    color: color.get(fg);
+                    color: color.lighten(fg, 15%);
                 }
             }
 
@@ -155,7 +214,7 @@
         .nav-bar {
             .nav-link,
             .nav-link:visited {
-                color: color.darken(fg, 10%);
+                color: color.lighten(fg, 10%);
             }
         }
 
@@ -168,20 +227,25 @@
     .section {
         header,
         .header {
-            background: color.darken(bg, -30%);
+            background: color.lighten(bg, 10%);
+            border: none;
+        }
+
+        &.with-border {
+            border-color: $soft-border-color;
         }
     }
 
     footer.achievements {
-        background: color.darken(bg, -30%);
+        background: color.lighten(bg, 5%);
     }
 
     table:not(.unstyled) thead tr {
-        background: color.darken(bg, -40%);
+        background: color.lighten(bg, 5%);
     }
 
     .grabber {
-        background: color.darken(bg, -40%);
+        background: color.lighten(bg, 14%);
     }
 
     .leaflet-container img.leaflet-tile {
@@ -189,10 +253,164 @@
     }
 
     .ReactModal__Content [class|="Modal--content"] {
-        background-color: color.darken(bg, -5%);
+        background-color: color.lighten(bg, 5%);
     }
 
-    .activity-stats .secondary-stats.inline-stats {
-        background-color: color.darken(bg, -5%);
+    .activity-stats {
+        .section {
+            border-color: $soft-border-color;
+        }
+
+        .secondary-stats.inline-stats {
+            background-color: color.lighten(bg, 5%);
+        }
+    }
+
+    .activity-summary-container:before {
+        border-color: $soft-border-color;
+    }
+
+    td {
+        border-bottom-color: color.lighten(bg, 10%);
+    }
+
+    .ui-dialog {
+        border-color: $hard-border-color;
+        background-color: color.shade(bg, 10%);
+
+        .ui-dialog-content,
+        .ui-widget-content {
+            border-color: $hard-border-color;
+        }
+    }
+
+    .actions-menu {
+        border-color: transparent;
+
+        > * {
+            background-color: color.shade(bg, 10%);
+        }
+    }
+
+    #heading {
+        .app-icon,
+        .icon-collapse {
+            filter: invert(1);
+        }
+
+        .button {
+            background: transparent;
+        }
+
+        .button,
+        .sharing {
+            border-color: transparent
+        }
+    }
+
+    .lightbox-window {
+        $body-bg-color: color.shade(bg, 10%);
+        background-color: $body-bg-color;
+        color: color.shade(fg, 10%);
+        border-color: $hard-border-color;
+
+
+        .modal-header {
+            background-color: color.shade(accent, 20%);
+            border-color: $soft-border-color;
+        }
+
+        .tabs {
+            background-color: color.shade(bg, 15%);
+            border-color: $hard-border-color;
+
+            .tab {
+                color: inherit;
+            }
+
+            .selected .tab {
+                background-color: $body-bg-color;
+                border-color: $hard-border-color;
+            }
+        }
+
+        .modal-body {
+            background-color: $body-bg-color !important;
+        }
+
+        .modal-footer {
+            background-color: color.shade(bg, 0%) !important;
+        }
+
+        .comments,
+        .list-athletes {
+            li,
+            form {
+                border-color: $hard-border-color !important;
+            }
+        }
+    }
+
+    input:not([type="range"]),
+    textarea,
+    .textarea-clone {
+        background-color: color.shade(bg, 8%) !important;
+        color: color.shade(fg, 8%) !important;
+        border-color: $hard-border-color !important;
+
+        &:focus {
+            background-color: color.shade(bg, 2%) !important;
+            color: color.shade(fg, 2%) !important;
+        }
+    }
+
+    #notifications-drop-down {
+        border-color: $hard-border-color !important;
+
+        li {
+            border-color: $hard-border-color !important;
+
+            &.unread {
+                background-color: color.shade(bg, 2%) !important;
+            }
+        }
+    }
+
+    .activity-summary .others-section-v2 {
+        border-color: $hard-border-color !important;
+    }
+
+    #map-container,
+    #map-canvas {
+        border: none;
+    }
+
+    .grabber {
+        border-color: $hard-border-color !important;
+    }
+
+    #heading.collapsed header {
+        border-color: $hard-border-color !important;
+    }
+
+    .infobox {
+        background-color: color.shade(bg, 2%) !important;
+        color: color.shade(fg, 2%) !important;
+    }
+
+    #basic-analysis #effort-detail {
+        color: color.shade(fg, 2%) !important;
+    }
+
+    .base-chart rect.simple-bar {
+        stroke: transparent;
+    }
+
+    #basic-analysis {
+        g .bottom-line.partial,
+        .xaxis-container .domain,
+        .base-chart .extent {
+            stroke: color.shade(fg, 30%) !important;
+        }
     }
 }

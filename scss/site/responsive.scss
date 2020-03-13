@@ -1,5 +1,7 @@
 @use 'mobile';
 @use 'defines';
+@use 'color';
+
 
 html.sauce-responsive,
 .sauce-responsive body {
@@ -418,7 +420,7 @@ html.sauce-responsive,
             }
 
             > *:first-child {
-                border-right: 1px solid #f0f0f5;  // replicate the above border
+                border-right: 1px solid color.shade(bg, 10%);  // replicate the above border
             }
 
             .activity-summary,

@@ -1,7 +1,38 @@
 @function get($key) {
-    @return hsl(var(--sauce-#{$key}-hue), var(--sauce-#{$key}-sat), var(--sauce-#{$key}-light));
+    @return hsl(
+        var(--sauce-#{$key}-hue),
+        var(--sauce-#{$key}-sat),
+        var(--sauce-#{$key}-light));
+}
+
+@function alpha($key, $alpha) {
+    @return hsla(
+        var(--sauce-#{$key}-hue),
+        var(--sauce-#{$key}-sat),
+        var(--sauce-#{$key}-light),
+        $alpha);
 }
 
 @function darken($key, $amount, $alpha: 100%) {
-    @return hsla(var(--sauce-#{$key}-hue), var(--sauce-#{$key}-sat), calc(var(--sauce-#{$key}-light) - #{$amount}), $alpha);
+    @return hsla(
+        var(--sauce-#{$key}-hue),
+        var(--sauce-#{$key}-sat),
+        calc(var(--sauce-#{$key}-light) - #{$amount}),
+        $alpha);
+}
+
+@function lighten($key, $amount, $alpha: 100%) {
+    @return hsla(
+        var(--sauce-#{$key}-hue),
+        var(--sauce-#{$key}-sat),
+        calc(var(--sauce-#{$key}-light) + #{$amount}),
+        $alpha);
+}
+
+@function shade($key, $amount, $alpha: 100%) {
+    @return hsla(
+        var(--sauce-#{$key}-hue),
+        var(--sauce-#{$key}-sat),
+        calc(var(--sauce-#{$key}-light) + (#{$amount} * var(--sauce-#{$key}-shade-dir))),
+        $alpha);
 }

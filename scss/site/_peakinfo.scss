@@ -1,4 +1,5 @@
 @use 'defines';
+@use 'color';
 
 
 #sauce-infopanel {
@@ -63,18 +64,20 @@
         }
 
         tr.selected {
-            background: rgba(0, 0, 0, 0.74);
-            color: #fff;
+            background: color.shade(bg, 75%);
+            $color: color.shade(fg, 90%);
+            color: $color;
+
+            td:last-child {
+                color: $color;
+            }
         }
 
         tr:hover:not(.selected) {
-            background: #9d9d9d87;
+            background: color.shade(bg, 30%);
             cursor: pointer;
         }
 
-        tr.selected td:last-child {
-            color: white;
-        }
 
         td {
             padding: 0.5em 0.4em;
@@ -120,11 +123,7 @@
         }
 
         tr:nth-child(odd) {
-            background-color: #fff8;
-        }
-
-        tr:hover {
-            background: #fffe;
+            background-color: color.shade(bg, 5%);
         }
 
         td.rank_holder {
