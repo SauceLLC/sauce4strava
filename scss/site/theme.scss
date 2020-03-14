@@ -32,6 +32,21 @@
         color: color.get(fg);
     }
 
+    .app-icon {
+        &:not(.icon-badge-premium):not(.icon-badge-pro) {
+            filter: invert(1);
+        }
+    }
+
+    .card {
+        background-color: color.shade(bg, 8%);
+        color: color.shade(fg, 8%);
+    }
+
+    #notifications-button {
+        border: none;
+    }
+
     .btn,
     .button,
     button,
@@ -65,6 +80,16 @@
             background-color: #5551;
             border-color: #5555;
             color: color.darken(fg, 10%);
+        }
+    }
+
+    .page {
+        a:not(.btn),
+        .btn.btn-link {
+            &:link,
+            &:visited {
+                color: color.shade(fg, 4%);
+            }
         }
     }
 
@@ -169,6 +194,10 @@
         background: color.darken(accent, 15%);
         border: none;
 
+        .upload-button.app-icon {
+            filter: invert(1) saturate(0) contrast(3) !important;
+        }
+
         .branding {
             filter: saturate(0) contrast(5) drop-shadow(2px 2px 1px #0005);
         }
@@ -209,6 +238,11 @@
                     filter: invert(1) saturate(0) brightness(2);
                 }
             }
+
+            .app-icon {
+                filter: initial;
+                background-position: initial !important;
+            }
         }
 
         .nav-bar {
@@ -217,17 +251,13 @@
                 color: color.lighten(fg, 10%);
             }
         }
-
-        .app-icon.icon-search {
-            filter: invert(1);
-        }
     }
 
     section,
     .section {
         header,
         .header {
-            background: color.lighten(bg, 10%);
+            background: color.shade(bg, 10%);
             border: none;
         }
 
@@ -293,7 +323,6 @@
     }
 
     #heading {
-        .app-icon,
         .icon-collapse {
             filter: invert(1);
         }
@@ -411,6 +440,121 @@
         .xaxis-container .domain,
         .base-chart .extent {
             stroke: color.shade(fg, 30%) !important;
+        }
+    }
+
+    #relative-effort {
+        [class*="WeekInsight--title"] {
+            color: color.shade(fg, 10%);
+        }
+
+        [class*="WeekInsight--description"],
+        [class*="WeekInsight--date-range"] {
+            color: color.shade(fg, 20%);
+        }
+
+        [class*="ActivitySummary--impact"] {
+            color: color.shade(fg, 5%);
+        }
+
+        table[class*="Activities--table"] {
+            tr {
+                &:nth-child(odd) {
+                    background-color: #7773;
+                }
+
+                td {
+                    background-color: transparent;
+                }
+            }
+        }
+    }
+
+    svg.recharts-surface {
+        g.recharts-layer {
+            path.recharts-area-area {
+                fill: color.shade(accent, 30%);
+            }
+
+            path.recharts-area-curve {
+                stroke: color.shade(fg, 30%);
+            }
+        }
+
+        g.recharts-cartesian-grid-vertical,
+        g.recharts-cartesian-axis {
+            line {
+                stroke: color.shade(fg, 40%);
+            }
+        }
+
+        circle.recharts-dot {
+            fill: color.shade(fg, 0%);
+            stroke: color.shade(bg, 50%);
+        }
+    }
+
+    .view > footer {
+        .footer-promos,
+        .footer-global {
+            background-color: color.shade(bg, 5%);
+            color: color.shade(fg, 5%);
+        }
+    }
+
+    #athlete-profile {
+        #totals li strong {
+            color: color.shade(fg, 5%);
+        }
+    }
+
+    .sidebar-footer {
+        a,
+        .dropdown .btn,
+        .copyright {
+            color: color.shade(fg, 15%);
+        }
+    }
+
+    .activity-map.entry-image .entry-image-wrapper img,
+    .group-activity-map img {
+        filter: invert(1) hue-rotate(320deg);
+    }
+
+    .tabbed-cards {
+        .tabs {
+            > li .tab {
+                background-color: color.shade(bg, 5%);
+            }
+
+            > li.selected .tab,
+            > li[aria-selected='true'] .tab {
+                background-color: color.shade(bg, 8%);
+            }
+
+            > li:hover .tab {
+                background-color: color.shade(bg, 15%);
+            }
+        }
+
+        .tab-contents > div {
+            background-color: color.shade(bg, 8%);
+        }
+    }
+
+    #js-dashboard-athlete-goals {
+        .weekly-goal svg {
+            filter: invert(1);
+        }
+
+        [class|="WeeklyGraph--container"] {
+            background-color: transparent;
+
+            svg {
+                text {
+                    fill: color.get(fg);
+                }
+            }
         }
     }
 }
