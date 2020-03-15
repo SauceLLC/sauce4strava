@@ -33,7 +33,7 @@
     }
 
     .app-icon {
-        &:not(.icon-badge-premium):not(.icon-badge-pro) {
+        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium) {
             filter: invert(1);
         }
     }
@@ -41,6 +41,11 @@
     .card {
         background-color: color.shade(bg, 8%);
         color: color.shade(fg, 8%);
+
+        .card-footer,
+        .card-section {
+            border-color: $hard-border-color;
+        }
     }
 
     #notifications-button {
@@ -80,6 +85,16 @@
             background-color: #5551;
             border-color: #5555;
             color: color.darken(fg, 10%);
+        }
+
+        &.btn-link {
+            border-color: transparent;
+            background-color: transparent;
+            color: color.shade(fg, 10%);
+
+            &:hover {
+                color: color.shade(accent, 10%);
+            }
         }
     }
 
@@ -204,7 +219,6 @@
 
         #notifications-button {
             background: transparent;
-            filter: invert(1);
         }
 
         #notifications-drop-down {
@@ -250,6 +264,10 @@
             .nav-link:visited {
                 color: color.lighten(fg, 10%);
             }
+
+            .selected.nav-item {
+                box-shadow: inset 0 -2px 0 0 #fff;
+            }
         }
     }
 
@@ -264,6 +282,10 @@
         &.with-border {
             border-color: $soft-border-color;
         }
+    }
+
+    .section {
+        border-color: $hard-border-color;
     }
 
     footer.achievements {
@@ -343,8 +365,8 @@
         color: color.shade(fg, 10%);
         border-color: $hard-border-color;
 
-
-        .modal-header {
+        .modal-header,
+        .glossary-header {
             background-color: color.shade(accent, 20%);
             border-color: $soft-border-color;
         }
@@ -363,7 +385,8 @@
             }
         }
 
-        .modal-body {
+        .modal-body,
+        .glossary-body {
             background-color: $body-bg-color !important;
         }
 
@@ -377,6 +400,10 @@
             form {
                 border-color: $hard-border-color !important;
             }
+        }
+
+        .glossary-body .btn-group-vertical .btn.selected {
+            background-color: color.shade(bg, 5%);
         }
     }
 
@@ -418,7 +445,8 @@
         border-color: $hard-border-color !important;
     }
 
-    #heading.collapsed header {
+    #heading.collapsed header,
+    #progress-goals .yearly-goal {
         border-color: $hard-border-color !important;
     }
 
@@ -547,6 +575,10 @@
             filter: invert(1);
         }
 
+        [class|="ProgressGoalsRelativeEffortTab--head"] {
+            color: color.shade(fg, 10%);
+        }
+
         [class|="WeeklyGraph--container"] {
             background-color: transparent;
 
@@ -556,5 +588,51 @@
                 }
             }
         }
+    }
+
+    .feed {
+        .group-activity {
+            .list-entries .avatar,
+            .group-activity-icon {
+                background-color: color.shade(bg, 15%);
+                border-color: $hard-border-color;
+            }
+
+            > .entry-media::before,
+            .list-entries > li::before {
+                border-color: $hard-border-color;
+            }
+        }
+
+        .feed-entry {
+            .kudos-comments {
+                .media-actions .btn {
+                    background-color: color.shade(bg, 15%);
+                    border-color: $hard-border-color;
+
+                    &:hover {
+                        background-color: color.shade(bg, 20%);
+                    }
+
+                    &:active {
+                        background-color: color.shade(bg, 5%);
+                    }
+                }
+
+                .kudos-facepile .avatar img {
+                    background-color: color.shade(bg, 15%);
+                    border-color: $hard-border-color;
+                }
+            }
+
+            .entry-comments form .media-content {
+                border-color: $hard-border-color;
+            }
+        }
+    }
+
+    .stat-subtext,
+    .feed time {
+        color: color.shade(fg, 10%);
     }
 }
