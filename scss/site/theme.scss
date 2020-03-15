@@ -558,11 +558,6 @@
         .tabs {
             &.tabs-justified > li {
                 border-bottom: none;
-
-                &.selected,
-                &[aria-selected="true"] {
-                    //border-bottom-color: transparent;
-                }
             }
 
             > li .tab {
@@ -655,5 +650,71 @@
     .stat-subtext,
     .feed time {
         color: color.shade(fg, 10%);
+    }
+
+    .invite-friends {
+        background-color: color.shade(bg, 8%);
+    }
+
+    ul.tabs {
+        border: none;
+
+        > li {
+            border-bottom: 1px solid $hard-border-color;
+
+            &:hover .tab {
+                background-color: color.shade(bg, 8%);
+            }
+        }
+
+        > li.selected,
+        > li[aria-selected='true'] {
+            border-bottom: none;
+
+            .tab {
+                background-color: transparent;
+                border-color: $hard-border-color;
+            }
+        }
+    }
+
+    ul.list-athletes > li {
+        border-color: $hard-border-color;
+    }
+
+    table.striped tr:last-child td {
+        border-color: $soft-border-color;
+    }
+
+    .sidebar {
+        .comparison table {
+            th, td {
+                border-color: $soft-border-color;
+            }
+        }
+
+        .section {
+            border-color: $soft-border-color;
+        }
+    }
+
+    .drop-down-menu .options a,
+    .slide-menu .options a,
+    .drop-down-menu .options .clickable,
+    .slide-menu .options .clickable,
+    .drop-down-menu .options .btn,
+    .slide-menu .options .btn {
+        color: color.shade(fg, 8%);
+    }
+
+    #profile-heatmap-upsell,
+    section.feature-section,
+    .section.feature-section {
+        background-color: color.shade(bg, 5%);
+        color: color.shade(fg, 5%);
+    }
+
+    [class|="StarToggle--star"] {
+        background: transparent !important;
     }
 }
