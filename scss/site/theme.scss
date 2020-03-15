@@ -33,7 +33,7 @@
     }
 
     .app-icon {
-        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium) {
+        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium):not(.icon-at-kom-1):not(.icon-star) {
             filter: invert(1);
         }
     }
@@ -99,6 +99,22 @@
         }
     }
 
+    .pagination {
+        .disabled,
+        .disabled:hover {
+            background-color: #5551;
+            border-color: #5555;
+            color: color.darken(fg, 10%);
+        }
+
+        .active .btn,
+        .active span {
+            background-color: color.shade(accent, 5%);
+            border-color: color.shade(accent, 20%);
+            color: color.get(fg);
+        }
+    }
+
     .page {
         a:not(.btn),
         .btn.btn-link {
@@ -122,6 +138,10 @@
             li > * {
                 color: inherit;
             }
+        }
+
+        .selection::after {
+            filter: invert(1);
         }
     }
 
@@ -301,8 +321,12 @@
         background: color.lighten(bg, 14%);
     }
 
-    .leaflet-container img.leaflet-tile {
-        filter: invert(1) hue-rotate(320deg);
+    .leaflet-container {
+        color: color.shade(fg, 8%);
+
+        img.leaflet-tile {
+            filter: invert(1) hue-rotate(320deg);
+        }
     }
 
     .ReactModal__Content [class|="Modal--content"] {
@@ -339,6 +363,15 @@
 
     .actions-menu {
         border-color: transparent;
+
+        > .slide-menu.active {
+            background-color: transparent;
+        }
+
+        > .button:hover,
+        > .slide-menu .selection:hover {
+            background-color: color.shade(bg, 15%);
+        }
 
         > * {
             background-color: color.shade(bg, 10%);
@@ -460,8 +493,32 @@
         color: color.shade(fg, 2%) !important;
     }
 
-    .base-chart rect.simple-bar {
-        stroke: transparent;
+    .base-chart {
+        rect.simple-bar {
+            stroke: transparent;
+        }
+
+        .grid-line {
+            stroke: color.shade(bg, 20%);
+        }
+
+        .line-chart-curr-fill,
+        .line-chart-range-fill,
+        .area-chart-curr-fill {
+            fill: color.shade(fg, 10%);
+        }
+
+        .area-chart-curr-fill {
+            opacity: 0.5;
+        }
+
+        .s-chart-tooltip-svg,
+        #infoBox rect,
+        .chart-tooltip {
+            fill: color.shade(bg, 15%);
+            stroke: color.shade(fg, 10%);
+            shape-rendering: auto;
+        }
     }
 
     #basic-analysis {
@@ -523,11 +580,19 @@
         }
     }
 
-    .view > footer {
+    footer {
+        background-color: color.shade(bg, 5%);
+        color: color.shade(fg, 8%);
+        border-color: $hard-border-color;
+
         .footer-promos,
         .footer-global {
-            background-color: color.shade(bg, 5%);
-            color: color.shade(fg, 5%);
+            background-color: transparent;
+            color: inherit;
+
+            a {
+                color: inherit;
+            }
         }
     }
 
@@ -548,6 +613,12 @@
     .activity-map.entry-image .entry-image-wrapper img,
     .group-activity-map img {
         filter: invert(1) hue-rotate(320deg);
+    }
+
+    .activity-map-tag {
+        background-color: color.shade(bg, 10%) !important;
+        border-color: $hard-border-color;
+        color: color.shade(fg, 0%);
     }
 
     .entry-images .entry-image-wrapper {
@@ -587,15 +658,11 @@
     }
 
     #js-dashboard-athlete-goals {
-        .weekly-goal svg {
-            filter: invert(1);
-        }
-
-        [class|="ProgressGoalsRelativeEffortTab--head"] {
+        [class*="ProgressGoalsRelativeEffortTab--head"] {
             color: color.shade(fg, 10%);
         }
 
-        [class|="WeeklyGraph--container"] {
+        [class*="WeeklyGraph--container"] {
             background-color: transparent;
 
             svg {
@@ -604,7 +671,37 @@
                 }
             }
         }
+
+        .text-caption2 {
+            color: color.shade(fg, 10%);
+        }
+
+        [class*="WeekChart--bar"] {
+            > span {
+                background-color: color.shade(fg, 10%);
+            }
+        }
+
+        [class*="Stat--stat-label"] {
+            color: color.shade(fg, 10%);
+        }
     }
+
+    .weekly-goal svg {
+        filter: invert(1);
+
+        .volume-bar-container,
+        .bg-circle,
+        .progress-bar-container {
+            fill: #222 !important;
+            shape-rendering: auto !important;  //cripsEdges looks super bad
+        }
+
+        text {
+            color: #222;
+        }
+    }
+
 
     .feed {
         .group-activity {
@@ -686,6 +783,19 @@
         border-color: $soft-border-color;
     }
 
+    .table-striped > tbody > tr:nth-of-type(even) {
+        background-color: color.shade(bg, 8%);
+    }
+
+    .table > tbody > tr > td {
+        border-color: $hard-border-color;
+    }
+
+    .table th {
+        background: color.shade(bg, 8%);
+        border-color: $soft-border-color;
+    }
+
     .sidebar {
         .comparison table {
             th, td {
@@ -716,5 +826,242 @@
 
     [class|="StarToggle--star"] {
         background: transparent !important;
+    }
+
+    .panel {
+        background-color: color.get(bg);
+        border-color: $hard-border-color;
+        color: color.get(fg);
+    }
+
+    #search-results {
+        th {
+            background-color: color.shade(bg, 5%);
+            border-color: $hard-border-color;
+
+            > .btn {
+                border: none;
+                border-radius: 0;
+            }
+        }
+
+        td.active,
+        th.active {
+            background-color: color.shade(bg, 8%);
+        }
+    }
+
+    .form-control {
+        background-color: color.shade(bg, 8%);
+        color: color.shade(fg, 8%);
+        border-color: $hard-border-color;
+    }
+
+    #dashboard-sidebar .section .media .media-object .media-img {
+        filter: invert(1);
+    }
+
+    .challenge-list-view li {
+        &,
+        .challenge-logo {
+            border-color: $soft-border-color;
+        }
+    }
+
+    #explorer .main-content {
+        #segments-sidebar,
+        .toggle-sidebar.hide {
+            background-color: color.shade(bg, 8%);
+        }
+
+        #segment-list ul li:hover {
+            background-color: color.shade(bg, 15%);
+        }
+    }
+
+    .info {
+        color: color.shade(fg, 8%);
+    }
+
+    .leaflet-control-layers, .leaflet-bar {
+        background-color: color.shade(bg, 8%);
+
+        a {
+            filter: invert(1);
+        }
+    }
+
+    .leaflet-container .leaflet-control-attribution {
+        background-color: color.shade(bg, 8%);
+    }
+
+    .leaflet-popup-content-wrapper,
+    .map-legends,
+    .map-tooltip,
+    .segment-info-box {
+        background-color: color.shade(bg, 8%);
+    }
+
+    .segment-info-box .info-box-header h1 {
+        color: color.shade(fg, 8%);
+    }
+
+    .segment-info-box .records {
+        background-color: color.shade(bg, 10%);
+    }
+
+    .segment-info-box .details-link .button {
+        border-color: $hard-border-color;
+    }
+
+    #strava-map-controls {
+        a {
+            color: color.shade(fg, 8%);
+        }
+
+        button,
+        .button,
+        .drop-down-menu .selection {
+            background-color: color.shade(bg, 8%);
+            color: color.shade(fg, 8%);
+
+            &:hover {
+                background-color: color.shade(bg, 15%);
+            }
+        }
+
+        .drop-down-menu .selection::after {
+             border-top-color: color.shade(fg, 8%);
+        }
+    }
+
+    .elevation-chart,
+    .activity-charts {
+        .axis,
+        .info-box,
+        .chart-separator {
+            stroke: color.shade(fg, 8%);
+        }
+
+        .grid {
+            stroke: color.shade(bg, 20%);
+        }
+
+        .fill {
+            fill: color.shade(bg, 25%, 50%);
+        }
+
+        .info-box {
+            fill: color.shade(bg, 10%, 50%);
+        }
+    }
+
+    .leaderboard {
+        .filters {
+            border-color: $hard-border-color;
+
+            a, .option {
+                color: color.shade(fg, 8%);
+            }
+
+            .option {
+                background: color.shade(bg, 8%);
+            }
+
+            #premium-new ul {
+                border-color: $hard-border-color;
+            }
+        }
+
+        td.athlete a {
+            color: color.shade(fg, 15%);
+        }
+    }
+
+    .leaflet-container {
+        .leaflet-control-attribution a,
+        .map-info-container a {
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    .feed-header #feed-filter {
+        &.open .dropdown-toggle {
+            background-color: color.shade(bg, 15%);
+            border-color: $hard-border-color;
+            color: color.shade(fg, 10%);
+        }
+
+        .dropdown-toggle:hover {
+            background-color: color.shade(bg, 18%);
+        }
+    }
+
+    .dropdown-menu {
+        background: color.shade(bg, 5%);
+        color: color.shade(fg, 5%);
+        overflow: auto !important;
+
+        > li > a {
+            &::after {
+                border-color: $soft-border-color;
+            }
+
+            &:hover,
+            &:focus {
+                background: color.shade(bg, 10%);
+                color: color.shade(fg, 2%);
+            }
+        }
+    }
+
+    ul.routes-list li.route-card {
+        background: color.shade(bg, 5%);
+        color: color.shade(fg, 5%);
+
+        .timestamp {
+            background: color.shade(bg, 8%);
+            color: color.shade(fg, 8%);
+        }
+
+        .actions {
+            background: color.shade(bg, 8%);
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    .inline-stats .label,
+    .inline-stats .stat-subtext {
+        color: color.shade(fg, 5%);
+    }
+
+    label,
+    .label,
+    .form-control-label {
+        color: color.shade(fg, 5%);
+    }
+
+    .sport-select {
+        border-color: $hard-border-color;
+    }
+
+    hr {
+        border-color: $hard-border-color;
+    }
+
+    .ui-datepicker {
+        border-color: $hard-border-color;
+        background: color.shade(bg, 8%);
+        color: color.shade(fg, 8%);
+
+        .ui-datepicker-header {
+            background: color.shade(bg, 12%);
+            color: color.shade(fg, 12%);
+        }
+    }
+
+    #training-header {
+        background: transparent;
+        color: color.shade(fg, 0%);
     }
 }
