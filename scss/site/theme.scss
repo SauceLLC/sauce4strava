@@ -41,6 +41,7 @@
     .card {
         background-color: color.shade(bg, 8%);
         color: color.shade(fg, 8%);
+        border-color: $hard-border-color;
 
         .card-footer,
         .card-section {
@@ -549,10 +550,24 @@
         filter: invert(1) hue-rotate(320deg);
     }
 
+    .entry-images .entry-image-wrapper {
+        background-color: transparent;
+    }
+
     .tabbed-cards {
         .tabs {
+            &.tabs-justified > li {
+                border-bottom: none;
+
+                &.selected,
+                &[aria-selected="true"] {
+                    //border-bottom-color: transparent;
+                }
+            }
+
             > li .tab {
-                background-color: color.shade(bg, 5%);
+                background-color: color.shade(bg, 12%);
+                border-color: $hard-border-color;
             }
 
             > li.selected .tab,
@@ -561,12 +576,18 @@
             }
 
             > li:hover .tab {
-                background-color: color.shade(bg, 15%);
+                background-color: color.shade(bg, 20%);
             }
         }
 
-        .tab-contents > div {
+        .tab-contents {
+            border-top: none;
+            border-color: $hard-border-color;
             background-color: color.shade(bg, 8%);
+
+            > div {
+                background-color: color.shade(bg, 8%);
+            }
         }
     }
 
