@@ -33,7 +33,7 @@
     }
 
     .app-icon {
-        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium):not(.icon-at-kom-1):not(.icon-star) {
+        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium):not([class*="icon-at-"]):not(.icon-star):not(.icon-badge-verified):not(.icon-color) {
             filter: invert(1);
         }
     }
@@ -120,7 +120,7 @@
         .btn.btn-link {
             &:link,
             &:visited {
-                color: color.shade(fg, 4%);
+                //color: color.shade(fg, 4%);  // XXX messes up valid blue links.  Why do we need this again?
             }
         }
     }
@@ -610,8 +610,9 @@
         }
     }
 
-    .activity-map.entry-image .entry-image-wrapper img,
-    .group-activity-map img {
+    .activity-map.entry-image img,
+    .group-activity-map img,
+    .group-map img {
         filter: invert(1) hue-rotate(320deg);
     }
 
@@ -637,7 +638,7 @@
             }
 
             > li.selected .tab,
-            > li[aria-selected='true'] .tab {
+            > li[aria-selected="true"] .tab {
                 background-color: color.shade(bg, 8%);
             }
 
@@ -741,6 +742,23 @@
             .entry-comments form .media-content {
                 border-color: $hard-border-color;
             }
+
+            a, .entry-athlete, .entry-author {
+                color: color.shade(fg, 8%);
+            }
+
+            .list-stats, .goal-message, .featured-achivements {
+                color: color.shade(fg, 12%);
+            }
+
+            .entry-container > .entry-head::before,
+            .entry-container > .entry-body::before {
+                border-color: $hard-border-color !important;
+            }
+
+            .entry::before {
+                background-color: color.shade(bg, 20%) !important;
+            }
         }
     }
 
@@ -755,6 +773,10 @@
 
     ul.tabs {
         border: none;
+
+        .tab {
+            color: color.shade(fg, 8%);
+        }
 
         > li {
             border-bottom: 1px solid $hard-border-color;
@@ -771,6 +793,7 @@
             .tab {
                 background-color: transparent;
                 border-color: $hard-border-color;
+                color: color.shade(fg, 2%);
             }
         }
     }
@@ -1063,5 +1086,49 @@
     #training-header {
         background: transparent;
         color: color.shade(fg, 0%);
+    }
+
+    .activity-summary-v2 .activity-calendar .highlighted .activity-indicator {
+        background: color.shade(fg, 12%);
+    }
+
+    .posts.topics,
+    #discussion-topics {
+        > li {
+            border-color: $hard-border-color;
+        }
+
+        .post-container ol.comments > li {
+            border-color: $soft-border-color;
+
+            &.see-all {
+                background: color.shade(bg, 5%);
+                color: color.shade(fg, 5%);
+            }
+        }
+    }
+
+    .shared-content {
+        border-color: $soft-border-color;
+
+        .shared-content-text {
+            color: color.shade(fg, 5%);
+        }
+    }
+
+    #header-photos ul a {
+        border-color: $soft-border-color;
+    }
+
+    .profile-heading .avatar img {
+        border-color: $hard-border-color;
+    }
+
+    a.view-all-link {
+        color: color.shade(fg, 5%);
+    }
+
+    .athlete-graph ul.intervals .interval {
+        border-left-color: $soft-border-color;
     }
 }
