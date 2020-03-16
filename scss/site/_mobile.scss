@@ -1,4 +1,5 @@
 @use 'defines';
+@use 'color';
 
 
 @keyframes clickoutline {
@@ -127,8 +128,8 @@
                 }
 
                 .sauce-title-menu .selection {
-                    background-color: #f7f7fa; // match other headings
-                    border-bottom: 1px solid #dfdfe8;
+                    background-color: color.shade(bg, 4%); // match other headings
+                    border-bottom: 1px solid color.shade(bg, 15%);
                 }
 
                 .sauce-title-menu .selection,
@@ -498,7 +499,7 @@
             }
 
             > tbody > tr:nth-child(odd) {
-                background-color: #fafafa;
+                background-color: color.shade(bg, 5%);
             }
 
             > tbody > tr > td {

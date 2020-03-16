@@ -15,6 +15,26 @@
     --sauce-accent-sat: 100%;
     --sauce-accent-light: 50%;
     --sauce-accent-shade-dir: -1;
+
+    --sauce-accent2-hue: 45;
+    --sauce-accent2-sat: 100%;
+    --sauce-accent2-light: 55%;
+    --sauce-accent2-shade-dir: -1;
+
+    --sauce-accent3-hue: 80;
+    --sauce-accent3-sat: 100%;
+    --sauce-accent3-light: 55%;
+    --sauce-accent3-shade-dir: -1;
+
+    --sauce-accent4-hue: 200;
+    --sauce-accent4-sat: 100%;
+    --sauce-accent4-light: 55%;
+    --sauce-accent4-shade-dir: -1;
+
+    --sauce-accent5-hue: 308;
+    --sauce-accent5-sat: 100%;
+    --sauce-accent5-light: 40%;
+    --sauce-accent5-shade-dir: -1;
 }
 
 
@@ -33,7 +53,7 @@
     }
 
     .app-icon {
-        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium):not([class*="icon-at-"]):not(.icon-star):not(.icon-badge-verified):not(.icon-color) {
+        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium):not([class*="icon-at-"]):not(.icon-star):not(.icon-badge-verified):not(.icon-color):not(.icon-white) {
             filter: invert(1);
         }
     }
@@ -131,7 +151,7 @@
         }
 
         .options {
-            background: color.lighten(bg, 10%);
+            background-color: color.lighten(bg, 10%);
             color: color.darken(fg, 10%);
             border-color: $hard-border-color;
 
@@ -151,7 +171,7 @@
     .slide-menu .options .clickable:hover,
     .drop-down-menu .options .btn:hover,
     .slide-menu .options .btn:hover {
-        background: color.lighten(bg, 20%);
+        background-color: color.lighten(bg, 20%);
     }
 
     .slide-menu {
@@ -173,13 +193,13 @@
     .ui-dialog {
         .ui-widget-content,
         .ui-dialog-content {
-            background: color.lighten(bg, 8%);
+            background-color: color.lighten(bg, 8%);
         }
     }
 
     .pagenav {
         border: none;
-        background: color.lighten(bg, 5%);
+        background-color: color.lighten(bg, 5%);
 
         li {
             border-color: $hard-border-color;
@@ -227,7 +247,7 @@
     }
 
     #global-header {
-        background: color.darken(accent, 15%);
+        background-color: color.darken(accent, 15%);
         border: none;
 
         .upload-button.app-icon {
@@ -258,7 +278,7 @@
         .nav-group .drop-down-menu {
             &.active,
             &:hover {
-                background: #0006;
+                background-color: #0006;
 
                 .nav-link {
                     background: transparent;
@@ -296,8 +316,13 @@
     .section {
         header,
         .header {
-            background: color.shade(bg, 10%);
+            background-color: color.shade(bg, 10%);
             border: none;
+        }
+
+        footer,
+        .footer {
+            box-shadow: none;
         }
 
         &.with-border {
@@ -310,15 +335,19 @@
     }
 
     footer.achievements {
-        background: color.lighten(bg, 5%);
+        background-color: color.lighten(bg, 5%);
+    }
+
+    thead th {
+        border-bottom-color: $hard-border-color;
     }
 
     table:not(.unstyled) thead tr {
-        background: color.lighten(bg, 5%);
+        background-color: color.lighten(bg, 5%);
     }
 
     .grabber {
-        background: color.lighten(bg, 14%);
+        background-color: color.lighten(bg, 14%);
     }
 
     .leaflet-container {
@@ -338,7 +367,7 @@
             border-color: $soft-border-color;
         }
 
-        .secondary-stats.inline-stats {
+        .secondary-stats.inline-stats:not(.sauce-stats) {
             background-color: color.lighten(bg, 5%);
         }
     }
@@ -815,7 +844,7 @@
     }
 
     .table th {
-        background: color.shade(bg, 8%);
+        background-color: color.shade(bg, 8%);
         border-color: $soft-border-color;
     }
 
@@ -988,7 +1017,7 @@
             }
 
             .option {
-                background: color.shade(bg, 8%);
+                background-color: color.shade(bg, 8%);
             }
 
             #premium-new ul {
@@ -1021,7 +1050,7 @@
     }
 
     .dropdown-menu {
-        background: color.shade(bg, 5%);
+        background-color: color.shade(bg, 5%);
         color: color.shade(fg, 5%);
         overflow: auto !important;
 
@@ -1032,30 +1061,34 @@
 
             &:hover,
             &:focus {
-                background: color.shade(bg, 10%);
+                background-color: color.shade(bg, 10%);
                 color: color.shade(fg, 2%);
             }
         }
     }
 
     ul.routes-list li.route-card {
-        background: color.shade(bg, 5%);
+        background-color: color.shade(bg, 5%);
         color: color.shade(fg, 5%);
 
         .timestamp {
-            background: color.shade(bg, 8%);
+            background-color: color.shade(bg, 8%);
             color: color.shade(fg, 8%);
         }
 
         .actions {
-            background: color.shade(bg, 8%);
+            background-color: color.shade(bg, 8%);
             color: color.shade(fg, 8%);
         }
     }
 
     .inline-stats .label,
-    .inline-stats .stat-subtext {
+    .inline-stats .stat-subtext,
+    .inline-stats.nav-style a {
         color: color.shade(fg, 5%);
+    }
+    .inline-stats.nav-style a:hover {
+        color: color.shade(accent4, 10%);
     }
 
     label,
@@ -1074,22 +1107,95 @@
 
     .ui-datepicker {
         border-color: $hard-border-color;
-        background: color.shade(bg, 8%);
+        background-color: color.shade(bg, 8%);
         color: color.shade(fg, 8%);
 
         .ui-datepicker-header {
-            background: color.shade(bg, 12%);
+            background-color: color.shade(bg, 12%);
             color: color.shade(fg, 12%);
         }
     }
 
-    #training-header {
-        background: transparent;
-        color: color.shade(fg, 0%);
+    & {
+        $ride-color: color.shade(accent, 30%);
+        $ride-border-color: color.shade(accent, 40%);
+        $run-color: color.shade(accent2, 30%);
+        $run-border-color: color.shade(accent2, 40%);
+        $swim-color: color.shade(accent4, 30%);
+        $swim-border-color: color.shade(accent4, 40%);
+
+        .ride-type-ride,
+        .ride-type,
+        .ride-workout-type-10,
+        .tt-workout-type-ride .key-chip,
+        .tt-workout-type-virtualride,
+        .tt-workout-type-ebikeride {
+            .key-chip {
+                background-color: $ride-color;
+            }
+        }
+
+        .run-type-run,
+        .run-workout-type-0,
+        .run-type,
+        .tt-workout-type-run {
+            .key-chip {
+                background-color: $run-color;
+            }
+        }
+
+        .swim-type,
+        .tt-workout-type-swim {
+            .key-chip {
+                background-color: $swim-color;
+            }
+        }
+
+        #training-header {
+            background-color: color.get(bg);
+            color: color.shade(fg, 0%);
+        }
+
+        #training-log-intervals {
+            .activity-type-wrapper {
+                stroke: color.shade(bg, 40%);
+                fill: color.shade(bg, 15%);
+            }
+
+            .activity-sport-ride,
+            .activity-type-ride,
+            .activity-type-ebikeride,
+            .activity-type-virtualride {
+                fill: $ride-color;
+                stroke: $ride-border-color;
+            }
+
+            .activity-sport-run,
+            .activity-type-run {
+                fill: $run-color;
+                stroke: $run-border-color;
+            }
+
+            .activity-sport-swim,
+            .activity-type-swim {
+                fill: $swim-color;
+                stroke: $swim-border-color;
+            }
+
+            .activity-threshold-zero {
+                fill: color.shade(fg, 20%) !important; 
+                stroke: color.shade(bg, 20%) !important;
+            }
+
+            .sum,
+            text.day-total {
+                fill: color.get(fg) !important;
+            }
+        }
     }
 
     .activity-summary-v2 .activity-calendar .highlighted .activity-indicator {
-        background: color.shade(fg, 12%);
+        background-color: color.shade(fg, 12%);
     }
 
     .posts.topics,
@@ -1102,7 +1208,7 @@
             border-color: $soft-border-color;
 
             &.see-all {
-                background: color.shade(bg, 5%);
+                background-color: color.shade(bg, 5%);
                 color: color.shade(fg, 5%);
             }
         }
@@ -1130,5 +1236,247 @@
 
     .athlete-graph ul.intervals .interval {
         border-left-color: $soft-border-color;
+    }
+
+    .photostream .show-more {
+        background-color: color.shade(bg, 5%);
+
+        a, .btn {
+            color: color.shade(fg, 5%);
+
+            &:hover,
+            &:focus {
+                background-color: color.shade(bg, 15%);
+            }
+        }
+    }
+
+    .select2-drop {
+        background-color: color.shade(bg, 12%);
+        color: color.shade(fg, 12%);
+    }
+
+    #performance-goal {
+        .select2-container {
+            .select2-search-choice {
+                background-color: color.shade(bg, 8%);
+                color: color.shade(fg, 2%);
+            }
+
+            .select2-choices {
+                background-color: color.shade(bg, 12%);
+                color: color.shade(fg, 12%);
+                border-color: $hard-border-color;
+            }
+        }
+
+        .email-share-container {
+            .sprite {
+                filter: invert(1);
+            }
+
+            a {
+                color: color.shade(fg, 12%);
+            }
+        }
+
+        .others-leaderboard {
+            header, .header {
+                filter: invert(1);
+                color: color.shade(bg, 8%);
+            }
+        }
+    }
+
+    .select2-results {
+        .select2-no-results,
+        .select2-searching,
+        .select2-selection-limit {
+            background-color: color.shade(bg, 15%);
+            color: color.shade(fg, 15%);
+        }
+    }
+
+    .strava-tt {
+        background-color: color.shade(bg, 12%);
+        color: color.shade(fg, 12%);
+        border-color: $hard-border-color;
+
+        .tt-date, .tt-start, .tt-type, table {
+            color: inherit;
+        }
+    }
+
+    .xt-day {
+        text-shadow: initial;
+    }
+
+    .month-chart {
+        .week-total-primary {
+            fill: color.shade(fg, 8%);
+        }
+
+        .week-total-secondary {
+            fill: color.shade(fg, 12%);
+        }
+
+        .week-total-tertiary {
+            fill: color.shade(fg, 15%);
+        }
+
+        .date-range, .month-change-text {
+            fill: color.shade(fg, 10%);
+        }
+
+        .current-week-pill {
+            fill: color.shade(bg, 10%);
+        }
+    }
+
+    .training-log-ftue-lightbox {
+        background-color: color.shade(bg, 8%);
+    }
+
+    #privacy-control #privacy-control-options {
+        background-color: color.shade(bg, 8%);
+    }
+
+    ol#events-nav {
+        li ol.months > li,
+        .year > a {
+            border-color: color.shade(bg, 10%);
+            background-color: transparent !important;
+        }
+
+        a {
+            color: color.shade(fg, 15%);
+        }
+
+        li.selected {
+            ol.months > li.selected {
+                border-color: color.shade(accent, 10%);
+            }
+
+            > a {
+                color: color.shade(fg, 0%);
+            }
+        }
+
+        > li ol ol.events li a {
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    .week-shelf,
+    .week-shelf-connection {
+        shape-rendering: auto;
+        stroke: color.shade(bg, 20%);
+        stroke-dashArray: initial;
+    }
+
+    .year-calendar {
+        strong {
+            color: color.shade(fg, 2%);
+        }
+
+        a {
+            background-color: color.shade(bg, 8%);
+            color: color.shade(fg, 8%);
+
+            &:hover {
+                background-color: color.shade(bg, 12%);
+            }
+        }
+
+        .interval-graph .bar .fill {
+            background-color: color.shade(fg, 8%);
+        }
+    }
+
+    .interval-graph {
+        .label strong,
+        .legend strong {
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    .month-calendar {
+        th, td {
+            border-color: $soft-border-color;
+        }
+
+        th {
+            background-color: color.shade(bg, 12%);
+        }
+
+        td {
+            background-color: color.shade(bg, 8%);
+        }
+
+        .day {
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    table.distribution-chart tbody td:not(:last-child) {
+        background-color: color.shade(bg, 12%);
+    }
+
+    img.sauce-rank {
+        filter: drop-shadow(1px 1px 4px white); // XXX hack for now, need better assets
+    }
+
+    .pinned .pinnable {
+        background-color: color.get(bg);
+    }
+
+    .ride.segments-list,
+    .swim.segments-list {
+        tr.selected {
+            background-color: color.shade(bg, 8%);
+        }
+    }
+
+    .ride, .swim {
+        .segment-effort-detail {
+            .content {
+                border-color: $hard-border-color;
+            }
+
+            .rank strong {
+                color: color.shade(fg, 2%);
+            }
+
+            .pr-comparison {
+                background-color: color.shade(bg, 10%);
+                border-color: $hard-border-color;
+            }
+
+            .segment-leaderboard table {
+                background-color: color.shade(bg, 10%);
+                color: color.shade(fg, 8%);
+
+                th {
+                    color: color.shade(fg, 8%);
+                }
+            }
+
+            .leaderboard-footer {
+                background-color: color.shade(bg, 10%);
+            }
+        }
+    }
+
+    table.segments,
+    table.hidden-segments,
+    table.laps-list {
+        tr.selected > td:first-child {
+            box-shadow: inset 3px 0 0 color.shade(accent, 5%);
+        }
+    }
+
+    .drop-down-menu .options .opt-group .label,
+    .slide-menu .options .opt-group .label {
+        background: color.shade(bg, 5%);
     }
 }

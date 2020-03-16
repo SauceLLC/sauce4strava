@@ -710,7 +710,7 @@ html.sauce-responsive,
             > .pinnable-anchor .pinnable {
                 position: sticky;
                 top: 0;
-                background: white;
+                background: color.get(bg);
                 z-index: 11; // > segment-effort-detail (10) < menus (30)
             }
         }

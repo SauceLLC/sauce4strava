@@ -1,3 +1,5 @@
+@use 'color';
+
 .sauce-inline-comments {
     max-height: 300px;
     overflow: auto;
@@ -5,7 +7,7 @@
     &:not(:empty) {
         margin-top: 1em;
         padding-top: 0.5em;
-        border-top: 1px solid #e5e5e5;
+        border-top: 1px solid color.shade(bg, 15%);
     }
 }
 
