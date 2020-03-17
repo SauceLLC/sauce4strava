@@ -66,6 +66,8 @@
 
     $link-accent: accent4;
 
+    $map-filter: invert(1) hue-rotate(320deg);
+
     body {
         background-color: color.get(bg);
         color: color.get(fg);
@@ -431,10 +433,11 @@
     }
 
     .leaflet-container {
+        background: color.shade(bg, 8%);
         color: color.shade(fg, 8%);
 
         img.leaflet-tile {
-            filter: invert(1) hue-rotate(320deg);
+            filter: $map-filter;
         }
     }
 
@@ -631,6 +634,10 @@
             stroke: color.shade(fg, 10%);
             shape-rendering: auto;
         }
+
+        .crossbar {
+            stroke: color.shade(fg, 3%);
+        }
     }
 
     #basic-analysis {
@@ -726,7 +733,7 @@
     .group-activity-map img,
     .group-map img,
     .stats-container .activity-map img {
-        filter: invert(1) hue-rotate(320deg);
+        filter: $map-filter;
     }
 
     .activity-map-tag {
@@ -931,8 +938,24 @@
         border-color: $soft-border-color;
     }
 
-    .table-striped > tbody > tr:nth-of-type(even) {
-        background-color: color.shade(bg, 3%);
+    .table-striped > tbody > {
+        tr:nth-of-type(even) {
+            background-color: color.shade(bg, 3%);
+        }
+    }
+
+    #activity_table.table-striped {
+        tr:nth-of-type(even) {
+            background-color: color.shade(bg, 3%);
+        }
+
+        tr:nth-of-type(odd) {
+            background-color: color.shade(bg, 5%);
+        }
+
+        td {
+            background: transparent;
+        }
     }
 
     .striped {
@@ -1907,5 +1930,70 @@
         .effort-flag-pace {
             fill: color.shade(fg, 5%);
         }
+    }
+
+    #roster {
+        thead th {
+            background-color: color.shade(bg, 10%);
+        }
+
+        .roster-entry-row:nth-child(even) td {
+            background-color: color.shade(bg, 3%);
+        }
+    }
+
+    #sidebar {
+        background-color: color.shade(bg, 8%);
+
+        .info {
+            background-color: color.shade(bg, 12%);
+        }
+
+        .labs-disclaimer {
+            background-color: color.shade(bg, 15%);
+        }
+    }
+
+    #compare-graph {
+        &,
+        #compare-info-text {
+            background-color: color.shade(bg, 8%);
+        }
+
+        svg {
+            text {
+                fill: color.shade(fg, 8%);
+            }
+
+            line {
+                fill: color.shade(fg, 8%);
+            }
+        }
+    }
+
+    .ui-resizable-n {
+        background-color: color.shade(bg, 8%);
+    }
+
+    #scrubber {
+        background-color: color.shade(bg, 8%);
+    }
+
+    #analysis-chart {
+        .yaxis2,
+        .xaxis {
+            .tick line {
+                stroke: color.shade(bg, 5%);
+                shape-rendering: auto;
+            }
+        }
+    }
+
+    .add-to-roster {
+        color: color.shade(accent4, 10%);
+    }
+
+    .remove-from-roster {
+        color: color.shade(accent, 10%);
     }
 }
