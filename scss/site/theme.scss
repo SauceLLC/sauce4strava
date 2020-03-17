@@ -316,8 +316,18 @@
     }
 
     #global-header {
-        background-color: color.darken(accent, 15%);
+        background-color: color.shade(accent, 15%) !important;
         border: none;
+
+        .collapsable-nav {
+            .nav-container {
+                //background-color: color.shade(bg, 5%);  Breaks header! XXX
+            }
+
+            a.btn.btn-mobile-menu {
+                background-color: transparent;
+            }
+        }
 
         .upload-button.app-icon {
             filter: invert(1) saturate(0) contrast(3) !important;
@@ -1875,5 +1885,27 @@
 
     .leaderboard .loading-panel {
         background-color: color.get(bg, 75%);
+    }
+
+    .stats-container .activity-map {
+        background-color: color.shade(bg, 5%);
+    }
+
+    #similar-activities-trend-chart svg {
+        .horiz-line, .vert-line {
+            stroke: color.shade(bg, 15%);
+        }
+    }
+
+    #similar-activities-section #similar-activities-chart-container #similar-activities-chart {
+        .effort-flag {
+            fill: color.shade(bg, 15%);
+            stroke: color.shade(fg, 8%);
+        }
+
+        .effort-flag-link.original-effort-link,
+        .effort-flag-pace {
+            fill: color.shade(fg, 5%);
+        }
     }
 }
