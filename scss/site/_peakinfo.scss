@@ -3,8 +3,8 @@
 
 
 #sauce-infopanel {
-    border-top: defines.$sauce-border;
-    border-bottom: defines.$sauce-border;
+    border-top: var(--sauce-border);
+    border-bottom: var(--sauce-border);
     margin-top: 10px;
 
     .title,
@@ -85,7 +85,7 @@
         }
 
         td:last-child {
-            color: #007fb6;
+            color: color.get(accent4);
         }
     }
 }

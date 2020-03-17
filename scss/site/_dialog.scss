@@ -29,7 +29,7 @@
 
     header {
         margin: 0.5em 1em;
-        border-bottom: defines.$sauce-thin-border;
+        border-bottom: var(--sauce-thin-border);
     }
 
     &.sauce-big-data {

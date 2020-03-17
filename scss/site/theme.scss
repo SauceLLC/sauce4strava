@@ -35,17 +35,36 @@
     --sauce-accent5-sat: 100%;
     --sauce-accent5-light: 40%;
     --sauce-accent5-shade-dir: -1;
+
+    --sauce-border-hue: 16;
+    --sauce-border-sat: 100%;
+    --sauce-border-light: 50%;
+    --sauce-border-shade-dir: -1;
+
+    --sauce-border: 1.5px solid #{color.get(border)};
+    --sauce-thin-border: 1px solid #{color.get(border, 50%)};
 }
 
 
 .sauce-dark-mode {
     --sauce-bg-light: 8%;
     --sauce-bg-shade-dir: 1;
+
     --sauce-fg-light: 80%;
     --sauce-fg-shade-dir: -1;
 
+    --sauce-accent4-hue: 200;
+    --sauce-accent4-sat: 100%;
+    --sauce-accent4-light: 55%;
+    --sauce-accent4-shade-dir: -1;
+
+    --sauce-border-light: 20%;
+
     $hard-border-color: color.shade(bg, 20%);
+    $mid-border-color: color.shade(bg, 12%);
     $soft-border-color: color.shade(bg, 5%);
+
+    $link-accent: accent4;
 
     body {
         background-color: color.get(bg);
@@ -53,9 +72,13 @@
     }
 
     .app-icon {
-        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium):not([class*="icon-at-"]):not(.icon-star):not(.icon-badge-verified):not(.icon-color):not(.icon-white) {
+        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium):not([class*="icon-at-"]):not(.icon-badge-verified):not(.icon-color):not(.icon-white):not(.icon-employee) {
             filter: invert(1);
         }
+    }
+
+    .starred.active .app-icon.icon-star {
+        filter: none !important;
     }
 
     .card {
@@ -83,40 +106,94 @@
     .pagination a,
     .pagination span,
     .pagination em {
-        background-color: #5554;
-        border-color: #5559;
-        color: color.darken(fg, 2%);
-
-        &:active,
-        &.active {
-            background-color: #5559;
-            border-color: #555c;
-            color: color.lighten(fg, 6%);
-        }
+        background-color: color.shade(bg, 8%);
+        border-color: $mid-border-color;
+        color: color.shade(fg, 8%);
 
         &:hover,
         &:focus {
-            background-color: #5556;
-            border-color: #555a;
-            color: color.lighten(fg, 2%);
+            background-color: color.shade(bg, 12%);
+            border-color: $hard-border-color;
+            color: color.shade(fg, 5%);
+        }
+
+        &:active,
+        &.active {
+            background-color: color.shade(bg, 2%);
+            color: color.shade(fg, 12%);
         }
 
         &[disabled],
         &.disabled {
-            background-color: #5551;
-            border-color: #5555;
-            color: color.darken(fg, 10%);
+            background-color: color.shade(bg, 5%);
+            color: color.shade(fg, 12%);
         }
 
         &.btn-link {
             border-color: transparent;
             background-color: transparent;
-            color: color.shade(fg, 10%);
+            color: color.shade(fg, 8%);
 
             &:hover {
-                color: color.shade(accent, 10%);
+                color: color.shade($link-accent, 10%);
             }
         }
+    }
+
+    .page {
+        a:not(.btn),
+        .btn.btn-link {
+            &:link,
+            &:visited {
+                color: color.shade(fg, 10%);
+            }
+
+            &:hover {
+                color: color.shade($link-accent, 10%);
+            }
+
+            &:active {
+                color: color.shade($link-accent, 20%);
+            }
+        }
+    }
+
+    .btn,
+    .button,
+    button,
+    input[type='submit'],
+    input[type='button'],
+    input[type='reset'] {
+        &.btn-unstyled {
+            background-color: transparent;
+            color: color.get(fg);
+        }
+
+        &.tag {
+            background-blend-mode: overlay;
+            background-color: color.get(bg);
+        }
+    }
+
+    .switches {
+        button,
+        .button,
+        a.button:link,
+        a.button:visited,
+        a.button:hover {
+            &.selected,
+            &.active,
+            &:active {
+                background-color: color.shade(bg, 5%);
+                background-image: none;
+                color: color.shade(fg, 5%) !important;
+                border-color: $mid-border-color;
+            }
+        }
+    }
+
+    #switch-discipline .button {
+        color: color.shade(fg, 8%);
     }
 
     .pagination {
@@ -177,16 +254,8 @@
     .slide-menu {
         box-shadow: none;
 
-        &:not(:first-child) .selection {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-        }
-
         .active {
             background: transparent;
-        }
-
-        .selection:hover {
         }
     }
 
@@ -347,7 +416,8 @@
     }
 
     .grabber {
-        background-color: color.lighten(bg, 14%);
+        background-color: color.lighten(bg, 10%);
+        background-blend-mode: overlay;
     }
 
     .leaflet-container {
@@ -392,6 +462,8 @@
 
     .actions-menu {
         border-color: transparent;
+        background-color: color.shade(bg, 10%);
+        border-radius: 4px;
 
         > .slide-menu.active {
             background-color: transparent;
@@ -403,7 +475,8 @@
         }
 
         > * {
-            background-color: color.shade(bg, 10%);
+            background-color: transparent;
+            border-radius: inherit;
         }
     }
 
@@ -641,7 +714,8 @@
 
     .activity-map.entry-image img,
     .group-activity-map img,
-    .group-map img {
+    .group-map img,
+    .stats-container .activity-map img {
         filter: invert(1) hue-rotate(320deg);
     }
 
@@ -788,6 +862,18 @@
             .entry::before {
                 background-color: color.shade(bg, 20%) !important;
             }
+
+            .entry-body .media {
+                border-color: $hard-border-color !important;
+            }
+
+            .dropdown .dropdown-toggle:hover {
+                background-color: color.shade(bg, 12%);
+            }
+
+            .comments li {
+                border-color: $hard-border-color !important;
+            }
         }
     }
 
@@ -836,11 +922,23 @@
     }
 
     .table-striped > tbody > tr:nth-of-type(even) {
-        background-color: color.shade(bg, 8%);
+        background-color: color.shade(bg, 3%);
+    }
+
+    .striped {
+        > li,
+        > div,
+        > tr {
+            border-color: $soft-border-color;
+
+            &:nth-child(even) {
+                background-color: color.shade(bg, 3%);
+            }
+        }
     }
 
     .table > tbody > tr > td {
-        border-color: $hard-border-color;
+        border-color: $mid-border-color;
     }
 
     .table th {
@@ -1016,8 +1114,17 @@
                 color: color.shade(fg, 8%);
             }
 
+            a.selected {
+                background-color: color.shade(accent, 8%);
+            }
+
+            a:hover {
+                background-color: color.shade(accent, 12%);
+            }
+
             .option {
                 background-color: color.shade(bg, 8%);
+                background-image: none;
             }
 
             #premium-new ul {
@@ -1067,6 +1174,25 @@
         }
     }
 
+    .dropdown.open {
+        .btn.dropdown-toggle {
+            &,
+            &:hover,
+            &:focus {
+                background-color: color.shade(bg, 2%);
+                border-color: $hard-border-color;
+            }
+        }
+
+        ul li .btn {
+            background-color: color.shade(bg, 2%);
+
+            &:hover {
+                background-color: color.shade(bg, 5%);
+            }
+        }
+    }
+
     ul.routes-list li.route-card {
         background-color: color.shade(bg, 5%);
         color: color.shade(fg, 5%);
@@ -1088,7 +1214,7 @@
         color: color.shade(fg, 5%);
     }
     .inline-stats.nav-style a:hover {
-        color: color.shade(accent4, 10%);
+        color: color.shade($link-accent, 10%);
     }
 
     label,
@@ -1123,6 +1249,39 @@
         $run-border-color: color.shade(accent2, 40%);
         $swim-color: color.shade(accent4, 30%);
         $swim-border-color: color.shade(accent4, 40%);
+
+        .activity-summary-v2 {
+            .activity-breakdown {
+                .legend dt.label-ride::after,
+                .cycling {
+                    background-color: $ride-color;
+                    border-color: $ride-border-color;
+                }
+
+                .legend dt.label-run::after,
+                .running {
+                    background-color: $run-color;
+                    border-color: $run-border-color;
+                }
+
+                .legend dt.label-swim::after,
+                .swimming {
+                    background-color: $swim-color;
+                    border-color: $swim-border-color;
+                }
+            }
+
+            .activity-calendar {
+                .highlighted .activity-indicator {
+                    background-color: color.shade(fg, 12%);
+                }
+
+                .day {
+                    color: color.shade(fg, 12%);
+                }
+            }
+        }
+
 
         .ride-type-ride,
         .ride-type,
@@ -1192,10 +1351,6 @@
                 fill: color.get(fg) !important;
             }
         }
-    }
-
-    .activity-summary-v2 .activity-calendar .highlighted .activity-indicator {
-        background-color: color.shade(fg, 12%);
     }
 
     .posts.topics,
@@ -1433,7 +1588,7 @@
     .ride.segments-list,
     .swim.segments-list {
         tr.selected {
-            background-color: color.shade(bg, 8%);
+            background-color: color.shade(bg, 5%);
         }
     }
 
@@ -1477,6 +1632,248 @@
 
     .drop-down-menu .options .opt-group .label,
     .slide-menu .options .opt-group .label {
-        background: color.shade(bg, 5%);
+        background-color: color.shade(bg, 5%);
+    }
+
+    .row [class*="spans"].border-left {
+        border-color: $hard-border-color;
+    }
+
+    #appUpsell {
+        background-color: color.shade(bg, 5%);
+    }
+
+    .list-devices li {
+        background-color: color.shade(bg, 30%);
+    }
+
+    #uploadFile form {
+        background-color: color.shade(bg, 8%);
+    }
+
+    .form-control::placeholder {
+        color: color.shade(fg, 50%, 80%);
+    }
+
+    button[class*="StepActions--cancel"] {
+        background: transparent;
+        border: none;
+        color: color.get(accent4);
+    }
+
+    .visibility-section {
+        border-color: $hard-border-color;
+    }
+
+    .stats-container {
+        background-color: color.shade(bg, 8%);
+    }
+
+    [class*="ExpandableOptionList--who-can-see"] {
+        background-color: color.shade(bg, 5%);
+        border-color: $hard-border-color;
+    }
+
+    .dropzone {
+        background-color: color.shade(bg, 5%);
+        border-color: $hard-border-color;
+    }
+
+    .activity-tags {
+        label {
+            background-color: color.shade(bg, 8%);
+            border-color: $soft-border-color;
+
+            &:hover {
+                background-color: color.shade(bg, 12%);
+
+                &::before,
+                &::after {
+                    border-right-color: color.shade(bg, 12%);
+                }
+            }
+
+            &::before,
+            &::after {
+                border-right-color: color.shade(bg, 8%);
+            }
+        }
+
+        input:checked + label {
+            background-color: color.shade(accent2, 3%);
+            color: color.shade(bg, 10%);
+
+            &::before,
+            &::after {
+                border-right-color: color.shade(accent2, 3%);
+            }
+        }
+    }
+
+    #settings-menu {
+        a:link,
+        a:visited {
+            background-color: color.shade(bg, 8%);
+            color: color.shade(fg, 8%);
+            border-color: $mid-border-color;
+        }
+
+        .selected a {
+            background-color: color.shade(accent, 10%);
+            color: color.shade(fg, -10%);
+        }
+    }
+
+    .upsell {
+        background-color: color.shade(bg, 5%);
+    }
+
+    .setting,
+    .editable-setting {
+        border-color: $mid-border-color;
+    }
+
+    .editable-setting {
+        &:hover,
+        &.editing {
+            background-color: color.shade(bg, 12%);
+            color: color.shade(fg, 10%);
+        }
+    }
+
+    .setting-label,
+    #my-profile .timezone-container {
+        color: color.shade(fg, 10%);
+    }
+
+    table.gear tr:hover td {
+        background-color: color.shade(bg, 12%);
+    }
+
+    #apps .app {
+        border-color: $mid-border-color;
+    }
+
+    ul.list-objects > li {
+        border-color: $mid-border-color;
+    }
+
+    #fitness-freshness .list-stats li {
+        color: color.shade(fg, 8%);
+    }
+
+    .dropdown-menu > li {
+        > a,
+        > .btn {
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    #about-container {
+        background-color: color.shade(bg, 15%);
+    }
+
+    button.close-action {
+        color: transparent;
+    }
+
+    .content form.search {
+        background-color: color.shade(bg, 8%);
+        border-color: $mid-border-color;
+        box-shadow: none;
+    }
+
+    .card-body .chart-container {
+        background-color: transparent;
+
+        > svg.progress-bar-svg-container {
+            background-color: color.shade(bg, 8%);
+        }
+    }
+
+    .list-apps .app-card {
+        background-color: color.shade(bg, 8%);
+        border-color: $mid-border-color;
+    }   
+
+    .apps-container {
+        background-color: color.shade(bg, 8%);
+        background-image: none;
+        border-color: $mid-border-color;
+    }
+
+    #race-features {
+        background-color: color.shade(bg, 3%);
+        border-color: $mid-border-color;
+        color: color.shade(fg, 3%);
+    }
+
+    #parent-regions-nav {
+        background-color: color.shade(bg, 8%);
+    }
+
+    #regions-nav li a {
+        color: color.shade(fg, 3%);
+    }
+
+    .list-parent-regions h2 {
+        background-color: color.shade(bg, 8%);
+
+        a {
+            color: color.shade(fg, 3%);
+        }
+    }
+
+    #global-footer {
+        &,
+        nav,
+        .upsell-container {
+            background-color: color.shade(bg, 5%);
+            color: color.shade(fg, 12%);
+
+            a {
+                color: color.shade(fg, 12%);
+            }
+        }
+    }
+
+    .testimonials {
+        background-color: color.shade(bg, 5%);
+        color: color.shade(fg, 12%);
+    }
+
+    .navbar {
+        a:not(.btn),
+        .dropdown .dropdown-toggle {
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    .perk-row {
+        background-color: color.shade(bg, 12%);
+
+        .perk-details,
+        .terms-link {
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    .product {
+        color: color.shade(fg, 8%);
+    }
+
+    #athlete-history-chart {
+        #effort-box-activity-date {
+            fill: color.shade(fg, 12%);
+        }
+
+        #effort-box {
+            fill: color.shade(bg, 12%);
+            stroke: color.shade(fg, 12%);
+        }
+    }
+
+    .leaderboard .loading-panel {
+        background-color: color.get(bg, 75%);
     }
 }

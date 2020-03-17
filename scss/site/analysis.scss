@@ -16,13 +16,13 @@
 
 .activity-stats {
     .secondary-stats.inline-stats.sauce-stats {
-        border: defines.$sauce-thin-border;
+        border: var(--sauce-thin-border);
         border-left: 0;
         border-right: 0;
         background: color.get(bg);
 
         .divider:not(:first-child) {
-            border-left: defines.$sauce-thin-border;
+            border-left: var(--sauce-thin-border);
             margin-right: 1.5em;
             height: 2.2em;
             display: inline-block;
@@ -37,7 +37,7 @@
         }
 
         .origin-sauce {
-            color: defines.$sauce-primary-color;
+            color: color.get(accent);
         }
     }
 }
@@ -56,8 +56,8 @@
     }
 
     .sauce-group {
-        border-top: defines.$sauce-border;
-        background-image: linear-gradient(180deg, darken(defines.$sauce-primary-color, 10%), darken(defines.$sauce-primary-color, 2%));
+        border-top: var(--sauce-border);
+        background-image: linear-gradient(180deg, color.shade(accent, 10%), color.shade(accent, 2%));
 
         .sauce-header {
             display: flex;

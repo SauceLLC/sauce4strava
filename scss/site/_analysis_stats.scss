@@ -1,4 +1,5 @@
 @use 'defines';
+@use 'color';
 
 @keyframes pournshake {
     0%,
@@ -19,8 +20,8 @@
     display: flex;
     overflow: hidden;
     font-size: 0.96em;
-    border-top: defines.$sauce-border;
-    border-bottom: defines.$sauce-border;
+    border-top: var(--sauce-border);
+    border-bottom: var(--sauce-border);
     width: defines.$basic-analysis-width;
 
     $vpad: 0.5rem;
@@ -56,7 +57,7 @@
             font-size: 1.1em;
             text-shadow: 1px 1px 3px #0001;
             line-height: 1.2;
-            color: defines.$sauce-primary-color;
+            color: color.shade(accent, 10%);
         }
     }
 
@@ -67,7 +68,7 @@
         margin: $vpad 0;
 
         &:not(:last-child) {
-            border-right: defines.$sauce-thin-border;
+            border-right: var(--sauce-thin-border);
         }
 
         &:not(:first-child) {

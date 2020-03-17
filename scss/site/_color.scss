@@ -1,8 +1,9 @@
-@function get($key) {
-    @return hsl(
+@function get($key, $alpha: 100%) {
+    @return hsla(
         var(--sauce-#{$key}-hue),
         var(--sauce-#{$key}-sat),
-        var(--sauce-#{$key}-light));
+        var(--sauce-#{$key}-light),
+        $alpha);
 }
 
 @function alpha($key, $alpha) {
