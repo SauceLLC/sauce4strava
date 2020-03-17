@@ -1641,6 +1641,29 @@
         }
     }
 
+    .run .segment-effort-detail {
+        border-color: $hard-border-color;
+
+        .global-records {
+            border-color: $mid-border-color;
+        }
+
+        &,
+        .effort-details .avatar,
+        .this-effort {
+            background-color: color.shade(bg, 5%); // Must apply to all of these to hide some border lines
+        }
+
+        .leaderboard-summary {
+            background-color: color.shade(bg, 8%);
+        }
+
+        .link-menu a {
+            background-color: color.shade(bg, 12%);
+            border-color: $hard-border-color;
+        }
+    }
+
     table.segments,
     table.hidden-segments,
     table.laps-list {
@@ -1889,6 +1912,18 @@
         #effort-box {
             fill: color.shade(bg, 12%);
             stroke: color.shade(fg, 12%);
+        }
+
+        .vgrid,
+        .axis {
+            stroke: color.shade(bg, 15%);
+        }
+
+        #vgrid-selected {
+            stroke: color.shade(accent, 15%);
+        }
+        #hgrid-selected {
+            stroke: color.shade(accent4, 15%);
         }
     }
 
