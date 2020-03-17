@@ -58,7 +58,7 @@
     --sauce-accent4-light: 55%;
     --sauce-accent4-shade-dir: -1;
 
-    --sauce-border-light: 20%;
+    --sauce-border-light: 30%;
 
     $hard-border-color: color.shade(bg, 20%);
     $mid-border-color: color.shade(bg, 12%);
@@ -298,20 +298,17 @@
 
     #basic-analysis {
         .chart {
-            background-color: color.lighten(bg, 10%);
-        }
-
-        rect.static-info-box {
-            fill: color.lighten(bg, 20%);
+            background-color: color.shade(bg, 10%);
         }
 
         #stacked-chart {
-            background-color: color.lighten(bg, 20%);
+            background-color: color.shade(bg, 10%);
         }
 
         .xaxis-container .background,
-        rect.static-label-box {
-            fill: color.lighten(bg, 25%);
+        rect.static-label-box,
+        rect.static-info-box {
+            fill: color.shade(bg, 12%);
         }
 
         text.static-info-box.value {
