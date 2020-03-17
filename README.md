@@ -27,6 +27,7 @@ Feature Highlights
    * Grade Adjusted Pace
    * VAM (climbing speed)
    * Cadence
+ * Dark Mode *BETA OPTION*
  * Export any activity to a TCX or GPX file
  * Running Power estimation
  * Analysis page stats are extended to include:
@@ -61,6 +62,9 @@ Feature Highlights
 
 Release Notes
 --------
+#### v5.3.0:
+ * Dark mode (BETA)
+
 #### v5.2.1:
  * Disable Polish translations until they can be improved
  * Switch from "sync" storage to "local" storage (has more space)
