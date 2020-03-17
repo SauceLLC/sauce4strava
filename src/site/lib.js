@@ -683,31 +683,31 @@ sauce.ns('power', function() {
     const rankLevels = [{
         levelRequirement: 7 / 8,
         label: 'World Class',
-        badge: `${badgeURN}/world-tour.png`
+        cat: 'world-tour'
     }, {
         levelRequirement: 6 / 8,
         label: 'Pro',
-        badge: `${badgeURN}/pro.png`
+        cat: 'pro'
     }, {
         levelRequirement: 5 / 8,
         label: 'Cat 1',
-        badge: `${badgeURN}/cat1.png`
+        cat: 'cat1'
     }, {
         levelRequirement: 4 / 8,
         label: 'Cat 2',
-        badge: `${badgeURN}/cat2.png`
+        cat: 'cat2'
     }, {
         levelRequirement: 3 / 8,
         label: 'Cat 3',
-        badge: `${badgeURN}/cat3.png`
+        cat: 'cat3'
     }, {
         levelRequirement: 2 / 8,
         label: 'Cat 4',
-        badge: `${badgeURN}/cat4.png`
+        cat: 'cat4'
     }, {
         levelRequirement: 1 / 8,
         label: 'Cat 5',
-        badge: `${badgeURN}/cat5.png`
+        cat: 'cat5'
     }, {
         levelRequirement: -Infinity,
         label: 'Recreational'
@@ -733,9 +733,13 @@ sauce.ns('power', function() {
         const high = _rankScaler(duration, rankConstants[gender].high);
         const low = _rankScaler(duration, rankConstants[gender].low);
         const level = (wKg - low) / (high - low);
+        const suffix = (document.documentElement.classList.contains('sauce-dark-mode')) ? '-darkbg.png' : '.png';
         for (const x of rankLevels) {
             if (level > x.levelRequirement) {
-                return Object.assign({level}, x);
+                return Object.assign({
+                    level,
+                    badge: x.cat && `${badgeURN}/${x.cat}${suffix}`
+                }, x);
             }
         }
     }
