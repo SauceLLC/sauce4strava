@@ -471,11 +471,11 @@
 
         > .button:hover,
         > .slide-menu .selection:hover {
-            background-color: color.shade(bg, 15%);
+            background-color: color.shade(bg, 15%) !important;
         }
 
         > * {
-            background-color: transparent;
+            background-color: color.shade(bg, 10%) !important;
             border-radius: inherit;
         }
     }

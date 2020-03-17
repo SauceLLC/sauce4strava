@@ -304,7 +304,7 @@
                 width: initial;
                 overflow: hidden auto;
                 max-height: calc(100vh - #{defines.$global-header-height});
-                background: white;
+                background: color.get(bg);
 
                 ul#pagenav,
                 .actions-menu .drop-down-menu > ul.options {
@@ -358,7 +358,7 @@
                         position: absolute;
                         z-index: 2;  // Must be over drop down menu
                         width: 50%;
-                        background: white;
+                        background: color.get(bg);
                         border-radius: 0;
                     }
 
@@ -401,18 +401,18 @@
                                 visibility: hidden;
                             }
                             &.open-menu {
-                                color: white;
+                                color: #eee;
                                 transition-duration: 400ms;
                                 max-height: 200vh;  // must exceed max content height
                             }
 
                             li > a {
                                 font-size: 1em;
-                                color: inherit;
+                                color: #eee;
                                 transition: initial;
 
                                 &:hover {
-                                    background: black;
+                                    background: #111;
                                 }
                             }
                         }
