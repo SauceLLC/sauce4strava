@@ -1119,6 +1119,7 @@ sauce.ns('analysis', ns => {
             width: '100%',
             height: 56,
             lineColor: '#EA400DA0',
+            normalRangeColor: '#8885',
             fillColor: {
                 type: 'gradient',
                 opacity: 0.6,  // use this instead of rgba colors (it's technical)
