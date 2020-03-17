@@ -74,7 +74,16 @@
     }
 
     .app-icon {
-        &:not(.icon-badge-premium):not(.icon-badge-pro):not(.icon-premium):not([class*="icon-at-"]):not(.icon-badge-verified):not(.icon-color):not(.icon-white):not(.icon-employee) {
+        &:not(
+        .icon-badge-premium):not(
+        .icon-badge-pro):not(
+        .icon-premium):not(
+        [class*="icon-at-"]):not(
+        .icon-badge-verified):not(
+        .icon-color):not(
+        .icon-white):not(
+        .icon-employee):not(
+        .kudoed) {
             filter: invert(1);
         }
     }
@@ -258,13 +267,6 @@
 
         .active {
             background: transparent;
-        }
-    }
-
-    .ui-dialog {
-        .ui-widget-content,
-        .ui-dialog-content {
-            background-color: color.lighten(bg, 8%);
         }
     }
 
@@ -463,16 +465,6 @@
         border-bottom-color: color.lighten(bg, 10%);
     }
 
-    .ui-dialog {
-        border-color: $hard-border-color;
-        background-color: color.shade(bg, 10%);
-
-        .ui-dialog-content,
-        .ui-widget-content {
-            border-color: $hard-border-color;
-        }
-    }
-
     .actions-menu {
         border-color: transparent;
         background-color: color.shade(bg, 10%);
@@ -614,7 +606,7 @@
         }
 
         .grid-line {
-            stroke: color.shade(bg, 20%);
+            stroke: color.shade(bg, 8%);
         }
 
         .line-chart-curr-fill,
