@@ -297,18 +297,15 @@
     }
 
     #basic-analysis {
-        .chart {
-            background-color: color.shade(bg, 10%);
-        }
-
+        .chart,
         #stacked-chart {
-            background-color: color.shade(bg, 10%);
+            background-color: color.shade(bg, 8%);
         }
 
         .xaxis-container .background,
         rect.static-label-box,
         rect.static-info-box {
-            fill: color.shade(bg, 12%);
+            fill: color.shade(bg, 10%);
         }
 
         text.static-info-box.value {
