@@ -2017,4 +2017,9 @@
     .remove-from-roster {
         color: color.shade(accent, 10%);
     }
+
+    .pace-info-box {
+        background-color: color.shade(bg, 8%);
+        border-color: $hard-border-color;
+    }
 }
