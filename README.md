@@ -2,9 +2,12 @@ Sauce for Strava™
 ===========
 ![Sauce](images/logo_horiz_320x120.png)
 #### A browser extension for Strava.com
-The Sauce browser extension upgrades strava.com with more stats, features and
-layouts (e.g. Dark-mode).  It's FREE, lightweight and easy to use.  There are
-no 3rd party services used and it's completely open source.
+Sauce for Strava™ is a browser extension that upgrades strava.com with more stats,
+features and layouts (e.g. dark-mode).
+
+It's FREE, lightweight and easy to use.
+
+There are no 3rd party services used and it's completely open source.
 
 
 Installation
