@@ -2,9 +2,9 @@ Sauce for Strava™
 ===========
 ![Sauce](images/logo_horiz_320x120.png)
 #### A browser extension for Strava.com
-The Sauce extension supplements athletic websites like https://strava.com with better
-cycling and running information.  It's a simple, lightweight and pure client-side javascript
-addition.  There are no external API calls made with this extension and it is open source.
+The Sauce browser extension upgrades strava.com with more stats, features and
+layouts (e.g. Dark-mode).  It's FREE, lightweight and easy to use.  There are
+no 3rd party services used and it's completely open source.
 
 
 Installation
