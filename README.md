@@ -9,7 +9,7 @@ It's FREE, lightweight and easy to use.
 
 There are no 3rd party services used and it's completely open source.
 
-[![become a patron](assets/images/become_a_patron@2x.png)](https://www.patreon.com/bePatron?u=32064618)
+[![become a patron](assets/images/become_a_patron_button.png)](https://www.patreon.com/bePatron?u=32064618)
 
 
 Installation
