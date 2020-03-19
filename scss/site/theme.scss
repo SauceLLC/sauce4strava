@@ -2022,4 +2022,8 @@
         background-color: color.shade(bg, 8%);
         border-color: $hard-border-color;
     }
+
+    #search-results.table .edit-col {
+        background-color: color.shade(bg, 8%);
+    }
 }
