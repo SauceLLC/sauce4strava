@@ -152,6 +152,14 @@ footer {
     justify-content: space-around;
 }
 
+.buttons > * {
+    display: flex;
+}
+
+.buttons > a {
+    text-decoration: none;
+}
+
 table {
     border-collapse: collapse;
 }
