@@ -9,9 +9,7 @@ It's free, lightweight and easy to use.
 
 There are no 3rd party services used and it's completely open source.
 
-If you want to help support this extension:
 [![become a patron](images/become_a_patron_button.png)](https://www.patreon.com/bePatron?u=32064618)
-
 
 Installation
 --------
