@@ -5,11 +5,12 @@ Sauce for Strava™
 Sauce for Strava™ is a browser extension that upgrades strava.com with more stats,
 features and layouts (e.g. dark-mode).
 
-It's FREE, lightweight and easy to use.
+It's free, lightweight and easy to use.
 
 There are no 3rd party services used and it's completely open source.
 
-[![become a patron](assets/images/become_a_patron_button.png)](https://www.patreon.com/bePatron?u=32064618)
+If you want to help support this extension:
+[![become a patron](images/become_a_patron_button.png)](https://www.patreon.com/bePatron?u=32064618)
 
 
 Installation
