@@ -110,7 +110,7 @@
         margin: 0;
     }
 
-    img.rank_badge {
+    img.sauce-rank {
         height: 28px; // XXX no pix
         margin-top: -7px;  // XXX no pix
         margin-bottom: -7px;  // XXX no pix
@@ -126,7 +126,7 @@
             background-color: color.shade(bg, 1%);
         }
 
-        td.rank_holder {
+        td.rank-holder {
             position: relative;
         }
 

@@ -471,7 +471,7 @@ sauce.ns('analysis', ns => {
         for (const range of ranges.filter(x => x.value >= minHRTime)) {
             const roll = sauce.data.peakAverage(range.value, timeStream, hrStream, {active: true});
             if (roll) {
-                const value = Math.round(roll.avg({active: true})).toLocaleString();
+                const value = humanNumber(roll.avg({active: true}));
                 rows.push(_rangeRollToRow({range, roll, value, unit}));
             }
         }
@@ -500,7 +500,7 @@ sauce.ns('analysis', ns => {
         for (const range of ranges.filter(x => !estimate || x.value >= minWattEstTime)) {
             const roll = sauce.power.peakPower(range.value, timeStream, wattsStream);
             if (roll) {
-                const value = prefix + Math.round(roll.avg()).toLocaleString();
+                const value = prefix + humanNumber(roll.avg());
                 rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
             }
         }
@@ -531,7 +531,7 @@ sauce.ns('analysis', ns => {
                 const start = getStreamTimeIndex(roll.firstTime());
                 const end = getStreamTimeIndex(roll.lastTime());
                 const gain = altitudeChanges(altStream.slice(start, end + 1)).gain;
-                const value = Math.round((gain / roll.elapsed()) * 3600).toLocaleString();
+                const value = humanNumber((gain / roll.elapsed()) * 3600);
                 rows.push(_rangeRollToRow({range, roll, value, unit: 'Vm/h'}));
             }
         }
@@ -587,6 +587,7 @@ sauce.ns('analysis', ns => {
             }
         }
         await renderTertiaryStats({
+            weight: ctx.weightFormatter.convert(ctx.weight).toFixed(2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
@@ -643,7 +644,7 @@ sauce.ns('analysis', ns => {
                             // only examines the trimmed dateset.
                             const np = roll && roll.np({external: true});
                             if (np) {
-                                const value = Math.round(np).toLocaleString();
+                                const value = humanNumber(np);
                                 rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
                             }
                         }
@@ -678,6 +679,7 @@ sauce.ns('analysis', ns => {
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
         await renderTertiaryStats({
+            weight: ctx.weightFormatter.convert(ctx.weight).toFixed(2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin
@@ -743,6 +745,7 @@ sauce.ns('analysis', ns => {
             intensity = power / ctx.ftp;
         }
         await renderTertiaryStats({
+            weight: ctx.weightFormatter.convert(ctx.weight).toFixed(2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
@@ -830,6 +833,7 @@ sauce.ns('analysis', ns => {
             intensity = power / ctx.ftp;
         }
         await renderTertiaryStats({
+            weight: ctx.weightFormatter.convert(ctx.weight).toFixed(2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
@@ -943,17 +947,8 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function humanWeight(kg, options) {
-        options = options || {};
-        if (options.suffix) {
-            if (options.html) {
-                return ctx.weightFormatter.abbreviated(kg);
-            } else {
-                return ctx.weightFormatter.formatShort(kg);
-            }
-        } else {
-            return ctx.weightFormatter.format(kg);
-        }
+    function humanWeight(kg) {
+        return humanNumber(ctx.weightFormatter.convert(kg), 1);
     }
 
 
@@ -976,6 +971,11 @@ sauce.ns('analysis', ns => {
         } else {
             return ctx.paceFormatter.format(value);
         }
+    }
+
+
+    function humanNumber(value, precision) {
+        return sauce.template.helpers.formatNumber(value, precision == null ? 0 : precision);
     }
 
 
@@ -1234,7 +1234,7 @@ sauce.ns('analysis', ns => {
         if (source === 'peak_power' || source === 'peak_np') {
             await infoDialogGraph($sparkline, {
                 data: correctedPower.values(),
-                formatter: x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'peak_pace') {
@@ -1247,7 +1247,7 @@ sauce.ns('analysis', ns => {
             const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
                 data: hrStream,
-                formatter: x => `${Math.round(x)}<abbr class="unit short">${unit}</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
                 colorSteps: [40, 100, 150, 200]
             });
         } else if (source === 'peak_cadence') {
@@ -1261,7 +1261,7 @@ sauce.ns('analysis', ns => {
         } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
                 data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
-                formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
                 colorSteps: [-500, 500, 1000, 2000]
             });
         }
@@ -1337,14 +1337,14 @@ sauce.ns('analysis', ns => {
         } else if (source === 'peak_power') {
             await infoDialogGraph($sparkline, {
                 data: correctedPower.values(),
-                formatter: x => `${Math.round(x).toLocaleString()}<abbr class="unit short">w</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'peak_hr') {
             const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
                 data: hrStream,
-                formatter: x => `${Math.round(x)}<abbr class="unit short">${unit}</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
                 colorSteps: [40, 100, 150, 200]
             });
         } else if (source === 'peak_cadence') {
@@ -1358,7 +1358,7 @@ sauce.ns('analysis', ns => {
         } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
                 data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
-                formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
                 colorSteps: [-500, 500, 1000, 2000]
             });
         }
@@ -1411,7 +1411,7 @@ sauce.ns('analysis', ns => {
             const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
                 data: hrStream,
-                formatter: x => `${Math.round(x)}<abbr class="unit short">${unit}</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
                 colorSteps: [40, 100, 150, 200]
             });
         } else if (source === 'peak_cadence') {
@@ -1476,7 +1476,7 @@ sauce.ns('analysis', ns => {
             const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
                 data: hrStream,
-                formatter: x => `${Math.round(x)}<abbr class="unit short">${unit}</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
                 colorSteps: [40, 100, 150, 200]
             });
         } else if (source === 'peak_cadence') {
@@ -1490,7 +1490,7 @@ sauce.ns('analysis', ns => {
         } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
                 data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
-                formatter: x => `${Math.round(x)}<abbr class="unit short">Vm/h</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
                 colorSteps: [-500, 500, 1000, 2000]
             });
         }
@@ -1587,7 +1587,7 @@ sauce.ns('analysis', ns => {
 
 
     function attachRankBadgeDialog() {
-        jQuery('body').on('click', '.rank_badge', async ev => {
+        jQuery('body').on('click', 'img.sauce-rank', async ev => {
             closeCurrentInfoDialog();
             const powerProfileTpl = await getTemplate('power-profile-help.html');
             const $dialog = modal({
@@ -1614,7 +1614,7 @@ sauce.ns('analysis', ns => {
                 let tooltipFormatterAbs;
                 if (ctx.weight) {
                     tooltipFormatterAbs = wKg => `
-                        ${Math.round(wKg * ctx.weight).toLocaleString()}<abbr class="unit short">W</abbr>
+                        ${humanNumber(wKg * ctx.weight)}<abbr class="unit short">W</abbr>
                         (with current athlete's weight)<br/>`;
                 } else {
                     tooltipFormatterAbs = wKg => ``;
@@ -1625,7 +1625,7 @@ sauce.ns('analysis', ns => {
                     height: 100,
                     chartRangeMin: 0,
                     tooltipFormatter: (_, _2, data) => `
-                        ${(data.y).toFixed(1)}<abbr class="unit short">W/kg</abbr><br/>
+                        ${humanNumber(data.y, 1)}<abbr class="unit short">W/kg</abbr><br/>
                         ${tooltipFormatterAbs(data.y)}
                         Duration: ${humanTime(times[data.x])}`
                 });
@@ -1806,7 +1806,7 @@ sauce.ns('analysis', ns => {
             <div class="sauce-rank-holder">
                 <div>${targetTD.innerHTML}</div>
                 <img src="${rank.badge}" class="sauce-rank"
-                     title="World Ranking: ${levelPct}%\nWatts/kg: ${wKg.toFixed(1)}"/>
+                     title="World Ranking: ${levelPct}%\nWatts/kg: ${humanNumber(wKg, 1)}"/>
             </div>
         `;
     }

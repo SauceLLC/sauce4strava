@@ -1598,10 +1598,6 @@
         background-color: color.shade(bg, 12%);
     }
 
-    img.sauce-rank {
-        filter: drop-shadow(1px 1px 4px white); // XXX hack for now, need better assets
-    }
-
     .pinned .pinnable {
         background-color: color.get(bg);
     }

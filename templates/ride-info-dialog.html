@@ -9,10 +9,10 @@
         <% if (power.elapsedWKg) { %>
             <tr title="{{{wkg_tooltip}}}">
                 <td>{{{Watts}}}/kg</td>
-                <td class="rank_holder">
+                <td class="rank-holder">
                     <span>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}</span>
                     <% if (power.rank && power.rank.badge && !power.estimate) { %>
-                        <img src="{{power.rank.badge}}" class="rank_badge"
+                        <img src="{{power.rank.badge}}" class="sauce-rank"
                              title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 0)}}%"/>
                     <% } %>
                 </td>
