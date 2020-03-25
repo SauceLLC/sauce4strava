@@ -607,7 +607,7 @@
 
     .base-chart {
         rect.simple-bar {
-            stroke: transparent;
+            stroke: color.shade(bg, 8%);
         }
 
         .grid-line {
@@ -2032,5 +2032,9 @@
 
     #search-results.table .edit-col {
         background-color: color.shade(bg, 8%);
+    }
+
+    #content-view .activity-content .sidebar {
+        background-color: color.get(bg);
     }
 }
