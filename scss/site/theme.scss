@@ -46,20 +46,7 @@
 }
 
 
-.sauce-dark-mode {
-    --sauce-bg-light: 8%;
-    --sauce-bg-shade-dir: 1;
-
-    --sauce-fg-light: 80%;
-    --sauce-fg-shade-dir: -1;
-
-    --sauce-accent4-hue: 200;
-    --sauce-accent4-sat: 100%;
-    --sauce-accent4-light: 55%;
-    --sauce-accent4-shade-dir: -1;
-
-    --sauce-border-light: 30%;
-
+.sauce-theme-enabled {
     $hard-border-color: color.shade(bg, 20%);
     $mid-border-color: color.shade(bg, 12%);
     $soft-border-color: color.shade(bg, 5%);
@@ -2037,4 +2024,64 @@
     #content-view .activity-content .sidebar {
         background-color: color.get(bg);
     }
+}
+
+.sauce-theme-dark {
+    --sauce-bg-light: 8%;
+    --sauce-bg-shade-dir: 1;
+
+    --sauce-fg-light: 80%;
+    --sauce-fg-shade-dir: -1;
+
+    --sauce-accent4-hue: 200;
+    --sauce-accent4-sat: 100%;
+    --sauce-accent4-light: 55%;
+    --sauce-accent4-shade-dir: -1;
+
+    --sauce-border-light: 30%;
+}
+
+.sauce-theme-windows31 {
+    --sauce-bg-hue: 0;
+    --sauce-bg-sat: 0%;
+    --sauce-bg-light: 99%;
+    --sauce-bg-shade-dir: -1;
+
+    --sauce-fg-hue: 0;
+    --sauce-fg-sat: 0%;
+    --sauce-fg-light: 0%;
+    --sauce-fg-shade-dir: 1;
+
+    --sauce-accent-hue: 240;
+    --sauce-accent-sat: 100%;
+    --sauce-accent-light: 33%;
+    --sauce-accent-shade-dir: 1;
+
+    --sauce-accent2-hue: 210;
+    --sauce-accent2-sat: 4%;
+    --sauce-accent2-light: 78%;
+    --sauce-accent2-shade-dir: -1;
+
+    --sauce-accent3-hue: 80;
+    --sauce-accent3-sat: 100%;
+    --sauce-accent3-light: 66%;
+    --sauce-accent3-shade-dir: -1;
+
+    --sauce-accent4-hue: 240;
+    --sauce-accent4-sat: 100%;
+    --sauce-accent4-light: 33%;
+    --sauce-accent4-shade-dir: -1;
+
+    --sauce-accent5-hue: 308;
+    --sauce-accent5-sat: 100%;
+    --sauce-accent5-light: 40%;
+    --sauce-accent5-shade-dir: -1;
+
+    --sauce-border-hue: 16;
+    --sauce-border-sat: 100%;
+    --sauce-border-light: 50%;
+    --sauce-border-shade-dir: -1;
+
+    --sauce-border: 1.5px solid #{color.get(border)};
+    --sauce-thin-border: 1px solid #{color.get(border, 50%)};
 }

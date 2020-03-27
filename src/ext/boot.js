@@ -71,8 +71,11 @@
         stylesheets: ['site/theme.css'],
         callbacks: [
             config => {
-                if (config.options['dark-mode']) {
-                    document.documentElement.classList.add('sauce-dark-mode');
+                const theme = config.options.theme;
+                if (theme) {
+                    document.documentElement.classList.add(
+                        'sauce-theme-enabled',
+                        `sauce-theme-${theme}`);
                 }
             }
         ]
@@ -149,6 +152,13 @@
         }
         document.documentElement.classList.add('sauce-enabled');
         const ext = browser.runtime.getManifest();
+        let patronLevel;
+        try {
+            const p = sauce.patron.getLevel();
+            patronLevel = (p instanceof Promise) ? await p : p;
+        } catch(e) {
+            patronLevel = 0;
+        }
         insertScript(`
             self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(config.options)};
@@ -156,6 +166,7 @@
             sauce.extId = "${browser.runtime.id}";
             sauce.name = "${ext.name}";
             sauce.version = "${ext.version}";
+            sauce.patronLevel = ${patronLevel}; 
         `);
         for (const m of manifests) {
             if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||

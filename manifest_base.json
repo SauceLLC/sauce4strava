@@ -65,6 +65,7 @@
             "src/ext/storage.js",
             "src/ext/rpc_hooks.js",
             "src/ext/rpc_proxy.js",
+            "src/ext/patron.js",
             "src/ext/boot.js"
         ]
     }],

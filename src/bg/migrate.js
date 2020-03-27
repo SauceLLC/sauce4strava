@@ -82,6 +82,14 @@
             config.options['activity-chronological-mode'] = 'updated';
             await sauce.storage.set({options: config.options});
         }
+    }, {
+        version: 6,
+        name: 'theme_option',
+        migrate: async config => {
+            config.options['theme'] = config.options['dark-mode'] ? 'dark' : undefined;
+            delete config.options['dark-mode'];
+            await sauce.storage.set({options: config.options});
+        }
     }];
 
 

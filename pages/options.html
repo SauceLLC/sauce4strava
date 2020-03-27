@@ -43,6 +43,10 @@
                 display: none;
             }
 
+            .option {
+                padding-bottom: 0.2em;
+            }
+
             .suboption {
                 display: block;
                 margin-top: 0.25em;
@@ -89,12 +93,19 @@
 
             <div class="actions">
                 <h4>General Options:</h4>
-                <div class="option" title="Make most pages work with any screen size.  Also adds BETA support for mobile Firefox!">
-                    <label><input type="checkbox" name="responsive"/>Responsive/Mobile Layout</label>
+
+                <div class="option">
+                    <label><input type="checkbox" style="visibility: hidden;"/>Theme:</label>
+                    <select name="theme">
+                        <option value="">Default Strava</option>
+                        <option value="dark">Dark mode</option>
+                        <option title="Available to Sauce patrons"
+                                value="windows31" disabled data-restriction="10">Windows 3.1</option>
+                    </select>
                 </div>
 
-                <div class="option" title="Embrace the night">
-                    <label><input type="checkbox" name="dark-mode"/>Dark mode <sup class="sauce-beta">BETA</sup></label>
+                <div class="option" title="Make most pages work with any screen size.  Also adds BETA support for mobile Firefox!">
+                    <label><input type="checkbox" name="responsive"/>Responsive/Mobile Layout</label>
                 </div>
             </div>
 
