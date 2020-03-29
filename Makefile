@@ -25,6 +25,7 @@ $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git/index
 
 sass:
 	$(TOOLPATH)/sassrender
+	cp -a scss/site/fonts css/site/
 
 clean:
 	rm -rf $(PACKAGES) builds css
