@@ -30,7 +30,7 @@
     --sauce-accent-hue: 16;
     --sauce-accent-sat: 100%;
     --sauce-accent-light: 50%;
-    --sauce-accent-shade-dir: -1;
+    --sauce-accent-shade-dir: 1;
 
     --sauce-accent2-hue: 45;
     --sauce-accent2-sat: 100%;
@@ -204,8 +204,8 @@
 
         .active .btn,
         .active span {
-            background-color: color.shade(accent, 5%);
-            border-color: color.shade(accent, 20%);
+            background-color: color.shade(accent, -5%);
+            border-color: color.shade(accent, -20%);
             color: color.get(fg);
         }
     }
@@ -222,27 +222,45 @@
 
     .drop-down-menu {
         &.active .selection {
-            background-color: color.lighten(bg, 10%);
+            background-color: color.shade(bg, 10%);
         }
 
         .options {
-            background-color: color.lighten(bg, 10%);
-            color: color.darken(fg, 10%);
+            background-color: color.shade(bg, 10%);
+            color: color.shade(fg, 10%);
             border-color: $hard-border-color;
 
             li > * {
                 color: inherit;
             }
+
+            .sauce-group {
+                color: color.shade(accent, 80%);
+            }
         }
     }
 
-    .drop-down-menu .options a:hover,
-    .slide-menu .options a:hover,
-    .drop-down-menu .options .clickable:hover,
-    .slide-menu .options .clickable:hover,
-    .drop-down-menu .options .btn:hover,
-    .slide-menu .options .btn:hover {
-        background-color: color.lighten(bg, 20%);
+    .drop-down-menu,
+    .slide-menu {
+        .options {
+            a:hover,
+            .clickable:hover,
+            .btn:hover {
+                background-color: color.shade(bg, 15%);
+            }
+
+            .opt-group.premium {
+                background-color: color.shade(accent4, 15%);
+
+                a,
+                .clickable,
+                .btn {
+                    &:hover {
+                        background-color: color.shade(accent4, 20%);
+                    }
+                }
+            }
+        }
     }
 
     .slide-menu {
@@ -255,17 +273,17 @@
 
     .pagenav {
         border: none;
-        background-color: color.lighten(bg, 5%);
+        background-color: color.lighten(bg, 5%); // XXX probably use shade
 
         li {
             border-color: $hard-border-color;
 
             > a {
-                color: color.darken(fg, 10%);
+                color: color.darken(fg, 10%); // XXX probably use shade
 
                 &:hover,
                 &:active {
-                    background-color: color.lighten(bg, 10%);
+                    background-color: color.lighten(bg, 10%); // XXX probably use shade
                 }
 
                 &:focus {
@@ -274,7 +292,7 @@
             }
 
             &.selected a {
-                color: color.lighten(fg, 10%);
+                color: color.lighten(fg, 10%); // XXX probably use shade
             }
         }
     }
@@ -297,7 +315,7 @@
     }
 
     #global-header {
-        background-color: color.shade(accent, 15%) !important;
+        background-color: color.shade(accent, -15%) !important;
         border: none;
 
         .collapsable-nav {
@@ -334,7 +352,7 @@
 
                 .nav-link {
                     background: transparent;
-                    color: color.lighten(fg, 15%);
+                    color: color.shade(accent, 85%);
                 }
             }
 
@@ -351,7 +369,7 @@
         .nav-bar {
             .nav-link,
             .nav-link:visited {
-                color: color.lighten(fg, 10%);
+                color: color.shade(accent, 80%);
             }
 
             .selected.nav-item {
@@ -469,7 +487,7 @@
 
         .modal-header,
         .glossary-header {
-            background-color: color.shade(accent, 20%);
+            background-color: color.shade(accent, -20%);
             border-color: $soft-border-color;
         }
 
@@ -631,7 +649,7 @@
     svg.recharts-surface {
         g.recharts-layer {
             path.recharts-area-area {
-                fill: color.shade(accent, 30%);
+                fill: color.shade(accent, -30%);
             }
 
             path.recharts-area-curve {
@@ -1072,11 +1090,11 @@
             }
 
             a.selected {
-                background-color: color.shade(accent, 8%);
+                background-color: color.shade(accent, -8%);
             }
 
             a:hover {
-                background-color: color.shade(accent, 12%);
+                background-color: color.shade(accent, -12%);
             }
 
             .option {
@@ -1200,12 +1218,12 @@
     }
 
     & {
-        $ride-color: color.shade(accent, 30%);
-        $ride-border-color: color.shade(accent, 40%);
-        $run-color: color.shade(accent2, 30%);
-        $run-border-color: color.shade(accent2, 40%);
-        $swim-color: color.shade(accent4, 30%);
-        $swim-border-color: color.shade(accent4, 40%);
+        $ride-color: color.shade(accent, -30%);
+        $ride-border-color: color.shade(accent, -40%);
+        $run-color: color.shade(accent2, -30%);
+        $run-border-color: color.shade(accent2, -40%);
+        $swim-color: color.shade(accent4, -30%);
+        $swim-border-color: color.shade(accent4, -40%);
 
         .activity-summary-v2 {
             .activity-breakdown {
@@ -1461,7 +1479,7 @@
 
         li.selected {
             ol.months > li.selected {
-                border-color: color.shade(accent, 10%);
+                border-color: color.shade(accent, -10%);
             }
 
             > a {
@@ -1597,7 +1615,7 @@
     table.hidden-segments,
     table.laps-list {
         tr.selected > td:first-child {
-            box-shadow: inset 3px 0 0 color.shade(accent, 5%);
+            box-shadow: inset 3px 0 0 color.shade(accent, -5%);
         }
     }
 
@@ -1690,7 +1708,7 @@
         }
 
         .selected a {
-            background-color: color.shade(accent, 10%);
+            background-color: color.shade(accent, -10%);
             color: color.shade(fg, -10%);
         }
     }
@@ -1849,7 +1867,7 @@
         }
 
         #vgrid-selected {
-            stroke: color.shade(accent, 15%);
+            stroke: color.shade(accent, -15%);
         }
         #hgrid-selected {
             stroke: color.shade(accent4, 15%);
@@ -1944,7 +1962,7 @@
     }
 
     .remove-from-roster {
-        color: color.shade(accent, 10%);
+        color: color.shade(accent, -10%);
     }
 
     .pace-info-box {
@@ -2018,7 +2036,7 @@
     }
 
     #global-header {
-        background-color: color.shade(accent, 15%) !important;
+        background-color: color.shade(accent, -15%) !important;
         border: none;
 
         .upload-button.app-icon {
@@ -2026,7 +2044,7 @@
         }
 
         .branding {
-            filter: saturate(0) contrast(5) drop-shadow(2px 2px 1px #0005);
+            filter: saturate(0) contrast(7) drop-shadow(2px 2px 1px #0005);
         }
 
         .nav-group .drop-down-menu {
@@ -2138,22 +2156,46 @@
     --sauce-border-light: 78%;
     --sauce-border-shade-dir: -1;
 
-    --sauce-border: 5px solid #{color.get(border)};
-    --sauce-thin-border: 1px solid #{color.get(border, 50%)};
+    //--sauce-border: 5px solid #{color.get(border)};
+    //--sauce-thin-border: 1px solid #{color.get(border, 50%)};
 
     body {
         font-family: 'RetroSans';
+    }
+
+    .btn,
+    .button,
+    button,
+    input[type="submit"],
+    input[type="button"],
+    input[type="reset"],
+    .selection,
+    .pagination a,
+    .pagination span,
+    .pagination em {
+        border-width: 3px;
+        border-style: outset;
+        border-color: color.get(accent2);
+        background-color: color.get(accent2);
+
+        &:hover,
+        &:focus {
+        }
+
+        &:active,
+        &.active {
+        }
+
+        &[disabled],
+        &.disabled {
+            background-color: color.get(accent2);
+        }
     }
 
     #global-header {
         background-color: color.get(accent) !important;
 
         .nav-bar {
-            .nav-link,
-            .nav-link:visited {
-                color: color.shade(accent, 90%);
-            }
-
             .selected.nav-item {
                 box-shadow: inset 0 -2px 0 0 #fff;
             }
@@ -2167,5 +2209,15 @@
                 }
             }
         }
+    }
+
+    #sauce-infopanel,
+    #pagenav {
+        border: solid;
+        border-image-source: url(../../images/win31-border.svg);
+        border-image-slice: 5%;
+        border-image-outset: 6px;
+        border-image-width: 10px;
+        margin-bottom: 2em;
     }
 }
