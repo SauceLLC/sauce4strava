@@ -733,7 +733,7 @@ sauce.ns('power', function() {
         const high = _rankScaler(duration, rankConstants[gender].high);
         const low = _rankScaler(duration, rankConstants[gender].low);
         const level = (wKg - low) / (high - low);
-        const suffix = (document.documentElement.classList.contains('sauce-dark-mode')) ? '-darkbg.png' : '.png';
+        const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ? '-darkbg.png' : '.png';
         for (const x of rankLevels) {
             if (level > x.levelRequirement) {
                 return Object.assign({
