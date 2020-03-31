@@ -74,7 +74,7 @@
         }
 
         tr:hover:not(.selected) {
-            background: color.shade(bg, 30%);
+            background: color.shade(bg, 10%);
             cursor: pointer;
         }
 

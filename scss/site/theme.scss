@@ -42,9 +42,9 @@
     --sauce-accent3-light: 55%;
     --sauce-accent3-shade-dir: -1;
 
-    --sauce-accent4-hue: 200;
+    --sauce-accent4-hue: 198;
     --sauce-accent4-sat: 100%;
-    --sauce-accent4-light: 55%;
+    --sauce-accent4-light: 36%;
     --sauce-accent4-shade-dir: -1;
 
     --sauce-accent5-hue: 308;
@@ -2247,10 +2247,12 @@
     body {
         background-color: color.shade(accent2, -10%);
 
-        > .view {
-            background: color.get(bg);
-            @include windows-border;
-            margin: 2em;
+        @media only screen and (min-width: 768px) {
+            > .view {
+                background: color.get(bg);
+                @include windows-border;
+                margin: 2em;
+            }
         }
     }
 
