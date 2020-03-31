@@ -2195,7 +2195,26 @@
     #global-header {
         background-color: color.get(accent) !important;
 
+        .branding {
+            filter: saturate(0) brightness(10);
+        }
+
         .nav-bar {
+            .app-icon.icon-search,
+            .selection::after,
+            .app-icon.icon-remove,
+            .icon-notification {
+                filter: invert(1);
+            }
+
+            .btn-primary {
+                color: color.get(fg);
+
+                &:hover {
+                    color: color.shade(fg, 5%);
+                }
+            }
+
             .selected.nav-item {
                 box-shadow: inset 0 -2px 0 0 #fff;
             }
@@ -2211,13 +2230,32 @@
         }
     }
 
-    #sauce-infopanel,
-    #pagenav {
-        border: solid;
+    @mixin windows-border {
+        border-style: solid;
         border-image-source: url(../../images/win31-border.svg);
         border-image-slice: 5%;
-        border-image-outset: 6px;
+        border-image-outset: 5px;
         border-image-width: 10px;
+    }
+
+    #sauce-infopanel,
+    #pagenav {
+        @include windows-border;
         margin-bottom: 2em;
+    }
+
+    body {
+        background-color: color.shade(accent2, -10%);
+
+        > .view {
+            background: color.get(bg);
+            @include windows-border;
+            margin: 2em;
+        }
+    }
+
+    .feed > .card {
+        border-radius: 0;
+        @include windows-border;
     }
 }
