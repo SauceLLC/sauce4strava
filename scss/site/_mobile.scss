@@ -651,20 +651,13 @@
         }
 
         #stacked-chart {
-            .xaxis-container text {
-                fill: black;
-            }
-
-            // XXX all this is in testing...
             .labelGroup {
                 text.label {
-                    fill: black !important;
-                    font-size: 15px;
-                    transform: translateY(-17px);
+                    font-size: 14px;
+                    transform: translateY(-16px);
                 }
 
                 text.detail {
-                    fill: black !important;
                     font-size: 14px;
                     transform: translateY(-23px);
                 }
@@ -732,7 +725,6 @@
                 width: 100%;
 
                 > .name {
-                    color: black;
                     max-width: 100%;
                 }
                 > svg {
@@ -781,6 +773,13 @@
 
     #laps #efforts-table {
         font-size: 0.85em;
+    }
+
+    #cpcurve-chart {
+        .infobox {
+            display: inline-block !important;
+            position: static !important;
+        }
     }
 }
 

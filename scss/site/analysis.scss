@@ -133,7 +133,7 @@ abbr.unit {
     text.static-label-box.label,
     text.laps-label,
     text.segments-label {
-        fill: color.shade(fg, 30%) !important;
+        fill: color.shade(fg, 20%) !important;
     }
 
     text.static-label-box.detail {
@@ -145,6 +145,11 @@ abbr.unit {
         color: color.shade(fg, 10%) !important;
     }
 
+    #stacked-chart {
+        .xaxis-container text {
+            fill: color.get(fg);
+        }
+    }
 }
 
 table.segments .sauce-rank-holder,
