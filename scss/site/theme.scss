@@ -1110,6 +1110,16 @@
         td.athlete a {
             color: color.shade(fg, 15%);
         }
+
+        tr.highlighted {
+            td:not(:last-child) {
+                border-right-color: $hard-border-color;
+            }
+
+            td {
+                background-color: color.shade(bg, 20%);
+            }
+        }
     }
 
     .leaflet-container {
@@ -2018,6 +2028,8 @@
         .icon-badge-pro):not(
         .icon-premium):not(
         [class*="icon-at-"]):not(
+        [class*="icon-yr-kom-"]):not(
+        [class*="icon-yr-pr-"]):not(
         .icon-badge-verified):not(
         .icon-color):not(
         .icon-white):not(
