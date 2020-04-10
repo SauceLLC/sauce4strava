@@ -71,7 +71,10 @@
         stylesheets: ['site/theme.css'],
         callbacks: [
             config => {
-                const theme = config.options.theme;
+                let theme = config.options.theme;
+                if (theme === 'system') {
+                    theme = (matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : null;
+                }
                 if (theme) {
                     document.documentElement.classList.add(
                         'sauce-theme-enabled',
