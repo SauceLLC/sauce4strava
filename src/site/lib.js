@@ -840,7 +840,7 @@ sauce.ns('power', function() {
         //   R^2 = 0.9739
         const elKm = el / 1000;
         const vo2maxAdjust = (-1.1219 * elKm ** 2 - 1.8991 * elKm + 99.921) / 100;
-        return power * vo2maxAdjust;
+        return power * (1 / vo2maxAdjust);
     }
 
 

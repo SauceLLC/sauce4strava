@@ -10,6 +10,40 @@
         <td>{{elapsed}}</td>
     </tr>
 
+    <% if (obj.power) { %>
+        <% if (power.elapsedWKg) { %>
+            <tr title="{{{wkg_tooltip}}}">
+                <td>{{{Watts}}}/kg</td>
+                <td class="rank-holder">
+                    <span>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}</span>
+                    <% if (power.rank && power.rank.badge && !power.estimate) { %>
+                        <img src="{{power.rank.badge}}" class="sauce-rank"
+                             title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 0)}}%"/>
+                    <% } %>
+                </td>
+            </tr>
+        <% } %>
+
+        <tr title="{{{elapsed_power_tooltip}}}">
+            <td>{{{power}}}</td>
+            <td>
+                {{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedAvg, 0)}}<abbr class="unit short">w</abbr>
+                <% if (!power.estimate) { %>
+                    <sup class="sauce-positive" title="{{{max_power_tooltip}}}">
+                        {{formatNumber(power.max, 0)}}
+                    </sup>
+                <% } %>
+            </td>
+        </tr>
+
+        <% if (power.elapsedSP) { %>
+            <tr title="{{{sp_tooltip}}}">
+                <td>{{{sea_power}}}</td>
+                <td>~{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr></td>
+            </tr>
+        <% } %>
+    <% } %>
+
     <% if (obj.pace) { %>
         <tr title="{{{elapsed_pace_tooltip}}}">
             <td>{{{pace}}}</td>

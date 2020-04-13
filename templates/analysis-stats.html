@@ -65,6 +65,14 @@
                 <value>{{formatNumber(power.np, 0)}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
+
+        <% if (obj.power.activeSP) { %>
+            <line title="{{{sp_tooltip}}}">
+                <key>SP</key>
+                <value>~{{formatNumber(power.activeSP, 0)}}<abbr class="unit">w</abbr></value>
+            </line>
+        <% } %>
+
     </div>
 <% } %>
 

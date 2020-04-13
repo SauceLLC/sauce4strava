@@ -549,6 +549,13 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function makeWattsSeaLevelStream(wattsStream, altStream) {
+        const seaWatts = wattsStream.map((x, i) => sauce.power.seaLevelPower(x, altStream[i]));
+        pageView.streams().streamData.add('watts_sealevel', seaWatts);
+        return seaWatts;
+    }
+
+
     async function startRideActivity() {
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
@@ -570,6 +577,9 @@ sauce.ns('analysis', ns => {
         let np;
         let intensity;
         if (wattsStream) {
+            if (altStream) {
+                makeWattsSeaLevelStream(wattsStream, altStream);
+            }
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             np = corrected && supportsNP() && corrected.np();
             if (corrected && ctx.ftp) {
@@ -604,6 +614,9 @@ sauce.ns('analysis', ns => {
                 if (!isWattEstimate) {
                     menu.push('peak_np');
                 }
+                if (altStream) {
+                    menu.push('peak_sp');
+                }
             }
             if (distStream) {
                 menu.push('peak_pace');
@@ -633,6 +646,10 @@ sauce.ns('analysis', ns => {
                     if (source === 'peak_power') {
                         attrs.isWattEstimate = isWattEstimate;
                         rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
+                    } else if (source === 'peak_sp') {
+                        attrs.isWattEstimate = isWattEstimate;
+                        const spStream = await fetchStream('watts_sealevel');
+                        rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
                     } else if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
                     } else if (source === 'peak_np') {
@@ -724,7 +741,7 @@ sauce.ns('analysis', ns => {
 
 
     async function startOtherActivity() {
-        const wattsStream = await fetchStream('watts');
+        const realWattsStream = await fetchStream('watts');
         const activeTime = await getActiveTime();
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
@@ -733,8 +750,16 @@ sauce.ns('analysis', ns => {
         const cadenceStream = await fetchStream('cadence');
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
+        const isWattEstimate = !realWattsStream;
+        let wattsStream = realWattsStream;
+        if (!wattsStream) {
+            wattsStream = await fetchStream('watts_calc');
+        }
         let power;
         if (wattsStream) {
+            if (altStream) {
+                makeWattsSeaLevelStream(wattsStream, altStream);
+            }
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             power = corrected && corrected.kj() * 1000 / activeTime;
         }
@@ -757,6 +782,12 @@ sauce.ns('analysis', ns => {
         });
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
+            if (wattsStream) {
+                menu.push('peak_power');
+                if (altStream) {
+                    menu.push('peak_sp');
+                }
+            }
             if (distStream) {
                 menu.push('peak_pace');
             }
@@ -781,8 +812,16 @@ sauce.ns('analysis', ns => {
                     const periodRanges = filterPeriodRanges(elapsedTime, activity);
                     const distRanges = filterDistRanges(distance, activity);
                     let rows;
+                    const attrs = {};
                     if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
+                    } else if (source === 'peak_power') {
+                        attrs.isWattEstimate = isWattEstimate;
+                        rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
+                    } else if (source === 'peak_sp') {
+                        attrs.isWattEstimate = isWattEstimate;
+                        const spStream = await fetchStream('watts_sealevel');
+                        rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
                     } else if (source === 'peak_hr') {
                         rows = hrRangesToRows(periodRanges, timeStream, hrStream);
                     } else if (source === 'peak_cadence') {
@@ -790,7 +829,7 @@ sauce.ns('analysis', ns => {
                     } else if (source === 'peak_vam') {
                         rows = vamRangesToRows(periodRanges, timeStream, altStream);
                     }
-                    return {rows};
+                    return Object.assign(attrs, {rows});
                 }
             });
             attachInfoPanel(panel);
@@ -823,6 +862,9 @@ sauce.ns('analysis', ns => {
             pageView.streams().streamData.add('watts_calc', wattsStream);
         }
         if (wattsStream) {
+            if (altStream) {
+                makeWattsSeaLevelStream(wattsStream, altStream);
+            }
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             power = corrected && corrected.kj() * 1000 / activeTime;
         }
@@ -853,6 +895,9 @@ sauce.ns('analysis', ns => {
             }
             if (wattsStream) {
                 menu.push('peak_power');
+                if (altStream) {
+                    menu.push('peak_sp');
+                }
             }
             if (hrStream) {
                 menu.push('peak_hr');
@@ -883,6 +928,10 @@ sauce.ns('analysis', ns => {
                     } else if (source === 'peak_power') {
                         attrs.isWattEstimate = isWattEstimate;
                         rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
+                    } else if (source === 'peak_sp') {
+                        attrs.isWattEstimate = isWattEstimate;
+                        const spStream = await fetchStream('watts_sealevel');
+                        rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
                     } else if (source === 'peak_hr') {
                         rows = hrRangesToRows(periodRanges, timeStream, hrStream);
                     } else if (source === 'peak_cadence') {
@@ -1203,7 +1252,7 @@ sauce.ns('analysis', ns => {
         const template = await getTemplate('ride-info-dialog.html');
         const body = await template({
             startsAt: humanTime(wallStartTime),
-            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, {
+            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
                 max: sauce.data.max(correctedPower.values()),
                 np: correctedPower.np(),
                 estimate: correctedPower.isEstimate
@@ -1287,7 +1336,7 @@ sauce.ns('analysis', ns => {
         const distance = streamDelta(distStream);
         const body = await template({
             startsAt: humanTime(wallStartTime),
-            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, {
+            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
                 max: sauce.data.max(correctedPower.values()),
                 estimate: correctedPower.isEstimate
             }),
@@ -1430,6 +1479,7 @@ sauce.ns('analysis', ns => {
     // XXX more DRY...
     async function otherInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
         const elapsedTime = wallEndTime - wallStartTime;
+        const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
@@ -1442,6 +1492,10 @@ sauce.ns('analysis', ns => {
         const template = await getTemplate('other-info-dialog.html');
         const body = await template({
             startsAt: humanTime(wallStartTime),
+            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
+                max: sauce.data.max(correctedPower.values()),
+                estimate: correctedPower.isEstimate
+            }),
             pace: distance && {
                 avg: humanPace(distance / elapsedTime, {velocity: true}),
                 max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
@@ -1471,6 +1525,12 @@ sauce.ns('analysis', ns => {
                 data: velocityStream,
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
                 colorSteps: [0.5, 10, 15, 30]
+            });
+        } else if (source === 'peak_power') {
+            await infoDialogGraph($sparkline, {
+                data: correctedPower.values(),
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
+                colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'peak_hr') {
             const unit = ctx.hrFormatter.shortUnitKey();
@@ -1964,16 +2024,25 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function powerData(kj, active, elapsed, extra) {
+    function powerData(kj, active, elapsed, altStream, extra) {
         const activeAvg = active ? kj * 1000 / active : null;
         const elapsedAvg = elapsed ? kj * 1000 / elapsed : null;
+        let activeSP;
+        let elapsedSP;
+        if (altStream) {
+            const avgEl = sauce.data.avg(altStream);
+            activeSP = activeAvg && sauce.power.seaLevelPower(activeAvg, avgEl);
+            elapsedSP = elapsedAvg && sauce.power.seaLevelPower(elapsedAvg, avgEl);
+        }
         return Object.assign({
             activeAvg,
             elapsedAvg,
+            activeSP,
+            elapsedSP,
             activeWKg: (ctx.weight && activeAvg != null) && activeAvg / ctx.weight,
             elapsedWKg: (ctx.weight && elapsedAvg != null) && elapsedAvg / ctx.weight,
             rank: (ctx.weight && elapsedAvg != null) &&
-                sauce.power.rank(elapsed, elapsedAvg / ctx.weight, ctx.gender)
+                sauce.power.rank(elapsed, elapsedAvg / ctx.weight, ctx.gender),
         }, extra);
     }
 
@@ -2014,7 +2083,7 @@ sauce.ns('analysis', ns => {
         if (correctedPower) {
             const kj = correctedPower.kj();
             const np = supportsNP() && correctedPower.np();
-            tplData.power = powerData(kj, activeTime, elapsedTime, {np});
+            tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np});
             let tss;
             if (ctx.ftp) {
                 if (np) {
@@ -2311,6 +2380,7 @@ sauce.ns('analysis', ns => {
         ctx.peakIcons = {
             peak_power: 'fa/bolt-duotone.svg',
             peak_np: 'fa/atom-alt-duotone.svg',
+            peak_sp: 'fa/ship-duotone.svg',
             peak_hr: 'fa/heartbeat-duotone.svg',
             peak_vam: 'fa/rocket-launch-duotone.svg',
             peak_gap: 'fa/hiking-duotone.svg',
