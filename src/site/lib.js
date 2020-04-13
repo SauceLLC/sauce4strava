@@ -828,6 +828,22 @@ sauce.ns('power', function() {
     }
 
 
+    function seaLevelPower(power, el) {
+        // Based on research from Bassett, D.R. Jr., C.R. Kyle, L. Passfield, J.P. Broker, and E.R. Burke.
+        // 31:1665-76, 1999.
+        // Note we assume the athlete is acclimatized for simplicity.
+        // acclimated:
+        //   vo2maxPct = -1.1219 * km ** 2 - 1.8991 * km + 99.921
+        //   R^2 = 0.9729
+        // unacclimated:
+        //   v02maxPct = 0.1781 * km ** 3 - 1.434 * km ** 2 - 4.0726 ** km + 100.35
+        //   R^2 = 0.9739
+        const elKm = el / 1000;
+        const vo2maxAdjust = (-1.1219 * elKm ** 2 - 1.8991 * elKm + 99.921) / 100;
+        return power * vo2maxAdjust;
+    }
+
+
     return {
         peakPower,
         peakNP,
@@ -836,6 +852,7 @@ sauce.ns('power', function() {
         calcTSS,
         rank,
         rankRequirements,
+        seaLevelPower
     };
 });
 
