@@ -41,6 +41,9 @@
     "analysis_np_tooltip": {
         "message": "Normalized Power®: une estimation de la puissance moyenne potentielle"
     },
+    "analysis_sp_tooltip": {
+        "message": "Sea Power: une estimation de la puissance potentielle au niveau de la mer"
+    },
     "analysis_energy_tooltip": {
         "message": "Énergie dépensée en kilojoules"
     },
@@ -115,6 +118,9 @@
     },
     "analysis_peak_power_tooltip": {
         "message": "Plages de puissance soutenues maximales"
+    },
+    "analysis_peak_sp_tooltip": {
+        "message": "Plages de puissance ajustées au niveau de la mer maximum"
     },
     "analysis_peak_np_tooltip": {
         "message": "Plages maximales normalisées Power®"
@@ -217,6 +223,10 @@
         "message": "Puissance Apogée",
         "description": "IMMUTABLE"
     },
+    "analysis_peak_sp": {
+        "message": "SP Apogée",
+        "description": "IMMUTABLE"
+    },
     "analysis_peak_np": {
         "message": "NP® Apogée",
         "description": "IMMUTABLE"
@@ -246,6 +256,9 @@
     },
     "analysis_power": {
         "message": "Puissance"
+    },
+    "analysis_sea_power": {
+        "message": "Sea Power"
     },
     "analysis_weight": {
         "message": "Poids"

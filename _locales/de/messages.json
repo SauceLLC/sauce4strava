@@ -40,6 +40,9 @@
     "analysis_np_tooltip": {
         "message": "Normalized Power®: Eine Schätzung der potenziellen Durchschnittsleistung"
     },
+    "analysis_sp_tooltip": {
+        "message": "Seemacht: Eine Schätzung der potenziellen Energie auf Meereshöhe"
+    },
     "analysis_energy_tooltip": {
         "message": "Energieverbrauch in Kilojoule"
     },
@@ -115,6 +118,9 @@
     },
     "analysis_peak_power_tooltip": {
         "message": "Maximale Dauerleistungsbereiche"
+    },
+    "analysis_peak_sp_tooltip": {
+        "message": "Maximal auf den Meeresspiegel angepasste Leistungsbereiche"
     },
     "analysis_peak_np_tooltip": {
         "message": "Maximale Normalized Power®",
@@ -213,6 +219,10 @@
         "message": "Beste Leistung",
         "description": "IMMUTABLE"
     },
+    "analysis_peak_sp": {
+        "message": "Beste SP",
+        "description": "IMMUTABLE"
+    },
     "analysis_peak_np": {
         "message": "Beste NP®",
         "description": "IMMUTABLE"
@@ -242,6 +252,9 @@
     },
     "analysis_power": {
         "message": "Leistung"
+    },
+    "analysis_sea_power": {
+        "message": "Seemacht"
     },
     "analysis_weight": {
         "message": "Gewicht"

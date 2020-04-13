@@ -41,6 +41,9 @@
     "analysis_np_tooltip": {
         "message": "归一化功率®：潜在平均功率的估计"
     },
+    "analysis_sp_tooltip": {
+        "message": "海力：海平面上的潜在功率估计"
+    },
     "analysis_energy_tooltip": {
         "message": "能量消耗以千焦耳为单位"
     },
@@ -116,6 +119,9 @@
     },
     "analysis_peak_power_tooltip": {
         "message": "最大持续功率范围"
+    },
+    "analysis_peak_sp_tooltip": {
+        "message": "最大海平面调整功率范围"
     },
     "analysis_peak_np_tooltip": {
         "message": "最大归一化功率范围"
@@ -214,6 +220,10 @@
         "message": "最佳功率",
         "description": "IMMUTABLE"
     },
+    "analysis_peak_sp": {
+        "message": "最佳SP",
+        "description": "IMMUTABLE"
+    },
     "analysis_peak_np": {
         "message": "最佳NP®",
         "description": "IMMUTABLE"
@@ -243,6 +253,9 @@
     },
     "analysis_power": {
         "message": "功率"
+    },
+    "analysis_sea_power": {
+        "message": "海上力量"
     },
     "analysis_weight": {
         "message": "重量"

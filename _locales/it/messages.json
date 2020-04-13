@@ -43,6 +43,9 @@
     "analysis_np_tooltip": {
         "message": "Normalized Power®: una stima della potenza media potenziale"
     },
+    "analysis_sp_tooltip": {
+        "message": "Sea Power: una stima della potenza potenziale a livello del mare"
+    },
     "analysis_energy_tooltip": {
         "message": "Energia spesa in kilojoule"
     },
@@ -118,6 +121,9 @@
     },
     "analysis_peak_power_tooltip": {
         "message": "Range di potenza massima sostenuta"
+    },
+    "analysis_peak_sp_tooltip": {
+        "message": "Gamme di potenza regolate a livello massimo del mare"
     },
     "analysis_peak_np_tooltip": {
         "message": "Range di potenza massima normalizzata®"
@@ -217,6 +223,10 @@
         "message": "Picco Potenza",
         "description": "IMMUTABLE"
     },
+    "analysis_peak_sp": {
+        "message": "Picco SP",
+        "description": "IMMUTABLE"
+    },
     "analysis_peak_np": {
         "message": "Picco NP®",
         "description": "IMMUTABLE"
@@ -246,6 +256,9 @@
     },
     "analysis_power": {
         "message": "Energia"
+    },
+    "analysis_sea_power": {
+        "message": "Sea Power"
     },
     "analysis_weight": {
         "message": "Peso"
