@@ -597,7 +597,7 @@ sauce.ns('analysis', ns => {
             }
         }
         await renderTertiaryStats({
-            weight: ctx.weightFormatter.convert(ctx.weight).toFixed(2),
+            weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
@@ -696,7 +696,7 @@ sauce.ns('analysis', ns => {
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
         await renderTertiaryStats({
-            weight: ctx.weightFormatter.convert(ctx.weight).toFixed(2),
+            weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin
@@ -770,7 +770,7 @@ sauce.ns('analysis', ns => {
             intensity = power / ctx.ftp;
         }
         await renderTertiaryStats({
-            weight: ctx.weightFormatter.convert(ctx.weight).toFixed(2),
+            weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
@@ -875,7 +875,7 @@ sauce.ns('analysis', ns => {
             intensity = power / ctx.ftp;
         }
         await renderTertiaryStats({
-            weight: ctx.weightFormatter.convert(ctx.weight).toFixed(2),
+            weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
@@ -1209,13 +1209,15 @@ sauce.ns('analysis', ns => {
 
 
     let _correctedPower;
-    async function correctedPowerTimeRange(wallStartTime, wallEndTime) {
+    async function correctedPowerTimeRange(wallStartTime, wallEndTime, options) {
         // startTime and endTime can be pad based values with corrected power sources.
         // Using wall time values and starting with full streams gives us the correct
         // padding as the source.
+        options = options || {};
+        const stream = options.stream || 'watts';
         if (_correctedPower === undefined) {
             _correctedPower = null;
-            let fullStream = await fetchStream('watts');
+            let fullStream = await fetchStream(stream);
             const isEstimate = !fullStream;
             if (isEstimate) {
                 fullStream = await fetchStream('watts_calc');
@@ -1284,6 +1286,14 @@ sauce.ns('analysis', ns => {
             await infoDialogGraph($sparkline, {
                 data: correctedPower.values(),
                 formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
+                colorSteps: [0, 100, 400, 1200]
+            });
+        } else if (source === 'peak_sp') {
+            const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
+                {stream: 'watts_sealevel'});
+            await infoDialogGraph($sparkline, {
+                data: correctedSP.values(),
+                formatter: x => `~${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'peak_pace') {
@@ -1387,6 +1397,14 @@ sauce.ns('analysis', ns => {
             await infoDialogGraph($sparkline, {
                 data: correctedPower.values(),
                 formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
+                colorSteps: [0, 100, 400, 1200]
+            });
+        } else if (source === 'peak_sp') {
+            const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
+                {stream: 'watts_sealevel'});
+            await infoDialogGraph($sparkline, {
+                data: correctedSP.values(),
+                formatter: x => `~${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'peak_hr') {
@@ -1530,6 +1548,14 @@ sauce.ns('analysis', ns => {
             await infoDialogGraph($sparkline, {
                 data: correctedPower.values(),
                 formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
+                colorSteps: [0, 100, 400, 1200]
+            });
+        } else if (source === 'peak_sp') {
+            const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
+                {stream: 'watts_sealevel'});
+            await infoDialogGraph($sparkline, {
+                data: correctedSP.values(),
+                formatter: x => `~${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'peak_hr') {
