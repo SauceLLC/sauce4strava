@@ -451,7 +451,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function _rangeRollToRow({range, roll, value, unit}) {
+    function _rangeRollToRow({range, roll, value, unit, style}) {
         return {
             rangeValue: range.value,
             rangeLabel: range.label,
@@ -461,6 +461,7 @@ sauce.ns('analysis', ns => {
             endTime: roll.lastTime({noPad: true}),
             wallStartTime: roll.firstTime(),
             wallEndTime: roll.lastTime(),
+            style
         };
     }
 
@@ -500,8 +501,15 @@ sauce.ns('analysis', ns => {
         for (const range of ranges.filter(x => !estimate || x.value >= minWattEstTime)) {
             const roll = sauce.power.peakPower(range.value, timeStream, wattsStream);
             if (roll) {
-                const value = prefix + humanNumber(roll.avg());
-                rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
+                const avg = roll.avg();
+                const value = prefix + humanNumber(avg);
+                //const rank = (ctx.weight && avg) && sauce.power.rank(roll.elapsed(), avg / ctx.weight, ctx.gender);
+                let style;
+                //if (rank) {
+                //    const pct = Math.round(rank.level * 100);
+                //    style = `background-image: linear-gradient(90deg, #f002 0% ${pct}%, transparent ${pct}%);`;
+                //}
+                rows.push(_rangeRollToRow({range, roll, value, unit: 'w', style}));
             }
         }
         return rows;

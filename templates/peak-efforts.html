@@ -32,7 +32,8 @@
                 data-start-time="{{row.startTime}}"
                 data-end-time="{{row.endTime}}"
                 data-wall-start-time="{{row.wallStartTime}}"
-                data-wall-end-time="{{row.wallEndTime}}">
+                data-wall-end-time="{{row.wallEndTime}}"
+                style="{{row.style}}">
                 <td>{-row.rangeLabel-}</td>
                 <td>{{row.value}}<% if (row.unit) { %><abbr class="unit short">{{row.unit}}</abbr><% } %></td>
             </tr>
