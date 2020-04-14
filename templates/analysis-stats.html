@@ -69,7 +69,10 @@
         <% if (obj.power.activeSP) { %>
             <line title="{{{sp_tooltip}}}">
                 <key>SP</key>
-                <value>~{{formatNumber(power.activeSP, 0)}}<abbr class="unit">w</abbr></value>
+                <value>~{{formatNumber(power.activeSP, 0)}}<abbr class="unit">w</abbr>
+                    <sup class="sauce-positive"
+                         title="{{{sp_adjust_tooltip}}}">+{{formatNumber(power.activeSPAdjust * 100, 1)}}%</sup>
+                </value>
             </line>
         <% } %>
 

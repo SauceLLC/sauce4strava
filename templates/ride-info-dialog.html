@@ -34,7 +34,11 @@
         <% if (power.elapsedSP) { %>
             <tr title="{{{sp_tooltip}}}">
                 <td>{{{sea_power}}}</td>
-                <td>~{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr></td>
+                <td>
+                    ~{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr>
+                    <sup class="sauce-positive"
+                         title="{{{sp_adjust_tooltip}}}">+{{formatNumber(power.elapsedSPAdjust * 100, 1)}}%</sup>
+                </td>
             </tr>
         <% } %>
 
