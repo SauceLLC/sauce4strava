@@ -31,7 +31,10 @@ Feature Highlights
    * Grade Adjusted Pace
    * VAM (climbing speed)
    * Cadence
- * Dark Mode *BETA OPTION*
+   * Sea Power (potential power at sea level)
+ * Themes:
+   * Dark Mode
+   * Windows 3.1 (Patron's only)
  * Export any activity to a TCX or GPX file
  * Running Power estimation
  * Analysis page stats are extended to include:
@@ -42,6 +45,7 @@ Feature Highlights
    * VAM
    * Elevation gain/loss
    * Raw data and graph views
+   * Sea Power
  * Weight and FTP overrides for all athletes
  * Inline comments system for activity page
  * Dashboard features:
@@ -66,8 +70,11 @@ Feature Highlights
 
 Release Notes
 --------
+#### v5.4.0:
+ * Sea Power
+
 #### v5.3.0:
- * Dark mode (BETA)
+ * Dark mode theme
 
 #### v5.2.1:
  * Disable Polish translations until they can be improved
@@ -98,7 +105,7 @@ Release Notes
    * Kilojoule field
    * Moving vs elapsed time stats
    * Improved placement on page
- * Running power (watts) estimate **[BETA]**
+ * Running power (watts) estimate
  * Raw data views; CSV table and graphs
  * Kilojoules in analysis view
  * Updated algo for VAM calculations (smoothing)
@@ -106,10 +113,10 @@ Release Notes
  * Support for HiDPI graphs
 
 #### v4.3.0:
- * TCX and GPX export **[BETA]**
+ * TCX and GPX export
 
 #### v4.1.0:
- * Support for VAM **[BETA]**
+ * Support for VAM
 
 #### v4.0.0:
  * Peak power calculations now support irregular recording intervals (non 1 sample / second)
