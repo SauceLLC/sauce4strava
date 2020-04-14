@@ -71,7 +71,7 @@
                 <key>SP</key>
                 <value>~{{formatNumber(power.activeSP, 0)}}<abbr class="unit">w</abbr>
                     <sup class="sauce-positive"
-                         title="{{{sp_adjust_tooltip}}}">+{{formatNumber(power.activeSPAdjust * 100, 1)}}%</sup>
+                         title="{{{sp_adjust_tooltip}}}">+{{formatNumber((power.activeSPAdjust - 1) * 100, 1)}}%</sup>
                 </value>
             </line>
         <% } %>

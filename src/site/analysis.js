@@ -2065,8 +2065,8 @@ sauce.ns('analysis', ns => {
             elapsedAvg,
             activeSP,
             elapsedSP,
-            activeSPAdjust: activeSP && (activeSP - activeAvg) / activeAvg,
-            elapsedSPAdjust: elapsedSP && (elapsedSP - elapsedAvg) / elapsedAvg,
+            activeSPAdjust: activeSP && activeSP / activeAvg,
+            elapsedSPAdjust: elapsedSP && elapsedSP / elapsedAvg,
             activeWKg: (ctx.weight && activeAvg != null) && activeAvg / ctx.weight,
             elapsedWKg: (ctx.weight && elapsedAvg != null) && elapsedAvg / ctx.weight,
             rank: (ctx.weight && elapsedAvg != null) &&

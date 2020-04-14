@@ -50,7 +50,7 @@
                 <td>
                     ~{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr>
                     <sup class="sauce-positive"
-                         title="{{{sp_adjust_tooltip}}}">+{{formatNumber(power.elapsedSPAdjust * 100, 1)}}%</sup>
+                         title="{{{sp_adjust_tooltip}}}">+{{formatNumber((power.elapsedSPAdjust - 1) * 100, 1)}}%</sup>
                 </td>
             </tr>
         <% } %>
