@@ -29,7 +29,7 @@ html.sauce-responsive,
     @media only screen and (max-width: 350px) {
         font-size: 11px;
     }
-    font-size: 13px;
+    font-size: 14px;
 }
 
 
@@ -177,7 +177,7 @@ html.sauce-responsive,
         }
 
         &.group ul li a {
-            font-size: 0.96em;
+            font-size: 0.86em;
         }
     }
 
@@ -283,10 +283,10 @@ html.sauce-responsive,
         flex-wrap: wrap;  // Only for extreme cases
         margin: 0;
         padding: $vert-pad 1em 0;
-        font-size: inherit;
+        font-size: 0.9em;
 
         &.secondary-stats {
-            font-size: 0.8em;
+            font-size: 0.75em;
         }
 
         li {
@@ -393,7 +393,7 @@ html.sauce-responsive,
 
             > h2 {
                 margin-left: 0.5em;
-                font-size: 1.2em;
+                font-size: 1.4em;
             }
         }
 
@@ -445,6 +445,7 @@ html.sauce-responsive,
             .activity-stats {
                 padding-left: 0;
                 padding-right: 0;
+                padding-top: 0.5em;
 
                 .section:not(.inline-stats) {
                     font-size: inherit;  // disable fixed sizing.
@@ -491,7 +492,7 @@ html.sauce-responsive,
             display: grid;
             grid-template-columns: minmax(calc(#{defines.$analysis-page-sidenav-width} + (2 * #{$hmargin})), 1fr)
                                    minmax(0, 10fr);
-            grid-template-rows: auto;
+            grid-template-rows: auto 1fr;
             grid-auto-flow: row;
             padding: 0 4vw;
             margin: 1.8rem 0 1rem 0;
@@ -509,7 +510,7 @@ html.sauce-responsive,
             > #heading {
                 grid-row: 1;
                 grid-column: 2 / 3;
-                margin: 0 $hmargin;
+                margin: 0 $hmargin 1.5rem;
             }
 
 
