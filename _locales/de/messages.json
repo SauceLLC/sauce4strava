@@ -43,6 +43,9 @@
     "analysis_sp_tooltip": {
         "message": "Seemacht: Eine Schätzung der potenziellen Energie auf Meereshöhe"
     },
+    "analysis_sp_adjust_tooltip": {
+        "message": "Kompensation aufgrund des Höheneffekts auf V02Max"
+    },
     "analysis_energy_tooltip": {
         "message": "Energieverbrauch in Kilojoule"
     },
@@ -143,7 +146,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_watt_estimate_tooltip": {
-        "message": "Diese Werte werden aus Leistungsschätzungen berechnet. Für genaue Werte ist ein reales Leistungsmessgerät erforderlich."
+        "message": "Diese Werte werden aus Leistungsschätzungen berechnet. Für genaue Werte ist ein Realleistungsmessgerät erforderlich."
     },
     "analysis_stops": {
         "message": "Stopps"

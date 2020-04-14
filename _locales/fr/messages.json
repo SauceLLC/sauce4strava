@@ -44,6 +44,9 @@
     "analysis_sp_tooltip": {
         "message": "Sea Power: une estimation de la puissance potentielle au niveau de la mer"
     },
+    "analysis_sp_adjust_tooltip": {
+        "message": "Compensation due à l'effet de l'altitude sur V02Max"
+    },
     "analysis_energy_tooltip": {
         "message": "Énergie dépensée en kilojoules"
     },
@@ -143,7 +146,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_watt_estimate_tooltip": {
-        "message": "Ces valeurs sont calculées à partir des estimations de puissance. Pour des valeurs précises, un appareil de mesure de la puissance réelle est requis."
+        "message": "Ces valeurs sont calculées à partir des estimations de puissance. Pour des valeurs précises, un véritable appareil de mesure de puissance est nécessaire."
     },
     "analysis_stops": {
         "message": "Arrête"

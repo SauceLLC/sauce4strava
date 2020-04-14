@@ -46,6 +46,9 @@
     "analysis_sp_tooltip": {
         "message": "Sea Power: una stima della potenza potenziale a livello del mare"
     },
+    "analysis_sp_adjust_tooltip": {
+        "message": "Compensazione dovuta all'effetto dell'altitudine su V02Max"
+    },
     "analysis_energy_tooltip": {
         "message": "Energia spesa in kilojoule"
     },
