@@ -393,16 +393,21 @@ sauce.ns('analysis', ns => {
             this.$el.on('click', '.group tr[data-range-value]', async ev => {
                 ev.stopPropagation();  // prevent click-away detection from closing dialog.
                 const row = ev.currentTarget;
-                await infoDialog({
-                    startTime: Number(row.dataset.startTime),
-                    endTime: Number(row.dataset.endTime),
-                    wallStartTime: Number(row.dataset.wallStartTime),
-                    wallEndTime: Number(row.dataset.wallEndTime),
-                    label: row.dataset.rangeLabel,
-                    icon: row.dataset.rangeIcon,
-                    source: this._selectedSource,
-                    originEl: row
-                });
+                try {
+                    await infoDialog({
+                        startTime: Number(row.dataset.startTime),
+                        endTime: Number(row.dataset.endTime),
+                        wallStartTime: Number(row.dataset.wallStartTime),
+                        wallEndTime: Number(row.dataset.wallEndTime),
+                        label: row.dataset.rangeLabel,
+                        icon: row.dataset.rangeIcon,
+                        source: this._selectedSource,
+                        originEl: row
+                    });
+                } catch (e) {
+                    sauce.rpc.reportError(e);
+                    throw e;
+                }
                 sauce.rpc.reportEvent('InfoDialog', 'open',
                     `${this._selectedSource}-${row.dataset.rangeValue}`);
             });
@@ -1916,7 +1921,6 @@ sauce.ns('analysis', ns => {
             try {
                 addBadge(row);
             } catch(e) {
-                console.error("addBadge failure:", e);
                 sauce.rpc.reportError(e);
             }
         }
