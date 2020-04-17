@@ -773,6 +773,16 @@
 
     #laps #efforts-table {
         font-size: 0.85em;
+
+        table.laps-list {
+            tr.selected {
+                background-color: color.shade(bg, 10%);
+            }
+            td {
+                padding-top: 1em;
+                padding-bottom: 1em;
+            }
+        }
     }
 
     #cpcurve-chart {
