@@ -1,6 +1,6 @@
 default: build
 
-TARGET ?= gecko
+TARGET ?= chromium
 
 PACKAGES := node_modules/.packages.build
 BUILD := build.json
