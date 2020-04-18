@@ -590,7 +590,7 @@ sauce.ns('analysis', ns => {
         let np;
         let intensity;
         if (wattsStream) {
-            if (altStream) {
+            if (supportsSeaPower()) {
                 makeWattsSeaLevelStream(wattsStream, altStream);
             }
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
@@ -627,7 +627,7 @@ sauce.ns('analysis', ns => {
                 if (!isWattEstimate) {
                     menu.push('peak_np');
                 }
-                if (altStream) {
+                if (supportsSeaPower()) {
                     menu.push('peak_sp');
                 }
             }
@@ -770,7 +770,7 @@ sauce.ns('analysis', ns => {
         }
         let power;
         if (wattsStream) {
-            if (altStream) {
+            if (supportsSeaPower()) {
                 makeWattsSeaLevelStream(wattsStream, altStream);
             }
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
@@ -797,7 +797,7 @@ sauce.ns('analysis', ns => {
             const menu = [/*locale keys*/];
             if (wattsStream) {
                 menu.push('peak_power');
-                if (altStream) {
+                if (supportsSeaPower()) {
                     menu.push('peak_sp');
                 }
             }
@@ -875,7 +875,7 @@ sauce.ns('analysis', ns => {
             pageView.streams().streamData.add('watts_calc', wattsStream);
         }
         if (wattsStream) {
-            if (altStream) {
+            if (supportsSeaPower()) {
                 makeWattsSeaLevelStream(wattsStream, altStream);
             }
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
@@ -908,7 +908,7 @@ sauce.ns('analysis', ns => {
             }
             if (wattsStream) {
                 menu.push('peak_power');
-                if (altStream) {
+                if (supportsSeaPower()) {
                     menu.push('peak_sp');
                 }
             }
@@ -1248,6 +1248,18 @@ sauce.ns('analysis', ns => {
             range.isEstimate = _correctedPower.isEstimate;
             return range;
         }
+    }
+
+
+    function isVirtual() {
+        const type = pageView.activity().get('detailedType');
+        return type && !!type.match(/Virtual/);
+    }
+
+
+    function supportsSeaPower() {
+        return !isVirtual() && !!_getStream('altitude') &&
+            !!(_getStream('watts') || _getStream('watts_calc'));
     }
 
 
@@ -2067,7 +2079,7 @@ sauce.ns('analysis', ns => {
         const elapsedAvg = elapsed ? kj * 1000 / elapsed : null;
         let activeSP;
         let elapsedSP;
-        if (altStream) {
+        if (supportsSeaPower()) {
             const avgEl = sauce.data.avg(altStream);
             activeSP = activeAvg && sauce.power.seaLevelPower(activeAvg, avgEl);
             elapsedSP = elapsedAvg && sauce.power.seaLevelPower(elapsedAvg, avgEl);
