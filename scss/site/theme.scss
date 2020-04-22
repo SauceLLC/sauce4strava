@@ -104,26 +104,41 @@
     .pagination a,
     .pagination span,
     .pagination em {
-        background-color: color.shade(bg, 8%);
-        border-color: $mid-border-color;
         color: color.shade(fg, 8%);
+
+        &:not(.btn-unstyled) {
+            background-color: color.shade(bg, 8%);
+            border-color: $mid-border-color;
+
+            &:hover,
+            &:focus {
+                background-color: color.shade(bg, 12%);
+                border-color: $hard-border-color;
+            }
+
+            &:active,
+            &.active {
+                background-color: color.shade(bg, 2%);
+            }
+
+            &[disabled],
+            &.disabled {
+                background-color: color.shade(bg, 5%);
+            }
+        }
 
         &:hover,
         &:focus {
-            background-color: color.shade(bg, 12%);
-            border-color: $hard-border-color;
             color: color.shade(fg, 5%);
         }
 
         &:active,
         &.active {
-            background-color: color.shade(bg, 2%);
             color: color.shade(fg, 12%);
         }
 
         &[disabled],
         &.disabled {
-            background-color: color.shade(bg, 5%);
             color: color.shade(fg, 12%);
         }
 
@@ -1877,7 +1892,7 @@
 
         .vgrid,
         .axis {
-            stroke: color.shade(bg, 15%);
+            stroke: color.shade(bg, 5%);
         }
 
         #vgrid-selected {

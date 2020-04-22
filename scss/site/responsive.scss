@@ -267,6 +267,12 @@ html.sauce-responsive,
                 margin-top: 1em;
             }
         }
+
+        .segment-effort-detail-view {
+            .effort-actions {
+                min-width: initial !important;
+            }
+        }
     }
 
     .sauce-analysis-stats {
