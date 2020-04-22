@@ -1957,13 +1957,17 @@
         background-color: color.shade(bg, 8%);
     }
 
-    #analysis-chart {
+    #analysis-chart svg {
         .yaxis2,
         .xaxis {
             .tick line {
                 stroke: color.shade(bg, 5%);
                 shape-rendering: auto;
             }
+        }
+
+        line.baseline {
+            stroke: color.get(fg);
         }
     }
 

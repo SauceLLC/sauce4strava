@@ -801,10 +801,18 @@
     }
 
     #leaderboard-table {
-        th, td {
-            padding-left: 0.4em;
-            padding-right: 0.2em;
+        thead {
+            display: none;
+        }
+
+        td {
+            padding: 1.3em 0.2em 1.2em 0.4em;
             font-size: 0.85em;
+        }
+
+        td:first-child {
+            padding-left: 1em;
+            padding-right: 0.33em;
         }
 
         td[class*="avatar-"] {
@@ -814,17 +822,44 @@
                 white-space: nowrap;
             }
         }
+
+        td.effort-date {
+            position: absolute;
+            right: 0em;
+            padding: 0.2em;
+            border: none;
+            opacity: 0.7;
+        }
+
+        .add-to-roster,
+        .remove-from-roster {
+            width: 28px;
+            height: 28px;
+            line-height: 30px;
+        }
+
+        .add-to-roster {
+            background: color.shade(bg, 10%);
+            color: color.shade(fg, 10%);
+        }
+
+        .remove-from-roster {
+            background: #b00;
+            color: #eee;
+        }
     }
 
     #leaderboard-container {
         ul.tabs {
+            border-bottom: none;
+
             > li {
                 border: 1px solid #aaa;
                 border-radius: 0.28em;
                 margin: 0.2em 0.4em;
 
                 &.selected {
-                    background: #dfdfe8;
+                    background: color.shade(bg, 15%);
                 }
 
                 > .tab {
