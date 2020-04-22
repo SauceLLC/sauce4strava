@@ -417,7 +417,7 @@
         border-bottom-color: $hard-border-color;
     }
 
-    table:not(.unstyled) thead tr {
+    table:not(.unstyled) > thead > tr {
         background-color: color.lighten(bg, 5%);
     }
 
@@ -1586,6 +1586,10 @@
             .segment-leaderboard table {
                 background-color: color.shade(bg, 10%);
                 color: color.shade(fg, 8%);
+
+                thead {
+                    background-color: color.shade(bg, 14%);
+                }
 
                 th {
                     color: color.shade(fg, 8%);
