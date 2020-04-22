@@ -796,8 +796,17 @@
 @mixin segment-compare {
     .page.container {
         width: 100%;
-        padding-left: 0.5em;
-        padding-right: 0.5em;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .breadcrumbs {
+        padding-left: 1em;
+    }
+
+    #roster .avatar-column .action {
+        opacity: 0.33;
+        color: #b00;
     }
 
     #leaderboard-table {

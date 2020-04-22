@@ -849,6 +849,10 @@ html.sauce-responsive,
         }
     }
 
+    #roster .avatar-column .action {
+        line-height: 36px; // Fix X alignment
+    }
+
     @media only screen and (max-width: 768px) {
         @include mobile.segment-compare;
     }
