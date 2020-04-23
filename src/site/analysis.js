@@ -1668,6 +1668,10 @@ sauce.ns('analysis', ns => {
     async function attachExporters() {
         const exportLocale = await sauce.locale.getMessage('analysis_export');
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
+        if (!menuEl) {
+            console.warn("Side nav menu not found: Probably a flagged activity");
+            return;
+        }
         menuEl.insertAdjacentHTML('beforeend', `
             <li class="sauce-group">
                 <div class="sauce-header">
@@ -2377,8 +2381,7 @@ sauce.ns('analysis', ns => {
         const navHeight = sidenav.offsetHeight;
         const slideMenu = sidenav.querySelector('.slide-menu');
         if (!slideMenu) {
-            // I don't know why this happens right now.  It's showing up in the exception
-            // reports with some frequency if I don't guard it.
+            console.warn("Slide menu not found: Probably a flagged activity");
             return;
         }
         // Must use jQuery since it's hidden and they do the magic..
