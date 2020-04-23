@@ -844,6 +844,41 @@ sauce.ns('power', function() {
     }
 
 
+    function gravityForce(slope, weight) {
+        const g = 9.80655;
+        return g * Math.sin(Math.atan(slope)) * weight;
+    }
+
+
+    function rollingResistanceForce(slope, weight, Crr) {
+        const g = 9.80655;
+        return g * Math.cos(Math.atan(slope)) * weight * Crr;
+    }
+
+
+    function aeroDragForce(Cd, A, p, v, w) {
+        return 0.5 * Cd * A * p * ((v + w) ** 2);
+    }
+
+
+    function airDensity(el, temp) {
+        const p0 = 1.225;
+        const g = 9.80655;
+        const M0 = 0.0289644;
+        const R = 8.3144598;
+        const k = 273.15 + temp;
+        return p0 * Math.exp((-g * M0 * el) / (R * k));
+    }
+
+
+    function cyclingPowerEstimate(slope, weight, Crr, Cd, A, el, temp, v, wind, loss) {
+        const Fg = gravityForce(slope, weight);
+        const Fr = rollingResistanceForce(slope, weight, Crr);
+        const Fa = aeroDragForce(Cd, A, airDensity(el, temp), v, wind);
+        return (Fg + Fr + Fa) * v / (1 - loss);
+    }
+
+
     return {
         peakPower,
         peakNP,
@@ -852,7 +887,8 @@ sauce.ns('power', function() {
         calcTSS,
         rank,
         rankRequirements,
-        seaLevelPower
+        seaLevelPower,
+        cyclingPowerEstimate
     };
 });
 
