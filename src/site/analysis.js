@@ -2375,7 +2375,12 @@ sauce.ns('analysis', ns => {
             return;
         }
         const navHeight = sidenav.offsetHeight;
-        const slideMenu = document.querySelector('.slide-menu');
+        const slideMenu = sidenav.querySelector('.slide-menu');
+        if (!slideMenu) {
+            // I don't know why this happens right now.  It's showing up in the exception
+            // reports with some frequency if I don't guard it.
+            return;
+        }
         // Must use jQuery since it's hidden and they do the magic..
         const slideMenuHeight = jQuery(slideMenu.querySelector(".options")).height();
         const top = slideMenuHeight > navHeight;
