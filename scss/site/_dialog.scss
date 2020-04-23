@@ -76,6 +76,9 @@
     .ui-dialog-titlebar {
         min-height: 0;
         background-image: linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);
+        background-image: linear-gradient(180deg,
+                                          #{color.shade(accent, -8%)} 0%,
+                                          #{color.shade(accent, -20%)} 100%);
         color: #fff;
         padding: 0.5em 0.5em;
 
