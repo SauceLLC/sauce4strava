@@ -2303,27 +2303,21 @@
     --sauce-accent-sat: 70%;
     --sauce-accent-light: 37%;
     --sauce-accent-shade-dir: -1;
+}
 
-    //--sauce-accent2-hue: 20;
-    //--sauce-accent2-sat: 77%;
-    //--sauce-accent2-light: 72%;
-    //--sauce-accent2-shade-dir: -1;
+.sauce-theme-deepred {
+    --sauce-bg-hue: 2;
+    --sauce-bg-sat: 77%;
+    --sauce-bg-light: 16%;
+    --sauce-bg-shade-dir: 1;
 
-    //--sauce-accent3-hue: 20;
-    //--sauce-accent3-sat: 77%;
-    //--sauce-accent3-light: 72%;
-    //--sauce-accent3-shade-dir: -1;
+    --sauce-fg-hue: 0;
+    --sauce-fg-sat: 0%;
+    --sauce-fg-light: 75%;
+    --sauce-fg-shade-dir: 1;
 
-    //--sauce-accent4-hue: 20;
-    //--sauce-accent4-sat: 77%;
-    //--sauce-accent4-light: 72%;
-    //--sauce-accent4-shade-dir: -1;
-
-    --sauce-border-hue: 16;
-    --sauce-border-sat: 100%;
-    --sauce-border-light: 50%;
-    --sauce-border-shade-dir: -1;
-
-    --sauce-border: 1.5px solid #{color.get(border)};
-    --sauce-thin-border: 1px solid #{color.get(border, 50%)};
+    --sauce-accent-hue: 13;
+    --sauce-accent-sat: 86%;
+    --sauce-accent-light: 41%;
+    --sauce-accent-shade-dir: 1;
 }
