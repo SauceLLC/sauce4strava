@@ -123,4 +123,9 @@ addTests([
         assertEqual(cp.avg(), (200 + (300 * 2)) / 3);
         assertEqual(cp.elapsed(), 3);
     },
+    function test_correctedpower_pad_lots_avoid_stack_overflow() {
+        sauce.power.correctedPower(timeStream(1, 1000000, 100000),
+                                   valueStream(1, 1000000 / 100000),
+                                   /*idealgap*/ 2, /*maxgap*/ 1);
+    },
 ]);

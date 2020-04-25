@@ -79,7 +79,7 @@ sauce.ns('data', function() {
         if (!data || !data.length) {
             return;
         }
-        const sorted = Array.from(data).sort();
+        const sorted = Array.from(data).sort((a, b) => a - b);
         const midPoint = sorted.length / 2;
         if (sorted.length % 2) {
             return sorted[Math.floor(midPoint)];
@@ -192,11 +192,12 @@ sauce.ns('data', function() {
         if (!_timeGapsCache.has(timeStream) || _timeGapsCache.get(timeStream).hash !== hash) {
             const gaps = timeStream.map((x, i) => timeStream[i + 1] - x);
             gaps.pop();  // last entry is not a number (NaN)
+            const ideal = sauce.data.mode(gaps) || 1;
             _timeGapsCache.set(timeStream, {
                 hash,
                 value: {
-                    ideal: sauce.data.mode(gaps),
-                    max: sauce.data.median(gaps) * 4
+                    ideal,
+                    max: Math.round(Math.max(ideal, sauce.data.median(gaps))) * 4
                 }
             });
         }
@@ -455,7 +456,7 @@ sauce.ns('data', function() {
             super(period);
             this._joules = 0;
             this.idealGap = idealGap;
-            this.maxGap = maxGap;
+            this.maxGap = maxGap && Math.max(maxGap, idealGap);
             if (options && options.inlineNP) {
                 const sampleRate = 1 / (idealGap || 1);
                 const rollSize = Math.round(30 * sampleRate);
