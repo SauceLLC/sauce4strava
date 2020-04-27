@@ -73,6 +73,12 @@
         }
     }
 
+    &.sauce-perf-predictor {
+        label {
+            min-width: 100px;
+        }
+    }
+
     .ui-dialog-titlebar {
         min-height: 0;
         background-image: linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);

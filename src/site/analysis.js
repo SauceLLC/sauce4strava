@@ -2361,6 +2361,54 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function showPerfPredictor() {
+        const start = ctx.$analysisStats.data('start');
+        const end = ctx.$analysisStats.data('end');
+        const timeStream = await fetchStream('time', start, end);
+        const distStream = await fetchStream('distance', start, end);
+        const altStream = await fetchSmoothStream('altitude', null, start, end);
+        const correctedPower = supportsStream('watts') && await correctedPowerTimeRange(
+            getStreamIndexTime(start), getStreamIndexTime(end));
+        const elapsedTime = streamDelta(timeStream);
+        const distance = streamDelta(distStream);
+        const velocity = distance / elapsedTime;
+        const el = sauce.data.avg(altStream);
+        const $dialog = modal({
+            title: 'Perf Predictor',
+            body: `
+                <div style="padding: 0.5em">
+                    <label>Power:</label>
+                    <input type="number" value="${Math.round(correctedPower.avg())}"/>
+
+                    <label>Body Weight:</label>
+                    <input type="number" value="${ctx.weightFormatter.convert(ctx.weight).toFixed(1)}"/>
+
+                    <label>Bike/Gear Weight:</label>
+                    <input type="number" value="30"/>
+
+                    <label>CdA:</label>
+                    <input type="number" value="0.3"/>
+
+                    <label>Crr:</label>
+                    <input type="number" value="0.0050"/>
+
+                    <label>Elevation (avg):</label>
+                    <input type="number" value="${Math.round(ctx.elevationFormatter.convert(el))}"/>
+
+                    <label>Speed:</label>
+                    <input type="number" value="${ctx.paceFormatter.convert(velocity).toFixed(1)}"/>
+
+                    <label>Time:</label>
+                    <input type="number" value="${elapsedTime}"/>
+                </div>
+            `,
+            width: '80vw',
+            dialogClass: 'sauce-perf-predictor',
+            position: {at: 'center top+100'}
+        });
+    }
+
+
     function attachAnalysisStats($el) {
         if (!ctx.$analysisStats) {
             ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
@@ -2368,6 +2416,7 @@ sauce.ns('analysis', ns => {
         $el.find('#stacked-chart').before(ctx.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData());
         $el.on('click', 'a.sauce-graph-data', () => showGraphData());
+        $el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor());
     }
 
 
