@@ -1,0 +1,126 @@
+<form class="input">
+    <p>
+        Change any of these input parameters to see their effect on performance for this data
+        selection.
+    </p>
+
+    <div class="entry">
+        <b>Rolling resistance</b>
+        <div class="indent">
+            <div class="entry" title="Bike type for Crr estimate">
+                <key>Bike:</key>
+                <label><input type="radio" name="bike" value="road" checked/> Road</label>
+                <label><input type="radio" name="bike" value="mtb"/> MTB</label>
+            </div>
+
+            <div class="entry" title="Bike type for Crr estimate">
+                <key>Terrain:</key>
+                <select name="terrain">
+                    <option value="asphalt">Asphalt</option>
+                    <option value="gravel">Gravel</option>
+                    <option value="grass">Grass</option>
+                    <option value="offroad">Off road</option>
+                    <option value="sand">Sand</option>
+                </select>
+            </div>
+
+            <div class="entry" title="Coeffecient for rolling resistence">
+                <key>Crr:</key>
+                <input name="crr" type="number" value="{{crr}}" step="0.001"/>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry">
+        <b>Aerodynamic resistance</b>
+        <div class="indent">
+            <div class="entry" title="Aerodynamic position on bike for CdA estimate">
+                <key>Aero Position:</key>
+                <input name="aero" type="range" min="0.15" max="0.65" step="0.01"
+                       value={{cda}}/>
+            </div>
+
+            <div class="entry" title="Aerodynamic drag coefficient times frontal surface area">
+                <key>CdA:</key>
+                <input name="cda" type="number" min="0.15" max="0.65" step="0.01"
+                       value="{{cda}}"/>
+                <abbr class="unit">m²</abbr>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry" title="Average watts for effort">
+        <key>Power:</key>
+        <input name="power" type="number" value="{{power}}"/>
+        <abbr class="unit">w</abbr>
+    </div>
+
+    <div class="entry" title="Just body weight">
+        <key>Body Weight:</key>
+        <input name="body-weight" type="number" value="{{bodyWeight}}"/>
+        <abbr class="unit">{{weightUnit}}</abbr>
+    </div>
+
+    <div class="entry" title="Weight of all gear and bike including water and clothes">
+        <key>Bike/Gear Weight:</key>
+        <input name="gear-weight" type="number" value="{{gearWeight}}"/>
+        <abbr class="unit">{{weightUnit}}</abbr>
+    </div>
+
+    <div class="entry" title="Gradient of hill in percentage">
+        <key>Slope:</key>
+        <input name="slope" type="number" value="{{slope}}" step="0.1"/>
+        <abbr class="unit">%</abbr>
+    </div>
+
+    <div class="entry" title="The average elevation of the effort">
+        <key>Elevation (avg):</key>
+        <input name="elevation" type="number" value="{{elevation}}"/>
+        <abbr class="unit">{{elevationUnit}}</abbr>
+    </div>
+
+    <div class="entry" title="The net wind speed against the rider or negative values for tail winds">
+        <key>Wind:</key>
+        <input name="wind" type="number" value="{{wind}}"/>
+        <abbr class="unit">{{speedUnit}}</abbr>
+    </div>
+
+</form>
+<div class="output">
+    <h4>Original performance:</h4>
+
+    <div class="entry">
+        <key>Speed:</key>
+        <span>{{speed}}</span>
+        <abbr class="unit">{{speedUnit}}</abbr>
+    </div>
+
+    <div class="entry">
+        <key>Time:</key>
+        <span>{{time}}</span>
+    </div>
+
+    <div class="entry">
+        <key>Watts/kg:</key>
+        <span>{{wkg}}</span>
+        <abbr class="unit">w/kg</abbr>
+    </div>
+
+    <h4>Predicted performance:</h4>
+    <div class="entry">
+        <key>Speed:</key>
+        <span class="speed"></span>
+        <abbr class="unit">{{speedUnit}}</abbr>
+    </div>
+
+    <div class="entry">
+        <key>Time:</key>
+        <span class="time"></span>
+    </div>
+
+    <div class="entry">
+        <key>Watts/kg:</key>
+        <span class="wkg"></span>
+        <abbr class="unit">w/kg</abbr>
+    </div>
+</div>

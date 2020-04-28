@@ -74,8 +74,86 @@
     }
 
     &.sauce-perf-predictor {
+        .ui-dialog-content {
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: row;
+        }
+
         label {
-            min-width: 100px;
+            display: inline-block;
+            padding: 0.5em 0.2em;
+            margin: 0;
+        }
+
+        form.input {
+            flex: 1 1 50%;
+            max-width: 100%;
+
+            p {
+                padding: 0.5em;
+                margin: 0;
+            }
+
+            .entry {
+                padding: 0.25em 0.8em;
+
+                .indent {
+                    padding-left: 1em;
+                }
+            }
+
+            > .entry:nth-child(odd) {
+                background-color: color.shade(bg, 8%);
+            }
+
+            key {
+                min-width: 16ch;
+            }
+        }
+
+        .output {
+            font-family: sans-serif;
+            background-color: color.shade(fg, 10%);
+            color: color.shade(bg, 10%);
+            padding: 1em;
+            font-size: 1.1em;
+            flex: 1 1 auto;
+            max-width: 100%;
+
+            key {
+                min-width: 12ch;
+                color: color.shade(bg, 30%);
+            }
+
+            label {
+                color: color.shade(bg, 30%);
+            }
+        }
+
+        key {
+            display: inline-block;
+        }
+
+        input {
+            vertical-align: middle;
+        }
+
+        input[type="number"] {
+            height: auto;
+            width: calc(7ch + 1em);
+            padding: 0.2em 0.5em;
+            border-radius: 0.22em;
+
+            &:invalid {
+                border-color: red;
+            }
+        }
+
+        select {
+            border-radius: 0.22em;
+            padding: 0 0.5em;
+            margin: 0;
         }
     }
 

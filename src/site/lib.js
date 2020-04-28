@@ -858,7 +858,9 @@ sauce.ns('power', function() {
 
 
     function aeroDragForce(CdA, p, v, w) {
-        return 0.5 * CdA * p * ((v + w) ** 2);
+        const netVelocity = v + w;
+        const invert = netVelocity < 0 ? -1 : 1;
+        return (0.5 * CdA * p * (netVelocity ** 2)) * invert;
     }
 
 
@@ -872,11 +874,33 @@ sauce.ns('power', function() {
     }
 
 
-    function cyclingPowerEstimate(slope, weight, Crr, CdA, el, v, wind, loss) {
+    function cyclingPowerEstimate(velocity, slope, weight, Crr, CdA, el, wind, loss) {
         const Fg = gravityForce(slope, weight);
         const Fr = rollingResistanceForce(slope, weight, Crr);
-        const Fa = aeroDragForce(CdA, airDensity(el), v, wind);
-        return (Fg + Fr + Fa) * v / (1 - loss);
+        const Fa = aeroDragForce(CdA, airDensity(el), velocity, wind);
+        return (Fg + Fr + Fa) * velocity / (1 - loss);
+    }
+
+
+    function cyclingVelocitySearch(power, slope, weight, Crr, CdA, el, wind, loss) {
+        const epsilon = 0.000001;
+        let lowervel = -1000.0;
+        let uppervel = 1000.0;
+        let midvel = 0.0;
+        let itcount = 0;
+        do {
+            const midpow = cyclingPowerEstimate(midvel, slope, weight, Crr, CdA, el, wind, loss);
+            if (Math.abs(midpow - power) < epsilon) {
+                break;
+            }
+            if (midpow > power) {
+                uppervel = midvel;
+            } else {
+                lowervel = midvel;
+            }
+            midvel = (uppervel + lowervel) / 2;
+        } while (itcount++ < 100);
+        return midvel;
     }
 
 
@@ -890,7 +914,7 @@ sauce.ns('power', function() {
         rankRequirements,
         seaLevelPower,
         cyclingPowerEstimate,
-        airDensity
+        cyclingVelocitySearch,
     };
 });
 

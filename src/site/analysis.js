@@ -328,7 +328,7 @@ sauce.ns('analysis', ns => {
     function attachEditableWeight($parent) {
         const $field = $parent.find('.sauce-editable-field.weight');
         async function save(v) {
-            const weight_override = ctx.weightFormatter.unitSystem === 'metric' ? v : v / 2.20462;
+            const weight_override = weightUnconvert(v);
             await updateAthleteInfo(ctx.athlete, {weight_override});
         }
         editableField($field, {
@@ -2325,6 +2325,21 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function weightUnconvert(localeWeight) {
+        return ctx.weightFormatter.unitSystem === 'metric' ? localeWeight : localeWeight / 2.20462;
+    }
+
+
+    function elevationUnconvert(localeEl) {
+        return ctx.elevationFormatter.unitSystem === 'metric' ? localeEl : localeEl * 0.3048;
+    }
+
+
+    function velocityUnconvert(localeV) {
+        return ctx.paceFormatter.unitSystem === 'metric' ? localeV : localeV * metersPerMile / 3600;
+    }
+
+
     async function showGraphData() {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
@@ -2373,39 +2388,73 @@ sauce.ns('analysis', ns => {
         const distance = streamDelta(distStream);
         const velocity = distance / elapsedTime;
         const el = sauce.data.avg(altStream);
+        const template = await getTemplate('perf-predictor.html');
+        const power = correctedPower.avg();
+        const slope = streamDelta(altStream) / distance;
+        const body = await template({
+            power: Math.round(power),
+            wkg: humanNumber(power / ctx.weight, 1),
+            bodyWeight: ctx.weightFormatter.convert(ctx.weight).toFixed(1),
+            gearWeight: ctx.weightFormatter.convert(13).toFixed(1),
+            slope: (slope * 100).toFixed(1),
+            cda: 0.30,
+            crr: 0.0050,
+            wind: 0,
+            windEstimate: 10,
+            crrEstimate: 0.0050,
+            cdaEstimate: 0.30,
+            elevation: Math.round(ctx.elevationFormatter.convert(el)),
+            speed: humanPace(velocity, {velocity: true}),
+            time: humanTime(elapsedTime),
+            weightUnit: ctx.weightFormatter.shortUnitKey(),
+            speedUnit: ctx.paceFormatter.shortUnitKey(),
+            elevationUnit: ctx.elevationFormatter.shortUnitKey(),
+        });
         const $dialog = modal({
             title: 'Perf Predictor',
-            body: `
-                <div style="padding: 0.5em">
-                    <label>Power:</label>
-                    <input type="number" value="${Math.round(correctedPower.avg())}"/>
-
-                    <label>Body Weight:</label>
-                    <input type="number" value="${ctx.weightFormatter.convert(ctx.weight).toFixed(1)}"/>
-
-                    <label>Bike/Gear Weight:</label>
-                    <input type="number" value="30"/>
-
-                    <label>CdA:</label>
-                    <input type="number" value="0.3"/>
-
-                    <label>Crr:</label>
-                    <input type="number" value="0.0050"/>
-
-                    <label>Elevation (avg):</label>
-                    <input type="number" value="${Math.round(ctx.elevationFormatter.convert(el))}"/>
-
-                    <label>Speed:</label>
-                    <input type="number" value="${ctx.paceFormatter.convert(velocity).toFixed(1)}"/>
-
-                    <label>Time:</label>
-                    <input type="number" value="${elapsedTime}"/>
-                </div>
-            `,
-            width: '80vw',
+            body,
+            width: '50rem',
             dialogClass: 'sauce-perf-predictor',
-            position: {at: 'center top+100'}
         });
+        function fget(name) {
+            return Number($dialog.find(`[name="${name}"]`).val());
+        }
+        function recalc() {
+            const crr = fget('crr');
+            const cda = fget('cda');
+            const power = fget('power');
+            const bodyWeight = weightUnconvert(fget('body-weight'));
+            const sysWeight = bodyWeight + weightUnconvert(fget('gear-weight'));
+            const slope = fget('slope') / 100;
+            const el = elevationUnconvert(fget('elevation'));
+            const wind = velocityUnconvert(fget('wind'));
+            const velocity = sauce.power.cyclingVelocitySearch(power, slope, sysWeight, crr, cda, el, wind, 0.035);
+            $dialog.find('.output .speed').text(humanPace(velocity, {velocity: true}));
+            $dialog.find('.output .time').text(humanTime(distance / velocity));
+            $dialog.find('.output .wkg').text(humanNumber(power / bodyWeight, 1));
+        }
+        $dialog.on('input', '[name="bike"],[name="terrain"]', ev => {
+            const terrain = $dialog.find('[name="terrain"]').val();
+            const bike = $dialog.find('[name="bike"]:checked').val();
+            const crr = {
+                road: {asphalt: 0.0050, gravel: 0.0060, grass: 0.0070, offroad: 0.0200, sand: 0.0300},
+                mtb: {asphalt: 0.0063, gravel: 0.0076, grass: 0.0089, offroad: 0.0253, sand: 0.0380}
+            }[bike][terrain];
+            $dialog.find('[name="crr"]').val(crr);
+            recalc();
+        });
+        $dialog.on('input', '[name="aero"]', ev => {
+            const cda = $dialog.find('[name="aero"]').val();
+            $dialog.find('[name="cda"]').val(cda);
+            recalc();
+        });
+        $dialog.on('input', '[name="cda"]', ev => {
+            const cda = $dialog.find('[name="cda"]').val();
+            $dialog.find('[name="aero"]').val(cda);
+            recalc();
+        });
+        $dialog.on('input', 'input', recalc);
+        recalc();
     }
 
 
