@@ -122,6 +122,15 @@
             flex: 1 1 auto;
             max-width: 100%;
 
+            @keyframes pulse {
+                0%, 100% {
+                    outline: 0px solid transparent;
+                }
+                50% {
+                    outline: 2px solid #FF413644;
+                }
+            }
+
             key {
                 min-width: 12ch;
                 color: inherit;
@@ -136,6 +145,12 @@
 
                 &.original {
                     font-size: 0.9em;
+                }
+
+                &.predicted {
+                    &.pulse {
+                        animation: pulse 2s 1;
+                    }
                 }
             }
         }

@@ -2397,12 +2397,9 @@ sauce.ns('analysis', ns => {
             bodyWeight: ctx.weightFormatter.convert(ctx.weight).toFixed(1),
             gearWeight: ctx.weightFormatter.convert(13).toFixed(1),
             slope: (slope * 100).toFixed(1),
-            cda: 0.30,
+            cda: 0.40,
             crr: 0.0050,
             wind: 0,
-            windEstimate: 10,
-            crrEstimate: 0.0050,
-            cdaEstimate: 0.30,
             elevation: Math.round(ctx.elevationFormatter.convert(el)),
             speed: humanPace(velocity, {velocity: true}),
             time: humanTime(elapsedTime),
@@ -2414,13 +2411,13 @@ sauce.ns('analysis', ns => {
             title: 'Performance Predictor',
             icon: await sauce.images.asText('fa/analytics-duotone.svg'),
             body,
-            width: '55em',
+            width: '50em',
             dialogClass: 'sauce-perf-predictor',
         });
         function fget(name) {
             return Number($dialog.find(`[name="${name}"]`).val());
         }
-        function recalc() {
+        function recalc(noPulse) {
             const crr = fget('crr');
             const cda = fget('cda');
             const power = fget('power');
@@ -2430,16 +2427,20 @@ sauce.ns('analysis', ns => {
             const el = elevationUnconvert(fget('elevation'));
             const wind = velocityUnconvert(fget('wind'));
             const velocity = sauce.power.cyclingVelocitySearch(power, slope, sysWeight, crr, cda, el, wind, 0.035);
-            $dialog.find('.output .speed').text(humanPace(velocity, {velocity: true}));
-            $dialog.find('.output .time').text(humanTime(distance / velocity));
-            $dialog.find('.output .wkg').text(humanNumber(power / bodyWeight, 1));
+            $dialog.find('.predicted .speed').text(humanPace(velocity, {velocity: true}));
+            $dialog.find('.predicted .time').text(humanTime(distance / velocity));
+            $dialog.find('.predicted .wkg').text(humanNumber(power / bodyWeight, 1));
+            if (!noPulse) {
+                $dialog.find('.predicted').addClass('pulse').one('animationend',
+                    ev => ev.currentTarget.classList.remove('pulse'));
+            }
         }
         $dialog.on('input', '[name="bike"],[name="terrain"]', ev => {
             const terrain = $dialog.find('[name="terrain"]').val();
             const bike = $dialog.find('[name="bike"]:checked').val();
             const crr = {
                 road: {asphalt: 0.0050, gravel: 0.0060, grass: 0.0070, offroad: 0.0200, sand: 0.0300},
-                mtb: {asphalt: 0.0063, gravel: 0.0076, grass: 0.0089, offroad: 0.0253, sand: 0.0380}
+                mtb: {asphalt: 0.0065, gravel: 0.0075, grass: 0.0090, offroad: 0.0255, sand: 0.0380}
             }[bike][terrain];
             $dialog.find('[name="crr"]').val(crr);
             recalc();
@@ -2455,7 +2456,7 @@ sauce.ns('analysis', ns => {
             recalc();
         });
         $dialog.on('input', 'input', recalc);
-        recalc();
+        recalc(/*noPulse*/ true);
     }
 
 
