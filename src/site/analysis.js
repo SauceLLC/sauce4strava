@@ -2411,9 +2411,10 @@ sauce.ns('analysis', ns => {
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
         });
         const $dialog = modal({
-            title: 'Perf Predictor',
+            title: 'Performance Predictor',
+            icon: await sauce.images.asText('fa/analytics-duotone.svg'),
             body,
-            width: '65em',
+            width: '55em',
             dialogClass: 'sauce-perf-predictor',
         });
         function fget(name) {

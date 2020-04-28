@@ -78,6 +78,7 @@
             display: flex;
             flex-wrap: wrap;
             flex-direction: row;
+            padding: 0;
         }
 
         label {
@@ -91,12 +92,12 @@
             max-width: 100%;
 
             p {
-                padding: 0.5em;
+                padding: 1em;
                 margin: 0;
             }
 
             .entry {
-                padding: 0.25em 0.8em;
+                padding: 0.25em 1.2em;
 
                 .indent {
                     padding-left: 1em;
@@ -123,11 +124,19 @@
 
             key {
                 min-width: 12ch;
-                color: color.shade(bg, 30%);
+                color: inherit;
             }
 
             label {
-                color: color.shade(bg, 30%);
+                color: inherit;
+            }
+
+            section {
+                padding: 1em;
+
+                &.original {
+                    font-size: 0.9em;
+                }
             }
         }
 
