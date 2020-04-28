@@ -2413,7 +2413,7 @@ sauce.ns('analysis', ns => {
         const $dialog = modal({
             title: 'Perf Predictor',
             body,
-            width: '50rem',
+            width: '80em',
             dialogClass: 'sauce-perf-predictor',
         });
         function fget(name) {
