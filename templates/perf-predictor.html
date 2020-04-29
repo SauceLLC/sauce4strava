@@ -51,31 +51,35 @@
 
     <div class="entry" title="Average watts for effort">
         <key>Power:</key>
-        <input name="power" type="number" value="{{power}}"/>
+        <input name="power" type="number" placeholder="{{power}}" value="{{power}}"/>
         <abbr class="unit">w</abbr>
     </div>
 
     <div class="entry" title="Just body weight">
         <key>Body Weight:</key>
-        <input name="body-weight" type="number" value="{{bodyWeight}}" step="any"/>
+        <input name="body-weight" type="number" placeholder="{{bodyWeight}}"
+               value="{{bodyWeight}}" step="any"/>
         <abbr class="unit">{{weightUnit}}</abbr>
     </div>
 
     <div class="entry" title="Weight of all gear and bike including water and clothes">
         <key>Bike/Gear Weight:</key>
-        <input name="gear-weight" type="number" value="{{gearWeight}}" step="any"/>
+        <input name="gear-weight" type="number" placeholder="{{gearWeight}}"
+               value="{{gearWeight}}" step="any"/>
         <abbr class="unit">{{weightUnit}}</abbr>
     </div>
 
     <div class="entry" title="Gradient of hill in percentage">
         <key>Slope:</key>
-        <input name="slope" type="number" value="{{slope}}" step="0.1"/>
+        <input name="slope" type="number" placeholder="{{slope}}"
+               value="{{slope}}" step="0.1"/>
         <abbr class="unit">%</abbr>
     </div>
 
     <div class="entry" title="The average elevation of the effort">
         <key>Elevation (avg):</key>
-        <input name="elevation" type="number" value="{{elevation}}"/>
+        <input name="elevation" type="number" placeholder="{{elevation}}"
+               value="{{elevation}}"/>
         <abbr class="unit">{{elevationUnit}}</abbr>
     </div>
 
