@@ -2042,11 +2042,15 @@ sauce.ns('analysis', ns => {
         const movingStream = await fetchStream('moving', start, end);
         const cadenceStream = await fetchStream('cadence', start, end);
         const wattsStream = await fetchStream('watts', start, end);
+        const velocityStream = await fetchStream('velocity_smooth', start, end);
         const activeStream = [];
         for (let i = 0; i < movingStream.length; i++) {
-            activeStream.push(movingStream[i] ||
-                !!(cadenceStream && cadenceStream[i]) ||
-                !!(wattsStream && wattsStream[i]));
+            activeStream.push(!!(
+                movingStream[i] ||
+                (cadenceStream && cadenceStream[i]) ||
+                (wattsStream && wattsStream[i]) ||
+                (velocityStream && velocityStream[i])
+            ));
         }
         return sauce.data.activeTime(timeStream, activeStream);
     }
