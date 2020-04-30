@@ -493,11 +493,12 @@
         $body-bg-color: color.shade(bg, 10%);
         background-color: $body-bg-color;
         color: color.shade(fg, 10%);
-        border-color: $hard-border-color;
+        border: none;
 
         .modal-header,
         .glossary-header {
             background-color: color.shade(accent, -20%);
+            color: color.shade(accent, 80%);
             border-color: $soft-border-color;
         }
 
@@ -1963,8 +1964,10 @@
         }
     }
 
-    .ui-resizable-n {
-        background-color: color.shade(bg, 8%);
+    #compare-outer {
+        .ui-resizable-n {
+            background-color: color.shade(bg, 8%);
+        }
     }
 
     #scrubber {
