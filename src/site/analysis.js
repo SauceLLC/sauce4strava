@@ -2388,9 +2388,9 @@ sauce.ns('analysis', ns => {
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const correctedPower = supportsStream('watts') && await correctedPowerTimeRange(
             getStreamIndexTime(start), getStreamIndexTime(end));
-        const elapsedTime = streamDelta(timeStream);
+        const origTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
-        const velocity = distance / elapsedTime;
+        const origVelocity = distance / origTime;
         const el = sauce.data.avg(altStream);
         const template = await getTemplate('perf-predictor.html');
         const power = correctedPower.avg();
@@ -2405,8 +2405,8 @@ sauce.ns('analysis', ns => {
             crr: 0.0050,
             wind: 0,
             elevation: Math.round(ctx.elevationFormatter.convert(el)),
-            speed: humanPace(velocity, {velocity: true}),
-            time: humanTime(elapsedTime),
+            speed: humanPace(origVelocity, {velocity: true}),
+            time: humanTime(origTime),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             speedUnit: ctx.paceFormatter.shortUnitKey(),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
@@ -2431,8 +2431,18 @@ sauce.ns('analysis', ns => {
             const el = elevationUnconvert(fget('elevation'));
             const wind = velocityUnconvert(fget('wind'));
             const velocity = sauce.power.cyclingVelocitySearch(power, slope, sysWeight, crr, cda, el, wind, 0.035);
+            const time = distance / velocity;
+            const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
+            const pct = ((origTime / time) - 1) * 100;
+            if (pct > 0.1) {
+                $timeAhead.text(`+${humanNumber(pct, 1)}%`).addClass('sauce-positive').removeClass('sauce-negative');
+            } else if (pct < -0.1) {
+                $timeAhead.text(`${humanNumber(pct, 1)}%`).addClass('sauce-negative').removeClass('sauce-positive');
+            } else {
+                $timeAhead.empty();
+            }
             $dialog.find('.predicted .speed').text(humanPace(velocity, {velocity: true}));
-            $dialog.find('.predicted .time').text(humanTime(distance / velocity));
+            $dialog.find('.predicted .time').text(humanTime(time));
             $dialog.find('.predicted .wkg').text(humanNumber(power / bodyWeight, 1));
             if (!noPulse) {
                 $dialog.find('.predicted').addClass('pulse').one('animationend',
