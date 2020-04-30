@@ -3,8 +3,8 @@
 
 
 .ui-dialog {
-    background-color: color.shade(bg, 5%);
-    border-color: color.shade(bg, 20%);
+    background: transparent;
+    border: none;
 
     .ui-widget-content,
     .ui-dialog-content {
@@ -90,6 +90,7 @@
         form.input {
             flex: 1 1 50%;
             max-width: 100%;
+            padding: 0.8em 0 1.2em;
 
             p {
                 padding: 1em;
@@ -105,7 +106,7 @@
             }
 
             > .entry:nth-child(odd) {
-                background-color: color.shade(bg, 8%);
+                background-color: color.shade(bg, 5%);
             }
 
             key {
@@ -115,7 +116,10 @@
 
         .output {
             font-family: sans-serif;
-            background-color: color.shade(fg, 10%);
+            background-image: linear-gradient(180deg,
+                                              #{color.shade(fg, 18%)},
+                                              #{color.shade(fg, -20%)} 1.8em,
+                                              #{color.shade(fg, 10%)});
             color: color.shade(bg, 10%);
             padding: 1em;
             font-size: 1.1em;
@@ -172,6 +176,10 @@
             &:invalid {
                 border-color: red;
             }
+
+            &::placeholder {
+                opacity: 0.8;
+            }
         }
 
         select {
@@ -183,7 +191,6 @@
 
     .ui-dialog-titlebar {
         min-height: 0;
-        background-image: linear-gradient(180deg, #c4644e 0%, #b43719 50%, #912f1a 100%);
         background-image: linear-gradient(180deg,
                                           #{color.shade(accent, -8%)} 0%,
                                           #{color.shade(accent, -20%)} 100%);
