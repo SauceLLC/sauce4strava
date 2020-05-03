@@ -883,24 +883,19 @@ sauce.ns('power', function() {
 
 
     function cyclingVelocitySearch(power, slope, weight, Crr, CdA, el, wind, loss) {
-        const epsilon = 0.000001;
-        let lowervel = -1000.0;
-        let uppervel = 1000.0;
-        let midvel = 0.0;
-        let itcount = 0;
-        do {
-            const midpow = cyclingPowerEstimate(midvel, slope, weight, Crr, CdA, el, wind, loss);
-            if (Math.abs(midpow - power) < epsilon) {
+        let v = 0;
+        for (let i = 0, low = -1000, high = 1000; i < 1000; i++, v = (high + low) / 2) {
+            const curP = cyclingPowerEstimate(v, slope, weight, Crr, CdA, el, wind, loss);
+            if (Math.abs(curP - power) < 0.000001) {
                 break;
             }
-            if (midpow > power) {
-                uppervel = midvel;
+            if (curP > power) {
+                high = v;
             } else {
-                lowervel = midvel;
+                low = v;
             }
-            midvel = (uppervel + lowervel) / 2;
-        } while (itcount++ < 100);
-        return midvel;
+        }
+        return v;
     }
 
 
