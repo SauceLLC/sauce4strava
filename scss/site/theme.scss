@@ -1,20 +1,9 @@
 @use 'color';
+@use 'themes/dark';
+@use 'themes/windows31';
+@use 'themes/deepred';
+@use 'themes/royalpeach';
 
-@font-face {
-    font-family: 'RetroSans';
-    font-weight: 300;
-    src: url('fonts/Roboto-Light.ttf') format("truetype");
-}
-@font-face {
-    font-family: 'RetroSans';
-    font-weight: 400;
-    src: url('fonts/Roboto-Regular.ttf') format("truetype");
-}
-@font-face {
-    font-family: 'RetroSans';
-    font-weight: 700;
-    src: url('fonts/Roboto-Medium.ttf') format("truetype");
-}
 
 :root {
     --sauce-bg-hue: 0;
@@ -391,6 +380,14 @@
                 &:hover {
                     .btn-default {
                         color: color.shade(fg, 8%);
+                    }
+
+                    .btn-primary {
+                        color: color.get(fg);
+
+                        &:hover {
+                            color: color.shade(fg, -12%);
+                        }
                     }
                 }
             }
@@ -851,6 +848,11 @@
 
             .comments li {
                 border-color: $hard-border-color !important;
+            }
+
+            .achievement-celebration {
+                background-color: color.shade(bg, 12%);
+                color: color.shade(fg, 4%);
             }
         }
     }
@@ -2012,315 +2014,17 @@
 
 
 .sauce-theme-dark {
-    --sauce-bg-light: 8%;
-    --sauce-bg-shade-dir: 1;
-
-    --sauce-fg-light: 80%;
-    --sauce-fg-shade-dir: -1;
-
-    --sauce-accent4-hue: 200;
-    --sauce-accent4-sat: 100%;
-    --sauce-accent4-light: 55%;
-    --sauce-accent4-shade-dir: -1;
-
-    --sauce-border-light: 30%;
-
-    $map-filter: invert(1) hue-rotate(320deg);
-
-    .leaflet-container {
-        background: color.shade(bg, 8%);
-        color: color.shade(fg, 8%);
-
-        img.leaflet-tile {
-            filter: $map-filter;
-        }
-    }
-
-    .activity-map.entry-image img,
-    .group-activity-map img,
-    .group-map img,
-    .stats-container .activity-map img {
-        filter: $map-filter;
-    }
-
-    .app-icon {
-        &:not(
-        .icon-badge-premium):not(
-        .icon-badge-pro):not(
-        .icon-premium):not(
-        [class*="icon-at-"]):not(
-        [class*="icon-yr-kom-"]):not(
-        [class*="icon-yr-pr-"]):not(
-        .icon-badge-verified):not(
-        .icon-color):not(
-        .icon-white):not(
-        .icon-employee):not(
-        .icon-badge-employee):not(
-        .icon-pro):not(
-        .kudoed) {
-            filter: invert(1);
-        }
-    }
-
-    .drop-down-menu {
-        .selection::after {
-            filter: invert(1);
-        }
-    }
-
-    #global-header {
-        background-color: color.shade(accent, -15%) !important;
-        border: none;
-
-        .upload-button.app-icon {
-            filter: invert(1) saturate(0) contrast(3) !important;
-        }
-
-        .branding {
-            filter: saturate(0) contrast(9) drop-shadow(2px 2px 1px #0005);
-        }
-
-        .nav-group .drop-down-menu {
-            &.active,
-            &:hover {
-                background-color: #0006;
-
-                .nav-link {
-                    background: transparent;
-                    color: color.lighten(fg, 15%);
-                }
-            }
-
-            .selection {
-                border: none;
-
-                &::after {
-                    filter: invert(1) saturate(0) brightness(2);
-                }
-            }
-        }
-    }
-
-    #heading {
-        .icon-collapse {
-            filter: invert(1);
-        }
-    }
-
-    .weekly-goal svg {
-        filter: invert(1);
-
-        .volume-bar-container,
-        .bg-circle,
-        .progress-bar-container {
-            fill: #222 !important;
-            shape-rendering: auto !important;  //cripsEdges looks super bad
-        }
-
-        text {
-            color: #222;
-        }
-    }
-
-    #dashboard-sidebar .section .media .media-object .media-img {
-        filter: invert(1);
-    }
-
-    .leaflet-control-layers, .leaflet-bar {
-        a {
-            filter: invert(1);
-        }
-    }
-
-    #performance-goal {
-        .email-share-container {
-            .sprite {
-                filter: invert(1);
-            }
-        }
-
-        .others-leaderboard {
-            header, .header {
-                filter: invert(1);
-            }
-        }
-    }
+    @include dark.theme;
 }
-
 
 .sauce-theme-windows31 {
-    --sauce-bg-hue: 0;
-    --sauce-bg-sat: 0%;
-    --sauce-bg-light: 99%;
-    --sauce-bg-shade-dir: -1;
-
-    --sauce-fg-hue: 0;
-    --sauce-fg-sat: 0%;
-    --sauce-fg-light: 0%;
-    --sauce-fg-shade-dir: 1;
-
-    --sauce-accent-hue: 240;
-    --sauce-accent-sat: 100%;
-    --sauce-accent-light: 33%;
-    --sauce-accent-shade-dir: 1;
-
-    --sauce-accent2-hue: 210;
-    --sauce-accent2-sat: 4%;
-    --sauce-accent2-light: 78%;
-    --sauce-accent2-shade-dir: -1;
-
-    --sauce-accent3-hue: 80;
-    --sauce-accent3-sat: 100%;
-    --sauce-accent3-light: 66%;
-    --sauce-accent3-shade-dir: -1;
-
-    --sauce-accent4-hue: 240;
-    --sauce-accent4-sat: 100%;
-    --sauce-accent4-light: 33%;
-    --sauce-accent4-shade-dir: -1;
-
-    --sauce-border-hue: 210;
-    --sauce-border-sat: 4%;
-    --sauce-border-light: 78%;
-    --sauce-border-shade-dir: -1;
-
-    //--sauce-border: 5px solid #{color.get(border)};
-    //--sauce-thin-border: 1px solid #{color.get(border, 50%)};
-
-    body {
-        font-family: 'RetroSans';
-    }
-
-    .btn,
-    .button,
-    button,
-    input[type="submit"],
-    input[type="button"],
-    input[type="reset"],
-    .selection,
-    .pagination a,
-    .pagination span,
-    .pagination em {
-        border-width: 3px;
-        border-style: outset;
-        border-color: color.get(accent2);
-        background-color: color.get(accent2);
-
-        &:hover,
-        &:focus {
-        }
-
-        &:active,
-        &.active {
-        }
-
-        &[disabled],
-        &.disabled {
-            background-color: color.get(accent2);
-        }
-    }
-
-    #global-header {
-        background-color: color.get(accent) !important;
-
-        .branding {
-            filter: saturate(0) brightness(10);
-        }
-
-        .nav-bar {
-            .app-icon.icon-search,
-            .selection::after,
-            .app-icon.icon-remove,
-            .icon-notification {
-                filter: invert(1);
-            }
-
-            .btn-primary {
-                color: color.get(fg);
-
-                &:hover {
-                    color: color.shade(fg, 5%);
-                }
-            }
-
-            .selected.nav-item {
-                box-shadow: inset 0 -2px 0 0 #fff;
-            }
-
-            .nav-item {
-                &,
-                &:hover {
-                    .btn-default {
-                        color: color.shade(fg, 8%);
-                    }
-                }
-            }
-        }
-    }
-
-    @mixin windows-border {
-        border-style: solid;
-        border-image-source: url(../../images/win31-border.svg);
-        border-image-slice: 5%;
-        border-image-outset: 5px;
-        border-image-width: 10px;
-    }
-
-    #sauce-infopanel,
-    #pagenav {
-        @include windows-border;
-        margin-bottom: 2em;
-    }
-
-    body {
-        background-color: color.shade(accent2, -10%);
-
-        @media only screen and (min-width: 768px) {
-            > .view {
-                background: color.get(bg);
-                @include windows-border;
-                margin: 2em;
-            }
-        }
-    }
-
-    .feed > .card {
-        border-radius: 0;
-        @include windows-border;
-    }
+    @include windows31.theme;
 }
 
-
 .sauce-theme-royalpeach {
-    --sauce-bg-hue: 20;
-    --sauce-bg-sat: 77%;
-    --sauce-bg-light: 90%;
-    --sauce-bg-shade-dir: -1;
-
-    --sauce-fg-hue: 0;
-    --sauce-fg-sat: 0%;
-    --sauce-fg-light: 0%;
-    --sauce-fg-shade-dir: 1;
-
-    --sauce-accent-hue: 208;
-    --sauce-accent-sat: 70%;
-    --sauce-accent-light: 37%;
-    --sauce-accent-shade-dir: -1;
+    @include royalpeach.theme;
 }
 
 .sauce-theme-deepred {
-    --sauce-bg-hue: 2;
-    --sauce-bg-sat: 77%;
-    --sauce-bg-light: 16%;
-    --sauce-bg-shade-dir: 1;
-
-    --sauce-fg-hue: 0;
-    --sauce-fg-sat: 0%;
-    --sauce-fg-light: 75%;
-    --sauce-fg-shade-dir: 1;
-
-    --sauce-accent-hue: 13;
-    --sauce-accent-sat: 86%;
-    --sauce-accent-light: 41%;
-    --sauce-accent-shade-dir: 1;
+    @include deepred.theme;
 }

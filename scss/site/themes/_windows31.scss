@@ -1,0 +1,152 @@
+@use '../color';
+
+
+@font-face {
+    font-family: 'RetroSans';
+    font-weight: 300;
+    src: url('fonts/Roboto-Light.ttf') format("truetype");
+}
+@font-face {
+    font-family: 'RetroSans';
+    font-weight: 400;
+    src: url('fonts/Roboto-Regular.ttf') format("truetype");
+}
+@font-face {
+    font-family: 'RetroSans';
+    font-weight: 700;
+    src: url('fonts/Roboto-Medium.ttf') format("truetype");
+}
+
+
+@mixin windows-border {
+    border-style: solid;
+    border-image-source: url(../../images/win31-border.svg);
+    border-image-slice: 5%;
+    border-image-outset: 5px;
+    border-image-width: 10px;
+}
+
+
+@mixin theme {
+    --sauce-bg-hue: 0;
+    --sauce-bg-sat: 0%;
+    --sauce-bg-light: 99%;
+    --sauce-bg-shade-dir: -1;
+
+    --sauce-fg-hue: 0;
+    --sauce-fg-sat: 0%;
+    --sauce-fg-light: 0%;
+    --sauce-fg-shade-dir: 1;
+
+    --sauce-accent-hue: 240;
+    --sauce-accent-sat: 100%;
+    --sauce-accent-light: 33%;
+    --sauce-accent-shade-dir: 1;
+
+    --sauce-accent2-hue: 210;
+    --sauce-accent2-sat: 4%;
+    --sauce-accent2-light: 78%;
+    --sauce-accent2-shade-dir: -1;
+
+    --sauce-accent3-hue: 80;
+    --sauce-accent3-sat: 100%;
+    --sauce-accent3-light: 66%;
+    --sauce-accent3-shade-dir: -1;
+
+    --sauce-accent4-hue: 240;
+    --sauce-accent4-sat: 100%;
+    --sauce-accent4-light: 33%;
+    --sauce-accent4-shade-dir: -1;
+
+    --sauce-border-hue: 210;
+    --sauce-border-sat: 4%;
+    --sauce-border-light: 78%;
+    --sauce-border-shade-dir: -1;
+
+    body {
+        font-family: 'RetroSans';
+    }
+
+    .btn,
+    .button,
+    button,
+    input[type="submit"],
+    input[type="button"],
+    input[type="reset"],
+    .selection,
+    .pagination a,
+    .pagination span,
+    .pagination em {
+        border-width: 3px;
+        border-style: outset;
+        border-color: color.get(accent2);
+        background-color: color.get(accent2);
+
+        &:hover,
+        &:focus {
+        }
+
+        &:active,
+        &.active {
+        }
+
+        &[disabled],
+        &.disabled {
+            background-color: color.get(accent2);
+        }
+    }
+
+    #global-header {
+        background-color: color.get(accent) !important;
+
+        .branding {
+            filter: saturate(0) brightness(10);
+        }
+
+        .nav-bar {
+            .app-icon.icon-search,
+            .selection::after,
+            .app-icon.icon-remove,
+            .icon-notification {
+                filter: invert(1);
+            }
+
+            .selected.nav-item {
+                box-shadow: inset 0 -2px 0 0 #fff;
+            }
+
+            .nav-item {
+                &,
+                &:hover {
+                    .btn-default {
+                        color: color.shade(fg, 8%);
+                    }
+                }
+            }
+        }
+    }
+
+
+    #sauce-infopanel,
+    #pagenav {
+        @include windows-border;
+        margin-bottom: 2em;
+    }
+
+    body {
+        background-color: color.shade(accent2, -10%);
+
+        @media only screen and (min-width: 768px) {
+            > .view {
+                background: color.get(bg);
+                @include windows-border;
+                margin: 2em;
+            }
+        }
+    }
+
+    .feed > .card {
+        border-radius: 0;
+        @include windows-border;
+    }
+}

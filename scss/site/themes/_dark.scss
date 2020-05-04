@@ -1,0 +1,137 @@
+@use '../color';
+
+@mixin theme {
+    --sauce-bg-light: 8%;
+    --sauce-bg-shade-dir: 1;
+
+    --sauce-fg-light: 80%;
+    --sauce-fg-shade-dir: -1;
+
+    --sauce-accent4-hue: 200;
+    --sauce-accent4-sat: 100%;
+    --sauce-accent4-light: 55%;
+    --sauce-accent4-shade-dir: -1;
+
+    --sauce-border-light: 30%;
+
+    $map-filter: invert(1) hue-rotate(320deg);
+
+    .leaflet-container {
+        background: color.shade(bg, 8%);
+        color: color.shade(fg, 8%);
+
+        img.leaflet-tile {
+            filter: $map-filter;
+        }
+    }
+
+    .activity-map.entry-image img,
+    .group-activity-map img,
+    .group-map img,
+    .stats-container .activity-map img {
+        filter: $map-filter;
+    }
+
+    .app-icon {
+        &:not(
+        .icon-badge-premium):not(
+        .icon-badge-pro):not(
+        .icon-premium):not(
+        [class*="icon-at-"]):not(
+        [class*="icon-yr-kom-"]):not(
+        [class*="icon-yr-pr-"]):not(
+        .icon-badge-verified):not(
+        .icon-color):not(
+        .icon-white):not(
+        .icon-employee):not(
+        .icon-badge-employee):not(
+        .icon-pro):not(
+        .kudoed) {
+            filter: invert(1);
+        }
+    }
+
+    .drop-down-menu {
+        .selection::after {
+            filter: invert(1);
+        }
+    }
+
+    #global-header {
+        background-color: color.shade(accent, -15%) !important;
+        border: none;
+
+        .upload-button.app-icon {
+            filter: invert(1) saturate(0) contrast(3) !important;
+        }
+
+        .branding {
+            filter: saturate(0) contrast(7) invert(1) drop-shadow(2px 2px 1px #3334);
+        }
+
+        .nav-group .drop-down-menu {
+            &.active,
+            &:hover {
+                background-color: #0006;
+
+                .nav-link {
+                    background: transparent;
+                    color: color.lighten(fg, 15%);
+                }
+            }
+
+            .selection {
+                border: none;
+
+                &::after {
+                    filter: invert(1) saturate(0) brightness(2);
+                }
+            }
+        }
+    }
+
+    #heading {
+        .icon-collapse {
+            filter: invert(1);
+        }
+    }
+
+    .weekly-goal svg {
+        filter: invert(1);
+
+        .volume-bar-container,
+        .bg-circle,
+        .progress-bar-container {
+            fill: #222 !important;
+            shape-rendering: auto !important;  //cripsEdges looks super bad
+        }
+
+        text {
+            color: #222;
+        }
+    }
+
+    #dashboard-sidebar .section .media .media-object .media-img {
+        filter: invert(1);
+    }
+
+    .leaflet-control-layers, .leaflet-bar {
+        a {
+            filter: invert(1);
+        }
+    }
+
+    #performance-goal {
+        .email-share-container {
+            .sprite {
+                filter: invert(1);
+            }
+        }
+
+        .others-leaderboard {
+            header, .header {
+                filter: invert(1);
+            }
+        }
+    }
+}

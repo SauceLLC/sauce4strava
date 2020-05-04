@@ -1,0 +1,16 @@
+@mixin theme {
+    --sauce-bg-hue: 20;
+    --sauce-bg-sat: 77%;
+    --sauce-bg-light: 90%;
+    --sauce-bg-shade-dir: -1;
+
+    --sauce-fg-hue: 0;
+    --sauce-fg-sat: 0%;
+    --sauce-fg-light: 0%;
+    --sauce-fg-shade-dir: 1;
+
+    --sauce-accent-hue: 208;
+    --sauce-accent-sat: 70%;
+    --sauce-accent-light: 37%;
+    --sauce-accent-shade-dir: -1;
+}
