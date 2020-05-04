@@ -2438,10 +2438,10 @@ sauce.ns('analysis', ns => {
             const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
             if (velocity && time < origTime) {
                 const pct = (origTime / time - 1) * 100;
-                $timeAhead.text(`+${humanNumber(pct, 1)}%`).addClass('sauce-positive').removeClass('sauce-negative');
+                $timeAhead.text(`${humanNumber(pct, 1)}% faster`).addClass('sauce-positive').removeClass('sauce-negative');
             } else if (velocity && time > origTime) {
                 const pct = (time / origTime - 1) * 100;
-                $timeAhead.text(`-${humanNumber(pct, 1)}%`).addClass('sauce-negative').removeClass('sauce-positive');
+                $timeAhead.text(`${humanNumber(pct, 1)}% slower`).addClass('sauce-negative').removeClass('sauce-positive');
             } else {
                 $timeAhead.empty();
             }
