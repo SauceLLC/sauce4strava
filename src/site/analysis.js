@@ -2418,7 +2418,7 @@ sauce.ns('analysis', ns => {
             title: 'Performance Predictor',
             icon: await sauce.images.asText('fa/analytics-duotone.svg'),
             body,
-            width: '50em',
+            width: '60em',
             dialogClass: 'sauce-perf-predictor',
         });
         function fget(name) {
