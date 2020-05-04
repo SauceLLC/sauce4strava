@@ -2130,6 +2130,7 @@ sauce.ns('analysis', ns => {
         const tplData = {
             logo: sauce.extUrl + 'images/logo_vert_48x128.png',
             supportsRankBadge: pageView.activity().isRide(),
+            supportsPerfPredictor: !!(pageView.activity().isRide() && distance && altStream),
             elapsed: humanTime(elapsedTime),
             active: humanTime(activeTime),
             paused: ctx.timeFormatter.abbreviatedNoTags(pausedTime, null, false),

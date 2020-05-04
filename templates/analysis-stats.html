@@ -163,10 +163,12 @@
         <value><a class="sauce-graph-data">{{{view}}} {{{graphs}}}</a></value>
     </line>
 
-    <line>
-        <key/>
-        <value><a class="sauce-perf-predictor">Perf Predictor</a></value>
-    </line>
+    <% if (supportsPerfPredictor) { %>
+        <line>
+            <key/>
+            <value><a class="sauce-perf-predictor">Perf Predictor</a></value>
+        </line>
+    <% } %>
 </div>
 
 <% if (supportsRankBadge && obj.power && !power.estimate && power.rank && power.rank.level > 0) { %>
