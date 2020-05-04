@@ -2393,11 +2393,12 @@ sauce.ns('analysis', ns => {
         const origVelocity = distance / origTime;
         const el = sauce.data.avg(altStream);
         const template = await getTemplate('perf-predictor.html');
-        const power = correctedPower.avg();
+        const power = correctedPower && correctedPower.avg();
         const slope = streamDelta(altStream) / distance;
         const body = await template({
-            power: Math.round(power),
-            wkg: humanNumber(power / ctx.weight, 1),
+            power: power && Math.round(power),
+            hasWeight: !!ctx.weight,
+            wkg: power && ctx.weight && humanNumber(power / ctx.weight, 1),
             bodyWeight: ctx.weightFormatter.convert(ctx.weight).toFixed(1),
             gearWeight: ctx.weightFormatter.convert(13).toFixed(1),
             slope: (slope * 100).toFixed(1),
@@ -2410,6 +2411,7 @@ sauce.ns('analysis', ns => {
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             speedUnit: ctx.paceFormatter.shortUnitKey(),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
+            infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
         });
         const $dialog = modal({
             title: 'Performance Predictor',
@@ -2433,11 +2435,12 @@ sauce.ns('analysis', ns => {
             const velocity = sauce.power.cyclingVelocitySearch(power, slope, sysWeight, crr, cda, el, wind, 0.035);
             const time = distance / velocity;
             const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
-            const pct = ((origTime / time) - 1) * 100;
-            if (pct > 0.1) {
+            if (velocity && time < origTime) {
+                const pct = (origTime / time - 1) * 100;
                 $timeAhead.text(`+${humanNumber(pct, 1)}%`).addClass('sauce-positive').removeClass('sauce-negative');
-            } else if (pct < -0.1) {
-                $timeAhead.text(`${humanNumber(pct, 1)}%`).addClass('sauce-negative').removeClass('sauce-positive');
+            } else if (velocity && time > origTime) {
+                const pct = (time / origTime - 1) * 100;
+                $timeAhead.text(`-${humanNumber(pct, 1)}%`).addClass('sauce-negative').removeClass('sauce-positive');
             } else {
                 $timeAhead.empty();
             }
@@ -2469,7 +2472,14 @@ sauce.ns('analysis', ns => {
             $dialog.find('[name="aero"]').val(cda);
             recalc();
         });
-        $dialog.on('input', 'input', recalc);
+        $dialog.on('input', 'input', () => recalc());
+        $dialog.on('click', 'a.help-info', ev => {
+            const helpFor = ev.currentTarget.dataset.help;
+            $dialog.find(`.help[data-for="${helpFor}"]`).toggleClass('visible');
+        });
+        $dialog.on('click', '.help a.dismiss', ev => {
+            ev.currentTarget.closest('.help').classList.remove('visible');
+        });
         recalc(/*noPulse*/ true);
     }
 

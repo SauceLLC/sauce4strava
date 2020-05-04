@@ -112,6 +112,54 @@
             key {
                 min-width: 16ch;
             }
+
+            a.help-info {
+                float: right;
+                width: 1.1em;
+                height: 1.1em;
+                color: color.get(fg);
+            }
+
+            .help {
+                background-image: linear-gradient(to bottom, color.shade(accent3, 10%), color.get(accent3));
+                color: color.shade(accent3, 60%);
+                padding: 1.2em;
+                margin: 1em 1.2em 0.5em;
+                border-radius: 0.5em;
+                position: relative;
+                font-size: 0.85em;
+
+                &:not(.visible) {
+                    display: none;
+                }
+
+                a.dismiss {
+                    float: right;
+                    margin-right: -0.5em;
+                    margin-top: -0.5em;
+                    filter: invert(1);
+                }
+
+                &::after {
+                    content: '';
+                    border-color: color.get(accent3) transparent transparent transparent;
+                    border-width: 0.5em 0.5em 0 0.5em;
+                    border-style: solid;
+                    position: absolute;
+                    bottom: -0.5em;
+                    left: 1em;
+                }
+
+                table {
+                    margin: 0 1em;
+
+                    td:first-child {
+                        white-space: nowrap;
+                        font-weight: bold;
+                        padding-right: 1em;
+                    }
+                }
+            }
         }
 
         .output {
@@ -128,10 +176,10 @@
 
             @keyframes pulse {
                 0%, 100% {
-                    outline: 0px solid transparent;
+                    border-bottom: 2px solid transparent;
                 }
-                50% {
-                    outline: 2px solid #FF413644;
+                80% {
+                    border-bottom: 2px solid color.get(accent3);
                 }
             }
 
@@ -153,7 +201,7 @@
 
                 &.predicted {
                     &.pulse {
-                        animation: pulse 2s 1;
+                        animation: pulse 600ms 1;
                     }
                 }
 

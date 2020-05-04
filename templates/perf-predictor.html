@@ -1,10 +1,36 @@
 <form class="input">
+    <div class="help" data-for="intro">
+        <a class="dismiss"/>
+        Performance calculator works best if you first tune the input parameters to match the original performance's
+        time.  For example, if you were on a mountain bike, select the "MTB" bike option.  If there was a
+        prevailing head wind during the effort, change the wind speed value to indicate the net wind impact and so on.
+        <br/><br/>
+        Once values are properly tuned, the predicted performance should resemble the original performance within a
+        small percentage.
+        <br/></br/>
+        Now you can alter different parameters such as power, weight and aerodynamics to estimate what performance
+        impact those changes might have.  You might learn that weight is less critical than aerodynamics and power
+        for a flat course, or that losing weight on a very steep climb is more important than aero positioning.
+    </div>
     <p>
+        <a class="help-info" data-help="intro" title="Click for more info">{-infoIcon-}</a>
+        Performance Predictor is a cycling power calculator that allows you to examine the impact of
+        altered performance factors.
+        <br/><br/>
         Change any of these input parameters to see their effect on performance for this data
         selection.
     </p>
 
+    <div class="help" data-for="rr">
+        <a class="dismiss"/>
+        Make sure this setting matches your bike and terrain as closely as possible.  You can fine tune the
+        rolling resistence directly by altering the <i>Crr</i> value.
+        <br/><br/>
+        Use lower <i>Crr</i> values (less resistance) for faster tires with good road surfaces and higher values
+        (more resistance) for heavier duty tires on rough surfaces, e.g. mountain biking.
+    </div>
     <div class="entry">
+        <a class="help-info" data-help="rr" title="Click for more info">{-infoIcon-}</a>
         <b>Rolling resistance</b>
         <div class="indent">
             <div class="entry" title="Bike type for Crr estimate">
@@ -31,7 +57,24 @@
         </div>
     </div>
 
+
+    <div class="help" data-for="cda">
+        <a class="dismiss"/>
+        <i>CdA</i> represents the aerodynamic drag of a rider and equipment.  It is technically the coefficient of
+        drag multiplied by the frontal surface area.  Lower values are achieved by riding lower,
+        using speed suits and using specialty equipment such as time trial bikes and disc wheels.
+        <br/><br/>
+        Some example values:
+            <table class="unstyled">
+                <tr><td>0.17 to 0.23:</td><td>Elite level time trial equipment and aero positioning</td>
+                <tr><td>0.23 to 0.30:</td><td>Good time trial equipment and aero positioning / Triathlon</td>
+                <tr><td>0.30 to 0.35:</td><td>Road bike racing positions / Bar drops to hoods</td>
+                <tr><td>0.35 to 0.50:</td><td>Road bike climbing positions / XC mountain biking</td>
+                <tr><td>0.50+:</td><td>Upright position / Casual clothing</td>
+            </table>
+    </div>
     <div class="entry">
+        <a class="help-info" data-help="cda" title="Click for more info">{-infoIcon-}</a>
         <b>Aerodynamic resistance</b>
         <div class="indent">
             <div class="entry" title="Aerodynamic position on bike for CdA estimate">
@@ -104,10 +147,12 @@
             <span>{{time}}</span>
         </div>
 
-        <div class="entry">
-            <key>Watts/kg:</key>
-            <span>{{wkg}}</span><abbr class="unit">w/kg</abbr>
-        </div>
+        <% if (wkg) { %>
+            <div class="entry">
+                <key>Watts/kg:</key>
+                <span>{{wkg}}</span><abbr class="unit">w/kg</abbr>
+            </div>
+        <% } %>
     </section>
 
     <section class="predicted">
@@ -124,9 +169,11 @@
             <sup class="ahead-behind"></sup>
         </div>
 
-        <div class="entry">
-            <key>Watts/kg:</key>
-            <span class="wkg"></span><abbr class="unit">w/kg</abbr>
-        </div>
+        <% if (hasWeight) { %>
+            <div class="entry">
+                <key>Watts/kg:</key>
+                <span class="wkg"></span><abbr class="unit">w/kg</abbr>
+            </div>
+        <% } %>
     </section>
 </div>
