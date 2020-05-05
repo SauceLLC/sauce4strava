@@ -2426,6 +2426,9 @@ sauce.ns('analysis', ns => {
         function fget(name) {
             return Number($dialog.find(`[name="${name}"]`).val());
         }
+        const localeKeys = ['faster', 'slower', 'gravity', 'aero_drag', 'rolling_resistance'];
+        const localeStrings = await sauce.locale.getMessages(localeKeys.map(x => `perf_predictor_${x}`));
+        const locale = localeStrings.reduce((acc, x, i) => (acc[localeKeys[i]] = x, acc), {});
         function recalc(noPulse) {
             const crr = fget('crr');
             const cda = fget('cda');
@@ -2441,16 +2444,44 @@ sauce.ns('analysis', ns => {
             const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
             if (powerEst.velocity && time < origTime) {
                 const pct = (origTime / time - 1) * 100;
-                $timeAhead.text(`${humanNumber(pct, 1)}% faster`).addClass('sauce-positive').removeClass('sauce-negative');
+                $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.faster}`).addClass('sauce-positive').removeClass('sauce-negative');
             } else if (powerEst.velocity && time > origTime) {
                 const pct = (time / origTime - 1) * 100;
-                $timeAhead.text(`${humanNumber(pct, 1)}% slower`).addClass('sauce-negative').removeClass('sauce-positive');
+                $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.slower}`).addClass('sauce-negative').removeClass('sauce-positive');
             } else {
                 $timeAhead.empty();
             }
             $dialog.find('.predicted .speed').text(humanPace(powerEst.velocity, {velocity: true}));
             $dialog.find('.predicted .time').text(humanTime(time));
             $dialog.find('.predicted .wkg').text(humanNumber(power / bodyWeight, 1));
+            const $gravity = $dialog.find('.predicted .power-details .gravity');
+            $gravity.find('.power').text(humanNumber(powerEst.gWatts));
+            $gravity.find('.force').text(humanNumber(powerEst.gForce));
+            const $aero = $dialog.find('.predicted .power-details .aero');
+            $aero.find('.power').text(humanNumber(powerEst.aWatts));
+            $aero.find('.force').text(humanNumber(powerEst.aForce));
+            const $crr = $dialog.find('.predicted .power-details .crr');
+            $crr.find('.power').text(humanNumber(powerEst.rWatts));
+            $crr.find('.force').text(humanNumber(powerEst.rForce));
+            $dialog.find('.predicted .power-details .piechart').sparkline(
+                [
+                    Math.round(powerEst.gWatts),
+                    Math.round(powerEst.aWatts),
+                    Math.round(powerEst.rWatts)
+                ],
+                {
+                    type: 'pie',
+                    width: '100%',
+                    height: '100%',
+                    tooltipFormatter: (_, _2, data) => {
+                        const labels = {
+                            0: locale.gravity,
+                            1: locale.aero_drag,
+                            2: locale.rolling_resistance,
+                        };
+                        return `${labels[data.offset]}: ${data.value}w (${data.percent.toFixed(1)}%)`;
+                    }
+                });
             if (!noPulse) {
                 $dialog.find('.predicted').addClass('pulse').one('animationend',
                     ev => ev.currentTarget.classList.remove('pulse'));

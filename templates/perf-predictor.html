@@ -118,7 +118,7 @@
 
 <div class="output">
     <section class="original">
-        <h4>{{{original_performance}}}:</h4>
+        <div class="heading">{{{original_performance}}}:</div>
 
         <div class="entry">
             <key>{{{speed}}}:</key>
@@ -139,7 +139,7 @@
     </section>
 
     <section class="predicted">
-        <h4>{{{predicted_performance}}}:</h4>
+        <div class="heading">{{{predicted_performance}}}:</div>
         <div class="entry">
             <key>{{{speed}}}:</key>
             <span class="speed"></span><abbr class="unit">{{speedUnit}}</abbr>
@@ -158,5 +158,27 @@
                 <span class="wkg"></span><abbr class="unit">w/kg</abbr>
             </div>
         <% } %>
+
+        <div class="entry power-details">
+            <b>{{{power_details_heading}}}</b>
+            <div class="indent">
+                <div class="entry gravity">
+                    <key>{{{gravity}}}:</key>
+                    <span class="power"></span><abbr class="unit">w</abbr>
+                    <small>/ <span class="force"></span><abbr class="unit" title="Netwons">N</abbr></small>
+                </div>
+                <div class="entry aero">
+                    <key>{{{aero_drag}}}:</key>
+                    <span class="power"></span><abbr class="unit">w</abbr>
+                    <small>/ <span class="force"></span><abbr class="unit" title="Netwons">N</abbr></small>
+                </div>
+                <div class="entry crr">
+                    <key>{{{rolling_resistance}}}:</key>
+                    <span class="power"></span><abbr class="unit">w</abbr>
+                    <small>/ <span class="force"></span><abbr class="unit" title="Netwons">N</abbr></small>
+                </div>
+                <div class="piechart"></div>
+            </div>
+        </div>
     </section>
 </div>

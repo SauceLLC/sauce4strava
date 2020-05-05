@@ -92,17 +92,13 @@
             max-width: 100%;
             padding: 0.8em 0 1.2em;
 
+            .entry {
+                padding: 0.2em 1.2em;
+            }
+
             p {
                 padding: 1em;
                 margin: 0;
-            }
-
-            .entry {
-                padding: 0.25em 1.2em;
-
-                .indent {
-                    padding-left: 1em;
-                }
             }
 
             > .entry:nth-child(odd) {
@@ -164,6 +160,11 @@
             }
         }
 
+        .indent {
+            display: flex;
+            flex-direction: column;
+        }
+
         .output {
             font-family: sans-serif;
             background-image: linear-gradient(180deg,
@@ -171,8 +172,6 @@
                                               #{color.shade(fg, -18%)} 1.5em,
                                               #{color.shade(fg, 10%)});
             color: color.shade(bg, 10%);
-            padding: 1em;
-            font-size: 1.1em;
             flex: 1 1 auto;
             max-width: 100%;
 
@@ -185,8 +184,19 @@
                 }
             }
 
+            .entry {
+                padding: 0.2em 1.2em 0.4em;
+            }
+
+            .heading {
+                font-size: 1.4em;
+                font-weight: bold;
+                font-variant: petite-caps;
+                color: color.get(bg);
+            }
+
             key {
-                min-width: 12ch;
+                min-width: 16ch;
                 color: inherit;
             }
 
@@ -197,19 +207,25 @@
             section {
                 padding: 1em;
 
-                &.original {
-                    font-size: 0.9em;
-                }
-
                 &.predicted {
                     &.pulse {
                         animation: pulse 600ms 1;
+                    }
+
+                    .entry.total {
+                        font-weight: bold;
                     }
                 }
 
                 sup.ahead-behind {
                     font-size: 0.80em;
                 }
+            }
+
+            .piechart {
+                align-self: center;
+                width: 8em;
+                height: 8em;
             }
         }
 

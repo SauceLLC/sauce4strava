@@ -159,5 +159,10 @@
     "perf_predictor_original_performance": {"message": "Original performance"},
     "perf_predictor_predicted_performance": {"message": "Predicated performance"},
     "perf_predictor_faster": {"message": "faster"},
-    "perf_predictor_slower": {"message": "slower"}
+    "perf_predictor_slower": {"message": "slower"},
+    "perf_predictor_power_details_heading": {"message": "Power details"},
+    "perf_predictor_gravity": {"message": "Gravity"},
+    "perf_predictor_aero_drag": {"message": "Aero drag"},
+    "perf_predictor_rolling_resistance": {"message": "Rolling resistance"},
+    "perf_predictor_total": {"message": "Total"}
 }
