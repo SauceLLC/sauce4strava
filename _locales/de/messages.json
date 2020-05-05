@@ -193,6 +193,9 @@
     "analysis_graphs": {
         "message": "Grafiken"
     },
+    "analysis_perf_predictor": {
+        "message": "Perf Predictor"
+    },
     "analysis_pace": {
         "message": "Tempo"
     },
@@ -353,5 +356,156 @@
     },
     "time_now": {
         "message": "jetzt"
+    },
+    "perf_predictor_help_info_tooltip": {
+        "message": "Klicken Sie hier für weitere Informationen"
+    },
+    "perf_predictor_intro_help1": {
+        "message": "Der Leistungsrechner funktioniert am besten, wenn Sie zuerst die Eingabeparameter so einstellen, dass sie mit der Zeit der ursprünglichen Leistung übereinstimmen. Wenn Sie beispielsweise mit einem Mountainbike unterwegs waren, wählen Sie die Option \"MTB\". Wenn während der Anstrengung ein Gegenwind vorherrschte, ändern Sie den Windgeschwindigkeitswert, um den Nettowindaufprall anzuzeigen, und so weiter."
+    },
+    "perf_predictor_intro_help2": {
+        "message": "Sobald die Werte richtig eingestellt sind, sollte die vorhergesagte Leistung innerhalb eines kleinen Prozentsatzes der ursprünglichen Leistung ähneln."
+    },
+    "perf_predictor_intro_help3": {
+        "message": "Jetzt können Sie verschiedene Parameter wie Leistung, Gewicht und Aerodynamik ändern, um abzuschätzen, welche Auswirkungen diese Änderungen auf die Leistung haben können. Sie werden vielleicht feststellen, dass das Gewicht für einen flachen Kurs weniger kritisch ist als Aerodynamik und Leistung, oder dass das Abnehmen bei einem sehr steilen Anstieg wichtiger ist als die Aero-Positionierung."
+    },
+    "perf_predictor_intro": {
+        "message": "Performance Predictor ist ein Fahrradleistungsrechner, mit dem Sie die Auswirkungen geänderter Leistungsfaktoren untersuchen können."
+    },
+    "perf_predictor_intro_note": {
+        "message": "Ändern Sie diese Parameter, um die geschätzten Auswirkungen auf die Leistung anzuzeigen."
+    },
+    "perf_predictor_crr_help1": {
+        "message": "Stellen Sie sicher, dass diese Einstellung so gut wie möglich zu Ihrem Fahrrad und Gelände passt. Sie können den Rollwiderstand direkt einstellen, indem Sie den Wert \"Crr\" ändern."
+    },
+    "perf_predictor_crr_help2": {
+        "message": "Verwenden Sie niedrigere \"Crr\" -Werte (weniger Widerstand) für schnellere Reifen mit guten Straßenoberflächen und höhere Werte (mehr Widerstand) für schwerere Reifen auf rauen Oberflächen, z. B. Mountainbiken."
+    },
+    "perf_predictor_crr_heading": {
+        "message": "Rollwiderstand"
+    },
+    "perf_predictor_crr_bike": {
+        "message": "Fahrrad"
+    },
+    "perf_predictor_crr_bike_tooltip": {
+        "message": "Fahrradtyp zur Abschätzung des Rollwiderstands (zB Crr)"
+    },
+    "perf_predictor_crr_bike_road": {
+        "message": "Straße"
+    },
+    "perf_predictor_crr_bike_mtb": {
+        "message": "MTB"
+    },
+    "perf_predictor_crr_terrain": {
+        "message": "Terrain"
+    },
+    "perf_predictor_crr_terrain_tooltip": {
+        "message": "Geländetyp für die Schätzung des Rollwiderstands (z. B. Crr)"
+    },
+    "perf_predictor_crr_terrain_asphalt": {
+        "message": "Asphalt"
+    },
+    "perf_predictor_crr_terrain_gravel": {
+        "message": "Kies"
+    },
+    "perf_predictor_crr_terrain_grass": {
+        "message": "Gras"
+    },
+    "perf_predictor_crr_terrain_offroad": {
+        "message": "Offroad"
+    },
+    "perf_predictor_crr_terrain_sand": {
+        "message": "Sand"
+    },
+    "perf_predictor_crr_tooltip": {
+        "message": "Koeffizient für den Rollwiderstand"
+    },
+    "perf_predictor_cda_help1": {
+        "message": "\"CdA\" repräsentiert den Luftwiderstand eines Fahrers und seiner Ausrüstung. Es ist technisch der Widerstandsbeiwert multipliziert mit der Frontfläche. Niedrigere Werte werden erzielt, wenn Sie niedriger fahren, Geschwindigkeitsanzüge verwenden und Spezialausrüstung wie Zeitfahrräder und Scheibenräder verwenden."
+    },
+    "perf_predictor_cda_help_table_heading": {
+        "message": "Einige Beispielwerte"
+    },
+    "perf_predictor_cda_help_table_elite_tt": {
+        "message": "Elite-Zeitfahrausrüstung und Aero-Positionierung"
+    },
+    "perf_predictor_cda_help_table_good_tt": {
+        "message": "Gute Zeitfahrausrüstung und ero Positioning / Triathlon"
+    },
+    "perf_predictor_cda_help_table_road": {
+        "message": "Rennrad-Rennpositionen / Bar fällt auf Hauben"
+    },
+    "perf_predictor_cda_help_table_climbing": {
+        "message": "Rennradkletterpositionen / XC Mountainbiken"
+    },
+    "perf_predictor_cda_help_table_upright": {
+        "message": "Aufrechte Position mit Freizeitkleidung"
+    },
+    "perf_predictor_cda_heading": {
+        "message": "Aerodynamischer Widerstand"
+    },
+    "perf_predictor_cda_position": {
+        "message": "Aero Position"
+    },
+    "perf_predictor_cda_position_tooltip": {
+        "message": "Aerodynamische Position auf dem Fahrrad für CdA-Schätzung"
+    },
+    "perf_predictor_cda_tooltip": {
+        "message": "Luftwiderstandsbeiwert mal Frontfläche"
+    },
+    "perf_predictor_power": {
+        "message": "Leistung"
+    },
+    "perf_predictor_power_tooltip": {
+        "message": "Durchschnittliche Wattleistung"
+    },
+    "perf_predictor_body_weight": {
+        "message": "Körpergewicht"
+    },
+    "perf_predictor_body_weight_tooltip": {
+        "message": "Nur Körpergewicht ohne Ausrüstung"
+    },
+    "perf_predictor_gear_weight": {
+        "message": "Fahrrad- / Ausrüstungsgewicht"
+    },
+    "perf_predictor_gear_weight_tooltip": {
+        "message": "Gewicht aller Ausrüstung und Fahrräder einschließlich Wasser und Kleidung"
+    },
+    "perf_predictor_slope": {
+        "message": "Steigung"
+    },
+    "perf_predictor_slope_tooltip": {
+        "message": "Steigung des Hügels in Prozent"
+    },
+    "perf_predictor_elevation": {
+        "message": "Höhe (Durchschn.)"
+    },
+    "perf_predictor_elevation_tooltip": {
+        "message": "Die durchschnittliche Höhe des Kurses"
+    },
+    "perf_predictor_wind": {
+        "message": "Wind"
+    },
+    "perf_predictor_wind_tooltip": {
+        "message": "Die Nettowindgeschwindigkeit gegen den Fahrer oder negative Werte für Rückenwinde"
+    },
+    "perf_predictor_speed": {
+        "message": "Geschwindigkeit"
+    },
+    "perf_predictor_time": {
+        "message": "Zeit"
+    },
+    "perf_predictor_original_performance": {
+        "message": "Ursprüngliche Leistung"
+    },
+    "perf_predictor_predicted_performance": {
+        "message": "Voraussichtliche Leistung"
+    },
+    "perf_predictor_faster": {
+        "message": "schneller"
+    },
+    "perf_predictor_slower": {
+        "message": "langsamer",
+        "description": "IMMUTABLE"
     }
 }
