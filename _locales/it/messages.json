@@ -197,6 +197,9 @@
     "analysis_graphs": {
         "message": "grafici"
     },
+    "analysis_perf_predictor": {
+        "message": "Perf Predictor"
+    },
     "analysis_pace": {
         "message": "Passo",
         "description": "IMMUTABLE"
@@ -346,5 +349,157 @@
     },
     "time_now": {
         "message": "adesso"
+    },
+    "perf_predictor_help_info_tooltip": {
+        "message": "Clicca per maggiori informazioni"
+    },
+    "perf_predictor_intro_help1": {
+        "message": "Il calcolatore delle prestazioni funziona al meglio se si sintonizzano prima i parametri di input in modo che corrispondano al tempo della prestazione originale. Ad esempio, se eri in mountain bike, seleziona l'opzione \"MTB\". Se durante lo sforzo si è verificato un vento prevalente, modificare il valore della velocità del vento per indicare l'impatto del vento netto e così via."
+    },
+    "perf_predictor_intro_help2": {
+        "message": "Una volta regolati correttamente i valori, le prestazioni previste dovrebbero assomigliare alle prestazioni originali in una piccola percentuale."
+    },
+    "perf_predictor_intro_help3": {
+        "message": "Ora puoi modificare diversi parametri come potenza, peso e aerodinamica per stimare quale impatto sulle prestazioni potrebbero avere questi cambiamenti. Potresti imparare che il peso è meno critico dell'aerodinamica e della potenza per un percorso pianeggiante o che perdere peso su una salita molto ripida è più importante del posizionamento aerodinamico."
+    },
+    "perf_predictor_intro": {
+        "message": "Performance Predictor è un calcolatore di potenza ciclica che consente di esaminare l'impatto dei fattori di prestazione alterati."
+    },
+    "perf_predictor_intro_note": {
+        "message": "Modificare questi parametri per vedere l'effetto stimato sulle prestazioni."
+    },
+    "perf_predictor_crr_help1": {
+        "message": "Assicurati che questa impostazione corrisponda il più possibile alla bici e al terreno. È possibile ottimizzare direttamente la resistenza al rotolamento modificando il valore \"Crr\"."
+    },
+    "perf_predictor_crr_help2": {
+        "message": "Utilizzare valori \"Crr\" più bassi (meno resistenza) per pneumatici più veloci con buone superfici stradali e valori più alti (più resistenza) per pneumatici più pesanti su superfici ruvide, ad esempio mountain bike."
+    },
+    "perf_predictor_crr_heading": {
+        "message": "Resistenza al rotolamento"
+    },
+    "perf_predictor_crr_bike": {
+        "message": "Bicicletta"
+    },
+    "perf_predictor_crr_bike_tooltip": {
+        "message": "Tipo di bici per la stima della resistenza al rotolamento (ad es. Crr)"
+    },
+    "perf_predictor_crr_bike_road": {
+        "message": "Strada"
+    },
+    "perf_predictor_crr_bike_mtb": {
+        "message": "MTB"
+    },
+    "perf_predictor_crr_terrain": {
+        "message": "Terreno"
+    },
+    "perf_predictor_crr_terrain_tooltip": {
+        "message": "Tipo di terreno per la stima della resistenza al rotolamento (ad es. Crr)"
+    },
+    "perf_predictor_crr_terrain_asphalt": {
+        "message": "Asfalto"
+    },
+    "perf_predictor_crr_terrain_gravel": {
+        "message": "Ghiaia"
+    },
+    "perf_predictor_crr_terrain_grass": {
+        "message": "Erba"
+    },
+    "perf_predictor_crr_terrain_offroad": {
+        "message": "Fuori strada"
+    },
+    "perf_predictor_crr_terrain_sand": {
+        "message": "Sabbia"
+    },
+    "perf_predictor_crr_tooltip": {
+        "message": "Coefficiente per resistenza al rotolamento"
+    },
+    "perf_predictor_cda_help1": {
+        "message": "\"CdA\" rappresenta la resistenza aerodinamica di un pilota e di un equipaggiamento. È tecnicamente il coefficiente di resistenza moltiplicato per la superficie frontale. Valori più bassi si ottengono guidando più in basso, usando le tute di velocità e usando attrezzature speciali come le bici da cronometro e le ruote a disco."
+    },
+    "perf_predictor_cda_help_table_heading": {
+        "message": "Alcuni valori di esempio"
+    },
+    "perf_predictor_cda_help_table_elite_tt": {
+        "message": "Equipaggiamento cronometro di livello Elite e posizionamento aerodinamico"
+    },
+    "perf_predictor_cda_help_table_good_tt": {
+        "message": "Attrezzature per prove a tempo e posizionamento aerodinamico / Triathlon"
+    },
+    "perf_predictor_cda_help_table_road": {
+        "message": "Posizioni di corsa per bici da strada / Barra scende sui cappucci"
+    },
+    "perf_predictor_cda_help_table_climbing": {
+        "message": "Posizioni di arrampicata per bici da strada / mountain bike XC"
+    },
+    "perf_predictor_cda_help_table_upright": {
+        "message": "Posizione verticale con abbigliamento casual"
+    },
+    "perf_predictor_cda_heading": {
+        "message": "Resistenza aerodinamica"
+    },
+    "perf_predictor_cda_position": {
+        "message": "Posizione aerea"
+    },
+    "perf_predictor_cda_position_tooltip": {
+        "message": "Posizione aerodinamica sulla bici per la stima CdA"
+    },
+    "perf_predictor_cda_tooltip": {
+        "message": "Coefficiente di resistenza aerodinamica per superficie frontale"
+    },
+    "perf_predictor_power": {
+        "message": "Energia"
+    },
+    "perf_predictor_power_tooltip": {
+        "message": "Watt medi per sforzo"
+    },
+    "perf_predictor_body_weight": {
+        "message": "Peso corporeo"
+    },
+    "perf_predictor_body_weight_tooltip": {
+        "message": "Solo peso corporeo senza attrezzi"
+    },
+    "perf_predictor_gear_weight": {
+        "message": "Peso bici / cambio"
+    },
+    "perf_predictor_gear_weight_tooltip": {
+        "message": "Peso di tutte le attrezzature e bici, inclusi acqua e vestiti"
+    },
+    "perf_predictor_slope": {
+        "message": "pendenza"
+    },
+    "perf_predictor_slope_tooltip": {
+        "message": "Gradiente di pendenza in percentuale"
+    },
+    "perf_predictor_elevation": {
+        "message": "Elevazione (media)"
+    },
+    "perf_predictor_elevation_tooltip": {
+        "message": "L'elevazione media del corso"
+    },
+    "perf_predictor_wind": {
+        "message": "Vento"
+    },
+    "perf_predictor_wind_tooltip": {
+        "message": "La velocità del vento netto contro il ciclista o valori negativi per i venti di coda"
+    },
+    "perf_predictor_speed": {
+        "message": "Velocità"
+    },
+    "perf_predictor_time": {
+        "message": "Tempo"
+    },
+    "perf_predictor_original_performance": {
+        "message": "Performance originale"
+    },
+    "perf_predictor_predicted_performance": {
+        "message": "Performance prevista"
+    },
+    "perf_predictor_faster": {
+        "message": "più veloce",
+        "description": "IMMUTABLE"
+    },
+    "perf_predictor_slower": {
+        "message": "più lento",
+        "description": "IMMUTABLE"
     }
 }
