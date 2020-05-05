@@ -193,6 +193,9 @@
     "analysis_graphs": {
         "message": "图表"
     },
+    "analysis_perf_predictor": {
+        "message": "性能预测器"
+    },
     "analysis_pace": {
         "message": "配速",
         "description": "IMMUTABLE"
@@ -343,5 +346,155 @@
     },
     "time_now": {
         "message": "现在"
+    },
+    "perf_predictor_help_info_tooltip": {
+        "message": "点击了解更多信息"
+    },
+    "perf_predictor_intro_help1": {
+        "message": "如果您首先调整输入参数以使其与原始演奏的时间匹配，则演奏计算器的效果最佳。例如，如果您正在骑山地自行车，请选择“ MTB”自行车选项。如果在尝试过程中盛行逆风，请更改风速值以指示净风影响等。"
+    },
+    "perf_predictor_intro_help2": {
+        "message": "正确调整值后，预测性能应在很小的百分比内与原始性能相似。"
+    },
+    "perf_predictor_intro_help3": {
+        "message": "现在，您可以更改不同的参数，例如功率，重量和空气动力学，以估计这些更改可能会对性能产生影响。您可能会发现，对于平坦的道路，重量的重要性不如空气动力学和动力重要，或者在非常陡峭的爬坡过程中减轻体重比航空定位更为重要。"
+    },
+    "perf_predictor_intro": {
+        "message": "Performance Predictor是一个循环功率计算器，可让您检查更改的性能因素的影响。"
+    },
+    "perf_predictor_intro_note": {
+        "message": "更改这些参数以查看对性能的估计影响。"
+    },
+    "perf_predictor_crr_help1": {
+        "message": "确保此设置尽可能匹配您的自行车和地形。您可以通过更改“ Crr”值直接微调滚动阻力。"
+    },
+    "perf_predictor_crr_help2": {
+        "message": "对于具有良好路面的速度更快的轮胎，请使用较低的“ Crr”值（较小的阻力），对于在粗糙表面（如山地自行车）上使用的重载轮胎，请使用较高的值（较大的阻力）。"
+    },
+    "perf_predictor_crr_heading": {
+        "message": "滚动阻力"
+    },
+    "perf_predictor_crr_bike": {
+        "message": "自行车"
+    },
+    "perf_predictor_crr_bike_tooltip": {
+        "message": "用于估算滚动阻力的自行车类型（例如Crr）"
+    },
+    "perf_predictor_crr_bike_road": {
+        "message": "路"
+    },
+    "perf_predictor_crr_bike_mtb": {
+        "message": "山地车"
+    },
+    "perf_predictor_crr_terrain": {
+        "message": "地形"
+    },
+    "perf_predictor_crr_terrain_tooltip": {
+        "message": "滚动阻力估算的地形类型（例如Crr）"
+    },
+    "perf_predictor_crr_terrain_asphalt": {
+        "message": "沥青"
+    },
+    "perf_predictor_crr_terrain_gravel": {
+        "message": "砾石"
+    },
+    "perf_predictor_crr_terrain_grass": {
+        "message": "草"
+    },
+    "perf_predictor_crr_terrain_offroad": {
+        "message": "越野"
+    },
+    "perf_predictor_crr_terrain_sand": {
+        "message": "砂"
+    },
+    "perf_predictor_crr_tooltip": {
+        "message": "滚动阻力系数"
+    },
+    "perf_predictor_cda_help1": {
+        "message": "“ CdA”代表骑手和装备的空气动力学阻力。从技术上讲，它是阻力系数乘以正面表面积。通过骑低速运动服，使用速滑服和使用诸如计时自行车和碟形轮之类的专用设备来降低价值。"
+    },
+    "perf_predictor_cda_help_table_heading": {
+        "message": "一些示例值"
+    },
+    "perf_predictor_cda_help_table_elite_tt": {
+        "message": "精英级计时设备和航空定位"
+    },
+    "perf_predictor_cda_help_table_good_tt": {
+        "message": "好的计时设备和航空定位/铁人三项"
+    },
+    "perf_predictor_cda_help_table_road": {
+        "message": "公路自行车赛车位置/酒吧掉到引擎盖"
+    },
+    "perf_predictor_cda_help_table_climbing": {
+        "message": "公路自行车攀爬位置/ XC山地自行车"
+    },
+    "perf_predictor_cda_help_table_upright": {
+        "message": "穿着休闲服装的直立姿势"
+    },
+    "perf_predictor_cda_heading": {
+        "message": "空气阻力"
+    },
+    "perf_predictor_cda_position": {
+        "message": "航空位置"
+    },
+    "perf_predictor_cda_position_tooltip": {
+        "message": "估算CdA时自行车的空气动力学位置"
+    },
+    "perf_predictor_cda_tooltip": {
+        "message": "空气阻力系数乘以正面表面积"
+    },
+    "perf_predictor_power": {
+        "message": "功率"
+    },
+    "perf_predictor_power_tooltip": {
+        "message": "平均瓦数"
+    },
+    "perf_predictor_body_weight": {
+        "message": "体重"
+    },
+    "perf_predictor_body_weight_tooltip": {
+        "message": "只是体重，没有齿轮"
+    },
+    "perf_predictor_gear_weight": {
+        "message": "自行车/齿轮重量"
+    },
+    "perf_predictor_gear_weight_tooltip": {
+        "message": "所有装备和自行车的重量，包括水和衣服"
+    },
+    "perf_predictor_slope": {
+        "message": "坡"
+    },
+    "perf_predictor_slope_tooltip": {
+        "message": "坡度百分比"
+    },
+    "perf_predictor_elevation": {
+        "message": "高程（平均）"
+    },
+    "perf_predictor_elevation_tooltip": {
+        "message": "路线的平均海拔"
+    },
+    "perf_predictor_wind": {
+        "message": "风"
+    },
+    "perf_predictor_wind_tooltip": {
+        "message": "相对于骑手的净风速或尾风的负值"
+    },
+    "perf_predictor_speed": {
+        "message": "速度"
+    },
+    "perf_predictor_time": {
+        "message": "时间"
+    },
+    "perf_predictor_original_performance": {
+        "message": "原始表现"
+    },
+    "perf_predictor_predicted_performance": {
+        "message": "预定性能"
+    },
+    "perf_predictor_faster": {
+        "message": "快点"
+    },
+    "perf_predictor_slower": {
+        "message": "慢点"
     }
 }
