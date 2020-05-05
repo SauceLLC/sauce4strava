@@ -878,24 +878,35 @@ sauce.ns('power', function() {
         const Fg = gravityForce(slope, weight);
         const Fr = rollingResistanceForce(slope, weight, Crr);
         const Fa = aeroDragForce(CdA, airDensity(el), velocity, wind);
-        return (Fg + Fr + Fa) * velocity / (1 - loss);
+        const vFactor = velocity / (1 - loss);
+        return {
+            gForce: Fg,
+            rForce: Fr,
+            aForce: Fa,
+            force: Fg + Fr + Fa,
+            gWatts: Fg * vFactor,
+            rWatts: Fr * vFactor,
+            aWatts: Fa * vFactor,
+            watts: (Fg + Fr + Fa) * vFactor
+        };
     }
 
 
-    function cyclingVelocitySearch(power, slope, weight, Crr, CdA, el, wind, loss) {
-        let v = 0;
-        for (let i = 0, low = -1000, high = 1000; i < 1000; i++, v = (high + low) / 2) {
-            const curP = cyclingPowerEstimate(v, slope, weight, Crr, CdA, el, wind, loss);
-            if (Math.abs(curP - power) < 0.000001) {
+    function cyclingPowerVelocitySearch(power, slope, weight, Crr, CdA, el, wind, loss) {
+        let velocity = 0;
+        let curEst;
+        for (let i = 0, low = -1000, high = 1000; i < 1000; i++, velocity = (high + low) / 2) {
+            curEst = cyclingPowerEstimate(velocity, slope, weight, Crr, CdA, el, wind, loss);
+            if (Math.abs(curEst.watts - power) < 0.000001) {
                 break;
             }
-            if (curP > power) {
-                high = v;
+            if (curEst.watts > power) {
+                high = velocity;
             } else {
-                low = v;
+                low = velocity;
             }
         }
-        return v;
+        return Object.assign({velocity}, curEst);
     }
 
 
@@ -909,7 +920,7 @@ sauce.ns('power', function() {
         rankRequirements,
         seaLevelPower,
         cyclingPowerEstimate,
-        cyclingVelocitySearch,
+        cyclingPowerVelocitySearch,
     };
 });
 
