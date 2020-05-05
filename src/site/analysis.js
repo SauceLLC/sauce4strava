@@ -1655,13 +1655,15 @@ sauce.ns('analysis', ns => {
 
 
     let _tplCache = {};
-    async function getTemplate(filename) {
-        if (!_tplCache[filename]) {
+    async function getTemplate(filename, localeKey) {
+        const cacheKey = '' + filename + localeKey;
+        if (!_tplCache[cacheKey]) {
             const resp = await fetch(`${tplUrl}/${filename}`);
             const tplText = await resp.text();
-            _tplCache[filename] = sauce.template.compile(tplText, {localePrefix: 'analysis_'});
+            localeKey = localeKey || 'analysis';
+            _tplCache[cacheKey] = sauce.template.compile(tplText, {localePrefix: `${localeKey}_`});
         }
-        return _tplCache[filename];
+        return _tplCache[cacheKey];
     }
 
 
@@ -2393,7 +2395,7 @@ sauce.ns('analysis', ns => {
         const distance = streamDelta(distStream);
         const origVelocity = distance / origTime;
         const el = sauce.data.avg(altStream);
-        const template = await getTemplate('perf-predictor.html');
+        const template = await getTemplate('perf-predictor.html', 'perf_predictor');
         const power = correctedPower && correctedPower.avg();
         const slope = streamDelta(altStream) / distance;
         const body = await template({
@@ -2433,19 +2435,20 @@ sauce.ns('analysis', ns => {
             const slope = fget('slope') / 100;
             const el = elevationUnconvert(fget('elevation'));
             const wind = velocityUnconvert(fget('wind'));
-            const velocity = sauce.power.cyclingVelocitySearch(power, slope, sysWeight, crr, cda, el, wind, 0.035);
-            const time = distance / velocity;
+            const powerEst = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
+                cda, el, wind, 0.035);
+            const time = distance / powerEst.velocity;
             const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
-            if (velocity && time < origTime) {
+            if (powerEst.velocity && time < origTime) {
                 const pct = (origTime / time - 1) * 100;
                 $timeAhead.text(`${humanNumber(pct, 1)}% faster`).addClass('sauce-positive').removeClass('sauce-negative');
-            } else if (velocity && time > origTime) {
+            } else if (powerEst.velocity && time > origTime) {
                 const pct = (time / origTime - 1) * 100;
                 $timeAhead.text(`${humanNumber(pct, 1)}% slower`).addClass('sauce-negative').removeClass('sauce-positive');
             } else {
                 $timeAhead.empty();
             }
-            $dialog.find('.predicted .speed').text(humanPace(velocity, {velocity: true}));
+            $dialog.find('.predicted .speed').text(humanPace(powerEst.velocity, {velocity: true}));
             $dialog.find('.predicted .time').text(humanTime(time));
             $dialog.find('.predicted .wkg').text(humanNumber(power / bodyWeight, 1));
             if (!noPulse) {

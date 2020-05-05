@@ -1,55 +1,47 @@
 <form class="input">
     <div class="help" data-for="intro">
         <a class="dismiss"/>
-        Performance calculator works best if you first tune the input parameters to match the original performance's
-        time.  For example, if you were on a mountain bike, select the "MTB" bike option.  If there was a
-        prevailing head wind during the effort, change the wind speed value to indicate the net wind impact and so on.
+        {{{intro_help1}}}
         <br/><br/>
-        Once values are properly tuned, the predicted performance should resemble the original performance within a
-        small percentage.
+        {{{intro_help2}}}
         <br/></br/>
-        Now you can alter different parameters such as power, weight and aerodynamics to estimate what performance
-        impact those changes might have.  You might learn that weight is less critical than aerodynamics and power
-        for a flat course, or that losing weight on a very steep climb is more important than aero positioning.
+        {{{intro_help3}}}
     </div>
     <p>
-        <a class="help-info" data-help="intro" title="Click for more info">{-infoIcon-}</a>
-        Performance Predictor is a cycling power calculator that allows you to examine the impact of
-        altered performance factors.
+        <a class="help-info" data-help="intro" title="{{{help_info_tooltip}}}">{-infoIcon-}</a>
+        {{{intro}}}
         <br/><br/>
-        <i>Change these parameters to see the estimated effect on performance.</i>
+        <i>{{{intro_note}}}</i>
     </p>
 
-    <div class="help" data-for="rr">
+    <div class="help" data-for="crr">
         <a class="dismiss"/>
-        Make sure this setting matches your bike and terrain as closely as possible.  You can fine tune the
-        rolling resistence directly by altering the <i>Crr</i> value.
+        {{{crr_help1}}}
         <br/><br/>
-        Use lower <i>Crr</i> values (less resistance) for faster tires with good road surfaces and higher values
-        (more resistance) for heavier duty tires on rough surfaces, e.g. mountain biking.
+        {{{crr_help2}}}
     </div>
     <div class="entry">
-        <a class="help-info" data-help="rr" title="Click for more info">{-infoIcon-}</a>
-        <b>Rolling resistance</b>
+        <a class="help-info" data-help="crr" title="{{{help_info_tooltip}}}">{-infoIcon-}</a>
+        <b>{{{crr_heading}}}</b>
         <div class="indent">
-            <div class="entry" title="Bike type for Crr estimate">
-                <key>Bike:</key>
-                <label><input type="radio" name="bike" value="road" checked/> Road</label>
-                <label><input type="radio" name="bike" value="mtb"/> MTB</label>
+            <div class="entry" title="{{{crr_bike_tooltip}}}">
+                <key>{{{crr_bike}}}:</key>
+                <label><input type="radio" name="bike" value="road" checked/> {{{crr_bike_road}}}</label>
+                <label><input type="radio" name="bike" value="mtb"/> {{{crr_bike_mtb}}}</label>
             </div>
 
-            <div class="entry" title="Bike type for Crr estimate">
-                <key>Terrain:</key>
+            <div class="entry" title="{{{crr_terrain_tooltip}}}">
+                <key>{{{crr_terrain}}}:</key>
                 <select name="terrain">
-                    <option value="asphalt">Asphalt</option>
-                    <option value="gravel">Gravel</option>
-                    <option value="grass">Grass</option>
-                    <option value="offroad">Off road</option>
-                    <option value="sand">Sand</option>
+                    <option value="asphalt">{{{crr_terrain_asphalt}}}</option>
+                    <option value="gravel">{{{crr_terrain_gravel}}}</option>
+                    <option value="grass">{{{crr_terrain_grass}}}</option>
+                    <option value="offroad">{{{crr_terrain_offroad}}}</option>
+                    <option value="sand">{{{crr_terrain_sand}}}</option>
                 </select>
             </div>
 
-            <div class="entry" title="Coeffecient for rolling resistence">
+            <div class="entry" title="{{{crr_tooltip}}}">
                 <key>Crr:</key>
                 <input name="crr" type="number" value="{{crr}}" min="0" step="0.0005"/>
             </div>
@@ -59,74 +51,66 @@
 
     <div class="help" data-for="cda">
         <a class="dismiss"/>
-        <i>CdA</i> represents the aerodynamic drag of a rider and equipment.  It is technically the coefficient of
-        drag multiplied by the frontal surface area.  Lower values are achieved by riding lower,
-        using speed suits and using specialty equipment such as time trial bikes and disc wheels.
+        {{{cda_help1}}}
         <br/><br/>
-        Some example values:
+        {{{cda_help_table_heading}}}:
             <table class="unstyled">
-                <tr><td>0.17 to 0.23:</td><td>Elite level time trial equipment and aero positioning</td>
-                <tr><td>0.23 to 0.30:</td><td>Good time trial equipment and aero positioning / Triathlon</td>
-                <tr><td>0.30 to 0.35:</td><td>Road bike racing positions / Bar drops to hoods</td>
-                <tr><td>0.35 to 0.50:</td><td>Road bike climbing positions / XC mountain biking</td>
-                <tr><td>0.50+:</td><td>Upright position / Casual clothing</td>
+                <tr><td>0.17 to 0.23:</td><td>{{{cda_help_table_elite_tt}}}</td>
+                <tr><td>0.23 to 0.30:</td><td>{{{cda_help_table_good_tt}}}</td>
+                <tr><td>0.30 to 0.35:</td><td>{{{cda_help_table_road}}}</td>
+                <tr><td>0.35 to 0.50:</td><td>{{{cda_help_table_climbing}}}</td>
+                <tr><td>0.50+:</td><td>{{{cda_help_table_upright}}}</td>
             </table>
     </div>
     <div class="entry">
-        <a class="help-info" data-help="cda" title="Click for more info">{-infoIcon-}</a>
-        <b>Aerodynamic resistance</b>
+        <a class="help-info" data-help="cda" title="{{{help_info_tooltip}}}">{-infoIcon-}</a>
+        <b>{{{cda_heading}}}</b>
         <div class="indent">
-            <div class="entry" title="Aerodynamic position on bike for CdA estimate">
-                <key>Aero Position:</key>
-                <input name="aero" type="range" min="0.15" max="0.7" step="0.01"
-                       value="{{cda}}"/>
+            <div class="entry" title="{{{cda_position_tooltip}}}">
+                <key>{{{cda_position}}}:</key>
+                <input name="aero" type="range" min="0.15" max="0.7" step="0.01" value="{{cda}}"/>
             </div>
 
-            <div class="entry" title="Aerodynamic drag coefficient times frontal surface area">
+            <div class="entry" title="{{{cda_tooltip}}}">
                 <key>CdA:</key>
-                <input name="cda" type="number" min="0.15" max="0.7" step="0.01"
-                       value="{{cda}}"/>
+                <input name="cda" type="number" min="0.15" max="0.7" step="0.01" value="{{cda}}"/>
                 <abbr class="unit">m²</abbr>
             </div>
         </div>
     </div>
 
-    <div class="entry" title="Average watts for effort">
-        <key>Power:</key>
+    <div class="entry" title="{{{power_tooltip}}}">
+        <key>{{{power}}}:</key>
         <input name="power" type="number" placeholder="{{power}}" value="{{power}}"/>
         <abbr class="unit">w</abbr>
     </div>
 
-    <div class="entry" title="Just body weight">
-        <key>Body Weight:</key>
-        <input name="body-weight" type="number" placeholder="{{bodyWeight}}"
-               value="{{bodyWeight}}" step="any"/>
+    <div class="entry" title="{{{body_weight_tooltip}}}">
+        <key>{{{body_weight}}}:</key>
+        <input name="body-weight" type="number" placeholder="{{bodyWeight}}" value="{{bodyWeight}}" step="any"/>
         <abbr class="unit">{{weightUnit}}</abbr>
     </div>
 
-    <div class="entry" title="Weight of all gear and bike including water and clothes">
-        <key>Bike/Gear Weight:</key>
-        <input name="gear-weight" type="number" placeholder="{{gearWeight}}"
-               value="{{gearWeight}}" step="any"/>
+    <div class="entry" title="{{{gear_weight_tooltip}}}">
+        <key>{{{gear_weight}}}:</key>
+        <input name="gear-weight" type="number" placeholder="{{gearWeight}}" value="{{gearWeight}}" step="any"/>
         <abbr class="unit">{{weightUnit}}</abbr>
     </div>
 
-    <div class="entry" title="Gradient of hill in percentage">
-        <key>Slope:</key>
-        <input name="slope" type="number" placeholder="{{slope}}"
-               value="{{slope}}" step="0.1"/>
+    <div class="entry" title="{{{slope_tooltip}}}">
+        <key>{{{slope}}}:</key>
+        <input name="slope" type="number" placeholder="{{slope}}" value="{{slope}}" step="0.1"/>
         <abbr class="unit">%</abbr>
     </div>
 
-    <div class="entry" title="The average elevation of the effort">
-        <key>Elevation (avg):</key>
-        <input name="elevation" type="number" placeholder="{{elevation}}"
-               value="{{elevation}}"/>
+    <div class="entry" title="{{{elevation_tooltip}}}">
+        <key>{{{elevation}}}:</key>
+        <input name="elevation" type="number" placeholder="{{elevation}}" value="{{elevation}}"/>
         <abbr class="unit">{{elevationUnit}}</abbr>
     </div>
 
-    <div class="entry" title="The net wind speed against the rider or negative values for tail winds">
-        <key>Wind:</key>
+    <div class="entry" title="{{{wind_tooltip}}}">
+        <key>{{{wind}}}:</key>
         <input name="wind" type="number" value="{{wind}}" step="any"/>
         <abbr class="unit">{{speedUnit}}</abbr>
     </div>
@@ -134,15 +118,15 @@
 
 <div class="output">
     <section class="original">
-        <h4>Original performance:</h4>
+        <h4>{{{original_performance}}}:</h4>
 
         <div class="entry">
-            <key>Speed:</key>
+            <key>{{{speed}}}:</key>
             <span>{{speed}}</span><abbr class="unit">{{speedUnit}}</abbr>
         </div>
 
         <div class="entry">
-            <key>Time:</key>
+            <key>{{{time}}}:</key>
             <span>{{time}}</span>
         </div>
 
@@ -155,15 +139,15 @@
     </section>
 
     <section class="predicted">
-        <h4>Predicted performance:</h4>
+        <h4>{{{predicted_performance}}}:</h4>
         <div class="entry">
-            <key>Speed:</key>
+            <key>{{{speed}}}:</key>
             <span class="speed"></span><abbr class="unit">{{speedUnit}}</abbr>
             <sup class="ahead-behind"></sup>
         </div>
 
         <div class="entry">
-            <key>Time:</key>
+            <key>{{{time}}}:</key>
             <span class="time"></span>
             <sup class="ahead-behind"></sup>
         </div>
