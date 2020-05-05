@@ -157,7 +157,7 @@
     "perf_predictor_speed": {"message": "Speed"},
     "perf_predictor_time": {"message": "Time"},
     "perf_predictor_original_performance": {"message": "Original performance"},
-    "perf_predictor_predicted_performance": {"message": "Predicated performance"},
+    "perf_predictor_predicted_performance": {"message": "Predicted performance"},
     "perf_predictor_faster": {"message": "faster"},
     "perf_predictor_slower": {"message": "slower"},
     "perf_predictor_power_details_heading": {"message": "Power details"},

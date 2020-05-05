@@ -496,7 +496,7 @@
         "message": "Performance originale"
     },
     "perf_predictor_predicted_performance": {
-        "message": "Performances prédites"
+        "message": "Performances prévues"
     },
     "perf_predictor_faster": {
         "message": "plus rapide"
@@ -504,5 +504,20 @@
     "perf_predictor_slower": {
         "message": "plus lent",
         "description": "IMMUTABLE"
+    },
+    "perf_predictor_power_details_heading": {
+        "message": "Détails sur l'alimentation"
+    },
+    "perf_predictor_gravity": {
+        "message": "La gravité"
+    },
+    "perf_predictor_aero_drag": {
+        "message": "Aero drag"
+    },
+    "perf_predictor_rolling_resistance": {
+        "message": "Résistance au roulement"
+    },
+    "perf_predictor_total": {
+        "message": "Total"
     }
 }

@@ -430,7 +430,7 @@
         "message": "Elite-Zeitfahrausrüstung und Aero-Positionierung"
     },
     "perf_predictor_cda_help_table_good_tt": {
-        "message": "Gute Zeitfahrausrüstung und ero Positioning / Triathlon"
+        "message": "Gute Zeitfahrausrüstung und Aero Positioning / Triathlon"
     },
     "perf_predictor_cda_help_table_road": {
         "message": "Rennrad-Rennpositionen / Bar fällt auf Hauben"
@@ -507,5 +507,20 @@
     "perf_predictor_slower": {
         "message": "langsamer",
         "description": "IMMUTABLE"
+    },
+    "perf_predictor_power_details_heading": {
+        "message": "Leistungsdetails"
+    },
+    "perf_predictor_gravity": {
+        "message": "Schwere"
+    },
+    "perf_predictor_aero_drag": {
+        "message": "Aero ziehen"
+    },
+    "perf_predictor_rolling_resistance": {
+        "message": "Rollwiderstand"
+    },
+    "perf_predictor_total": {
+        "message": "Gesamt"
     }
 }

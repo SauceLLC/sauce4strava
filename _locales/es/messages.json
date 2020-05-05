@@ -496,5 +496,20 @@
     },
     "perf_predictor_slower": {
         "message": "más lento"
+    },
+    "perf_predictor_power_details_heading": {
+        "message": "Detalles de potencia"
+    },
+    "perf_predictor_gravity": {
+        "message": "Gravedad"
+    },
+    "perf_predictor_aero_drag": {
+        "message": "Aero drag"
+    },
+    "perf_predictor_rolling_resistance": {
+        "message": "Resistencia a la rodadura"
+    },
+    "perf_predictor_total": {
+        "message": "Total"
     }
 }

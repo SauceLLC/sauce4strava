@@ -489,12 +489,27 @@
         "message": "原始表现"
     },
     "perf_predictor_predicted_performance": {
-        "message": "预定性能"
+        "message": "预期表现"
     },
     "perf_predictor_faster": {
         "message": "快点"
     },
     "perf_predictor_slower": {
         "message": "慢点"
+    },
+    "perf_predictor_power_details_heading": {
+        "message": "电源细节"
+    },
+    "perf_predictor_gravity": {
+        "message": "重力"
+    },
+    "perf_predictor_aero_drag": {
+        "message": "气动阻力"
+    },
+    "perf_predictor_rolling_resistance": {
+        "message": "滚动阻力"
+    },
+    "perf_predictor_total": {
+        "message": "总"
     }
 }
