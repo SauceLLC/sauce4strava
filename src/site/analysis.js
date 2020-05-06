@@ -2408,6 +2408,11 @@ sauce.ns('analysis', ns => {
         const template = await getTemplate('perf-predictor.html', 'perf_predictor');
         const power = correctedPower && correctedPower.avg();
         const slope = streamDelta(altStream) / origDistance;
+        const powerColors = {
+            gravity: '#36c',
+            aero: '#dc3912',
+            rr: '#f90'
+        };
         const body = await template({
             power: power && Math.round(power),
             hasWeight: !!ctx.weight,
@@ -2427,6 +2432,7 @@ sauce.ns('analysis', ns => {
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
             distanceUnit: ctx.distanceFormatter.shortUnitKey(),
             infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
+            powerColors
         });
         const $dialog = modal({
             title: 'Performance Predictor',
@@ -2438,7 +2444,7 @@ sauce.ns('analysis', ns => {
         function fget(name) {
             return Number($dialog.find(`[name="${name}"]`).val());
         }
-        const localeKeys = ['faster', 'slower', 'gravity', 'aero_drag', 'rolling_resistance'];
+        const localeKeys = ['faster', 'slower', 'power_details_gravity', 'power_details_aero', 'power_details_rr'];
         const localeStrings = await sauce.locale.getMessages(localeKeys.map(x => `perf_predictor_${x}`));
         const locale = localeStrings.reduce((acc, x, i) => (acc[localeKeys[i]] = x, acc), {});
         function recalc(noPulse) {
@@ -2470,26 +2476,31 @@ sauce.ns('analysis', ns => {
             $dialog.find('.predicted .wkg').text(humanNumber(power / bodyWeight, 1));
             const $gravity = $dialog.find('.predicted .power-details .gravity');
             $gravity.find('.power').text(humanNumber(powerEst.gWatts));
-            $gravity.find('.work').text(humanNumber(powerEst.gForce * distance));
+            $gravity.find('.pct').text(humanNumber(powerEst.gWatts / powerEst.watts * 100));
             const $aero = $dialog.find('.predicted .power-details .aero');
             $aero.find('.power').text(humanNumber(powerEst.aWatts));
-            $aero.find('.work').text(humanNumber(powerEst.aForce * distance));
+            $aero.find('.pct').text(humanNumber(powerEst.aWatts / powerEst.watts * 100));
             const $rr = $dialog.find('.predicted .power-details .rr');
             $rr.find('.power').text(humanNumber(powerEst.rWatts));
-            $rr.find('.work').text(humanNumber(powerEst.rForce * distance));
+            $rr.find('.pct').text(humanNumber(powerEst.rWatts / powerEst.watts * 100));
             $dialog.find('.predicted .power-details .piechart').sparkline(
                 [powerEst.gWatts, powerEst.aWatts, powerEst.rWatts],
                 {
                     type: 'pie',
                     width: '100%',
                     height: '100%',
+                    sliceColors: [powerColors.gravity, powerColors.aero, powerColors.rr],
                     tooltipFormatter: (_, __, data) => {
-                        const labels = {
-                            0: locale.gravity,
-                            1: locale.aero_drag,
-                            2: locale.rolling_resistance,
-                        };
-                        return `${labels[data.offset]}: ${Math.round(data.value)}w (${data.percent.toFixed(1)}%)`;
+                        const key = ['gravity', 'aero', 'rr'][data.offset];
+                        const force = powerEst[['g', 'a', 'r'][data.offset] + 'Force'];
+                        return `
+                            <b>${locale[`power_details_${key}`]}:</b>
+                            <ul>
+                                <li>&nbsp;&nbsp;${Math.round(data.value)}w</li>
+                                <li>&nbsp;&nbsp;${data.percent.toFixed(1)}%</li>
+                                <li>&nbsp;&nbsp;${humanNumber(force * distance / 1000)}kJ</li>
+                            </ul>
+                        `;
                     }
                 });
             if (!noPulse) {

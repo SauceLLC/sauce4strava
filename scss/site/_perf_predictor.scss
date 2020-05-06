@@ -16,7 +16,7 @@
         }
 
         form.input {
-            flex: 1 1 50%;
+            flex: 1 1 60%;
             max-width: 100%;
             padding: 0.8em 0 1.2em;
 
@@ -94,6 +94,9 @@
         }
 
         .output {
+            flex: 1 1 40%;
+            min-width: 300px;
+            max-width: 100%;
             font-family: sans-serif;
             background-image: linear-gradient(180deg,
                                               #{color.shade(fg, 18%)},
@@ -101,7 +104,6 @@
                                               #{color.shade(fg, 10%)});
             color: color.shade(bg, 10%);
             flex: 1 1 auto;
-            max-width: 100%;
 
             @keyframes pulse {
                 0%, 100% {
@@ -124,7 +126,7 @@
             }
 
             key {
-                width: 16ch;
+                width: 10ch;
                 color: inherit;
             }
 
@@ -143,17 +145,50 @@
                     .entry.total {
                         font-weight: bold;
                     }
+
+                    .power-details {
+                        .indent {
+                            flex-direction: row;
+                            flex-wrap: wrap;
+
+                            .left-col {
+                                flex: 0 1 auto;
+                            }
+
+                            .right-col {
+                                flex: 0 0 auto;
+                            }
+                        }
+
+                        dot {
+                            display: inline-block;
+                            width: 0.7em;
+                            height: 0.7em;
+                            border-radius: 100%;
+                            margin-right: 0.2em;
+                        }
+
+                        .pct:not(:empty)::before {
+                            content: ' | ';
+                            color: color.shade(fg, 8%);
+                        }
+                    }
                 }
 
                 .ahead-behind {
                     font-size: 0.85em;
+
+                    &:not(:empty)::before {
+                        content: ' | ';
+                        color: color.shade(fg, 12%);
+                    }
                 }
             }
 
             .piechart {
                 align-self: center;
-                width: 8em;
-                height: 8em;
+                width: 5em;
+                height: 5em;
             }
         }
 

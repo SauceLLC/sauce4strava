@@ -148,7 +148,7 @@
         <div class="entry">
             <key>{{{time}}}:</key>
             <span class="time"></span>
-            | <small class="ahead-behind"></small>
+            <small class="ahead-behind"></small>
         </div>
 
         <div class="entry">
@@ -166,22 +166,27 @@
         <div class="entry power-details">
             <b>{{{power_details_heading}}}:</b>
             <div class="indent">
-                <div class="entry gravity" title="{{{power_details_gravity_tooltip}}}">
-                    <key>{{{power_details_gravity}}}:</key>
-                    <span class="power"></span><abbr class="unit">w</abbr>
-                    <small>| <span class="work"></span><abbr class="unit">kJ</abbr></small>
+                <div class="left-col">
+                    <div class="entry gravity" title="{{{power_details_gravity_tooltip}}}">
+                        <dot style="background-color: {{powerColors.gravity}}"/>
+                        <key>{{{power_details_gravity}}}:</key>
+                        <span class="power"></span><abbr class="unit">w</abbr>
+                        <small><span class="pct"></span><abbr class="unit">%</abbr></small>
+                    </div>
+                    <div class="entry aero" title="{{{power_details_aero_tooltip}}}">
+                        <dot style="background-color: {{powerColors.aero}}"/>
+                        <key>{{{power_details_aero}}}:</key>
+                        <span class="power"></span><abbr class="unit">w</abbr>
+                        <small><span class="pct"></span><abbr class="unit">%</abbr></small>
+                    </div>
+                    <div class="entry rr" title="{{{power_details_rr_tooltip}}}">
+                        <dot style="background-color: {{powerColors.rr}}"/>
+                        <key>{{{power_details_rr}}}:</key>
+                        <span class="power"></span><abbr class="unit">w</abbr>
+                        <small><span class="pct"></span><abbr class="unit">%</abbr></small>
+                    </div>
                 </div>
-                <div class="entry aero" title="{{{power_details_aero_tooltip}}}">
-                    <key>{{{power_details_aero}}}:</key>
-                    <span class="power"></span><abbr class="unit">w</abbr>
-                    <small>| <span class="work"></span><abbr class="unit">kJ</abbr></small>
-                </div>
-                <div class="entry rr" title="{{{power_details_rr_tooltip}}}">
-                    <key>{{{power_details_rr}}}:</key>
-                    <span class="power"></span><abbr class="unit">w</abbr>
-                    <small>| <span class="work"></span><abbr class="unit">kJ</abbr></small>
-                </div>
-                <div class="piechart"></div>
+                <div class="right-col piechart"></div>
             </div>
         </div>
     </section>
