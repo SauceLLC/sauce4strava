@@ -22,7 +22,7 @@
     </div>
     <div class="entry">
         <a class="help-info" data-help="crr" title="{{{help_info_tooltip}}}">{-infoIcon-}</a>
-        <b>{{{crr_heading}}}</b>
+        <b>{{{crr_heading}}}:</b>
         <div class="indent">
             <div class="entry" title="{{{crr_bike_tooltip}}}">
                 <key>{{{crr_bike}}}:</key>
@@ -64,7 +64,7 @@
     </div>
     <div class="entry">
         <a class="help-info" data-help="cda" title="{{{help_info_tooltip}}}">{-infoIcon-}</a>
-        <b>{{{cda_heading}}}</b>
+        <b>{{{cda_heading}}}:</b>
         <div class="indent">
             <div class="entry" title="{{{cda_position_tooltip}}}">
                 <key>{{{cda_position}}}:</key>
@@ -103,6 +103,13 @@
         <abbr class="unit">%</abbr>
     </div>
 
+    <div class="entry" title="{{{distance_tooltip}}}">
+        <key>{{{distance}}}:</key>
+        <input name="distance" type="number" placeholder="{{distance}}" value="{{distance}}" step="0.001" min="0"/>
+        <abbr class="unit">{{distanceUnit}}</abbr>
+    </div>
+
+
     <div class="entry" title="{{{elevation_tooltip}}}">
         <key>{{{elevation}}}:</key>
         <input name="elevation" type="number" placeholder="{{elevation}}" value="{{elevation}}"/>
@@ -121,35 +128,32 @@
         <div class="heading">{{{original_performance}}}:</div>
 
         <div class="entry">
-            <key>{{{speed}}}:</key>
-            <span>{{speed}}</span><abbr class="unit">{{speedUnit}}</abbr>
+            <key>{{{time}}}:</key> {{time}}
         </div>
 
         <div class="entry">
-            <key>{{{time}}}:</key>
-            <span>{{time}}</span>
+            <key>{{{speed}}}:</key> {{speed}}<abbr class="unit">{{speedUnit}}</abbr>
         </div>
 
         <% if (wkg) { %>
             <div class="entry">
-                <key>Watts/kg:</key>
-                <span>{{wkg}}</span><abbr class="unit">w/kg</abbr>
+                <key>Watts/kg:</key> {{wkg}}<abbr class="unit">w/kg</abbr>
             </div>
         <% } %>
     </section>
 
     <section class="predicted">
         <div class="heading">{{{predicted_performance}}}:</div>
-        <div class="entry">
-            <key>{{{speed}}}:</key>
-            <span class="speed"></span><abbr class="unit">{{speedUnit}}</abbr>
-            <sup class="ahead-behind"></sup>
-        </div>
 
         <div class="entry">
             <key>{{{time}}}:</key>
             <span class="time"></span>
-            <sup class="ahead-behind"></sup>
+            | <small class="ahead-behind"></small>
+        </div>
+
+        <div class="entry">
+            <key>{{{speed}}}:</key>
+            <span class="speed"></span><abbr class="unit">{{speedUnit}}</abbr>
         </div>
 
         <% if (hasWeight) { %>
@@ -160,22 +164,22 @@
         <% } %>
 
         <div class="entry power-details">
-            <b>{{{power_details_heading}}}</b>
+            <b>{{{power_details_heading}}}:</b>
             <div class="indent">
-                <div class="entry gravity">
-                    <key>{{{gravity}}}:</key>
+                <div class="entry gravity" title="{{{power_details_gravity_tooltip}}}">
+                    <key>{{{power_details_gravity}}}:</key>
                     <span class="power"></span><abbr class="unit">w</abbr>
-                    <small>/ <span class="force"></span><abbr class="unit" title="Netwons">N</abbr></small>
+                    <small>| <span class="work"></span><abbr class="unit">kJ</abbr></small>
                 </div>
-                <div class="entry aero">
-                    <key>{{{aero_drag}}}:</key>
+                <div class="entry aero" title="{{{power_details_aero_tooltip}}}">
+                    <key>{{{power_details_aero}}}:</key>
                     <span class="power"></span><abbr class="unit">w</abbr>
-                    <small>/ <span class="force"></span><abbr class="unit" title="Netwons">N</abbr></small>
+                    <small>| <span class="work"></span><abbr class="unit">kJ</abbr></small>
                 </div>
-                <div class="entry crr">
-                    <key>{{{rolling_resistance}}}:</key>
+                <div class="entry rr" title="{{{power_details_rr_tooltip}}}">
+                    <key>{{{power_details_rr}}}:</key>
                     <span class="power"></span><abbr class="unit">w</abbr>
-                    <small>/ <span class="force"></span><abbr class="unit" title="Netwons">N</abbr></small>
+                    <small>| <span class="work"></span><abbr class="unit">kJ</abbr></small>
                 </div>
                 <div class="piechart"></div>
             </div>

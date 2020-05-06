@@ -1020,6 +1020,11 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function humanDistance(meters, precision) {
+        return ctx.distanceFormatter.format(meters, precision || 2);
+    }
+
+
     function humanPace(raw, options) {
         options = options || {};
         const mps = options.velocity ? raw : 1 / raw;
@@ -1202,7 +1207,7 @@ sauce.ns('analysis', ns => {
             chartRangeMin: min,
             normalRangeMin: min,
             normalRangeMax: sauce.data.avg(data),
-            tooltipFormatter: (_, _2, data) => formatter(data.y)
+            tooltipFormatter: (_, __, data) => formatter(data.y)
         });
     }
 
@@ -1741,7 +1746,7 @@ sauce.ns('analysis', ns => {
                     width: '100%',
                     height: 100,
                     chartRangeMin: 0,
-                    tooltipFormatter: (_, _2, data) => `
+                    tooltipFormatter: (_, __, data) => `
                         ${humanNumber(data.y, 1)}<abbr class="unit short">W/kg</abbr><br/>
                         ${tooltipFormatterAbs(data.y)}
                         Duration: ${humanTime(times[data.x])}`
@@ -2347,6 +2352,11 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function distanceUnconvert(localeDist) {
+        return ctx.distanceFormatter.unitSystem === 'metric' ? localeDist : localeDist * metersPerMile;
+    }
+
+
     async function showGraphData() {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
@@ -2392,12 +2402,12 @@ sauce.ns('analysis', ns => {
         const correctedPower = supportsStream('watts') && await correctedPowerTimeRange(
             getStreamIndexTime(start), getStreamIndexTime(end));
         const origTime = streamDelta(timeStream);
-        const distance = streamDelta(distStream);
-        const origVelocity = distance / origTime;
+        const origDistance = streamDelta(distStream);
+        const origVelocity = origDistance / origTime;
         const el = sauce.data.avg(altStream);
         const template = await getTemplate('perf-predictor.html', 'perf_predictor');
         const power = correctedPower && correctedPower.avg();
-        const slope = streamDelta(altStream) / distance;
+        const slope = streamDelta(altStream) / origDistance;
         const body = await template({
             power: power && Math.round(power),
             hasWeight: !!ctx.weight,
@@ -2405,6 +2415,7 @@ sauce.ns('analysis', ns => {
             bodyWeight: ctx.weightFormatter.convert(ctx.weight).toFixed(1),
             gearWeight: ctx.weightFormatter.convert(13).toFixed(1),
             slope: (slope * 100).toFixed(1),
+            distance: humanNumber(ctx.distanceFormatter.convert(origDistance), 3),
             cda: 0.40,
             crr: 0.0050,
             wind: 0,
@@ -2414,6 +2425,7 @@ sauce.ns('analysis', ns => {
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             speedUnit: ctx.paceFormatter.shortUnitKey(),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
+            distanceUnit: ctx.distanceFormatter.shortUnitKey(),
             infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
         });
         const $dialog = modal({
@@ -2436,6 +2448,7 @@ sauce.ns('analysis', ns => {
             const bodyWeight = weightUnconvert(fget('body-weight'));
             const sysWeight = bodyWeight + weightUnconvert(fget('gear-weight'));
             const slope = fget('slope') / 100;
+            const distance = distanceUnconvert(fget('distance'));
             const el = elevationUnconvert(fget('elevation'));
             const wind = velocityUnconvert(fget('wind'));
             const powerEst = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
@@ -2453,33 +2466,30 @@ sauce.ns('analysis', ns => {
             }
             $dialog.find('.predicted .speed').text(humanPace(powerEst.velocity, {velocity: true}));
             $dialog.find('.predicted .time').text(humanTime(time));
+            $dialog.find('.predicted .distance').text(humanDistance(distance));
             $dialog.find('.predicted .wkg').text(humanNumber(power / bodyWeight, 1));
             const $gravity = $dialog.find('.predicted .power-details .gravity');
             $gravity.find('.power').text(humanNumber(powerEst.gWatts));
-            $gravity.find('.force').text(humanNumber(powerEst.gForce));
+            $gravity.find('.work').text(humanNumber(powerEst.gForce * distance));
             const $aero = $dialog.find('.predicted .power-details .aero');
             $aero.find('.power').text(humanNumber(powerEst.aWatts));
-            $aero.find('.force').text(humanNumber(powerEst.aForce));
-            const $crr = $dialog.find('.predicted .power-details .crr');
-            $crr.find('.power').text(humanNumber(powerEst.rWatts));
-            $crr.find('.force').text(humanNumber(powerEst.rForce));
+            $aero.find('.work').text(humanNumber(powerEst.aForce * distance));
+            const $rr = $dialog.find('.predicted .power-details .rr');
+            $rr.find('.power').text(humanNumber(powerEst.rWatts));
+            $rr.find('.work').text(humanNumber(powerEst.rForce * distance));
             $dialog.find('.predicted .power-details .piechart').sparkline(
-                [
-                    Math.round(powerEst.gWatts),
-                    Math.round(powerEst.aWatts),
-                    Math.round(powerEst.rWatts)
-                ],
+                [powerEst.gWatts, powerEst.aWatts, powerEst.rWatts],
                 {
                     type: 'pie',
                     width: '100%',
                     height: '100%',
-                    tooltipFormatter: (_, _2, data) => {
+                    tooltipFormatter: (_, __, data) => {
                         const labels = {
                             0: locale.gravity,
                             1: locale.aero_drag,
                             2: locale.rolling_resistance,
                         };
-                        return `${labels[data.offset]}: ${data.value}w (${data.percent.toFixed(1)}%)`;
+                        return `${labels[data.offset]}: ${Math.round(data.value)}w (${data.percent.toFixed(1)}%)`;
                     }
                 });
             if (!noPulse) {
@@ -2588,6 +2598,7 @@ sauce.ns('analysis', ns => {
             new Strava.I18n.CadenceFormatter();
         ctx.timeFormatter = new Strava.I18n.TimespanFormatter();
         ctx.weightFormatter = new Strava.I18n.WeightFormatter();
+        ctx.distanceFormatter = new Strava.I18n.DistanceFormatter();
         const speedUnit = activity.get('speedUnit') || (activity.isRide() ? 'mph' : 'mpm');
         const PaceFormatter = {
             mp100m: Strava.I18n.SwimPaceFormatter,
