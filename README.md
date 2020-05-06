@@ -33,8 +33,7 @@ Feature Highlights
    * Cadence
    * Sea Power (potential power at sea level)
  * Themes:
-   * Dark Mode
-   * Windows 3.1 (Patron's only)
+   * Including Dark Mode
  * Export any activity to a TCX or GPX file
  * Running Power estimation
  * Analysis page stats are extended to include:
@@ -48,6 +47,7 @@ Feature Highlights
    * Sea Power
  * Weight and FTP overrides for all athletes
  * Inline comments system for activity page
+ * Performance predictor tool
  * Dashboard features:
    * Chronological ordering *OPTION*
    * Hide virtual activities (except your own) *OPTION*
@@ -70,8 +70,11 @@ Feature Highlights
 
 Release Notes
 --------
+#### v5.5.0:
+ * Performance Predictor - Estimate power requirements for any activity selection
+
 #### v5.4.0:
- * Sea Power
+ * Sea Power - Estimate power capacity of effort at sea level
 
 #### v5.3.0:
  * Dark mode theme
