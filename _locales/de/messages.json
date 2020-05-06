@@ -361,13 +361,13 @@
         "message": "Klicken Sie hier für weitere Informationen"
     },
     "perf_predictor_intro_help1": {
-        "message": "Der Leistungsrechner funktioniert am besten, wenn Sie zuerst die Eingabeparameter so einstellen, dass sie mit der Zeit der ursprünglichen Leistung übereinstimmen. Wenn Sie beispielsweise mit einem Mountainbike unterwegs waren, wählen Sie die Option \"MTB\". Wenn während der Anstrengung ein Gegenwind vorherrschte, ändern Sie den Windgeschwindigkeitswert, um den Nettowindaufprall anzuzeigen, und so weiter."
+        "message": "Der Leistungsprädiktor funktioniert am besten, wenn Sie zuerst die Eingabeparameter so einstellen, dass sie der Zeit der ursprünglichen Leistung entsprechen. Wenn Sie beispielsweise mit einem Mountainbike unterwegs waren, wählen Sie die Option \"MTB\". Wenn während der Anstrengung ein Gegenwind vorherrschte, ändern Sie den Windgeschwindigkeitswert, um den Nettowindaufprall anzuzeigen, und so weiter."
     },
     "perf_predictor_intro_help2": {
         "message": "Sobald die Werte richtig eingestellt sind, sollte die vorhergesagte Leistung innerhalb eines kleinen Prozentsatzes der ursprünglichen Leistung ähneln."
     },
     "perf_predictor_intro_help3": {
-        "message": "Jetzt können Sie verschiedene Parameter wie Leistung, Gewicht und Aerodynamik ändern, um abzuschätzen, welche Auswirkungen diese Änderungen auf die Leistung haben können. Sie werden vielleicht feststellen, dass das Gewicht für einen flachen Kurs weniger kritisch ist als Aerodynamik und Leistung, oder dass das Abnehmen bei einem sehr steilen Anstieg wichtiger ist als die Aero-Positionierung."
+        "message": "Jetzt können Sie verschiedene Parameter wie Leistung, Gewicht und Aerodynamik ändern, um abzuschätzen, welche Auswirkungen diese Änderungen auf die Leistung haben können."
     },
     "perf_predictor_intro": {
         "message": "Performance Predictor ist ein Fahrradleistungsrechner, mit dem Sie die Auswirkungen geänderter Leistungsfaktoren untersuchen können."
@@ -475,7 +475,13 @@
         "message": "Steigung"
     },
     "perf_predictor_slope_tooltip": {
-        "message": "Steigung des Hügels in Prozent"
+        "message": "Gefälle des Hügels oder Abstiegs"
+    },
+    "perf_predictor_distance": {
+        "message": "Entfernung"
+    },
+    "perf_predictor_distance_tooltip": {
+        "message": "Kursentfernung"
     },
     "perf_predictor_elevation": {
         "message": "Höhe (Durchschn.)"
@@ -511,16 +517,22 @@
     "perf_predictor_power_details_heading": {
         "message": "Leistungsdetails"
     },
-    "perf_predictor_gravity": {
+    "perf_predictor_power_details_gravity": {
         "message": "Schwere"
     },
-    "perf_predictor_aero_drag": {
-        "message": "Aero ziehen"
+    "perf_predictor_power_details_aero": {
+        "message": "Aero"
     },
-    "perf_predictor_rolling_resistance": {
-        "message": "Rollwiderstand"
+    "perf_predictor_power_details_rr": {
+        "message": "Rollen"
     },
-    "perf_predictor_total": {
-        "message": "Gesamt"
+    "perf_predictor_power_details_gravity_tooltip": {
+        "message": "Kraft- und Arbeitsanforderungen zur Überwindung der Schwerkraft"
+    },
+    "perf_predictor_power_details_aero_tooltip": {
+        "message": "Leistungs- und Arbeitsanforderungen zur Überwindung des Luftwiderstands"
+    },
+    "perf_predictor_power_details_rr_tooltip": {
+        "message": "Leistungs- und Arbeitsanforderungen zur Überwindung des Rollwiderstands"
     }
 }

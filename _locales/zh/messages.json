@@ -351,13 +351,13 @@
         "message": "点击了解更多信息"
     },
     "perf_predictor_intro_help1": {
-        "message": "如果您首先调整输入参数以使其与原始演奏的时间匹配，则演奏计算器的效果最佳。例如，如果您正在骑山地自行车，请选择“ MTB”自行车选项。如果在尝试过程中盛行逆风，请更改风速值以指示净风影响等。"
+        "message": "如果您首先调整输入参数以匹配原始性能的时间，则性能预测器最有效。例如，如果您正在骑山地自行车，请选择“ MTB”自行车选项。如果在尝试过程中盛行逆风，请更改风速值以指示净风影响等。"
     },
     "perf_predictor_intro_help2": {
         "message": "正确调整值后，预测性能应在很小的百分比内与原始性能相似。"
     },
     "perf_predictor_intro_help3": {
-        "message": "现在，您可以更改不同的参数，例如功率，重量和空气动力学，以估计这些更改可能会对性能产生影响。您可能会发现，对于平坦的道路，重量的重要性不如空气动力学和动力重要，或者在非常陡峭的爬坡过程中减轻体重比航空定位更为重要。"
+        "message": "现在，您可以更改不同的参数，例如功率，重量和空气动力学，以估计这些更改可能会对性能产生影响。"
     },
     "perf_predictor_intro": {
         "message": "Performance Predictor是一个循环功率计算器，可让您检查更改的性能因素的影响。"
@@ -465,7 +465,13 @@
         "message": "坡"
     },
     "perf_predictor_slope_tooltip": {
-        "message": "坡度百分比"
+        "message": "坡度或坡度"
+    },
+    "perf_predictor_distance": {
+        "message": "距离"
+    },
+    "perf_predictor_distance_tooltip": {
+        "message": "航向距离"
     },
     "perf_predictor_elevation": {
         "message": "高程（平均）"
@@ -500,16 +506,22 @@
     "perf_predictor_power_details_heading": {
         "message": "电源细节"
     },
-    "perf_predictor_gravity": {
+    "perf_predictor_power_details_gravity": {
         "message": "重力"
     },
-    "perf_predictor_aero_drag": {
-        "message": "气动阻力"
+    "perf_predictor_power_details_aero": {
+        "message": "航空"
     },
-    "perf_predictor_rolling_resistance": {
-        "message": "滚动阻力"
+    "perf_predictor_power_details_rr": {
+        "message": "滚动"
     },
-    "perf_predictor_total": {
-        "message": "总"
+    "perf_predictor_power_details_gravity_tooltip": {
+        "message": "克服重力的动力和工作要求"
+    },
+    "perf_predictor_power_details_aero_tooltip": {
+        "message": "克服空气阻力的动力和工作要求"
+    },
+    "perf_predictor_power_details_rr_tooltip": {
+        "message": "克服滚动阻力的动力和工作要求"
     }
 }

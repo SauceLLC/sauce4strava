@@ -350,13 +350,13 @@
         "message": "Haga clic para obtener más información"
     },
     "perf_predictor_intro_help1": {
-        "message": "La calculadora de rendimiento funciona mejor si primero ajusta los parámetros de entrada para que coincidan con el tiempo del rendimiento original. Por ejemplo, si estaba en una bicicleta de montaña, seleccione la opción de bicicleta \"MTB\". Si hubo un viento de cabeza predominante durante el esfuerzo, cambie el valor de la velocidad del viento para indicar el impacto neto del viento y así sucesivamente."
+        "message": "El predictor de rendimiento funciona mejor si primero ajusta los parámetros de entrada para que coincidan con el tiempo del rendimiento original. Por ejemplo, si estaba en una bicicleta de montaña, seleccione la opción de bicicleta \"MTB\". Si hubo un viento de cabeza predominante durante el esfuerzo, cambie el valor de la velocidad del viento para indicar el impacto neto del viento y así sucesivamente."
     },
     "perf_predictor_intro_help2": {
         "message": "Una vez que los valores se ajustan correctamente, el rendimiento previsto debería parecerse al rendimiento original dentro de un pequeño porcentaje."
     },
     "perf_predictor_intro_help3": {
-        "message": "Ahora puede modificar diferentes parámetros como la potencia, el peso y la aerodinámica para estimar qué impacto en el rendimiento podrían tener esos cambios. Es posible que aprenda que el peso es menos crítico que la aerodinámica y la potencia para un curso plano, o que perder peso en una subida muy empinada es más importante que el posicionamiento aerodinámico."
+        "message": "Ahora puede modificar diferentes parámetros como la potencia, el peso y la aerodinámica para estimar qué impacto en el rendimiento podrían tener esos cambios."
     },
     "perf_predictor_intro": {
         "message": "Performance Predictor es una calculadora de potencia cíclica que le permite examinar el impacto de los factores de rendimiento alterados."
@@ -464,7 +464,13 @@
         "message": "Pendiente"
     },
     "perf_predictor_slope_tooltip": {
-        "message": "Gradiente de colina en porcentaje"
+        "message": "Gradiente de colina o descenso"
+    },
+    "perf_predictor_distance": {
+        "message": "Distancia"
+    },
+    "perf_predictor_distance_tooltip": {
+        "message": "Distancia del curso"
     },
     "perf_predictor_elevation": {
         "message": "Elevación (promedio)"
@@ -500,16 +506,22 @@
     "perf_predictor_power_details_heading": {
         "message": "Detalles de potencia"
     },
-    "perf_predictor_gravity": {
+    "perf_predictor_power_details_gravity": {
         "message": "Gravedad"
     },
-    "perf_predictor_aero_drag": {
-        "message": "Aero drag"
+    "perf_predictor_power_details_aero": {
+        "message": "Aero"
     },
-    "perf_predictor_rolling_resistance": {
-        "message": "Resistencia a la rodadura"
+    "perf_predictor_power_details_rr": {
+        "message": "Laminación"
     },
-    "perf_predictor_total": {
-        "message": "Total"
+    "perf_predictor_power_details_gravity_tooltip": {
+        "message": "Requisitos de potencia y trabajo para superar la gravedad."
+    },
+    "perf_predictor_power_details_aero_tooltip": {
+        "message": "Requisitos de potencia y trabajo para superar la resistencia aerodinámica."
+    },
+    "perf_predictor_power_details_rr_tooltip": {
+        "message": "Requisitos de potencia y trabajo para superar la resistencia a la rodadura."
     }
 }
