@@ -172,6 +172,13 @@
         }
     }
 
+    button[role="slider"] {
+        background-image: linear-gradient(135deg,
+                                          color.shade(accent, 8%),
+                                          color.shade(accent, -12%));
+        border-color: color.shade(fg, 12%);
+    }
+
     .switches {
         button,
         .button,
@@ -537,7 +544,8 @@
 
     input:not([type="range"]),
     textarea,
-    .textarea-clone {
+    .textarea-clone,
+    select {
         background-color: color.shade(bg, 8%) !important;
         color: color.shade(fg, 8%) !important;
         border-color: $hard-border-color !important;
@@ -545,6 +553,10 @@
         &:focus {
             background-color: color.shade(bg, 2%) !important;
             color: color.shade(fg, 2%) !important;
+        }
+
+        &::placeholder {
+            color: color.shade(fg, 40%, 80%) !important;
         }
     }
 
@@ -995,12 +1007,6 @@
         th.active {
             background-color: color.shade(bg, 8%);
         }
-    }
-
-    .form-control {
-        background-color: color.shade(bg, 8%);
-        color: color.shade(fg, 8%);
-        border-color: $hard-border-color;
     }
 
     .challenge-list-view li {
@@ -1607,6 +1613,14 @@
                 th {
                     color: color.shade(fg, 8%);
                 }
+
+                tr td:last-child {
+                    color: color.shade(fg, 33%);
+                }
+
+                tr.current-athlete td:last-child {
+                    color: color.shade(fg, 12%);
+                }
             }
 
             .leaderboard-footer {
@@ -1665,10 +1679,6 @@
 
     #uploadFile form {
         background-color: color.shade(bg, 8%);
-    }
-
-    .form-control::placeholder {
-        color: color.shade(fg, 50%, 80%);
     }
 
     button[class*="StepActions--cancel"] {
@@ -2009,6 +2019,14 @@
 
     #content-view .activity-content .sidebar {
         background-color: color.get(bg);
+    }
+
+    #edit-activity {
+        button[class*="PerceivedExertionInput--reset"] {
+            background: transparent !important;
+            color: color.shade($link-accent, 12%);
+            border: none !important;
+        }
     }
 }
 
