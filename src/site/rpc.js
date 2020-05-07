@@ -67,8 +67,13 @@ sauce.ns('rpc', function() {
 
     async function reportError(e) {
         const page = location.pathname;
-        console.warn('Reporting error:', e.toString());
-        const desc = e.stack || e.toString() || 'unknown error';
+        let desc;
+        try {
+            desc = e instanceof Error ? e.stack : (new Error(JSON.stringify(e))).stack;
+        } catch(e) {
+            desc = new Error("Internal error during report error: "  + e);
+        }
+        console.error('Reporting error:', desc);
         await sauce.rpc.ga('send', 'exception', {
             exDescription: desc,
             exFatal: true,
