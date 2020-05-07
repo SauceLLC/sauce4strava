@@ -27,7 +27,6 @@ sauce.ns('dashboard', function(ns) {
         let count = 0;
         for (const card of feedEl.querySelectorAll('.card:not(.hidden-by-sauce)')) {
             const ourId = self.currentAthlete.id;
-            if (!ourId) throw new Error("foo");
             if (card.querySelector(`[class^="icon-virtual"], [class*=" icon-virtual"]`) &&
                 !card.querySelector(`.entry-owner[href="/athletes/${ourId}"]`)) {
                 console.info("Hiding Virtual Activity:", card.id || 'group activity');
