@@ -15,7 +15,7 @@ Installation
 --------
 #### Official versions:
 [![chrome web store](assets/images/ChromeWebStore_Badge_v2_206x58.png)](https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha)
-[![firefox add on](assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce)
+[![firefox add on](assets/images/AMO-button_1.png)](https://addons.mozilla.org/addon/sauce4strava)
 
 
 ![slideshow](assets/images/screenshots/slideshow.gif)
@@ -47,7 +47,7 @@ Feature Highlights
    * Sea Power
  * Weight and FTP overrides for all athletes
  * Inline comments system for activity page
- * Performance predictor tool
+ * Performance Predictor
  * Dashboard features:
    * Chronological ordering *OPTION*
    * Hide virtual activities (except your own) *OPTION*
