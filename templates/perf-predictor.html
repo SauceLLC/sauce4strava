@@ -1,26 +1,25 @@
 <form class="input">
-    <div class="help" data-for="intro">
-        <a class="dismiss"/>
-        {{{intro_help1}}}
-        <br/><br/>
-        {{{intro_help2}}}
-        <br/></br/>
-        {{{intro_help3}}}
-    </div>
-    <p>
+    <div class="intro">
+        <div class="help" data-for="intro">
+            <a class="dismiss"></a>
+            {{{intro_help1}}}
+            <br/><br/>
+            {{{intro_help2}}}
+            <br/><br/>
+            {{{intro_help3}}}
+        </div>
         <a class="help-info" data-help="intro" title="{{{help_info_tooltip}}}">{-infoIcon-}</a>
         {{{intro}}}
         <br/><br/>
         <i>{{{intro_note}}}</i>
-    </p>
-
-    <div class="help" data-for="crr">
-        <a class="dismiss"/>
-        {{{crr_help1}}}
-        <br/><br/>
-        {{{crr_help2}}}
     </div>
     <div class="entry">
+        <div class="help" data-for="crr">
+            <a class="dismiss"></a>
+            {{{crr_help1}}}
+            <br/><br/>
+            {{{crr_help2}}}
+        </div>
         <a class="help-info" data-help="crr" title="{{{help_info_tooltip}}}">{-infoIcon-}</a>
         <b>{{{crr_heading}}}:</b>
         <div class="indent">
@@ -29,7 +28,6 @@
                 <label><input type="radio" name="bike" value="road" checked/> {{{crr_bike_road}}}</label>
                 <label><input type="radio" name="bike" value="mtb"/> {{{crr_bike_mtb}}}</label>
             </div>
-
             <div class="entry" title="{{{crr_terrain_tooltip}}}">
                 <key>{{{crr_terrain}}}:</key>
                 <select name="terrain">
@@ -40,7 +38,6 @@
                     <option value="sand">{{{crr_terrain_sand}}}</option>
                 </select>
             </div>
-
             <div class="entry" title="{{{crr_tooltip}}}">
                 <key>Crr:</key>
                 <input name="crr" type="number" value="{{crr}}" min="0" step="0.0005"/>
@@ -48,12 +45,12 @@
         </div>
     </div>
 
-
-    <div class="help" data-for="cda">
-        <a class="dismiss"/>
-        {{{cda_help1}}}
-        <br/><br/>
-        {{{cda_help_table_heading}}}:
+    <div class="entry">
+        <div class="help" data-for="cda">
+            <a class="dismiss"></a>
+            {{{cda_help1}}}
+            <br/><br/>
+            {{{cda_help_table_heading}}}:
             <table class="unstyled">
                 <tr><td>0.17 to 0.23:</td><td>{{{cda_help_table_elite_tt}}}</td>
                 <tr><td>0.23 to 0.30:</td><td>{{{cda_help_table_good_tt}}}</td>
@@ -61,8 +58,7 @@
                 <tr><td>0.35 to 0.50:</td><td>{{{cda_help_table_climbing}}}</td>
                 <tr><td>0.50+:</td><td>{{{cda_help_table_upright}}}</td>
             </table>
-    </div>
-    <div class="entry">
+        </div>
         <a class="help-info" data-help="cda" title="{{{help_info_tooltip}}}">{-infoIcon-}</a>
         <b>{{{cda_heading}}}:</b>
         <div class="indent">
@@ -165,7 +161,7 @@
 
         <div class="entry power-details">
             <b>{{{power_details_heading}}}:</b>
-            <div class="indent">
+            <div class="indent columns">
                 <div class="left-col">
                     <div class="entry gravity" title="{{{power_details_gravity_tooltip}}}">
                         <dot style="background-color: {{powerColors.gravity}}"/>

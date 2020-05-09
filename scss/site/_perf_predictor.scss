@@ -2,6 +2,18 @@
 
 @mixin dialog {
     &.sauce-perf-predictor {
+        // height settings for sticky output..
+        height: max-content !important;
+        // Fixed center pos...
+        position: fixed;
+        top: 1rem !important;
+        left: 1rem !important;
+        right: 1rem !important;
+        bottom: 1rem !important;
+        margin: auto;
+        max-width: calc(100vw - 2rem - (100vw - 100%));
+        max-height: calc(100vh - 2rem - (100vh - 100%));
+
         .ui-dialog-content {
             display: flex;
             flex-wrap: wrap;
@@ -20,17 +32,31 @@
             max-width: 100%;
             padding: 0.8em 0 1.2em;
 
-            .entry {
-                padding: 0.2em 1.2em;
-            }
-
-            p {
+            .intro {
                 padding: 1em;
                 margin: 0;
             }
 
-            > .entry:nth-child(odd) {
+            .entry {
+                padding: 0.2em 1.2em;
+            }
+
+            > .entry:nth-of-type(odd) {
                 background-color: color.shade(bg, 5%);
+            }
+
+            .divider {
+                display: flex;
+                align-items: center;
+                padding: 0.5em;
+
+                &::before,
+                &::after {
+                    flex: 1 1 auto;
+                    content: '';
+                    border-bottom: 1px solid color.shade(bg, 20%);
+                    margin: 0 0.25em;
+                }
             }
 
             key {
@@ -41,16 +67,25 @@
                 float: right;
                 width: 1.1em;
                 height: 1.1em;
-                margin-left: 0.35em;
-                margin-bottom: 0.35em;
+                margin: 0.25em 0 0.35em 0.35em;
                 color: color.get(fg);
+
+                &.hidden {
+                    display: none;
+                }
+
+                &:hover {
+                    color: color.shade(fg, -12%);
+                }
             }
 
             .help {
-                background-image: linear-gradient(to bottom, color.shade(accent3, 10%), color.get(accent3));
+                background-image: linear-gradient(to bottom,
+                                                  color.shade(accent3, 10%),
+                                                  color.get(accent3));
                 color: color.shade(accent3, 60%);
                 padding: 1.2em;
-                margin: 1em 1.2em 0.5em;
+                margin: 0 0 1em;
                 border-radius: 0.5em;
                 position: relative;
                 font-size: 0.85em;
@@ -72,7 +107,7 @@
                     border-width: 0.5em 0.5em 0 0.5em;
                     border-style: solid;
                     position: absolute;
-                    bottom: -0.5em;
+                    bottom: -0.48em;  // firefox subpixel rendering is buggy, subtract 0.02em to avoid lines.
                     left: 1em;
                 }
 
@@ -93,17 +128,32 @@
             flex-direction: column;
         }
 
+        .columns {
+            flex-direction: row;
+            flex-wrap: wrap;
+
+            .left-col {
+                flex: 0 1 auto;
+            }
+
+            .right-col {
+                flex: 0 0 auto;
+            }
+        }
+
         .output {
             flex: 1 1 40%;
             min-width: 300px;
             max-width: 100%;
-            font-family: sans-serif;
+            max-height: 100%;  // for sticky scroll to work
+            position: sticky;
+            top: 0;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             background-image: linear-gradient(180deg,
                                               #{color.shade(fg, 18%)},
                                               #{color.shade(fg, -18%)} 1.5em,
                                               #{color.shade(fg, 10%)});
             color: color.shade(bg, 10%);
-            flex: 1 1 auto;
 
             @keyframes pulse {
                 0%, 100% {
@@ -147,19 +197,6 @@
                     }
 
                     .power-details {
-                        .indent {
-                            flex-direction: row;
-                            flex-wrap: wrap;
-
-                            .left-col {
-                                flex: 0 1 auto;
-                            }
-
-                            .right-col {
-                                flex: 0 0 auto;
-                            }
-                        }
-
                         dot {
                             display: inline-block;
                             width: 0.7em;
@@ -171,6 +208,10 @@
                         .pct:not(:empty)::before {
                             content: ' | ';
                             color: color.shade(fg, 8%);
+                        }
+
+                        .left-col {
+                            font-size: 0.92em;
                         }
                     }
                 }
@@ -187,8 +228,8 @@
 
             .piechart {
                 align-self: center;
-                width: 5em;
-                height: 5em;
+                width: 4.25em;
+                height: 4.25em;
             }
         }
 
@@ -205,6 +246,7 @@
             width: calc(7ch + 1em);
             padding: 0.2em 0.5em;
             border-radius: 0.22em;
+            text-align: right;
 
             &:invalid {
                 border-color: red;
@@ -217,7 +259,24 @@
 
         select {
             border-radius: 0.22em;
-            padding: 0 0.5em;
+            padding: 0.25em 0.5em;
+            margin: 0;
+            top: initial;
+            height: auto;
+        }
+    }
+
+
+    @media only screen and (max-width: 768px) {
+        &.sauce-perf-predictor {
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            height: 100vh !important;
+            width: 100vw !important;
+            max-height: initial;
+            max-width: initial;
             margin: 0;
         }
     }

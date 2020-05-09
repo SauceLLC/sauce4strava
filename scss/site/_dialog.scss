@@ -27,8 +27,8 @@
     flex-direction: column;
     box-sizing: border-box;
     font-family: inherit;  /* use strava font, not jquery */
-    max-width: 100vw;
-    max-height: 100vh;
+    max-width: calc(100vw - (100vw - 100%));  // full viewport minus possible scrollbar
+    max-height: calc(100vh - (100vh - 100%)); // full viewport minus possible scrollbar
 
     .ui-dialog-titlebar,
     .ui-dialog-buttonpane {

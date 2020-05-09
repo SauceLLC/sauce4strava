@@ -2440,6 +2440,8 @@ sauce.ns('analysis', ns => {
             body,
             width: '60em',
             dialogClass: 'sauce-perf-predictor',
+            resizable: false,
+            draggable: false,
         });
         function fget(name) {
             return Number($dialog.find(`[name="${name}"]`).val());
@@ -2531,10 +2533,13 @@ sauce.ns('analysis', ns => {
         $dialog.on('input', 'input', () => recalc());
         $dialog.on('click', 'a.help-info', ev => {
             const helpFor = ev.currentTarget.dataset.help;
+            ev.currentTarget.classList.add('hidden');
             $dialog.find(`.help[data-for="${helpFor}"]`).toggleClass('visible');
         });
         $dialog.on('click', '.help a.dismiss', ev => {
-            ev.currentTarget.closest('.help').classList.remove('visible');
+            const help = ev.currentTarget.closest('.help');
+            help.classList.remove('visible');
+            $dialog.find(`a.help-info[data-help="${help.dataset.for}"]`).removeClass('hidden');
         });
         recalc(/*noPulse*/ true);
     }
