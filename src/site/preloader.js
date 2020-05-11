@@ -320,7 +320,8 @@
         sauce.propDefined('Strava.Labs.Activities.StreamsRequest', Model => {
             const requireSave = Model.prototype.require;
             Model.prototype.require = function() {
-                if (!this.pending) {
+                const ret = requireSave.apply(this, arguments);
+                if (!this.pending && this.required && this.required.length) {
                     this.pending = new Promise(resolve => {
                         this.deferred.always(() => {
                             this.pending = false;
@@ -328,7 +329,7 @@
                         });
                     });
                 }
-                return requireSave.apply(this, arguments);
+                return ret;
             };
         });
 
