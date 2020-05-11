@@ -414,6 +414,9 @@
     "perf_predictor_crr_terrain_sand": {
         "message": "Le sable"
     },
+    "perf_predictor_crr_terrain_custom": {
+        "message": "Douane"
+    },
     "perf_predictor_crr_tooltip": {
         "message": "Coefficient de résistance au roulement"
     },

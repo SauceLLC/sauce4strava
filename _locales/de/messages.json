@@ -417,6 +417,9 @@
     "perf_predictor_crr_terrain_sand": {
         "message": "Sand"
     },
+    "perf_predictor_crr_terrain_custom": {
+        "message": "Benutzerdefiniert"
+    },
     "perf_predictor_crr_tooltip": {
         "message": "Koeffizient für den Rollwiderstand"
     },

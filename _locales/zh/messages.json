@@ -407,6 +407,9 @@
     "perf_predictor_crr_terrain_sand": {
         "message": "砂"
     },
+    "perf_predictor_crr_terrain_custom": {
+        "message": "自订"
+    },
     "perf_predictor_crr_tooltip": {
         "message": "滚动阻力系数"
     },

@@ -406,6 +406,9 @@
     "perf_predictor_crr_terrain_sand": {
         "message": "Arena"
     },
+    "perf_predictor_crr_terrain_custom": {
+        "message": "Personalizado"
+    },
     "perf_predictor_crr_tooltip": {
         "message": "Coeficiente de resistencia a la rodadura."
     },

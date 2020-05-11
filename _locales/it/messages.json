@@ -410,6 +410,9 @@
     "perf_predictor_crr_terrain_sand": {
         "message": "Sabbia"
     },
+    "perf_predictor_crr_terrain_custom": {
+        "message": "costume"
+    },
     "perf_predictor_crr_tooltip": {
         "message": "Coefficiente per resistenza al rotolamento"
     },
