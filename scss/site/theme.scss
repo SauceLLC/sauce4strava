@@ -626,6 +626,12 @@
             shape-rendering: auto;
         }
 
+        .chart-tooltip text,
+        .chart-tooltip-label,
+        .chart-tooltip-unit {
+            fill: color.shade(fg, 10%);
+        }
+
         .crossbar {
             stroke: color.shade(fg, 3%);
         }
