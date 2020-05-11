@@ -130,6 +130,7 @@
     "perf_predictor_crr_terrain_grass": {"message": "Grass"},
     "perf_predictor_crr_terrain_offroad": {"message": "Off road"},
     "perf_predictor_crr_terrain_sand": {"message": "Sand"},
+    "perf_predictor_crr_terrain_custom": {"message": "Custom"},
     "perf_predictor_crr_tooltip": {"message": "Coefficient for rolling resistance"},
     "perf_predictor_cda_help1": {"message": "\"CdA\" represents the aerodynamic drag of a rider and equipment.  It is technically the coefficient of drag multiplied by the frontal surface area.  Lower values are achieved by riding lower, using speed suits and using specialty equipment such as time trial bikes and disc wheels."},
     "perf_predictor_cda_help_table_heading": {"message": "Some example values"},

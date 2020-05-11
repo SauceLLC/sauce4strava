@@ -2393,6 +2393,26 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function getAthleteBike() {
+        const bikeEl = document.querySelector('.gear-name');
+        const bikeName = (bikeEl && bikeEl.textContent.trim()) || '_default_';
+        const bikes = await sauce.rpc.getAthleteProp(ctx.athlete.id, 'bikes');
+        return bikes && bikes[bikeName];
+    }
+
+
+    async function updateAthleteBike(settings) {
+        const bikeEl = document.querySelector('.gear-name');
+        const bikeName = (bikeEl && bikeEl.textContent.trim()) || '_default_';
+        const bikes = (await sauce.rpc.getAthleteProp(ctx.athlete.id, 'bikes')) || {};
+        if (!bikes[bikeName]) {
+            bikes[bikeName] = {};
+        }
+        Object.assign(bikes[bikeName], settings);
+        await sauce.rpc.setAthleteProp(ctx.athlete.id, 'bikes', bikes);
+    }
+
+
     async function showPerfPredictor() {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
@@ -2413,16 +2433,29 @@ sauce.ns('analysis', ns => {
             aero: '#dc3912',
             rr: '#f90'
         };
+        const bikeDefaults = {
+            cda: 0.40,
+            crr: 0.0050,
+            gearWeight: 13,
+            bike: 'road',
+            terrain: 'asphalt',
+        };
+        const bike = await getAthleteBike();
+        if (bike) {
+            Object.assign(bikeDefaults, bike.perf_predictor_defaults);
+        }
         const body = await template({
             power: power && Math.round(power),
             hasWeight: !!ctx.weight,
             wkg: power && ctx.weight && humanNumber(power / ctx.weight, 1),
             bodyWeight: ctx.weightFormatter.convert(ctx.weight).toFixed(1),
-            gearWeight: ctx.weightFormatter.convert(13).toFixed(1),
+            gearWeight: ctx.weightFormatter.convert(bikeDefaults.gearWeight).toFixed(1),
             slope: (slope * 100).toFixed(1),
             distance: humanNumber(ctx.distanceFormatter.convert(origDistance), 3),
-            cda: 0.40,
-            crr: 0.0050,
+            cda: bikeDefaults.cda,
+            crr: bikeDefaults.crr,
+            bike: bikeDefaults.bike,
+            terrain: bikeDefaults.terrain,
             wind: 0,
             elevation: Math.round(ctx.elevationFormatter.convert(el)),
             speed: humanPace(origVelocity, {velocity: true}),
@@ -2449,12 +2482,14 @@ sauce.ns('analysis', ns => {
         const localeKeys = ['faster', 'slower', 'power_details_gravity', 'power_details_aero', 'power_details_rr'];
         const localeStrings = await sauce.locale.getMessages(localeKeys.map(x => `perf_predictor_${x}`));
         const locale = localeStrings.reduce((acc, x, i) => (acc[localeKeys[i]] = x, acc), {});
+        let lazySaveTimeout;
         function recalc(noPulse) {
             const crr = fget('crr');
             const cda = fget('cda');
             const power = fget('power');
             const bodyWeight = weightUnconvert(fget('body-weight'));
-            const sysWeight = bodyWeight + weightUnconvert(fget('gear-weight'));
+            const gearWeight = weightUnconvert(fget('gear-weight'));
+            const sysWeight = bodyWeight + gearWeight;
             const slope = fget('slope') / 100;
             const distance = distanceUnconvert(fget('distance'));
             const el = elevationUnconvert(fget('elevation'));
@@ -2508,6 +2543,18 @@ sauce.ns('analysis', ns => {
             if (!noPulse) {
                 $dialog.find('.predicted').addClass('pulse').one('animationend',
                     ev => ev.currentTarget.classList.remove('pulse'));
+                clearTimeout(lazySaveTimeout);
+                lazySaveTimeout = setTimeout(async () => {
+                    await updateAthleteBike({
+                        perf_predictor_defaults: {
+                            cda,
+                            crr,
+                            gearWeight,
+                            bike: $dialog.find('[name="bike"]:checked').val(),
+                            terrain: $dialog.find('[name="terrain"]').val()
+                        }
+                    });
+                }, 200);
             }
         }
         $dialog.on('input', '[name="bike"],[name="terrain"]', ev => {
@@ -2517,20 +2564,26 @@ sauce.ns('analysis', ns => {
                 road: {asphalt: 0.0050, gravel: 0.0060, grass: 0.0070, offroad: 0.0200, sand: 0.0300},
                 mtb: {asphalt: 0.0065, gravel: 0.0075, grass: 0.0090, offroad: 0.0255, sand: 0.0380}
             }[bike][terrain];
-            $dialog.find('[name="crr"]').val(crr);
-            recalc();
+            if (crr) {
+                $dialog.find('[name="crr"]').val(crr);
+            }
+            setTimeout(recalc, 0);
+        });
+        $dialog.on('input', '[name="crr"]', ev => {
+            $dialog.find('select[name="terrain"]').val('custom');
+            setTimeout(recalc, 0);  // Only required to save bike defaults.
         });
         $dialog.on('input', '[name="aero"]', ev => {
             const cda = $dialog.find('[name="aero"]').val();
             $dialog.find('[name="cda"]').val(cda);
-            recalc();
+            setTimeout(recalc, 0);
         });
         $dialog.on('input', '[name="cda"]', ev => {
             const cda = $dialog.find('[name="cda"]').val();
             $dialog.find('[name="aero"]').val(cda);
-            recalc();
+            setTimeout(recalc, 0);
         });
-        $dialog.on('input', 'input', () => recalc());
+        $dialog.on('input', 'input', () => setTimeout(recalc, 0));
         $dialog.on('click', 'a.help-info', ev => {
             const helpFor = ev.currentTarget.dataset.help;
             ev.currentTarget.classList.add('hidden');

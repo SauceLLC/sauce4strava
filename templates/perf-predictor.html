@@ -25,17 +25,20 @@
         <div class="indent">
             <div class="entry" title="{{{crr_bike_tooltip}}}">
                 <key>{{{crr_bike}}}:</key>
-                <label><input type="radio" name="bike" value="road" checked/> {{{crr_bike_road}}}</label>
-                <label><input type="radio" name="bike" value="mtb"/> {{{crr_bike_mtb}}}</label>
+                <label><input type="radio" name="bike" value="road"
+                              {{bike === "road" ? "checked" : ""}}/> {{{crr_bike_road}}}</label>
+                <label><input type="radio" name="bike" value="mtb"
+                              {{bike === "mtb" ? "checked" : ""}}/> {{{crr_bike_mtb}}}</label>
             </div>
             <div class="entry" title="{{{crr_terrain_tooltip}}}">
                 <key>{{{crr_terrain}}}:</key>
                 <select name="terrain">
-                    <option value="asphalt">{{{crr_terrain_asphalt}}}</option>
-                    <option value="gravel">{{{crr_terrain_gravel}}}</option>
-                    <option value="grass">{{{crr_terrain_grass}}}</option>
-                    <option value="offroad">{{{crr_terrain_offroad}}}</option>
-                    <option value="sand">{{{crr_terrain_sand}}}</option>
+                    <option value="asphalt" {{terrain === "asphalt" ? "selected" : ""}}>{{{crr_terrain_asphalt}}}</option>
+                    <option value="gravel" {{terrain === "gravel" ? "selected" : ""}}>{{{crr_terrain_gravel}}}</option>
+                    <option value="grass" {{terrain === "grass" ? "selected" : ""}}>{{{crr_terrain_grass}}}</option>
+                    <option value="offroad" {{terrain === "offroad" ? "selected" : ""}}>{{{crr_terrain_offroad}}}</option>
+                    <option value="sand" {{terrain === "sand" ? "selected" : ""}}>{{{crr_terrain_sand}}}</option>
+                    <option style="display: none" value="custom" {{terrain === "custom" ? "selected" : ""}}>{{{crr_terrain_custom}}}</option>
                 </select>
             </div>
             <div class="entry" title="{{{crr_tooltip}}}">
