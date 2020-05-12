@@ -90,7 +90,11 @@
         });
         const details_el = document.querySelector('#details > tbody');
         const type = browser.runtime.getURL('').split(':')[0];
-        document.body.classList.add(type);
+        const doc = document.documentElement;
+        doc.classList.add(type);
+        if (navigator.userAgent.match(/ Edg\//)) {
+            doc.classList.add('edge');
+        }
         const manifest = browser.runtime.getManifest();
         const build = await getBuildInfo();
         const commit = build.git_commit.slice(0, 10);

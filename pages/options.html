@@ -38,8 +38,9 @@
                 padding: 0 0.5em;
             }
 
-            body:not(.moz-extension) .moz-only,
-            body:not(.chrome-extension) .chrome-only {
+            html:not(.moz-extension) .moz-only,
+            html:not(.chrome-extension) .chrome-only,
+            html.edge .not-edge {
                 display: none;
             }
 
@@ -167,7 +168,7 @@
             <div class="links">
                 <a target="_BLANK" href="https://saucellc.io">Home Page</a>
                 |
-                <a target="_BLANK" class="chrome-only"
+                <a target="_BLANK" class="chrome-only not-edge"
                    href="https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha">Chrome Web Store Page</a>
                 <a target="_BLANK" class="moz-only"
                    href="https://addons.mozilla.org/addon/sauce4strava">Firefox Add-On Page</a>
