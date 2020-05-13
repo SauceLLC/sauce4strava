@@ -520,7 +520,8 @@
         border: none;
 
         .modal-header,
-        .glossary-header {
+        .glossary-header,
+        header {
             background-color: color.shade(accent, -20%);
             color: color.shade(accent, 80%);
             border-color: $soft-border-color;
@@ -559,6 +560,24 @@
 
         .glossary-body .btn-group-vertical .btn.selected {
             background-color: color.shade(bg, 5%);
+        }
+
+        .help-content {
+            .nav .dt {
+                color: color.shade(fg, 10%);
+
+                &:hover {
+                    color: color.shade(fg, 0%);
+                }
+
+                &.selected {
+                    color: color.shade(accent, 8%);
+                }
+            }
+
+            .main {
+                background-color: color.shade(bg, 5%);
+            }
         }
     }
 
@@ -2065,6 +2084,56 @@
             background: transparent !important;
             color: color.shade($link-accent, 12%);
             border: none !important;
+        }
+    }
+
+    #route-container {
+        .button > .icon {
+            filter: invert(0.6);
+
+            &.info {
+                filter: invert(0);
+            }
+        }
+
+        #directions,
+        #segment-list {
+            .info {
+                color: color.shade(fg, 10%);
+
+                .seg-name {
+                    color: color.shade(fg, 5%);
+                }
+            }
+
+            li {
+                border-color: color.shade(bg, 5%);
+
+                &:hover,
+                &:focus {
+                    background-color: color.shade(bg, 10%);
+                }
+            }
+        }
+
+        #segment-cat-container {
+            background-color: color.shade(bg, 10%);
+        }
+
+        #segment-categories .category {
+            background-color: color.shade(bg, 10%);
+            color: color.shade(fg, 10%);
+        }
+
+        .toolbar .group .button,
+        #map-controls .button {
+            background-color: transparent;
+        }
+
+        .collapse.button {
+            &, &:hover, &:focus {
+                background-color: transparent;
+            }
         }
     }
 }
