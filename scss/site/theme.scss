@@ -36,6 +36,26 @@
     --sauce-accent4-light: 36%;
     --sauce-accent4-shade-dir: -1;
 
+    --sauce-ride-hue: 16;
+    --sauce-ride-sat: 80%;
+    --sauce-ride-light: 70%;
+    --sauce-ride-shade-dir: -1;
+
+    --sauce-run-hue: 45;
+    --sauce-run-sat: 80%;
+    --sauce-run-light: 70%;
+    --sauce-run-shade-dir: -1;
+
+    --sauce-swim-hue: 212;
+    --sauce-swim-sat: 64%;
+    --sauce-swim-light: 85%;
+    --sauce-swim-shade-dir: -1;
+
+    --sauce-other-hue: 0;
+    --sauce-other-sat: 0%;
+    --sauce-other-light: 60%;
+    --sauce-other-shade-dir: -1;
+
     --sauce-border-hue: 16;
     --sauce-border-sat: 100%;
     --sauce-border-light: 50%;
@@ -1253,12 +1273,15 @@
     }
 
     & {
-        $ride-color: color.shade(accent, -30%);
-        $ride-border-color: color.shade(accent, -40%);
-        $run-color: color.shade(accent2, -30%);
-        $run-border-color: color.shade(accent2, -40%);
-        $swim-color: color.shade(accent4, -30%);
-        $swim-border-color: color.shade(accent4, -40%);
+        $ride-color: color.shade(ride, 0%, 0.9);
+        $ride-border-color: color.shade(ride, 10%, 0.9);
+        $run-color: color.shade(run, 0%, 0.9);
+        $run-border-color: color.shade(run, 10%, 0.9);
+        $swim-color: color.shade(swim, 0%, 0.9);
+        $swim-border-color: color.shade(swim, 10%, 0.9);
+        $other-color: color.shade(other, 0%, 0.9);
+        $other-border-color: color.shade(other, 10%, 0.9);
+        $summary-color: #111;
 
         .activity-summary-v2 {
             .activity-breakdown {
@@ -1278,6 +1301,12 @@
                 .swimming {
                     background-color: $swim-color;
                     border-color: $swim-border-color;
+                }
+
+                .legend dt.label-other::after,
+                .swimming {
+                    background-color: $other-color;
+                    border-color: $other-border-color;
                 }
             }
 
@@ -1358,7 +1387,7 @@
 
             .sum,
             text.day-total {
-                fill: color.get(fg) !important;
+                fill: $summary-color !important;
             }
         }
     }
@@ -1490,6 +1519,10 @@
 
         .current-week-pill {
             fill: color.shade(bg, 10%);
+        }
+
+        .rest-day, .xt-day, .no-rest, .today-label {
+            fill: color.shade(fg, 18%);
         }
     }
 

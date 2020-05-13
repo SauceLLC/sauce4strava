@@ -43,16 +43,6 @@
     --sauce-accent-light: 33%;
     --sauce-accent-shade-dir: 1;
 
-    --sauce-accent2-hue: 210;
-    --sauce-accent2-sat: 4%;
-    --sauce-accent2-light: 78%;
-    --sauce-accent2-shade-dir: -1;
-
-    --sauce-accent3-hue: 220;
-    --sauce-accent3-sat: 50%;
-    --sauce-accent3-light: 50%;
-    --sauce-accent3-shade-dir: 1;
-
     --sauce-accent4-hue: 240;
     --sauce-accent4-sat: 100%;
     --sauce-accent4-light: 33%;
@@ -79,8 +69,8 @@
     .pagination em {
         border-width: 3px;
         border-style: outset;
-        border-color: color.get(accent2);
-        background-color: color.get(accent2);
+        border-color: color.shade(bg, 10%);
+        background-color: color.shade(bg, 10%);
 
         &:hover,
         &:focus {
@@ -92,7 +82,7 @@
 
         &[disabled],
         &.disabled {
-            background-color: color.get(accent2);
+            background-color: color.shade(bg, 12%);
         }
     }
 
@@ -134,7 +124,7 @@
     }
 
     body {
-        background-color: color.shade(accent2, -10%);
+        background-color: color.shade(bg, 10%);
 
         @media only screen and (min-width: 768px) {
             > .view {
