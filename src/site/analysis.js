@@ -2353,7 +2353,7 @@ sauce.ns('analysis', ns => {
 
 
     function distanceUnconvert(localeDist) {
-        return ctx.distanceFormatter.unitSystem === 'metric' ? localeDist : localeDist * metersPerMile;
+        return ctx.distanceFormatter.unitSystem === 'metric' ? localeDist * 1000 : localeDist * metersPerMile;
     }
 
 
