@@ -350,5 +350,26 @@
                 }
             };
         }, {once: true});
+
+        sauce.propDefined('Strava.ExternalPhotos.Views.PhotoLightboxView', Klass => {
+            // Must wait for prototype to be fully assigned by the current execution context.
+            setTimeout(() => {
+                const renderSave = Klass.prototype.render;
+                Klass.prototype.render = function() {
+                    const ret = renderSave.apply(this, arguments);
+                    this.$('.lightbox-more-controls').prepend(`
+                        <button class="btn btn-unstyled sauce-download" title="Open fullsize photo">
+                            <div class="app-icon sauce-download-icon icon-xs"
+                                 style="background-image: url(${sauce.extUrl}images/fa/external-link-duotone.svg);"></div>
+                        </button>
+                    `);
+                    this.$el.on('click', 'button.sauce-download', async ev => {
+                        const url = this.$('.photo-slideshow-content .image-wrapper img').attr('src');
+                        window.open(url, '_blank');
+                    });
+                    return ret;
+                };
+            }, 0);
+        }, {once: true});
     }
 })();

@@ -19,4 +19,12 @@
     #smartbanner-orion {
         display: none !important;
     }
+
+    .lightbox.external_photo .photo-view {
+        .lightbox-more-controls button.sauce-download {
+            .app-icon.sauce-download-icon {
+                filter: invert(1);
+            }
+        }
+    }
 }
