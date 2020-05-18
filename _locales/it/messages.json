@@ -531,5 +531,8 @@
     },
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Requisiti di potenza e di lavoro per superare la resistenza al rotolamento"
+    },
+    "subscription": {
+        "message": "Sottoscrizione"
     }
 }

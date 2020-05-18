@@ -281,6 +281,8 @@
                 a,
                 .clickable,
                 .btn {
+                    color: color.shade(accent4, -60%);
+
                     &:hover {
                         background-color: color.shade(accent4, 20%);
                     }
@@ -315,6 +317,10 @@
                 &:focus {
                     outline: none;
                 }
+            }
+
+            .title.small {
+                color: color.shade(fg, 20%);
             }
 
             &.selected a {

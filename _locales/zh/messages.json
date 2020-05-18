@@ -526,5 +526,8 @@
     },
     "perf_predictor_power_details_rr_tooltip": {
         "message": "克服滚动阻力的动力和工作要求"
+    },
+    "subscription": {
+        "message": "订阅"
     }
 }

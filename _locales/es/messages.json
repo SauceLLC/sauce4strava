@@ -526,5 +526,8 @@
     },
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Requisitos de potencia y trabajo para superar la resistencia a la rodadura."
+    },
+    "subscription": {
+        "message": "Suscripción"
     }
 }

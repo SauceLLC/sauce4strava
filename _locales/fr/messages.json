@@ -534,5 +534,8 @@
     },
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Exigences de puissance et de travail pour surmonter la résistance au roulement"
+    },
+    "subscription": {
+        "message": "Abonnement"
     }
 }

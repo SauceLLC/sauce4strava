@@ -1629,8 +1629,8 @@ sauce.ns('analysis', ns => {
         const premiumGroup = pageNav.querySelector('#premium-views');
         if (premiumGroup) {
             // This is were things get tricky...
-            // Strava shows the word "Summit" (never translated) for the menu heading of
-            // premium member's activities only for rides.  For runs, it uses the locale
+            // Strava shows the word "Subscription" (localized) for the menu heading of
+            // premium member's activities ONLY for rides.  For runs, it uses the locale
             // translation of "Analysis".  This makes our job of re-adding the analysis
             // link more difficult because we don't want the menu to repeat the word "Analysis".
             // So for Runs we make their menu structure look like a rides, and add our analysis
@@ -1638,15 +1638,8 @@ sauce.ns('analysis', ns => {
             // surely be a problem.
             if (pageView.activity().isRun()) {
                 const titleEl = premiumGroup.querySelector('.title');
-                // Walk the contents, clearing leading text node(s) and then replacing the text.
-                for (const node of Array.from(titleEl.childNodes)) {
-                    if (node instanceof Text) {
-                        titleEl.removeChild(node);
-                    } else {
-                        titleEl.insertBefore(new Text('Summit'), node);
-                        break;
-                    }
-                }
+                titleEl.classList.add('small');
+                titleEl.innerText = await sauce.locale.getMessage('subscription');
             }
         }
     }

@@ -537,5 +537,8 @@
     },
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Leistungs- und Arbeitsanforderungen zur Überwindung des Rollwiderstands"
+    },
+    "subscription": {
+        "message": "Abonnement"
     }
 }

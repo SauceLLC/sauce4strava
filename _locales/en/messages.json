@@ -169,5 +169,6 @@
     "perf_predictor_power_details_rr": {"message": "Rolling"},
     "perf_predictor_power_details_gravity_tooltip": {"message": "Power and work requirements to overcome gravity"},
     "perf_predictor_power_details_aero_tooltip": {"message": "Power and work requirements to overcome aerodynamic drag"},
-    "perf_predictor_power_details_rr_tooltip": {"message": "Power and work requirements to overcome rolling resistance"}
+    "perf_predictor_power_details_rr_tooltip": {"message": "Power and work requirements to overcome rolling resistance"},
+    "subscription": {"message": "Subscription"}
 }
