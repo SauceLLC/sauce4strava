@@ -138,8 +138,9 @@
 
                 .sauce-title-menu .selection,
                 .sauce-title-menu ul li a {
-                    font-size: 1.1em;
-                    padding: 0.8em;
+                    font-size: 1.2em;
+                    padding-top: 1em;
+                    padding-bottom: 1em;  // make sure when chaning you don't break "ESTIMATED"
                 }
             }
 

@@ -1,8 +1,14 @@
 <li class="group">
     <div class="drop-down-menu sauce-title-menu">
-        <a title="{{{[sourceTooltip]}}}" class="selection">
+        <a title="{{{[sourceTooltip]}}}"
+           class="selection {{obj.isWattEstimate ? 'watt-estimate' : ''}}">
             <div class="sauce-svg-icon">{-sourceIcon-}</div>
             {{{[source]}}}
+            <% if (obj.isWattEstimate) { %>
+                <div class="watt-estimate-disclaimer" title="{{{watt_estimate_tooltip}}}">
+                    <span class="text">{{{estimated}}}</span>
+                </div>
+            <% } %>
         </a>
         <ul class="options">
             <% for (const menuEntry of menuInfo) { %>
@@ -17,12 +23,6 @@
             <% } %>
         </ul>
     </div>
-
-    <% if (obj.isWattEstimate) { %>
-        <div class="watt-estimate-disclaimer" title="{{{watt_estimate_tooltip}}}">
-            <b>&#9888;</b> <small>({{{estimated}}})</small>
-        </div>
-    <% } %>
 
     <table>
         <% for (const row of rows) { %>
@@ -39,4 +39,5 @@
             </tr>
         <% } %>
     </table>
+
 </li>
