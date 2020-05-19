@@ -62,11 +62,11 @@
         border: none;
 
         .upload-button.app-icon {
-            filter: invert(1) saturate(0) contrast(3) !important;
+            filter: invert(1) saturate(0) contrast(10) !important;
         }
 
         .branding {
-            filter: saturate(0) contrast(7) invert(1) drop-shadow(2px 2px 1px #3334);
+            filter: saturate(0) contrast(14) invert(1) drop-shadow(2px 2px 1px #3334);
         }
 
         .nav-group .drop-down-menu {
