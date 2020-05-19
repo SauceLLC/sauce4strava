@@ -63,6 +63,9 @@
 
     --sauce-border: 1.5px solid #{color.get(border)};
     --sauce-thin-border: 1px solid #{color.get(border, 50%)};
+
+    --sauce-positive: #0ca10c;
+    --sauce-negative: #cd0000;
 }
 
 

@@ -1133,7 +1133,7 @@ sauce.ns('analysis', ns => {
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             resizable: false,
-            width: 240,
+            width: 260,
             position: {
                 my: 'left center',
                 at: 'right center',

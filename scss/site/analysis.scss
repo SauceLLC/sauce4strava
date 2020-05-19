@@ -7,11 +7,11 @@
 
 
 .sauce-positive {
-    color: #109f10 !important;
+    color: var(--sauce-positive) !important;
 }
 
 .sauce-negative {
-    color: #8b1c1c !important;
+    color: var(--sauce-negative) !important;
 }
 
 .activity-stats {
