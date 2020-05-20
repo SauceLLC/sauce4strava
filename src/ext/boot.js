@@ -32,6 +32,12 @@
             config => void document.documentElement.classList.add('sauce-segment-compare')
         ]
     }, {
+        name: 'Route Builder',
+        pathMatch: /^\/routes\/new\b/,
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-route-builder')
+        ]
+    }, {
         name: 'responsive',
         stylesheets: ['site/responsive.css'],
         callbacks: [
