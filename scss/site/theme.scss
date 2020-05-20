@@ -2096,6 +2096,7 @@
         }
     }
 
+    // Legacy router builder (New builder added 20-05-2020, remove this in a few months)
     #route-container {
         .button > .icon {
             filter: invert(0.6);
@@ -2142,6 +2143,183 @@
         .collapse.button {
             &, &:hover, &:focus {
                 background-color: transparent;
+            }
+        }
+    }
+
+    // New router builder
+    &.sauce-route-builder {
+        .__floater__body {
+            [class*="CustomTooltip--tooltip"] {
+                background-color: color.shade(bg, 20%);
+
+                .text-caption1,
+                .color-black {
+                    color: color.get(fg);
+                }
+
+                .text-footnote,
+                .color-n70-gravel {
+                    color: color.shade(fg, 5%);
+                }
+            }
+        }
+
+        [class*="RouteBuilder--toolbar"] {
+            &,
+            [class*="Toolbar--typeahead"] {
+                background-color: color.shade(bg, 5%);
+            }
+        }
+
+        header[class*="Header--header"] {
+            background-color: color.shade(bg, 10%);
+            border-color: $mid-border-color;
+        }
+
+        .mapboxgl-popup-content {
+            background-color: color.shade(bg, 20%);
+        }
+
+        .mapboxgl-ctrl-geocoder .suggestions {
+            background-color: color.shade(bg, 20%);
+
+            > li {
+                border-color: $soft-border-color;
+
+                &.active {
+                    > a {
+                        background-color: color.shade(bg, 10%);
+                    }
+                }
+
+                > a {
+                    color: color.get(fg);
+
+                    &:hover {
+                        background-color: color.shade(bg, 5%);
+                    }
+                }
+            }
+        }
+
+        [class*="Toolbar--vertical-line"] {
+            border-color: $mid-border-color;
+        }
+
+        [class*="Toolbar--btn"] svg {
+            fill: color.shade(fg, 10%);
+        }
+
+        [class*="Toolbar--actions--"] {
+            [class*="Toolbar--btn--"]:not(:disabled) {
+                &:focus,
+                &:hover {
+                    background-color: color.shade(bg, -5%);
+                }
+            }
+        }
+
+        [class*="RouteBuilder--sidebar"] {
+            background-color: color.shade(bg, 8%);
+        }
+
+        [class*="Button--icon--"] {
+            &:focus,
+            &:hover,
+            &:active {
+                background-color: transparent;
+            }
+        }
+
+        [class*="SelectMenu--divider"] {
+            border-color: $mid-border-color;
+        }
+
+        [class*="SelectMenu--select-menu-button-label"],
+        [class*="Sidebar--switch-item-icon"],
+        [class*="Sidebar--toggle-item-icon"] {
+            svg {
+                stroke: color.shade(fg, 5%);
+            }
+        }
+
+        [data-reach-listbox-popover] {
+            background-color: color.shade(bg, 12%);
+        }
+
+        [data-reach-listbox-button] {
+            background-color: color.shade(bg, 12%);
+            border-color: $mid-border-color;
+
+            &:hover {
+                background-color: color.shade(bg, 5%);
+            }
+        }
+
+        [data-reach-dialog-content] {
+            background-color: color.shade(bg, 20%);
+        }
+
+        [data-reach-listbox-option] {
+            &[aria-selected="true"] {
+                background-color: color.shade(bg, 2%);
+            }
+        }
+
+        [class*="Sidebar--settings-item"] {
+            border-color: $mid-border-color;
+        }
+
+        .mapboxgl-ctrl-group {
+            background-color: color.shade(bg, 30%);
+
+            button {
+                background: transparent;
+            }
+        }
+
+        [class*="SaveModal--save-route-form--"] {
+            [class*="SaveModal--input-row--"] {
+                label {
+                    color: color.shade(fg, 10%);
+                }
+            }
+        }
+
+        [class*="RouteBuilder--bottombar--"] {
+            background-color: color.shade(bg, 12%);
+
+            [class*="Bottombar--stats--"] > li {
+                border-color: $mid-border-color;
+
+                [class*="Stat--stat-label--"] {
+                    color: color.shade(fg, 5%);
+                }
+
+                [class*="Stat--stat-value--"] {
+                    color: color.get(fg);
+
+                    svg {
+                        stroke: color.get(fg);
+                    }
+                }
+            }
+        }
+
+        [class*="SegmentExplorer--wrapper--"] {
+            background-color: color.shade(bg, 10%);
+
+            [class*="SegmentExplorer--segment-list--"] {
+                border-color: $mid-border-color;
+
+                li {
+                    border-color: $mid-border-color;
+                }
+
+                [class*="SegmentExplorer--segment-item-content--"]:hover:not([class*="SegmentExplorer--open--"]) {
+                    background-color: color.shade(bg, 5%);
+                }
             }
         }
     }

@@ -134,4 +134,10 @@
             }
         }
     }
+
+    &.sauce-route-builder {
+        [aria-labelledby~="surfaceType"] img[class*="Sidebar--image-icon"] {
+            filter: invert(1);
+        }
+    }
 }
