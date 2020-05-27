@@ -56,7 +56,7 @@ Feature Highlights
  * Detailed Running segments *OPTION*
 
 
-[![intro](https://img.youtube.com/vi/VkxEnBb1YhA/0.jpg)](https://www.youtube.com/watch?v=VkxEnBb1YhA)
+[![intro](https://img.youtube.com/vi/6nR12miKQ98/0.jpg)](https://www.youtube.com/watch?v=6nR12miKQ98)
 
 
 #### Development:
