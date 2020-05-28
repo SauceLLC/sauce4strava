@@ -36,8 +36,11 @@
 
 
     ns.getLevel = function() {
-        const cookies = new Map(document.cookie.split(/\s*;\s*/).map(x => x.split(/=/)));
-        const athleteId = cookies.get('strava_remember_id');
+        const athleteId = localStorage.getItem('ajs_user_id');
+        if (!athleteId) {
+            console.warn("Athlete ID not found");
+            return 0;
+        }
         const sp = localStorage.getItem(`sp-${athleteId}`);
         if (sp) {
             const [exp, level] = JSON.parse(sp);
