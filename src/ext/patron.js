@@ -36,7 +36,7 @@
 
 
     ns.getLevel = function() {
-        const athleteId = localStorage.getItem('ajs_user_id');
+        const athleteId = Number(localStorage.getItem('ajs_user_id'));
         if (!athleteId) {
             console.warn("Athlete ID not found");
             return 0;
