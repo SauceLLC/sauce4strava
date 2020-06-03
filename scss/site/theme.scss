@@ -239,55 +239,83 @@
         }
     }
 
-    .page {
-        a:not(.btn),
-        .btn.btn-link {
-            &:link,
-            &:visited {
-                //color: color.shade(fg, 4%);  // XXX messes up valid blue links.  Why do we need this again?
+    & {
+        $link-bg: color.shade(bg, 10%);
+        $link-fg: color.shade(fg, 10%);
+        $link-bg-hover: color.shade(bg, 15%);
+        $summit-group-bg: color.shade(accent4, 15%);
+        $summit-group-fg: color.shade(accent4, -60%);
+        $summit-group-bg-hover: color.shade(accent4, 20%);
+
+        .drop-down-menu {
+            &.active .selection {
+                background-color: $link-bg;
+            }
+
+            .options {
+                background-color: $link-bg;
+                color: $link-fg;
+                border-color: $hard-border-color;
+
+                li > * {
+                    color: inherit;
+                }
+
+                .sauce-group {
+                    color: color.shade(accent, 80%);
+                }
             }
         }
-    }
 
-    .drop-down-menu {
-        &.active .selection {
-            background-color: color.shade(bg, 10%);
+        .drop-down-menu,
+        .slide-menu {
+            .options {
+                a:hover,
+                .clickable:hover,
+                .btn:hover {
+                    background-color: $link-bg-hover;
+                }
+
+                .opt-group.premium {
+                    background-color: $summit-group-bg;
+
+                    a,
+                    .clickable,
+                    .btn {
+                        color: $summit-group-fg;
+
+                        &:hover {
+                            background-color: $summit-group-bg-hover;
+                        }
+                    }
+                }
+            }
         }
 
-        .options {
-            background-color: color.shade(bg, 10%);
-            color: color.shade(fg, 10%);
-            border-color: $hard-border-color;
+        [class*="components--menu--"] {
+            [class*="components--menu-items--"] {
+                background-color: $link-bg;
+                border: none;
 
-            li > * {
-                color: inherit;
-            }
+                a:link,
+                a:visted {
+                    background-color: $link-bg;
+                }
 
-            .sauce-group {
-                color: color.shade(accent, 80%);
-            }
-        }
-    }
+                a:hover,
+                a:active {
+                    background-color: $link-bg-hover;
+                }
 
-    .drop-down-menu,
-    .slide-menu {
-        .options {
-            a:hover,
-            .clickable:hover,
-            .btn:hover {
-                background-color: color.shade(bg, 15%);
-            }
+                a[class*="components--summit--"] {
+                    &:link,
+                    &:visited {
+                        background-color: $summit-group-bg;
+                    }
 
-            .opt-group.premium {
-                background-color: color.shade(accent4, 15%);
-
-                a,
-                .clickable,
-                .btn {
-                    color: color.shade(accent4, -60%);
-
-                    &:hover {
-                        background-color: color.shade(accent4, 20%);
+                    &:hover,
+                    &:active {
+                        background-color: $summit-group-bg-hover;
                     }
                 }
             }
@@ -349,81 +377,104 @@
         }
     }
 
-    #global-header {
+    #global-header,
+    [class*="src--global-header--"] {
         background-color: color.shade(accent, -15%) !important;
         border: none;
+    }
 
-        .collapsable-nav {
-            .nav-container {
-                //background-color: color.shade(bg, 5%);  Breaks header! XXX
+    & {
+        $nav-link-color: color.shade(accent, 80%);
+        $nav-link-hover-color: color.shade(accent, 85%);
+        $nav-selected-shadow: inset 0 -2px 0 0 #fff;
+
+        #global-header {
+            .collapsable-nav {
+                a.btn.btn-mobile-menu {
+                    background-color: transparent;
+                }
             }
 
-            a.btn.btn-mobile-menu {
-                background-color: transparent;
+            #notifications-button {
+                background: transparent;
             }
-        }
 
-        #notifications-button {
-            background: transparent;
-        }
-
-        #notifications-drop-down {
-            background-color: color.lighten(bg, 10%);
-            color: color.darken(fg, 10%);
-
-            li a {
+            #notifications-drop-down {
+                background-color: color.lighten(bg, 10%);
                 color: color.darken(fg, 10%);
 
-                &:hover {
-                    background-color: color.lighten(bg, 5%);
-                }
-            }
-        }
+                li a {
+                    color: color.darken(fg, 10%);
 
-        .nav-group .drop-down-menu {
-            &.active,
-            &:hover {
-                background-color: #0006;
-
-                .nav-link {
-                    background: transparent;
-                    color: color.shade(accent, 85%);
-                }
-            }
-
-            .selection {
-                border: none;
-            }
-
-            .app-icon {
-                filter: initial;
-                background-position: initial !important;
-            }
-        }
-
-        .nav-bar {
-            .nav-link,
-            .nav-link:visited {
-                color: color.shade(accent, 80%);
-            }
-
-            .selected.nav-item {
-                box-shadow: inset 0 -2px 0 0 #fff;
-            }
-
-            .nav-item {
-                &,
-                &:hover {
-                    .btn-default {
-                        color: color.shade(fg, 8%);
+                    &:hover {
+                        background-color: color.lighten(bg, 5%);
                     }
+                }
+            }
 
-                    .btn-primary {
-                        color: color.get(fg);
+            .nav-group .drop-down-menu {
+                &.active,
+                &:hover {
+                    background-color: #0006;
 
-                        &:hover {
-                            color: color.shade(fg, -12%);
+                    .nav-link {
+                        background: transparent;
+                        color: $nav-link-hover-color;
+                    }
+                }
+
+                .selection {
+                    border: none;
+                }
+
+                .app-icon {
+                    filter: initial;
+                    background-position: initial !important;
+                }
+            }
+
+            .nav-bar {
+                .nav-link,
+                .nav-link:visited {
+                    color: $nav-link-color;
+                }
+
+                .selected.nav-item {
+                    box-shadow: $nav-selected-shadow;
+                }
+
+                .nav-item {
+                    &,
+                    &:hover {
+                        .btn-default {
+                            color: color.shade(fg, 8%);
                         }
+
+                        .btn-primary {
+                            color: color.get(fg);
+
+                            &:hover {
+                                color: color.shade(fg, -12%);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        [class*="src--global-header--"] {
+            a:link,
+            a:visited {
+                color: $nav-link-color;
+            }
+
+            [class*="components--menu--"] {
+
+                &:hover,
+                &:active {
+                    [class*="components--button--"] {
+                        background-color: #0006;
+                        border: none;
                     }
                 }
             }
@@ -1409,7 +1460,7 @@
             }
 
             .activity-threshold-zero {
-                fill: color.shade(fg, 20%) !important; 
+                fill: color.shade(fg, 20%) !important;
                 stroke: color.shade(bg, 20%) !important;
             }
 
@@ -1418,6 +1469,51 @@
                 fill: $summary-color !important;
             }
         }
+    }
+
+    [class*="training--sticky--"],
+    [class*="training--calendar-header--"] {
+        background-color: transparent;
+    }
+
+    [class*="training--calendar-header--"],
+    [class*="Calendar--calendar-row-container--"],
+    [class*="training--calendar-container--"],
+    [class*="Controls--controls-container--"] {
+        border-color: $mid-border-color;
+    }
+
+    [class*="training--top-container--"] {
+        [class*="CommuteToggle--label--"],
+        [class*="WeekOverview--date-range--"],
+        [class*="WeekOverview--summary-dimension--"],
+        [class*="Timeline--years--"] a {
+            color: color.get(fg);
+        }
+    }
+
+    [class*="Popup--contents--"] {
+        background-color: color.shade(bg, 12%);
+        color: color.shade(fg, 8%);
+    }
+
+    .color-text-secondary {
+        color: color.shade(fg, 10%);
+    }
+
+    [class*="Activity--activity-row--"]:hover {
+        [class*="Activity--activity-name--"] {
+            color: color.shade(fg, 5%);
+        }
+    }
+
+    [class*="Timeline--months--"] > li[class*="Timeline--selected--"] {
+        border-color: color.shade(fg, 5%);
+    }
+
+    [class*="components--notifications-menu--"] button[class*="components--notifications-button--"] {
+        background-color: transparent;
+        border: none;
     }
 
     .posts.topics,
@@ -1887,7 +1983,7 @@
     .list-apps .app-card {
         background-color: color.shade(bg, 8%);
         border-color: $mid-border-color;
-    }   
+    }
 
     .apps-container {
         background-color: color.shade(bg, 8%);
