@@ -1214,7 +1214,7 @@ sauce.ns('analysis', ns => {
 
     async function fetchGradeDistStream(options) {
         options = options || {};
-        if (!pageView.supportsGap()) {
+        if (!pageView.activity().isRun()) {
             return;
         }
         if (options.startTime != null && options.endTime != null) {
