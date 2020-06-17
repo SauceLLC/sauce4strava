@@ -2038,19 +2038,22 @@ sauce.ns('analysis', ns => {
 
 
     async function getActiveTime(start, end) {
+        const isTrainer = pageView.activity().isTrainer();
         const timeStream = await fetchStream('time', start, end);
         const movingStream = await fetchStream('moving', start, end);
-        const cadenceStream = await fetchStream('cadence', start, end);
+        const cadenceStream = isTrainer && await fetchStream('cadence', start, end);
         const wattsStream = await fetchStream('watts', start, end);
-        const velocityStream = await fetchStream('velocity_smooth', start, end);
+        const distStream = await fetchStream('distance', start, end);
         const activeStream = [];
+        let lastDist = 0;
         for (let i = 0; i < movingStream.length; i++) {
             activeStream.push(!!(
                 movingStream[i] ||
                 (cadenceStream && cadenceStream[i]) ||
                 (wattsStream && wattsStream[i]) ||
-                (velocityStream && velocityStream[i])
+                (distStream && distStream[i] !== lastDist)
             ));
+            lastDist = distStream[i];
         }
         return sauce.data.activeTime(timeStream, activeStream);
     }
@@ -2462,6 +2465,7 @@ sauce.ns('analysis', ns => {
         fitParser.addMessage('segment_lap', {
             uuid: 'foobar',
             total_distance: streamDelta(distStream),
+            total_ascent: altitudeChanges(altStream).gain,
             start_position_lat: latlngStream[0][0],
             start_position_long: latlngStream[0][1],
             end_position_lat: latlngStream[latlngStream.length - 1][0],
