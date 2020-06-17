@@ -68,6 +68,22 @@
     --sauce-negative: #cd0000;
 }
 
+.sauce-enabled {
+    .sauce-button.button {
+        background-color: color.shade(accent, -10%) !important;
+        color: color.shade(accent, 80%) !important;
+        background-image: url('../../images/logo_vert_48x128.png'),
+                          linear-gradient(180deg, color.shade(accent, 10%), color.shade(accent, 2%));
+        background-repeat: no-repeat;
+        background-size: contain, auto;
+        background-origin: content-box, border-box;
+
+        &:hover {
+            background-image: url('../../images/logo_vert_48x128.png'),
+                              linear-gradient(180deg, color.shade(accent, 2%), color.shade(accent, -6%));
+        }
+    }
+}
 
 .sauce-theme-enabled {
     $hard-border-color: color.shade(bg, 20%);
