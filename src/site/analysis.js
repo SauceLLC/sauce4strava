@@ -2405,7 +2405,100 @@ sauce.ns('analysis', ns => {
         await sauce.rpc.setAthleteProp(ctx.athlete.id, 'bikes', bikes);
     }
 
-
+    async function testLiveSegment() {
+        if (!window.jsfit) {
+            const script = document.createElement('script');
+            await new Promise(resolve => {
+                script.addEventListener('load', resolve);
+                script.type = 'module';
+                script.src = `${sauce.extUrl}src/site/jsfit/web.js`;
+                document.head.appendChild(script);
+            });
+        }
+        const start = ctx.$analysisStats.data('start');
+        const end = ctx.$analysisStats.data('end');
+        const timeStream = await fetchStream('time', start, end);
+        const distStream = await fetchStream('distance', start, end);
+        const altStream = await fetchSmoothStream('altitude', null, start, end);
+        const latlngStream = await fetchStream('latlng', start, end);
+        const points = [];
+        const distOfft = distStream[0];
+        const timeOfft = timeStream[0];
+        let nec_lat = latlngStream[0][0];
+        let nec_long = latlngStream[0][1];
+        let swc_lat = latlngStream[0][0];
+        let swc_long = latlngStream[0][1];
+        for (let i = 0; i < altStream.length; i++) {
+            nec_lat = Math.max(latlngStream[i][0], nec_lat);
+            nec_long = Math.max(latlngStream[i][1], nec_long);
+            swc_lat = Math.min(latlngStream[i][0], swc_lat);
+            swc_long = Math.min(latlngStream[i][1], swc_long);
+            points.push({
+                altitude: altStream[i],
+                distance: distStream[i] - distOfft,
+                position_lat: latlngStream[i][0],
+                position_long: latlngStream[i][1],
+                leader_time: [timeStream[i] - timeOfft],
+                message_index: {
+                    flags: [],
+                    value: i
+                }
+            });
+        }
+        const fitParser = new jsfit.FitParser();
+        fitParser.addMessage('file_id', {
+            manufacturer: 'strava',
+            type: 'segment',
+            time_created: new Date()
+        });
+        fitParser.addMessage('segment_id', {
+            name: 'testing live segment',
+            enabled: true,
+            sport: 'cycling',
+            selection_type: 'starred',
+            uuid: 'foobar',
+            default_race_leader: 1,
+        });
+        fitParser.addMessage('segment_lap', {
+            uuid: 'foobar',
+            total_distance: streamDelta(distStream),
+            start_position_lat: latlngStream[0][0],
+            start_position_long: latlngStream[0][1],
+            end_position_lat: latlngStream[latlngStream.length - 1][0],
+            end_position_long: latlngStream[latlngStream.length - 1][1],
+            swc_lat,
+            swc_long,
+            nec_lat,
+            nec_long,
+            message_index: {
+                flags: [],
+                value: 0
+            }
+        });
+        fitParser.addMessage('segment_leaderboard_entry', {
+            activity_id_string: 'randomid',
+            segment_time: streamDelta(timeStream),
+            type: 'rival',
+            name: 'The man from town',
+            message_index: {
+                flags: [],
+                value: 0
+            }
+        });
+        for (const x of points) {
+            fitParser.addMessage('segment_point', x);
+        }
+        const buf = fitParser.encode();
+        const link = document.createElement('a');
+        link.download = 'live_segment_demo.fit';
+        link.href = URL.createObjectURL(new Blob([buf]));
+        try {
+            link.click();
+        } finally {
+            URL.revokeObjectURL(link.href);
+        }
+    }
+ 
     async function showPerfPredictor() {
         const start = ctx.$analysisStats.data('start');
         const end = ctx.$analysisStats.data('end');
@@ -2598,7 +2691,8 @@ sauce.ns('analysis', ns => {
         $el.find('#stacked-chart').before(ctx.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData());
         $el.on('click', 'a.sauce-graph-data', () => showGraphData());
-        $el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor());
+        //$el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor());
+        $el.on('click', 'a.sauce-perf-predictor', () => testLiveSegment());
     }
 
 
