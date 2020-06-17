@@ -114,6 +114,38 @@
                     pageNav.insertBefore(li, overview.nextSibling);
                 }
             }
+            const activity = view.activity();
+            let _supportsGap;
+            function supportsGap(v) {
+                // Ignore explicit false value and instead infer gap support from activity type.
+                if (v) {
+                    _supportsGap = true;
+                } else if (!_supportsGap) {
+                    return !!(
+                        activity.isRun() &&
+                        !activity.isTrainer() &&
+                        activity.get('distance') &&
+                        activity.get('elev_gain')
+                    );
+                }
+                return _supportsGap;
+            };
+            supportsGap(pageView.supportsGap());
+            pageView.supportsGap = supportsGap;
+            if (activity) {
+                supportsGap(activity.supportsGap());
+                activity.supportsGap = supportsGap;
+            } else {
+                let _activity;
+                view.activity = function(a) {
+                    if (a) {
+                        _activity = a;
+                        supportsGap(a.supportsGap());
+                        a.supportsGap = supportsGap;
+                    }
+                    return _activity;
+                }
+            }
         }, {once: true});
 
         sauce.propDefined('Strava.Charts.Activities.BasicAnalysisElevation', Klass => {
@@ -370,6 +402,16 @@
                     return ret;
                 };
             }, 0);
+        }, {once: true});
+
+        sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', Klass => {
+            const renderSave = Klass.prototype.render;
+            Klass.prototype.render = function() {
+                const ret = renderSave.apply(this, arguments);
+                this.$('.effort-actions').append(
+                    jQuery('<div class="btn-block button sauce-button live-segment">Create Live Segment</div>'));
+                return ret;
+            };
         }, {once: true});
     }
 })();
