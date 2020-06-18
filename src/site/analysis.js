@@ -1885,7 +1885,7 @@ sauce.ns('analysis', ns => {
 
     async function attachLiveSegmentsHandler() {
         jQuery(document).on('click', '.live-segment.sauce-button.enabled', async ev => {
-            const id = ev.currentTarget.closest('[data-segment-effort-id]').dataset.segmentEffortId;
+            const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
             await createLiveSegment({
                 start: details.get('start_index'),

@@ -76,6 +76,8 @@
         background-repeat: no-repeat;
         background-size: contain, auto;
         background-origin: content-box, border-box;
+        min-width: 18ch;
+        background-position-x: -0.5em, 0;
 
         &:hover:not(.disabled) {
             background-image: url('../../images/logo_vert_48x128.png'),
