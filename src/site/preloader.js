@@ -129,9 +129,9 @@
                     );
                 }
                 return _supportsGap;
-            };
-            supportsGap(pageView.supportsGap());
-            pageView.supportsGap = supportsGap;
+            }
+            supportsGap(view.supportsGap());
+            view.supportsGap = supportsGap;
             if (activity) {
                 supportsGap(activity.supportsGap());
                 activity.supportsGap = supportsGap;
@@ -144,7 +144,7 @@
                         a.supportsGap = supportsGap;
                     }
                     return _activity;
-                }
+                };
             }
         }, {once: true});
 
@@ -404,12 +404,18 @@
             }, 0);
         }, {once: true});
 
-        sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', Klass => {
+        sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', async Klass => {
             const renderSave = Klass.prototype.render;
+            const disabled = (sauce.patronLevel && sauce.patronLevel < 10);
+            const labelKey = 'analysis_create_live_segment';
+            const titleKey = `${labelKey}_tooltip${disabled ? '_disabled' : ''}`;
             Klass.prototype.render = function() {
                 const ret = renderSave.apply(this, arguments);
-                this.$('.effort-actions').append(
-                    jQuery('<div class="btn-block button sauce-button live-segment">Create Live Segment</div>'));
+                sauce.locale.getMessages([titleKey, labelKey]).then(([title, label]) => {
+                    this.$('.effort-actions').append(
+                        jQuery(`<div title="${title}" class="btn-block button sauce-button
+                                            live-segment ${disabled ? 'disabled' : 'enabled'}">${label}</div>`));
+                });
                 return ret;
             };
         }, {once: true});

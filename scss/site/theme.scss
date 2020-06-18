@@ -70,7 +70,6 @@
 
 .sauce-enabled {
     .sauce-button.button {
-        background-color: color.shade(accent, -10%) !important;
         color: color.shade(accent, 80%) !important;
         background-image: url('../../images/logo_vert_48x128.png'),
                           linear-gradient(180deg, color.shade(accent, 10%), color.shade(accent, 2%));
@@ -78,9 +77,16 @@
         background-size: contain, auto;
         background-origin: content-box, border-box;
 
-        &:hover {
+        &:hover:not(.disabled) {
             background-image: url('../../images/logo_vert_48x128.png'),
                               linear-gradient(180deg, color.shade(accent, 2%), color.shade(accent, -6%));
+        }
+
+        &.disabled {
+            opacity: 0.6;
+            filter: brightness(85%);
+            pointer-events: auto;
+            cursor: not-allowed;
         }
     }
 }

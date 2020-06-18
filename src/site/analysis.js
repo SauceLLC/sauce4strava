@@ -1,4 +1,4 @@
-/* global Strava, sauce, jQuery, pageView */
+/* global Strava, sauce, jQuery, pageView, jsfit */
 
 sauce.ns('analysis', ns => {
     'use strict';
@@ -1883,6 +1883,19 @@ sauce.ns('analysis', ns => {
         await render();
     }
 
+    async function attachLiveSegmentsHandler() {
+        jQuery(document).on('click', '.live-segment.sauce-button.enabled', async ev => {
+            const id = ev.currentTarget.closest('[data-segment-effort-id]').dataset.segmentEffortId;
+            const details = pageView.segmentEffortDetails().get(id);
+            await createLiveSegment({
+                start: details.get('start_index'),
+                end: details.get('end_index'),
+                name: details.get('name'),
+                id: details.get('segment_id')
+            });
+        });
+    }
+
 
     function addBadge(row) {
         if (!ctx.weight || row.querySelector(':scope > td.sauce-mark')) {
@@ -2408,18 +2421,17 @@ sauce.ns('analysis', ns => {
         await sauce.rpc.setAthleteProp(ctx.athlete.id, 'bikes', bikes);
     }
 
-    async function testLiveSegment() {
+    async function createLiveSegment({start, end, id, name}) {
         if (!window.jsfit) {
             const script = document.createElement('script');
-            await new Promise(resolve => {
+            await new Promise((resolve, reject) => {
                 script.addEventListener('load', resolve);
+                script.addEventListener('error', reject);
                 script.type = 'module';
                 script.src = `${sauce.extUrl}src/site/jsfit/web.js`;
                 document.head.appendChild(script);
             });
         }
-        const start = ctx.$analysisStats.data('start');
-        const end = ctx.$analysisStats.data('end');
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
@@ -2455,15 +2467,15 @@ sauce.ns('analysis', ns => {
             time_created: new Date()
         });
         fitParser.addMessage('segment_id', {
-            name: 'testing live segment',
+            name,
             enabled: true,
-            sport: 'cycling',
+            sport: pageView.isRide() ? 'cycling' : pageView.isRun() ? 'running' : null,
             selection_type: 'starred',
-            uuid: 'foobar',
-            default_race_leader: 1,
+            uuid: id.toString(),
+            default_race_leader: 0,
         });
         fitParser.addMessage('segment_lap', {
-            uuid: 'foobar',
+            uuid: id.toString(),
             total_distance: streamDelta(distStream),
             total_ascent: altitudeChanges(altStream).gain,
             start_position_lat: latlngStream[0][0],
@@ -2480,10 +2492,10 @@ sauce.ns('analysis', ns => {
             }
         });
         fitParser.addMessage('segment_leaderboard_entry', {
-            activity_id_string: 'randomid',
+            activity_id_string: pageView.activity().id.toString(),
             segment_time: streamDelta(timeStream),
             type: 'rival',
-            name: 'The man from town',
+            name: pageView.activityAthlete().get('display_name'),
             message_index: {
                 flags: [],
                 value: 0
@@ -2493,14 +2505,7 @@ sauce.ns('analysis', ns => {
             fitParser.addMessage('segment_point', x);
         }
         const buf = fitParser.encode();
-        const link = document.createElement('a');
-        link.download = 'live_segment_demo.fit';
-        link.href = URL.createObjectURL(new Blob([buf]));
-        try {
-            link.click();
-        } finally {
-            URL.revokeObjectURL(link.href);
-        }
+        download(new File([buf], name.trim().replace(/\s/g, '_').replace(/[^\w]/g, '') + '.fit'));
     }
  
     async function showPerfPredictor() {
@@ -2695,8 +2700,7 @@ sauce.ns('analysis', ns => {
         $el.find('#stacked-chart').before(ctx.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData());
         $el.on('click', 'a.sauce-graph-data', () => showGraphData());
-        //$el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor());
-        $el.on('click', 'a.sauce-perf-predictor', () => testLiveSegment());
+        $el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor());
     }
 
 
@@ -2786,6 +2790,7 @@ sauce.ns('analysis', ns => {
         updateSideNav();  // bg okay
         attachExporters();  // bg okay
         attachComments();  // bg okay
+        attachLiveSegmentsHandler();  // bg okay
         const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');
         ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
         for (const range of ctx.allPeriodRanges) {
