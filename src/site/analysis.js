@@ -2432,11 +2432,14 @@ sauce.ns('analysis', ns => {
                 document.head.appendChild(script);
             });
         }
-        const uuid = `sauce-${id}-${parseInt(Date.now() / 1000)}`;  // Avoid collision with strava ids so we can coexist
+        const uuid = `sauce-${id}-${pageView.activity().id}`;  // Avoid collision with strava ids so we can coexist
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const latlngStream = await fetchStream('latlng', start, end);
+        const athlete = pageView.activityAthlete();
+        const athleteInitials = athlete.get('first_name').substr(0, 1) + athlete.get('last_name').substr(0, 1);
+        const dateStamp = (await getEstimatedActivityStart()).toLocaleDateString();
         const points = [];
         const distOfft = distStream[0];
         const timeOfft = timeStream[0];
@@ -2467,9 +2470,8 @@ sauce.ns('analysis', ns => {
             type: 'segment',
             time_created: new Date()
         });
-        const athleteName = pageView.activityAthlete().get('display_name');
         fitParser.addMessage('segment_id', {
-            name: `Sauce: ${name} vs ${athleteName}`,
+            name: `${name.substr(0, 32)} [${athleteInitials} ${dateStamp}]`,
             enabled: true,
             sport: pageView.isRide() ? 'cycling' : pageView.isRun() ? 'running' : null,
             selection_type: 'starred',
@@ -2497,7 +2499,7 @@ sauce.ns('analysis', ns => {
             activity_id_string: pageView.activity().id.toString(),
             segment_time: streamDelta(timeStream),
             type: 'rival',
-            name: athleteName,
+            name: athlete.get('display_name'),
             message_index: {
                 flags: [],
                 value: 0
@@ -2507,7 +2509,7 @@ sauce.ns('analysis', ns => {
             fitParser.addMessage('segment_point', x);
         }
         const buf = fitParser.encode();
-        const fname = `Sauce_Segment-${name}-vs-${athleteName}`;
+        const fname = `Sauce_Live_Segment-${name.substr(0, 22)}-${athleteInitials}`;
         download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
     }
  
