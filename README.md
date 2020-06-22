@@ -32,9 +32,9 @@ Feature Highlights
    * VAM (climbing speed)
    * Cadence
    * Sea Power (potential power at sea level)
- * Themes:
-   * Including Dark Mode
+ * Themes (including dark mode)
  * Export any activity to a TCX or GPX file
+ * Create Live Segments for any effort (Garmin devices required)
  * Running Power estimation
  * Analysis page stats are extended to include:
    * Elapsed power average, normalized power, moving power average and watts/kg.
@@ -70,6 +70,10 @@ Feature Highlights
 
 Release Notes
 --------
+#### v6.0.0:
+ * Revised active time calculation (better supports smart recording interval)
+ * Live Segment creation for Garmin devices (Patron Only)
+
 #### v5.5.0:
  * Performance Predictor - Estimate power requirements for any activity selection
 
