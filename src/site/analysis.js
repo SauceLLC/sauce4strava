@@ -2940,7 +2940,6 @@ sauce.ns('analysis', ns => {
             console.info("Unsupported activity type:", type);
         }
         sendGAPageView(type);  // bg okay
-        throw '';
         console.info(`Analysis load time: ${(Date.now() - start).toLocaleString()}ms`);
     }
 

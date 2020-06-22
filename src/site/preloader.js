@@ -406,7 +406,7 @@
 
         sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', async Klass => {
             const renderSave = Klass.prototype.render;
-            const disabled = (sauce.patronLevel && sauce.patronLevel < 10);
+            const disabled = (!sauce.patronLevel || sauce.patronLevel < 10);
             const labelKey = 'analysis_create_live_segment';
             const titleKey = `${labelKey}_tooltip${disabled ? '_disabled' : ''}`;
             Klass.prototype.render = function() {
