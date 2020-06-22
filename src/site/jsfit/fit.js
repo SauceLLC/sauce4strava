@@ -38,9 +38,9 @@ export const baseTypes = [
     {invalid: 0x0000, name: 'uint16z', size: 2, TypedArray: Uint16Array},
     {invalid: 0x00000000, name: 'uint32z', size: 4, TypedArray: Uint32Array},
     {invalid: 0xff, name: 'byte', size: 1, TypedArray: Uint8Array},
-    {invalid: 0x7fffffffffffffffn, name: 'sint64', size: 8, TypedArray: BigInt64Array},
-    {invalid: 0xffffffffffffffffn, name: 'uint64', size: 8, TypedArray: BigUint64Array},
-    {invalid: 0x0000000000000000n, name: 'uint64z', size: 8, TypedArray: BigUint64Array},
+    {invalid: BigInt('0x7fffffffffffffff'), name: 'sint64', size: 8, TypedArray: BigInt64Array},
+    {invalid: BigInt('0xffffffffffffffff'), name: 'uint64', size: 8, TypedArray: BigUint64Array},
+    {invalid: BigInt('0x0000000000000000'), name: 'uint64z', size: 8, TypedArray: BigUint64Array},
 ];
 
 export const messages = {
