@@ -67,19 +67,50 @@ sauce.ns('rpc', function() {
 
     async function reportError(e) {
         const page = location.pathname;
-        let desc;
+        const activity = window.pageView && window.pageView.activity();
+        const aid = activity && activity.id;
+        const desc = [`v${sauce && sauce.version} a:${aid}`];
         try {
-            desc = e instanceof Error ? e.stack : (new Error(JSON.stringify(e))).stack;
-        } catch(e) {
-            desc = new Error("Internal error during report error: "  + e);
+            if (e == null || !e.stack) {
+                console.error("Non-exception object was thrown:", e);
+                const props = {type: typeof e};
+                try {
+                    props.json = JSON.parse(JSON.stringify(e));
+                } catch(_) {/*no-pragma*/}
+                if (e != null) {
+                    props.klass = e.constructor && e.constructor.name;
+                    props.name = e.name;
+                    props.message = e.message;
+                    props.code = e.code;
+                }
+                desc.push(`Invalid Error: ${JSON.stringify(props)}`);
+                for (const x of _stackFrameAudits) {
+                    desc.push(` Audit frame: ${x}`);
+                }
+            } else {
+                desc.push(e.stack);
+            }
+        } catch(intError) {
+            desc.push(`Internal error during report error: ${intError.stack} ::: ${e}`);
         }
-        console.error('Reporting error:', desc);
+        const exDescription = desc.join('\n');
+        console.error('Reporting error:', exDescription);
         await sauce.rpc.ga('send', 'exception', {
-            exDescription: desc,
+            exDescription,
             exFatal: true,
             page
         });
         await reportEvent('Error', 'exception', desc, {nonInteraction: true, page});
+    }
+
+
+    let _stackFrameAudits = [];
+    function auditStackFrame() {
+        const e = new Error();
+        const caller = e.stack.split(/\n/)[2];
+        if (typeof caller === 'string') { // be paranoid for now
+            _stackFrameAudits.push(caller.trim());
+        }
     }
 
 
@@ -182,6 +213,7 @@ sauce.ns('rpc', function() {
         ga,
         reportEvent,
         reportError,
+        auditStackFrame,
         getLocaleMessage,
         getLocaleMessages,
         ping,

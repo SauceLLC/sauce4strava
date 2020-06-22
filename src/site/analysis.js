@@ -2895,7 +2895,9 @@ sauce.ns('analysis', ns => {
 
     async function load() {
         const start = Date.now();
+        sauce.rpc.auditStackFrame();
         await sauce.propDefined('pageView', {once: true});
+        sauce.rpc.auditStackFrame();
         if (sauce.options['responsive']) {
             attachMobileMenuExpander();  // bg okay
             pageView.unbindScrollListener();
@@ -2906,7 +2908,9 @@ sauce.ns('analysis', ns => {
             mobileMedia.addListener(ev => void (jQuery.fx.off = ev.matches));
             jQuery.fx.off = mobileMedia.matches;
         }
+        sauce.rpc.auditStackFrame();
         await pageViewAssembled();
+        sauce.rpc.auditStackFrame();
         const activity = pageView.activity();
         const type = activity.get('type');
         ctx.manifest = manifests[type];
@@ -2922,18 +2926,21 @@ sauce.ns('analysis', ns => {
             document.body.dataset.route = pageRouter.context.startMenu();
             startPageMonitors();
             attachRankBadgeDialog();
+            sauce.rpc.auditStackFrame();
             await prepareContext();
             // Make sure this is last thing before start..
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;
                 schedUpdateAnalysisStats(start, end);
             }
+            sauce.rpc.auditStackFrame();
             await ctx.manifest.start();
         } else {
             ctx.unsupported = true;
             console.info("Unsupported activity type:", type);
         }
         sendGAPageView(type);  // bg okay
+        throw '';
         console.info(`Analysis load time: ${(Date.now() - start).toLocaleString()}ms`);
     }
 
@@ -2959,6 +2966,7 @@ sauce.ns('analysis', ns => {
         return;
     }
     try {
+        sauce.rpc.auditStackFrame();
         await sauce.analysis.load();
     } catch(e) {
         await sauce.rpc.reportError(e);
