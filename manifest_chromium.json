@@ -1,6 +1,6 @@
 {
-    "version_name": "6.0.1 [release]",
-    "minimum_chrome_version": "60",
+    "version_name": "6.0.2 [release]",
+    "minimum_chrome_version": "67",
     "permissions": [
         "declarativeContent"
     ],
