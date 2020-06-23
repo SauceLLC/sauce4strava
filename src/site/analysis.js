@@ -367,6 +367,7 @@ sauce.ns('analysis', ns => {
         // The main site's side nav is absolute positioned, so if the primary view is too short
         // the footer will overflow and mess everything up.  Add a min-height to the view to
         // prevent the footer from doing this.
+        sauce.rpc.auditStackFrame();
         const sidenav = document.querySelector('nav.sidenav');
         const minHeight = sidenav.offsetHeight;
         document.querySelector('.view > .page.container').style.minHeight = `${minHeight}px`;
@@ -375,6 +376,7 @@ sauce.ns('analysis', ns => {
 
 
     async function renderTertiaryStats(attrs) {
+        sauce.rpc.auditStackFrame();
         const template = await getTemplate('tertiary-stats.html');
         const $stats = jQuery(await template(attrs));
         attachEditableFTP($stats);
@@ -385,6 +387,7 @@ sauce.ns('analysis', ns => {
 
     class PeakEffortsPanel {
         constructor({type, menu, renderAttrs, infoDialog}) {
+            sauce.rpc.auditStackFrame();
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
             this.type = type;
             this.menu = menu;
@@ -418,6 +421,7 @@ sauce.ns('analysis', ns => {
         }
 
         async render() {
+            sauce.rpc.auditStackFrame();
             const source = await this.getSelectedSource();
             const template = await getTemplate('peak-efforts.html');
             this.$el.html(await template(Object.assign({
@@ -570,6 +574,7 @@ sauce.ns('analysis', ns => {
 
 
     async function startRideActivity() {
+        sauce.rpc.auditStackFrame();
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
@@ -702,6 +707,7 @@ sauce.ns('analysis', ns => {
 
 
     async function startSwimActivity() {
+        sauce.rpc.auditStackFrame();
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
         const distStream = await fetchStream('distance');
@@ -754,6 +760,7 @@ sauce.ns('analysis', ns => {
 
 
     async function startOtherActivity() {
+        sauce.rpc.auditStackFrame();
         const realWattsStream = await fetchStream('watts');
         const activeTime = await getActiveTime();
         const timeStream = await fetchStream('time');
@@ -852,6 +859,7 @@ sauce.ns('analysis', ns => {
 
 
     async function startRunActivity() {
+        sauce.rpc.auditStackFrame();
         let wattsStream = await fetchStream('watts');
         const activeTime = await getActiveTime();
         const timeStream = await fetchStream('time');
@@ -2712,6 +2720,7 @@ sauce.ns('analysis', ns => {
     function adjustSlideMenu() {
         // We expand the sidenav, so we need to modify this routine to make the menu
         // work properly in all conditions.
+        sauce.rpc.auditStackFrame();
         const sidenav = document.querySelector('nav.sidenav');
         if (!sidenav) {
             return;
@@ -2733,6 +2742,7 @@ sauce.ns('analysis', ns => {
 
 
     async function pageViewAssembled() {
+        sauce.rpc.auditStackFrame();
         if (!pageView.factory().page()) {
             const pf = pageView.factory();
             const setget = pf.page;
@@ -2753,6 +2763,7 @@ sauce.ns('analysis', ns => {
 
 
     async function prepareContext() {
+        sauce.rpc.auditStackFrame();
         const activity = pageView.activity();
         ctx.athlete = pageView.activityAthlete();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
@@ -2894,10 +2905,8 @@ sauce.ns('analysis', ns => {
 
 
     async function load() {
-        const start = Date.now();
         sauce.rpc.auditStackFrame();
         await sauce.propDefined('pageView', {once: true});
-        sauce.rpc.auditStackFrame();
         if (sauce.options['responsive']) {
             attachMobileMenuExpander();  // bg okay
             pageView.unbindScrollListener();
@@ -2908,9 +2917,7 @@ sauce.ns('analysis', ns => {
             mobileMedia.addListener(ev => void (jQuery.fx.off = ev.matches));
             jQuery.fx.off = mobileMedia.matches;
         }
-        sauce.rpc.auditStackFrame();
         await pageViewAssembled();
-        sauce.rpc.auditStackFrame();
         const activity = pageView.activity();
         const type = activity.get('type');
         ctx.manifest = manifests[type];
@@ -2926,21 +2933,18 @@ sauce.ns('analysis', ns => {
             document.body.dataset.route = pageRouter.context.startMenu();
             startPageMonitors();
             attachRankBadgeDialog();
-            sauce.rpc.auditStackFrame();
             await prepareContext();
             // Make sure this is last thing before start..
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;
                 schedUpdateAnalysisStats(start, end);
             }
-            sauce.rpc.auditStackFrame();
             await ctx.manifest.start();
         } else {
             ctx.unsupported = true;
             console.info("Unsupported activity type:", type);
         }
         sendGAPageView(type);  // bg okay
-        console.info(`Analysis load time: ${(Date.now() - start).toLocaleString()}ms`);
     }
 
 
@@ -2964,8 +2968,8 @@ sauce.ns('analysis', ns => {
     if (sauce.testing) {
         return;
     }
+    sauce.rpc.auditStackFrame();
     try {
-        sauce.rpc.auditStackFrame();
         await sauce.analysis.load();
     } catch(e) {
         await sauce.rpc.reportError(e);
