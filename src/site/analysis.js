@@ -319,7 +319,11 @@ sauce.ns('analysis', ns => {
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect FTP change.</b>'
                 });
-                location.reload();
+                try {
+                    await sauce.rpc.reportEvent('AthleteInfo', 'edit', 'ftp');
+                } finally {
+                    location.reload();
+                }
             }
         });
     }
@@ -357,7 +361,11 @@ sauce.ns('analysis', ns => {
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect weight change.</b>'
                 });
-                location.reload();
+                try {
+                    await sauce.rpc.reportEvent('AthleteInfo', 'edit', 'weight');
+                } finally {
+                    location.reload();
+                }
             }
         });
     }
@@ -456,6 +464,7 @@ sauce.ns('analysis', ns => {
         async setSelectedSource(source) {
             this._selectedSource = source;
             await sauce.rpc.storageUpdate('analysis_peak_ranges', {[this.sourceKey]: source});
+            sauce.rpc.reportEvent('PeakRange', 'select', source);
         }
     }
 
@@ -1693,8 +1702,8 @@ sauce.ns('analysis', ns => {
             </li>
         `);
         menuEl.querySelector('a.tcx').addEventListener('click', () => {
-            sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
             exportActivity(sauce.export.TCXSerializer);
+            sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
         });
         if (!menuEl.querySelector('a[href$="/export_gpx"')) {
             menuEl.querySelector('.sauce-group ul').insertAdjacentHTML('beforeend', `
@@ -1702,8 +1711,8 @@ sauce.ns('analysis', ns => {
                        class="gpx">${exportLocale} GPX</a></li>
             `);
             menuEl.querySelector('a.gpx').addEventListener('click', () => {
-                sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
                 exportActivity(sauce.export.GPXSerializer);
+                sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
             });
         }
     }
@@ -1757,6 +1766,7 @@ sauce.ns('analysis', ns => {
             $genderSelect.on('change', drawGraph);
             $dialog.on('dialogresize', drawGraph);
             drawGraph();
+            sauce.rpc.reportEvent('PowerProfileHelp', 'show');
         });
     }
 
@@ -1891,7 +1901,7 @@ sauce.ns('analysis', ns => {
         await render();
     }
 
-    async function attachLiveSegmentsHandler() {
+    function attachLiveSegmentsHandler() {
         jQuery(document).on('click', '.live-segment.sauce-button.enabled', async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
@@ -2351,6 +2361,7 @@ sauce.ns('analysis', ns => {
             $dialog.find('pre').html(data);
             $dialog.dialog('option', 'width', `calc(${width}ch + 4em)`);
         });
+        sauce.rpc.reportEvent('RawData', 'show');
     }
 
 
@@ -2407,6 +2418,7 @@ sauce.ns('analysis', ns => {
         }
         $selector.on('update', renderGraphs);
         await renderGraphs();
+        sauce.rpc.reportEvent('GraphData', 'show');
     }
 
 
@@ -2519,6 +2531,7 @@ sauce.ns('analysis', ns => {
         const buf = fitParser.encode();
         const fname = `Sauce_Live_Segment-${name.substr(0, 22)}-${athleteInitials}`;
         download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
+        sauce.rpc.reportEvent('LiveSegment', 'create');
     }
  
     async function showPerfPredictor() {
@@ -2703,6 +2716,7 @@ sauce.ns('analysis', ns => {
             $dialog.find(`a.help-info[data-help="${help.dataset.for}"]`).removeClass('hidden');
         });
         recalc(/*noPulse*/ true);
+        sauce.rpc.reportEvent('PerfPredictor', 'show');
     }
 
 
@@ -2803,10 +2817,10 @@ sauce.ns('analysis', ns => {
         } else if (activity.isSwim()) {
             ctx.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
-        updateSideNav();  // bg okay
-        attachExporters();  // bg okay
-        attachComments();  // bg okay
-        attachLiveSegmentsHandler();  // bg okay
+        updateSideNav().catch(sauce.rpc.reportError);  // bg okay
+        attachExporters().catch(sauce.rpc.reportError);  // bg okay
+        attachComments().catch(sauce.rpc.reportError);  // bg okay
+        attachLiveSegmentsHandler();
         const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');
         ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
         for (const range of ctx.allPeriodRanges) {
@@ -2908,7 +2922,7 @@ sauce.ns('analysis', ns => {
         sauce.rpc.auditStackFrame();
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
-            attachMobileMenuExpander();  // bg okay
+            attachMobileMenuExpander().catch(sauce.rpc.reportError);  // bg okay
             pageView.unbindScrollListener();
             document.body.classList.add('sauce-disabled-scroll-listener');
             pageView.handlePageScroll = function() {};
@@ -2923,7 +2937,7 @@ sauce.ns('analysis', ns => {
         ctx.manifest = manifests[type];
         if (ctx.manifest) {
             if (ctx.manifest.streams) {
-                fetchStreams(Array.from(ctx.manifest.streams));  // bg okay
+                fetchStreams(Array.from(ctx.manifest.streams)).catch(sauce.rpc.reportError);  // bg okay
             }
             const pageRouter = pageView.router();
             pageRouter.on('route', page => {
@@ -2940,6 +2954,7 @@ sauce.ns('analysis', ns => {
                 schedUpdateAnalysisStats(start, end);
             }
             await ctx.manifest.start();
+            sauce.rpc.reportEvent('ActivityAnalysis', 'load', type);
         } else {
             ctx.unsupported = true;
             console.info("Unsupported activity type:", type);
