@@ -2066,7 +2066,7 @@ sauce.ns('analysis', ns => {
                 (wattsStream && wattsStream[i]) ||
                 (distStream && distStream[i] !== lastDist)
             ));
-            lastDist = distStream[i];
+            lastDist = distStream && distStream[i];
         }
         return sauce.data.activeTime(timeStream, activeStream);
     }
