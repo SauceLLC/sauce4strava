@@ -305,6 +305,15 @@
     "analysis_title": {
         "message": "分析"
     },
+    "analysis_create_live_segment_tooltip": {
+        "message": "通过这项工作，可以创建实时细分文件。与大多数现代Garmin设备兼容。"
+    },
+    "analysis_create_live_segment_tooltip_disabled": {
+        "message": "实时片段文件的创建是一个赞助人功能。"
+    },
+    "analysis_create_live_segment": {
+        "message": "创建实时细分"
+    },
     "time_sec": {
         "message": "秒"
     },

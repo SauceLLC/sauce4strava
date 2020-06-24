@@ -306,6 +306,15 @@
     "analysis_title": {
         "message": "Analyse"
     },
+    "analysis_create_live_segment_tooltip": {
+        "message": "Erstellen Sie aus dieser Anstrengung eine Live-Segmentdatei. Kompatibel mit den meisten modernen Garmin-Geräten."
+    },
+    "analysis_create_live_segment_tooltip_disabled": {
+        "message": "Die Erstellung von Live-Segmentdateien ist eine Benutzerfunktion."
+    },
+    "analysis_create_live_segment": {
+        "message": "Live-Segment erstellen"
+    },
     "time_sec": {
         "message": "sek"
     },

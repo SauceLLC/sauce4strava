@@ -308,6 +308,15 @@
     "analysis_title": {
         "message": "Analisi"
     },
+    "analysis_create_live_segment_tooltip": {
+        "message": "Crea un file di segmento live da questo sforzo. Compatibile con i più moderni dispositivi Garmin."
+    },
+    "analysis_create_live_segment_tooltip_disabled": {
+        "message": "La creazione di file di segmenti in tempo reale è una caratteristica dell'utente."
+    },
+    "analysis_create_live_segment": {
+        "message": "Crea segmento live"
+    },
     "time_sec": {
         "message": "secondo"
     },

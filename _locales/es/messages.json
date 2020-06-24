@@ -301,6 +301,15 @@
     "analysis_title": {
         "message": "Análisis"
     },
+    "analysis_create_live_segment_tooltip": {
+        "message": "Cree un archivo de segmento en vivo a partir de este esfuerzo. Compatible con la mayoría de los dispositivos modernos de Garmin."
+    },
+    "analysis_create_live_segment_tooltip_disabled": {
+        "message": "La creación de archivos de segmento en vivo es una característica del usuario."
+    },
+    "analysis_create_live_segment": {
+        "message": "Crear segmento en vivo"
+    },
     "time_sec": {
         "message": "sec",
         "description": "IMMUTABLE"

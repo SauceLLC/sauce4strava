@@ -309,6 +309,15 @@
     "analysis_title": {
         "message": "Une analyse"
     },
+    "analysis_create_live_segment_tooltip": {
+        "message": "Créez un fichier de segment en direct à partir de cet effort. Compatible avec la plupart des appareils Garmin modernes."
+    },
+    "analysis_create_live_segment_tooltip_disabled": {
+        "message": "La création de fichiers de segments en direct est une fonction de mécène."
+    },
+    "analysis_create_live_segment": {
+        "message": "Créer un segment en direct"
+    },
     "time_sec": {
         "message": "sec",
         "description": "IMMUTABLE"
