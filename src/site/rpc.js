@@ -67,9 +67,7 @@ sauce.ns('rpc', function() {
 
     async function reportError(e) {
         const page = location.pathname;
-        const activity = window.pageView && window.pageView.activity();
-        const aid = activity && activity.id;
-        const desc = [`v${sauce && sauce.version} a:${aid}`];
+        const desc = [];
         try {
             if (e == null || !e.stack) {
                 console.error("Non-exception object was thrown:", e);
@@ -93,8 +91,12 @@ sauce.ns('rpc', function() {
         } catch(intError) {
             desc.push(`Internal error during report error: ${intError.stack} ::: ${e}`);
         }
+        desc.push(`Sauce: v${sauce && sauce.version}`);
+        for (const x of getStackFrames().slice(1)) {
+            desc.push(` Stack frame: ${x}`);
+        }
         const exDescription = desc.join('\n');
-        console.error('Reporting error:', exDescription);
+        console.error('Reporting:', exDescription);
         await sauce.rpc.ga('send', 'exception', {
             exDescription,
             exFatal: true,
@@ -104,12 +106,18 @@ sauce.ns('rpc', function() {
     }
 
 
+    function getStackFrames() {
+        const e = new Error();
+        return e.stack.split(/\n/).slice(2).map(x => x.trim());
+    }
+
+
     let _stackFrameAudits = [];
     function auditStackFrame() {
-        const e = new Error();
-        const caller = e.stack.split(/\n/)[2];
+        const frames = getStackFrames();
+        const caller = frames && frames[1];
         if (typeof caller === 'string') { // be paranoid for now
-            _stackFrameAudits.push(caller.trim());
+            _stackFrameAudits.push(caller);
         }
     }
 

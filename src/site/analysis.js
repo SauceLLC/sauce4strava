@@ -126,15 +126,24 @@ sauce.ns('analysis', ns => {
             }
             if (fetching.length) {
                 console.info("Fetching streams:", fetching.join(', '));
-                const p = new Promise((success, error) => {
-                    streams.fetchStreams(fetching, {success, error});
+                const p = new Promise((resolve, reject) => {
+                    streams.fetchStreams(fetching, {
+                        success: resolve,
+                        error: (streams, ajax) =>
+                            reject(new Error(`Fetch streams failed: ${ajax.status} ${ajax.statusText}`))
+                    });
                 });
                 for (const x of fetching) {
                     pending.set(x, p);
                 }
-                await p;
+                try {
+                    await p;
+                } finally {
+                    for (const x of fetching) {
+                        pending.delete(x);
+                    }
+                }
                 for (const x of fetching) {
-                    pending.delete(x);
                     attempted.add(x);
                 }
             }
@@ -2212,6 +2221,7 @@ sauce.ns('analysis', ns => {
     let _schedUpdateAnalysisHash = null;
     let _schedUpdateAnalysisPending = null;
     let _schedUpdateAnalysisId = 0;
+    let _schedUpdateErrorTS;
     function schedUpdateAnalysisStats(start, end) {
         if (start === null) {
             // rescheduled invocation.
@@ -2248,7 +2258,13 @@ sauce.ns('analysis', ns => {
             }
             _schedUpdateAnalysisPromise = _updateAnalysisStats(start, end);
             await _schedUpdateAnalysisPromise;
-        })();
+        })().catch(e => {
+            const now = Date.now();
+            if (!_schedUpdateErrorTS || (now - _schedUpdateErrorTS) > 5000) {
+                _schedUpdateErrorTS = now;
+                sauce.rpc.reportError(e);
+            }
+        });
     }
 
 
@@ -2725,9 +2741,9 @@ sauce.ns('analysis', ns => {
             ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
         }
         $el.find('#stacked-chart').before(ctx.$analysisStats);
-        $el.on('click', 'a.sauce-raw-data', () => showRawData());
-        $el.on('click', 'a.sauce-graph-data', () => showGraphData());
-        $el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor());
+        $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.rpc.reportError));
+        $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.rpc.reportError));
+        $el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor().catch(sauce.rpc.reportError));
     }
 
 
