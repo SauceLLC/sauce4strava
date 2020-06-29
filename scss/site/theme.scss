@@ -184,8 +184,33 @@
         }
     }
 
+    .btn-primary {
+        &:not(.btn-outline) {
+            border-color: color.shade(accent, 12%);
+            background-color: color.shade(accent, 12%);
+            color: color.shade(accent, 80%);
+
+            &:hover {
+                background-color: color.shade(accent, 8%);
+                color: color.shade(accent, 80%);
+            }
+        }
+
+        &.btn-outline {
+            border-color: color.shade(accent, 12%);
+            background-color: transparent;
+            color: color.shade(accent, 12%);
+
+            &:hover {
+                background-color: color.shade(accent, 12%);
+                color: color.shade(accent, 80%);
+            }
+        }
+    }
+
+
     .page {
-        a:not(.btn),
+        a:not(.btn):not(.btn-primary),
         .btn.btn-link {
             &:link,
             &:visited {
@@ -475,10 +500,13 @@
                         }
 
                         .btn-primary {
-                            color: color.get(fg);
+                            color: color.shade(accent, 50%);
+                            background-color: color.shade(accent, -25%);
+                            border-color: color.shade(accent, -25%);
 
                             &:hover {
-                                color: color.shade(fg, -12%);
+                                color: color.shade(accent, 70%);
+                                background-color: color.shade(accent, -30%);
                             }
                         }
                     }
@@ -2378,7 +2406,11 @@
         }
 
         [data-reach-dialog-content] {
-            background-color: color.shade(bg, 20%);
+            background-color: color.shade(bg, 16%);
+
+            .color-black {
+                color: color.get(fg);
+            }
         }
 
         [data-reach-listbox-option] {
@@ -2448,6 +2480,29 @@
         > tr:hover,
         > tr.highlighted {
             background-color: color.shade(fg, 10%, 0.1);
+        }
+    }
+
+    .index-heading section {
+        .place-holder {
+            border-color: $hard-border-color;
+        }
+
+        .upsell {
+            background-color: color.shade(bg, 5%);
+            color: color.shade(fg, 8%);
+        }
+    }
+
+    #basic-analysis .ride-segments-chart-upsell .upsell-text-container {
+        background-color: color.shade(bg, 5%);
+
+        .upsell-title {
+            color: color.shade(fg, 8%);
+        }
+
+        .upsell-description {
+            color: color.shade(fg, 12%);
         }
     }
 }
