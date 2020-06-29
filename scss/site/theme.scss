@@ -563,7 +563,7 @@
     }
 
     td {
-        border-bottom-color: color.lighten(bg, 10%);
+        border-bottom-color: $mid-border-color;
     }
 
     .actions-menu {
@@ -2441,6 +2441,13 @@
                     background-color: color.shade(bg, 5%);
                 }
             }
+        }
+    }
+
+    table.hoverable > tbody {
+        > tr:hover,
+        > tr.highlighted {
+            background-color: color.shade(fg, 10%, 0.1);
         }
     }
 }
