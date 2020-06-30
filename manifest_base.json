@@ -53,13 +53,13 @@
 
     "content_scripts": [{
         "run_at": "document_start",
-        "matches": ["*://*.strava.com/*"],
+        "matches": ["https://www.strava.com/*"],
         "css": [
             "css/site/common.css"
         ]
     }, {
         "run_at": "document_start",
-        "matches": ["*://*.strava.com/*"],
+        "matches": ["https://www.strava.com/*"],
         "js": [
             "src/ext/webext.js",
             "src/ext/storage.js",

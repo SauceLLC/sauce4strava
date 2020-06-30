@@ -2392,33 +2392,6 @@
             }
         }
 
-        [data-reach-listbox-popover] {
-            background-color: color.shade(bg, 12%);
-        }
-
-        [data-reach-listbox-button] {
-            background-color: color.shade(bg, 12%);
-            border-color: $mid-border-color;
-
-            &:hover {
-                background-color: color.shade(bg, 5%);
-            }
-        }
-
-        [data-reach-dialog-content] {
-            background-color: color.shade(bg, 16%);
-
-            .color-black {
-                color: color.get(fg);
-            }
-        }
-
-        [data-reach-listbox-option] {
-            &[aria-selected="true"] {
-                background-color: color.shade(bg, 2%);
-            }
-        }
-
         [class*="Sidebar--settings-item"] {
             border-color: $mid-border-color;
         }
@@ -2473,6 +2446,41 @@
                     background-color: color.shade(bg, 5%);
                 }
             }
+        }
+    }
+
+    a[class*="Button--btn--"]:not([class*="Button--primary--"]) {
+        color: color.shade(fg, 8%);
+
+        &:hover {
+            color: color.shade($link-accent, 10%);
+        }
+    }
+
+    [data-reach-listbox-popover] {
+        background-color: color.shade(bg, 12%);
+    }
+
+    [data-reach-listbox-button] {
+        background-color: color.shade(bg, 12%);
+        border-color: $mid-border-color;
+
+        &:hover {
+            background-color: color.shade(bg, 5%);
+        }
+    }
+
+    [data-reach-dialog-content] {
+        background-color: color.shade(bg, 16%);
+
+        .color-black {
+            color: color.get(fg);
+        }
+    }
+
+    [data-reach-listbox-option] {
+        &[aria-selected="true"] {
+            background-color: color.shade(bg, 2%);
         }
     }
 

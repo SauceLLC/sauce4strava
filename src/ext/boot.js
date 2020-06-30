@@ -74,6 +74,7 @@
         ]
     }, {
         name: 'theme',
+        pathExclude: /^\/subscribe(\/.*|\b)/,
         stylesheets: ['site/theme.css'],
         callbacks: [
             config => {
