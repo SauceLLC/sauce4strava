@@ -67,7 +67,7 @@ sauce.ns('rpc', function() {
 
     async function reportError(e) {
         const page = location.pathname;
-        const desc = [];
+        const desc = [`v${sauce && sauce.version}`];
         try {
             if (e == null || !e.stack) {
                 console.error("Non-exception object was thrown:", e);
@@ -91,7 +91,6 @@ sauce.ns('rpc', function() {
         } catch(intError) {
             desc.push(`Internal error during report error: ${intError.stack} ::: ${e}`);
         }
-        desc.push(`Sauce: v${sauce && sauce.version}`);
         for (const x of getStackFrames().slice(1)) {
             desc.push(` Stack frame: ${x}`);
         }
