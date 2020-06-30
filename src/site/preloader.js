@@ -411,18 +411,20 @@
             const titleKey = `${labelKey}_tooltip${disabled ? '_disabled' : ''}`;
             Klass.prototype.render = function() {
                 const ret = renderSave.apply(this, arguments);
-                sauce.locale.getMessages([titleKey, labelKey]).then(([title, label]) => {
-                    const segmentId = this.viewModel.model.id;
-                    const runSegmentsView = this.options.pageView.chartContext().activity().get('type') === 'Run';
-                    const $btn = jQuery(`<div title="${title}" class="btn-block button sauce-button
-                                                     live-segment ${disabled ? 'disabled' : 'enabled'}"
-                                              data-segment-id="${segmentId}">${label}</div>`);
-                    if (runSegmentsView) {
-                        this.$('.bottomless.inset').append($btn);
-                    } else {
-                        this.$('.effort-actions').append($btn);
-                    }
-                });
+                if (sauce && sauce.locale) {
+                    sauce.locale.getMessages([titleKey, labelKey]).then(([title, label]) => {
+                        const segmentId = this.viewModel.model.id;
+                        const runSegmentsView = this.options.pageView.chartContext().activity().get('type') === 'Run';
+                        const $btn = jQuery(`<div title="${title}" class="btn-block button sauce-button
+                                                         live-segment ${disabled ? 'disabled' : 'enabled'}"
+                                                  data-segment-id="${segmentId}">${label}</div>`);
+                        if (runSegmentsView) {
+                            this.$('.bottomless.inset').append($btn);
+                        } else {
+                            this.$('.effort-actions').append($btn);
+                        }
+                    });
+                }
                 return ret;
             };
         }, {once: true});

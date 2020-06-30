@@ -180,12 +180,13 @@
 
             &:hover {
                 color: color.shade($link-accent, 10%);
+                border-color: transparent;  // undo basic button theme border
             }
         }
     }
 
     .btn-primary {
-        &:not(.btn-outline) {
+        &:not(.btn-outline):not(.btn-link) {
             border-color: color.shade(accent, 12%);
             background-color: color.shade(accent, 12%);
             color: color.shade(accent, 80%);
@@ -479,6 +480,10 @@
                 .app-icon {
                     filter: initial;
                     background-position: initial !important;
+                }
+
+                .options .selected a {
+                    color: color.shade(fg, -5%);
                 }
             }
 
@@ -2511,6 +2516,50 @@
 
         .upsell-description {
             color: color.shade(fg, 12%);
+        }
+    }
+
+    .marketing-upsell {
+        background-color: color.shade(bg, 8%);
+    }
+
+    .leaderboard .leaderboards-upsell {
+        background-color: color.shade(bg, 8%);
+
+        .heading {
+            color: color.shade(fg, 8%);
+        }
+
+        .text {
+            color: color.shade(fg, 12%);
+        }
+    }
+
+    .leaderboard .filters #premium-enhanced ul {
+        border-color: $hard-border-color;
+    }
+
+    .list-categories h3 a {
+        color: color.shade(fg, 0%);
+
+        &:hover,
+        &:active {
+            color: color.shade(fg, -5%);
+        }
+    }
+
+    .ride,
+    .swim {
+        .segment-effort-detail .leaderboard-footer .seg-leaderboard-upsell {
+            background-color: color.shade(bg, 8%);
+
+            .heading {
+                color: color.shade(fg, 8%);
+            }
+
+            .text {
+                color: color.shade(fg, 12%);
+            }
         }
     }
 }
