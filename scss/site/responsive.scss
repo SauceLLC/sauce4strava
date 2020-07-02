@@ -281,7 +281,6 @@ html.sauce-responsive,
 
     .sauce-analysis-stats {
         width: 100%;
-        flex-wrap: wrap; // XXX looks terrible but needed to prevent overflow between 768px and 1000+ widths.
     }
 
     ul.inline-stats {

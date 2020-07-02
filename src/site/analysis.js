@@ -2183,6 +2183,8 @@ sauce.ns('analysis', ns => {
             paceUnit: ctx.paceFormatter.shortUnitKey(),
             samples: timeStream.length,
             elevation: elevationData(altStream, elapsedTime, distance),
+            expandIcon: await sauce.images.asText('fa/plus-square-duotone.svg'),
+            compressIcon: await sauce.images.asText('fa/minus-square-duotone.svg'),
         };
         if (correctedPower) {
             const kj = correctedPower.kj();
@@ -2744,6 +2746,8 @@ sauce.ns('analysis', ns => {
         $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.rpc.reportError));
         $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.rpc.reportError));
         $el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor().catch(sauce.rpc.reportError));
+        $el.on('click', 'a.expander', ev =>
+            ev.currentTarget.closest('.sauce-analysis-stats').classList.toggle('expanded'));
     }
 
 

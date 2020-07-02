@@ -17,21 +17,71 @@
 }
 
 .sauce-analysis-stats {
+    $expander-size: 16px;
+    $pad: 0.5rem;
+
     display: flex;
     overflow: hidden;
     font-size: 0.96em;
     border-top: var(--sauce-border);
     border-bottom: var(--sauce-border);
     width: defines.$basic-analysis-width;
-
-    $vpad: 0.5rem;
+    position: relative;
+    box-sizing: border-box;
+    flex-wrap: wrap; // Looks terrible but needed to prevent overflow
+    padding-right: calc($expander-size + $pad);
 
     &:empty {
         display: none;
     }
 
+    a.expander {
+        width: $expander-size;
+        height: $expander-size;
+        position: absolute;
+        top: $pad;
+        right: $pad;
+        color: color.shade(fg, 0%) !important;
+
+        &:hover,
+        &:active {
+            color: color.shade(fg, -14%) !important;
+        }
+    }
+
+    &.expanded {
+        .expander.compressed-only {
+            display: none;
+        }
+
+        .sauce-data-tuple {
+            line:nth-child(1n+4) {  // Enable display of more than 3 lines.
+                visibility: visible;
+                max-height: 4em;
+                max-width: 25vw;
+                opacity: 1;
+            }
+        }
+
+    }
+
+    &:not(.expanded) {
+        .expander.expanded-only {
+            display: none;
+        }
+
+        .sauce-data-tuple {
+            line:nth-child(1n+4) {  // Only show 3 lines if not expanded
+                visiblity: hidden;
+                max-height: 0;
+                max-width: 0;
+                opacity: 0;
+            }
+        }
+    }
+
     .sauce-brand-sidebar {
-        padding: $vpad 1.2em;
+        padding: $pad 1.2em;
         display: flex;
         flex-direction: column;
 
@@ -42,8 +92,8 @@
 
             img {
                 transform: rotate(-20deg);
-                max-width: 3.2em;
-                max-height: 3.2em;
+                max-width: 2.85em;
+                max-height: 2.85em;
                 font-size: inherit;
             }
 
@@ -54,10 +104,10 @@
         }
 
         .sauce-label {
-            font-size: 1.1em;
+            font-size: 0.9em;
             text-shadow: 1px 1px 3px #0001;
             line-height: 1.2;
-            color: color.shade(accent, 10%);
+            color: color.shade(accent, -5%);
         }
     }
 
@@ -65,9 +115,10 @@
         display: flex;
         flex-direction: column;
         padding-right: 1em;
-        margin: $vpad 0;
+        margin: $pad 0;
+        position: relative;
 
-        &:not(:last-child) {
+        &:not(:last-of-type) {
             border-right: var(--sauce-thin-border);
         }
 
@@ -75,11 +126,14 @@
             margin-left: 1em;
         }
 
+
         line {
             display: flex;
             justify-content: flex-start;
             align-items: baseline;
             font-size: 0.90em;
+            transition: max-height, max-width, opacity, visiblity;
+            transition-duration: 200ms;
 
             &.heading {
                 font-size: 0.95em;
