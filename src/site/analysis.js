@@ -2588,7 +2588,7 @@ sauce.ns('analysis', ns => {
             bodyWeight: ctx.weightFormatter.convert(ctx.weight).toFixed(1),
             gearWeight: ctx.weightFormatter.convert(bikeDefaults.gearWeight).toFixed(1),
             slope: (slope * 100).toFixed(1),
-            distance: humanNumber(ctx.distanceFormatter.convert(origDistance), 3),
+            distance: ctx.distanceFormatter.convert(origDistance).toFixed(3),
             cda: bikeDefaults.cda,
             crr: bikeDefaults.crr,
             bike: bikeDefaults.bike,
