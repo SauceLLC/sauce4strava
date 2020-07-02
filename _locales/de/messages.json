@@ -269,6 +269,12 @@
         "message": "Variation",
         "description": "IMMUTABLE"
     },
+    "analysis_gain": {
+        "message": "Dazugewinnen"
+    },
+    "analysis_loss": {
+        "message": "Verlust"
+    },
     "analysis_view": {
         "message": "Aussicht"
     },

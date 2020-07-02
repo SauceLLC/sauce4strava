@@ -269,6 +269,12 @@
     "analysis_change": {
         "message": "更改"
     },
+    "analysis_gain": {
+        "message": "获得"
+    },
+    "analysis_loss": {
+        "message": "失利"
+    },
     "analysis_view": {
         "message": "视图"
     },

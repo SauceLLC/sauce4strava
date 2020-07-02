@@ -272,6 +272,12 @@
     "analysis_change": {
         "message": "Modificare"
     },
+    "analysis_gain": {
+        "message": "Guadagno"
+    },
+    "analysis_loss": {
+        "message": "Perdita"
+    },
     "analysis_view": {
         "message": "Visualizza"
     },

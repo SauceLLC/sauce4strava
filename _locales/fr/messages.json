@@ -273,6 +273,12 @@
         "message": "Ècart",
         "description": "IMMUTABLE"
     },
+    "analysis_gain": {
+        "message": "Gain"
+    },
+    "analysis_loss": {
+        "message": "Perte"
+    },
     "analysis_view": {
         "message": "Vue"
     },
