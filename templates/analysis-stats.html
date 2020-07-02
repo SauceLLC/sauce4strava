@@ -9,13 +9,6 @@
         <value>{{active}}</value>
     </line>
 
-    <% if (elapsed !== active) { %>
-        <line title="{{{elapsed_time_tooltip}}}">
-            <key>{{{elapsed}}}</key>
-            <value>{{elapsed}}</value>
-        </line>
-    <% } %>
-
     <% if (obj.pace) { %>
         <% if (isSpeed) { %>
             <line title="{{{active_speed_tooltip}}}">
@@ -34,6 +27,20 @@
             </line>
         <% } %>
     <% } %>
+
+    <% if (elapsed !== active) { %>
+        <line title="{{{elapsed_time_tooltip}}}">
+            <key>{{{elapsed}}}</key>
+            <value>{{elapsed}}</value>
+        </line>
+    <% } %>
+
+    <% if (obj.stops) { %>
+        <line>
+            <key>{{{stops}}}</key>
+            <value>{{stops}}</value>
+        </line>
+    <% } %>
 </div>
 
 <% if (obj.power) { %>
@@ -44,13 +51,6 @@
                 {{power.estimate ? '~' : ''}}{{formatNumber(power.activeAvg, 0)}}<abbr class="unit">w</abbr>
             </value>
         </line>
-
-        <% if (power.elapsedAvg && Math.round(power.elapsedAvg) !== Math.round(power.activeAvg)) { %>
-            <line title="{{{elapsed_power_tooltip}}}">
-                <key>{{{elapsed}}}</key>
-                <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedAvg, 0)}}<abbr class="unit">w</abbr></value>
-            </line>
-        <% } %>
 
         <% if (power.activeWKg) { %>
             <line title="{{{wkg_tooltip}}}">
@@ -66,16 +66,22 @@
             </line>
         <% } %>
 
+        <% if (power.elapsedAvg && Math.round(power.elapsedAvg) !== Math.round(power.activeAvg)) { %>
+            <line title="{{{elapsed_power_tooltip}}}">
+                <key>{{{elapsed}}}</key>
+                <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedAvg, 0)}}<abbr class="unit">w</abbr></value>
+            </line>
+        <% } %>
+
         <% if (obj.power.activeSP) { %>
             <line title="{{{sp_tooltip}}}">
                 <key>SP</key>
-                <value>~{{formatNumber(power.activeSP, 0)}}<abbr class="unit">w</abbr>
+                <value>{{formatNumber(power.activeSP, 0)}}<abbr class="unit">w</abbr>
                     <sup class="sauce-positive"
                          title="{{{sp_adjust_tooltip}}}">+{{formatNumber((power.activeSPAdjust - 1) * 100, 1)}}%</sup>
                 </value>
             </line>
         <% } %>
-
     </div>
 <% } %>
 
@@ -97,6 +103,14 @@
                 <value>{{formatNumber(energy.tss, 0)}}</value>
             </line>
         <% } %>
+
+        <% if (energy.intensity) { %>
+            <line title="{{{intensity_tooltip}}}">
+                <key>IF®</key>
+                <value>{{formatNumber(energy.intensity * 100, 0)}}<abbr class="unit">%</abbr></value>
+            </line>
+        <% } %>
+
     </div>
 <% } %>
 
@@ -111,37 +125,60 @@
             <value title="{{{elevation_avg_tooltip}}}">~{{elevation.avg}}<abbr class="unit">{{elUnit}}</abbr></value>
         </line>
 
-        <line>
-            <key>{{{change}}}</key>
-            <value>
-                <% if (elevation.gain && elevation.loss) { %>
-                    <span class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
-                        +{{elevation.gain}}<abbr class="unit">{{elUnit}}</abbr></span>,
-                    <span class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
-                        -{{elevation.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
-                <% } else if (elevation.gain) { %>
-                    <span class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
-                        +{{elevation.gain}}<abbr class="unit">{{elUnit}}</abbr></span>
-                <% } else if (elevation.loss) { %>
-                    <span class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
-                        -{{elevation.loss}}<abbr class="unit">{{elUnit}}</abbr></span>
-                <% } %>
-            </value>
-        </line>
-
-        <% if (elevation.grade && Math.abs(elevation.grade) >= 1) { %>
-            <line title="{{{grade_tooltip}}}">
-                <key>{{{grade}}}</key>
-                <value>{{formatNumber(elevation.grade, 1)}}<abbr class="unit">%</abbr></value>
-            </line>
-        <% } %>
-
         <% if (elevation.vam && elevation.vam >= 1) { %>
             <line title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                 <key>VAM</key>
                 <value>
                     {{formatNumber(elevation.vam, 0)}}<abbr class="unit">Vm/h</abbr>
                 </value>
+            </line>
+        <% } %>
+
+        <% if (elevation.gain && elevation.loss && elevation.grade < -1) { %>
+            <line title="{{{elevation_loss_tooltip}}}">
+                <key>{{{loss}}}</key>
+                <value>
+                    <span class="sauce-negative">
+                        -{{elevation.loss}}<abbr class="unit">{{elUnit}}</abbr>
+                    </span>
+                </value>
+            </line>
+            <line title="{{{elevation_gain_tooltip}}}">
+                <key>{{{gain}}}</key>
+                <value>
+                    <span class="sauce-positive">
+                        +{{elevation.gain}}<abbr class="unit">{{elUnit}}</abbr>
+                    </span>
+                </value>
+            </line>
+        <% } else { %>
+            <% if (elevation.gain) { %>
+                <line title="{{{elevation_gain_tooltip}}}">
+                    <key>{{{gain}}}</key>
+                    <value>
+                        <span class="sauce-positive">
+                            +{{elevation.gain}}<abbr class="unit">{{elUnit}}</abbr>
+                        </span>
+                    </value>
+                </line>
+            <% } %>
+
+            <% if (elevation.loss) { %>
+                <line title="{{{elevation_loss_tooltip}}}">
+                    <key>{{{loss}}}</key>
+                    <value>
+                        <span class="sauce-negative">
+                            -{{elevation.loss}}<abbr class="unit">{{elUnit}}</abbr>
+                        </span>
+                    </value>
+                </line>
+            <% } %>
+        <% } %>
+
+        <% if (elevation.grade && Math.abs(elevation.grade) >= 1) { %>
+            <line title="{{{grade_tooltip}}}">
+                <key>{{{grade}}}</key>
+                <value>{{formatNumber(elevation.grade, 1)}}<abbr class="unit">%</abbr></value>
             </line>
         <% } %>
     </div>
@@ -153,6 +190,13 @@
         <value>{{samples.toLocaleString()}} {{{samples}}}</value>
     </line>
 
+    <% if (supportsPerfPredictor) { %>
+        <line>
+            <key/>
+            <value><a class="sauce-perf-predictor">{{{perf_predictor}}}</a></value>
+        </line>
+    <% } %>
+
     <line>
         <key/>
         <value><a class="sauce-raw-data">{{{view}}} {{{raw_data}}}</a></value>
@@ -162,13 +206,6 @@
         <key/>
         <value><a class="sauce-graph-data">{{{view}}} {{{graphs}}}</a></value>
     </line>
-
-    <% if (supportsPerfPredictor) { %>
-        <line>
-            <key/>
-            <value><a class="sauce-perf-predictor">{{{perf_predictor}}}</a></value>
-        </line>
-    <% } %>
 </div>
 
 <% if (supportsRankBadge && obj.power && !power.estimate && power.rank && power.rank.level > 0) { %>

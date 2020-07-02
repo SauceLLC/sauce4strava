@@ -29,7 +29,7 @@
     position: relative;
     box-sizing: border-box;
     flex-wrap: wrap; // Looks terrible but needed to prevent overflow
-    padding-right: calc($expander-size + $pad);
+    padding-right: calc(#{$expander-size} + #{$pad});
 
     &:empty {
         display: none;
@@ -53,16 +53,6 @@
         .expander.compressed-only {
             display: none;
         }
-
-        .sauce-data-tuple {
-            line:nth-child(1n+4) {  // Enable display of more than 3 lines.
-                visibility: visible;
-                max-height: 4em;
-                max-width: 25vw;
-                opacity: 1;
-            }
-        }
-
     }
 
     &:not(.expanded) {
@@ -72,10 +62,7 @@
 
         .sauce-data-tuple {
             line:nth-child(1n+4) {  // Only show 3 lines if not expanded
-                visiblity: hidden;
-                max-height: 0;
-                max-width: 0;
-                opacity: 0;
+                display: none;
             }
         }
     }
@@ -126,14 +113,11 @@
             margin-left: 1em;
         }
 
-
         line {
             display: flex;
             justify-content: flex-start;
             align-items: baseline;
             font-size: 0.90em;
-            transition: max-height, max-width, opacity, visiblity;
-            transition-duration: 200ms;
 
             &.heading {
                 font-size: 0.95em;
@@ -177,9 +161,10 @@
         }
 
         .sauce-rank {
-            max-height: 3em;
+            max-height: 2.8em;
+            max-width: 5em;
+            width: auto;
             object-fit: contain;
-            padding: 0.5em;
         }
     }
 }

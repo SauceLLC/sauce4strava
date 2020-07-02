@@ -162,7 +162,7 @@ sauce.ns('analysis', ns => {
 
 
     async function fetchSmoothStream(name, period, start, end) {
-        period = period || 30;
+        period = period || 10;
         const fqName = `${name}_smooth_${period}`;
         const stream = _getStream(fqName, start, end);
         if (stream) {
@@ -2077,7 +2077,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function getActiveTime(start, end) {
+    async function getActiveStream(start, end) {
         const isTrainer = pageView.activity().isTrainer();
         const timeStream = await fetchStream('time', start, end);
         const movingStream = await fetchStream('moving', start, end);
@@ -2085,17 +2085,39 @@ sauce.ns('analysis', ns => {
         const wattsStream = await fetchStream('watts', start, end);
         const distStream = await fetchStream('distance', start, end);
         const activeStream = [];
-        let lastDist = 0;
+        const speedMin = 0.447;  // meter/second (1mph)
         for (let i = 0; i < movingStream.length; i++) {
             activeStream.push(!!(
                 movingStream[i] ||
                 (cadenceStream && cadenceStream[i]) ||
                 (wattsStream && wattsStream[i]) ||
-                (distStream && distStream[i] !== lastDist)
+                (distStream && i &&
+                 (distStream[i] - distStream[i - 1]) /
+                 (timeStream[i] - timeStream[i - 1]) >= speedMin)
             ));
-            lastDist = distStream && distStream[i];
         }
+        return activeStream;
+    }
+
+
+    async function getActiveTime(start, end) {
+        const activeStream = await getActiveStream(start, end);
+        const timeStream = await fetchStream('time', start, end);
         return sauce.data.activeTime(timeStream, activeStream);
+    }
+
+
+    async function getStopCount(start, end) {
+        let stops = 0;
+        let wasActive = false;
+        const activeStream = await getActiveStream(start, end);
+        for (const x of activeStream) {
+            if (!x && wasActive) {
+                stops++;
+            }
+            wasActive = x;
+        }
+        return stops;
     }
 
 
@@ -2177,6 +2199,7 @@ sauce.ns('analysis', ns => {
             elapsed: humanTime(elapsedTime),
             active: humanTime(activeTime),
             paused: ctx.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
+            stops: await getStopCount(start, end),
             weight: ctx.weight,
             elUnit: ctx.elevationFormatter.shortUnitKey(),
             isSpeed: ctx.paceMode === 'speed',
@@ -2191,17 +2214,21 @@ sauce.ns('analysis', ns => {
             const np = supportsNP() && correctedPower.np();
             tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np});
             let tss;
+            let intensity;
             if (ctx.ftp) {
                 if (np) {
                     tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
+                    intensity = np / ctx.ftp;
                 } else {
                     tss = sauce.power.calcTSS(tplData.power.activeAvg, activeTime, ctx.ftp);
+                    intensity = tplData.power.activeAvg / ctx.ftp;
                 }
             }
             tplData.energy = {
                 kj,
                 kjHour: (kj / activeTime) * 3600,
-                tss
+                tss,
+                intensity
             };
         }
         if (distance) {
