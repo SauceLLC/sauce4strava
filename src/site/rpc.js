@@ -142,6 +142,11 @@ sauce.ns('rpc', function() {
     }
 
 
+    async function openOptionsPage() {
+        return await invoke({system: 'options', op: 'openOptionsPage'});
+    }
+
+
     const _invokePromise = (async () => {
         // Instead of just broadcasting all RPC over generic 'message' events, create a channel
         // which is like a unix pipe pair and transfer one of the ports to the ext for us
@@ -225,5 +230,6 @@ sauce.ns('rpc', function() {
         getLocaleMessages,
         ping,
         bgping,
+        openOptionsPage,
     };
 });

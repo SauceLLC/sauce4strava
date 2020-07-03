@@ -395,9 +395,12 @@ sauce.ns('analysis', ns => {
     async function renderTertiaryStats(attrs) {
         sauce.rpc.auditStackFrame();
         const template = await getTemplate('tertiary-stats.html');
-        const $stats = jQuery(await template(attrs));
+        const $stats = jQuery(await template(Object.assign({
+            optionsIcon: await sauce.images.asText('fa/cog-duotone.svg'),
+        }, attrs)));
         attachEditableFTP($stats);
         attachEditableWeight($stats);
+        $stats.on('click', 'a.sauce-options', () => sauce.rpc.openOptionsPage());
         jQuery('.activity-stats .inline-stats').last().after($stats);
     }
 
@@ -736,7 +739,7 @@ sauce.ns('analysis', ns => {
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
-            weightOrigin: ctx.weightOrigin
+            weightOrigin: ctx.weightOrigin,
         });
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
@@ -816,7 +819,7 @@ sauce.ns('analysis', ns => {
             ftpOrigin: ctx.ftpOrigin,
             intensity,
             tss,
-            power
+            power,
         });
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
@@ -1691,7 +1694,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function attachExporters() {
+    async function attachActionMenuItems() {
         const exportLocale = await sauce.locale.getMessage('analysis_export');
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
         if (!menuEl) {
@@ -1711,7 +1714,7 @@ sauce.ns('analysis', ns => {
             </li>
         `);
         menuEl.querySelector('a.tcx').addEventListener('click', () => {
-            exportActivity(sauce.export.TCXSerializer);
+            exportActivity(sauce.export.TCXSerializer).catch(sauce.rpc.reportError);  // bg okay
             sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
         });
         if (!menuEl.querySelector('a[href$="/export_gpx"')) {
@@ -1720,10 +1723,18 @@ sauce.ns('analysis', ns => {
                        class="gpx">${exportLocale} GPX</a></li>
             `);
             menuEl.querySelector('a.gpx').addEventListener('click', () => {
-                exportActivity(sauce.export.GPXSerializer);
+                exportActivity(sauce.export.GPXSerializer).catch(sauce.rpc.reportError);  // bg okay
                 sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
             });
         }
+        const optionsLocale = await sauce.locale.getMessage('analysis_options');
+        menuEl.querySelector('.sauce-group ul').insertAdjacentHTML('beforeend', `
+            <li><a class="sauce-options">Sauce ${optionsLocale}</a></li>
+        `);
+        menuEl.querySelector('a.sauce-options').addEventListener('click', () => {
+            sauce.rpc.openOptionsPage().catch(sauce.rpc.reportError);  // bg okay
+            sauce.rpc.reportEvent('ActionsMenu', 'options');
+        });
     }
 
 
@@ -2865,7 +2876,7 @@ sauce.ns('analysis', ns => {
             ctx.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
         updateSideNav().catch(sauce.rpc.reportError);  // bg okay
-        attachExporters().catch(sauce.rpc.reportError);  // bg okay
+        attachActionMenuItems().catch(sauce.rpc.reportError);  // bg okay
         attachComments().catch(sauce.rpc.reportError);  // bg okay
         attachLiveSegmentsHandler();
         const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');

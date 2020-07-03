@@ -78,4 +78,6 @@
             }
         };
     })(), {backgroundOnly: true});
+    addHook('options', 'openOptionsPage', () => browser.runtime.openOptionsPage(),
+        {backgroundOnly: true});
 })();

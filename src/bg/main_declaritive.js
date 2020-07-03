@@ -15,8 +15,8 @@
                 actions: [new browser.declarativeContent.ShowPageAction()],
                 conditions: [new browser.declarativeContent.PageStateMatcher({
                     pageUrl: {
-                        hostSuffix: '.strava.com',
-                        schemes: ['https', 'http']
+                        hostSuffix: 'www.strava.com',
+                        schemes: ['https']
                     }
                 })],
             }]);

@@ -46,6 +46,7 @@
         &:hover,
         &:active {
             color: color.shade(fg, -14%) !important;
+            filter: drop-shadow(1px 1px 3px color.shade(fg, 5%, 0.33));
         }
     }
 

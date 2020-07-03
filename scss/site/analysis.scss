@@ -39,6 +39,18 @@
         .origin-sauce {
             color: color.get(accent);
         }
+
+        a.sauce-options {
+            color: color.shade(fg, 10%);
+            display: block;
+            float: right;
+            height: 1.5em;
+            width: 1.5em;
+
+            &:hover {
+                color: color.shade(fg, 0%);
+            }
+        }
     }
 }
 

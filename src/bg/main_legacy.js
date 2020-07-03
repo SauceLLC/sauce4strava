@@ -17,7 +17,7 @@
     });
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         const url = new URL(tab.url);
-        if (url.origin.match(/^https?:\/\/.*?\.strava\.com$/i)) {
+        if (url.origin.match(/^https:\/\/www\.strava\.com$/i)) {
             browser.pageAction.show(tabId);
             showing.add(tabId);
         } else if (showing.has(tabId)) {
