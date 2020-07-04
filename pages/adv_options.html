@@ -75,7 +75,7 @@
         </style>
     </head>
     <body>
-        <a class="dismiss"></a>
+        <a class="dismiss popup-only"></a>
         <header>
             <h2 class="title">Sauce Advanced Options</h3>
         </header>
@@ -113,7 +113,8 @@
         </main>
         <footer>
             <div class="buttons">
-                <a href="options.html"><button>Back</button></a>
+                <a class="popup-only" href="options.html?popup"><button>Back</button></a>
+                <a class="not-popup-only" href="options.html"><button>Back</button></a>
                 <button id="clear" class="red">Erase All Data</button>
                 <button id="save" class="green">Save</button>
             </div>

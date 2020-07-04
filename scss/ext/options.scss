@@ -12,16 +12,40 @@ html {
 }
 
 body {
-    width: 36em;
-    max-width: 100%;
-    height: 580px; /* chrome seems to have a max size of 600px */
-    padding: 1.2em;
     margin: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     font-family: 'Lato', sans-serif;
-    font-size: 0.85em;
+}
+
+html.popup {
+    body {
+        font-size: 0.85em;
+        width: 36em;
+        max-width: 100%;
+        height: 580px; /* chrome seems to have a max size of 600px */
+        padding: 1.2em;
+    }
+
+    .not-popup-only {
+        display: none;
+    }
+}
+
+html:not(.popup) {
+    width: 100%;
+    height: 100%;
+
+    body {
+        font-size: 0.92em;
+        width: 100%;
+        height: 100%;
+    }
+
+    .popup-only {
+        display: none;
+    }
 }
 
 button {

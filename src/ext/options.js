@@ -3,6 +3,11 @@
 (function() {
     'use strict';
 
+    const isPopup = (new URLSearchParams(window.location.search)).get('popup') !== null;
+    if (isPopup) {
+        document.documentElement.classList.add('popup');
+    }
+
     function manageEnabler(enabled) {
         function toggle(en) {
             enabled = en;
@@ -17,7 +22,9 @@
             x.addEventListener('click', async () => {
                 await sauce.storage.set('enabled', !enabled);
                 toggle(!enabled);
-                browser.tabs.reload();
+                if (isPopup) {
+                    browser.tabs.reload();
+                }
             });
         }
         toggle(enabled);
@@ -42,7 +49,9 @@
                 options[input.name] = input.checked;
                 resetSuboptions(input);
                 await sauce.storage.set('options', options);
-                browser.tabs.reload();
+                if (isPopup) {
+                    browser.tabs.reload();
+                }
             });
             resetSuboptions(input);
         }
@@ -55,7 +64,9 @@
             input.addEventListener('change', async ev => {
                 options[input.name] = input.value;
                 await sauce.storage.set('options', options);
-                browser.tabs.reload();
+                if (isPopup) {
+                    browser.tabs.reload();
+                }
             });
         }
         const selects = document.querySelectorAll('.option select');
@@ -73,7 +84,9 @@
                 const value = Array.from(select.selectedOptions).map(x => x.value).join(',');
                 options[select.name] = value;
                 await sauce.storage.set('options', options);
-                browser.tabs.reload();
+                if (isPopup) {
+                    browser.tabs.reload();
+                }
             });
         }
     }

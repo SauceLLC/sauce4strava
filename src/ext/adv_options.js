@@ -3,11 +3,14 @@
 (function() {
     'use strict';
 
+    const isPopup = (new URLSearchParams(window.location.search)).get('popup') !== null;
+    if (isPopup) {
+        document.documentElement.classList.add('popup');
+    }
 
     function sleep(seconds) {
         return new Promise(resolve => setTimeout(resolve, seconds * 1000));
     }
-
 
     async function saveAthleteInfo(el) {
         const textareas = el.querySelectorAll('textarea.athlete-info');
@@ -124,7 +127,9 @@
                     "analysis-cp-chart": true,
                     "activity-hide-promotions": true
                 });
-                browser.tabs.reload();
+                if (isPopup) {
+                    browser.tabs.reload();
+                }
                 window.location.reload();
             });
         });
@@ -155,7 +160,9 @@
             await renderRanges(rangesEl);
             await renderAthleteInfo(athleteEl);
             status.textContent = 'Saved';
-            browser.tabs.reload();
+            if (isPopup) {
+                browser.tabs.reload();
+            }
             await sleep(5);
             status.textContent = '';
         });

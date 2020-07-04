@@ -42,11 +42,12 @@
             "256": "images/icon256.png"
         },
         "default_title": "Sauce for Strava™",
-        "default_popup": "pages/options.html"
+        "default_popup": "pages/options.html?popup"
     },
 
     "options_ui": {
-        "page": "pages/options.html"
+        "page": "pages/options.html",
+        "open_in_tab": true
     },
 
     "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
