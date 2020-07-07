@@ -4,6 +4,8 @@
 html {
     box-sizing: border-box;
     color: #111;
+    width: 100%;
+    height: 100%;
 }
 
 *,
@@ -18,6 +20,7 @@ body {
     flex-direction: column;
     overflow: hidden;
     font-family: 'Lato', sans-serif;
+    background-color: #f3f0ee;
 }
 
 html.popup {
@@ -35,18 +38,29 @@ html.popup {
 }
 
 html:not(.popup) {
-    width: 100%;
-    height: 100%;
-
     body {
-        font-size: 0.92em;
-        width: 100%;
-        height: 100%;
-        padding: 1.2em;
+        max-height: 100%;
     }
 
     .popup-only {
         display: none;
+    }
+}
+
+@media only screen and (min-width: 768px) {
+    html:not(.popup) {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        background: #222;
+        padding: 1em;
+
+        body {
+            font-size: 0.92em;
+            padding: 1.2em;
+            border-radius: 0.22em;
+            box-shadow: 1px 1px 8px #fff5;
+        }
     }
 }
 
@@ -119,6 +133,7 @@ section:not(:last-child) {
 .desc {
     color: #555;
     margin: 0.4em 0 0.5em;
+    max-width: 68ch;
 }
 
 a {
@@ -126,7 +141,7 @@ a {
 }
 
 header {
-    padding: 1em;
+    padding-bottom: 0.8em;
     border-bottom: 1.5px solid #ff4000;
     display: flex;
     flex-direction: column;
@@ -140,7 +155,7 @@ header {
         max-width: 5em;
         max-height: 100%;
         transform: rotate(-30deg);
-        padding: 1em;
+        padding: 0.4em;
     }
 
     .title {
@@ -170,8 +185,8 @@ header {
     opacity: 0.6;
     cursor: pointer;
     position: absolute;
-    top: 1.2em;
-    right: 1.2em;
+    top: 0.8em;
+    right: 0.8em;
 }
 .dismiss:hover {
     opacity: 1;
@@ -235,8 +250,4 @@ body.disabled .actions {
     pointer-events: none;
 }
 
-@media only screen and (max-width: 768px) {
-    body {
-        padding: 0 !important;
-    }
-}
+
