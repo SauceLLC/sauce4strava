@@ -100,6 +100,18 @@
             'site/lib.js',
             'site/dashboard.js'
         ]
+    }, {
+        name: 'Profile Settings',
+        pathMatch: /^\/settings\/profile\b/,
+        scripts: [
+            'site/base.js',
+            'site/rpc.js',
+            'site/locale.js',
+            'site/profile-settings.js',
+        ],
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-profile-settings')
+        ]
     }];
 
 
