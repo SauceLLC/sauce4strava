@@ -400,7 +400,6 @@ sauce.ns('analysis', ns => {
         }, attrs)));
         attachEditableFTP($stats);
         attachEditableWeight($stats);
-        $stats.on('click', 'a.sauce-options', () => sauce.rpc.openOptionsPage());
         jQuery('.activity-stats .inline-stats').last().after($stats);
     }
 
