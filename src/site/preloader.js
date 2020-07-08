@@ -329,18 +329,36 @@
             const initSave = View.prototype.initialize;
             View.prototype.initialize = function(pageView) {
                 if (pageView.isRun() && sauce.options && sauce.options['analysis-detailed-run-segments']) {
-                    pageView = Object.create(pageView);
-                    pageView.activity(pageView.activity().clone());
-                    pageView.activity().set('type', 'Ride');
+                    const altPageView = Object.create(pageView);
+                    altPageView.activity(altPageView.activity().clone());
+                    altPageView.activity().set('type', 'Ride');
+                    altPageView._detailedSegments = true;
+                    Strava.Labs.Activities.SegmentsChartView.prototype.render = function() {
+                        this.renderTemplate();
+                        // Use non-small Activity class..
+                        this.chart = new Strava.Charts.Activities.Activity(this.context, this.streamsRequest,
+                            this.showStreamsOnZoom);
+                        // Copy height adjustment made by ride overview in StreamsChartView.
+                        this.chart.builder.height(100);
+                        this.chart.render(this.$el);
+                        return this;
+                    }
+                    return initSave.call(this, altPageView);
+                } else {
+                    return initSave.call(this, pageView);
                 }
-                return initSave.call(this, pageView);
             };
 
             const renderSave = View.prototype.render;
             View.prototype.render = function() {
+                if (this.pageView._detailedSegments) {
+                    this.$el.removeClass('pinnable-anchor');  // Will be moved to the elevation-profile
+                }
                 renderSave.apply(this, arguments);
-                if (self.pageView.isRun() && this.pageView.isRide() && sauce.options &&
-                    sauce.options['analysis-detailed-run-segments']) {
+                if (this.pageView._detailedSegments) {
+                    this.$el.prepend(`<div class="pinnable-anchor" id="elevation-profile">
+                        <div class="chart pinnable sauce-detailed-run-segments" id="chart-container"></div>
+                    </div>`);
                     this.$el.prepend(`<div id="map-canvas" class="leaflet-container leaflet-retina
                                                                   leaflet-fade-anim leaflet-touch"></div>`);
                 }
