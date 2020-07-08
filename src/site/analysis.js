@@ -2431,7 +2431,7 @@ sauce.ns('analysis', ns => {
 
 
     function velocityUnconvert(localeV) {
-        return ctx.paceFormatter.unitSystem === 'metric' ? localeV : localeV * metersPerMile / 3600;
+        return (ctx.paceFormatter.unitSystem === 'metric' ? localeV * 1000 : localeV * metersPerMile) / 3600;
     }
 
 
