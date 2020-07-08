@@ -151,4 +151,10 @@
             background-color: #bebebe;
         }
     }
+
+    .run .segment-effort-detail {
+        .segment-effort-detail-view .dismiss {
+            filter: invert(1);
+        }
+    }
 }

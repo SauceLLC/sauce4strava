@@ -710,7 +710,7 @@ html.sauce-responsive,
     }
 
     // pageView's scroll listener hooks must be disabled.
-    .sauce-disabled-scroll-listener {
+    body.sauce-disabled-scroll-listener:not(.fullscreen) {
         // Use pure CSS pinning that works everywhere.
         .pinnable-view {
             position: relative;

@@ -16,4 +16,10 @@
 
     --sauce-positive: #82b06a;
     --sauce-negative: #c89a9a;
+
+    .run .segment-effort-detail {
+        .segment-effort-detail-view .dismiss {
+            filter: invert(1);
+        }
+    }
 }

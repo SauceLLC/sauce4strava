@@ -2562,6 +2562,16 @@
             }
         }
     }
+
+    body.fullscreen {
+        #elevation-profile {
+            background-color: color.get(bg);
+        }
+
+        #view {
+            background-color: color.get(bg);
+        }
+    }
 }
 
 
