@@ -140,4 +140,15 @@
             filter: invert(1);
         }
     }
+
+    // Background image must be inverted for fullscreen icon.
+    #map-control-container #toggle-fullscreen {
+        background-color: #d6d6d6;
+        border-color: #cecece;
+        filter: invert(1);
+
+        &:hover {
+            background-color: #bebebe;
+        }
+    }
 }
