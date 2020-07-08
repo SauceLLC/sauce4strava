@@ -353,6 +353,9 @@
             View.prototype.render = function() {
                 if (this.pageView._detailedSegments) {
                     this.$el.removeClass('pinnable-anchor');  // Will be moved to the elevation-profile
+                    if (sauce.options.responsive) {
+                        this.$el.addClass('pinnable-view');  // Must be placed on direct parent of pinnable-anchor
+                    }
                 }
                 renderSave.apply(this, arguments);
                 if (this.pageView._detailedSegments) {
