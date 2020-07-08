@@ -1,6 +1,6 @@
 /* global sauce */
 
-sauce.ns('profileSettings', ns => {
+sauce.ns('settings', ns => {
     'use strict';
 
     async function load() {
@@ -13,14 +13,17 @@ sauce.ns('profileSettings', ns => {
     }
 
     async function _load() {
-        const menu = document.querySelector('#settings-menu');
-        const item = document.createElement('li');
         const anchor = document.createElement('a');
         anchor.textContent = `Sauce ${await sauce.locale.getMessage('analysis_options')}`;
-        anchor.href = 'javascript:void(0)';
+        const image = document.createElement('img');
+        image.src = sauce.extUrl + 'images/logo_horiz_128x48.png';
+        anchor.appendChild(image);
+        anchor.href = 'javascript:void(0);';
         anchor.addEventListener('click', () => sauce.rpc.openOptionsPage());
+        const item = document.createElement('li');
+        item.classList.add('sauce');
         item.appendChild(anchor);
-        menu.appendChild(item);
+        document.querySelector('#settings-menu').appendChild(item);
     }
 
     return {
@@ -29,7 +32,7 @@ sauce.ns('profileSettings', ns => {
 });
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    sauce.profileSettings.load();
+    sauce.settings.load();
 } else {
-    addEventListener('DOMContentLoaded', sauce.profileSettings.load);
+    addEventListener('DOMContentLoaded', sauce.settings.load);
 }

@@ -102,12 +102,12 @@
         ]
     }, {
         name: 'Profile Settings',
-        pathMatch: /^\/settings\/profile\b/,
+        pathMatch: /^\/(settings|account)(\/.*|\b)/,
         scripts: [
             'site/base.js',
             'site/rpc.js',
             'site/locale.js',
-            'site/profile-settings.js',
+            'site/settings.js',
         ],
         callbacks: [
             config => void document.documentElement.classList.add('sauce-profile-settings')
