@@ -38,8 +38,8 @@
                 console.error('RPC Hook Error:', e);
                 data = {success: false, rid: ev.data.rid, result: e.message};
             }
-            data.extId = browser.runtime.id; // DEBUG only; remove later
-            data.type = 'sauce-rpc-response'; // DEBUG only; remove later
+            data.extId = browser.runtime.id;
+            data.type = 'sauce-rpc-response';
             respPort.postMessage(data);
         });
         reqPort.addEventListener('messageerror', ev => console.error("Message Error:", ev));

@@ -164,9 +164,8 @@ sauce.ns('rpc', function() {
                 }
                 const respPort = ev.ports[0];
                 respPort.addEventListener('message', ev => {
-                    // DEBUG checks; remove at some point.
                     if (!ev.data || ev.data.extId !== sauce.extId || ev.data.type !== 'sauce-rpc-response') {
-                        throw new Error('RPC Protocol Vilation [CONTENT] [RESP]!');
+                        throw new Error('RPC Protocol Violation [CONTENT] [RESP]!');
                     }
                     if (ev.data.success === true) {
                         const rid = ev.data.rid;
@@ -183,7 +182,6 @@ sauce.ns('rpc', function() {
                     }
                 });
                 respPort.start();
-                console.info("Established secure RPC channel");
                 resolve();
             }
             reqPort.addEventListener('message', onMessageEstablishChannelAck);
@@ -202,8 +200,8 @@ sauce.ns('rpc', function() {
                 reqPort.postMessage({
                     rid,
                     msg,
-                    type: 'sauce-rpc-request',  // DEBUG only; remove later
-                    extId: sauce.extId  // DEBUG only; remove later
+                    type: 'sauce-rpc-request',
+                    extId: sauce.extId
                 });
             });
         };

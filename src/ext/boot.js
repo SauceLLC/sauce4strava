@@ -38,7 +38,6 @@
             config => void document.documentElement.classList.add('sauce-route-builder')
         ]
     }, {
-        name: 'responsive',
         stylesheets: ['site/responsive.css'],
         callbacks: [
             config => {
@@ -73,8 +72,7 @@
             }
         ]
     }, {
-        name: 'theme',
-        pathExclude: /^\/($|subscribe|subscription|login|register|legal|challenges)(\/.*|\b|$)/,
+        pathExclude: /^\/($|subscribe|login|register|legal|challenges)(\/.*|\b|$)/,
         stylesheets: ['site/theme.css'],
         callbacks: [
             config => {
@@ -101,16 +99,12 @@
             'site/dashboard.js'
         ]
     }, {
-        name: 'Profile Settings',
-        pathMatch: /^\/(settings|account)(\/.*|\b)/,
+        pathExclude: /^\/($|subscribe|login|register|legal|challenges)(\/.*|\b|$)/,
         scripts: [
             'site/base.js',
             'site/rpc.js',
             'site/locale.js',
-            'site/settings.js',
-        ],
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-profile-settings')
+            'site/usermenu.js',
         ]
     }];
 
@@ -130,7 +124,13 @@
     }
 
 
+    const _loadedScripts = new Set();
     function loadScript(url, options) {
+        if (_loadedScripts.has(url)) {
+            console.warn("Skipping already loaded script", url);
+            return;
+        }
+        _loadedScripts.add(url);
         options = options || {};
         const script = document.createElement('script');
         if (options.defer) {
@@ -195,7 +195,9 @@
                 (m.pathExclude && location.pathname.match(m.pathExclude))) {
                 continue;
             }
-            console.info(`Sauce loading: ${m.name}`);
+            if (m.name) {
+                console.info(`Sauce loading: ${m.name}`);
+            }
             if (m.callbacks) {
                 for (const cb of m.callbacks) {
                     cb(config);

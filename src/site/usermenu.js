@@ -1,6 +1,6 @@
 /* global sauce */
 
-sauce.ns('settings', ns => {
+(function () {
     'use strict';
 
     async function load() {
@@ -13,6 +13,13 @@ sauce.ns('settings', ns => {
     }
 
     async function _load() {
+        let menuOptions = document.querySelector('#global-header .user-nav .user-menu .options');
+        if (!menuOptions) {
+            menuOptions = document.querySelector('[class*="src--global-header--"] ul[labeledby="athlete-menu"]');
+            if (!menuOptions) {
+                return;
+            }
+        }
         const anchor = document.createElement('a');
         anchor.textContent = `Sauce ${await sauce.locale.getMessage('analysis_options')}`;
         const image = document.createElement('img');
@@ -21,18 +28,14 @@ sauce.ns('settings', ns => {
         anchor.href = 'javascript:void(0);';
         anchor.addEventListener('click', () => sauce.rpc.openOptionsPage());
         const item = document.createElement('li');
-        item.classList.add('sauce');
+        item.id = 'global-sauce-options-menu-item';
         item.appendChild(anchor);
-        document.querySelector('#settings-menu').appendChild(item);
+        menuOptions.appendChild(item);
     }
 
-    return {
-        load,
-    };
-});
-
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    sauce.settings.load();
-} else {
-    addEventListener('DOMContentLoaded', sauce.settings.load);
-}
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        load();
+    } else {
+        addEventListener('DOMContentLoaded', load);
+    }
+})();
