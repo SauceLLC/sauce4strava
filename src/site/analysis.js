@@ -1726,14 +1726,6 @@ sauce.ns('analysis', ns => {
                 sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
             });
         }
-        const optionsLocale = await sauce.locale.getMessage('analysis_options');
-        menuEl.querySelector('.sauce-group ul').insertAdjacentHTML('beforeend', `
-            <li><a class="sauce-options">Sauce ${optionsLocale}</a></li>
-        `);
-        menuEl.querySelector('a.sauce-options').addEventListener('click', () => {
-            sauce.rpc.openOptionsPage().catch(sauce.rpc.reportError);  // bg okay
-            sauce.rpc.reportEvent('ActionsMenu', 'options');
-        });
     }
 
 

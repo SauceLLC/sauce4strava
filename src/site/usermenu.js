@@ -26,7 +26,10 @@
         image.src = sauce.extUrl + 'images/logo_horiz_128x48.png';
         anchor.appendChild(image);
         anchor.href = 'javascript:void(0);';
-        anchor.addEventListener('click', () => sauce.rpc.openOptionsPage());
+        anchor.addEventListener('click', () => {
+            sauce.rpc.openOptionsPage().catch(sauce.rpc.reportError);  // bg okay
+            sauce.rpc.reportEvent('UserMenu', 'options');
+        });
         const item = document.createElement('li');
         item.id = 'global-sauce-options-menu-item';
         item.appendChild(anchor);

@@ -50,4 +50,16 @@
             }
         }
     }
+
+    &.sauce-hide-upsells {
+        .js-snw-goals-upsell,
+        .user-nav .nav-item.upgrade,
+        #segments-upsell,
+        .upsell-others,
+        .seg-leaderboard-upsell,
+        .leaderboards-upsell
+        {
+            display: none !important;
+        }
+    }
 }

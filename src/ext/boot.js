@@ -106,6 +106,14 @@
             'site/locale.js',
             'site/usermenu.js',
         ]
+    }, {
+        callbacks: [
+            config => {
+                if (config.options['hide-upsells']) {
+                    document.documentElement.classList.add('sauce-hide-upsells');
+                }
+            }
+        ]
     }];
 
 
@@ -127,7 +135,6 @@
     const _loadedScripts = new Set();
     function loadScript(url, options) {
         if (_loadedScripts.has(url)) {
-            console.warn("Skipping already loaded script", url);
             return;
         }
         _loadedScripts.add(url);
