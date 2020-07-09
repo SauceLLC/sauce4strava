@@ -2,6 +2,9 @@
     "app_desc": {
         "message": "循环和运行分析的附加功能。该扩展程序升级了Strava™网站。"
     },
+    "analysis_options": {
+        "message": "选件"
+    },
     "analysis_time": {
         "message": "时间"
     },
@@ -103,6 +106,12 @@
     },
     "analysis_swim_cadence_tooltip": {
         "message": "每分钟行程"
+    },
+    "analysis_expand_tooltip": {
+        "message": "点击展开"
+    },
+    "analysis_compress_tooltip": {
+        "message": "点击折叠"
     },
     "analysis_ftp_link_tooltip": {
         "message": "点击设置值"

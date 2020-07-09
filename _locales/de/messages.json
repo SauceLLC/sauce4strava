@@ -2,6 +2,9 @@
     "app_desc": {
         "message": "Zusätzliche Funktionen für Ihre Rad- und Laufanalyse. Diese Erweiterung aktualisiert die Strava ™ Website."
     },
+    "analysis_options": {
+        "message": "Optionen"
+    },
     "analysis_time": {
         "message": "Zeit"
     },
@@ -103,6 +106,12 @@
     },
     "analysis_swim_cadence_tooltip": {
         "message": "Striche pro Minute"
+    },
+    "analysis_expand_tooltip": {
+        "message": "Zum erweitern klicken"
+    },
+    "analysis_compress_tooltip": {
+        "message": "Klicken Sie, um zu reduzieren"
     },
     "analysis_ftp_link_tooltip": {
         "message": "Klicken Sie hier, um den Wert festzulegen"

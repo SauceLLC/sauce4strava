@@ -2,6 +2,9 @@
     "app_desc": {
         "message": "Fonctionnalité supplémentaire pour votre analyse de cyclisme et de course. Cette extension met à niveau le site Web Strava ™."
     },
+    "analysis_options": {
+        "message": "Les options"
+    },
     "analysis_time": {
         "message": "Temps"
     },
@@ -103,6 +106,12 @@
     },
     "analysis_swim_cadence_tooltip": {
         "message": "Coups par minute"
+    },
+    "analysis_expand_tooltip": {
+        "message": "Cliquez pour agrandir"
+    },
+    "analysis_compress_tooltip": {
+        "message": "Cliquez pour réduire"
     },
     "analysis_ftp_link_tooltip": {
         "message": "Cliquez pour définir la valeur"
