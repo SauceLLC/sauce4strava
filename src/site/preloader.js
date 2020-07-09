@@ -1,4 +1,4 @@
-/* global sauce, jQuery */
+/* global sauce, jQuery, Strava */
 
 (function() {
     'use strict';
@@ -342,7 +342,7 @@
                         this.chart.builder.height(100);
                         this.chart.render(this.$el);
                         return this;
-                    }
+                    };
                     return initSave.call(this, altPageView);
                 } else {
                     return initSave.call(this, pageView);
