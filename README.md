@@ -70,6 +70,10 @@ Feature Highlights
 
 Release Notes
 --------
+#### v6.1.0:
+ * Option to hide subscribe upsells
+ * Add Sauce options to user menu.
+
 #### v6.0.0:
  * Revised active time calculation (better supports smart recording interval)
  * Live Segment creation for Garmin devices (Patron Only)
