@@ -101,28 +101,45 @@
             browser.tabs.update({active: true});  // required to allow self.close()
             self.close();
         });
-        const details_el = document.querySelector('#details > tbody');
+        const detailsEl = document.querySelector('#details > tbody');
         const type = browser.runtime.getURL('').split(':')[0];
         const doc = document.documentElement;
         doc.classList.add(type);
         if (navigator.userAgent.match(/ Edg\//)) {
             doc.classList.add('edge');
         }
+        const config = await sauce.storage.get();
         const manifest = browser.runtime.getManifest();
         const build = await getBuildInfo();
         const commit = build.git_commit.slice(0, 10);
-        const details_list = [
-            ['Version', `${manifest.version_name || manifest.version} <small>(commit:${commit})</small>`],
-            ['Author', manifest.author]
+        const details = [
+            ['Version', `${manifest.version_name || manifest.version} (${commit})`],
         ];
-        details_list.forEach(function(x) {
-            details_el.innerHTML += [
-                '<tr><td class="key">', x[0], '</td>',
-                '<td class="value">', x[1], '</td></tr>'
-            ].join('');
-        });
-
-        const config = await sauce.storage.get();
+        if (config.patronLevel) {
+            // There is going to be small window where names are not available
+            let levelName;
+            if (config.patronLevelNames) {
+                for (const x of config.patronLevelNames) {
+                    if (x.level <= config.patronLevel) {
+                        levelName = x.name;
+                        break;
+                    }
+                }
+            }
+            details.push(['Patron Level', levelName || config.patronLevel]);
+        }
+        for (const [key, value] of details) {
+            const tdKey = document.createElement('td');
+            tdKey.classList.add('key');
+            tdKey.textContent = key;
+            const tdVal = document.createElement('td');
+            tdVal.classList.add('value');
+            tdVal.textContent = value;
+            const tr = document.createElement('tr');
+            tr.appendChild(tdKey);
+            tr.appendChild(tdVal);
+            detailsEl.appendChild(tr);
+        }
         manageEnabler(config.enabled !== false);
         manageOptions(config.options, config.patronLevel);
     }

@@ -85,5 +85,5 @@
         } else {
             return fetchLevelNames().then(_getName);
         }
-    }
+    };
 })();
