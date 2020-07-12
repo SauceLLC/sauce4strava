@@ -1800,10 +1800,16 @@
         background-color: color.get(bg);
     }
 
-    .ride.segments-list,
-    .swim.segments-list {
-        tr.selected {
-            background-color: color.shade(bg, 5%);
+    .segments-list {
+        &.ride,
+        &.swim {
+            tr.selected {
+                background-color: color.shade(bg, 5%);
+            }
+        }
+
+        .no-segments {
+            box-shadow: initial;
         }
     }
 
