@@ -72,7 +72,7 @@
             }
         ]
     }, {
-        pathExclude: /^\/($|subscribe|login|register|legal|challenges)(\/.*|\b|$)/,
+        pathExclude: /^\/($|subscribe|login|register|legal)(\/.*|\b|$)/,
         stylesheets: ['site/theme.css'],
         callbacks: [
             config => {

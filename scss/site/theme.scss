@@ -185,7 +185,8 @@
         }
     }
 
-    .btn-primary {
+    .btn-primary,
+    button[class*="Button--primary--"] {
         &:not(.btn-outline):not(.btn-link) {
             border-color: color.shade(accent, 12%);
             background-color: color.shade(accent, 12%);
@@ -209,6 +210,16 @@
         }
     }
 
+    button[class*="Button--primary-outline--"] {
+        border-color: color.shade(accent, 12%);
+        background-color: transparent;
+        color: color.shade(accent, 12%);
+
+        &:hover {
+            background-color: color.shade(accent, 12%);
+            color: color.shade(accent, 80%);
+        }
+    }
 
     .page {
         a:not(.btn):not(.btn-primary),
@@ -632,9 +643,15 @@
 
     .lightbox-window {
         $body-bg-color: color.shade(bg, 10%);
+        $tabs-bg-color: color.shade(bg, 15%);
         background-color: $body-bg-color;
         color: color.shade(fg, 10%);
         border: none;
+
+        .modal-content {
+            background-color: $body-bg-color;
+            color: color.shade(fg, 10%);
+        }
 
         .modal-header,
         .glossary-header,
@@ -645,7 +662,7 @@
         }
 
         .tabs {
-            background-color: color.shade(bg, 15%);
+            background-color: $tabs-bg-color;
             border-color: $hard-border-color;
 
             .tab {
@@ -696,9 +713,26 @@
                 background-color: color.shade(bg, 5%);
             }
         }
+
+        .share-lightbox {
+            .main .row {
+                background-color: $tabs-bg-color;
+                margin: 0 -15px; // Fix strava off by one style error
+            }
+        }
+
+        .tab-contents {
+            background-color: $body-bg-color;
+            border-color: $mid-border-color;
+
+            > div {
+                background-color: $body-bg-color;
+            }
+        }
     }
 
-    input:not([type="range"]),
+    input[type="text"],
+    input[type="number"],
     textarea,
     .textarea-clone,
     select {
@@ -1631,19 +1665,33 @@
         color: color.shade(fg, 12%);
     }
 
-    #performance-goal {
-        .select2-container {
-            .select2-search-choice {
-                background-color: color.shade(bg, 8%);
-                color: color.shade(fg, 2%);
-            }
+    .select2-container {
+        .select2-search-choice {
+            background-color: color.shade(bg, 8%);
+            color: color.shade(fg, 2%);
+        }
 
-            .select2-choices {
-                background-color: color.shade(bg, 12%);
-                color: color.shade(fg, 12%);
-                border-color: $hard-border-color;
+        .select2-choices {
+            background-color: color.shade(bg, 12%);
+            color: color.shade(fg, 12%);
+            border-color: $hard-border-color;
+
+            .select2-search-choice {
+                box-shadow: 0 0 2px color.shade(bg, 30%) inset;
             }
         }
+    }
+
+    .select2-results {
+        .select2-no-results,
+        .select2-searching,
+        .select2-selection-limit {
+            background-color: color.shade(bg, 15%);
+            color: color.shade(fg, 15%);
+        }
+    }
+
+    #performance-goal {
 
         .email-share-container {
             a {
@@ -1655,15 +1703,6 @@
             header, .header {
                 color: color.shade(bg, 8%);
             }
-        }
-    }
-
-    .select2-results {
-        .select2-no-results,
-        .select2-searching,
-        .select2-selection-limit {
-            background-color: color.shade(bg, 15%);
-            color: color.shade(fg, 15%);
         }
     }
 
@@ -2576,6 +2615,78 @@
 
         #view {
             background-color: color.get(bg);
+        }
+    }
+
+    .ui-dialog {
+        background-color: color.shade(bg, 15%);
+        border-color: $mid-border-color;
+        outline: none;
+
+        .ui-dialog-titlebar {
+            background-color: color.shade(bg, 12%);
+        }
+
+        .ui-widget-header {
+            color: color.shade(fg, 5%);
+            border-color: $mid-border-color;
+        }
+    }
+
+    [class*="CollapsibleSection--subsection--"] {
+        a {
+            color: color.get($link-accent);
+        }
+
+        [class*="CollapsibleSection--light--"] {
+            color: color.shade(fg, 20%);
+        }
+        [class*="CollapsibleSection--dark--"] {
+            color: color.shade(fg, -5%);
+        }
+    }
+
+    [class*="Summary--container--"] {
+        a {
+            color: color.get($link-accent);
+        }
+    }
+
+    [class*="Gallery--page-body--"] {
+        background-color: color.get(bg);
+
+        a {
+            color: color.get(fg);
+
+            &:hover {
+                color: color.get($link-accent);
+            }
+        }
+
+        [class*="PromotedDoradoSection--challenge-info--"] {
+            background-color: color.shade(bg, 5%);
+        }
+    }
+
+    [class*="ChallengeCard--challenge-card--"] {
+        background-color: color.shade(bg, 5%);
+    }
+
+    .challenge {
+        .location {
+            color: color.shade(fg, 10%);
+        }
+
+        .progress-bar {
+            background-color: color.shade(bg, 10%);
+
+            .current-progress {
+                background-color: color.shade(fg, 10%) !important;
+            }
+        }
+
+        table.participants td.percent-text {
+            color: color.shade(fg, 10%);
         }
     }
 }
