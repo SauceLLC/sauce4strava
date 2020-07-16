@@ -86,9 +86,19 @@
             code.push(`__p.push('${text.slice(index, offset).replace(escapeRegExp, escapeChar)}');\n`);
             index = offset + match.length;
             if (localeLookup) {
-                code.push(`__p.push(await sauce.locale.getMessage('${settings.localePrefix}' + ${localeLookup}));\n`);
+                let prefix;
+                let lookup;
+                if (localeLookup.startsWith('/')) {
+                    lookup = localeLookup.substr(1);
+                    prefix = '';
+                } else {
+                    lookup = localeLookup;
+                    prefix = settings.localePrefix;
+                }
+                code.push(`__p.push(await sauce.locale.getMessage('${prefix}' + ${lookup}));\n`);
             } else if (locale) {
-                code.push(`__p.push(await sauce.locale.getMessage('${settings.localePrefix}${locale}'));\n`);
+                const key = locale.startsWith('/') ? locale.substr(1) : settings.localePrefix + locale;
+                code.push(`__p.push(await sauce.locale.getMessage('${key}'));\n`);
             } else if (escape) {
                 code.push(`
                     __t = (${escape});
