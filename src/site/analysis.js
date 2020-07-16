@@ -1935,11 +1935,20 @@ sauce.ns('analysis', ns => {
     async function showLiveSegmentDialog(details) {
         const template = await getTemplate('live-segment.html', 'live_segment');
         const athlete = pageView.activityAthlete();
+        const start = details.get('start_index');
+        const end = details.get('end_index');
+        const timeStream = await fetchStream('time', start, end);
+        const distStream = await fetchStream('distance', start, end);
+        const distOfft = distStream[0];
+        const timeOfft = timeStream[0];
         const body = await template({
             infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
             segmentName: details.get('name'),
             leaderName: athlete.get('display_name'),
             isSelf: athlete.id === pageView.currentAthlete().id,
+            leaderTime: ctx.timeFormatter.abbreviatedNoTags(streamDelta(timeStream), null, false),
+            distance: streamDelta(distStream),
+            distanceUnit: ctx.distanceFormatter.shortUnitKey(),
         });
         const $dialog = modal({
             title: 'Live Segment Creator',
@@ -1955,9 +1964,9 @@ sauce.ns('analysis', ns => {
                 id: details.get('segment_id'),
                 start: details.get('start_index'),
                 end: details.get('end_index'),
-                segmentName: details.get('name'),
-                leaderName: $form.find('input[name="leader-name"]').val(),
-                leaderType: $form.find('input[name="leader-type"]').val(),
+                segmentName: $form.find('[name="segment-name"]').val(),
+                leaderName: $form.find('[name="leader-name"]').val(),
+                leaderType: $form.find('[name="leader-type"]').val(),
             }).catch(sauce.rpc.reportError);
         });
         sauce.rpc.reportEvent('LiveSegment', 'show');

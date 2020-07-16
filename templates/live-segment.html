@@ -25,16 +25,39 @@
     </div>
 
     <div class="entry">
-        <key>Leader Type</key>
+        <key>Leader Type:</key>
         <select name="leader-type">
             <option value="rival" {{!isSelf ? "selected" : ""}}>Rival</option>
             <option value="goal" {{isSelf ? "goal" : "">Goal</option>
-            <option value="personal_best">Personal Best</option>
+            <option value="pr">PR</option>
             <option value="challenger">Challenger</option>
             <option value="kom">KOM</option>
             <option value="qom">QOM</option>
             <option value="club_leader">Club Leader</option>
         </select>
+    </div>
+
+    <div class="entry">
+        <key>Leader Time:</key>
+        <span class="leader-time">{{leaderTime}}</span>
+    </div>
+
+    <div class="entry" title="Optional distance offset into start (e.g. trim the start)">
+        <key>Start Offset:</key>
+        <input name="offset-start" type="number" min="0" step="1" value="0"/>
+        <abbr class="unit">{{distanceUnit}}</abbr>
+    </div>
+
+    <div class="entry" title="Optional distance offset from finish (e.g. trim the finish)">
+        <key>End Trim:</key>
+        <input name="offset-end" type="number" min="0" step="1" value="0"/>
+        <abbr class="unit">{{distanceUnit}}</abbr>
+    </div>
+
+    <div class="entry" title="Adjust the overall speed by some percentage">
+        <key>Adjust Time:</key>
+        <input name="time-adjust" type="number" min="-250" max="250" step="1" value="100"/>
+        <abbr class="unit">%</abbr>
     </div>
 
     <input type="submit" value="Create Live Segment"/>
