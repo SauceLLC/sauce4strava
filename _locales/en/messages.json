@@ -118,7 +118,7 @@
     "time_years": {"message": "years"},
     "time_ago": {"message": "ago"},
     "time_now": {"message": "now"},
-    "perf_predictor_help_info_tooltip": {"message": "Click for more information"},
+    "dialog_help_info_tooltip": {"message": "Click for more information"},
     "perf_predictor_intro_help1": {"message": "Performance predictor works best if you first tune the input parameters to match the original performance's time.  For example, if you were on a mountain bike, select the \"MTB\" bike option.  If there was a prevailing head wind during the effort, change the wind speed value to indicate the net wind impact and so on."},
     "perf_predictor_intro_help2": {"message": "Once values are properly tuned, the predicted performance should resemble the original performance within a small percentage."},
     "perf_predictor_intro_help3": {"message": "Now you can alter different parameters such as power, weight and aerodynamics to estimate what performance impact those changes might have."},

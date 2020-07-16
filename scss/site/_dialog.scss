@@ -74,6 +74,113 @@
         }
     }
 
+    a.help-info {
+        float: right;
+        width: 1.1em;
+        height: 1.1em;
+        margin: 0.25em 0 0.35em 0.35em;
+        color: color.get(fg);
+
+        &.hidden {
+            display: none;
+        }
+
+        &:hover {
+            color: color.shade(fg, -12%);
+        }
+    }
+
+    .help {
+        background-image: linear-gradient(to bottom,
+                                          color.shade(accent3, 10%),
+                                          color.get(accent3));
+        color: color.shade(accent3, 60%);
+        padding: 1.2em;
+        margin: 0 0 1em;
+        border-radius: 0.5em;
+        position: relative;
+        font-size: 0.85em;
+
+        &:not(.visible) {
+            display: none;
+        }
+
+        a.dismiss {
+            float: right;
+            margin-right: -0.75em;
+            margin-top: -0.75em;
+            filter: invert(1);
+        }
+
+        &::after {
+            content: '';
+            border-color: color.get(accent3) transparent transparent transparent;
+            border-width: 0.5em 0.5em 0 0.5em;
+            border-style: solid;
+            position: absolute;
+            bottom: -0.48em;  // firefox subpixel rendering is buggy, subtract 0.02em to avoid lines.
+            left: 1em;
+        }
+
+        table {
+            margin: 0 1em;
+
+            td:first-child {
+                white-space: nowrap;
+                font-weight: bold;
+                padding-right: 1em;
+            }
+        }
+    }
+
+    .sauce-key-value {
+        label {
+            display: inline-block;
+            padding: 0.5em 0.2em;
+            margin: 0;
+        }
+
+        .entry {
+            padding: 0.2em 1.2em;
+        }
+
+        > .entry:nth-of-type(odd) {
+            background-color: color.shade(bg, 5%);
+        }
+
+        key {
+            width: 16ch;
+            display: inline-block;
+        }
+
+        input {
+            vertical-align: middle;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            border-radius: 0.22em;
+            padding: 0.2em 0.5em;
+            height: auto;
+
+            &:invalid {
+                border-color: red;
+            }
+
+            &::placeholder {
+                opacity: 0.8;
+            }
+        }
+
+        select {
+            border-radius: 0.22em;
+            padding: 0.25em 0.5em;
+            margin: 0;
+            top: initial;
+            height: auto;
+        }
+    }
+
     @include perf_predictor.dialog;
 
     .ui-dialog-titlebar {

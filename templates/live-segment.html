@@ -1,0 +1,41 @@
+<form class="sauce-key-value">
+    <div class="intro">
+        <div class="help" data-for="intro">
+            <a class="dismiss"></a>
+            Hey man, looks like you need help?  Don't we all. We'll my name is Dr. Spaitso, and I am here to help you.
+        </div>
+        <a class="help-info" data-help="intro" title="{{{/dialog_help_info_tooltip}}}">{-infoIcon-}</a>
+        Create a live segment file for use with supported Garmin head units.
+        <br/><br/>
+        <i>This will generate a FIT segment file that can be placed in the `NewFiles` folder of your Garmin when you connect it to a computer via USB.</i>
+    </div>
+    <div class="entry">
+        <div class="help" data-for="segment-name">
+            <a class="dismiss"></a>
+            The segment name is how this segment appears on your device when you approach the starting location.
+        </div>
+        <a class="help-info" data-help="segment-name" title="{{{/dialog_help_info_tooltip}}}">{-infoIcon-}</a>
+        <key>Segment Name:</key>
+        <input name="segment-name" type="text" value="{{segmentName}}" maxlength="40"/>
+    </div>
+
+    <div class="entry">
+        <key>Leader Name:</key>
+        <input name="leader-name" type="text" value="{{leaderName}}" maxlength="30"/>
+    </div>
+
+    <div class="entry">
+        <key>Leader Type</key>
+        <select name="leader-type">
+            <option value="rival" {{!isSelf ? "selected" : ""}}>Rival</option>
+            <option value="goal" {{isSelf ? "goal" : "">Goal</option>
+            <option value="personal_best">Personal Best</option>
+            <option value="challenger">Challenger</option>
+            <option value="kom">KOM</option>
+            <option value="qom">QOM</option>
+            <option value="club_leader">Club Leader</option>
+        </select>
+    </div>
+
+    <input type="submit" value="Create Live Segment"/>
+</form>

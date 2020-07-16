@@ -279,6 +279,16 @@ sauce.ns('analysis', ns => {
         $dialog.dialog(Object.assign({
             buttons
         }, options, {dialogClass}));
+        $dialog.on('click', 'a.help-info', ev => {
+            const helpFor = ev.currentTarget.dataset.help;
+            ev.currentTarget.classList.add('hidden');
+            $dialog.find(`.help[data-for="${helpFor}"]`).toggleClass('visible');
+        });
+        $dialog.on('click', '.help a.dismiss', ev => {
+            const help = ev.currentTarget.closest('.help');
+            help.classList.remove('visible');
+            $dialog.find(`a.help-info[data-help="${help.dataset.for}"]`).removeClass('hidden');
+        });
         return $dialog;
     }
 
@@ -1912,17 +1922,45 @@ sauce.ns('analysis', ns => {
         await render();
     }
 
+
     function attachLiveSegmentsHandler() {
         jQuery(document).on('click', '.live-segment.sauce-button.enabled', async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
-            await createLiveSegment({
+            showLiveSegmentDialog(details).catch(sauce.rpc.catchError);
+        });
+    }
+
+
+    async function showLiveSegmentDialog(details) {
+        const template = await getTemplate('live-segment.html', 'live_segment');
+        const athlete = pageView.activityAthlete();
+        const body = await template({
+            infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
+            segmentName: details.get('name'),
+            leaderName: athlete.get('display_name'),
+            isSelf: athlete.id === pageView.currentAthlete().id,
+        });
+        const $dialog = modal({
+            title: 'Live Segment Creator',
+            icon: await sauce.images.asText('fa/trophy-duotone.svg'),
+            body,
+            width: '40em',
+            dialogClass: 'sauce-live-segment',
+        });
+        $dialog.on('submit', 'form', ev => {
+            ev.preventDefault();  // Don't reload page
+            const $form = $dialog.find('form');
+            createLiveSegment({
+                id: details.get('segment_id'),
                 start: details.get('start_index'),
                 end: details.get('end_index'),
-                name: details.get('name'),
-                id: details.get('segment_id')
-            });
+                segmentName: details.get('name'),
+                leaderName: $form.find('input[name="leader-name"]').val(),
+                leaderType: $form.find('input[name="leader-type"]').val(),
+            }).catch(sauce.rpc.reportError);
         });
+        sauce.rpc.reportEvent('LiveSegment', 'show');
     }
 
 
@@ -2488,7 +2526,7 @@ sauce.ns('analysis', ns => {
         await sauce.rpc.setAthleteProp(ctx.athlete.id, 'bikes', bikes);
     }
 
-    async function createLiveSegment({start, end, id, name}) {
+    async function createLiveSegment({start, end, id, segmentName, leaderName, leaderType}) {
         if (!window.jsfit) {
             const script = document.createElement('script');
             await new Promise((resolve, reject) => {
@@ -2504,9 +2542,6 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const latlngStream = await fetchStream('latlng', start, end);
-        const athlete = pageView.activityAthlete();
-        const athleteInitials = athlete.get('first_name').substr(0, 1) + athlete.get('last_name').substr(0, 1);
-        const dateStamp = (await getEstimatedActivityStart()).toLocaleDateString();
         const points = [];
         const distOfft = distStream[0];
         const timeOfft = timeStream[0];
@@ -2538,7 +2573,7 @@ sauce.ns('analysis', ns => {
             time_created: new Date()
         });
         fitParser.addMessage('segment_id', {
-            name: `${name.substr(0, 32)} [${athleteInitials} ${dateStamp}]`,
+            name: segmentName.substr(0, 40),
             enabled: true,
             sport: pageView.isRide() ? 'cycling' : pageView.isRun() ? 'running' : null,
             selection_type: 'starred',
@@ -2565,8 +2600,8 @@ sauce.ns('analysis', ns => {
         fitParser.addMessage('segment_leaderboard_entry', {
             activity_id_string: pageView.activity().id.toString(),
             segment_time: streamDelta(timeStream),
-            type: 'rival',
-            name: athlete.get('display_name'),
+            type: leaderType,
+            name: leaderName,
             message_index: {
                 flags: [],
                 value: 0
@@ -2576,7 +2611,8 @@ sauce.ns('analysis', ns => {
             fitParser.addMessage('segment_point', x);
         }
         const buf = fitParser.encode();
-        const fname = `Sauce_Live_Segment-${name.substr(0, 22)}-${athleteInitials}`;
+        const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
+        const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
         download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
         sauce.rpc.reportEvent('LiveSegment', 'create');
     }
@@ -2752,16 +2788,6 @@ sauce.ns('analysis', ns => {
             setTimeout(recalc, 0);
         });
         $dialog.on('input', 'input', () => setTimeout(recalc, 0));
-        $dialog.on('click', 'a.help-info', ev => {
-            const helpFor = ev.currentTarget.dataset.help;
-            ev.currentTarget.classList.add('hidden');
-            $dialog.find(`.help[data-for="${helpFor}"]`).toggleClass('visible');
-        });
-        $dialog.on('click', '.help a.dismiss', ev => {
-            const help = ev.currentTarget.closest('.help');
-            help.classList.remove('visible');
-            $dialog.find(`a.help-info[data-help="${help.dataset.for}"]`).removeClass('hidden');
-        });
         recalc(/*noPulse*/ true);
         sauce.rpc.reportEvent('PerfPredictor', 'show');
     }
