@@ -146,6 +146,13 @@ html.sauce-responsive,
     @media only screen and (max-width: 768px) {
         @include mobile.global;
     }
+
+    .ui-dialog .ui-dialog-titlebar button.ui-dialog-titlebar-close.ui-button {
+        // Reset our button styling that has higher prio back to dialog based close btn..
+        min-height: 0;
+        background-color: initial;
+        border: none;
+    }
 }
 // END global style
 
