@@ -24,26 +24,6 @@
         form.input {
             flex: 1 1 60%;
             max-width: 100%;
-            padding: 0.8em 0 1.2em;
-
-            .intro {
-                padding: 1em;
-                margin: 0;
-            }
-
-            .divider {
-                display: flex;
-                align-items: center;
-                padding: 0.5em;
-
-                &::before,
-                &::after {
-                    flex: 1 1 auto;
-                    content: '';
-                    border-bottom: 1px solid color.shade(bg, 20%);
-                    margin: 0 0.25em;
-                }
-            }
         }
 
         .indent {
@@ -103,20 +83,12 @@
                 color: inherit;
             }
 
-            label {
-                color: inherit;
-            }
-
             section {
                 padding: 1em;
 
                 &.predicted {
                     &.pulse {
                         animation: pulse 600ms 1;
-                    }
-
-                    .entry.total {
-                        font-weight: bold;
                     }
 
                     .power-details {

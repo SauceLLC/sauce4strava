@@ -1,5 +1,5 @@
 <form class="sauce-key-value">
-    <div class="intro">
+    <div class="padded-info">
         <div class="help" data-for="intro">
             <a class="dismiss"></a>
             Hey man, looks like you need help?  Don't we all. We'll my name is Dr. Spaitso, and I am here to help you.
@@ -16,12 +16,12 @@
         </div>
         <a class="help-info" data-help="segment-name" title="{{{/dialog_help_info_tooltip}}}">{-infoIcon-}</a>
         <key>Segment Name:</key>
-        <input name="segment-name" type="text" value="{{segmentName}}" maxlength="40"/>
+        <input name="segment-name" type="text" value="{{segmentName}}" minlength="1" maxlength="40"/>
     </div>
 
     <div class="entry">
         <key>Leader Name:</key>
-        <input name="leader-name" type="text" value="{{leaderName}}" maxlength="30"/>
+        <input name="leader-name" type="text" value="{{leaderName}}" minlength="1" maxlength="30"/>
     </div>
 
     <div class="entry">
@@ -55,10 +55,8 @@
     </div>
 
     <div class="entry" title="Adjust the overall speed by some percentage">
-        <key>Adjust Time:</key>
-        <input name="time-adjust" type="number" min="-250" max="250" step="1" value="100"/>
+        <key>Speed Adjust:</key>
+        <input name="speed-adjust" type="number" min="-250" max="250" step="1" value="100"/>
         <abbr class="unit">%</abbr>
     </div>
-
-    <input type="submit" value="Create Live Segment"/>
 </form>

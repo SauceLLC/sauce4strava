@@ -188,13 +188,14 @@
     .btn-primary,
     button[class*="Button--primary--"] {
         &:not(.btn-outline):not(.btn-link) {
-            border-color: color.shade(accent, 12%);
-            background-color: color.shade(accent, 12%);
+            border-color: color.shade(accent, 10%);
+            background-color: color.shade(accent, 10%);
             color: color.shade(accent, 80%);
 
             &:hover {
-                background-color: color.shade(accent, 8%);
-                color: color.shade(accent, 80%);
+                border-color: color.shade(accent, -5%);
+                background-color: color.shade(accent, -5%);
+                color: color.shade(accent, 90%);
             }
         }
 
@@ -211,13 +212,14 @@
     }
 
     button[class*="Button--primary-outline--"] {
-        border-color: color.shade(accent, 12%);
+        border-color: color.shade(accent, 10%);
         background-color: transparent;
-        color: color.shade(accent, 12%);
+        color: color.shade(accent, 10%);
 
         &:hover {
-            background-color: color.shade(accent, 12%);
-            color: color.shade(accent, 80%);
+            border-color: color.shade(accent, -5%);
+            background-color: color.shade(accent, -5%);
+            color: color.shade(accent, 90%);
         }
     }
 

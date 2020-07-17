@@ -273,9 +273,20 @@ sauce.ns('analysis', ns => {
         const $dialog = jQuery(`<div>${options.body}</div>`);
         options = options || {};
         const dialogClass = `${options.dialogClass || ''} sauce-dialog`;
-        const buttons = Object.assign({
-            "Close": () => $dialog.dialog('close')
-        }, options.extraButtons);
+        // Assign default button(s) (will be clobbered if options.buttons is defined)
+        const buttons = [{
+            text: "Close", // XXX locale
+            click: () => $dialog.dialog('close')
+        }];
+        if (Array.isArray(options.extraButtons)) {
+            for (const x of options.extraButtons) {
+                buttons.push(x);
+            }
+        } else if (options.extraButtons && typeof options.extraButtons === 'object') {
+            for (const [text, click] of Object.entries(options.extraButtons)) {
+                buttons.push({text, click});
+            }
+        }
         $dialog.dialog(Object.assign({
             buttons
         }, options, {dialogClass}));
@@ -1955,7 +1966,22 @@ sauce.ns('analysis', ns => {
             icon: await sauce.images.asText('fa/trophy-duotone.svg'),
             body,
             width: '40em',
-            dialogClass: 'sauce-live-segment',
+            dialogClass: 'sauce-live-segment no-pad',
+            extraButtons: [{
+                text: 'Create Live Segment', // XXX locale
+                class: "btn-primary",
+                click: () => {
+                    const $form = $dialog.find('form');
+                    createLiveSegment({
+                        id: details.get('segment_id'),
+                        start: details.get('start_index'),
+                        end: details.get('end_index'),
+                        segmentName: $form.find('[name="segment-name"]').val(),
+                        leaderName: $form.find('[name="leader-name"]').val(),
+                        leaderType: $form.find('[name="leader-type"]').val(),
+                    }).catch(sauce.rpc.reportError);
+                }
+            }]
         });
         $dialog.on('submit', 'form', ev => {
             ev.preventDefault();  // Don't reload page
@@ -2685,7 +2711,7 @@ sauce.ns('analysis', ns => {
             icon: await sauce.images.asText('fa/analytics-duotone.svg'),
             body,
             width: '60em',
-            dialogClass: 'sauce-perf-predictor',
+            dialogClass: 'sauce-perf-predictor no-pad',
             resizable: false,
             draggable: false,
         });
