@@ -1,6 +1,7 @@
 @use 'defines';
 @use 'color';
 @use 'perf_predictor';
+@use 'live_segment';
 
 
 .ui-dialog {
@@ -194,6 +195,7 @@
     }
 
     @include perf_predictor.dialog;
+    @include live_segment.dialog;
 
     .ui-dialog-titlebar {
         min-height: 0;

@@ -1,0 +1,25 @@
+@use 'color';
+
+@mixin dialog {
+    &.sauce-live-segment {
+        input[type="number"] {
+            width: calc(7ch + 1em);
+            text-align: right;
+        }
+    }
+
+
+    @media only screen and (max-width: 768px) {
+        &.sauce-live-segment {
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            height: 100vh !important;
+            width: 100vw !important;
+            max-height: initial;
+            max-width: initial;
+            margin: 0;
+        }
+    }
+}
