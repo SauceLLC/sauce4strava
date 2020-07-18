@@ -1946,10 +1946,9 @@ sauce.ns('analysis', ns => {
     async function showLiveSegmentDialog(details) {
         const template = await getTemplate('live-segment.html', 'live_segment');
         const athlete = pageView.activityAthlete();
-        const start = details.get('start_index');
-        const end = details.get('end_index');
+        const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
         const timeStream = await fetchStream('time', start, end);
-        const distStream = await fetchStream('distance', start, end);
+        let timeMultiplier = 1;
         const body = await template({
             infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
             segmentName: details.get('name'),
@@ -1976,9 +1975,16 @@ sauce.ns('analysis', ns => {
                         segmentName: $form.find('[name="segment-name"]').val(),
                         leaderName: $form.find('[name="leader-name"]').val(),
                         leaderType: $form.find('[name="leader-type"]').val(),
+                        timeMultiplier
                     }).catch(sauce.rpc.reportError);
                 }
             }]
+        });
+        $dialog.on('input', 'input', () => {
+            const speedAdj = Number($dialog.find(`[name="speed-adjust"]`).val());
+            timeMultiplier = 1 - (speedAdj / 100);
+            const adjustedTime = timeMultiplier * streamDelta(timeStream);
+            $dialog.find('.leader-time').text(humanTime(adjustedTime));
         });
         sauce.rpc.reportEvent('LiveSegment', 'show');
     }
@@ -2546,7 +2552,8 @@ sauce.ns('analysis', ns => {
         await sauce.rpc.setAthleteProp(ctx.athlete.id, 'bikes', bikes);
     }
 
-    async function createLiveSegment({start, end, uuid, segmentName, leaderName, leaderType}) {
+    async function createLiveSegment({start, end, uuid, segmentName, leaderName, leaderType,
+        timeMultiplier}) {
         if (!window.jsfit) {
             const script = document.createElement('script');
             await new Promise((resolve, reject) => {
@@ -2557,7 +2564,9 @@ sauce.ns('analysis', ns => {
                 document.head.appendChild(script);
             });
         }
-        const timeStream = await fetchStream('time', start, end);
+        const timeStreamOrig = await fetchStream('time', start, end);
+        const timeStream = (timeMultiplier && timeMultiplier !== 1) ?
+            timeStreamOrig.map(x => x * timeMultiplier) : timeStreamOrig;
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const latlngStream = await fetchStream('latlng', start, end);
@@ -2693,9 +2702,9 @@ sauce.ns('analysis', ns => {
         function fget(name) {
             return Number($dialog.find(`[name="${name}"]`).val());
         }
-        const localeKeys = ['faster', 'slower', 'power_details_gravity', 'power_details_aero', 'power_details_rr'];
-        const localeStrings = await sauce.locale.getMessages(localeKeys.map(x => `perf_predictor_${x}`));
-        const locale = localeStrings.reduce((acc, x, i) => (acc[localeKeys[i]] = x, acc), {});
+        const locale = await sauce.locale.getMessagesObject([
+            'faster', 'slower', 'power_details_rr', 'power_details_gravity', 'power_details_aero'
+        ], 'perf_predictor');
         let lazySaveTimeout;
         function recalc(noPulse) {
             const crr = fget('crr');
@@ -2714,10 +2723,12 @@ sauce.ns('analysis', ns => {
             const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
             if (powerEst.velocity && time < origTime) {
                 const pct = (origTime / time - 1) * 100;
-                $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.faster}`).addClass('sauce-positive').removeClass('sauce-negative');
+                $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.faster}`);
+                $timeAhead.addClass('sauce-positive').removeClass('sauce-negative');
             } else if (powerEst.velocity && time > origTime) {
                 const pct = (time / origTime - 1) * 100;
-                $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.slower}`).addClass('sauce-negative').removeClass('sauce-positive');
+                $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.slower}`);
+                $timeAhead.addClass('sauce-negative').removeClass('sauce-positive');
             } else {
                 $timeAhead.empty();
             }

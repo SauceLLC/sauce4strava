@@ -28,7 +28,7 @@
         <key>Leader Type:</key>
         <select name="leader-type">
             <option value="rival" {{!isSelf ? "selected" : ""}}>Rival</option>
-            <option value="goal" {{isSelf ? "goal" : "">Goal</option>
+            <option value="goal" {{isSelf ? "selected" : ""}}>Goal</option>
             <option value="pr">PR</option>
             <option value="challenger">Challenger</option>
             <option value="kom">KOM</option>
@@ -39,7 +39,7 @@
 
     <div class="entry" title="Adjust the overall speed by some percentage">
         <key>Speed Adjust:</key>
-        <input name="speed-adjust" type="number" min="-250" max="250" step="1" value="100"/>
+        <input name="speed-adjust" type="number" min="-100" max="100" step="any" value="0"/>
         <abbr class="unit">%</abbr>
     </div>
 

@@ -76,6 +76,13 @@ sauce.ns('locale', ns => {
     }
 
 
+    async function getMessagesObject(keys, ns) {
+        const prefix = ns ? `${ns}_` : '';
+        const msgs = await sauce.locale.getMessages(keys.map(x => `${prefix}${x}`));
+        return msgs.reduce((acc, x, i) => (acc[keys[i]] = x, acc), {});
+    }
+
+
     async function humanDuration(elapsed, options) {
         options = options || {};
         const min = 60;
@@ -124,6 +131,7 @@ sauce.ns('locale', ns => {
     return {
         getMessage,
         getMessages,
+        getMessagesObject,
         humanDuration,
         humanTimeAgo
     };
