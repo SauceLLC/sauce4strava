@@ -2627,9 +2627,6 @@
 
         .ui-dialog-titlebar {
             background-color: color.shade(bg, 12%);
-        }
-
-        .ui-widget-header {
             color: color.shade(fg, 5%);
             border-color: $mid-border-color;
         }
