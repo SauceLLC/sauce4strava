@@ -37,26 +37,14 @@
         </select>
     </div>
 
-    <div class="entry">
-        <key>Leader Time:</key>
-        <span class="leader-time">{{leaderTime}}</span>
-    </div>
-
-    <div class="entry" title="Optional distance offset into start (e.g. trim the start)">
-        <key>Start Offset:</key>
-        <input name="offset-start" type="number" min="0" step="1" value="0"/>
-        <abbr class="unit">{{distanceUnit}}</abbr>
-    </div>
-
-    <div class="entry" title="Optional distance offset from finish (e.g. trim the finish)">
-        <key>End Trim:</key>
-        <input name="offset-end" type="number" min="0" step="1" value="0"/>
-        <abbr class="unit">{{distanceUnit}}</abbr>
-    </div>
-
     <div class="entry" title="Adjust the overall speed by some percentage">
         <key>Speed Adjust:</key>
         <input name="speed-adjust" type="number" min="-250" max="250" step="1" value="100"/>
         <abbr class="unit">%</abbr>
+    </div>
+
+    <div class="entry">
+        <key>Time:</key>
+        <span class="leader-time">{{leaderTime}}</span>
     </div>
 </form>

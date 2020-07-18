@@ -1950,16 +1950,12 @@ sauce.ns('analysis', ns => {
         const end = details.get('end_index');
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
-        const distOfft = distStream[0];
-        const timeOfft = timeStream[0];
         const body = await template({
             infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
             segmentName: details.get('name'),
             leaderName: athlete.get('display_name'),
             isSelf: athlete.id === pageView.currentAthlete().id,
-            leaderTime: ctx.timeFormatter.abbreviatedNoTags(streamDelta(timeStream), null, false),
-            distance: streamDelta(distStream),
-            distanceUnit: ctx.distanceFormatter.shortUnitKey(),
+            leaderTime: humanTime(streamDelta(timeStream))
         });
         const $dialog = modal({
             title: 'Live Segment Creator',
@@ -1973,27 +1969,16 @@ sauce.ns('analysis', ns => {
                 click: () => {
                     const $form = $dialog.find('form');
                     createLiveSegment({
-                        id: details.get('segment_id'),
-                        start: details.get('start_index'),
-                        end: details.get('end_index'),
+                        // Avoid collision with strava ids so we can coexist
+                        uuid: `sauce-${details.get('segment_id')}-${pageView.activity().id}`,
+                        start,
+                        end,
                         segmentName: $form.find('[name="segment-name"]').val(),
                         leaderName: $form.find('[name="leader-name"]').val(),
                         leaderType: $form.find('[name="leader-type"]').val(),
                     }).catch(sauce.rpc.reportError);
                 }
             }]
-        });
-        $dialog.on('submit', 'form', ev => {
-            ev.preventDefault();  // Don't reload page
-            const $form = $dialog.find('form');
-            createLiveSegment({
-                id: details.get('segment_id'),
-                start: details.get('start_index'),
-                end: details.get('end_index'),
-                segmentName: $form.find('[name="segment-name"]').val(),
-                leaderName: $form.find('[name="leader-name"]').val(),
-                leaderType: $form.find('[name="leader-type"]').val(),
-            }).catch(sauce.rpc.reportError);
         });
         sauce.rpc.reportEvent('LiveSegment', 'show');
     }
@@ -2561,7 +2546,7 @@ sauce.ns('analysis', ns => {
         await sauce.rpc.setAthleteProp(ctx.athlete.id, 'bikes', bikes);
     }
 
-    async function createLiveSegment({start, end, id, segmentName, leaderName, leaderType}) {
+    async function createLiveSegment({start, end, uuid, segmentName, leaderName, leaderType}) {
         if (!window.jsfit) {
             const script = document.createElement('script');
             await new Promise((resolve, reject) => {
@@ -2572,7 +2557,6 @@ sauce.ns('analysis', ns => {
                 document.head.appendChild(script);
             });
         }
-        const uuid = `sauce-${id}-${pageView.activity().id}`;  // Avoid collision with strava ids so we can coexist
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
@@ -2595,10 +2579,7 @@ sauce.ns('analysis', ns => {
                 position_lat: latlngStream[i][0],
                 position_long: latlngStream[i][1],
                 leader_time: [timeStream[i] - timeOfft],
-                message_index: {
-                    flags: [],
-                    value: i
-                }
+                message_index: {flags: [], value: i}
             });
         }
         const fitParser = new jsfit.FitParser();
@@ -2627,20 +2608,14 @@ sauce.ns('analysis', ns => {
             swc_long,
             nec_lat,
             nec_long,
-            message_index: {
-                flags: [],
-                value: 0
-            }
+            message_index: {flags: [], value: 0}
         });
         fitParser.addMessage('segment_leaderboard_entry', {
             activity_id_string: pageView.activity().id.toString(),
             segment_time: streamDelta(timeStream),
             type: leaderType,
             name: leaderName,
-            message_index: {
-                flags: [],
-                value: 0
-            }
+            message_index: {flags: [], value: 0}
         });
         for (const x of points) {
             fitParser.addMessage('segment_point', x);
