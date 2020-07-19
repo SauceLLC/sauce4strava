@@ -3,7 +3,7 @@
 @mixin dialog {
     &.sauce-live-segment {
         input[type="number"] {
-            width: calc(7ch + 1em);
+            width: calc(5ch + 1em);
             text-align: right;
         }
     }

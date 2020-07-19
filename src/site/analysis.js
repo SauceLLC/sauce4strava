@@ -1935,7 +1935,7 @@ sauce.ns('analysis', ns => {
 
 
     function attachLiveSegmentsHandler() {
-        jQuery(document).on('click', '.live-segment.sauce-button.enabled', async ev => {
+        jQuery(document).on('click', '.live-segment.sauce-button', async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
             showLiveSegmentDialog(details).catch(sauce.rpc.catchError);
@@ -1949,20 +1949,18 @@ sauce.ns('analysis', ns => {
         const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
         const timeStream = await fetchStream('time', start, end);
         let timeMultiplier = 1;
+        const hasPatronRequirement = sauce.patronLevel >= 30;
         const body = await template({
             infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
             segmentName: details.get('name'),
             leaderName: athlete.get('display_name'),
             isSelf: athlete.id === pageView.currentAthlete().id,
-            leaderTime: humanTime(streamDelta(timeStream))
+            leaderTime: humanTime(streamDelta(timeStream)),
+            hasPatronRequirement,
         });
-        const $dialog = modal({
-            title: 'Live Segment Creator',
-            icon: await sauce.images.asText('fa/trophy-duotone.svg'),
-            body,
-            width: '40em',
-            dialogClass: 'sauce-live-segment no-pad',
-            extraButtons: [{
+        const extraButtons = [];
+        if (hasPatronRequirement) {
+            extraButtons.push({
                 text: 'Create Live Segment', // XXX locale
                 class: "btn-primary",
                 click: () => {
@@ -1978,7 +1976,21 @@ sauce.ns('analysis', ns => {
                         timeMultiplier
                     }).catch(sauce.rpc.reportError);
                 }
-            }]
+            });
+        } else {
+            extraButtons.push({
+                text: 'Become a Patron',
+                class: "btn-primary",
+                click: () => window.open('https://www.patreon.com/bePatron?u=32064618', '_blank')
+            });
+        }
+        const $dialog = modal({
+            title: 'Live Segment Creator',
+            icon: await sauce.images.asText('fa/trophy-duotone.svg'),
+            body,
+            width: '40em',
+            dialogClass: 'sauce-live-segment no-pad',
+            extraButtons,
         });
         $dialog.on('input', 'input', () => {
             const speedAdj = Number($dialog.find(`[name="speed-adjust"]`).val());

@@ -427,17 +427,16 @@
 
         sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', async Klass => {
             const renderSave = Klass.prototype.render;
-            const disabled = (!sauce.patronLevel || sauce.patronLevel < 10);
             const labelKey = 'analysis_create_live_segment';
-            const titleKey = `${labelKey}_tooltip${disabled ? '_disabled' : ''}`;
+            const titleKey = `${labelKey}_tooltip`;
             Klass.prototype.render = function() {
                 const ret = renderSave.apply(this, arguments);
                 if (sauce && sauce.locale) {
                     sauce.locale.getMessages([titleKey, labelKey]).then(([title, label]) => {
                         const segmentId = this.viewModel.model.id;
                         const runSegmentsView = this.options.pageView.chartContext().activity().get('type') === 'Run';
-                        const $btn = jQuery(`<div title="${title}" class="btn-block button sauce-button
-                                                         live-segment ${disabled ? 'disabled' : 'enabled'}"
+                        const $btn = jQuery(`<div title="${title}"
+                                                  class="btn-block button sauce-button live-segment"
                                                   data-segment-id="${segmentId}">${label}</div>`);
                         if (runSegmentsView) {
                             this.$('.bottomless.inset').append($btn);

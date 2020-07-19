@@ -102,7 +102,6 @@
     "analysis_comment": {"message": "Comment"},
     "analysis_title": {"message": "Analysis"},
     "analysis_create_live_segment_tooltip": {"message": "Create a live segment file from this effort.\nCompatible with most modern Garmin devices."},
-    "analysis_create_live_segment_tooltip_disabled": {"message": "Live segment file creation is a patron feature."},
     "analysis_create_live_segment": {"message": "Create Live Segment"},
     "time_sec": {"message": "sec"},
     "time_secs": {"message": "secs"},
