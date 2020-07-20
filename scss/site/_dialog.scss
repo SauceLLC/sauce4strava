@@ -85,6 +85,14 @@
         margin: 0;
     }
 
+    a {
+        color: color.get(accent);
+
+        &:focus {
+            outline: none;
+        }
+    }
+
     a.help-info {
         float: right;
         width: 1.1em;
@@ -114,6 +122,10 @@
 
         &:not(.visible) {
             display: none;
+        }
+
+        a {
+            color: color.get(accent2);
         }
 
         a.dismiss {

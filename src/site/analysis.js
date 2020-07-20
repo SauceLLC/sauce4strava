@@ -1957,6 +1957,7 @@ sauce.ns('analysis', ns => {
             isSelf: athlete.id === pageView.currentAthlete().id,
             leaderTime: humanTime(streamDelta(timeStream)),
             hasPatronRequirement,
+            selfImageUrl: sauce.extUrl + 'images/jen_and_i_europe.jpg',
         });
         const extraButtons = [];
         if (hasPatronRequirement) {
