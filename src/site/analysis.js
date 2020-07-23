@@ -125,7 +125,7 @@ sauce.ns('analysis', ns => {
                 }
             }
             if (fetching.length) {
-                console.info("Fetching streams:", fetching.join(', '));
+                console.info('Fetching streams:', fetching.join(', '));
                 const p = new Promise((resolve, reject) => {
                     streams.fetchStreams(fetching, {
                         success: resolve,
@@ -275,7 +275,7 @@ sauce.ns('analysis', ns => {
         const dialogClass = `${options.dialogClass || ''} sauce-dialog`;
         // Assign default button(s) (will be clobbered if options.buttons is defined)
         const buttons = [{
-            text: "Close", // XXX locale
+            text: 'Close', // XXX locale
             click: () => $dialog.dialog('close')
         }];
         if (Array.isArray(options.extraButtons)) {
@@ -629,7 +629,7 @@ sauce.ns('analysis', ns => {
         if (!wattsStream) {
             wattsStream = await fetchStream('watts_calc');
             if (!wattsStream) {
-                console.info("No power data for this activity.");
+                console.info('No power data for this activity.');
             }
         }
         let tss;
@@ -1718,7 +1718,7 @@ sauce.ns('analysis', ns => {
         const exportLocale = await sauce.locale.getMessage('analysis_export');
         const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
         if (!menuEl) {
-            console.warn("Side nav menu not found: Probably a flagged activity");
+            console.warn('Side nav menu not found: Probably a flagged activity');
             return;
         }
         menuEl.insertAdjacentHTML('beforeend', `
@@ -1734,7 +1734,7 @@ sauce.ns('analysis', ns => {
             </li>
         `);
         menuEl.querySelector('a.tcx').addEventListener('click', () => {
-            exportActivity(sauce.export.TCXSerializer).catch(sauce.rpc.reportError);  // bg okay
+            exportActivity(sauce.export.TCXSerializer).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
         });
         if (!menuEl.querySelector('a[href$="/export_gpx"')) {
@@ -1743,7 +1743,7 @@ sauce.ns('analysis', ns => {
                        class="gpx">${exportLocale} GPX</a></li>
             `);
             menuEl.querySelector('a.gpx').addEventListener('click', () => {
-                exportActivity(sauce.export.GPXSerializer).catch(sauce.rpc.reportError);  // bg okay
+                exportActivity(sauce.export.GPXSerializer).catch(sauce.rpc.reportError);
                 sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
             });
         }
@@ -1817,7 +1817,7 @@ sauce.ns('analysis', ns => {
                 for (const [, lng] of geoStream) {
                     if (lng != null) {
                         longitude = lng;
-                        console.info("Getting longitude of activity based on latlng stream");
+                        console.info('Getting longitude of activity based on latlng stream');
                         break;
                     }
                 }
@@ -1827,18 +1827,18 @@ sauce.ns('analysis', ns => {
                 const athleteGeo = ctx.athlete.get('geo');
                 if (athleteGeo && athleteGeo.lat_lng) {
                     longitude = athleteGeo.lat_lng[1];
-                    console.info("Getting longitude of activity based on athlete's location");
+                    console.info('Getting longitude of activity based on athlete\'s location');
                 }
             }
             let offset = 0;
             if (longitude != null) {
                 offset = Math.round((longitude / 180) * (24 / 2)) * 3600000;
-                console.info("Using laughably bad timezone correction:", offset);
+                console.info('Using laughably bad timezone correction:', offset);
             }
             return new Date(localTime - offset);  // Subtract offset to counteract the localtime.
         }
         // Sadly we would have to resort to HTML scraping here. Which for now, I won't..
-        console.info("No activity start date could be acquired");
+        console.info('No activity start date could be acquired');
         return new Date();
     }
 
@@ -1943,51 +1943,89 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function showLiveSegmentDialog(details) {
+    async function showLiveSegmentDialog(details, useTrial) {
         const template = await getTemplate('live-segment.html', 'live_segment');
         const athlete = pageView.activityAthlete();
         const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
         const timeStream = await fetchStream('time', start, end);
         let timeMultiplier = 1;
-        const hasPatronRequirement = sauce.patronLevel >= 30;
+        const hasPatronRequirement = sauce.patronLevel >= 30; // XXX
+        const trialCount = (!hasPatronRequirement &&
+            await sauce.rpc.storageGet('live_segment_trial_count', {sync: true})) || 0;
+        const maxTrials = 3;
+        const icon = await sauce.images.asText('fa/trophy-duotone.svg');
         const body = await template({
             infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
             segmentName: details.get('name'),
             leaderName: athlete.get('display_name'),
             isSelf: athlete.id === pageView.currentAthlete().id,
             leaderTime: humanTime(streamDelta(timeStream)),
-            hasPatronRequirement,
             selfImageUrl: sauce.extUrl + 'images/jen_and_i_europe.jpg',
+            hasPatronRequirement,
+            useTrial,
         });
         const extraButtons = [];
-        if (hasPatronRequirement) {
+        if (hasPatronRequirement || useTrial) {
             extraButtons.push({
                 text: 'Create Live Segment', // XXX locale
-                class: "btn-primary",
-                click: () => {
+                class: 'btn-primary',
+                click: async () => {
                     const $form = $dialog.find('form');
-                    createLiveSegment({
-                        // Avoid collision with strava ids so we can coexist
-                        uuid: `sauce-${details.get('segment_id')}-${pageView.activity().id}`,
-                        start,
-                        end,
-                        segmentName: $form.find('[name="segment-name"]').val(),
-                        leaderName: $form.find('[name="leader-name"]').val(),
-                        leaderType: $form.find('[name="leader-type"]').val(),
-                        timeMultiplier
-                    }).catch(sauce.rpc.reportError);
+                    try {
+                        await createLiveSegment({
+                            // Avoid collision with strava ids so we can coexist
+                            uuid: `sauce-${details.get('segment_id')}-${pageView.activity().id}`,
+                            start,
+                            end,
+                            segmentName: $form.find('[name="segment-name"]').val(),
+                            leaderName: $form.find('[name="leader-name"]').val(),
+                            leaderType: $form.find('[name="leader-type"]').val(),
+                            timeMultiplier
+                        });
+                    } catch(e) {
+                        sauce.rpc.reportError(e);
+                        return;
+                    }
+                    if (useTrial) {
+                        await sauce.rpc.storageSet('live_segment_trial_count', trialCount + 1, {sync: true});
+                        sauce.rpc.reportEvent('LiveSegment', 'trial');
+                    }
+                    $dialog.dialog('destroy');
+                    modal({
+                        title: 'All finished',  // XXX locale
+                        icon,
+                        body: `
+                            Your live segment file should now be downloaded to your computer.<br/>
+                            <br/>
+                            Mount your Garmin (or other Live Segment supported device) to your computer via USB
+                            and copy this file to the "Garmin/NewFiles" folder.<br/>
+                            <br/>
+                            <i>Be sure to safely eject the device before disconnecting it.</i>
+                        ` // XXX locale
+                    });
                 }
             });
         } else {
+            if (trialCount < maxTrials) {
+                extraButtons.push({
+                    text: `Use Trial (${maxTrials - trialCount} remaining)`, // XXX locale
+                    class: 'btn-primary btn-outline',
+                    click: () => {
+                        $dialog.dialog('destroy');
+                        showLiveSegmentDialog(details, /*useTrial*/ true).catch(sauce.rpc.reportError);
+                    }
+                });
+            }
             extraButtons.push({
-                text: 'Become a Patron',
-                class: "btn-primary",
+                text: 'Become a Patron', // XXX locale
+                class: 'btn-primary',
                 click: () => window.open('https://www.patreon.com/bePatron?u=32064618', '_blank')
             });
         }
+        const trialTitle = useTrial ? ` - Trial ${trialCount + 1} / ${maxTrials}` : '';
         const $dialog = modal({
-            title: 'Live Segment Creator',
-            icon: await sauce.images.asText('fa/trophy-duotone.svg'),
+            title: 'Live Segment Creator' + trialTitle,  // XXX locale
+            icon,
             body,
             width: '40em',
             dialogClass: 'sauce-live-segment no-pad',
@@ -2009,7 +2047,7 @@ sauce.ns('analysis', ns => {
         }
         const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
         if (!segment) {
-            console.warn("Segment data not found for:", row.dataset.segmentEffortId);
+            console.warn('Segment data not found for:', row.dataset.segmentEffortId);
             return;
         }
         const wKg = segment.get('avg_watts_raw') / ctx.weight;
@@ -2032,7 +2070,7 @@ sauce.ns('analysis', ns => {
             targetTD = row.querySelector('.time-col');
         }
         if (!targetTD) {
-            throw new Error("Badge Fail: row query selector failed");
+            throw new Error('Badge Fail: row query selector failed');
         }
         targetTD.classList.add('sauce-mark');
         const levelPct = Math.round(rank.level * 100);
@@ -2851,15 +2889,15 @@ sauce.ns('analysis', ns => {
         const navHeight = sidenav.offsetHeight;
         const slideMenu = sidenav.querySelector('.slide-menu');
         if (!slideMenu) {
-            console.warn("Slide menu not found: Probably a flagged activity");
+            console.warn('Slide menu not found: Probably a flagged activity');
             return;
         }
         // Must use jQuery since it's hidden and they do the magic..
-        const slideMenuHeight = jQuery(slideMenu.querySelector(".options")).height();
+        const slideMenuHeight = jQuery(slideMenu.querySelector('.options')).height();
         const top = slideMenuHeight > navHeight;
         requestAnimationFrame(() => {
-            slideMenu.classList.remove("align-top");  // Never seems to be a good idea.
-            slideMenu.classList.toggle("align-bottom", !top);
+            slideMenu.classList.remove('align-top');  // Never seems to be a good idea.
+            slideMenu.classList.toggle('align-bottom', !top);
         });
     }
 
@@ -2926,9 +2964,9 @@ sauce.ns('analysis', ns => {
         } else if (activity.isSwim()) {
             ctx.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
-        updateSideNav().catch(sauce.rpc.reportError);  // bg okay
-        attachActionMenuItems().catch(sauce.rpc.reportError);  // bg okay
-        attachComments().catch(sauce.rpc.reportError);  // bg okay
+        updateSideNav().catch(sauce.rpc.reportError);
+        attachActionMenuItems().catch(sauce.rpc.reportError);
+        attachComments().catch(sauce.rpc.reportError);
         attachLiveSegmentsHandler();
         const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');
         ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
@@ -3031,7 +3069,7 @@ sauce.ns('analysis', ns => {
         sauce.rpc.auditStackFrame();
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
-            attachMobileMenuExpander().catch(sauce.rpc.reportError);  // bg okay
+            attachMobileMenuExpander().catch(sauce.rpc.reportError);
             pageView.unbindScrollListener();
             document.body.classList.add('sauce-disabled-scroll-listener');
             pageView.handlePageScroll = function() {};
@@ -3046,7 +3084,7 @@ sauce.ns('analysis', ns => {
         ctx.manifest = manifests[type];
         if (ctx.manifest) {
             if (ctx.manifest.streams) {
-                fetchStreams(Array.from(ctx.manifest.streams)).catch(sauce.rpc.reportError);  // bg okay
+                fetchStreams(Array.from(ctx.manifest.streams)).catch(sauce.rpc.reportError);
             }
             const pageRouter = pageView.router();
             pageRouter.on('route', page => {
@@ -3066,7 +3104,7 @@ sauce.ns('analysis', ns => {
             sauce.rpc.reportEvent('ActivityAnalysis', 'load', type);
         } else {
             ctx.unsupported = true;
-            console.info("Unsupported activity type:", type);
+            console.info('Unsupported activity type:', type);
         }
         sendGAPageView(type);  // bg okay
     }

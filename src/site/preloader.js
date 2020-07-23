@@ -428,6 +428,8 @@
         sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', async Klass => {
             const renderSave = Klass.prototype.render;
             const labelKey = 'analysis_create_live_segment';
+            const lacksPatronReq = !sauce.patronLevel || sauce.patronLevel < 30;  // XXX
+            const extraCls = lacksPatronReq ? 'trial' : '';
             const titleKey = `${labelKey}_tooltip`;
             Klass.prototype.render = function() {
                 const ret = renderSave.apply(this, arguments);
@@ -436,7 +438,7 @@
                         const segmentId = this.viewModel.model.id;
                         const runSegmentsView = this.options.pageView.chartContext().activity().get('type') === 'Run';
                         const $btn = jQuery(`<div title="${title}"
-                                                  class="btn-block button sauce-button live-segment"
+                                                  class="btn-block button sauce-button live-segment ${extraCls}"
                                                   data-segment-id="${segmentId}">${label}</div>`);
                         if (runSegmentsView) {
                             this.$('.bottomless.inset').append($btn);
