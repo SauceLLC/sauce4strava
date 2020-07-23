@@ -26,8 +26,6 @@
     }
 
 
-    addHook('storage', 'set', sauce.storage.set);
-    addHook('storage', 'get', sauce.storage.get);
     addHook('ga', 'apply', async function({args, meta}) {
         let tracker = await sauce.ga.getTracker(this.tab.id);
         const url = new URL(this.url);
@@ -45,39 +43,10 @@
     addHook('locale', 'getMessages', batch => batch.map(x => _getI18nMessage(x)));
     addHook('util', 'ping', x => x);
     addHook('util', 'bgping', x => x, {backgroundOnly: true});
-    addHook('storage', 'update', (() => {
-        let _activeUpdate;
-        return async ({keyPath, updates}) => {
-            // keyPath can be dot.notation.
-            const priorUpdate = _activeUpdate;
-            const ourUpdate = (async () => {
-                if (priorUpdate) {
-                    await priorUpdate;
-                }
-                const keys = keyPath.split('.');
-                const rootKey = keys.shift();
-                const rootRef = await sauce.storage.get(rootKey) || {};
-                let ref = rootRef;
-                for (const key of keys) {
-                    if (ref[key] == null) {
-                        ref[key] = {};
-                    }
-                    ref = ref[key];
-                }
-                Object.assign(ref, updates);
-                await sauce.storage.set({[rootKey]: rootRef});
-                return ref;
-            })();
-            _activeUpdate = ourUpdate;
-            try {
-                return await ourUpdate;
-            } finally {
-                if (ourUpdate === _activeUpdate) {
-                    _activeUpdate = null;
-                }
-            }
-        };
-    })(), {backgroundOnly: true});
+    addHook('storage', 'get', ({args}) => sauce.storage.get.apply(null, args));
+    addHook('storage', 'set', ({args}) => sauce.storage.set.apply(null, args));
+    addHook('storage', 'update', ({args}) => sauce.storage.update.apply(null, args),
+        {backgroundOnly: true});
     addHook('options', 'openOptionsPage', () => browser.runtime.openOptionsPage(),
         {backgroundOnly: true});
 })();

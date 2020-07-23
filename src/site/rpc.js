@@ -4,19 +4,15 @@ sauce.ns('rpc', function() {
     'use strict';
 
 
-    async function storageSet(key, value) {
-        let data;
-        if (value === undefined && typeof key === 'object') {
-            data = key;
-        } else {
-            data = {[key]: value};
-        }
-        return await invoke({system: 'storage', op: 'set', data});
+    async function storageSet() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'storage', op: 'set', data: {args}});
     }
 
 
-    async function storageGet(data) {
-        return await invoke({system: 'storage', op: 'get', data});
+    async function storageGet() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'storage', op: 'get', data: {args}});
     }
 
 
@@ -28,8 +24,9 @@ sauce.ns('rpc', function() {
     }
 
 
-    async function storageUpdate(keyPath, updates) {
-        return await invoke({system: 'storage', op: 'update', data: {keyPath, updates}});
+    async function storageUpdate() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'storage', op: 'update', data: {args}});
     }
 
 
