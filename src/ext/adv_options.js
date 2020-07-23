@@ -117,7 +117,12 @@
             browser.tabs.update({active: true});  // required to allow self.close()
             self.close();
         });
+        let _confirmingErase;
         document.getElementById('clear').addEventListener('click', function() {
+            if (_confirmingErase) {
+                return;
+            }
+            _confirmingErase = true;
             this.innerText = "Double Click to Confirm Erase";
             this.addEventListener('dblclick', async () => {
                 await sauce.storage.remove('athlete_info');
