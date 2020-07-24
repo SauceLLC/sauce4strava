@@ -205,9 +205,6 @@
     "analysis_graphs": {
         "message": "Grafiken"
     },
-    "analysis_perf_predictor": {
-        "message": "Perf Predictor"
-    },
     "analysis_perf_predictor_tooltip": {
         "message": "Vorhersage der Leistung von Radsportbemühungen."
     },
@@ -328,10 +325,10 @@
         "message": "Analyse"
     },
     "analysis_create_live_segment_tooltip": {
-        "message": "Erstellen Sie aus dieser Anstrengung eine Live-Segmentdatei. Kompatibel mit den meisten modernen Garmin-Geräten."
+        "message": "Erstellen Sie aus dieser Anstrengung eine Live-Segment-Datei. Kompatibel mit den meisten modernen Garmin-Geräten."
     },
-    "analysis_create_live_segment": {
-        "message": "Live-Segment erstellen"
+    "analysis_create": {
+        "message": "Erstellen"
     },
     "time_sec": {
         "message": "sek"
@@ -567,5 +564,101 @@
     },
     "subscription": {
         "message": "Abonnement"
+    },
+    "live_segment_create": {
+        "message": "Erstellen"
+    },
+    "live_segment_creator": {
+        "message": "Schöpfer"
+    },
+    "live_segment_success_create_title": {
+        "message": "Erfolgreich erstellt"
+    },
+    "live_segment_success_create_body1": {
+        "message": "Ihre Live-Segmentdatei sollte jetzt auf Ihren Computer heruntergeladen werden."
+    },
+    "live_segment_success_create_body2": {
+        "message": "Hängen Sie Ihr Gerät über USB an Ihren Computer an und kopieren Sie diese Datei in den Ordner \"Garmin / NewFiles\"."
+    },
+    "live_segment_success_create_body3": {
+        "message": "Stellen Sie sicher, dass Sie das Gerät sicher auswerfen, bevor Sie es trennen."
+    },
+    "live_segment_use_trial": {
+        "message": "Testversion verwenden"
+    },
+    "live_segment_remaining": {
+        "message": "verbleibend"
+    },
+    "live_segment_become_patron": {
+        "message": "Werden Sie Patron"
+    },
+    "live_segment_intro_help1": {
+        "message": "Der Sauce Live Segment-Ersteller generiert aus jeder Strava-Aktivität eine Segmentdatei. Die erstellte Datei entspricht dem offenen Standard für FIT-Segmentdateien. Diese Datei ist mit unterstützten Garmin-Geräten kompatibel und möglicherweise mit anderen Geräten kompatibel, die das seitliche Laden von Segmentdateien unterstützen."
+    },
+    "live_segment_intro_help_side_loading_more_info": {
+        "message": "Weitere Informationen zum Garmin-Seitenladen finden Sie hier."
+    },
+    "live_segment_intro_help_note": {
+        "message": "HINWEIS: Wahoo-Geräte unterstützen KEIN seitliches Laden von Segmentdateien."
+    },
+    "live_segment_intro1": {
+        "message": "Erstellen Sie eine Live-Segment-Datei zur Verwendung mit"
+    },
+    "live_segment_intro_supported_devices": {
+        "message": "unterstützte Garmin-Geräte"
+    },
+    "live_segment_intro_note": {
+        "message": "Dadurch wird eine FIT-Segmentdatei generiert, die im Ordner \"Garmin / NewFiles\" Ihres Garmin abgelegt werden kann, wenn Sie ihn über USB an einen Computer anschließen."
+    },
+    "live_segment_segment_name_help": {
+        "message": "Der Segmentname gibt an, wie dieses Segment auf Ihrem Gerät angezeigt wird, wenn Sie sich dem Startort nähern."
+    },
+    "live_segment_segment_name": {
+        "message": "Segmentname"
+    },
+    "live_segment_leader_name": {
+        "message": "Name des Anführers"
+    },
+    "live_segment_leader_type": {
+        "message": "Führertyp"
+    },
+    "live_segment_rival": {
+        "message": "Rivale"
+    },
+    "live_segment_Goal": {
+        "message": "Tor"
+    },
+    "live_segment_pr": {
+        "message": "PR"
+    },
+    "live_segment_challenger": {
+        "message": "Herausforderer"
+    },
+    "live_segment_kom": {
+        "message": "KOM"
+    },
+    "live_segment_qom": {
+        "message": "QOM"
+    },
+    "live_segment_club_leader": {
+        "message": "Clubleiter"
+    },
+    "live_segment_speed_adjust": {
+        "message": "Geschwindigkeitsanpassung"
+    },
+    "live_segment_speed_adjust_tooltip": {
+        "message": "Passen Sie die Gesamtgeschwindigkeit um einen bestimmten Prozentsatz an"
+    },
+    "live_segment_time": {
+        "message": "Zeit"
+    },
+    "live_segment_beg1": {
+        "message": "Hallo, mein Name ist Justin und ich bin der Autor von Sauce."
+    },
+    "live_segment_beg2": {
+        "message": "Ich arbeite hart daran, Sauce zum bestmöglichen Strava-Upgrade zu machen, aber ohne Unterstützung kann ich nicht die Zeit und Energie investieren, um dies zu ermöglichen. Bitte erwägen Sie, ein Benutzer zu werden, um diese und weitere Funktionen zu aktivieren, damit Sie die volle Sauce-Erfahrung erhalten."
+    },
+    "live_segment_beg3": {
+        "message": "Vielen Dank für das Verständnis und den Beitrag, Sauce noch besser zu machen!"
     }
 }

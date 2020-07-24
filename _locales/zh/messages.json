@@ -205,9 +205,6 @@
     "analysis_graphs": {
         "message": "图表"
     },
-    "analysis_perf_predictor": {
-        "message": "性能预测器"
-    },
     "analysis_perf_predictor_tooltip": {
         "message": "预测自行车运动的表现。"
     },
@@ -327,10 +324,10 @@
         "message": "分析"
     },
     "analysis_create_live_segment_tooltip": {
-        "message": "通过这项工作，可以创建实时细分文件。与大多数现代Garmin设备兼容。"
+        "message": "通过这项工作，可以创建一个实时细分文件。与大多数现代Garmin设备兼容。"
     },
-    "analysis_create_live_segment": {
-        "message": "创建实时细分"
+    "analysis_create": {
+        "message": "创造"
     },
     "time_sec": {
         "message": "秒"
@@ -556,5 +553,101 @@
     },
     "subscription": {
         "message": "订阅"
+    },
+    "live_segment_create": {
+        "message": "创造"
+    },
+    "live_segment_creator": {
+        "message": "创作者"
+    },
+    "live_segment_success_create_title": {
+        "message": "成功创建"
+    },
+    "live_segment_success_create_body1": {
+        "message": "您的实时细分文件现在应该下载到计算机上了。"
+    },
+    "live_segment_success_create_body2": {
+        "message": "通过USB将设备安装到计算机上，然后将此文件复制到“ Garmin / NewFiles”文件夹中。"
+    },
+    "live_segment_success_create_body3": {
+        "message": "断开设备连接之前，请确保安全弹出设备。"
+    },
+    "live_segment_use_trial": {
+        "message": "使用试用"
+    },
+    "live_segment_remaining": {
+        "message": "剩余的"
+    },
+    "live_segment_become_patron": {
+        "message": "成为赞助人"
+    },
+    "live_segment_intro_help1": {
+        "message": "Sauce Live Segment创建者可以从任何Strava活动中生成细分文件。创建的文件符合FIT段文件打开标准。该文件与受支持的Garmin设备兼容，并且可能与可以支持段文件的侧面加载的其他设备兼容。"
+    },
+    "live_segment_intro_help_side_loading_more_info": {
+        "message": "有关Garmin侧面装载的更多信息，请参见此处。"
+    },
+    "live_segment_intro_help_note": {
+        "message": "注意：Wahoo设备不支持侧面加载段文件。"
+    },
+    "live_segment_intro1": {
+        "message": "创建一个实时细分文件以用于"
+    },
+    "live_segment_intro_supported_devices": {
+        "message": "支持的Garmin设备"
+    },
+    "live_segment_intro_note": {
+        "message": "这将生成一个FIT段文件，当您通过USB将其连接到计算机时，该文件可以放在Garmin的“ Garmin / NewFiles”文件夹中。"
+    },
+    "live_segment_segment_name_help": {
+        "message": "细分名称是您接近起始位置时此细分在您的设备上显示的方式。"
+    },
+    "live_segment_segment_name": {
+        "message": "段名"
+    },
+    "live_segment_leader_name": {
+        "message": "领导者姓名"
+    },
+    "live_segment_leader_type": {
+        "message": "领导者类型"
+    },
+    "live_segment_rival": {
+        "message": "对手"
+    },
+    "live_segment_Goal": {
+        "message": "目标"
+    },
+    "live_segment_pr": {
+        "message": "公关"
+    },
+    "live_segment_challenger": {
+        "message": "挑战者"
+    },
+    "live_segment_kom": {
+        "message": "KOM"
+    },
+    "live_segment_qom": {
+        "message": "生活质量"
+    },
+    "live_segment_club_leader": {
+        "message": "俱乐部负责人"
+    },
+    "live_segment_speed_adjust": {
+        "message": "调速"
+    },
+    "live_segment_speed_adjust_tooltip": {
+        "message": "将整体速度调整一些百分比"
+    },
+    "live_segment_time": {
+        "message": "时间"
+    },
+    "live_segment_beg1": {
+        "message": "嗨，我叫贾斯汀，我是《酱》的作者，"
+    },
+    "live_segment_beg2": {
+        "message": "我正在努力使Sauce尽可能达到最佳Strava升级，但是如果没有支持，我将无法花费时间和精力来实现这一目标。请考虑成为一个支持此功能的主顾，以便您获得完整的Sauce体验。"
+    },
+    "live_segment_beg3": {
+        "message": "非常感谢您的理解并为使Sauce变得更好做出了贡献！"
     }
 }

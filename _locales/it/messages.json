@@ -209,9 +209,6 @@
     "analysis_graphs": {
         "message": "grafici"
     },
-    "analysis_perf_predictor": {
-        "message": "Perf Predictor"
-    },
     "analysis_perf_predictor_tooltip": {
         "message": "Prevedere le prestazioni degli sforzi in bicicletta."
     },
@@ -332,8 +329,8 @@
     "analysis_create_live_segment_tooltip": {
         "message": "Crea un file di segmento live da questo sforzo. Compatibile con i più moderni dispositivi Garmin."
     },
-    "analysis_create_live_segment": {
-        "message": "Crea segmento live"
+    "analysis_create": {
+        "message": "Creare"
     },
     "time_sec": {
         "message": "secondo"
@@ -561,5 +558,101 @@
     },
     "subscription": {
         "message": "Sottoscrizione"
+    },
+    "live_segment_create": {
+        "message": "Creare"
+    },
+    "live_segment_creator": {
+        "message": "Creatore"
+    },
+    "live_segment_success_create_title": {
+        "message": "Creato con successo"
+    },
+    "live_segment_success_create_body1": {
+        "message": "Il file del segmento live dovrebbe ora essere scaricato sul tuo computer."
+    },
+    "live_segment_success_create_body2": {
+        "message": "Montare il dispositivo sul computer tramite USB e copiare questo file nella cartella \"Garmin / NewFiles\"."
+    },
+    "live_segment_success_create_body3": {
+        "message": "Assicurati di espellere in sicurezza il dispositivo prima di scollegarlo."
+    },
+    "live_segment_use_trial": {
+        "message": "Usa la prova"
+    },
+    "live_segment_remaining": {
+        "message": "residuo"
+    },
+    "live_segment_become_patron": {
+        "message": "Diventa un Patrono"
+    },
+    "live_segment_intro_help1": {
+        "message": "Il creatore di Sauce Live Segment genera un file di segmento da qualsiasi attività Strava. Il file creato è conforme allo standard aperto del file di segmento FIT. Questo file è compatibile con i dispositivi Garmin supportati e potrebbe essere compatibile con altri dispositivi in grado di supportare il caricamento laterale dei file di segmenti."
+    },
+    "live_segment_intro_help_side_loading_more_info": {
+        "message": "Ulteriori informazioni sul caricamento laterale Garmin sono disponibili qui."
+    },
+    "live_segment_intro_help_note": {
+        "message": "NOTA: i dispositivi Wahoo NON supportano i file dei segmenti con caricamento laterale."
+    },
+    "live_segment_intro1": {
+        "message": "Crea un file di segmento live da utilizzare con"
+    },
+    "live_segment_intro_supported_devices": {
+        "message": "dispositivi Garmin supportati"
+    },
+    "live_segment_intro_note": {
+        "message": "Ciò genererà un file di segmento FIT che può essere inserito nella cartella \"Garmin / NewFiles\" del tuo Garmin quando lo colleghi a un computer tramite USB."
+    },
+    "live_segment_segment_name_help": {
+        "message": "Il nome del segmento è come questo segmento appare sul tuo dispositivo quando ti avvicini alla posizione di partenza."
+    },
+    "live_segment_segment_name": {
+        "message": "Nome del segmento"
+    },
+    "live_segment_leader_name": {
+        "message": "Nome del leader"
+    },
+    "live_segment_leader_type": {
+        "message": "Tipo di leader"
+    },
+    "live_segment_rival": {
+        "message": "Rivale"
+    },
+    "live_segment_Goal": {
+        "message": "Obbiettivo"
+    },
+    "live_segment_pr": {
+        "message": "PR"
+    },
+    "live_segment_challenger": {
+        "message": "Sfidante"
+    },
+    "live_segment_kom": {
+        "message": "KOM"
+    },
+    "live_segment_qom": {
+        "message": "QOM"
+    },
+    "live_segment_club_leader": {
+        "message": "Capo del club"
+    },
+    "live_segment_speed_adjust": {
+        "message": "Regolazione velocità"
+    },
+    "live_segment_speed_adjust_tooltip": {
+        "message": "Regola la velocità complessiva di una certa percentuale"
+    },
+    "live_segment_time": {
+        "message": "Tempo"
+    },
+    "live_segment_beg1": {
+        "message": "Ciao, mi chiamo Justin e sono l'autore di Sauce,"
+    },
+    "live_segment_beg2": {
+        "message": "Sto lavorando duramente per rendere Sauce il miglior aggiornamento Strava possibile, ma senza supporto non sarò in grado di dedicare il tempo e l'energia per renderlo possibile. Ti preghiamo di considerare di diventare un utente per abilitare questa funzione e altro ancora, in modo da poter ottenere l'esperienza completa di Salsa."
+    },
+    "live_segment_beg3": {
+        "message": "Grazie mille per aver compreso e contribuito a rendere la salsa ancora migliore!"
     }
 }
