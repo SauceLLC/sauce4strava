@@ -5,6 +5,9 @@
     "analysis_options": {
         "message": "Optionen"
     },
+    "analysis_tools": {
+        "message": "Werkzeuge"
+    },
     "analysis_time": {
         "message": "Zeit"
     },
@@ -205,6 +208,9 @@
     "analysis_perf_predictor": {
         "message": "Perf Predictor"
     },
+    "analysis_perf_predictor_tooltip": {
+        "message": "Vorhersage der Leistung von Radsportbemühungen."
+    },
     "analysis_pace": {
         "message": "Tempo"
     },
@@ -324,9 +330,6 @@
     "analysis_create_live_segment_tooltip": {
         "message": "Erstellen Sie aus dieser Anstrengung eine Live-Segmentdatei. Kompatibel mit den meisten modernen Garmin-Geräten."
     },
-    "analysis_create_live_segment_tooltip_disabled": {
-        "message": "Die Erstellung von Live-Segmentdateien ist eine Benutzerfunktion."
-    },
     "analysis_create_live_segment": {
         "message": "Live-Segment erstellen"
     },
@@ -381,7 +384,7 @@
     "time_now": {
         "message": "jetzt"
     },
-    "perf_predictor_help_info_tooltip": {
+    "dialog_help_info_tooltip": {
         "message": "Klicken Sie hier für weitere Informationen"
     },
     "perf_predictor_intro_help1": {

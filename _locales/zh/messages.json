@@ -5,6 +5,9 @@
     "analysis_options": {
         "message": "选件"
     },
+    "analysis_tools": {
+        "message": "工具类"
+    },
     "analysis_time": {
         "message": "时间"
     },
@@ -205,6 +208,9 @@
     "analysis_perf_predictor": {
         "message": "性能预测器"
     },
+    "analysis_perf_predictor_tooltip": {
+        "message": "预测自行车运动的表现。"
+    },
     "analysis_pace": {
         "message": "配速",
         "description": "IMMUTABLE"
@@ -323,9 +329,6 @@
     "analysis_create_live_segment_tooltip": {
         "message": "通过这项工作，可以创建实时细分文件。与大多数现代Garmin设备兼容。"
     },
-    "analysis_create_live_segment_tooltip_disabled": {
-        "message": "实时片段文件的创建是一个赞助人功能。"
-    },
     "analysis_create_live_segment": {
         "message": "创建实时细分"
     },
@@ -371,7 +374,7 @@
     "time_now": {
         "message": "现在"
     },
-    "perf_predictor_help_info_tooltip": {
+    "dialog_help_info_tooltip": {
         "message": "点击了解更多信息"
     },
     "perf_predictor_intro_help1": {

@@ -5,6 +5,9 @@
     "analysis_options": {
         "message": "Opzioni"
     },
+    "analysis_tools": {
+        "message": "Utensili"
+    },
     "analysis_time": {
         "message": "Tempo"
     },
@@ -209,6 +212,9 @@
     "analysis_perf_predictor": {
         "message": "Perf Predictor"
     },
+    "analysis_perf_predictor_tooltip": {
+        "message": "Prevedere le prestazioni degli sforzi in bicicletta."
+    },
     "analysis_pace": {
         "message": "Passo",
         "description": "IMMUTABLE"
@@ -326,9 +332,6 @@
     "analysis_create_live_segment_tooltip": {
         "message": "Crea un file di segmento live da questo sforzo. Compatibile con i più moderni dispositivi Garmin."
     },
-    "analysis_create_live_segment_tooltip_disabled": {
-        "message": "La creazione di file di segmenti in tempo reale è una caratteristica dell'utente."
-    },
     "analysis_create_live_segment": {
         "message": "Crea segmento live"
     },
@@ -374,7 +377,7 @@
     "time_now": {
         "message": "adesso"
     },
-    "perf_predictor_help_info_tooltip": {
+    "dialog_help_info_tooltip": {
         "message": "Clicca per maggiori informazioni"
     },
     "perf_predictor_intro_help1": {

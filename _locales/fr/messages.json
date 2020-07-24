@@ -5,6 +5,9 @@
     "analysis_options": {
         "message": "Les options"
     },
+    "analysis_tools": {
+        "message": "Outils"
+    },
     "analysis_time": {
         "message": "Temps"
     },
@@ -207,6 +210,9 @@
     "analysis_perf_predictor": {
         "message": "Perf Predictor"
     },
+    "analysis_perf_predictor_tooltip": {
+        "message": "Prédisez la performance des efforts de cyclisme."
+    },
     "analysis_pace": {
         "message": "Allure",
         "description": "IMMUTABLE"
@@ -327,9 +333,6 @@
     "analysis_create_live_segment_tooltip": {
         "message": "Créez un fichier de segment en direct à partir de cet effort. Compatible avec la plupart des appareils Garmin modernes."
     },
-    "analysis_create_live_segment_tooltip_disabled": {
-        "message": "La création de fichiers de segments en direct est une fonction de mécène."
-    },
     "analysis_create_live_segment": {
         "message": "Créer un segment en direct"
     },
@@ -378,7 +381,7 @@
     "time_now": {
         "message": "maintenant"
     },
-    "perf_predictor_help_info_tooltip": {
+    "dialog_help_info_tooltip": {
         "message": "Cliquez pour plus d'informations"
     },
     "perf_predictor_intro_help1": {
