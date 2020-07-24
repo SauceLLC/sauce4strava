@@ -163,6 +163,12 @@ table.hidden-segments .sauce-rank-holder {
     margin-right: 0.5em;
 }
 
+.effort-actions {
+    .btn-block + .btn-block {
+        margin-top: 0.5em;  // Make margin smaller so our buttons fit better (strava was overpadding anyway)
+    }
+}
+
 .sauce-editable-field {
     &.editing {
         a {
@@ -204,5 +210,42 @@ table.hidden-segments .sauce-rank-holder {
         color: black;
         border-radius: 0.22em;
         padding: 0.2em 0.25em;
+    }
+}
+
+.sauce-btn-group {
+    label {
+        pointer: default;
+        text-transform: uppercase;
+        margin-bottom: 0;
+        font-size: 0.7em;
+        color: color.shade(accent, -6%);
+        font-weight: bold;
+        margin-top: 0.2em;
+    }
+
+    .sauce-buttons {
+        display: flex;
+        white-space: normal;
+
+        > .button {
+            flex: 1 1 0;
+            font-size: 0.8em !important;
+            padding-left: 0.5em;  // smaller than std
+            padding-right: 0.5em;  // smaller than std
+
+            &:first-child:not(:last-child) {
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            &:not(:first-child) {
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+            }
+            &:last-child:first-child {
+                // Fix strava's btn-group css when single child.
+                border-radius: 4px;
+            }
+        }
     }
 }

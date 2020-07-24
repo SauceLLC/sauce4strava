@@ -1,4 +1,4 @@
-/* global sauce, jQuery, Strava */
+/* global sauce, jQuery, Strava, pageView */
 
 (function() {
     'use strict';
@@ -427,26 +427,43 @@
 
         sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', async Klass => {
             const renderSave = Klass.prototype.render;
-            const labelKey = 'analysis_create_live_segment';
-            const lacksPatronReq = !sauce.patronLevel || sauce.patronLevel < 30;  // XXX
-            const extraCls = lacksPatronReq ? 'trial' : '';
-            const titleKey = `${labelKey}_tooltip`;
+            async function addButton(segmentId, labelKey, tipKey, extraCls) {
+                if (sauce && sauce.locale) {
+                    const [label, tip] = await sauce.locale.getMessages([labelKey, tipKey]);
+                    const runSegmentsView = this.options.pageView.chartContext().activity().get('type') === 'Run';
+                    const selector = runSegmentsView ? '.bottomless.inset' : '.effort-actions';
+                    let $btns = this.$(`${selector} .sauce-buttons`);
+                    if (!$btns.length) {
+                        const toolsLocale = await sauce.locale.getMessage('analysis_tools');
+                        this.$(selector).append(jQuery(`
+                            <div class="sauce-btn-group btn-block">
+                                <label>Sauce ${toolsLocale}</label>
+                                <div class="sauce-buttons btn-group"></div>
+                            </div>`));
+                        $btns = this.$(`${selector} .sauce-buttons`);
+                    }
+                    $btns.append(jQuery(`
+                        <div title="${tip}" class="button sauce-button ${extraCls || ''}"
+                             data-segment-id="${segmentId}">${label}</div>`));
+                }
+            }
+            async function addButtons() {
+                const segId = this.viewModel.model.id;
+                const supportsLiveSeg = (pageView.activity().isRide() ||
+                                         pageView.activity().isRun()) &&
+                                        (sauce.patronLevel && sauce.patronLevel >= 30);  // XXX
+                if (supportsLiveSeg || (sauce.options && !sauce.options['hide-upsells'])) {
+                    await addButton.call(this, segId, 'analysis_create_live_segment',
+                        'analysis_create_live_segment_tooltip', `live-segment`);
+                }
+                if (pageView.activity().isRide()) {
+                    await addButton.call(this, segId, 'analysis_perf_predictor',
+                        'analysis_perf_predictor_tooltip', 'perf-predictor');
+                }
+            }
             Klass.prototype.render = function() {
                 const ret = renderSave.apply(this, arguments);
-                if (sauce && sauce.locale) {
-                    sauce.locale.getMessages([titleKey, labelKey]).then(([title, label]) => {
-                        const segmentId = this.viewModel.model.id;
-                        const runSegmentsView = this.options.pageView.chartContext().activity().get('type') === 'Run';
-                        const $btn = jQuery(`<div title="${title}"
-                                                  class="btn-block button sauce-button live-segment ${extraCls}"
-                                                  data-segment-id="${segmentId}">${label}</div>`);
-                        if (runSegmentsView) {
-                            this.$('.bottomless.inset').append($btn);
-                        } else {
-                            this.$('.effort-actions').append($btn);
-                        }
-                    });
-                }
+                addButtons.call(this).catch(sauce.rpc.reportError);
                 return ret;
             };
         }, {once: true});

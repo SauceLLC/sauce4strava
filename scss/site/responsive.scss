@@ -281,7 +281,7 @@ html.sauce-responsive,
 
         .segment-effort-detail-view {
             .effort-actions {
-                min-width: initial !important;
+                min-width: 200px !important;  // Allow more squeeze on this column
             }
         }
     }

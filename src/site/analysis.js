@@ -1934,11 +1934,18 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function attachLiveSegmentsHandler() {
-        jQuery(document).on('click', '.live-segment.sauce-button', async ev => {
+    function attachSegmentToolHandlers() {
+        const segView = '.segment-effort-detail-view';
+        jQuery(document).on('click', `${segView} .sauce-button.live-segment`, async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
-            showLiveSegmentDialog(details).catch(sauce.rpc.catchError);
+            showLiveSegmentDialog(details).catch(sauce.rpc.reportError);
+        });
+        jQuery(document).on('click', `${segView} .sauce-button.perf-predictor`, async ev => {
+            const id = ev.currentTarget.dataset.segmentId;
+            const details = pageView.segmentEffortDetails().get(id);
+            const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
+            showPerfPredictor(start, end).catch(sauce.rpc.reportError);
         });
     }
 
@@ -2687,9 +2694,7 @@ sauce.ns('analysis', ns => {
         sauce.rpc.reportEvent('LiveSegment', 'create');
     }
  
-    async function showPerfPredictor() {
-        const start = ctx.$analysisStats.data('start');
-        const end = ctx.$analysisStats.data('end');
+    async function showPerfPredictor(start, end) {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
@@ -2872,7 +2877,11 @@ sauce.ns('analysis', ns => {
         $el.find('#stacked-chart').before(ctx.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.rpc.reportError));
         $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.rpc.reportError));
-        $el.on('click', 'a.sauce-perf-predictor', () => showPerfPredictor().catch(sauce.rpc.reportError));
+        $el.on('click', 'a.sauce-perf-predictor', () => {
+            const start = ctx.$analysisStats.data('start');
+            const end = ctx.$analysisStats.data('end');
+            showPerfPredictor(start, end).catch(sauce.rpc.reportError);
+        });
         $el.on('click', 'a.expander', ev =>
             ev.currentTarget.closest('.sauce-analysis-stats').classList.toggle('expanded'));
     }
@@ -2967,7 +2976,7 @@ sauce.ns('analysis', ns => {
         updateSideNav().catch(sauce.rpc.reportError);
         attachActionMenuItems().catch(sauce.rpc.reportError);
         attachComments().catch(sauce.rpc.reportError);
-        attachLiveSegmentsHandler();
+        attachSegmentToolHandlers();
         const savedRanges = await sauce.rpc.storageGet('analysis_peak_ranges');
         ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
         for (const range of ctx.allPeriodRanges) {
