@@ -1951,6 +1951,10 @@ sauce.ns('analysis', ns => {
 
 
     async function showLiveSegmentDialog(details, useTrial) {
+        const locale = await sauce.locale.getMessagesObject([
+            'create', 'success_create_title', 'success_create_body1', 'success_create_body2',
+            'success_create_body3', 'become_patron', 'remaining', 'use_trial', 'creator'
+        ], 'live_segment');
         const template = await getTemplate('live-segment.html', 'live_segment');
         const athlete = pageView.activityAthlete();
         const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
@@ -1974,7 +1978,7 @@ sauce.ns('analysis', ns => {
         const extraButtons = [];
         if (hasPatronRequirement || useTrial) {
             extraButtons.push({
-                text: 'Create Live Segment', // XXX locale
+                text: `${locale.create} Live Segment`,
                 class: 'btn-primary',
                 click: async () => {
                     const $form = $dialog.find('form');
@@ -1999,23 +2003,22 @@ sauce.ns('analysis', ns => {
                     }
                     $dialog.dialog('destroy');
                     modal({
-                        title: 'All finished',  // XXX locale
+                        title: locale.success_create_title,
                         icon,
                         body: `
-                            Your live segment file should now be downloaded to your computer.<br/>
+                            ${locale.success_create_body1}<br/>
                             <br/>
-                            Mount your Garmin (or other Live Segment supported device) to your computer via USB
-                            and copy this file to the "Garmin/NewFiles" folder.<br/>
+                            ${locale.success_create_body2}<br/>
                             <br/>
-                            <i>Be sure to safely eject the device before disconnecting it.</i>
-                        ` // XXX locale
+                            <i>${locale.success_create_body3}</i>
+                        `
                     });
                 }
             });
         } else {
             if (trialCount < maxTrials) {
                 extraButtons.push({
-                    text: `Use Trial (${maxTrials - trialCount} remaining)`, // XXX locale
+                    text: `${locale.use_trial} (${maxTrials - trialCount} ${locale.remaining})`,
                     class: 'btn-primary btn-outline',
                     click: () => {
                         $dialog.dialog('destroy');
@@ -2024,14 +2027,14 @@ sauce.ns('analysis', ns => {
                 });
             }
             extraButtons.push({
-                text: 'Become a Patron', // XXX locale
+                text: locale.become_patron,
                 class: 'btn-primary',
                 click: () => window.open('https://www.patreon.com/bePatron?u=32064618', '_blank')
             });
         }
         const trialTitle = useTrial ? ` - Trial ${trialCount + 1} / ${maxTrials}` : '';
         const $dialog = modal({
-            title: 'Live Segment Creator' + trialTitle,  // XXX locale
+            title: `Live Segment ${locale.creator}${trialTitle}`,
             icon,
             body,
             width: '40em',

@@ -427,9 +427,8 @@
 
         sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', async Klass => {
             const renderSave = Klass.prototype.render;
-            async function addButton(segmentId, labelKey, tipKey, extraCls) {
+            async function addButton(segmentId, label, tip, extraCls) {
                 if (sauce && sauce.locale) {
-                    const [label, tip] = await sauce.locale.getMessages([labelKey, tipKey]);
                     const runSegmentsView = this.options.pageView.chartContext().activity().get('type') === 'Run';
                     const selector = runSegmentsView ? '.bottomless.inset' : '.effort-actions';
                     let $btns = this.$(`${selector} .sauce-buttons`);
@@ -453,12 +452,16 @@
                                          pageView.activity().isRun()) &&
                                         (sauce.patronLevel && sauce.patronLevel >= 30);  // XXX
                 if (supportsLiveSeg || (sauce.options && !sauce.options['hide-upsells'])) {
-                    await addButton.call(this, segId, 'analysis_create_live_segment',
-                        'analysis_create_live_segment_tooltip', `live-segment`);
+                    const locale = await sauce.locale.getMessagesObject(['create', 'create_live_segment_tooltip'],
+                        'analysis');
+                    await addButton.call(this, segId, `${locale.create} Live Segment`,
+                        locale.create_live_segment_tooltip, `live-segment`);
                 }
                 if (pageView.activity().isRide()) {
-                    await addButton.call(this, segId, 'analysis_perf_predictor',
-                        'analysis_perf_predictor_tooltip', 'perf-predictor');
+                    const locale = await sauce.locale.getMessagesObject(['create', 'perf_predictor_tooltip'],
+                        'analysis');
+                    await addButton.call(this, segId, 'Perf Predictor',
+                        locale.perf_predictor_tooltip, 'perf-predictor');
                 }
             }
             Klass.prototype.render = function() {
