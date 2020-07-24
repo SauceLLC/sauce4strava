@@ -157,4 +157,14 @@
             filter: invert(1);
         }
     }
+
+    .super-tooltip {
+        .dismiss {
+            filter: invert(1);
+        }
+
+        .arrow {
+            filter: invert(0.785);  // rough match to bg.
+        }
+    }
 }

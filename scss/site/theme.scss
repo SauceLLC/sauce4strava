@@ -2693,6 +2693,35 @@
             color: color.shade(fg, 10%);
         }
     }
+
+    #segment-visualizer {  // the potential-segment-matches page..
+        .segment-details {
+            background-color: color.shade(bg, 5%);
+        }
+    }
+
+    & {
+        $bg: color.shade(bg, 16%);
+
+        .tooltip,
+        .super-tooltip {
+            background-color: $bg;
+            color: color.shade(fg, 5%);
+            border-color: $mid-border-color;
+        }
+
+        .super-tooltip {
+            .title {
+                background-color: color.shade(bg, 12%);
+                border-color: $hard-border-color;
+            }
+
+            &::after {  // The diamon on the bottom
+                background-color: $bg;
+                border-color: $mid-border-color;
+            }
+        }
+    }
 }
 
 
