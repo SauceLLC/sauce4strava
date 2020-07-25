@@ -215,13 +215,15 @@ table.hidden-segments .sauce-rank-holder {
 
 .sauce-btn-group {
     label {
-        pointer: default;
+        cursor: default;
         text-transform: uppercase;
         margin-bottom: 0;
         font-size: 0.7em;
-        color: color.shade(accent, -6%);
+        color: color.shade(accent, -3%) !important;
+        opacity: 0.65;
         font-weight: bold;
         margin-top: 0.2em;
+        line-height: 1;
     }
 
     .sauce-buttons {
@@ -231,8 +233,9 @@ table.hidden-segments .sauce-rank-holder {
         > .button {
             flex: 1 1 0;
             font-size: 0.8em !important;
-            padding-left: 0.5em;  // smaller than std
-            padding-right: 0.5em;  // smaller than std
+            line-height: 1.2;
+            padding-left: 0.75em;  // smaller than std
+            padding-right: 0.75em;  // smaller than std
 
             &:first-child:not(:last-child) {
                 border-top-right-radius: 0;
@@ -245,6 +248,12 @@ table.hidden-segments .sauce-rank-holder {
             &:last-child:first-child {
                 // Fix strava's btn-group css when single child.
                 border-radius: 4px;
+            }
+
+            svg[data-icon] {
+                width: 1.5em;
+                max-height: 1.5em;
+                margin-right: 0.4em;
             }
         }
     }
