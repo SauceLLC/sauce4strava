@@ -34,7 +34,7 @@ Feature Highlights
    * Sea Power (potential power at sea level)
  * Themes (including dark mode)
  * Export any activity to a TCX or GPX file
- * Create Live Segments for any effort (Garmin devices required)
+ * Create Live Segments for any effort (including downhills)
  * Running Power estimation
  * Analysis page stats are extended to include:
    * Elapsed power average, normalized power, moving power average and watts/kg.
@@ -70,6 +70,10 @@ Feature Highlights
 
 Release Notes
 --------
+#### v6.2.0:
+ * Support for Perf Predictor in segments view
+ * Upgraded Live Segment creator tool with editing support
+
 #### v6.1.0:
  * Option to hide subscribe upsells
  * Add Sauce options to user menu.
