@@ -40,9 +40,12 @@
     .ui-dialog-content {
         flex: 1 1 auto;
         overflow: auto;
-        display: flex !important;
         flex-direction: column;
         width: auto !important; /* override element styling during moves */
+
+        &.flex {
+            display: flex !important;
+        }
     }
 
     header {
@@ -62,7 +65,6 @@
             padding: 1em 2em;
             white-space: pre;
             letter-spacing: 0;
-            overflow: auto;
         }
 
         label {
@@ -83,6 +85,10 @@
     .padded-info {
         padding: 1.2em;
         margin: 0;
+    }
+
+    .overflow {
+        overflow: auto;
     }
 
     a {
@@ -204,6 +210,16 @@
             top: initial;
             height: auto;
         }
+    }
+
+    // Reset firefox number input arrows to look like normal text input
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type=number] {
+        -moz-appearance:textfield;
     }
 
     @include perf_predictor.dialog;
