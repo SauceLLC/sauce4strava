@@ -270,9 +270,12 @@ sauce.ns('analysis', ns => {
 
 
     function dialog(options) {
-        const $dialog = jQuery(`<div>${options.body}</div>`);
         options = options || {};
-        const dialogClass = `${options.dialogClass || ''} sauce-dialog`;
+        const $dialog = jQuery(`<div>${options.body}</div>`);
+        const dialogClass = `sauce-dialog ${options.dialogClass || ''}`;
+        if (options.flex) {
+            $dialog.addClass('flex');
+        }
         // Assign default button(s) (will be clobbered if options.buttons is defined)
         const buttons = [{
             text: 'Close', // XXX locale
@@ -287,9 +290,7 @@ sauce.ns('analysis', ns => {
                 buttons.push({text, click});
             }
         }
-        $dialog.dialog(Object.assign({
-            buttons
-        }, options, {dialogClass}));
+        $dialog.dialog(Object.assign({buttons}, options, {dialogClass}));
         $dialog.on('click', 'a.help-info', ev => {
             const helpFor = ev.currentTarget.dataset.help;
             ev.currentTarget.classList.add('hidden');
@@ -1181,6 +1182,7 @@ sauce.ns('analysis', ns => {
             icon: await sauce.images.asText(ctx.peakIcons[options.source]),
             dialogClass: 'sauce-info-dialog',
             body: options.body,
+            flex: true,
             resizable: false,
             width: 260,
             position: {
@@ -1960,7 +1962,7 @@ sauce.ns('analysis', ns => {
         const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
         const timeStream = await fetchStream('time', start, end);
         let timeMultiplier = 1;
-        const hasPatronRequirement = sauce.patronLevel >= 30; // XXX
+        const hasPatronRequirement = sauce.patronLevel >= 10;
         const trialCount = (!hasPatronRequirement &&
             await sauce.rpc.storageGet('live_segment_trial_count', {sync: true})) || 0;
         const maxTrials = 3;
@@ -2037,6 +2039,7 @@ sauce.ns('analysis', ns => {
             title: `Live Segment ${locale.creator}${trialTitle}`,
             icon,
             body,
+            flex: true,
             width: '40em',
             dialogClass: 'sauce-live-segment no-pad',
             extraButtons,
@@ -2515,7 +2518,8 @@ sauce.ns('analysis', ns => {
         let currentData = initialData;
         const $dialog = modal({
             title: 'Raw Data',
-            body: `<pre>${initialData}</pre>`,
+            body: `<pre class="overflow">${initialData}</pre>`,
+            flex: true,
             width: `calc(${initialWidth}ch + 4em)`,
             dialogClass: 'sauce-big-data',
             extraButtons: {
@@ -2563,7 +2567,8 @@ sauce.ns('analysis', ns => {
         const $selector = await _dataViewStreamSelector();
         const $dialog = modal({
             title: 'Graph Data',
-            body: '<div style="padding: 0.5em" class="graphs"></div>',
+            body: '<div class="graphs padded-info overflow"></div>',
+            flex: true,
             width: '80vw',
             dialogClass: 'sauce-big-data',
             position: {at: 'center top+100'}
@@ -2753,6 +2758,7 @@ sauce.ns('analysis', ns => {
             title: 'Performance Predictor',
             icon: await sauce.images.asText('fa/analytics-duotone.svg'),
             body,
+            flex: true,
             width: '60em',
             dialogClass: 'sauce-perf-predictor no-pad',
             resizable: false,

@@ -448,7 +448,7 @@
                 const segId = this.viewModel.model.id;
                 const supportsLiveSeg = (pageView.activity().isRide() ||
                                          pageView.activity().isRun()) &&
-                                        (sauce.patronLevel && sauce.patronLevel >= 30);  // XXX
+                                        (sauce.patronLevel && sauce.patronLevel >= 10);
                 if (supportsLiveSeg || (sauce.options && !sauce.options['hide-upsells'])) {
                     const tooltip = await sauce.locale.getMessage('analysis_create_live_segment_tooltip');
                     const icon = await sauce.images.asText('fa/trophy-duotone.svg');
