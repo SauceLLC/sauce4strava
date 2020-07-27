@@ -60,10 +60,10 @@ Feature Highlights
 
 
 #### Development:
- 1. Clone this repo to your local computer.
+ 1. Clone this repo to your local computer
  2. Run `make`
- 3. Go to chrome://extensions/ on your Chrome browser.
- 4. Make sure "Developer mode" is checked.
+ 3. Go to chrome://extensions/ on your Chrome browser
+ 4. Make sure "Developer mode" is checked
  5. Click "Load unpacked extension..."
  6. Navigate to the directory  where you cloned or unzipped sauce and click "Open."
 
@@ -76,7 +76,7 @@ Release Notes
 
 #### v6.1.0:
  * Option to hide subscribe upsells
- * Add Sauce options to user menu.
+ * Add Sauce options to user menu
 
 #### v6.0.0:
  * Revised active time calculation (better supports smart recording interval)
