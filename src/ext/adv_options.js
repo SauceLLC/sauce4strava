@@ -96,7 +96,7 @@
         const options = await sauce.storage.get('options');
         const json = JSON.stringify(options, null, 2);
         el.setAttribute('rows', json.split('\n').length);
-        el.innerHTML = json;
+        el.textContent = json;
     }
 
 
