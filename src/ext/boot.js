@@ -201,7 +201,7 @@
             sauce.name = "${ext.name}";
             sauce.version = "${ext.version}";
             sauce.patronLevel = ${patronLevel};
-            sauce.patronLevelName = "${patronLevelName}";
+            sauce.patronLevelName = "${patronLevelName || ''}";
         `);
         for (const m of manifests) {
             if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||

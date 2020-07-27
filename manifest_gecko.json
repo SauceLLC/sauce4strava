@@ -6,7 +6,8 @@
         }
     },
     "permissions": [
-        "tabs"
+        "tabs",
+        "https://saucellc.io/*"
     ],
     "background": {
         "scripts": [
