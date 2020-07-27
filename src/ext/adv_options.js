@@ -57,23 +57,38 @@
 
     async function renderAthleteInfo(el) {
         const info = await sauce.storage.get('athlete_info');
-        const html = [];
+        const boxes = [];
         for (const [id, athlete] of Object.entries(info || {})) {
             const json = JSON.stringify(athlete, null, 2);
             const lines = json.split('\n');
-            html.push(`
-                <div class="athlete-box" data-athlete-id="${id}">
-                    <div class="label">
-                        ${athlete.name} (ID: ${id})
-                        <button class="remove red">Remove</button>
-                    </div>
-                    <textarea rows="${lines.length}" class="athlete-info"
-                              id="${id}">${json}</textarea>
-                    <div class="error"></div>
-                </div>
-            `);
+            const box = document.createElement('div');
+            box.classList.add('athlete-box');
+            box.dataset.athleteId = id;
+            const label = document.createElement('div');
+            label.classList.add('label');
+            label.textContent = `${athlete.name} (ID: ${id})`;
+            const button = document.createElement('button');
+            button.classList.add('remove', 'red');
+            button.textContent = 'Remove';
+            label.appendChild(button);
+            const text = document.createElement('textarea');
+            text.classList.add('athlete-info');
+            text.setAttribute('rows', lines.length);
+            text.id = id;
+            text.textContent = json;
+            const error = document.createElement('div');
+            error.classList.add('error');
+            box.appendChild(label);
+            box.appendChild(text);
+            box.appendChild(error);
+            boxes.push(box);
         }
-        el.innerHTML = html.join('');
+        while (el.firstChild) {
+            el.removeChild(el.firstChild);
+        }
+        for (const x of boxes) {
+            el.appendChild(x);
+        }
     }
 
 
