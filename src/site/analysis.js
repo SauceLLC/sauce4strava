@@ -1018,11 +1018,11 @@ sauce.ns('analysis', ns => {
         } else if (!ev.target.closest('a')) {
             return;  // ignore non link clicks in the menu.
         }
-        toggleMobileNavMenu(ev);
+        toggleMobileNavMenu();
     }
 
 
-    function toggleMobileNavMenu(ev) {
+    function toggleMobileNavMenu() {
         const expandedClass = 'sauce-nav-expanded';
         const expanded = document.body.classList.contains(expandedClass);
         const evOptions = {capture: true, passive: false};
@@ -2087,13 +2087,13 @@ sauce.ns('analysis', ns => {
         }
         targetTD.classList.add('sauce-mark');
         const levelPct = Math.round(rank.level * 100);
-        targetTD.innerHTML = `
+        targetTD.appendChild(jQuery(`
             <div class="sauce-rank-holder">
                 <div>${targetTD.innerHTML}</div>
                 <img src="${rank.badge}" class="sauce-rank"
                      title="World Ranking: ${levelPct}%\nWatts/kg: ${humanNumber(wKg, 1)}"/>
             </div>
-        `;
+        `)[0]);
     }
 
 
@@ -3076,10 +3076,9 @@ sauce.ns('analysis', ns => {
 
     async function attachMobileMenuExpander() {
         const svg = await sauce.images.asText('fa/bars-regular.svg');
-        const navHeader = document.querySelector('#global-header > nav');
-        navHeader.insertAdjacentHTML('afterbegin',
-            `<div style="display: none" class="menu-expander">${svg}</div>`);
-        navHeader.querySelector('.menu-expander').addEventListener('click', toggleMobileNavMenu);
+        const $navHeader = jQuery('#global-header > nav');
+        $navHeader.prepend(jQuery(`<div style="display: none" class="menu-expander">${svg}</div>`));
+        $navHeader.find('.menu-expander').on('click', toggleMobileNavMenu);
     }
 
 
