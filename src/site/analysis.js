@@ -1718,12 +1718,12 @@ sauce.ns('analysis', ns => {
 
     async function attachActionMenuItems() {
         const exportLocale = await sauce.locale.getMessage('analysis_export');
-        const menuEl = document.querySelector('nav.sidenav .actions-menu .drop-down-menu ul.options');
-        if (!menuEl) {
+        const $menu = jQuery('nav.sidenav .actions-menu .drop-down-menu ul.options');
+        if (!$menu.length) {
             console.warn('Side nav menu not found: Probably a flagged activity');
             return;
         }
-        menuEl.insertAdjacentHTML('beforeend', `
+        $menu.append(jQuery(`
             <li class="sauce-group">
                 <div class="sauce-header">
                     <div class="sauce-title">SAUCE</div>
@@ -1734,17 +1734,17 @@ sauce.ns('analysis', ns => {
                            class="tcx">${exportLocale} TCX</a></li>
                 </ul>
             </li>
-        `);
-        menuEl.querySelector('a.tcx').addEventListener('click', () => {
+        `));
+        $menu.find('a.tcx').on('click', () => {
             exportActivity(sauce.export.TCXSerializer).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
         });
-        if (!menuEl.querySelector('a[href$="/export_gpx"')) {
-            menuEl.querySelector('.sauce-group ul').insertAdjacentHTML('beforeend', `
+        if (!$menu.find('a[href$="/export_gpx"]').length) {
+            $menu.find('.sauce-group ul').append(jQuery(`
                 <li><a title="NOTE: GPX files do not support power data (watts)."
                        class="gpx">${exportLocale} GPX</a></li>
-            `);
-            menuEl.querySelector('a.gpx').addEventListener('click', () => {
+            `));
+            $menu.find('a.gpx').on('click', () => {
                 exportActivity(sauce.export.GPXSerializer).catch(sauce.rpc.reportError);
                 sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
             });
