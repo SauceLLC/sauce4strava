@@ -299,7 +299,7 @@ sauce.ns('data', function() {
             }
         }
 
-        import(times, values) {
+        importData(times, values) {
             for (const x of this._importIter(times, values)) {void x;}
         }
 
@@ -786,7 +786,7 @@ sauce.ns('power', function() {
         if (!roll) {
             return;
         }
-        roll.import(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
+        roll.importData(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
         return roll;
     }
 
