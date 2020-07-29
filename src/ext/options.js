@@ -20,11 +20,13 @@
         const enablers = document.querySelectorAll("button.enabler");
         for (const x of enablers) {
             x.addEventListener('click', async () => {
-                await sauce.storage.set('enabled', !enabled);
-                toggle(!enabled);
+                const enabling = !enabled;
+                await sauce.storage.set('enabled', enabling);
+                toggle(enabling);
                 if (isPopup) {
                     browser.tabs.reload();
                 }
+                await reportOptionSet('enabled', enabling);
             });
         }
         toggle(enabled);
