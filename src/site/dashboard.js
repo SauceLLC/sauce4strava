@@ -123,7 +123,6 @@ sauce.ns('dashboard', function(ns) {
 
 
     async function sendGAPageView(type) {
-        await sauce.rpc.ga('set', 'page', `/site/dashboard`);
         await sauce.rpc.ga('set', 'title', 'Sauce Dashboard');
         await sauce.rpc.ga('send', 'pageview');
     }

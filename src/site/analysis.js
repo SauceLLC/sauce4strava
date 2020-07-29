@@ -1696,13 +1696,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function sendGAPageView(type) {
-        await sauce.rpc.ga('set', 'page', `/site/analysis/${type}`);
-        await sauce.rpc.ga('set', 'title', 'Sauce Analysis');
-        await sauce.rpc.ga('send', 'pageview');
-    }
-
-
     let _tplCache = {};
     async function getTemplate(filename, localeKey) {
         const cacheKey = '' + filename + localeKey;
@@ -2891,8 +2884,12 @@ sauce.ns('analysis', ns => {
             const end = ctx.$analysisStats.data('end');
             showPerfPredictor(start, end).catch(sauce.rpc.reportError);
         });
-        $el.on('click', 'a.expander', ev =>
-            ev.currentTarget.closest('.sauce-analysis-stats').classList.toggle('expanded'));
+        $el.on('click', 'a.expander', ev => {
+            const el = ev.currentTarget.closest('.sauce-analysis-stats');
+            const collapsing = el.classList.contains('expanded');
+            el.classList.toggle('expanded');
+            sauce.rpc.reportEvent('AnalysisStats', collapsing ? 'collapse' : 'expand');
+        });
     }
 
 
@@ -3098,6 +3095,7 @@ sauce.ns('analysis', ns => {
         await pageViewAssembled();
         const activity = pageView.activity();
         const type = activity.get('type');
+        const gaSetTitlePromsie = sauce.rpc.ga('set', 'title', `Sauce Analysis - ${type}`);
         ctx.manifest = manifests[type];
         if (ctx.manifest) {
             if (ctx.manifest.streams) {
@@ -3118,12 +3116,11 @@ sauce.ns('analysis', ns => {
                 schedUpdateAnalysisStats(start, end);
             }
             await ctx.manifest.start();
-            sauce.rpc.reportEvent('ActivityAnalysis', 'load', type);
         } else {
             ctx.unsupported = true;
             console.info('Unsupported activity type:', type);
         }
-        sendGAPageView(type);  // bg okay
+        gaSetTitlePromsie.then(() => sauce.rpc.ga('send', 'pageview'));
     }
 
 
