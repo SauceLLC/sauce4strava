@@ -37,6 +37,20 @@
         }
     }
 
+    async function reportOptionSet(name, value) {
+        let prettyValue;
+        if (value === null) {
+            prettyValue = 'null';
+        } else if (value === undefined) {
+            prettyValue = 'undefined';
+        } else if (value.toString) {
+            prettyValue = value.toString();
+        } else {
+            prettyValue = JSON.stringify(value);
+        }
+        return await reportEvent('Options', `set-${name}`, prettyValue);
+    }
+
     function manageOptions(options, patronLevel) {
         options = options || {};
         const checkboxes = document.querySelectorAll('.option input[type="checkbox"]');
@@ -52,6 +66,7 @@
                 if (isPopup) {
                     browser.tabs.reload();
                 }
+                await reportOptionSet(input.name, input.checked);
             });
             resetSuboptions(input);
         }
@@ -67,6 +82,7 @@
                 if (isPopup) {
                     browser.tabs.reload();
                 }
+                await reportOptionSet(input.name, input.value);
             });
         }
         const selects = document.querySelectorAll('.option select');
@@ -87,6 +103,7 @@
                 if (isPopup) {
                     browser.tabs.reload();
                 }
+                await reportOptionSet(select.name, value);
             });
         }
     }
@@ -94,6 +111,11 @@
     async function getBuildInfo() {
         const resp = await fetch('/build.json');
         return await resp.json();
+    }
+
+    async function reportEvent(eventCategory, eventAction, eventLabel) {
+        const t = await sauce.ga.getOrCreateTracker();
+        return t.send('event', {eventCategory, eventAction, eventLabel});
     }
 
     async function main() {
@@ -142,6 +164,7 @@
         }
         manageEnabler(config.enabled !== false);
         manageOptions(config.options, config.patronLevel);
+        (await sauce.ga.getOrCreateTracker()).send('pageview');
     }
 
     document.addEventListener('DOMContentLoaded', main);

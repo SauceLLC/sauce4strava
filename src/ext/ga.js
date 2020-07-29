@@ -35,11 +35,18 @@
         }
         tracker.set('checkProtocolTask', () => undefined);  // needed when used in an ext.
         localStorage.setItem(gaClientIdKey, tracker.get('clientId'));
+        if (await browser.runtime.getBackgroundPage() !== self) {
+            // An ext option page tracker.  Must override page to avoid getting filtered at ga.
+            tracker.set('page', `/EXTENTION_PAGE${location.pathname}`);
+        }
         return tracker;
     };
 
-    if (await browser.runtime.getBackgroundPage() !== self) {
-        const t = await ns.createTracker();
-        t.send('pageview', location.pathname);
-    }
+    let _trackerCreations = new Map();
+    ns.getOrCreateTracker = async function(name) {
+        if (!_trackerCreations.has(name)) {
+            _trackerCreations.set(name, ns.createTracker(name));
+        }
+        return await _trackerCreations.get(name);
+    };
 })();

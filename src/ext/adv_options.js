@@ -8,9 +8,11 @@
         document.documentElement.classList.add('popup');
     }
 
+
     function sleep(seconds) {
         return new Promise(resolve => setTimeout(resolve, seconds * 1000));
     }
+
 
     async function saveAthleteInfo(el) {
         const textareas = el.querySelectorAll('textarea.athlete-info');
@@ -127,6 +129,12 @@
     }
 
 
+    async function reportEvent(eventCategory, eventAction, eventLabel) {
+        const t = await sauce.ga.getOrCreateTracker();
+        return t.send('event', {eventCategory, eventAction, eventLabel});
+    }
+
+
     async function main() {
         document.querySelector('a.dismiss').addEventListener('click', () => {
             browser.tabs.update({active: true});  // required to allow self.close()
@@ -150,7 +158,11 @@
                 if (isPopup) {
                     browser.tabs.reload();
                 }
-                window.location.reload();
+                try {
+                    await reportEvent('AdvancedOptions', 'erase-all-data');
+                } finally {
+                    window.location.reload();
+                }
             });
         });
         const optionsEl = document.getElementById('options');
@@ -165,6 +177,7 @@
             delete athlete_info[id];
             await sauce.storage.set({athlete_info});
             await renderAthleteInfo(athleteEl);
+            reportEvent('AdvancedOptions', 'remove-athlete-info');  // bg okay
         });
         document.getElementById('save').addEventListener('click', async () => {
             const status = document.getElementById('status');
@@ -183,9 +196,11 @@
             if (isPopup) {
                 browser.tabs.reload();
             }
+            reportEvent('AdvancedOptions', 'save');  // bg okay
             await sleep(5);
             status.textContent = '';
         });
+        (await sauce.ga.getOrCreateTracker()).send('pageview');
     }
 
     document.addEventListener('DOMContentLoaded', main);
