@@ -14,6 +14,12 @@
     color: var(--sauce-negative) !important;
 }
 
+.pagenav.sauce-error {
+    font-size: 0.8em;
+    padding: 0.5em;
+    color: var(--sauce-negative);
+}
+
 .activity-stats {
     .secondary-stats.inline-stats.sauce-stats {
         border: var(--sauce-thin-border);

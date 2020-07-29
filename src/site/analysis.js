@@ -99,6 +99,14 @@ sauce.ns('analysis', ns => {
     }
 
 
+    class ThrottledNetworkError extends Error {
+        constructor() {
+            super('Strava returned API throttle response: 429');
+            this.disableReport = true;
+        }
+    }
+
+
     const _attemptedFetch = new Set();
     const _pendingFetches = new Map();
     async function fetchStreams(names) {
@@ -129,8 +137,15 @@ sauce.ns('analysis', ns => {
                 const p = new Promise((resolve, reject) => {
                     streams.fetchStreams(fetching, {
                         success: resolve,
-                        error: (streams, ajax) =>
-                            reject(new Error(`Fetch streams failed: ${ajax.status} ${ajax.statusText}`))
+                        error: (streams, ajax) => {
+                            let e;
+                            if (ajax.status === 429) {
+                                e = new ThrottledNetworkError();
+                            } else {
+                                e = new Error(`Fetch streams failed: ${ajax.status} ${ajax.statusText}`);
+                            }
+                            reject(e);
+                        }
                     });
                 });
                 for (const x of fetching) {
@@ -735,7 +750,7 @@ sauce.ns('analysis', ns => {
                     return Object.assign(attrs, {rows});
                 }
             });
-            attachInfoPanel(panel);
+            attachInfo(panel.$el);
             await panel.render();
         }
     }
@@ -795,7 +810,7 @@ sauce.ns('analysis', ns => {
                     return {rows};
                 }
             });
-            attachInfoPanel(panel);
+            attachInfo(panel.$el);
             await panel.render();
         }
     }
@@ -894,7 +909,7 @@ sauce.ns('analysis', ns => {
                     return Object.assign(attrs, {rows});
                 }
             });
-            attachInfoPanel(panel);
+            attachInfo(panel.$el);
             await panel.render();
         }
     }
@@ -1005,7 +1020,7 @@ sauce.ns('analysis', ns => {
                     return Object.assign(attrs, {rows});
                 }
             });
-            attachInfoPanel(panel);
+            attachInfo(panel.$el);
             await panel.render();
         }
     }
@@ -1036,15 +1051,14 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function attachInfoPanel(panel) {
-        const infoEl = panel.$el[0];
+    function attachInfo($el) {
         async function placeInfo(isMobile) {
             if (isMobile) {
                 const parent = document.getElementById('heading');
-                parent.insertAdjacentElement('afterend', infoEl);
+                parent.insertAdjacentElement('afterend', $el[0]);
             } else {
                 const before = document.getElementById('pagenav');
-                before.insertAdjacentElement('afterend', infoEl);
+                before.insertAdjacentElement('afterend', $el[0]);
             }
         }
         if (!sauce.options['responsive']) {
@@ -3115,7 +3129,19 @@ sauce.ns('analysis', ns => {
                 const {start, end} = sauce.analysisStatsIntent;
                 schedUpdateAnalysisStats(start, end);
             }
-            await ctx.manifest.start();
+            try {
+                await ctx.manifest.start();
+            } catch(e) {
+                if (e instanceof ThrottledNetworkError) {
+                    attachInfo(jQuery(`
+                        <div class="pagenav sauce-error">
+                            <b>Unable to load Sauce:</b><br/>
+                            Strava Network Error:
+                            Too many requests, try again later.
+                        </div>`));
+                }
+                throw e;
+            }
         } else {
             ctx.unsupported = true;
             console.info('Unsupported activity type:', type);
@@ -3136,6 +3162,7 @@ sauce.ns('analysis', ns => {
         humanElevation,
         schedUpdateAnalysisStats,
         attachAnalysisStats,
+        ThrottledNetworkError,
     };
 });
 

@@ -63,6 +63,10 @@ sauce.ns('rpc', function() {
 
 
     async function reportError(e) {
+        if (e && e.disableReport) {
+            console.warn('Ignoring non-reporting error:', e);
+            return;
+        }
         const page = location.pathname;
         const desc = [`v${sauce && sauce.version}`];
         try {
