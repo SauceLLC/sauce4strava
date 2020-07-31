@@ -981,8 +981,10 @@ sauce.ns('images', function(ns) {
 sauce.ns('geo', function(ns) {
     'use strict';
 
+    let _xxx = 0;
     function distance([latA, lngA], [latB, lngB]) {
         // haversine method (slow but accurate) - as the crow flies
+        _xxx++;
         const rLatA = latA * Math.PI / 180;
         const rLatB = latB * Math.PI / 180;
         const rDeltaLat = (latB - latA) * Math.PI / 180;
@@ -1049,5 +1051,6 @@ sauce.ns('geo', function(ns) {
         distance,
         boundingBox,
         boundsOverlap,
+        xxx: () => _xxx
     };
 });

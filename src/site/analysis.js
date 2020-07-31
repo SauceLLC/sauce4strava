@@ -647,7 +647,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function trailforksIntersections(options = {}) {
+    async function tfFetchTrailsUnofficial(bbox, options={}) {
         const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
         const q = new URLSearchParams();
         q.set('rmsP', 'j2');
@@ -657,10 +657,7 @@ sauce.ns('analysis', ns => {
         q.set('z', '100');  // nearly zero impact, but must be roughly over 10 (13.4 is one observed default)
         q.set('layers', 'tracks'); // comma delim (markers,tracks,polygons)
         //q.set('markertypes', 'poi,directory,region');
-        const latlngStream = await fetchStream('latlng');
-        const distStream = await fetchStream('distance');
-        const box = sauce.geo.boundingBox(latlngStream);
-        q.set('bboxa', [box.swc[1], box.swc[0], box.nec[1], box.nec[0]].join(','));
+        q.set('bboxa', [bbox.swc[1], bbox.swc[0], bbox.nec[1], bbox.nec[0]].join(','));
         q.set('display', 'difficulty');
         q.set('activitytype', '1');  // 1 = bike?  6 = run/hike ???, 5 = ??? XXX
         // unset ....  &condition_time=0 &trailids= &rid=0 &season=0 &ebike=0 &filters=bikepacking::0 &hideunsanctioned=0
@@ -669,16 +666,62 @@ sauce.ns('analysis', ns => {
         }
         const resp = await fetch(`${tfHost}/rms/?${q.toString()}`);
         const data = await resp.json();
-        const trailIntersectMatrix = [];
-        for (const feature of data.features) {
-            if (feature.type !== 'Feature' || !feature.properties ||
-                feature.properties.type !== 'trail' || !feature.geometry ||
-                feature.geometry.type !== 'LineString' || !feature.geometry.encodedpath) {
-                continue;
+        return data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail').map(x => {
+            // Make data look more like the official api
+            return Object.assign({}, x.properties, {
+                track: {
+                    encodedPath: x.geometry.encodedpath
+                }
+            });
+        });
+    }
+
+
+    async function tfFetchTrails(bbox, options={}) {
+        //const tfHost = 'https://www.trailforks.com';
+        const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
+        const q = new URLSearchParams();
+        q.set('api_key', 'cats'.split('').map((_, i) =>
+            String.fromCharCode(1685021555 >> i * 8 & 0xff)).reverse().join(''));  // be a bit cheeky
+        q.set('rows', '100');
+        q.set('scope', 'detailed');
+        q.set('filter', `bbox::${[bbox.swc[0], bbox.swc[1], bbox.nec[0], bbox.nec[1]].join(',')}`);
+        for (const [k, v] of Object.entries(options)) {
+            q.set(k, v);
+        }
+        const trails = [];
+        let page = 1;
+        for (;;) {
+            q.set('page', page++);
+            const resp = await fetch(`${tfHost}/api/1/trails?${q.toString()}`);
+            const data = await resp.json();
+            if (data.error !== 0) {
+                throw new Error(`TF API Error: ${data.error} ${data.message}`);
             }
-            const path = polyline.decode(feature.geometry.encodedpath);
-            const pathBox = sauce.geo.boundingBox(path);
-            if (!sauce.geo.boundsOverlap(pathBox, box)) {
+            if (data.data && data.data.length) {
+                for (const x of data.data) {
+                    trails.push(x);
+                }
+            } else {
+                break;
+            }
+        }
+        return trails;
+    }
+
+
+    async function trailforksIntersections(options = {}) {
+        const latlngStream = await fetchStream('latlng');
+        const distStream = await fetchStream('distance');
+        const bbox = sauce.geo.boundingBox(latlngStream);
+        const s1 = Date.now();  // XXX
+        //const trails = await tfFetchTrailsUnofficial(bbox);
+        const trails = await tfFetchTrails(bbox);
+        const s2 = Date.now();  // XXX
+        const trailIntersectMatrix = [];
+        for (const trail of trails) {
+            const path = polyline.decode(trail.track.encodedPath);
+            if (!sauce.geo.boundsOverlap(sauce.geo.boundingBox(path), bbox)) {
                 continue;
             }
             const intersections = [];
@@ -741,12 +784,14 @@ sauce.ns('analysis', ns => {
                 }
                 trailIntersectMatrix.push({
                     path,
-                    feature,
+                    trail,
                     intersections,
                     indexes: intersections.reduce((agg, x, i) => (x != null && agg.push([x, i]), agg), [])
                 });
             }
         }
+        const s3 = Date.now(); // XXX
+        console.log(sauce.geo.xxx(), 'net', s2 - s1, 'cpu', s3 - s2, 'tot', s3 - s1);
         return trailIntersectMatrix;
     }
 
@@ -769,24 +814,23 @@ sauce.ns('analysis', ns => {
             }
         }
         /* XXX */
-        const trailIntersections = await trailforksIntersections();
+        const tfIntersections = await trailforksIntersections();
         for (const segment of pageView.segmentEfforts().models) {
-            const trails = [];
+            const tfMatches = [];
             const [start, end] = pageView.chartContext().convertStreamIndices(segment.indices());
-            for (const trail of trailIntersections) {
+            for (const x of tfIntersections) {
                 let overlap = 0;
                 for (let i = start; i < end; i++) {
-                    if (trail.intersections[i] !== undefined) {
+                    if (x.intersections[i] !== undefined) {
                         if (overlap++ > Math.min(10, end - start)) {
-                            trails.push(trail); // XXX make it a little harder than one single match.
+                            tfMatches.push(x); // XXX make it a little harder than one single match.
                             break;
                         }
                     }
                 }
             }
-            if (trails.length) {
-                segment.set('trailforks', trails);
-                console.error(trails);
+            if (tfMatches.length) {
+                segment.set('tfMatches', tfMatches);
             }
         }
         /* //XXX */
@@ -2283,8 +2327,8 @@ sauce.ns('analysis', ns => {
             console.warn('Segment data not found for:', row.dataset.segmentEffortId);
             return;
         }
-        const trails = segment.get('trailforks');
-        if (!trails) {
+        const tfMatches = segment.get('tfMatches');
+        if (!tfMatches || !tfMatches.length) {
             return;
         }
         const targetTD = row.querySelector('.name-col');
@@ -2318,15 +2362,14 @@ sauce.ns('analysis', ns => {
                 color: 'orange'
             }
         };
-        for (const t of trails) {
-            const props = t.feature.properties;
-            const difficulty = difficulties[props.difficulty] || {
-                title: `Difficulty: ${props.difficulty}`,
-                color: props.color
+        for (const x of tfMatches) {
+            const difficulty = difficulties[x.trail.difficulty] || {
+                title: `Difficulty: ${x.trail.difficulty}`,
+                color: x.trail.color
             };
             jQuery(targetTD).find('.stats').append(jQuery(`
                 <span style="color: ${difficulty.color};"
-                      title="${difficulty.title}">${props.name}</span>
+                      title="${difficulty.title}">${x.trail.name}</span>
             `));
         }
     }
