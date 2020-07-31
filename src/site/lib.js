@@ -1048,6 +1048,6 @@ sauce.ns('geo', function(ns) {
     return {
         distance,
         boundingBox,
-        boundsOverlap
+        boundsOverlap,
     };
 });

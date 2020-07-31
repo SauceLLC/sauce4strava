@@ -671,18 +671,12 @@ sauce.ns('analysis', ns => {
         const data = await resp.json();
         const trailIntersectMatrix = [];
         for (const feature of data.features) {
-            if (feature.type !== 'Feature' || !feature.properties || feature.properties.type !== 'trail' ||
-                !feature.geometry || feature.geometry.type !== 'LineString' ||
-                !(feature.geometry.encodedpath || feature.geometry.simplepath)) {
+            if (feature.type !== 'Feature' || !feature.properties ||
+                feature.properties.type !== 'trail' || !feature.geometry ||
+                feature.geometry.type !== 'LineString' || !feature.geometry.encodedpath) {
                 continue;
             }
-            let path;
-            if (!feature.geometry.simplepath) {
-                console.warn("Have to use encoded path which is going to be slower!");
-                path = polyline.decode(feature.geometry.encodedpath);
-            } else {
-                path = polyline.decode(feature.geometry.simplepath);
-            }
+            const path = polyline.decode(feature.geometry.encodedpath);
             const pathBox = sauce.geo.boundingBox(path);
             if (!sauce.geo.boundsOverlap(pathBox, box)) {
                 continue;
@@ -690,35 +684,33 @@ sauce.ns('analysis', ns => {
             const intersections = [];
             let match;
             let lastIntersectIdx;
+            const minMatchDistance = 10;
             for (let i = 0; i < latlngStream.length; i++) {
                 let intersects;
                 let closestDistance = Infinity;
-                for (const [xLoc, ii] of middleOutIter(path, lastIntersectIdx)) {
+                for (const [xLoc, ii] of middleOutIter(path, lastIntersectIdx + 1)) {
                     const distance = sauce.geo.distance(latlngStream[i], xLoc);
                     if (distance < closestDistance) {
                         closestDistance = distance;
                     }
-                    if (distance < 10) {
+                    if (distance <= minMatchDistance) {
                         intersects = ii;
                         match = true;
                         lastIntersectIdx = ii;
                         break;
                     }
                 }
-                if (closestDistance > 10) {
+                if (closestDistance > minMatchDistance * 10) {
                     // Optimization..
-                    // Scan fwd till we are at least half way to the nearest point of this trail relative to our last
-                    // index point.  Doing nested distance checks is pointless otherwise.
+                    // Scan fwd till we are at least potentially near the trail.
                     const offt = distStream[i];
+                    const maxSkipDistance = closestDistance * 0.80 - minMatchDistance;
                     while (i < latlngStream.length - 1) {
-                        if (distStream[i + 1] - offt < closestDistance / 2) {
+                        const covered = distStream[i + 1] - offt;
+                        if (covered < maxSkipDistance) {
                             intersections.push(undefined);
                             i++;
                         } else {
-                            if (i >= latlngStream.length - 1) {
-                                console.error('run offt');
-                                debugger;
-                            }
                             break;
                         }
                     }
@@ -731,6 +723,8 @@ sauce.ns('analysis', ns => {
                 let lastStreamIdx;
                 for (const [pathIdx, streamIdx] of indexes) {
                     // Fill any gaps where pathIdx is contiguous.
+                    // XXX do sanity distance checks because sometimes a ride can touch a trail head
+                    // on the start and end of a ride which leads to the entire ride getting filled.
                     if (lastPathIdx !== undefined) {
                         if (Math.abs(pathIdx - lastPathIdx) === 1 &&
                             Math.abs(streamIdx - lastStreamIdx) !== 1) {
@@ -738,9 +732,6 @@ sauce.ns('analysis', ns => {
                             const start = fwd ? lastStreamIdx : streamIdx;
                             const end = fwd ? streamIdx : lastStreamIdx;
                             for (let i = start + 1; i < end; i++) {
-                                if (intersections[i] !== undefined) {
-                                    throw new Error("XXX");
-                                }
                                 intersections[i] = pathIdx + ((lastPathIdx - pathIdx) / 2);
                             }
                         }
@@ -781,18 +772,21 @@ sauce.ns('analysis', ns => {
         const trailIntersections = await trailforksIntersections();
         for (const segment of pageView.segmentEfforts().models) {
             const trails = [];
-            const start = segment.get('start_index');
-            const end = segment.get('end_index');
+            const [start, end] = pageView.chartContext().convertStreamIndices(segment.indices());
             for (const trail of trailIntersections) {
+                let overlap = 0;
                 for (let i = start; i < end; i++) {
                     if (trail.intersections[i] !== undefined) {
-                        trails.push(trail); // XXX make it a little harder than one single match.
-                        break;
+                        if (overlap++ > Math.min(10, end - start)) {
+                            trails.push(trail); // XXX make it a little harder than one single match.
+                            break;
+                        }
                     }
                 }
             }
             if (trails.length) {
                 segment.set('trailforks', trails);
+                console.error(trails);
             }
         }
         /* //XXX */
@@ -2293,17 +2287,48 @@ sauce.ns('analysis', ns => {
         if (!trails) {
             return;
         }
-        const targetTD = row.querySelector('.time-col');
+        const targetTD = row.querySelector('.name-col');
         if (!targetTD) {
             throw new Error('Trailforks Fail: row query selector failed');
         }
         targetTD.classList.add('sauce-tf-mark');
-        targetTD.appendChild(jQuery(`
-            <div class="sauce-trailforks-holder">
-                <div>${trails.map(x => x.feature.properties.name).join()}</div>
-                <img src="" class="sauce-rank"/>
-            </div>
-        `)[0]);
+        const difficulties = {
+            2: {
+                title: 'Easiest / White Circle',
+                color: 'white'
+            },
+            3: {
+                title: 'Easy / Green Circle',
+                color: 'green'
+            },
+            4: {
+                title: 'Intermediate / Blue Square',
+                color: 'blue'
+            },
+            5: {
+                title: 'Very Difficult / Black Diamond',
+                color: 'black'
+            },
+            6: {
+                title: 'Extremely Difficult / Double Black Diamond',
+                color: 'black'
+            },
+            8: {
+                title: 'Extremely Dangerous / Pros Only',
+                color: 'orange'
+            }
+        };
+        for (const t of trails) {
+            const props = t.feature.properties;
+            const difficulty = difficulties[props.difficulty] || {
+                title: `Difficulty: ${props.difficulty}`,
+                color: props.color
+            };
+            jQuery(targetTD).find('.stats').append(jQuery(`
+                <span style="color: ${difficulty.color};"
+                      title="${difficulty.title}">${props.name}</span>
+            `));
+        }
     }
 
 
