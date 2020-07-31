@@ -127,6 +127,7 @@ sauce.ns('dashboard', function(ns) {
         await sauce.rpc.ga('send', 'pageview');
     }
 
+
     function monitorFeed(feedEl) {
         const mo = new MutationObserver(() => filterFeed(feedEl));
         mo.observe(feedEl, {childList: true});

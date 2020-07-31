@@ -647,7 +647,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function trailforksExperement(options = {}) {
+    async function trailforksIntersections(options = {}) {
         const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
         const q = new URLSearchParams();
         q.set('rmsP', 'j2');
@@ -750,14 +750,13 @@ sauce.ns('analysis', ns => {
                 }
                 trailIntersectMatrix.push({
                     path,
-                    name: feature.properties.name, // xxx
                     feature,
                     intersections,
                     indexes: intersections.reduce((agg, x, i) => (x != null && agg.push([x, i]), agg), [])
                 });
             }
         }
-        console.error(trailIntersectMatrix);
+        return trailIntersectMatrix;
     }
 
     async function startRideActivity() {
@@ -779,7 +778,23 @@ sauce.ns('analysis', ns => {
             }
         }
         /* XXX */
-        await trailforksExperement();
+        const trailIntersections = await trailforksIntersections();
+        for (const segment of pageView.segmentEfforts().models) {
+            const trails = [];
+            const start = segment.get('start_index');
+            const end = segment.get('end_index');
+            for (const trail of trailIntersections) {
+                for (let i = start; i < end; i++) {
+                    if (trail.intersections[i] !== undefined) {
+                        trails.push(trail); // XXX make it a little harder than one single match.
+                        break;
+                    }
+                }
+            }
+            if (trails.length) {
+                segment.set('trailforks', trails);
+            }
+        }
         /* //XXX */
         let tss;
         let np;
@@ -2253,6 +2268,45 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function addTrailforksOverlay() {
+        const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
+        for (const row of rows) {
+            try {
+                addTrailforksRow(row);
+            } catch(e) {
+                sauce.rpc.reportError(e);
+            }
+        }
+    }
+
+
+    function addTrailforksRow(row) {
+        if (row.querySelector(':scope > td.sauce-tf-mark')) {
+            return;
+        }
+        const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
+        if (!segment) {
+            console.warn('Segment data not found for:', row.dataset.segmentEffortId);
+            return;
+        }
+        const trails = segment.get('trailforks');
+        if (!trails) {
+            return;
+        }
+        const targetTD = row.querySelector('.time-col');
+        if (!targetTD) {
+            throw new Error('Trailforks Fail: row query selector failed');
+        }
+        targetTD.classList.add('sauce-tf-mark');
+        targetTD.appendChild(jQuery(`
+            <div class="sauce-trailforks-holder">
+                <div>${trails.map(x => x.feature.properties.name).join()}</div>
+                <img src="" class="sauce-rank"/>
+            </div>
+        `)[0]);
+    }
+
+
     async function getFTPInfo(athleteId) {
         const info = {};
         const override = await sauce.rpc.getAthleteProp(athleteId, 'ftp_override');
@@ -3178,6 +3232,7 @@ sauce.ns('analysis', ns => {
         const segments = document.querySelector('table.segments');
         if (segments) {
             addSegmentBadges();
+            addTrailforksOverlay(); // break out XXX
         }
     }
 
@@ -3289,7 +3344,7 @@ sauce.ns('analysis', ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,
-        tfTest: trailforksExperement
+        tfTest: trailforksIntersections
     };
 });
 
