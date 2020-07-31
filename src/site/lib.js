@@ -1,4 +1,4 @@
-/* global sauce, jQuery */
+/* global sauce */
 
 sauce.ns('data', function() {
     'use strict';
@@ -978,54 +978,76 @@ sauce.ns('images', function(ns) {
 });
 
 
-sauce.ns('tools', function(ns) {
+sauce.ns('geo', function(ns) {
     'use strict';
 
-    function sparklineDialog(data, sparklineOptions, dialogOptions) {
-        const draw = () => {
-            dialog.sparkline(data, Object.assign({
-                type: 'line',
-                width: '100%',
-                height: '100%',
-            }, sparklineOptions));
-        };
-        const dialog = jQuery('<div/>').dialog(Object.assign({
-            title: 'Sparkline Tool',
-            dialogClass: 'sauce-dialog',
-            buttons: [{
-                text: 'Close',
-                click: () => dialog.dialog('close')
-            }],
-            resize: draw,
-        }, dialogOptions));
-        draw();
+    function distance([latA, lngA], [latB, lngB]) {
+        // haversine method (slow but accurate) - as the crow flies
+        const rLatA = latA * Math.PI / 180;
+        const rLatB = latB * Math.PI / 180;
+        const rDeltaLat = (latB - latA) * Math.PI / 180;
+        const rDeltaLng = (lngB - lngA) * Math.PI / 180;
+        const a = Math.sin(rDeltaLat / 2) ** 2 +
+                  Math.cos(rLatA) * Math.cos(rLatB) *
+                  Math.sin(rDeltaLng / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return 6371e3 * c;
     }
 
 
-    async function benchRPC(iterations, options) {
-        iterations = iterations || 100;
-        options = options || {};
-        const jobs = [];
-        const start = Date.now();
-        const ping = options.bg ? sauce.rpc.bgping : sauce.rpc.ping;
-        for (let i = 0; i < iterations; i++) {
-            if (options.concurrent) {
-                jobs.push(ping(i, options.payload));
-            } else {
-                await ping(i, options.payload);
+    function boundingBox(latlngStream) {
+        if (!latlngStream || !latlngStream.length) {
+            return;
+        }
+        let necLat = latlngStream[0][0];
+        let necLng = latlngStream[0][1];
+        let swcLat = latlngStream[0][0];
+        let swcLng = latlngStream[0][1];
+        for (const [lat, lng] of latlngStream) {
+            if (lat > necLat) {
+                necLat = lat;
+            }
+            if (lng > necLng) {
+                necLng = lng;
+            }
+            if (lat < swcLat) {
+                swcLat = lat;
+            }
+            if (lng < swcLng) {
+                swcLng = lng;
             }
         }
-        if (options.concurrent) {
-            await Promise.all(jobs);
+        return {
+            nec: [necLat, necLng],
+            swc: [swcLat, swcLng]
+        };
+    }
+
+    function boundsOverlap(boxA, boxB) {
+        const yA = boxA.swc[0];
+        const yB = boxB.swc[0];
+        const hA = boxA.nec[0] - yA;
+        const hB = boxB.nec[0] - yB;
+        const top = Math.min(yA + hA, yB + hB);
+        const bottom = Math.max(yA, yB);
+        if (top - bottom < 0) {
+            return false;
         }
-        const done = Date.now();
-        const elapsed = (done - start) / 1000;
-        const payloadSize = options.payload ? JSON.stringify(options.payload).length : 0;
-        console.warn(`Bench RPC: ${(iterations / elapsed).toFixed(2)} iter/sec, ${elapsed.toFixed(3)} elapsed, payload-size-est: ${payloadSize}`);
+        const xA = boxA.swc[1];
+        const xB = boxB.swc[1];
+        const wA = boxA.nec[1] - xA;
+        const wB = boxB.nec[1] - xB;
+        const right = Math.min(xA + wA, xB + wB);
+        const left = Math.max(xA, xB);
+        if (right - left < 0) {
+            return false;
+        }
+        return true;
     }
 
     return {
-        sparklineDialog,
-        benchRPC
+        distance,
+        boundingBox,
+        boundsOverlap
     };
 });

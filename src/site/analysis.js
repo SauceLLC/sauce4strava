@@ -1,4 +1,4 @@
-/* global Strava, sauce, jQuery, pageView, jsfit */
+/* global Strava, sauce, jQuery, pageView, jsfit, polyline */
 
 sauce.ns('analysis', ns => {
     'use strict';
@@ -630,6 +630,136 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function *middleOutIter(data, start) {
+        const len = data.length;
+        let count = 0;
+        let left = Math.max(0, Math.min(len, start || Math.floor(len / 2)));
+        let right = left;
+        while (count++ < len) {
+            let idx;
+            if ((count % 2 && left > 0) || right === len) {
+                idx = --left;
+            } else {
+                idx = right++;
+            }
+            yield [data[idx], idx];
+        }
+    }
+
+
+    async function trailforksExperement(options = {}) {
+        const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
+        const q = new URLSearchParams();
+        q.set('rmsP', 'j2');
+        q.set('mod', 'trailforks');
+        q.set('op', 'map');
+        q.set('format', 'geojson');
+        q.set('z', '100');  // nearly zero impact, but must be roughly over 10 (13.4 is one observed default)
+        q.set('layers', 'tracks'); // comma delim (markers,tracks,polygons)
+        //q.set('markertypes', 'poi,directory,region');
+        const latlngStream = await fetchStream('latlng');
+        const distStream = await fetchStream('distance');
+        const box = sauce.geo.boundingBox(latlngStream);
+        q.set('bboxa', [box.swc[1], box.swc[0], box.nec[1], box.nec[0]].join(','));
+        q.set('display', 'difficulty');
+        q.set('activitytype', '1');  // 1 = bike?  6 = run/hike ???, 5 = ??? XXX
+        // unset ....  &condition_time=0 &trailids= &rid=0 &season=0 &ebike=0 &filters=bikepacking::0 &hideunsanctioned=0
+        for (const [k, v] of Object.entries(options)) {
+            q.set(k, v);
+        }
+        const resp = await fetch(`${tfHost}/rms/?${q.toString()}`);
+        const data = await resp.json();
+        const trailIntersectMatrix = [];
+        for (const feature of data.features) {
+            if (feature.type !== 'Feature' || !feature.properties || feature.properties.type !== 'trail' ||
+                !feature.geometry || feature.geometry.type !== 'LineString' ||
+                !(feature.geometry.encodedpath || feature.geometry.simplepath)) {
+                continue;
+            }
+            let path;
+            if (!feature.geometry.simplepath) {
+                console.warn("Have to use encoded path which is going to be slower!");
+                path = polyline.decode(feature.geometry.encodedpath);
+            } else {
+                path = polyline.decode(feature.geometry.simplepath);
+            }
+            const pathBox = sauce.geo.boundingBox(path);
+            if (!sauce.geo.boundsOverlap(pathBox, box)) {
+                continue;
+            }
+            const intersections = [];
+            let match;
+            let lastIntersectIdx;
+            for (let i = 0; i < latlngStream.length; i++) {
+                let intersects;
+                let closestDistance = Infinity;
+                for (const [xLoc, ii] of middleOutIter(path, lastIntersectIdx)) {
+                    const distance = sauce.geo.distance(latlngStream[i], xLoc);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                    }
+                    if (distance < 10) {
+                        intersects = ii;
+                        match = true;
+                        lastIntersectIdx = ii;
+                        break;
+                    }
+                }
+                if (closestDistance > 10) {
+                    // Optimization..
+                    // Scan fwd till we are at least half way to the nearest point of this trail relative to our last
+                    // index point.  Doing nested distance checks is pointless otherwise.
+                    const offt = distStream[i];
+                    while (i < latlngStream.length - 1) {
+                        if (distStream[i + 1] - offt < closestDistance / 2) {
+                            intersections.push(undefined);
+                            i++;
+                        } else {
+                            if (i >= latlngStream.length - 1) {
+                                console.error('run offt');
+                                debugger;
+                            }
+                            break;
+                        }
+                    }
+                }
+                intersections.push(intersects);
+            }
+            if (match) {
+                const indexes = intersections.reduce((agg, x, i) => (x != null && agg.push([x, i]), agg), []);
+                let lastPathIdx;
+                let lastStreamIdx;
+                for (const [pathIdx, streamIdx] of indexes) {
+                    // Fill any gaps where pathIdx is contiguous.
+                    if (lastPathIdx !== undefined) {
+                        if (Math.abs(pathIdx - lastPathIdx) === 1 &&
+                            Math.abs(streamIdx - lastStreamIdx) !== 1) {
+                            const fwd = streamIdx > lastStreamIdx;
+                            const start = fwd ? lastStreamIdx : streamIdx;
+                            const end = fwd ? streamIdx : lastStreamIdx;
+                            for (let i = start + 1; i < end; i++) {
+                                if (intersections[i] !== undefined) {
+                                    throw new Error("XXX");
+                                }
+                                intersections[i] = pathIdx + ((lastPathIdx - pathIdx) / 2);
+                            }
+                        }
+                    }
+                    lastPathIdx = pathIdx;
+                    lastStreamIdx = streamIdx;
+                }
+                trailIntersectMatrix.push({
+                    path,
+                    name: feature.properties.name, // xxx
+                    feature,
+                    intersections,
+                    indexes: intersections.reduce((agg, x, i) => (x != null && agg.push([x, i]), agg), [])
+                });
+            }
+        }
+        console.error(trailIntersectMatrix);
+    }
+
     async function startRideActivity() {
         sauce.rpc.auditStackFrame();
         const realWattsStream = await fetchStream('watts');
@@ -648,6 +778,9 @@ sauce.ns('analysis', ns => {
                 console.info('No power data for this activity.');
             }
         }
+        /* XXX */
+        await trailforksExperement();
+        /* //XXX */
         let tss;
         let np;
         let intensity;
@@ -2646,15 +2779,8 @@ sauce.ns('analysis', ns => {
         const points = [];
         const distOfft = distStream[0];
         const timeOfft = timeStream[0];
-        let nec_lat = latlngStream[0][0];
-        let nec_long = latlngStream[0][1];
-        let swc_lat = latlngStream[0][0];
-        let swc_long = latlngStream[0][1];
+        const bounds = sauce.geo.boundingBox(latlngStream);
         for (let i = 0; i < altStream.length; i++) {
-            nec_lat = Math.max(latlngStream[i][0], nec_lat);
-            nec_long = Math.max(latlngStream[i][1], nec_long);
-            swc_lat = Math.min(latlngStream[i][0], swc_lat);
-            swc_long = Math.min(latlngStream[i][1], swc_long);
             points.push({
                 altitude: altStream[i],
                 distance: distStream[i] - distOfft,
@@ -2686,10 +2812,10 @@ sauce.ns('analysis', ns => {
             start_position_long: latlngStream[0][1],
             end_position_lat: latlngStream[latlngStream.length - 1][0],
             end_position_long: latlngStream[latlngStream.length - 1][1],
-            swc_lat,
-            swc_long,
-            nec_lat,
-            nec_long,
+            swc_lat: bounds.swc[0],
+            swc_long: bounds.swc[1],
+            nec_lat: bounds.nec[0],
+            nec_long: bounds.nec[1],
             message_index: {flags: [], value: 0}
         });
         fitParser.addMessage('segment_leaderboard_entry', {
@@ -3163,6 +3289,7 @@ sauce.ns('analysis', ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,
+        tfTest: trailforksExperement
     };
 });
 
