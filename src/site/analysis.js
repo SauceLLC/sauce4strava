@@ -2303,13 +2303,13 @@ sauce.ns('analysis', ns => {
         }
         targetTD.classList.add('sauce-mark');
         const levelPct = Math.round(rank.level * 100);
-        targetTD.appendChild(jQuery(`
+        jQuery(targetTD).html(`
             <div class="sauce-rank-holder">
                 <div>${targetTD.innerHTML}</div>
                 <img src="${rank.badge}" class="sauce-rank"
                      title="World Ranking: ${levelPct}%\nWatts/kg: ${humanNumber(wKg, 1)}"/>
             </div>
-        `)[0]);
+        `);
     }
 
 
