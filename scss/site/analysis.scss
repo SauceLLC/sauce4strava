@@ -158,11 +158,98 @@ abbr.unit {
     }
 }
 
-table.segments .sauce-rank-holder,
-table.hidden-segments .sauce-rank-holder {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+table.segments,
+table.hidden-segments {
+    .sauce-trailforks-info {
+        display: flex;
+
+        > * {
+            display: flex;
+        }
+
+        .title {
+            color: color.shade(accent, 10%);
+        }
+
+        .condition {
+            &.mud {color: brown;}
+            &.wet {color: blue;}
+            &.dry {color: orange;}
+            &.very-dry {color: red;}
+            &.icy {color: #eee;}
+            &.snow {color: #ccc;}
+            &.ideal {color: green;}
+        }
+
+        .status {
+            &.clear {color: green;}
+            &.minor-issue {color: #dbb21d;}
+            &.significant-issue {color: orange;}
+            &.closed {color: red;}
+        }
+
+        img.difficulty {
+            max-width: 2em;
+            max-height: 2em;
+            object-fit: contain;
+        }
+
+        svg[data-icon] {
+            width: 1.2em;
+        }
+
+        .add-report {
+            color: color.get(fg);
+            margin-left: 0.4em;
+        }
+
+        a {
+            opacity: 0.85;
+            transition: opacity 200ms, box-shadow 200ms, background-color;
+            border-radius: 0.2em;
+            padding: 0.28em 0.4em;
+
+            &:hover {
+                opacity: 1;
+                box-shadow: 1px 1px 5px 0 color.shade(fg, 20%, 0.3);
+                background-color: color.shade(bg, 10%, 0.5);
+            }
+            &:active {
+                opacity: 1;
+                box-shadow: inset 0 0 3px 0 color.shade(fg, 20%, 0.3);
+                background-color: color.shade(bg, 10%, 0.5);
+            }
+        }
+
+        .report {
+            display: flex;
+            align-items: center;
+
+            > * {
+                display: flex;
+            }
+            > *:not(:last-child) {
+                margin-right: 0.3em;
+            }
+            
+            img.trailforks-icon {
+                max-height: 2em;
+                max-width: 2em;
+            }
+        }
+
+        iframe.trailstatus {
+            width: 30em;
+            height: 2em;
+            display: none;
+        }
+    }
+
+    .sauce-rank-holder {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
 }
 
 .segment-effort-detail .leaderboard .activity-sprite {

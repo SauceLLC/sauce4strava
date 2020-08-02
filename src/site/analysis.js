@@ -652,39 +652,61 @@ sauce.ns('analysis', ns => {
         const q = new URLSearchParams();
         q.set('rmsP', 'j2');
         q.set('mod', 'trailforks');
-        q.set('op', 'map');
+        q.set('op', 'tracks');
         q.set('format', 'geojson');
         q.set('z', '100');  // nearly zero impact, but must be roughly over 10 (13.4 is one observed default)
         q.set('layers', 'tracks'); // comma delim (markers,tracks,polygons)
-        //q.set('markertypes', 'poi,directory,region');
         q.set('bboxa', [bbox.swc[1], bbox.swc[0], bbox.nec[1], bbox.nec[0]].join(','));
-        q.set('display', 'difficulty');
-        q.set('activitytype', '1');  // 1 = bike?  6 = run/hike ???, 5 = ??? XXX
+        //q.set('activitytype', '1');  // 1 = bike?  6 = run/hike ???, 5 = ??? XXX
         // unset ....  &condition_time=0 &trailids= &rid=0 &season=0 &ebike=0 &filters=bikepacking::0 &hideunsanctioned=0
         for (const [k, v] of Object.entries(options)) {
             q.set(k, v);
         }
         const resp = await fetch(`${tfHost}/rms/?${q.toString()}`);
         const data = await resp.json();
-        return data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail').map(x => {
+        if (data.rmsS === false) {
+            throw new Error(`TF API Error: ${data.rmsM}`);
+        }
+        const trailQ = new URLSearchParams();
+        trailQ.set('scope', 'full');
+        trailQ.set('api_key', tfApiKey());
+        const trails = data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail');
+        // In leu of having a working trails API, do it manually..
+        return await Promise.all(trails.map(async x => { 
+            trailQ.set('id', x.id);
+            const resp = await fetch(`${tfHost}/api/1/trail/?${trailQ.toString()}`);
+            const data = await resp.json();
+            if (data.error !== 0) {
+                throw new Error(`TF API Error: ${data.error} ${data.message}`);
+            }
+            return data.data;
+        }));
+        /*return data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail').map(x => {
             // Make data look more like the official api
             return Object.assign({}, x.properties, {
+                title: x.properties.name,
                 track: {
                     encodedPath: x.geometry.encodedpath
                 }
             });
-        });
+        });*/
     }
 
 
+    function tfApiKey() {
+        return 'cats'.split('').map((_, i) =>
+            String.fromCharCode(1685021555 >> i * 8 & 0xff)).reverse().join('');
+    }
+
+
+    /*
     async function tfFetchTrails(bbox, options={}) {
         //const tfHost = 'https://www.trailforks.com';
         const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
         const q = new URLSearchParams();
-        q.set('api_key', 'cats'.split('').map((_, i) =>
-            String.fromCharCode(1685021555 >> i * 8 & 0xff)).reverse().join(''));  // be a bit cheeky
+        q.set('api_key', tfApiKey());
         q.set('rows', '100');
-        q.set('scope', 'detailed');
+        q.set('scope', 'full');
         q.set('filter', `bbox::${[bbox.swc[0], bbox.swc[1], bbox.nec[0], bbox.nec[1]].join(',')}`);
         for (const [k, v] of Object.entries(options)) {
             q.set(k, v);
@@ -708,6 +730,7 @@ sauce.ns('analysis', ns => {
         }
         return trails;
     }
+    */
 
 
     async function trailforksIntersections(options = {}) {
@@ -715,8 +738,8 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance');
         const bbox = sauce.geo.boundingBox(latlngStream);
         const s1 = Date.now();  // XXX
-        //const trails = await tfFetchTrailsUnofficial(bbox);
-        const trails = await tfFetchTrails(bbox);
+        const trails = await tfFetchTrailsUnofficial(bbox, options);
+        //const trails = await tfFetchTrails(bbox);
         const s2 = Date.now();  // XXX
         const trailIntersectMatrix = [];
         for (const trail of trails) {
@@ -2309,16 +2332,28 @@ sauce.ns('analysis', ns => {
     function addTrailforksOverlay() {
         const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
         for (const row of rows) {
-            try {
-                addTrailforksRow(row);
-            } catch(e) {
-                sauce.rpc.reportError(e);
-            }
+            addTrailforksRow(row).catch(sauce.rpc.reportError);
         }
     }
 
 
-    function addTrailforksRow(row) {
+    function tfWidgetDialog(title, widget, options={}, dialogOptions) {
+        const q = new URLSearchParams();
+        for (const [k, v] of Object.entries(options)) {
+            q.set(k, v);
+        }
+        //trailid=216&w=800px&h=703px&activitytype=1&map=1&elevation=1&photos=1&title=1&info=1"></iframe>
+        return dialog(Object.assign({
+            title,
+            body: `
+                <iframe class="sauce-trailforks-widget" width="100%" height="100%" frameborder="0"
+                        src="https://www.trailforks.com/widgets/${widget}/?${q}"></iframe>
+            `
+        }, dialogOptions));
+    }
+
+
+    async function addTrailforksRow(row) {
         if (row.querySelector(':scope > td.sauce-tf-mark')) {
             return;
         }
@@ -2337,40 +2372,154 @@ sauce.ns('analysis', ns => {
         }
         targetTD.classList.add('sauce-tf-mark');
         const difficulties = {
+            1: {
+                title: 'Access Road/Trail',
+            },
             2: {
                 title: 'Easiest / White Circle',
-                color: 'white'
+                icon: 'white-150x150.png'
             },
             3: {
                 title: 'Easy / Green Circle',
-                color: 'green'
+                icon: 'green-150x150.png'
             },
             4: {
                 title: 'Intermediate / Blue Square',
-                color: 'blue'
+                icon: 'blue-150x150.png'
             },
             5: {
                 title: 'Very Difficult / Black Diamond',
-                color: 'black'
+                icon: 'black-150x150.png'
             },
             6: {
                 title: 'Extremely Difficult / Double Black Diamond',
-                color: 'black'
+                icon: 'double-black-150x150.png'
+            },
+            7: {
+                title: 'Secondary Access Road/Trail'
             },
             8: {
                 title: 'Extremely Dangerous / Pros Only',
-                color: 'orange'
-            }
+                icon: 'pro-only-150x150.png'
+            },
+            11: {
+                title: 'Advanced: Grade 4'
+            },
         };
+        const conditions = {
+            0: {
+                title: "Unknown",
+            },
+            1: {
+                title: "Snow Packed",
+                class: "snow"
+            },
+            2: {
+                title: "Prevalent Mud",
+                class: "mud"
+            },
+            3: {
+                title: "Wet",
+                class: "wet"
+            },
+            4: {
+                title: "Variable",
+            },
+            5: {
+                title: "Dry",
+                class: "dry"
+            },
+            6: {
+                title: "Very Dry",
+                class: "very-dry"
+            },
+            7: {
+                title: "Snow Covered",
+                class: "snow"
+            },
+            8: {
+                title: "Freeze/thaw Cycle",
+                class: "icy"
+            },
+            9: {
+                title: "Icy",
+                class: "icy"
+            },
+            10: {
+                title: "Snow Groomed",
+                class: "snow"
+            },
+            11: {
+                title: "Ideal",
+                class: "ideal"
+            },
+        };
+        const statuses = {
+            1: {
+                title: "All Clear",
+                class: "clear"
+            },
+            2: {
+                title: "Minor Issue",
+                class: "minor-issue"
+            },
+            3: {
+                title: "Significant Issue",
+                class: "significant-issue"
+            },
+            4: {
+                title: "Closed",
+                class: "closed"
+            },
+        };
+        const reportIcon = await sauce.images.asText('fa/file-export-duotone.svg');
+        const statusIcon = await sauce.images.asText('fa/circle-duotone.svg');
+        const conditionIcon = await sauce.images.asText('fa/certificate-duotone.svg');
         for (const x of tfMatches) {
-            const difficulty = difficulties[x.trail.difficulty] || {
-                title: `Difficulty: ${x.trail.difficulty}`,
-                color: x.trail.color
-            };
-            jQuery(targetTD).find('.stats').append(jQuery(`
-                <span style="color: ${difficulty.color};"
-                      title="${difficulty.title}">${x.trail.name}</span>
-            `));
+            const difficulty = difficulties[x.trail.difficulty];
+            const condition = conditions[x.trail.condition];
+            const status = statuses[x.trail.status];
+            // Make a template for this... XXX
+            const $tf = jQuery(`
+                <div class="sauce-trailforks-info">
+                    <a class="report">
+                        <img title="${difficulty.title} - Click for full report" class="difficulty"
+                             src="${sauce.extUrl}images/trail_difficulty/${difficulty.icon}"/>
+                        <div class="condition ${condition.class}"
+                             title="${condition.title} - Click for full report">${conditionIcon}</div>
+                        <div class="status ${status.class}"
+                             title="${status.title} - Click for full report">${statusIcon}</div>
+                    </a>
+                    <a class="add-report" title="File a trail report">${reportIcon}</a>
+                </div>
+            `);
+            $tf.on('click', 'a.report', ev => {
+                ev.stopPropagation();
+                tfWidgetDialog(`Trailforks Report - ${x.trail.title}`, 'trail', {
+                    trailid: x.trail.id,
+                    map: 1,
+                    photos: 1,
+                    title: 0,
+                    info: 1
+                }, {
+                    width: 500,
+                    height: 600,
+                    flex: true,
+                });
+            });
+            $tf.on('click', 'a.add-report', ev => {
+                ev.stopPropagation();
+                tfWidgetDialog(`Trailforks New Report - ${x.trail.title}`, 'reportsubmit', {
+                    trailid: x.trail.id,
+                    work: 0,
+                }, {
+                    width: 500,
+                    height: 600,
+                    flex: true,
+                });
+            });
+
+            jQuery(targetTD).find('.stats').append($tf);
         }
     }
 
@@ -3277,9 +3426,15 @@ sauce.ns('analysis', ns => {
     // Using mutation observers on the entire document leads to perf issues in chrome.
     let _pageMonitorsBackoff = 10;
     let _pageMonitorsTimeout;
-    async function startPageMonitors() {
-        if (sauce.options['analysis-segment-badges']) {
-            maintainSegmentBadges();
+    function startPageMonitors() {
+        const segments = document.querySelector('table.segments');
+        if (segments) {
+            if (sauce.options['analysis-segment-badges']) {
+                addSegmentBadges();
+            }
+            if (!sauce.options['analysis-disable-trailforks']) {
+                addTrailforksOverlay();
+            }
         }
         if (sauce.options['responsive']) {
             maintainScalableSVG();
@@ -3293,15 +3448,6 @@ sauce.ns('analysis', ns => {
         _pageMonitorsBackoff = 10;
         clearTimeout(_pageMonitorsTimeout);
         startPageMonitors();
-    }
-
-
-    function maintainSegmentBadges() {
-        const segments = document.querySelector('table.segments');
-        if (segments) {
-            addSegmentBadges();
-            addTrailforksOverlay(); // break out XXX
-        }
     }
 
 
@@ -3412,7 +3558,8 @@ sauce.ns('analysis', ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,
-        tfTest: trailforksIntersections
+        tfTest: trailforksIntersections,
+        tfWidgetDialog
     };
 });
 
