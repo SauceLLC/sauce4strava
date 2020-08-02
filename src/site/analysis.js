@@ -647,25 +647,29 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function tfFetchTrailsUnofficial(bbox, options={}) {
+    let _tfCache;
+    async function tfFetchTrailsUnofficial(bbox) {
         const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
-        const q = new URLSearchParams();
-        q.set('rmsP', 'j2');
-        q.set('mod', 'trailforks');
-        q.set('op', 'tracks');
-        q.set('format', 'geojson');
-        q.set('z', '100');  // nearly zero impact, but must be roughly over 10 (13.4 is one observed default)
-        q.set('layers', 'tracks'); // comma delim (markers,tracks,polygons)
-        q.set('bboxa', [bbox.swc[1], bbox.swc[0], bbox.nec[1], bbox.nec[0]].join(','));
-        //q.set('activitytype', '1');  // 1 = bike?  6 = run/hike ???, 5 = ??? XXX
-        // unset ....  &condition_time=0 &trailids= &rid=0 &season=0 &ebike=0 &filters=bikepacking::0 &hideunsanctioned=0
-        for (const [k, v] of Object.entries(options)) {
-            q.set(k, v);
+        if (!_tfCache) {
+            _tfCache = new sauce.cache.TTLCache('trailforks', 43200 * 1000);
         }
-        const resp = await fetch(`${tfHost}/rms/?${q.toString()}`);
-        const data = await resp.json();
-        if (data.rmsS === false) {
-            throw new Error(`TF API Error: ${data.rmsM}`);
+        const bboxKey = `bbox-${JSON.stringify(bbox)}`;
+        let data = await _tfCache.get(bboxKey);
+        if (!data) {
+            const q = new URLSearchParams();
+            q.set('rmsP', 'j2');
+            q.set('mod', 'trailforks');
+            q.set('op', 'tracks');
+            q.set('format', 'geojson');
+            q.set('z', '100');  // nearly zero impact, but must be roughly over 10
+            q.set('layers', 'tracks'); // comma delim (markers,tracks,polygons)
+            q.set('bboxa', [bbox.swc[1], bbox.swc[0], bbox.nec[1], bbox.nec[0]].join(','));
+            const resp = await fetch(`${tfHost}/rms/?${q.toString()}`);
+            data = await resp.json();
+            if (data.rmsS === false) {
+                throw new Error(`TF API Error: ${data.rmsM}`);
+            }
+            await _tfCache.set(bboxKey, data);
         }
         const trailQ = new URLSearchParams();
         trailQ.set('scope', 'full');
@@ -673,11 +677,16 @@ sauce.ns('analysis', ns => {
         const trails = data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail');
         // In leu of having a working trails API, do it manually..
         return await Promise.all(trails.map(async x => { 
-            trailQ.set('id', x.id);
-            const resp = await fetch(`${tfHost}/api/1/trail/?${trailQ.toString()}`);
-            const data = await resp.json();
-            if (data.error !== 0) {
-                throw new Error(`TF API Error: ${data.error} ${data.message}`);
+            const trailKey = `trail-${x.id}`;
+            let data = await _tfCache.get(trailKey);
+            if (!data) {
+                trailQ.set('id', x.id);
+                const resp = await fetch(`${tfHost}/api/1/trail/?${trailQ.toString()}`);
+                data = await resp.json();
+                if (data.error !== 0) {
+                    throw new Error(`TF API Error: ${data.error} ${data.message}`);
+                }
+                await _tfCache.set(trailKey, data);
             }
             return data.data;
         }));
@@ -837,7 +846,7 @@ sauce.ns('analysis', ns => {
             }
         }
         /* XXX */
-        const tfIntersections = await trailforksIntersections();
+        const tfIntersections = []; // await trailforksIntersections();
         for (const segment of pageView.segmentEfforts().models) {
             const tfMatches = [];
             const [start, end] = pageView.chartContext().convertStreamIndices(segment.indices());

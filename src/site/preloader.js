@@ -1,4 +1,4 @@
-/* global sauce, jQuery, Strava, pageView */
+/* global sauce, jQuery, Strava, pageView, Backbone */
 
 (function() {
     'use strict';
@@ -82,6 +82,108 @@
             }
             catchDefine(options.root || self, propertyAccessor.split('.'));
         });
+    };
+
+
+    class IDBExpirationBucket {
+        static async factory() {
+            const instance = new this();
+            instance.db = await new Promise((resolve, reject) => {
+                const request = indexedDB.open('SauceCache', 1);
+                request.addEventListener('error', ev => reject(request.error));
+                request.addEventListener('success', ev => resolve(ev.target.result));
+                request.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
+                request.addEventListener('upgradeneeded', ev => {
+                    const db = ev.target.result;
+                    if (ev.oldVersion < 1) {
+                        const store = db.createObjectStore("entries", {autoIncrement: true});
+                        store.createIndex('bucket-expiration', ['bucket', 'expiration']);
+                        store.createIndex('bucket-key', ['bucket', 'key'], {unique: true});
+                    }
+                });
+            });
+            return instance;
+        }
+
+        requestPromise(req) {
+            return new Promise((resolve, reject) => {
+                req.addEventListener('error', ev => reject(req.error));
+                req.addEventListener('success', ev => resolve(req.result));
+            });
+        }
+
+        async _storeCall(transactionMode, onStore) {
+            const t = this.db.transaction('entries', transactionMode);
+            const store = t.objectStore('entries');
+            const result = await this.requestPromise(await onStore(store));
+            return await new Promise((resolve, reject) => {
+                t.addEventListener('abort', ev => reject('Transaction Abort'));
+                t.addEventListener('error', ev => reject(t.error));
+                t.addEventListener('complete', ev => resolve(result));
+            });
+        }
+
+        async get(keyOrRange) {
+            return await this._storeCall('readonly', store => {
+                const index = store.index('bucket-key');
+                return index.get(keyOrRange);
+            });
+        }
+
+        async put(data) {
+            await this._storeCall('readwrite', async store => {
+                const index = store.index('bucket-key');
+                const key = await this.requestPromise(index.getKey([data.bucket, data.key]));
+                if (key) {
+                    await this.requestPromise(store.delete(key));
+                }
+                return store.put(data);
+            });
+        }
+
+        async delete(keyOrRange) {
+            await this._storeCall('readwrite', async store => {
+                const index = store.index('bucket-key');
+                const key = await this.requestPromise(index.getKey(keyOrRange));
+                return store.delete(key);
+            });
+        }
+    }
+
+
+    class TTLCache {
+        constructor(bucket, ttl) {
+            this.bucket = bucket;
+            this.ttl = ttl;
+            this._initing = this.init();
+        }
+
+        async init() {
+            this.idb = await IDBExpirationBucket.factory();
+        }
+
+        async get(key) {
+            await this._initing;
+            const data = await this.idb.get([this.bucket, key]);
+            if (data && data.expiration > Date.now()) {
+                return data.value;
+            }
+        }
+
+        async set(key, value) {
+            await this._initing;
+            const expiration = Date.now() + this.ttl;
+            await this.idb.put({
+                bucket: this.bucket,
+                key,
+                expiration,
+                value
+            });
+        }
+    }
+
+    sauce.cache = {
+        TTLCache
     };
 
 
@@ -385,6 +487,52 @@
                 return ret;
             };
         });
+
+
+        let _streamsCache;
+        sauce.propDefined('Strava.Labs.Activities.Streams', Klass => {
+            const fetchRemoteSave = Klass.prototype.fetchRemote;
+            Klass.prototype.fetchRemote = function(streams, options) {
+                if (!_streamsCache) {
+                    _streamsCache = new TTLCache('streams', 300 * 1000);
+                }
+                const BackboneAjaxSave = Backbone.ajax;
+                Backbone.ajax = function(ajaxOptions) {
+                    const deferred = jQuery.Deferred();
+                    function fallbackAjax() {
+                        const xhr = BackboneAjaxSave(ajaxOptions);
+                        xhr.done(streamsData => {
+                            debugger;
+                            deferred.resolve.apply(deferred, arguments);
+                            _streamsCache.set(streams.join(), streamsData);
+                        });
+                        xhr.fail(deferred.reject); // XXX need to using scope binding?
+                    }
+                    // XXX just being real dumb here for now, break out to unique stream sets..
+                    _streamsCache.get(streams.join()).then(streamsData => {
+                        if (streamsData) {
+                            deferred.resolve(streamsData);
+                            if (ajaxOptions.success) {
+                                ajaxOptions.success(streamsData); // XXX Guessing at arguments..
+                            }
+                        } else {
+                            fallbackAjax();
+                        }
+                    }).catch(e => {
+                        // Abort our cache attempt in any error case and use original method.
+                        console.error('Sauce stream cache error:', e);
+                        fallbackAjax();
+                    });
+                    return deferred;
+                };
+                try {
+                    return fetchRemoteSave.call(this, streams, options);
+                } finally {
+                    Backbone.ajax = BackboneAjaxSave;
+                }
+            };
+        });
+
 
         sauce.propDefined('Strava.Labs.Activities.MenuRouter', Klass => {
             const changeMenuToSave = Klass.prototype.changeMenuTo;
