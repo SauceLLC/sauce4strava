@@ -133,7 +133,6 @@ sauce.ns('analysis', ns => {
                 }
             }
             if (fetching.length) {
-                console.info('Fetching streams:', fetching.join(', '));
                 const p = new Promise((resolve, reject) => {
                     streams.fetchStreams(fetching, {
                         success: resolve,

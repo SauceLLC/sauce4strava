@@ -85,6 +85,68 @@
     };
 
 
+    const _benchmarks = {};
+    class Benchmark {
+        constructor() {
+            const [func, line] = this._stack();
+            this.steps = [];
+            if (!_benchmarks[func]) {
+                _benchmarks[func] = {
+                    count: 0,
+                    times: {
+                        total: 0
+                    }
+                };
+            }
+            this._step(func, line);
+        }
+
+        _stack() {
+            const stack = (new Error()).stack.split('\n')[3];
+            return stack.match(/ at ([\w.]+) .*?:([0-9]+):/).slice(1);
+        }
+
+        _step(func, line) {
+            const bench = _benchmarks[func];
+            if (this.steps.length && !bench.times[line]) {
+                bench.times[line] = 0;
+            }
+            this.steps.push({
+                line,
+                ts: Date.now()
+            });
+        }
+
+        step() {
+            const [func, line] = this._stack();
+            this._step(func, line);
+        }
+
+        leave() {
+            const [func, line] = this._stack();
+            this._step(func, line);
+            const bench = _benchmarks[func];
+            bench.count++;
+            for (let i = this.steps.length - 1; i > 0; i--) {
+                const step = this.steps[i];
+                const prevStep = this.steps[i - 1];
+                bench.times[step.line] += step.ts - prevStep.ts;
+            }
+            const start = this.steps[0].ts;
+            const finish = this.steps[this.steps.length - 1].ts;
+            bench.times.total += finish - start;
+            const logs = [];
+            let char = 65;
+            for (const [label, timing] of Object.entries(bench.times)) {
+                const letter = label === 'total' ? label : String.fromCharCode(char++);
+                logs.push(`${letter}:${label}=(sum:${timing}ms, avg:${Math.round(timing / bench.count)}ms)`);
+            }
+            console.warn(func, bench.count, logs.join(', '));
+        }
+    }
+    sauce.Benchmark = Benchmark;
+
+
     class IDBExpirationBucket {
         static async factory() {
             const instance = new this();
@@ -115,7 +177,7 @@
         async _storeCall(transactionMode, onStore) {
             const t = this.db.transaction('entries', transactionMode);
             const store = t.objectStore('entries');
-            const result = await this.requestPromise(await onStore(store));
+            const result = await onStore(store);
             return await new Promise((resolve, reject) => {
                 t.addEventListener('abort', ev => reject('Transaction Abort'));
                 t.addEventListener('error', ev => reject(t.error));
@@ -124,9 +186,17 @@
         }
 
         async get(keyOrRange) {
-            return await this._storeCall('readonly', store => {
+            return await this._storeCall('readonly', async store => {
                 const index = store.index('bucket-key');
-                return index.get(keyOrRange);
+                return await this.requestPromise(index.get(keyOrRange));
+            });
+        }
+
+        async getMany(keyOrRangeArray) {
+            return await this._storeCall('readonly', async store => {
+                const index = store.index('bucket-key');
+                return await Promise.all(keyOrRangeArray.map(x =>
+                    this.requestPromise(index.get(x))));
             });
         }
 
@@ -137,7 +207,20 @@
                 if (key) {
                     await this.requestPromise(store.delete(key));
                 }
-                return store.put(data);
+                return await this.requestPromise(store.put(data));
+            });
+        }
+
+        async putMany(dataArray) {
+            await this._storeCall('readwrite', async store => {
+                const index = store.index('bucket-key');
+                await Promise.all(dataArray.map(async data => {
+                    const key = await this.requestPromise(index.getKey([data.bucket, data.key]));
+                    if (key) {
+                        await this.requestPromise(store.delete(key));
+                    }
+                    return await this.requestPromise(store.put(data));
+                }));
             });
         }
 
@@ -145,7 +228,33 @@
             await this._storeCall('readwrite', async store => {
                 const index = store.index('bucket-key');
                 const key = await this.requestPromise(index.getKey(keyOrRange));
-                return store.delete(key);
+                return await this.requestPromise(store.delete(key));
+            });
+        }
+
+        async purgeExpired(bucket) {
+            return await this._storeCall('readwrite', async store => {
+                const now = Date.now();
+                const index = store.index('bucket-expiration');
+                const cursorReq = index.openCursor(IDBKeyRange.upperBound([bucket, now]));
+                return await new Promise((resolve, reject) => {
+                    let count = 0;
+                    cursorReq.addEventListener('error', ev => reject(cursorReq.error));
+                    cursorReq.addEventListener('success', async ev => {
+                        try {
+                            const cursor = ev.target.result;
+                            if (!cursor) {
+                                resolve(count);
+                                return;
+                            }
+                            await this.requestPromise(cursor.delete());
+                            count++;
+                            cursor.continue();
+                        } catch(e) {
+                            reject(e);
+                        }
+                    });
+                });
             });
         }
     }
@@ -160,25 +269,62 @@
 
         async init() {
             this.idb = await IDBExpirationBucket.factory();
+            this.gc();  // bg okay
+        }
+
+        async gc() {
+            for (let sleep = 10000;; sleep += 1000) {
+                await new Promise(resolve => setTimeout(resolve, sleep));
+                const count = await this.idb.purgeExpired(this.bucket);
+                if (count) {
+                    console.info(`Flushed ${count} objects from TTL cache`);
+                }
+            }
         }
 
         async get(key) {
             await this._initing;
-            const data = await this.idb.get([this.bucket, key]);
-            if (data && data.expiration > Date.now()) {
-                return data.value;
+            const entry = await this.idb.get([this.bucket, key]);
+            if (entry && entry.expiration > Date.now()) {
+                return entry.value;
             }
         }
 
-        async set(key, value) {
+        async getObject(keys) {
             await this._initing;
-            const expiration = Date.now() + this.ttl;
+            const entries = await this.idb.getMany(keys.map(k => [this.bucket, k]));
+            const now = Date.now();
+            const obj = {};
+            for (const x of entries) {
+                if (x && x.expiration > now) {
+                    obj[x.key] = x.value;
+                }
+            }
+            return obj;
+        }
+
+        async set(key, value, options={}) {
+            await this._initing;
+            const ttl = options.ttl || this.ttl;
+            const expiration = Date.now() + ttl;
             await this.idb.put({
                 bucket: this.bucket,
                 key,
                 expiration,
                 value
             });
+        }
+
+        async setObject(obj, options={}) {
+            await this._initing;
+            const ttl = options.ttl || this.ttl;
+            const expiration = Date.now() + ttl;
+            await this.idb.putMany(Object.entries(obj).map(([key, value]) => ({
+                bucket: this.bucket,
+                key,
+                value,
+                expiration
+            })));
         }
     }
 
@@ -491,39 +637,71 @@
 
         let _streamsCache;
         sauce.propDefined('Strava.Labs.Activities.Streams', Klass => {
+            if (!_streamsCache) {
+                _streamsCache = new TTLCache('streams', 3600 * 1000);
+            }
+            async function fetchStreams(url, streamTypes) {
+                const q = new URLSearchParams();
+                for (const x of streamTypes) {
+                    q.append('stream_types[]', x);
+                }
+                const resp = await fetch(`${url}?${q}`);
+                if (!resp.ok) {
+                    throw new Error(`Stream fetch fail: ${resp.status}`);
+                }
+                return await resp.json();
+            }
+            async function getStreams(streams, url) {
+                const keyPrefix = pageView.activity().id;
+                const cacheKey = key => `${keyPrefix}-${key}`;
+                const cached = await _streamsCache.getObject(streams.map(cacheKey));
+                const missing = new Set();
+                const streamsObj = {};
+                for (const key of streams) {
+                    const cacheEntry = cached[cacheKey(key)];
+                    if (cacheEntry === undefined) {
+                        missing.add(key);
+                    } else if (cacheEntry !== null) {
+                        streamsObj[key] = cacheEntry;
+                    }
+                }
+                if (missing.size) {
+                    const data = await fetchStreams(url, missing);
+                    Object.assign(streamsObj, data);
+                    const cacheObj = {};
+                    for (const key of missing) {
+                        // Convert undefined to null so indicate cache has been set.
+                        cacheObj[cacheKey(key)] = data[key] === undefined ? null : data[key];
+                    }
+                    await _streamsCache.setObject(cacheObj);
+                }
+                return streamsObj;
+            }
             const fetchRemoteSave = Klass.prototype.fetchRemote;
             Klass.prototype.fetchRemote = function(streams, options) {
-                if (!_streamsCache) {
-                    _streamsCache = new TTLCache('streams', 300 * 1000);
-                }
+                /*
+                 * We would like to cache stream requests locally as they tend to be high latency
+                 * network calls and strava does no HTTP caching with them.  To achieve this everywhere
+                 * we temporarily monkey patch Backbone.ajax() for the synchronous call to
+                 * fetchRemote().  This modified Backbone.ajax is learned in the ways of using Sauce's
+                 * cache system and can only fetch the streams not known about already and store them
+                 * for future lookups.  Overall this makes page reloads for long rides substantially
+                 * faster.
+                 */
                 const BackboneAjaxSave = Backbone.ajax;
-                Backbone.ajax = function(ajaxOptions) {
-                    const deferred = jQuery.Deferred();
-                    function fallbackAjax() {
-                        const xhr = BackboneAjaxSave(ajaxOptions);
-                        xhr.done(streamsData => {
-                            debugger;
-                            deferred.resolve.apply(deferred, arguments);
-                            _streamsCache.set(streams.join(), streamsData);
-                        });
-                        xhr.fail(deferred.reject); // XXX need to using scope binding?
-                    }
-                    // XXX just being real dumb here for now, break out to unique stream sets..
-                    _streamsCache.get(streams.join()).then(streamsData => {
-                        if (streamsData) {
-                            deferred.resolve(streamsData);
-                            if (ajaxOptions.success) {
-                                ajaxOptions.success(streamsData); // XXX Guessing at arguments..
-                            }
-                        } else {
-                            fallbackAjax();
+                Backbone.ajax = function(options) {
+                    const d = jQuery.Deferred();
+                    getStreams(streams, options.url).then(data => {
+                        d.resolve(data);
+                        if (options.success) {
+                            options.success(data);
                         }
                     }).catch(e => {
-                        // Abort our cache attempt in any error case and use original method.
-                        console.error('Sauce stream cache error:', e);
-                        fallbackAjax();
+                        console.error(`Sauce getStreams failed (falling back to ajax): ${e}`);
+                        const xhr = BackboneAjaxSave(options);
+                        xhr.done(d.resolve).fail(d.reject); // XXX validate binding and args
                     });
-                    return deferred;
+                    return d;
                 };
                 try {
                     return fetchRemoteSave.call(this, streams, options);
