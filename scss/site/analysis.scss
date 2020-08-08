@@ -162,57 +162,65 @@ table.segments,
 table.hidden-segments {
     .sauce-trailforks-info {
         display: flex;
+        align-items: center;
 
         > * {
             display: flex;
         }
 
         .title {
-            color: color.shade(accent, 10%);
+            color: color.shade(fg, 30%);
+            font-variant: all-small-caps;
+            font-weight: bold;
+            margin-right: 0.3em;
         }
 
         .condition {
             &.mud {color: brown;}
             &.wet {color: blue;}
-            &.dry {color: orange;}
-            &.very-dry {color: red;}
-            &.icy {color: #eee;}
-            &.snow {color: #ccc;}
+            &.dry {color: #ae3d00;}
+            &.very-dry {color: #cf0000;}
+            &.icy {color: color.shade(fg, 30%);}
+            &.snow {color: color.shade(fg, 20%);}
             &.ideal {color: green;}
         }
 
         .status {
             &.clear {color: green;}
             &.minor-issue {color: #dbb21d;}
-            &.significant-issue {color: orange;}
+            &.significant-issue {color: #fa0000;}
             &.closed {color: red;}
         }
 
         img.difficulty {
-            max-width: 2em;
-            max-height: 2em;
+            max-width: 1.8em;
+            max-height: 1.8em;
             object-fit: contain;
         }
 
+        .difficulty {
+            &.road {color: color.get(fg);}
+        }
+
         svg[data-icon] {
-            width: 1.2em;
+            width: 1em;
         }
 
         .add-report {
             color: color.get(fg);
             margin-left: 0.4em;
+            padding: 0.4em 0.5em;
         }
 
         a {
             opacity: 0.85;
             transition: opacity 200ms, box-shadow 200ms, background-color;
             border-radius: 0.2em;
-            padding: 0.28em 0.4em;
 
             &:hover {
                 opacity: 1;
-                box-shadow: 1px 1px 5px 0 color.shade(fg, 20%, 0.3);
-                background-color: color.shade(bg, 10%, 0.5);
+                box-shadow: 1px 1px 2px 0 color.shade(fg, 20%, 0.3);
+                background-color: color.shade(bg, 30%, 0.5);
             }
             &:active {
                 opacity: 1;
@@ -224,12 +232,13 @@ table.hidden-segments {
         .report {
             display: flex;
             align-items: center;
+            padding: 0.20em 0.5em;
 
             > * {
                 display: flex;
             }
             > *:not(:last-child) {
-                margin-right: 0.3em;
+                margin-right: 0.8em;
             }
 
             img.trailforks-icon {
