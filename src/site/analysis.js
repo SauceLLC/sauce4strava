@@ -1,4 +1,4 @@
-/* global Strava, sauce, jQuery, pageView, jsfit, polyline */
+/* global Strava, sauce, jQuery, pageView, jsfit */
 
 sauce.ns('analysis', ns => {
     'use strict';
@@ -420,7 +420,6 @@ sauce.ns('analysis', ns => {
         // The main site's side nav is absolute positioned, so if the primary view is too short
         // the footer will overflow and mess everything up.  Add a min-height to the view to
         // prevent the footer from doing this.
-        sauce.rpc.auditStackFrame();
         const sidenav = document.querySelector('nav.sidenav');
         const minHeight = sidenav.offsetHeight;
         document.querySelector('.view > .page.container').style.minHeight = `${minHeight}px`;
@@ -429,7 +428,6 @@ sauce.ns('analysis', ns => {
 
 
     async function renderTertiaryStats(attrs) {
-        sauce.rpc.auditStackFrame();
         const template = await getTemplate('tertiary-stats.html');
         const $stats = jQuery(await template(Object.assign({
             optionsIcon: await sauce.images.asText('fa/cog-duotone.svg'),
@@ -442,7 +440,6 @@ sauce.ns('analysis', ns => {
 
     class PeakEffortsPanel {
         constructor({type, menu, renderAttrs, infoDialog}) {
-            sauce.rpc.auditStackFrame();
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
             this.type = type;
             this.menu = menu;
@@ -476,7 +473,6 @@ sauce.ns('analysis', ns => {
         }
 
         async render() {
-            sauce.rpc.auditStackFrame();
             const source = await this.getSelectedSource();
             const template = await getTemplate('peak-efforts.html');
             this.$el.html(await template(Object.assign({
@@ -629,205 +625,39 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function *middleOutIter(data, start) {
-        const len = data.length;
-        let count = 0;
-        let left = Math.max(0, Math.min(len, start || Math.floor(len / 2)));
-        let right = left;
-        while (count++ < len) {
-            let idx;
-            if ((count % 2 && left > 0) || right === len) {
-                idx = --left;
-            } else {
-                idx = right++;
-            }
-            yield [data[idx], idx];
-        }
-    }
-
-
-    let _tfCache;
-    async function tfFetchTrailsUnofficial(bbox) {
-        const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
-        if (!_tfCache) {
-            _tfCache = new sauce.cache.TTLCache('trailforks', 43200 * 1000);
-        }
-        const bboxKey = `bbox-${JSON.stringify(bbox)}`;
-        let data = await _tfCache.get(bboxKey);
-        if (!data) {
-            const q = new URLSearchParams();
-            q.set('rmsP', 'j2');
-            q.set('mod', 'trailforks');
-            q.set('op', 'tracks');
-            q.set('format', 'geojson');
-            q.set('z', '100');  // nearly zero impact, but must be roughly over 10
-            q.set('layers', 'tracks'); // comma delim (markers,tracks,polygons)
-            q.set('bboxa', [bbox.swc[1], bbox.swc[0], bbox.nec[1], bbox.nec[0]].join(','));
-            const resp = await fetch(`${tfHost}/rms/?${q.toString()}`);
-            data = await resp.json();
-            if (data.rmsS === false) {
-                throw new Error(`TF API Error: ${data.rmsM}`);
-            }
-            await _tfCache.set(bboxKey, data);
-        }
-        const trailQ = new URLSearchParams();
-        trailQ.set('scope', 'full');
-        trailQ.set('api_key', tfApiKey());
-        const trails = data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail');
-        // In leu of having a working trails API, do it manually..
-        return await Promise.all(trails.map(async x => { 
-            const trailKey = `trail-${x.id}`;
-            let data = await _tfCache.get(trailKey);
-            if (!data) {
-                trailQ.set('id', x.id);
-                const resp = await fetch(`${tfHost}/api/1/trail/?${trailQ.toString()}`);
-                data = await resp.json();
-                if (data.error !== 0) {
-                    throw new Error(`TF API Error: ${data.error} ${data.message}`);
-                }
-                await _tfCache.set(trailKey, data);
-            }
-            return data.data;
-        }));
-        /*return data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail').map(x => {
-            // Make data look more like the official api
-            return Object.assign({}, x.properties, {
-                title: x.properties.name,
-                track: {
-                    encodedPath: x.geometry.encodedpath
-                }
-            });
-        });*/
-    }
-
-
-    function tfApiKey() {
-        return 'cats'.split('').map((_, i) =>
-            String.fromCharCode(1685021555 >> i * 8 & 0xff)).reverse().join('');
-    }
-
-
-    /*
-    async function tfFetchTrails(bbox, options={}) {
-        //const tfHost = 'https://www.trailforks.com';
-        const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
-        const q = new URLSearchParams();
-        q.set('api_key', tfApiKey());
-        q.set('rows', '100');
-        q.set('scope', 'full');
-        q.set('filter', `bbox::${[bbox.swc[0], bbox.swc[1], bbox.nec[0], bbox.nec[1]].join(',')}`);
-        for (const [k, v] of Object.entries(options)) {
-            q.set(k, v);
-        }
-        const trails = [];
-        let page = 1;
-        for (;;) {
-            q.set('page', page++);
-            const resp = await fetch(`${tfHost}/api/1/trails?${q.toString()}`);
-            const data = await resp.json();
-            if (data.error !== 0) {
-                throw new Error(`TF API Error: ${data.error} ${data.message}`);
-            }
-            if (data.data && data.data.length) {
-                for (const x of data.data) {
-                    trails.push(x);
-                }
-            } else {
-                break;
-            }
-        }
-        return trails;
-    }
-    */
-
-
-    async function trailforksIntersections(options = {}) {
+    async function assignTrailforksToSegments() {
+        console.warn('tfpre', performance.now());
         const latlngStream = await fetchStream('latlng');
         const distStream = await fetchStream('distance');
-        const bbox = sauce.geo.boundingBox(latlngStream);
-        const s1 = Date.now();  // XXX
-        const trails = await tfFetchTrailsUnofficial(bbox, options);
-        //const trails = await tfFetchTrails(bbox);
-        const s2 = Date.now();  // XXX
-        const trailIntersectMatrix = [];
-        for (const trail of trails) {
-            const path = polyline.decode(trail.track.encodedPath);
-            if (!sauce.geo.boundsOverlap(sauce.geo.boundingBox(path), bbox)) {
-                continue;
-            }
-            const intersections = [];
-            let match;
-            let lastIntersectIdx;
-            const minMatchDistance = 10;
-            for (let i = 0; i < latlngStream.length; i++) {
-                let intersects;
-                let closestDistance = Infinity;
-                for (const [xLoc, ii] of middleOutIter(path, lastIntersectIdx + 1)) {
-                    const distance = sauce.geo.distance(latlngStream[i], xLoc);
-                    if (distance < closestDistance) {
-                        closestDistance = distance;
-                    }
-                    if (distance <= minMatchDistance) {
-                        intersects = ii;
-                        match = true;
-                        lastIntersectIdx = ii;
-                        break;
-                    }
-                }
-                if (closestDistance > minMatchDistance * 10) {
-                    // Optimization..
-                    // Scan fwd till we are at least potentially near the trail.
-                    const offt = distStream[i];
-                    const maxSkipDistance = closestDistance * 0.80 - minMatchDistance;
-                    while (i < latlngStream.length - 1) {
-                        const covered = distStream[i + 1] - offt;
-                        if (covered < maxSkipDistance) {
-                            intersections.push(undefined);
-                            i++;
-                        } else {
+        console.warn('tfstart', performance.now());
+        let tfIntersections;
+        //tfIntersections = await sauce.trailforks.intersections(latlngStream, distStream);
+        //const tfIntersections = await sauce.workerClient.call('trailforksIntersections', latlngStream, distStream);
+        tfIntersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
+        console.warn('tfready', performance.now());
+        for (const segment of pageView.segmentEfforts().models) {
+            const tfMatches = [];
+            const [start, end] = pageView.chartContext().convertStreamIndices(segment.indices());
+            for (const x of tfIntersections) {
+                let overlap = 0;
+                for (let i = start; i < end; i++) {
+                    if (x.intersections[i] != null) {
+                        if (overlap++ > Math.min(10, end - start)) {
+                            tfMatches.push(x); // XXX make it a little harder than one single match.
                             break;
                         }
                     }
                 }
-                intersections.push(intersects);
             }
-            if (match) {
-                const indexes = intersections.reduce((agg, x, i) => (x != null && agg.push([x, i]), agg), []);
-                let lastPathIdx;
-                let lastStreamIdx;
-                for (const [pathIdx, streamIdx] of indexes) {
-                    // Fill any gaps where pathIdx is contiguous.
-                    // XXX do sanity distance checks because sometimes a ride can touch a trail head
-                    // on the start and end of a ride which leads to the entire ride getting filled.
-                    if (lastPathIdx !== undefined) {
-                        if (Math.abs(pathIdx - lastPathIdx) === 1 &&
-                            Math.abs(streamIdx - lastStreamIdx) !== 1) {
-                            const fwd = streamIdx > lastStreamIdx;
-                            const start = fwd ? lastStreamIdx : streamIdx;
-                            const end = fwd ? streamIdx : lastStreamIdx;
-                            for (let i = start + 1; i < end; i++) {
-                                intersections[i] = pathIdx + ((lastPathIdx - pathIdx) / 2);
-                            }
-                        }
-                    }
-                    lastPathIdx = pathIdx;
-                    lastStreamIdx = streamIdx;
-                }
-                trailIntersectMatrix.push({
-                    path,
-                    trail,
-                    intersections,
-                    indexes: intersections.reduce((agg, x, i) => (x != null && agg.push([x, i]), agg), [])
-                });
+            if (tfMatches.length) {
+                //segment.set('tfMatches', tfMatches);
+                segment.set('tfMatches', tfMatches.slice(0, 1));  // XXX
             }
         }
-        const s3 = Date.now(); // XXX
-        console.log(sauce.geo.xxx(), 'net', s2 - s1, 'cpu', s3 - s2, 'tot', s3 - s1);
-        return trailIntersectMatrix;
     }
 
+
     async function startRideActivity() {
-        sauce.rpc.auditStackFrame();
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
@@ -844,27 +674,6 @@ sauce.ns('analysis', ns => {
                 console.info('No power data for this activity.');
             }
         }
-        /* XXX */
-        const tfIntersections = []; // await trailforksIntersections();
-        for (const segment of pageView.segmentEfforts().models) {
-            const tfMatches = [];
-            const [start, end] = pageView.chartContext().convertStreamIndices(segment.indices());
-            for (const x of tfIntersections) {
-                let overlap = 0;
-                for (let i = start; i < end; i++) {
-                    if (x.intersections[i] !== undefined) {
-                        if (overlap++ > Math.min(10, end - start)) {
-                            tfMatches.push(x); // XXX make it a little harder than one single match.
-                            break;
-                        }
-                    }
-                }
-            }
-            if (tfMatches.length) {
-                segment.set('tfMatches', tfMatches);
-            }
-        }
-        /* //XXX */
         let tss;
         let np;
         let intensity;
@@ -888,7 +697,8 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
-        await renderTertiaryStats({
+        assignTrailforksToSegments().catch(sauce.rpc.reportError);
+        renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
@@ -898,7 +708,7 @@ sauce.ns('analysis', ns => {
             intensity,
             tss,
             np,
-        });
+        }).catch(sauce.rpc.reportError);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
@@ -981,19 +791,18 @@ sauce.ns('analysis', ns => {
 
 
     async function startSwimActivity() {
-        sauce.rpc.auditStackFrame();
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
         const distStream = await fetchStream('distance');
         const cadenceStream = await fetchStream('cadence');
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
-        await renderTertiaryStats({
+        renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
             weightOrigin: ctx.weightOrigin,
-        });
+        }).catch(sauce.rpc.reportError);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (distStream) {
@@ -1034,7 +843,6 @@ sauce.ns('analysis', ns => {
 
 
     async function startOtherActivity() {
-        sauce.rpc.auditStackFrame();
         const realWattsStream = await fetchStream('watts');
         const activeTime = await getActiveTime();
         const timeStream = await fetchStream('time');
@@ -1063,7 +871,7 @@ sauce.ns('analysis', ns => {
             tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
             intensity = power / ctx.ftp;
         }
-        await renderTertiaryStats({
+        renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
@@ -1073,7 +881,7 @@ sauce.ns('analysis', ns => {
             intensity,
             tss,
             power,
-        });
+        }).catch(sauce.rpc.reportError);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
@@ -1133,7 +941,6 @@ sauce.ns('analysis', ns => {
 
 
     async function startRunActivity() {
-        sauce.rpc.auditStackFrame();
         let wattsStream = await fetchStream('watts');
         const activeTime = await getActiveTime();
         const timeStream = await fetchStream('time');
@@ -1169,7 +976,8 @@ sauce.ns('analysis', ns => {
             tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
             intensity = power / ctx.ftp;
         }
-        await renderTertiaryStats({
+        assignTrailforksToSegments().catch(sauce.rpc.reportError);
+        renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
             weightNorm: humanWeight(ctx.weight),
@@ -1179,7 +987,7 @@ sauce.ns('analysis', ns => {
             intensity,
             tss,
             power
-        });
+        }).catch(sauce.rpc.reportError);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (distStream) {
@@ -1927,16 +1735,23 @@ sauce.ns('analysis', ns => {
     }
 
 
-    let _tplCache = {};
+    const _tplCache = new Map();
+    const _tplFetching = new Map();
     async function getTemplate(filename, localeKey) {
         const cacheKey = '' + filename + localeKey;
-        if (!_tplCache[cacheKey]) {
-            const resp = await fetch(`${tplUrl}/${filename}`);
-            const tplText = await resp.text();
-            localeKey = localeKey || 'analysis';
-            _tplCache[cacheKey] = sauce.template.compile(tplText, {localePrefix: `${localeKey}_`});
+        if (!_tplCache.has(cacheKey)) {
+            if (!_tplFetching.has(cacheKey)) {
+                _tplFetching.set(cacheKey, (async () => {
+                    const resp = await fetch(`${tplUrl}/${filename}`);
+                    const tplText = await resp.text();
+                    localeKey = localeKey || 'analysis';
+                    _tplCache.set(cacheKey, sauce.template.compile(tplText, {localePrefix: `${localeKey}_`}));
+                    _tplFetching.delete(cacheKey);
+                })());
+            }
+            await _tplFetching.get(cacheKey);
         }
-        return _tplCache[cacheKey];
+        return _tplCache.get(cacheKey);
     }
 
 
@@ -2350,13 +2165,13 @@ sauce.ns('analysis', ns => {
         for (const [k, v] of Object.entries(options)) {
             q.set(k, v);
         }
-        //trailid=216&w=800px&h=703px&activitytype=1&map=1&elevation=1&photos=1&title=1&info=1"></iframe>
         return dialog(Object.assign({
             title,
             body: `
                 <iframe class="sauce-trailforks-widget" width="100%" height="100%" frameborder="0"
                         src="https://www.trailforks.com/widgets/${widget}/?${q}"></iframe>
-            `
+            `,
+            dialogClass: 'no-pad',
         }, dialogOptions));
     }
 
@@ -2382,91 +2197,99 @@ sauce.ns('analysis', ns => {
         const difficulties = {
             1: {
                 title: 'Access Road/Trail',
+                icon: 'road-duotone',
+                class: 'road'
             },
             2: {
                 title: 'Easiest / White Circle',
-                icon: 'white-150x150.png'
+                image: 'white-150x150.png'
             },
             3: {
                 title: 'Easy / Green Circle',
-                icon: 'green-150x150.png'
+                image: 'green-150x150.png'
             },
             4: {
                 title: 'Intermediate / Blue Square',
-                icon: 'blue-150x150.png'
+                image: 'blue-150x150.png'
             },
             5: {
                 title: 'Very Difficult / Black Diamond',
-                icon: 'black-150x150.png'
+                image: 'black-150x150.png'
             },
             6: {
                 title: 'Extremely Difficult / Double Black Diamond',
-                icon: 'double-black-150x150.png'
+                image: 'double-black-150x150.png'
             },
             7: {
-                title: 'Secondary Access Road/Trail'
+                title: 'Secondary Access Road/Trail',
+                icon: 'road-duotone',
+                class: 'road'
             },
             8: {
                 title: 'Extremely Dangerous / Pros Only',
-                icon: 'pro-only-150x150.png'
+                image: 'pro-only-150x150.png'
             },
             11: {
-                title: 'Advanced: Grade 4'
+                title: 'Advanced: Grade 4',
+                image: 'black-150x150.png'
             },
         };
         const conditions = {
-            0: {
-                title: "Unknown",
-            },
+            // 0 = Unknown
             1: {
                 title: "Snow Packed",
-                class: "snow"
+                class: "snow",
+                icon: 'icicles-duotone'
             },
             2: {
                 title: "Prevalent Mud",
-                class: "mud"
+                class: "mud",
+                icon: 'water-duotone'
             },
             3: {
                 title: "Wet",
-                class: "wet"
+                class: "wet",
+                icon: 'umbrella-duotone'
             },
-            4: {
-                title: "Variable",
-            },
+            // 4 = Variable
             5: {
                 title: "Dry",
-                class: "dry"
+                class: "dry",
+                icon: 'heat-duotone'
             },
             6: {
                 title: "Very Dry",
-                class: "very-dry"
+                class: "very-dry",
+                icon: 'temperature-hot-duotone'
             },
             7: {
                 title: "Snow Covered",
-                class: "snow"
+                class: "snow",
+                icon: 'snowflake-duotone'
             },
             8: {
                 title: "Freeze/thaw Cycle",
-                class: "icy"
+                class: "icy",
+                icon: 'icicles-duotone'
             },
             9: {
                 title: "Icy",
-                class: "icy"
+                class: "icy",
+                icon: 'icicles-duotone'
             },
             10: {
                 title: "Snow Groomed",
-                class: "snow"
+                class: "snow",
+                icon: 'snowflake-duotone'
             },
             11: {
                 title: "Ideal",
-                class: "ideal"
+                class: "ideal",
+                icon: 'thumbs-up-duotone'
             },
         };
         const statuses = {
-            1: {
-                title: "All Clear",
-                class: "clear"
-            },
+            // 1: {title: "All Clear", class: "clear"},
             2: {
                 title: "Minor Issue",
                 class: "minor-issue"
@@ -2480,27 +2303,13 @@ sauce.ns('analysis', ns => {
                 class: "closed"
             },
         };
-        const reportIcon = await sauce.images.asText('fa/file-export-duotone.svg');
-        const statusIcon = await sauce.images.asText('fa/circle-duotone.svg');
-        const conditionIcon = await sauce.images.asText('fa/certificate-duotone.svg');
+        const tpl = await getTemplate('tf-info.html');
         for (const x of tfMatches) {
-            const difficulty = difficulties[x.trail.difficulty];
-            const condition = conditions[x.trail.condition];
-            const status = statuses[x.trail.status];
-            // Make a template for this... XXX
-            const $tf = jQuery(`
-                <div class="sauce-trailforks-info">
-                    <a class="report">
-                        <img title="${difficulty.title} - Click for full report" class="difficulty"
-                             src="${sauce.extUrl}images/trail_difficulty/${difficulty.icon}"/>
-                        <div class="condition ${condition.class}"
-                             title="${condition.title} - Click for full report">${conditionIcon}</div>
-                        <div class="status ${status.class}"
-                             title="${status.title} - Click for full report">${statusIcon}</div>
-                    </a>
-                    <a class="add-report" title="File a trail report">${reportIcon}</a>
-                </div>
-            `);
+            const $tf = jQuery(await tpl({
+                difficulty: difficulties[x.trail.difficulty],
+                condition: conditions[x.trail.condition],
+                status: statuses[x.trail.status],
+            }));
             $tf.on('click', 'a.report', ev => {
                 ev.stopPropagation();
                 tfWidgetDialog(`Trailforks Report - ${x.trail.title}`, 'trail', {
@@ -2526,7 +2335,6 @@ sauce.ns('analysis', ns => {
                     flex: true,
                 });
             });
-
             jQuery(targetTD).find('.stats').append($tf);
         }
     }
@@ -3315,7 +3123,6 @@ sauce.ns('analysis', ns => {
     function adjustSlideMenu() {
         // We expand the sidenav, so we need to modify this routine to make the menu
         // work properly in all conditions.
-        sauce.rpc.auditStackFrame();
         const sidenav = document.querySelector('nav.sidenav');
         if (!sidenav) {
             return;
@@ -3337,7 +3144,6 @@ sauce.ns('analysis', ns => {
 
 
     async function pageViewAssembled() {
-        sauce.rpc.auditStackFrame();
         if (!pageView.factory().page()) {
             const pf = pageView.factory();
             const setget = pf.page;
@@ -3358,7 +3164,6 @@ sauce.ns('analysis', ns => {
 
 
     async function prepareContext() {
-        sauce.rpc.auditStackFrame();
         const activity = pageView.activity();
         ctx.athlete = pageView.activityAthlete();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
@@ -3497,7 +3302,9 @@ sauce.ns('analysis', ns => {
 
 
     async function load() {
-        sauce.rpc.auditStackFrame();
+        console.warn(performance.now());
+        //const workerClient = await sauce.worker.WorkerClient.factory();
+        //sauce.workerClient = workerClient;
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
             attachMobileMenuExpander().catch(sauce.rpc.reportError);
@@ -3566,7 +3373,6 @@ sauce.ns('analysis', ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,
-        tfTest: trailforksIntersections,
         tfWidgetDialog
     };
 });
@@ -3576,7 +3382,6 @@ sauce.ns('analysis', ns => {
     if (sauce.testing) {
         return;
     }
-    sauce.rpc.auditStackFrame();
     try {
         await sauce.analysis.load();
     } catch(e) {

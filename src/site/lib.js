@@ -956,20 +956,25 @@ sauce.ns('pace', function() {
 sauce.ns('images', function(ns) {
     'use strict';
 
-    const textCache = new Map();
-
-
+    const _textCache = new Map();
+    const _textFetching = new Map();
     async function asText(path) {
-        if (!textCache.has(path)) {
+        if (!_textCache.has(path)) {
             try {
-                const resp = await fetch(`${sauce.extUrl}images/${path.replace(/^\/+/, '')}`);
-                textCache.set(path, await resp.text());
+                if (!_textFetching.has(path)) {
+                    _textFetching.set(path, (async () => {
+                        const resp = await fetch(`${sauce.extUrl}images/${path.replace(/^\/+/, '')}`);
+                        _textCache.set(path, await resp.text());
+                        _textFetching.delete(path);
+                    })());
+                }
+                await _textFetching.get(path);
             } catch(e) {
                 console.warn("Failed to fetch image:", path, e);
-                textCache.set(path, '');
+                _textCache.set(path, '');
             }
         }
-        return textCache.get(path);
+        return _textCache.get(path);
     }
 
     return {
@@ -982,9 +987,11 @@ sauce.ns('geo', function(ns) {
     'use strict';
 
     let _xxx = 0;
+    const bench = new sauce.Benchmark('dist');
     function distance([latA, lngA], [latB, lngB]) {
         // haversine method (slow but accurate) - as the crow flies
         _xxx++;
+        bench.enter();
         const rLatA = latA * Math.PI / 180;
         const rLatB = latB * Math.PI / 180;
         const rDeltaLat = (latB - latA) * Math.PI / 180;
@@ -993,7 +1000,9 @@ sauce.ns('geo', function(ns) {
                   Math.cos(rLatA) * Math.cos(rLatB) *
                   Math.sin(rDeltaLng / 2) ** 2;
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return 6371e3 * c;
+        const distance = 6371e3 * c;
+        bench.leave();
+        return distance;
     }
 
 

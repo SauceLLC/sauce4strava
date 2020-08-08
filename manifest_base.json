@@ -28,7 +28,10 @@
             "src/ext/storage.js",
             "src/ext/rpc_hooks.js",
             "src/bg/rpc.js",
-            "src/bg/migrate.js"
+            "src/bg/migrate.js",
+            "src/site/base.js",
+            "src/site/lib.js",
+            "src/site/trailforks.js"
         ]
     },
 

@@ -49,4 +49,6 @@
         {backgroundOnly: true});
     addHook('options', 'openOptionsPage', () => browser.runtime.openOptionsPage(),
         {backgroundOnly: true});
+    addHook('trailforks', 'intersections', ({args}) => sauce.trailforks.intersections.apply(null, args),
+        {backgroundOnly: true});
 })();
