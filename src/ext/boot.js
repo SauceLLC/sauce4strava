@@ -8,7 +8,6 @@
         pathMatch: /^\/activities\/.*/,
         stylesheets: ['site/analysis.css'],
         scripts: [
-            'site/base.js',
             'site/rpc.js',
             'site/locale.js',
             'common/template.js',
@@ -24,7 +23,6 @@
         name: 'Segment Compare',
         pathMatch: /^\/segments\/[0-9]+\/compare\b/,
         scripts: [
-            'site/base.js',
             'site/rpc.js',
             'site/segment-compare.js',
         ],
@@ -91,7 +89,6 @@
         name: 'Dashboard',
         pathMatch: /^\/dashboard(\/.*|\b)/,
         scripts: [
-            'site/base.js',
             'site/rpc.js',
             'site/locale.js',
             'common/template.js',
@@ -101,7 +98,6 @@
     }, {
         pathExclude: /^\/($|subscribe|login|register|legal|challenges)(\/.*|\b|$)/,
         scripts: [
-            'site/base.js',
             'site/rpc.js',
             'site/locale.js',
             'site/usermenu.js',
@@ -133,23 +129,38 @@
 
 
     const _loadedScripts = new Set();
+    function loadScripts(urls, options) {
+        const loading = [];
+        const frag = document.createDocumentFragment();
+        for (const url of urls) {
+            if (_loadedScripts.has(url)) {
+                continue;
+            }
+            _loadedScripts.add(url);
+            options = options || {};
+            const script = document.createElement('script');
+            if (options.defer) {
+                script.defer = 'defer';
+            }
+            if (!options.async) {
+                script.async = false;  // default is true
+            }
+            loading.push(new Promise((resolve, reject) => {
+                script.addEventListener('load', resolve);
+                script.addEventListener('error', ev => {
+                    reject(new URIError(`Script load error: ${ev.target.src}`));
+                });
+            }));
+            script.src = url;
+            frag.appendChild(script);
+        }
+        addHeadElement(frag, options.top);
+        return Promise.all(loading);
+    }
+
+
     function loadScript(url, options) {
-        if (_loadedScripts.has(url)) {
-            return;
-        }
-        _loadedScripts.add(url);
-        options = options || {};
-        const script = document.createElement('script');
-        if (options.defer) {
-            script.defer = 'defer';
-        }
-        if (!options.async) {
-            script.async = false;  // default is true
-        }
-        const p = new Promise(resolve => script.addEventListener('load', resolve));
-        script.src = url;
-        addHeadElement(script, options.top);
-        return p;
+        return loadScripts([url], options);
     }
 
 
@@ -172,7 +183,10 @@
 
     async function load() {
         const extUrl = browser.extension.getURL('');
-        await loadScript(`${extUrl}src/site/preloader.js`, {top: true});
+        await loadScripts([
+            `${extUrl}src/site/base.js`,
+            `${extUrl}src/site/preloader.js`
+        ], {top: true});
         const config = await sauce.storage.get(null);
         if (config.enabled === false) {
             document.documentElement.classList.add('sauce-disabled');
