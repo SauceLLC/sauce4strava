@@ -50,6 +50,9 @@
             } else {
                 return Number(value.toFixed(decimalPlaces)).toLocaleString();
             }
+        },
+        faIcon: async function(icon) {
+            return await sauce.images.asText(`fa/${icon}.svg`);
         }
     };
 
@@ -110,7 +113,7 @@
                 code.push(`
                     __t = (${interpolate});
                     if (__t != null) {
-                        __p.push(__t);  // XXX maybe ('' + __t)
+                        __p.push(__t);
                     }
                 `);
             } else if (evaluate) {
