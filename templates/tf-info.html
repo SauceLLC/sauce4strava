@@ -1,0 +1,28 @@
+<div class="sauce-trailforks-info">
+    <div class="title">Trailforks:</div>
+    <a class="report">
+        <% if (obj.difficulty) { %>
+            <% if (difficulty.image) { %>
+                <img title="{{difficulty.title}} - Click for full report"
+                     class="difficulty {{difficulty.class || ''}}"
+                     src="{{sauce.extUrl}}images/trail_difficulty/{{difficulty.image}}"/>
+            <%  } else if (difficulty.icon) { %>
+                <div title="{{difficulty.title}} - Click for full report"
+                     class="difficulty {{difficulty.class || ''}}"
+                     style="color: {{difficulty.color}};">{-await faIcon(difficulty.icon)-}</div>
+            <% } %>
+        <% } %>
+        <% if (obj.condition) { %>
+            <div class="condition {{condition.class || ''}}"
+                 title="{{condition.title}} - Click for full report">
+                {-await faIcon(condition.icon || 'certificate-duotone')-}
+            </div>
+        <% } %>
+        <% if (obj.status) { %>
+            <div class="status {{status.class || ''}}"
+                 title="{{status.title}} - Click for full report">{-await faIcon('circle-duotone')-}</div>
+        <% } %>
+    </a>
+    <a class="add-report" title="File a trail report">{-await faIcon('file-export-duotone')-}</a>
+</div>
+
