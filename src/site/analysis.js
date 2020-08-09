@@ -697,7 +697,9 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
-        assignTrailforksToSegments().catch(sauce.rpc.reportError);
+        if (!sauce.options['analysis-disable-trailforks']) {
+            assignTrailforksToSegments().catch(sauce.rpc.reportError);
+        }
         renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
