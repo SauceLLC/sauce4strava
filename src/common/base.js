@@ -1,6 +1,6 @@
 /* global sauce */
 
-(function() {
+function sauceBaseInit() {
     'use strict';
 
     self.sauce = self.sauce || {};
@@ -399,4 +399,6 @@
     sauce.cache = {
         TTLCache
     };
-})();
+}
+
+sauceBaseInit;  // eslint

@@ -1,6 +1,6 @@
 /* global sauce, jQuery, Strava, pageView, Backbone */
 
-(function() {
+function saucePreloaderInit() {
     'use strict';
 
     self.sauce = self.sauce || {};
@@ -306,83 +306,6 @@
     });
 
 
-    let _streamsCache;
-    sauce.propDefined('Strava.Labs.Activities.Streams', Klass => {
-        if (!_streamsCache) {
-            _streamsCache = new sauce.cache.TTLCache('streams', 3600 * 1000);
-        }
-        async function fetchStreams(url, streamTypes) {
-            const q = new URLSearchParams();
-            for (const x of streamTypes) {
-                q.append('stream_types[]', x);
-            }
-            const resp = await fetch(`${url}?${q}`);
-            if (!resp.ok) {
-                throw new Error(`Stream fetch fail: ${resp.status}`);
-            }
-            return await resp.json();
-        }
-        async function getStreams(streams, url) {
-            const keyPrefix = pageView.activity().id;
-            const cacheKey = key => `${keyPrefix}-${key}`;
-            const cached = await _streamsCache.getObject(streams.map(cacheKey));
-            const missing = new Set();
-            const streamsObj = {};
-            for (const key of streams) {
-                const cacheEntry = cached[cacheKey(key)];
-                if (cacheEntry === undefined) {
-                    missing.add(key);
-                } else if (cacheEntry !== null) {
-                    streamsObj[key] = cacheEntry;
-                }
-            }
-            if (missing.size) {
-                const data = await fetchStreams(url, missing);
-                Object.assign(streamsObj, data);
-                const cacheObj = {};
-                for (const key of missing) {
-                    // Convert undefined to null so indicate cache has been set.
-                    cacheObj[cacheKey(key)] = data[key] === undefined ? null : data[key];
-                }
-                await _streamsCache.setObject(cacheObj);
-            }
-            return streamsObj;
-        }
-        const fetchRemoteSave = Klass.prototype.fetchRemote;
-        Klass.prototype.fetchRemote = function(streams, options) {
-            /*
-             * We would like to cache stream requests locally as they tend to be high latency
-             * network calls and strava does no HTTP caching with them.  To achieve this everywhere
-             * we temporarily monkey patch Backbone.ajax() for the synchronous call to
-             * fetchRemote().  This modified Backbone.ajax is learned in the ways of using Sauce's
-             * cache system and can only fetch the streams not known about already and store them
-             * for future lookups.  Overall this makes page reloads for long rides substantially
-             * faster.
-             */
-            const BackboneAjaxSave = Backbone.ajax;
-            Backbone.ajax = function(options) {
-                const d = jQuery.Deferred();
-                getStreams(streams, options.url).then(data => {
-                    d.resolve(data);
-                    if (options.success) {
-                        options.success(data);
-                    }
-                }).catch(e => {
-                    console.error(`Sauce getStreams failed (falling back to ajax): ${e}`);
-                    const xhr = BackboneAjaxSave(options);
-                    xhr.done(d.resolve).fail(d.reject); // XXX validate binding and args
-                });
-                return d;
-            };
-            try {
-                return fetchRemoteSave.call(this, streams, options);
-            } finally {
-                Backbone.ajax = BackboneAjaxSave;
-            }
-        };
-    });
-
-
     sauce.propDefined('Strava.Labs.Activities.MenuRouter', Klass => {
         const changeMenuToSave = Klass.prototype.changeMenuTo;
         Klass.prototype.changeMenuTo = function(page, trigger) {
@@ -464,4 +387,146 @@
         };
     }, {once: true});
 
-})();
+
+    async function fetchLikeXHR(url, query) {
+        /* This fetch technique is required for several API endpoints. */
+        const q = new URLSearchParams();
+        if (query) {
+            if (Array.isArray(query)) {
+                for (const {key, value} of query) {
+                    q.append(key, value);
+                }
+            } else {
+                for (const [key, value] of Object.entries(query)) {
+                    q.set(key, value);
+                }
+            }
+        }
+        const qStr = q.toString();
+        const fqUrl = qStr ? `${url}?${qStr}` : url;
+        console.warn("Network fetching:", fqUrl);
+        const resp = await fetch(fqUrl, {
+            redirect: 'error',
+            headers: {'X-Requested-With': 'XMLHttpRequest'},  // Required to avoid 301s and 404s
+        });
+        if (!resp.ok) {
+            throw new Error(`Sauce fetch like XHR fail: ${resp.status}`);
+        }
+        return await resp.json();
+    }
+
+
+    function interceptModelFetch(originalFetch, interceptCallback) {
+        /* We would like to cache some model requests locally as they tend to be high latency
+         * network calls and strava does no HTTP caching with them.  To achieve this everywhere
+         * we temporarily monkey patch Backbone.ajax() during the synchronous call to fetch().
+         * This modified Backbone.ajax is learned in the ways of using Sauce's cache system. */
+        return function() {
+            const BackboneAjaxSave = Backbone.ajax;
+            Backbone.ajax = function(options) {
+                const d = jQuery.Deferred();
+                interceptCallback(options).then(data => {
+                    if (options.success) {
+                        options.success(data);
+                    }
+                    d.resolve(data);
+                }).catch(e => {
+                    console.error(`Sauce inteceptCallback failed (falling back to ajax):`, e);
+                    const xhr = BackboneAjaxSave.apply(this, arguments);
+                    xhr.done(d.resolve).fail(d.reject);
+                });
+                return d;
+            };
+            try {
+                return originalFetch.apply(this, arguments);
+            } finally {
+                Backbone.ajax = BackboneAjaxSave;
+            }
+        };
+    }
+
+
+    let _streamsCache;
+    sauce.propDefined('Strava.Labs.Activities.Streams', Klass => {
+        console.warn("monkey patch", performance.now());
+        if (!_streamsCache) {
+            _streamsCache = new sauce.cache.TTLCache('streams', 3600 * 1000);
+        }
+        async function getStreams(options) {
+            const keyPrefix = pageView.activity().id;
+            const cacheKey = key => `${keyPrefix}-${key}`;
+            const streams = options.data.stream_types;
+            const cached = await _streamsCache.getObject(streams.map(cacheKey));
+            const missing = new Set();
+            const streamsObj = {};
+            for (const key of streams) {
+                const cacheEntry = cached[cacheKey(key)];
+                if (cacheEntry === undefined) {
+                    missing.add(key);
+                } else if (cacheEntry !== null) {
+                    streamsObj[key] = cacheEntry;
+                }
+            }
+            if (missing.size) {
+                const query = Array.from(missing).map(value => ({key: 'stream_types[]', value}));
+                const data = await fetchLikeXHR(options.url, query);
+                Object.assign(streamsObj, data);
+                const cacheObj = {};
+                for (const key of missing) {
+                    // Convert undefined to null so indicate cache has been set.
+                    cacheObj[cacheKey(key)] = data[key] === undefined ? null : data[key];
+                }
+                await _streamsCache.setObject(cacheObj);
+            }
+            return streamsObj;
+        }
+        Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getStreams);
+    });
+
+
+    let _segmentEffortCache;
+    sauce.propDefined('Strava.Models.SegmentEffortDetail', Klass => {
+        if (!_segmentEffortCache) {
+            _segmentEffortCache = new sauce.cache.TTLCache('segment-effort', 3600 * 1000);
+        }
+        async function getSegmentEffort(options) {
+            const key = options.url.match(/segment_efforts\/([0-9]+)/)[1];
+            if (isNaN(Number(key))) {
+                throw new TypeError("Invalid segment id: " + key);
+            }
+            const cached = await _segmentEffortCache.get(key);
+            if (cached) {
+                return cached;
+            }
+            const data = await fetchLikeXHR(options.url);
+            await _segmentEffortCache.set(key, data);
+            return data;
+        }
+        Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getSegmentEffort);
+    });
+
+
+    let _segmentLeaderboardCache;
+    sauce.propDefined('Strava.Models.SegmentLeaderboard', Klass => {
+        if (!_segmentLeaderboardCache) {
+            _segmentLeaderboardCache = new sauce.cache.TTLCache('segment-leaderboard', 3600 * 1000);
+        }
+        async function getSegmentLeaderboard(options) {
+            const id = options.url.match(/segments\/([0-9]+)\/leaderboard/)[1];
+            if (isNaN(Number(id))) {
+                throw new TypeError("Invalid leaderboard id: " + id);
+            }
+            const key = `${id}-${JSON.stringify(options.data)}`;
+            const cached = await _segmentLeaderboardCache.get(key);
+            if (cached) {
+                return cached;
+            }
+            const data = await fetchLikeXHR(options.url, options.data);
+            await _segmentLeaderboardCache.set(key, data);
+            return data;
+        }
+        Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getSegmentLeaderboard);
+    });
+}
+
+saucePreloaderInit;  // eslint

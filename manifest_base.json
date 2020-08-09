@@ -29,7 +29,8 @@
             "src/ext/rpc_hooks.js",
             "src/bg/rpc.js",
             "src/bg/migrate.js",
-            "src/site/base.js",
+            "src/common/base.js",
+            "src/bg/base_init.js",
             "src/site/lib.js",
             "src/site/trailforks.js"
         ]
@@ -67,6 +68,8 @@
             "src/ext/rpc_hooks.js",
             "src/ext/rpc_proxy.js",
             "src/ext/patron.js",
+            "src/common/base.js",
+            "src/site/preloader.js",
             "src/ext/boot.js"
         ]
     }],

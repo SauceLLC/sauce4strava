@@ -129,7 +129,7 @@
 
 
     const _loadedScripts = new Set();
-    function loadScripts(urls, options) {
+    function loadScripts(urls, options={}) {
         const loading = [];
         const frag = document.createDocumentFragment();
         for (const url of urls) {
@@ -137,7 +137,6 @@
                 continue;
             }
             _loadedScripts.add(url);
-            options = options || {};
             const script = document.createElement('script');
             if (options.defer) {
                 script.defer = 'defer';
@@ -159,13 +158,7 @@
     }
 
 
-    function loadScript(url, options) {
-        return loadScripts([url], options);
-    }
-
-
-    function loadStylesheet(url, options) {
-        options = options || {};
+    function loadStylesheet(url, options={}) {
         const link = document.createElement('link');
         link.setAttribute('rel', 'stylesheet');
         link.setAttribute('type', 'text/css');
@@ -177,16 +170,20 @@
     function insertScript(content) {
         const script = document.createElement('script');
         script.textContent = content;
-        addHeadElement(script, true);
+        addHeadElement(script, /*top*/ true);
     }
 
 
     async function load() {
         const extUrl = browser.extension.getURL('');
-        await loadScripts([
-            `${extUrl}src/site/base.js`,
-            `${extUrl}src/site/preloader.js`
-        ], {top: true});
+        /* Using the src works but is async, this will block the page from loading while the scripts
+         * are evaluated and executed, preventing race conditions in our preloader */
+        insertScript([
+            self.sauceBaseInit.toString(),
+            self.saucePreloaderInit.toString(),
+            'sauceBaseInit();',
+            'saucePreloaderInit();',
+        ].join('\n'));
         const config = await sauce.storage.get(null);
         if (config.enabled === false) {
             document.documentElement.classList.add('sauce-disabled');
@@ -236,9 +233,7 @@
                 }
             }
             if (m.scripts) {
-                for (const url of m.scripts) {
-                    loadScript(`${extUrl}src/${url}`, {});
-                }
+                await loadScripts(m.scripts.map(x => `${extUrl}src/${x}`));
             }
         }
     }
