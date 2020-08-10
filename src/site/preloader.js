@@ -450,7 +450,8 @@ function saucePreloaderInit() {
     sauce.propDefined('Strava.Labs.Activities.Streams', Klass => {
         console.warn("monkey patch", performance.now());
         if (!_streamsCache) {
-            _streamsCache = new sauce.cache.TTLCache('streams', 3600 * 1000);
+            //_streamsCache = new sauce.cache.TTLCache('streams', 3600 * 1000);
+            _streamsCache = new sauce.cache.TTLCache('streams', 30 * 1000);
         }
         async function getStreams(options) {
             const keyPrefix = pageView.activity().id;

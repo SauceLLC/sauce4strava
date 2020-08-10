@@ -45,8 +45,9 @@ sauce.ns('analysis', ns => {
 
     const minVAMTime = 60;
     const minHRTime = 60;
-    const minNPTime = 900;
+    const minPowerPotentialTime = 300;
     const minWattEstTime = 300;
+    const minSeaPowerElevation = 328;  // About 1000ft or 1% power
 
     const metersPerMile = 1609.344;
     const defaultPeakPeriods = [
@@ -626,9 +627,15 @@ sauce.ns('analysis', ns => {
 
 
     async function assignTrailforksToSegments() {
+        if (!sauce.options['analysis-disable-trailforks']) {
+            return;
+        }
         console.warn('tfpre', performance.now());
         const latlngStream = await fetchStream('latlng');
         const distStream = await fetchStream('distance');
+        if (!latlngStream || !latlngStream.length || !distStream || !distStream.length) {
+            return;
+        }
         console.warn('tfstart', performance.now());
         let tfIntersections;
         //tfIntersections = await sauce.trailforks.intersections(latlngStream, distStream);
@@ -676,6 +683,7 @@ sauce.ns('analysis', ns => {
         }
         let tss;
         let np;
+        let xp;
         let intensity;
         if (wattsStream) {
             if (supportsSeaPower()) {
@@ -683,6 +691,7 @@ sauce.ns('analysis', ns => {
             }
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             np = corrected && supportsNP() && corrected.np();
+            xp = corrected && supportsXP() && corrected.xp();
             if (corrected && ctx.ftp) {
                 if (np) {
                     // Calculate TSS based on elapsed time when NP is being used.
@@ -697,9 +706,7 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
-        if (!sauce.options['analysis-disable-trailforks']) {
-            assignTrailforksToSegments().catch(sauce.rpc.reportError);
-        }
+        assignTrailforksToSegments().catch(sauce.rpc.reportError);
         renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
@@ -710,6 +717,7 @@ sauce.ns('analysis', ns => {
             intensity,
             tss,
             np,
+            xp,
         }).catch(sauce.rpc.reportError);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
@@ -717,6 +725,7 @@ sauce.ns('analysis', ns => {
                 menu.push('peak_power');
                 if (!isWattEstimate) {
                     menu.push('peak_np');
+                    menu.push('peak_xp');
                 }
                 if (supportsSeaPower()) {
                     menu.push('peak_sp');
@@ -756,16 +765,20 @@ sauce.ns('analysis', ns => {
                         rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
                     } else if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
-                    } else if (source === 'peak_np') {
+                    } else if (source === 'peak_np' || source === 'peak_xp') {
+                        const calcs = {
+                            peak_np: {peakSearch: sauce.power.peakNP, rollMethod: 'np'},
+                            peak_xp: {peakSearch: sauce.power.peakXP, rollMethod: 'xp'},
+                        }[source];
                         rows = [];
-                        for (const range of periodRanges.filter(x => x.value >= minNPTime)) {
-                            const roll = sauce.power.peakNP(range.value, timeStream, wattsStream);
-                            // Use external NP method for consistency.  There are tiny differences because
-                            // the peakNP function is a continous rolling avg vs the external method that
+                        for (const range of periodRanges.filter(x => x.value >= minPowerPotentialTime)) {
+                            const roll = calcs.peakSearch(range.value, timeStream, wattsStream);
+                            // Use external NP/XP method for consistency.  There are tiny differences because
+                            // the peak functions use a continous rolling avg vs the external method that
                             // only examines the trimmed dateset.
-                            const np = roll && roll.np({external: true});
-                            if (np) {
-                                const value = humanNumber(np);
+                            const power = roll && roll[calcs.rollMethod].call(roll, {external: true});
+                            if (power) {
+                                const value = humanNumber(power);
                                 rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
                             }
                         }
@@ -1404,7 +1417,7 @@ sauce.ns('analysis', ns => {
             end: endTime,
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
-        if (source === 'peak_power' || source === 'peak_np') {
+        if (source === 'peak_power' || source === 'peak_np' || source === 'peak_xp') {
             await infoDialogGraph($sparkline, {
                 data: correctedPower.values(),
                 formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
@@ -1901,23 +1914,27 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function exportActivity(Serializer) {
+    async function exportActivity(Serializer, start, end) {
         const streamNames = ['time', 'watts', 'heartrate', 'altitude',
                              'cadence', 'temp', 'latlng', 'distance'];
-        const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) => (acc[streamNames[i]] = x, acc), {});
+        const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) =>
+            (acc[streamNames[i]] = x && x.slice(start, end), acc), {});
         const fullActivity = await fetchFullActivity();
         const realStartTime = fullActivity && fullActivity.get('start_time');
-        let start;
+        let startDate;
         if (realStartTime) {
-            start = new Date(realStartTime);
+            startDate = new Date(realStartTime);
         } else {
-            start = await getEstimatedActivityStart();
+            startDate = await getEstimatedActivityStart();
         }
         // Name and description are not available in the activity model for other users..
-        const name = document.querySelector('#heading .activity-name').textContent;
+        let name = document.querySelector('#heading .activity-name').textContent.trim();
+        if (start) {
+            name += ` [selection ${start}-${end}]`;
+        }
         const descEl = document.querySelector('#heading .activity-description .content');
         const desc = descEl && descEl.textContent;
-        const serializer = new Serializer(name, desc, pageView.activity().get('type'), start);
+        const serializer = new Serializer(name, desc, pageView.activity().get('type'), startDate);
         serializer.start();
         serializer.loadStreams(streams);
         download(serializer.toFile());
@@ -2513,8 +2530,10 @@ sauce.ns('analysis', ns => {
         let elapsedSP;
         if (supportsSeaPower()) {
             const avgEl = sauce.data.avg(altStream);
-            activeSP = activeAvg && sauce.power.seaLevelPower(activeAvg, avgEl);
-            elapsedSP = elapsedAvg && sauce.power.seaLevelPower(elapsedAvg, avgEl);
+            if (avgEl >= minSeaPowerElevation) {
+                activeSP = activeAvg && sauce.power.seaLevelPower(activeAvg, avgEl);
+                elapsedSP = elapsedAvg && sauce.power.seaLevelPower(elapsedAvg, avgEl);
+            }
         }
         return Object.assign({
             activeAvg,
@@ -2538,6 +2557,11 @@ sauce.ns('analysis', ns => {
 
     function supportsNP() {
         return pageView.activity().isRide() && !!pageView.streams().getStream('watts');
+    }
+
+
+    function supportsXP() {
+        return supportsNP();
     }
 
 
@@ -2571,7 +2595,8 @@ sauce.ns('analysis', ns => {
         if (correctedPower) {
             const kj = correctedPower.kj();
             const np = supportsNP() && correctedPower.np();
-            tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np});
+            const xp = supportsXP() && correctedPower.xp();
+            tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np, xp});
             let tss;
             let intensity;
             if (ctx.ftp) {
@@ -3113,6 +3138,18 @@ sauce.ns('analysis', ns => {
             const end = ctx.$analysisStats.data('end');
             showPerfPredictor(start, end).catch(sauce.rpc.reportError);
         });
+        $el.on('click', 'a.sauce-export-tcx', () => {
+            const start = ctx.$analysisStats.data('start');
+            const end = ctx.$analysisStats.data('end');
+            exportActivity(sauce.export.TCXSerializer, start, end).catch(sauce.rpc.reportError);
+            sauce.rpc.reportEvent('AnalysisStats', 'export', 'tcx');
+        });
+        $el.on('click', 'a.sauce-export-gpx', () => {
+            const start = ctx.$analysisStats.data('start');
+            const end = ctx.$analysisStats.data('end');
+            exportActivity(sauce.export.GPXSerializer, start, end).catch(sauce.rpc.reportError);
+            sauce.rpc.reportEvent('AnalysisStats', 'export', 'gpx');
+        });
         $el.on('click', 'a.expander', ev => {
             const el = ev.currentTarget.closest('.sauce-analysis-stats');
             const collapsing = el.classList.contains('expanded');
@@ -3192,6 +3229,7 @@ sauce.ns('analysis', ns => {
         ctx.peakIcons = {
             peak_power: 'fa/bolt-duotone.svg',
             peak_np: 'fa/atom-alt-duotone.svg',
+            peak_xp: 'fa/atom-duotone.svg',
             peak_sp: 'fa/ship-duotone.svg',
             peak_hr: 'fa/heartbeat-duotone.svg',
             peak_vam: 'fa/rocket-launch-duotone.svg',

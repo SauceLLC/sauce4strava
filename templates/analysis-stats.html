@@ -66,6 +66,13 @@
             </line>
         <% } %>
 
+        <% if (obj.power.xp) { %>
+            <line title="{{{xp_tooltip}}}">
+                <key>xPower</key>
+                <value>{{formatNumber(power.xp, 0)}}<abbr class="unit">w</abbr></value>
+            </line>
+        <% } %>
+
         <% if (power.elapsedAvg && Math.round(power.elapsedAvg) !== Math.round(power.activeAvg)) { %>
             <line title="{{{elapsed_power_tooltip}}}">
                 <key>{{{elapsed}}}</key>
@@ -198,13 +205,13 @@
     <% } %>
 
     <line>
-        <key/>
-        <value><a class="sauce-raw-data">{{{view}}} {{{raw_data}}}</a></value>
+        <key>{{{view}}}</key>
+        <value><a class="sauce-raw-data">{{{raw}}}</a> | <a class="sauce-graph-data">{{{graphs}}}</a></value>
     </line>
 
     <line>
-        <key/>
-        <value><a class="sauce-graph-data">{{{view}}} {{{graphs}}}</a></value>
+        <key>{{{export}}}</key>
+        <value><a class="sauce-export-tcx">TCX</a> | <a class="sauce-export-gpx">GPX</a></value>
     </line>
 </div>
 
