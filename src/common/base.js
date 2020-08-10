@@ -273,10 +273,7 @@ function sauceBaseInit() {
             await this._storeCall('readwrite', async store => {
                 const index = store.index('bucket-key');
                 const key = await this.requestPromise(index.getKey([data.bucket, data.key]));
-                if (key) {
-                    await this.requestPromise(store.delete(key));
-                }
-                return await this.requestPromise(store.put(data));
+                return await this.requestPromise(store.put(data, key));
             });
         }
 
@@ -285,10 +282,7 @@ function sauceBaseInit() {
                 const index = store.index('bucket-key');
                 await Promise.all(dataArray.map(async data => {
                     const key = await this.requestPromise(index.getKey([data.bucket, data.key]));
-                    if (key) {
-                        await this.requestPromise(store.delete(key));
-                    }
-                    return await this.requestPromise(store.put(data));
+                    return await this.requestPromise(store.put(data, key));
                 }));
             });
         }
@@ -351,23 +345,31 @@ function sauceBaseInit() {
             }
         }
 
-        async get(key) {
+        async getEntry(key) {
             await this._initing;
             const entry = await this.idb.get([this.bucket, key]);
             if (entry && entry.expiration > Date.now()) {
-                return entry.value;
+                return entry;
             }
         }
 
-        async getObject(keys) {
+        async get(key) {
+            const entry = await this.getEntry(key);
+            return entry && entry.value;
+        }
+
+        async getEntries(keys) {
             await this._initing;
             const entries = await this.idb.getMany(keys.map(k => [this.bucket, k]));
             const now = Date.now();
+            return entries.filter(x => x && x.expiration > now);
+        }
+
+        async getObject(keys) {
+            const entries = await this.getEntries(keys);
             const obj = {};
             for (const x of entries) {
-                if (x && x.expiration > now) {
-                    obj[x.key] = x.value;
-                }
+                obj[x.key] = x.value;
             }
             return obj;
         }
@@ -375,10 +377,12 @@ function sauceBaseInit() {
         async set(key, value, options={}) {
             await this._initing;
             const ttl = options.ttl || this.ttl;
-            const expiration = Date.now() + ttl;
+            const created = Date.now();
+            const expiration = created + ttl;
             await this.idb.put({
                 bucket: this.bucket,
                 key,
+                created,
                 expiration,
                 value
             });
@@ -387,12 +391,14 @@ function sauceBaseInit() {
         async setObject(obj, options={}) {
             await this._initing;
             const ttl = options.ttl || this.ttl;
-            const expiration = Date.now() + ttl;
+            const created = Date.now();
+            const expiration = created + ttl;
             await this.idb.putMany(Object.entries(obj).map(([key, value]) => ({
                 bucket: this.bucket,
                 key,
+                created,
+                expiration,
                 value,
-                expiration
             })));
         }
     }
