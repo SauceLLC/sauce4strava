@@ -18,7 +18,8 @@
 
 
     async function onMessageEstablishChannel(ev) {
-        if (ev.source !== self || !ev.data || ev.data.extId !== browser.runtime.id ||
+        const extId = browser.runtime.id;
+        if (ev.source !== self || !ev.data || ev.data.extId !== extId ||
             ev.data.type !== 'sauce-rpc-establish-channel') {
             return;
         }
@@ -27,7 +28,7 @@
         const respChannel = new MessageChannel();
         const respPort = respChannel.port1;
         reqPort.addEventListener('message', async ev => {
-            if (!ev.data || ev.data.extId !== browser.runtime.id) {
+            if (!ev.data || ev.data.extId !== extId) {
                 throw new TypeError('RPC Protocol Violation [PAGE]');
             }
             let data;
@@ -38,7 +39,7 @@
                 console.error('RPC Hook Error:', e);
                 data = {success: false, rid: ev.data.rid, result: e.message};
             }
-            data.extId = browser.runtime.id;
+            data.extId = extId;
             data.type = 'sauce-rpc-response';
             respPort.postMessage(data);
         });
@@ -46,7 +47,7 @@
         reqPort.start();
         reqPort.postMessage({
             type: 'sauce-rpc-establish-channel-ack',
-            extId: browser.runtime.id,
+            extId,
         }, [respChannel.port2]);
     }
     window.addEventListener('message', onMessageEstablishChannel);
