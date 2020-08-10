@@ -3,7 +3,6 @@
 sauce.ns('data', function() {
     'use strict';
 
-
     function sum(data, offt) {
         let total = 0;
         for (let i = offt || 0, len = data.length; i < len; i++) {
@@ -255,7 +254,6 @@ sauce.ns('data', function() {
 
 
     class RollingBase {
-
         constructor(period, options) {
             options = options || {};
             this.period = period || undefined;
@@ -389,7 +387,6 @@ sauce.ns('data', function() {
 
 
     class RollingAverage extends RollingBase {
-
         constructor(period, options) {
             super(period);
             options = options || {};
@@ -450,145 +447,6 @@ sauce.ns('data', function() {
     }
 
 
-    class RollingPower extends RollingBase {
-
-        constructor(period, idealGap, maxGap, options) {
-            super(period);
-            this._joules = 0;
-            this.idealGap = idealGap;
-            this.maxGap = maxGap && Math.max(maxGap, idealGap);
-            if (options && options.inlineNP) {
-                const sampleRate = 1 / (idealGap || 1);
-                const rollSize = Math.round(30 * sampleRate);
-                this._inlineNP = {
-                    rollSize,
-                    slot: 0,
-                    roll: new Array(rollSize),
-                    rollSum: 0,
-                    stream: [],
-                    total: 0,
-                };
-            }
-        }
-
-        add(ts, value) {
-            if (this._times.length) {
-                const gap = ts - this._times[this._times.length - 1];
-                if (gap > this.maxGap || (gap > this.idealGap && this._values[this._values.length - 1] instanceof Pad)) {
-                    const padTS = this._times[this._times.length - 1] + this.idealGap;
-                    return this.add(padTS, new Zero());
-                }
-            }
-            return super.add(ts, value);
-        }
-
-        addValue(value, ts) {
-            const i = this._times.length;
-            const gap = i ? ts - this._times[i - 1] : 0;
-            this._joules += value * gap;
-            if (this._inlineNP) {
-                const inp = this._inlineNP;
-                inp.slot = (inp.slot + 1) % inp.rollSize;
-                inp.rollSum += value;
-                inp.rollSum -= inp.roll[inp.slot] || 0;
-                inp.roll[inp.slot] = value;
-                const npa = inp.rollSum / Math.min(inp.rollSize, i + 1);
-                const qnpa = npa * npa * npa * npa;  // unrolled for perf
-                inp.total += qnpa;
-                inp.stream.push(qnpa);
-            }
-            return value;
-        }
-
-        shiftValue(value) {
-            const i = this._offt - 1;
-            const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
-            this._joules -= this._values[i + 1] * gap;
-            if (this._inlineNP) {
-                const inp = this._inlineNP;
-                inp.total -= inp.stream[i];
-            }
-        }
-
-        popValue(value) {
-            const lastIdx = this._times.length - 1;
-            const gap = lastIdx >= 1 ? this._times[lastIdx] - this._times[lastIdx - 1] : 0;
-            this._joules -= value * gap;
-            if (this._inlineNP) {
-                throw new Error("Unsupported");
-            }
-        }
-
-        avg() {
-            return this._joules / this.elapsed();
-        }
-
-        np(options) {
-            if (this._inlineNP && (!options || !options.external)) {
-                if (this.elapsed() < 1200) {
-                    return;
-                }
-                const inp = this._inlineNP;
-                return (inp.total / this.size()) ** 0.25;
-            } else {
-                return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt);
-            }
-        }
-
-        kj() {
-            return this._joules / 1000;
-        }
-
-        full(options) {
-            options = options || {};
-            const offt = options.offt;
-            return this.elapsed({offt}) >= this.period;
-        }
-
-        copy() {
-            const instance = super.copy();
-            instance.idealGap = this.idealGap;
-            instance.maxGap = this.maxGap;
-            instance._joules = this._joules;
-            if (this._inlineNP) {
-                const stream = this._inlineNP.stream;
-                instance._inlineNP = Object.assign({}, this._inlineNP);
-                instance._inlineNP.stream = stream.slice(stream.length - instance._times.length);
-            }
-            return instance;
-        }
-    }
-
-
-    class RollingPace extends RollingBase {
-
-        distance(options) {
-            options = options || {};
-            const offt = (options.offt || 0) + this._offt;
-            const start = this._values[offt];
-            const end = this._values[this._values.length - 1];
-            if (start != null && end != null) {
-                return end - start;
-            }
-        }
-
-        avg() {
-            const dist = this.distance();
-            const elapsed = this.elapsed();
-            if (!dist || !elapsed) {
-                return;
-            }
-            return elapsed / dist;
-        }
-
-        full(options) {
-            options = options || {};
-            const offt = options.offt;
-            return this.distance({offt}) >= this.period;
-        }
-    }
-
-
     function peakAverage(period, timeStream, valuesStream, options) {
         options = options || {};
         const active = options.active;
@@ -601,7 +459,7 @@ sauce.ns('data', function() {
 
     function smooth(period, timeStream, valuesStream) {
         const values = [];
-        const roll = new sauce.data.RollingAverage(period);
+        const roll = new RollingAverage(period);
         for (let i = 0; i < valuesStream.length; i++) {
             const ts = timeStream == null ? i : timeStream[i];
             const v = valuesStream[i];
@@ -630,9 +488,8 @@ sauce.ns('data', function() {
         activeTime,
         recommendedTimeGaps,
         tabulate,
+        RollingBase,
         RollingAverage,
-        RollingPower,
-        RollingPace,
         Zero,
         Pad,
         peakAverage,
@@ -679,6 +536,9 @@ sauce.ns('power', function() {
             }
         }
     };
+
+    const npMinTime = 300;  // Andy says 20, but we're rebels.
+    const xpMinTime = 300;
 
     const badgeURN = `${sauce.extUrl}images/ranking`;
     const rankLevels = [{
@@ -746,6 +606,120 @@ sauce.ns('power', function() {
     }
 
 
+    class RollingPower extends sauce.data.RollingBase {
+        constructor(period, idealGap, maxGap, options) {
+            super(period);
+            this._joules = 0;
+            this.idealGap = idealGap;
+            this.maxGap = maxGap && Math.max(maxGap, idealGap);
+            if (options && options.inlineNP) {
+                const sampleRate = 1 / (idealGap || 1);
+                const rollSize = Math.round(30 * sampleRate);
+                this._inlineNP = {
+                    rollSize,
+                    slot: 0,
+                    roll: new Array(rollSize),
+                    rollSum: 0,
+                    stream: [],
+                    total: 0,
+                };
+            }
+        }
+
+        add(ts, value) {
+            if (this._times.length) {
+                const gap = ts - this._times[this._times.length - 1];
+                if (gap > this.maxGap || (gap > this.idealGap &&
+                    this._values[this._values.length - 1] instanceof sauce.data.Pad)) {
+                    const padTS = this._times[this._times.length - 1] + this.idealGap;
+                    return this.add(padTS, new sauce.data.Zero());
+                }
+            }
+            return super.add(ts, value);
+        }
+
+        addValue(value, ts) {
+            const i = this._times.length;
+            const gap = i ? ts - this._times[i - 1] : 0;
+            this._joules += value * gap;
+            if (this._inlineNP) {
+                const inp = this._inlineNP;
+                inp.slot = (inp.slot + 1) % inp.rollSize;
+                inp.rollSum += value;
+                inp.rollSum -= inp.roll[inp.slot] || 0;
+                inp.roll[inp.slot] = value;
+                const npa = inp.rollSum / Math.min(inp.rollSize, i + 1);
+                const qnpa = npa * npa * npa * npa;  // unrolled for perf
+                inp.total += qnpa;
+                inp.stream.push(qnpa);
+            }
+            return value;
+        }
+
+        shiftValue(value) {
+            const i = this._offt - 1;
+            const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
+            this._joules -= this._values[i + 1] * gap;
+            if (this._inlineNP) {
+                const inp = this._inlineNP;
+                inp.total -= inp.stream[i];
+            }
+        }
+
+        popValue(value) {
+            const lastIdx = this._times.length - 1;
+            const gap = lastIdx >= 1 ? this._times[lastIdx] - this._times[lastIdx - 1] : 0;
+            this._joules -= value * gap;
+            if (this._inlineNP) {
+                throw new Error("Unsupported");
+            }
+        }
+
+        avg() {
+            return this._joules / this.elapsed();
+        }
+
+        np(options) {
+            if (this._inlineNP && (!options || !options.external)) {
+                if (this.elapsed() < npMinTime) {
+                    return;
+                }
+                const inp = this._inlineNP;
+                return (inp.total / this.size()) ** 0.25;
+            } else {
+                return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt);
+            }
+        }
+
+        xp(options) {
+            return sauce.power.calcXP(this._values, 1 / this.idealGap, this._offt);
+        }
+
+        kj() {
+            return this._joules / 1000;
+        }
+
+        full(options) {
+            options = options || {};
+            const offt = options.offt;
+            return this.elapsed({offt}) >= this.period;
+        }
+
+        copy() {
+            const instance = super.copy();
+            instance.idealGap = this.idealGap;
+            instance.maxGap = this.maxGap;
+            instance._joules = this._joules;
+            if (this._inlineNP) {
+                const stream = this._inlineNP.stream;
+                instance._inlineNP = Object.assign({}, this._inlineNP);
+                instance._inlineNP.stream = stream.slice(stream.length - instance._times.length);
+            }
+            return instance;
+        }
+    }
+
+
     function _correctedRollingPower(timeStream, wattsStream, period, idealGap, maxGap, options) {
         if (timeStream.length < 2) {
             return;
@@ -759,7 +733,7 @@ sauce.ns('power', function() {
                 maxGap = gaps.max;
             }
         }
-        return new sauce.data.RollingPower(period, idealGap, maxGap, options);
+        return new RollingPower(period, idealGap, maxGap, options);
     }
 
 
@@ -781,6 +755,15 @@ sauce.ns('power', function() {
     }
 
 
+    function peakXP(period, timeStream, wattsStream) {
+        const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null, {inlineXP: true});
+        if (!roll) {
+            return;
+        }
+        return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.xp() >= lead.xp());
+    }
+
+
     function correctedPower(timeStream, wattsStream, idealGap, maxGap) {
         const roll = _correctedRollingPower(timeStream, wattsStream, null, idealGap, maxGap);
         if (!roll) {
@@ -792,12 +775,13 @@ sauce.ns('power', function() {
 
 
     function calcNP(stream, sampleRate, _offset) {
-        /* Coggan doesn't recommend NP for less than 20 mins. */
+        /* Coggan doesn't recommend NP for less than 20 mins, but we're outlaws
+         * and we go as low as 5 mins now! (10-08-2020) */
         sampleRate = sampleRate || 1;
         _offset = _offset || 0;
         const size = stream.length - _offset;
         const elapsed = size / sampleRate;
-        if (!stream || elapsed < 1200) {
+        if (!stream || elapsed < npMinTime) {
             return;
         }
         const rollingSize = Math.round(30 * sampleRate);
@@ -821,6 +805,48 @@ sauce.ns('power', function() {
     }
 
 
+    function calcXP(stream, sampleRate, _offset) {
+        /* See: https://perfprostudio.com/BETA/Studio/scr/BikeScore.htm
+         * xPower is more accurate version of NP that better correlates to how
+         * humans recover from oxygen debt. */
+        sampleRate = sampleRate || 1;
+        _offset = _offset || 0;
+        const size = stream.length - _offset;
+        const elapsed = size / sampleRate;
+        if (!stream || elapsed < xpMinTime) {
+            return;
+        }
+        const epsilon = 0.1;
+        const negligible = 0.1;
+        const sampleInterval = 1 / sampleRate;
+        const samplesPerWindow = 25 / sampleInterval;
+        const attenuation = samplesPerWindow / (samplesPerWindow + sampleInterval);
+        const sampleWeight = sampleInterval / (samplesPerWindow + sampleInterval);
+        let lastSecs = 0;
+        let weighted = 0;
+        let total = 0;
+        let count = 0;
+        const xpWatts = [];
+        for (let i = _offset, len = stream.length; i < len; i++) {
+            const secs = (i - _offset) * sampleInterval;
+            while ((weighted > negligible) && secs > lastSecs + sampleInterval + epsilon) {
+                weighted *= attenuation;
+                lastSecs += sampleInterval;
+                total += weighted * weighted * weighted * weighted;  // unrolled for perf
+                count++;
+            }
+            weighted *= attenuation;
+            weighted += sampleWeight * stream[i];
+            lastSecs = secs;
+            total += weighted * weighted * weighted * weighted;  // unrolled for perf
+            count++;
+            xpWatts.push((total / count) ** 0.25);
+            //console.warn(xpWatts.slice(-1)[0]);
+        }
+        return count ? (total / count) ** 0.25 : 0;
+    }
+
+
     function calcTSS(power, duration, ftp) {
         const joules = power * duration;
         const ftpHourJoules = ftp * 3600;
@@ -840,7 +866,7 @@ sauce.ns('power', function() {
         //   v02maxPct = 0.1781 * km ** 3 - 1.434 * km ** 2 - 4.0726 ** km + 100.35
         //   R^2 = 0.9739
         const elKm = el / 1000;
-        const vo2maxAdjust = (-1.1219 * elKm ** 2 - 1.8991 * elKm + 99.921) / 100;
+        const vo2maxAdjust = (-1.1219 * (elKm * elKm) - 1.8991 * elKm + 99.921) / 100;  // unroll exp for perf
         return power * (1 / vo2maxAdjust);
     }
 
@@ -860,7 +886,7 @@ sauce.ns('power', function() {
     function aeroDragForce(CdA, p, v, w) {
         const netVelocity = v + w;
         const invert = netVelocity < 0 ? -1 : 1;
-        return (0.5 * CdA * p * (netVelocity ** 2)) * invert;
+        return (0.5 * CdA * p * (netVelocity * netVelocity)) * invert;
     }
 
 
@@ -913,14 +939,17 @@ sauce.ns('power', function() {
     return {
         peakPower,
         peakNP,
+        peakXP,
         correctedPower,
         calcNP,
+        calcXP,
         calcTSS,
         rank,
         rankRequirements,
         seaLevelPower,
         cyclingPowerEstimate,
         cyclingPowerVelocitySearch,
+        RollingPower,
     };
 });
 
@@ -928,11 +957,40 @@ sauce.ns('power', function() {
 sauce.ns('pace', function() {
     'use strict';
 
+    class RollingPace extends sauce.data.RollingBase {
+        distance(options) {
+            options = options || {};
+            const offt = (options.offt || 0) + this._offt;
+            const start = this._values[offt];
+            const end = this._values[this._values.length - 1];
+            if (start != null && end != null) {
+                return end - start;
+            }
+        }
+
+        avg() {
+            const dist = this.distance();
+            const elapsed = this.elapsed();
+            if (!dist || !elapsed) {
+                return;
+            }
+            return elapsed / dist;
+        }
+
+        full(options) {
+            options = options || {};
+            const offt = options.offt;
+            return this.distance({offt}) >= this.period;
+        }
+    }
+
+
+
     function bestPace(distance, timeStream, distStream) {
         if (timeStream.length < 2) {
             return;
         }
-        const roll = new sauce.data.RollingPace(distance);
+        const roll = new RollingPace(distance);
         return roll.importReduce(timeStream, distStream, (cur, lead) => cur.avg() <= lead.avg());
     }
 
@@ -986,11 +1044,9 @@ sauce.ns('images', function(ns) {
 sauce.ns('geo', function(ns) {
     'use strict';
 
-    let _xxx = 0;
     const bench = new sauce.Benchmark('dist');
     function distance([latA, lngA], [latB, lngB]) {
         // haversine method (slow but accurate) - as the crow flies
-        _xxx++;
         bench.enter();
         const rLatA = latA * Math.PI / 180;
         const rLatB = latB * Math.PI / 180;
@@ -999,6 +1055,24 @@ sauce.ns('geo', function(ns) {
         const a = Math.sin(rDeltaLat / 2) ** 2 +
                   Math.cos(rLatA) * Math.cos(rLatB) *
                   Math.sin(rDeltaLng / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = 6371e3 * c;
+        bench.leave();
+        return distance;
+    }
+
+    function distanceOpt([latA, lngA], [latB, lngB]) {
+        // haversine method (slow but accurate) - as the crow flies
+        bench.enter();
+        const rLatA = latA * Math.PI / 180;
+        const rLatB = latB * Math.PI / 180;
+        const rDeltaLat = (latB - latA) * Math.PI / 180;
+        const rDeltaLng = (lngB - lngA) * Math.PI / 180;
+        const rDeltaLatHalfSin = Math.sin(rDeltaLat / 2);
+        const rDeltaLngHalfSin = Math.sin(rDeltaLng / 2);
+        const a = (rDeltaLatHalfSin * rDeltaLatHalfSin) +
+                  Math.cos(rLatA) * Math.cos(rLatB) *
+                  (rDeltaLngHalfSin * rDeltaLngHalfSin);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const distance = 6371e3 * c;
         bench.leave();
@@ -1058,8 +1132,8 @@ sauce.ns('geo', function(ns) {
 
     return {
         distance,
+        distanceOpt, // XXX
         boundingBox,
         boundsOverlap,
-        xxx: () => _xxx
     };
 });
