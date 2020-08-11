@@ -431,7 +431,9 @@ function saucePreloaderInit() {
                     }
                     d.resolve(data);
                 }).catch(e => {
-                    console.error(`Sauce inteceptCallback failed (falling back to ajax):`, e);
+                    if (!e.fallback) {
+                        console.error(`Sauce inteceptCallback failed (falling back to ajax):`, e);
+                    }
                     const xhr = BackboneAjaxSave.apply(this, arguments);
                     xhr.done(d.resolve).fail(d.reject);
                 });
@@ -454,6 +456,12 @@ function saucePreloaderInit() {
             _streamsCache = new sauce.cache.TTLCache('streams', 30 * 1000);
         }
         async function getStreams(options) {
+            if (!pageView) {
+                // File uploads use Streams class but don't have a pageView.
+                const e = new Error();
+                e.fallback = true;
+                throw e;
+            }
             const keyPrefix = pageView.activity().id;
             const cacheKey = key => `${keyPrefix}-${key}`;
             const streams = options.data.stream_types;
