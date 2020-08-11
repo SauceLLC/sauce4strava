@@ -103,8 +103,8 @@ addTests([
         let cp = sauce.power.peakPower(5, [0, 240, 420, 600, 1200, 1800],
                                        [200, 300, 400, 600, 800, 1000]);
         assertEqual(cp.avg(), 1000);
-        assertEqual(cp.elapsed(), 600);
-        assertEqual(cp.firstTime(), 1200);
+        assertEqual(cp.elapsed(), 60);
+        assertEqual(cp.firstTime(), 1740);
     },
     function test_peakpower_correct_avg_with_gaps() {
         let cp = sauce.power.peakPower(5, [0, 1, 2, 3, 100, 101, 102, 103], valueStream(1, 8));

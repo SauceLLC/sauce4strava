@@ -287,13 +287,7 @@ sauce.ns('data', function() {
                 throw new TypeError("times and values not same length");
             }
             for (let i = 0; i < times.length; i++) {
-                const value = this.add(times[i], values[i]);
-                if (value instanceof Pad) {
-                    // Our value wasn't added, instead padding was added.  rewind
-                    // incrementer and repeat the last entry until padding is done.
-                    i--;
-                }
-                yield value;
+                yield this.add(times[i], values[i]);
             }
         }
 
@@ -646,11 +640,17 @@ sauce.ns('power', function() {
 
         add(ts, value) {
             if (this._times.length) {
-                const gap = ts - this._times[this._times.length - 1];
-                if (gap > this.maxGap || (gap > this.idealGap &&
-                    this._values[this._values.length - 1] instanceof sauce.data.Pad)) {
-                    const padTS = this._times[this._times.length - 1] + this.idealGap;
-                    return this.add(padTS, new sauce.data.Zero());
+                const prevTS = this._times[this._times.length - 1];
+                const gap = ts - prevTS;
+                if (gap > this.maxGap) {
+                    const zeroPad = new sauce.data.Zero();
+                    for (let i = this.idealGap; i < gap; i += this.idealGap) {
+                        super.add(prevTS + i, zeroPad);
+                    }
+                } else if (gap > this.idealGap) {
+                    for (let i = this.idealGap; i < gap; i += this.idealGap) {
+                        super.add(prevTS + i, new sauce.data.Pad(value));
+                    }
                 }
             }
             return super.add(ts, value);
