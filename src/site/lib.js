@@ -612,17 +612,35 @@ sauce.ns('power', function() {
             this._joules = 0;
             this.idealGap = idealGap;
             this.maxGap = maxGap && Math.max(maxGap, idealGap);
-            if (options && options.inlineNP) {
-                const sampleRate = 1 / (idealGap || 1);
-                const rollSize = Math.round(30 * sampleRate);
-                this._inlineNP = {
-                    rollSize,
-                    slot: 0,
-                    roll: new Array(rollSize),
-                    rollSum: 0,
-                    stream: [],
-                    total: 0,
-                };
+            if (options) {
+                const sampleInterval = idealGap || 1;
+                if (options.inlineNP) {
+                    const sampleRate = 1 / sampleInterval;
+                    const rollSize = Math.round(30 * sampleRate);
+                    this._inlineNP = {
+                        stream: [],
+                        rollSize,
+                        slot: 0,
+                        roll: new Array(rollSize),
+                        rollSum: 0,
+                        total: 0,
+                    };
+                }
+                if (options.inlineXP) {
+                    const samplesPerWindow = 25 / sampleInterval;
+                    this._inlineXP = {
+                        stream: [],
+                        sampleInterval,
+                        samplesPerWindow,
+                        attenuation: samplesPerWindow / (samplesPerWindow + sampleInterval),
+                        sampleWeight: sampleInterval / (samplesPerWindow + sampleInterval),
+                        prevTime: 0,
+                        weighted: 0,
+                        counts: [],
+                        count: 0,
+                        total: 0,
+                    };
+                }
             }
         }
 
@@ -643,15 +661,43 @@ sauce.ns('power', function() {
             const gap = i ? ts - this._times[i - 1] : 0;
             this._joules += value * gap;
             if (this._inlineNP) {
-                const inp = this._inlineNP;
-                inp.slot = (inp.slot + 1) % inp.rollSize;
-                inp.rollSum += value;
-                inp.rollSum -= inp.roll[inp.slot] || 0;
-                inp.roll[inp.slot] = value;
-                const npa = inp.rollSum / Math.min(inp.rollSize, i + 1);
+                const state = this._inlineNP;
+                state.slot = (state.slot + 1) % state.rollSize;
+                state.rollSum += value;
+                state.rollSum -= state.roll[state.slot] || 0;
+                state.roll[state.slot] = value;
+                const npa = state.rollSum / Math.min(state.rollSize, i + 1);
                 const qnpa = npa * npa * npa * npa;  // unrolled for perf
-                inp.total += qnpa;
-                inp.stream.push(qnpa);
+                state.total += qnpa;
+                state.stream.push(qnpa);
+            }
+            if (this._inlineXP) {
+                const state = this._inlineXP;
+                const epsilon = 0.1;
+                const negligible = 0.1;
+                const time = i * state.sampleInterval;
+                let counts = 0;
+                while ((state.weighted > negligible) &&
+                       time > state.prevTime + state.sampleInterval + epsilon) {
+                    debugger; // Need to study why this is needed? XXX
+                    state.weighted *= state.attenuation;
+                    state.prevTime += state.sampleInterval;
+                    // unrolled for perf
+                    const w = state.weighted;
+                    state.total += w * w * w * w;  // unroll for perf
+                    state.count++;
+                    counts++;
+                }
+                state.weighted *= state.attenuation;
+                state.weighted += state.sampleWeight * value;
+                state.prevTime = time;
+                const w = state.weighted;
+                const qw = w * w * w * w;  // unrolled for perf
+                state.total += qw;
+                state.count++;
+                counts++;
+                state.stream.push(qw);
+                state.counts.push(counts);
             }
             return value;
         }
@@ -661,8 +707,17 @@ sauce.ns('power', function() {
             const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
             this._joules -= this._values[i + 1] * gap;
             if (this._inlineNP) {
-                const inp = this._inlineNP;
-                inp.total -= inp.stream[i];
+                const state = this._inlineNP;
+                state.total -= state.stream[i];
+            }
+            if (this._inlineXP) {
+                const state = this._inlineXP;
+                state.total -= state.stream[i];
+                state.count -= state.counts[i];
+                if (state.counts[i] > 1) {
+                    console.error("bigger than I thought");
+                    debugger;
+                }
             }
         }
 
@@ -670,7 +725,7 @@ sauce.ns('power', function() {
             const lastIdx = this._times.length - 1;
             const gap = lastIdx >= 1 ? this._times[lastIdx] - this._times[lastIdx - 1] : 0;
             this._joules -= value * gap;
-            if (this._inlineNP) {
+            if (this._inlineNP || this._inlineXP) {
                 throw new Error("Unsupported");
             }
         }
@@ -684,15 +739,23 @@ sauce.ns('power', function() {
                 if (this.elapsed() < npMinTime) {
                     return;
                 }
-                const inp = this._inlineNP;
-                return (inp.total / this.size()) ** 0.25;
+                const state = this._inlineNP;
+                return (state.total / this.size()) ** 0.25;
             } else {
                 return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt);
             }
         }
 
         xp(options) {
-            return sauce.power.calcXP(this._values, 1 / this.idealGap, this._offt);
+            if (this._inlineXP && (!options || !options.external)) {
+                if (this.elapsed() < xpMinTime) {
+                    return;
+                }
+                const state = this._inlineXP;
+                return (state.total / state.count) ** 0.25;
+            } else {
+                return sauce.power.calcXP(this._values, 1 / this.idealGap, this._offt);
+            }
         }
 
         kj() {
@@ -714,6 +777,14 @@ sauce.ns('power', function() {
                 const stream = this._inlineNP.stream;
                 instance._inlineNP = Object.assign({}, this._inlineNP);
                 instance._inlineNP.stream = stream.slice(stream.length - instance._times.length);
+            }
+            if (this._inlineXP) {
+                const stream = this._inlineXP.stream;
+                const counts = this._inlineXP.counts;
+                instance._inlineXP = Object.assign({}, this._inlineXP);
+                const offt = stream.length - instance._times.length;
+                instance._inlineXP.stream = stream.slice(offt);
+                instance._inlineXP.counts = counts.slice(offt);
             }
             return instance;
         }
@@ -822,26 +893,24 @@ sauce.ns('power', function() {
         const samplesPerWindow = 25 / sampleInterval;
         const attenuation = samplesPerWindow / (samplesPerWindow + sampleInterval);
         const sampleWeight = sampleInterval / (samplesPerWindow + sampleInterval);
-        let lastSecs = 0;
+        let prevTime = 0;
         let weighted = 0;
         let total = 0;
         let count = 0;
-        const xpWatts = [];
         for (let i = _offset, len = stream.length; i < len; i++) {
-            const secs = (i - _offset) * sampleInterval;
-            while ((weighted > negligible) && secs > lastSecs + sampleInterval + epsilon) {
+            const time = (i - _offset) * sampleInterval;
+            while ((weighted > negligible) && time > prevTime + sampleInterval + epsilon) {
+                debugger; // Need to study why this is needed? XXX
                 weighted *= attenuation;
-                lastSecs += sampleInterval;
+                prevTime += sampleInterval;
                 total += weighted * weighted * weighted * weighted;  // unrolled for perf
                 count++;
             }
             weighted *= attenuation;
             weighted += sampleWeight * stream[i];
-            lastSecs = secs;
+            prevTime = time;
             total += weighted * weighted * weighted * weighted;  // unrolled for perf
             count++;
-            xpWatts.push((total / count) ** 0.25);
-            //console.warn(xpWatts.slice(-1)[0]);
         }
         return count ? (total / count) ** 0.25 : 0;
     }

@@ -1392,6 +1392,7 @@ sauce.ns('analysis', ns => {
             power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
                 max: sauce.data.max(correctedPower.values()),
                 np: correctedPower.np(),
+                xp: correctedPower.xp(),
                 estimate: correctedPower.isEstimate
             }),
             pace: distance && {

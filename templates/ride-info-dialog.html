@@ -48,6 +48,13 @@
                 <td>{{formatNumber(power.np, 0)}}<abbr class="unit short">w</abbr></td>
             </tr>
         <% } %>
+
+        <% if (power.xp && !power.estimate) { %>
+            <tr title="{{{xp_tooltip}}}">
+                <td>xPower</td>
+                <td>{{formatNumber(power.xp, 0)}}<abbr class="unit short">w</abbr></td>
+            </tr>
+        <% } %>
     <% } %>
 
     <% if (obj.hr) { %>
