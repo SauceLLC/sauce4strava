@@ -47,6 +47,9 @@
     "analysis_np_tooltip": {
         "message": "归一化功率®：潜在平均功率的估计"
     },
+    "analysis_xp_tooltip": {
+        "message": "xPower：一种改进的潜在功率估算，受NormalizedPower®（由Philip Friere Skiba博士创建）启发"
+    },
     "analysis_sp_tooltip": {
         "message": "海力：海平面上的潜在功率估计"
     },
@@ -141,6 +144,9 @@
     "analysis_peak_np_tooltip": {
         "message": "最大归一化功率范围"
     },
+    "analysis_peak_xp_tooltip": {
+        "message": "最大xPower范围"
+    },
     "analysis_peak_hr_tooltip": {
         "message": "最大持续心率范围"
     },
@@ -199,8 +205,8 @@
     "analysis_rank": {
         "message": "秩"
     },
-    "analysis_raw_data": {
-        "message": "原始数据"
+    "analysis_raw": {
+        "message": "生的"
     },
     "analysis_graphs": {
         "message": "图表"
@@ -245,6 +251,9 @@
     "analysis_peak_np": {
         "message": "最佳NP®",
         "description": "IMMUTABLE"
+    },
+    "analysis_peak_xp": {
+        "message": "峰值xPower"
     },
     "analysis_peak_hr": {
         "message": "最大心率",

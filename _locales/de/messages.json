@@ -46,6 +46,9 @@
     "analysis_np_tooltip": {
         "message": "Normalized Power®: Eine Schätzung der potenziellen Durchschnittsleistung"
     },
+    "analysis_xp_tooltip": {
+        "message": "xPower: Eine verbesserte potenzielle Leistungsschätzung, inspiriert von Normalized Power® (erstellt von Dr. Philip Friere Skiba)"
+    },
     "analysis_sp_tooltip": {
         "message": "Seemacht: Eine Schätzung der potenziellen Energie auf Meereshöhe"
     },
@@ -141,6 +144,9 @@
         "message": "Maximale Normalized Power®",
         "description": "IMMUTABLE"
     },
+    "analysis_peak_xp_tooltip": {
+        "message": "Maximale xPower-Bereiche"
+    },
     "analysis_peak_hr_tooltip": {
         "message": "Maximal anhaltende Herzfrequenzbereiche"
     },
@@ -199,8 +205,8 @@
     "analysis_rank": {
         "message": "Rang"
     },
-    "analysis_raw_data": {
-        "message": "Rohdaten"
+    "analysis_raw": {
+        "message": "roh"
     },
     "analysis_graphs": {
         "message": "Grafiken"
@@ -243,6 +249,10 @@
     },
     "analysis_peak_np": {
         "message": "Beste NP®",
+        "description": "IMMUTABLE"
+    },
+    "analysis_peak_xp": {
+        "message": "Beste xPower",
         "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {

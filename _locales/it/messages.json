@@ -49,6 +49,9 @@
     "analysis_np_tooltip": {
         "message": "Normalized Power®: una stima della potenza media potenziale"
     },
+    "analysis_xp_tooltip": {
+        "message": "xPower: una stima del potere potenziale migliorata ispirata a Normalized Power® (creato dal Dr. Philip Friere Skiba)"
+    },
     "analysis_sp_tooltip": {
         "message": "Sea Power: una stima della potenza potenziale a livello del mare"
     },
@@ -143,6 +146,9 @@
     "analysis_peak_np_tooltip": {
         "message": "Range di potenza massima normalizzata®"
     },
+    "analysis_peak_xp_tooltip": {
+        "message": "Intervalli xPower massimi"
+    },
     "analysis_peak_hr_tooltip": {
         "message": "Intervalli di frequenza cardiaca sostenuti massimi"
     },
@@ -203,8 +209,8 @@
     "analysis_rank": {
         "message": "Rango"
     },
-    "analysis_raw_data": {
-        "message": "dati non elaborati"
+    "analysis_raw": {
+        "message": "crudo"
     },
     "analysis_graphs": {
         "message": "grafici"
@@ -247,6 +253,10 @@
     },
     "analysis_peak_np": {
         "message": "Picco NP®",
+        "description": "IMMUTABLE"
+    },
+    "analysis_peak_xp": {
+        "message": "Picco xPower",
         "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {

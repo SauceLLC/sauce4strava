@@ -47,6 +47,9 @@
     "analysis_np_tooltip": {
         "message": "Normalized Power®: une estimation de la puissance moyenne potentielle"
     },
+    "analysis_xp_tooltip": {
+        "message": "xPower: Une estimation de puissance potentielle améliorée inspirée de Normalized Power® (créé par le Dr Philip Friere Skiba)"
+    },
     "analysis_sp_tooltip": {
         "message": "Sea Power: une estimation de la puissance potentielle au niveau de la mer"
     },
@@ -140,6 +143,9 @@
     "analysis_peak_np_tooltip": {
         "message": "Plages maximales normalisées Power®"
     },
+    "analysis_peak_xp_tooltip": {
+        "message": "Plages xPower maximales"
+    },
     "analysis_peak_hr_tooltip": {
         "message": "Plages maximales de fréquence cardiaque soutenue"
     },
@@ -201,8 +207,8 @@
     "analysis_rank": {
         "message": "Rang"
     },
-    "analysis_raw_data": {
-        "message": "données brutes"
+    "analysis_raw": {
+        "message": "brut"
     },
     "analysis_graphs": {
         "message": "graphiques"
@@ -247,6 +253,10 @@
     },
     "analysis_peak_np": {
         "message": "NP® Apogée",
+        "description": "IMMUTABLE"
+    },
+    "analysis_peak_xp": {
+        "message": "xPower Apogée",
         "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
