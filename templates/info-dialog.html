@@ -1,0 +1,140 @@
+<row class="sauce-sparkline"></row>
+<row title="{{{start_of_effort_tooltip}}}">
+    <key>{{{start_of_effort}}}</key>
+    <value><a class="start_time_link">{{startsAt}}</a></value>
+</row>
+
+<% if (obj.power) { %>
+    <row class="multi-entry">
+        <header>{{{power}}} / Biomechanics:</header>
+
+        <% if (power.elapsedWKg) { %>
+            <row title="{{{wkg_tooltip}}}">
+                <key>{{{Watts}}}/kg</key>
+                <value class="rank-holder">
+                    {{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}
+                    <% if (power.rank && power.rank.badge && !power.estimate) { %>
+                        <img src="{{power.rank.badge}}" class="sauce-rank"
+                             title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 0)}}%"/>
+                    <% } %>
+                </value>
+            </row>
+        <% } %>
+
+        <row title="{{{elapsed_power_tooltip}}}">
+            <key>Average</key>
+            <value>
+                {{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedAvg, 0)}}<abbr class="unit short">w</abbr>
+                <% if (!power.estimate) { %>
+                    <sup class="sauce-positive" title="{{{max_power_tooltip}}}">
+                        {{formatNumber(power.max, 0)}}
+                    </sup>
+                <% } %>
+            </value>
+        </row>
+
+        <% if (power.np && !power.estimate) { %>
+            <row title="{{{np_tooltip}}}">
+                <key>NP®</key>
+                <value>{{formatNumber(power.np, 0)}}<abbr class="unit short">w</abbr></value>
+            </row>
+        <% } %>
+
+        <% if (power.xp && !power.estimate) { %>
+            <row title="{{{xp_tooltip}}}">
+                <key>xPower</key>
+                <value>{{formatNumber(power.xp, 0)}}<abbr class="unit short">w</abbr></value>
+            </row>
+        <% } %>
+
+        <% if (power.elapsedSP) { %>
+            <row title="{{{sp_tooltip}}}">
+                <key>{{{sea_power}}}</key>
+                <value>
+                    {{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr>
+                    <sup class="sauce-positive"
+                         title="{{{sp_adjust_tooltip}}}">+{{formatNumber((power.elapsedSPAdjust - 1) * 100, 1)}}%</sup>
+                </value>
+            </row>
+        <% } %>
+
+        <% if (obj.cadence) { %>
+            <row title="{{{cycling_cadence_tooltip}}}">
+                <key>{{{cadence}}}</key>
+                <value>{{cadence}}<abbr class="unit short">{{cadenceUnit}}</abbr>
+            </row>
+        <% } %>
+    </row>
+<% } %>
+
+<% if (obj.hr) { %>
+    <row class="multi-entry">
+        <header>{{{heartrate}}}:</header>
+        <row>
+            <key>Average</key>
+            <value>{{hr.avg}}<abbr class="unit short">{{hrUnit}}</abbr></value>
+        </row>
+        <row>
+            <key>Lowest</key>
+            <value class="sauce-positive" title="{{{low_hr_tooltip}}}">{{hr.min}}<abbr class="unit short">{{hrUnit}}</abbr></value>
+        </row>
+        <row>
+            <key>Highest</key>
+            <value class="sauce-negative" title="{{{high_hr_tooltip}}}">{{hr.max}}<abbr class="unit short">{{hrUnit}}</abbr></value>
+        </row>
+    </row>
+<% } %>
+
+
+<% if (obj.pace) { %>
+    <row class="multi-entry">
+        <header>{{{speed}}}:</header>
+        <row>
+            <key>Avg</key>
+            <value>{{pace.avg}}<abbr class="unit short">{{paceUnit}}</abbr></value>
+        </row>
+        <row>
+            <key>Max</key>
+            <value class="sauce-positive"i
+                   title="{{{high_speed_tooltip}}}">{{pace.max}}<abbr class="unit short">{{paceUnit}}</abbr></value>
+        </row>
+    </row>
+<% } %>
+
+<% if (obj.elevation) { %>
+    <row class="multi-entry">
+        <header>Environment</header>
+        <row>
+            <key>{{{elevation}}} (avg)</key>
+            <value>{{elevation.avg}}<abbr class="unit short">{{elevationUnit}}</abbr></value>
+        </row>
+
+        <row>
+            <key>Climbed</key>
+            <value class="sauce-positive" title="{{{elevation_gain_tooltip}}}">
+                    {{elevation.gain}}<abbr class="unit short">{{elevationUnit}}</abbr>
+            </value>
+        </row>
+
+        <row>
+            <key>Descended</key>
+            <value class="sauce-negative" title="{{{elevation_loss_tooltip}}}">
+                    {{elevation.loss}}<abbr class="unit short">{{elevationUnit}}</abbr>
+            </value>
+        </row>
+
+        <row>
+            <key>{{{grade}}}</key>
+            <value title="{{{grade_tooltip}}}">
+                {{formatNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
+            </value>
+        </row>
+
+        <% if (elevation.vam && elevation.vam > 0) { %>
+            <row title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
+                <key>VAM</key>
+                <value>{{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr></value>
+            </row>
+        <% } %>
+    </row>
+<% } %>

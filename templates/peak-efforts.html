@@ -33,6 +33,9 @@
                 data-end-time="{{row.endTime}}"
                 data-wall-start-time="{{row.wallStartTime}}"
                 data-wall-end-time="{{row.wallEndTime}}"
+                <% if (obj.distanceRange) { %>
+                    data-distance-range="true"
+                <% } %>
                 style="{{row.style}}">
                 <td>{-row.rangeLabel-}</td>
                 <td>{{row.value}}<% if (row.unit) { %><abbr class="unit short">{{row.unit}}</abbr><% } %></td>

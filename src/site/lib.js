@@ -394,7 +394,8 @@ sauce.ns('data', function() {
         avg(options) {
             options = options || {};
             if (options.active) {
-                return this._sum / (this._values.length - this._offt - (this._zeros || 0));
+                const count = (this._values.length - this._offt - (this._zeros || 0));
+                return count ? this._sum / count : 0;
             } else {
                 if (this._ignoreZeros) {
                     throw new TypeError("Elasped avg unsupported when ignoreZeros=true");

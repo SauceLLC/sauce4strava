@@ -4,7 +4,120 @@ sauce.ns('trailforks', ns => {
     'use strict';
 
     const tfCache = new sauce.cache.TTLCache('trailforks', 43200 * 1000);
- 
+
+    const difficulties = {
+        1: {
+            title: 'Access Road/Trail',
+            icon: 'road-duotone',
+            class: 'road'
+        },
+        2: {
+            title: 'Easiest / White Circle',
+            image: 'white-150x150.png'
+        },
+        3: {
+            title: 'Easy / Green Circle',
+            image: 'green-150x150.png'
+        },
+        4: {
+            title: 'Intermediate / Blue Square',
+            image: 'blue-150x150.png'
+        },
+        5: {
+            title: 'Very Difficult / Black Diamond',
+            image: 'black-150x150.png'
+        },
+        6: {
+            title: 'Extremely Difficult / Double Black Diamond',
+            image: 'double-black-150x150.png'
+        },
+        7: {
+            title: 'Secondary Access Road/Trail',
+            icon: 'road-duotone',
+            class: 'road'
+        },
+        8: {
+            title: 'Extremely Dangerous / Pros Only',
+            image: 'pro-only-150x150.png'
+        },
+        11: {
+            title: 'Advanced: Grade 4',
+            image: 'black-150x150.png'
+        },
+    };
+
+    const conditions = {
+        // 0 = Unknown
+        1: {
+            title: "Snow Packed",
+            class: "snow",
+            icon: 'icicles-duotone'
+        },
+        2: {
+            title: "Prevalent Mud",
+            class: "mud",
+            icon: 'water-duotone'
+        },
+        3: {
+            title: "Wet",
+            class: "wet",
+            icon: 'umbrella-duotone'
+        },
+        // 4 = Variable
+        5: {
+            title: "Dry",
+            class: "dry",
+            icon: 'heat-duotone'
+        },
+        6: {
+            title: "Very Dry",
+            class: "very-dry",
+            icon: 'temperature-hot-duotone'
+        },
+        7: {
+            title: "Snow Covered",
+            class: "snow",
+            icon: 'snowflake-duotone'
+        },
+        8: {
+            title: "Freeze/thaw Cycle",
+            class: "icy",
+            icon: 'icicles-duotone'
+        },
+        9: {
+            title: "Icy",
+            class: "icy",
+            icon: 'icicles-duotone'
+        },
+        10: {
+            title: "Snow Groomed",
+            class: "snow",
+            icon: 'snowflake-duotone'
+        },
+        11: {
+            title: "Ideal",
+            class: "ideal",
+            icon: 'thumbs-up-duotone'
+        },
+    };
+
+    const statuses = {
+        // 1: {title: "All Clear", class: "clear"},
+        2: {
+            title: "Minor Issue",
+            class: "minor-issue"
+        },
+        3: {
+            title: "Significant Issue",
+            class: "significant-issue"
+        },
+        4: {
+            title: "Closed",
+            class: "closed"
+        },
+    };
+
+
     function *middleOutIter(data, start) {
         const len = data.length;
         let count = 0;
@@ -19,6 +132,18 @@ sauce.ns('trailforks', ns => {
             }
             yield [data[idx], idx];
         }
+    }
+
+
+    function lookupEnums(trail) {
+        if (!trail) {
+            return trail;
+        }
+        return Object.assign({
+            statusInfo: statuses[trail.status],
+            conditionInfo: conditions[trail.condition],
+            difficultyInfo: difficulties[trail.difficulty],
+        }, trail);
     }
 
 
@@ -59,7 +184,7 @@ sauce.ns('trailforks', ns => {
                 }
                 await tfCache.set(trailKey, data);
             }
-            return data.data;
+            return lookupEnums(data.data);
         }));
         /*return data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail').map(x => {
             // Make data look more like the official api
@@ -99,7 +224,7 @@ sauce.ns('trailforks', ns => {
             }
             if (data.data && data.data.length) {
                 for (const x of data.data) {
-                    trails.push(x);
+                    trails.push(lookupEnums(x));
                 }
             } else {
                 break;

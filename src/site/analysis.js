@@ -3,33 +3,6 @@
 sauce.ns('analysis', ns => {
     'use strict';
 
-    const commonStreams = [
-        'time', 'timer_time', 'heartrate', 'altitude', 'distance', 'moving',
-        'grade_smooth', 'velocity_smooth', 'cadence'
-    ];
-    const manifests = {
-        'Ride': {
-            start: startRideActivity,
-            streams: new Set(commonStreams.concat(['watts', 'watts_calc'])),
-        },
-        'Run': {
-            start: startRunActivity,
-            streams: new Set(commonStreams.concat(['watts', 'grade_adjusted_distance'])),
-        },
-        'Swim': {
-            start: startSwimActivity,
-            streams: new Set(commonStreams),
-        },
-        'Other': {
-            start: startOtherActivity,
-            streams: new Set(commonStreams.concat(['watts'])),
-        },
-        'StationaryOther': {
-            start: startOtherActivity,
-            streams: new Set(commonStreams.concat(['watts'])),
-        }
-    };
-
     let _resolvePrepared;
     const ctx = {
         ready: false,
@@ -80,6 +53,12 @@ sauce.ns('analysis', ns => {
         {value: Math.round(metersPerMile * 100)},
         {value: 200000},
     ];
+    const prefetchStreams = [
+        'time', 'heartrate', 'altitude', 'distance', 'moving',
+        'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
+        'grade_adjusted_distance'
+    ];
+
 
     let _fullActivity;
     async function fetchFullActivity() {
@@ -440,17 +419,16 @@ sauce.ns('analysis', ns => {
 
 
     class PeakEffortsPanel {
-        constructor({type, menu, renderAttrs, infoDialog}) {
+        constructor({menu, renderAttrs}) {
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
-            this.type = type;
             this.menu = menu;
-            this.sourceKey = `${type}_source`;
+            this.sourceKey = `${ctx.activityType}_source`;
             this.renderAttrs = renderAttrs;
             this.$el.on('click', '.group tr[data-range-value]', async ev => {
                 ev.stopPropagation();  // prevent click-away detection from closing dialog.
                 const row = ev.currentTarget;
                 try {
-                    await infoDialog({
+                    await showInfoDialog({
                         startTime: Number(row.dataset.startTime),
                         endTime: Number(row.dataset.endTime),
                         wallStartTime: Number(row.dataset.wallStartTime),
@@ -458,7 +436,8 @@ sauce.ns('analysis', ns => {
                         label: row.dataset.rangeLabel,
                         icon: row.dataset.rangeIcon,
                         source: this._selectedSource,
-                        originEl: row
+                        originEl: row,
+                        distanceRange: row.dataset.distanceRange,
                     });
                 } catch (e) {
                     sauce.rpc.reportError(e);
@@ -627,21 +606,16 @@ sauce.ns('analysis', ns => {
 
 
     async function assignTrailforksToSegments() {
-        if (!sauce.options['analysis-disable-trailforks']) {
+        if (sauce.options['analysis-disable-trailforks']) {
             return;
         }
-        console.warn('tfpre', performance.now());
         const latlngStream = await fetchStream('latlng');
         const distStream = await fetchStream('distance');
         if (!latlngStream || !latlngStream.length || !distStream || !distStream.length) {
             return;
         }
-        console.warn('tfstart', performance.now());
-        let tfIntersections;
-        //tfIntersections = await sauce.trailforks.intersections(latlngStream, distStream);
-        //const tfIntersections = await sauce.workerClient.call('trailforksIntersections', latlngStream, distStream);
-        tfIntersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
-        console.warn('tfready', performance.now());
+        //const tfIntersections = await sauce.trailforks.intersections(latlngStream, distStream);
+        const tfIntersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
         for (const segment of pageView.segmentEfforts().models) {
             const tfMatches = [];
             const [start, end] = pageView.chartContext().convertStreamIndices(segment.indices());
@@ -664,45 +638,54 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function startRideActivity() {
+    async function startActivity() {
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
-        const distStream = await fetchStream('distance');
-        const cadenceStream = await fetchStream('cadence');
         const altStream = await fetchSmoothStream('altitude');
+        const distStream = await fetchStream('distance');
+        const gradeDistStream = distStream && await fetchGradeDistStream();
+        const cadenceStream = await fetchStream('cadence');
+        const activeTime = await getActiveTime();
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
         const isWattEstimate = !realWattsStream;
         let wattsStream = realWattsStream;
         if (!wattsStream) {
-            wattsStream = await fetchStream('watts_calc');
-            if (!wattsStream) {
-                console.info('No power data for this activity.');
+            if (ctx.activityType === 'run') {
+                if (ctx.weight && gradeDistStream) {
+                    wattsStream = [0];
+                    for (let i = 1; i < gradeDistStream.length; i++) {
+                        const dist = gradeDistStream[i] - gradeDistStream[i - 1];
+                        const time = timeStream[i] - timeStream[i - 1];
+                        const kj = sauce.pace.work(ctx.weight, dist);
+                        wattsStream.push(kj * 1000 / time);
+                    }
+                    pageView.streams().streamData.add('watts_calc', wattsStream);
+                }
+            } else {
+                wattsStream = await fetchStream('watts_calc');
             }
         }
-        let tss;
-        let np;
-        let xp;
-        let intensity;
+        let tss, np, intensity, power;
         if (wattsStream) {
             if (supportsSeaPower()) {
                 makeWattsSeaLevelStream(wattsStream, altStream);
             }
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            np = corrected && supportsNP() && corrected.np();
-            xp = corrected && supportsXP() && corrected.xp();
-            if (corrected && ctx.ftp) {
-                if (np) {
-                    // Calculate TSS based on elapsed time when NP is being used.
-                    tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
-                    intensity = np / ctx.ftp;
-                } else {
-                    // Calculate TSS based on active time when just avg is available.
-                    const activeTime = await getActiveTime();
-                    const power = corrected.kj() * 1000 / activeTime;
-                    tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
-                    intensity = power / ctx.ftp;
+            if (corrected) {
+                power = corrected.kj() * 1000 / activeTime;
+                np = supportsWeightedPower() ? corrected.np() : null;
+                if (ctx.ftp) {
+                    if (np) {
+                        // Calculate TSS based on elapsed time when NP is being used.
+                        tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
+                        intensity = np / ctx.ftp;
+                    } else {
+                        // Calculate TSS based on active time when just avg is available.
+                        tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
+                        intensity = power / ctx.ftp;
+                    }
                 }
             }
         }
@@ -717,13 +700,13 @@ sauce.ns('analysis', ns => {
             intensity,
             tss,
             np,
-            xp,
+            power, // XXX Keys a run activity, validate template handling of this (fallback from no np?)
         }).catch(sauce.rpc.reportError);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
                 menu.push('peak_power');
-                if (!isWattEstimate) {
+                if (!isWattEstimate && supportsWeightedPower()) {
                     menu.push('peak_np');
                     menu.push('peak_xp');
                 }
@@ -732,7 +715,14 @@ sauce.ns('analysis', ns => {
                 }
             }
             if (distStream) {
-                menu.push('peak_pace');
+                if (gradeDistStream) {
+                    menu.unshift('peak_gap');  // At top because its a run
+                }
+                if (ctx.activityType === 'run' || ctx.activityType === 'swim') {
+                    menu.unshift('peak_pace');  // Place at top (above gap too)
+                } else {
+                    menu.push('peak_pace');
+                }
             }
             if (hrStream) {
                 menu.push('peak_hr');
@@ -747,9 +737,7 @@ sauce.ns('analysis', ns => {
                 return;
             }
             const panel = new PeakEffortsPanel({
-                type: 'ride',
                 menu,
-                infoDialog: rideInfoDialog,
                 renderAttrs: async source => {
                     let rows;
                     const attrs = {};
@@ -765,6 +753,10 @@ sauce.ns('analysis', ns => {
                         rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
                     } else if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
+                        attrs.distanceRange = true;
+                    } else if (source === 'peak_gap') {
+                        rows = paceVelocityRangesToRows(distRanges, timeStream, gradeDistStream);
+                        attrs.distanceRange = true;
                     } else if (source === 'peak_np' || source === 'peak_xp') {
                         const calcs = {
                             peak_np: {peakSearch: sauce.power.peakNP, rollMethod: 'np'},
@@ -774,8 +766,8 @@ sauce.ns('analysis', ns => {
                         for (const range of periodRanges.filter(x => x.value >= minPowerPotentialTime)) {
                             const roll = calcs.peakSearch(range.value, timeStream, wattsStream);
                             // Use external NP/XP method for consistency.  There are tiny differences because
-                            // the peak functions use a continous rolling avg vs the external method that
-                            // only examines the trimmed dateset.
+                            // the peak functions use a continuous rolling avg vs the external method that
+                            // only examines the trimmed date set.
                             const power = roll && roll[calcs.rollMethod].call(roll, {external: true});
                             if (power) {
                                 const value = humanNumber(power);
@@ -802,267 +794,6 @@ sauce.ns('analysis', ns => {
         sameness = sameness || 0.01;
         const delta = Math.abs(a - b);
         return delta < sameness;
-    }
-
-
-    async function startSwimActivity() {
-        const timeStream = await fetchStream('time');
-        const hrStream = await fetchStream('heartrate');
-        const distStream = await fetchStream('distance');
-        const cadenceStream = await fetchStream('cadence');
-        const elapsedTime = streamDelta(timeStream);
-        const distance = streamDelta(distStream);
-        renderTertiaryStats({
-            weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
-            weightUnit: ctx.weightFormatter.shortUnitKey(),
-            weightNorm: humanWeight(ctx.weight),
-            weightOrigin: ctx.weightOrigin,
-        }).catch(sauce.rpc.reportError);
-        if (sauce.options['analysis-cp-chart']) {
-            const menu = [/*locale keys*/];
-            if (distStream) {
-                menu.push('peak_pace');
-            }
-            if (hrStream) {
-                menu.push('peak_hr');
-            }
-            if (cadenceStream) {
-                menu.push('peak_cadence');
-            }
-            if (!menu.length) {
-                return;
-            }
-            const panel = new PeakEffortsPanel({
-                type: 'swim',
-                menu,
-                infoDialog: swimInfoDialog,
-                renderAttrs: async source => {
-                    const activity = pageView.activity();
-                    const periodRanges = filterPeriodRanges(elapsedTime, activity);
-                    const distRanges = filterDistRanges(distance, activity);
-                    let rows;
-                    if (source === 'peak_pace') {
-                        rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
-                    } else if (source === 'peak_hr') {
-                        rows = hrRangesToRows(periodRanges, timeStream, hrStream);
-                    } else if (source === 'peak_cadence') {
-                        rows = cadenceRangesToRows(periodRanges, timeStream, cadenceStream);
-                    }
-                    return {rows};
-                }
-            });
-            attachInfo(panel.$el);
-            await panel.render();
-        }
-    }
-
-
-    async function startOtherActivity() {
-        const realWattsStream = await fetchStream('watts');
-        const activeTime = await getActiveTime();
-        const timeStream = await fetchStream('time');
-        const hrStream = await fetchStream('heartrate');
-        const altStream = await fetchSmoothStream('altitude');
-        const distStream = await fetchStream('distance');
-        const cadenceStream = await fetchStream('cadence');
-        const elapsedTime = streamDelta(timeStream);
-        const distance = streamDelta(distStream);
-        const isWattEstimate = !realWattsStream;
-        let wattsStream = realWattsStream;
-        if (!wattsStream) {
-            wattsStream = await fetchStream('watts_calc');
-        }
-        let power;
-        if (wattsStream) {
-            if (supportsSeaPower()) {
-                makeWattsSeaLevelStream(wattsStream, altStream);
-            }
-            const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            power = corrected && corrected.kj() * 1000 / activeTime;
-        }
-        let tss;
-        let intensity;
-        if (power && ctx.ftp) {
-            tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
-            intensity = power / ctx.ftp;
-        }
-        renderTertiaryStats({
-            weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
-            weightUnit: ctx.weightFormatter.shortUnitKey(),
-            weightNorm: humanWeight(ctx.weight),
-            weightOrigin: ctx.weightOrigin,
-            ftp: ctx.ftp,
-            ftpOrigin: ctx.ftpOrigin,
-            intensity,
-            tss,
-            power,
-        }).catch(sauce.rpc.reportError);
-        if (sauce.options['analysis-cp-chart']) {
-            const menu = [/*locale keys*/];
-            if (wattsStream) {
-                menu.push('peak_power');
-                if (supportsSeaPower()) {
-                    menu.push('peak_sp');
-                }
-            }
-            if (distStream) {
-                menu.push('peak_pace');
-            }
-            if (hrStream) {
-                menu.push('peak_hr');
-            }
-            if (cadenceStream) {
-                menu.push('peak_cadence');
-            }
-            if (altStream) {
-                menu.push('peak_vam');
-            }
-            if (!menu.length) {
-                return;
-            }
-            const panel = new PeakEffortsPanel({
-                type: 'other',
-                menu,
-                infoDialog: otherInfoDialog,
-                renderAttrs: async source => {
-                    const activity = pageView.activity();
-                    const periodRanges = filterPeriodRanges(elapsedTime, activity);
-                    const distRanges = filterDistRanges(distance, activity);
-                    let rows;
-                    const attrs = {};
-                    if (source === 'peak_pace') {
-                        rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
-                    } else if (source === 'peak_power') {
-                        attrs.isWattEstimate = isWattEstimate;
-                        rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
-                    } else if (source === 'peak_sp') {
-                        attrs.isWattEstimate = isWattEstimate;
-                        const spStream = await fetchStream('watts_sealevel');
-                        rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
-                    } else if (source === 'peak_hr') {
-                        rows = hrRangesToRows(periodRanges, timeStream, hrStream);
-                    } else if (source === 'peak_cadence') {
-                        rows = cadenceRangesToRows(periodRanges, timeStream, cadenceStream);
-                    } else if (source === 'peak_vam') {
-                        rows = vamRangesToRows(periodRanges, timeStream, altStream);
-                    }
-                    return Object.assign(attrs, {rows});
-                }
-            });
-            attachInfo(panel.$el);
-            await panel.render();
-        }
-    }
-
-
-    async function startRunActivity() {
-        let wattsStream = await fetchStream('watts');
-        const activeTime = await getActiveTime();
-        const timeStream = await fetchStream('time');
-        const hrStream = await fetchStream('heartrate');
-        const altStream = await fetchSmoothStream('altitude');
-        const distStream = await fetchStream('distance');
-        const cadenceStream = await fetchStream('cadence');
-        const gradeDistStream = distStream && await fetchGradeDistStream();
-        const elapsedTime = streamDelta(timeStream);
-        const distance = streamDelta(distStream);
-        const isWattEstimate = !wattsStream;
-        let power;
-        if (!wattsStream && ctx.weight && gradeDistStream) {
-            wattsStream = [0];
-            for (let i = 1; i < gradeDistStream.length; i++) {
-                const dist = gradeDistStream[i] - gradeDistStream[i - 1];
-                const time = timeStream[i] - timeStream[i - 1];
-                const kj = sauce.pace.work(ctx.weight, dist);
-                wattsStream.push(kj * 1000 / time);
-            }
-            pageView.streams().streamData.add('watts_calc', wattsStream);
-        }
-        if (wattsStream) {
-            if (supportsSeaPower()) {
-                makeWattsSeaLevelStream(wattsStream, altStream);
-            }
-            const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            power = corrected && corrected.kj() * 1000 / activeTime;
-        }
-        let tss;
-        let intensity;
-        if (power && ctx.ftp) {
-            tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
-            intensity = power / ctx.ftp;
-        }
-        assignTrailforksToSegments().catch(sauce.rpc.reportError);
-        renderTertiaryStats({
-            weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
-            weightUnit: ctx.weightFormatter.shortUnitKey(),
-            weightNorm: humanWeight(ctx.weight),
-            weightOrigin: ctx.weightOrigin,
-            ftp: ctx.ftp,
-            ftpOrigin: ctx.ftpOrigin,
-            intensity,
-            tss,
-            power
-        }).catch(sauce.rpc.reportError);
-        if (sauce.options['analysis-cp-chart']) {
-            const menu = [/*locale keys*/];
-            if (distStream) {
-                menu.push('peak_pace');
-            }
-            if (gradeDistStream) {
-                menu.push('peak_gap');
-            }
-            if (wattsStream) {
-                menu.push('peak_power');
-                if (supportsSeaPower()) {
-                    menu.push('peak_sp');
-                }
-            }
-            if (hrStream) {
-                menu.push('peak_hr');
-            }
-            if (cadenceStream) {
-                menu.push('peak_cadence');
-            }
-            if (altStream) {
-                menu.push('peak_vam');
-            }
-            if (!menu.length) {
-                return;
-            }
-            const panel = new PeakEffortsPanel({
-                type: 'run',
-                menu,
-                infoDialog: runInfoDialog,
-                renderAttrs: async source => {
-                    const activity = pageView.activity();
-                    const periodRanges = filterPeriodRanges(elapsedTime, activity);
-                    const distRanges = filterDistRanges(distance, activity);
-                    let rows;
-                    const attrs = {};
-                    if (source === 'peak_pace') {
-                        rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
-                    } else if (source === 'peak_gap') {
-                        rows = paceVelocityRangesToRows(distRanges, timeStream, gradeDistStream);
-                    } else if (source === 'peak_power') {
-                        attrs.isWattEstimate = isWattEstimate;
-                        rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
-                    } else if (source === 'peak_sp') {
-                        attrs.isWattEstimate = isWattEstimate;
-                        const spStream = await fetchStream('watts_sealevel');
-                        rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
-                    } else if (source === 'peak_hr') {
-                        rows = hrRangesToRows(periodRanges, timeStream, hrStream);
-                    } else if (source === 'peak_cadence') {
-                        rows = cadenceRangesToRows(periodRanges, timeStream, cadenceStream);
-                    } else if (source === 'peak_vam') {
-                        rows = vamRangesToRows(periodRanges, timeStream, altStream);
-                    }
-                    return Object.assign(attrs, {rows});
-                }
-            });
-            attachInfo(panel.$el);
-            await panel.render();
-        }
     }
 
 
@@ -1319,7 +1050,7 @@ sauce.ns('analysis', ns => {
 
     async function fetchGradeDistStream(options) {
         options = options || {};
-        if (!pageView.activity().isRun()) {
+        if (!ctx.activityType !== 'run') {
             return;
         }
         if (options.startTime != null && options.endTime != null) {
@@ -1373,8 +1104,16 @@ sauce.ns('analysis', ns => {
     }
 
 
-    // XXX more DRY...
-    async function rideInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
+    async function showInfoDialog({
+        startTime,
+        endTime,
+        wallStartTime,
+        wallEndTime,
+        label,
+        source,
+        originEl,
+        distanceRange
+    }) {
         const elapsedTime = wallEndTime - wallStartTime;
         const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
@@ -1384,20 +1123,27 @@ sauce.ns('analysis', ns => {
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const distance = streamDelta(distStream);
+        let gap, gradeDistStream;
+        if (ctx.activityType === 'run') {
+            gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
+            gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
+        }
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
-        const template = await getTemplate('ride-info-dialog.html');
+        const template = await getTemplate('info-dialog.html');
         const body = await template({
             startsAt: humanTime(wallStartTime),
+            elapsed: humanTime(elapsedTime),
             power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
                 max: sauce.data.max(correctedPower.values()),
-                np: correctedPower.np(),
-                xp: correctedPower.xp(),
+                np: ctx.activityType === 'ride' ? correctedPower.np() : null,
+                xp: ctx.activityType === 'ride' ? correctedPower.xp() : null,
                 estimate: correctedPower.isEstimate
             }),
             pace: distance && {
                 avg: humanPace(distance / elapsedTime, {velocity: true}),
                 max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
+                gap: gap && humanPace(gap, {velocity: true}),
             },
             hr: hrInfo(hrStream),
             hrUnit: ctx.hrFormatter.shortUnitKey(),
@@ -1416,6 +1162,7 @@ sauce.ns('analysis', ns => {
             originEl,
             start: startTime,
             end: endTime,
+            distanceRange,
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
         if (source === 'peak_power' || source === 'peak_np' || source === 'peak_xp') {
@@ -1429,93 +1176,19 @@ sauce.ns('analysis', ns => {
                 {stream: 'watts_sealevel'});
             await infoDialogGraph($sparkline, {
                 data: correctedSP.values(),
-                formatter: x => `~${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
+                formatter: x => `${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
                 colorSteps: [0, 100, 400, 1200]
             });
         } else if (source === 'peak_pace') {
             await infoDialogGraph($sparkline, {
                 data: velocityStream,
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
-                colorSteps: [4, 12, 20, 28]
-            });
-        } else if (source === 'peak_hr') {
-            const unit = ctx.hrFormatter.shortUnitKey();
-            await infoDialogGraph($sparkline, {
-                data: hrStream,
-                formatter: x => `${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
-                colorSteps: [40, 100, 150, 200]
-            });
-        } else if (source === 'peak_cadence') {
-            const unit = ctx.cadenceFormatter.shortUnitKey();
-            const format = x => ctx.cadenceFormatter.format(x);
-            await infoDialogGraph($sparkline, {
-                data: cadenceStream,
-                formatter: x => `${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                colorSteps: [40, 80, 120, 150]
-            });
-        } else if (source === 'peak_vam') {
-            await infoDialogGraph($sparkline, {
-                data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
-                formatter: x => `${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
-                colorSteps: [-500, 500, 1000, 2000]
-            });
-        }
-        return $dialog;
-    }
-
-
-    // XXX more DRY...
-    async function runInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
-        const elapsedTime = wallEndTime - wallStartTime;
-        const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
-        const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
-        const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
-        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
-        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
-        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
-        const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
-        const gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
-        const heading = await sauce.locale.getMessage(`analysis_${source}`);
-        const textLabel = jQuery(`<div>${label}</div>`).text();
-        const gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
-        const template = await getTemplate('run-info-dialog.html');
-        const distance = streamDelta(distStream);
-        const body = await template({
-            startsAt: humanTime(wallStartTime),
-            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
-                max: sauce.data.max(correctedPower.values()),
-                estimate: correctedPower.isEstimate
-            }),
-            pace: distance && {
-                avg: humanPace(distance / elapsedTime, {velocity: true}),
-                max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
-                gap: gap && humanPace(gap, {velocity: true}),
-            },
-            elapsed: humanTime(elapsedTime),
-            hr: hrInfo(hrStream),
-            hrUnit: ctx.hrFormatter.shortUnitKey(),
-            cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
-            cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
-            elevation: elevationData(altStream, elapsedTime, distance),
-            elevationUnit: ctx.elevationFormatter.shortUnitKey(),
-            paceUnit: ctx.paceFormatter.shortUnitKey(),
-            source,
-        });
-        const $dialog = await createInfoDialog({
-            heading,
-            textLabel,
-            source,
-            body,
-            originEl,
-            start: startTime,
-            end: endTime
-        });
-        const $sparkline = $dialog.find('.sauce-sparkline');
-        if (source === 'peak_pace') {
-            await infoDialogGraph($sparkline, {
-                data: velocityStream,
-                formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
-                colorSteps: [0.5, 2, 5, 10]
+                colorSteps: {
+                    ride: [4, 12, 20, 28],
+                    run: [0.5, 2, 5, 10],
+                    swim: [0.5, 0.85, 1.1, 1.75],
+                    other: [0.5, 10, 15, 30],
+                }[ctx.activityType]
             });
         } else if (source === 'peak_gap') {
             const gradeVelocity = [];
@@ -1529,20 +1202,6 @@ sauce.ns('analysis', ns => {
                 formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
                 colorSteps: [0.5, 2, 5, 10]
             });
-        } else if (source === 'peak_power') {
-            await infoDialogGraph($sparkline, {
-                data: correctedPower.values(),
-                formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
-                colorSteps: [0, 100, 400, 1200]
-            });
-        } else if (source === 'peak_sp') {
-            const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
-                {stream: 'watts_sealevel'});
-            await infoDialogGraph($sparkline, {
-                data: correctedSP.values(),
-                formatter: x => `~${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
-                colorSteps: [0, 100, 400, 1200]
-            });
         } else if (source === 'peak_hr') {
             const unit = ctx.hrFormatter.shortUnitKey();
             await infoDialogGraph($sparkline, {
@@ -1556,158 +1215,12 @@ sauce.ns('analysis', ns => {
             await infoDialogGraph($sparkline, {
                 data: cadenceStream,
                 formatter: x => `${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                colorSteps: [50, 80, 90, 100]
-            });
-        } else if (source === 'peak_vam') {
-            await infoDialogGraph($sparkline, {
-                data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
-                formatter: x => `${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
-                colorSteps: [-500, 500, 1000, 2000]
-            });
-        }
-        return $dialog;
-    }
-
-
-    // XXX more DRY...
-    async function swimInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
-        const elapsedTime = wallEndTime - wallStartTime;
-        const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
-        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
-        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
-        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
-        const distance = streamDelta(distStream);
-        const heading = await sauce.locale.getMessage(`analysis_${source}`);
-        const textLabel = jQuery(`<div>${label}</div>`).text();
-        const template = await getTemplate('swim-info-dialog.html');
-        const body = await template({
-            startsAt: humanTime(wallStartTime),
-            pace: distance && {
-                avg: humanPace(distance / elapsedTime, {velocity: true}),
-                max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
-            },
-            elapsed: humanTime(elapsedTime),
-            hr: hrInfo(hrStream),
-            hrUnit: ctx.hrFormatter.shortUnitKey(),
-            cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
-            cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
-            paceUnit: ctx.paceFormatter.shortUnitKey(),
-            source,
-        });
-        const $dialog = await createInfoDialog({
-            heading,
-            textLabel,
-            source,
-            body,
-            originEl,
-            start: startTime,
-            end: endTime
-        });
-        const $sparkline = $dialog.find('.sauce-sparkline');
-        if (source === 'peak_pace') {
-            await infoDialogGraph($sparkline, {
-                data: velocityStream,
-                formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
-                colorSteps: [0.5, 0.85, 1.1, 1.75]
-            });
-        } else if (source === 'peak_hr') {
-            const unit = ctx.hrFormatter.shortUnitKey();
-            await infoDialogGraph($sparkline, {
-                data: hrStream,
-                formatter: x => `${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
-                colorSteps: [40, 100, 150, 200]
-            });
-        } else if (source === 'peak_cadence') {
-            const unit = ctx.cadenceFormatter.shortUnitKey();
-            const format = x => ctx.cadenceFormatter.format(x);
-            await infoDialogGraph($sparkline, {
-                data: cadenceStream,
-                formatter: x => `${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                colorSteps: [20, 25, 30, 35]
-            });
-        }
-        return $dialog;
-    }
-
-
-    // XXX more DRY...
-    async function otherInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source, originEl}) {
-        const elapsedTime = wallEndTime - wallStartTime;
-        const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
-        const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
-        const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
-        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
-        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
-        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
-        const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
-        const distance = streamDelta(distStream);
-        const heading = await sauce.locale.getMessage(`analysis_${source}`);
-        const textLabel = jQuery(`<div>${label}</div>`).text();
-        const template = await getTemplate('other-info-dialog.html');
-        const body = await template({
-            startsAt: humanTime(wallStartTime),
-            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
-                max: sauce.data.max(correctedPower.values()),
-                estimate: correctedPower.isEstimate
-            }),
-            pace: distance && {
-                avg: humanPace(distance / elapsedTime, {velocity: true}),
-                max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
-            },
-            elapsed: humanTime(elapsedTime),
-            hr: hrInfo(hrStream),
-            hrUnit: ctx.hrFormatter.shortUnitKey(),
-            cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
-            cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
-            elevation: elevationData(altStream, elapsedTime, streamDelta(distStream)),
-            elevationUnit: ctx.elevationFormatter.shortUnitKey(),
-            paceUnit: ctx.paceFormatter.shortUnitKey(),
-            source,
-        });
-        const $dialog = await createInfoDialog({
-            heading,
-            textLabel,
-            source,
-            body,
-            originEl,
-            start: startTime,
-            end: endTime
-        });
-        const $sparkline = $dialog.find('.sauce-sparkline');
-        if (source === 'peak_pace') {
-            await infoDialogGraph($sparkline, {
-                data: velocityStream,
-                formatter: x => humanPace(x, {velocity: true, html: true, suffix: true}),
-                colorSteps: [0.5, 10, 15, 30]
-            });
-        } else if (source === 'peak_power') {
-            await infoDialogGraph($sparkline, {
-                data: correctedPower.values(),
-                formatter: x => `${humanNumber(x)}<abbr class="unit short">w</abbr>`,
-                colorSteps: [0, 100, 400, 1200]
-            });
-        } else if (source === 'peak_sp') {
-            const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
-                {stream: 'watts_sealevel'});
-            await infoDialogGraph($sparkline, {
-                data: correctedSP.values(),
-                formatter: x => `~${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
-                colorSteps: [0, 100, 400, 1200]
-            });
-        } else if (source === 'peak_hr') {
-            const unit = ctx.hrFormatter.shortUnitKey();
-            await infoDialogGraph($sparkline, {
-                data: hrStream,
-                formatter: x => `${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
-                colorSteps: [40, 100, 150, 200]
-            });
-        } else if (source === 'peak_cadence') {
-            const unit = ctx.cadenceFormatter.shortUnitKey();
-            const format = x => ctx.cadenceFormatter.format(x);
-            await infoDialogGraph($sparkline, {
-                data: cadenceStream,
-                formatter: x => `${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                colorSteps: [10, 50, 100, 160]
+                colorSteps: {
+                    ride: [40, 80, 120, 150],
+                    run: [50, 80, 90, 100],
+                    swim: [20, 25, 30, 35],
+                    other: [10, 50, 100, 160]
+                }[ctx.activityType],
             });
         } else if (source === 'peak_vam') {
             await infoDialogGraph($sparkline, {
@@ -2214,122 +1727,9 @@ sauce.ns('analysis', ns => {
             throw new Error('Trailforks Fail: row query selector failed');
         }
         targetTD.classList.add('sauce-tf-mark');
-        const difficulties = {
-            1: {
-                title: 'Access Road/Trail',
-                icon: 'road-duotone',
-                class: 'road'
-            },
-            2: {
-                title: 'Easiest / White Circle',
-                image: 'white-150x150.png'
-            },
-            3: {
-                title: 'Easy / Green Circle',
-                image: 'green-150x150.png'
-            },
-            4: {
-                title: 'Intermediate / Blue Square',
-                image: 'blue-150x150.png'
-            },
-            5: {
-                title: 'Very Difficult / Black Diamond',
-                image: 'black-150x150.png'
-            },
-            6: {
-                title: 'Extremely Difficult / Double Black Diamond',
-                image: 'double-black-150x150.png'
-            },
-            7: {
-                title: 'Secondary Access Road/Trail',
-                icon: 'road-duotone',
-                class: 'road'
-            },
-            8: {
-                title: 'Extremely Dangerous / Pros Only',
-                image: 'pro-only-150x150.png'
-            },
-            11: {
-                title: 'Advanced: Grade 4',
-                image: 'black-150x150.png'
-            },
-        };
-        const conditions = {
-            // 0 = Unknown
-            1: {
-                title: "Snow Packed",
-                class: "snow",
-                icon: 'icicles-duotone'
-            },
-            2: {
-                title: "Prevalent Mud",
-                class: "mud",
-                icon: 'water-duotone'
-            },
-            3: {
-                title: "Wet",
-                class: "wet",
-                icon: 'umbrella-duotone'
-            },
-            // 4 = Variable
-            5: {
-                title: "Dry",
-                class: "dry",
-                icon: 'heat-duotone'
-            },
-            6: {
-                title: "Very Dry",
-                class: "very-dry",
-                icon: 'temperature-hot-duotone'
-            },
-            7: {
-                title: "Snow Covered",
-                class: "snow",
-                icon: 'snowflake-duotone'
-            },
-            8: {
-                title: "Freeze/thaw Cycle",
-                class: "icy",
-                icon: 'icicles-duotone'
-            },
-            9: {
-                title: "Icy",
-                class: "icy",
-                icon: 'icicles-duotone'
-            },
-            10: {
-                title: "Snow Groomed",
-                class: "snow",
-                icon: 'snowflake-duotone'
-            },
-            11: {
-                title: "Ideal",
-                class: "ideal",
-                icon: 'thumbs-up-duotone'
-            },
-        };
-        const statuses = {
-            // 1: {title: "All Clear", class: "clear"},
-            2: {
-                title: "Minor Issue",
-                class: "minor-issue"
-            },
-            3: {
-                title: "Significant Issue",
-                class: "significant-issue"
-            },
-            4: {
-                title: "Closed",
-                class: "closed"
-            },
-        };
         const tpl = await getTemplate('tf-info.html');
         for (const x of tfMatches) {
-            const $tf = jQuery(await tpl({
-                difficulty: difficulties[x.trail.difficulty],
-                condition: conditions[x.trail.condition],
-                status: statuses[x.trail.status],
-            }));
+            const $tf = jQuery(await tpl(x.trail));
             $tf.on('click', 'a.report', ev => {
                 ev.stopPropagation();
                 tfWidgetDialog(`Trailforks Report - ${x.trail.title}`, 'trail', {
@@ -2551,18 +1951,8 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function supportsStream(type) {
-        return !!(ctx.manifest && ctx.manifest.streams && ctx.manifest.streams.has(type));
-    }
-
-
-    function supportsNP() {
-        return pageView.activity().isRide() && !!pageView.streams().getStream('watts');
-    }
-
-
-    function supportsXP() {
-        return supportsNP();
+    function supportsWeightedPower() {
+        return ctx.activityType === 'ride' && !!_getStream('watts');
     }
 
 
@@ -2571,8 +1961,7 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const activeTime = await getActiveTime(start, end);
-        const correctedPower = supportsStream('watts') && await correctedPowerTimeRange(
-            getStreamIndexTime(start), getStreamIndexTime(end));
+        const correctedPower = await correctedPowerTimeRange(getStreamIndexTime(start), getStreamIndexTime(end));
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
         const pausedTime = elapsedTime - activeTime;
@@ -2595,8 +1984,8 @@ sauce.ns('analysis', ns => {
         };
         if (correctedPower) {
             const kj = correctedPower.kj();
-            const np = supportsNP() && correctedPower.np();
-            const xp = supportsXP() && correctedPower.xp();
+            const np = supportsWeightedPower() && correctedPower.np();
+            const xp = supportsWeightedPower() && correctedPower.xp();
             tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np, xp});
             let tss;
             let intensity;
@@ -2954,8 +2343,7 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
-        const correctedPower = supportsStream('watts') && await correctedPowerTimeRange(
-            getStreamIndexTime(start), getStreamIndexTime(end));
+        const correctedPower = await correctedPowerTimeRange(getStreamIndexTime(start), getStreamIndexTime(end));
         const origTime = streamDelta(timeStream);
         const origDistance = streamDelta(distStream);
         const origVelocity = origDistance / origTime;
@@ -3343,9 +2731,6 @@ sauce.ns('analysis', ns => {
 
 
     async function load() {
-        console.warn(performance.now());
-        //const workerClient = await sauce.worker.WorkerClient.factory();
-        //sauce.workerClient = workerClient;
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
             attachMobileMenuExpander().catch(sauce.rpc.reportError);
@@ -3361,11 +2746,16 @@ sauce.ns('analysis', ns => {
         const activity = pageView.activity();
         const type = activity.get('type');
         const gaSetTitlePromsie = sauce.rpc.ga('set', 'title', `Sauce Analysis - ${type}`);
-        ctx.manifest = manifests[type];
-        if (ctx.manifest) {
-            if (ctx.manifest.streams) {
-                fetchStreams(Array.from(ctx.manifest.streams)).catch(sauce.rpc.reportError);
-            }
+        ctx.activityType = {
+            'Ride': 'ride',
+            'Run': 'run',
+            'Swim': 'swim',
+            'Other': 'other',
+            'StationaryOther': 'other',
+        }[type];
+        if (ctx.activityType) {
+            // Start network load early..
+            fetchStreams(prefetchStreams).catch(sauce.rpc.reportError);
             const pageRouter = pageView.router();
             pageRouter.on('route', page => {
                 document.body.dataset.route = page;
@@ -3381,7 +2771,7 @@ sauce.ns('analysis', ns => {
                 schedUpdateAnalysisStats(start, end);
             }
             try {
-                await ctx.manifest.start();
+                await startActivity();
             } catch(e) {
                 if (e instanceof ThrottledNetworkError) {
                     attachInfo(jQuery(`

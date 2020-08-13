@@ -110,51 +110,87 @@
         padding: 0 !important;
     }
 
-    .ui-dialog-content table {
-        box-sizing: border-box;
-        margin: 0;
-    }
-
     img.sauce-rank {
-        height: 28px; // XXX no pix
-        margin-top: -7px;  // XXX no pix
-        margin-bottom: -7px;  // XXX no pix
-        margin-left: 1px;  // XXX no pix
     }
 
-    table {
-        sub {
-            vertical-align: sub; // undo override from strava that made this too low
-        }
+    sub {
+        vertical-align: sub; // undo override from strava that made this too low
+    }
 
-        tr:nth-child(odd) {
+    row {
+        display: flex;
+        align-items: center;
+
+        &:nth-child(even) {  // Be sure to use even so the sparkline bg matches the parent el
             background-color: color.shade(bg, 1%);
         }
 
-        td.rank-holder {
-            position: relative;
+        &:not(:last-child):not(:first-child) {
+            border-bottom: 1px solid color.shade(bg, 10%);
         }
 
-        tr:last-child td {
-            border-bottom: 0;
-        }
+        &.multi-entry {
+            flex-direction: column;
+            align-items: normal;
 
-        td {
-            padding: 0.65em 0.15em;
-            width: 50%;
-            text-align: center;
+            header {
+                font-variant: all-small-caps;
+                font-weight: bold;
+                border-color: color.shade(fg, 10%, 0.25);
+                color: color.shade(fg, 20%);
+                margin: 0.3em 1em;;
+                //text-align: center;
+            }
 
-            a {
-                color: #007fb6;
+            row {
+                background-color: transparent;
+                border: none !important;
+
+                key {
+                    font-size: 0.88em;
+                    padding-left: 1.6rem;
+                }
+
+                value {
+                    padding-right: 1.6rem;
+                    font-size: 0.92em;
+                }
+
+                key,
+                value {
+                    padding-top: 0.25rem;
+                    padding-bottom: 0.25rem;
+                }
             }
         }
+    }
 
-        td:first-child {
-            padding-left: 1em;
-        }
+    key {
+        padding-left: 1rem;
+        padding-right: 0.35rem;
+        display: flex;
+        //justify-content: center;
+    }
 
-        td:last-child {
-            padding-right: 1em;
+    value {
+        padding-left: 0.35rem;
+        padding-right: 1rem;
+        display: block;  // avoid flex by default as it breaks inline formatting
+    }
+
+    .rank-holder {
+        display: flex;
+        align-items: center;
+    }
+
+    key,
+    value {
+        flex: 1 1 50%;
+        padding-top: 0.65rem;
+        padding-bottom: 0.65rem;
+
+        a {
+            color: #007fb6;
         }
     }
 }

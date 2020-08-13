@@ -1,26 +1,26 @@
 <div class="sauce-trailforks-info">
     <div class="title">Trailforks:</div>
     <a class="report">
-        <% if (obj.difficulty) { %>
-            <% if (difficulty.image) { %>
-                <img title="{{difficulty.title}} - Click for full report"
-                     class="difficulty {{difficulty.class || ''}}"
-                     src="{{sauce.extUrl}}images/trail_difficulty/{{difficulty.image}}"/>
-            <%  } else if (difficulty.icon) { %>
-                <div title="{{difficulty.title}} - Click for full report"
-                     class="difficulty {{difficulty.class || ''}}"
-                     style="color: {{difficulty.color}};">{-await faIcon(difficulty.icon)-}</div>
+        <% if (obj.difficultyInfo) { %>
+            <% if (difficultyInfo.image) { %>
+                <img title="{{difficultyInfo.title}} - Click for full report"
+                     class="difficulty {{difficultyInfo.class || ''}}"
+                     src="{{sauce.extUrl}}images/trail_difficulty/{{difficultyInfo.image}}"/>
+            <%  } else if (difficultyInfo.icon) { %>
+                <div title="{{difficultyInfo.title}} - Click for full report"
+                     class="difficulty {{difficultyInfo.class || ''}}"
+                     style="color: {{difficultyInfo.color}};">{-await faIcon(difficultyInfo.icon)-}</div>
             <% } %>
         <% } %>
-        <% if (obj.condition) { %>
-            <div class="condition {{condition.class || ''}}"
-                 title="{{condition.title}} - Click for full report">
-                {-await faIcon(condition.icon || 'certificate-duotone')-}
+        <% if (obj.conditionInfo) { %>
+            <div class="condition {{conditionInfo.class || ''}}"
+                 title="{{conditionInfo.title}} - Click for full report">
+                {-await faIcon(conditionInfo.icon || 'certificate-duotone')-}
             </div>
         <% } %>
-        <% if (obj.status) { %>
-            <div class="status {{status.class || ''}}"
-                 title="{{status.title}} - Click for full report">{-await faIcon('circle-duotone')-}</div>
+        <% if (obj.statusInfo) { %>
+            <div class="status {{statusInfo.class || ''}}"
+                 title="{{statusInfo.title}} - Click for full report">{-await faIcon('circle-duotone')-}</div>
         <% } %>
     </a>
     <a class="add-report" title="File a trail report">{-await faIcon('file-export-duotone')-}</a>
