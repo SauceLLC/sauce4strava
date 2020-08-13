@@ -108,6 +108,7 @@
 
     .ui-dialog-content {
         padding: 0 !important;
+        background-color: color.get(bg);
     }
 
     img.sauce-rank {
@@ -121,12 +122,33 @@
         display: flex;
         align-items: center;
 
-        &:nth-child(even) {  // Be sure to use even so the sparkline bg matches the parent el
-            background-color: color.shade(bg, 1%);
+        &.single-entry,
+        &.multi-entry {
+            margin: 0 1rem 1rem;
         }
 
-        &:not(:last-child):not(:first-child) {
-            border-bottom: 1px solid color.shade(bg, 10%);
+        &.single-entry key,
+        &.multi-entry header {
+            font-variant: all-small-caps;
+            font-weight: bold;
+            color: color.shade(fg, 20%);
+            margin: 0.3rem 0;
+        }
+
+        &.single-entry,
+        &.multi-entry header {
+            border-bottom: var(--sauce-thin-border);
+            border-color: color.shade(fg, 0%, 0.33);
+        }
+
+        &.single-entry {
+            key {
+                padding: 0 1.35rem 0 0;
+            }
+
+            value {
+                font-size: 0.92em;
+            }
         }
 
         &.multi-entry {
@@ -134,12 +156,6 @@
             align-items: normal;
 
             header {
-                font-variant: all-small-caps;
-                font-weight: bold;
-                border-color: color.shade(fg, 10%, 0.25);
-                color: color.shade(fg, 20%);
-                margin: 0.3em 1em;;
-                //text-align: center;
             }
 
             row {
@@ -148,18 +164,12 @@
 
                 key {
                     font-size: 0.88em;
-                    padding-left: 1.6rem;
+                    padding-left: 0.6rem;
                 }
 
                 value {
-                    padding-right: 1.6rem;
+                    padding-right: 0.6rem;
                     font-size: 0.92em;
-                }
-
-                key,
-                value {
-                    padding-top: 0.25rem;
-                    padding-bottom: 0.25rem;
                 }
             }
         }
@@ -169,7 +179,6 @@
         padding-left: 1rem;
         padding-right: 0.35rem;
         display: flex;
-        //justify-content: center;
     }
 
     value {
@@ -186,8 +195,8 @@
     key,
     value {
         flex: 1 1 50%;
-        padding-top: 0.65rem;
-        padding-bottom: 0.65rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
 
         a {
             color: #007fb6;

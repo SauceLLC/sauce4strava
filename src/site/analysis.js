@@ -437,7 +437,7 @@ sauce.ns('analysis', ns => {
                         icon: row.dataset.rangeIcon,
                         source: this._selectedSource,
                         originEl: row,
-                        distanceRange: row.dataset.distanceRange,
+                        isDistanceRange: !!row.dataset.distanceRange,
                     });
                 } catch (e) {
                     sauce.rpc.reportError(e);
@@ -753,10 +753,10 @@ sauce.ns('analysis', ns => {
                         rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
                     } else if (source === 'peak_pace') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
-                        attrs.distanceRange = true;
+                        attrs.isDistanceRange = true;
                     } else if (source === 'peak_gap') {
                         rows = paceVelocityRangesToRows(distRanges, timeStream, gradeDistStream);
-                        attrs.distanceRange = true;
+                        attrs.isDistanceRange = true;
                     } else if (source === 'peak_np' || source === 'peak_xp') {
                         const calcs = {
                             peak_np: {peakSearch: sauce.power.peakNP, rollMethod: 'np'},
@@ -923,6 +923,17 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function humanStride(meters) {
+        const metric = ctx.weightFormatter.unitSystem === 'metric';
+        if (metric) {
+            return humanNumber(meters, 2);
+        } else {
+            const feet = meters / metersPerMile * 5280;
+            return humanNumber(feet, 1);
+        }
+    }
+
+
     function changeToAnalysisView(startTime, endTime) {
         const startIdx = getStreamTimeIndex(startTime);
         const endIdx = getStreamTimeIndex(endTime);
@@ -1050,7 +1061,7 @@ sauce.ns('analysis', ns => {
 
     async function fetchGradeDistStream(options) {
         options = options || {};
-        if (!ctx.activityType !== 'run') {
+        if (ctx.activityType !== 'run') {
             return;
         }
         if (options.startTime != null && options.endTime != null) {
@@ -1112,7 +1123,7 @@ sauce.ns('analysis', ns => {
         label,
         source,
         originEl,
-        distanceRange
+        isDistanceRange
     }) {
         const elapsedTime = wallEndTime - wallStartTime;
         const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
@@ -1131,6 +1142,15 @@ sauce.ns('analysis', ns => {
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
+        const cadence = cadenceStream && sauce.data.avg(cadenceStream); // XXX ignore zeros and only active time
+        let stride;
+        if (cadence &&
+            (ctx.cadenceFormatter.key === 'step_cadence' ||
+             ctx.cadenceFormatter.key === 'swim_cadence')) {
+            const activeTime = await getActiveTime(getStreamTimeIndex(wallStartTime),
+                getStreamTimeIndex(wallEndTime));
+            stride = distance / activeTime / (cadence * 2 / 60);
+        }
         const body = await template({
             startsAt: humanTime(wallStartTime),
             elapsed: humanTime(elapsedTime),
@@ -1145,14 +1165,19 @@ sauce.ns('analysis', ns => {
                 max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
                 gap: gap && humanPace(gap, {velocity: true}),
             },
+            isSpeed: ctx.paceMode === 'speed',
             hr: hrInfo(hrStream),
             hrUnit: ctx.hrFormatter.shortUnitKey(),
-            cadence: cadenceStream && ctx.cadenceFormatter.format(sauce.data.avg(cadenceStream)),
+            cadence: cadenceStream && ctx.cadenceFormatter.format(cadence),
             cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
+            distanceUnit: ctx.distanceFormatter.shortUnitKey(),
+            stride: stride && humanStride(stride),
+            strideUnit: ctx.elevationFormatter.shortUnitKey(),  // for meters/feet
             elevation: elevationData(altStream, elapsedTime, distance),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
             paceUnit: ctx.paceFormatter.shortUnitKey(),
             source,
+            isDistanceRange
         });
         const $dialog = await createInfoDialog({
             heading,
@@ -1162,7 +1187,6 @@ sauce.ns('analysis', ns => {
             originEl,
             start: startTime,
             end: endTime,
-            distanceRange,
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
         if (source === 'peak_power' || source === 'peak_np' || source === 'peak_xp') {
@@ -2590,7 +2614,7 @@ sauce.ns('analysis', ns => {
         }
     }
 
-
+    
     async function prepareContext() {
         const activity = pageView.activity();
         ctx.athlete = pageView.activityAthlete();
@@ -2604,6 +2628,19 @@ sauce.ns('analysis', ns => {
         ctx.cadenceFormatter = activity.isRun() ?
             new Strava.I18n.DoubledStepCadenceFormatter() :
             new Strava.I18n.CadenceFormatter();
+        if (activity.isSwim()) {
+            Strava.I18n.FormatterTranslations.swim_cadence = {
+                abbr: "%{value} <abbr class='unit short' title='strokes per minute'>spm</abbr>",
+                "long": {
+                    one: "%{count} strokes per minute",
+                    other: "%{count} strokes per minute"
+                },
+                "short": "%{value} spm",
+                name_long: "strokes per minute",
+                name_short: "spm"
+            };
+            ctx.cadenceFormatter.key = 'swim_cadence';
+        }
         ctx.timeFormatter = new Strava.I18n.TimespanFormatter();
         ctx.weightFormatter = new Strava.I18n.WeightFormatter();
         ctx.distanceFormatter = new Strava.I18n.DistanceFormatter();
@@ -2752,6 +2789,7 @@ sauce.ns('analysis', ns => {
             'Swim': 'swim',
             'Other': 'other',
             'StationaryOther': 'other',
+            'Manual': 'other',
         }[type];
         if (ctx.activityType) {
             // Start network load early..
