@@ -109,6 +109,42 @@
     .ui-dialog-content {
         padding: 0 !important;
         background-color: color.shade(bg, 1.5%);
+        flex-direction: row !important;
+    }
+
+    article {
+        &.segments {
+            background-image: linear-gradient(to bottom, #dfdfdf, #e7e3e3 20%, white);
+
+            section {
+                display: flex;
+                flex-direction: column;;
+            }
+
+            table {
+                td {
+                    padding: 0.4em 0.5em;
+                    font-size: 0.9em;
+                }
+
+                td.segment-name {
+                    a {
+                        max-width: 15ch;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        display: block;
+                    }
+                }
+
+                td.segment-achievement {
+                    .app-icon {
+                        width: 20px;
+                        height: 20px;
+                    }
+                }
+            }
+        }
     }
 
     sub {
@@ -117,12 +153,16 @@
 
     section {
         $highlight-value-offset: 3mm;
+        $highlight-margin-right: 3mm;
+        $heading-bottom-margin: 2mm;
+        $section-padding-bottom: 1.6mm;
+        $section-margin-top: 2mm;
 
         display: grid;
         grid-template-columns: 70% 30%;
         padding: 0;
-        margin: 2mm 4mm 0;
-        padding-bottom: 1.6mm;
+        margin: $section-margin-top 4mm 0;
+        padding-bottom: $section-padding-bottom;
 
         > heading {
             grid-column: 1 / 3;
@@ -130,7 +170,7 @@
             font-size: 1.12em;
             font-weight: bold;
             color: color.shade(fg, 33%);
-            margin-bottom: 2mm;
+            margin-bottom: $heading-bottom-margin;
             border-bottom: var(--sauce-thin-border);
             border-color: color.shade(fg, 0%, 0.15);
         }
@@ -177,25 +217,51 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            margin-right: 3mm;
+            margin-right: $highlight-margin-right;
             padding-top: $highlight-value-offset;
 
             .icon-background {
                 position: absolute;
-                width: 100%;
-                opacity: 0.3;
+                top: calc(-#{$heading-bottom-margin} / 2);
+                width: calc(100% + (#{$highlight-margin-right} * 2));
+                opacity: 0.18;
                 display: flex;
-                max-height: calc(100% + (#{$highlight-value-offset} / 2));
-                max-width: 100%;
+                max-height: calc(100% + #{$section-margin-top} + (#{$highlight-value-offset} * 2) + #{$section-padding-bottom} - #{$heading-bottom-margin});
+
+                --sauce-info-icon-highlight-primary: color.shade(fg, 20%, 0.58);
+                --sauce-info-icon-highlight-secondary: color.shade(fg, 40%);
+
+                &.hr {
+                    --sauce-info-icon-highlight-primary: #d002;
+                    --sauce-info-icon-highlight-secondary: #d00;
+                }
+
+                &.power {
+                    --sauce-info-icon-highlight-primary: #ffb24e;
+                    --sauce-info-icon-highlight-secondary: #ff8600;
+                }
+
+                &.pace {
+                    --sauce-info-icon-highlight-primary: #08f2;
+                    --sauce-info-icon-highlight-secondary: #08f;
+                }
+
+                &.env {
+                    --sauce-info-icon-highlight-primary: #11ad00;
+                    --sauce-info-icon-highlight-secondary: #17ab00;
+                }
+
 
                 svg[data-icon] {
                     flex: 1 1 100%;
 
                     .fa-primary {
                         color: color.shade(fg, 20%, 0.58);
+                        color: var(--sauce-info-icon-highlight-primary);
                     }
                     .fa-secondary {
                         color: color.shade(fg, 40%);
+                        color: var(--sauce-info-icon-highlight-secondary);
                     }
                 }
             }
@@ -221,6 +287,10 @@
 
         &:last-child column.highlight {
             padding-bottom: $highlight-value-offset;
+
+            .icon-background {
+                max-height: calc(100% + #{$highlight-value-offset});
+            }
         }
     }
 

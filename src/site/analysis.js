@@ -979,8 +979,8 @@ sauce.ns('analysis', ns => {
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             flex: true,
-            resizable: false,
-            width: 300,
+            resizable: true, // XXX
+            width: 600,
             position: {
                 my: 'left center',
                 at: 'right center',
@@ -1115,6 +1115,39 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function getOverlappingSegments(start, end) {
+        const segEfforts = pageView.segmentEfforts && pageView.segmentEfforts();
+        if (!segEfforts) {
+            return [];
+        }
+        const overlapping = [];
+        console.group();
+        for (const segment of segEfforts.models) {
+            const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(segment.indices());
+            let overlap;
+            if (segStart >= start && segEnd < end) {
+                overlap = (end - start) / (segEnd - segStart);
+                console.error("Match0 FULL INSIDE", segment.get('display_name'), overlap);
+            } else if (segStart >= start && segStart < end) {
+                overlap = (end - segStart) / (segEnd - segStart);
+                console.error("Match1", segment.get('display_name'), overlap);
+            } else if (segEnd > start && segEnd < end) {
+                overlap = (segEnd - start) / (segEnd - segStart);
+                console.error("Match2", segment.get('display_name'), overlap);
+            } else if (segStart <= start && segEnd >= end) {
+                const overlap = (end - start) / (segEnd - segStart);
+                console.error("Match3", segment.get('display_name'), overlap);
+            }
+            if (overlap != null) {
+                const correlation = 1 - Math.abs(1 - overlap);
+                overlapping.push({overlap, correlation, segment});
+            }
+        }
+        console.groupEnd();
+        return overlapping;
+    }
+
+
     async function showInfoDialog({
         startTime,
         endTime,
@@ -1141,32 +1174,6 @@ sauce.ns('analysis', ns => {
             gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
             gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
         }
-        const segments = [];
-        console.group();
-        for (const segment of pageView.segmentEfforts().models) {
-            const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(segment.indices());
-            let overlap;
-            if (segStart >= startIdx && segEnd < endIdx) {
-                overlap = (endIdx - startIdx) / (segEnd - segStart);
-                console.error("Match0 FULL INSIDE", segment.get('display_name'), overlap);
-            } else if (segStart >= startIdx && segStart < endIdx) {
-                overlap = (endIdx - segStart) / (segEnd - segStart);
-                console.error("Match1", segment.get('display_name'), overlap);
-            } else if (segEnd > startIdx && segEnd < endIdx) {
-                overlap = (segEnd - startIdx) / (segEnd - segStart);
-                console.error("Match2", segment.get('display_name'), overlap);
-            } else if (segStart <= startIdx && segEnd >= endIdx) {
-                const overlap = (endIdx - startIdx) / (segEnd - segStart);
-                console.error("Match3", segment.get('display_name'), overlap);
-            }
-            if (overlap != null) {
-                const correlation = 1 - Math.abs(1 - overlap);
-                segments.push({overlap, correlation, segment});
-            }
-        }
-        segments.sort((a, b) => b.correlation - a.correlation);
-        console.info(segments.map(x => x.overlap));
-        console.groupEnd();
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
@@ -1207,7 +1214,7 @@ sauce.ns('analysis', ns => {
             paceUnit: ctx.paceFormatter.shortUnitKey(),
             source,
             isDistanceRange,
-            segments,
+            overlappingSegments: getOverlappingSegments(startIdx, endIdx)
         });
         const $dialog = await createInfoDialog({
             heading,
