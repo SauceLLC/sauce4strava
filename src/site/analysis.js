@@ -979,8 +979,9 @@ sauce.ns('analysis', ns => {
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             flex: true,
-            resizable: false,
-            width: 260,
+            resizable: true, // XXX
+            //width: 260,
+            width: 320, // XXX
             position: {
                 my: 'left center',
                 at: 'right center',
@@ -1134,11 +1135,39 @@ sauce.ns('analysis', ns => {
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         const distance = streamDelta(distStream);
+        const startIdx = getStreamTimeIndex(wallStartTime);
+        const endIdx = getStreamTimeIndex(wallEndTime);
         let gap, gradeDistStream;
         if (ctx.activityType === 'run') {
             gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
             gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
         }
+        const segments = [];
+        console.group();
+        for (const segment of pageView.segmentEfforts().models) {
+            const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(segment.indices());
+            let overlap;
+            if (segStart >= startIdx && segEnd < endIdx) {
+                overlap = (endIdx - startIdx) / (segEnd - segStart);
+                console.error("Match0 FULL INSIDE", segment.get('display_name'), overlap);
+            } else if (segStart >= startIdx && segStart < endIdx) {
+                overlap = (endIdx - segStart) / (segEnd - segStart);
+                console.error("Match1", segment.get('display_name'), overlap);
+            } else if (segEnd > startIdx && segEnd < endIdx) {
+                overlap = (segEnd - startIdx) / (segEnd - segStart);
+                console.error("Match2", segment.get('display_name'), overlap);
+            } else if (segStart <= startIdx && segEnd >= endIdx) {
+                const overlap = (endIdx - startIdx) / (segEnd - segStart);
+                console.error("Match3", segment.get('display_name'), overlap);
+            }
+            if (overlap != null) {
+                const correlation = 1 - Math.abs(1 - overlap);
+                segments.push({overlap, correlation, segment});
+            }
+        }
+        segments.sort((a, b) => b.correlation - a.correlation);
+        console.info(segments.map(x => x.overlap));
+        console.groupEnd();
         const heading = await sauce.locale.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
@@ -1147,8 +1176,7 @@ sauce.ns('analysis', ns => {
         if (cadence &&
             (ctx.cadenceFormatter.key === 'step_cadence' ||
              ctx.cadenceFormatter.key === 'swim_cadence')) {
-            const activeTime = await getActiveTime(getStreamTimeIndex(wallStartTime),
-                getStreamTimeIndex(wallEndTime));
+            const activeTime = await getActiveTime(startIdx, endIdx);
             stride = distance / activeTime / (cadence * 2 / 60);
         }
         const body = await template({
@@ -1170,14 +1198,17 @@ sauce.ns('analysis', ns => {
             hrUnit: ctx.hrFormatter.shortUnitKey(),
             cadence: cadenceStream && ctx.cadenceFormatter.format(cadence),
             cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
+            distance: distance && humanDistance(distance),
             distanceUnit: ctx.distanceFormatter.shortUnitKey(),
             stride: stride && humanStride(stride),
             strideUnit: ctx.elevationFormatter.shortUnitKey(),  // for meters/feet
             elevation: elevationData(altStream, elapsedTime, distance),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
+            elevationUnitLong: ctx.elevationFormatter.longUnitKey(),
             paceUnit: ctx.paceFormatter.shortUnitKey(),
             source,
-            isDistanceRange
+            isDistanceRange,
+            segments,
         });
         const $dialog = await createInfoDialog({
             heading,

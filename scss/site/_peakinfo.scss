@@ -18,7 +18,7 @@
         a.selection {
             border: none;
             border-radius: 0;
-            padding-right: 1.5rem;
+            padding-right: 4.5mm;
 
             &.watt-estimate {
                 padding-bottom: 0.8em;
@@ -111,95 +111,124 @@
         background-color: color.get(bg);
     }
 
-    img.sauce-rank {
-    }
-
     sub {
         vertical-align: sub; // undo override from strava that made this too low
     }
 
-    row {
-        display: flex;
-        align-items: center;
+    section {
+        $highlight-value-offset: 3mm;
 
-        &.single-entry,
-        &.multi-entry {
-            margin: 0 1rem 1rem;
-        }
+        display: grid;
+        grid-template-columns: 65% 35%;
+        padding: 0;
+        margin: 2mm 4mm 0;
+        padding-bottom: 1.6mm;
 
-        &.single-entry key,
-        &.multi-entry header {
+        > heading {
+            grid-column: 1 / 3;
             font-variant: all-small-caps;
+            font-size: 1.12em;
             font-weight: bold;
-            color: color.shade(fg, 20%);
-            margin: 0.3rem 0;
-        }
-
-        &.single-entry,
-        &.multi-entry header {
+            color: color.shade(fg, 33%);
+            margin-bottom: 2mm;
             border-bottom: var(--sauce-thin-border);
-            border-color: color.shade(fg, 0%, 0.33);
+            border-color: color.shade(fg, 0%, 0.15);
         }
 
-        &.single-entry {
-            key {
-                padding: 0 1.35rem 0 0;
-            }
-
-            value {
-                font-size: 0.92em;
-            }
+        > column {
+            grid-row: 2;
         }
 
-        &.multi-entry {
+        > column:not(.highlight) {
+            grid-column: 1 / 2;
+            display: flex;
             flex-direction: column;
-            align-items: normal;
-
-            header {
-            }
+            justify-content: center;
 
             row {
-                background-color: transparent;
-                border: none !important;
+                display: flex;
+
+                key,
+                value {
+                    flex: 1 1 50%;
+                    padding-top: 0.36mm;
+                    padding-bottom: 0.36mm;
+                }
 
                 key {
                     font-size: 0.88em;
-                    padding-left: 0.6rem;
+                    padding-left: 1.8mm;
+                    display: flex;
                 }
 
                 value {
-                    padding-right: 0.6rem;
+                    padding-left: 1mm;
+                    padding-right: 1.8mm;
                     font-size: 0.92em;
+                    display: block;  // avoid flex by default as it breaks inline formatting
                 }
             }
         }
-    }
 
-    key {
-        padding-left: 1rem;
-        padding-right: 0.35rem;
-        display: flex;
-    }
+        > column.highlight {
+            grid-column: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-right: 3mm;
+            padding-top: $highlight-value-offset;
 
-    value {
-        padding-left: 0.35rem;
-        padding-right: 1rem;
-        display: block;  // avoid flex by default as it breaks inline formatting
+            .icon-background {
+                position: absolute;
+                width: 100%;
+                opacity: 0.3;
+                display: flex;
+                max-height: calc(100% + (#{$highlight-value-offset} / 2));
+                max-width: 100%;
+
+                svg[data-icon] {
+                    flex: 1 1 100%;
+
+                    .fa-primary {
+                        color: color.shade(fg, 20%, 0.58);
+                    }
+                    .fa-secondary {
+                        color: color.shade(fg, 40%);
+                    }
+                }
+            }
+
+            key {
+                font-size: 1em;
+                font-variant: all-small-caps;
+                line-height: 1;
+                margin-top: -0.2em;
+                mix-blend-mode: difference;
+                color: color.shade(bg, 40%);  // mix blend of difference inverts this.
+            }
+
+            value {
+                mix-blend-mode: difference;
+                color: color.shade(bg, 30%);  // mix blend of difference inverts this.
+                font-size: 2em;
+                font-weight: bold;
+                line-height: 1;
+
+                abbr.unit {
+                    font-size: 0.5em;
+                }
+            }
+        }
+
+        &:last-child column.highlight {
+            padding-bottom: $highlight-value-offset;
+        }
     }
 
     .rank-holder {
         display: flex;
         align-items: center;
-    }
-
-    key,
-    value {
-        flex: 1 1 50%;
-        padding-top: 0.25rem;
-        padding-bottom: 0.25rem;
-
-        a {
-            color: #007fb6;
-        }
     }
 }
