@@ -108,7 +108,7 @@
 
     .ui-dialog-content {
         padding: 0 !important;
-        background-color: color.get(bg);
+        background-color: color.shade(bg, 1.5%);
     }
 
     sub {
@@ -119,7 +119,7 @@
         $highlight-value-offset: 3mm;
 
         display: grid;
-        grid-template-columns: 65% 35%;
+        grid-template-columns: 70% 30%;
         padding: 0;
         margin: 2mm 4mm 0;
         padding-bottom: 1.6mm;
@@ -205,16 +205,13 @@
                 font-variant: all-small-caps;
                 line-height: 1;
                 margin-top: -0.2em;
-                mix-blend-mode: difference;
-                color: color.shade(bg, 40%);  // mix blend of difference inverts this.
             }
 
             value {
-                mix-blend-mode: difference;
-                color: color.shade(bg, 30%);  // mix blend of difference inverts this.
                 font-size: 2em;
                 font-weight: bold;
                 line-height: 1;
+                opacity: 0.85;
 
                 abbr.unit {
                     font-size: 0.5em;

@@ -979,9 +979,8 @@ sauce.ns('analysis', ns => {
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             flex: true,
-            resizable: true, // XXX
-            //width: 260,
-            width: 320, // XXX
+            resizable: false,
+            width: 300,
             position: {
                 my: 'left center',
                 at: 'right center',
