@@ -472,6 +472,14 @@ sauce.ns('data', function() {
     }
 
 
+    function overlap([aStart, aEnd], [bStart, bEnd]) {
+        const interStart = Math.max(aStart, bStart);
+        const interEnd = Math.min(aEnd, bEnd);
+        const overlap = interEnd - interStart;
+        return overlap < 0 ? null : overlap + 1;
+    }
+
+
     return {
         sum,
         avg,
@@ -488,7 +496,8 @@ sauce.ns('data', function() {
         Zero,
         Pad,
         peakAverage,
-        smooth
+        smooth,
+        overlap,
     };
 });
 
