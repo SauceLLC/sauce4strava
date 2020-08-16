@@ -1494,6 +1494,9 @@ sauce.ns('analysis', ns => {
                              'cadence', 'temp', 'latlng', 'distance'];
         const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) =>
             (acc[streamNames[i]] = x && x.slice(start, end), acc), {});
+        if (!streams.watts) {
+            streams.watts = await fetchStream('watts_calc');
+        }
         const fullActivity = await fetchFullActivity();
         const realStartTime = fullActivity && fullActivity.get('start_time');
         let startDate;
