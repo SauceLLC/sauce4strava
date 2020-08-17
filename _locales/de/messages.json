@@ -11,16 +11,40 @@
     "analysis_time": {
         "message": "Zeit"
     },
+    "analysis_timing": {
+        "message": "Zeitliche Koordinierung"
+    },
     "analysis_gap": {
         "message": "SAT",
         "description": "IMMUTABLE"
+    },
+    "analysis_climbed": {
+        "message": "Kletterte"
+    },
+    "analysis_descended": {
+        "message": "Abstieg"
+    },
+    "analysis_avg": {
+        "message": "Durchschn"
+    },
+    "analysis_min": {
+        "message": "Mindest"
+    },
+    "analysis_max": {
+        "message": "Max"
+    },
+    "analysis_lowest": {
+        "message": "Am niedrigsten"
+    },
+    "analysis_highest": {
+        "message": "Höchste"
     },
     "analysis_elapsed": {
         "message": "Verstrichen",
         "description": "IMMUTABLE"
     },
     "analysis_elapsed_time_tooltip": {
-        "message": "Verstrichene Zeit: Zeit vom Beginn bis zum Ende der Aktivität"
+        "message": "Verstrichene Zeit: Zeit einschließlich Stopps"
     },
     "analysis_elapsed_power_tooltip": {
         "message": "Durchschnittliche verstrichene Leistung: Stopps sind mit Nullen aufgefüllt"
@@ -104,14 +128,11 @@
     "analysis_high_speed_tooltip": {
         "message": "Höchste Geschwindigkeit"
     },
-    "analysis_running_cadence_tooltip": {
-        "message": "Schritte pro Minute"
+    "analysis_low_pace_tooltip": {
+        "message": "Niedrigstes Tempo"
     },
-    "analysis_cycling_cadence_tooltip": {
-        "message": "Pedalumdrehungen pro Minute"
-    },
-    "analysis_swim_cadence_tooltip": {
-        "message": "Striche pro Minute"
+    "analysis_high_pace_tooltip": {
+        "message": "Höchstes Tempo"
     },
     "analysis_expand_tooltip": {
         "message": "Zum erweitern klicken"
@@ -153,6 +174,9 @@
     "analysis_peak_cadence_tooltip": {
         "message": "Maximal anhaltende Trittfrequenzbereiche"
     },
+    "analysis_peak_stride_tooltip": {
+        "message": "Durchschnittlicher Abstand pro Schritt / Hub"
+    },
     "analysis_peak_vam_tooltip": {
         "message": "Maximal anhaltende Steiggeschwindigkeitsbereiche"
     },
@@ -193,6 +217,9 @@
     "analysis_elevation": {
         "message": "Elevation"
     },
+    "analysis_environment": {
+        "message": "Umgebung"
+    },
     "analysis_grade": {
         "message": "Klasse"
     },
@@ -220,6 +247,9 @@
     "analysis_speed": {
         "message": "Geschwindigkeit"
     },
+    "analysis_distance": {
+        "message": "Entfernung"
+    },
     "analysis_samples": {
         "message": "Proben"
     },
@@ -238,6 +268,9 @@
     "analysis_cadence": {
         "message": "Trittfrequenz",
         "description": "IMMUTABLE"
+    },
+    "analysis_stride": {
+        "message": "Schreiten"
     },
     "analysis_peak_power": {
         "message": "Beste Leistung",
@@ -286,6 +319,18 @@
     },
     "analysis_weight": {
         "message": "Gewicht"
+    },
+    "analysis_segments": {
+        "message": "Segmente"
+    },
+    "analysis_name": {
+        "message": "Name"
+    },
+    "analysis_overlap": {
+        "message": "Überlappung"
+    },
+    "analysis_overlap_tooltip": {
+        "message": "Das Ausmaß der Überlappung in einem Segment. 100% bedeutet, dass das gesamte Segment durchlaufen wurde."
     },
     "analysis_change": {
         "message": "Variation",

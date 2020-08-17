@@ -11,15 +11,39 @@
     "analysis_time": {
         "message": "时间"
     },
+    "analysis_timing": {
+        "message": "定时"
+    },
     "analysis_gap": {
         "message": "GAP",
         "description": "IMMUTABLE"
+    },
+    "analysis_climbed": {
+        "message": "爬上"
+    },
+    "analysis_descended": {
+        "message": "下降"
+    },
+    "analysis_avg": {
+        "message": "平均"
+    },
+    "analysis_min": {
+        "message": "敏"
+    },
+    "analysis_max": {
+        "message": "最高"
+    },
+    "analysis_lowest": {
+        "message": "最低"
+    },
+    "analysis_highest": {
+        "message": "最高"
     },
     "analysis_elapsed": {
         "message": "过去"
     },
     "analysis_elapsed_time_tooltip": {
-        "message": "经过时间：从活动开始到结束的时间"
+        "message": "经过的时间：包括停止的时间"
     },
     "analysis_elapsed_power_tooltip": {
         "message": "平均耗电量：停靠点为零填充"
@@ -104,14 +128,11 @@
     "analysis_high_speed_tooltip": {
         "message": "最高速度"
     },
-    "analysis_running_cadence_tooltip": {
-        "message": "每分钟步数"
+    "analysis_low_pace_tooltip": {
+        "message": "最低步伐"
     },
-    "analysis_cycling_cadence_tooltip": {
-        "message": "每分钟踏板转速"
-    },
-    "analysis_swim_cadence_tooltip": {
-        "message": "每分钟行程"
+    "analysis_high_pace_tooltip": {
+        "message": "最高速度"
     },
     "analysis_expand_tooltip": {
         "message": "点击展开"
@@ -153,6 +174,9 @@
     "analysis_peak_cadence_tooltip": {
         "message": "最大持续节奏范围"
     },
+    "analysis_peak_stride_tooltip": {
+        "message": "每步/行程的平均距离"
+    },
     "analysis_peak_vam_tooltip": {
         "message": "最大持续爬升速度范围"
     },
@@ -193,6 +217,9 @@
     "analysis_elevation": {
         "message": "海拔"
     },
+    "analysis_environment": {
+        "message": "环境"
+    },
     "analysis_grade": {
         "message": "年级"
     },
@@ -221,6 +248,9 @@
     "analysis_speed": {
         "message": "速度"
     },
+    "analysis_distance": {
+        "message": "距离"
+    },
     "analysis_samples": {
         "message": "样品"
     },
@@ -239,6 +269,9 @@
     "analysis_cadence": {
         "message": "踏频",
         "description": "IMMUTABLE"
+    },
+    "analysis_stride": {
+        "message": "大步走"
     },
     "analysis_peak_power": {
         "message": "最佳功率",
@@ -286,6 +319,18 @@
     },
     "analysis_weight": {
         "message": "重量"
+    },
+    "analysis_segments": {
+        "message": "区隔"
+    },
+    "analysis_name": {
+        "message": "名称"
+    },
+    "analysis_overlap": {
+        "message": "交叠"
+    },
+    "analysis_overlap_tooltip": {
+        "message": "段上的重叠量。 100％表示遍历整个段。"
     },
     "analysis_change": {
         "message": "更改"

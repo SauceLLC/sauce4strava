@@ -11,15 +11,39 @@
     "analysis_time": {
         "message": "Hora"
     },
+    "analysis_timing": {
+        "message": "Sincronización"
+    },
     "analysis_gap": {
         "message": "RAP",
         "description": "IMMUTABLE"
+    },
+    "analysis_climbed": {
+        "message": "Trepado"
+    },
+    "analysis_descended": {
+        "message": "Descendió"
+    },
+    "analysis_avg": {
+        "message": "Promedio"
+    },
+    "analysis_min": {
+        "message": "Min"
+    },
+    "analysis_max": {
+        "message": "Max"
+    },
+    "analysis_lowest": {
+        "message": "Más bajo"
+    },
+    "analysis_highest": {
+        "message": "Más alto"
     },
     "analysis_elapsed": {
         "message": "Transcurrido"
     },
     "analysis_elapsed_time_tooltip": {
-        "message": "Tiempo transcurrido: tiempo desde el inicio hasta el final de la actividad."
+        "message": "Tiempo transcurrido: tiempo que incluye paradas"
     },
     "analysis_elapsed_power_tooltip": {
         "message": "Potencia media transcurrida: las paradas son de relleno cero"
@@ -102,14 +126,11 @@
     "analysis_high_speed_tooltip": {
         "message": "Mayor velocidad"
     },
-    "analysis_running_cadence_tooltip": {
-        "message": "Pasos por minuto"
+    "analysis_low_pace_tooltip": {
+        "message": "Ritmo más bajo"
     },
-    "analysis_cycling_cadence_tooltip": {
-        "message": "Revoluciones de pedal por minuto"
-    },
-    "analysis_swim_cadence_tooltip": {
-        "message": "Golpes por minuto"
+    "analysis_high_pace_tooltip": {
+        "message": "Ritmo más alto"
     },
     "analysis_expand_tooltip": {
         "message": "Haga clic para ampliar"
@@ -150,6 +171,9 @@
     "analysis_peak_cadence_tooltip": {
         "message": "Rangos máximos de cadencia sostenida"
     },
+    "analysis_peak_stride_tooltip": {
+        "message": "Distancia media por paso / carrera"
+    },
     "analysis_peak_vam_tooltip": {
         "message": "Rangos máximos sostenidos de velocidad de escalada"
     },
@@ -189,6 +213,9 @@
     "analysis_elevation": {
         "message": "Elevación"
     },
+    "analysis_environment": {
+        "message": "Ambiente"
+    },
     "analysis_grade": {
         "message": "Grado"
     },
@@ -217,6 +244,9 @@
     "analysis_speed": {
         "message": "Velocidad"
     },
+    "analysis_distance": {
+        "message": "Distancia"
+    },
     "analysis_samples": {
         "message": "Muestras"
     },
@@ -234,6 +264,9 @@
     },
     "analysis_cadence": {
         "message": "Cadencia"
+    },
+    "analysis_stride": {
+        "message": "Paso"
     },
     "analysis_peak_power": {
         "message": "Potencia Pico",
@@ -283,6 +316,18 @@
     },
     "analysis_weight": {
         "message": "Peso"
+    },
+    "analysis_segments": {
+        "message": "Segmentos"
+    },
+    "analysis_name": {
+        "message": "Nombre"
+    },
+    "analysis_overlap": {
+        "message": "Superposición"
+    },
+    "analysis_overlap_tooltip": {
+        "message": "La cantidad de superposición en un segmento. 100% significa que se atravesó todo el segmento."
     },
     "analysis_change": {
         "message": "Cambio"

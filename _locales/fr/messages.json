@@ -11,15 +11,39 @@
     "analysis_time": {
         "message": "Temps"
     },
+    "analysis_timing": {
+        "message": "Horaire"
+    },
     "analysis_gap": {
         "message": "VAP",
         "description": "IMMUTABLE"
+    },
+    "analysis_climbed": {
+        "message": "Grimpé"
+    },
+    "analysis_descended": {
+        "message": "Descendu"
+    },
+    "analysis_avg": {
+        "message": "Moy"
+    },
+    "analysis_min": {
+        "message": "Min"
+    },
+    "analysis_max": {
+        "message": "Max"
+    },
+    "analysis_lowest": {
+        "message": "Le plus bas"
+    },
+    "analysis_highest": {
+        "message": "Le plus élevé"
     },
     "analysis_elapsed": {
         "message": "Écoulé"
     },
     "analysis_elapsed_time_tooltip": {
-        "message": "Temps écoulé: temps du début à la fin de l'activité"
+        "message": "Temps écoulé: temps, arrêts compris"
     },
     "analysis_elapsed_power_tooltip": {
         "message": "Puissance moyenne écoulée: les arrêts sont à rembourrage nul"
@@ -104,14 +128,11 @@
     "analysis_high_speed_tooltip": {
         "message": "Vitesse la plus élevée"
     },
-    "analysis_running_cadence_tooltip": {
-        "message": "Pas par minute"
+    "analysis_low_pace_tooltip": {
+        "message": "Rythme le plus bas"
     },
-    "analysis_cycling_cadence_tooltip": {
-        "message": "Révolutions de pédale par minute"
-    },
-    "analysis_swim_cadence_tooltip": {
-        "message": "Coups par minute"
+    "analysis_high_pace_tooltip": {
+        "message": "Rythme le plus élevé"
     },
     "analysis_expand_tooltip": {
         "message": "Cliquez pour agrandir"
@@ -151,6 +172,9 @@
     },
     "analysis_peak_cadence_tooltip": {
         "message": "Gammes maximales de cadence soutenue"
+    },
+    "analysis_peak_stride_tooltip": {
+        "message": "Distance moyenne par pas / course"
     },
     "analysis_peak_vam_tooltip": {
         "message": "Plages de vitesse de montée maximales soutenues"
@@ -194,6 +218,9 @@
     "analysis_elevation": {
         "message": "Élévation"
     },
+    "analysis_environment": {
+        "message": "Environnement"
+    },
     "analysis_grade": {
         "message": "Classe"
     },
@@ -224,6 +251,9 @@
         "message": "Vitesse",
         "description": "IMMUTABLE"
     },
+    "analysis_distance": {
+        "message": "Distance"
+    },
     "analysis_samples": {
         "message": "Échantillons"
     },
@@ -242,6 +272,9 @@
     },
     "analysis_cadence": {
         "message": "Cadence"
+    },
+    "analysis_stride": {
+        "message": "Foulée"
     },
     "analysis_peak_power": {
         "message": "Puissance Apogée",
@@ -290,6 +323,18 @@
     },
     "analysis_weight": {
         "message": "Poids"
+    },
+    "analysis_segments": {
+        "message": "Segments"
+    },
+    "analysis_name": {
+        "message": "Nom"
+    },
+    "analysis_overlap": {
+        "message": "Chevauchement"
+    },
+    "analysis_overlap_tooltip": {
+        "message": "La quantité de chevauchement sur un segment. 100% signifie que tout le segment a été parcouru."
     },
     "analysis_change": {
         "message": "Ècart",
