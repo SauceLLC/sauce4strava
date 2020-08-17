@@ -1,208 +1,223 @@
-<article>
-<div class="sauce-sparkline"></div>
+<div class="left-main">
+    <div class="sauce-sparkline"></div>
 
-<section>
-    <heading>{{{timing}}}</heading>
-    <column>
-        <row>
-            <!--<div class="icon-background">{-await faIcon('stopwatch-duotone')-}</div>-->
-            <key>{{{start_of_effort}}}</key>
-            <value><a class="start_time_link">{{startsAt}}</a></value>
-        </row>
-        <% if (isDistanceRange) { %>
-            <row title="{{{elapsed_time_tooltip}}}">
-                <key>{{{elapsed_time}}}</key>
-                <value>{{elapsed}}</value>
-            </row>
-        <% } %>
-    </column>
-</section>
-
-<% if (obj.power) { %>
     <section>
-        <heading><% if (power.estimate) {%>{{{estimated}}} <% } %>{{{power}}}</heading>
-
-        <column class="highlight" title="{{{elapsed_power_tooltip}}}">
-            <div class="icon-background power">{-await faIcon('bolt-duotone')-}</div>
-            <value>
-                {-power.estimate ? '<small>~</small>' : ''-}{{formatNumber(power.elapsedAvg, 0)}}
-            </value>
-            <key>{{{watts}}}</key>
-        </column>
-
+        <heading>{{{timing}}}</heading>
         <column>
-            <% if (!power.estimate) { %>
-                <row title="{{{max_power_tooltip}}}">
-                    <key>{{{max}}}</key>
-                    <value class="xxxsauce-positive">{{formatNumber(power.max, 0)}}<abbr class="unit short">w</abbr></value>
-                </row>
-            <% } %>
-            <% if (power.elapsedWKg) { %>
-                <row "title="{{{wkg_tooltip}}}">
-                    <key>{{{Watts}}}/kg</key>
-                    <value class="rank-holder">
-                        {{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}
-                        <% if (power.rank && power.rank.badge && !power.estimate) { %>
-                            <img src="{{power.rank.badge}}" class="sauce-rank"
-                                 title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 0)}}%"/>
-                        <% } %>
-                    </value>
-                </row>
-            <% } %>
-            <% if (power.np && !power.estimate) { %>
-                <row title="{{{np_tooltip}}}">
-                    <key>NP®</key>
-                    <value>{{formatNumber(power.np, 0)}}<abbr class="unit short">w</abbr></value>
-                </row>
-            <% } %>
-            <% if (power.xp && !power.estimate) { %>
-                <row title="{{{xp_tooltip}}}">
-                    <key>xPower</key>
-                    <value>{{formatNumber(power.xp, 0)}}<abbr class="unit short">w</abbr></value>
-                </row>
-            <% } %>
-            <% if (power.elapsedSP) { %>
-                <row title="{{{sp_tooltip}}}">
-                    <key>{{{sea_power}}}</key>
-                    <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr></value>
-                </row>
-            <% } %>
-        </column>
-    </section>
-<% } %>
-
-<% if (obj.hr) { %>
-    <section>
-        <heading>{{{heartrate}}}</heading>
-        <column class="highlight">
-            <div class="icon-background hr">{-await faIcon('heartbeat-duotone')-}</div>
-            <value>{{hr.avg}}</value>
-            <key>{{hrUnit}}</key>
-        </column>
-        <column>
-            <row title="{{{low_hr_tooltip}}}">
-                <key>{{{lowest}}}</key>
-                <value class="xxxsauce-positive">{{hr.min}}<abbr class="unit short">{{hrUnit}}</abbr></value>
-            </row>
-            <row title="{{{high_hr_tooltip}}}">
-                <key>{{{highest}}}</key>
-                <value class="xxxsauce-negative">{{hr.max}}<abbr class="unit short">{{hrUnit}}</abbr></value>
-            </row>
-        </column>
-    </section>
-<% } %>
-
-<% if (obj.pace) { %>
-    <section>
-        <%if (isSpeed) { %>
-            <heading>{{{speed}}}</heading>
-        <% } else { %>
-            <heading>{{{pace}}}</heading>
-        <% } %>
-        <column class="highlight">
-            <div class="icon-background pace">{-await faIcon('tachometer-duotone')-}</div>
-            <value>{{pace.avg}}</value>
-            <key>{{paceUnit}}</key>
-        </column>
-        <column>
-            <%if (isSpeed) { %>
-                <row title="{{{high_speed_tooltip}}}">
-                    <key>{{{max}}}</key>
-                    <value class="xxxsauce-positive">{{pace.max}}<abbr class="unit short">{{paceUnit}}</abbr></value>
-                </row>
-            <% } else { %>
-                <row title="{{{high_pace_tooltip}}}">
-                    <key>{{{max}}}</key>
-                    <value class="xxxsauce-positive">{{pace.max}}<abbr class="unit short">{{paceUnit}}</abbr></value>
-                </row>
-            <% } %>
-
             <row>
-                <key>{{{distance}}}</key>
-                <value>{{distance}}<abbr class="unit short">{{distanceUnit}}</abbr></value>
+                <!--<div class="icon-background">{-await faIcon('stopwatch-duotone')-}</div>-->
+                <key>{{{start_of_effort}}}</key>
+                <value><a class="start_time_link">{{startsAt}}</a></value>
             </row>
-
-            <% if (obj.cadence) { %>
-                <row>
-                    <key>{{{cadence}}}</key>
-                    <value>{{cadence}}<abbr class="unit short">{{cadenceUnit}}</abbr>
+            <% if (isDistanceRange) { %>
+                <row title="{{{elapsed_time_tooltip}}}">
+                    <key>{{{elapsed_time}}}</key>
+                    <value>{{elapsed}}</value>
                 </row>
-                <% if (obj.stride) { %>
-                    <row title="{{{stride_tooltip}}}">
-                        <key>{{{stride}}}</key>
-                        <value>{{stride}}<abbr class="unit short">{{strideUnit}}</abbr>
+            <% } %>
+        </column>
+    </section>
+
+    <% if (obj.power) { %>
+        <section>
+            <heading><% if (power.estimate) {%>{{{estimated}}} <% } %>{{{power}}}</heading>
+
+            <column class="highlight" title="{{{elapsed_power_tooltip}}}">
+                <div class="icon-background power">{-await faIcon('bolt-duotone')-}</div>
+                <value>
+                    {-power.estimate ? '<small>~</small>' : ''-}{{formatNumber(power.elapsedAvg, 0)}}
+                </value>
+                <key>{{{watts}}}</key>
+            </column>
+
+            <column>
+                <% if (!power.estimate) { %>
+                    <row title="{{{max_power_tooltip}}}">
+                        <key>{{{max}}}</key>
+                        <value class="xxxsauce-positive">{{formatNumber(power.max, 0)}}<abbr class="unit short">w</abbr></value>
                     </row>
                 <% } %>
-            <% } %>
-        </column>
-    </section>
-<% } %>
+                <% if (power.elapsedWKg) { %>
+                    <row "title="{{{wkg_tooltip}}}">
+                        <key>{{{Watts}}}/kg</key>
+                        <value class="rank-holder">
+                            {{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}
+                            <% if (power.rank && power.rank.badge && !power.estimate) { %>
+                                <img src="{{power.rank.badge}}" class="sauce-rank"
+                                     title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 0)}}%"/>
+                            <% } %>
+                        </value>
+                    </row>
+                <% } %>
+                <% if (power.np && !power.estimate) { %>
+                    <row title="{{{np_tooltip}}}">
+                        <key>NP®</key>
+                        <value>{{formatNumber(power.np, 0)}}<abbr class="unit short">w</abbr></value>
+                    </row>
+                <% } %>
+                <% if (power.xp && !power.estimate) { %>
+                    <row title="{{{xp_tooltip}}}">
+                        <key>xPower</key>
+                        <value>{{formatNumber(power.xp, 0)}}<abbr class="unit short">w</abbr></value>
+                    </row>
+                <% } %>
+                <% if (power.elapsedSP) { %>
+                    <row title="{{{sp_tooltip}}}">
+                        <key>{{{sea_power}}}</key>
+                        <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr></value>
+                    </row>
+                <% } %>
+            </column>
+        </section>
+    <% } %>
 
-<% if (obj.elevation) { %>
-    <section>
-        <heading>{{{environment}}}</heading>
-        <column class="highlight" title="{{{elevation_avg_tooltip}}}">
-            <div class="icon-background env">{-await faIcon('mountains-duotone')-}</div>
-            <value>{{elevation.avg}}</value>
-            <key>{{elevationUnitLong}}</key>
-        </column>
-        <column>
-            <% if (elevation.gain) { %>
-                <row title="{{{elevation_gain_tooltip}}}">
-                    <key>{{{climbed}}}</key>
-                    <value class="xxxsauce-positive">
-                        {{elevation.gain}}<abbr class="unit short">{{elevationUnit}}</abbr>
+    <% if (obj.hr) { %>
+        <section>
+            <heading>{{{heartrate}}}</heading>
+            <column class="highlight">
+                <div class="icon-background hr">{-await faIcon('heartbeat-duotone')-}</div>
+                <value>{{hr.avg}}</value>
+                <key>{{hrUnit}}</key>
+            </column>
+            <column>
+                <row title="{{{low_hr_tooltip}}}">
+                    <key>{{{lowest}}}</key>
+                    <value class="xxxsauce-positive">{{hr.min}}<abbr class="unit short">{{hrUnit}}</abbr></value>
+                </row>
+                <row title="{{{high_hr_tooltip}}}">
+                    <key>{{{highest}}}</key>
+                    <value class="xxxsauce-negative">{{hr.max}}<abbr class="unit short">{{hrUnit}}</abbr></value>
+                </row>
+            </column>
+        </section>
+    <% } %>
+
+    <% if (obj.pace) { %>
+        <section>
+            <%if (isSpeed) { %>
+                <heading>{{{speed}}}</heading>
+            <% } else { %>
+                <heading>{{{pace}}}</heading>
+            <% } %>
+            <column class="highlight">
+                <div class="icon-background pace">{-await faIcon('tachometer-duotone')-}</div>
+                <value>{{pace.avg}}</value>
+                <key>{{paceUnit}}</key>
+            </column>
+            <column>
+                <%if (isSpeed) { %>
+                    <row title="{{{high_speed_tooltip}}}">
+                        <key>{{{max}}}</key>
+                        <value class="xxxsauce-positive">{{pace.max}}<abbr class="unit short">{{paceUnit}}</abbr></value>
+                    </row>
+                <% } else { %>
+                    <row title="{{{high_pace_tooltip}}}">
+                        <key>{{{max}}}</key>
+                        <value class="xxxsauce-positive">{{pace.max}}<abbr class="unit short">{{paceUnit}}</abbr></value>
+                    </row>
+                <% } %>
+
+                <row>
+                    <key>{{{distance}}}</key>
+                    <value>{{distance}}<abbr class="unit short">{{distanceUnit}}</abbr></value>
+                </row>
+
+                <% if (obj.cadence) { %>
+                    <row>
+                        <key>{{{cadence}}}</key>
+                        <value>{{cadence}}<abbr class="unit short">{{cadenceUnit}}</abbr>
+                    </row>
+                    <% if (obj.stride) { %>
+                        <row title="{{{stride_tooltip}}}">
+                            <key>{{{stride}}}</key>
+                            <value>{{stride}}<abbr class="unit short">{{strideUnit}}</abbr>
+                        </row>
+                    <% } %>
+                <% } %>
+            </column>
+        </section>
+    <% } %>
+
+    <% if (obj.elevation) { %>
+        <section>
+            <heading>{{{environment}}}</heading>
+            <column class="highlight" title="{{{elevation_avg_tooltip}}}">
+                <div class="icon-background env">{-await faIcon('mountains-duotone')-}</div>
+                <value>{{elevation.avg}}</value>
+                <key>{{elevationUnitLong}}</key>
+            </column>
+            <column>
+                <% if (elevation.gain) { %>
+                    <row title="{{{elevation_gain_tooltip}}}">
+                        <key>{{{climbed}}}</key>
+                        <value class="xxxsauce-positive">
+                            {{elevation.gain}}<abbr class="unit short">{{elevationUnit}}</abbr>
+                        </value>
+                    </row>
+                <% } %>
+                <% if (elevation.loss) { %>
+                    <row title="{{{elevation_loss_tooltip}}}">
+                        <key>{{{descended}}}</key>
+                        <value class="xxxsauce-negative">
+                            {{elevation.loss}}<abbr class="unit short">{{elevationUnit}}</abbr>
+                        </value>
+                    </row>
+                <% } %>
+
+                <row>
+                    <key>{{{grade}}}</key>
+                    <value title="{{{grade_tooltip}}}">
+                        {{formatNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
                     </value>
                 </row>
-            <% } %>
-            <% if (elevation.loss) { %>
-                <row title="{{{elevation_loss_tooltip}}}">
-                    <key>{{{descended}}}</key>
-                    <value class="xxxsauce-negative">
-                        {{elevation.loss}}<abbr class="unit short">{{elevationUnit}}</abbr>
-                    </value>
-                </row>
-            <% } %>
 
-            <row>
-                <key>{{{grade}}}</key>
-                <value title="{{{grade_tooltip}}}">
-                    {{formatNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
-                </value>
-            </row>
-
-            <% if (elevation.vam && elevation.vam > 0) { %>
-                <row title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
-                    <key>VAM</key>
-                    <value>{{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr></value>
-                </row>
-            <% } %>
-        </column>
-    </section>
-<% } %>
-</article>
-<article class="segments">
+                <% if (elevation.vam && elevation.vam > 0) { %>
+                    <row title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
+                        <key>VAM</key>
+                        <value>{{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr></value>
+                    </row>
+                <% } %>
+            </column>
+        </section>
+    <% } %>
+</div>
 
 <% if (obj.overlappingSegments && overlappingSegments.length) { %>
-    <section>
-        <heading>Segments</heading>
-        <table class="unstyled">
-            <% for (const x of overlappingSegments) { %>
-                <tr>
-                    <td class="segment-name" title="{{x.segment.get('display_name')}}">
-                        <a href="#">{{x.segment.get('display_name')}}</a>
-                    </td>
-                    <td class="segment-time">{{x.segment.get('elapsed_time')}}</td>
-                    <td class="segment-overlap">{{(Math.min(1, x.overlap) * 100).toFixed(1)}}%</td>
-                    <td class="segment-achievement">
-                        <% if (x.segment.get('has_achievement')) { %>
-                            <div class="app-icon {{x.segment.get('achievement_sprite_name')}} icon-sm"
-                                 title="{{x.segment.get('achievement_description')}}"></div>
-                        <% } %>
-                    </td>
-                </tr>
-            <% } %>
-        </table>
-    </section>
+    <div class="right-aside">
+        <section class="segments">
+            <heading>{{{segments}}}</heading>
+            <table class="unstyled">
+                <thead>
+                    <tr>
+                        <th>{{{name}}}</td>
+                        <th>{{{time}}}</td>
+                        <th title="{{{overlap_tooltip}}}">{{{overlap}}}</td>
+                        <th></td>
+                    </tr>
+                </thead>
+                <% for (const x of overlappingSegments) { %>
+                    <tr>
+                        <td class="segment-name" title="{{x.segment.get('display_name')}}">
+                            <a data-id="{{x.segment.id}}">{{x.segment.get('display_name')}}</a>
+                        </td>
+                        <td class="segment-time">{-x.segment.get('elapsed_time')-}</td>
+                        <td class="segment-overlap" title="{{{overlap_tooltip}}}">
+                            {{formatNumber(x.correlation * 100, 0)}}<abbr class="unit short">%</abbr>
+                        </td>
+                        <td class="segment-achievement">
+                            <% if (x.segment.get('has_achievement')) { %>
+                                <div class="app-icon {{x.segment.get('achievement_sprite_name')}}"
+                                     title="{{x.segment.get('achievement_description')}}"></div>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% } %>
+            </table>
+        </section>
+    </div>
+
+    <div class="expander">
+        <div class="icon expand" title="{{{expand_tooltip}}}">{-await faIcon('angle-double-right-solid')-}</div>
+        <div class="icon compress" title="{{{compress_tooltip}}}">{-await faIcon('angle-double-left-solid')-}</div>
+    </div>
 <% } %>
-</article>

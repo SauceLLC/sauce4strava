@@ -83,7 +83,6 @@
             cursor: pointer;
         }
 
-
         td {
             padding: 0.5em 0.4em;
             text-align: center;
@@ -96,9 +95,8 @@
 }
 
 .sauce-info-dialog {
-    .sauce-sparkline {
-        margin-top: 1em;
-    }
+    width: auto !important;
+    right: initial !important;  // required for auto width
 
     sub,
     small,
@@ -110,21 +108,87 @@
         padding: 0 !important;
         background-color: color.shade(bg, 1.5%);
         flex-direction: row !important;
+        overflow: initial;
     }
 
-    article {
-        &.segments {
-            background-image: linear-gradient(to bottom, #dfdfdf, #e7e3e3 20%, white);
+    .left-main {
+        $width: 300px;
+        flex: 0 0 $width;
+        width: $width;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow-y: auto;
 
-            section {
-                display: flex;
-                flex-direction: column;;
+        .sauce-sparkline {
+            margin-top: 0.8em;
+        }
+    }
+
+    .expander {
+        flex: 0 0 auto;
+        opacity: 0.6;
+        transition: opacity 200ms;
+        background-image: linear-gradient(to right, color.shade(bg, 20%), color.shade(bg, 10%) 18%, color.shade(bg, 22%));
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.1em;
+
+        .icon {
+            width: 0.65em;
+            margin: 4em 0; // expand tooltip range (hack)
+        }
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    .ui-dialog-content.expanded {
+        .expander {
+            .expand {
+                display: none;
             }
+        }
+    }
+    .ui-dialog-content:not(.expanded) {
+        .expander {
+            .compress {
+                display: none;
+            }
+        }
+
+        .right-aside {
+            display: none;
+        }
+    }
+
+    .right-aside {
+        width: 300px;
+        overflow-y: auto;
+        background-image: linear-gradient(to bottom, color.shade(bg, 10%), color.shade(bg, 18%) 2em, color.shade(bg, 0%));
+
+        section.segments {
+            display: flex;
+            flex-direction: column;;
 
             table {
-                td {
+                td, th {
                     padding: 0.4em 0.5em;
                     font-size: 0.9em;
+
+                    &:first-child {
+                        padding-left: 0;
+                    }
+                    &:last-child {
+                        padding-right: 0;
+                    }
+                }
+
+                th {
+                    font-variant: all-small-caps;
                 }
 
                 td.segment-name {
@@ -286,7 +350,7 @@
         }
 
         &:last-child column.highlight {
-            padding-bottom: $highlight-value-offset;
+            padding-bottom: calc(#{$highlight-value-offset * 2}); // Must be big enough to prevent scrollbars from icon overflow
 
             .icon-background {
                 max-height: calc(100% + #{$highlight-value-offset});

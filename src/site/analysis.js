@@ -979,8 +979,7 @@ sauce.ns('analysis', ns => {
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             flex: true,
-            resizable: true, // XXX
-            width: 600,
+            resizable: false,
             position: {
                 my: 'left center',
                 at: 'right center',
@@ -1031,7 +1030,7 @@ sauce.ns('analysis', ns => {
         $el.sparkline(data, {
             type: 'line',
             width: '100%',
-            height: 56,
+            height: 56,  // slightly oversampled
             lineColor: '#EA400DA0',
             normalRangeColor: '#8885',
             fillColor: {
@@ -1121,29 +1120,18 @@ sauce.ns('analysis', ns => {
             return [];
         }
         const overlapping = [];
-        console.group();
         for (const segment of segEfforts.models) {
             const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(segment.indices());
-            let overlap;
-            if (segStart >= start && segEnd < end) {
-                overlap = (end - start) / (segEnd - segStart);
-                console.error("Match0 FULL INSIDE", segment.get('display_name'), overlap);
-            } else if (segStart >= start && segStart < end) {
-                overlap = (end - segStart) / (segEnd - segStart);
-                console.error("Match1", segment.get('display_name'), overlap);
-            } else if (segEnd > start && segEnd < end) {
-                overlap = (segEnd - start) / (segEnd - segStart);
-                console.error("Match2", segment.get('display_name'), overlap);
-            } else if (segStart <= start && segEnd >= end) {
-                const overlap = (end - start) / (segEnd - segStart);
-                console.error("Match3", segment.get('display_name'), overlap);
-            }
-            if (overlap != null) {
-                const correlation = 1 - Math.abs(1 - overlap);
+            const overlap = sauce.data.overlap([start, end], [segStart, segEnd]);
+            if (overlap) {
+                const segLength = segEnd - segStart + 1;
+                const correlation = overlap / segLength;
                 overlapping.push({overlap, correlation, segment});
             }
         }
-        console.groupEnd();
+        overlapping.sort((a, b) => b.correlation === a.correlation ?
+            (b.overlap < a.overlap ? -1 : 1) : (b.correlation < a.correlation ? -1 : 1));
+        overlapping.sort((a, b) => b.segment.get('start_index') < a.segment.get('start_index') ? 1 : -1);
         return overlapping;
     }
 
@@ -1224,6 +1212,18 @@ sauce.ns('analysis', ns => {
             originEl,
             start: startTime,
             end: endTime,
+        });
+        if (sauce.options.expandInfoDialog) {
+            $dialog.addClass('expanded');
+        }
+        $dialog.on('click', '.expander', async () => {
+            $dialog.toggleClass('expanded');
+            sauce.options.expandInfoDialog = !sauce.options.expandInfoDialog;  // for non page reloads
+            await sauce.rpc.storageUpdate('options', {expandInfoDialog: sauce.options.expandInfoDialog});
+        });
+        $dialog.on('click', '.segments a[data-id]', ev => {
+            $dialog.dialog('close');
+            pageView.router().changeMenuTo(`segments/${ev.currentTarget.dataset.id}`);
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
         if (source === 'peak_power' || source === 'peak_np' || source === 'peak_xp') {
