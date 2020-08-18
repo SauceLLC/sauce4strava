@@ -49,15 +49,11 @@ sauce.propDefined('jQuery', function($) {
         getDefaults, createClass, SPFormat, clipval, quartile, normalizeValue, normalizeValues,
         remove, isNumber, all, addCSS, ensureArray, formatNumber, RangeMap,
         MouseHandler, Tooltip, barHighlightMixin,
-        line, bar, tristate, discrete, bullet, pie, box, defaultStyles, initStyles,
+        line, bar, colorline, tristate, discrete, bullet, pie, box, defaultStyles, initStyles,
         VShape, VCanvas_base, VCanvas_canvas, pending, shapeCount = 0;
 
-    /**
-     * Default configuration settings
-     */
     getDefaults = function () {
         return {
-            // Settings common to most/all chart types
             common: {
                 type: 'line',
                 lineColor: '#00f',
@@ -82,7 +78,6 @@ sauce.propDefined('jQuery', function($) {
                 disableTooltips: false,
                 disableInteraction: false
             },
-            // Defaults for line charts
             line: {
                 spotColor: '#f80',
                 highlightSpotColor: '#5f5',
@@ -101,7 +96,6 @@ sauce.propDefined('jQuery', function($) {
                 chartRangeMaxX: undefined,
                 tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{prefix}}{{y}}{{suffix}}')
             },
-            // Defaults for bar charts
             bar: {
                 barColor: '#3366cc',
                 negBarColor: '#f44',
@@ -118,7 +112,20 @@ sauce.propDefined('jQuery', function($) {
                 colorMap: undefined,
                 tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{prefix}}{{value}}{{suffix}}')
             },
-            // Defaults for tristate charts
+            colorline: {
+                barColor: '#3366cc',
+                negBarColor: '#f44',
+                stackedBarColor: ['#3366cc', '#dc3912', '#ff9900', '#109618', '#66aa00',
+                    '#dd4477', '#0099c6', '#990099'],
+                zeroColor: undefined,
+                nullColor: undefined,
+                zeroAxis: true,
+                chartRangeMax: undefined,
+                chartRangeMin: undefined,
+                chartRangeClip: false,
+                colorMap: undefined,
+                tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{prefix}}{{value}}{{suffix}}')
+            },
             tristate: {
                 barWidth: 4,
                 barSpacing: 1,
@@ -129,7 +136,6 @@ sauce.propDefined('jQuery', function($) {
                 tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{value:map}}'),
                 tooltipValueLookups: { map: { '-1': 'Loss', '0': 'Draw', '1': 'Win' } }
             },
-            // Defaults for discrete charts
             discrete: {
                 lineHeight: 'auto',
                 thresholdColor: undefined,
@@ -139,7 +145,6 @@ sauce.propDefined('jQuery', function($) {
                 chartRangeClip: false,
                 tooltipFormat: new SPFormat('{{prefix}}{{value}}{{suffix}}')
             },
-            // Defaults for bullet charts
             bullet: {
                 targetColor: '#f33',
                 targetWidth: 3, // width of the target bar in pixels
@@ -149,7 +154,6 @@ sauce.propDefined('jQuery', function($) {
                 tooltipFormat: new SPFormat('{{fieldkey:fields}} - {{value}}'),
                 tooltipValueLookups: { fields: {r: 'Range', p: 'Performance', t: 'Target'} }
             },
-            // Defaults for pie charts
             pie: {
                 offset: 0,
                 sliceColors: ['#3366cc', '#dc3912', '#ff9900', '#109618', '#66aa00',
@@ -158,7 +162,6 @@ sauce.propDefined('jQuery', function($) {
                 borderColor: '#000',
                 tooltipFormat: new SPFormat('<span style="color: {{color}}">&#9679;</span> {{value}} ({{percent.1}}%)')
             },
-            // Defaults for box plots
             box: {
                 raw: false,
                 boxLineColor: '#000',
@@ -462,11 +465,11 @@ sauce.propDefined('jQuery', function($) {
     };
 
     $.RangeMapClass = RangeMap = createClass({
-        init: function (map) {
-            var key, range, rangelist = [];
-            for (key in map) {
-                if (Object.prototype.hasOwnProperty.call(map, key) && typeof key === 'string' && key.indexOf(':') > -1) {
-                    range = key.split(':');
+        init: function(map) {
+            const rangelist = [];
+            for (const key of Object.keys(map)) {
+                if (typeof key === 'string' && key.indexOf(':') !== -1) {
+                    const range = key.split(':');
                     range[0] = range[0].length === 0 ? -Infinity : parseFloat(range[0]);
                     range[1] = range[1].length === 0 ? Infinity : parseFloat(range[1]);
                     range[2] = map[key];
@@ -477,21 +480,17 @@ sauce.propDefined('jQuery', function($) {
             this.rangelist = rangelist || false;
         },
 
-        get: function (value) {
-            var rangelist = this.rangelist,
-                i, range, result;
-            if ((result = this.map[value]) !== undefined) {
-                return result;
+        get: function(value) {
+            if (this.map[value] !== undefined) {
+                return this.map[value];
             }
-            if (rangelist) {
-                for (i = rangelist.length; i--;) {
-                    range = rangelist[i];
+            if (this.rangelist) {
+                for (const range of this.rangelist) {
                     if (range[0] <= value && range[1] >= value) {
                         return range[2];
                     }
                 }
             }
-            return undefined;
         }
     });
 
@@ -1276,11 +1275,11 @@ sauce.propDefined('jQuery', function($) {
                 xvalues = this.options.get('xvalues');
             }
 
-            this.maxy = this.maxyorg = Math.max.apply(Math, yminmax);
-            this.miny = this.minyorg = Math.min.apply(Math, yminmax);
+            this.maxy = this.maxyorg = sauce.data.max(yminmax);
+            this.miny = this.minyorg = sauce.data.min(yminmax);
 
-            this.maxx = Math.max.apply(Math, xvalues);
-            this.minx = Math.min.apply(Math, xvalues);
+            this.maxx = sauce.data.max(xvalues);
+            this.minx = sauce.data.min(xvalues);
 
             this.xvalues = xvalues;
             this.yvalues = yvalues;
@@ -1526,8 +1525,8 @@ sauce.propDefined('jQuery', function($) {
                 stackMin = Infinity,
                 stackMax = -Infinity,
                 isStackString, groupMin, groupMax, stackRanges,
-                numValues, i, vlen, range, zeroAxis, xaxisOffset, min, max, clipMin, clipMax,
-                stacked, vlist, j, slen, svals, val, yoffset, yMaxCalc;
+                numValues, i, vlen, range, zeroAxis, min, max, clipMin, clipMax,
+                stacked, vlist, j, slen, svals, val, yMaxCalc;
             bar._super.init.call(this, el, values, options, width, height);
 
             // scan values to determine whether to stack bars
@@ -1540,8 +1539,8 @@ sauce.propDefined('jQuery', function($) {
                         val = values[i] = normalizeValues(val.split(':'));
                     }
                     val = remove(val, null); // min/max will treat null as zero
-                    groupMin = Math.min.apply(Math, val);
-                    groupMax = Math.max.apply(Math, val);
+                    groupMin = sauce.data.min(val);
+                    groupMax = sauce.data.max(val);
                     if (groupMin < stackMin) {
                         stackMin = groupMin;
                     }
@@ -1601,10 +1600,10 @@ sauce.propDefined('jQuery', function($) {
                     }
                 }
             }
-            this.max = max = Math.max.apply(Math, numValues);
-            this.min = min = Math.min.apply(Math, numValues);
-            this.stackMax = stackMax = stacked ? Math.max.apply(Math, stackTotals) : max;
-            this.stackMin = stackMin = stacked ? Math.min.apply(Math, numValues) : min;
+            this.max = max = sauce.data.max(numValues);
+            this.min = min = sauce.data.min(numValues);
+            this.stackMax = stackMax = stacked ? sauce.data.max(stackTotals) : max;
+            this.stackMin = stackMin = min;
 
             if (options.get('chartRangeMin') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMin') < min)) {
                 min = options.get('chartRangeMin');
@@ -1612,37 +1611,30 @@ sauce.propDefined('jQuery', function($) {
             if (options.get('chartRangeMax') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMax') > max)) {
                 max = options.get('chartRangeMax');
             }
-
-            this.zeroAxis = zeroAxis = options.get('zeroAxis', true);
+            zeroAxis = options.get('zeroAxis', true);
             if (min <= 0 && max >= 0 && zeroAxis) {
-                xaxisOffset = 0;
+                this.xaxisOffset = 0;
             } else if (zeroAxis == false) {
-                xaxisOffset = min;
+                this.xaxisOffset = min;
             } else if (min > 0) {
-                xaxisOffset = min;
+                this.xaxisOffset = min;
             } else {
-                xaxisOffset = max;
+                this.xaxisOffset = max;
             }
-            this.xaxisOffset = xaxisOffset;
-
-            range = stacked ? (Math.max.apply(Math, stackRanges) + Math.max.apply(Math, stackRangesNeg)) : max - min;
-
+            range = stacked ? sauce.data.max(stackRanges) + sauce.data.max(stackRangesNeg) : max - min;
             // as we plot zero/min values a single pixel line, we add a pixel to all other
             // values - Reduce the effective canvas size to suit
             this.canvasHeightEf = (zeroAxis && min < 0) ? this.canvasHeight - 2 : this.canvasHeight - 1;
-
-            if (min < xaxisOffset) {
+            if (min < this.xaxisOffset) {
                 yMaxCalc = (stacked && max >= 0) ? stackMax : max;
-                yoffset = (yMaxCalc - xaxisOffset) / range * this.canvasHeight;
-                if (yoffset !== Math.ceil(yoffset)) {
+                this.yoffset = (yMaxCalc - this.xaxisOffset) / range * this.canvasHeight;
+                if (this.yoffset !== Math.ceil(this.yoffset)) {
                     this.canvasHeightEf -= 2;
-                    yoffset = Math.ceil(yoffset);
+                    this.yoffset = Math.ceil(this.yoffset);
                 }
             } else {
-                yoffset = this.canvasHeight;
+                this.yoffset = this.canvasHeight;
             }
-            this.yoffset = yoffset;
-
             if ($.isArray(options.get('colorMap'))) {
                 this.colorMapByIndex = options.get('colorMap');
                 this.colorMapByValue = null;
@@ -1653,7 +1645,6 @@ sauce.propDefined('jQuery', function($) {
                     this.colorMapByValue = new RangeMap(this.colorMapByValue);
                 }
             }
-
             this.range = range;
         },
 
@@ -1742,6 +1733,185 @@ sauce.propDefined('jQuery', function($) {
                     minPlotted = true;
                 }
 
+                if (range > 0) {
+                    height = Math.floor(canvasHeightEf * ((Math.abs(val - xaxisOffset) / range))) + 1;
+                } else {
+                    height = 1;
+                }
+                if (val < xaxisOffset || (val === xaxisOffset && yoffset === 0)) {
+                    y = yoffsetNeg;
+                    yoffsetNeg += height;
+                } else {
+                    y = yoffset - height;
+                    yoffset -= height;
+                }
+                color = this.calcColor(i, val, valuenum);
+                if (highlight) {
+                    color = this.calcHighlightColor(color, options);
+                }
+                result.push(target.drawRect(x, y, this.barWidth - 1, height - 1, color, color));
+            }
+            if (result.length === 1) {
+                return result[0];
+            }
+            return result;
+        }
+    });
+
+    /**
+     * Bar charts
+     */
+    $.fn.sparkline.colorline = colorline = createClass($.fn.sparkline._base, barHighlightMixin, {
+        type: 'colorline',
+
+        init: function (el, values, options, width, height) {
+            colorline._super.init.call(this, el, values, options, width, height);
+            this.initTarget();
+            this.barWidth = this.canvasWidth / values.length;
+            const chartRangeMin = options.get('chartRangeMin');
+            const chartRangeMax = options.get('chartRangeMax');
+            const chartRangeClip = options.get('chartRangeClip');
+            if (values && values.length) {
+                const isStackString = typeof(values[0]) === 'string' && values[0].indexOf(':') > -1;
+                if (isStackString || Array.isArray(values[0])) {
+                    throw new TypeError("Stacked data not supported");
+                }
+            }
+            this.regionShapes = {};
+            let clipMin;
+            let clipMax;
+            if (chartRangeClip) {
+                clipMin = chartRangeMin === undefined ? -Infinity : chartRangeMin;
+                clipMax = chartRangeMax === undefined ? Infinity : chartRangeMax;
+            }
+            let min = Infinity;
+            let max = -Infinity;
+            for (let i = 0; i < values.length; i++) {
+                const normValue = values[i] = normalizeValue(chartRangeClip ?
+                    clipval(values[i], clipMin, clipMax) : values[i]);
+                if (normValue !== null) {
+                    if (normValue > max) {
+                        max = normValue;
+                    }
+                    if (normValue < min) {
+                        min = normValue;
+                    }
+                }
+            }
+            if (chartRangeMin !== undefined && (chartRangeClip || chartRangeMin < min)) {
+                min = chartRangeMin;
+            }
+            if (chartRangeMax !== undefined && (chartRangeClip || chartRangeMax > max)) {
+                max = chartRangeMax;
+            }
+            const zeroAxis = options.get('zeroAxis', true);
+            if (min <= 0 && max >= 0 && zeroAxis) {
+                this.xaxisOffset = 0;
+            } else if (zeroAxis == false) {
+                this.xaxisOffset = min;
+            } else if (min > 0) {
+                this.xaxisOffset = min;
+            } else {
+                this.xaxisOffset = max;
+            }
+            const range = max - min;
+            // as we plot zero/min values a single pixel line, we add a pixel to all other
+            // values - Reduce the effective canvas size to suit
+            this.canvasHeightEf = (zeroAxis && min < 0) ? this.canvasHeight - 2 : this.canvasHeight - 1;
+            if (min < this.xaxisOffset) {
+                this.yoffset = (max - this.xaxisOffset) / range * this.canvasHeight;
+                if (this.yoffset !== Math.ceil(this.yoffset)) {
+                    this.canvasHeightEf -= 2;
+                    this.yoffset = Math.ceil(this.yoffset);
+                }
+            } else {
+                this.yoffset = this.canvasHeight;
+            }
+
+            if ($.isArray(options.get('colorMap'))) {
+                this.colorMapByIndex = options.get('colorMap');
+                this.colorMapByValue = null;
+            } else {
+                this.colorMapByIndex = null;
+                this.colorMapByValue = options.get('colorMap');
+                if (this.colorMapByValue && this.colorMapByValue.get === undefined) {
+                    this.colorMapByValue = new RangeMap(this.colorMapByValue);
+                }
+            }
+            this.range = range;
+        },
+
+        getRegion: function (el, x, y) {
+            const result = Math.floor(x / this.barWidth);
+            return (result < 0 || result >= this.values.length) ? undefined : result;
+        },
+
+        getCurrentRegionFields: function () {
+            var currentRegion = this.currentRegion,
+                values = ensureArray(this.values[currentRegion]),
+                result = [],
+                value, i;
+            for (i = values.length; i--;) {
+                value = values[i];
+                result.push({
+                    isNull: value === null,
+                    value: value,
+                    color: this.calcColor(i, value, currentRegion),
+                    offset: currentRegion
+                });
+            }
+            return result;
+        },
+
+        calcColor: function (stacknum, value, valuenum) {
+            var colorMapByIndex = this.colorMapByIndex,
+                colorMapByValue = this.colorMapByValue,
+                options = this.options,
+                newColor;
+            let color = (value < 0) ? options.get('negBarColor') : options.get('barColor');
+            if (value === 0 && options.get('zeroColor') !== undefined) {
+                color = options.get('zeroColor');
+            }
+            if (colorMapByValue && (newColor = colorMapByValue.get(value))) {
+                color = newColor;
+            } else if (colorMapByIndex && colorMapByIndex.length > valuenum) {
+                color = colorMapByIndex[valuenum];
+            }
+            return $.isArray(color) ? color[stacknum % color.length] : color;
+        },
+
+        /**
+         * Render colorline(s) for a region
+         */
+        renderRegion: function (valuenum, highlight) {
+            var vals = this.values[valuenum],
+                options = this.options,
+                xaxisOffset = this.xaxisOffset,
+                result = [],
+                range = this.range,
+                target = this.target,
+                x = valuenum * this.barWidth,
+                canvasHeightEf = this.canvasHeightEf,
+                yoffset = this.yoffset,
+                y, height, color, isNull, yoffsetNeg, i, valcount, val;
+
+            vals = $.isArray(vals) ? vals : [vals];
+            valcount = vals.length;
+            val = vals[0];
+            isNull = all(null, vals);
+
+            if (isNull) {
+                if (options.get('nullColor')) {
+                    color = highlight ? options.get('nullColor') : this.calcHighlightColor(options.get('nullColor'), options);
+                    y = (yoffset > 0) ? yoffset - 1 : yoffset;
+                    return target.drawRect(x, y, this.barWidth - 1, 0, color, color);
+                } else {
+                    return undefined;
+                }
+            }
+            yoffsetNeg = yoffset;
+            for (i = 0; i < valcount; i++) {
+                val = vals[i];
                 if (range > 0) {
                     height = Math.floor(canvasHeightEf * ((Math.abs(val - xaxisOffset) / range))) + 1;
                 } else {
@@ -1876,8 +2046,8 @@ sauce.propDefined('jQuery', function($) {
 
             this.regionShapes = {};
             this.values = values = $.map(values, Number);
-            this.min = Math.min.apply(Math, values);
-            this.max = Math.max.apply(Math, values);
+            this.min = sauce.data.min(values);
+            this.max = sauce.data.max(values);
             this.range = this.max - this.min;
             this.width = width = options.get('width') === 'auto' ? values.length * 2 : this.width;
             this.interval = Math.floor(width / values.length);
@@ -1947,8 +2117,8 @@ sauce.propDefined('jQuery', function($) {
             vals = values.slice();
             vals[0] = vals[0] === null ? vals[2] : vals[0];
             vals[1] = values[1] === null ? vals[2] : vals[1];
-            min = Math.min.apply(Math, values);
-            max = Math.max.apply(Math, values);
+            min = sauce.data.min(values);
+            max = sauce.data.max(values);
             if (options.get('base') === undefined) {
                 min = min < 0 ? min : 0;
             } else {
@@ -2225,8 +2395,8 @@ sauce.propDefined('jQuery', function($) {
                 options = this.options,
                 canvasWidth = this.canvasWidth,
                 canvasHeight = this.canvasHeight,
-                minValue = options.get('chartRangeMin') === undefined ? Math.min.apply(Math, values) : options.get('chartRangeMin'),
-                maxValue = options.get('chartRangeMax') === undefined ? Math.max.apply(Math, values) : options.get('chartRangeMax'),
+                minValue = options.get('chartRangeMin') === undefined ? sauce.data.min(values) : options.get('chartRangeMin'),
+                maxValue = options.get('chartRangeMax') === undefined ? sauce.data.max(values) : options.get('chartRangeMax'),
                 canvasLeft = 0,
                 lwhisker, loutlier, iqr, q1, q2, q3, rwhisker, routlier, i,
                 size, unitSize;
@@ -2529,8 +2699,8 @@ sauce.propDefined('jQuery', function($) {
             refCanvas.height = 2;
             const refContext = refCanvas.getContext('2d');
             const refGradient = refContext.createLinearGradient(0, 0, size, 0);
-            const refMin = Math.min.apply(null, spec.steps.map(x => x.value));
-            const refMax = Math.max.apply(null, spec.steps.map(x => x.value));
+            const refMin = sauce.data.min(spec.steps.map(x => x.value));
+            const refMax = sauce.data.max(spec.steps.map(x => x.value));
             const refRange = refMax - refMin;
             for (const step of spec.steps) {
                 const pct = Math.min(1, Math.max(0, (step.value - refMin) / refRange));
