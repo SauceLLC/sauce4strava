@@ -1,6 +1,7 @@
 /* global sauce, jQuery, Strava, pageView, Backbone */
 
-function saucePreloaderInit() {
+// NOTE: Must be assigned to self and have matching name for FF
+self.saucePreloaderInit = function saucePreloaderInit() {
     'use strict';
 
     self.sauce = self.sauce || {};
@@ -534,6 +535,4 @@ function saucePreloaderInit() {
         }
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getSegmentLeaderboard);
     });
-}
-
-saucePreloaderInit;  // eslint
+};

@@ -1,6 +1,7 @@
 /* global sauce */
 
-function sauceBaseInit() {
+// NOTE: Must be assigned to self and have matching name for FF
+self.sauceBaseInit = function sauceBaseInit() {
     'use strict';
 
     self.sauce = self.sauce || {};
@@ -405,6 +406,4 @@ function sauceBaseInit() {
     sauce.cache = {
         TTLCache
     };
-}
-
-sauceBaseInit;  // eslint
+};
