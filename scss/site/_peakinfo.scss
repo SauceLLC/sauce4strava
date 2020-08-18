@@ -120,6 +120,18 @@
         position: relative;
         overflow-y: auto;
 
+        .graph-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-variant: all-small-caps;
+            color: color.shade(fg, 40%, 0.7);
+            font-weight: bold;
+            font-size: 0.7em;
+            padding: 0.12em;
+            z-index: 2;
+            pointer-events: none;
+        }
         .sauce-sparkline {
             margin-top: 0.8em;
         }
@@ -218,7 +230,7 @@
     section {
         $highlight-value-offset: 3mm;
         $highlight-margin-right: 3mm;
-        $heading-bottom-margin: 2mm;
+        $heading-bottom-margin: 1.5mm;
         $section-padding-bottom: 1.6mm;
         $section-margin-top: 2mm;
 
@@ -230,13 +242,37 @@
 
         > heading {
             grid-column: 1 / 3;
-            font-variant: all-small-caps;
-            font-size: 1.12em;
-            font-weight: bold;
-            color: color.shade(fg, 33%);
+            display: flex;
             margin-bottom: $heading-bottom-margin;
             border-bottom: var(--sauce-thin-border);
             border-color: color.shade(fg, 0%, 0.15);
+            justify-content: space-between;
+
+            .title {
+                font-variant: all-small-caps;
+                font-size: 1.12em;
+                font-weight: bold;
+                color: color.shade(fg, 33%);
+            }
+
+            .graph-selector {
+                width: 1em;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                transition: opacity 200ms, color 200ms;
+                color: color.get(fg);
+                opacity: 0.25;
+
+                &.enabled {
+                    opacity: 0.9;
+                    pointer-events: none;
+                }
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
         }
 
         > column {
@@ -284,13 +320,33 @@
             margin-right: $highlight-margin-right;
             padding-top: $highlight-value-offset;
 
+            prefix {
+                font-size: 0.65em;
+                vertical-align: middle;
+                opacity: 0.9;
+            }
+
+            img.sauce-rank {
+                margin: -$highlight-value-offset 0;
+                width: 5em;
+                filter: drop-shadow(1px 1px 4px color.shade(fg, 30%, 0.40));
+                opacity: 0.80;
+                transition: opacity 200ms;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+
             .icon-background {
                 position: absolute;
                 top: calc(-#{$heading-bottom-margin} / 2);
                 width: calc(100% + (#{$highlight-margin-right} * 2));
                 opacity: 0.18;
                 display: flex;
-                max-height: calc(100% + #{$section-margin-top} + (#{$highlight-value-offset} * 2) + #{$section-padding-bottom} - #{$heading-bottom-margin});
+                height: calc(100% + #{$section-margin-top} + #{$highlight-value-offset} + #{$section-padding-bottom} - #{$heading-bottom-margin});
+                display: flex;
+                align-items: center;
 
                 --sauce-info-icon-highlight-primary: color.shade(fg, 20%, 0.58);
                 --sauce-info-icon-highlight-secondary: color.shade(fg, 40%);
@@ -308,6 +364,10 @@
                 &.pace {
                     --sauce-info-icon-highlight-primary: #08f2;
                     --sauce-info-icon-highlight-secondary: #08f;
+
+                    svg[data-icon] {
+                        max-height: min(100%, 5em);  // it's a little bigger than the others.
+                    }
                 }
 
                 &.env {
@@ -318,6 +378,7 @@
 
                 svg[data-icon] {
                     flex: 1 1 100%;
+                    max-height: min(100%, 6em);
 
                     .fa-primary {
                         color: color.shade(fg, 20%, 0.58);
@@ -333,15 +394,15 @@
             key {
                 font-size: 1em;
                 font-variant: all-small-caps;
-                line-height: 1;
-                margin-top: -0.2em;
+                line-height: 0.9;
+                margin-top: -0.33em;
             }
 
             value {
                 font-size: 2em;
                 font-weight: bold;
                 line-height: 1;
-                opacity: 0.85;
+                opacity: 0.82;
 
                 abbr.unit {
                     font-size: 0.5em;
@@ -350,16 +411,11 @@
         }
 
         &:last-child column.highlight {
-            padding-bottom: calc(#{$highlight-value-offset * 2}); // Must be big enough to prevent scrollbars from icon overflow
+            padding-bottom: calc(#{$highlight-value-offset} * 2); // Must be big enough to prevent scrollbars from icon overflow
 
             .icon-background {
-                max-height: calc(100% + #{$highlight-value-offset});
+                height: calc(100%);
             }
         }
-    }
-
-    .rank-holder {
-        display: flex;
-        align-items: center;
     }
 }
