@@ -195,7 +195,6 @@ sauce.propDefined('jQuery', function($) {
             visibility: hidden;
             background-color: #000a;
             color: white;
-            font-size: 0.85em;
             text-align: left;
             white-space: nowrap;
             padding: 0.3em 0.5em;
@@ -1003,7 +1002,12 @@ sauce.propDefined('jQuery', function($) {
             fields = this.getCurrentRegionFields();
             formatter = options.get('tooltipFormatter');
             if (formatter) {
-                return formatter(this, options, fields);
+                const tooltip = formatter(this, options, fields);
+                if (!(formatter instanceof SPFormat)) {
+                    return `<div class="jqsfield">${tooltip}</div>`;
+                } else {
+                    return tooltip;
+                }
             }
             if (options.get('tooltipChartTitle')) {
                 header += '<div class="jqs jqstitle">' + options.get('tooltipChartTitle') + '</div>\n';
@@ -2552,6 +2556,7 @@ sauce.propDefined('jQuery', function($) {
             this.shapes = {};
             this.shapeseq = [];
             this.currentTargetShapeId = undefined;
+            this._fillGradients = new Map();
         },
 
         _buildFillGradient: function(context, spec) {
@@ -2600,10 +2605,14 @@ sauce.propDefined('jQuery', function($) {
             context.lineWidth = lineWidth === undefined ? 1 : lineWidth;
             if (fillColor !== undefined) {
                 if (fillColor.type === 'gradient') {
-                    if (this._fillGradient == null) {
-                        this._fillGradient = this._buildFillGradient(context, fillColor);
+                    let fillGradient;
+                    if (this._fillGradients.has(fillColor)) {
+                        fillGradient = this._fillGradients.get(fillColor);
+                    } else {
+                        fillGradient = this._buildFillGradient(context, fillColor);
+                        this._fillGradients.set(fillColor, fillGradient);
                     }
-                    context.fillStyle = this._fillGradient;
+                    context.fillStyle = fillGradient;
                 } else {
                     context.fillStyle = fillColor;
                 }
