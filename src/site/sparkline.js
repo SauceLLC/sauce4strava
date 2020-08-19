@@ -791,11 +791,7 @@ sauce.propDefined('jQuery', function($) {
                 }
 
                 if (options.get('composite') && !$.data(this, '_jqs_vcanvas')) {
-                    if (!$.data(this, '_jqs_errnotify')) {
-                        alert('Attempted to attach a composite sparkline to an element with no existing sparkline');
-                        $.data(this, '_jqs_errnotify', true);
-                    }
-                    return;
+                    throw new Error('Attempted to attach a composite sparkline to an element with no existing sparkline');
                 }
 
                 sp = new $.fn.sparkline[options.get('type')](this, values, options, width, height);
@@ -2523,7 +2519,6 @@ sauce.propDefined('jQuery', function($) {
 
     // Setup a very simple "virtual canvas" to make drawing the few shapes we need easier
     // This is accessible as $(foo).simpledraw()
-
     VShape = createClass({
         init: function (target, id, type, args) {
             this.target = target;
@@ -2578,27 +2573,18 @@ sauce.propDefined('jQuery', function($) {
             return this.canvas;
         },
 
-        /**
-         * Return the most recently inserted shape id
-         */
         getLastShapeId: function () {
             return this.lastShapeId;
         },
 
-        /**
-         * Clear and reset the canvas
-         */
         reset: function () {
-            alert('reset not implemented');
+            throw new Error('reset not implemented');
         },
 
         _insert: function (el, target) {
             $(target).html(el);
         },
 
-        /**
-         * Calculate the pixel dimensions of the canvas
-         */
         _calculatePixelDims: function (width, height, canvas) {
             const heightMatch = this._pxregex.exec(height);
             const pixelHeight = heightMatch ?  Number(heightMatch[1]) : $(canvas).height();
@@ -2609,55 +2595,34 @@ sauce.propDefined('jQuery', function($) {
             this.pixelWidth = Math.round(pixelWidth * dpr);
         },
 
-        /**
-         * Generate a shape object and id for later rendering
-         */
         _genShape: function (shapetype, shapeargs) {
             var id = shapeCount++;
             shapeargs.unshift(id);
             return new VShape(this, id, shapetype, shapeargs);
         },
 
-        /**
-         * Add a shape to the end of the render queue
-         */
         appendShape: function (shape) {
-            alert('appendShape not implemented');
+            throw new Error('appendShape not implemented');
         },
 
-        /**
-         * Replace one shape with another
-         */
         replaceWithShape: function (shapeid, shape) {
-            alert('replaceWithShape not implemented');
+            throw new Error('replaceWithShape not implemented');
         },
 
-        /**
-         * Insert one shape after another in the render queue
-         */
         insertAfterShape: function (shapeid, shape) {
-            alert('insertAfterShape not implemented');
+            throw new Error('insertAfterShape not implemented');
         },
 
-        /**
-         * Remove a shape from the queue
-         */
         removeShapeId: function (shapeid) {
-            alert('removeShapeId not implemented');
+            throw new Error('removeShapeId not implemented');
         },
 
-        /**
-         * Find a shape at the specified x/y co-ordinates
-         */
         getShapeAt: function (el, x, y) {
-            alert('getShapeAt not implemented');
+            throw new Error('getShapeAt not implemented');
         },
 
-        /**
-         * Render all queued shapes onto the canvas
-         */
         render: function () {
-            alert('render not implemented');
+            throw new Error('render not implemented');
         }
     });
 
