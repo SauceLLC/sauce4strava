@@ -964,8 +964,8 @@ sauce.propDefined('jQuery', function($) {
          */
         setRegionHighlight: function (el, x, y) {
             const $canvas = $(this.target.canvas);
-            x *= (this.canvasWidth /$canvas.width());
-            y *= (this.canvasHeight /$canvas.height());
+            x *= (this.canvasWidth / $canvas.width());
+            y *= (this.canvasHeight / $canvas.height());
             var currentRegion = this.currentRegion,
                 highlightEnabled = !this.options.get('disableHighlight'),
                 newRegion;
@@ -1670,7 +1670,7 @@ sauce.propDefined('jQuery', function($) {
             return result;
         },
 
-        calcColor: function (stacknum, value, valuenum) {
+        calcColor: function (stacknum, value, idx) {
             var colorMapByIndex = this.colorMapByIndex,
                 colorMapByValue = this.colorMapByValue,
                 options = this.options,
@@ -1685,8 +1685,8 @@ sauce.propDefined('jQuery', function($) {
             }
             if (colorMapByValue && (newColor = colorMapByValue.get(value))) {
                 color = newColor;
-            } else if (colorMapByIndex && colorMapByIndex.length > valuenum) {
-                color = colorMapByIndex[valuenum];
+            } else if (colorMapByIndex && colorMapByIndex.length > idx) {
+                color = colorMapByIndex[idx];
             }
             return $.isArray(color) ? color[stacknum % color.length] : color;
         },
@@ -1694,15 +1694,15 @@ sauce.propDefined('jQuery', function($) {
         /**
          * Render bar(s) for a region
          */
-        renderRegion: function (valuenum, highlight) {
-            var vals = this.values[valuenum],
+        renderRegion: function (idx, highlight) {
+            var vals = this.values[idx],
                 options = this.options,
                 xaxisOffset = this.xaxisOffset,
                 result = [],
                 range = this.range,
                 stacked = this.stacked,
                 target = this.target,
-                x = valuenum * this.totalBarWidth,
+                x = idx * this.totalBarWidth,
                 canvasHeightEf = this.canvasHeightEf,
                 yoffset = this.yoffset,
                 y, height, color, isNull, yoffsetNeg, i, valcount, val, minPlotted, allMin;
@@ -1745,7 +1745,7 @@ sauce.propDefined('jQuery', function($) {
                     y = yoffset - height;
                     yoffset -= height;
                 }
-                color = this.calcColor(i, val, valuenum);
+                color = this.calcColor(i, val, idx);
                 if (highlight) {
                     color = this.calcHighlightColor(color, options);
                 }
@@ -1863,7 +1863,7 @@ sauce.propDefined('jQuery', function($) {
             return result;
         },
 
-        calcColor: function (stacknum, value, valuenum) {
+        calcColor: function (stacknum, value, idx) {
             var colorMapByIndex = this.colorMapByIndex,
                 colorMapByValue = this.colorMapByValue,
                 options = this.options,
@@ -1874,44 +1874,37 @@ sauce.propDefined('jQuery', function($) {
             }
             if (colorMapByValue && (newColor = colorMapByValue.get(value))) {
                 color = newColor;
-            } else if (colorMapByIndex && colorMapByIndex.length > valuenum) {
-                color = colorMapByIndex[valuenum];
+            } else if (colorMapByIndex && colorMapByIndex.length > idx) {
+                color = colorMapByIndex[idx];
             }
             return $.isArray(color) ? color[stacknum % color.length] : color;
         },
 
-        /**
-         * Render colorline(s) for a region
-         */
-        renderRegion: function (valuenum, highlight) {
-            var vals = this.values[valuenum],
+        renderRegion: function (idx, highlight) {
+            var vals = this.values[idx],
                 options = this.options,
                 xaxisOffset = this.xaxisOffset,
                 result = [],
                 range = this.range,
                 target = this.target,
-                x = valuenum * this.barWidth,
+                x = idx * this.barWidth,
                 canvasHeightEf = this.canvasHeightEf,
                 yoffset = this.yoffset,
-                y, height, color, isNull, yoffsetNeg, i, valcount, val;
-
+                y, height, yoffsetNeg;
             vals = $.isArray(vals) ? vals : [vals];
-            valcount = vals.length;
-            val = vals[0];
-            isNull = all(null, vals);
-
-            if (isNull) {
+            if (all(null, vals)) {
                 if (options.get('nullColor')) {
-                    color = highlight ? options.get('nullColor') : this.calcHighlightColor(options.get('nullColor'), options);
+                    const color = highlight ? options.get('nullColor') :
+                        this.calcHighlightColor(options.get('nullColor'), options);
                     y = (yoffset > 0) ? yoffset - 1 : yoffset;
-                    return target.drawRect(x, y, this.barWidth - 1, 0, color, color);
+                    return target.drawRect(x, y, this.barWidth, 0, color, color);
                 } else {
-                    return undefined;
+                    return;
                 }
             }
             yoffsetNeg = yoffset;
-            for (i = 0; i < valcount; i++) {
-                val = vals[i];
+            for (let i = 0; i < vals.length; i++) {
+                const val = vals[i];
                 if (range > 0) {
                     height = Math.floor(canvasHeightEf * ((Math.abs(val - xaxisOffset) / range))) + 1;
                 } else {
@@ -1924,11 +1917,12 @@ sauce.propDefined('jQuery', function($) {
                     y = yoffset - height;
                     yoffset -= height;
                 }
-                color = this.calcColor(i, val, valuenum);
+                let color = this.calcColor(i, val, idx);
                 if (highlight) {
                     color = this.calcHighlightColor(color, options);
                 }
-                result.push(target.drawRect(x, y, this.barWidth - 1, height - 1, color, color));
+                console.log(x, y, this.barWidth, height);
+                result.push(target.drawRect(x, y, this.barWidth, height - 1, undefined, color));
             }
             if (result.length === 1) {
                 return result[0];
@@ -1937,9 +1931,6 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    /**
-     * Tristate charts
-     */
     $.fn.sparkline.tristate = tristate = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'tristate',
 
@@ -1982,7 +1973,7 @@ sauce.propDefined('jQuery', function($) {
             };
         },
 
-        calcColor: function (value, valuenum) {
+        calcColor: function (value, idx) {
             var values = this.values,
                 options = this.options,
                 colorMapByIndex = this.colorMapByIndex,
@@ -1991,11 +1982,11 @@ sauce.propDefined('jQuery', function($) {
 
             if (colorMapByValue && (newColor = colorMapByValue.get(value))) {
                 color = newColor;
-            } else if (colorMapByIndex && colorMapByIndex.length > valuenum) {
-                color = colorMapByIndex[valuenum];
-            } else if (values[valuenum] < 0) {
+            } else if (colorMapByIndex && colorMapByIndex.length > idx) {
+                color = colorMapByIndex[idx];
+            } else if (values[idx] < 0) {
                 color = options.get('negBarColor');
-            } else if (values[valuenum] > 0) {
+            } else if (values[idx] > 0) {
                 color = options.get('posBarColor');
             } else {
                 color = options.get('zeroBarColor');
@@ -2003,7 +1994,7 @@ sauce.propDefined('jQuery', function($) {
             return color;
         },
 
-        renderRegion: function (valuenum, highlight) {
+        renderRegion: function (idx, highlight) {
             var values = this.values,
                 options = this.options,
                 target = this.target,
@@ -2013,18 +2004,18 @@ sauce.propDefined('jQuery', function($) {
             canvasHeight = target.pixelHeight;
             halfHeight = Math.round(canvasHeight / 2);
 
-            x = valuenum * this.totalBarWidth;
-            if (values[valuenum] < 0) {
+            x = idx * this.totalBarWidth;
+            if (values[idx] < 0) {
                 y = halfHeight;
                 height = halfHeight - 1;
-            } else if (values[valuenum] > 0) {
+            } else if (values[idx] > 0) {
                 y = 0;
                 height = halfHeight - 1;
             } else {
                 y = halfHeight - 1;
                 height = 2;
             }
-            color = this.calcColor(values[valuenum], valuenum);
+            color = this.calcColor(values[idx], idx);
             if (color === null) {
                 return;
             }
@@ -2077,7 +2068,7 @@ sauce.propDefined('jQuery', function($) {
             };
         },
 
-        renderRegion: function (valuenum, highlight) {
+        renderRegion: function (idx, highlight) {
             var values = this.values,
                 options = this.options,
                 min = this.min,
@@ -2090,8 +2081,8 @@ sauce.propDefined('jQuery', function($) {
                 pheight = canvasHeight - lineHeight,
                 ytop, val, color, x;
 
-            val = clipval(values[valuenum], min, max);
-            x = valuenum * interval;
+            val = clipval(values[idx], min, max);
+            x = idx * interval;
             ytop = Math.round(pheight - pheight * ((val - min) / range));
             color = (options.get('thresholdColor') && val < options.get('thresholdValue')) ? options.get('thresholdColor') : options.get('lineColor');
             if (highlight) {
@@ -2287,7 +2278,7 @@ sauce.propDefined('jQuery', function($) {
             this.shapes[newslice.id] = currentRegion;
         },
 
-        renderSlice: function (valuenum, highlight) {
+        renderSlice: function (idx, highlight) {
             var target = this.target,
                 options = this.options,
                 radius = this.radius,
@@ -2306,7 +2297,7 @@ sauce.propDefined('jQuery', function($) {
                 if (total > 0) {  // avoid divide by zero
                     end = next + (circle * (values[i] / total));
                 }
-                if (valuenum === i) {
+                if (idx === i) {
                     color = options.get('sliceColors')[i % options.get('sliceColors').length];
                     if (highlight) {
                         color = this.calcHighlightColor(color, options);
@@ -2757,9 +2748,13 @@ sauce.propDefined('jQuery', function($) {
         _drawShape: function (shapeid, path, lineColor, fillColor, lineWidth) {
             var context = this._getContext(lineColor, fillColor, lineWidth), i, plen;
             context.beginPath();
-            context.moveTo(path[0][0] + 0.5, path[0][1] + 0.5);
+            //context.moveTo(path[0][0] + 0.5, path[0][1] + 0.5);
+            //for (i = 1, plen = path.length; i < plen; i++) {
+            //    context.lineTo(path[i][0] + 0.5, path[i][1] + 0.5); // the 0.5 offset gives us crisp pixel-width lines
+            //}
+            context.moveTo(path[0][0], path[0][1]);
             for (i = 1, plen = path.length; i < plen; i++) {
-                context.lineTo(path[i][0] + 0.5, path[i][1] + 0.5); // the 0.5 offset gives us crisp pixel-width lines
+                context.lineTo(path[i][0], path[i][1]);
             }
             if (lineColor !== undefined) {
                 context.stroke();
