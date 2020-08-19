@@ -52,7 +52,7 @@ sauce.propDefined('jQuery', function($) {
         line, bar, colorline, tristate, discrete, bullet, pie, box, defaultStyles, initStyles,
         VShape, VCanvas_base, VCanvas_canvas, pending, shapeCount = 0;
 
-    getDefaults = function () {
+    getDefaults = function() {
         return {
             common: {
                 type: 'line',
@@ -214,9 +214,9 @@ sauce.propDefined('jQuery', function($) {
      * Utilities
      */
 
-    createClass = function (/* [baseclass, [mixin, ...]], definition */) {
+    createClass = function(/* [baseclass, [mixin, ...]], definition */) {
         var Class, args;
-        Class = function () {
+        Class = function() {
             this.init.apply(this, arguments);
         };
         if (arguments.length > 1) {
@@ -248,16 +248,16 @@ sauce.propDefined('jQuery', function($) {
         fre: /\{\{([\w.]+?)(:(.+?))?\}\}/g,
         precre: /(\w+)\.(\d+)/,
 
-        init: function (format, fclass) {
+        init: function(format, fclass) {
             this.format = format;
             this.fclass = fclass;
         },
 
-        render: function (fieldset, lookups, options) {
+        render: function(fieldset, lookups, options) {
             var self = this,
                 fields = fieldset,
                 match, token, lookupkey, fieldvalue, prec;
-            return this.format.replace(this.fre, function () {
+            return this.format.replace(this.fre, function() {
                 var lookup;
                 token = arguments[1];
                 lookupkey = arguments[3];
@@ -300,7 +300,7 @@ sauce.propDefined('jQuery', function($) {
         return new SPFormat(format, fclass);
     };
 
-    clipval = function (val, min, max) {
+    clipval = function(val, min, max) {
         if (val < min) {
             return min;
         }
@@ -310,7 +310,7 @@ sauce.propDefined('jQuery', function($) {
         return val;
     };
 
-    quartile = function (values, q) {
+    quartile = function(values, q) {
         var vl;
         if (q === 2) {
             vl = Math.floor(values.length / 2);
@@ -327,7 +327,7 @@ sauce.propDefined('jQuery', function($) {
         }
     };
 
-    normalizeValue = function (val) {
+    normalizeValue = function(val) {
         var nf;
         switch (val) {
         case 'undefined':
@@ -351,7 +351,7 @@ sauce.propDefined('jQuery', function($) {
         return val;
     };
 
-    normalizeValues = function (vals) {
+    normalizeValues = function(vals) {
         var i, result = [];
         for (i = vals.length; i--;) {
             result[i] = normalizeValue(vals[i]);
@@ -359,7 +359,7 @@ sauce.propDefined('jQuery', function($) {
         return result;
     };
 
-    remove = function (vals, filter) {
+    remove = function(vals, filter) {
         var i, vl, result = [];
         for (i = 0, vl = vals.length; i < vl; i++) {
             if (vals[i] !== filter) {
@@ -369,11 +369,11 @@ sauce.propDefined('jQuery', function($) {
         return result;
     };
 
-    isNumber = function (num) {
+    isNumber = function(num) {
         return !isNaN(parseFloat(num)) && isFinite(num);
     };
 
-    formatNumber = function (num, prec, groupsize, groupsep, decsep) {
+    formatNumber = function(num, prec, groupsize, groupsep, decsep) {
         var p, i;
         num = (prec === false ? parseFloat(num).toString() : num.toFixed(prec)).split('');
         p = (p = $.inArray('.', num)) < 0 ? num.length : p;
@@ -388,7 +388,7 @@ sauce.propDefined('jQuery', function($) {
 
     // determine if all values of an array match a value
     // returns true if the array is empty
-    all = function (val, arr, ignoreNull) {
+    all = function(val, arr, ignoreNull) {
         var i;
         for (i = arr.length; i--; ) {
             if (ignoreNull && arr[i] === null) continue;
@@ -399,7 +399,7 @@ sauce.propDefined('jQuery', function($) {
         return true;
     };
 
-    ensureArray = function (val) {
+    ensureArray = function(val) {
         return $.isArray(val) ? val : [val];
     };
 
@@ -418,38 +418,32 @@ sauce.propDefined('jQuery', function($) {
     };
 
     // Provide a cross-browser interface to a few simple drawing primitives
-    $.fn.simpledraw = function (width, height, useExisting, interact) {
+    $.fn.simpledraw = function(width, height, useExisting, interact) {
         var target, mhandler;
         if (useExisting && (target = this.data('_jqs_vcanvas'))) {
             return target;
         }
-
         if ($.fn.sparkline.canvas === false) {
             return false;
-
         } else if ($.fn.sparkline.canvas === undefined) {
             // No function defined yet -- need to see if we support Canvas
             var el = document.createElement('canvas');
             if (el.getContext && el.getContext('2d')) {
                 // Canvas is available
-                $.fn.sparkline.canvas = function(width, height, target, interact) {
-                    return new VCanvas_canvas(width, height, target, interact);
-                };
+                $.fn.sparkline.canvas = (width, height, target, interact) =>
+                    new VCanvas_canvas(width, height, target, interact);
             } else {
                 $.fn.sparkline.canvas = false;
                 return false;
             }
         }
-
         if (width === undefined) {
             width = $(this).innerWidth();
         }
         if (height === undefined) {
             height = $(this).innerHeight();
         }
-
         target = $.fn.sparkline.canvas(width, height, this, interact);
-
         mhandler = $(this).data('_jqs_mhandler');
         if (mhandler) {
             mhandler.registerCanvas(target);
@@ -457,7 +451,7 @@ sauce.propDefined('jQuery', function($) {
         return target;
     };
 
-    $.fn.cleardraw = function () {
+    $.fn.cleardraw = function() {
         var target = this.data('_jqs_vcanvas');
         if (target) {
             target.reset();
@@ -500,7 +494,7 @@ sauce.propDefined('jQuery', function($) {
     };
 
     MouseHandler = createClass({
-        init: function (el, options) {
+        init: function(el, options) {
             var $el = $(el);
             this.$el = $el;
             this.options = options;
@@ -514,14 +508,14 @@ sauce.propDefined('jQuery', function($) {
             this.highlightEnabled = !options.get('disableHighlight');
         },
 
-        registerSparkline: function (sp) {
+        registerSparkline: function(sp) {
             this.splist.push(sp);
             if (this.over) {
                 this.updateDisplay();
             }
         },
 
-        registerCanvas: function (canvas) {
+        registerCanvas: function(canvas) {
             var $canvas = $(canvas.canvas);
             this.canvas = canvas;
             this.$canvas = $canvas;
@@ -530,7 +524,7 @@ sauce.propDefined('jQuery', function($) {
             $canvas.click($.proxy(this.mouseclick, this));
         },
 
-        reset: function (removeTooltip) {
+        reset: function(removeTooltip) {
             this.splist = [];
             if (this.tooltip && removeTooltip) {
                 this.tooltip.remove();
@@ -538,14 +532,14 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        mouseclick: function (e) {
+        mouseclick: function(e) {
             var clickEvent = $.Event('sparklineClick');
             clickEvent.originalEvent = e;
             clickEvent.sparklines = this.splist;
             this.$el.trigger(clickEvent);
         },
 
-        mouseenter: function (e) {
+        mouseenter: function(e) {
             $(document.body).unbind('mousemove.jqs');
             $(document.body).bind('mousemove.jqs', $.proxy(this.mousemove, this));
             this.over = true;
@@ -559,7 +553,7 @@ sauce.propDefined('jQuery', function($) {
             this.updateDisplay();
         },
 
-        mouseleave: function () {
+        mouseleave: function() {
             $(document.body).unbind('mousemove.jqs');
             var splist = this.splist,
                 spcount = splist.length,
@@ -567,25 +561,22 @@ sauce.propDefined('jQuery', function($) {
                 sp, i;
             this.over = false;
             this.currentEl = null;
-
             if (this.tooltip) {
                 this.tooltip.remove();
                 this.tooltip = null;
             }
-
             for (i = 0; i < spcount; i++) {
                 sp = splist[i];
                 if (sp.clearRegionHighlight()) {
                     needsRefresh = true;
                 }
             }
-
             if (needsRefresh) {
                 this.canvas.render();
             }
         },
 
-        mousemove: function (e) {
+        mousemove: function(e) {
             this.currentPageX = e.pageX;
             this.currentPageY = e.pageY;
             this.currentEl = e.target;
@@ -595,7 +586,7 @@ sauce.propDefined('jQuery', function($) {
             this.updateDisplay();
         },
 
-        updateDisplay: function () {
+        updateDisplay: function() {
             var splist = this.splist,
                 needsRefresh = false,
                 offset = this.$canvas.offset(),
@@ -626,14 +617,13 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-
     Tooltip = createClass({
         sizeStyle: 'position: static !important;' +
             'display: block !important;' +
             'visibility: hidden !important;' +
             'float: left !important;',
 
-        init: function (options) {
+        init: function(options) {
             var tooltipClassname = options.get('tooltipClassname', 'jqstooltip'),
                 sizetipStyle = this.sizeStyle,
                 offset;
@@ -664,21 +654,21 @@ sauce.propDefined('jQuery', function($) {
             this.updateWindowDims();
         },
 
-        updateWindowDims: function () {
+        updateWindowDims: function() {
             this.scrollTop = $(window).scrollTop();
             this.scrollLeft = $(window).scrollLeft();
             this.scrollRight = this.scrollLeft + $(window).width();
             this.updatePosition();
         },
 
-        getSize: function (content) {
+        getSize: function(content) {
             this.sizetip.html(content).appendTo(this.container);
             this.width = this.sizetip.width() + 1;
             this.height = this.sizetip.height();
             this.sizetip.remove();
         },
 
-        setContent: function (content) {
+        setContent: function(content) {
             if (!content) {
                 this.tooltip.css('visibility', 'hidden');
                 this.hidden = true;
@@ -697,7 +687,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        updatePosition: function (x, y) {
+        updatePosition: function(x, y) {
             if (x === undefined) {
                 if (this.mousex === undefined) {
                     return;
@@ -731,7 +721,7 @@ sauce.propDefined('jQuery', function($) {
             });
         },
 
-        remove: function () {
+        remove: function() {
             this.tooltip.remove();
             this.sizetip.remove();
             this.sizetip = this.tooltip = undefined;
@@ -746,12 +736,12 @@ sauce.propDefined('jQuery', function($) {
     $(initStyles);
 
     pending = [];
-    $.fn.sparkline = function (userValues, userOptions) {
-        return this.each(function () {
+    $.fn.sparkline = function(userValues, userOptions) {
+        return this.each(function() {
             var options = new $.fn.sparkline.options(this, userOptions),
                 $this = $(this),
                 render;
-            render = function () {
+            render = function() {
                 var values, mhandler, sp, vals;
                 if (userValues === 'html' || userValues === undefined) {
                     vals = this.getAttribute(options.get('tagValuesAttribute'));
@@ -819,7 +809,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.defaults = getDefaults();
 
 
-    $.sparkline_display_visible = function () {
+    $.sparkline_display_visible = function() {
         var el, i, pl;
         var done = [];
         for (i = 0, pl = pending.length; i < pl; i++) {
@@ -847,7 +837,7 @@ sauce.propDefined('jQuery', function($) {
      * User option handler
      */
     $.fn.sparkline.options = createClass({
-        init: function (tag, userOptions) {
+        init: function(tag, userOptions) {
             var extendedOptions, defaults, base, tagOptionType;
             this.userOptions = userOptions = userOptions || {};
             this.tag = tag;
@@ -864,7 +854,7 @@ sauce.propDefined('jQuery', function($) {
             this.mergedOptions = $.extend({}, base, extendedOptions, userOptions);
         },
 
-        getTagSetting: function (key) {
+        getTagSetting: function(key) {
             var prefix = this.tagOptionsPrefix,
                 val, i, pairs, keyval;
             if (prefix === false || prefix === undefined) {
@@ -896,7 +886,7 @@ sauce.propDefined('jQuery', function($) {
             return val;
         },
 
-        get: function (key, defaultval) {
+        get: function(key, defaultval) {
             var tagOption = this.getTagSetting(key),
                 result;
             if (tagOption !== UNSET_OPTION) {
@@ -910,7 +900,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline._base = createClass({
         disabled: false,
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             this.el = el;
             this.$el = $(el);
             this.values = values;
@@ -923,7 +913,7 @@ sauce.propDefined('jQuery', function($) {
         /**
          * Setup the canvas
          */
-        initTarget: function () {
+        initTarget: function() {
             var interactive = !this.options.get('disableInteraction');
             if (!(this.target = this.$el.simpledraw(this.width, this.height, this.options.get('composite'), interactive))) {
                 this.disabled = true;
@@ -936,7 +926,7 @@ sauce.propDefined('jQuery', function($) {
         /**
          * Actually render the chart to the canvas
          */
-        render: function () {
+        render: function() {
             if (this.disabled) {
                 this.el.innerHTML = '';
                 return false;
@@ -947,13 +937,13 @@ sauce.propDefined('jQuery', function($) {
         /**
          * Return a region id for a given x/y co-ordinate
          */
-        getRegion: function (x, y) {
+        getRegion: function(x, y) {
         },
 
         /**
          * Highlight an item based on the moused-over x,y co-ordinate
          */
-        setRegionHighlight: function (el, x, y) {
+        setRegionHighlight: function(el, x, y) {
             const $canvas = $(this.target.canvas);
             x *= (this.canvasWidth / $canvas.width());
             y *= (this.canvasHeight / $canvas.height());
@@ -981,7 +971,7 @@ sauce.propDefined('jQuery', function($) {
             return false;
         },
 
-        clearRegionHighlight: function () {
+        clearRegionHighlight: function() {
             if (this.currentRegion !== undefined) {
                 this.removeHighlight();
                 this.currentRegion = undefined;
@@ -990,17 +980,17 @@ sauce.propDefined('jQuery', function($) {
             return false;
         },
 
-        renderHighlight: function () {
+        renderHighlight: function() {
             this.changeHighlight(true);
         },
 
-        removeHighlight: function () {
+        removeHighlight: function() {
             this.changeHighlight(false);
         },
 
-        changeHighlight: function (highlight)  {},
+        changeHighlight: function(highlight)  {},
 
-        getCurrentRegionTooltip: function () {
+        getCurrentRegionTooltip: function() {
             var options = this.options,
                 header = '',
                 entries = [],
@@ -1066,9 +1056,9 @@ sauce.propDefined('jQuery', function($) {
             return '';
         },
 
-        getCurrentRegionFields: function () {},
+        getCurrentRegionFields: function() {},
 
-        calcHighlightColor: function (color, options) {
+        calcHighlightColor: function(color, options) {
             var highlightColor = options.get('highlightColor'),
                 lighten = options.get('highlightLighten'),
                 parse, mult, rgbnew, i;
@@ -1093,7 +1083,7 @@ sauce.propDefined('jQuery', function($) {
     });
 
     barHighlightMixin = {
-        changeHighlight: function (highlight) {
+        changeHighlight: function(highlight) {
             var currentRegion = this.currentRegion,
                 target = this.target,
                 shapeids = this.regionShapes[currentRegion],
@@ -1103,9 +1093,7 @@ sauce.propDefined('jQuery', function($) {
                 newShapes = this.renderRegion(currentRegion, highlight);
                 if ($.isArray(newShapes) || $.isArray(shapeids)) {
                     target.replaceWithShapes(shapeids, newShapes);
-                    this.regionShapes[currentRegion] = $.map(newShapes, function (newShape) {
-                        return newShape.id;
-                    });
+                    this.regionShapes[currentRegion] = $.map(newShapes, x => x.id);
                 } else {
                     target.replaceWithShape(shapeids, newShapes);
                     this.regionShapes[currentRegion] = newShapes.id;
@@ -1113,7 +1101,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        render: function () {
+        render: function() {
             var values = this.values,
                 target = this.target,
                 regionShapes = this.regionShapes,
@@ -1148,7 +1136,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.line = line = createClass($.fn.sparkline._base, {
         type: 'line',
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             line._super.init.call(this, el, values, options, width, height);
             this.vertices = [];
             this.regionMap = [];
@@ -1160,7 +1148,7 @@ sauce.propDefined('jQuery', function($) {
             this.initTarget();
         },
 
-        getRegion: function (el, x, y) {
+        getRegion: function(el, x, y) {
             var i,
                 regionMap = this.regionMap; // maps regions to value positions
             for (i = regionMap.length; i--;) {
@@ -1171,7 +1159,7 @@ sauce.propDefined('jQuery', function($) {
             return undefined;
         },
 
-        getCurrentRegionFields: function () {
+        getCurrentRegionFields: function() {
             var currentRegion = this.currentRegion;
             return {
                 isNull: this.yvalues[currentRegion] === null,
@@ -1183,7 +1171,7 @@ sauce.propDefined('jQuery', function($) {
             };
         },
 
-        renderHighlight: function () {
+        renderHighlight: function() {
             var currentRegion = this.currentRegion,
                 target = this.target,
                 vertex = this.vertices[currentRegion],
@@ -1209,7 +1197,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        removeHighlight: function () {
+        removeHighlight: function() {
             var target = this.target;
             if (this.highlightSpotId) {
                 target.removeShapeId(this.highlightSpotId);
@@ -1221,7 +1209,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        scanValues: function () {
+        scanValues: function() {
             var values = this.values,
                 valcount = values.length,
                 xvalues = this.xvalues,
@@ -1263,7 +1251,7 @@ sauce.propDefined('jQuery', function($) {
             this.yminmax = yminmax;
         },
 
-        processRangeOptions: function () {
+        processRangeOptions: function() {
             var options = this.options,
                 normalRangeMin = options.get('normalRangeMin'),
                 normalRangeMax = options.get('normalRangeMax');
@@ -1290,7 +1278,7 @@ sauce.propDefined('jQuery', function($) {
 
         },
 
-        drawNormalRange: function (canvasLeft, canvasTop, canvasHeight, canvasWidth, rangey) {
+        drawNormalRange: function(canvasLeft, canvasTop, canvasHeight, canvasWidth, rangey) {
             var normalRangeMin = this.options.get('normalRangeMin'),
                 normalRangeMax = this.options.get('normalRangeMax'),
                 ytop = canvasTop + Math.round(canvasHeight - (canvasHeight * ((normalRangeMax - this.miny) / rangey))),
@@ -1298,7 +1286,7 @@ sauce.propDefined('jQuery', function($) {
             this.target.drawRect(canvasLeft, ytop, canvasWidth, height, undefined, this.options.get('normalRangeColor')).append();
         },
 
-        render: function () {
+        render: function() {
             var options = this.options,
                 target = this.target,
                 canvasWidth = this.canvasWidth,
@@ -1471,7 +1459,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.bar = bar = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'bar',
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             var barWidth = parseInt(options.get('barWidth'), 10),
                 barSpacing = parseInt(options.get('barSpacing'), 10),
                 chartRangeMin = options.get('chartRangeMin'),
@@ -1597,12 +1585,12 @@ sauce.propDefined('jQuery', function($) {
             this.range = range;
         },
 
-        getRegion: function (el, x, y) {
+        getRegion: function(el, x, y) {
             var result = Math.floor(x / this.totalBarWidth);
             return (result < 0 || result >= this.values.length) ? undefined : result;
         },
 
-        getCurrentRegionFields: function () {
+        getCurrentRegionFields: function() {
             var currentRegion = this.currentRegion,
                 values = ensureArray(this.values[currentRegion]),
                 result = [],
@@ -1619,7 +1607,7 @@ sauce.propDefined('jQuery', function($) {
             return result;
         },
 
-        calcColor: function (stacknum, value, idx) {
+        calcColor: function(stacknum, value, idx) {
             var colorMapByIndex = this.colorMapByIndex,
                 colorMapByValue = this.colorMapByValue,
                 options = this.options,
@@ -1643,7 +1631,7 @@ sauce.propDefined('jQuery', function($) {
         /**
          * Render bar(s) for a region
          */
-        renderRegion: function (idx, highlight) {
+        renderRegion: function(idx, highlight) {
             var vals = this.values[idx],
                 options = this.options,
                 xaxisOffset = this.xaxisOffset,
@@ -1711,7 +1699,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.colorline = colorline = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'colorline',
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             colorline._super.init.call(this, el, values, options, width, height);
             this.initTarget();
             this.barWidth = this.canvasWidth / values.length;
@@ -1787,12 +1775,12 @@ sauce.propDefined('jQuery', function($) {
             this.range = range;
         },
 
-        getRegion: function (el, x, y) {
+        getRegion: function(el, x, y) {
             const result = Math.floor(x / this.barWidth);
             return (result < 0 || result >= this.values.length) ? undefined : result;
         },
 
-        getCurrentRegionFields: function () {
+        getCurrentRegionFields: function() {
             var currentRegion = this.currentRegion,
                 values = ensureArray(this.values[currentRegion]),
                 result = [],
@@ -1809,7 +1797,7 @@ sauce.propDefined('jQuery', function($) {
             return result;
         },
 
-        calcColor: function (stacknum, value, idx) {
+        calcColor: function(stacknum, value, idx) {
             var colorMapByIndex = this.colorMapByIndex,
                 colorMapByValue = this.colorMapByValue,
                 options = this.options,
@@ -1826,7 +1814,7 @@ sauce.propDefined('jQuery', function($) {
             return $.isArray(color) ? color[stacknum % color.length] : color;
         },
 
-        renderRegion: function (idx, highlight) {
+        renderRegion: function(idx, highlight) {
             var vals = this.values[idx],
                 options = this.options,
                 xaxisOffset = this.xaxisOffset,
@@ -1879,7 +1867,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.tristate = tristate = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'tristate',
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             var barWidth = parseInt(options.get('barWidth'), 10),
                 barSpacing = parseInt(options.get('barSpacing'), 10);
             tristate._super.init.call(this, el, values, options, width, height);
@@ -1904,11 +1892,11 @@ sauce.propDefined('jQuery', function($) {
             this.initTarget();
         },
 
-        getRegion: function (el, x, y) {
+        getRegion: function(el, x, y) {
             return Math.floor(x / this.totalBarWidth);
         },
 
-        getCurrentRegionFields: function () {
+        getCurrentRegionFields: function() {
             var currentRegion = this.currentRegion;
             return {
                 isNull: this.values[currentRegion] === undefined,
@@ -1918,7 +1906,7 @@ sauce.propDefined('jQuery', function($) {
             };
         },
 
-        calcColor: function (value, idx) {
+        calcColor: function(value, idx) {
             var values = this.values,
                 options = this.options,
                 colorMapByIndex = this.colorMapByIndex,
@@ -1938,7 +1926,7 @@ sauce.propDefined('jQuery', function($) {
             return color;
         },
 
-        renderRegion: function (idx, highlight) {
+        renderRegion: function(idx, highlight) {
             var values = this.values,
                 options = this.options,
                 target = this.target,
@@ -1971,7 +1959,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.discrete = discrete = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'discrete',
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             discrete._super.init.call(this, el, values, options, width, height);
 
             this.regionShapes = {};
@@ -1994,11 +1982,11 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        getRegion: function (el, x, y) {
+        getRegion: function(el, x, y) {
             return Math.floor(x / this.itemWidth);
         },
 
-        getCurrentRegionFields: function () {
+        getCurrentRegionFields: function() {
             var currentRegion = this.currentRegion;
             return {
                 isNull: this.values[currentRegion] === undefined,
@@ -2007,7 +1995,7 @@ sauce.propDefined('jQuery', function($) {
             };
         },
 
-        renderRegion: function (idx, highlight) {
+        renderRegion: function(idx, highlight) {
             var values = this.values,
                 options = this.options,
                 min = this.min,
@@ -2033,7 +2021,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.bullet = bullet = createClass($.fn.sparkline._base, {
         type: 'bullet',
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             var min, max, vals;
             bullet._super.init.call(this, el, values, options, width, height);
             // values: target, performance, range1, range2, range3
@@ -2063,12 +2051,12 @@ sauce.propDefined('jQuery', function($) {
             this.initTarget();
         },
 
-        getRegion: function (el, x, y) {
+        getRegion: function(el, x, y) {
             var shapeid = this.target.getShapeAt(el, x, y);
             return (shapeid !== undefined && this.shapes[shapeid] !== undefined) ? this.shapes[shapeid] : undefined;
         },
 
-        getCurrentRegionFields: function () {
+        getCurrentRegionFields: function() {
             var currentRegion = this.currentRegion;
             return {
                 fieldkey: currentRegion.substr(0, 1),
@@ -2077,7 +2065,7 @@ sauce.propDefined('jQuery', function($) {
             };
         },
 
-        changeHighlight: function (highlight) {
+        changeHighlight: function(highlight) {
             var currentRegion = this.currentRegion,
                 shapeid = this.valueShapes[currentRegion],
                 shape;
@@ -2098,7 +2086,7 @@ sauce.propDefined('jQuery', function($) {
             this.target.replaceWithShape(shapeid, shape);
         },
 
-        renderRange: function (rn, highlight) {
+        renderRange: function(rn, highlight) {
             var rangeval = this.values[rn],
                 rangewidth = Math.round(this.canvasWidth * ((rangeval - this.min) / this.range)),
                 color = this.options.get('rangeColors')[rn - 2];
@@ -2108,7 +2096,7 @@ sauce.propDefined('jQuery', function($) {
             return this.target.drawRect(0, 0, rangewidth - 1, this.canvasHeight - 1, color, color);
         },
 
-        renderPerformance: function (highlight) {
+        renderPerformance: function(highlight) {
             var perfval = this.values[1],
                 perfwidth = Math.round(this.canvasWidth * ((perfval - this.min) / this.range)),
                 color = this.options.get('performanceColor');
@@ -2119,7 +2107,7 @@ sauce.propDefined('jQuery', function($) {
                 Math.round(this.canvasHeight * 0.4) - 1, color, color);
         },
 
-        renderTarget: function (highlight) {
+        renderTarget: function(highlight) {
             var targetval = this.values[0],
                 x = Math.round(this.canvasWidth * ((targetval - this.min) / this.range) - (this.options.get('targetWidth') / 2)),
                 targettop = Math.round(this.canvasHeight * 0.10),
@@ -2131,7 +2119,7 @@ sauce.propDefined('jQuery', function($) {
             return this.target.drawRect(x, targettop, this.options.get('targetWidth') - 1, targetheight - 1, color, color);
         },
 
-        render: function () {
+        render: function() {
             var vlen = this.values.length,
                 target = this.target,
                 i, shape;
@@ -2160,7 +2148,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.pie = pie = createClass($.fn.sparkline._base, {
         type: 'pie',
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             var total = 0, i;
             pie._super.init.call(this, el, values, options, width, height);
             this.shapes = {}; // map shape ids to value offsets
@@ -2179,12 +2167,12 @@ sauce.propDefined('jQuery', function($) {
             this.radius = Math.floor(Math.min(this.canvasWidth, this.canvasHeight) / 2);
         },
 
-        getRegion: function (el, x, y) {
+        getRegion: function(el, x, y) {
             var shapeid = this.target.getShapeAt(el, x, y);
             return (shapeid !== undefined && this.shapes[shapeid] !== undefined) ? this.shapes[shapeid] : undefined;
         },
 
-        getCurrentRegionFields: function () {
+        getCurrentRegionFields: function() {
             var currentRegion = this.currentRegion;
             return {
                 isNull: this.values[currentRegion] === undefined,
@@ -2195,7 +2183,7 @@ sauce.propDefined('jQuery', function($) {
             };
         },
 
-        changeHighlight: function (highlight) {
+        changeHighlight: function(highlight) {
             var currentRegion = this.currentRegion,
                 newslice = this.renderSlice(currentRegion, highlight),
                 shapeid = this.valueShapes[currentRegion];
@@ -2205,7 +2193,7 @@ sauce.propDefined('jQuery', function($) {
             this.shapes[newslice.id] = currentRegion;
         },
 
-        renderSlice: function (idx, highlight) {
+        renderSlice: function(idx, highlight) {
             var target = this.target,
                 options = this.options,
                 radius = this.radius,
@@ -2236,7 +2224,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        render: function () {
+        render: function() {
             var target = this.target,
                 values = this.values,
                 options = this.options,
@@ -2264,7 +2252,7 @@ sauce.propDefined('jQuery', function($) {
     $.fn.sparkline.box = box = createClass($.fn.sparkline._base, {
         type: 'box',
 
-        init: function (el, values, options, width, height) {
+        init: function(el, values, options, width, height) {
             box._super.init.call(this, el, values, options, width, height);
             this.values = $.map(values, Number);
             this.width = options.get('width') === 'auto' ? '4.0em' : width;
@@ -2274,11 +2262,11 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        getRegion: function () {
+        getRegion: function() {
             return 1;  // Simulate a single region
         },
 
-        getCurrentRegionFields: function () {
+        getCurrentRegionFields: function() {
             var result = [
                 { field: 'lq', value: this.quartiles[0] },
                 { field: 'med', value: this.quartiles[1] },
@@ -2299,7 +2287,7 @@ sauce.propDefined('jQuery', function($) {
             return result;
         },
 
-        render: function () {
+        render: function() {
             var target = this.target,
                 values = this.values,
                 vlen = values.length,
@@ -2331,7 +2319,7 @@ sauce.propDefined('jQuery', function($) {
                     rwhisker = values[4];
                 }
             } else {
-                values.sort(function (a, b) { return a - b; });
+                values.sort((a, b) => a - b);
                 q1 = quartile(values, 1);
                 q2 = quartile(values, 2);
                 q3 = quartile(values, 3);
@@ -2440,14 +2428,14 @@ sauce.propDefined('jQuery', function($) {
     // Setup a very simple "virtual canvas" to make drawing the few shapes we need easier
     // This is accessible as $(foo).simpledraw()
     VShape = createClass({
-        init: function (target, id, type, args) {
+        init: function(target, id, type, args) {
             this.target = target;
             this.id = id;
             this.type = type;
             this.args = args;
         },
 
-        append: function () {
+        append: function() {
             this.target.appendShape(this);
             return this;
         }
@@ -2456,7 +2444,7 @@ sauce.propDefined('jQuery', function($) {
     VCanvas_base = createClass({
         _pxregex: /(\d+)(px)?\s*$/i,
 
-        init: function (width, height, target) {
+        init: function(width, height, target) {
             if (!width) {
                 return;
             }
@@ -2470,43 +2458,43 @@ sauce.propDefined('jQuery', function($) {
             $.data(target, '_jqs_vcanvas', this);
         },
 
-        drawLine: function (x1, y1, x2, y2, lineColor, lineWidth) {
+        drawLine: function(x1, y1, x2, y2, lineColor, lineWidth) {
             return this.drawShape([[x1, y1], [x2, y2]], lineColor, lineWidth);
         },
 
-        drawShape: function (path, lineColor, fillColor, lineWidth) {
+        drawShape: function(path, lineColor, fillColor, lineWidth) {
             return this._genShape('Shape', [path, lineColor, fillColor, lineWidth]);
         },
 
-        drawCircle: function (x, y, radius, lineColor, fillColor, lineWidth) {
+        drawCircle: function(x, y, radius, lineColor, fillColor, lineWidth) {
             return this._genShape('Circle', [x, y, radius, lineColor, fillColor, lineWidth]);
         },
 
-        drawPieSlice: function (x, y, radius, startAngle, endAngle, lineColor, fillColor) {
+        drawPieSlice: function(x, y, radius, startAngle, endAngle, lineColor, fillColor) {
             return this._genShape('PieSlice', [x, y, radius, startAngle, endAngle, lineColor, fillColor]);
         },
 
-        drawRect: function (x, y, width, height, lineColor, fillColor) {
+        drawRect: function(x, y, width, height, lineColor, fillColor) {
             return this._genShape('Rect', [x, y, width, height, lineColor, fillColor]);
         },
 
-        getElement: function () {
+        getElement: function() {
             return this.canvas;
         },
 
-        getLastShapeId: function () {
+        getLastShapeId: function() {
             return this.lastShapeId;
         },
 
-        reset: function () {
+        reset: function() {
             throw new Error('reset not implemented');
         },
 
-        _insert: function (el, target) {
+        _insert: function(el, target) {
             $(target).html(el);
         },
 
-        _calculatePixelDims: function (width, height, canvas) {
+        _calculatePixelDims: function(width, height, canvas) {
             const heightMatch = this._pxregex.exec(height);
             const pixelHeight = heightMatch ?  Number(heightMatch[1]) : $(canvas).height();
             const widthMatch = this._pxregex.exec(width);
@@ -2516,39 +2504,39 @@ sauce.propDefined('jQuery', function($) {
             this.pixelWidth = Math.round(pixelWidth * dpr);
         },
 
-        _genShape: function (shapetype, shapeargs) {
+        _genShape: function(shapetype, shapeargs) {
             var id = shapeCount++;
             shapeargs.unshift(id);
             return new VShape(this, id, shapetype, shapeargs);
         },
 
-        appendShape: function (shape) {
+        appendShape: function(shape) {
             throw new Error('appendShape not implemented');
         },
 
-        replaceWithShape: function (shapeid, shape) {
+        replaceWithShape: function(shapeid, shape) {
             throw new Error('replaceWithShape not implemented');
         },
 
-        insertAfterShape: function (shapeid, shape) {
+        insertAfterShape: function(shapeid, shape) {
             throw new Error('insertAfterShape not implemented');
         },
 
-        removeShapeId: function (shapeid) {
+        removeShapeId: function(shapeid) {
             throw new Error('removeShapeId not implemented');
         },
 
-        getShapeAt: function (el, x, y) {
+        getShapeAt: function(el, x, y) {
             throw new Error('getShapeAt not implemented');
         },
 
-        render: function () {
+        render: function() {
             throw new Error('render not implemented');
         }
     });
 
     VCanvas_canvas = createClass(VCanvas_base, {
-        init: function (width, height, target, interact) {
+        init: function(width, height, target, interact) {
             VCanvas_canvas._super.init.call(this, width, height, target);
             this.canvas = document.createElement('canvas');
             if (target[0]) {
@@ -2604,7 +2592,7 @@ sauce.propDefined('jQuery', function($) {
             return gradient;
         },
 
-        _getContext: function (lineColor, fillColor, lineWidth) {
+        _getContext: function(lineColor, fillColor, lineWidth) {
             const context = this.canvas.getContext('2d');
             if (lineColor !== undefined) {
                 context.strokeStyle = lineColor;
@@ -2623,7 +2611,7 @@ sauce.propDefined('jQuery', function($) {
             return context;
         },
 
-        reset: function () {
+        reset: function() {
             var context = this._getContext();
             context.clearRect(0, 0, this.pixelWidth, this.pixelHeight);
             this.shapes = {};
@@ -2631,7 +2619,7 @@ sauce.propDefined('jQuery', function($) {
             this.currentTargetShapeId = undefined;
         },
 
-        _drawShape: function (shapeid, path, lineColor, fillColor, lineWidth) {
+        _drawShape: function(shapeid, path, lineColor, fillColor, lineWidth) {
             var context = this._getContext(lineColor, fillColor, lineWidth), i, plen;
             context.beginPath();
             //context.moveTo(path[0][0] + 0.5, path[0][1] + 0.5);
@@ -2654,7 +2642,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        _drawCircle: function (shapeid, x, y, radius, lineColor, fillColor, lineWidth) {
+        _drawCircle: function(shapeid, x, y, radius, lineColor, fillColor, lineWidth) {
             var context = this._getContext(lineColor, fillColor, lineWidth);
             context.beginPath();
             context.arc(x, y, radius, 0, 2 * Math.PI, false);
@@ -2670,7 +2658,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        _drawPieSlice: function (shapeid, x, y, radius, startAngle, endAngle, lineColor, fillColor) {
+        _drawPieSlice: function(shapeid, x, y, radius, startAngle, endAngle, lineColor, fillColor) {
             var context = this._getContext(lineColor, fillColor);
             context.beginPath();
             context.moveTo(x, y);
@@ -2689,18 +2677,18 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        _drawRect: function (shapeid, x, y, width, height, lineColor, fillColor) {
+        _drawRect: function(shapeid, x, y, width, height, lineColor, fillColor) {
             return this._drawShape(shapeid, [[x, y], [x + width, y], [x + width, y + height], [x, y + height], [x, y]], lineColor, fillColor);
         },
 
-        appendShape: function (shape) {
+        appendShape: function(shape) {
             this.shapes[shape.id] = shape;
             this.shapeseq.push(shape.id);
             this.lastShapeId = shape.id;
             return shape.id;
         },
 
-        replaceWithShape: function (shapeid, shape) {
+        replaceWithShape: function(shapeid, shape) {
             this.shapes[shape.id] = shape;
             for (let i = this.shapeseq.length; i--;) {
                 if (this.shapeseq[i] == shapeid) {
@@ -2710,7 +2698,7 @@ sauce.propDefined('jQuery', function($) {
             delete this.shapes[shapeid];
         },
 
-        replaceWithShapes: function (shapeids, shapes) {
+        replaceWithShapes: function(shapeids, shapes) {
             const shapemap = {};
             for (let i = shapeids.length; i--;) {
                 shapemap[shapeids[i]] = true;
@@ -2730,7 +2718,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        insertAfterShape: function (shapeid, shape) {
+        insertAfterShape: function(shapeid, shape) {
             for (let i = this.shapeseq.length; i--;) {
                 if (this.shapeseq[i] === shapeid) {
                     this.shapeseq.splice(i + 1, 0, shape.id);
@@ -2740,7 +2728,7 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        removeShapeId: function (shapeid) {
+        removeShapeId: function(shapeid) {
             for (let i = this.shapeseq.length; i--;) {
                 if (this.shapeseq[i] === shapeid) {
                     this.shapeseq.splice(i, 1);
@@ -2750,14 +2738,14 @@ sauce.propDefined('jQuery', function($) {
             delete this.shapes[shapeid];
         },
 
-        getShapeAt: function (el, x, y) {
+        getShapeAt: function(el, x, y) {
             this.targetX = x;
             this.targetY = y;
             this.render();
             return this.currentTargetShapeId;
         },
 
-        render: function () {
+        render: function() {
             const context = this._getContext();
             context.clearRect(0, 0, this.pixelWidth, this.pixelHeight);
             for (const shapeid of this.shapeseq) {
