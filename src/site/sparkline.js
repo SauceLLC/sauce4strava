@@ -752,7 +752,7 @@ sauce.propDefined('jQuery', function($) {
                 $this = $(this),
                 render;
             render = function () {
-                var values, width, height, tmp, mhandler, sp, vals;
+                var values, mhandler, sp, vals;
                 if (userValues === 'html' || userValues === undefined) {
                     vals = this.getAttribute(options.get('tagValuesAttribute'));
                     if (vals === undefined || vals === null) {
@@ -762,22 +762,22 @@ sauce.propDefined('jQuery', function($) {
                 } else {
                     values = userValues;
                 }
-
-                width = options.get('width') === 'auto' ? values.length * options.get('defaultPixelsPerValue') : options.get('width');
+                const width = options.get('width') === 'auto' ?
+                    values.length * options.get('defaultPixelsPerValue') :
+                    options.get('width');
+                let height;
                 if (options.get('height') === 'auto') {
                     if (!options.get('composite') || !$.data(this, '_jqs_vcanvas')) {
                         // must be a better way to get the line height
-                        tmp = document.createElement('span');
-                        tmp.innerHTML = 'a';
+                        const tmp = document.createElement('span');
+                        tmp.innerText = 'a';
                         $this.html(tmp);
                         height = $(tmp).innerHeight() || $(tmp).height();
                         $(tmp).remove();
-                        tmp = null;
                     }
                 } else {
                     height = options.get('height');
                 }
-
                 if (!options.get('disableInteraction')) {
                     mhandler = $.data(this, '_jqs_mhandler');
                     if (!mhandler) {
@@ -789,20 +789,17 @@ sauce.propDefined('jQuery', function($) {
                 } else {
                     mhandler = false;
                 }
-
                 if (options.get('composite') && !$.data(this, '_jqs_vcanvas')) {
                     throw new Error('Attempted to attach a composite sparkline to an element with no existing sparkline');
                 }
-
                 sp = new $.fn.sparkline[options.get('type')](this, values, options, width, height);
-
                 sp.render();
-
                 if (mhandler) {
                     mhandler.registerSparkline(sp);
                 }
             };
-            if (($(this).html() && !options.get('disableHiddenCheck') && $(this).is(':hidden')) || !$(this).parents('body').length) {
+            if (($(this).html() && !options.get('disableHiddenCheck') && $(this).is(':hidden')) ||
+                !$(this).parents('body').length) {
                 if (!options.get('composite') && $.data(this, '_jqs_pending')) {
                     // remove any existing references to the element
                     for (let i = pending.length; i; i--) {
@@ -858,7 +855,6 @@ sauce.propDefined('jQuery', function($) {
             defaults = $.fn.sparkline.defaults;
             base = defaults.common;
             this.tagOptionsPrefix = userOptions.enableTagOptions && (userOptions.tagOptionsPrefix || base.tagOptionsPrefix);
-
             tagOptionType = this.getTagSetting('type');
             if (tagOptionType === UNSET_OPTION) {
                 extendedOptions = defaults[userOptions.type || base.type];
@@ -867,7 +863,6 @@ sauce.propDefined('jQuery', function($) {
             }
             this.mergedOptions = $.extend({}, base, extendedOptions, userOptions);
         },
-
 
         getTagSetting: function (key) {
             var prefix = this.tagOptionsPrefix,
@@ -986,9 +981,6 @@ sauce.propDefined('jQuery', function($) {
             return false;
         },
 
-        /**
-         * Reset any currently highlighted item
-         */
         clearRegionHighlight: function () {
             if (this.currentRegion !== undefined) {
                 this.removeHighlight();
@@ -1008,9 +1000,6 @@ sauce.propDefined('jQuery', function($) {
 
         changeHighlight: function (highlight)  {},
 
-        /**
-         * Fetch the HTML to display as a tooltip
-         */
         getCurrentRegionTooltip: function () {
             var options = this.options,
                 header = '',
@@ -1101,7 +1090,6 @@ sauce.propDefined('jQuery', function($) {
             }
             return color;
         }
-
     });
 
     barHighlightMixin = {
@@ -1157,9 +1145,6 @@ sauce.propDefined('jQuery', function($) {
         }
     };
 
-    /**
-     * Line charts
-     */
     $.fn.sparkline.line = line = createClass($.fn.sparkline._base, {
         type: 'line',
 
@@ -1207,7 +1192,6 @@ sauce.propDefined('jQuery', function($) {
                 highlightSpotColor = options.get('highlightSpotColor'),
                 highlightLineColor = options.get('highlightLineColor'),
                 highlightSpot, highlightLine;
-
             if (!vertex) {
                 return;
             }
@@ -1270,13 +1254,10 @@ sauce.propDefined('jQuery', function($) {
             if (this.options.get('xvalues')) {
                 xvalues = this.options.get('xvalues');
             }
-
             this.maxy = this.maxyorg = sauce.data.max(yminmax);
             this.miny = this.minyorg = sauce.data.min(yminmax);
-
             this.maxx = sauce.data.max(xvalues);
             this.minx = sauce.data.min(xvalues);
-
             this.xvalues = xvalues;
             this.yvalues = yvalues;
             this.yminmax = yminmax;
@@ -1286,7 +1267,6 @@ sauce.propDefined('jQuery', function($) {
             var options = this.options,
                 normalRangeMin = options.get('normalRangeMin'),
                 normalRangeMax = options.get('normalRangeMax');
-
             if (normalRangeMin !== undefined) {
                 if (normalRangeMin < this.miny) {
                     this.miny = normalRangeMin;
@@ -1331,29 +1311,22 @@ sauce.propDefined('jQuery', function($) {
                 vertex, path, paths, x, y, xnext, xpos, xposnext,
                 last, next, yvalcount, lineShapes, fillShapes, plen,
                 valueSpots, hlSpotsEnabled, color, xvalues, yvalues, i;
-
             if (!line._super.render.call(this)) {
                 return;
             }
-
             this.scanValues();
             this.processRangeOptions();
             this.target.setMinMax(this.miny, this.maxy);
-
             xvalues = this.xvalues;
             yvalues = this.yvalues;
-
             if (!this.yminmax.length || this.yvalues.length < 2) {
                 // empty or all null valuess
                 return;
             }
-
             canvasTop = canvasLeft = 0;
-
             rangex = this.maxx - this.minx === 0 ? 1 : this.maxx - this.minx;
             rangey = this.maxy - this.miny === 0 ? 1 : this.maxy - this.miny;
             yvallast = this.yvalues.length - 1;
-
             if (spotRadius && (canvasWidth < (spotRadius * 4) || canvasHeight < (spotRadius * 4))) {
                 spotRadius = 0;
             }
@@ -1378,14 +1351,10 @@ sauce.propDefined('jQuery', function($) {
                     canvasWidth -= Math.ceil(spotRadius);
                 }
             }
-
-
             canvasHeight--;
-
             if (options.get('normalRangeMin') !== undefined && !options.get('drawNormalOnTop')) {
                 this.drawNormalRange(canvasLeft, canvasTop, canvasHeight, canvasWidth, rangey);
             }
-
             path = [];
             paths = [path];
             last = next = null;
@@ -1423,7 +1392,6 @@ sauce.propDefined('jQuery', function($) {
                     vertices.push(vertex);
                 }
             }
-
             lineShapes = [];
             fillShapes = [];
             plen = paths.length;
@@ -1444,23 +1412,19 @@ sauce.propDefined('jQuery', function($) {
                     lineShapes.push(path);
                 }
             }
-
             // draw the fill first, then optionally the normal range, then the line on top of that
             plen = fillShapes.length;
             for (i = 0; i < plen; i++) {
                 target.drawShape(fillShapes[i], undefined, options.get('fillColor')).append();
             }
-
             if (options.get('normalRangeMin') !== undefined && options.get('drawNormalOnTop')) {
                 this.drawNormalRange(canvasLeft, canvasTop, canvasHeight, canvasWidth, rangey);
             }
-
             plen = lineShapes.length;
             for (i = 0; i < plen; i++) {
                 target.drawShape(lineShapes[i], options.get('lineColor'), undefined,
                     options.get('lineWidth')).append();
             }
-
             if (spotRadius && options.get('valueSpots')) {
                 valueSpots = options.get('valueSpots');
                 if (valueSpots.get === undefined) {
@@ -1475,7 +1439,6 @@ sauce.propDefined('jQuery', function($) {
                             color).append();
                     }
                 }
-
             }
             if (spotRadius && options.get('spotColor') && yvalues[yvallast] !== null) {
                 target.drawCircle(canvasLeft + Math.round((xvalues[xvalues.length - 1] - this.minx) * (canvasWidth / rangex)),
@@ -1499,16 +1462,12 @@ sauce.propDefined('jQuery', function($) {
                         options.get('maxSpotColor')).append();
                 }
             }
-
             this.lastShapeId = target.getLastShapeId();
             this.canvasTop = canvasTop;
             target.render();
         }
     });
 
-    /**
-     * Bar charts
-     */
     $.fn.sparkline.bar = bar = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'bar',
 
@@ -1524,7 +1483,6 @@ sauce.propDefined('jQuery', function($) {
                 numValues, i, vlen, range, zeroAxis, min, max, clipMin, clipMax,
                 stacked, vlist, j, slen, svals, val, yMaxCalc;
             bar._super.init.call(this, el, values, options, width, height);
-
             // scan values to determine whether to stack bars
             for (i = 0, vlen = values.length; i < vlen; i++) {
                 val = values[i];
@@ -1545,21 +1503,17 @@ sauce.propDefined('jQuery', function($) {
                     }
                 }
             }
-
             this.stacked = stacked;
             this.regionShapes = {};
             this.barWidth = barWidth;
             this.barSpacing = barSpacing;
             this.totalBarWidth = barWidth + barSpacing;
             this.width = width = (values.length * barWidth) + ((values.length - 1) * barSpacing);
-
             this.initTarget();
-
             if (chartRangeClip) {
                 clipMin = chartRangeMin === undefined ? -Infinity : chartRangeMin;
                 clipMax = chartRangeMax === undefined ? Infinity : chartRangeMax;
             }
-
             numValues = [];
             stackRanges = stacked ? [] : numValues;
             var stackTotals = [];
@@ -1600,7 +1554,6 @@ sauce.propDefined('jQuery', function($) {
             this.min = min = sauce.data.min(numValues);
             this.stackMax = stackMax = stacked ? sauce.data.max(stackTotals) : max;
             this.stackMin = stackMin = min;
-
             if (options.get('chartRangeMin') !== undefined && (options.get('chartRangeClip') || options.get('chartRangeMin') < min)) {
                 min = options.get('chartRangeMin');
             }
@@ -1708,7 +1661,6 @@ sauce.propDefined('jQuery', function($) {
             val = vals[0];
             isNull = all(null, vals);
             allMin = all(xaxisOffset, vals, true);
-
             if (isNull) {
                 if (options.get('nullColor')) {
                     color = highlight ? options.get('nullColor') : this.calcHighlightColor(options.get('nullColor'), options);
@@ -1728,7 +1680,6 @@ sauce.propDefined('jQuery', function($) {
                     }
                     minPlotted = true;
                 }
-
                 if (range > 0) {
                     height = Math.floor(canvasHeightEf * ((Math.abs(val - xaxisOffset) / range))) + 1;
                 } else {
@@ -1755,7 +1706,7 @@ sauce.propDefined('jQuery', function($) {
     });
 
     /**
-     * Bar charts
+     * WIP color filled line based on value.
      */
     $.fn.sparkline.colorline = colorline = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'colorline',
@@ -1823,7 +1774,6 @@ sauce.propDefined('jQuery', function($) {
             } else {
                 this.yoffset = this.canvasHeight;
             }
-
             if ($.isArray(options.get('colorMap'))) {
                 this.colorMapByIndex = options.get('colorMap');
                 this.colorMapByValue = null;
@@ -1917,7 +1867,6 @@ sauce.propDefined('jQuery', function($) {
                 if (highlight) {
                     color = this.calcHighlightColor(color, options);
                 }
-                console.log(x, y, this.barWidth, height);
                 result.push(target.drawRect(x, y, this.barWidth, height - 1, undefined, color));
             }
             if (result.length === 1) {
@@ -1975,7 +1924,6 @@ sauce.propDefined('jQuery', function($) {
                 colorMapByIndex = this.colorMapByIndex,
                 colorMapByValue = this.colorMapByValue,
                 color, newColor;
-
             if (colorMapByValue && (newColor = colorMapByValue.get(value))) {
                 color = newColor;
             } else if (colorMapByIndex && colorMapByIndex.length > idx) {
@@ -1996,10 +1944,8 @@ sauce.propDefined('jQuery', function($) {
                 target = this.target,
                 canvasHeight, height, halfHeight,
                 x, y, color;
-
             canvasHeight = target.pixelHeight;
             halfHeight = Math.round(canvasHeight / 2);
-
             x = idx * this.totalBarWidth;
             if (values[idx] < 0) {
                 y = halfHeight;
@@ -2022,9 +1968,6 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    /**
-     * Discrete charts
-     */
     $.fn.sparkline.discrete = discrete = createClass($.fn.sparkline._base, barHighlightMixin, {
         type: 'discrete',
 
@@ -2076,7 +2019,6 @@ sauce.propDefined('jQuery', function($) {
                 lineHeight = this.lineHeight,
                 pheight = canvasHeight - lineHeight,
                 ytop, val, color, x;
-
             val = clipval(values[idx], min, max);
             x = idx * interval;
             ytop = Math.round(pheight - pheight * ((val - min) / range));
@@ -2088,16 +2030,12 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    /**
-     * Bullet charts
-     */
     $.fn.sparkline.bullet = bullet = createClass($.fn.sparkline._base, {
         type: 'bullet',
 
         init: function (el, values, options, width, height) {
             var min, max, vals;
             bullet._super.init.call(this, el, values, options, width, height);
-
             // values: target, performance, range1, range2, range3
             this.values = values = normalizeValues(values);
             // target or performance could be null
@@ -2219,25 +2157,18 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    /**
-     * Pie charts
-     */
     $.fn.sparkline.pie = pie = createClass($.fn.sparkline._base, {
         type: 'pie',
 
         init: function (el, values, options, width, height) {
             var total = 0, i;
-
             pie._super.init.call(this, el, values, options, width, height);
-
             this.shapes = {}; // map shape ids to value offsets
             this.valueShapes = {}; // maps value offsets to shape ids
             this.values = values = $.map(values, Number);
-
             if (options.get('width') === 'auto') {
                 this.width = this.height;
             }
-
             if (values.length > 0) {
                 for (i = values.length; i--;) {
                     total += values[i];
@@ -2312,7 +2243,6 @@ sauce.propDefined('jQuery', function($) {
                 radius = this.radius,
                 borderWidth = options.get('borderWidth'),
                 shape, i;
-
             if (!pie._super.render.call(this)) {
                 return;
             }
@@ -2331,9 +2261,6 @@ sauce.propDefined('jQuery', function($) {
         }
     });
 
-    /**
-     * Box plots
-     */
     $.fn.sparkline.box = box = createClass($.fn.sparkline._base, {
         type: 'box',
 
@@ -2347,11 +2274,8 @@ sauce.propDefined('jQuery', function($) {
             }
         },
 
-        /**
-         * Simulate a single region
-         */
         getRegion: function () {
-            return 1;
+            return 1;  // Simulate a single region
         },
 
         getCurrentRegionFields: function () {
@@ -2387,11 +2311,9 @@ sauce.propDefined('jQuery', function($) {
                 canvasLeft = 0,
                 lwhisker, loutlier, iqr, q1, q2, q3, rwhisker, routlier, i,
                 size, unitSize;
-
             if (!box._super.render.call(this)) {
                 return;
             }
-
             if (options.get('raw')) {
                 if (options.get('showOutliers') && values.length > 5) {
                     loutlier = values[0];
@@ -2436,7 +2358,6 @@ sauce.propDefined('jQuery', function($) {
             this.rwhisker = rwhisker;
             this.loutlier = loutlier;
             this.routlier = routlier;
-
             unitSize = canvasWidth / (maxValue - minValue + 1);
             if (options.get('showOutliers')) {
                 canvasLeft = Math.ceil(options.get('spotRadius'));
@@ -2457,7 +2378,6 @@ sauce.propDefined('jQuery', function($) {
                         options.get('outlierFillColor')).append();
                 }
             }
-
             // box
             target.drawRect(
                 Math.round((q1 - minValue) * unitSize + canvasLeft),
@@ -2526,6 +2446,7 @@ sauce.propDefined('jQuery', function($) {
             this.type = type;
             this.args = args;
         },
+
         append: function () {
             this.target.appendShape(this);
             return this;
@@ -2780,46 +2701,39 @@ sauce.propDefined('jQuery', function($) {
         },
 
         replaceWithShape: function (shapeid, shape) {
-            var shapeseq = this.shapeseq,
-                i;
             this.shapes[shape.id] = shape;
-            for (i = shapeseq.length; i--;) {
-                if (shapeseq[i] == shapeid) {
-                    shapeseq[i] = shape.id;
+            for (let i = this.shapeseq.length; i--;) {
+                if (this.shapeseq[i] == shapeid) {
+                    this.shapeseq[i] = shape.id;
                 }
             }
             delete this.shapes[shapeid];
         },
 
         replaceWithShapes: function (shapeids, shapes) {
-            var shapeseq = this.shapeseq,
-                shapemap = {},
-                sid, i, first;
-
-            for (i = shapeids.length; i--;) {
+            const shapemap = {};
+            for (let i = shapeids.length; i--;) {
                 shapemap[shapeids[i]] = true;
             }
-            for (i = shapeseq.length; i--;) {
-                sid = shapeseq[i];
+            let first;
+            for (let i = this.shapeseq.length; i--;) {
+                const sid = this.shapeseq[i];
                 if (shapemap[sid]) {
-                    shapeseq.splice(i, 1);
+                    this.shapeseq.splice(i, 1);
                     delete this.shapes[sid];
                     first = i;
                 }
             }
-            for (i = shapes.length; i--;) {
-                shapeseq.splice(first, 0, shapes[i].id);
+            for (let i = shapes.length; i--;) {
+                this.shapeseq.splice(first, 0, shapes[i].id);
                 this.shapes[shapes[i].id] = shapes[i];
             }
-
         },
 
         insertAfterShape: function (shapeid, shape) {
-            var shapeseq = this.shapeseq,
-                i;
-            for (i = shapeseq.length; i--;) {
-                if (shapeseq[i] === shapeid) {
-                    shapeseq.splice(i + 1, 0, shape.id);
+            for (let i = this.shapeseq.length; i--;) {
+                if (this.shapeseq[i] === shapeid) {
+                    this.shapeseq.splice(i + 1, 0, shape.id);
                     this.shapes[shape.id] = shape;
                     return;
                 }
@@ -2827,11 +2741,9 @@ sauce.propDefined('jQuery', function($) {
         },
 
         removeShapeId: function (shapeid) {
-            var shapeseq = this.shapeseq,
-                i;
-            for (i = shapeseq.length; i--;) {
-                if (shapeseq[i] === shapeid) {
-                    shapeseq.splice(i, 1);
+            for (let i = this.shapeseq.length; i--;) {
+                if (this.shapeseq[i] === shapeid) {
+                    this.shapeseq.splice(i, 1);
                     break;
                 }
             }
@@ -2846,15 +2758,10 @@ sauce.propDefined('jQuery', function($) {
         },
 
         render: function () {
-            var shapeseq = this.shapeseq,
-                shapes = this.shapes,
-                shapeCount = shapeseq.length,
-                context = this._getContext(),
-                shapeid, shape, i;
+            const context = this._getContext();
             context.clearRect(0, 0, this.pixelWidth, this.pixelHeight);
-            for (i = 0; i < shapeCount; i++) {
-                shapeid = shapeseq[i];
-                shape = shapes[shapeid];
+            for (const shapeid of this.shapeseq) {
+                const shape = this.shapes[shapeid];
                 this['_draw' + shape.type].apply(this, shape.args);
             }
             if (!this.interact) {
