@@ -120,20 +120,23 @@
         position: relative;
         overflow-y: auto;
 
-        .graph-label {
-            position: absolute;
-            top: 0;
-            left: 0;
-            font-variant: all-small-caps;
-            color: color.shade(fg, 40%, 0.7);
-            font-weight: bold;
-            font-size: 0.7em;
-            padding: 0.12em;
-            z-index: 2;
-            pointer-events: none;
-        }
-        .sauce-sparkline {
-            margin-top: 0.8em;
+        .graph-holder {
+            position: relative;
+            padding-top: 0.5em;
+            background-color: color.shade(bg, 8%);
+
+            .graph-label {
+                position: absolute;
+                top: 0;
+                left: 0;
+                font-variant: all-small-caps;
+                color: color.shade(fg, 40%, 0.7);
+                font-weight: bold;
+                font-size: 0.75em;
+                padding: 0.12em 0.2em;
+                z-index: 2;
+                pointer-events: none;
+            }
         }
     }
 
