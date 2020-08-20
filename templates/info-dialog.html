@@ -54,24 +54,28 @@
                 <% } %>
                 <% if (power.elapsedWKg) { %>
                     <row "title="{{{wkg_tooltip}}}">
+                        <div class="graph-select" data-id="power"></div>
                         <key>{{{Watts}}}/kg</key>
                         <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}<abbr class="unit short">w/kg</abbr></value>
                     </row>
                 <% } %>
                 <% if (power.np && !power.estimate) { %>
                     <row title="{{{np_tooltip}}}">
+                        <div class="graph-select" data-id="cadence"></div>
                         <key>NP®</key>
                         <value>{{formatNumber(power.np, 0)}}<abbr class="unit short">w</abbr></value>
                     </row>
                 <% } %>
                 <% if (power.xp && !power.estimate) { %>
                     <row title="{{{xp_tooltip}}}">
+                        <div class="graph-select" data-id="xp"></div>
                         <key>xPower</key>
                         <value>{{formatNumber(power.xp, 0)}}<abbr class="unit short">w</abbr></value>
                     </row>
                 <% } %>
                 <% if (power.elapsedSP) { %>
                     <row title="{{{sp_tooltip}}}">
+                        <div class="graph-select" data-id="sp"></div>
                         <key>{{{sea_power}}}</key>
                         <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr></value>
                     </row>
@@ -123,14 +127,23 @@
             <column>
                 <%if (isSpeed) { %>
                     <row title="{{{high_speed_tooltip}}}">
+                        <div class="graph-select" data-id="pace"></div>
                         <key>{{{max}}}</key>
                         <value>{{pace.max}}<abbr class="unit short">{{paceUnit}}</abbr></value>
                     </row>
                 <% } else { %>
                     <row title="{{{high_pace_tooltip}}}">
+                        <div class="graph-select" data-id="pace"></div>
                         <key>{{{max}}}</key>
                         <value>{{pace.max}}<abbr class="unit short">{{paceUnit}}</abbr></value>
                     </row>
+                    <% if (pace.gap) { %>
+                        <row title="{{{gap_tooltip}}}">
+                            <div class="graph-select" data-id="gap"></div>
+                            <key>{{{gap}}}</key>
+                            <value>{{pace.gap}}<abbr class="unit short">{{paceUnit}}</abbr></value>
+                        </row>
+                    <% } %>
                 <% } %>
 
                 <row>
@@ -140,6 +153,7 @@
 
                 <% if (obj.cadence) { %>
                     <row>
+                        <div class="graph-select" data-id="cadence"></div>
                         <key>{{{cadence}}}</key>
                         <value>{{cadence}}<abbr class="unit short">{{cadenceUnit}}</abbr>
                     </row>
@@ -176,6 +190,7 @@
             <column>
                 <% if (elevation.avg) { %>
                     <row title="{{{elevation_avg_tooltip}}}">
+                        <div class="graph-select" data-id="elevation"></div>
                         <key>{{{avg}}}</key>
                         <value>
                             {{elevation.avg}}<abbr class="unit short">{{elevationUnit}}</abbr>
@@ -200,6 +215,7 @@
 
                 <% if (elevation.vam && elevation.vam > 0) { %>
                     <row title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
+                        <div class="graph-select" data-id="cadence"></div>
                         <key>VAM</key>
                         <value>{{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr></value>
                     </row>

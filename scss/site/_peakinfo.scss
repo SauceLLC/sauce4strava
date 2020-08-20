@@ -294,6 +294,31 @@
 
             row {
                 display: flex;
+                position: relative;
+
+                .graph-select {
+                    content: '';
+                    width: 0.5em;
+                    height: 0.5em;
+                    background-color: color.shade(bg, 5%);
+                    border: 1px solid color.shade(fg, 40%);
+                    border-radius: 50%;
+                    position: absolute;
+                    left: -0.4em;
+                    top: 0.333em;
+                    cursor: pointer;
+                    opacity: 0.6;
+                    transition: opacity 200ms;
+
+                    &.selected {
+                        background-color: color.shade(fg, 10%);
+                        opacity: 0.8;
+                    }
+
+                    &:hover {
+                        opacity: 1;
+                    }
+                }
 
                 key,
                 value {
@@ -425,4 +450,14 @@
             }
         }
     }
+}
+
+
+.jqs-legend {
+    display: inline-block;
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    border: 1px solid white;
+    margin-right: 0.25em;
 }

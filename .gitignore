@@ -1,6 +1,7 @@
 *.swp
 *.pem
 *.crx
+*.DS_Store
 manifest.json
 node_modules
 builds

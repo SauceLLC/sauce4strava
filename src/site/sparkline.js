@@ -193,7 +193,7 @@ sauce.propDefined('jQuery', function($) {
             left: 0;
             top: 0;
             visibility: hidden;
-            background-color: #000a;
+            background-color: #000c;
             color: white;
             text-align: left;
             white-space: nowrap;
@@ -2631,10 +2631,6 @@ sauce.propDefined('jQuery', function($) {
         _drawShape: function(shapeid, path, lineColor, fillColor, lineWidth) {
             var context = this._getContext(lineColor, fillColor, lineWidth), i, plen;
             context.beginPath();
-            //context.moveTo(path[0][0] + 0.5, path[0][1] + 0.5);
-            //for (i = 1, plen = path.length; i < plen; i++) {
-            //    context.lineTo(path[i][0] + 0.5, path[i][1] + 0.5); // the 0.5 offset gives us crisp pixel-width lines
-            //}
             context.moveTo(path[0][0], path[0][1]);
             for (i = 1, plen = path.length; i < plen; i++) {
                 context.lineTo(path[i][0], path[i][1]);

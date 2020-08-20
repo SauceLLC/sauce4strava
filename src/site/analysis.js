@@ -1377,7 +1377,6 @@ sauce.ns('analysis', ns => {
                     height: 64,  // slightly oversampled
                     lineColor: '#EA400DA0',
                     composite,
-                    normalRangeColor: '#8885',
                     fillColor: {
                         type: 'gradient',
                         opacity,
@@ -1385,7 +1384,10 @@ sauce.ns('analysis', ns => {
                     },
                     chartRangeMin,
                     chartRangeMax,
-                    tooltipFormatter: (_, __, data) => spec.formatter(data.y)
+                    tooltipFormatter: (_, __, data) => {
+                        const legendColor = data.fillColor.steps[Math.floor(data.fillColor.steps.length / 2)].color;
+                        return `<div class="jqs-legend" style="background-color: ${legendColor};"></div>${spec.formatter(data.y)}`;
+                    }
                 });
                 composite = true;
                 opacity -= (1 / specs.length) / 2;
