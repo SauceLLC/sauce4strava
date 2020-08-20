@@ -123,17 +123,18 @@
         .graph-holder {
             position: relative;
             padding-top: 0.8em;
-            background-color: color.shade(bg, 8%);
+            background-image: linear-gradient(to bottom, color.shade(bg, 2%), color.shade(bg, 10%) 1em, color.shade(bg, 0%));
 
             .graph-label {
                 position: absolute;
                 top: 0;
                 left: 0;
                 font-variant: all-small-caps;
-                color: color.shade(fg, 40%, 0.7);
+                color: color.shade(fg, 10%, 0.7);
                 font-weight: bold;
                 font-size: 0.75em;
                 padding: 0 0.3em;
+                line-height: 1;
                 z-index: 10;
                 pointer-events: none;
             }
