@@ -910,7 +910,6 @@ sauce.ns('power', function() {
         for (let i = _offset, len = stream.length; i < len; i++) {
             const time = (i - _offset) * sampleInterval;
             while ((weighted > negligible) && time > prevTime + sampleInterval + epsilon) {
-                debugger; // Need to study why this is needed? XXX
                 weighted *= attenuation;
                 prevTime += sampleInterval;
                 total += weighted * weighted * weighted * weighted;  // unrolled for perf

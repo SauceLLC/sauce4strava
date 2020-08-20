@@ -1099,6 +1099,8 @@ sauce.ns('analysis', ns => {
     }
 
 
+    const _activeGraphs = new Set();
+    let _lastInfoDialogSource;
     async function showInfoDialog({
         startTime,
         endTime,
@@ -1177,7 +1179,7 @@ sauce.ns('analysis', ns => {
             end: endTime,
         });
         const $sparkline = $dialog.find('.sauce-sparkline');
-        async function renderGraph(section) {
+        async function renderGraphs() {
             function valueGradient(thresholds, {hStart, hEnd, sStart, sEnd, lStart, lEnd}) {
                 const steps = [];
                 if (hStart == null || sStart == null || lStart == null) {
@@ -1199,54 +1201,53 @@ sauce.ns('analysis', ns => {
                 }
                 return steps;
             }
-            let specs;
-            let localeTitle;
-            if (section === 'power') {
-                localeTitle = 'power';
-                specs = [{
-                    data: correctedPower.values(),
-                    formatter: x => `Power: ${humanNumber(x)}<abbr class="unit short">w</abbr>`,
-                    colorSteps: valueGradient([0, 100, 400, 1200], {
-                        hStart: 390,
-                        hEnd: 280,
-                        sStart: 95,
-                        lStart: 65,
-                        lEnd: 20,
-                    })
-                }];
-            } else if (section === 'sp') {
-                const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
-                    {stream: 'watts_sealevel'});
-                specs = [{
-                    data: correctedSP.values(),
-                    formatter: x => `Sea Power: ${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
-                    colorSteps: valueGradient([0, 100, 400, 1200], {
-                        hStart: 25,
-                        sStart: 100,
-                        lStart: 50,
-                        lEnd: 20,
-                    })
-
-                }];
-            } else if (section === 'pace') {
-                localeTitle = pageView.activity().isRun() ? 'pace' : 'speed';
-                const thresholds = {
-                    ride: [4, 12, 20, 28],
-                    run: [0.5, 2, 5, 10],
-                    swim: [0.5, 0.85, 1.1, 1.75],
-                    other: [0.5, 10, 15, 30],
-                }[ctx.activityType];
-                specs = [{
-                    data: velocityStream,
-                    formatter: x => `Pace: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
-                    colorSteps: valueGradient(thresholds, {
-                        hStart: 216,
-                        sStart: 100,
-                        lStart: 84,
-                        lEnd: 20,
-                    }),
-                }];
-                if (cadenceStream && cadenceStream.length > 1) {
+            const specs = [];
+            for (const x of _activeGraphs) {
+                if (x === 'power') {
+                    specs.push({
+                        data: correctedPower.values(),
+                        formatter: x => `Power: ${humanNumber(x)}<abbr class="unit short">w</abbr>`,
+                        colorSteps: valueGradient([0, 100, 400, 1200], {
+                            //hStart: 390,
+                            hStart: 420,
+                            hEnd: 280,
+                            sStart: 50,
+                            sEnd: 95,
+                            lStart: 80,
+                            lEnd: 20,
+                        })
+                    });
+                } else if (x === 'sp') {
+                    const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
+                        {stream: 'watts_sealevel'});
+                    specs.push({
+                        data: correctedSP.values(),
+                        formatter: x => `Sea Power: ${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
+                        colorSteps: valueGradient([0, 100, 400, 1200], {
+                            hStart: 25,
+                            sStart: 100,
+                            lStart: 50,
+                            lEnd: 20,
+                        })
+                    });
+                } else if (x === 'pace') {
+                    const thresholds = {
+                        ride: [4, 12, 20, 28],
+                        run: [0.5, 2, 5, 10],
+                        swim: [0.5, 0.85, 1.1, 1.75],
+                        other: [0.5, 10, 15, 30],
+                    }[ctx.activityType];
+                    specs.push({
+                        data: velocityStream,
+                        formatter: x => `Pace: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
+                        colorSteps: valueGradient(thresholds, {
+                            hStart: 216,
+                            sStart: 100,
+                            lStart: 84,
+                            lEnd: 20,
+                        }),
+                    });
+                } else if (x === 'cadence') {
                     const unit = ctx.cadenceFormatter.shortUnitKey();
                     const format = x => ctx.cadenceFormatter.format(x);
                     const thresholds = {
@@ -1258,7 +1259,6 @@ sauce.ns('analysis', ns => {
                     specs.push({
                         data: cadenceStream,
                         formatter: x => `Cadence: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                        maxMargin: 0.90,  // make nearly half height
                         colorSteps: valueGradient(thresholds, {
                             hStart: 60,
                             hEnd: 80,
@@ -1266,67 +1266,38 @@ sauce.ns('analysis', ns => {
                             lStart: 50
                         }),
                     });
-                }
-            } else if (section === 'gap') {
-                const gradeVelocity = [];
-                for (let i = 1; i < gradeDistStream.length; i++) {
-                    const dist = gradeDistStream[i] - gradeDistStream[i - 1];
-                    const elapsed = timeStream[i] - timeStream[i - 1];
-                    gradeVelocity.push(dist / elapsed);
-                }
-                specs = [{
-                    data: gradeVelocity,
-                    formatter: x => `GAP: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
-                    colorSteps: [0.5, 2, 5, 10]
-                }];
-            } else if (section === 'hr') {
-                localeTitle = 'heartrate';
-                const unit = ctx.hrFormatter.shortUnitKey();
-                specs = [{
-                    data: hrStream,
-                    formatter: x => `Heart Rate: ${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
-                    minMargin: 0.5,
-                    colorSteps: valueGradient([40, 100, 150, 200], {
-                        hStart: 0,
-                        sStart: 50,
-                        sEnd: 100,
-                        lStart: 50
-                    }),
-                }];
-            } else if (section === 'cadence') {
-                const unit = ctx.cadenceFormatter.shortUnitKey();
-                const format = x => ctx.cadenceFormatter.format(x);
-                specs = [{
-                    data: cadenceStream,
-                    formatter: x => `Cadence: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                    colorSteps: {
-                        ride: [40, 80, 120, 150],
-                        run: [50, 80, 90, 100],
-                        swim: [20, 25, 30, 35],
-                        other: [10, 50, 100, 160]
-                    }[ctx.activityType],
-                }];
-            } else if (section === 'vam') {
-                specs = [{
-                    data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
-                    formatter: x => `VAM: ${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
-                    colorSteps: [-500, 500, 1000, 2000]
-                }];
-            } else if (section === 'elevation') {
-                localeTitle = 'elevation';
-                const unit = ctx.elevationFormatter.shortUnitKey();
-                specs = [{
-                    data: altStream,
-                    formatter: x => `Elevation: ${humanElevation(x)}<abbr class="unit short">${unit}</abbr>`,
-                    colorSteps: valueGradient([0, 1000, 2000, 4000], {
-                        hStart: 0,
-                        sStart: 0,
-                        lStart: 60,
-                        lEnd: 20,
-                    }),
-                }];
-                const vamStream = createVAMStream(timeStream, altStream).slice(1);  // first entry is always 0
-                if (vamStream && vamStream.length > 1) {
+                } else if (x === 'gap') {
+                    const gradeVelocity = [];
+                    for (let i = 1; i < gradeDistStream.length; i++) {
+                        const dist = gradeDistStream[i] - gradeDistStream[i - 1];
+                        const elapsed = timeStream[i] - timeStream[i - 1];
+                        gradeVelocity.push(dist / elapsed);
+                    }
+                    specs.push({
+                        data: gradeVelocity,
+                        formatter: x => `GAP: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
+                        colorSteps: valueGradient([0.5, 2, 5, 10], {
+                            hStart: 216, // XXX Change a bit
+                            sStart: 100,
+                            lStart: 84,
+                            lEnd: 20,
+                        }),
+                    });
+                } else if (x === 'hr') {
+                    const unit = ctx.hrFormatter.shortUnitKey();
+                    specs.push({
+                        data: hrStream,
+                        formatter: x => `Heart Rate: ${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
+                        minMargin: 0.5,
+                        colorSteps: valueGradient([40, 100, 150, 200], {
+                            hStart: 0,
+                            sStart: 50,
+                            sEnd: 100,
+                            lStart: 50
+                        }),
+                    });
+                } else if (x === 'vam') {
+                    const vamStream = createVAMStream(timeStream, altStream).slice(1);  // first entry is always 0
                     specs.push({
                         data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
                         formatter: x => `VAM: ${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
@@ -1338,39 +1309,35 @@ sauce.ns('analysis', ns => {
                             lend: 50,
                         }),
                     });
+                } else if (x === 'elevation') {
+                    const unit = ctx.elevationFormatter.shortUnitKey();
+                    specs.push({
+                        data: altStream,
+                        formatter: x => `Elevation: ${humanElevation(x)}<abbr class="unit short">${unit}</abbr>`,
+                        colorSteps: valueGradient([0, 1000, 2000, 4000], {
+                            hStart: 0,
+                            sStart: 0,
+                            lStart: 60,
+                            lEnd: 20,
+                        }),
+                    });
+                } else {
+                    throw new TypeError(`Invalid section: ${section}`);
                 }
-            } else {
-                throw new TypeError(`Invalid section: ${section}`);
-            }
-            if (localeTitle) {
-                $sparkline.prev('.graph-label').text(await sauce.locale.getMessage(`analysis_${localeTitle}`));
-            } else {
-                $sparkline.prev('.graph-label').empty();
             }
             let composite = false;
             let opacity = 0.8;
+            let maxMargin = 0;
+            const minMargin = 0.20;
             for (const spec of specs) {
                 let data = spec.data;
                 // Firefox Mobile doesn't support audiocontext based resampling.
                 if (data.length > 120 && !navigator.userAgent.match(/Mobile/)) {
                     data = await sauce.data.resample(data, 120);
                 }
-                let chartRangeMin, chartRangeMax;
-                if (spec.min == null || spec.max == null) {
-                    const dataMin = sauce.data.min(data);
-                    const dataMax = sauce.data.max(data);
-                    const range = dataMax - dataMin;
-                    if (spec.min == null) {
-                        chartRangeMin = Math.max(0, dataMin - (range * (spec.minMargin == null ? 0.20 : spec.minMargin)));
-                    } else {
-                        chartRangeMin = spec.min;
-                    }
-                    if (spec.max == null) {
-                        chartRangeMax = dataMax + (range * (spec.maxMargin == null ? 0.05 : spec.maxMargin));
-                    } else {
-                        chartRangeMax = spec.max;
-                    }
-                }
+                const dataMin = sauce.data.min(data);
+                const dataMax = sauce.data.max(data);
+                const range = dataMax - dataMin;
                 $sparkline.sparkline(data, {
                     type: 'line',
                     width: '100%',
@@ -1382,15 +1349,17 @@ sauce.ns('analysis', ns => {
                         opacity,
                         steps: spec.colorSteps
                     },
-                    chartRangeMin,
-                    chartRangeMax,
+                    chartRangeMin: Math.max(0, dataMin - (range * minMargin)),
+                    chartRangeMax: dataMax + (range * maxMargin),
                     tooltipFormatter: (_, __, data) => {
                         const legendColor = data.fillColor.steps[Math.floor(data.fillColor.steps.length / 2)].color;
                         return `<div class="jqs-legend" style="background-color: ${legendColor};"></div>${spec.formatter(data.y)}`;
                     }
                 });
                 composite = true;
-                opacity -= (1 / specs.length) / 2;
+                opacity -= (1 / (specs.length)) / 2;
+                maxMargin += (1 / (specs.length)) * 1.5;
+                console.log({maxMargin, opacity});
             }
         }
         if (sauce.options.expandInfoDialog) {
@@ -1407,22 +1376,41 @@ sauce.ns('analysis', ns => {
             ev.currentTarget.classList.add('enabled');
             await renderGraph(section);
         });
+        $dialog.on('click', '.graph-select', async ev => {
+            const graphId = ev.currentTarget.dataset.id;
+            const selected = ev.currentTarget.classList.toggle('selected');
+            if (selected) {
+                _activeGraphs.add(graphId);
+            } else {
+                _activeGraphs.delete(graphId);
+            }
+            await renderGraphs();
+        });
         $dialog.on('click', '.segments a[data-id]', ev => {
             $dialog.dialog('close');
             pageView.router().changeMenuTo(`segments/${ev.currentTarget.dataset.id}`);
         });
-        const graphSection = {
-            peak_power: 'power',
-            peak_np: 'power',
-            peak_xp: 'power',
-            peak_sp: 'sp',
-            peak_pace: 'pace',
-            peak_gap: 'gap',
-            peak_hr: 'hr',
-            peak_cadence: 'cadence',
-            peak_vam: 'vam',
-        }[source];
-        await renderGraph(graphSection);
+        if (source !== _lastInfoDialogSource) {
+            _activeGraphs.clear();
+            _activeGraphs.add({
+                peak_power: 'power',
+                peak_np: 'power',
+                peak_xp: 'power',
+                peak_sp: 'sp',
+                peak_pace: 'pace',
+                peak_gap: 'gap',
+                peak_hr: 'hr',
+                peak_cadence: 'cadence',
+                peak_vam: 'vam',
+            }[source]);
+            _lastInfoDialogSource = source;
+        }
+        for (const x of $dialog.find('.graph-select[data-id]')) {
+            if (_activeGraphs.has(x.dataset.id)) {
+                x.classList.add('selected');
+            }
+        }
+        await renderGraphs();
         return $dialog;
     }
 
