@@ -1258,7 +1258,7 @@ sauce.ns('analysis', ns => {
                     specs.push({
                         data: cadenceStream,
                         formatter: x => `Cadence: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                        maxMargin: 0.90,
+                        maxMargin: 0.90,  // make nearly half height
                         colorSteps: valueGradient(thresholds, {
                             hStart: 60,
                             hEnd: 80,
@@ -1285,6 +1285,7 @@ sauce.ns('analysis', ns => {
                 specs = [{
                     data: hrStream,
                     formatter: x => `Heart Rate: ${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
+                    minMargin: 0.5,
                     colorSteps: valueGradient([40, 100, 150, 200], {
                         hStart: 0,
                         sStart: 50,

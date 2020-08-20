@@ -122,7 +122,7 @@
 
         .graph-holder {
             position: relative;
-            padding-top: 0.5em;
+            padding-top: 0.8em;
             background-color: color.shade(bg, 8%);
 
             .graph-label {
@@ -133,9 +133,12 @@
                 color: color.shade(fg, 40%, 0.7);
                 font-weight: bold;
                 font-size: 0.75em;
-                padding: 0.12em 0.2em;
-                z-index: 2;
+                padding: 0 0.3em;
+                z-index: 10;
                 pointer-events: none;
+            }
+
+            .sauce-sparkline {
             }
         }
     }
