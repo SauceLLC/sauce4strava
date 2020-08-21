@@ -235,11 +235,11 @@
     }
 
     section {
-        $highlight-value-offset: 3mm;
+        $highlight-value-offset: 2mm;
         $highlight-margin-right: 3mm;
-        $heading-bottom-margin: 1.5mm;
-        $section-padding-bottom: 1.6mm;
-        $section-margin-top: 2mm;
+        $heading-bottom-margin: 1mm;
+        $section-padding-bottom: 1mm;
+        $section-margin-top: 1.5mm;
 
         display: grid;
         grid-template-columns: 70% 30%;
@@ -251,7 +251,15 @@
             cursor: pointer;
 
             &:hover {
-                filter: brightness(1.1);
+                color: color.shade(accent3, 10%);
+
+                .title {
+                    color: inherit;
+                }
+
+                .graph-select {
+                    opacity: 1;
+                }
             }
 
             .graph-select {
@@ -259,18 +267,14 @@
                 width: 0.5em;
                 height: 0.5em;
                 background-color: color.shade(bg, 5%);
-                border: 1px solid color.shade(fg, 40%);
+                border: 1px solid color.shade(fg, 20%);
                 border-radius: 50%;
                 position: absolute;
-                left: -0.4em;
+                left: -0.92em;
                 top: 0.333em;
                 cursor: pointer;
-                opacity: 0.6;
+                opacity: 0;
                 transition: opacity 200ms;
-
-                &:hover {
-                    opacity: 1;
-                }
             }
 
             &.selected {
@@ -292,14 +296,13 @@
 
             &.selectable .graph-select {
                 top: 0.5em;
-                left: -0.85em;
             }
 
             .title {
                 font-variant: all-small-caps;
-                font-size: 1.12em;
+                font-size: 1.08em;
                 font-weight: bold;
-                color: color.shade(fg, 33%);
+                color: color.shade(fg, 25%);
             }
         }
 
@@ -320,12 +323,12 @@
                 key,
                 value {
                     flex: 1 1 50%;
-                    padding-top: 0.36mm;
-                    padding-bottom: 0.36mm;
+                    padding-top: 0.2mm;
+                    padding-bottom: 0.3mm;
                 }
 
                 key {
-                    font-size: 0.88em;
+                    font-size: 0.86em;
                     padding-left: 1.8mm;
                     display: flex;
                 }
@@ -333,7 +336,7 @@
                 value {
                     padding-left: 1mm;
                     padding-right: 1.8mm;
-                    font-size: 0.92em;
+                    font-size: 0.88em;
                     display: block;  // avoid flex by default as it breaks inline formatting
                 }
             }
@@ -373,7 +376,7 @@
                 width: calc(100% + (#{$highlight-margin-right} * 2));
                 opacity: 0.18;
                 display: flex;
-                height: calc(100% + #{$section-margin-top} + #{$highlight-value-offset} + #{$section-padding-bottom} - #{$heading-bottom-margin});
+                height: calc(100% + #{$section-margin-top} + (#{$highlight-value-offset} * 2) + #{$section-padding-bottom} - #{$heading-bottom-margin});
                 display: flex;
                 align-items: center;
 
@@ -396,6 +399,7 @@
 
                     svg[data-icon] {
                         max-height: min(100%, 5em);  // it's a little bigger than the others.
+                        margin-bottom: 0.5em;
                     }
                 }
 
@@ -424,7 +428,8 @@
                 font-size: 1em;
                 font-variant: all-small-caps;
                 line-height: 0.9;
-                margin-top: -0.33em;
+                margin-top: -0.25em;
+                height: 0.5em; // contribute less to centering.
             }
 
             value {
