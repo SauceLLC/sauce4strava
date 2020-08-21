@@ -31,10 +31,9 @@
 
     <% if (obj.power) { %>
         <section>
-            <heading>
-                <div class="graph-select" data-id="power"></div>
+            <heading class="selectable" data-graph="power">
+                <div class="graph-select"></div>
                 <div class="title"><% if (power.estimate) {%>{{{estimated}}} <% } %>{{{power}}}</div>
-                <a class="graph-selector" data-section="power">{-await faIcon('chart-line-duotone')-}</a>
             </heading>
 
             <column class="highlight" title="{{{elapsed_power_tooltip}}}">
@@ -71,8 +70,8 @@
                     </row>
                 <% } %>
                 <% if (power.elapsedSP) { %>
-                    <row title="{{{sp_tooltip}}}">
-                        <div class="graph-select" data-id="sp"></div>
+                    <row class="selectable" data-graph="sp" title="{{{sp_tooltip}}}">
+                        <div class="graph-select"></div>
                         <key>{{{sea_power}}}</key>
                         <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr></value>
                     </row>
@@ -83,10 +82,9 @@
 
     <% if (obj.hr) { %>
         <section>
-            <heading>
-                <div class="graph-select" data-id="hr"></div>
+            <heading class="selectable" data-graph="hr">
+                <div class="graph-select"></div>
                 <div class="title">{{{heartrate}}}</div>
-                <a class="graph-selector" data-section="hr">{-await faIcon('chart-line-duotone')-}</a>
             </heading>
 
             <column class="highlight">
@@ -109,14 +107,13 @@
 
     <% if (obj.pace) { %>
         <section>
-            <heading>
-                <div class="graph-select" data-id="pace"></div>
+            <heading class="selectable" data-graph="pace">
+                <div class="graph-select"></div>
                 <%if (isSpeed) { %>
                     <div class="title">{{{speed}}}</div>
                 <% } else { %>
                     <div class="title">{{{pace}}}</div>
                 <% } %>
-                <a class="graph-selector" data-section="pace">{-await faIcon('chart-line-duotone')-}</a>
             </heading>
             <column class="highlight">
                 <div class="icon-background pace">{-await faIcon('tachometer-duotone')-}</div>
@@ -135,8 +132,8 @@
                         <value>{{pace.max}}<abbr class="unit short">{{paceUnit}}</abbr></value>
                     </row>
                     <% if (pace.gap) { %>
-                        <row title="{{{gap_tooltip}}}">
-                            <div class="graph-select" data-id="gap"></div>
+                        <row class="selectable" data-graph="gap" title="{{{gap_tooltip}}}">
+                            <div class="graph-select"></div>
                             <key>{{{gap}}}</key>
                             <value>{{pace.gap}}<abbr class="unit short">{{paceUnit}}</abbr></value>
                         </row>
@@ -149,8 +146,8 @@
                 </row>
 
                 <% if (obj.cadence) { %>
-                    <row>
-                        <div class="graph-select" data-id="cadence"></div>
+                    <row class="selectable" data-graph="cadence">
+                        <div class="graph-select"></div>
                         <key>{{{cadence}}}</key>
                         <value>{{cadence}}<abbr class="unit short">{{cadenceUnit}}</abbr>
                     </row>
@@ -167,10 +164,9 @@
 
     <% if (obj.elevation) { %>
         <section>
-            <heading>
-                <div class="graph-select" data-id="elevation"></div>
+            <heading class="selectable" data-graph="elevation">
+                <div class="graph-select"></div>
                 <div class="title">{{{elevation}}}</div>
-                <a class="graph-selector" data-section="elevation">{-await faIcon('chart-line-duotone')-}</a>
             </heading>
             <% if (elevation.gain) { %>
                 <column class="highlight" title="{{{elevation_gain_tooltip}}}">
@@ -211,8 +207,8 @@
                 </row>
 
                 <% if (elevation.vam && elevation.vam > 0) { %>
-                    <row title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
-                        <div class="graph-select" data-id="vam"></div>
+                    <row class="selectable" data-graph="vam" title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
+                        <div class="graph-select"></div>
                         <key>VAM</key>
                         <value>{{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr></value>
                     </row>

@@ -122,7 +122,7 @@
 
         .graph-holder {
             position: relative;
-            padding-top: 0.8em;
+            padding-top: 0.3em;
             background-image: linear-gradient(to bottom, color.shade(bg, 2%), color.shade(bg, 10%) 1em, color.shade(bg, 0%));
 
             .graph-label {
@@ -247,27 +247,37 @@
         margin: $section-margin-top 5mm 0;
         padding-bottom: $section-padding-bottom;
 
-        .graph-select {
-            content: '';
-            width: 0.5em;
-            height: 0.5em;
-            background-color: color.shade(bg, 5%);
-            border: 1px solid color.shade(fg, 40%);
-            border-radius: 50%;
-            position: absolute;
-            left: -0.4em;
-            top: 0.333em;
+        .selectable {
             cursor: pointer;
-            opacity: 0.6;
-            transition: opacity 200ms;
-
-            &.selected {
-                background-color: color.shade(accent2, 10%);
-                opacity: 0.8;
-            }
 
             &:hover {
-                opacity: 1;
+                filter: brightness(1.1);
+            }
+
+            .graph-select {
+                content: '';
+                width: 0.5em;
+                height: 0.5em;
+                background-color: color.shade(bg, 5%);
+                border: 1px solid color.shade(fg, 40%);
+                border-radius: 50%;
+                position: absolute;
+                left: -0.4em;
+                top: 0.333em;
+                cursor: pointer;
+                opacity: 0.6;
+                transition: opacity 200ms;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+
+            &.selected {
+                .graph-select {
+                    background-color: color.shade(fg, 10%);
+                    opacity: 0.8;
+                }
             }
         }
 
@@ -280,7 +290,7 @@
             border-color: color.shade(fg, 0%, 0.15);
             justify-content: space-between;
 
-            .graph-select {
+            &.selectable .graph-select {
                 top: 0.5em;
                 left: -0.85em;
             }
@@ -290,26 +300,6 @@
                 font-size: 1.12em;
                 font-weight: bold;
                 color: color.shade(fg, 33%);
-            }
-
-            .graph-selector {
-                display: none !important; // XXX remove if not using later.
-                width: 1em;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                transition: opacity 200ms, color 200ms;
-                color: color.get(fg);
-                opacity: 0.25;
-
-                &.enabled {
-                    opacity: 0.9;
-                    pointer-events: none;
-                }
-
-                &:hover {
-                    opacity: 1;
-                }
             }
         }
 

@@ -46,6 +46,17 @@ sauce.ns('rpc', function() {
     }
 
 
+    async function getPref(key) {
+        const prefs = await storageGet('preferences');
+        return prefs && prefs[key];
+    }
+
+
+    async function setPref(key, value) {
+        return await storageUpdate('preferences', {[key]: value});
+    }
+
+
     async function ga() {
         const args = Array.from(arguments);
         const meta = {referrer: document.referrer};
@@ -224,6 +235,8 @@ sauce.ns('rpc', function() {
         updateAthleteInfo,
         getAthleteProp,
         setAthleteProp,
+        getPref,
+        setPref,
         storageSet,
         storageGet,
         storageUpdate,

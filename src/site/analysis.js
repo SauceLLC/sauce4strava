@@ -1099,18 +1099,33 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function hslValueGradientSteps(thresholds, {hStart, hEnd, sStart, sEnd, lStart, lEnd}) {
+        const steps = [];
+        if (hStart == null || sStart == null || lStart == null) {
+            throw new Error("HSL start args required");
+        }
+        hEnd = hEnd == null ? hStart : hEnd;
+        sEnd = sEnd == null ? sStart : sEnd;
+        lEnd = lEnd == null ? lStart : lEnd;
+        const count = thresholds.length;
+        for (let i = 0; i < count; i++) {
+            const pct = i / (count - 1);
+            const h = Math.round(hStart + ((hEnd - hStart) * pct));
+            const s = Math.round(sStart + ((sEnd - sStart) * pct));
+            const l = Math.round(lStart + ((lEnd - lStart) * pct));
+            steps.push({
+                value: thresholds[i],
+                color: `hsl(${h}deg, ${s}%, ${l}%)`
+            });
+        }
+        return steps;
+    }
+
+
     const _activeGraphs = new Set();
     let _lastInfoDialogSource;
-    async function showInfoDialog({
-        startTime,
-        endTime,
-        wallStartTime,
-        wallEndTime,
-        label,
-        source,
-        originEl,
-        isDistanceRange
-    }) {
+    async function showInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source,
+        originEl, isDistanceRange}) {
         const elapsedTime = wallEndTime - wallStartTime;
         const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
@@ -1169,53 +1184,18 @@ sauce.ns('analysis', ns => {
             isDistanceRange,
             overlappingSegments: getOverlappingSegments(startIdx, endIdx)
         });
-        const $dialog = await createInfoDialog({
-            heading,
-            textLabel,
-            source,
-            body,
-            originEl,
-            start: startTime,
-            end: endTime,
-        });
+        const $dialog = await createInfoDialog({heading, textLabel, source, body, originEl,
+            start: startTime, end: endTime, });
         const $sparkline = $dialog.find('.sauce-sparkline');
-        async function renderGraphs() {
-            function valueGradient(thresholds, {hStart, hEnd, sStart, sEnd, lStart, lEnd}) {
-                const steps = [];
-                if (hStart == null || sStart == null || lStart == null) {
-                    throw new Error("HSL start args required");
-                }
-                hEnd = hEnd == null ? hStart : hEnd;
-                sEnd = sEnd == null ? sStart : sEnd;
-                lEnd = lEnd == null ? lStart : lEnd;
-                const count = thresholds.length;
-                for (let i = 0; i < count; i++) {
-                    const pct = i / (count - 1);
-                    const h = Math.round(hStart + ((hEnd - hStart) * pct));
-                    const s = Math.round(sStart + ((sEnd - sStart) * pct));
-                    const l = Math.round(lStart + ((lEnd - lStart) * pct));
-                    steps.push({
-                        value: thresholds[i],
-                        color: `hsl(${h}deg, ${s}%, ${l}%)`
-                    });
-                }
-                return steps;
-            }
+        async function renderGraphs(graphs) {
             const specs = [];
             for (const x of _activeGraphs) {
                 if (x === 'power') {
                     specs.push({
                         data: correctedPower.values(),
                         formatter: x => `Power: ${humanNumber(x)}<abbr class="unit short">w</abbr>`,
-                        colorSteps: valueGradient([0, 100, 400, 1200], {
-                            //hStart: 390,
-                            hStart: 420,
-                            hEnd: 280,
-                            sStart: 50,
-                            sEnd: 95,
-                            lStart: 80,
-                            lEnd: 20,
-                        })
+                        colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
+                            {hStart: 360, hEnd: 280, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
                     });
                 } else if (x === 'sp') {
                     const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
@@ -1223,12 +1203,8 @@ sauce.ns('analysis', ns => {
                     specs.push({
                         data: correctedSP.values(),
                         formatter: x => `Sea Power: ${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
-                        colorSteps: valueGradient([0, 100, 400, 1200], {
-                            hStart: 25,
-                            sStart: 100,
-                            lStart: 50,
-                            lEnd: 20,
-                        })
+                        colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
+                            {hStart: 208, hEnd: 256, sStart: 0, sEnd: 100, lStart: 80, lEnd: 40})
                     });
                 } else if (x === 'pace') {
                     const thresholds = {
@@ -1240,12 +1216,8 @@ sauce.ns('analysis', ns => {
                     specs.push({
                         data: velocityStream,
                         formatter: x => `Pace: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
-                        colorSteps: valueGradient(thresholds, {
-                            hStart: 216,
-                            sStart: 100,
-                            lStart: 84,
-                            lEnd: 20,
-                        }),
+                        colorSteps: hslValueGradientSteps(thresholds,
+                            {hStart: 216, sStart: 100, lStart: 84, lEnd: 20}),
                     });
                 } else if (x === 'cadence') {
                     const unit = ctx.cadenceFormatter.shortUnitKey();
@@ -1259,12 +1231,7 @@ sauce.ns('analysis', ns => {
                     specs.push({
                         data: cadenceStream,
                         formatter: x => `Cadence: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                        colorSteps: valueGradient(thresholds, {
-                            hStart: 60,
-                            hEnd: 80,
-                            sStart: 95,
-                            lStart: 50
-                        }),
+                        colorSteps: hslValueGradientSteps(thresholds, {hStart: 60, hEnd: 80, sStart: 95, lStart: 50}),
                     });
                 } else if (x === 'gap') {
                     const gradeVelocity = [];
@@ -1276,7 +1243,7 @@ sauce.ns('analysis', ns => {
                     specs.push({
                         data: gradeVelocity,
                         formatter: x => `GAP: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
-                        colorSteps: valueGradient([0.5, 2, 5, 10], {
+                        colorSteps: hslValueGradientSteps([0.5, 2, 5, 10], {
                             hStart: 216, // XXX Change a bit
                             sStart: 100,
                             lStart: 84,
@@ -1289,102 +1256,91 @@ sauce.ns('analysis', ns => {
                         data: hrStream,
                         formatter: x => `Heart Rate: ${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
                         minMargin: 0.5,
-                        colorSteps: valueGradient([40, 100, 150, 200], {
-                            hStart: 0,
-                            sStart: 50,
-                            sEnd: 100,
-                            lStart: 50
-                        }),
+                        colorSteps: hslValueGradientSteps([40, 100, 150, 200],
+                            {hStart: 0, sStart: 50, sEnd: 100, lStart: 50})
                     });
                 } else if (x === 'vam') {
-                    const vamStream = createVAMStream(timeStream, altStream).slice(1);  // first entry is always 0
                     specs.push({
                         data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
                         formatter: x => `VAM: ${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
-                        colorSteps: valueGradient([-500, 500, 1000, 2000], {
-                            hStart: 260,
-                            sStart: 65,
-                            sEnd: 100,
-                            lStart: 75,
-                            lend: 50,
-                        }),
+                        colorSteps: hslValueGradientSteps([-500, 500, 1000, 2000],
+                            {hStart: 260, sStart: 65, sEnd: 100, lStart: 75, lend: 50}),
                     });
                 } else if (x === 'elevation') {
                     const unit = ctx.elevationFormatter.shortUnitKey();
                     specs.push({
                         data: altStream,
                         formatter: x => `Elevation: ${humanElevation(x)}<abbr class="unit short">${unit}</abbr>`,
-                        colorSteps: valueGradient([0, 1000, 2000, 4000], {
-                            hStart: 0,
-                            sStart: 0,
-                            lStart: 60,
-                            lEnd: 20,
-                        }),
+                        colorSteps: hslValueGradientSteps([0, 1000, 2000, 4000],
+                            {hStart: 0, sStart: 0, lStart: 60, lEnd: 20}),
                     });
                 } else {
-                    throw new TypeError(`Invalid section: ${section}`);
+                    throw new TypeError(`Invalid graph: ${x}`);
                 }
             }
-            let composite = false;
-            let opacity = 0.8;
-            let maxMargin = 0;
-            const minMargin = 0.20;
-            for (const spec of specs) {
-                let data = spec.data;
-                // Firefox Mobile doesn't support audiocontext based resampling.
-                if (data.length > 120 && !navigator.userAgent.match(/Mobile/)) {
-                    data = await sauce.data.resample(data, 120);
-                }
-                const dataMin = sauce.data.min(data);
-                const dataMax = sauce.data.max(data);
-                const range = dataMax - dataMin;
-                $sparkline.sparkline(data, {
-                    type: 'line',
-                    width: '100%',
-                    height: 64,  // slightly oversampled
-                    lineColor: '#EA400DA0',
-                    composite,
-                    fillColor: {
-                        type: 'gradient',
-                        opacity,
-                        steps: spec.colorSteps
-                    },
-                    chartRangeMin: Math.max(0, dataMin - (range * minMargin)),
-                    chartRangeMax: dataMax + (range * maxMargin),
-                    tooltipFormatter: (_, __, data) => {
-                        const legendColor = data.fillColor.steps[Math.floor(data.fillColor.steps.length / 2)].color;
-                        return `<div class="jqs-legend" style="background-color: ${legendColor};"></div>${spec.formatter(data.y)}`;
+            if (!specs.length) {
+                $sparkline.empty();
+            } else {
+                const opacityLimit = 0.25;
+                const maxMarginLimit = 2;
+                const minMarginLimit = 0.8;
+                let opacity = 0.85;
+                let maxMargin = 0;
+                let minMargin = minMarginLimit + 0.1;
+                let composite = false;
+                for (const spec of specs) {
+                    let data = spec.data;
+                    // Firefox Mobile doesn't support audiocontext based resampling.
+                    if (data.length > 120 && !navigator.userAgent.match(/Mobile/)) {
+                        data = await sauce.data.resample(data, 60);
                     }
-                });
-                composite = true;
-                opacity -= (1 / (specs.length)) / 2;
-                maxMargin += (1 / (specs.length)) * 1.5;
-                console.log({maxMargin, opacity});
+                    const dataMin = sauce.data.min(data);
+                    const dataMax = sauce.data.max(data);
+                    const range = dataMax - dataMin;
+                    minMargin -= minMarginLimit / specs.length;
+                    $sparkline.sparkline(data, {
+                        type: 'line',
+                        width: '100%',
+                        height: 64,  // slightly oversampled
+                        lineColor: '#EA400DA0',
+                        composite,
+                        fillColor: {
+                            type: 'gradient',
+                            opacity,
+                            steps: spec.colorSteps
+                        },
+                        chartRangeMin: dataMin - (range * minMargin),
+                        chartRangeMax: dataMax + (range * maxMargin),
+                        tooltipFormatter: (_, __, data) => {
+                            const legendColor = data.fillColor.steps[Math.floor(data.fillColor.steps.length / 2)].color;
+                            return `
+                                <div class="jqs-legend" style="background-color: ${legendColor};"></div>
+                                ${spec.formatter(data.y)}
+                            `;
+                        }
+                    });
+                    composite = true;
+                    opacity -= opacityLimit / specs.length;
+                    maxMargin += maxMarginLimit / specs.length;
+                }
             }
         }
-        if (sauce.options.expandInfoDialog) {
+        if (await sauce.rpc.getPref('expandInfoDialog')) {
             $dialog.addClass('expanded');
         }
         $dialog.on('click', '.expander', async () => {
-            $dialog.toggleClass('expanded');
-            sauce.options.expandInfoDialog = !sauce.options.expandInfoDialog;  // for non page reloads
-            await sauce.rpc.storageUpdate('options', {expandInfoDialog: sauce.options.expandInfoDialog});
+            const expanded = $dialog[0].classList.toggle('expanded');
+            await sauce.rpc.setPref('expandInfoDialog', expanded);
         });
-        $dialog.on('click', '.graph-selector', async ev => {
-            const section = ev.currentTarget.dataset.section;
-            $dialog.find('.graph-selector').removeClass('enabled');
-            ev.currentTarget.classList.add('enabled');
-            await renderGraph(section);
-        });
-        $dialog.on('click', '.graph-select', async ev => {
-            const graphId = ev.currentTarget.dataset.id;
+        $dialog.on('click', '.selectable', async ev => {
+            const graph = ev.currentTarget.dataset.graph;
             const selected = ev.currentTarget.classList.toggle('selected');
             if (selected) {
-                _activeGraphs.add(graphId);
+                _activeGraphs.add(graph);
             } else {
-                _activeGraphs.delete(graphId);
+                _activeGraphs.delete(graph);
             }
-            await renderGraphs();
+            await renderGraphs(_activeGraphs);
         });
         $dialog.on('click', '.segments a[data-id]', ev => {
             $dialog.dialog('close');
@@ -1405,12 +1361,12 @@ sauce.ns('analysis', ns => {
             }[source]);
             _lastInfoDialogSource = source;
         }
-        for (const x of $dialog.find('.graph-select[data-id]')) {
-            if (_activeGraphs.has(x.dataset.id)) {
+        for (const x of $dialog.find('.selectable[data-graph]')) {
+            if (_activeGraphs.has(x.dataset.graph)) {
                 x.classList.add('selected');
             }
         }
-        await renderGraphs();
+        await renderGraphs(_activeGraphs);
         return $dialog;
     }
 
