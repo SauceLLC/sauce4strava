@@ -2581,7 +2581,7 @@ sauce.propDefined('jQuery', function($) {
             const gradient = context.createLinearGradient(0, this.pixelHeight, 0, 0);
             const range = this._maxValue - this._minValue;
             const samples = stepCount * 5;  // Slightly more bands than the orig.
-            const alpha = spec.opacity || 1;
+            const alphaMax = spec.opacity || 1;
             let over;
             for (let i = 0; i < samples && !over; i++) {
                 const pct = i / samples;
@@ -2590,6 +2590,7 @@ sauce.propDefined('jQuery', function($) {
                 if (refPct > 1) {
                     over = true;
                 }
+                const alpha = refPct < 0 ? Math.max(0, alphaMax - ((-refPct) ** 0.5 * alphaMax)) : alphaMax;
                 const refOffset = Math.max(0, Math.min(size - 1, Math.round(refPct * size)));
                 const [r, g, b] = refContext.getImageData(refOffset, 0, refOffset + 1, 1).data;
                 gradient.addColorStop(pct, `rgba(${r}, ${g}, ${b}, ${alpha})`);
