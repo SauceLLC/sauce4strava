@@ -42,9 +42,10 @@ translate:
 	$(TOOLPATH)/translate
 
 $(MANIFEST): manifest_base.json manifest_$(TARGET).json Makefile
-	$(TOOLPATH)/mergejson manifest_base.json manifest_$(TARGET).json > $@
+	$(MAKE) manifest
 
-manifest: $(MANIFEST)
+manifest:
+	$(TOOLPATH)/mergejson manifest_base.json manifest_$(TARGET).json > manifest.json
 
 package:
 	$(TOOLPATH)/package $(TARGET)
