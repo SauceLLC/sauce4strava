@@ -191,6 +191,7 @@
     .right-aside {
         flex: 1 0 auto;
         width: 300px;
+        max-height: 40rem;  // Taller than left-main with all fields (NOTE: must adjsut if fields change)
         overflow-y: auto;
         background-image: linear-gradient(to bottom, color.shade(bg, 10%), color.shade(bg, 18%) 2em, color.shade(bg, 0%));
 
@@ -486,6 +487,7 @@
 
         .right-aside {
             display: initial !important;
+            max-height: initial;
         }
     }
 }
