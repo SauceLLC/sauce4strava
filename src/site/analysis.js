@@ -980,6 +980,7 @@ sauce.ns('analysis', ns => {
             body: options.body,
             flex: true,
             resizable: false,
+            autoOpen: false, // Defer till after graph render so position is correct
             position: {
                 my: 'left center',
                 at: 'right center',
@@ -1185,7 +1186,7 @@ sauce.ns('analysis', ns => {
             overlappingSegments: getOverlappingSegments(startIdx, endIdx)
         });
         const $dialog = await createInfoDialog({heading, textLabel, source, body, originEl,
-            start: startTime, end: endTime, });
+            start: startTime, end: endTime});
         const $sparkline = $dialog.find('.sauce-sparkline');
         async function renderGraphs(graphs) {
             const specs = [];
@@ -1300,8 +1301,8 @@ sauce.ns('analysis', ns => {
                     minMargin -= minMarginLimit / specs.length;
                     $sparkline.sparkline(data, {
                         type: 'line',
-                        width: '100%',
-                        height: 64,  // slightly oversampled
+                        width: 300,  // Is scaled by DPR in sparkline()
+                        height: 64,  //  "
                         lineColor: '#EA400DA0',
                         composite,
                         fillColor: {
@@ -1367,6 +1368,7 @@ sauce.ns('analysis', ns => {
             }
         }
         await renderGraphs(_activeGraphs);
+        $dialog.dialog('open');
         return $dialog;
     }
 

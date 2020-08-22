@@ -113,7 +113,7 @@
 
     .left-main {
         $width: 300px;
-        flex: 0 0 $width;
+        flex: 1 0 auto;
         width: $width;
         display: flex;
         flex-direction: column;
@@ -140,6 +140,10 @@
             }
 
             .sauce-sparkline {
+                canvas {
+                    width: 100% !important;
+                    height: auto !important;
+                }
             }
         }
     }
@@ -185,6 +189,7 @@
     }
 
     .right-aside {
+        flex: 1 0 auto;
         width: 300px;
         overflow-y: auto;
         background-image: linear-gradient(to bottom, color.shade(bg, 10%), color.shade(bg, 18%) 2em, color.shade(bg, 0%));
@@ -462,4 +467,25 @@
     border-radius: 50%;
     border: 1px solid white;
     margin-right: 0.25em;
+}
+
+@media only screen and (max-width: 768px) {
+    .sauce-info-dialog {
+        .ui-dialog-content {
+            flex-direction: column !important;
+        }
+
+        .left-main,
+        .right-aside {
+            width: initial;
+        }
+
+        .expander {
+            display: none;
+        }
+
+        .right-aside {
+            display: initial !important;
+        }
+    }
 }
