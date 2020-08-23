@@ -1019,8 +1019,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-
-
     async function fetchGradeDistStream(options) {
         options = options || {};
         if (ctx.activityType !== 'run') {
@@ -1188,7 +1186,7 @@ sauce.ns('analysis', ns => {
         const $dialog = await createInfoDialog({heading, textLabel, source, body, originEl,
             start: startTime, end: endTime});
         const $sparkline = $dialog.find('.sauce-sparkline');
-        async function renderGraphs(graphs) {
+        async function renderGraphs() {
             const specs = [];
             for (const x of _activeGraphs) {
                 if (x === 'power') {
@@ -1256,7 +1254,6 @@ sauce.ns('analysis', ns => {
                     specs.push({
                         data: hrStream,
                         formatter: x => `Heart Rate: ${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
-                        minMargin: 0.5,
                         colorSteps: hslValueGradientSteps([40, 100, 150, 200],
                             {hStart: 0, sStart: 50, sEnd: 100, lStart: 50})
                     });
@@ -1305,6 +1302,7 @@ sauce.ns('analysis', ns => {
                         height: 64,  //  "
                         lineColor: '#EA400DA0',
                         composite,
+                        disableHiddenCheck: true,  // Fix issue with detached composite render
                         fillColor: {
                             type: 'gradient',
                             opacity,
@@ -1341,7 +1339,7 @@ sauce.ns('analysis', ns => {
             } else {
                 _activeGraphs.delete(graph);
             }
-            await renderGraphs(_activeGraphs);
+            await renderGraphs();
         });
         $dialog.on('click', '.segments a[data-id]', ev => {
             $dialog.dialog('close');
@@ -1367,7 +1365,7 @@ sauce.ns('analysis', ns => {
                 x.classList.add('selected');
             }
         }
-        await renderGraphs(_activeGraphs);
+        await renderGraphs();
         $dialog.dialog('open');
         return $dialog;
     }
