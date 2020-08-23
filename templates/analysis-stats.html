@@ -3,6 +3,11 @@
     <div class="sauce-logo"><img src="{{logo}}"/></div>
 </div>
 
+<div class="expander">
+    <div class="icon expand" title="{{{expand_tooltip}}}">{-await faIcon('angle-double-down-solid')-}</div>
+    <div class="icon compress" title="{{{compress_tooltip}}}">{-await faIcon('angle-double-up-solid')-}</div>
+</div>
+
 <div class="sauce-data-tuple">
     <line class="heading" title="{{{active_time_tooltip}}}">
         <key>{{{active}}}</key>
@@ -44,6 +49,7 @@
 </div>
 
 <% if (obj.power) { %>
+    <div class="sauce-data-divider"></div>
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{active_power_tooltip}}}">
             <key>{{{power}}}</key>
@@ -93,6 +99,7 @@
 <% } %>
 
 <% if (obj.energy) { %>
+    <div class="sauce-data-divider"></div>
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{energy_tooltip}}}">
             <key>{{{energy}}}</key>
@@ -126,6 +133,7 @@
         elevation.loss ||
         (elevation.grade && Math.abs(elevation.grade) >= 1) ||
         (elevation.vam && elevation.vam >= 1))) { %>
+    <div class="sauce-data-divider"></div>
     <div class="sauce-data-tuple">
         <line class="heading">
             <key>{{{elevation}}}</key>
@@ -191,6 +199,7 @@
     </div>
 <% } %>
 
+<div class="sauce-data-divider"></div>
 <div class="sauce-data-tuple">
     <line class="heading">
         <key>{{{data}}}</key>
@@ -216,6 +225,7 @@
 </div>
 
 <% if (supportsRankBadge && obj.power && !power.estimate && power.rank && power.rank.level > 0) { %>
+    <div class="sauce-data-divider"></div>
     <div class="sauce-data-tuple sauce-rank-badge">
         <line class="heading">
             <key>{{{rank}}}</key>
@@ -227,6 +237,3 @@
         <% } %>
     </div>
 <% } %>
-
-<a class="expander compressed-only" title="{{{expand_tooltip}}}">{-expandIcon-}</a>
-<a class="expander expanded-only" title="{{{compress_tooltip}}}">{-compressIcon-}</a>

@@ -409,9 +409,7 @@ sauce.ns('analysis', ns => {
 
     async function renderTertiaryStats(attrs) {
         const template = await getTemplate('tertiary-stats.html');
-        const $stats = jQuery(await template(Object.assign({
-            optionsIcon: await sauce.images.asText('fa/cog-duotone.svg'),
-        }, attrs)));
+        const $stats = jQuery(await template(attrs));
         attachEditableFTP($stats);
         attachEditableWeight($stats);
         jQuery('.activity-stats .inline-stats').last().after($stats);
@@ -1681,7 +1679,6 @@ sauce.ns('analysis', ns => {
         const maxTrials = 3;
         const icon = await sauce.images.asText('fa/trophy-duotone.svg');
         const body = await template({
-            infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
             segmentName: details.get('name'),
             leaderName: athlete.get('display_name'),
             isSelf: athlete.id === pageView.currentAthlete().id,
@@ -2119,9 +2116,7 @@ sauce.ns('analysis', ns => {
             isSpeed: ctx.paceMode === 'speed',
             paceUnit: ctx.paceFormatter.shortUnitKey(),
             samples: timeStream.length,
-            elevation: elevationData(altStream, elapsedTime, distance),
-            expandIcon: await sauce.images.asText('fa/plus-square-duotone.svg'),
-            compressIcon: await sauce.images.asText('fa/minus-square-duotone.svg'),
+            elevation: elevationData(altStream, elapsedTime, distance)
         };
         if (correctedPower) {
             const kj = correctedPower.kj();
@@ -2529,7 +2524,6 @@ sauce.ns('analysis', ns => {
             speedUnit: ctx.paceFormatter.shortUnitKey(),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
             distanceUnit: ctx.distanceFormatter.shortUnitKey(),
-            infoIcon: await sauce.images.asText('fa/info-circle-duotone.svg'),
             powerColors
         });
         const $dialog = modal({
@@ -2681,11 +2675,10 @@ sauce.ns('analysis', ns => {
             exportActivity(sauce.export.GPXSerializer, start, end).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('AnalysisStats', 'export', 'gpx');
         });
-        $el.on('click', 'a.expander', ev => {
+        $el.on('click', '.expander', ev => {
             const el = ev.currentTarget.closest('.sauce-analysis-stats');
-            const collapsing = el.classList.contains('expanded');
-            el.classList.toggle('expanded');
-            sauce.rpc.reportEvent('AnalysisStats', collapsing ? 'collapse' : 'expand');
+            const expanded = el.classList.toggle('expanded');
+            sauce.rpc.reportEvent('AnalysisStats', expanded ? 'expand' : 'collapse');
         });
     }
 

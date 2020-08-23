@@ -17,47 +17,31 @@
 }
 
 .sauce-analysis-stats {
-    $expander-size: 16px;
     $pad: 0.5rem;
+    $expander-height: 0.6em;
 
     display: flex;
+    justify-content: space-evenly;
     overflow: hidden;
     font-size: 0.96em;
     border-top: var(--sauce-border);
-    border-bottom: var(--sauce-border);
     width: defines.$basic-analysis-width;
     position: relative;
     box-sizing: border-box;
     flex-wrap: wrap; // Looks terrible but needed to prevent overflow
-    padding-right: calc(#{$expander-size} + #{$pad});
+    padding-bottom: $expander-height;
 
     &:empty {
         display: none;
     }
 
-    a.expander {
-        width: $expander-size;
-        height: $expander-size;
-        position: absolute;
-        top: $pad;
-        right: $pad;
-        color: color.shade(fg, 0%) !important;
-
-        &:hover,
-        &:active {
-            color: color.shade(fg, -14%) !important;
-            filter: drop-shadow(1px 1px 3px color.shade(fg, 5%, 0.33));
-        }
-    }
-
     &.expanded {
-        .expander.compressed-only {
+        .expander .expand.icon {
             display: none;
         }
     }
-
     &:not(.expanded) {
-        .expander.expanded-only {
+        .expander .compress.icon {
             display: none;
         }
 
@@ -65,6 +49,41 @@
             line:nth-child(1n+4) {  // Only show 3 lines if not expanded
                 display: none;
             }
+        }
+    }
+
+    .expander {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: $expander-height;
+        transition: box-shadow 200ms, filter 200ms;
+        background-image: linear-gradient(to top,
+            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * 0%)),
+            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * -4%)) 18%,
+            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * -26%)));
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.1em;
+
+        .icon {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            svg[data-icon] {
+                height: 100%;
+            }
+        }
+
+        &:hover {
+            filter: contrast(2);
+            box-shadow: 0 -1px 3px 0 color.shade(fg, 0%, 0.1);
         }
     }
 
@@ -99,20 +118,16 @@
         }
     }
 
+    .sauce-data-divider {
+        margin: $pad 0;
+        border-right: var(--sauce-thin-border);
+    }
+
     .sauce-data-tuple {
         display: flex;
         flex-direction: column;
-        padding-right: 1em;
-        margin: $pad 0;
+        margin: $pad 0.22em;
         position: relative;
-
-        &:not(:last-of-type) {
-            border-right: var(--sauce-thin-border);
-        }
-
-        &:not(:first-child) {
-            margin-left: 1em;
-        }
 
         line {
             display: flex;
