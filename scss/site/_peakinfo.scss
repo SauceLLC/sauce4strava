@@ -150,6 +150,7 @@
 
     .expander {
         flex: 0 0 auto;
+        width: 0.65em;
         opacity: 0.6;
         transition: opacity 200ms;
         background-image: linear-gradient(to right, color.shade(bg, 20%), color.shade(bg, 10%) 18%, color.shade(bg, 22%));
@@ -160,8 +161,15 @@
         padding: 0.1em;
 
         .icon {
-            width: 0.65em;
-            margin: 4em 0; // expand tooltip range (hack)
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            svg[data-icon] {
+                width: 100%;
+            }
         }
 
         &:hover {
