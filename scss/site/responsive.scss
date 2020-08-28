@@ -518,7 +518,6 @@ html.sauce-responsive,
                 grid-column: 1 / 2;
                 position: sticky;  // This is a sweet improvement in wasted space otherwise
                 top: 1em;
-                z-index: initial;
                 width: initial;
                 margin: 0 $hmargin;
                 align-self: start;  // no fill so menu's expand in the rigth pos.
