@@ -67,6 +67,9 @@
     "analysis_gap_tooltip": {
         "message": "Gradangepasstes Tempo: Geschätztes Tempo für flaches Gelände"
     },
+    "analysis_stride_tooltip": {
+        "message": "Durchschnittlicher Abstand pro Schritt / Hub"
+    },
     "analysis_np_tooltip": {
         "message": "Normalized Power®: Eine Schätzung der potenziellen Durchschnittsleistung"
     },
@@ -173,9 +176,6 @@
     },
     "analysis_peak_cadence_tooltip": {
         "message": "Maximal anhaltende Trittfrequenzbereiche"
-    },
-    "analysis_peak_stride_tooltip": {
-        "message": "Durchschnittlicher Abstand pro Schritt / Hub"
     },
     "analysis_peak_vam_tooltip": {
         "message": "Maximal anhaltende Steiggeschwindigkeitsbereiche"

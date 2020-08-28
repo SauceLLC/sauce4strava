@@ -68,6 +68,9 @@
     "analysis_gap_tooltip": {
         "message": "坡度调整步幅：平坦地形的估计步速"
     },
+    "analysis_stride_tooltip": {
+        "message": "每步/行程的平均距离"
+    },
     "analysis_np_tooltip": {
         "message": "归一化功率®：潜在平均功率的估计"
     },
@@ -173,9 +176,6 @@
     },
     "analysis_peak_cadence_tooltip": {
         "message": "最大持续节奏范围"
-    },
-    "analysis_peak_stride_tooltip": {
-        "message": "每步/行程的平均距离"
     },
     "analysis_peak_vam_tooltip": {
         "message": "最大持续爬升速度范围"

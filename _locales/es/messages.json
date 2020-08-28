@@ -66,6 +66,9 @@
     "analysis_gap_tooltip": {
         "message": "Ritmo ajustado de pendiente: ritmo estimado para terreno plano"
     },
+    "analysis_stride_tooltip": {
+        "message": "Distancia media por paso / carrera"
+    },
     "analysis_np_tooltip": {
         "message": "Normalized Power®: una estimación de la potencia media potencial"
     },
@@ -170,9 +173,6 @@
     },
     "analysis_peak_cadence_tooltip": {
         "message": "Rangos máximos de cadencia sostenida"
-    },
-    "analysis_peak_stride_tooltip": {
-        "message": "Distancia media por paso / carrera"
     },
     "analysis_peak_vam_tooltip": {
         "message": "Rangos máximos sostenidos de velocidad de escalada"

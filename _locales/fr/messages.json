@@ -68,6 +68,9 @@
         "message": "Vitesse ajustée selon la pente: allure estimée pour un terrain plat",
         "description": "IMMUTABLE"
     },
+    "analysis_stride_tooltip": {
+        "message": "Distance moyenne par pas / course"
+    },
     "analysis_np_tooltip": {
         "message": "Normalized Power®: une estimation de la puissance moyenne potentielle"
     },
@@ -172,9 +175,6 @@
     },
     "analysis_peak_cadence_tooltip": {
         "message": "Gammes maximales de cadence soutenue"
-    },
-    "analysis_peak_stride_tooltip": {
-        "message": "Distance moyenne par pas / course"
     },
     "analysis_peak_vam_tooltip": {
         "message": "Plages de vitesse de montée maximales soutenues"

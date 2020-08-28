@@ -70,6 +70,9 @@
         "message": "Passo in base alla pendenza: andatura stimata per terreni pianeggianti",
         "description": "IMMUTABLE"
     },
+    "analysis_stride_tooltip": {
+        "message": "Distanza media per passo / corsa"
+    },
     "analysis_np_tooltip": {
         "message": "Normalized Power®: una stima della potenza media potenziale"
     },
@@ -175,9 +178,6 @@
     },
     "analysis_peak_cadence_tooltip": {
         "message": "Intervalli di cadenza massimi sostenuti"
-    },
-    "analysis_peak_stride_tooltip": {
-        "message": "Distanza media per passo / corsa"
     },
     "analysis_peak_vam_tooltip": {
         "message": "Intervalli di VAM massima sostenuta",
