@@ -266,6 +266,9 @@
     "analysis_heartrate": {
         "message": "心率"
     },
+    "analysis_temp": {
+        "message": "温度"
+    },
     "analysis_cadence": {
         "message": "踏频",
         "description": "IMMUTABLE"

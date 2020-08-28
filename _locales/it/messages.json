@@ -270,6 +270,9 @@
     "analysis_heartrate": {
         "message": "Frequenza cardiaca"
     },
+    "analysis_temp": {
+        "message": "Temp"
+    },
     "analysis_cadence": {
         "message": "Cadenza"
     },

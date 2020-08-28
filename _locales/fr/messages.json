@@ -270,6 +270,9 @@
         "message": "Fréquence Cardiaque",
         "description": "IMMUTABLE"
     },
+    "analysis_temp": {
+        "message": "Temp"
+    },
     "analysis_cadence": {
         "message": "Cadence"
     },

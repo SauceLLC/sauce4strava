@@ -262,6 +262,9 @@
     "analysis_heartrate": {
         "message": "Ritmo cardiaco"
     },
+    "analysis_temp": {
+        "message": "Temperatura"
+    },
     "analysis_cadence": {
         "message": "Cadencia"
     },

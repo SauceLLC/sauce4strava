@@ -265,6 +265,9 @@
     "analysis_heartrate": {
         "message": "Pulsschlag"
     },
+    "analysis_temp": {
+        "message": "Temp"
+    },
     "analysis_cadence": {
         "message": "Trittfrequenz",
         "description": "IMMUTABLE"
