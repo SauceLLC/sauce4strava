@@ -209,7 +209,7 @@
 
             table {
                 td, th {
-                    padding: 0.4em 0.5em;
+                    padding: 0.4em 0.3em;
                     font-size: 0.9em;
 
                     &:first-child {
@@ -225,13 +225,25 @@
                 }
 
                 td.segment-name {
+                    $overflow-font-size: 0.65;
+
                     a {
-                        max-width: 15ch;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
+                        font-size: $overflow-font-size * 1em;
                         display: block;
+                        word-break: break-word;
+
+                        &::first-line {
+                            font-size: (1 / $overflow-font-size) * 1em;
+                        }
                     }
+                }
+
+                td.segment-time {
+                    font-size: 0.8em;
+                }
+
+                td.segment-overlap {
+                    font-size: 0.8em;
                 }
 
                 td.segment-achievement {
@@ -412,8 +424,8 @@
                     --sauce-info-icon-highlight-secondary: #08f;
 
                     svg[data-icon] {
-                        max-height: min(100%, 5em);  // it's a little bigger than the others.
-                        margin-bottom: 0.5em;
+                        max-height: min(100%, 4.5em);  // it's a little bigger than the others.
+                        margin-bottom: 0.6em;
                     }
                 }
 
