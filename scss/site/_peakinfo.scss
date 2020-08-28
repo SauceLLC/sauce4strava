@@ -199,7 +199,7 @@
     .right-aside {
         flex: 1 0 auto;
         width: 300px;
-        max-height: 580px;  // Taller than left-main with all fields (NOTE: must adjust if fields change)
+        max-height: 575px;  // Taller than left-main with all fields (NOTE: must adjust if fields change)
         overflow-y: auto;
         background-image: linear-gradient(to bottom, color.shade(bg, 10%), color.shade(bg, 18%) 2em, color.shade(bg, 0%));
 

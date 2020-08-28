@@ -86,6 +86,7 @@
     "analysis_start_of_effort": {"message": "Start of effort"},
     "analysis_elapsed_time": {"message": "Elapsed Time"},
     "analysis_heartrate": {"message": "Heart Rate"},
+    "analysis_temp": {"message": "Temp"},
     "analysis_cadence": {"message": "Cadence"},
     "analysis_stride": {"message": "Stride"},
     "analysis_peak_power": {"message": "Peak Power"},

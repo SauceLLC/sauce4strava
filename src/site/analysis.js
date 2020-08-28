@@ -1131,6 +1131,7 @@ sauce.ns('analysis', ns => {
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
+        const tempStream = await fetchStreamTimeRange('temp', startTime, endTime);
         const distance = streamDelta(distStream);
         const startIdx = getStreamTimeIndex(wallStartTime);
         const endIdx = getStreamTimeIndex(wallEndTime);
@@ -1176,6 +1177,8 @@ sauce.ns('analysis', ns => {
             elevation: elevationData(altStream, elapsedTime, distance),
             elevationUnit: ctx.elevationFormatter.shortUnitKey(),
             elevationUnitLong: ctx.elevationFormatter.longUnitKey(),
+            temp: tempStream && ctx.tempFormatter.format(sauce.data.avg(tempStream)), // XXX check gap handling
+            tempUnit: ctx.tempFormatter.shortUnitKey(),
             paceUnit: ctx.paceFormatter.shortUnitKey(),
             source,
             isDistanceRange,
@@ -1188,18 +1191,20 @@ sauce.ns('analysis', ns => {
             const specs = [];
             for (const x of _activeGraphs) {
                 if (x === 'power') {
+                    const label = await sauce.locale.getMessage('analysis_power');
                     specs.push({
                         data: correctedPower.values(),
-                        formatter: x => `Power: ${humanNumber(x)}<abbr class="unit short">w</abbr>`,
+                        formatter: x => `${label}: ${humanNumber(x)}<abbr class="unit short">w</abbr>`,
                         colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
                             {hStart: 360, hEnd: 280, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
                     });
                 } else if (x === 'sp') {
                     const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
                         {stream: 'watts_sealevel'});
+                    const label = await sauce.locale.getMessage('analysis_sea_power');
                     specs.push({
                         data: correctedSP.values(),
-                        formatter: x => `Sea Power: ${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
+                        formatter: x => `${label}: ${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
                         colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
                             {hStart: 208, hEnd: 256, sStart: 0, sEnd: 100, lStart: 80, lEnd: 40})
                     });
@@ -1210,15 +1215,18 @@ sauce.ns('analysis', ns => {
                         swim: [0.5, 0.85, 1.1, 1.75],
                         other: [0.5, 10, 15, 30],
                     }[ctx.activityType];
+                    const labelKey = ctx.paceMode === 'speed' ? 'speed' : 'pace';
+                    const label = await sauce.locale.getMessage(`analysis_${labelKey}`);
                     specs.push({
                         data: velocityStream,
-                        formatter: x => `Pace: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
+                        formatter: x => `${label}: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
                         colorSteps: hslValueGradientSteps(thresholds,
                             {hStart: 216, sStart: 100, lStart: 84, lEnd: 20}),
                     });
                 } else if (x === 'cadence') {
                     const unit = ctx.cadenceFormatter.shortUnitKey();
                     const format = x => ctx.cadenceFormatter.format(x);
+                    const label = await sauce.locale.getMessage('analysis_cadence');
                     const thresholds = {
                         ride: [40, 80, 120, 150],
                         run: [50, 80, 90, 100],
@@ -1227,7 +1235,7 @@ sauce.ns('analysis', ns => {
                     }[ctx.activityType];
                     specs.push({
                         data: cadenceStream,
-                        formatter: x => `Cadence: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
+                        formatter: x => `${label}: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
                         colorSteps: hslValueGradientSteps(thresholds, {hStart: 60, hEnd: 80, sStart: 95, lStart: 50}),
                     });
                 } else if (x === 'gap') {
@@ -1237,9 +1245,10 @@ sauce.ns('analysis', ns => {
                         const elapsed = timeStream[i] - timeStream[i - 1];
                         gradeVelocity.push(dist / elapsed);
                     }
+                    const label = await sauce.locale.getMessage('analysis_gap');
                     specs.push({
                         data: gradeVelocity,
-                        formatter: x => `GAP: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
+                        formatter: x => `${label}: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
                         colorSteps: hslValueGradientSteps([0.5, 2, 5, 10], {
                             hStart: 216, // XXX Change a bit
                             sStart: 100,
@@ -1249,9 +1258,10 @@ sauce.ns('analysis', ns => {
                     });
                 } else if (x === 'hr') {
                     const unit = ctx.hrFormatter.shortUnitKey();
+                    const label = await sauce.locale.getMessage('analysis_heartrate');
                     specs.push({
                         data: hrStream,
-                        formatter: x => `Heart Rate: ${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
+                        formatter: x => `${label}: ${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
                         colorSteps: hslValueGradientSteps([40, 100, 150, 200],
                             {hStart: 0, sStart: 50, sEnd: 100, lStart: 50})
                     });
@@ -1264,9 +1274,10 @@ sauce.ns('analysis', ns => {
                     });
                 } else if (x === 'elevation') {
                     const unit = ctx.elevationFormatter.shortUnitKey();
+                    const label = await sauce.locale.getMessage('analysis_elevation');
                     specs.push({
                         data: altStream,
-                        formatter: x => `Elevation: ${humanElevation(x)}<abbr class="unit short">${unit}</abbr>`,
+                        formatter: x => `${label}: ${humanElevation(x)}<abbr class="unit short">${unit}</abbr>`,
                         colorSteps: hslValueGradientSteps([0, 1000, 2000, 4000],
                             {hStart: 0, sStart: 0, lStart: 60, lEnd: 20}),
                     });
@@ -2736,6 +2747,7 @@ sauce.ns('analysis', ns => {
         ]);
         ctx.elevationFormatter = new Strava.I18n.ElevationFormatter();
         ctx.hrFormatter = new Strava.I18n.HeartRateFormatter();
+        ctx.tempFormatter = new Strava.I18n.TemperatureFormatter();
         ctx.cadenceFormatter = activity.isRun() ?
             new Strava.I18n.DoubledStepCadenceFormatter() :
             new Strava.I18n.CadenceFormatter();
@@ -2772,7 +2784,7 @@ sauce.ns('analysis', ns => {
             peak_vam: 'fa/rocket-launch-duotone.svg',
             peak_gap: 'fa/hiking-duotone.svg',
             peak_pace: 'fa/rabbit-fast-duotone.svg',
-            peak_cadence: 'fa/solar-system-duotone.svg'
+            peak_cadence: 'fa/solar-system-duotone.svg',
         };
         if (activity.isRun()) {
             ctx.peakIcons.peak_pace = 'fa/running-duotone.svg';

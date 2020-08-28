@@ -213,6 +213,14 @@
                         <value>{{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr></value>
                     </row>
                 <% } %>
+
+                <% if (obj.temp) { %>
+                    <row>
+                        <div class="graph-select"></div>
+                        <key>{{{temp}}}</key>
+                        <value>{{temp}}<abbr class="unit short">{{tempUnit}}</abbr></value>
+                    </row>
+                <% } %>
             </column>
         </section>
     <% } %>
