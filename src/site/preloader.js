@@ -6,6 +6,8 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     self.sauce = self.sauce || {};
 
+    const cacheRefreshThreshold = 60 * 1000;
+
     sauce.propDefined('pageView', view => {
         const addCustomRoutes = view.addCustomRoutes;
         view.addCustomRoutes = menuRouter => {
@@ -367,10 +369,9 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
         async function addButtons() {
             const segId = this.viewModel.model.id;
-            const supportsLiveSeg = (pageView.activity().isRide() ||
-                                     pageView.activity().isRun()) &&
-                                    (sauce.patronLevel && sauce.patronLevel >= 10);
-            if (supportsLiveSeg || (sauce.options && !sauce.options['hide-upsells'])) {
+            const supportsLiveSeg = pageView.activity().isRide() || pageView.activity().isRun();
+            const isPatron = sauce.patronLevel && sauce.patronLevel >= 10;
+            if (supportsLiveSeg && (isPatron || (sauce.options && !sauce.options['hide-upsells']))) {
                 const tooltip = await sauce.locale.getMessage('analysis_create_live_segment_tooltip');
                 const icon = await sauce.images.asText('fa/trophy-duotone.svg');
                 await addButton.call(this, segId, `Live Segment`, tooltip, `live-segment`, icon);
@@ -383,7 +384,9 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
         Klass.prototype.render = function() {
             const ret = renderSave.apply(this, arguments);
-            addButtons.call(this).catch(sauce.rpc.reportError);
+            if (sauce.options) {
+                addButtons.call(this).catch(sauce.rpc.reportError);
+            }
             return ret;
         };
     }, {once: true});
@@ -405,7 +408,6 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
         const qStr = q.toString();
         const fqUrl = qStr ? `${url}?${qStr}` : url;
-        console.warn("Network fetching:", fqUrl);
         const resp = await fetch(fqUrl, {
             redirect: 'error',
             headers: {'X-Requested-With': 'XMLHttpRequest'},  // Required to avoid 301s and 404s
@@ -452,7 +454,24 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     let _streamsCache;
     sauce.propDefined('Strava.Labs.Activities.Streams', Klass => {
         if (!_streamsCache) {
-            _streamsCache = new sauce.cache.TTLCache('streams', 3600 * 1000);
+            _streamsCache = new sauce.cache.TTLCache('streams', 7 * 86400 * 1000);
+        }
+        function cacheKey(key) {
+            const keyPrefix = pageView.activity().id;
+            return `${keyPrefix}-${key}`;
+        }
+        const pendingStale = new Set();
+        let pendingFill;
+        async function fillCache(options, streams) {
+            const query = Array.from(streams).map(value => ({key: 'stream_types[]', value}));
+            const data = await fetchLikeXHR(options.url, query);
+            const cacheObj = {};
+            for (const key of streams) {
+                // Convert undefined to null so indicate cache has been set.
+                cacheObj[cacheKey(key)] = data[key] === undefined ? null : data[key];
+            }
+            await _streamsCache.setObject(cacheObj);
+            return data;
         }
         async function getStreams(options) {
             if (!pageView) {
@@ -461,30 +480,38 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 e.fallback = true;
                 throw e;
             }
-            const keyPrefix = pageView.activity().id;
-            const cacheKey = key => `${keyPrefix}-${key}`;
             const streams = options.data.stream_types;
-            const cached = await _streamsCache.getObject(streams.map(cacheKey));
+            const cachedEntries = await _streamsCache.getEntries(streams.map(cacheKey));
             const missing = new Set();
+            const stale = new Set();
             const streamsObj = {};
-            for (const key of streams) {
-                const cacheEntry = cached[cacheKey(key)];
-                if (cacheEntry === undefined) {
+            for (let i = 0; i < streams.length; i++) {
+                const key = streams[i];
+                const cacheEntry = cachedEntries[i];
+                if (!cacheEntry) {
                     missing.add(key);
-                } else if (cacheEntry !== null) {
-                    streamsObj[key] = cacheEntry;
+                } else {
+                    if (Date.now() - cacheEntry.created > cacheRefreshThreshold) {
+                        stale.add(key);
+                    }
+                    if (cacheEntry.value !== null) {
+                        streamsObj[key] = cacheEntry.value;
+                    }
                 }
             }
             if (missing.size) {
-                const query = Array.from(missing).map(value => ({key: 'stream_types[]', value}));
-                const data = await fetchLikeXHR(options.url, query);
-                Object.assign(streamsObj, data);
-                const cacheObj = {};
-                for (const key of missing) {
-                    // Convert undefined to null so indicate cache has been set.
-                    cacheObj[cacheKey(key)] = data[key] === undefined ? null : data[key];
+                Object.assign(streamsObj, await fillCache(options, missing));
+            }
+            if (stale.size) {
+                for (const x of stale) {
+                    pendingStale.add(x);
                 }
-                await _streamsCache.setObject(cacheObj);
+                clearTimeout(pendingFill);
+                pendingFill = setTimeout(() => requestIdleCallback(async () => {
+                    const streams = Array.from(pendingStale);
+                    pendingStale.clear();
+                    await fillCache(options, streams);
+                }), 1000);
             }
             return streamsObj;
         }
@@ -495,20 +522,26 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     let _segmentEffortCache;
     sauce.propDefined('Strava.Models.SegmentEffortDetail', Klass => {
         if (!_segmentEffortCache) {
-            _segmentEffortCache = new sauce.cache.TTLCache('segment-effort', 3600 * 1000);
+            _segmentEffortCache = new sauce.cache.TTLCache('segment-effort', 1 * 86400 * 1000);
+        }
+        async function fillCache(options, key) {
+            const data = await fetchLikeXHR(options.url);
+            await _segmentEffortCache.set(key, data);
+            return data;
         }
         async function getSegmentEffort(options) {
             const key = options.url.match(/segment_efforts\/([0-9]+)/)[1];
             if (isNaN(Number(key))) {
                 throw new TypeError("Invalid segment id: " + key);
             }
-            const cached = await _segmentEffortCache.get(key);
-            if (cached) {
-                return cached;
+            const cachedEntry = await _segmentEffortCache.getEntry(key);
+            if (cachedEntry) {
+                if (Date.now() - cachedEntry.created > cacheRefreshThreshold) {
+                    setTimeout(() => requestIdleCallback(() => fillCache(options, key)), 1000);
+                }
+                return cachedEntry.value;
             }
-            const data = await fetchLikeXHR(options.url);
-            await _segmentEffortCache.set(key, data);
-            return data;
+            return await fillCache(options, key);
         }
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getSegmentEffort);
     });
@@ -517,7 +550,12 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     let _segmentLeaderboardCache;
     sauce.propDefined('Strava.Models.SegmentLeaderboard', Klass => {
         if (!_segmentLeaderboardCache) {
-            _segmentLeaderboardCache = new sauce.cache.TTLCache('segment-leaderboard', 3600 * 1000);
+            _segmentLeaderboardCache = new sauce.cache.TTLCache('segment-leaderboard', 1 * 86400 * 1000);
+        }
+        async function fillCache(options, key) {
+            const data = await fetchLikeXHR(options.url, options.data);
+            await _segmentLeaderboardCache.set(key, data);
+            return data;
         }
         async function getSegmentLeaderboard(options) {
             const id = options.url.match(/segments\/([0-9]+)\/leaderboard/)[1];
@@ -525,13 +563,14 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 throw new TypeError("Invalid leaderboard id: " + id);
             }
             const key = `${id}-${JSON.stringify(options.data)}`;
-            const cached = await _segmentLeaderboardCache.get(key);
-            if (cached) {
-                return cached;
+            const cachedEntry = await _segmentLeaderboardCache.getEntry(key);
+            if (cachedEntry) {
+                if (Date.now() - cachedEntry.created > cacheRefreshThreshold) {
+                    setTimeout(() => requestIdleCallback(() => fillCache(options, key)), 1000);
+                }
+                return cachedEntry.value;
             }
-            const data = await fetchLikeXHR(options.url, options.data);
-            await _segmentLeaderboardCache.set(key, data);
-            return data;
+            return await fillCache(options, key);
         }
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getSegmentLeaderboard);
     });

@@ -337,7 +337,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async gc() {
-            for (let sleep = 10000;; sleep = Math.min(sleep + 1000, 60000)) {
+            for (let sleep = 10000;; sleep = Math.min(sleep + 1000, 300 * 1000)) {
                 await new Promise(resolve => setTimeout(resolve, sleep));
                 const count = await this.idb.purgeExpired(this.bucket);
                 if (count) {
