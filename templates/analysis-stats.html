@@ -189,13 +189,6 @@
                 </line>
             <% } %>
         <% } %>
-
-        <% if (elevation.grade && Math.abs(elevation.grade) >= 1) { %>
-            <line title="{{{grade_tooltip}}}">
-                <key>{{{grade}}}</key>
-                <value>{{formatNumber(elevation.grade, 1)}}<abbr class="unit">%</abbr></value>
-            </line>
-        <% } %>
     </div>
 <% } %>
 
