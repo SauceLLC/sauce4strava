@@ -199,7 +199,7 @@
     .right-aside {
         flex: 1 0 auto;
         width: 300px;
-        max-height: 40rem;  // Taller than left-main with all fields (NOTE: must adjsut if fields change)
+        max-height: 580px;  // Taller than left-main with all fields (NOTE: must adjust if fields change)
         overflow-y: auto;
         background-image: linear-gradient(to bottom, color.shade(bg, 10%), color.shade(bg, 18%) 2em, color.shade(bg, 0%));
 
@@ -225,7 +225,7 @@
                 }
 
                 td.segment-name {
-                    $overflow-font-size: 0.65;
+                    $overflow-font-size: 0.70;
 
                     a {
                         font-size: $overflow-font-size * 1em;
@@ -239,17 +239,17 @@
                 }
 
                 td.segment-time {
-                    font-size: 0.8em;
+                    font-size: 0.85em;
                 }
 
                 td.segment-overlap {
-                    font-size: 0.8em;
+                    font-size: 0.85em;
                 }
 
                 td.segment-achievement {
                     .app-icon {
-                        width: 20px;
-                        height: 20px;
+                        width: 18px;
+                        height: 18px;
                     }
                 }
             }
