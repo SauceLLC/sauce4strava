@@ -2665,6 +2665,8 @@ sauce.ns('analysis', ns => {
     function attachAnalysisStats($el) {
         if (!ctx.$analysisStats) {
             ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
+            sauce.rpc.getPref('expandAnalysisStats').then(expanded =>
+                ctx.$analysisStats.toggleClass('expanded', expanded));
         }
         $el.find('#stacked-chart').before(ctx.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.rpc.reportError));
@@ -2686,9 +2688,10 @@ sauce.ns('analysis', ns => {
             exportActivity(sauce.export.GPXSerializer, start, end).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('AnalysisStats', 'export', 'gpx');
         });
-        $el.on('click', '.expander', ev => {
+        $el.on('click', '.expander', async ev => {
             const el = ev.currentTarget.closest('.sauce-analysis-stats');
             const expanded = el.classList.toggle('expanded');
+            await sauce.rpc.setPref('expandAnalysisStats', expanded);
             sauce.rpc.reportEvent('AnalysisStats', expanded ? 'expand' : 'collapse');
         });
     }
