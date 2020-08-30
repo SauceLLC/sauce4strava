@@ -73,6 +73,7 @@ button {
     padding: 0.3em 1em;
     margin: 0.1em 0.4em;
     transition: box-shadow 100ms;
+    font: inherit; // Undo user-agent overrides.
 }
 
 button:hover {
