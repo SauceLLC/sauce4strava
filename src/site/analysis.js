@@ -505,87 +505,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function hrRangesToRows(ranges, timeStream, hrStream) {
-        const unit = ctx.hrFormatter.shortUnitKey();
-        const rows = [];
-        for (const range of ranges.filter(x => x.value >= minHRTime)) {
-            const roll = sauce.data.peakAverage(range.value, timeStream, hrStream, {active: true});
-            if (roll) {
-                const value = humanNumber(roll.avg({active: true}));
-                rows.push(_rangeRollToRow({range, roll, value, unit}));
-            }
-        }
-        return rows;
-    }
-
-
-    function cadenceRangesToRows(ranges, timeStream, cadenceStream) {
-        const unit = ctx.cadenceFormatter.shortUnitKey();
-        const rows = [];
-        for (const range of ranges.filter(x => x.value >= minHRTime)) {
-            const roll = sauce.data.peakAverage(range.value, timeStream, cadenceStream,
-                {active: true, ignoreZeros: true});
-            if (roll) {
-                const value = ctx.cadenceFormatter.format(roll.avg({active: true}));
-                rows.push(_rangeRollToRow({range, roll, value, unit}));
-            }
-        }
-        return rows;
-    }
-
-
-    function powerRangesToRows(ranges, timeStream, wattsStream, estimate) {
-        const rows = [];
-        const prefix = estimate ? '~' : '';
-        for (const range of ranges.filter(x => !estimate || x.value >= minWattEstTime)) {
-            const roll = sauce.power.peakPower(range.value, timeStream, wattsStream);
-            if (roll) {
-                const avg = roll.avg();
-                const value = prefix + humanNumber(avg);
-                //const rank = (ctx.weight && avg) && sauce.power.rank(roll.elapsed(), avg / ctx.weight, ctx.gender);
-                let style;
-                //if (rank) {
-                //    const pct = Math.round(rank.level * 100);
-                //    style = `background-image: linear-gradient(90deg, #f002 0% ${pct}%, transparent ${pct}%);`;
-                //}
-                rows.push(_rangeRollToRow({range, roll, value, unit: 'w', style}));
-            }
-        }
-        return rows;
-    }
-
-
-    function paceVelocityRangesToRows(ranges, timeStream, distStream) {
-        const unit = ctx.paceFormatter.shortUnitKey();
-        const rows = [];
-        for (const range of ranges) {
-            const roll = sauce.pace.bestPace(range.value, timeStream, distStream);
-            if (roll) {
-                const value = humanPace(roll.avg());
-                rows.push(_rangeRollToRow({range, roll, value, unit}));
-            }
-        }
-        return rows;
-    }
-
-
-    function vamRangesToRows(ranges, timeStream, altStream) {
-        const vamStream = createVAMStream(timeStream, altStream);
-        const rows = [];
-        for (const range of ranges.filter(x => x.value >= minVAMTime)) {
-            const roll = sauce.data.peakAverage(range.value, timeStream, vamStream);
-            if (roll) {
-                const start = getStreamTimeIndex(roll.firstTime());
-                const end = getStreamTimeIndex(roll.lastTime());
-                const gain = altitudeChanges(altStream.slice(start, end + 1)).gain;
-                const value = humanNumber((gain / roll.elapsed()) * 3600);
-                rows.push(_rangeRollToRow({range, roll, value, unit: 'Vm/h'}));
-            }
-        }
-        return rows;
-    }
-
-
     function filterPeriodRanges(elapsed, ...filterArgs) {
         return ctx.allPeriodRanges.filter(x => x.value <= elapsed && (!x.filter || x.filter.apply(x, filterArgs)));
     }
@@ -737,30 +656,49 @@ sauce.ns('analysis', ns => {
             const panel = new PeakEffortsPanel({
                 menu,
                 renderAttrs: async source => {
-                    let rows;
+                    const rows = [];
                     const attrs = {};
                     const activity = pageView.activity();
                     const periodRanges = filterPeriodRanges(elapsedTime, activity);
                     const distRanges = filterDistRanges(distance, activity);
-                    if (source === 'peak_power') {
-                        attrs.isWattEstimate = isWattEstimate;
-                        rows = powerRangesToRows(periodRanges, timeStream, wattsStream, isWattEstimate);
-                    } else if (source === 'peak_sp') {
-                        attrs.isWattEstimate = isWattEstimate;
-                        const spStream = await fetchStream('watts_sealevel');
-                        rows = powerRangesToRows(periodRanges, timeStream, spStream, true);
-                    } else if (source === 'peak_pace') {
-                        rows = paceVelocityRangesToRows(distRanges, timeStream, distStream);
+                    if (source === 'peak_power' || source === 'peak_sp') {
+                        let dataStream;
+                        if (source === 'peak_sp') {
+                            dataStream = await fetchStream('watts_sealevel');
+                            attrs.isWattEstimate = true;
+                        } else {
+                            dataStream = wattsStream;
+                            attrs.isWattEstimate = isWattEstimate;
+                        }
+                        const prefix = attrs.isWattEstimate ? '~' : '';
+                        for (const range of periodRanges.filter(x => !attrs.isWattEstimate || x.value >= minWattEstTime)) {
+                            const roll = sauce.power.peakPower(range.value, timeStream, dataStream);
+                            if (roll) {
+                                const value = prefix + humanNumber(roll.avg());
+                                rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
+                            }
+                        }
+                    } else if (source === 'peak_pace' || source === 'peak_gap') {
                         attrs.isDistanceRange = true;
+                        const dataStream = {
+                            peak_pace: distStream,
+                            peak_gap: gradeDistStream
+                        }[source];
+                        const unit = ctx.paceFormatter.shortUnitKey();
+                        for (const range of distRanges) {
+                            const roll = sauce.pace.bestPace(range.value, timeStream, dataStream);
+                            if (roll) {
+                                const value = humanPace(roll.avg());
+                                rows.push(_rangeRollToRow({range, roll, value, unit}));
+                            }
+                        }
                     } else if (source === 'peak_gap') {
-                        rows = paceVelocityRangesToRows(distRanges, timeStream, gradeDistStream);
                         attrs.isDistanceRange = true;
                     } else if (source === 'peak_np' || source === 'peak_xp') {
                         const calcs = {
                             peak_np: {peakSearch: sauce.power.peakNP, rollMethod: 'np'},
                             peak_xp: {peakSearch: sauce.power.peakXP, rollMethod: 'xp'},
                         }[source];
-                        rows = [];
                         for (const range of periodRanges.filter(x => x.value >= minPowerPotentialTime)) {
                             const roll = calcs.peakSearch(range.value, timeStream, wattsStream);
                             // Use external NP/XP method for consistency.  There are tiny differences because
@@ -773,11 +711,37 @@ sauce.ns('analysis', ns => {
                             }
                         }
                     } else if (source === 'peak_hr') {
-                        rows = hrRangesToRows(periodRanges, timeStream, hrStream);
+                        const unit = ctx.hrFormatter.shortUnitKey();
+                        for (const range of periodRanges.filter(x => x.value >= minHRTime)) {
+                            const roll = sauce.data.peakAverage(range.value, timeStream, hrStream,
+                                {active: true});
+                            if (roll) {
+                                const value = humanNumber(roll.avg({active: true}));
+                                rows.push(_rangeRollToRow({range, roll, value, unit}));
+                            }
+                        }
                     } else if (source === 'peak_cadence') {
-                        rows = cadenceRangesToRows(periodRanges, timeStream, cadenceStream);
+                        const unit = ctx.cadenceFormatter.shortUnitKey();
+                        for (const range of periodRanges.filter(x => x.value >= minHRTime)) {
+                            const roll = sauce.data.peakAverage(range.value, timeStream, cadenceStream,
+                                {active: true, ignoreZeros: true});
+                            if (roll) {
+                                const value = ctx.cadenceFormatter.format(roll.avg({active: true}));
+                                rows.push(_rangeRollToRow({range, roll, value, unit}));
+                            }
+                        }
                     } else if (source === 'peak_vam') {
-                        rows = vamRangesToRows(periodRanges, timeStream, altStream);
+                        const vamStream = createVAMStream(timeStream, altStream);
+                        for (const range of periodRanges.filter(x => x.value >= minVAMTime)) {
+                            const roll = sauce.data.peakAverage(range.value, timeStream, vamStream);
+                            if (roll) {
+                                const start = getStreamTimeIndex(roll.firstTime());
+                                const end = getStreamTimeIndex(roll.lastTime());
+                                const gain = altitudeChanges(altStream.slice(start, end + 1)).gain;
+                                const value = humanNumber((gain / roll.elapsed()) * 3600);
+                                rows.push(_rangeRollToRow({range, roll, value, unit: 'Vm/h'}));
+                            }
+                        }
                     }
                     return Object.assign(attrs, {rows});
                 }
@@ -1074,7 +1038,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function getOverlappingSegments(start, end) {
+    function getOverlappingSegments(start, end, threshold=0.1) {
         const segEfforts = pageView.segmentEfforts && pageView.segmentEfforts();
         if (!segEfforts) {
             return [];
@@ -1086,7 +1050,9 @@ sauce.ns('analysis', ns => {
             if (overlap) {
                 const segLength = segEnd - segStart + 1;
                 const correlation = overlap / segLength;
-                overlapping.push({overlap, correlation, segment});
+                if (correlation >= threshold) {
+                    overlapping.push({overlap, correlation, segment});
+                }
             }
         }
         overlapping.sort((a, b) => b.correlation === a.correlation ?
