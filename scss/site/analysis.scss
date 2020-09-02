@@ -160,14 +160,11 @@ abbr.unit {
 
 table.segments,
 table.hidden-segments {
-    .sauce-trailforks-info {
-        display: flex;
-        align-items: center;
+    th.sauce-tf-col svg {
+        height: 0.7em;
+    }
 
-        > * {
-            display: flex;
-        }
-
+    .sauce-tf-col {
         .title {
             color: color.shade(fg, 30%);
             font-variant: all-small-caps;
@@ -178,7 +175,7 @@ table.hidden-segments {
         .condition {
             &.mud {color: brown;}
             &.wet {color: blue;}
-            &.dry {color: #ae3d00;}
+            &.dry {color: #dbb600;}
             &.very-dry {color: #cf0000;}
             &.icy {color: color.shade(fg, 30%);}
             &.snow {color: color.shade(fg, 20%);}
@@ -193,8 +190,8 @@ table.hidden-segments {
         }
 
         img.difficulty {
-            max-width: 1.8em;
-            max-height: 1.8em;
+            max-width: 2em;
+            max-height: 2em;
             object-fit: contain;
         }
 
@@ -232,7 +229,7 @@ table.hidden-segments {
         .report {
             display: flex;
             align-items: center;
-            padding: 0.20em 0.5em;
+            padding: 0.2em;
 
             > * {
                 display: flex;

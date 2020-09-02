@@ -1801,7 +1801,16 @@ sauce.ns('analysis', ns => {
 
 
     function addTrailforksOverlay() {
-        const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
+        if (!document.querySelector('table.segments thead th.sauce-tf-col')) {
+            const th = document.createElement('th');
+            th.classList.add('sauce-tf-col');
+            th.setAttribute('colspan', '2');
+            sauce.images.asText('trailforks_logo_horiz.svg').then(x => jQuery(th).html(x));
+            const nameCol = document.querySelector('table.segments thead th.name-col');
+            nameCol.setAttribute('colspan', '1');
+            nameCol.insertAdjacentElement('afterend', th);
+        }
+        const rows = Array.from(document.querySelectorAll('table.segments > tbody > tr[data-segment-effort-id]'));
         for (const row of rows) {
             addTrailforksRow(row).catch(sauce.rpc.reportError);
         }
@@ -1825,7 +1834,13 @@ sauce.ns('analysis', ns => {
 
 
     async function addTrailforksRow(row) {
-        if (row.querySelector(':scope > td.sauce-tf-mark')) {
+        let tfCol = row.querySelector('td.sauce-tf-col');
+        if (!tfCol) {
+            const tfCol = document.createElement('td');
+            tfCol.classList.add('sauce-tf-col');
+            const nameCol = row.querySelector('td.name-col');
+            nameCol.insertAdjacentElement('afterend', tfCol);
+        } else if (tfCol.dataset.done) {
             return;
         }
         const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
@@ -1837,17 +1852,13 @@ sauce.ns('analysis', ns => {
         if (!tfMatches || !tfMatches.length) {
             return;
         }
-        const targetTD = row.querySelector('.name-col');
-        if (!targetTD) {
-            throw new Error('Trailforks Fail: row query selector failed');
-        }
-        targetTD.classList.add('sauce-tf-mark');
+        tfCol.dataset.done = true;
         const tpl = await getTemplate('tf-info.html');
         for (const x of tfMatches) {
             const $tf = jQuery(await tpl(x.trail));
-            $tf.on('click', 'a.report', ev => {
+            $tf.on('click', ev => {
                 ev.stopPropagation();
-                tfWidgetDialog(`Trailforks Report - ${x.trail.title}`, 'trail', {
+                const $tfDialog = tfWidgetDialog(`Trailforks - ${x.trail.title}`, 'trail', {
                     trailid: x.trail.id,
                     map: 1,
                     photos: 1,
@@ -1857,6 +1868,19 @@ sauce.ns('analysis', ns => {
                     width: 500,
                     height: 600,
                     flex: true,
+                    extraButtons: {
+                        "Create Trail Report": () => {
+                            $tfDialog.dialog('close');
+                            tfWidgetDialog(`Trailforks Create Report - ${x.trail.title}`, 'reportsubmit', {
+                                trailid: x.trail.id,
+                                work: 0,
+                            }, {
+                                width: 500,
+                                height: 600,
+                                flex: true,
+                            });
+                        }
+                    }
                 });
             });
             $tf.on('click', 'a.add-report', ev => {
@@ -1870,7 +1894,7 @@ sauce.ns('analysis', ns => {
                     flex: true,
                 });
             });
-            jQuery(targetTD).find('.stats').append($tf);
+            jQuery(tfCol).append($tf);
         }
     }
 
