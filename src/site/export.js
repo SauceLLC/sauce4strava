@@ -31,7 +31,7 @@ sauce.ns('export', function() {
         }
 
         toFile() {
-            const heading = `<?xml version="${this.doc.xmlVersion}" encoding="${this.doc.inputEncoding}"?>\n`;
+            const heading = `<?xml version="1.0" encoding="${this.doc.inputEncoding}"?>\n`;
             return new File(
                 [heading + (new XMLSerializer()).serializeToString(this.doc)],
                 `${this.activity.name}.${this.fileExt}`.replace(/\s/g, '_'),
@@ -157,14 +157,20 @@ sauce.ns('export', function() {
             this.addNodeTo(creator, 'UnitId', 0);
             this.addNodeTo(creator, 'ProductId', 0);
             creator.appendChild(sauceVersion.cloneNode(/*deep*/ true));
-            const lap = this.addNodeTo(activity, 'Lap');
-            lap.setAttribute('StartTime', startISOString);
-            this.addNodeTo(lap, 'TriggerMethod', 'Manual');
-            this.track = this.addNodeTo(lap, 'Track');
+            this.lap = this.addNodeTo(activity, 'Lap');
+            this.lap.setAttribute('StartTime', startISOString);
+            this.addNodeTo(this.lap, 'TriggerMethod', 'Manual');
+            this.track = this.addNodeTo(this.lap, 'Track');
         }
 
         loadStreams(streams) {
             const startTime = this.activity.start.getTime();
+            if (streams.time.length > 0) {
+                var endTime = startTime + (streams.time[streams.time.length - 1] * 1000);
+                this.addNodeTo(this.lap, 'TotalTimeSeconds', (endTime - startTime) / 1000);
+            } else {
+                this.addNodeTo(this.lap, 'TotalTimeSeconds', 0);
+            }
             for (let i = 0; i < streams.time.length; i++) {
                 const point = this.addNodeTo(this.track, 'Trackpoint');
                 const t = (new Date(startTime + (streams.time[i] * 1000)));
