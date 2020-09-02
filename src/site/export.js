@@ -4,12 +4,13 @@ sauce.ns('export', function() {
     'use strict';
 
     class DOMSerializer {
-        constructor(name, desc, type, start) {
+        constructor(name, desc, type, start, laps) {
             this.activity = {
                 name,
                 desc,
                 type,
-                start
+                start,
+                laps
             };
             this.doc = new Document();
         }
@@ -139,68 +140,78 @@ sauce.ns('export', function() {
             this.addNodeTo(sauceVersion, 'BuildMajor', bmajor);
             this.addNodeTo(sauceVersion, 'BuildMinor', 0);
             const activities = this.addNodeTo(this.rootNode, 'Activities');
-            const activity = this.addNodeTo(activities, 'Activity');
+            this.activityNode = this.addNodeTo(activities, 'Activity');
             const sportEnum = {
                 Ride: 'Biking',
                 Run: 'Running'
             };
-            activity.setAttribute('Sport', sportEnum[this.activity.type] || 'Other');
+            this.activityNode.setAttribute('Sport', sportEnum[this.activity.type] || 'Other');
             const startISOString = this.activity.start.toISOString();
-            this.addNodeTo(activity, 'Id', startISOString);  // Garmin does, so we will to.
+            this.addNodeTo(this.activityNode, 'Id', startISOString);  // Garmin does, so we will too.
             const notes = this.activity.desc ?
                 `${this.activity.name}\n\n${this.activity.desc}` :
                 this.activity.name;
-            this.addNodeTo(activity, 'Notes', notes);
-            const creator = this.addNodeTo(activity, 'Creator');
+            this.addNodeTo(this.activityNode, 'Notes', notes);
+            const creator = this.addNodeTo(this.activityNode, 'Creator');
             creator.setAttribute('xsi:type', 'Device_t');  // Could maybe be Application_t too.
             this.addNodeTo(creator, 'Name', sauce.name);
             this.addNodeTo(creator, 'UnitId', 0);
             this.addNodeTo(creator, 'ProductId', 0);
             creator.appendChild(sauceVersion.cloneNode(/*deep*/ true));
-            this.lap = this.addNodeTo(activity, 'Lap');
-            this.lap.setAttribute('StartTime', startISOString);
-            this.addNodeTo(this.lap, 'TriggerMethod', 'Manual');
-            this.track = this.addNodeTo(this.lap, 'Track');
         }
 
         loadStreams(streams) {
             const startTime = this.activity.start.getTime();
-            if (streams.time.length > 0) {
-                var endTime = startTime + (streams.time[streams.time.length - 1] * 1000);
-                this.addNodeTo(this.lap, 'TotalTimeSeconds', (endTime - startTime) / 1000);
-            } else {
-                this.addNodeTo(this.lap, 'TotalTimeSeconds', 0);
-            }
-            for (let i = 0; i < streams.time.length; i++) {
-                const point = this.addNodeTo(this.track, 'Trackpoint');
-                const t = (new Date(startTime + (streams.time[i] * 1000)));
-                this.addNodeTo(point, 'Time', t.toISOString());
-                if (streams.latlng) {
-                    const [lat, lon] = streams.latlng[i];
-                    const position = this.addNodeTo(point, 'Position');
-                    this.addNodeTo(position, 'LatitudeDegrees', lat);
-                    this.addNodeTo(position, 'LongitudeDegrees', lon);
-                }
-                if (streams.altitude) {
-                    this.addNodeTo(point, 'AltitudeMeters', streams.altitude[i]);
-                }
+            const laps = this.activity.laps || [[0, streams.time.length - 1]];
+            for (const [start, end] of laps) {
+                const lap = this.addNodeTo(this.activityNode, 'Lap');
+                this.addNodeTo(lap, 'TriggerMethod', 'Manual');
+                this.addNodeTo(lap, 'TotalTimeSeconds', streams.time[end] - streams.time[start]);
                 if (streams.distance) {
-                    this.addNodeTo(point, 'DistanceMeters', streams.distance[i]);
+                    this.addNodeTo(lap, 'DistanceMeters', streams.distance[end] - streams.distance[start]);
                 }
                 if (streams.heartrate) {
-                    const hr = this.addNodeTo(point, 'HeartRateBpm');
-                    this.addNodeTo(hr, 'Value', streams.heartrate[i]);
+                    const lapStream = streams.heartrate.slice(start, end);
+                    const avg = this.addNodeTo(lap, 'AverageHeartRateBpm');
+                    this.addNodeTo(avg, 'Value', Math.round(sauce.data.avg(lapStream)));
+                    const max = this.addNodeTo(lap, 'MaximumHeartRateBpm');
+                    this.addNodeTo(max, 'Value', sauce.data.max(lapStream));
                 }
-                if (streams.cadence) {
-                    // XXX Might be more accurate to use RunCadence ext for running types.
-                    this.addNodeTo(point, 'Cadence', streams.cadence[i]);
-                }
-                if (streams.watts) {
-                    const ext = this.addNodeTo(point, 'Extensions');
-                    const tpx = this.addNodeTo(ext, 'ns3:TPX');
-                    const watts = streams.watts[i];
-                    if (watts !== null) {
-                        this.addNodeTo(tpx, 'ns3:Watts', watts);
+                const track = this.addNodeTo(lap, 'Track');
+                for (let i = start; i <= end; i++) {
+                    const point = this.addNodeTo(track, 'Trackpoint');
+                    const time = (new Date(startTime + (streams.time[i] * 1000))).toISOString();
+                    this.addNodeTo(point, 'Time', time);
+                    if (i === 0) {
+                        lap.setAttribute('StartTime', time);
+                    }
+                    if (streams.latlng) {
+                        const [lat, lon] = streams.latlng[i];
+                        const position = this.addNodeTo(point, 'Position');
+                        this.addNodeTo(position, 'LatitudeDegrees', lat);
+                        this.addNodeTo(position, 'LongitudeDegrees', lon);
+                    }
+                    if (streams.altitude) {
+                        this.addNodeTo(point, 'AltitudeMeters', streams.altitude[i]);
+                    }
+                    if (streams.distance) {
+                        this.addNodeTo(point, 'DistanceMeters', streams.distance[i]);
+                    }
+                    if (streams.heartrate) {
+                        const hr = this.addNodeTo(point, 'HeartRateBpm');
+                        this.addNodeTo(hr, 'Value', streams.heartrate[i]);
+                    }
+                    if (streams.cadence) {
+                        // XXX Might be more accurate to use RunCadence ext for running types.
+                        this.addNodeTo(point, 'Cadence', streams.cadence[i]);
+                    }
+                    if (streams.watts) {
+                        const ext = this.addNodeTo(point, 'Extensions');
+                        const tpx = this.addNodeTo(ext, 'ns3:TPX');
+                        const watts = streams.watts[i];
+                        if (watts !== null) {
+                            this.addNodeTo(tpx, 'ns3:Watts', watts);
+                        }
                     }
                 }
             }

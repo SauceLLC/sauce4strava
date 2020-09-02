@@ -1416,8 +1416,10 @@ sauce.ns('analysis', ns => {
                 </ul>
             </li>
         `));
+        const lapEfforts = pageView.lapEfforts();
+        const laps = lapEfforts && lapEfforts.models.map(x => x.indices());
         $menu.find('a.tcx').on('click', () => {
-            exportActivity(sauce.export.TCXSerializer).catch(sauce.rpc.reportError);
+            exportActivity(sauce.export.TCXSerializer, {laps}).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
         });
         if (!$menu.find('a[href$="/export_gpx"]').length) {
@@ -1426,7 +1428,7 @@ sauce.ns('analysis', ns => {
                        class="gpx">${exportLocale} GPX</a></li>
             `));
             $menu.find('a.gpx').on('click', () => {
-                exportActivity(sauce.export.GPXSerializer).catch(sauce.rpc.reportError);
+                exportActivity(sauce.export.GPXSerializer, {laps}).catch(sauce.rpc.reportError);
                 sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
             });
         }
@@ -1541,7 +1543,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function exportActivity(Serializer, start, end) {
+    async function exportActivity(Serializer, {start, end, laps}) {
         const streamNames = ['time', 'watts', 'heartrate', 'altitude',
                              'cadence', 'temp', 'latlng', 'distance'];
         const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) =>
@@ -1564,7 +1566,7 @@ sauce.ns('analysis', ns => {
         }
         const descEl = document.querySelector('#heading .activity-description .content');
         const desc = descEl && descEl.textContent;
-        const serializer = new Serializer(name, desc, pageView.activity().get('type'), startDate);
+        const serializer = new Serializer(name, desc, pageView.activity().get('type'), startDate, laps);
         serializer.start();
         serializer.loadStreams(streams);
         download(serializer.toFile());
@@ -2669,13 +2671,13 @@ sauce.ns('analysis', ns => {
         $el.on('click', 'a.sauce-export-tcx', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            exportActivity(sauce.export.TCXSerializer, start, end).catch(sauce.rpc.reportError);
+            exportActivity(sauce.export.TCXSerializer, {start, end}).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('AnalysisStats', 'export', 'tcx');
         });
         $el.on('click', 'a.sauce-export-gpx', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            exportActivity(sauce.export.GPXSerializer, start, end).catch(sauce.rpc.reportError);
+            exportActivity(sauce.export.GPXSerializer, {start, end}).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('AnalysisStats', 'export', 'gpx');
         });
         $el.on('click', '.expander', async ev => {
