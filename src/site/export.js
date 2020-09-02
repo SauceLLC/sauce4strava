@@ -31,7 +31,7 @@ sauce.ns('export', function() {
         }
 
         toFile() {
-            const heading = `<?xml version="${this.doc.xmlVersion}" encoding="${this.doc.inputEncoding}"?>\n`;
+            const heading = `<?xml version="1.0" encoding="${this.doc.inputEncoding}"?>\n`;
             return new File(
                 [heading + (new XMLSerializer()).serializeToString(this.doc)],
                 `${this.activity.name}.${this.fileExt}`.replace(/\s/g, '_'),
