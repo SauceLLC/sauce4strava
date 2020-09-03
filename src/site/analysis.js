@@ -617,7 +617,7 @@ sauce.ns('analysis', ns => {
             intensity,
             tss,
             np,
-            power, // XXX Keys a run activity, validate template handling of this (fallback from no np?)
+            power,
         }).catch(sauce.rpc.reportError);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
@@ -1838,7 +1838,7 @@ sauce.ns('analysis', ns => {
     async function addTrailforksRow(row) {
         let tfCol = row.querySelector('td.sauce-tf-col');
         if (!tfCol) {
-            const tfCol = document.createElement('td');
+            tfCol = document.createElement('td');
             tfCol.classList.add('sauce-tf-col');
             const nameCol = row.querySelector('td.name-col');
             nameCol.insertAdjacentElement('afterend', tfCol);
@@ -1861,11 +1861,7 @@ sauce.ns('analysis', ns => {
             $tf.on('click', ev => {
                 ev.stopPropagation();
                 const $tfDialog = tfWidgetDialog(`Trailforks - ${x.trail.title}`, 'trail', {
-                    trailid: x.trail.id,
-                    map: 1,
-                    photos: 1,
-                    title: 0,
-                    info: 1
+                    trailid: x.trail.id, map: 1, photos: 1, title: 0, info: 1
                 }, {
                     width: 500,
                     height: 600,
@@ -1883,17 +1879,6 @@ sauce.ns('analysis', ns => {
                             });
                         }
                     }
-                });
-            });
-            $tf.on('click', 'a.add-report', ev => {
-                ev.stopPropagation();
-                tfWidgetDialog(`Trailforks New Report - ${x.trail.title}`, 'reportsubmit', {
-                    trailid: x.trail.id,
-                    work: 0,
-                }, {
-                    width: 500,
-                    height: 600,
-                    flex: true,
                 });
             });
             jQuery(tfCol).append($tf);
@@ -2478,6 +2463,7 @@ sauce.ns('analysis', ns => {
         download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
         sauce.rpc.reportEvent('LiveSegment', 'create');
     }
+
 
     async function showPerfPredictor(start, end) {
         const timeStream = await fetchStream('time', start, end);
