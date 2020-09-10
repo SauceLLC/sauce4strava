@@ -3,7 +3,7 @@
 sauce.ns('trailforks', ns => {
     'use strict';
 
-    const tfCache = new sauce.cache.TTLCache('trailforks', 43200 * 1000);
+    const tfCache = new sauce.cache.TTLCache('trailforks', 12 * 3600 * 1000);
 
     const difficulties = {
         1: {
@@ -118,23 +118,6 @@ sauce.ns('trailforks', ns => {
     };
 
 
-    function *middleOutIter(data, start) {
-        const len = data.length;
-        let count = 0;
-        let left = Math.max(0, Math.min(len, start || Math.floor(len / 2)));
-        let right = left;
-        while (count++ < len) {
-            let idx;
-            if ((count % 2 && left > 0) || right === len) {
-                idx = --left;
-            } else {
-                idx = right++;
-            }
-            yield [data[idx], idx];
-        }
-    }
-
-
     function lookupEnums(trail) {
         if (!trail) {
             return trail;
@@ -235,103 +218,90 @@ sauce.ns('trailforks', ns => {
     */
 
 
-    const bench = new sauce.Benchmark('tf');
     ns.intersections = async function(latlngStream, distStream) {
-        bench.enter();
         const hashData = new Float32Array([].concat(
             latlngStream.map(x => x[0]),
             latlngStream.map(x => x[1]),
             distStream));
         const argsHash = await sauce.digest('SHA-1', hashData);
-        bench.step();
         const cacheKey = `intersections-${argsHash}`;
         const cacheHit = await tfCache.get(cacheKey);
         if (cacheHit) {
-            bench.leave();
             return cacheHit;
         }
-        const bbox = sauce.geo.boundingBox(latlngStream);
+        const bbox = sauce.geo.boundingBox(latlngStream, {pad: 50});
         const trails = await fetchTrailsUnofficial(bbox);
         //const trails = await fetchTrails(bbox);
-        console.info("Raw trail count:", trails.length); // XXX
-        bench.step();
         const trailIntersectMatrix = [];
         for (const trail of trails) {
             const lats = trail.track.latitude.split(',');
             const lngs = trail.track.longitude.split(',');
             const path = lats.map((x, i) => [Number(x), Number(lngs[i])]);
-            if (!sauce.geo.boundsOverlap(sauce.geo.boundingBox(path), bbox)) {
+            const trailBBox = sauce.geo.boundingBox(path, {pad: 20});
+            if (!sauce.geo.boundsOverlap(trailBBox, bbox)) {
                 continue;
             }
-            const intersections = [];
-            let match;
-            let lastIntersectIdx;
-            const minMatchDistance = 10;
+            const minMatchDistance = 15;
+            const matches = [];
+            let pathOffsetHint;
+            let streamPathMap;
+            let streamStartOffset;
+            const endMatch = streamEnd => {
+                matches.push({streamStart: streamStartOffset, streamEnd, streamPathMap});
+                streamStartOffset = null;
+                streamPathMap = null;
+            };
             for (let i = 0; i < latlngStream.length; i++) {
-                let intersects = null;
-                let closestDistance = Infinity;
-                for (const [xLoc, ii] of middleOutIter(path, lastIntersectIdx + 1)) {
-                    const distance = sauce.geo.distance(latlngStream[i], xLoc);
-                    if (distance < closestDistance) {
-                        closestDistance = distance;
+                const [lat, lng] = latlngStream[i];
+                if (!sauce.geo.inBounds([lat, lng], trailBBox)) {
+                    if (streamStartOffset != null) {
+                        endMatch(i - 1);
                     }
-                    if (distance <= minMatchDistance) {
-                        intersects = ii;
-                        match = true;
-                        lastIntersectIdx = ii;
-                        break;
-                    }
+                    continue;
                 }
-                if (closestDistance > minMatchDistance * 10) {
-                    // Optimization..
-                    // Scan fwd till we are at least potentially near the trail.
-                    const offt = distStream[i];
-                    const maxSkipDistance = closestDistance * 0.80 - minMatchDistance;
-                    while (i < latlngStream.length - 1) {
-                        const covered = distStream[i + 1] - offt;
-                        if (covered < maxSkipDistance) {
-                            intersections.push(null);
-                            i++;
-                        } else {
-                            break;
-                        }
+                const [distance, pathOffset] = (new sauce.geo.BDCC(lat, lng)).distanceToPolyline(path, {
+                    min: minMatchDistance,
+                    offsetHint: pathOffsetHint
+                });
+                pathOffsetHint = pathOffset;
+                if (distance <= minMatchDistance) {
+                    if (streamStartOffset == null) {
+                        streamStartOffset = i;
+                        streamPathMap = {};
                     }
-                }
-                intersections.push(intersects);
-            }
-            if (match) {
-                const indexes = intersections.reduce((agg, x, i) => (x != null && agg.push([x, i]), agg), []);
-                let lastPathIdx;
-                let lastStreamIdx;
-                for (const [pathIdx, streamIdx] of indexes) {
-                    // Fill any gaps where pathIdx is contiguous.
-                    // XXX do sanity distance checks because sometimes a ride can touch a trail head
-                    // on the start and end of a ride which leads to the entire ride getting filled.
-                    if (lastPathIdx !== undefined) {
-                        if (Math.abs(pathIdx - lastPathIdx) === 1 &&
-                            Math.abs(streamIdx - lastStreamIdx) !== 1) {
-                            const fwd = streamIdx > lastStreamIdx;
-                            const start = fwd ? lastStreamIdx : streamIdx;
-                            const end = fwd ? streamIdx : lastStreamIdx;
-                            for (let i = start + 1; i < end; i++) {
-                                intersections[i] = pathIdx + ((lastPathIdx - pathIdx) / 2);
+                    streamPathMap[i] = pathOffset;
+                } else {
+                    if (streamStartOffset != null) {
+                        endMatch(i - 1);
+                    }
+                    if (distance > minMatchDistance * 10) {
+                        // Optimization..
+                        // Scan fwd till we are at least potentially near the trail.
+                        const offt = distStream[i];
+                        const maxSkipDistance = distance * 0.80 - minMatchDistance;
+                        while (i < latlngStream.length - 1) {
+                            const covered = distStream[i + 1] - offt;
+                            if (covered < maxSkipDistance) {
+                                i++;
+                            } else {
+                                break;
                             }
                         }
                     }
-                    lastPathIdx = pathIdx;
-                    lastStreamIdx = streamIdx;
                 }
+            }
+            if (streamStartOffset != null) {
+                endMatch(latlngStream.length - 1);
+            }
+            if (matches.length) {
                 trailIntersectMatrix.push({
                     path,
                     trail,
-                    intersections,
-                    indexes: intersections.reduce((agg, x, i) => (x != null && agg.push([x, i]), agg), [])
+                    matches
                 });
             }
         }
-        console.info("Matching trail count:", trailIntersectMatrix.length); // XXX
         await tfCache.set(cacheKey, trailIntersectMatrix);
-        bench.leave();
         return trailIntersectMatrix;
     };
 });

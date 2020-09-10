@@ -1,23 +1,28 @@
-<a class="report">
-    <% if (obj.difficultyInfo) { %>
-        <% if (difficultyInfo.image) { %>
-            <img title="{{difficultyInfo.title}} - Click for full report"
-                 class="difficulty {{difficultyInfo.class || ''}}"
-                 src="{{sauce.extUrl}}images/trail_difficulty/{{difficultyInfo.image}}"/>
-        <%  } else if (difficultyInfo.icon) { %>
-            <div title="{{difficultyInfo.title}} - Click for full report"
-                 class="difficulty {{difficultyInfo.class || ''}}"
-                 style="color: {{difficultyInfo.color}};">{-await faIcon(difficultyInfo.icon)-}</div>
+<small>
+    {{trail.title}}<br/>
+    segcor: {{Math.round(segmentCorrelation * 100)}}<br/>
+    trailcor: {{Math.round(trailCorrelation * 100)}}
+</small>
+<a title="{{trail.title}} {{Math.round(segmentCorrelation * 100)}} {{Math.round(trailCorrelation * 100)}}" class="report">
+    <% if (trail.difficultyInfo) { %>
+        <% if (trail.difficultyInfo.image) { %>
+            <img title="{{trail.difficultyInfo.title}} - Click for full report"
+                 class="difficulty {{trail.difficultyInfo.class || ''}}"
+                 src="{{sauce.extUrl}}images/trail_difficulty/{{trail.difficultyInfo.image}}"/>
+        <%  } else if (trail.difficultyInfo.icon) { %>
+            <div title="{{trail.difficultyInfo.title}} - Click for full report"
+                 class="difficulty {{trail.difficultyInfo.class || ''}}"
+                 style="color: {{trail.difficultyInfo.color}};">{-await faIcon(trail.difficultyInfo.icon)-}</div>
         <% } %>
     <% } %>
-    <% if (obj.conditionInfo) { %>
-        <div class="condition {{conditionInfo.class || ''}}"
-             title="{{conditionInfo.title}} - Click for full report">
-            {-await faIcon(conditionInfo.icon || 'certificate-duotone')-}
+    <% if (trail.conditionInfo) { %>
+        <div class="condition {{trail.conditionInfo.class || ''}}"
+             title="{{trail.conditionInfo.title}} - Click for full report">
+            {-await faIcon(trail.conditionInfo.icon || 'certificate-duotone')-}
         </div>
     <% } %>
-    <% if (obj.statusInfo) { %>
-        <div class="status {{statusInfo.class || ''}}"
-             title="{{statusInfo.title}} - Click for full report">{-await faIcon('circle-duotone')-}</div>
+    <% if (trail.statusInfo) { %>
+        <div class="status {{trail.statusInfo.class || ''}}"
+             title="{{trail.statusInfo.title}} - Click for full report">{-await faIcon('circle-duotone')-}</div>
     <% } %>
 </a>

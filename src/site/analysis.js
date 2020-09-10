@@ -265,7 +265,7 @@ sauce.ns('analysis', ns => {
 
     function dialog(options) {
         options = options || {};
-        const $dialog = jQuery(`<div>${options.body}</div>`);
+        const $dialog = jQuery(`<div>${options.body || ''}</div>`);
         const dialogClass = `sauce-dialog ${options.dialogClass || ''}`;
         if (options.flex) {
             $dialog.addClass('flex');
@@ -303,6 +303,26 @@ sauce.ns('analysis', ns => {
         return dialog(Object.assign({
             modal: true,
         }, options));
+    }
+
+
+    function mapDialog(latlngStream, options) {
+        const $dialog = dialog(Object.assign({
+            width: '80vw',
+            height: '400',
+        }, options));
+        $dialog.css('overflow', 'hidden');
+        const bounds = sauce.geo.boundingBox(latlngStream);
+        const mbr = [[bounds.swc[0], bounds.swc[1]], [bounds.nec[0], bounds.nec[1]]];
+        const context = new Strava.Maps.MapContext();
+        context.latlngStream(new Strava.Maps.LatLngStream(latlngStream));
+        const map = new Strava.Maps.Mapbox.Construction.MapFactory(context, $dialog, null, mbr);
+        map.showGpxDownload(false);
+        map.showCreateRoute(false);
+        map.showPrivacyToggle(false);
+        map.showFullScreenToggle(false);
+        map.initializeMap();
+        $dialog.on('dialogresize', () => void map.map.resize());
     }
 
 
@@ -531,25 +551,37 @@ sauce.ns('analysis', ns => {
         if (!latlngStream || !latlngStream.length || !distStream || !distStream.length) {
             return;
         }
-        //const tfIntersections = await sauce.trailforks.intersections(latlngStream, distStream);
+        // const tfIntersections = await sauce.trailforks.intersections(latlngStream, distStream);
         const tfIntersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
-        for (const segment of pageView.segmentEfforts().models) {
-            const tfMatches = [];
-            const [start, end] = pageView.chartContext().convertStreamIndices(segment.indices());
-            for (const x of tfIntersections) {
-                let overlap = 0;
-                for (let i = start; i < end; i++) {
-                    if (x.intersections[i] != null) {
-                        if (overlap++ > Math.min(10, end - start)) {
-                            tfMatches.push(x); // XXX make it a little harder than one single match.
-                            break;
+        for (const tfX of tfIntersections) {
+            for (const match of tfX.matches) {
+                const overlapping = getOverlappingSegments(match.streamStart, match.streamEnd);
+                for (const overlap of overlapping) {
+                    console.debug(overlap.segment.get('name'), tfX.trail.alias);
+                    let tfTrails = overlap.segment.get('tfTrails');
+                    if (!tfTrails) {
+                        tfTrails = new Map();
+                        overlap.segment.set('tfTrails', tfTrails);
+                    }
+                    let entry = tfTrails.get(tfX);
+                    if (!entry) {
+                        entry = {
+                            trail: tfX.trail,
+                            segmentCorrelation: 0,
+                            _trailIndexes: new Set()
+                        };
+                        tfTrails.set(tfX, entry);
+                    }
+                    const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(overlap.segment.indices());
+                    for (let i = segStart; i <= segEnd; i++) {
+                        const trailIndex = match.streamPathMap[i];
+                        if (trailIndex != null) {
+                            entry._trailIndexes.add(trailIndex);
                         }
                     }
+                    entry.trailCorrelation = entry._trailIndexes.size / tfX.path.length;
+                    entry.segmentCorrelation += overlap.correlation;
                 }
-            }
-            if (tfMatches.length) {
-                //segment.set('tfMatches', tfMatches);
-                segment.set('tfMatches', tfMatches.slice(0, 1));  // XXX
             }
         }
     }
@@ -1850,14 +1882,15 @@ sauce.ns('analysis', ns => {
             console.warn('Segment data not found for:', row.dataset.segmentEffortId);
             return;
         }
-        const tfMatches = segment.get('tfMatches');
-        if (!tfMatches || !tfMatches.length) {
+        const tfTrails = segment.get('tfTrails');
+        if (!tfTrails || !tfTrails.size) {
             return;
         }
         tfCol.dataset.done = true;
         const tpl = await getTemplate('tf-info.html');
-        for (const x of tfMatches) {
-            const $tf = jQuery(await tpl(x.trail));
+        for (const x of tfTrails.values()) {
+            console.debug(x);
+            const $tf = jQuery(await tpl(x));
             $tf.on('click', ev => {
                 ev.stopPropagation();
                 const $tfDialog = tfWidgetDialog(`Trailforks - ${x.trail.title}`, 'trail', {
@@ -2939,6 +2972,7 @@ sauce.ns('analysis', ns => {
         fetchStreams,
         dialog,
         modal,
+        mapDialog,
         humanWeight,
         humanTime,
         humanPace,
