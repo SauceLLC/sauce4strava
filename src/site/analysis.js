@@ -552,27 +552,25 @@ sauce.ns('analysis', ns => {
             return;
         }
         // const tfIntersections = await sauce.trailforks.intersections(latlngStream, distStream);
-        const tfIntersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
-        for (const tfX of tfIntersections) {
+        const segmentTrails = new Map();
+        for (const tfX of await sauce.rpc.trailforksIntersections(latlngStream, distStream)) {
             for (const match of tfX.matches) {
-                const overlapping = getOverlappingSegments(match.streamStart, match.streamEnd);
-                for (const overlap of overlapping) {
-                    console.debug(overlap.segment.get('name'), tfX.trail.alias);
-                    let tfTrails = overlap.segment.get('tfTrails');
-                    if (!tfTrails) {
-                        tfTrails = new Map();
-                        overlap.segment.set('tfTrails', tfTrails);
+                for (const x of getOverlappingSegments(match.streamStart, match.streamEnd)) {
+                    let trails = segmentTrails.get(x.segment);
+                    if (!trails) {
+                        trails = new Map();
+                        segmentTrails.set(x.segment, trails);
                     }
-                    let entry = tfTrails.get(tfX);
+                    let entry = trails.get(tfX);
                     if (!entry) {
                         entry = {
                             trail: tfX.trail,
                             segmentCorrelation: 0,
                             _trailIndexes: new Set()
                         };
-                        tfTrails.set(tfX, entry);
+                        trails.set(tfX, entry);
                     }
-                    const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(overlap.segment.indices());
+                    const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(x.segment.indices());
                     for (let i = segStart; i <= segEnd; i++) {
                         const trailIndex = match.streamPathMap[i];
                         if (trailIndex != null) {
@@ -580,8 +578,19 @@ sauce.ns('analysis', ns => {
                         }
                     }
                     entry.trailCorrelation = entry._trailIndexes.size / tfX.path.length;
-                    entry.segmentCorrelation += overlap.correlation;
+                    entry.segmentCorrelation += x.correlation;
                 }
+            }
+        }
+        for (const [segment, trails] of segmentTrails.entries()) {
+            const tfTrails = [];
+            for (const x of trails.values()) {
+                if (x.trailCorrelation > 0.10) {
+                    tfTrails.push(x);
+                }
+            }
+            if (tfTrails.length) {
+                segment.set('tfTrails', tfTrails);
             }
         }
     }
@@ -1883,13 +1892,12 @@ sauce.ns('analysis', ns => {
             return;
         }
         const tfTrails = segment.get('tfTrails');
-        if (!tfTrails || !tfTrails.size) {
+        if (!tfTrails || !tfTrails.length) {
             return;
         }
         tfCol.dataset.done = true;
         const tpl = await getTemplate('tf-info.html');
-        for (const x of tfTrails.values()) {
-            console.debug(x);
+        for (const x of tfTrails) {
             const $tf = jQuery(await tpl(x));
             $tf.on('click', ev => {
                 ev.stopPropagation();

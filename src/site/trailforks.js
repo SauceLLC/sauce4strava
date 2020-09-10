@@ -1,9 +1,10 @@
-/* global sauce  */
+/* global sauce */
 
 sauce.ns('trailforks', ns => {
     'use strict';
 
     const tfCache = new sauce.cache.TTLCache('trailforks', 12 * 3600 * 1000);
+    const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
 
     const difficulties = {
         1: {
@@ -118,6 +119,36 @@ sauce.ns('trailforks', ns => {
     };
 
 
+    function decodePolyline(encoded, precisionDigits) {
+        const precision = 10 ** (precisionDigits || 5);
+        const latlngStream = [];
+        let lat = 0;
+        let lng = 0;
+        let xDelta;
+        let accum = 0;
+        let bits = 0;
+        for (var i = 0; i < encoded.length; i++) {
+            const byte = encoded.charCodeAt(i) - 63;
+            accum |= (byte & 0x1f) << bits;
+            bits += 5;
+            if (byte < 32) {
+                const delta = accum & 1 ? ~(accum >>> 1) : accum >>> 1;
+                if (xDelta == null) {
+                    xDelta = delta;
+                } else {
+                    lat += xDelta;
+                    lng += delta;
+                    latlngStream.push([lat / precision, lng / precision]);
+                    xDelta = null;
+                }
+                accum = 0;
+                bits = 0;
+            }
+        }
+        return latlngStream;
+    }
+
+
     function lookupEnums(trail) {
         if (!trail) {
             return trail;
@@ -130,8 +161,35 @@ sauce.ns('trailforks', ns => {
     }
 
 
+    async function fetchFullTrails(ids) {
+        // If we had a proper API key (which TF has been to busy to help with) we could
+        // do a single call to the trails endpoint.  This works as a hack until then.
+        const q = new URLSearchParams();
+        q.set('scope', 'full');
+        q.set('api_key', tfApiKey());
+        const manifests = ids.map(id => {
+            q.set('id', id);
+            return {
+                cacheKey: `trail-${id}`,
+                query: q.toString()
+            };
+        });
+        return await Promise.all(manifests.map(async x => {
+            let data = await tfCache.get(x.cacheKey);
+            if (!data) {
+                const resp = await fetch(`${tfHost}/api/1/trail/?${x.query}`);
+                data = await resp.json();
+                if (data.error !== 0) {
+                    throw new Error(`TF API Error: ${data.error} ${data.message}`);
+                }
+                await tfCache.set(x.cacheKey, data);
+            }
+            return lookupEnums(data.data);
+        }));
+    }
+
+
     async function fetchTrailsUnofficial(bbox) {
-        const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
         const bboxKey = `bbox-${JSON.stringify(bbox)}`;
         let data = await tfCache.get(bboxKey);
         if (!data) {
@@ -150,26 +208,7 @@ sauce.ns('trailforks', ns => {
             }
             await tfCache.set(bboxKey, data);
         }
-        const trailQ = new URLSearchParams();
-        trailQ.set('scope', 'full');
-        trailQ.set('api_key', tfApiKey());
-        const trails = data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail');
-        // In leu of having a working trails API, do it manually..
-        return await Promise.all(trails.map(async x => { 
-            const trailKey = `trail-${x.id}`;
-            let data = await tfCache.get(trailKey);
-            if (!data) {
-                trailQ.set('id', x.id);
-                const resp = await fetch(`${tfHost}/api/1/trail/?${trailQ.toString()}`);
-                data = await resp.json();
-                if (data.error !== 0) {
-                    throw new Error(`TF API Error: ${data.error} ${data.message}`);
-                }
-                await tfCache.set(trailKey, data);
-            }
-            return lookupEnums(data.data);
-        }));
-        /*return data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail').map(x => {
+        return data.features.filter(x => x.type === 'Feature' && x.properties.type === 'trail').map(x => {
             // Make data look more like the official api
             return Object.assign({}, x.properties, {
                 title: x.properties.name,
@@ -177,7 +216,7 @@ sauce.ns('trailforks', ns => {
                     encodedPath: x.geometry.encodedpath
                 }
             });
-        });*/
+        });
     }
 
 
@@ -230,13 +269,11 @@ sauce.ns('trailforks', ns => {
             return cacheHit;
         }
         const bbox = sauce.geo.boundingBox(latlngStream, {pad: 50});
-        const trails = await fetchTrailsUnofficial(bbox);
         //const trails = await fetchTrails(bbox);
-        const trailIntersectMatrix = [];
+        const trails = await fetchTrailsUnofficial(bbox);
+        const intersections = [];
         for (const trail of trails) {
-            const lats = trail.track.latitude.split(',');
-            const lngs = trail.track.longitude.split(',');
-            const path = lats.map((x, i) => [Number(x), Number(lngs[i])]);
+            const path = decodePolyline(trail.track.encodedPath);
             const trailBBox = sauce.geo.boundingBox(path, {pad: 20});
             if (!sauce.geo.boundsOverlap(trailBBox, bbox)) {
                 continue;
@@ -294,14 +331,18 @@ sauce.ns('trailforks', ns => {
                 endMatch(latlngStream.length - 1);
             }
             if (matches.length) {
-                trailIntersectMatrix.push({
+                intersections.push({
                     path,
-                    trail,
+                    trailId: trail.id,
                     matches
                 });
             }
         }
-        await tfCache.set(cacheKey, trailIntersectMatrix);
-        return trailIntersectMatrix;
+        const fullTrails = await fetchFullTrails(intersections.map(x => x.trailId));
+        for (let i = 0; i < fullTrails.length; i++) {
+            intersections[i].trail = fullTrails[i];
+        }
+        await tfCache.set(cacheKey, intersections);
+        return intersections;
     };
 });
