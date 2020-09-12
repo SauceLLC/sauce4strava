@@ -157,6 +157,7 @@ sauce.ns('trailforks', ns => {
             statusInfo: statuses[trail.status],
             conditionInfo: conditions[trail.condition],
             difficultyInfo: difficulties[trail.difficulty],
+            votedDifficultyInfo: difficulties[trail.difficulty_user_avg],
         }, trail);
     }
 
@@ -186,6 +187,58 @@ sauce.ns('trailforks', ns => {
             }
             return lookupEnums(data.data);
         }));
+    }
+
+
+    async function fetchPagedTrailResource(resource, trailId, options={}) {
+        if (options.pageSize == null) {
+            throw new TypeError('pageSize required');
+        }
+        const pageSize = options.pageSize;
+        const filterKey = options.filterKey || 'trail';
+        const pk = options.pk || 'id';
+        const cacheKey = `${resource}-${trailId}`;
+        const listingEntry = await tfCache.getEntry(cacheKey);
+        if (listingEntry && Date.now() - listingEntry.created < 1 * 3600 * 1000) {
+            return listingEntry.value;
+        }
+        const listing = listingEntry ? listingEntry.value : [];
+        const newestPK = listing[0] ? listing[0][pk] : null;
+        const q = new URLSearchParams();
+        q.set('api_key', tfApiKey());
+        q.set('scope', 'full');
+        q.set('filter', `${filterKey}::${trailId}`);
+        q.set('rows', pageSize);  // NOTE: Must be _PERFECT_ due to api_key limits.
+        q.set('sort', 'created'); // NOTE: Not the same as 'ts' but best we can do.
+        q.set('order', 'desc');
+        // We can't properly sort the photos API; they only allow sorting by
+        // 'created' but we only see 'ts' which is different.  So we just
+        // batch all new photos until we've seen one before and then break.
+        // It's imperfect but close enough.
+        const newBatch = [];
+        let page = 1;
+        for (;page;) {
+            q.set('page', page++);
+            const resp = await fetch(`${tfHost}/api/1/${resource}?${q.toString()}`);
+            const data = await resp.json();
+            if (data.error !== 0) {
+                throw new Error(`TF API Error: ${data.error} ${data.message}`);
+            }
+            if (data.data && data.data.length) {
+                for (const x of data.data) {
+                    if (x[pk] === newestPK) {
+                        page = null;
+                        break;
+                    }
+                    newBatch.push(x);
+                }
+            } else {
+                break;
+            }
+        }
+        const updatedListing = newBatch.concat(listing);
+        await tfCache.set(cacheKey, updatedListing, {ttl: 365 * 86400 * 1000});
+        return updatedListing;
     }
 
 
@@ -344,5 +397,21 @@ sauce.ns('trailforks', ns => {
         }
         await tfCache.set(cacheKey, intersections);
         return intersections;
+    };
+
+    ns.photos = async function(trailId) {
+        const pageSize = 3;  // MUST be 3!!!
+        return await fetchPagedTrailResource('photos', trailId, {pageSize});
+    };
+
+    ns.videos = async function(trailId) {
+        const pageSize = 6;  // MUST be 6!!!
+        return await fetchPagedTrailResource('videos', trailId, {pageSize});
+    };
+
+    ns.reports = async function(trailId) {
+        const pageSize = 3;  // MUST be 3!!!
+        return await fetchPagedTrailResource('reports', trailId,
+            {pageSize, filterKey: 'nid', pk: 'reportid'});
     };
 });

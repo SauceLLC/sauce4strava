@@ -14,6 +14,7 @@
             'site/sparkline.js',
             'site/lib.js',
             'site/export.js',
+            'site/trailforks.js',
             'site/analysis.js',
         ],
         callbacks: [
