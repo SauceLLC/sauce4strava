@@ -295,6 +295,9 @@ sauce.ns('analysis', ns => {
             help.classList.remove('visible');
             $dialog.find(`a.help-info[data-help="${help.dataset.for}"]`).removeClass('hidden');
         });
+        if (options.autoDestroy) {
+            $dialog.on('dialogclose', ev => void $dialog.dialog('destroy'));
+        }
         return $dialog;
     }
 
@@ -1995,17 +1998,37 @@ sauce.ns('analysis', ns => {
                 });
                 $tfModal.on('click', 'a.tf-media.video', ev => {
                     const id = ev.currentTarget.dataset.id;
+                    function videoModal({title, body}) {
+                        return modal({
+                            title,
+                            body,
+                            dialogClass: 'no-pad',
+                            flex: true,
+                            width: '80vw', // occlude cur dialog
+                            height: 600,   // occlude cur dialog
+                            autoDestroy: true  // Be sure to stop video playback.
+                        });
+                    }
                     for (const v of contribs.videos) {
                         if (v.id === id) {
                             if (v.video_type === 'pb') {
                                 const sources = Object.entries(v.media).map(([res, url]) =>
                                     `<source src="${url}"/>`);
-                                modal({
-                                    title: `Pinkbike Video: ${tfTrail.trail.title}`,
-                                    body: `<video controls>${sources.join('')}</video>`
+                                videoModal({
+                                    title: v.title || tfTrail.trail.title,
+                                    body: `<video style="width: 100%; height: 100%;"
+                                                  controls>${sources.join('')}</video>`,
+                                });
+                            } else if (v.source === 'youtube') {
+                                videoModal({
+                                    title: v.title || tfTrail.trail.title,
+                                    body: `
+                                        <iframe frameborder="0" allow="fullscreen" width="100%" height="100%"
+                                                src="https://www.youtube.com/embed/${v.source_id}"></iframe>
+                                    `,
                                 });
                             } else {
-                                debugger;
+                                throw new TypeError('unsupported video type: ' + v.video_type);
                             }
                         }
                     }
