@@ -1,0 +1,86 @@
+<div class='lightbox-control lightbox-more-controls'>
+<button class='btn btn-unstyled' data-action='toggle-fullscreen' id='toggle-fullscreen' title='Fullscreen'>
+<div class='app-icon icon-fullscreen icon-xs icon-white'></div>
+</button>
+<div class='more-actions'>
+<button class='btn btn-unstyled' data-action='toggle-more-actions' title='More'>• • •</button>
+<div class='options'>
+<div class='activity-link' style='display: none'></div>
+<div class='report-link'>
+<div class='clickable' id='report-action'>Report Photo</div>
+<div id='reported' style='display: none;'>Reported</div>
+</div>
+</div>
+</div>
+</div>
+<div class='photo-sidebar'>
+<div class='sidebar-container'>
+<h2 class='topless'>
+<a id='lb-activity-name'></a>
+</h2>
+<div class='activity-map' id='lb-activity-map'></div>
+<ul class='inline-stats inline-stats-sm' id='lb-activity-stats'>
+<li id='lb-activity-distance'>
+<strong></strong>
+<div class='label'>Distance</div>
+</li>
+<li id='lb-activity-elapsed-time'>
+<strong></strong>
+<div class='label'>Time</div>
+</li>
+<li id='lb-activity-elev-gain'>
+<strong></strong>
+<div class='label'>Elevation</div>
+</li>
+</ul>
+<div id='lb-activity-description'></div>
+</div>
+</div>
+<div class='lightbox-main photo-main'>
+<div class='lightbox-control'>
+<button class='btn btn-unstyled' data-action='toggle-sidebar' id='toggle-photo-sidebar'>
+<div class='app-icon icon-drawer-right icon-xs icon-white'></div>
+<div class='app-icon icon-drawer-left icon-xs icon-white'></div>
+</button>
+</div>
+<div class='photo-container'>
+<figure>
+<figcaption class='caption-container'>
+<div class='caption-show'>
+<div class='caption'></div>
+<div class='caption-actions'>
+<button class='btn btn-unstyled update-caption'>Add Caption</button>
+</div>
+</div>
+<div class='caption-edit hidden'>
+<input name='caption_escaped' placeholder='Start typing' type='text'>
+<div class='caption-actions'>
+<button class='btn btn-sm btn-unstyled save-caption'>Save</button>
+<button class='btn btn-sm btn-unstyled discard-caption'>Discard</button>
+</div>
+</div>
+</figcaption>
+<div class='photo-slideshow-content'>
+<div class='partner-tags left'></div>
+<div class='image-wrapper'>
+<div class='loading-spinner'><div class='spinner sm ' style=''>
+      <div class='graphic'></div>
+      <span class='status'></span>
+    </div></div>
+</div>
+</div>
+</figure>
+<nav class='photo-nav' role='navigation' style='display: none'>
+<button class='btn btn-unstyled btn-prev'>
+<div class='app-icon-wrapper'>
+<div class='app-icon icon-prev icon-md icon-white'>Previous Photo</div>
+</div>
+</button>
+<button class='btn btn-unstyled btn-next'>
+<div class='app-icon-wrapper'>
+<div class='app-icon icon-next icon-md icon-white'>Next Photo</div>
+</div>
+</button>
+</nav>
+</div>
+</div>

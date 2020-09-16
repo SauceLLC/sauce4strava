@@ -1905,11 +1905,11 @@ sauce.ns('analysis', ns => {
         }
         tfCol.dataset.done = true;
         const tpl = await getTemplate('tf-info.html');
-        for (const x of tfTrails) {
-            const $tf = jQuery(await tpl(x));
+        for (const tfTrail of tfTrails) {
+            const $tf = jQuery(await tpl(tfTrail));
             $tf.on('click', async ev => {
                 ev.stopPropagation();
-                console.warn(x); // XXX
+                console.warn(tfTrail); // XXX
                 const icon = `<img src="${sauce.extUrl}images/trailforks-250x250.png"/>`;
                 // XXX localize
                 const $loading = modal({
@@ -1923,9 +1923,9 @@ sauce.ns('analysis', ns => {
                 const maxReportAge = 182.5 * 86400 * 1000;
                 const maxCount = 10;
                 const pending = new Map(Object.entries({
-                    photos: sauce.trailforks.photos(x.trail.id, {maxCount}).then(x => ['photos', x]),
-                    videos: sauce.trailforks.videos(x.trail.id, {maxCount}).then(x => ['videos', x]),
-                    reports: sauce.trailforks.reports(x.trail.id, {maxAge: maxReportAge, maxCount}).then(x => ['reports', x])
+                    photos: sauce.trailforks.photos(tfTrail.trail.id, {maxCount}).then(x => ['photos', x]),
+                    videos: sauce.trailforks.videos(tfTrail.trail.id, {maxCount}).then(x => ['videos', x]),
+                    reports: sauce.trailforks.reports(tfTrail.trail.id, {maxAge: maxReportAge, maxCount}).then(x => ['reports', x])
                 }));
                 const contribs = {};
                 while (pending.size) {
@@ -1939,14 +1939,14 @@ sauce.ns('analysis', ns => {
                 console.info(contribs);
                 $loading.dialog('destroy');
                 const $tfModal = modal({
-                    title: `Trailforks - ${x.trail.title}`,
+                    title: `Trailforks - ${tfTrail.trail.title}`,
                     dialogClass: 'trailforks-overview no-pad',
                     icon,
                     body: await template(Object.assign({
                         contribs,
                         humanDistance,
                         distanceUnit: ctx.distanceFormatter.shortUnitKey(),
-                    }, x)),
+                    }, tfTrail)),
                     width: '80vw',
                     height: 600,
                     flex: true,
@@ -1955,15 +1955,15 @@ sauce.ns('analysis', ns => {
                         "Create Trail Report": () => {
                             $tfModal.dialog('close');
                             // XXX localize
-                            tfWidgetDialog(`Trailforks Create Report - ${x.trail.title}`, 'reportsubmit',
-                                {trailid: x.trail.id, work: 0}, {width: 500, height: 600, flex: true});
+                            tfWidgetDialog(`Trailforks Create Report - ${tfTrail.trail.title}`, 'reportsubmit',
+                                {trailid: tfTrail.trail.id, work: 0}, {width: 500, height: 600, flex: true});
                         }
                     }
                 });
-                const altStream = x.trail.track.altitude.split(',').map(Number);
-                const distStream = x.trail.track.distance.split(',').map(Number);
-                const lats = x.trail.track.latitude.split(',');
-                const lngs = x.trail.track.longitude.split(',');
+                const altStream = tfTrail.trail.track.altitude.split(',').map(Number);
+                const distStream = tfTrail.trail.track.distance.split(',').map(Number);
+                const lats = tfTrail.trail.track.latitude.split(',');
+                const lngs = tfTrail.trail.track.longitude.split(',');
                 const latlngStream = lats.map((x, i) => [Number(x), Number(lngs[i])]);
                 const map = createPolylineMap(latlngStream, $tfModal.find('.map'));
                 map.showGpxDownload(false);
@@ -2001,7 +2001,7 @@ sauce.ns('analysis', ns => {
                                 const sources = Object.entries(v.media).map(([res, url]) =>
                                     `<source src="${url}"/>`);
                                 modal({
-                                    title: `Pinkbike Video: ${x.title}`,
+                                    title: `Pinkbike Video: ${tfTrail.trail.title}`,
                                     body: `<video controls>${sources.join('')}</video>`
                                 });
                             } else {
@@ -2010,16 +2010,33 @@ sauce.ns('analysis', ns => {
                         }
                     }
                 });
-                $tfModal.on('click', 'a.tf-media.photo', ev => {
+                let photosCollection;
+                $tfModal.on('click', 'a.tf-media.photo', async ev => {
                     const id = ev.currentTarget.dataset.id;
-                    for (const p of contribs.photos) {
-                        if (p.id === id) {
-                            modal({
-                                title: `Trail photo`,
-                                body: `<img src="${p.thumbs.l}"/>`
-                            });
+                    if (!photosCollection) {
+                        photosCollection = new Strava.Models.Photos(contribs.photos.map((x, i) => ({
+                            caption_escaped: `${tfTrail.trail.title} (${i + 1}/${contribs.photos.length})`,
+                            large: x.thumbs.l,
+                            thumbnail: x.thumbs.s,
+                            photo_id: x.id,
+                            viewing_athlete_id: -1  // makes caption uneditable
+                        })));
+                    }
+                    if (!self.JST['#photo-lightbox-template']) {
+                        // Workaround for missing templates when activity doesn't have photos of its own.
+                        const tplResp = await fetch(`${tplUrl}/photo-lightbox-template-backup.html`);
+                        self.JST['#photo-lightbox-template'] = self._.template(await tplResp.text());
+                        self.JST['#reporting-modal-template'] = self._.template('<div style="display: none;" id="reporting-modal"><form/></div>');
+                    }
+                    let selected;
+                    for (const photo of photosCollection.models) {
+                        if (photo.id === id) {
+                            selected = photo;
+                            break;
                         }
                     }
+                    const photoView = Strava.ExternalPhotos.Views.PhotoLightboxView.show(selected);
+                    photoView.$el.addClass('sauce-over-modal');
                 });
             });
             jQuery(tfCol).append($tf);
