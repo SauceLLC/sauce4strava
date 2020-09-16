@@ -246,25 +246,25 @@ sauce.ns('trailforks', ns => {
     }
 
 
-    function lookupEnums(trail) {
-        if (!trail) {
-            return trail;
+    function lookupEnums(data) {
+        if (!data) {
+            return data;
         }
         const expanded = {
-            status: enums.statuses[trail.status],
-            condition: enums.conditions[trail.condition],
-            difficulty: enums.difficulties[trail.difficulty],
-            difficultyUserAvg: enums.difficulties[trail.difficulty_user_avg],
-            trailType: enums.types[trail.trailtype],
-            bikeType: enums.bikeTypes[trail.biketype],
-            usage: enums.usages[trail.usage],
-            direction: enums.directions[trail.direction],
-            physicalRating: enums.physicalRatings[trail.physical_rating],
-            seasonType: enums.seasonTypes[trail.season_type],
-            ttfs: trail.ttfs ? trail.ttfs.split(',').map(x => enums.ttfs[x]) : [],
-            description: trail.description.replace(/\[L=(.*?)\](.*?)\[\/L\]/g, '<a href="$1" target="_blank">$2</a>')
+            status: enums.statuses[data.status],
+            condition: enums.conditions[data.condition],
+            difficulty: enums.difficulties[data.difficulty],
+            difficultyUserAvg: enums.difficulties[data.difficulty_user_avg],
+            trailType: enums.types[data.trailtype],
+            bikeType: enums.bikeTypes[data.biketype],
+            usage: enums.usages[data.usage],
+            direction: enums.directions[data.direction],
+            physicalRating: enums.physicalRatings[data.physical_rating],
+            seasonType: enums.seasonTypes[data.season_type],
+            ttfs: data.ttfs ? data.ttfs.split(',').map(x => enums.ttfs[x]) : [],
+            description: data.description.replace(/\[L=(.*?)\](.*?)\[\/L\]/g, '<a href="$1" target="_blank">$2</a>')
         };
-        return Object.assign({}, {expanded}, trail);
+        return Object.assign({}, {expanded}, data);
     }
 
 
@@ -528,6 +528,7 @@ sauce.ns('trailforks', ns => {
             const cutoff = Date.now() - options.maxAge;
             options.filter = x => Number(x.created) * 1000 >= cutoff;
         }
-        return await fetchPagedTrailResource('reports', trailId, options);
+        const data = await fetchPagedTrailResource('reports', trailId, options);
+        return data.map(lookupEnums);
     };
 });

@@ -1,5 +1,6 @@
 <section class="sauce-left">
     <div class="panel">
+        <h1>Last Known Status</h1>
         <% if (trail.expanded.difficulty) { %>
             <% if (trail.expanded.difficulty.image) { %>
                 <div class="item">
@@ -34,11 +35,15 @@
         <% } %>
     </div>
 
-    <div class="panel">
-        <div class="item"><span>{-trail.expanded.description-}</span></div>
-    </div>
+    <% if (trail.expanded.description) { %>
+        <div class="panel">
+            <h1>Description</h1>
+            <div class="item"><span>{-trail.expanded.description-}</span></div>
+        </div>
+    <% } %>
 
     <div class="panel">
+        <h1>Trail Details</h1>
         <div class="item">
             <key>Distance:</key>
             {{humanDistance(trail.stats.distance)}}
@@ -66,7 +71,7 @@
         <% if (trail.expanded.trailType) { %>
             <div class="item"><key>Trail type:</key> {{trail.expanded.trailType}}</div>
         <% } %>
-        <% if (trail.expanded.ttfs) { %>
+        <% if (trail.expanded.ttfs && trail.expanded.ttfs.length) { %>
             <div class="item"><key>Tech Features:</key> {{trail.expanded.ttfs.join(', ')}}</div>
         <% } %>
         <% if (trail.expanded.usage) { %>
@@ -77,12 +82,62 @@
 
 <section class="sauce-right">
     <% if (contribs.photos) { %>
-        <div class="panel horiz sauce-media">
-            <% for (const photo of contribs.photos) { %>
-                <div class="item"><a class="tf-media" href="foobar"><img src="{{photo.thumbs.l}}"/></a></div>
+        <div class="panel">
+            <h1>Photos</h1>
+            <div class="sauce-media">
+                <% for (const x of contribs.photos) { %>
+                    <div class="item">
+                        <a class="tf-media photo" href="javascript:void(0)" data-id="{{x.id}}">
+                            <img src="{{x.thumbs.s}}"/>
+                        </a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    <% } %>
+
+    <% if (contribs.videos) { %>
+        <div class="panel">
+            <h1>Videos</h1>
+            <div class="sauce-media">
+                <% for (const x of contribs.videos) { %>
+                    <div class="item">
+                        <a class="tf-media video" href="javascript:void(0)" data-id="{{x.id}}">
+                            <img src="{{x.thumbs.s}}"/>
+                        </a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    <% } %>
+
+    <% if (contribs.reports) { %>
+        <div class="panel">
+            <h1>Reports</h1>
+            <% for (const x of contribs.reports) { %>
+                <% if (x.expanded.condition) { %>
+                    <div class="item tf-condition {{x.expanded.condition.class || ''}}">
+                        <key>Condition:</key>
+                        {-await faIcon(x.expanded.condition.icon || 'certificate-duotone')-}
+                        {{x.expanded.condition.title}}
+                    </div>
+                <% } %>
+
+                <% if (x.expanded.status) { %>
+                    <div class="item tf-status {{x.expanded.status.class || ''}}">
+                        <key>Status:</key>
+                        {-await faIcon('circle-duotone')-}
+                        {{x.expanded.status.title}}
+                    </div>
+                <% } %>
+
+                <% if (x.expanded.description) { %>
+                    <div class="item"><span>{-x.expanded.description-}</span></div>
+                <% } %>
             <% } %>
         </div>
     <% } %>
+
     <div class="map"></div>
     <div class="sparkline elevation"></div>
 </section>

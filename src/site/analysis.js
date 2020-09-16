@@ -1909,9 +1909,17 @@ sauce.ns('analysis', ns => {
             const $tf = jQuery(await tpl(x));
             $tf.on('click', async ev => {
                 ev.stopPropagation();
-                console.warn(x);
+                console.warn(x); // XXX
                 const icon = `<img src="${sauce.extUrl}images/trailforks-250x250.png"/>`;
-                const $loading = modal({title: 'Loading Trailforks data', icon});
+                // XXX localize
+                const $loading = modal({
+                    title: 'Loading Trailforks data',
+                    body: `
+                        <div class="sauce-loading photos">Loading: photos...</div>
+                        <div class="sauce-loading videos">Loading: videos...</div>
+                        <div class="sauce-loading reports">Loading: reports...</div>
+                    `
+                });
                 const maxReportAge = 182.5 * 86400 * 1000;
                 const maxCount = 10;
                 const pending = new Map(Object.entries({
@@ -1924,9 +1932,11 @@ sauce.ns('analysis', ns => {
                     const [key, data] = await Promise.race(pending.values());
                     contribs[key] = data;
                     pending.delete(key);
-                    $loading.append(`<b>Loaded: ${data.length} ${key}</b><br/>`);
+                    // XXX localize
+                    $loading.find(`.sauce-loading.${key}`).html(`<b>Loaded: ${data.length} ${key}</b>`);
                 }
                 const template = await getTemplate('tf-dialog.html', 'trailforks');
+                console.info(contribs);
                 $loading.dialog('destroy');
                 const $tfModal = modal({
                     title: `Trailforks - ${x.trail.title}`,
@@ -1941,25 +1951,31 @@ sauce.ns('analysis', ns => {
                     height: 600,
                     flex: true,
                     extraButtons: {
+                        // XXX localize
                         "Create Trail Report": () => {
                             $tfModal.dialog('close');
-                            tfWidgetDialog(`Trailforks Create Report - ${x.trail.title}`, 'reportsubmit', {
-                                trailid: x.trail.id,
-                                work: 0,
-                            }, {
-                                width: 500,
-                                height: 600,
-                                flex: true,
-                            });
+                            // XXX localize
+                            tfWidgetDialog(`Trailforks Create Report - ${x.trail.title}`, 'reportsubmit',
+                                {trailid: x.trail.id, work: 0}, {width: 500, height: 600, flex: true});
                         }
                     }
                 });
                 const altStream = x.trail.track.altitude.split(',').map(Number);
                 const distStream = x.trail.track.distance.split(',').map(Number);
+                const lats = x.trail.track.latitude.split(',');
+                const lngs = x.trail.track.longitude.split(',');
+                const latlngStream = lats.map((x, i) => [Number(x), Number(lngs[i])]);
+                const map = createPolylineMap(latlngStream, $tfModal.find('.map'));
+                map.showGpxDownload(false);
+                map.showCreateRoute(false);
+                map.showPrivacyToggle(false);
+                map.showFullScreenToggle(false);
+                map.initializeMap();
+                $tfModal.on('dialogresize', () => void map.map.resize());
                 $tfModal.find('.elevation.sparkline').sparkline(altStream.map((x, i) => [distStream[i], x]), {
                     type: 'line',
                     width: '100%',
-                    height: '6em',
+                    height: '5em',
                     lineColor: '#EA400DA0',
                     fillColor: {
                         type: 'gradient',
@@ -1967,22 +1983,44 @@ sauce.ns('analysis', ns => {
                         steps: hslValueGradientSteps([0, 3000],
                             {hStart: 60, hEnd: 80, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
                     },
-                    tooltipFormatter: (_, __, data) => [
-                        `Altitude: ${humanElevation(data.y, {suffix: true})}`,
-                        `Distance: ${humanDistance(data.x, 2)} ${ctx.distanceFormatter.shortUnitKey()}`
-                    ].join('<br/>')
+                    tooltipFormatter: (_, __, data) => {
+                        const [lat, lng] = latlngStream[data.offset];
+                        map.map.getRabbit(lat, lng);
+                        return [
+                            // XXX localize
+                            `Altitude: ${humanElevation(data.y, {suffix: true})}`,
+                            `Distance: ${humanDistance(data.x, 2)} ${ctx.distanceFormatter.shortUnitKey()}`
+                        ].join('<br/>');
+                    }
                 });
-                const lats = x.trail.track.latitude.split(',');
-                const lngs = x.trail.track.longitude.split(',');
-                const map = createPolylineMap(lats.map((x, i) => [Number(x), Number(lngs[i])]),
-                    $tfModal.find('.map'));
-                map.showGpxDownload(false);
-                map.showCreateRoute(false);
-                map.showPrivacyToggle(false);
-                map.showFullScreenToggle(false);
-                map.initializeMap();
-                window.foobar = map;
-                $tfModal.on('dialogresize', () => void map.map.resize());
+                $tfModal.on('click', 'a.tf-media.video', ev => {
+                    const id = ev.currentTarget.dataset.id;
+                    for (const v of contribs.videos) {
+                        if (v.id === id) {
+                            if (v.video_type === 'pb') {
+                                const sources = Object.entries(v.media).map(([res, url]) =>
+                                    `<source src="${url}"/>`);
+                                modal({
+                                    title: `Pinkbike Video: ${x.title}`,
+                                    body: `<video controls>${sources.join('')}</video>`
+                                });
+                            } else {
+                                debugger;
+                            }
+                        }
+                    }
+                });
+                $tfModal.on('click', 'a.tf-media.photo', ev => {
+                    const id = ev.currentTarget.dataset.id;
+                    for (const p of contribs.photos) {
+                        if (p.id === id) {
+                            modal({
+                                title: `Trail photo`,
+                                body: `<img src="${p.thumbs.l}"/>`
+                            });
+                        }
+                    }
+                });
             });
             jQuery(tfCol).append($tf);
         }
