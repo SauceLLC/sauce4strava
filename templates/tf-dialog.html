@@ -1,0 +1,88 @@
+<section class="sauce-left">
+    <div class="panel">
+        <% if (trail.expanded.difficulty) { %>
+            <% if (trail.expanded.difficulty.image) { %>
+                <div class="item">
+                    <key>Difficulty:</key>
+                    <img class="tf-difficulty {{trail.expanded.difficulty.class || ''}}"
+                         src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"/>
+                    {{trail.expanded.difficulty.title}}
+                </div>
+            <%  } else if (trail.expanded.difficulty.icon) { %>
+                <div class="item tf-difficulty {{trail.expanded.difficulty.class || ''}}"
+                     style="color: {{trail.expanded.difficulty.color}};">
+                    {-await faIcon(trail.expanded.difficulty.icon)-}
+                    {{trail.expanded.difficulty.title}}
+                </div>
+            <% } %>
+        <% } %>
+
+        <% if (trail.expanded.condition) { %>
+            <div class="item tf-condition {{trail.expanded.condition.class || ''}}">
+                <key>Condition:</key>
+                {-await faIcon(trail.expanded.condition.icon || 'certificate-duotone')-}
+                {{trail.expanded.condition.title}}
+            </div>
+        <% } %>
+
+        <% if (trail.expanded.status) { %>
+            <div class="item tf-status {{trail.expanded.status.class || ''}}">
+                <key>Status:</key>
+                {-await faIcon('circle-duotone')-}
+                {{trail.expanded.status.title}}
+            </div>
+        <% } %>
+    </div>
+
+    <div class="panel">
+        <div class="item"><span>{-trail.expanded.description-}</span></div>
+    </div>
+
+    <div class="panel">
+        <div class="item">
+            <key>Distance:</key>
+            {{humanDistance(trail.stats.distance)}}
+            <abbr class="unit short">{{distanceUnit}}</abbr>
+        </div>
+        <div class="item">
+            <key>Grade:</key> {{trail.stats.grade}} <abbr class="unit short">%</abbr>
+        </div>
+        <div class="item"><key>Global rank:</key> {{trail.global_rank}}</div>
+        <div class="item"><key>Popularity Score:</key> {{trail.popularity_score}}</div>
+        <div class="item"><key>Rating:</key> {{trail.rating}}</div>
+        <div class="item"><key>Land manager:</key> {{trail.land_manager}}</div>
+        <% if (trail.expanded.direction) { %>
+            <div class="item"><key>Direction:</key> {{trail.expanded.direction}}</div>
+        <% } %>
+        <% if (trail.expanded.bikeType) { %>
+            <div class="item"><key>Bike type:</key> {{trail.expanded.bikeType}}</div>
+        <% } %>
+        <% if (trail.expanded.physicalRating) { %>
+            <div class="item"><key>Physical rating:</key> {{trail.expanded.physicalRating}}</div>
+        <% } %>
+        <% if (trail.expanded.seasonType) { %>
+            <div class="item"><key>Season type:</key> {{trail.expanded.seasonType}}</div>
+        <% } %>
+        <% if (trail.expanded.trailType) { %>
+            <div class="item"><key>Trail type:</key> {{trail.expanded.trailType}}</div>
+        <% } %>
+        <% if (trail.expanded.ttfs) { %>
+            <div class="item"><key>Tech Features:</key> {{trail.expanded.ttfs.join(', ')}}</div>
+        <% } %>
+        <% if (trail.expanded.usage) { %>
+            <div class="item"><key>Usage:</key> {{trail.expanded.usage}}</div>
+        <% } %>
+    </div>
+</section>
+
+<section class="sauce-right">
+    <% if (contribs.photos) { %>
+        <div class="panel horiz sauce-media">
+            <% for (const photo of contribs.photos) { %>
+                <div class="item"><a class="tf-media" href="foobar"><img src="{{photo.thumbs.l}}"/></a></div>
+            <% } %>
+        </div>
+    <% } %>
+    <div class="map"></div>
+    <div class="sparkline elevation"></div>
+</section>

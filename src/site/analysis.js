@@ -312,17 +312,23 @@ sauce.ns('analysis', ns => {
             height: '400',
         }, options));
         $dialog.css('overflow', 'hidden');
-        const bounds = sauce.geo.boundingBox(latlngStream);
-        const mbr = [[bounds.swc[0], bounds.swc[1]], [bounds.nec[0], bounds.nec[1]]];
-        const context = new Strava.Maps.MapContext();
-        context.latlngStream(new Strava.Maps.LatLngStream(latlngStream));
-        const map = new Strava.Maps.Mapbox.Construction.MapFactory(context, $dialog, null, mbr);
+        const map = createPolylineMap(latlngStream, $dialog);
         map.showGpxDownload(false);
         map.showCreateRoute(false);
         map.showPrivacyToggle(false);
         map.showFullScreenToggle(false);
         map.initializeMap();
         $dialog.on('dialogresize', () => void map.map.resize());
+    }
+
+
+    function createPolylineMap(latlngStream, $el) {
+        const bounds = sauce.geo.boundingBox(latlngStream);
+        const mbr = [[bounds.swc[0], bounds.swc[1]], [bounds.nec[0], bounds.nec[1]]];
+        const context = new Strava.Maps.MapContext();
+        context.activityId(pageView.activityId());
+        context.latlngStream(new Strava.Maps.LatLngStream(latlngStream));
+        return new Strava.Maps.Mapbox.Construction.MapFactory(context, $el, null, mbr);
     }
 
 
@@ -551,24 +557,25 @@ sauce.ns('analysis', ns => {
         if (!latlngStream || !latlngStream.length || !distStream || !distStream.length) {
             return;
         }
-        // const tfIntersections = await sauce.trailforks.intersections(latlngStream, distStream);
+        const intersections = await sauce.trailforks.intersections(latlngStream, distStream);
+        //const intersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
         const segmentTrails = new Map();
-        for (const tfX of await sauce.rpc.trailforksIntersections(latlngStream, distStream)) {
-            for (const match of tfX.matches) {
+        for (const intersect of intersections) {
+            for (const match of intersect.matches) {
                 for (const x of getOverlappingSegments(match.streamStart, match.streamEnd)) {
                     let trails = segmentTrails.get(x.segment);
                     if (!trails) {
                         trails = new Map();
                         segmentTrails.set(x.segment, trails);
                     }
-                    let entry = trails.get(tfX);
+                    let entry = trails.get(intersect);
                     if (!entry) {
                         entry = {
-                            trail: tfX.trail,
+                            trail: intersect.trail,
                             segmentCorrelation: 0,
                             _trailIndexes: new Set()
                         };
-                        trails.set(tfX, entry);
+                        trails.set(intersect, entry);
                     }
                     const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(x.segment.indices());
                     for (let i = segStart; i <= segEnd; i++) {
@@ -577,7 +584,7 @@ sauce.ns('analysis', ns => {
                             entry._trailIndexes.add(trailIndex);
                         }
                     }
-                    entry.trailCorrelation = entry._trailIndexes.size / tfX.path.length;
+                    entry.trailCorrelation = entry._trailIndexes.size / intersect.path.length;
                     entry.segmentCorrelation += x.correlation;
                 }
             }
@@ -588,6 +595,7 @@ sauce.ns('analysis', ns => {
                 if (x.trailCorrelation > 0.10) {
                     tfTrails.push(x);
                 }
+                delete x._trailIndexes;
             }
             if (tfTrails.length) {
                 segment.set('tfTrails', tfTrails);
@@ -1899,17 +1907,42 @@ sauce.ns('analysis', ns => {
         const tpl = await getTemplate('tf-info.html');
         for (const x of tfTrails) {
             const $tf = jQuery(await tpl(x));
-            $tf.on('click', ev => {
+            $tf.on('click', async ev => {
                 ev.stopPropagation();
-                const $tfDialog = tfWidgetDialog(`Trailforks - ${x.trail.title}`, 'trail', {
-                    trailid: x.trail.id, map: 1, photos: 1, title: 0, info: 1
-                }, {
-                    width: 500,
+                console.warn(x);
+                const icon = `<img src="${sauce.extUrl}images/trailforks-250x250.png"/>`;
+                const $loading = modal({title: 'Loading Trailforks data', icon});
+                const maxReportAge = 182.5 * 86400 * 1000;
+                const maxCount = 10;
+                const pending = new Map(Object.entries({
+                    photos: sauce.trailforks.photos(x.trail.id, {maxCount}).then(x => ['photos', x]),
+                    videos: sauce.trailforks.videos(x.trail.id, {maxCount}).then(x => ['videos', x]),
+                    reports: sauce.trailforks.reports(x.trail.id, {maxAge: maxReportAge, maxCount}).then(x => ['reports', x])
+                }));
+                const contribs = {};
+                while (pending.size) {
+                    const [key, data] = await Promise.race(pending.values());
+                    contribs[key] = data;
+                    pending.delete(key);
+                    $loading.append(`<b>Loaded: ${data.length} ${key}</b><br/>`);
+                }
+                const template = await getTemplate('tf-dialog.html', 'trailforks');
+                $loading.dialog('destroy');
+                const $tfModal = modal({
+                    title: `Trailforks - ${x.trail.title}`,
+                    dialogClass: 'trailforks-overview no-pad',
+                    icon,
+                    body: await template(Object.assign({
+                        contribs,
+                        humanDistance,
+                        distanceUnit: ctx.distanceFormatter.shortUnitKey(),
+                    }, x)),
+                    width: '80vw',
                     height: 600,
                     flex: true,
                     extraButtons: {
                         "Create Trail Report": () => {
-                            $tfDialog.dialog('close');
+                            $tfModal.dialog('close');
                             tfWidgetDialog(`Trailforks Create Report - ${x.trail.title}`, 'reportsubmit', {
                                 trailid: x.trail.id,
                                 work: 0,
@@ -1921,6 +1954,35 @@ sauce.ns('analysis', ns => {
                         }
                     }
                 });
+                const altStream = x.trail.track.altitude.split(',').map(Number);
+                const distStream = x.trail.track.distance.split(',').map(Number);
+                $tfModal.find('.elevation.sparkline').sparkline(altStream.map((x, i) => [distStream[i], x]), {
+                    type: 'line',
+                    width: '100%',
+                    height: '6em',
+                    lineColor: '#EA400DA0',
+                    fillColor: {
+                        type: 'gradient',
+                        opacity: 0.8,
+                        steps: hslValueGradientSteps([0, 3000],
+                            {hStart: 60, hEnd: 80, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
+                    },
+                    tooltipFormatter: (_, __, data) => [
+                        `Altitude: ${humanElevation(data.y, {suffix: true})}`,
+                        `Distance: ${humanDistance(data.x, 2)} ${ctx.distanceFormatter.shortUnitKey()}`
+                    ].join('<br/>')
+                });
+                const lats = x.trail.track.latitude.split(',');
+                const lngs = x.trail.track.longitude.split(',');
+                const map = createPolylineMap(lats.map((x, i) => [Number(x), Number(lngs[i])]),
+                    $tfModal.find('.map'));
+                map.showGpxDownload(false);
+                map.showCreateRoute(false);
+                map.showPrivacyToggle(false);
+                map.showFullScreenToggle(false);
+                map.initializeMap();
+                window.foobar = map;
+                $tfModal.on('dialogresize', () => void map.map.resize());
             });
             jQuery(tfCol).append($tf);
         }

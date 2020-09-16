@@ -4,6 +4,12 @@
 @use 'analysis_stats';
 @use 'peakinfo';
 @use 'color';
+@use 'trailforks';
+
+
+.sauce-enabled {
+    @include trailforks.enums;
+}
 
 
 .sauce-positive {
@@ -172,31 +178,10 @@ table.hidden-segments {
             margin-right: 0.3em;
         }
 
-        .condition {
-            &.mud {color: brown;}
-            &.wet {color: blue;}
-            &.dry {color: #dbb600;}
-            &.very-dry {color: #cf0000;}
-            &.icy {color: color.shade(fg, 30%);}
-            &.snow {color: color.shade(fg, 20%);}
-            &.ideal {color: green;}
-        }
-
-        .status {
-            &.clear {color: green;}
-            &.minor-issue {color: #dbb21d;}
-            &.significant-issue {color: #fa0000;}
-            &.closed {color: red;}
-        }
-
-        img.difficulty {
+        img.tf-difficulty {
             max-width: 2em;
             max-height: 2em;
             object-fit: contain;
-        }
-
-        .difficulty {
-            &.road {color: color.get(fg);}
         }
 
         svg[data-icon] {

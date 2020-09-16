@@ -1,28 +1,27 @@
-<small>
-    {{trail.title}}<br/>
-    segcor: {{Math.round(segmentCorrelation * 100)}}<br/>
-    trailcor: {{Math.round(trailCorrelation * 100)}}
-</small>
-<a title="{{trail.title}} {{Math.round(segmentCorrelation * 100)}} {{Math.round(trailCorrelation * 100)}}" class="report">
-    <% if (trail.difficultyInfo) { %>
-        <% if (trail.difficultyInfo.image) { %>
-            <img title="{{trail.difficultyInfo.title}} - Click for full report"
-                 class="difficulty {{trail.difficultyInfo.class || ''}}"
-                 src="{{sauce.extUrl}}images/trail_difficulty/{{trail.difficultyInfo.image}}"/>
-        <%  } else if (trail.difficultyInfo.icon) { %>
-            <div title="{{trail.difficultyInfo.title}} - Click for full report"
-                 class="difficulty {{trail.difficultyInfo.class || ''}}"
-                 style="color: {{trail.difficultyInfo.color}};">{-await faIcon(trail.difficultyInfo.icon)-}</div>
+<a class="report"
+   title="Trail: {{trail.title}}
+{{(trail.expanded.difficulty && trail.expanded.difficulty.title) ? ('Difficulty: ' + trail.expanded.difficulty.title) : ''}}
+{{(trail.expanded.condition && trail.expanded.condition.title) ? ('Condition: ' + trail.expanded.condition.title) : ''}}
+{{(trail.expanded.status && trail.expanded.status.title) ? ('Status: ' + trail.expanded.status.title) : ''}}
+
+- Click for full report -">
+    <% if (trail.expanded.difficulty) { %>
+        <% if (trail.expanded.difficulty.image) { %>
+            <img class="tf-difficulty {{trail.expanded.difficulty.class || ''}}"
+                 src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"/>
+        <%  } else if (trail.expanded.difficulty.icon) { %>
+            <div class="tf-difficulty {{trail.expanded.difficulty.class || ''}}"
+                 style="color: {{trail.expanded.difficulty.color}};">{-await faIcon(trail.expanded.difficulty.icon)-}</div>
         <% } %>
     <% } %>
-    <% if (trail.conditionInfo) { %>
-        <div class="condition {{trail.conditionInfo.class || ''}}"
-             title="{{trail.conditionInfo.title}} - Click for full report">
-            {-await faIcon(trail.conditionInfo.icon || 'certificate-duotone')-}
+    <% if (trail.expanded.condition) { %>
+        <div class="tf-condition {{trail.expanded.condition.class || ''}}">
+            {-await faIcon(trail.expanded.condition.icon || 'certificate-duotone')-}
         </div>
     <% } %>
-    <% if (trail.statusInfo) { %>
-        <div class="status {{trail.statusInfo.class || ''}}"
-             title="{{trail.statusInfo.title}} - Click for full report">{-await faIcon('circle-duotone')-}</div>
+    <% if (trail.expanded.status) { %>
+        <div class="tf-status {{trail.expanded.status.class || ''}}">
+            {-await faIcon('circle-duotone')-}
+        </div>
     <% } %>
 </a>

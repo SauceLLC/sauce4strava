@@ -6,116 +6,213 @@ sauce.ns('trailforks', ns => {
     const tfCache = new sauce.cache.TTLCache('trailforks', 12 * 3600 * 1000);
     const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
 
-    const difficulties = {
-        1: {
-            title: 'Access Road/Trail',
-            icon: 'road-duotone',
-            class: 'road'
+    const enums = {
+        difficulties: {
+            1: {
+                title: 'Access Road/Trail',
+                icon: 'road-duotone',
+                class: 'road'
+            },
+            2: {
+                title: 'Easiest / White Circle',
+                image: 'white-150x150.png'
+            },
+            3: {
+                title: 'Easy / Green Circle',
+                image: 'green-150x150.png'
+            },
+            4: {
+                title: 'Intermediate / Blue Square',
+                image: 'blue-150x150.png'
+            },
+            5: {
+                title: 'Very Difficult / Black Diamond',
+                image: 'black-150x150.png'
+            },
+            6: {
+                title: 'Extremely Difficult / Double Black Diamond',
+                image: 'double-black-150x150.png'
+            },
+            7: {
+                title: 'Secondary Access Road/Trail',
+                icon: 'road-duotone',
+                class: 'road'
+            },
+            8: {
+                title: 'Extremely Dangerous / Pros Only',
+                image: 'pro-only-150x150.png'
+            },
+            11: {
+                title: 'Advanced: Grade 4',
+                image: 'black-150x150.png'
+            },
         },
-        2: {
-            title: 'Easiest / White Circle',
-            image: 'white-150x150.png'
+        conditions: {
+            // 0 = Unknown
+            1: {
+                title: "Snow Packed",
+                class: "snow",
+                icon: 'icicles-duotone'
+            },
+            2: {
+                title: "Prevalent Mud",
+                class: "mud",
+                icon: 'water-duotone'
+            },
+            3: {
+                title: "Wet",
+                class: "wet",
+                icon: 'umbrella-duotone'
+            },
+            4: {
+                title: "Variable",
+            },
+            5: {
+                title: "Dry",
+                class: "dry",
+                icon: 'heat-duotone'
+            },
+            6: {
+                title: "Very Dry",
+                class: "very-dry",
+                icon: 'temperature-hot-duotone'
+            },
+            7: {
+                title: "Snow Covered",
+                class: "snow",
+                icon: 'snowflake-duotone'
+            },
+            8: {
+                title: "Freeze/thaw Cycle",
+                class: "icy",
+                icon: 'icicles-duotone'
+            },
+            9: {
+                title: "Icy",
+                class: "icy",
+                icon: 'icicles-duotone'
+            },
+            10: {
+                title: "Snow Groomed",
+                class: "snow",
+                icon: 'snowflake-duotone'
+            },
+            11: {
+                title: "Ideal",
+                class: "ideal",
+                icon: 'thumbs-up-duotone'
+            },
         },
-        3: {
-            title: 'Easy / Green Circle',
-            image: 'green-150x150.png'
+        statuses: {
+            1: {
+                title: "All Clear",
+                class: "clear"
+            },
+            2: {
+                title: "Minor Issue",
+                class: "minor-issue"
+            },
+            3: {
+                title: "Significant Issue",
+                class: "significant-issue"
+            },
+            4: {
+                title: "Closed",
+                class: "closed"
+            },
         },
-        4: {
-            title: 'Intermediate / Blue Square',
-            image: 'blue-150x150.png'
+        types: {
+            1: 'Singletrack',
+            2: 'Machine Groomed',
+            3: 'Doubletrack',
+            4: 'Mixed',
+            5: 'Other',
+            6: 'Dirt/Gravel Road',
+            7: 'Paved Path',
+            8: 'Gravel Path',
+            9: 'Rail Trail',
+            10: 'Wilderness Trail',
+            11: 'Hike-a-Bike',
+            12: 'Primitive',
+            13: 'Winter/Fatbike Only',
+            14: 'Sandy',
+            17: 'Asphalt/Tarmac Road',
         },
-        5: {
-            title: 'Very Difficult / Black Diamond',
-            image: 'black-150x150.png'
+        directions: {
+            1: 'Downhill Only',
+            2: 'Downhill Primary',
+            3: 'Both Directions',
+            4: 'Uphill Primary',
+            5: 'Uphill Only',
+            6: 'One Direction',
         },
-        6: {
-            title: 'Extremely Difficult / Double Black Diamond',
-            image: 'double-black-150x150.png'
+        usages: {
+            1: 'Biking Only',
+            2: 'Biking Primary',
+            3: 'Multi-Use',
         },
-        7: {
-            title: 'Secondary Access Road/Trail',
-            icon: 'road-duotone',
-            class: 'road'
+        physicalRatings: {
+            1: 'Easy',
+            2: 'Moderate',
+            3: 'Hard',
+            4: 'Extreme',
         },
-        8: {
-            title: 'Extremely Dangerous / Pros Only',
-            image: 'pro-only-150x150.png'
+        seasonTypes: {
+            1: 'Winter & Summer',
+            2: 'Winter Only',
         },
-        11: {
-            title: 'Advanced: Grade 4',
-            image: 'black-150x150.png'
+        ttfs: {
+            1: 'Berm',
+            2: 'Gap Jump',
+            4: 'Log Ride',
+            5: 'Ladder Bridge',
+            6: 'Rock Garden',
+            10: 'Other',
+            15: 'Skinny',
+            16: 'Jump',
+            17: 'Drop',
+            18: 'Rock Face',
+            19: 'Teeter Totter',
+            20: 'A-Frame',
+            21: 'Wallride',
+            50: 'Roller Coaster',
+            54: 'Bridge',
+            104: 'Pump Track',
         },
-    };
-
-    const conditions = {
-        // 0 = Unknown
-        1: {
-            title: "Snow Packed",
-            class: "snow",
-            icon: 'icicles-duotone'
+        skillparkTypes: {
+            1: 'Skillpark',
+            2: 'BMX Track',
+            3: 'Cyclocross',
+            4: 'Motocross Track',
+            9: 'Other',
         },
-        2: {
-            title: "Prevalent Mud",
-            class: "mud",
-            icon: 'water-duotone'
+        upliftTypes: {
+            1: 'Chair Lift',
+            2: 'Gondola',
+            3: 'Shuttle',
+            4: 'T-Bar',
+            5: 'Magic Carpet',
         },
-        3: {
-            title: "Wet",
-            class: "wet",
-            icon: 'umbrella-duotone'
+        routeTypes: {
+            1: 'Loop',
+            2: 'Out & Back',
+            3: 'Point to Point',
+            4: 'Shuttled',
         },
-        // 4 = Variable
-        5: {
-            title: "Dry",
-            class: "dry",
-            icon: 'heat-duotone'
-        },
-        6: {
-            title: "Very Dry",
-            class: "very-dry",
-            icon: 'temperature-hot-duotone'
-        },
-        7: {
-            title: "Snow Covered",
-            class: "snow",
-            icon: 'snowflake-duotone'
-        },
-        8: {
-            title: "Freeze/thaw Cycle",
-            class: "icy",
-            icon: 'icicles-duotone'
-        },
-        9: {
-            title: "Icy",
-            class: "icy",
-            icon: 'icicles-duotone'
-        },
-        10: {
-            title: "Snow Groomed",
-            class: "snow",
-            icon: 'snowflake-duotone'
-        },
-        11: {
-            title: "Ideal",
-            class: "ideal",
-            icon: 'thumbs-up-duotone'
-        },
-    };
-
-    const statuses = {
-        // 1: {title: "All Clear", class: "clear"},
-        2: {
-            title: "Minor Issue",
-            class: "minor-issue"
-        },
-        3: {
-            title: "Significant Issue",
-            class: "significant-issue"
-        },
-        4: {
-            title: "Closed",
-            class: "closed"
-        },
+        bikeTypes: {
+            1: 'Downhill',
+            2: 'All-Mountain',
+            3: 'Cross-Country',
+            4: 'Dirtjump/Slopestyle',
+            5: 'Road',
+            6: 'Fat Bike',
+            7: 'Adaptive MTB',
+            8: 'Cyclo-Cross',
+            12: 'Gravel / Adventure',
+            9: 'Unicycle',
+            10: 'BMX',
+            11: 'Trials',
+        }
     };
 
 
@@ -153,12 +250,21 @@ sauce.ns('trailforks', ns => {
         if (!trail) {
             return trail;
         }
-        return Object.assign({
-            statusInfo: statuses[trail.status],
-            conditionInfo: conditions[trail.condition],
-            difficultyInfo: difficulties[trail.difficulty],
-            votedDifficultyInfo: difficulties[trail.difficulty_user_avg],
-        }, trail);
+        const expanded = {
+            status: enums.statuses[trail.status],
+            condition: enums.conditions[trail.condition],
+            difficulty: enums.difficulties[trail.difficulty],
+            difficultyUserAvg: enums.difficulties[trail.difficulty_user_avg],
+            trailType: enums.types[trail.trailtype],
+            bikeType: enums.bikeTypes[trail.biketype],
+            usage: enums.usages[trail.usage],
+            direction: enums.directions[trail.direction],
+            physicalRating: enums.physicalRatings[trail.physical_rating],
+            seasonType: enums.seasonTypes[trail.season_type],
+            ttfs: trail.ttfs ? trail.ttfs.split(',').map(x => enums.ttfs[x]) : [],
+            description: trail.description.replace(/\[L=(.*?)\](.*?)\[\/L\]/g, '<a href="$1" target="_blank">$2</a>')
+        };
+        return Object.assign({}, {expanded}, trail);
     }
 
 
@@ -226,7 +332,9 @@ sauce.ns('trailforks', ns => {
             }
             if (data.data && data.data.length) {
                 for (const x of data.data) {
-                    if (x[pk] === newestPK) {
+                    if (x[pk] === newestPK ||
+                        (options.filter && options.filter(x) === false) ||
+                        (options.maxCount && newBatch.length >= options.maxCount)) {
                         page = null;
                         break;
                     }
@@ -237,6 +345,9 @@ sauce.ns('trailforks', ns => {
             }
         }
         const updatedListing = newBatch.concat(listing);
+        if (options.maxCount) {
+            updatedListing.length = Math.min(updatedListing.length, options.maxCount);
+        }
         await tfCache.set(cacheKey, updatedListing, {ttl: 365 * 86400 * 1000});
         return updatedListing;
     }
@@ -399,19 +510,24 @@ sauce.ns('trailforks', ns => {
         return intersections;
     };
 
-    ns.photos = async function(trailId) {
-        const pageSize = 3;  // MUST be 3!!!
-        return await fetchPagedTrailResource('photos', trailId, {pageSize});
+    ns.photos = async function(trailId, options={}) {
+        options.pageSize = 3;  // MUST be 3!!!
+        return await fetchPagedTrailResource('photos', trailId, options);
     };
 
-    ns.videos = async function(trailId) {
-        const pageSize = 6;  // MUST be 6!!!
-        return await fetchPagedTrailResource('videos', trailId, {pageSize});
+    ns.videos = async function(trailId, options={}) {
+        options.pageSize = 6;  // MUST be 6!!!
+        return await fetchPagedTrailResource('videos', trailId, options);
     };
 
-    ns.reports = async function(trailId) {
-        const pageSize = 3;  // MUST be 3!!!
-        return await fetchPagedTrailResource('reports', trailId,
-            {pageSize, filterKey: 'nid', pk: 'reportid'});
+    ns.reports = async function(trailId, options={}) {
+        options.pageSize = 3;  // MUST be 3!!!
+        options.filterKey = 'nid';
+        options.pk = 'reportid';
+        if (options.maxAge) {
+            const cutoff = Date.now() - options.maxAge;
+            options.filter = x => Number(x.created) * 1000 >= cutoff;
+        }
+        return await fetchPagedTrailResource('reports', trailId, options);
     };
 });

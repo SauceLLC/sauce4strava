@@ -1,0 +1,131 @@
+@use 'color';
+
+
+@mixin enums {
+    .tf-condition {
+        &.mud {color: brown;}
+        &.wet {color: blue;}
+        &.dry {color: #dbb600;}
+        &.very-dry {color: #cf0000;}
+        &.icy {color: color.shade(fg, 30%);}
+        &.snow {color: color.shade(fg, 20%);}
+        &.ideal {color: green;}
+    }
+
+    .tf-status {
+        &.clear {color: green;}
+        &.minor-issue {color: #dbb21d;}
+        &.significant-issue {color: #fa0000;}
+        &.closed {color: red;}
+    }
+
+    .tf-difficulty {
+        &.road {color: color.get(fg);}
+    }
+}
+
+
+@mixin dialog {
+    &.trailforks-overview {
+        * {
+            box-sizing: border-box;
+        }
+
+        .ui-dialog-content {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+
+        section {
+            flex: 1 1 50%;
+            padding: 0;
+            overflow: hidden;
+            margin-bottom: 1em;
+        }
+
+        .map {
+            height: 25em;
+            border-radius: 0.28em;
+            margin: 1rem;
+        }
+
+        .sparkline.elevation {
+            margin: 1rem;
+            padding-top: 1.15em;
+            position: relative;
+
+            &::before {
+                content: 'Elevation';
+                font-variant: all-small-caps;
+                position: absolute;
+                top: 0;
+                left: 0;
+                font-weight: bold;
+            }
+        }
+
+        .panel {
+            padding: 1rem;
+            background: color.shade(bg, 10%);
+            margin: 1em;
+            border-radius: 0.28em;
+            display: flex;
+            flex-direction: column;
+
+            &.horiz {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            &.sauce-media {
+                overflow: auto;
+
+                .item {
+                    padding: 0.2em;
+
+                    a.tf-media {
+                        display: block;
+                        line-height: 0;
+
+                        > * {
+                            width: 8em;
+                            height: 8em;
+                            object-fit: cover;
+                            border-radius: 0.28em;
+                        }
+                    }
+                }
+            }
+
+            .item {
+                padding: 0.2em;
+                display: flex;
+                align-items: center;
+
+                key {
+                    min-width: 14ch;
+                    color: color.shade(fg, 5%);
+                    margin-right: 0.3em;
+                    font-variant: all-small-caps;
+                    font-weight: bold;
+                }
+            }
+
+            img.tf-difficulty {
+                margin: 0 0.44em;
+                max-width: 2.2em;
+                max-height: 2.2em;
+                object-fit: contain;
+            }
+
+            .tf-difficulty,
+            .tf-condition,
+            .tf-status {
+                svg[data-icon] {
+                    width: 1.2em;
+                    margin: 0 0.52em 0.2em;
+                }
+            }
+        }
+    }
+}
