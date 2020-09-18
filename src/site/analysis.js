@@ -1924,7 +1924,7 @@ sauce.ns('analysis', ns => {
                     `
                 });
                 const maxReportAge = 182.5 * 86400 * 1000;
-                const maxCount = 10;
+                const maxCount = 20;
                 const pending = new Map(Object.entries({
                     photos: sauce.trailforks.photos(tfTrail.trail.id, {maxCount}).then(x => ['photos', x]),
                     videos: sauce.trailforks.videos(tfTrail.trail.id, {maxCount}).then(x => ['videos', x]),
@@ -1938,6 +1938,9 @@ sauce.ns('analysis', ns => {
                     // XXX localize
                     $loading.find(`.sauce-loading.${key}`).html(`<b>Loaded: ${data.length} ${key}</b>`);
                 }
+                for (const x of contribs.reports) {
+                    x.age = Date.now() - (Number(x.created) * 1000);
+                }
                 const template = await getTemplate('tf-dialog.html', 'trailforks');
                 console.info(contribs);
                 $loading.dialog('destroy');
@@ -1948,9 +1951,11 @@ sauce.ns('analysis', ns => {
                     body: await template(Object.assign({
                         contribs,
                         humanDistance,
+                        humanTime,
+                        humanTimeAgo: sauce.locale.humanTimeAgo,
                         distanceUnit: ctx.distanceFormatter.shortUnitKey(),
                     }, tfTrail)),
-                    width: '80vw',
+                    width: 'min(80vw, 70em)',
                     height: 600,
                     flex: true,
                     extraButtons: {

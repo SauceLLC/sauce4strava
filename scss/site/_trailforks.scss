@@ -71,7 +71,27 @@
             margin: 1em;
             border-radius: 0.28em;
             display: flex;
+            position: relative;
             flex-direction: column;
+
+            heading {
+                display: flex;
+                justify-content: space-between;
+
+                h1 {
+                    font-size: 1.2em;
+                    line-height: 1.1;
+                    color: color.shade(accent, 5%);
+                    margin: 0;
+                    font-variant: all-small-caps;
+                    font-weight: bold;
+                    padding-bottom: 0.5em;
+                }
+
+                a.external svg[data-icon] {
+                    width: 0.7em;
+                }
+            }
 
             .sauce-media {
                 display: flex;
@@ -95,16 +115,6 @@
                 }
             }
 
-            > h1 {
-                font-size: 1.2em;
-                line-height: 1.1;
-                color: color.shade(accent, 5%);
-                margin: 0;
-                font-variant: all-small-caps;
-                font-weight: bold;
-                padding-bottom: 0.5em;
-            }
-
             .item {
                 padding: 0.2em 0;
                 display: flex;
@@ -116,6 +126,16 @@
                     margin-right: 0.3em;
                     font-variant: all-small-caps;
                     font-weight: bold;
+                }
+            }
+
+            .report {
+                padding: 1em;
+                margin-bottom: 1px solid grey;
+
+                .age {
+                    font-size: 0.72em;
+                    opacity: 0.8;
                 }
             }
 

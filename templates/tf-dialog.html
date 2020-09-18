@@ -1,6 +1,8 @@
 <section class="sauce-left">
     <div class="panel">
-        <h1>Last Known Status</h1>
+        <heading>
+            <h1>Last Known Status</h1>
+        </heading>
         <% if (trail.expanded.difficulty) { %>
             <% if (trail.expanded.difficulty.image) { %>
                 <div class="item">
@@ -37,13 +39,17 @@
 
     <% if (trail.expanded.description) { %>
         <div class="panel">
-            <h1>Description</h1>
+            <heading>
+                <h1>Description</h1>
+            </heading>
             <div class="item"><span>{-trail.expanded.description-}</span></div>
         </div>
     <% } %>
 
     <div class="panel">
-        <h1>Trail Details</h1>
+        <heading>
+            <h1>Trail Details</h1>
+        </heading>
         <div class="item">
             <key>Distance:</key>
             {{humanDistance(trail.stats.distance)}}
@@ -81,9 +87,15 @@
 </section>
 
 <section class="sauce-right">
-    <% if (contribs.photos) { %>
+    <% if (contribs.photos && contribs.photos.length) { %>
         <div class="panel">
-            <h1>Photos</h1>
+            <heading>
+                <h1>Photos</h1>
+                <a class="external" title="View all on trailforks" target="_blank"
+                   href="https://www.trailforks.com/trails/{{trail.alias}}/photos/">
+                    {-await faIcon('external-link-duotone')-}
+                </a>
+            </heading>
             <div class="sauce-media">
                 <% for (const x of contribs.photos) { %>
                     <div class="item">
@@ -96,9 +108,15 @@
         </div>
     <% } %>
 
-    <% if (contribs.videos) { %>
+    <% if (contribs.videos && contribs.videos.length) { %>
         <div class="panel">
-            <h1>Videos</h1>
+            <heading>
+                <h1>Videos</h1>
+                <a class="external" title="View all on trailforks" target="_blank"
+                   href="https://www.trailforks.com/trails/{{trail.alias}}/videos/">
+                    {-await faIcon('external-link-duotone')-}
+                </a>
+            </heading>
             <div class="sauce-media">
                 <% for (const x of contribs.videos) { %>
                     <div class="item">
@@ -111,29 +129,42 @@
         </div>
     <% } %>
 
-    <% if (contribs.reports) { %>
+    <% if (contribs.reports && contribs.reports.length) { %>
         <div class="panel">
-            <h1>Reports</h1>
+            <heading>
+                <h1>Reports</h1>
+                <a class="external" title="View all on trailforks" target="_blank"
+                   href="https://www.trailforks.com/trails/{{trail.alias}}/reports/">
+                    {-await faIcon('external-link-duotone')-}
+                </a>
+            </heading>
             <% for (const x of contribs.reports) { %>
-                <% if (x.expanded.condition) { %>
-                    <div class="item tf-condition {{x.expanded.condition.class || ''}}">
-                        <key>Condition:</key>
-                        {-await faIcon(x.expanded.condition.icon || 'certificate-duotone')-}
-                        {{x.expanded.condition.title}}
-                    </div>
-                <% } %>
+                <div class="report">
+                    <% if (x.expanded.condition) { %>
+                        <div class="item tf-condition {{x.expanded.condition.class || ''}}">
+                            <key>Condition:</key>
+                            {-await faIcon(x.expanded.condition.icon || 'certificate-duotone')-}
+                            {{x.expanded.condition.title}}
+                        </div>
+                    <% } %>
 
-                <% if (x.expanded.status) { %>
-                    <div class="item tf-status {{x.expanded.status.class || ''}}">
-                        <key>Status:</key>
-                        {-await faIcon('circle-duotone')-}
-                        {{x.expanded.status.title}}
-                    </div>
-                <% } %>
+                    <% if (x.expanded.status) { %>
+                        <div class="item tf-status {{x.expanded.status.class || ''}}">
+                            <key>Status:</key>
+                            {-await faIcon('circle-duotone')-}
+                            {{x.expanded.status.title}}
+                        </div>
+                    <% } %>
 
-                <% if (x.expanded.description) { %>
-                    <div class="item"><span>{-x.expanded.description-}</span></div>
-                <% } %>
+                    <% if (x.expanded.description) { %>
+                        <div class="item"><span>{-x.expanded.description-}</span></div>
+                    <% } %>
+
+                    <span class="age" title="{{(new Date(Number(x.created) * 1000)).toLocaleString()}}">
+                        Created {-await humanTimeAgo(new Date(Number(x.created * 1000)))-} ago by
+                        <a href="https://www.trailforks.com/profile/{{x.username}}/" target="_blank">{{x.username}}</a>
+                    </span>
+                </div>
             <% } %>
         </div>
     <% } %>
