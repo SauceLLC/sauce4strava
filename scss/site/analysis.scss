@@ -7,10 +7,19 @@
 @use 'trailforks';
 
 
-.sauce-enabled {
+html.sauce-enabled {
+    transition: opacity 400ms;
+
+    &.sauce-loading {
+        opacity: 0.5;
+
+        * {
+            cursor: progress !important;
+        }
+    }
+
     @include trailforks.enums;
 }
-
 
 .sauce-positive {
     color: var(--sauce-positive) !important;

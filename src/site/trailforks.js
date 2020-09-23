@@ -268,6 +268,169 @@ sauce.ns('trailforks', ns => {
     }
 
 
+    function convertDataFields(data, fields, converter) {
+        for (const field of fields) {
+            if (field instanceof RegExp) {
+                for (const x of Object.keys(data)) {
+                    if (x.match(field)) {
+                        data[x] = converter(data[x]);
+                    }
+                }
+            } else if (Object.prototype.hasOwnProperty.call(data, field)) {
+                data[field] = converter(data[field]);
+            } else {
+                console.warn('Field not found:', field);
+            }
+        }
+    }
+
+
+    function toNumber(value) {
+        if (!value) {
+            return;
+        }
+        const n = Number(value);
+        if (isNaN(n)) {
+            throw new TypeError(`Invalid number data: ${value}`);
+        }
+        return n;
+    }
+
+
+    function toBoolean(value) {
+        const n = toNumber(value);
+        if (n == null || (n !== 0 && n !== 1)) {
+            throw new TypeError(`Invalid boolean data: ${value}`);
+        }
+        return !!n;
+    }
+
+
+    function toDate(value) {
+        const ts = toNumber(value);
+        return ts && new Date(ts * 1000);
+    }
+
+
+    function convertTrailFields(data) {
+        const boolFields = [
+            /^act_.*/,
+            'alpine',
+            'approved',
+            'archived',
+            'closed',
+            'dogs_allowed',
+            'download_disable',
+            'entrance_gate',
+            'family_friendly',
+            'hide_association',
+            'published',
+            'restricted_access',
+            'unsanctioned',
+            'verified',
+            'wet_weather',
+            'leaderboard_disable',
+            'license_required',
+            'snow_grooming', 
+            'dirty', 
+        ];
+        const numberFields = [
+            'amtb_rating',
+            'condition',
+            'cover_photo',
+            'climb_difficulty',
+            'confirmid',
+            'connector',
+            'difficulty',
+            'difficulty_user_avg',
+            'difficulty_votes',
+            'direction',
+            'direction_flagged', // probably bool XXX
+            'direction_backward',
+            'direction_forward',
+            'ebike',
+            'faved',  // XXX possibly bool?
+            'featured_photo',
+            'featured_video',
+            'funding_goal',
+            'funding_usd',
+            'hidden', // Bool? XXX
+            'global_rank',
+            'global_rank_score',
+            'id',
+            'latitude',
+            'longitude',
+            'legacy_id',
+            'physical_rating',
+            'popularity_score',
+            'rating',
+            'rid',
+            'ridden',
+            'sac_scale',
+            'season_type',
+            'skidmap_id',
+            'status', 
+            'strava_segment', 
+            'strava_segment_reverse', 
+            /^total_.*/, 
+            'trackid',
+            'trail_association',
+            'trail_visibility', // XXX might be bool
+            'trailid',
+            'trailtype',
+            'usage',
+            'userid',
+            'views',
+            'votes',
+            'watchmen',
+            'max_vehicle_width',
+        ];
+        const dateFields = [
+            'changed',
+            'created',
+            'last_comment_ts',
+            'last_report_ts',
+            'last_totals_ts',
+        ];
+        convertDataFields(data, boolFields, toBoolean);
+        convertDataFields(data, numberFields, toNumber);
+        convertDataFields(data, dateFields, toDate);
+        for (const [k, v] of Object.entries(data.stats)) {
+            data.stats[k] = v ? Number(v) : undefined;
+        }
+        return data;
+    }
+
+
+    function convertReportFields(data) {
+        const boolFields = [
+            /^act_.*/,
+            'published',
+            'private',
+            'premium',
+            'approved',
+            'active',
+        ];
+        const numberFields = [
+            /^total_.*/, 
+            'activitytype',
+            'approved',
+            'assessment',
+            'bulkid',
+            'nid',
+            'reportid',
+            'ridelogid',
+            'userid',
+        ];
+        const dateFields = [
+            'created',
+        ];
+        convertDataFields(data, boolFields, toBoolean);
+        convertDataFields(data, numberFields, toNumber);
+        convertDataFields(data, dateFields, toDate);
+        return data;
+    }
+
     async function fetchFullTrails(ids) {
         // If we had a proper API key (which TF has been to busy to help with) we could
         // do a single call to the trails endpoint.  This works as a hack until then.
@@ -291,7 +454,7 @@ sauce.ns('trailforks', ns => {
                 }
                 await tfCache.set(x.cacheKey, data);
             }
-            return lookupEnums(data.data);
+            return lookupEnums(convertTrailFields(data.data));
         }));
     }
 
@@ -529,6 +692,6 @@ sauce.ns('trailforks', ns => {
             options.filter = x => Number(x.created) * 1000 >= cutoff;
         }
         const data = await fetchPagedTrailResource('reports', trailId, options);
-        return data.map(lookupEnums);
+        return data.map(x => lookupEnums(convertReportFields(x)));
     };
 });

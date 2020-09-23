@@ -7,12 +7,12 @@
             <% if (trail.expanded.difficulty.image) { %>
                 <div class="item">
                     <key>Difficulty:</key>
-                    <img class="tf-difficulty {{trail.expanded.difficulty.class || ''}}"
+                    <img class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
                          src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"/>
                     {{trail.expanded.difficulty.title}}
                 </div>
             <%  } else if (trail.expanded.difficulty.icon) { %>
-                <div class="item tf-difficulty {{trail.expanded.difficulty.class || ''}}"
+                <div class="item tf-difficulty tf-{{trail.expanded.difficulty.class}}"
                      style="color: {{trail.expanded.difficulty.color}};">
                     {-await faIcon(trail.expanded.difficulty.icon)-}
                     {{trail.expanded.difficulty.title}}
@@ -21,7 +21,7 @@
         <% } %>
 
         <% if (trail.expanded.condition) { %>
-            <div class="item tf-condition {{trail.expanded.condition.class || ''}}">
+            <div class="item tf-condition tf-{{trail.expanded.condition.class}}">
                 <key>Condition:</key>
                 {-await faIcon(trail.expanded.condition.icon || 'certificate-duotone')-}
                 {{trail.expanded.condition.title}}
@@ -29,7 +29,7 @@
         <% } %>
 
         <% if (trail.expanded.status) { %>
-            <div class="item tf-status {{trail.expanded.status.class || ''}}">
+            <div class="item tf-status tf-{{trail.expanded.status.class}}">
                 <key>Status:</key>
                 {-await faIcon('circle-duotone')-}
                 {{trail.expanded.status.title}}
@@ -58,10 +58,12 @@
         <div class="item">
             <key>Grade:</key> {{trail.stats.grade}} <abbr class="unit short">%</abbr>
         </div>
-        <div class="item"><key>Global rank:</key> {{trail.global_rank}}</div>
+        <div class="item"><key>Global rank:</key> {{trail.global_rank.toLocaleString()}}</div>
         <div class="item"><key>Popularity Score:</key> {{trail.popularity_score}}</div>
         <div class="item"><key>Rating:</key> {{trail.rating}}</div>
-        <div class="item"><key>Land manager:</key> {{trail.land_manager}}</div>
+        <% if (trail.land_manager) { %>
+            <div class="item"><key>Land manager:</key> {{trail.land_manager}}</div>
+        <% } %>
         <% if (trail.expanded.direction) { %>
             <div class="item"><key>Direction:</key> {{trail.expanded.direction}}</div>
         <% } %>
@@ -87,7 +89,7 @@
 </section>
 
 <section class="sauce-right">
-    <% if (contribs.photos && contribs.photos.length) { %>
+    <% if (obj.photos && photos.length) { %>
         <div class="panel">
             <heading>
                 <h1>Photos</h1>
@@ -97,7 +99,7 @@
                 </a>
             </heading>
             <div class="sauce-media">
-                <% for (const x of contribs.photos) { %>
+                <% for (const x of photos) { %>
                     <div class="item">
                         <a class="tf-media photo" href="javascript:void(0)" data-id="{{x.id}}">
                             <img src="{{x.thumbs.s}}"/>
@@ -108,7 +110,7 @@
         </div>
     <% } %>
 
-    <% if (contribs.videos && contribs.videos.length) { %>
+    <% if (obj.videos && videos.length) { %>
         <div class="panel">
             <heading>
                 <h1>Videos</h1>
@@ -118,7 +120,7 @@
                 </a>
             </heading>
             <div class="sauce-media">
-                <% for (const x of contribs.videos) { %>
+                <% for (const x of videos) { %>
                     <div class="item">
                         <a class="tf-media video" href="javascript:void(0)" data-id="{{x.id}}">
                             <img src="{{x.thumbs.s}}"/>
@@ -129,7 +131,7 @@
         </div>
     <% } %>
 
-    <% if (contribs.reports && contribs.reports.length) { %>
+    <% if (obj.reports && reports.length) { %>
         <div class="panel">
             <heading>
                 <h1>Reports</h1>
@@ -138,32 +140,32 @@
                     {-await faIcon('external-link-duotone')-}
                 </a>
             </heading>
-            <% for (const x of contribs.reports) { %>
+            <% for (const x of reports) { %>
                 <div class="report">
-                    <% if (x.expanded.condition) { %>
-                        <div class="item tf-condition {{x.expanded.condition.class || ''}}">
-                            <key>Condition:</key>
-                            {-await faIcon(x.expanded.condition.icon || 'certificate-duotone')-}
-                            {{x.expanded.condition.title}}
-                        </div>
-                    <% } %>
-
-                    <% if (x.expanded.status) { %>
-                        <div class="item tf-status {{x.expanded.status.class || ''}}">
-                            <key>Status:</key>
-                            {-await faIcon('circle-duotone')-}
-                            {{x.expanded.status.title}}
-                        </div>
-                    <% } %>
-
-                    <% if (x.expanded.description) { %>
-                        <div class="item"><span>{-x.expanded.description-}</span></div>
-                    <% } %>
-
-                    <span class="age" title="{{(new Date(Number(x.created) * 1000)).toLocaleString()}}">
-                        Created {-await humanTimeAgo(new Date(Number(x.created * 1000)))-} ago by
-                        <a href="https://www.trailforks.com/profile/{{x.username}}/" target="_blank">{{x.username}}</a>
+                    <span class="age" title="{{x.created.toLocaleString()}}">
+                        <a href="https://www.trailforks.com/profile/{{x.username}}/" target="_blank">{{x.username}}</a> • {-await humanTimeAgo(x.created)-} ago
                     </span>
+
+                    <div class="item">
+                        <key>Reported:</key>
+                        <div class="reported">
+                           <% if (x.expanded.condition) { %>
+                                <span class="tf-condition tf-{{x.expanded.condition.class}}">
+                                    {-await faIcon(x.expanded.condition.icon || 'certificate-duotone')-}
+                                    {{x.expanded.condition.title}}</span><% if (x.expanded.status) { %>, <% } %>
+                            <% } %>
+
+                            <% if (x.expanded.status) { %>
+                                <span class="tf-status tf-{{x.expanded.status.class}}">
+                                    {-await faIcon('circle-duotone')-}
+                                    {{x.expanded.status.title}}
+                                </span>
+                            <% } %>
+                        </div>
+                    </div>
+                    <% if (x.expanded.description) { %>
+                        <div class="item desc"><span>"{-x.expanded.description-}"</span></div>
+                    <% } %>
                 </div>
             <% } %>
         </div>

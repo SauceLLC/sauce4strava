@@ -3,24 +3,24 @@
 
 @mixin enums {
     .tf-condition {
-        &.mud {color: brown;}
-        &.wet {color: blue;}
-        &.dry {color: #dbb600;}
-        &.very-dry {color: #cf0000;}
-        &.icy {color: color.shade(fg, 30%);}
-        &.snow {color: color.shade(fg, 20%);}
-        &.ideal {color: green;}
+        &.tf-mud {color: brown;}
+        &.tf-wet {color: blue;}
+        &.tf-dry {color: #dbb600;}
+        &.tf-very-dry {color: #cf0000;}
+        &.tf-icy {color: color.shade(fg, 30%);}
+        &.tf-snow {color: color.shade(fg, 20%);}
+        &.tf-ideal {color: green;}
     }
 
     .tf-status {
-        &.clear {color: green;}
-        &.minor-issue {color: #dbb21d;}
-        &.significant-issue {color: #fa0000;}
-        &.closed {color: red;}
+        &.tf-clear {color: green;}
+        &.tf-minor-issue {color: #dbb21d;}
+        &.tf-significant-issue {color: #fa0000;}
+        &.tf-closed {color: red;}
     }
 
     .tf-difficulty {
-        &.road {color: color.get(fg);}
+        &.tf-road {color: color.get(fg);}
     }
 }
 
@@ -118,7 +118,7 @@
             .item {
                 padding: 0.2em 0;
                 display: flex;
-                align-items: center;
+                font-size: 0.92em;
 
                 key {
                     min-width: 14ch;
@@ -130,19 +130,33 @@
             }
 
             .report {
-                padding: 1em;
-                margin-bottom: 1px solid grey;
+                padding: 0.3em;
+
+                &:not(:last-child) {
+                    border-bottom: 1px solid color.shade(bg, 20%, 0.5);
+                }
 
                 .age {
                     font-size: 0.72em;
                     opacity: 0.8;
                 }
+
+                .desc {
+                    border-radius: 0.28em;
+                    background-color: color.shade(bg, 0%);
+                    padding: 0.5em 1em;
+                    margin: 0.3em;
+                }
+
+                .item.reported {
+                    color:blue;
+                }
             }
 
             img.tf-difficulty {
-                margin: 0 0.44em;
-                max-width: 2.2em;
-                max-height: 2.2em;
+                margin: 0 0.44em 0.2em;
+                max-width: 2em;
+                max-height: 2em;
                 object-fit: contain;
             }
 
@@ -150,8 +164,8 @@
             .tf-condition,
             .tf-status {
                 svg[data-icon] {
-                    width: 1.2em;
-                    margin: 0 0.52em 0.2em;
+                    width: 1em;
+                    max-height: 0.92em;
                 }
             }
         }

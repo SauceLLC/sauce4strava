@@ -7,20 +7,20 @@
 - Click for full report -">
     <% if (trail.expanded.difficulty) { %>
         <% if (trail.expanded.difficulty.image) { %>
-            <img class="tf-difficulty {{trail.expanded.difficulty.class || ''}}"
+            <img class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
                  src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"/>
         <%  } else if (trail.expanded.difficulty.icon) { %>
-            <div class="tf-difficulty {{trail.expanded.difficulty.class || ''}}"
+            <div class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
                  style="color: {{trail.expanded.difficulty.color}};">{-await faIcon(trail.expanded.difficulty.icon)-}</div>
         <% } %>
     <% } %>
     <% if (trail.expanded.condition) { %>
-        <div class="tf-condition {{trail.expanded.condition.class || ''}}">
+        <div class="tf-condition tf-{{trail.expanded.condition.class}}">
             {-await faIcon(trail.expanded.condition.icon || 'certificate-duotone')-}
         </div>
     <% } %>
-    <% if (trail.expanded.status) { %>
-        <div class="tf-status {{trail.expanded.status.class || ''}}">
+    <% if (trail.expanded.status && trail.status !== 1) { %>
+        <div class="tf-status tf-{{trail.expanded.status.class}}">
             {-await faIcon('circle-duotone')-}
         </div>
     <% } %>
