@@ -162,7 +162,7 @@ sauce.ns('export', function() {
 
         loadStreams(streams) {
             const startTime = this.activity.start.getTime();
-            const laps = this.activity.laps || [[0, streams.time.length - 1]];
+            const laps = (this.activity.laps && this.activity.laps.length) || [[0, streams.time.length - 1]];
             for (const [start, end] of laps) {
                 const lap = this.addNodeTo(this.activityNode, 'Lap');
                 this.addNodeTo(lap, 'TriggerMethod', 'Manual');
