@@ -1946,6 +1946,7 @@ sauce.ns('analysis', ns => {
                 photos,
                 videos,
                 reports,
+                humanNumber,
                 humanDistance,
                 humanTime,
                 humanTimeAgo: sauce.locale.humanTimeAgo,
@@ -1985,7 +1986,7 @@ sauce.ns('analysis', ns => {
                 type: 'gradient',
                 opacity: 0.8,
                 steps: hslValueGradientSteps([0, 3000],
-                    {hStart: 60, hEnd: 80, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
+                    {hStart: 120, hEnd: 160, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
             },
             tooltipFormatter: (_, __, data) => {
                 const [lat, lng] = latlngStream[data.offset];

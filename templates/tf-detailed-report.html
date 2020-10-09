@@ -1,4 +1,4 @@
-<section class="sauce-left">
+<section class="info">
     <div class="panel">
         <heading>
             <h1>Last Known Status</h1>
@@ -7,9 +7,11 @@
             <% if (trail.expanded.difficulty.image) { %>
                 <div class="item">
                     <key>Difficulty:</key>
-                    <img class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
-                         src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"/>
-                    {{trail.expanded.difficulty.title}}
+                    <value>
+                        <img class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
+                             src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"/>
+                        {{trail.expanded.difficulty.title}}
+                    </value>
                 </div>
             <%  } else if (trail.expanded.difficulty.icon) { %>
                 <div class="item tf-difficulty tf-{{trail.expanded.difficulty.class}}"
@@ -20,31 +22,85 @@
             <% } %>
         <% } %>
 
+        <div class="item activity-flags">
+            <key>Activity types</key>
+            <% if (trail.act_atv) { %>
+                <div class="activity-icon" title="ATV's permitted">
+                    {-await faIcon('truck-pickup-duotone')-}
+                </div>
+            <% } %>
+            <% if (trail.act_ebike) { %>
+                <div class="activity-icon" title="E-bike's permitted">
+                    {-await faIcon('bicycle-duotone')-}
+                    <div class="sub-icon">{-await faIcon('bolt-duotone')-}</div>
+                </div>
+            <% } %>
+            <% if (trail.act_hike) { %>
+                <div class="activity-icon" title="Hiking permitted">
+                    {-await faIcon('hiking-duotone')-}
+                </div>
+            <% } %>
+            <% if (trail.act_trailrun) { %>
+                <div class="activity-icon" title="Running permitted">
+                    {-await faIcon('running-duotone')-}
+                </div>
+            <% } %>
+            <% if (trail.act_horse) { %>
+                <div class="activity-icon" title="Horse's permitted">
+                    {-await faIcon('horse-duotone')-}
+                </div>
+            <% } %>
+            <% if (trail.act_moto || trail.act_mototrials) { %>
+                <div class="activity-icon" title="Motorcycle's permitted">
+                    {-await faIcon('motorcycle-duotone')-}
+                </div>
+            <% } %>
+            <% if (trail.act_mtb) { %>
+                <div class="activity-icon" title="Mountain bike's permitted">
+                    {-await faIcon('biking-mountain-duotone')-}
+                </div>
+            <% } %>
+            <% if (trail.act_skialpine || trail.act_skibc || trail.act_skixc) { %>
+                <div class="activity-icon" title="Skiing permitted">
+                    {-await faIcon('skiing-nordic-duotone')-}
+                </div>
+            <% } %>
+            <% if (trail.act_snowshoe) { %>
+                <div class="activity-icon" title="Snow shoeing permitted">
+                    {-await faIcon('snowflake-duotone')-}
+                </div>
+            <% } %>
+            <% if (trail.act_snowmobile) { %>
+                <div class="activity-icon" title="Snow mobile's permitted">
+                    {-await faIcon('snowmobile-duotone')-}
+                </div>
+            <% } %>
+        </div>
+
         <% if (trail.expanded.condition) { %>
             <div class="item tf-condition tf-{{trail.expanded.condition.class}}">
                 <key>Condition:</key>
-                {-await faIcon(trail.expanded.condition.icon || 'certificate-duotone')-}
-                {{trail.expanded.condition.title}}
+                <value>
+                    {-await faIcon(trail.expanded.condition.icon || 'certificate-duotone')-}
+                    {{trail.expanded.condition.title}}
+                </value>
             </div>
         <% } %>
 
         <% if (trail.expanded.status) { %>
             <div class="item tf-status tf-{{trail.expanded.status.class}}">
                 <key>Status:</key>
-                {-await faIcon('circle-duotone')-}
-                {{trail.expanded.status.title}}
+                <value>
+                    {-await faIcon('circle-duotone')-}
+                    {{trail.expanded.status.title}}
+                </value>
             </div>
         <% } %>
-    </div>
 
-    <% if (trail.expanded.description) { %>
-        <div class="panel">
-            <heading>
-                <h1>Description</h1>
-            </heading>
-            <div class="item"><span>{-trail.expanded.description-}</span></div>
-        </div>
-    <% } %>
+        <% if (trail.expanded.description) { %>
+            <div class="item desc"><span>{-trail.expanded.description-}</span></div>
+        <% } %>
+    </div>
 
     <div class="panel">
         <heading>
@@ -52,43 +108,50 @@
         </heading>
         <div class="item">
             <key>Distance:</key>
-            {{humanDistance(trail.stats.distance)}}
-            <abbr class="unit short">{{distanceUnit}}</abbr>
+            <value>
+                {{humanDistance(trail.stats.distance)}} <abbr class="unit short">{{distanceUnit}}</abbr>
+            </value>
         </div>
         <div class="item">
-            <key>Grade:</key> {{trail.stats.grade}} <abbr class="unit short">%</abbr>
+            <key>Grade:</key>
+            <value>{{formatNumber(trail.stats.grade, 1)}}<abbr class="unit short">%</abbr></value>
         </div>
-        <div class="item"><key>Global rank:</key> {{trail.global_rank.toLocaleString()}}</div>
-        <div class="item"><key>Popularity Score:</key> {{trail.popularity_score}}</div>
-        <div class="item"><key>Rating:</key> {{trail.rating}}</div>
+        <div class="item"><key>Global rank:</key><value>{{trail.global_rank.toLocaleString()}}</value></div>
+        <div class="item"><key>Popularity Score:</key><value>{{trail.popularity_score}}</value></div>
+        <div class="item"><key>Rating:</key><value>{{trail.rating}}</value></div>
         <% if (trail.land_manager) { %>
-            <div class="item"><key>Land manager:</key> {{trail.land_manager}}</div>
+            <div class="item"><key>Land manager:</key><value>{{trail.land_manager}}</value></div>
         <% } %>
         <% if (trail.expanded.direction) { %>
-            <div class="item"><key>Direction:</key> {{trail.expanded.direction}}</div>
+            <div class="item"><key>Direction:</key><value>{{trail.expanded.direction}}</value></div>
         <% } %>
         <% if (trail.expanded.bikeType) { %>
-            <div class="item"><key>Bike type:</key> {{trail.expanded.bikeType}}</div>
+            <div class="item"><key>Bike type:</key><value>{{trail.expanded.bikeType}}</value></div>
         <% } %>
         <% if (trail.expanded.physicalRating) { %>
-            <div class="item"><key>Physical rating:</key> {{trail.expanded.physicalRating}}</div>
+            <div class="item"><key>Physical rating:</key><value>{{trail.expanded.physicalRating}}</value></div>
         <% } %>
         <% if (trail.expanded.seasonType) { %>
-            <div class="item"><key>Season type:</key> {{trail.expanded.seasonType}}</div>
+            <div class="item"><key>Season type:</key><value>{{trail.expanded.seasonType}}</value></div>
         <% } %>
         <% if (trail.expanded.trailType) { %>
-            <div class="item"><key>Trail type:</key> {{trail.expanded.trailType}}</div>
+            <div class="item"><key>Trail type:</key><value>{{trail.expanded.trailType}}</value></div>
         <% } %>
         <% if (trail.expanded.ttfs && trail.expanded.ttfs.length) { %>
-            <div class="item"><key>Tech Features:</key> {{trail.expanded.ttfs.join(', ')}}</div>
+            <div class="item"><key>Tech Features:</key><value>{{trail.expanded.ttfs.join(', ')}}</value></div>
         <% } %>
         <% if (trail.expanded.usage) { %>
-            <div class="item"><key>Usage:</key> {{trail.expanded.usage}}</div>
+            <div class="item"><key>Usage:</key><value>{{trail.expanded.usage}}</value></div>
         <% } %>
     </div>
 </section>
 
-<section class="sauce-right">
+<section class="geo">
+    <div class="sparkline elevation"></div>
+    <div class="map"></div>
+</section>
+
+<section class="contribs">
     <% if (obj.photos && photos.length) { %>
         <div class="panel">
             <heading>
@@ -147,8 +210,7 @@
                     </span>
 
                     <div class="item">
-                        <key>Reported:</key>
-                        <div class="reported">
+                        <value class="reported">
                            <% if (x.expanded.condition) { %>
                                 <span class="tf-condition tf-{{x.expanded.condition.class}}">
                                     {-await faIcon(x.expanded.condition.icon || 'certificate-duotone')-}
@@ -161,7 +223,7 @@
                                     {{x.expanded.status.title}}
                                 </span>
                             <% } %>
-                        </div>
+                        </value>
                     </div>
                     <% if (x.expanded.description) { %>
                         <div class="item desc"><span>"{-x.expanded.description-}"</span></div>
@@ -170,7 +232,5 @@
             <% } %>
         </div>
     <% } %>
-
-    <div class="map"></div>
-    <div class="sparkline elevation"></div>
 </section>
+

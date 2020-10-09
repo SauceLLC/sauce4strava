@@ -188,13 +188,13 @@ table.hidden-segments {
         }
 
         img.tf-difficulty {
-            max-width: 2em;
-            max-height: 2em;
+            max-width: 1.8em;
+            max-height: 1.8em;
             object-fit: contain;
         }
 
         svg[data-icon] {
-            width: 1em;
+            height: 1em;
         }
 
         .add-report {
@@ -211,7 +211,7 @@ table.hidden-segments {
             &:hover {
                 opacity: 1;
                 box-shadow: 1px 1px 2px 0 color.shade(fg, 20%, 0.3);
-                background-color: color.shade(bg, 30%, 0.5);
+                background-color: color.shade(bg, 20%, 0.5);
             }
             &:active {
                 opacity: 1;
@@ -221,7 +221,7 @@ table.hidden-segments {
         }
 
         .report {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             padding: 0.2em;
 
@@ -231,17 +231,6 @@ table.hidden-segments {
             > *:not(:last-child) {
                 margin-right: 0.8em;
             }
-
-            img.trailforks-icon {
-                max-height: 2em;
-                max-width: 2em;
-            }
-        }
-
-        iframe.trailstatus {
-            width: 30em;
-            height: 2em;
-            display: none;
         }
     }
 

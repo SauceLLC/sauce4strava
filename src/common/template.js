@@ -43,12 +43,20 @@
 
     ns.helpers = {
         formatNumber: function(value, decimalPlaces) {
+            if (value == null || value === '') {
+                return '';
+            }
+            const n = Number(value);
+            if (isNaN(n)) {
+                console.warn("Value is not a number:", value);
+                return value;
+            }
             if (decimalPlaces == null) {
-                return value.toLocaleString();
+                return n.toLocaleString();
             } else if (decimalPlaces === 0) {
-                return Math.round(value).toLocaleString();
+                return Math.round(n).toLocaleString();
             } else {
-                return Number(value.toFixed(decimalPlaces)).toLocaleString();
+                return Number(n.toFixed(decimalPlaces)).toLocaleString();
             }
         },
         faIcon: async function(icon) {

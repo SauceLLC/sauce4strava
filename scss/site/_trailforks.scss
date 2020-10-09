@@ -37,21 +37,37 @@
         }
 
         section {
-            min-width: 300px;
-            flex: 1 1 50%;
-            padding: 0;
+            min-width: 280px;
+            flex: 1 1;
+            padding: 1rem 0.5rem;
             overflow: hidden;
             margin-bottom: 1em;
+
+            &.info {
+                flex-basis: 33%;
+            }
+            &.geo {
+                flex-basis: 33%;
+            }
+            &.contribs {
+                flex-basis: 33%;
+            }
+
+            &:first-child {
+                padding-left: 1rem;
+            }
+            &:last-child {
+                padding-right: 1rem;
+            }
         }
 
         .map {
             height: 25em;
             border-radius: 0.28em;
-            margin: 1rem;
+            margin-top: 0.5rem;
         }
 
         .sparkline.elevation {
-            margin: 1rem;
             padding-top: 1.15em;
             position: relative;
 
@@ -65,14 +81,35 @@
             }
         }
 
+        .activity-icon {
+            position: relative;
+            line-height: 0;
+            font-size: 1.4em;
+            margin-right: 0.44em;
+
+            svg[data-icon] {
+                height: 1em;
+            }
+
+            .sub-icon {
+                position: absolute;
+                top: -0.2em;
+                left: -0.2em;
+                font-size: 0.6em;
+            }
+        }
+
         .panel {
-            padding: 1rem;
+            padding: 0.8rem;
             background: color.shade(bg, 10%);
-            margin: 1em;
             border-radius: 0.28em;
             display: flex;
             position: relative;
             flex-direction: column;
+
+            &:not(:last-child) {
+                margin-bottom: 0.8rem;
+            }
 
             heading {
                 display: flex;
@@ -118,7 +155,8 @@
             .item {
                 padding: 0.2em 0;
                 display: flex;
-                font-size: 0.92em;
+                font-size: 0.88em;
+                align-items: center;
 
                 key {
                     min-width: 14ch;
@@ -126,6 +164,17 @@
                     margin-right: 0.3em;
                     font-variant: all-small-caps;
                     font-weight: bold;
+                }
+
+                value {
+                    display: block;
+                }
+
+                &.desc {
+                    border-radius: 0.28em;
+                    background-color: color.shade(bg, 4%);
+                    padding: 0.5em 1em;
+                    margin: 0.3em 0;
                 }
             }
 
@@ -141,31 +190,20 @@
                     opacity: 0.8;
                 }
 
-                .desc {
-                    border-radius: 0.28em;
-                    background-color: color.shade(bg, 0%);
-                    padding: 0.5em 1em;
-                    margin: 0.3em;
-                }
-
                 .item.reported {
-                    color:blue;
                 }
             }
 
             img.tf-difficulty {
-                margin: 0 0.44em 0.2em;
-                max-width: 2em;
-                max-height: 2em;
-                object-fit: contain;
+                margin: -0.3em 0.2em -0.3em 0;
+                height: 1.7em;
             }
 
             .tf-difficulty,
             .tf-condition,
             .tf-status {
                 svg[data-icon] {
-                    width: 1em;
-                    max-height: 0.92em;
+                    height: 1em;
                 }
             }
         }

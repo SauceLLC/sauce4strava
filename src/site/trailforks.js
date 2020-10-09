@@ -331,8 +331,9 @@ sauce.ns('trailforks', ns => {
             'wet_weather',
             'leaderboard_disable',
             'license_required',
-            'snow_grooming', 
-            'dirty', 
+            'snow_grooming',
+            'dirty',
+            'disable_sensitive_check',
         ];
         const numberFields = [
             'amtb_rating',
@@ -341,6 +342,9 @@ sauce.ns('trailforks', ns => {
             'climb_difficulty',
             'confirmid',
             'connector',
+            'cleanup',
+            'cleanup2',
+            'cleanup3_checked',  // XXX might be bool
             'difficulty',
             'difficulty_user_avg',
             'difficulty_votes',
@@ -369,10 +373,10 @@ sauce.ns('trailforks', ns => {
             'sac_scale',
             'season_type',
             'skidmap_id',
-            'status', 
-            'strava_segment', 
-            'strava_segment_reverse', 
-            /^total_.*/, 
+            'status',
+            'strava_segment',
+            'strava_segment_reverse',
+            /^total_.*/,
             'trackid',
             'trail_association',
             'trail_visibility', // XXX might be bool
@@ -380,6 +384,7 @@ sauce.ns('trailforks', ns => {
             'trailtype',
             'usage',
             'userid',
+            'vid',
             'views',
             'votes',
             'watchmen',
@@ -412,7 +417,7 @@ sauce.ns('trailforks', ns => {
             'active',
         ];
         const numberFields = [
-            /^total_.*/, 
+            /^total_.*/,
             'activitytype',
             'approved',
             'assessment',
