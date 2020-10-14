@@ -16,7 +16,7 @@
             <%  } else if (trail.expanded.difficulty.icon) { %>
                 <div class="item tf-difficulty tf-{{trail.expanded.difficulty.class}}"
                      style="color: {{trail.expanded.difficulty.color}};">
-                    {-await faIcon(trail.expanded.difficulty.icon)-}
+                    <div class="tf-icon">{-await faIcon(trail.expanded.difficulty.icon)-}</div>
                     {{trail.expanded.difficulty.title}}
                 </div>
             <% } %>
@@ -81,7 +81,9 @@
             <div class="item tf-condition tf-{{trail.expanded.condition.class}}">
                 <key>Condition:</key>
                 <value>
-                    {-await faIcon(trail.expanded.condition.icon || 'certificate-duotone')-}
+                    <div class="tf-icon">
+                        {-await faIcon(trail.expanded.condition.icon || 'certificate-duotone')-}
+                    </div>
                     {{trail.expanded.condition.title}}
                 </value>
             </div>
@@ -91,7 +93,7 @@
             <div class="item tf-status tf-{{trail.expanded.status.class}}">
                 <key>Status:</key>
                 <value>
-                    {-await faIcon('circle-duotone')-}
+                    <div class="tf-icon">{-await faIcon('circle-duotone')-}</div>
                     {{trail.expanded.status.title}}
                 </value>
             </div>
@@ -213,13 +215,15 @@
                         <value class="reported">
                            <% if (x.expanded.condition) { %>
                                 <span class="tf-condition tf-{{x.expanded.condition.class}}">
-                                    {-await faIcon(x.expanded.condition.icon || 'certificate-duotone')-}
+                                    <div class="tf-icon">
+                                        {-await faIcon(x.expanded.condition.icon || 'certificate-duotone')-}
+                                    </div>
                                     {{x.expanded.condition.title}}</span><% if (x.expanded.status) { %>, <% } %>
                             <% } %>
 
                             <% if (x.expanded.status) { %>
                                 <span class="tf-status tf-{{x.expanded.status.class}}">
-                                    {-await faIcon('circle-duotone')-}
+                                    <div class="tf-icon">{-await faIcon('circle-duotone')-}</div>
                                     {{x.expanded.status.title}}
                                 </span>
                             <% } %>

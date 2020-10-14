@@ -1908,7 +1908,48 @@ sauce.ns('analysis', ns => {
         }
         tfCol.dataset.done = true;
         const tpl = await getTemplate('tf-segment-col.html');
+        // Extract aggregate mappings of icons we will add so they can be sorted and stacked.
+        // Otherwise the visual clutter is very bad for segments matching many trails.
+        const aggDifMap = new Map();
+        const aggCondMap = new Map();
+        const aggStatusMap = new Map();
         for (const x of descs) {
+            const t = x.trail;
+            if (t.expanded.difficulty) {
+                aggDifMap.set(t.difficulty, [t.difficulty, t.expanded.difficulty]);
+            }
+            if (t.expanded.condition) {
+                aggCondMap.set(t.condition, [t.condition, t.expanded.condition]);
+            }
+            if (t.expanded.status && t.expanded.status.class !== 'clear') {
+                aggStatusMap.set(t.status, [t.status, t.expanded.status]);
+            }
+        }
+        // Sort by prio and reduce to just the pretty values.
+        const aggDif = Array.from(aggDifMap.values()).sort(([a], [b]) => b - a).map(x => x[1]);
+        const aggCond = Array.from(aggCondMap.values()).sort(([a], [b]) => b - a).map(x => x[1]);
+        const aggStatus = Array.from(aggStatusMap.values()).sort(([a], [b]) => a - b).map(x => x[1]);
+        const $tf = jQuery(await tpl({
+            aggDif,
+            aggCond,
+            aggStatus,
+            descs
+        }));
+        $tf.on('click', async ev => {
+            ev.stopPropagation();
+            const docClasses = document.documentElement.classList;
+            docClasses.add('sauce-loading');
+            try {
+                await showTFDetailedReport(descs[0]);
+            } catch(e) {
+                sauce.rpc.reportError(e);
+            } finally {
+                docClasses.remove('sauce-loading');
+            }
+        });
+        jQuery(tfCol).append($tf);
+
+        /*for (const x of descs) {
             const $tf = jQuery(await tpl(x));
             $tf.on('click', async ev => {
                 ev.stopPropagation();
@@ -1923,7 +1964,7 @@ sauce.ns('analysis', ns => {
                 }
             });
             jQuery(tfCol).append($tf);
-        }
+        }*/
     }
 
 

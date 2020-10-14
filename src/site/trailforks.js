@@ -15,23 +15,28 @@ sauce.ns('trailforks', ns => {
             },
             2: {
                 title: 'Easiest / White Circle',
-                image: 'white-150x150.png'
+                image: 'white-150x150.png',
+                class: 'white-circle'
             },
             3: {
                 title: 'Easy / Green Circle',
-                image: 'green-150x150.png'
+                image: 'green-150x150.png',
+                class: 'green-circle'
             },
             4: {
                 title: 'Intermediate / Blue Square',
-                image: 'blue-150x150.png'
+                image: 'blue-150x150.png',
+                class: 'blue-circle'
             },
             5: {
                 title: 'Very Difficult / Black Diamond',
-                image: 'black-150x150.png'
+                image: 'black-150x150.png',
+                class: 'black-diamond'
             },
             6: {
                 title: 'Extremely Difficult / Double Black Diamond',
-                image: 'double-black-150x150.png'
+                image: 'double-black-150x150.png',
+                class: 'double-black-diamond'
             },
             7: {
                 title: 'Secondary Access Road/Trail',
@@ -40,11 +45,13 @@ sauce.ns('trailforks', ns => {
             },
             8: {
                 title: 'Extremely Dangerous / Pros Only',
-                image: 'pro-only-150x150.png'
+                image: 'pro-only-150x150.png',
+                class: 'pro-only'
             },
             11: {
                 title: 'Advanced: Grade 4',
-                image: 'black-150x150.png'
+                image: 'black-150x150.png',
+                class: 'adv-grade-4'
             },
         },
         conditions: {
@@ -66,6 +73,7 @@ sauce.ns('trailforks', ns => {
             },
             4: {
                 title: "Variable",
+                class: "variable",
             },
             5: {
                 title: "Dry",
