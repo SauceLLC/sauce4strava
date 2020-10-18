@@ -188,9 +188,18 @@ table.hidden-segments {
         }
 
         img.tf-difficulty {
-            max-width: 1.8em;
-            max-height: 1.8em;
+            max-width: 1.3em;
+            max-height: 1.3em;
             object-fit: contain;
+
+            &.tf-black-diamond {
+                max-width: 1.6em;
+                max-height: 1.6em;
+            }
+            &.tf-double-black-diamond {
+                max-width: 1.5em;
+                max-height: 1.5em;
+            }
         }
 
         svg[data-icon] {
@@ -229,6 +238,7 @@ table.hidden-segments {
                 filter: drop-shadow(0.5px 0.5px 0.5px #000a);
                 grid-column-end: span 2;
                 grid-row-end: span 2;
+                font-size: 1em;
             }
 
             @for $i from 1 to 12 {
