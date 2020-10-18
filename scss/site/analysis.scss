@@ -191,15 +191,6 @@ table.hidden-segments {
             max-width: 1.3em;
             max-height: 1.3em;
             object-fit: contain;
-
-            &.tf-black-diamond {
-                max-width: 1.6em;
-                max-height: 1.6em;
-            }
-            &.tf-double-black-diamond {
-                max-width: 1.5em;
-                max-height: 1.5em;
-            }
         }
 
         svg[data-icon] {

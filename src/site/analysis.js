@@ -1930,9 +1930,9 @@ sauce.ns('analysis', ns => {
         const aggCond = Array.from(aggCondMap.values()).sort(([a], [b]) => b - a).map(x => x[1]);
         const aggStatus = Array.from(aggStatusMap.values()).sort(([a], [b]) => a - b).map(x => x[1]);
         const $tf = jQuery(await tpl({
-            aggDif,
-            aggCond,
-            aggStatus,
+            mostDifficult: aggDif[0],
+            worstCondition: aggCond[0],
+            worstStatus: aggStatus[0],
             descs
         }));
         $tf.on('click', async ev => {

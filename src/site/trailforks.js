@@ -261,7 +261,8 @@ sauce.ns('trailforks', ns => {
         const expanded = {
             status: enums.statuses[data.status],
             condition: enums.conditions[data.condition],
-            difficulty: enums.difficulties[data.difficulty],
+            //difficulty: enums.difficulties[data.difficulty],
+            difficulty: enums.difficulties[Math.round(Math.random() * 10)],
             difficultyUserAvg: enums.difficulties[data.difficulty_user_avg],
             trailType: enums.types[data.trailtype],
             bikeType: enums.bikeTypes[data.biketype],

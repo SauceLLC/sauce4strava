@@ -1,33 +1,34 @@
-<a class="report">
-    <% if (aggDif.length) { %>
+<a class="report"
+   title=
+"{{descs.length}} trail(s) <% for (const x of descs) { %>
+ • {{x.trail.title}}:
+     Difficulty: {{x.trail.expanded.difficulty.title}}
+     Condition: {{x.trail.expanded.condition.title}}
+     Status: {{x.trail.expanded.status.title}}
+<% } %>">
+    <% if (mostDifficult) { %>
         <div class="tf-icon-stack">
-            <% for (const x of aggDif) { %>
-                <% if (x.image) { %>
-                    <img class="tf-difficulty tf-{{x.class}}"
-                         src="{{sauce.extUrl}}images/trail_difficulty/{{x.image}}"/>
-                <%  } else if (x.icon) { %>
-                    <div class="tf-difficulty tf-{{x.class}} tf-icon"
-                         style="color: {{x.color}};">{-await faIcon(x.icon)-}</div>
-                <% } %>
+            <% if (mostDifficult.image) { %>
+                <img class="tf-difficulty tf-{{mostDifficult.class}}"
+                     src="{{sauce.extUrl}}images/trail_difficulty/{{mostDifficult.image}}"/>
+            <%  } else if (mostDifficult.icon) { %>
+                <div class="tf-difficulty tf-{{mostDifficult.class}} tf-icon"
+                     style="color: {{mostDifficult.color}};">{-await faIcon(mostDifficult.icon)-}</div>
             <% } %>
         </div>
     <% } %>
-    <% if (aggCond.length) { %>
+    <% if (worstCondition) { %>
         <div class="tf-icon-stack">
-            <% for (const x of aggCond) { %>
-                <div class="tf-condition tf-{{x.class}} tf-icon">
-                    {-await faIcon(x.icon || 'certificate-duotone')-}
-                </div>
-            <% } %>
+            <div class="tf-condition tf-{{worstCondition.class}} tf-icon">
+                {-await faIcon(worstCondition.icon || 'certificate-duotone')-}
+            </div>
         </div>
     <% } %>
-    <% if (aggStatus.length) { %>
+    <% if (worstStatus) { %>
         <div class="tf-icon-stack">
-            <% for (const x of aggStatus) { %>
-                <div class="tf-status tf-{{x.class}} tf-icon">
-                    {-await faIcon('circle-duotone')-}
-                </div>
-            <% } %>
+            <div class="tf-status tf-{{worstStatus.class}} tf-icon">
+                {-await faIcon('circle-duotone')-}
+            </div>
         </div>
     <% } %>
 </a>
