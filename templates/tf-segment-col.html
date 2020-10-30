@@ -1,11 +1,5 @@
 <a class="report"
-   title=
-"{{descs.length}} trail(s) <% for (const x of descs) { %>
- • {{x.trail.title}}:
-     Difficulty: {{x.trail.expanded.difficulty.title}}
-     Condition: {{x.trail.expanded.condition.title}}
-     Status: {{x.trail.expanded.status.title}}
-<% } %>">
+   title="<% for (const x of descs) { %> • {{x.tooltip}}<% } %>">
     <% if (mostDifficult) { %>
         <div class="tf-icon-stack">
             <% if (mostDifficult.image) { %>

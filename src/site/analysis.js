@@ -1915,15 +1915,20 @@ sauce.ns('analysis', ns => {
         const aggStatusMap = new Map();
         for (const x of descs) {
             const t = x.trail;
+            const tt = [`${t.title}`];
             if (t.expanded.difficulty) {
                 aggDifMap.set(t.difficulty, [t.difficulty, t.expanded.difficulty]);
+                tt.push(`   Difficulty: ${x.trail.expanded.difficulty.title}`);
             }
             if (t.expanded.condition) {
                 aggCondMap.set(t.condition, [t.condition, t.expanded.condition]);
+                tt.push(`   Condition: ${x.trail.expanded.condition.title}`);
             }
             if (t.expanded.status && t.expanded.status.class !== 'clear') {
                 aggStatusMap.set(t.status, [t.status, t.expanded.status]);
+                tt.push(`   Status: ${x.trail.expanded.status.title}`);
             }
+            x.tooltip = tt.join('\n');
         }
         // Sort by prio and reduce to just the pretty values.
         const aggDif = Array.from(aggDifMap.values()).sort(([a], [b]) => b - a).map(x => x[1]);
@@ -1933,7 +1938,7 @@ sauce.ns('analysis', ns => {
             mostDifficult: aggDif[0],
             worstCondition: aggCond[0],
             worstStatus: aggStatus[0],
-            descs
+            descs,
         }));
         $tf.on('click', async ev => {
             ev.stopPropagation();
