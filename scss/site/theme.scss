@@ -2724,6 +2724,64 @@
             }
         }
     }
+
+    [class*="PopulatedState--page-body--"] {
+        background-color: color.get(bg);
+        color: color.get(fg);
+
+        a, a:visited {
+            color: color.get(fg);
+        }
+
+        [class*="SegmentDetails--segment-details--"],
+        [class*="LegendDetails--split-profile--"],
+        [class*="LegendDetails--your-efforts--"],
+        [class*="EffortDetails--container--"] {
+            background-color: color.shade(bg, 5%);
+
+            [class*="LegendDetails--effort-desc--"] {
+                color: color.get(fg);
+            }
+        }
+
+        [class*="StatsRow--container--"] {
+            [class*="StatsRow--label--"] {
+                color: color.shade(fg, 20%);
+            }
+
+            [class*="StatsRow--data--"] {
+                color: color.shade(fg, 10%);
+            }
+        }
+
+        [class*="LegendDetails--your-efforts--"] [class*="LegendDetails--coal--"] {
+            color: color.shade(fg, 10%);
+        }
+
+        [class*="SegmentDetails--segment-details--"] [class*="SegmentDetails--segment-desc--"] { 
+            color: color.shade(fg, 20%);
+        }
+
+        [class*="EffortDetails--title--"],
+        [class*="EffortDetails--subscribe-title--"],
+        [class*="EffortDetails--no-legend-title--"] {
+            color: color.shade(fg, 10%);
+        }
+
+        [class*="EffortDetails--subtitle--"],
+        [class*="EffortDetails--subscribe-subtitle--"],
+        [class*="EffortDetails--no-legend-subtitle--"] {
+            color: color.shade(fg, 20%);
+        }
+
+        [class*="Histogram--histogram--"] [class*="Histogram--alt-label--"] {
+            color: color.shade(fg, 10%);
+        }
+
+        svg text {
+            fill: color.shade(fg, 10%);
+        }
+    }
 }
 
 
