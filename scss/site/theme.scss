@@ -2778,6 +2778,16 @@
             color: color.shade(fg, 10%);
         }
 
+        [class*="Leaderboard--leaderboard--"] {
+            tr {
+                border-color: $mid-border-color;
+            }
+
+            th {
+                color: color.shade(fg, 20%);
+            }
+        }
+
         svg text {
             fill: color.shade(fg, 10%);
         }
