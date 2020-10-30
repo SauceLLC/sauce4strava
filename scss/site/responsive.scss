@@ -227,6 +227,14 @@ html.sauce-responsive,
                 flex-grow: 1.2;
             }
 
+            .local-legend-container {
+                min-width: initial;
+
+                .local-legend-button-row a.button {
+                    min-width: calc(100% - 2em);
+                }
+            }
+
             &.charts {
                 flex-wrap: nowrap;
                 flex-direction: column;
