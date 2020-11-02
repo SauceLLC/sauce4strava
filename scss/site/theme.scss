@@ -386,6 +386,11 @@
                         background-color: $summit-group-bg-hover;
                     }
                 }
+
+                [class*="components--subscription-callout--"] {
+                    border-color: $hard-border-color;
+                    background-color: $summit-group-bg;
+                }
             }
         }
     }
@@ -454,7 +459,7 @@
     & {
         $nav-link-color: color.shade(accent, 80%);
         $nav-link-hover-color: color.shade(accent, 85%);
-        $nav-selected-shadow: inset 0 -2px 0 0 #fff;
+        $nav-selected-shadow: inset 0 -2px 0 0 color.shade(accent, 60%);
 
         #global-header {
             .collapsable-nav {
@@ -544,7 +549,6 @@
             }
 
             [class*="components--menu--"] {
-
                 &:hover,
                 &:active {
                     [class*="components--button--"] {
@@ -552,6 +556,10 @@
                         border: none;
                     }
                 }
+            }
+
+            [class*="components--nav--"] [class*="components--nav-item--"][class*="components--selected"] {
+                box-shadow: $nav-selected-shadow;
             }
         }
     }
@@ -734,6 +742,62 @@
 
             > div {
                 background-color: $body-bg-color;
+            }
+        }
+    }
+
+    .modal .modal-dialog .modal-body {
+        background-color: color.shade(bg, 10%);
+    }
+
+    .chart-data-loading-overlay {
+        background-color: color.get(bg);
+    }
+
+    [class*="Controls--controls-selectors--"] {
+        [class*="-container"] {
+            color: color.shade(fg, 8%);
+
+            [class*="-control"] {
+                background-color: color.shade(bg, 8%);
+                border-color: $hard-border-color;
+
+                [class*="-singleValue"],
+                [class*="ActivitySelect--value-container--"],
+                .text-subhead {
+                    color: inherit;
+                }
+
+                &:hover {
+                    background-color: color.shade(bg, 2%);
+                }
+
+                [class*="-indicatorContainer"] svg {
+                    stroke: color.get(fg);
+                }
+            }
+
+            [class*="-menu"] {
+                background-color: color.shade(bg, 8%);
+
+                [class*="-option"] {
+                    background-color: color.shade(bg, 8%);
+
+                    &:hover {
+                        background-color: color.shade(bg, 12%);
+                    }
+
+                    input[type="radio"],
+                    input[type="checkbox"] {
+                        & + svg {
+                            stroke: color.get(fg);
+                        }
+
+                        &[checked] + svg {
+                            stroke: color.get(accent);
+                        }
+                    }
+                }
             }
         }
     }
@@ -2752,13 +2816,17 @@
             [class*="StatsRow--data--"] {
                 color: color.shade(fg, 10%);
             }
+
+            [class*="StatsRow--vertical-line--"] {
+                border-color: $hard-border-color;
+            }
         }
 
         [class*="LegendDetails--your-efforts--"] [class*="LegendDetails--coal--"] {
             color: color.shade(fg, 10%);
         }
 
-        [class*="SegmentDetails--segment-details--"] [class*="SegmentDetails--segment-desc--"] { 
+        [class*="SegmentDetails--segment-details--"] [class*="SegmentDetails--segment-desc--"] {
             color: color.shade(fg, 20%);
         }
 
@@ -2772,6 +2840,12 @@
         [class*="EffortDetails--subscribe-subtitle--"],
         [class*="EffortDetails--no-legend-subtitle--"] {
             color: color.shade(fg, 20%);
+        }
+
+        button[class*="EffortDetails--active-button--"],
+        button[class*="Header--active-button--"] {
+            background-color: color.shade(accent, -18%);
+            color: color.shade(accent, 60%);
         }
 
         [class*="Histogram--histogram--"] [class*="Histogram--alt-label--"] {
@@ -2790,6 +2864,34 @@
 
         svg text {
             fill: color.shade(fg, 10%);
+        }
+
+        .rv-xy-plot svg {
+            .rv-xy-plot__series {
+                rect {
+                    stroke: color.shade(accent2, 10%) !important;
+                    fill: color.shade(accent2, 10%) !important;
+                }
+            }
+
+            .rv-xy-plot__grid-lines__line,
+            .rv-xy-plot__axis__line {
+                stroke: color.shade(fg, 8%, 0.5) !important;
+            }
+        }
+    }
+
+    footer[class*="src--global-footer--"] {
+        h1, h2, h3, h4, h5 {
+            color: color.shade(fg, 10%);
+        }
+
+        a {
+            color: color.shade(fg, 14%);
+
+            &:visited {
+                color: color.shade(fg, 14%);
+            }
         }
     }
 }

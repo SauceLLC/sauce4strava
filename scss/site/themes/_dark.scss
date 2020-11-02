@@ -16,6 +16,10 @@
 
     $map-filter: invert(1) hue-rotate(320deg);
 
+    :focus {
+        outline-color: color.shade(accent, -5%, 0.5);
+    }
+
     .leaflet-container {
         background: color.shade(bg, 8%);
         color: color.shade(fg, 8%);
@@ -28,7 +32,8 @@
     .activity-map.entry-image img,
     .group-activity-map img,
     .group-map img,
-    .stats-container .activity-map img {
+    .stats-container .activity-map img,
+    canvas.mapboxgl-canvas {
         filter: $map-filter;
     }
 
@@ -152,6 +157,14 @@
         }
     }
 
+    .mapboxgl-ctrl-group {
+        background-color: color.get(bg);
+    }
+
+    .mapboxgl-ctrl button[class*="mapboxgl-ctrl-zoom-"] .mapboxgl-ctrl-icon {
+        filter: invert(1);
+    }
+
     .run .segment-effort-detail {
         .segment-effort-detail-view .dismiss {
             filter: invert(1);
@@ -166,5 +179,14 @@
         .arrow {
             filter: invert(0.785);  // rough match to bg.
         }
+    }
+
+    [class*=SegmentDetails--elevation-profile--] img {
+        filter: $map-filter;
+    }
+
+    [class*=SegmentDetails--sport-type-icon--] svg,
+    [class*=src--branding--] a img {
+        filter: invert(1);
     }
 }
