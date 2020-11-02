@@ -924,3 +924,41 @@
         max-height: 25vh;
     }
 }
+
+
+@mixin training-log {
+    [class*="training--calendar-header--"] {
+        float: initial;
+        width: 100%;
+    }
+
+    [class*="training--timeline-container--"] {
+        float: initial;
+        width: 100%;
+
+        ol[class*="Timeline--years--"] {
+            padding: 0.4em 0;
+            display: flex;
+            overflow-x: auto;
+            max-width: 100%;
+    
+            li[class*="Timeline--year--"] {
+                display: inline-block;
+
+                a.text-footnote {
+                    padding: 0.6em 1.2em;
+
+                    &:first-child {
+                        padding-left: 0;
+                    }
+                }
+
+                &[class*="Timeline--selected--"] {
+                    ol[class*="Timeline--months--"] {
+                        display: none !important;  // just use scrolling
+                    }
+                }
+            }
+        }
+    }
+}

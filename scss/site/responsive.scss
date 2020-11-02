@@ -153,6 +153,19 @@ html.sauce-responsive,
         background-color: initial;
         border: none;
     }
+
+    [class*="training--top-container--"] {
+        [class*="Controls--controls-container--"] {
+            flex-wrap: wrap;
+        }
+        [class*="Controls--controls-selectors--"] {
+            flex-wrap: wrap;
+        }
+
+        @media only screen and (max-width: 768px) {
+            @include mobile.training-log;
+        }
+    }
 }
 // END global style
 

@@ -1633,7 +1633,7 @@
 
     [class*="training--sticky--"],
     [class*="training--calendar-header--"] {
-        background-color: transparent;
+        background-color: color.get(bg);
     }
 
     [class*="training--calendar-header--"],
