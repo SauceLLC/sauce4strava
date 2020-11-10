@@ -104,6 +104,8 @@
     $soft-border-color: color.shade(bg, 5%);
 
     $link-accent: accent4;
+    $link-color: color.get(accent4);
+    $link-color-hover: color.shade(accent4, 10%);
 
     body {
         background-color: color.get(bg);
@@ -184,7 +186,7 @@
             color: color.shade(fg, 8%);
 
             &:hover {
-                color: color.shade($link-accent, 10%);
+                color: $link-color-hover;
                 border-color: transparent;  // undo basic button theme border
             }
         }
@@ -237,7 +239,7 @@
             }
 
             &:hover {
-                color: color.shade($link-accent, 10%);
+                color: $link-color-hover;
             }
 
             &:active {
@@ -1483,7 +1485,7 @@
         color: color.shade(fg, 5%);
     }
     .inline-stats.nav-style a:hover {
-        color: color.shade($link-accent, 10%);
+        color: $link-color-hover;
     }
 
     label,
@@ -1726,6 +1728,26 @@
             &:focus {
                 background-color: color.shade(bg, 15%);
             }
+        }
+    }
+
+    // https://www.strava.com/activities/3989350790/photos/7E786277-39C8-471C-839F-46757947F849
+    main.photo-view {
+        a {
+            color: $link-color;
+
+            &:hover,
+            &:focus {
+                color: $link-color-hover;
+            }
+        }
+
+        .photo-main .photo-container {
+            background-color: color.shade(bg, 5%);
+        }
+
+        .photo-sidebar {
+            background-color: color.get(bg);
         }
     }
 
@@ -2198,6 +2220,10 @@
             a {
                 color: color.shade(fg, 12%);
             }
+        }
+
+        .footer-nav-wrapper:hover .footer-nav-menu:hover h4 {
+            color: color.shade(fg, 12%);
         }
     }
 
