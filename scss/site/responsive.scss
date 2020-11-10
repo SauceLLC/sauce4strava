@@ -217,27 +217,46 @@ html.sauce-responsive,
     }
 
     .segments-list {
-        .segment-effort-detail-view .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0;
+        .segment-effort-detail-view {
+            .row {
+                display: flex;
+                flex-wrap: wrap;
+                margin: 0;
 
-            > * {
-                flex: 1 1 0;
-            }
-            > [class*="spans"] {
-                float: initial;
-                width: initial;
-                margin-bottom: 0.5em;
-            }
-            > .spans7, > .spans8, > .spans9 {
-                min-width: 290px;
-            }
-            > .spans7 {
-                flex-shrink: 1.2;
-            }
-            > .spans9 {
-                flex-grow: 1.2;
+                > * {
+                    flex: 1 1 0;
+                }
+                > [class*="spans"] {
+                    float: initial;
+                    width: initial;
+                    margin-bottom: 0.5em;
+                }
+                > .spans7, > .spans8, > .spans9 {
+                    min-width: 290px;
+                }
+                > .spans7 {
+                    flex-shrink: 1.2;
+                }
+                > .spans9 {
+                    flex-grow: 1.2;
+                }
+
+
+                &.charts {
+                    flex-wrap: nowrap;
+                    flex-direction: column;
+
+                    > * {
+                        flex: initial;
+                    }
+                }
+
+                .this-effort {
+                    .button {
+                        padding-top: 0.4em;
+                        padding-bottom: 0.4em;
+                    }
+                }
             }
 
             .local-legend-container {
@@ -245,22 +264,6 @@ html.sauce-responsive,
 
                 .local-legend-button-row a.button {
                     min-width: calc(100% - 2em);
-                }
-            }
-
-            &.charts {
-                flex-wrap: nowrap;
-                flex-direction: column;
-
-                > * {
-                    flex: initial;
-                }
-            }
-
-            .this-effort {
-                .button {
-                    padding-top: 0.4em;
-                    padding-bottom: 0.4em;
                 }
             }
         }

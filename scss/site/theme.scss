@@ -1982,10 +1982,6 @@
             .leaderboard-footer {
                 background-color: color.shade(bg, 10%);
             }
-
-            .local-legend-container {
-                background-color: color.shade(bg, 10%);
-            }
         }
     }
 
@@ -2009,6 +2005,13 @@
         .link-menu a {
             background-color: color.shade(bg, 12%);
             border-color: $hard-border-color;
+        }
+    }
+
+    // Ride and run style (rare)
+    .segment-effort-detail {
+        .local-legend-container {
+            background-color: color.shade(bg, 10%);
         }
     }
 
