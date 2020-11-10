@@ -37,6 +37,10 @@
         filter: $map-filter;
     }
 
+    .feed .activity .activity-map .activity-map-create-route .btn {
+        color: color.get(fg);
+    }
+
     .app-icon {
         &:not(
         .icon-badge-premium):not(
