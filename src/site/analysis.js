@@ -1859,7 +1859,9 @@ sauce.ns('analysis', ns => {
             const th = document.createElement('th');
             th.classList.add('sauce-tf-col');
             th.setAttribute('colspan', '2');
-            sauce.images.asText('trailforks_logo_horiz.svg').then(x => jQuery(th).html(x));
+            const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ?
+                '_darkmode.svg' : '.svg';
+            sauce.images.asText(`trailforks_logo_horiz${suffix}`).then(x => jQuery(th).html(x));
             const nameCol = document.querySelector('table.segments thead th.name-col');
             nameCol.setAttribute('colspan', '1');
             nameCol.insertAdjacentElement('afterend', th);
