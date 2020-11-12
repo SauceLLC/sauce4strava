@@ -1944,62 +1944,31 @@ sauce.ns('analysis', ns => {
         }));
         $tf.on('click', async ev => {
             ev.stopPropagation();
-            const docClasses = document.documentElement.classList;
-            docClasses.add('sauce-loading');
             try {
-                await showTFDetailedReport(descs[0]);
+                await showTrailforksModal(descs);
             } catch(e) {
                 sauce.rpc.reportError(e);
-            } finally {
-                docClasses.remove('sauce-loading');
+                throw e;
             }
         });
         jQuery(tfCol).append($tf);
-
-        /*for (const x of descs) {
-            const $tf = jQuery(await tpl(x));
-            $tf.on('click', async ev => {
-                ev.stopPropagation();
-                const docClasses = document.documentElement.classList;
-                docClasses.add('sauce-loading');
-                try {
-                    await showTFDetailedReport(x);
-                } catch(e) {
-                    sauce.rpc.reportError(e);
-                } finally {
-                    docClasses.remove('sauce-loading');
-                }
-            });
-            jQuery(tfCol).append($tf);
-        }*/
     }
 
-
-    async function showTFDetailedReport(desc) {
-        console.warn("XXX trail desc", desc);
-        const maxReportAge = 182.5 * 86400 * 1000;
-        const maxCount = 20;
-        const [photos, videos, reports] = await Promise.all([
-            sauce.trailforks.photos(desc.trail.id, {maxCount}),
-            sauce.trailforks.videos(desc.trail.id, {maxCount}),
-            sauce.trailforks.reports(desc.trail.id, {maxAge: maxReportAge, maxCount})
-        ]);
-        const template = await getTemplate('tf-detailed-report.html', 'trailforks');
-        document.documentElement.classList.remove('sauce-loading');
+    async function showTrailforksModal(descs) {
         const $tfModal = modal({
-            title: `Trailforks - ${desc.trail.title}`,
-            dialogClass: 'trailforks-overview no-pad',
+            title: `Trailforks Overviews`,
+            dialogClass: 'trailforks-overviews no-pad',
             icon: `<img src="${sauce.extUrl}images/trailforks-250x250.png"/>`,
-            body: await template(Object.assign({
-                photos,
-                videos,
-                reports,
-                humanNumber,
-                humanDistance,
-                humanTime,
-                humanTimeAgo: sauce.locale.humanTimeAgo,
-                distanceUnit: ctx.distanceFormatter.shortUnitKey(),
-            }, desc)),
+            body: `
+                <ul class="tabs">
+                    ${descs.map(x => `
+                        <li class="trail-${x.trail.id}">
+                            <a class="tab">${x.trail.title}</a>
+                        </li>
+                    `).join('')}
+                </ul>
+                <div class="tf-overview"></div>
+            `,
             width: 'min(80vw, 70em)',
             height: 600,
             flex: true,
@@ -2008,24 +1977,81 @@ sauce.ns('analysis', ns => {
                 "Create Trail Report": () => {
                     $tfModal.dialog('close');
                     // XXX localize
-                    tfWidgetDialog(`Trailforks Create Report - ${desc.trail.title}`, 'reportsubmit',
-                        {trailid: desc.trail.id, work: 0}, {width: 500, height: 600, flex: true});
+                    tfWidgetDialog(`Trailforks Create Report - ${descs[0].trail.title}`, 'reportsubmit',
+                        {trailid: descs[0].trail.id, work: 0}, {width: 500, height: 600, flex: true});
                 }
             }
         });
+        const tabs = descs.map((desc, i) => ({
+            selector: `li.trail-${desc.trail.id}`,
+            renderer: new (self.Backbone.View.extend({
+                select: () => {
+                    console.warn('select missing impl');
+                },
+                unselect: () => {
+                    console.warn('unselect missing impl');
+                },
+                show: async function() {
+                    this.$el.children().detach();
+                    if (!this.$reportEl) {
+                        const docClasses = document.documentElement.classList;
+                        docClasses.add('sauce-loading');
+                        try {
+                            this.$reportEl = await renderTFDetailedReport(desc, this.$el);
+                        } catch(e) {
+                            sauce.rpc.reportError(e);
+                            throw e;
+                        } finally {
+                            docClasses.remove('sauce-loading');
+                        }
+                    } else {
+                        this.$el.append(this.$reportEl);
+                    }
+                },
+                render: function() {
+                    // nada
+                },
+            }))({el: $tfModal.find('.tf-overview')}),
+            selected: i === 0
+        }));
+        const tc = new Strava.Ui.TabController(tabs, $tfModal.find('ul.tabs'), '.tf-overview');
+        tc.render();
+    }
+
+
+    async function renderTFDetailedReport(desc, $into) {
+        const maxReportAge = 182.5 * 86400 * 1000;
+        const maxCount = 20;
+        const [photos, videos, reports] = await Promise.all([
+            sauce.trailforks.photos(desc.trail.id, {maxCount}),
+            sauce.trailforks.videos(desc.trail.id, {maxCount}),
+            sauce.trailforks.reports(desc.trail.id, {maxAge: maxReportAge, maxCount})
+        ]);
+        const template = await getTemplate('tf-detailed-report.html', 'trailforks');
+        const $el = jQuery(await template(Object.assign({
+            photos,
+            videos,
+            reports,
+            humanNumber,
+            humanDistance,
+            humanTime,
+            humanTimeAgo: sauce.locale.humanTimeAgo,
+            distanceUnit: ctx.distanceFormatter.shortUnitKey(),
+        }, desc)));
+        $into.html($el);
         const altStream = desc.trail.track.altitude.split(',').map(Number);
         const distStream = desc.trail.track.distance.split(',').map(Number);
         const lats = desc.trail.track.latitude.split(',');
         const lngs = desc.trail.track.longitude.split(',');
         const latlngStream = lats.map((x, i) => [Number(x), Number(lngs[i])]);
-        const map = createPolylineMap(latlngStream, $tfModal.find('.map'));
+        const map = createPolylineMap(latlngStream, $el.find('.map'));
         map.showGpxDownload(false);
         map.showCreateRoute(false);
         map.showPrivacyToggle(false);
         map.showFullScreenToggle(false);
         map.initializeMap();
-        $tfModal.on('dialogresize', () => void map.map.resize());
-        $tfModal.find('.elevation.sparkline').sparkline(altStream.map((x, i) => [distStream[i], x]), {
+        $el.on('dialogresize', () => void map.map.resize());
+        $el.find('.elevation.sparkline').sparkline(altStream.map((x, i) => [distStream[i], x]), {
             type: 'line',
             width: '100%',
             height: '5em',
@@ -2046,7 +2072,7 @@ sauce.ns('analysis', ns => {
                 ].join('<br/>');
             }
         });
-        $tfModal.on('click', 'a.tf-media.video', ev => {
+        $el.on('click', 'a.tf-media.video', ev => {
             const id = ev.currentTarget.dataset.id;
             function videoModal({title, body}) {
                 return modal({
@@ -2084,7 +2110,7 @@ sauce.ns('analysis', ns => {
             }
         });
         let photosCollection;
-        $tfModal.on('click', 'a.tf-media.photo', async ev => {
+        $el.on('click', 'a.tf-media.photo', async ev => {
             const id = ev.currentTarget.dataset.id;
             if (!photosCollection) {
                 photosCollection = new Strava.Models.Photos(photos.map((x, i) => ({
@@ -2111,6 +2137,7 @@ sauce.ns('analysis', ns => {
             const photoView = Strava.ExternalPhotos.Views.PhotoLightboxView.show(selected);
             photoView.$el.addClass('sauce-over-modal');
         });
+        return $el;
     }
 
 
