@@ -26,184 +26,185 @@
 
 
 @mixin dialog {
-    &.trailforks-overview {
+    &.trailforks-overviews {
         * {
             box-sizing: border-box;
         }
 
-        .ui-dialog-content {
+        .tf-overview {
+            display: flex;
             flex-direction: row;
             flex-wrap: wrap;
-        }
 
-        section {
-            min-width: 280px;
-            flex: 1 1;
-            padding: 1rem 0.5rem;
-            overflow: hidden;
-            margin-bottom: 1em;
+            section {
+                min-width: 280px;
+                flex: 1 1;
+                padding: 1rem 0.5rem;
+                overflow: hidden;
+                margin-bottom: 1em;
 
-            &.sauce-info {
-                flex-basis: 33%;
-            }
-            &.geo {
-                flex-basis: 33%;
-            }
-            &.contribs {
-                flex-basis: 33%;
-            }
+                &.sauce-info {
+                    flex-basis: 33%;
+                }
+                &.geo {
+                    flex-basis: 33%;
+                }
+                &.contribs {
+                    flex-basis: 33%;
+                }
 
-            &:first-child {
-                padding-left: 1rem;
-            }
-            &:last-child {
-                padding-right: 1rem;
-            }
-        }
-
-        .map {
-            height: 25em;
-            border-radius: 0.28em;
-            margin-top: 0.5rem;
-        }
-
-        .sparkline.elevation {
-            padding-top: 1.15em;
-            position: relative;
-
-            &::before {
-                content: 'Elevation';
-                font-variant: all-small-caps;
-                position: absolute;
-                top: 0;
-                left: 0;
-                font-weight: bold;
-            }
-        }
-
-        .activity-icon {
-            position: relative;
-            line-height: 0;
-            font-size: 1.4em;
-            margin-right: 0.44em;
-
-            svg[data-icon] {
-                height: 1em;
+                &:first-child {
+                    padding-left: 1rem;
+                }
+                &:last-child {
+                    padding-right: 1rem;
+                }
             }
 
-            .sub-icon {
-                position: absolute;
-                top: -0.2em;
-                left: -0.2em;
-                font-size: 0.6em;
-            }
-        }
-
-        .panel {
-            padding: 0.8rem;
-            background: color.shade(bg, 10%);
-            border-radius: 0.28em;
-            display: flex;
-            position: relative;
-            flex-direction: column;
-
-            &:not(:last-child) {
-                margin-bottom: 0.8rem;
+            .map {
+                height: 25em;
+                border-radius: 0.28em;
+                margin-top: 0.5rem;
             }
 
-            heading {
-                display: flex;
-                justify-content: space-between;
+            .sparkline.elevation {
+                padding-top: 1.15em;
+                position: relative;
 
-                h1 {
-                    font-size: 1.2em;
-                    line-height: 1.1;
-                    color: color.shade(accent, 5%);
-                    margin: 0;
+                &::before {
+                    content: 'Elevation';
                     font-variant: all-small-caps;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
                     font-weight: bold;
-                    padding-bottom: 0.5em;
-                }
-
-                a.external svg[data-icon] {
-                    width: 0.7em;
                 }
             }
 
-            .sauce-media {
+            .activity-icon {
+                position: relative;
+                line-height: 0;
+                font-size: 1.4em;
+                margin-right: 0.44em;
+
+                svg[data-icon] {
+                    height: 1em;
+                }
+
+                .sub-icon {
+                    position: absolute;
+                    top: -0.2em;
+                    left: -0.2em;
+                    font-size: 0.6em;
+                }
+            }
+
+            .panel {
+                padding: 0.8rem;
+                background: color.shade(bg, 10%);
+                border-radius: 0.28em;
                 display: flex;
-                align-items: center;
-                overflow: auto;
+                position: relative;
+                flex-direction: column;
 
-                .item {
-                    padding: 0.2em;
+                &:not(:last-child) {
+                    margin-bottom: 0.8rem;
+                }
 
-                    a.tf-media {
-                        display: block;
-                        line-height: 0;
+                heading {
+                    display: flex;
+                    justify-content: space-between;
 
-                        > * {
-                            width: 8em;
-                            height: 8em;
-                            object-fit: cover;
-                            border-radius: 0.28em;
+                    h1 {
+                        font-size: 1.2em;
+                        line-height: 1.1;
+                        color: color.shade(accent, 5%);
+                        margin: 0;
+                        font-variant: all-small-caps;
+                        font-weight: bold;
+                        padding-bottom: 0.5em;
+                    }
+
+                    a.external svg[data-icon] {
+                        width: 0.7em;
+                    }
+                }
+
+                .sauce-media {
+                    display: flex;
+                    align-items: center;
+                    overflow: auto;
+
+                    .item {
+                        padding: 0.2em;
+
+                        a.tf-media {
+                            display: block;
+                            line-height: 0;
+
+                            > * {
+                                width: 8em;
+                                height: 8em;
+                                object-fit: cover;
+                                border-radius: 0.28em;
+                            }
                         }
                     }
                 }
-            }
 
-            .item {
-                padding: 0.2em 0;
-                display: flex;
-                font-size: 0.88em;
-                align-items: center;
+                .item {
+                    padding: 0.2em 0;
+                    display: flex;
+                    font-size: 0.88em;
+                    align-items: center;
 
-                key {
-                    min-width: 14ch;
-                    color: color.shade(fg, 5%);
-                    margin-right: 0.3em;
-                    font-variant: all-small-caps;
-                    font-weight: bold;
+                    key {
+                        min-width: 14ch;
+                        color: color.shade(fg, 5%);
+                        margin-right: 0.3em;
+                        font-variant: all-small-caps;
+                        font-weight: bold;
+                    }
+
+                    value {
+                        display: block;
+                    }
+
+                    &.desc {
+                        border-radius: 0.28em;
+                        background-color: color.shade(bg, 4%);
+                        padding: 0.5em 1em;
+                        margin: 0.3em 0;
+                    }
                 }
 
-                value {
-                    display: block;
+                .report {
+                    padding: 0.3em;
+
+                    &:not(:last-child) {
+                        border-bottom: 1px solid color.shade(bg, 20%, 0.5);
+                    }
+
+                    .age {
+                        font-size: 0.72em;
+                        opacity: 0.8;
+                    }
+
+                    .item.reported {
+                    }
                 }
 
-                &.desc {
-                    border-radius: 0.28em;
-                    background-color: color.shade(bg, 4%);
-                    padding: 0.5em 1em;
-                    margin: 0.3em 0;
-                }
-            }
-
-            .report {
-                padding: 0.3em;
-
-                &:not(:last-child) {
-                    border-bottom: 1px solid color.shade(bg, 20%, 0.5);
+                img.tf-difficulty {
+                    margin: -0.3em 0.2em -0.3em 0;
+                    height: 1.7em;
                 }
 
-                .age {
-                    font-size: 0.72em;
-                    opacity: 0.8;
-                }
-
-                .item.reported {
-                }
-            }
-
-            img.tf-difficulty {
-                margin: -0.3em 0.2em -0.3em 0;
-                height: 1.7em;
-            }
-
-            .tf-difficulty,
-            .tf-condition,
-            .tf-status {
-                svg[data-icon] {
-                    height: 1em;
+                .tf-difficulty,
+                .tf-condition,
+                .tf-status {
+                    svg[data-icon] {
+                        height: 1em;
+                    }
                 }
             }
         }

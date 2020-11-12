@@ -112,6 +112,16 @@
         color: color.get(fg);
     }
 
+    a {
+        &:visited,
+        &:link {
+            color: $link-color;
+        }
+
+        &:hover {
+            color: $link-color-hover;
+        }
+    }
 
     .starred.active .app-icon.icon-star {
         filter: none !important;
@@ -686,9 +696,8 @@
                 color: inherit;
             }
 
-            .selected .tab {
+            .selected {
                 background-color: $body-bg-color;
-                border-color: $hard-border-color;
             }
         }
 
@@ -1076,7 +1085,13 @@
         }
 
         .feed-entry {
+            .entry-title {
+                color: color.get(fg);
+            }
+
             .kudos-comments {
+                border-top-color: $hard-border-color;
+
                 .media-actions .btn {
                     background-color: color.shade(bg, 15%);
                     border-color: $hard-border-color;
@@ -1146,7 +1161,7 @@
     }
 
     ul.tabs {
-        border: none;
+        border-bottom: 1px solid $hard-border-color;
 
         .tab {
             color: color.shade(fg, 8%);
@@ -1162,10 +1177,11 @@
 
         > li.selected,
         > li[aria-selected='true'] {
+            // Requires that every tab.selected has background color set.
             border-bottom: none;
 
             .tab {
-                background-color: transparent;
+                background-color: transparent;  // See above, this is a fallback
                 border-color: $hard-border-color;
                 color: color.shade(fg, 2%);
             }
@@ -2920,6 +2936,26 @@
 
             &:visited {
                 color: color.shade(fg, 14%);
+            }
+        }
+    }
+
+    [data-react-class="SegmentDetailsSideBar"] {
+        li[class*="SegmentDetailsSideBar--card--"] {
+            border-color: $mid-border-color;
+
+            [class*="SegmentDetailsSideBar--action-link--"] {
+                border-color: $mid-border-color;
+            }
+        }
+
+        [class*="CardActionsSection--url-label--"] {
+            color: color.shade(fg, 10%);
+
+            &:hover {
+                &, * {
+                    color: $link-color-hover;
+                }
             }
         }
     }

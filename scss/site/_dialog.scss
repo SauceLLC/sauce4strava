@@ -11,8 +11,13 @@
 
     .ui-widget-content,
     .ui-dialog-content {
-        background-color: color.shade(bg, 3%);
+        $bg: color.shade(bg, 3%);
+        background-color: $bg;
         border-color: color.shade(bg, 12%);
+
+        ul.tabs li.selected {
+            background-color: $bg;
+        }
     }
 
     .ui-widget-header {
