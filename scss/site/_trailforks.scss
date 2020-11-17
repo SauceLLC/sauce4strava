@@ -31,10 +31,23 @@
             box-sizing: border-box;
         }
 
+        ul.tabs {
+            margin-bottom: 1em;
+        }
+
+        a.external svg[data-icon] {
+            width: 0.7em;
+        }
+
         .tf-overview {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
+
+            > heading {
+                flex: 1 1 100%;
+                padding: 0 1em;
+            }
 
             section {
                 min-width: 280px;
@@ -111,6 +124,22 @@
                     margin-bottom: 0.8rem;
                 }
 
+                .tf-difficulty {
+                    height: 4em;
+                    width: 4em;
+                    background: #fff;  // Yup, hard code it.
+                    border-radius: 0.2em;
+                    padding: 0.3em;
+                    float: right;
+                    margin-left: 0.3em;
+
+                    img {
+                        max-height: 100%;
+                        max-width: 100%;
+                        object-fit: contain;
+                    }
+                }
+
                 heading {
                     display: flex;
                     justify-content: space-between;
@@ -123,26 +152,6 @@
                         font-variant: all-small-caps;
                         font-weight: bold;
                         padding-bottom: 0.5em;
-                    }
-
-                    a.external svg[data-icon] {
-                        width: 0.7em;
-                    }
-                    .tf-difficulty {
-                        height: 3em;
-                        width: 3em;
-                        background: #fff;  // Yup, hard code it.
-                        border-radius: 0.22em;
-                        padding: 0.33em;
-                        position: absolute;
-                        top: 0.2em;
-                        right: 0.2em;
-
-                        img {
-                            max-height: 100%;
-                            max-width: 100%;
-                            object-fit: contain;
-                        }
                     }
                 }
 

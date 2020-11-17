@@ -560,8 +560,8 @@ sauce.ns('analysis', ns => {
         if (!latlngStream || !latlngStream.length || !distStream || !distStream.length) {
             return;
         }
-        const intersections = await sauce.trailforks.intersections(latlngStream, distStream); // XXX
-        //const intersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
+        //const intersections = await sauce.trailforks.intersections(latlngStream, distStream); // XXX
+        const intersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
         const segmentTrailDescs = new Map();
         for (const intersect of intersections) {
             for (const match of intersect.matches) {
@@ -1972,15 +1972,6 @@ sauce.ns('analysis', ns => {
             width: 'min(80vw, 70em)',
             height: 600,
             flex: true,
-            extraButtons: {
-                // XXX localize
-                "Create Trail Report": () => {
-                    $tfModal.dialog('close');
-                    // XXX localize
-                    tfWidgetDialog(`Trailforks Create Report - ${descs[0].trail.title}`, 'reportsubmit',
-                        {trailid: descs[0].trail.id, work: 0}, {width: 500, height: 600, flex: true});
-                }
-            }
         });
         const tabs = descs.map((desc, i) => ({
             selector: `li.trail-${desc.trail.id}`,
@@ -2020,12 +2011,10 @@ sauce.ns('analysis', ns => {
 
 
     async function renderTFDetailedReport(desc, $into) {
-        const maxReportAge = 182.5 * 86400 * 1000;
-        const maxCount = 10;
         const [photos, videos, reports] = await Promise.all([
-            sauce.trailforks.photos(desc.trail.id, {maxCount}),
-            sauce.trailforks.videos(desc.trail.id, {maxCount}),
-            sauce.trailforks.reports(desc.trail.id, {maxAge: maxReportAge, maxCount})
+            sauce.trailforks.photos(desc.trail.id, {maxCount: 20}),
+            sauce.trailforks.videos(desc.trail.id, {maxCount: 20}),
+            sauce.trailforks.reports(desc.trail.id, {maxAge: 182.5 * 86400 * 1000, maxCount: 6})
         ]);
         const template = await getTemplate('tf-detailed-report.html', 'trailforks');
         const $el = jQuery(await template(Object.assign({

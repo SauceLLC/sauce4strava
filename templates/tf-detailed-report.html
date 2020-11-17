@@ -1,8 +1,17 @@
+<heading>
+    <a class="external" title="Create a conditions report for this trail." target="_blank"
+       href="https://www.trailforks.com/contribute/report/?trailid={{trail.id}}">
+        Add Trail Report {-await faIcon('external-link-duotone')-}</a>
+</heading>
+
 <section class="sauce-info">
     <div class="panel">
         <heading>
-            <h1>Details</h1>
-            <% if (trail.expanded.difficulty) { %>
+            <h1>Overview</h1>
+            <a class="external" title="View on trailforks.com" target="_blank"
+               href="https://www.trailforks.com/trails/{{trail.alias}}/">
+                {-await faIcon('external-link-duotone')-}</a>
+            <% if (!trail.expanded.description && trail.expanded.difficulty) { %>
                 <div class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
                      title="{{trail.expanded.difficulty.title}}"
                     ><% if (trail.expanded.difficulty.image) { %><img
@@ -12,6 +21,23 @@
                     ><% } %></div>
             <% } %>
         </heading>
+
+        <% if (trail.expanded.description) { %>
+            <div class="item desc">
+                <span>
+                    <% if (trail.expanded.difficulty) { %>
+                        <div class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
+                             title="{{trail.expanded.difficulty.title}}"
+                            ><% if (trail.expanded.difficulty.image) { %><img
+                                src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"
+                            /><% } else if (trail.expanded.difficulty.icon) { %><div
+                                class="tf-icon">{-await faIcon(trail.expanded.difficulty.icon)-}</div
+                            ><% } %></div>
+                    <% } %>
+                    {-trail.expanded.description-}
+                </span>
+            </div>
+        <% } %>
 
         <div class="item activity-flags">
             <key>Activity types</key>
@@ -88,10 +114,6 @@
                     {{trail.expanded.status.title}}
                 </value>
             </div>
-        <% } %>
-
-        <% if (trail.expanded.description) { %>
-            <div class="item desc"><span>{-trail.expanded.description-}</span></div>
         <% } %>
 
         <div class="item">

@@ -176,7 +176,7 @@
 
 
     async function load() {
-        const extUrl = browser.extension.getURL('');
+        const extUrl = browser.runtime.getURL('');
         /* Using the src works but is async, this will block the page from loading while the scripts
          * are evaluated and executed, preventing race conditions in our preloader */
         insertScript([
