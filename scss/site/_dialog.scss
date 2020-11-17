@@ -5,7 +5,9 @@
 @use 'trailforks';
 
 
-.ui-dialog {
+// Use more specific selector to avoid race with application-xyz.css that strava loads
+// at the same time as us.  Load order varies.
+html .ui-dialog {
     background: transparent;
     border: none;
 
@@ -98,8 +100,6 @@
     }
 
     a {
-        color: color.get(accent);
-
         &:focus {
             outline: none;
         }

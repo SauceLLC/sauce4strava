@@ -275,6 +275,7 @@
 
         .selectable {
             cursor: pointer;
+            transition: color 300ms;
 
             &:hover {
                 color: color.shade(accent3, 10%);

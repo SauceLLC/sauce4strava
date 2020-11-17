@@ -128,6 +128,22 @@
                     a.external svg[data-icon] {
                         width: 0.7em;
                     }
+                    .tf-difficulty {
+                        height: 3em;
+                        width: 3em;
+                        background: #fff;  // Yup, hard code it.
+                        border-radius: 0.22em;
+                        padding: 0.33em;
+                        position: absolute;
+                        top: 0.2em;
+                        right: 0.2em;
+
+                        img {
+                            max-height: 100%;
+                            max-width: 100%;
+                            object-fit: contain;
+                        }
+                    }
                 }
 
                 .sauce-media {
@@ -172,8 +188,8 @@
 
                     &.desc {
                         border-radius: 0.28em;
-                        background-color: color.shade(bg, 4%);
-                        padding: 0.5em 1em;
+                        background-color: color.shade(bg, 8%);
+                        padding: 1em 1em;
                         margin: 0.3em 0;
                     }
                 }
@@ -189,17 +205,8 @@
                         font-size: 0.72em;
                         opacity: 0.8;
                     }
-
-                    .item.reported {
-                    }
                 }
-
-                img.tf-difficulty {
-                    margin: -0.3em 0.2em -0.3em 0;
-                    height: 1.7em;
-                }
-
-                .tf-difficulty,
+                
                 .tf-condition,
                 .tf-status {
                     svg[data-icon] {

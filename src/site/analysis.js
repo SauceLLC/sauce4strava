@@ -2021,7 +2021,7 @@ sauce.ns('analysis', ns => {
 
     async function renderTFDetailedReport(desc, $into) {
         const maxReportAge = 182.5 * 86400 * 1000;
-        const maxCount = 20;
+        const maxCount = 10;
         const [photos, videos, reports] = await Promise.all([
             sauce.trailforks.photos(desc.trail.id, {maxCount}),
             sauce.trailforks.videos(desc.trail.id, {maxCount}),
