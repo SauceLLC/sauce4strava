@@ -24,6 +24,7 @@ rsync -av \
     --exclude 'css' \
     --exclude 'builds' \
     --exclude 'test' \
+    --exclude 'safari-app' \
     ./* $TMPDIR
 
 node_modules/.bin/sass scss:$TMPDIR/css --no-source-map
