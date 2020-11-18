@@ -112,9 +112,8 @@
     }
 
     .left-main {
-        $width: 300px;
         flex: 1 0 auto;
-        width: $width;
+        width: 318px;
         display: flex;
         flex-direction: column;
         position: relative;
@@ -198,7 +197,7 @@
 
     .right-aside {
         flex: 1 0 auto;
-        width: 300px;
+        width: 318px;
         max-height: 575px;  // Taller than left-main with all fields (NOTE: must adjust if fields change)
         overflow-y: auto;
         background-image: linear-gradient(to bottom, color.shade(bg, 10%), color.shade(bg, 18%) 2em, color.shade(bg, 0%));
@@ -210,7 +209,7 @@
             table {
                 td, th {
                     padding: 0.4em 0.3em;
-                    font-size: 0.9em;
+                    font-size: 0.92em;
 
                     &:first-child {
                         padding-left: 0;
@@ -239,11 +238,11 @@
                 }
 
                 td.segment-time {
-                    font-size: 0.85em;
+                    font-size: 0.86em;
                 }
 
                 td.segment-overlap {
-                    font-size: 0.85em;
+                    font-size: 0.86em;
                 }
 
                 td.segment-achievement {
@@ -263,7 +262,7 @@
     section {
         $highlight-value-offset: 2mm;
         $highlight-margin-right: 3mm;
-        $heading-bottom-margin: 1mm;
+        $heading-bottom-margin: 2mm;
         $section-padding-bottom: 1mm;
         $section-margin-top: 1.5mm;
 
@@ -318,7 +317,7 @@
             display: flex;
             margin-bottom: $heading-bottom-margin;
             border-bottom: var(--sauce-thin-border);
-            border-color: color.shade(fg, 0%, 0.15);
+            border-color: color.shade(fg, 0%, 0.10);
             justify-content: space-between;
 
             &.selectable .graph-select {
@@ -355,7 +354,7 @@
                 }
 
                 key {
-                    font-size: 0.86em;
+                    font-size: 0.9em;
                     padding-left: 1.8mm;
                     display: flex;
                 }
@@ -363,7 +362,7 @@
                 value {
                     padding-left: 1mm;
                     padding-right: 1.8mm;
-                    font-size: 0.88em;
+                    font-size: 0.92em;
                     display: block;  // avoid flex by default as it breaks inline formatting
                 }
             }
@@ -399,11 +398,12 @@
 
             .icon-background {
                 position: absolute;
-                top: calc(-#{$heading-bottom-margin} / 2);
+                //top: calc(-#{$heading-bottom-margin} / 3);
+                top: 0;  // a little lower than ^^^ needs testing.. XXX
                 width: calc(100% + (#{$highlight-margin-right} * 2));
                 opacity: 0.18;
                 display: flex;
-                height: calc(100% + #{$section-margin-top} + (#{$highlight-value-offset} * 2) + #{$section-padding-bottom} - #{$heading-bottom-margin});
+                height: calc(100% + #{$section-margin-top} + (#{$highlight-value-offset} * 2) + #{$section-padding-bottom} - (#{$heading-bottom-margin} * 2));
                 display: flex;
                 align-items: center;
 
@@ -452,7 +452,7 @@
             }
 
             key {
-                font-size: 1em;
+                font-size: 1.1em;
                 font-variant: all-small-caps;
                 line-height: 0.9;
                 margin-top: -0.25em;
@@ -460,13 +460,13 @@
             }
 
             value {
-                font-size: 2em;
+                font-size: 2.1em;
                 font-weight: bold;
                 line-height: 1;
                 opacity: 0.82;
 
                 abbr.unit {
-                    font-size: 0.5em;
+                    font-size: 0.6em;
                 }
             }
         }
