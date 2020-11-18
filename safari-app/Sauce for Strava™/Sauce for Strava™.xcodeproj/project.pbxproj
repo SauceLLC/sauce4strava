@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,27 +14,14 @@
 		BC3B945225648C31001E35EF /* Sauce for Strava™ Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BC3B945125648C31001E35EF /* Sauce for Strava™ Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BC3B945725648C31001E35EF /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC3B945625648C31001E35EF /* Cocoa.framework */; };
 		BC3B945A25648C31001E35EF /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC3B945925648C31001E35EF /* SafariWebExtensionHandler.swift */; };
-		BC3B947C25648C32001E35EF /* tools in Resources */ = {isa = PBXBuildFile; fileRef = BC3B946725648C32001E35EF /* tools */; };
-		BC3B947D25648C32001E35EF /* test in Resources */ = {isa = PBXBuildFile; fileRef = BC3B946825648C32001E35EF /* test */; };
-		BC3B947E25648C32001E35EF /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = BC3B946925648C32001E35EF /* Makefile */; };
 		BC3B947F25648C32001E35EF /* css in Resources */ = {isa = PBXBuildFile; fileRef = BC3B946A25648C32001E35EF /* css */; };
 		BC3B948025648C32001E35EF /* images in Resources */ = {isa = PBXBuildFile; fileRef = BC3B946B25648C32001E35EF /* images */; };
-		BC3B948125648C32001E35EF /* scss in Resources */ = {isa = PBXBuildFile; fileRef = BC3B946C25648C32001E35EF /* scss */; };
-		BC3B948225648C32001E35EF /* manifest_gecko.json in Resources */ = {isa = PBXBuildFile; fileRef = BC3B946D25648C32001E35EF /* manifest_gecko.json */; };
-		BC3B948325648C32001E35EF /* node_modules in Resources */ = {isa = PBXBuildFile; fileRef = BC3B946E25648C32001E35EF /* node_modules */; };
-		BC3B948425648C32001E35EF /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = BC3B946F25648C32001E35EF /* LICENSE */; };
-		BC3B948525648C32001E35EF /* manifest_chromium.json in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947025648C32001E35EF /* manifest_chromium.json */; };
-		BC3B948625648C32001E35EF /* safari-app in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947125648C32001E35EF /* safari-app */; };
-		BC3B948725648C32001E35EF /* package.json in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947225648C32001E35EF /* package.json */; };
-		BC3B948825648C32001E35EF /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947325648C32001E35EF /* README.md */; };
-		BC3B948925648C32001E35EF /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947425648C32001E35EF /* manifest.json */; };
 		BC3B948A25648C32001E35EF /* templates in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947525648C32001E35EF /* templates */; };
 		BC3B948B25648C32001E35EF /* _locales in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947625648C32001E35EF /* _locales */; };
-		BC3B948C25648C32001E35EF /* manifest_base.json in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947725648C32001E35EF /* manifest_base.json */; };
-		BC3B948D25648C32001E35EF /* assets in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947825648C32001E35EF /* assets */; };
 		BC3B948E25648C32001E35EF /* pages in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947925648C32001E35EF /* pages */; };
 		BC3B948F25648C32001E35EF /* build.json in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947A25648C32001E35EF /* build.json */; };
 		BC3B949025648C32001E35EF /* src in Resources */ = {isa = PBXBuildFile; fileRef = BC3B947B25648C32001E35EF /* src */; };
+		BCA3E0C325652E4700B3D4D3 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BCA3E0C225652E4700B3D4D3 /* manifest.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,27 +59,14 @@
 		BC3B945625648C31001E35EF /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		BC3B945925648C31001E35EF /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 		BC3B945B25648C31001E35EF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		BC3B946725648C32001E35EF /* tools */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tools; path = ../../../tools; sourceTree = "<group>"; };
-		BC3B946825648C32001E35EF /* test */ = {isa = PBXFileReference; lastKnownFileType = folder; name = test; path = ../../../test; sourceTree = "<group>"; };
-		BC3B946925648C32001E35EF /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; name = Makefile; path = ../../../Makefile; sourceTree = "<group>"; };
 		BC3B946A25648C32001E35EF /* css */ = {isa = PBXFileReference; lastKnownFileType = folder; name = css; path = ../../../css; sourceTree = "<group>"; };
 		BC3B946B25648C32001E35EF /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../../../images; sourceTree = "<group>"; };
-		BC3B946C25648C32001E35EF /* scss */ = {isa = PBXFileReference; lastKnownFileType = folder; name = scss; path = ../../../scss; sourceTree = "<group>"; };
-		BC3B946D25648C32001E35EF /* manifest_gecko.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest_gecko.json; path = ../../../manifest_gecko.json; sourceTree = "<group>"; };
-		BC3B946E25648C32001E35EF /* node_modules */ = {isa = PBXFileReference; lastKnownFileType = folder; name = node_modules; path = ../../../node_modules; sourceTree = "<group>"; };
-		BC3B946F25648C32001E35EF /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE; path = ../../../LICENSE; sourceTree = "<group>"; };
-		BC3B947025648C32001E35EF /* manifest_chromium.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest_chromium.json; path = ../../../manifest_chromium.json; sourceTree = "<group>"; };
-		BC3B947125648C32001E35EF /* safari-app */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "safari-app"; path = ../..; sourceTree = "<group>"; };
-		BC3B947225648C32001E35EF /* package.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = package.json; path = ../../../package.json; sourceTree = "<group>"; };
-		BC3B947325648C32001E35EF /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../../../README.md; sourceTree = "<group>"; };
-		BC3B947425648C32001E35EF /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../../manifest.json; sourceTree = "<group>"; };
 		BC3B947525648C32001E35EF /* templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = templates; path = ../../../templates; sourceTree = "<group>"; };
 		BC3B947625648C32001E35EF /* _locales */ = {isa = PBXFileReference; lastKnownFileType = folder; name = _locales; path = ../../../_locales; sourceTree = "<group>"; };
-		BC3B947725648C32001E35EF /* manifest_base.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest_base.json; path = ../../../manifest_base.json; sourceTree = "<group>"; };
-		BC3B947825648C32001E35EF /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../../assets; sourceTree = "<group>"; };
 		BC3B947925648C32001E35EF /* pages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pages; path = ../../../pages; sourceTree = "<group>"; };
 		BC3B947A25648C32001E35EF /* build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = build.json; path = ../../../build.json; sourceTree = "<group>"; };
 		BC3B947B25648C32001E35EF /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../../src; sourceTree = "<group>"; };
+		BCA3E0C225652E4700B3D4D3 /* manifest.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = manifest.json; path = ../../../manifest.json; sourceTree = "<group>"; };
 		BCB25E8E25649ED400BAB291 /* sauce4strava.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = sauce4strava.entitlements; sourceTree = "<group>"; };
 		BCB25E9125649F4E00BAB291 /* sauce4strava_Extension.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = sauce4strava_Extension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -170,24 +144,11 @@
 		BC3B946625648C32001E35EF /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				BC3B946725648C32001E35EF /* tools */,
-				BC3B946825648C32001E35EF /* test */,
-				BC3B946925648C32001E35EF /* Makefile */,
+				BCA3E0C225652E4700B3D4D3 /* manifest.json */,
 				BC3B946A25648C32001E35EF /* css */,
 				BC3B946B25648C32001E35EF /* images */,
-				BC3B946C25648C32001E35EF /* scss */,
-				BC3B946D25648C32001E35EF /* manifest_gecko.json */,
-				BC3B946E25648C32001E35EF /* node_modules */,
-				BC3B946F25648C32001E35EF /* LICENSE */,
-				BC3B947025648C32001E35EF /* manifest_chromium.json */,
-				BC3B947125648C32001E35EF /* safari-app */,
-				BC3B947225648C32001E35EF /* package.json */,
-				BC3B947325648C32001E35EF /* README.md */,
-				BC3B947425648C32001E35EF /* manifest.json */,
 				BC3B947525648C32001E35EF /* templates */,
 				BC3B947625648C32001E35EF /* _locales */,
-				BC3B947725648C32001E35EF /* manifest_base.json */,
-				BC3B947825648C32001E35EF /* assets */,
 				BC3B947925648C32001E35EF /* pages */,
 				BC3B947A25648C32001E35EF /* build.json */,
 				BC3B947B25648C32001E35EF /* src */,
@@ -241,6 +202,7 @@
 		BC3B943725648C31001E35EF /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1220;
 				LastUpgradeCheck = 1220;
 				TargetAttributes = {
@@ -253,7 +215,7 @@
 				};
 			};
 			buildConfigurationList = BC3B943A25648C31001E35EF /* Build configuration list for PBXProject "Sauce for Strava™" */;
-			compatibilityVersion = "Xcode 9.3";
+			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -285,25 +247,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC3B948625648C32001E35EF /* safari-app in Resources */,
 				BC3B948025648C32001E35EF /* images in Resources */,
-				BC3B948D25648C32001E35EF /* assets in Resources */,
 				BC3B947F25648C32001E35EF /* css in Resources */,
 				BC3B948B25648C32001E35EF /* _locales in Resources */,
-				BC3B948925648C32001E35EF /* manifest.json in Resources */,
-				BC3B948725648C32001E35EF /* package.json in Resources */,
 				BC3B948F25648C32001E35EF /* build.json in Resources */,
-				BC3B948425648C32001E35EF /* LICENSE in Resources */,
-				BC3B948225648C32001E35EF /* manifest_gecko.json in Resources */,
+				BCA3E0C325652E4700B3D4D3 /* manifest.json in Resources */,
 				BC3B948E25648C32001E35EF /* pages in Resources */,
-				BC3B948825648C32001E35EF /* README.md in Resources */,
 				BC3B948A25648C32001E35EF /* templates in Resources */,
-				BC3B948325648C32001E35EF /* node_modules in Resources */,
-				BC3B948C25648C32001E35EF /* manifest_base.json in Resources */,
-				BC3B948125648C32001E35EF /* scss in Resources */,
-				BC3B947D25648C32001E35EF /* test in Resources */,
-				BC3B947C25648C32001E35EF /* tools in Resources */,
-				BC3B948525648C32001E35EF /* manifest_chromium.json in Resources */,
 				BC3B949025648C32001E35EF /* src in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -324,7 +274,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC3B947E25648C32001E35EF /* Makefile in Sources */,
 				BC3B945A25648C31001E35EF /* SafariWebExtensionHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -460,6 +409,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -470,7 +420,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "Sauce for Strava™ Extension/sauce4strava_Extension.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
 				INFOPLIST_FILE = "Sauce for Strava™ Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -489,7 +441,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "Sauce for Strava™ Extension/sauce4strava_Extension.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
 				INFOPLIST_FILE = "Sauce for Strava™ Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -511,8 +465,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Sauce for Strava™/sauce4strava.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
 				INFOPLIST_FILE = "Sauce for Strava™/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -533,8 +489,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Sauce for Strava™/sauce4strava.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
 				INFOPLIST_FILE = "Sauce for Strava™/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
