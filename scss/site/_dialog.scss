@@ -19,6 +19,10 @@ html .ui-dialog {
 
         ul.tabs li.selected {
             background-color: $bg;
+
+            .tab {
+                background-color: transparent;
+            }
         }
     }
 
