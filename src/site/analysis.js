@@ -1316,7 +1316,8 @@ sauce.ns('analysis', ns => {
                 for (const spec of specs) {
                     let data = spec.data;
                     // Firefox Mobile doesn't support audiocontext based resampling.
-                    if (data.length > 120 && !navigator.userAgent.match(/Mobile/)) {
+                    // Safari doens't have OfflineAudioContext
+                    if (data.length > 120 && !navigator.userAgent.match(/Mobile/) && !self.safari) {
                         data = await sauce.data.resample(data, 60);
                     }
                     const dataMin = sauce.data.min(data);

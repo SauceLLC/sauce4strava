@@ -7,6 +7,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     self.sauce = self.sauce || {};
 
     const cacheRefreshThreshold = 60 * 1000;
+    const maybeRequestIdleCallback = self.requestIdleCallback || (fn => fn());  // Safari
 
     sauce.propDefined('pageView', view => {
         const addCustomRoutes = view.addCustomRoutes;
@@ -507,7 +508,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     pendingStale.add(x);
                 }
                 clearTimeout(pendingFill);
-                pendingFill = setTimeout(() => requestIdleCallback(async () => {
+                pendingFill = setTimeout(() => maybeRequestIdleCallback(async () => {
                     const streams = Array.from(pendingStale);
                     pendingStale.clear();
                     await fillCache(options, streams);
@@ -537,7 +538,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             const cachedEntry = await _segmentEffortCache.getEntry(key);
             if (cachedEntry) {
                 if (Date.now() - cachedEntry.created > cacheRefreshThreshold) {
-                    setTimeout(() => requestIdleCallback(() => fillCache(options, key)), 1000);
+                    setTimeout(() => maybeRequestIdleCallback(() => fillCache(options, key)), 1000);
                 }
                 return cachedEntry.value;
             }
@@ -566,7 +567,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             const cachedEntry = await _segmentLeaderboardCache.getEntry(key);
             if (cachedEntry) {
                 if (Date.now() - cachedEntry.created > cacheRefreshThreshold) {
-                    setTimeout(() => requestIdleCallback(() => fillCache(options, key)), 1000);
+                    setTimeout(() => maybeRequestIdleCallback(() => fillCache(options, key)), 1000);
                 }
                 return cachedEntry.value;
             }
