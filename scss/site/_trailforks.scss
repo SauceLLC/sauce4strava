@@ -138,6 +138,18 @@
                         max-width: 100%;
                         object-fit: contain;
                     }
+
+                    .tf-icon {
+                        line-height: 0;
+                        width: 100%;
+                        height: 100%;
+                        color: #000;  // Yup, hard code it too!
+
+                        svg[data-icon] {
+                            height: 100%;
+                            max-width: 100%;
+                        }
+                    }
                 }
 
                 heading {
