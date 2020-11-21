@@ -154,7 +154,6 @@
 
                 heading {
                     display: flex;
-                    justify-content: space-between;
 
                     h1 {
                         font-size: 1.2em;
@@ -164,6 +163,7 @@
                         font-variant: all-small-caps;
                         font-weight: bold;
                         padding-bottom: 0.5em;
+                        flex: 1 0 auto;
                     }
                 }
 
