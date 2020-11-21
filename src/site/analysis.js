@@ -2788,8 +2788,10 @@ sauce.ns('analysis', ns => {
             const distance = distanceUnconvert(fget('distance'));
             const el = elevationUnconvert(fget('elevation'));
             const wind = velocityUnconvert(fget('wind'));
-            const powerEst = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
+            const powerEsts = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
                 cda, el, wind, 0.035);
+            powerEsts.sort((a, b) => b.velocity - a.velocity);
+            const powerEst = powerEsts[0];  // Take the fastest one (yup, there can be multiple solutions!)
             const time = distance / powerEst.velocity;
             const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
             if (powerEst.velocity && time < origTime) {
@@ -3116,6 +3118,22 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function graphDialog(data, options) {
+        const $dialog = dialog(Object.assign({
+            title: 'Graph Dialog',
+            width: 600,
+            height: 300,
+        }, options));
+        $dialog.sparkline(data, Object.assign({
+            type: 'line',
+            width: '100%',
+            height: '100%',
+            tooltipFormatter: (_, __, data) => `${humanNumber(data.x, 6)}: ${humanNumber(data.y, 6)}`
+        }, options));
+        return $dialog;
+    }
+
+
     async function load() {
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
@@ -3192,7 +3210,8 @@ sauce.ns('analysis', ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,
-        tfWidgetDialog
+        tfWidgetDialog,
+        graphDialog,
     };
 });
 
