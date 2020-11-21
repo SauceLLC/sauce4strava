@@ -1,24 +1,7 @@
 /* global addTests, sauce, assertEqual, assertTruthy, assertGreaterEqual, assertLessEqual */
 
-function *range(startOrSize, end, step) {
-    let size;
-    let start;
-    if (end === undefined && step === undefined) {
-        size = startOrSize;
-        start = 0;
-        step = 1;
-    } else {
-        start = startOrSize;
-        step = step || 1;
-        size = (end - start) / step;
-    }
-    for (let x = start, i = 0; i < size; x += step, i++) {
-        yield x;
-    }
-}
-
 function timeStream() {
-    return Array.from(range.apply(this, arguments));
+    return Array.from(sauce.data.range.apply(this, arguments));
 }
 
 
@@ -29,7 +12,7 @@ function valueStream(fnOrValue, size) {
     } else {
         fn = fnOrValue;
     }
-    return Array.from(range(size)).map(fn);
+    return Array.from(sauce.data.range(size)).map(fn);
 }
 
 

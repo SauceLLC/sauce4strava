@@ -69,6 +69,15 @@ function assertEqualArray(a, b, failMessage) {
 }
 
 
+function assertNear(a, b, failMessage, options) {
+    options = options || {};
+    const epsilon = options.epsilon == null ? 0.000001 : options.epsilon;
+    if (Math.abs(a - b) > epsilon) {
+        throw new AssertionError(`${a} is not near ${b}`, failMessage);
+    }
+}
+
+
 function assertGreater(a, b, failMessage) {
     if (!(a > b)) {
         throw new AssertionError(`${a} not greater than ${b}`, failMessage);
@@ -93,6 +102,12 @@ function assertGreaterEqual(a, b, failMessage) {
 function assertLessEqual(a, b, failMessage) {
     if (!(a <= b)) {
         throw new AssertionError(`${a} not less than or equal to ${b}`, failMessage);
+    }
+}
+
+function assertDefined(a, failMessage) {
+    if (a == null) {
+        throw new AssertionError(`value is undefined`, failMessage);
     }
 }
 
