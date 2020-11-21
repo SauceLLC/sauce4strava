@@ -89,6 +89,13 @@ sauce.ns('data', function() {
     }
 
 
+    function stddev(data) {
+        const mean = sauce.data.avg(data);
+        const variance = data.map(x => (mean - x) ** 2);
+        return Math.sqrt(sauce.data.avg(variance));
+    }
+
+
     let _useSafeSampleRate = false;
     async function resample(inData, outLen, options) {
         const minBestSampleRate = 3000;  // chromium min
@@ -246,6 +253,29 @@ sauce.ns('data', function() {
             }
         }
         return rows;
+    }
+
+
+    function *range(startOrCount, stop, step) {
+        step = step || 1;
+        let start;
+        if (stop == null) {
+            start = 0;
+            stop = startOrCount;
+        } else {
+            start = startOrCount;
+        }
+        let last;
+        for (let i = start; i < stop; i += step) {
+            if (last !== undefined) {
+                // Prevent infinite loop when step and value are huge/tiny due to ieee754.
+                for (let j = 2; last === i; j++) {
+                    i += j * step;
+                }
+            }
+            yield i;
+            last = i;
+        }
     }
 
 
@@ -487,10 +517,12 @@ sauce.ns('data', function() {
         max,
         mode,
         median,
+        stddev,
         resample,
         activeTime,
         recommendedTimeGaps,
         tabulate,
+        range,
         RollingBase,
         RollingAverage,
         Zero,
@@ -975,40 +1007,114 @@ sauce.ns('power', function() {
 
 
     function cyclingPowerEstimate(velocity, slope, weight, Crr, CdA, el, wind, loss) {
+        const invert = velocity < 0 ? -1 : 1;
         const Fg = gravityForce(slope, weight);
-        const Fr = rollingResistanceForce(slope, weight, Crr);
+        const Fr = rollingResistanceForce(slope, weight, Crr) * invert;
         const Fa = aeroDragForce(CdA, airDensity(el), velocity, wind);
-        const vFactor = velocity / (1 - loss);
+        const vFactor = velocity / (1 - loss);  // velocity with mech loss integrated
         return {
             gForce: Fg,
             rForce: Fr,
             aForce: Fa,
             force: Fg + Fr + Fa,
-            gWatts: Fg * vFactor,
-            rWatts: Fr * vFactor,
-            aWatts: Fa * vFactor,
-            watts: (Fg + Fr + Fa) * vFactor
+            gWatts: Fg * vFactor * invert,
+            rWatts: Fr * vFactor * invert,
+            aWatts: Fa * vFactor * invert,
+            watts: (Fg + Fr + Fa) * vFactor * invert
         };
     }
 
 
     function cyclingPowerVelocitySearch(power, slope, weight, Crr, CdA, el, wind, loss) {
-        let velocity = 0;
-        let curEst;
-        for (let i = 0, low = -1000, high = 1000; i < 1000; i++, velocity = (high + low) / 2) {
-            curEst = cyclingPowerEstimate(velocity, slope, weight, Crr, CdA, el, wind, loss);
-            if (Math.abs(curEst.watts - power) < 0.000001) {
-                break;
+        const epsilon = 0.000001;
+        const sampleSize = 300;  // Do not adjust without running test suite
+        const filterPct = 0.50;  // Do not adjust without running test suite
+
+        function narrowRange(start, end) {
+            let lastStart;
+            let lastEnd;
+            for (let fuse = 0; fuse < 100; fuse++) {
+                const results = [];
+                const step = Math.max((end - start) / sampleSize, epsilon / sampleSize);
+                for (const v of sauce.data.range(start, end, step)) {
+                    const est = cyclingPowerEstimate(v, slope, weight, Crr, CdA, el, wind, loss);
+                    results.push([v, est]);
+                }
+                results.sort((a, b) => {
+                    const deltaA = Math.abs(a[1].watts - power);
+                    const deltaB = Math.abs(b[1].watts - power);
+                    if (deltaA < deltaB) {
+                        return -1;
+                    } else if (deltaB < deltaA) {
+                        return 1;
+                    } else {
+                        return b[0] - a[0];  // fallback to velocity
+                    }
+                });
+                results.length = Math.min(Math.floor(sampleSize * filterPct), results.length);
+                const velocities = results.map(x => x[0]);
+                if (velocities.length === 1) {
+                    return velocities;
+                } else if (velocities.length === 0) {
+                    throw new Error("Emnty Range");
+                }
+                start = sauce.data.min(velocities);
+                end = sauce.data.max(velocities);
+                if (Math.abs(start - lastStart) < epsilon && Math.abs(end - lastEnd) < epsilon) {
+                    return velocities;
+                }
+                lastStart = start;
+                lastEnd = end;
             }
-            if (curEst.watts > power) {
-                high = velocity;
-            } else {
-                low = velocity;
+            throw new Error("No result found");
+        }
+
+        function findLocalRanges(velocities) {
+            // Search for high energy matches based on stddev outliers. Returns an array
+            // of ranges with lowe and upper bounds that can be further narrowed.
+            const stddev = sauce.data.stddev(velocities);
+            const groups = new Map();
+            for (const v of velocities) {
+                let added = false;
+                for (const [x, values] of groups.entries()) {
+                    if (Math.abs(v - x) < Math.max(stddev, epsilon * sampleSize * filterPct)) {
+                        values.push(v);
+                        added = true;
+                        break;
+                    }
+                }
+                if (!added) {
+                    groups.set(v, [v]);
+                }
+            }
+            return Array.from(groups.values()).filter(x => x.length > 1).map(x =>
+                [sauce.data.min(x), sauce.data.max(x)]);
+        }
+
+        const matches = [];
+        let r = 0;
+        function search(velocities) {
+            for (const [lower, upper] of findLocalRanges(velocities)) {
+                const rangeVs = narrowRange(lower, upper);
+                const innerRanges = rangeVs.length >= 4 && findLocalRanges(rangeVs);
+                if (innerRanges && innerRanges.length > 1) {
+                    for (const [lower, upper] of innerRanges) {
+                        console.warn("RECURSE", ++r);
+                        search(narrowRange(lower, upper));
+                    }
+                } else {
+                    const est = cyclingPowerEstimate(rangeVs[0], slope, weight, Crr, CdA, el, wind, loss);
+                    if (Math.abs(est.watts - power) < epsilon) {
+                        matches.push(Object.assign({velocity: rangeVs[0]}, est));
+                    }
+                }
             }
         }
-        return Object.assign({velocity}, curEst);
-    }
 
+        const c = 299792458;  // speed of light
+        search(narrowRange(-c, c));
+        return matches;
+    }
 
     return {
         peakPower,
