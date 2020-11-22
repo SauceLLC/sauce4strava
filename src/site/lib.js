@@ -1026,9 +1026,10 @@ sauce.ns('power', function() {
 
 
     function cyclingPowerVelocitySearch(power, slope, weight, Crr, CdA, el, wind, loss) {
+        // Do not adjust without running test suite and tuning for 50% tollerance above failure
         const epsilon = 0.000001;
-        const sampleSize = 300;  // Do not adjust without running test suite
-        const filterPct = 0.50;  // Do not adjust without running test suite
+        const sampleSize = 300;
+        const filterPct = 0.50;
 
         function narrowRange(start, end) {
             let lastStart;
@@ -1092,19 +1093,21 @@ sauce.ns('power', function() {
         }
 
         const matches = [];
-        let r = 0;
         function search(velocities) {
             for (const [lower, upper] of findLocalRanges(velocities)) {
                 const rangeVs = narrowRange(lower, upper);
                 const innerRanges = rangeVs.length >= 4 && findLocalRanges(rangeVs);
                 if (innerRanges && innerRanges.length > 1) {
                     for (const [lower, upper] of innerRanges) {
-                        console.warn("RECURSE", ++r);
                         search(narrowRange(lower, upper));
                     }
                 } else {
                     const est = cyclingPowerEstimate(rangeVs[0], slope, weight, Crr, CdA, el, wind, loss);
-                    if (Math.abs(est.watts - power) < epsilon) {
+                    // If the difference is less than epsilon (1 millionth) or we are within epsilon %.
+                    // The former is for very small values and the latter is for massive values. Both
+                    // are needed!
+                    if (Math.abs(est.watts - power) < epsilon ||
+                        1 - ((est.watts || epsilon) / (power || epsilon)) < epsilon) {
                         matches.push(Object.assign({velocity: rangeVs[0]}, est));
                     }
                 }
