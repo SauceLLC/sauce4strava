@@ -552,7 +552,7 @@ sauce.ns('analysis', ns => {
 
 
     async function assignTrailforksToSegments() {
-        if (sauce.options['analysis-disable-trailforks']) {
+        if (!sauce.options['analysis-trailforks']) {
             return;
         }
         const latlngStream = await fetchStream('latlng');
@@ -560,7 +560,7 @@ sauce.ns('analysis', ns => {
         if (!latlngStream || !latlngStream.length || !distStream || !distStream.length) {
             return;
         }
-        //const intersections = await sauce.trailforks.intersections(latlngStream, distStream); // XXX
+        //const intersections = await sauce.trailforks.intersections(latlngStream, distStream); // DEBUG
         const intersections = await sauce.rpc.trailforksIntersections(latlngStream, distStream);
         const segmentTrailDescs = new Map();
         for (const intersect of intersections) {
@@ -1947,6 +1947,7 @@ sauce.ns('analysis', ns => {
             ev.stopPropagation();
             try {
                 await showTrailforksModal(descs);
+                sauce.rpc.reportEvent('Trailforks', 'show');
             } catch(e) {
                 sauce.rpc.reportError(e);
                 throw e;
@@ -3075,7 +3076,7 @@ sauce.ns('analysis', ns => {
             if (sauce.options['analysis-segment-badges']) {
                 addSegmentBadges();
             }
-            if (!sauce.options['analysis-disable-trailforks']) {
+            if (sauce.options['analysis-trailforks']) {
                 addTrailforksOverlay();
             }
         }
