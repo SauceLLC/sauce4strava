@@ -159,4 +159,10 @@ addTests([
         assertNear(estimates[0].velocity, -91.46928559597359)
         assertNear(estimates[0].watts, -200000, null, {epsilon: 0.0001})
     },
+    function test_velocity_search_odd_mismatch() {
+        const estimates = sauce.power.cyclingPowerVelocitySearch(43, 0.012, 86.2, 0.0065, 0.32, 866, 0, 0.035);
+        for (const x of estimates) {
+            assertNear(x.watts, 43);
+        }
+    },
 ]);
