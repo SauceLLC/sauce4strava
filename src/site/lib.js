@@ -1107,7 +1107,7 @@ sauce.ns('power', function() {
                     // The former is for very small values and the latter is for massive values. Both
                     // are needed!
                     if (Math.abs(est.watts - power) < epsilon ||
-                        1 - ((est.watts || epsilon) / (power || epsilon)) < epsilon) {
+                        Math.abs(1 - ((est.watts || epsilon) / (power || epsilon))) < epsilon) {
                         matches.push(Object.assign({velocity: rangeVs[0]}, est));
                     }
                 }
