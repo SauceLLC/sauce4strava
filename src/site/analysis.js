@@ -2791,7 +2791,7 @@ sauce.ns('analysis', ns => {
             const powerEsts = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
                 cda, el, wind, 0.035);
             powerEsts.sort((a, b) => b.velocity - a.velocity);
-            const powerEst = powerEsts[0];  // Take the fastest one (yup, there can be multiple solutions!)
+            const powerEst = powerEsts[0];  // Take the fastest solution.
             const time = distance / powerEst.velocity;
             const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
             if (powerEst.velocity && time < origTime) {
@@ -2809,31 +2809,44 @@ sauce.ns('analysis', ns => {
             $dialog.find('.predicted .time').text(humanTime(time));
             $dialog.find('.predicted .distance').text(humanDistance(distance));
             $dialog.find('.predicted .wkg').text(humanNumber(power / bodyWeight, 1));
+            const watts = [powerEst.gWatts, powerEst.aWatts, powerEst.rWatts];
+            const wattRange = sauce.data.sum(watts.map(Math.abs));
+            const pcts = {
+                gravity: powerEst.gWatts / wattRange * 100,
+                aero: powerEst.aWatts / wattRange * 100,
+                rr: powerEst.rWatts / wattRange * 100
+            };
             const $gravity = $dialog.find('.predicted .power-details .gravity');
             $gravity.find('.power').text(humanNumber(powerEst.gWatts));
-            $gravity.find('.pct').text(humanNumber(powerEst.gWatts / powerEst.watts * 100));
+            $gravity.find('.pct').text(humanNumber(pcts.gravity));
             const $aero = $dialog.find('.predicted .power-details .aero');
             $aero.find('.power').text(humanNumber(powerEst.aWatts));
-            $aero.find('.pct').text(humanNumber(powerEst.aWatts / powerEst.watts * 100));
+            $aero.find('.pct').text(humanNumber(pcts.aero));
             const $rr = $dialog.find('.predicted .power-details .rr');
             $rr.find('.power').text(humanNumber(powerEst.rWatts));
-            $rr.find('.pct').text(humanNumber(powerEst.rWatts / powerEst.watts * 100));
-            $dialog.find('.predicted .power-details .piechart').sparkline(
-                [powerEst.gWatts, powerEst.aWatts, powerEst.rWatts],
+            $rr.find('.pct').text(humanNumber(pcts.rr));
+            $dialog.find('.predicted .power-details .sparkline').sparkline(
+                watts,
                 {
-                    type: 'pie',
+                    type: 'bar',
                     width: '100%',
                     height: '100%',
-                    sliceColors: [powerColors.gravity, powerColors.aero, powerColors.rr],
+                    barWidth: 30,
+                    disableHiddenCheck: true,
+                    chartRangeMin: sauce.data.min(watts.concat([0])),
+                    colorMap: {
+                        [powerEst.gWatts]: powerColors.gravity,
+                        [powerEst.aWatts]: powerColors.aero,
+                        [powerEst.rWatts]: powerColors.rr
+                    },
                     tooltipFormatter: (_, __, data) => {
-                        const key = ['gravity', 'aero', 'rr'][data.offset];
-                        const force = powerEst[['g', 'a', 'r'][data.offset] + 'Force'];
+                        const key = ['gravity', 'aero', 'rr'][data[0].offset];
+                        const force = powerEst[['g', 'a', 'r'][data[0].offset] + 'Force'];
                         return `
-                            <b>${locale[`power_details_${key}`]}:</b>
+                            <b>${locale[`power_details_${key}`]}: ${humanNumber(pcts[key])}%</b>
                             <ul>
-                                <li>&nbsp;&nbsp;${Math.round(data.value)}w</li>
-                                <li>&nbsp;&nbsp;${data.percent.toFixed(1)}%</li>
-                                <li>&nbsp;&nbsp;${humanNumber(force * distance / 1000)}kJ</li>
+                                <li>&nbsp;&nbsp;${Math.round(data[0].value)} Watts</li>
+                                <li>&nbsp;&nbsp;${humanNumber(force)} Newtons</li>
                             </ul>
                         `;
                     }
