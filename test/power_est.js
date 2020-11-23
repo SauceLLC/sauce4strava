@@ -165,4 +165,13 @@ addTests([
             assertNear(x.watts, 43);
         }
     },
+    function test_velocity_search_escape() {
+        const estimates = sauce.power.cyclingPowerVelocitySearch(259, 0.087, 85.592982, 0.005, 0.4, 1045.464, 0, 0.035);
+        assertEqual(estimates.length, 3);
+        estimates.sort((a, b) => b.velocity - a.velocity);
+        assertNear(estimates[0].velocity, 3.1600175977839435);
+        for (const x of estimates) {
+            assertNear(x.watts, 259);
+        }
+    }
 ]);

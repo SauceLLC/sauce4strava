@@ -1031,37 +1031,60 @@ sauce.ns('power', function() {
         const sampleSize = 300;
         const filterPct = 0.50;
 
-        function narrowRange(start, end) {
+        function refineRange(start, end) {
             let lastStart;
             let lastEnd;
+
+            function byPowerClosenessOrVelocity(a, b) {
+                const deltaA = Math.abs(a[1].watts - power);
+                const deltaB = Math.abs(b[1].watts - power);
+                if (deltaA < deltaB) {
+                    return -1;
+                } else if (deltaB < deltaA) {
+                    return 1;
+                } else {
+                    return b[0] - a[0];  // fallback to velocity
+                }
+            }
+
             for (let fuse = 0; fuse < 100; fuse++) {
                 const results = [];
                 const step = Math.max((end - start) / sampleSize, epsilon / sampleSize);
-                for (const v of sauce.data.range(start, end, step)) {
+                for (const v of sauce.data.range(start, end + step, step)) {
                     const est = cyclingPowerEstimate(v, slope, weight, Crr, CdA, el, wind, loss);
                     results.push([v, est]);
                 }
-                results.sort((a, b) => {
-                    const deltaA = Math.abs(a[1].watts - power);
-                    const deltaB = Math.abs(b[1].watts - power);
-                    if (deltaA < deltaB) {
-                        return -1;
-                    } else if (deltaB < deltaA) {
-                        return 1;
-                    } else {
-                        return b[0] - a[0];  // fallback to velocity
-                    }
-                });
+                results.sort(byPowerClosenessOrVelocity);
                 results.length = Math.min(Math.floor(sampleSize * filterPct), results.length);
                 const velocities = results.map(x => x[0]);
-                if (velocities.length === 1) {
-                    return velocities;
-                } else if (velocities.length === 0) {
+                if (velocities.length === 0) {
                     throw new Error("Emnty Range");
                 }
                 start = sauce.data.min(velocities);
                 end = sauce.data.max(velocities);
-                if (Math.abs(start - lastStart) < epsilon && Math.abs(end - lastEnd) < epsilon) {
+                if (velocities.length === 1 ||
+                    (Math.abs(start - lastStart) < epsilon && Math.abs(end - lastEnd) < epsilon)) {
+                    // When multiple solution are in a single range it's possible to be too course
+                    // in the steps and then exclude the most optimal solutions that exist outside
+                    // the filtered range here.  So we scan out as the last step to ensure we are
+                    // inclusive of all optimal solutions.
+                    if (step > epsilon) {
+                        for (const [iv, dir] of [[start, -1], [end, 1]]) {
+                            let bestEst = cyclingPowerEstimate(iv, slope, weight, Crr, CdA, el, wind, loss);
+                            const smallStep = Math.max(step / 100, epsilon) * dir;
+                            for (let v = iv + smallStep;; v += smallStep) {
+                                const est = cyclingPowerEstimate(v, slope, weight, Crr, CdA, el, wind, loss);
+                                results.push([v, est]);  // Always include the test case.
+                                if (Math.abs(est.watts - power) < Math.abs(bestEst.watts - power)) {
+                                    bestEst = est;
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                        results.sort(byPowerClosenessOrVelocity);
+                        return results.map(x => x[0]);
+                    }
                     return velocities;
                 }
                 lastStart = start;
@@ -1072,7 +1095,7 @@ sauce.ns('power', function() {
 
         function findLocalRanges(velocities) {
             // Search for high energy matches based on stddev outliers. Returns an array
-            // of ranges with lowe and upper bounds that can be further narrowed.
+            // of ranges with lower and upper bounds that can be further narrowed.
             const stddev = sauce.data.stddev(velocities);
             const groups = new Map();
             for (const v of velocities) {
@@ -1094,12 +1117,13 @@ sauce.ns('power', function() {
 
         const matches = [];
         function search(velocities) {
-            for (const [lower, upper] of findLocalRanges(velocities)) {
-                const rangeVs = narrowRange(lower, upper);
+            const outerRanges = findLocalRanges(velocities);
+            for (const [lower, upper] of outerRanges) {
+                const rangeVs = refineRange(lower, upper);
                 const innerRanges = rangeVs.length >= 4 && findLocalRanges(rangeVs);
                 if (innerRanges && innerRanges.length > 1) {
                     for (const [lower, upper] of innerRanges) {
-                        search(narrowRange(lower, upper));
+                        search(refineRange(lower, upper));
                     }
                 } else {
                     const est = cyclingPowerEstimate(rangeVs[0], slope, weight, Crr, CdA, el, wind, loss);
@@ -1115,7 +1139,7 @@ sauce.ns('power', function() {
         }
 
         const c = 299792458;  // speed of light
-        search(narrowRange(-c, c));
+        search(refineRange(-c, c));
         return matches;
     }
 
