@@ -70,7 +70,7 @@
             [exp, levels] = JSON.parse(cacheEntry);
             if (exp <= Date.now()) {
                 // expired
-                level = null;
+                levels = null;
             }
         }
         function _getName(levels) {
