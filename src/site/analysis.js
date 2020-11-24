@@ -1978,12 +1978,8 @@ sauce.ns('analysis', ns => {
         const tabs = descs.map((desc, i) => ({
             selector: `li.trail-${desc.trail.id}`,
             renderer: new (self.Backbone.View.extend({
-                select: () => {
-                    console.warn('select missing impl');
-                },
-                unselect: () => {
-                    console.warn('unselect missing impl');
-                },
+                select: () => void 0,
+                unselect: () => void 0,
                 show: async function() {
                     this.$el.children().detach();
                     if (!this.$reportEl) {
@@ -2001,9 +1997,7 @@ sauce.ns('analysis', ns => {
                         this.$el.append(this.$reportEl);
                     }
                 },
-                render: function() {
-                    // nada
-                },
+                render: () => void 0,
             }))({el: $tfModal.find('.tf-overview')}),
             selected: i === 0
         }));
@@ -2778,6 +2772,7 @@ sauce.ns('analysis', ns => {
             'faster', 'slower', 'power_details_rr', 'power_details_gravity', 'power_details_aero'
         ], 'perf_predictor');
         let lazySaveTimeout;
+        const $pred = $dialog.find('.predicted');
         function recalc(noPulse) {
             const crr = fget('crr');
             const cda = fget('cda');
@@ -2790,11 +2785,15 @@ sauce.ns('analysis', ns => {
             const el = elevationUnconvert(fget('elevation'));
             const wind = velocityUnconvert(fget('wind'));
             const powerEsts = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
-                cda, el, wind, 0.035);
+                cda, el, wind, 0.035).filter(x => x.velocity > 0);
+            $pred.toggleClass('valid', powerEsts.length > 0);
+            if (!powerEsts.length) {
+                return;
+            }
             powerEsts.sort((a, b) => b.velocity - a.velocity);
             const powerEst = powerEsts[0];  // Take the fastest solution.
             const time = distance / powerEst.velocity;
-            const $timeAhead = $dialog.find('.predicted .time + .ahead-behind');
+            const $timeAhead = $pred.find('.time + .ahead-behind');
             if (powerEst.velocity && time < origTime) {
                 const pct = (origTime / time - 1) * 100;
                 $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.faster}`);
@@ -2806,10 +2805,10 @@ sauce.ns('analysis', ns => {
             } else {
                 $timeAhead.empty();
             }
-            $dialog.find('.predicted .speed').text(humanPace(powerEst.velocity, {velocity: true}));
-            $dialog.find('.predicted .time').text(humanTime(time));
-            $dialog.find('.predicted .distance').text(humanDistance(distance));
-            $dialog.find('.predicted .wkg').text(humanNumber(power / bodyWeight, 1));
+            $pred.find('.speed').text(humanPace(powerEst.velocity, {velocity: true}));
+            $pred.find('.time').text(humanTime(time));
+            $pred.find('.distance').text(humanDistance(distance));
+            $pred.find('.wkg').text(humanNumber(power / bodyWeight, 1));
             const watts = [powerEst.gWatts, powerEst.aWatts, powerEst.rWatts];
             const wattRange = sauce.data.sum(watts.map(Math.abs));
             const pcts = {
@@ -2817,22 +2816,22 @@ sauce.ns('analysis', ns => {
                 aero: powerEst.aWatts / wattRange * 100,
                 rr: powerEst.rWatts / wattRange * 100
             };
-            const $gravity = $dialog.find('.predicted .power-details .gravity');
+            const $gravity = $pred.find('.power-details .gravity');
             $gravity.find('.power').text(humanNumber(powerEst.gWatts));
             $gravity.find('.pct').text(humanNumber(pcts.gravity));
-            const $aero = $dialog.find('.predicted .power-details .aero');
+            const $aero = $pred.find('.power-details .aero');
             $aero.find('.power').text(humanNumber(powerEst.aWatts));
             $aero.find('.pct').text(humanNumber(pcts.aero));
-            const $rr = $dialog.find('.predicted .power-details .rr');
+            const $rr = $pred.find('.power-details .rr');
             $rr.find('.power').text(humanNumber(powerEst.rWatts));
             $rr.find('.pct').text(humanNumber(pcts.rr));
-            $dialog.find('.predicted .power-details .sparkline').sparkline(
+            $pred.find('.power-details .sparkline').sparkline(
                 watts,
                 {
                     type: 'bar',
                     width: '100%',
                     height: '100%',
-                    barWidth: 30,
+                    barWidth: 38,
                     disableHiddenCheck: true,
                     chartRangeMin: sauce.data.min(watts.concat([0])),
                     colorMap: {
@@ -2853,7 +2852,7 @@ sauce.ns('analysis', ns => {
                     }
                 });
             if (!noPulse) {
-                $dialog.find('.predicted').addClass('pulse').one('animationend',
+                $pred.addClass('pulse').one('animationend',
                     ev => ev.currentTarget.classList.remove('pulse'));
                 clearTimeout(lazySaveTimeout);
                 lazySaveTimeout = setTimeout(async () => {

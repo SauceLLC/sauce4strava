@@ -86,13 +86,13 @@
 
     <div class="entry" title="{{{body_weight_tooltip}}}">
         <key>{{{body_weight}}}:</key>
-        <input name="body-weight" type="number" placeholder="{{bodyWeight}}" value="{{bodyWeight}}" step="any"/>
+        <input name="body-weight" type="number" placeholder="{{bodyWeight}}" value="{{bodyWeight}}" min="0" step="any"/>
         <abbr class="unit">{{weightUnit}}</abbr>
     </div>
 
     <div class="entry" title="{{{gear_weight_tooltip}}}">
         <key>{{{gear_weight}}}:</key>
-        <input name="gear-weight" type="number" placeholder="{{gearWeight}}" value="{{gearWeight}}" step="any"/>
+        <input name="gear-weight" type="number" placeholder="{{gearWeight}}" value="{{gearWeight}}" min="0" step="any"/>
         <abbr class="unit">{{weightUnit}}</abbr>
     </div>
 
@@ -188,5 +188,9 @@
                 <div class="right-col sparkline"></div>
             </div>
         </div>
+    </section>
+    <section class="invalid">
+        <div class="heading">{{{predicted_performance}}}:</div>
+        <b>No velocity predicted for these parameters</b>
     </section>
 </div>

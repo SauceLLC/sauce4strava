@@ -90,6 +90,12 @@
                     &.pulse {
                         animation: pulse 600ms 1;
                     }
+                    &:not(.valid) {
+                        display: none;
+                    }
+                    &.valid + section.invalid {
+                        display: none;
+                    }
 
                     .power-details {
                         dot {
