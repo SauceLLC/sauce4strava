@@ -317,7 +317,7 @@
             display: flex;
             margin-bottom: $heading-bottom-margin;
             border-bottom: var(--sauce-thin-border);
-            border-color: color.shade(fg, 0%, 0.10);
+            border-color: color.shade(fg, 0%, 0.08);
             justify-content: space-between;
 
             &.selectable .graph-select {
@@ -413,6 +413,10 @@
                 &.hr {
                     --sauce-info-icon-highlight-primary: #d002;
                     --sauce-info-icon-highlight-secondary: #d00;
+
+                    svg[data-icon] {
+                        max-height: min(120%, 5.4em);  // Enlarge a bit.
+                    }
                 }
 
                 &.power {
@@ -433,12 +437,16 @@
                 &.env {
                     --sauce-info-icon-highlight-primary: #11ad00;
                     --sauce-info-icon-highlight-secondary: #17ab00;
+
+                    svg[data-icon] {
+                        margin-bottom: 0.5em;
+                    }
                 }
 
 
                 svg[data-icon] {
                     flex: 1 1 100%;
-                    max-height: min(100%, 6em);
+                    max-height: min(100%, 5.4em);
 
                     .fa-primary {
                         color: color.shade(fg, 20%, 0.58);
