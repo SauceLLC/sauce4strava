@@ -415,7 +415,7 @@
                     --sauce-info-icon-highlight-secondary: #d00;
 
                     svg[data-icon] {
-                        max-height: min(120%, 5.4em);  // Enlarge a bit.
+                        max-height: min(110%, 5.4em);  // Enlarge a bit.
                     }
                 }
 
@@ -429,8 +429,8 @@
                     --sauce-info-icon-highlight-secondary: #08f;
 
                     svg[data-icon] {
-                        max-height: min(100%, 4.5em);  // it's a little bigger than the others.
-                        margin-bottom: 0.6em;
+                        max-height: min(110%, 4.5em);  // it's a little bigger than the others.
+                        margin-bottom: 0.5em;
                     }
                 }
 

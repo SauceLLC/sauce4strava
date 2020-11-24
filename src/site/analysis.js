@@ -699,7 +699,7 @@ sauce.ns('analysis', ns => {
             if (cadenceStream) {
                 menu.push('peak_cadence');
             }
-            if (altStream) {
+            if (altStream && distance) {
                 menu.push('peak_vam');
             }
             if (!menu.length) {
@@ -1864,6 +1864,9 @@ sauce.ns('analysis', ns => {
                 '_darkmode.svg' : '.svg';
             sauce.images.asText(`trailforks_logo_horiz${suffix}`).then(x => jQuery(th).html(x));
             const nameCol = document.querySelector('table.segments thead th.name-col');
+            if (!nameCol) {
+                return;  // Unsupported activity type such as (https://www.strava.com/activities/4381573410)
+            }
             nameCol.setAttribute('colspan', '1');
             nameCol.insertAdjacentElement('afterend', th);
         }
