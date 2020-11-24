@@ -176,7 +176,7 @@
 
 
     function isSafari() {
-        return location.protocol.startsWith('safari-web-extension:');
+        return browser.runtime.getURL('').startsWith('safari-web-extension:');
     }
 
 
