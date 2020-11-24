@@ -139,6 +139,16 @@
         const details = [
             ['Version', `${manifest.version_name || manifest.version} (${commit})`],
         ];
+        if (config.safariLatestVersion) {
+            if (build.git_commit !== config.safariLatestVersion.commit) {
+                const link = document.createElement('a');
+                link.setAttribute('href', config.safariLatestVersion.url);
+                link.setAttribute('target', '_blank');
+                link.textContent = `Download Version: ${config.safariLatestVersion.version}`;
+                link.style.fontWeight = 'bold';
+                details.push(['Update Available', link]);
+            }
+        }
         if (config.patronLevel) {
             // There is going to be small window where names are not available
             let levelName;
@@ -158,7 +168,11 @@
             tdKey.textContent = key;
             const tdVal = document.createElement('td');
             tdVal.classList.add('value');
-            tdVal.textContent = value;
+            if (value instanceof Element) {
+                tdVal.appendChild(value);
+            } else {
+                tdVal.textContent = value;
+            }
             const tr = document.createElement('tr');
             tr.appendChild(tdKey);
             tr.appendChild(tdVal);

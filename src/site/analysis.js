@@ -3150,6 +3150,48 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function checkForSafariUpdates() {
+        const latest = await sauce.rpc.storageGet('safariLatestVersion');
+        if (latest) {
+            const ignoring = await sauce.rpc.storageGet('safariIgnoreVersion');
+            if (ignoring && ignoring === latest.commit) {
+                return;
+            }
+            const lastNotice = await sauce.rpc.storageGet('safariUpdateNotice');
+            if (lastNotice && lastNotice < Date.now() + 86400 * 1000) {
+                // Only bug once a day if they don't hit skip version.
+                return;
+            }
+            const build = await (await fetch(sauce.extUrl + 'build.json')).json();
+            if (build.git_commit !== latest.commit) {
+                const $dialog = dialog({
+                    title: 'Sauce Update Available',
+                    width: 500,
+                    autoDestroy: true,
+                    body: `
+                        A new version of of Sauce for Strava™ is available to download.<br/>
+                        You are currently using v${sauce.version} and <u>v${latest.version}</u> is available.
+                        <br/><br/>
+                        <center>
+                            <a class="btn download-update" href="${latest.url}" target="_blank">Download Update</a>
+                        </center>
+                    `,
+                    extraButtons: {
+                        "Skip this version": async () => {
+                            $dialog.dialog('close');
+                            await sauce.rpc.storageSet('safariIgnoreVersion', latest.commit);
+                        }
+                    }
+                });
+                $dialog.find('.download-update').on('click', () => $dialog.dialog('close'));
+                $dialog.on('dialogclose', async () => {
+                    await sauce.rpc.storageSet('safariUpdateNotice', Date.now());
+                });
+            }
+        }
+    }
+
+
     async function load() {
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
@@ -3228,6 +3270,7 @@ sauce.ns('analysis', ns => {
         ThrottledNetworkError,
         tfWidgetDialog,
         graphDialog,
+        checkForSafariUpdates,
     };
 });
 
@@ -3242,4 +3285,5 @@ sauce.ns('analysis', ns => {
         await sauce.rpc.reportError(e);
         throw e;
     }
+    setTimeout(sauce.analysis.checkForSafariUpdates, 5000);
 })();
