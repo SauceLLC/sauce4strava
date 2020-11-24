@@ -17,17 +17,20 @@ fname = f'sauce4strava-safari-{version}.zip'
 build_dir = 'safari-app/Sauce for Strava™/DerivedData/Sauce for Strava™/Build/Products/Release/'
 subprocess.check_call(['zip', '-ry', fname, 'Sauce for Strava™.app'], cwd=build_dir)
 
-website_project = '../SauceLLC.github.io/'
-website_dir = website_project + 'builds/safari/'
+website_dir = '../SauceLLC.github.io/'
+website_builds = website_dir + 'builds/safari/'
 
-shutil.copyfile(build_dir + fname, website_dir + fname)
+subprocess.check_call(['git', 'pull'], cwd=website_dir)
 
-with open(website_dir + 'LATEST.json', 'w') as f:
+shutil.copyfile(build_dir + fname, website_builds + fname)
+
+with open(website_builds + 'LATEST.json', 'w') as f:
     json.dump({
         "version": version,
         "commit": commit,
         "url": f'https://saucellc.io/builds/safari/{fname}'
     }, f)
 
-subprocess.check_call(['git', 'commit', '-a', '-m', 'Safari release ' + version], cwd=website_project)
-subprocess.check_call(['git', 'push'], cwd=website_project)
+subprocess.check_call(['git', 'add', fname], cwd=website_builds)
+subprocess.check_call(['git', 'commit', '-a', '-m', 'Safari release ' + version], cwd=website_dir)
+subprocess.check_call(['git', 'push'], cwd=website_dir)
