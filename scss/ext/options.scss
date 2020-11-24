@@ -121,6 +121,7 @@ main {
 }
 
 section {
+    flex: 0 0 auto;  // Required for Safari
     display: flex;
     flex-direction: column;
 }
