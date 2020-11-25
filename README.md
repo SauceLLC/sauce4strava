@@ -68,6 +68,19 @@ Feature Highlights
 
 Release Notes
 --------
+#### v7.0.0:
+ * xPower support
+ * Safari support
+ * Trailforks support [BETA]
+ * Complete redesign of Peak effort dialog
+   * Segment display in peak effort dialog
+   * Customization of graph data
+ * Enhanced analysis bar with expand/collapse support
+ * Improve Strava page and leaderboard load times with cache system
+ * Bug fixes for Perf Predictor when evaluating downhill efforts
+ * Export estimated watts in TCX files
+ * Theme support for local legends pages and inserts
+
 #### v6.2.0:
  * Support for Perf Predictor in segments view
  * Upgraded Live Segment creator tool with editing support
