@@ -43,5 +43,5 @@ with open(website_builds + 'LATEST.json', 'w') as f:
     }, f)
 
 sh('git', 'add', fname, cwd=website_builds)
-sh('git', 'commit', '-a', '-m', 'Safari release ' + version, cwd=website_dir)
+sh('git', 'commit', '-a', '-m', f'Safari release {version}, build {build}', cwd=website_dir)
 sh('git', 'push', cwd=website_dir)
