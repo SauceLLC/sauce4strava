@@ -1,36 +1,47 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import shutil
 import subprocess
+
+env = os.environ.copy()
+env['TARGET'] = 'gecko'  # eventually safari when build sys supports it.
+def sh(*cmds, output=None, **kwargs):
+    if output:
+        return subprocess.check_output(cmds, env=env, **kwargs)
+    else:
+        return subprocess.check_call(cmds, env=env, **kwargs)
+
+proj_dir = 'safari-app/Sauce for Strava™/'
+build_dir = proj_dir + 'DerivedData/Sauce for Strava™/Build/Products/Release/'
+website_dir = '../SauceLLC.github.io/'
+website_builds = website_dir + 'builds/safari/'
+
+build = sh('tools/bin/safari-inc-build', output=True)
+sh('make')  # eventually target should be safari
+sh('xcodebuild', '-scheme', 'Release', cwd=proj_dir)
 
 with open('manifest.json') as f:
     d = json.load(f)
     version = d['version']
 
-with open('build.json') as f:
-    d = json.load(f)
-    commit = d['git_commit']
+fname = f'sauce4strava-safari-{version}-{build}.zip'
 
-
-fname = f'sauce4strava-safari-{version}.zip'
-build_dir = 'safari-app/Sauce for Strava™/DerivedData/Sauce for Strava™/Build/Products/Release/'
-subprocess.check_call(['zip', '-ry', fname, 'Sauce for Strava™.app'], cwd=build_dir)
-
-website_dir = '../SauceLLC.github.io/'
-website_builds = website_dir + 'builds/safari/'
-
-subprocess.check_call(['git', 'pull'], cwd=website_dir)
-
+sh('zip', '-ry', fname, 'Sauce for Strava™.app', cwd=build_dir)
+sh('git', 'pull', cwd=website_dir)
 shutil.copyfile(build_dir + fname, website_builds + fname)
 
 with open(website_builds + 'LATEST.json', 'w') as f:
+    with open('build.json') as f2:
+        d = json.load(f2)
+        commit = d['git_commit']
     json.dump({
         "version": version,
         "commit": commit,
         "url": f'https://saucellc.io/builds/safari/{fname}'
     }, f)
 
-subprocess.check_call(['git', 'add', fname], cwd=website_builds)
-subprocess.check_call(['git', 'commit', '-a', '-m', 'Safari release ' + version], cwd=website_dir)
-subprocess.check_call(['git', 'push'], cwd=website_dir)
+sh('git', 'add', fname, cwd=website_builds)
+sh('git', 'commit', '-a', '-m', 'Safari release ' + version, cwd=website_dir)
+sh('git', 'push', cwd=website_dir)
