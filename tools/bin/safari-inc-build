@@ -3,8 +3,17 @@
 PLIST_APP="safari-app/Sauce for Strava™/Sauce for Strava™/Info.plist"
 PLIST_EXT="safari-app/Sauce for Strava™/Sauce for Strava™ Extension/Info.plist"
 
+version="$1"
+
+if [ -z "$version" ] ; then
+    echo VERSION arg required 1>&2
+    exit 1
+fi
+
 buildNumber=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$PLIST_APP")
 buildNumber=$(($buildNumber + 1))
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$PLIST_APP" 1>&2
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$PLIST_EXT" 1>&2
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $buildNumber" "$PLIST_APP" 1>&2
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $buildNumber" "$PLIST_EXT" 1>&2
 git commit -m "Increment safari build num: ${buildNumber}" "$PLIST_APP" "$PLIST_EXT" 1>&2
