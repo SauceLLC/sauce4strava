@@ -263,8 +263,10 @@
         }
         if (isSafari()) {
             const lastCheck = config.lastSafariUpdateCheck || 0;
-            if (lastCheck < Date.now() - 86400 * 1000) {
+            const lastVersion = config.lastSafariVersion || ext.version;
+            if (lastCheck < Date.now() - 86400 * 1000 || lastVersion !== ext.version) {
                 await sauce.storage.set('lastSafariUpdateCheck', Date.now());
+                await sauce.storage.set('lastSafariVersion', ext.version);
                 await checkForSafariUpdates();
             }
         }

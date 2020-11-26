@@ -140,7 +140,8 @@
             ['Version', `${manifest.version_name || manifest.version} (${commit})`],
         ];
         if (config.safariLatestVersion) {
-            if (build.git_commit !== config.safariLatestVersion.commit) {
+            if (build.git_commit !== config.safariLatestVersion.commit &&
+                config.lastSafariVersion === manifest.version) {
                 const link = document.createElement('a');
                 link.setAttribute('href', config.safariLatestVersion.url);
                 link.setAttribute('target', '_blank');
