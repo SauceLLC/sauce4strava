@@ -2,6 +2,6 @@
 self.sauceBaseInit();
 if (self.browser.runtime.getURL('').startsWith('safari-web-extension:')) {
     // Workaround for visibiltyState = 'prerender' causing GC to pause until unload
-    Object.defineProperty(document, 'visiblityState', {value: 'hidden'});
+    Object.defineProperty(document, 'visibilityState', {value: 'hidden'});
     document.dispatchEvent(new Event('visibilitychange'));
 }
