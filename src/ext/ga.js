@@ -30,6 +30,7 @@
             clientId: localStorage.getItem(gaClientIdKey)
         });
         const tracker = await ns.getTracker(name);
+        tracker.set('transport', 'xhr');  // Do NOT allow beacon
         tracker.set('checkProtocolTask', () => undefined);  // needed when used in an ext.
         localStorage.setItem(gaClientIdKey, tracker.get('clientId'));
         if (await browser.runtime.getBackgroundPage() !== self) {
