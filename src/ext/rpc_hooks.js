@@ -27,12 +27,9 @@
 
 
     addHook('ga', 'apply', async function({args, meta}) {
-        let tracker = await sauce.ga.getTracker(this.tab.id);
+        const tracker = await sauce.ga.getOrCreateTracker(this.tab.id);
         const url = new URL(this.url);
-        if (!tracker) {
-            tracker = await sauce.ga.createTracker(this.tab.id);
-            tracker.set('hostname', url.hostname);
-        }
+        tracker.set('hostname', url.hostname);
         tracker.set('referrer', meta.referrer);
         tracker.set('location', url.href.split('#')[0]);
         tracker.set('viewportSize', `${this.tab.width}x${this.tab.height}`);
