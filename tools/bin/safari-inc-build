@@ -16,5 +16,4 @@ buildNumber=$(($buildNumber + 1))
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $version" "$PLIST_EXT" 1>&2
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $buildNumber" "$PLIST_APP" 1>&2
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $buildNumber" "$PLIST_EXT" 1>&2
-git commit -m "Increment safari build num: ${buildNumber}" "$PLIST_APP" "$PLIST_EXT" 1>&2
 echo $buildNumber

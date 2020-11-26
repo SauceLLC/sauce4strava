@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import shutil
+import subprocess
+
+env = os.environ.copy()
+env['TARGET'] = 'gecko'  # eventually safari when build sys supports it.
+def sh(*cmds, output=None, **kwargs):
+    if output:
+        return subprocess.check_output(cmds, env=env, text=True, **kwargs)
+    else:
+        return subprocess.check_call(cmds, env=env, **kwargs)
+
+proj_dir = 'safari-app/Sauce for Strava™/'
+build_dir = proj_dir + 'DerivedData/Sauce for Strava™/Build/Products/Release/'
+
+with open('manifest.json') as f:
+    d = json.load(f)
+    version = d['version']
+
+build = sh('tools/bin/safari-inc-build', version, output=True).strip()
+sh('make')  # eventually target should be safari
+sh('xcodebuild', '-scheme', 'Release', cwd=proj_dir)

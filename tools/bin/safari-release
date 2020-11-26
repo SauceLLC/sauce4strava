@@ -26,8 +26,9 @@ with open('manifest.json') as f:
 
 plist="safari-app/Sauce for Strava™/Sauce for Strava™/Info.plist"
 build = sh('/usr/libexec/PlistBuddy', '-c', 'Print CFBundleVersion', plist, output=True).strip()
-fname = f'sauce4strava-safari-{version}-{build}.zip'
+sh('git' 'commit', '-a', '-m', f'Increment safari build: ${version}, build ${build}')
 
+fname = f'sauce4strava-safari-{version}-{build}.zip'
 sh('zip', '-ry', fname, 'Sauce for Strava™.app', cwd=build_dir)
 sh('git', 'pull', cwd=website_dir)
 shutil.copyfile(build_dir + fname, website_builds + fname)
