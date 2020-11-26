@@ -30,9 +30,6 @@
             clientId: localStorage.getItem(gaClientIdKey)
         });
         const tracker = await ns.getTracker(name);
-        if (navigator.sendBeacon) {
-            tracker.set('transport', 'beacon');
-        }
         tracker.set('checkProtocolTask', () => undefined);  // needed when used in an ext.
         localStorage.setItem(gaClientIdKey, tracker.get('clientId'));
         if (await browser.runtime.getBackgroundPage() !== self) {
