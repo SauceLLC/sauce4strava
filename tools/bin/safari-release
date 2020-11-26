@@ -18,14 +18,14 @@ build_dir = proj_dir + 'DerivedData/Sauce for Strava™/Build/Products/Release/'
 website_dir = '../SauceLLC.github.io/'
 website_builds = website_dir + 'builds/safari/'
 
-build = sh('tools/bin/safari-inc-build', output=True).strip()
-sh('make')  # eventually target should be safari
-sh('xcodebuild', '-scheme', 'Release', cwd=proj_dir)
+sh('tools/bin/safari-build')
 
 with open('manifest.json') as f:
     d = json.load(f)
     version = d['version']
 
+plist="safari-app/Sauce for Strava™/Sauce for Strava™/Info.plist"
+build = sh('/usr/libexec/PlistBuddy', '-c', 'Print CFBundleVersion', plist, output=True).strip()
 fname = f'sauce4strava-safari-{version}-{build}.zip'
 
 sh('zip', '-ry', fname, 'Sauce for Strava™.app', cwd=build_dir)
