@@ -143,6 +143,7 @@ a {
 }
 
 header {
+    flex: 0 0 auto;  // Required for Safari
     padding-bottom: 0.8em;
     border-bottom: 1.5px solid #ff4000;
     display: flex;
