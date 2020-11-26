@@ -41,6 +41,7 @@
 
             html:not(.moz-extension) .moz-only,
             html:not(.chrome-extension) .chrome-only,
+            html:not(.safari-web-extension) .safari-only,
             html.edge .not-edge {
                 display: none;
             }
@@ -187,6 +188,7 @@
                 |
                 <a class="moz-only" href="privacy.html">Privacy Policy</a><!--Gecko can't do BLANK for ext based pages-->
                 <a target="_BLANK" class="chrome-only" href="privacy.html">Privacy Policy</a>
+                <a target="_BLANK" class="safari-only" href="privacy.html">Privacy Policy</a>
             </div>
         </footer>
     </body>

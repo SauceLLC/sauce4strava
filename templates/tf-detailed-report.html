@@ -7,11 +7,13 @@
 <section class="sauce-info">
     <div class="panel">
         <heading>
-            <h1>Overview</h1>
-            <a class="external" title="View on trailforks.com" target="_blank"
-               href="https://www.trailforks.com/trails/{{trail.alias}}/">
-                {-await faIcon('external-link-duotone')-}</a>
-            <% if (!trail.expanded.description && trail.expanded.difficulty) { %>
+            <h1>
+                Overview
+                <a class="external" title="View on trailforks.com" target="_blank"
+                   href="https://www.trailforks.com/trails/{{trail.alias}}/"
+                    >{-await faIcon('external-link-duotone')-}</a>
+            </h1>
+            <% if (trail.expanded.difficulty) { %>
                 <div class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
                      title="{{trail.expanded.difficulty.title}}"
                     ><% if (trail.expanded.difficulty.image) { %><img
@@ -23,20 +25,7 @@
         </heading>
 
         <% if (trail.expanded.description) { %>
-            <div class="item desc">
-                <span>
-                    <% if (trail.expanded.difficulty) { %>
-                        <div class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
-                             title="{{trail.expanded.difficulty.title}}"
-                            ><% if (trail.expanded.difficulty.image) { %><img
-                                src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"
-                            /><% } else if (trail.expanded.difficulty.icon) { %><div
-                                class="tf-icon">{-await faIcon(trail.expanded.difficulty.icon)-}</div
-                            ><% } %></div>
-                    <% } %>
-                    {-trail.expanded.description-}
-                </span>
-            </div>
+            <div class="item desc"><span>{-trail.expanded.description-}</span></div>
         <% } %>
 
         <div class="item activity-flags">
@@ -158,11 +147,12 @@
     <% if (obj.reports && reports.length) { %>
         <div class="panel">
             <heading>
-                <h1>Reports</h1>
-                <a class="external" title="View all on trailforks" target="_blank"
-                   href="https://www.trailforks.com/trails/{{trail.alias}}/reports/">
-                    {-await faIcon('external-link-duotone')-}
-                </a>
+                <h1>
+                    Reports
+                    <a class="external" title="View all on trailforks" target="_blank"
+                       href="https://www.trailforks.com/trails/{{trail.alias}}/reports/"
+                        >{-await faIcon('external-link-duotone')-}</a>
+                </h1>
             </heading>
             <% for (const x of reports) { %>
                 <div class="report">
@@ -208,11 +198,12 @@
         <% if (obj.photos && photos.length) { %>
             <div class="panel">
                 <heading>
-                    <h1>Photos</h1>
-                    <a class="external" title="View all on trailforks" target="_blank"
-                       href="https://www.trailforks.com/trails/{{trail.alias}}/photos/">
-                        {-await faIcon('external-link-duotone')-}
-                    </a>
+                    <h1>
+                        Photos
+                        <a class="external" title="View all on trailforks" target="_blank"
+                           href="https://www.trailforks.com/trails/{{trail.alias}}/photos/"
+                            >{-await faIcon('external-link-duotone')-}</a>
+                    </h1>
                 </heading>
                 <div class="sauce-media">
                     <% for (const x of photos) { %>
@@ -229,11 +220,12 @@
         <% if (obj.videos && videos.length) { %>
             <div class="panel">
                 <heading>
-                    <h1>Videos</h1>
-                    <a class="external" title="View all on trailforks" target="_blank"
-                       href="https://www.trailforks.com/trails/{{trail.alias}}/videos/">
-                        {-await faIcon('external-link-duotone')-}
-                    </a>
+                    <h1>
+                        Videos
+                        <a class="external" title="View all on trailforks" target="_blank"
+                           href="https://www.trailforks.com/trails/{{trail.alias}}/videos/"
+                            >{-await faIcon('external-link-duotone')-}</a>
+                    </h1>
                 </heading>
                 <div class="sauce-media">
                     <% for (const x of videos) { %>

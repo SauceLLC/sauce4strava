@@ -262,7 +262,7 @@ sauce.ns('trailforks', ns => {
             status: enums.statuses[data.status],
             condition: enums.conditions[data.condition],
             difficulty: enums.difficulties[data.difficulty],
-            //difficulty: enums.difficulties[Math.round(Math.random() * 10)],
+            //difficulty: enums.difficulties[Math.round(Math.random() * 10)], // TESTING
             difficultyUserAvg: enums.difficulties[data.difficulty_user_avg],
             trailType: enums.types[data.trailtype],
             bikeType: enums.bikeTypes[data.biketype],

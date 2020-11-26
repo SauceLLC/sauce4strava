@@ -26,6 +26,8 @@
 
 
 @mixin dialog {
+    $difficulty-size: 4em;
+
     &.trailforks-overviews {
         * {
             box-sizing: border-box;
@@ -58,6 +60,13 @@
 
                 &.sauce-info {
                     flex-basis: 33%;
+
+                    .panel {
+                        > .item:nth-of-type(1),
+                        > .item:nth-of-type(2), {
+                            margin-right: $difficulty-size + 1em;
+                        }
+                    }
                 }
                 &.geo {
                     flex-basis: 33%;
@@ -125,13 +134,13 @@
                 }
 
                 .tf-difficulty {
-                    height: 4em;
-                    width: 4em;
+                    height: $difficulty-size;
+                    width: $difficulty-size;
                     background: #fff;  // Yup, hard code it.
                     border-radius: 0.2em;
                     padding: 0.3em;
-                    float: right;
                     margin-left: 0.3em;
+                    margin-bottom: -($difficulty-size - 1em); // emulate float
 
                     img {
                         max-height: 100%;
@@ -164,6 +173,11 @@
                         font-weight: bold;
                         padding-bottom: 0.5em;
                         flex: 1 0 auto;
+
+                        a {
+                            padding: 0 0.3em;
+                            vertical-align: text-bottom;
+                        }
                     }
                 }
 
@@ -208,10 +222,8 @@
                     }
 
                     &.desc {
-                        border-radius: 0.28em;
-                        background-color: color.shade(bg, 8%);
-                        padding: 1em 1em;
-                        margin: 0.3em 0;
+                        padding: 0.6em;
+                        margin-bottom: 0.8em;
                     }
                 }
 
@@ -234,6 +246,24 @@
                         height: 1em;
                     }
                 }
+            }
+        }
+    }
+
+    @media only screen and (max-width: 768px) {
+        &.trailforks-overviews {
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            height: 100vh !important;
+            width: 100vw !important;
+            max-height: initial;
+            max-width: initial;
+            margin: 0;
+
+            ul.tabs {
+                overflow-x: initial !important;  // undo strava css that breaks tabs in mobile
             }
         }
     }
