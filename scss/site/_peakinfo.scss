@@ -50,7 +50,7 @@
         left: calc(10px + 1.3em + 0.5em); // match icon pad/offset
 
         .text {
-            font-size: 0.85em;
+            font-size: 0.82em;
             color: color.shade(accent, 0%);
             text-transform: capitalize;
             font-variant: all-petite-caps;
@@ -63,6 +63,7 @@
 
     table {
         margin: 0;
+        font-size: 0.88em;
 
         tr:nth-child(odd) {
             background: rgba(128, 128, 128, 0.04);
@@ -84,7 +85,7 @@
         }
 
         td {
-            padding: 0.5em 0.4em;
+            padding: 0.6em 0.44em;
             text-align: center;
         }
 

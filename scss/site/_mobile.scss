@@ -125,9 +125,10 @@
 
             #sauce-infopanel {
                 margin: 0;
+                font-size: 1.12em;
 
                 td {
-                    padding: 0.6em 0.3em;
+                    padding: 0.92em 0.3em;
                     width: 50%;
                 }
 
@@ -138,9 +139,13 @@
 
                 .sauce-title-menu .selection,
                 .sauce-title-menu ul li a {
-                    font-size: 1.2em;
-                    padding-top: 1em;
-                    padding-bottom: 1em;  // make sure when chaning you don't break "ESTIMATED"
+                    font-size: 1.12em;
+                    padding-top: 0.7em;
+                    padding-bottom: 0.7em;
+
+                    &.watt-estimate {
+                        padding-bottom: 0.82em;
+                    }
                 }
             }
 
@@ -161,6 +166,8 @@
                 }
 
                 > header {
+                    padding: 0.33em 0;
+
                     .social {
                         flex: 1 0 auto;
                         margin-right: 0;
@@ -268,7 +275,7 @@
 
                 #map-canvas {
                     min-height: initial;
-                    max-height: 20vh;
+                    max-height: 30vh;
                 }
 
                 #run-efforts-table .laps {
@@ -671,14 +678,6 @@
                     transform: translateY(-23px);
                 }
             }
-        }
-    }
-
-    .leaflet-container {
-        pointer-events: none;
-
-        .mapbox-container {
-            pointer-events: auto;
         }
     }
 
