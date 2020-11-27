@@ -127,9 +127,13 @@
                 margin: 0;
                 font-size: 1.12em;
 
-                td {
-                    padding: 0.92em 0.3em;
-                    width: 50%;
+                table {
+                    font-size: 1em;
+
+                    td {
+                        padding: 0.72em 0.3em;
+                        width: 50%;
+                    }
                 }
 
                 .sauce-title-menu .selection {
@@ -260,11 +264,20 @@
                         display: none;
                     }
 
+                    .expander {
+                        display: none;  // always expanded
+                    }
+
                     .sauce-data-tuple {
-                        align-items: flex-start;
+                        font-size: 1.2em;
+                        padding: 0.2em 1em;
 
                         &:nth-child(odd) {
                             border: none;
+                        }
+
+                        line:nth-child(1n+4) {
+                            display: flex;  // Force expanded mode.
                         }
                     }
                 }
