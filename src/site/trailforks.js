@@ -467,6 +467,9 @@ sauce.ns('trailforks', ns => {
         q.set('rows', pageSize);  // NOTE: Must be _PERFECT_ due to api_key limits.
         q.set('sort', 'created'); // NOTE: Not the same as 'ts' but best we can do.
         q.set('order', 'desc');
+        if (options.noCache) {
+            q.set('_dc', Date.now());
+        }
         // We can't properly sort the photos API; they only allow sorting by
         // 'created' but we only see 'ts' which is different.  So we just
         // batch all new photos until we've seen one before and then break.
@@ -667,6 +670,9 @@ sauce.ns('trailforks', ns => {
         q.set('scope', 'full');
         q.set('api_key', tfApiKey());
         q.set('id', id);
+        if (options.noCache) {
+            q.set('_dc', Date.now());
+        }
         const cacheKey = `trail-${id}`;
         let data = !options.noCache && await tfCache.get(cacheKey);
         if (!data) {
