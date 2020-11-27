@@ -299,10 +299,16 @@ sauce.ns('analysis', ns => {
             $dialog.on('dialogclose', ev => void $dialog.dialog('destroy'));
         }
         if (options.closeOnMobileBack && ctx.isMobile) {
-            history.pushState({}, null);
-            const onPop = ev => setTimeout(() => $dialog.dialog('close'), 0);
+            const dialogId = Math.random();
+            history.pushState({dialogId}, null);
+            const onPop = ev => $dialog.dialog('close');
             window.addEventListener('popstate', onPop);
-            $dialog.on('dialogclose', ev => window.removeEventListener('popstate', onPop));
+            $dialog.on('dialogclose', ev => {
+                window.removeEventListener('popstate', onPop);
+                if (history.state.dialogId === dialogId) {
+                    history.go(-1);
+                }
+            });
         }
         return $dialog;
     }
