@@ -219,7 +219,7 @@ table.hidden-segments {
 
         .tf-icon-stack {
             display: grid;
-            z-index: 1; // Allows negative z-indexes for children without whole div going below parent.
+            //z-index: 1; // Allows negative z-indexes for children without whole div going below parent.
 
             &:not(:last-child) {
                 margin-right: 0.3em;
@@ -232,11 +232,12 @@ table.hidden-segments {
                 font-size: 1em;
             }
 
+            // Deprecate (needs testing to fully remove)
             @for $i from 1 to 12 {
                 > :nth-child(#{$i}) {
                     grid-column-start: #{$i};
                     grid-row-start: #{$i};
-                    z-index: -$i;
+                    //z-index: -$i;
                     opacity: 1 - (($i - 1) * 0.28);
                 }
             }

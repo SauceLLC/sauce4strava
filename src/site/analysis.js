@@ -298,6 +298,12 @@ sauce.ns('analysis', ns => {
         if (options.autoDestroy) {
             $dialog.on('dialogclose', ev => void $dialog.dialog('destroy'));
         }
+        if (options.closeOnMobileBack && ctx.isMobile) {
+            history.pushState({}, null);
+            const onPop = ev => setTimeout(() => $dialog.dialog('close'), 0);
+            window.addEventListener('popstate', onPop);
+            $dialog.on('dialogclose', ev => window.removeEventListener('popstate', onPop));
+        }
         return $dialog;
     }
 
@@ -995,6 +1001,7 @@ sauce.ns('analysis', ns => {
             flex: true,
             resizable: false,
             autoOpen: false, // Defer till after graph render so position is correct
+            closeOnMobileBack: true,
             position: {
                 my: 'left center',
                 at: 'right center',
@@ -1495,6 +1502,7 @@ sauce.ns('analysis', ns => {
             const $dialog = modal({
                 title: 'Power Profile Badges Explained',
                 body: await powerProfileTpl(),
+                closeOnMobileBack: true,
                 width: 600
             });
             const times = [];
@@ -1970,6 +1978,7 @@ sauce.ns('analysis', ns => {
             width: 'min(80vw, 70em)',
             height: 600,
             flex: true,
+            closeOnMobileBack: true,
             extraButtons: [{
                 text: 'Refresh',
                 click: () => selectedTab().renderer.refresh(),
@@ -2781,6 +2790,7 @@ sauce.ns('analysis', ns => {
             dialogClass: 'sauce-perf-predictor no-pad',
             resizable: false,
             draggable: false,
+            closeOnMobileBack: true,
         });
         function fget(name) {
             return Number($dialog.find(`[name="${name}"]`).val());
@@ -3217,6 +3227,7 @@ sauce.ns('analysis', ns => {
             const mobileMedia = window.matchMedia('(max-width: 768px)');
             mobileMedia.addListener(ev => void (jQuery.fx.off = ev.matches));
             jQuery.fx.off = mobileMedia.matches;
+            ctx.isMobile = mobileMedia.matches;
         }
         await pageViewAssembled();
         const activity = pageView.activity();
