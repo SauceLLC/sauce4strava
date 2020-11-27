@@ -49,6 +49,13 @@ html .ui-dialog {
         flex: 0 0 auto;
     }
 
+    .ui-dialog-buttonpane  .ui-dialog-buttonset {
+        button svg[data-icon] {
+            width: 1em;
+            margin-left: 0.44em;
+        }
+    }
+
     .ui-dialog-content {
         flex: 1 1 auto;
         overflow: auto;

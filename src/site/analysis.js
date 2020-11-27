@@ -1877,22 +1877,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function tfWidgetDialog(title, widget, options={}, dialogOptions) {
-        const q = new URLSearchParams();
-        for (const [k, v] of Object.entries(options)) {
-            q.set(k, v);
-        }
-        return dialog(Object.assign({
-            title,
-            body: `
-                <iframe class="sauce-trailforks-widget" width="100%" height="100%" frameborder="0"
-                        src="https://www.trailforks.com/widgets/${widget}/?${q}"></iframe>
-            `,
-            dialogClass: 'no-pad',
-        }, dialogOptions));
-    }
-
-
     async function addTrailforksRow(row) {
         let tfCol = row.querySelector('td.sauce-tf-col');
         if (!tfCol) {
@@ -1960,6 +1944,15 @@ sauce.ns('analysis', ns => {
     }
 
     async function showTrailforksModal(descs) {
+        const extUrlIcon = await sauce.images.asText('fa/external-link-duotone.svg');
+        function selectedTab() {
+            for (const t of tabs) {
+                if (t.selected) {
+                    return t;
+                }
+            }
+            throw new Error("No Selected Tab");
+        }
         const $tfModal = modal({
             title: `Trailforks Overviews`,
             dialogClass: 'trailforks-overviews no-pad',
@@ -1977,30 +1970,49 @@ sauce.ns('analysis', ns => {
             width: 'min(80vw, 70em)',
             height: 600,
             flex: true,
+            extraButtons: [{
+                text: 'Refresh',
+                click: () => selectedTab().renderer.refresh(),
+            }, {
+                html: `Add Trail Report ${extUrlIcon}`,
+                click: () => {
+                    const id = selectedTab().trailId;
+                    window.open(`https://www.trailforks.com/contribute/report/?trailid=${id}`, '_blank');
+                }
+            }]
         });
         const tabs = descs.map((desc, i) => ({
             selector: `li.trail-${desc.trail.id}`,
+            trailId: desc.trail.id,
             renderer: new (self.Backbone.View.extend({
                 select: () => void 0,
                 unselect: () => void 0,
-                show: async function() {
+                show: async function(options) {
                     this.$el.children().detach();
                     if (!this.$reportEl) {
-                        const docClasses = document.documentElement.classList;
-                        docClasses.add('sauce-loading');
-                        try {
-                            this.$reportEl = await renderTFDetailedReport(desc, this.$el);
-                        } catch(e) {
-                            sauce.rpc.reportError(e);
-                            throw e;
-                        } finally {
-                            docClasses.remove('sauce-loading');
-                        }
+                        this.$reportEl = await this.asyncRender(options);
                     } else {
                         this.$el.append(this.$reportEl);
                     }
                 },
-                render: () => void 0,
+                refresh: async function() {
+                    const $old = this.$reportEl;
+                    this.$reportEl = null;
+                    await this.show({noCache: true});
+                    $old.remove();
+                },
+                asyncRender: async function(options) {
+                    const docClasses = document.documentElement.classList;
+                    docClasses.add('sauce-loading');
+                    try {
+                        return await renderTFDetailedReport(desc.trail.id, this.$el, options);
+                    } catch(e) {
+                        sauce.rpc.reportError(e);
+                        throw e;
+                    } finally {
+                        docClasses.remove('sauce-loading');
+                    }
+                }
             }))({el: $tfModal.find('.tf-overview')}),
             selected: i === 0
         }));
@@ -2009,14 +2021,16 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function renderTFDetailedReport(desc, $into) {
-        const [photos, videos, reports] = await Promise.all([
-            sauce.trailforks.photos(desc.trail.id, {maxCount: 20}),
-            sauce.trailforks.videos(desc.trail.id, {maxCount: 20}),
-            sauce.trailforks.reports(desc.trail.id, {maxAge: 182.5 * 86400 * 1000, maxCount: 6})
+    async function renderTFDetailedReport(id, $into, options) {
+        const [trail, photos, videos, reports] = await Promise.all([
+            sauce.trailforks.trail(id, options),
+            sauce.trailforks.photos(id, Object.assign({maxCount: 20}, options)),
+            sauce.trailforks.videos(id, Object.assign({maxCount: 20}, options)),
+            sauce.trailforks.reports(id, Object.assign({maxAge: 182.5 * 86400 * 1000, maxCount: 6}, options))
         ]);
         const template = await getTemplate('tf-detailed-report.html', 'trailforks');
-        const $el = jQuery(await template(Object.assign({
+        const $el = jQuery(await template({
+            trail,
             photos,
             videos,
             reports,
@@ -2025,12 +2039,12 @@ sauce.ns('analysis', ns => {
             humanTime,
             humanTimeAgo: sauce.locale.humanTimeAgo,
             distanceUnit: ctx.distanceFormatter.shortUnitKey(),
-        }, desc)));
+        }));
         $into.html($el);
-        const altStream = desc.trail.track.altitude.split(',').map(Number);
-        const distStream = desc.trail.track.distance.split(',').map(Number);
-        const lats = desc.trail.track.latitude.split(',');
-        const lngs = desc.trail.track.longitude.split(',');
+        const altStream = trail.track.altitude.split(',').map(Number);
+        const distStream = trail.track.distance.split(',').map(Number);
+        const lats = trail.track.latitude.split(',');
+        const lngs = trail.track.longitude.split(',');
         const latlngStream = lats.map((x, i) => [Number(x), Number(lngs[i])]);
         const map = createPolylineMap(latlngStream, $el.find('.map'));
         map.showGpxDownload(false);
@@ -2079,13 +2093,13 @@ sauce.ns('analysis', ns => {
                         const sources = Object.entries(v.media).map(([res, url]) =>
                             `<source src="${url}"/>`);
                         videoModal({
-                            title: v.title || desc.trail.title,
+                            title: v.title || trail.title,
                             body: `<video style="width: 100%; height: 100%;"
                                           controls>${sources.join('')}</video>`,
                         });
                     } else if (v.source === 'youtube') {
                         videoModal({
-                            title: v.title || desc.trail.title,
+                            title: v.title || trail.title,
                             body: `
                                 <iframe frameborder="0" allow="fullscreen" width="100%" height="100%"
                                         src="https://www.youtube.com/embed/${v.source_id}"></iframe>
@@ -2102,7 +2116,7 @@ sauce.ns('analysis', ns => {
             const id = ev.currentTarget.dataset.id;
             if (!photosCollection) {
                 photosCollection = new Strava.Models.Photos(photos.map((x, i) => ({
-                    caption_escaped: `${desc.trail.title} (${i + 1}/${photos.length})`,
+                    caption_escaped: `${trail.title} (${i + 1}/${photos.length})`,
                     large: x.thumbs.l,
                     thumbnail: x.thumbs.s,
                     photo_id: x.id,
@@ -3268,7 +3282,6 @@ sauce.ns('analysis', ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,
-        tfWidgetDialog,
         graphDialog,
         checkForSafariUpdates,
     };

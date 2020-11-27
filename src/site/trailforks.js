@@ -445,33 +445,6 @@ sauce.ns('trailforks', ns => {
         return data;
     }
 
-    async function fetchFullTrails(ids) {
-        // If we had a proper API key (which TF has been to busy to help with) we could
-        // do a single call to the trails endpoint.  This works as a hack until then.
-        const q = new URLSearchParams();
-        q.set('scope', 'full');
-        q.set('api_key', tfApiKey());
-        const manifests = ids.map(id => {
-            q.set('id', id);
-            return {
-                cacheKey: `trail-${id}`,
-                query: q.toString()
-            };
-        });
-        return await Promise.all(manifests.map(async x => {
-            let data = await tfCache.get(x.cacheKey);
-            if (!data) {
-                const resp = await fetch(`${tfHost}/api/1/trail/?${x.query}`);
-                data = await resp.json();
-                if (data.error !== 0) {
-                    throw new Error(`TF API Error: ${data.error} ${data.message}`);
-                }
-                await tfCache.set(x.cacheKey, data);
-            }
-            return lookupEnums(convertTrailFields(data.data));
-        }));
-    }
-
 
     async function fetchPagedTrailResource(resource, trailId, options={}) {
         if (options.pageSize == null) {
@@ -481,7 +454,7 @@ sauce.ns('trailforks', ns => {
         const filterKey = options.filterKey || 'trail';
         const pk = options.pk || 'id';
         const cacheKey = `${resource}-${trailId}`;
-        const listingEntry = await tfCache.getEntry(cacheKey);
+        const listingEntry = !options.noCache && await tfCache.getEntry(cacheKey);
         if (listingEntry && Date.now() - listingEntry.created < 1 * 3600 * 1000) {
             return listingEntry.value;
         }
@@ -679,12 +652,32 @@ sauce.ns('trailforks', ns => {
                 });
             }
         }
-        const fullTrails = await fetchFullTrails(intersections.map(x => x.trailId));
+        // If we had a proper API key (which TF has been to busy to help with) we could
+        // do a single call to the trails endpoint.  This works as a hack until then.
+        const fullTrails = await Promise.all(intersections.map(x => ns.trail(x.trailId)));
         for (let i = 0; i < fullTrails.length; i++) {
             intersections[i].trail = fullTrails[i];
         }
         await tfCache.set(cacheKey, intersections);
         return intersections;
+    };
+
+    ns.trail = async function(id, options={}) {
+        const q = new URLSearchParams();
+        q.set('scope', 'full');
+        q.set('api_key', tfApiKey());
+        q.set('id', id);
+        const cacheKey = `trail-${id}`;
+        let data = !options.noCache && await tfCache.get(cacheKey);
+        if (!data) {
+            const resp = await fetch(`${tfHost}/api/1/trail/?${q}`);
+            data = await resp.json();
+            if (data.error !== 0) {
+                throw new Error(`TF API Error: ${data.error} ${data.message}`);
+            }
+            await tfCache.set(cacheKey, data);
+        }
+        return lookupEnums(convertTrailFields(data.data));
     };
 
     ns.photos = async function(trailId, options={}) {
