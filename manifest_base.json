@@ -9,7 +9,8 @@
     "version": "7.0.0.5",
 
     "permissions": [
-        "storage"
+        "storage",
+        "contextMenus"
     ],
 
     "icons": {
@@ -27,6 +28,7 @@
             "src/ext/ga.js",
             "src/ext/storage.js",
             "src/ext/rpc_hooks.js",
+            "src/bg/menu.js",
             "src/bg/rpc.js",
             "src/bg/migrate.js",
             "src/common/base.js",

@@ -707,5 +707,11 @@
     },
     "live_segment_beg3": {
         "message": "¡Muchas gracias por entender y contribuir a hacer que Sauce sea aún mejor!"
+    },
+    "menu_add_review": {
+        "message": "Agregar una opinión"
+    },
+    "menu_supporters": {
+        "message": "Partidarios"
     }
 }

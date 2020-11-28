@@ -712,5 +712,11 @@
     },
     "live_segment_beg3": {
         "message": "Grazie mille per aver compreso e contribuito a rendere la salsa ancora migliore!"
+    },
+    "menu_add_review": {
+        "message": "Aggiungi recensione"
+    },
+    "menu_supporters": {
+        "message": "Sostenitori"
     }
 }

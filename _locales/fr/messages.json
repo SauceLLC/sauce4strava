@@ -715,5 +715,11 @@
     },
     "live_segment_beg3": {
         "message": "Merci beaucoup pour votre compréhension et votre contribution à rendre la sauce encore meilleure!"
+    },
+    "menu_add_review": {
+        "message": "Ajouter un commentaire"
+    },
+    "menu_supporters": {
+        "message": "Partisans"
     }
 }

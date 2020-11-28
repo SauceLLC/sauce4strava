@@ -706,5 +706,11 @@
     },
     "live_segment_beg3": {
         "message": "非常感谢您的理解并为使Sauce变得更好做出了贡献！"
+    },
+    "menu_add_review": {
+        "message": "添加评论"
+    },
+    "menu_supporters": {
+        "message": "支持者"
     }
 }
