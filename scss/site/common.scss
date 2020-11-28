@@ -33,13 +33,13 @@
     li#global-sauce-options-menu-item {
         a {
             color: color.shade(accent, 60%) !important;
-            background-image: linear-gradient(color.shade(accent, -5%),
-                                              color.shade(accent, 10%) 33%,
+            background-image: linear-gradient(color.shade(accent, 10%),
+                                              color.shade(accent, 10%) 20%,
                                               color.shade(accent, 0%));
 
             &:hover {
-                background-image: linear-gradient(color.shade(accent, -10%),
-                                                  color.shade(accent, 5%) 33%,
+                background-image: linear-gradient(color.shade(accent, 5%),
+                                                  color.shade(accent, 5%) 20%,
                                                   color.shade(accent, -5%));
             }
 

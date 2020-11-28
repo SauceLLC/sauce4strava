@@ -60,9 +60,9 @@
         height: $expander-height;
         transition: box-shadow 200ms, filter 200ms;
         background-image: linear-gradient(to top,
-            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * 0%)),
-            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * -4%)) 18%,
-            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * -26%)));
+            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * -6%)),
+            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * -16%)) 18%,
+            hsl(var(--sauce-border-hue), var(--sauce-border-sat), calc(var(--sauce-border-light) + var(--sauce-border-shade-dir) * -20%)));
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -83,7 +83,7 @@
 
         &:hover {
             filter: contrast(2);
-            box-shadow: 0 -1px 3px 0 color.shade(fg, 0%, 0.1);
+            box-shadow: 0 0 6px -1px color.shade(fg, 0%) inset;
         }
     }
 
@@ -99,8 +99,8 @@
 
             img {
                 transform: rotate(-20deg);
-                max-width: 2.85em;
-                max-height: 2.85em;
+                max-width: 2.75em;
+                max-height: 2.75em;
                 font-size: inherit;
             }
 
