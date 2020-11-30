@@ -166,6 +166,8 @@ sauce.ns('export', function() {
             const laps = hasLaps ? this.activity.laps : [[0, streams.time.length - 1]];
             for (const [start, end] of laps) {
                 const lap = this.addNodeTo(this.activityNode, 'Lap');
+                const lapTime = (new Date(startTime + (streams.time[start] * 1000))).toISOString();
+                lap.setAttribute('StartTime', lapTime);
                 this.addNodeTo(lap, 'TriggerMethod', 'Manual');
                 this.addNodeTo(lap, 'TotalTimeSeconds', streams.time[end] - streams.time[start]);
                 if (streams.distance) {
@@ -183,7 +185,6 @@ sauce.ns('export', function() {
                     const point = this.addNodeTo(track, 'Trackpoint');
                     const time = (new Date(startTime + (streams.time[i] * 1000))).toISOString();
                     this.addNodeTo(point, 'Time', time);
-                    lap.setAttribute('StartTime', time);
                     if (streams.latlng) {
                         const [lat, lon] = streams.latlng[i];
                         const position = this.addNodeTo(point, 'Position');

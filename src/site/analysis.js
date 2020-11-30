@@ -1482,9 +1482,12 @@ sauce.ns('analysis', ns => {
                 </ul>
             </li>
         `));
-        const lapEfforts = pageView.lapEfforts();
-        const laps = lapEfforts && lapEfforts.models.map(x => x.indices());
+        function getLaps() {
+            const lapEfforts = pageView.lapEfforts();
+            return (lapEfforts && lapEfforts.length) ? lapEfforts.models.map(x => x.indices()) : null;
+        }
         $menu.find('a.tcx').on('click', () => {
+            const laps = getLaps();
             exportActivity(sauce.export.TCXSerializer, {laps}).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
         });
@@ -1494,6 +1497,7 @@ sauce.ns('analysis', ns => {
                        class="gpx">${exportLocale} GPX</a></li>
             `));
             $menu.find('a.gpx').on('click', () => {
+                const laps = getLaps();
                 exportActivity(sauce.export.GPXSerializer, {laps}).catch(sauce.rpc.reportError);
                 sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
             });
