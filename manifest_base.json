@@ -6,7 +6,7 @@
     "short_name": "Sauce",
     "description": "__MSG_app_desc__",
     "author": "Sauce, LLC",
-    "version": "7.0.2",
+    "version": "7.0.3",
 
     "permissions": [
         "storage",
