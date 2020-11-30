@@ -3245,7 +3245,6 @@ sauce.ns('analysis', ns => {
             'Swim': 'swim',
             'Other': 'other',
             'StationaryOther': 'other',
-            'Manual': 'other',
         }[type];
         if (ctx.activityType) {
             // Start network load early..
