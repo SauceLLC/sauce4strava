@@ -1482,12 +1482,18 @@ sauce.ns('analysis', ns => {
                 </ul>
             </li>
         `));
-        function getLaps() {
+        async function getLaps() {
             const lapEfforts = pageView.lapEfforts();
-            return (lapEfforts && lapEfforts.length) ? lapEfforts.models.map(x => x.indices()) : null;
+            if (lapEfforts && !lapEfforts.length) {
+                await new Promise(resolve => lapEfforts.fetch().always(resolve));
+            }
+            const ctx = pageView.chartContext();
+            return (lapEfforts && lapEfforts.length) ?
+                lapEfforts.models.map(x => ctx.convertStreamIndices(x.indices())) :
+                null;
         }
-        $menu.find('a.tcx').on('click', () => {
-            const laps = getLaps();
+        $menu.find('a.tcx').on('click', async () => {
+            const laps = await getLaps();
             exportActivity(sauce.export.TCXSerializer, {laps}).catch(sauce.rpc.reportError);
             sauce.rpc.reportEvent('ActionsMenu', 'export', 'tcx');
         });
@@ -1496,8 +1502,8 @@ sauce.ns('analysis', ns => {
                 <li><a title="NOTE: GPX files do not support power data (watts)."
                        class="gpx">${exportLocale} GPX</a></li>
             `));
-            $menu.find('a.gpx').on('click', () => {
-                const laps = getLaps();
+            $menu.find('a.gpx').on('click', async () => {
+                const laps = await getLaps();
                 exportActivity(sauce.export.GPXSerializer, {laps}).catch(sauce.rpc.reportError);
                 sauce.rpc.reportEvent('ActionsMenu', 'export', 'gpx');
             });
