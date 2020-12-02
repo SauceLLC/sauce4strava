@@ -2582,7 +2582,7 @@ sauce.ns('analysis', ns => {
             width: `calc(${initialWidth}ch + 4em)`,
             dialogClass: 'sauce-big-data',
             extraButtons: {
-                "Download": () => {
+                "Download CSV": () => {
                     const range = start && end ? `-${start}-${end}` : '';
                     const name = `${pageView.activity().id}${range}.csv`;
                     download(new Blob([currentData], {type: 'text/csv'}), name);
