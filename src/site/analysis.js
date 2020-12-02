@@ -165,7 +165,7 @@ sauce.ns('analysis', ns => {
         await fetchStreams([name]);
         const rawStream = _getStream(name);
         if (rawStream) {
-            const smooth = sauce.data.smooth(period, null, rawStream);
+            const smooth = sauce.data.smooth(period, rawStream);
             pageView.streams().streamData.add(fqName, smooth);
             return _getStream(fqName, start, end);
         }
@@ -890,13 +890,23 @@ sauce.ns('analysis', ns => {
         options = options || {};
         const mps = options.velocity ? raw : 1 / raw;
         const value = ctx.paceFormatter.key === 'distance_per_time' ? mps * 3600 : mps;
+        const minPace = 0.1;  // About 4.5 hours / mile
         if (options.suffix) {
             if (options.html) {
+                if (value < minPace) {
+                    return '<abbr class="unit short" title="Stopped">-</abbr>';
+                }
                 return ctx.paceFormatter.abbreviated(value);
             } else {
+                if (value < minPace) {
+                    return '-';
+                }
                 return ctx.paceFormatter.formatShort(value);
             }
         } else {
+            if (value < minPace) {
+                return '-';
+            }
             return ctx.paceFormatter.format(value);
         }
     }
@@ -1328,10 +1338,8 @@ sauce.ns('analysis', ns => {
                 let composite = false;
                 for (const spec of specs) {
                     let data = spec.data;
-                    // Firefox Mobile doesn't support audiocontext based resampling.
-                    // Safari doens't have OfflineAudioContext
-                    if (data.length > 120 && !navigator.userAgent.match(/Mobile/) && !self.safari) {
-                        data = await sauce.data.resample(data, 60);
+                    if (data.length > 120) {
+                        data = sauce.data.resample(data, 120);
                     }
                     const dataMin = sauce.data.min(data);
                     const dataMax = sauce.data.max(data);

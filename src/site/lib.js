@@ -96,71 +96,20 @@ sauce.ns('data', function() {
     }
 
 
-    let _useSafeSampleRate = false;
-    async function resample(inData, outLen, options) {
-        const minBestSampleRate = 3000;  // chromium min
-        const maxBestSampleRate = 300000; // chromium max
-        const minSafeSampleRate = 8000;  // spec min
-        const maxSafeSampleRate = 96000; // spec max
-        const minSampleRate = _useSafeSampleRate ? minSafeSampleRate : minBestSampleRate;
-        const maxSampleRate = _useSafeSampleRate ? maxSafeSampleRate : maxBestSampleRate;
-        let outData;
-        let ratio = outLen / inData.length;
-        if (ratio > 1) {
-            let scratch = Float32Array.from(inData);
-            do {
-                const outSampleRate = Math.min(maxSampleRate, ratio * minSampleRate);
-                try {
-                    scratch = await _resample(scratch, minSampleRate, outSampleRate);
-                } catch(e) {
-                    if (!_useSafeSampleRate && e.name === 'NotSupportedError') {
-                        _useSafeSampleRate = true;
-                        return await resample(inData, outLen, options);
-                    } else {
-                        throw e;
-                    }
-                }
-                ratio = outLen / scratch.length;
-            } while (ratio > 1);
-            outData = scratch;
-        } else if (inData.length > outLen) {
-            let scratch = Float32Array.from(inData);
-            do {
-                const outSampleRate = Math.max(minSampleRate, ratio * maxSampleRate);
-                try {
-                    scratch = await _resample(scratch, maxSampleRate, outSampleRate);
-                } catch(e) {
-                    if (!_useSafeSampleRate && e.name === 'NotSupportedError') {
-                        _useSafeSampleRate = true;
-                        return await resample(inData, outLen, options);
-                    } else {
-                        throw e;
-                    }
-                }
-                ratio = outLen / scratch.length;
-            } while (ratio < 1);
-            outData = scratch;
-        } else {
-            outData = inData;
+    function resample(inData, outLen, options={}) {
+        const smoothing = options.smoothing || 0.10;
+        const inLen = inData.length;
+        const step = inLen / outLen;
+        const period = Math.round(step * smoothing);
+        if (period >= 2) {
+            inData = smooth(period, inData);
         }
-        return Array.from(outData);
-    }
-
-
-    async function _resample(inData, inRate, outRate) {
-        if (!(inData instanceof Float32Array)) {
-            throw new TypeError("inData argument must be Float32Array");
+        const outData = [];
+        for (let i = 0; i < outLen; i++) {
+            // Round 0.5 down to avoid single use of index 0 and tripple use of final index.
+            outData.push(inData[Math.min(inLen - 1, -Math.round(-i * step))]);
         }
-        const outLen = Math.round(inData.length * (outRate / inRate));
-        const ctx = new OfflineAudioContext(1, outLen, outRate);
-        const inBuf = ctx.createBuffer(1, inData.length, inRate);
-        inBuf.copyToChannel(inData, 0);
-        const outBufNode = ctx.createBufferSource();
-        outBufNode.buffer = inBuf;
-        outBufNode.connect(ctx.destination);
-        outBufNode.start(0);
-        const outBuf = await ctx.startRendering();
-        return outBuf.getChannelData(0);
+        return outData;
     }
 
 
@@ -482,19 +431,18 @@ sauce.ns('data', function() {
     }
 
 
-    function smooth(period, timeStream, valuesStream) {
+    function smooth(period, valuesStream) {
         const values = [];
         const roll = new RollingAverage(period);
         for (let i = 0; i < valuesStream.length; i++) {
-            const ts = timeStream == null ? i : timeStream[i];
             const v = valuesStream[i];
             if (i < period - 1) {
                 // soften the leading edge by unweighting the first values.
                 const weighted = valuesStream.slice(i, period - 1);
                 weighted.push(v);
-                roll.add(ts, avg(weighted));
+                roll.add(i, avg(weighted));
             } else {
-                roll.add(ts, v);
+                roll.add(i, v);
             }
             values.push(roll.avg({active: true}));
         }
