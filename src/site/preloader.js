@@ -427,9 +427,10 @@ self.saucePreloaderInit = function saucePreloaderInit() {
          * This modified Backbone.ajax is learned in the ways of using Sauce's cache system. */
         return function() {
             const BackboneAjaxSave = Backbone.ajax;
+            const outerScope = this;  // Only use for interceptCallback.  Orig must use ajax scope.
             Backbone.ajax = function(options) {
                 const d = jQuery.Deferred();
-                interceptCallback(options).then(data => {
+                interceptCallback.call(outerScope, options).then(data => {
                     if (options.success) {
                         options.success(data);
                     }
@@ -457,10 +458,10 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         if (!_streamsCache) {
             _streamsCache = new sauce.cache.TTLCache('streams', 7 * 86400 * 1000);
         }
-        function cacheKey(key) {
-            const keyPrefix = pageView.activity().id;
+        Klass.prototype._cacheKey = function(key) {
+            const keyPrefix = this.activityId;
             return `${keyPrefix}-${key}`;
-        }
+        };
         const pendingStale = new Set();
         let pendingFill;
         async function fillCache(options, streams) {
@@ -469,7 +470,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             const cacheObj = {};
             for (const key of streams) {
                 // Convert undefined to null so indicate cache has been set.
-                cacheObj[cacheKey(key)] = data[key] === undefined ? null : data[key];
+                cacheObj[this._cacheKey(key)] = data[key] === undefined ? null : data[key];
             }
             await _streamsCache.setObject(cacheObj);
             return data;
@@ -482,7 +483,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 throw e;
             }
             const streams = options.data.stream_types;
-            const cachedEntries = await _streamsCache.getEntries(streams.map(cacheKey));
+            const cachedEntries = await _streamsCache.getEntries(streams.map(x => this._cacheKey(x)));
             const missing = new Set();
             const stale = new Set();
             const streamsObj = {};
@@ -501,7 +502,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 }
             }
             if (missing.size) {
-                Object.assign(streamsObj, await fillCache(options, missing));
+                Object.assign(streamsObj, await fillCache.call(this, options, missing));
             }
             if (stale.size) {
                 for (const x of stale) {
@@ -511,7 +512,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 pendingFill = setTimeout(() => maybeRequestIdleCallback(async () => {
                     const streams = Array.from(pendingStale);
                     pendingStale.clear();
-                    await fillCache(options, streams);
+                    await fillCache.call(this, options, streams);
                 }), 1000);
             }
             return streamsObj;

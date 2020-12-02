@@ -89,7 +89,7 @@ sauce.ns('analysis', ns => {
 
     const _attemptedFetch = new Set();
     const _pendingFetches = new Map();
-    async function fetchStreams(names) {
+    async function fetchStreams(streamTypes) {
         if (pageView.streamsRequest.pending) {
             // We must wait until the pageView.streamsRequest has completed.
             // Stream transform functions fail otherwise.
@@ -100,7 +100,7 @@ sauce.ns('analysis', ns => {
         const pending = _pendingFetches;
         const available = new Set(Object.keys(streams.availableStreams()));
         const fetched = new Set(streams.requestedTypes);
-        const todo = names.filter(x => !attempted.has(x) && !available.has(x) && !fetched.has(x));
+        const todo = streamTypes.filter(x => !attempted.has(x) && !available.has(x) && !fetched.has(x));
         if (todo.length) {
             const waitfor = [];
             const fetching = [];
@@ -145,7 +145,7 @@ sauce.ns('analysis', ns => {
                 await Promise.all(waitfor);
             }
         }
-        return names.map(x => streams.getStream(x));
+        return streamTypes.map(x => streams.getStream(x));
     }
 
 
@@ -1629,10 +1629,10 @@ sauce.ns('analysis', ns => {
 
 
     async function exportActivity(Serializer, {start, end, laps}) {
-        const streamNames = ['time', 'watts', 'heartrate', 'altitude',
+        const streamTypes = ['time', 'watts', 'heartrate', 'altitude',
                              'cadence', 'temp', 'latlng', 'distance'];
-        const streams = (await fetchStreams(streamNames)).reduce((acc, x, i) =>
-            (acc[streamNames[i]] = x && x.slice(start, end), acc), {});
+        const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
+            (acc[streamTypes[i]] = x && x.slice(start, end), acc), {});
         if (!streams.watts) {
             streams.watts = await fetchStream('watts_calc');
         }
@@ -3198,6 +3198,57 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function fetchAthleteActivities() {
+        async function getPage(page) {
+            const q = new URLSearchParams();
+            q.set('new_activity_only', 'false');
+            q.set('page', page);
+            const resp = await fetch(`/athlete/training_activities?${q}`, {
+                headers: {
+                    'x-requested-with': 'XMLHttpRequest'
+                }
+            });
+            return await resp.json();
+        }
+        const activities = [];
+        const seed = await getPage(1);
+        for (const x of seed.models) {
+            activities.push(x);
+        }
+        const pages = Math.ceil(seed.total / seed.perPage);
+        const work = [];
+        for (let p = 2; p <= pages; p++) {
+            work.push(getPage(p));
+        }
+        for (const data of await Promise.all(work)) {
+            for (const x of data.models) {
+                activities.push(x);
+            }
+        }
+        return activities;
+    }
+
+
+    async function fetchActivityStreams(activityId, streamTypes) {
+        const streams = new Strava.Labs.Activities.Streams(activityId);
+        await new Promise((resolve, reject) => {
+            streams.fetchStreams(streamTypes, {
+                success: resolve,
+                error: (_, ajax) => {
+                    let e;
+                    if (ajax.status === 429) {
+                        e = new ThrottledNetworkError();
+                    } else {
+                        e = new Error(`Fetch streams failed: ${ajax.status} ${ajax.statusText}`);
+                    }
+                    reject(e);
+                }
+            });
+        });
+        return streamTypes.map(x => streams.getStream(x));
+    }
+
+
     async function checkForSafariUpdates() {
         const latest = await sauce.rpc.storageGet('safariLatestVersion');
         if (latest) {
@@ -3318,6 +3369,8 @@ sauce.ns('analysis', ns => {
         ThrottledNetworkError,
         graphDialog,
         checkForSafariUpdates,
+        fetchAthleteActivities,
+        fetchActivityStreams,
     };
 });
 
