@@ -1,4 +1,4 @@
-/* global */
+/* global sauce */
 
 (function() {
     'use strict';
@@ -7,26 +7,49 @@
     const ns = self.sauce.hist = {};
 
 
-    //const actCache = new sauce.cache.TTLCache('activities', 365 * 86400 * 1000);
+    const othersActCache = new sauce.cache.TTLCache('hist-others-activity-ids', 365 * 86400 * 1000);
+    const selfActCache = new sauce.cache.TTLCache('hist-self-activities', 365 * 86400 * 1000);
+    const streamsCache = new sauce.cache.TTLCache('hist-streams', 365 * 86400 * 1000);
 
-    /*async function fetchStreams(activityId, streamTypes) {
-        const streams = new Strava.Labs.Activities.Streams(activityId);
-        await new Promise((resolve, reject) => {
-            streams.fetchStreams(streamTypes, {
-                success: resolve,
-                error: (_, ajax) => {
-                    let e;
-                    if (ajax.status === 429) {
-                        e = new ThrottledNetworkError();
-                    } else {
-                        e = new Error(`Fetch streams failed: ${ajax.status} ${ajax.statusText}`);
-                    }
-                    reject(e);
-                }
-            });
-        });
-        return streamTypes.map(x => streams.getStream(x));
-    }*/
+    let lastStreamFetch = 0;
+    ns.streams = async function(activityId, streamTypes) {
+        const q = new URLSearchParams();
+        const cacheKey = stream => `${activityId}-${stream}`;
+        const missing = new Set();
+        const results = {};
+        for (const x of streamTypes) {
+            const cached = await streamsCache.get(cacheKey(x));
+            if (cached === undefined) {
+                missing.add(x);
+            } else {
+                results[x] = cached;
+            }
+        }
+        if (!missing.size) {
+            return results;
+        }
+        for (const x of missing) {
+            q.append('stream_types[]', x);
+        }
+        while (Date.now() - lastStreamFetch < 1000) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        lastStreamFetch = Date.now();
+        const resp = await fetch(`/activities/${activityId}/streams?${q}`);
+        if (!resp.ok) {
+            throw new Error(`Fetch streams failed: ${resp.status}`);
+        }
+        const data = await resp.json();
+        for (const [key, value] of Object.entries(data)) {
+            results[key] = value;
+            missing.delete(key);
+            await streamsCache.set(cacheKey(key), value);
+        }
+        for (const x of missing) {
+            await streamsCache.set(cacheKey(x), null);
+        }
+        return results;
+    };
 
 
     ns.selfActivities = async function() {
@@ -62,11 +85,18 @@
 
     ns.othersActivityIds = async function(athleteId=56679) {
         async function getPage(year, month) {
+            const cacheKey = `${athleteId}-${year}-${month}`;
+            const startTS = new Date(`${year}-${month}`).getTime();
+            const allowCacheTS = startTS + (45 * 86400 * 1000);
+            const cachedEntry = await othersActCache.getEntry(cacheKey);
+            if (cachedEntry && cachedEntry.created > allowCacheTS) {
+                return cachedEntry.value;
+            }
             const propType = 'html';
             const q = new URLSearchParams();
             q.set('interval_type', 'month');
-            q.set('chart_type', 'miles'); // XXX
-            q.set('year_offset', '0'); // XXX
+            q.set('chart_type', 'miles');
+            q.set('year_offset', '0');
             q.set('interval', '' + year +  month.toString().padStart(2, '0'));
             const resp = await fetch(`/athletes/${athleteId}/interval?${q}`, {
                 headers: {"x-requested-with": "XMLHttpRequest"},
@@ -92,6 +122,7 @@
                 }
                 batch.push(Number(id));
             }
+            await othersActCache.set(cacheKey, batch);
             return batch;
         }
         const ids = [];

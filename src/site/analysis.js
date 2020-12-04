@@ -3198,57 +3198,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function fetchAthleteActivities() {
-        async function getPage(page) {
-            const q = new URLSearchParams();
-            q.set('new_activity_only', 'false');
-            q.set('page', page);
-            const resp = await fetch(`/athlete/training_activities?${q}`, {
-                headers: {
-                    'x-requested-with': 'XMLHttpRequest'
-                }
-            });
-            return await resp.json();
-        }
-        const activities = [];
-        const seed = await getPage(1);
-        for (const x of seed.models) {
-            activities.push(x);
-        }
-        const pages = Math.ceil(seed.total / seed.perPage);
-        const work = [];
-        for (let p = 2; p <= pages; p++) {
-            work.push(getPage(p));
-        }
-        for (const data of await Promise.all(work)) {
-            for (const x of data.models) {
-                activities.push(x);
-            }
-        }
-        return activities;
-    }
-
-
-    async function fetchActivityStreams(activityId, streamTypes) {
-        const streams = new Strava.Labs.Activities.Streams(activityId);
-        await new Promise((resolve, reject) => {
-            streams.fetchStreams(streamTypes, {
-                success: resolve,
-                error: (_, ajax) => {
-                    let e;
-                    if (ajax.status === 429) {
-                        e = new ThrottledNetworkError();
-                    } else {
-                        e = new Error(`Fetch streams failed: ${ajax.status} ${ajax.statusText}`);
-                    }
-                    reject(e);
-                }
-            });
-        });
-        return streamTypes.map(x => streams.getStream(x));
-    }
-
-
     async function checkForSafariUpdates() {
         const latest = await sauce.rpc.storageGet('safariLatestVersion');
         if (latest) {
@@ -3369,8 +3318,30 @@ sauce.ns('analysis', ns => {
         ThrottledNetworkError,
         graphDialog,
         checkForSafariUpdates,
-        fetchAthleteActivities,
-        fetchActivityStreams,
+        xxx: async () => {
+            const athleteId = pageView.activityAthlete().id;
+            const isSelf = athleteId === pageView.currentAthlete().id;
+            if (isSelf && false) {
+                const acts = await sauce.rpc.histSelfActivities(athleteId);
+            } else {
+                const peaks = [];
+                const ids = await sauce.rpc.histOthersActivityIds(athleteId);
+                const work = [];
+                for (const x of ids) {
+                    work.push((async () => {
+                        const streams = await sauce.rpc.histStreams(x, ['time', 'watts']);
+                        if (streams.time && streams.watts) {
+                            const roll = sauce.power.peakPower(20 * 60, streams.time, streams.watts);
+                            if (roll) {
+                                peaks.push(roll);
+                                console.log(roll.avg(), roll);
+                            }
+                        }
+                    })());
+                }
+                await Promise.all(work);
+            }
+        },
     };
 });
 

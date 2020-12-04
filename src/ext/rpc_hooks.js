@@ -58,4 +58,6 @@
     addHook('hist', 'selfActivities', ({args}) => sauce.hist.selfActivities.apply(null, args));
 
     addHook('hist', 'othersActivityIds', ({args}) => sauce.hist.othersActivityIds.apply(null, args));
+
+    addHook('hist', 'streams', ({args}) => sauce.hist.streams.apply(null, args));
 })();
