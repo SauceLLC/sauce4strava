@@ -35,17 +35,27 @@
         tracker.set('viewportSize', `${this.tab.width}x${this.tab.height}`);
         const method = args.shift();
         tracker[method].apply(tracker, args);
-    }, {backgroundOnly: true});
+    }, {bg: true});
+
     addHook('locale', 'getMessage', _getI18nMessage);
+
     addHook('locale', 'getMessages', batch => batch.map(x => _getI18nMessage(x)));
+
     addHook('util', 'ping', x => x);
-    addHook('util', 'bgping', x => x, {backgroundOnly: true});
+
+    addHook('util', 'bgping', x => x, {bg: true});
+
     addHook('storage', 'get', ({args}) => sauce.storage.get.apply(null, args));
+
     addHook('storage', 'set', ({args}) => sauce.storage.set.apply(null, args));
-    addHook('storage', 'update', ({args}) => sauce.storage.update.apply(null, args),
-        {backgroundOnly: true});
-    addHook('options', 'openOptionsPage', () => browser.runtime.openOptionsPage(),
-        {backgroundOnly: true});
-    addHook('trailforks', 'intersections', ({args}) => sauce.trailforks.intersections.apply(null, args),
-        {backgroundOnly: true});
+
+    addHook('storage', 'update', ({args}) => sauce.storage.update.apply(null, args), {bg: true});
+
+    addHook('options', 'openOptionsPage', () => browser.runtime.openOptionsPage(), {bg: true});
+
+    addHook('trailforks', 'intersections', ({args}) => sauce.trailforks.intersections.apply(null, args), {bg: true});
+
+    addHook('hist', 'selfActivities', ({args}) => sauce.hist.selfActivities.apply(null, args));
+
+    addHook('hist', 'othersActivityIds', ({args}) => sauce.hist.othersActivityIds.apply(null, args));
 })();

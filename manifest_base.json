@@ -27,6 +27,7 @@
             "src/ext/webext.js",
             "src/ext/ga.js",
             "src/ext/storage.js",
+            "src/ext/hist.js",
             "src/ext/rpc_hooks.js",
             "src/bg/menu.js",
             "src/bg/rpc.js",
@@ -72,6 +73,7 @@
             "src/ext/patron.js",
             "src/common/base.js",
             "src/site/preloader.js",
+            "src/ext/hist.js",
             "src/ext/boot.js"
         ]
     }],

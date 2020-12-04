@@ -9,7 +9,10 @@
 
     async function messageHandler(msg) {
         const hook = sauce.rpc.hooks[msg.system][msg.op];
-        if (hook.options && hook.options.backgroundOnly) {
+        if (!hook) {
+            throw new Error(`Invalid RPC hook: ${msg.system} ${msg.op}`);
+        }
+        if (msg.bg || (hook.options && hook.options.bg)) {
             return await browser.runtime.sendMessage(msg);
         } else {
             return await hook.callback(msg.data);

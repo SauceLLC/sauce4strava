@@ -165,6 +165,17 @@ sauce.ns('rpc', function() {
     }
 
 
+    async function histSelfActivities() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'hist', op: 'selfActivities', data: {args}});
+    }
+
+    async function histOthersActivityIds() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'hist', op: 'othersActivityIds', data: {args}});
+    }
+
+
     const _invokePromise = (async () => {
         // Instead of just broadcasting all RPC over generic 'message' events, create a channel
         // which is like a unix pipe pair and transfer one of the ports to the ext for us
@@ -250,5 +261,7 @@ sauce.ns('rpc', function() {
         bgping,
         openOptionsPage,
         trailforksIntersections,
+        histSelfActivities,
+        histOthersActivityIds,
     };
 });
