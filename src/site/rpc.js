@@ -170,9 +170,9 @@ sauce.ns('rpc', function() {
         return await invoke({system: 'hist', op: 'selfActivities', data: {args}});
     }
 
-    async function histOthersActivityIds() {
+    async function histPeerActivities() {
         const args = Array.from(arguments);
-        return await invoke({system: 'hist', op: 'othersActivityIds', data: {args}});
+        return await invoke({system: 'hist', op: 'peerActivities', data: {args}});
     }
 
 
@@ -268,7 +268,7 @@ sauce.ns('rpc', function() {
         openOptionsPage,
         trailforksIntersections,
         histSelfActivities,
-        histOthersActivityIds,
+        histPeerActivities,
         histStreams,
     };
 });

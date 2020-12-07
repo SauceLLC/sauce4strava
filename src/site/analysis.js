@@ -3322,33 +3322,48 @@ sauce.ns('analysis', ns => {
             const athleteId = pageView.activityAthlete().id;
             const isSelf = athleteId === pageView.currentAthlete().id;
             const peaks = [];
-            let ids;
+            let acts;
             if (isSelf) {
-                const acts = await sauce.rpc.histSelfActivities(athleteId);
-                ids = acts.map(x => x.id);
+                acts = await sauce.rpc.histSelfActivities(athleteId);
             } else {
-                ids = await sauce.rpc.histOthersActivityIds(athleteId);
+                acts = await sauce.rpc.histPeerActivities(athleteId);
             }
-            const work = [];
+            const ids = acts.map(x => x.id);
+            // Really try to get EVERYTHING.  Sync takes forever but each request is cheap!
+            const streamTypes = [
+                'time', 'heartrate', 'altitude', 'distance', 'moving',
+                'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
+                'grade_adjusted_distance', 'temp',
+            ];
             for (const x of ids) {
-                work.push((async () => {
-                    let streams;
+                let streams;
+                for (let r = 0; r < 3; r++) {
                     try {
-                        streams = await sauce.rpc.histStreams(x, ['time', 'watts']);
+                        streams = await sauce.rpc.histStreams(x, streamTypes);
                     } catch(e) {
-                        console.warn("Ignoring broken streams for:", x);
-                        return;
-                    }
-                    if (streams && streams.time && streams.watts) {
-                        const roll = sauce.power.peakPower(20 * 60, streams.time, streams.watts);
-                        if (roll) {
-                            peaks.push(roll);
-                            console.log(roll.avg(), roll);
+                        if (e.toString().indexOf('ThrottledFetchError') !== -1) {
+                            console.warn("Throttled: Delaying next request for one hour...");
+                            await new Promise(resolve => setTimeout(resolve, 3600 * 1000));
+                            console.warn("Resuming after throttle period");
+                            continue;
+                        } else {
+                            console.warn("Ignoring broken streams for:", x, e);
+                            break;
                         }
                     }
-                })());
+                }
+                if (streams && streams.time && streams.watts) {
+                    const roll = sauce.power.peakPower(20 * 60, streams.time, streams.watts);
+                    if (roll) {
+                        peaks.push(roll);
+                        const best = sauce.data.max(peaks.map(x => x.avg()));
+                        if (best === roll.avg()) {
+                            console.info("NEW BEST!", `https://www.strava.com/activities/${x}`);
+                        }
+                        console.info(Math.round(roll.avg()), 'Best', Math.round(best));
+                    }
+                }
             }
-            await Promise.all(work);
         },
     };
 });

@@ -6,8 +6,8 @@
     self.sauce = self.sauce || {};
     const ns = self.sauce.hist = {};
 
-    const actIdsCache = new sauce.cache.TTLCache('hist-activity-ids', Infinity);
-    const actDescCache = new sauce.cache.TTLCache('hist-activity-descs', Infinity);
+    const actPeersCache = new sauce.cache.TTLCache('hist-activities-peers', Infinity);
+    const actSelfCache = new sauce.cache.TTLCache('hist-activities-self', Infinity);
     const streamsCache = new sauce.cache.TTLCache('hist-streams', Infinity);
 
 
@@ -132,7 +132,7 @@
             return await resp.json();
         }
 
-        const activities = (await actDescCache.get(athleteId)) || [];
+        const activities = (await actSelfCache.get(athleteId)) || [];
         const cachedIds = new Set(activities.map(x => x.id));
         const seed = await fetchPage(1);
         let added = 0;
@@ -147,7 +147,7 @@
             return activities;
         } else if (added < seed.models.length) {
             // Some new data, but we overlap with cache already.
-            await actDescCache.set(athleteId, activities);
+            await actSelfCache.set(athleteId, activities);
             return activities;
         }
         const pages = Math.ceil(seed.total / seed.perPage);
@@ -174,16 +174,17 @@
                 }
             }
         }
-        await actDescCache.set(athleteId, activities);
+        await actSelfCache.set(athleteId, activities);
         return activities;
     };
 
 
-    ns.othersActivityIds = async function(athleteId) {
-        const cachedIds = new Map();
-        const fetchedIds = new Map();
+    ns.peerActivities = async function(athleteId) {
+        const cachedDescs = new Map();
+        const fetchedDescs = new Map();
         let cacheEndDate;
         let bulkStartDate;
+        let sentinelDate;
         const now = new Date();
 
         function cacheKey(year, month) {
@@ -191,7 +192,7 @@
         }
 
         function isSameData(a, b) {
-            return a.length === b.length && a.every((x, i) => x === b[i]);
+            return JSON.stringify(a) === JSON.stringify(b);
         }
 
         function *yearMonthRange(date) {
@@ -202,8 +203,7 @@
             }
         }
 
-        async function fetchIds(year, month) {
-            const propType = 'html';
+        async function fetchMonth(year, month) {
             const q = new URLSearchParams();
             q.set('interval_type', 'month');
             q.set('chart_type', 'miles');
@@ -211,22 +211,19 @@
             q.set('interval', '' + year +  month.toString().padStart(2, '0'));
             const resp = await retryFetch(`/athletes/${athleteId}/interval?${q}`);
             const data = await resp.text();
-            const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
-            const norm = self.Function(`"use strict"; return (${raw})`)();
-            const frag = document.createElement('div');
-            frag[`inner${propType.toUpperCase()}`] = norm;
             const batch = [];
-            for (const x of frag.querySelectorAll('.feed-entry[id^="Activity-"]')) {
-                const athUrl = x.querySelector('.avatar-content').getAttribute('href');
-                const athId = Number(athUrl.match(/\/athletes\/([0-9]*)/)[1]);
-                if (athId !== athleteId) {
+            const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
+            for (const [, scriptish] of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
+                const entity = scriptish.match(/entity = \\"(.+?)\\";/);
+                if (!entity || entity[1] !== 'Activity') {
                     continue;
                 }
-                const id = x.id.split(/Activity-/)[1];
-                if (!id) {
-                    throw new Error("Invalid Activity");
+                const actAthleteId = scriptish.match(/activity_athlete = {id: \\"([0-9]+)\\"};/);
+                if (!actAthleteId || Number(actAthleteId[1]) !== athleteId) {
+                    continue;
                 }
-                batch.push(Number(id));
+                // NOTE: Maybe someday we can safely get more fields in there.
+                batch.push({id: Number(scriptish.match(/entity_id = \\"(.+?)\\";/)[1])});
             }
             return batch;
         }
@@ -238,24 +235,34 @@
                 const work = new Map();
                 for (let i = 0; i < 12; i++) {
                     const [year, month] = iter.next().value;
-                    work.set(cacheKey(year, month), fetchIds(year, month));
+                    work.set(cacheKey(year, month), fetchMonth(year, month));
                 }
                 await Promise.all(work.values());
                 let added = 0;
+                let found = 0;
                 for (const [key, p] of work.entries()) {
                     const fetched = await p;
-                    fetchedIds.set(key, fetched);
-                    const cached = cachedIds.get(key);
+                    found += fetched.length;
+                    fetchedDescs.set(key, fetched);
+                    const cached = cachedDescs.get(key);
                     if (!cached || !isSameData(cached, fetched)) {
                         added += fetched.length;
                     }
-                    await actIdsCache.set(key, fetched);
+                    await actPeersCache.set(key, fetched);
                 }
                 if (!added) {
                     // Full year without an activity or updates.  Stop looking..
-                    const [year, month] = iter.next().value;
-                    await actIdsCache.set(cacheKey(year, month), 'SENTINEL');
-                    cacheEndDate = null;
+                    debugger;
+                    if (!found) {
+                        // No data either, don't bother with tail search
+                        if (sentinelDate) {
+                            const oldKey = cacheKey(sentinelDate.getUTCFullYear(), sentinelDate.getUTCMonth() + 1);
+                            await actPeersCache.delete(oldKey);
+                        }
+                        const [year, month] = iter.next().value;
+                        await actPeersCache.set(cacheKey(year, month), 'SENTINEL');
+                        cacheEndDate = null;
+                    }
                     return;
                 }
             }
@@ -265,29 +272,30 @@
         let cacheMisses = 0;
         let lastCacheHit = now;
         for (const [year, month] of yearMonthRange(now)) {
-            const ids = await actIdsCache.get(cacheKey(year, month));
-            if (ids === undefined) {
+            const cached = await actPeersCache.get(cacheKey(year, month));
+            if (cached === undefined) {
                 if (++cacheMisses > 36) {  // 3 years is enough
                     cacheEndDate = new Date(lastCacheHit);
                     break;
                 }
-            } else if (ids === 'SENTINEL') {
+            } else if (cached === 'SENTINEL') {
+                sentinelDate = new Date(`${year}-${month}`);
                 break;
             } else {
-                cachedIds.set(cacheKey(year, month), ids);
+                cachedDescs.set(cacheKey(year, month), cached);
                 lastCacheHit = `${year}-${month}`;
             }
         }
-        if (cachedIds.size) {
+        if (cachedDescs.size) {
             // Look for cache consistency with fetched values. Then we can
             // use bulk mode or just the cache if it's complete.
             for (const [year, month] of yearMonthRange(now)) {
                 const key = cacheKey(year, month);
-                const fetched = await fetchIds(year, month);
-                fetchedIds.set(key, fetched);
-                const cached = cachedIds.get(key);
+                const fetched = await fetchMonth(year, month);
+                fetchedDescs.set(key, fetched);
+                const cached = cachedDescs.get(key);
                 if (!cached) {
-                    await actIdsCache.set(cacheKey(year, month), fetched);
+                    await actPeersCache.set(cacheKey(year, month), fetched);
                     const prior = year * 12 + month - 1;
                     bulkStartDate = new Date(`${Math.floor(prior / 12)}-${prior % 12 || 12}`);
                     break;
@@ -296,7 +304,7 @@
                         break;
                     } else {
                         // Found updated data
-                        await actIdsCache.set(cacheKey(year, month), fetched);
+                        await actPeersCache.set(cacheKey(year, month), fetched);
                     }
                 }
             }
@@ -309,26 +317,26 @@
             // Fill the tail...
             await bulkImport(cacheEndDate);
         }
-        const ids = [];
-        const dedup = new Set();  // Unknown bug causes dups (likely upstream)
+        const activities = [];
+        const dedup = new Set();
         for (const [year, month] of yearMonthRange(now)) {
             const key = cacheKey(year, month);
-            if (fetchedIds.has(key)) {
-                for (const x of fetchedIds.get(key)) {
-                    if (!dedup.has(x)) {
-                        ids.push(x);
-                        dedup.add(x);
+            if (fetchedDescs.has(key)) {
+                for (const x of fetchedDescs.get(key)) {
+                    if (!dedup.has(x.id)) {
+                        dedup.add(x.id);
+                        activities.push(x);
                     }
                 }
-            } else if (cachedIds.has(key)) {
-                for (const x of cachedIds.get(key)) {
-                    if (!dedup.has(x)) {
-                        ids.push(x);
-                        dedup.add(x);
+            } else if (cachedDescs.has(key)) {
+                for (const x of cachedDescs.get(key)) {
+                    if (!dedup.has(x.id)) {
+                        dedup.add(x.id);
+                        activities.push(x);
                     }
                 }
             } else {
-                return ids;
+                return activities;
             }
         }
     };
