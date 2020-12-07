@@ -28,10 +28,11 @@
     class ThrottledFetchError extends FetchError {}
 
 
-    async function retryFetch(url, options={}) {
+    async function retryFetch(urn, options={}) {
         const maxRetries = 5;
         const headers = options.headers || {};
         headers["x-requested-with"] = "XMLHttpRequest";  // Required for most Strava endpoints
+        const url = `https://www.strava.com${urn}`;
         for (let r = 1;; r++) {
             const resp = await fetch(url, Object.assign({headers}, options));
             if (resp.ok) {
@@ -99,7 +100,7 @@
         }
         _lastFetch = Date.now();
         sauce.storage.set('histStreamsFetchCount', ++_fetchCount);  // bg okay
-        console.warn("Fetch count:", _fetchCount); // XXX
+        console.warn("Fetch count:", _fetchCount);  // XXX
         let resp;
         try {
             resp = await retryFetch(`/activities/${activityId}/streams?${q}`);
@@ -252,7 +253,6 @@
                 }
                 if (!added) {
                     // Full year without an activity or updates.  Stop looking..
-                    debugger;
                     if (!found) {
                         // No data either, don't bother with tail search
                         if (sentinelDate) {
