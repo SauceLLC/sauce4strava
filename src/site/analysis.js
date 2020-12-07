@@ -3321,26 +3321,34 @@ sauce.ns('analysis', ns => {
         xxx: async () => {
             const athleteId = pageView.activityAthlete().id;
             const isSelf = athleteId === pageView.currentAthlete().id;
+            const peaks = [];
+            let ids;
             if (isSelf && false) {
                 const acts = await sauce.rpc.histSelfActivities(athleteId);
+                ids = acts.map(x => x.id);
             } else {
-                const peaks = [];
-                const ids = await sauce.rpc.histOthersActivityIds(athleteId);
-                const work = [];
-                for (const x of ids) {
-                    work.push((async () => {
-                        const streams = await sauce.rpc.histStreams(x, ['time', 'watts']);
-                        if (streams.time && streams.watts) {
-                            const roll = sauce.power.peakPower(20 * 60, streams.time, streams.watts);
-                            if (roll) {
-                                peaks.push(roll);
-                                console.log(roll.avg(), roll);
-                            }
-                        }
-                    })());
-                }
-                await Promise.all(work);
+                ids = await sauce.rpc.histOthersActivityIds(athleteId);
             }
+            const work = [];
+            for (const x of ids) {
+                work.push((async () => {
+                    let streams;
+                    try {
+                        streams = await sauce.rpc.histStreams(x, ['time', 'watts']);
+                    } catch(e) {
+                        console.warn("Ignoring broken streams for:", x);
+                        return;
+                    }
+                    if (streams && streams.time && streams.watts) {
+                        const roll = sauce.power.peakPower(20 * 60, streams.time, streams.watts);
+                        if (roll) {
+                            peaks.push(roll);
+                            console.log(roll.avg(), roll);
+                        }
+                    }
+                })());
+            }
+            await Promise.all(work);
         },
     };
 });

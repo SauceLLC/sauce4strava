@@ -6,7 +6,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     self.sauce = self.sauce || {};
 
-    const cacheRefreshThreshold = 60 * 1000;
+    const cacheRefreshThreshold = 120 * 1000;
     const maybeRequestIdleCallback = self.requestIdleCallback || (fn => fn());  // Safari
 
     sauce.propDefined('pageView', view => {
@@ -456,7 +456,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     let _streamsCache;
     sauce.propDefined('Strava.Labs.Activities.Streams', Klass => {
         if (!_streamsCache) {
-            _streamsCache = new sauce.cache.TTLCache('streams', 7 * 86400 * 1000);
+            _streamsCache = new sauce.cache.TTLCache('streams', 180 * 86400 * 1000);
         }
         Klass.prototype._cacheKey = function(key) {
             const keyPrefix = this.activityId;
