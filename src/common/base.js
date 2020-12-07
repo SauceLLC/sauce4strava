@@ -402,6 +402,11 @@ self.sauceBaseInit = function sauceBaseInit() {
                 value,
             })));
         }
+
+        async delete(key) {
+            await this._initing;
+            await this.idb.delete([this.bucket, key]);
+        }
     }
     sauce.cache = {
         TTLCache
