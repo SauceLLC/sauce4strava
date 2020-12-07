@@ -50,8 +50,10 @@
     }
 
 
-    let lastStreamFetch = 0;
-    let fetched = 0;
+    let _fetchCount;
+    let _firstFetch;
+    let _lastFetch = 0;
+    let _streamsInit;
     ns.streams = async function(activityId, streamTypes) {
         const q = new URLSearchParams();
         const cacheKey = stream => `${activityId}-${stream}`;
@@ -71,11 +73,33 @@
         for (const x of missing) {
             q.append('stream_types[]', x);
         }
-        const maxRequestPerMinute = 30;
-        while (Date.now() - lastStreamFetch < 60000 / maxRequestPerMinute) {
-            await sleep(100);
+        if (_streamsInit === undefined) {
+            _streamsInit = (async () => {
+                _fetchCount = (await sauce.storage.get('histStreamsFetchCount')) || 0;
+                _firstFetch = await sauce.storage.get('histStreamsFirstFetch');
+                if (!_firstFetch) {
+                    _firstFetch = Date.now();
+                    await sauce.storage.set('histStreamsFirstFetch', _firstFetch);
+                }
+            })();
         }
-        lastStreamFetch = Date.now();
+        await _streamsInit;
+        // We must stay within API limits;  Roughy 40/min and 300/hour...
+        const maxRequestsPerMinute = 28;
+        const maxRequestsPerHour = 200;
+        while (_fetchCount >= maxRequestsPerHour ||
+               Date.now() - _lastFetch < 60000 / maxRequestsPerMinute) {
+            await sleep(200);
+            if (Date.now() - _firstFetch > (3600 + 300) * 1000) {
+                console.warn("Reset hourly limit");
+                _fetchCount = 0;
+                _firstFetch = Date.now();
+                sauce.storage.set('histStreamsFirstFetch', _firstFetch);  // bg okay
+            }
+        }
+        _lastFetch = Date.now();
+        sauce.storage.set('histStreamsFetchCount', ++_fetchCount);  // bg okay
+        console.warn("Fetch count:", _fetchCount); // XXX
         let resp;
         try {
             resp = await retryFetch(`/activities/${activityId}/streams?${q}`);
@@ -86,7 +110,6 @@
                 throw e;
             }
         }
-        console.warn("Fetch count:", ++fetched);
         const data = resp === undefined ? {} : await resp.json();
         for (const [key, value] of Object.entries(data)) {
             results[key] = value;

@@ -3323,7 +3323,7 @@ sauce.ns('analysis', ns => {
             const isSelf = athleteId === pageView.currentAthlete().id;
             const peaks = [];
             let ids;
-            if (isSelf && false) {
+            if (isSelf) {
                 const acts = await sauce.rpc.histSelfActivities(athleteId);
                 ids = acts.map(x => x.id);
             } else {
