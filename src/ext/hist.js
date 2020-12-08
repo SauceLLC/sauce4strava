@@ -99,16 +99,21 @@
 
         async wait() {
             const spreadDelay = this.state.spec.period / this.state.spec.limit;
+            this.checkForResetCond();
             // Perform as loop because this should work with concurreny too.
             while (this.state.count >= this.state.spec.limit ||
                    (this.state.spec.spread && Date.now() - this.state.last < spreadDelay)) {
                 await sleep(50);
-                if (Date.now() - this.state.first > this.state.spec.period) {
-                    console.warn(`Reseting rate limit period for: ${this}`);
-                    this.state.count = 0;
-                    this.state.first = Date.now();
-                    this.saveState();  // bg okay
-                }
+                this.checkForResetCond();
+            }
+        }
+
+        checkForResetCond() {
+            if (Date.now() - this.state.first > this.state.spec.period) {
+                console.warn(`Reseting rate limit period for: ${this}`);
+                this.state.count = 0;
+                this.state.first = Date.now();
+                this.saveState();  // bg okay
             }
         }
 
