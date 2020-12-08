@@ -51,10 +51,75 @@
     }
 
 
-    let _fetchCount;
-    let _firstFetch;
-    let _lastFetch = 0;
-    let _streamsInit;
+    class RateLimiter {
+        static async singleton(label, spec) {
+            if (!this._instances) {
+                this._instances = {};
+            }
+            if (!this._instances[label]) {
+                this._instances[label] = new this(label, spec);
+            }
+            const instance = this._instances[label];
+            await instance._init;
+            return instance;
+        }
+
+        constructor(label, spec) {
+            this.version = 1;
+            this.label = label;
+            this.spec = spec;
+            this.storeKey = `hist-rate-limiter-${label}`;
+            this._init = this.loadState();
+        }
+
+        toString() {
+            return `RateLimiter [${this.label}]: period: ${this.state.spec.period / 1000}s, ` +
+                `limit: ${this.state.spec.limit}, count: ${this.state.count}`;
+        }
+
+        async loadState() {
+            const state = await sauce.storage.get(this.storeKey);
+            if (!state || state.version !== this.version) {
+                this.state = {
+                    version: this.version,
+                    first: Date.now(),
+                    last: 0,
+                    count: 0,
+                    spec: this.spec
+                };
+                await this.saveState();
+            } else {
+                this.state = state;
+            }
+        }
+
+        async saveState() {
+            await sauce.storage.set(this.storeKey, this.state);
+        }
+
+        async wait() {
+            const spreadDelay = this.state.spec.period / this.state.spec.limit;
+            // Perform as loop because this should work with concurreny too.
+            while (this.state.count >= this.state.spec.limit ||
+                   (this.state.spec.spread && Date.now() - this.state.last < spreadDelay)) {
+                await sleep(50);
+                if (Date.now() - this.state.first > this.state.spec.period) {
+                    console.warn(`Reseting rate limit period for: ${this}`);
+                    this.state.count = 0;
+                    this.state.first = Date.now();
+                    this.saveState();  // bg okay
+                }
+            }
+        }
+
+        inc() {
+            this.state.count++;
+            this.state.last = Date.now();
+            this.saveState();  // bg okay
+        }
+    }
+
+
     ns.streams = async function(activityId, streamTypes) {
         const q = new URLSearchParams();
         const cacheKey = stream => `${activityId}-${stream}`;
@@ -74,36 +139,23 @@
         for (const x of missing) {
             q.append('stream_types[]', x);
         }
-        if (_streamsInit === undefined) {
-            _streamsInit = (async () => {
-                _fetchCount = (await sauce.storage.get('histStreamsFetchCount')) || 0;
-                _firstFetch = await sauce.storage.get('histStreamsFirstFetch');
-                if (!_firstFetch) {
-                    _firstFetch = Date.now();
-                    await sauce.storage.set('histStreamsFirstFetch', _firstFetch);
-                }
-            })();
+        // We must stay within API limits;  Roughy 40/min, 300/hour and 1000/day...
+        const rateLimiters = await Promise.all([
+            RateLimiter.singleton('streams-min', {period: (60 + 5) * 1000, limit: 30, spread: true}),
+            RateLimiter.singleton('streams-hour', {period: (3600 + 500) * 1000, limit: 200}),
+            RateLimiter.singleton('streams-day', {period: (86400 + 3600) * 1000, limit: 700})
+        ]);
+        await Promise.all(rateLimiters.map(x => x.wait()));
+        console.group('Stream Fetch');
+        for (const x of rateLimiters) {
+            x.inc();
+            console.warn(x.toString());
         }
-        await _streamsInit;
-        // We must stay within API limits;  Roughy 40/min and 300/hour...
-        const maxRequestsPerMinute = 28;
-        const maxRequestsPerHour = 200;
-        while (_fetchCount >= maxRequestsPerHour ||
-               Date.now() - _lastFetch < 60000 / maxRequestsPerMinute) {
-            await sleep(200);
-            if (Date.now() - _firstFetch > (3600 + 300) * 1000) {
-                console.warn("Reset hourly limit");
-                _fetchCount = 0;
-                _firstFetch = Date.now();
-                sauce.storage.set('histStreamsFirstFetch', _firstFetch);  // bg okay
-            }
-        }
-        _lastFetch = Date.now();
-        sauce.storage.set('histStreamsFetchCount', ++_fetchCount);  // bg okay
-        console.warn("Fetch count:", _fetchCount);  // XXX
+        console.groupEnd();
         let resp;
         try {
             resp = await retryFetch(`/activities/${activityId}/streams?${q}`);
+            //resp = await sleep(400);
         } catch(e) {
             if (e.resp && e.resp.status === 404) {
                 console.warn("No streams found for:", activityId);
