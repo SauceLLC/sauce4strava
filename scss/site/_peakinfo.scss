@@ -434,6 +434,7 @@
 
                 svg[data-icon] {
                     flex: 1 1 100%;
+                    max-height: 110%;  // Kiwi doesn't handle min.
                     max-height: min(110%, 4.2em);
 
                     .fa-primary {
