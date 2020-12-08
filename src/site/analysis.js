@@ -839,11 +839,11 @@ sauce.ns('analysis', ns => {
         const expanded = document.body.classList.contains(expandedClass);
         const evOptions = {capture: true, passive: false};
         if (expanded) {
-            document.removeEventListener('click', onMobileNavClickaway, evOptions);
+            removeEventListener('click', onMobileNavClickaway, evOptions);
             document.body.classList.remove(expandedClass);
         } else {
             document.body.classList.add(expandedClass);
-            document.addEventListener('click', onMobileNavClickaway, evOptions);
+            addEventListener('click', onMobileNavClickaway, evOptions);
         }
     }
 
