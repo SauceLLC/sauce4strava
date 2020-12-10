@@ -3335,40 +3335,49 @@ sauce.ns('analysis', ns => {
                 'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
                 'grade_adjusted_distance', 'temp',
             ];
-            for (const x of ids) {
-                let streams;
-                for (let i = 1;; i++) {
-                    const s = Date.now();
-                    try {
-                        streams = await sauce.rpc.histStreams(x, streamTypes);
-                    } catch(e) {
-                        if (e.toString().indexOf('ThrottledFetchError') !== -1) {
-                            const delay = 60000 * i;
-                            console.warn(`Hit Throttle Limits: Delaying next request for ${delay}s`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            console.warn("Resuming after throttle period");
-                            continue;
-                        } else {
-                            console.warn("Ignoring broken streams for:", x, e);
+            const idsIter = ids.values();
+            for (let x of idsIter) {
+                const batch = [];
+                for (let i = 0; i < 100 && x; i++) {
+                    batch.push((async () => {
+                        const id = x;
+                        let streams;
+                        for (let i = 1;; i++) {
+                            const s = Date.now();
+                            try {
+                                streams = await sauce.rpc.histStreams(id, streamTypes);
+                            } catch(e) {
+                                if (e.toString().indexOf('ThrottledFetchError') !== -1) {
+                                    const delay = 60000 * i;
+                                    console.warn(`Hit Throttle Limits: Delaying next request for ${delay}s`);
+                                    await new Promise(resolve => setTimeout(resolve, delay));
+                                    console.warn("Resuming after throttle period");
+                                    continue;
+                                } else {
+                                    console.warn("Ignoring broken streams for:", id, e);
+                                    break;
+                                }
+                            } finally {
+                                console.debug("histStreams took:", Date.now() - s);
+                            }
                             break;
                         }
-                    } finally {
-                        console.info("histStreams took:", Date.now() - s);
-                    }
-                    break;
-                }
-                if (streams && streams.time && streams.watts) {
-                    const s = Date.now();
-                    const roll = sauce.power.peakPower(20 * 60, streams.time, streams.watts);
-                    if (roll) {
-                        peaks.push(roll);
-                        const best = sauce.data.max(peaks.map(x => x.avg()));
-                        if (best === roll.avg()) {
-                            console.info("NEW BEST!", `https://www.strava.com/activities/${x}`);
+                        if (streams && streams.time && streams.watts) {
+                            const s = Date.now();
+                            const roll = sauce.power.peakPower(20 * 60, streams.time, streams.watts);
+                            if (roll) {
+                                peaks.push(roll);
+                                const best = sauce.data.max(peaks.map(x => x.avg()));
+                                if (best === roll.avg()) {
+                                    console.info("NEW BEST!", `https://www.strava.com/activities/${id}`, roll.avg());
+                                }
+                                console.debug(Math.round(roll.avg()), 'Best', Math.round(best), 'took', Date.now() - s);
+                            }
                         }
-                        console.debug(Math.round(roll.avg()), 'Best', Math.round(best), 'took', Date.now() - s);
-                    }
+                    })());
+                    x = idsIter.next().value;
                 }
+                await Promise.all(batch);
             }
         },
     };
