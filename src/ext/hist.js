@@ -11,11 +11,6 @@
     const streamsCache = new sauce.cache.TTLCache('hist-streams', Infinity);
 
 
-    async function sleep(ms) {
-        await new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-
     class FetchError extends Error {
         static fromResp(resp) {
             const msg = `${this.name}: ${resp.url} [${resp.status}]`;
@@ -26,6 +21,11 @@
     }
 
     class ThrottledFetchError extends FetchError {}
+
+
+    async function sleep(ms) {
+        await new Promise(resolve => setTimeout(resolve, ms));
+    }
 
 
     async function retryFetch(urn, options={}) {
@@ -39,7 +39,7 @@
                 return resp;
             }
             if (resp.status >= 500 && resp.status < 600 && r <= maxRetries) {
-                console.warn(`Server error for: ${resp.url} - Retry: ${r}/${maxRetries}`);
+                console.info(`Server error for: ${resp.url} - Retry: ${r}/${maxRetries}`);
                 await sleep(1000 * r);
                 continue;
             }
@@ -74,7 +74,7 @@
 
         toString() {
             return `RateLimiter [${this.label}]: period: ${this.state.spec.period / 1000}s, ` +
-                `limit: ${this.state.spec.limit}, count: ${this.state.count}`;
+                `usage: ${this.state.count}/${this.state.spec.limit}`;
         }
 
         async loadState() {
@@ -99,31 +99,72 @@
 
         async wait() {
             const spreadDelay = this.state.spec.period / this.state.spec.limit;
-            this.checkForResetCond();
+            this.maybeReset();
             // Perform as loop because this should work with concurreny too.
             while (this.state.count >= this.state.spec.limit ||
                    (this.state.spec.spread && Date.now() - this.state.last < spreadDelay)) {
                 await sleep(50);
-                this.checkForResetCond();
+                this.maybeReset();
             }
         }
 
-        checkForResetCond() {
+        maybeReset() {
             if (Date.now() - this.state.first > this.state.spec.period) {
-                console.warn(`Reseting rate limit period for: ${this}`);
+                console.info(`Reseting rate limit period: ${this}`);
                 this.state.count = 0;
                 this.state.first = Date.now();
                 this.saveState();  // bg okay
             }
         }
 
-        inc() {
+        increment() {
             this.state.count++;
             this.state.last = Date.now();
             this.saveState();  // bg okay
         }
     }
 
+
+    class RateLimiterGroup extends Array {
+        async add(label, spec) {
+            this.push(await RateLimiter.singleton(label, spec));
+        }
+
+        async wait() {
+            await Promise.all(this.map(x => x.wait()));
+        }
+
+        increment() {
+            console.group('RateLimiterGroup');
+            try {
+                for (const x of this) {
+                    x.increment();
+                    console.debug(`Increment: ${x}`);
+                }
+            } finally {
+                console.groupEnd();
+            }
+        }
+    }
+
+
+    // We must stay within API limits;  Roughy 40/min, 300/hour and 1000/day...
+    const getStreamRateLimiterGroup = (function() {
+        let group;
+        let init;
+        return async function() {
+            if (!group) {
+                group = new RateLimiterGroup();
+                init = Promise.all([
+                    group.add('streams-min', {period: (60 + 5) * 1000, limit: 30, spread: true}),
+                    group.add('streams-hour', {period: (3600 + 500) * 1000, limit: 200}),
+                    group.add('streams-day', {period: (86400 + 3600) * 1000, limit: 700})
+                ]);
+            }
+            await init;
+            return group;
+        };
+    })();
 
     ns.streams = async function(activityId, streamTypes) {
         const q = new URLSearchParams();
@@ -144,27 +185,14 @@
         for (const x of missing) {
             q.append('stream_types[]', x);
         }
-        // We must stay within API limits;  Roughy 40/min, 300/hour and 1000/day...
-        const rateLimiters = await Promise.all([
-            RateLimiter.singleton('streams-min', {period: (60 + 5) * 1000, limit: 30, spread: true}),
-            RateLimiter.singleton('streams-hour', {period: (3600 + 500) * 1000, limit: 200}),
-            RateLimiter.singleton('streams-day', {period: (86400 + 3600) * 1000, limit: 700})
-        ]);
-        await Promise.all(rateLimiters.map(x => x.wait()));
-        console.group('Stream Fetch');
-        for (const x of rateLimiters) {
-            x.inc();
-            console.warn(x.toString());
-        }
-        console.groupEnd();
+        const rateLimiters = await getStreamRateLimiterGroup();
+        await rateLimiters.wait();
+        rateLimiters.increment();
         let resp;
         try {
             resp = await retryFetch(`/activities/${activityId}/streams?${q}`);
-            //resp = await sleep(400);
         } catch(e) {
-            if (e.resp && e.resp.status === 404) {
-                console.warn("No streams found for:", activityId);
-            } else {
+            if (!e.resp || e.resp.status !== 404) {
                 throw e;
             }
         }

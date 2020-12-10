@@ -3337,22 +3337,28 @@ sauce.ns('analysis', ns => {
             ];
             for (const x of ids) {
                 let streams;
-                for (let r = 0; r < 3; r++) {
+                for (let i = 1;; i++) {
+                    const s = Date.now();
                     try {
                         streams = await sauce.rpc.histStreams(x, streamTypes);
                     } catch(e) {
                         if (e.toString().indexOf('ThrottledFetchError') !== -1) {
-                            console.warn("Throttled: Delaying next request for one hour...");
-                            await new Promise(resolve => setTimeout(resolve, 3600 * 1000));
+                            const delay = 60000 * i;
+                            console.warn(`Hit Throttle Limits: Delaying next request for ${delay}s`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
                             console.warn("Resuming after throttle period");
                             continue;
                         } else {
                             console.warn("Ignoring broken streams for:", x, e);
                             break;
                         }
+                    } finally {
+                        console.info("histStreams took:", Date.now() - s);
                     }
+                    break;
                 }
                 if (streams && streams.time && streams.watts) {
+                    const s = Date.now();
                     const roll = sauce.power.peakPower(20 * 60, streams.time, streams.watts);
                     if (roll) {
                         peaks.push(roll);
@@ -3360,7 +3366,7 @@ sauce.ns('analysis', ns => {
                         if (best === roll.avg()) {
                             console.info("NEW BEST!", `https://www.strava.com/activities/${x}`);
                         }
-                        console.info(Math.round(roll.avg()), 'Best', Math.round(best));
+                        console.debug(Math.round(roll.avg()), 'Best', Math.round(best), 'took', Date.now() - s);
                     }
                 }
             }
