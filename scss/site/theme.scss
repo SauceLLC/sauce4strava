@@ -143,6 +143,14 @@
         border: none;
     }
 
+    .alert-message {
+        color: #fff;  // Reset to strava value to work with the fixed BG they set.
+
+        a {
+            color: #fff !important;
+        }
+    }
+
     .btn,
     .button,
     button,
