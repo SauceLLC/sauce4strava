@@ -6,13 +6,20 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     self.sauce = self.sauce || {};
 
-    sauce.ns = function(ns, callback) {
-        let offt = sauce;
-        for (const x of ns.split('.')) {
+    function buildPath(path) {
+        let offt = self;
+        for (const x of path) {
             if (!offt[x]) {
-                offt = (offt[x] = {});
+                offt[x] = {};
             }
+            offt = offt[x];
         }
+        return offt;
+    }
+
+
+    sauce.ns = function(ns, callback) {
+        const offt = buildPath(`sauce.${ns}`.split('.'));
         const assignments = callback && callback(offt);
         if (assignments) {
             Object.assign(offt, assignments);
@@ -60,6 +67,45 @@ self.sauceBaseInit = function sauceBaseInit() {
             doc.classList.add('sauce-theme-enabled');
             doc.classList.add(`sauce-theme-${name}`);
         }
+    };
+
+
+    const _modules = {};
+    sauce.getModule = async function(url) {
+        if (!_modules[url]) {
+            const script = document.createElement('script');
+            const doneEvent = 'sauceModuleImportDone-' + (Date.now() + Math.random());
+            _modules[url] = await new Promise((resolve, reject) => {
+                // Inline scripts don't fire load (but they do fire error).  We have to use
+                // a DOM event to capture the ready state of the module and it's imports.
+                function onDone(ev) {
+                    document.removeEventListener(doneEvent, onDone);
+                    resolve(ev.module);
+                }
+                document.addEventListener(doneEvent, onDone);
+                script.addEventListener('error', ev => reject(new Error(`Module load error: ${url}`)));
+                script.type = 'module';
+                script.textContent = `
+                    import * as module from '${url}';
+                    const ev = new Event('${doneEvent}');
+                    ev.module = module;
+                    document.dispatchEvent(ev);
+                `;
+                document.head.appendChild(script);
+            });
+        }
+        return _modules[url];
+    };
+
+
+    sauce.loadModule = async function(namespace, url) {
+        const path = namespace.split('.');
+        const root = buildPath(path.slice(0, -1));
+        const name = path.pop();
+        if (!root[name]) {
+            root[name] = await sauce.getModule(url);
+        }
+        return root[name];
     };
 
 
