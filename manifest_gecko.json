@@ -7,7 +7,8 @@
     },
     "permissions": [
         "tabs",
-        "https://saucellc.io/*"
+        "https://saucellc.io/*",
+        "https://www.strava.com/*"
     ],
     "background": {
         "scripts": [
