@@ -243,7 +243,6 @@ export class RateLimiter {
             return;
         }
         if (this.state.count >= this.spec.limit) {
-            const rem = this.spec.period - (Date.now() - this.state.first);
             await this._sleep(this.spec.period - (Date.now() - this.state.first));
         } else if (this.spec.spread) {
             const remTime = this.spec.period - (Date.now() - this.state.first);
