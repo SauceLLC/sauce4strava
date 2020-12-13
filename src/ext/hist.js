@@ -1,6 +1,6 @@
-/* global sauce */
+/* global sauce, browser */
 
-(function() {
+(async function() {
     'use strict';
 
     self.sauce = self.sauce || {};
@@ -10,6 +10,7 @@
     const actSelfCache = new sauce.cache.TTLCache('hist-activities-self', Infinity);
     const streamsCache = new sauce.cache.TTLCache('hist-streams', Infinity);
 
+    const jobs = await sauce.getModule(browser.runtime.getURL('/src/common/jscoop/jobs.js'));
 
     class FetchError extends Error {
         static fromResp(resp) {
@@ -51,99 +52,15 @@
     }
 
 
-    class RateLimiter {
-        static async singleton(label, spec) {
-            if (!this._instances) {
-                this._instances = {};
-            }
-            if (!this._instances[label]) {
-                this._instances[label] = new this(label, spec);
-            }
-            const instance = this._instances[label];
-            await instance._init;
-            return instance;
+    class SauceRateLimiter extends jobs.RateLimiter {
+        async getState() {
+            const storeKey = `hist-rate-limiter-${this.label}`;
+            return await sauce.storage.get(storeKey);
         }
 
-        constructor(label, spec) {
-            this.version = 1;
-            this.label = label;
-            this.spec = spec;
-            this.storeKey = `hist-rate-limiter-${label}`;
-            this._init = this.loadState();
-        }
-
-        toString() {
-            return `RateLimiter [${this.label}]: period: ${this.state.spec.period / 1000}s, ` +
-                `usage: ${this.state.count}/${this.state.spec.limit}`;
-        }
-
-        async loadState() {
-            const state = await sauce.storage.get(this.storeKey);
-            if (!state || state.version !== this.version) {
-                this.state = {
-                    version: this.version,
-                    first: Date.now(),
-                    last: 0,
-                    count: 0,
-                    spec: this.spec
-                };
-                await this.saveState();
-            } else {
-                this.state = state;
-            }
-        }
-
-        async saveState() {
-            await sauce.storage.set(this.storeKey, this.state);
-        }
-
-        async wait() {
-            const spreadDelay = this.state.spec.period / this.state.spec.limit;
-            this.maybeReset();
-            // Perform as loop because this should work with concurreny too.
-            while (this.state.count >= this.state.spec.limit ||
-                   (this.state.spec.spread && Date.now() - this.state.last < spreadDelay)) {
-                await sleep(50);
-                this.maybeReset();
-            }
-        }
-
-        maybeReset() {
-            if (Date.now() - this.state.first > this.state.spec.period) {
-                console.info(`Reseting rate limit period: ${this}`);
-                this.state.count = 0;
-                this.state.first = Date.now();
-                this.saveState();  // bg okay
-            }
-        }
-
-        increment() {
-            this.state.count++;
-            this.state.last = Date.now();
-            this.saveState();  // bg okay
-        }
-    }
-
-
-    class RateLimiterGroup extends Array {
-        async add(label, spec) {
-            this.push(await RateLimiter.singleton(label, spec));
-        }
-
-        async wait() {
-            await Promise.all(this.map(x => x.wait()));
-        }
-
-        increment() {
-            console.group('RateLimiterGroup');
-            try {
-                for (const x of this) {
-                    x.increment();
-                    console.debug(`Increment: ${x}`);
-                }
-            } finally {
-                console.groupEnd();
-            }
+        async setState(state) {
+            const storeKey = `hist-rate-limiter-${this.label}`;
+            await sauce.storage.set(storeKey, state);
         }
     }
 
@@ -151,17 +68,13 @@
     // We must stay within API limits;  Roughy 40/min, 300/hour and 1000/day...
     const getStreamRateLimiterGroup = (function() {
         let group;
-        let init;
-        return async function() {
+        return function() {
             if (!group) {
-                group = new RateLimiterGroup();
-                init = Promise.all([
-                    group.add('streams-min', {period: (60 + 5) * 1000, limit: 30, spread: true}),
-                    group.add('streams-hour', {period: (3600 + 500) * 1000, limit: 200}),
-                    group.add('streams-day', {period: (86400 + 3600) * 1000, limit: 700})
-                ]);
+                group = new jobs.RateLimiterGroup();
+                group.push(new SauceRateLimiter('streams-min', {period: (60 + 5) * 1000, limit: 30, spread: true}));
+                group.push(new SauceRateLimiter('streams-hour', {period: (3600 + 500) * 1000, limit: 200}));
+                group.push(new SauceRateLimiter('streams-day', {period: (86400 + 3600) * 1000, limit: 700}));
             }
-            await init;
             return group;
         };
     })();
@@ -185,9 +98,13 @@
         for (const x of missing) {
             q.append('stream_types[]', x);
         }
-        const rateLimiters = await getStreamRateLimiterGroup();
+        const rateLimiters = getStreamRateLimiterGroup();
         await rateLimiters.wait();
-        rateLimiters.increment();
+        console.group();
+        for (const x of rateLimiters) {
+            console.info('' + x);
+        }
+        console.groupEnd();
         let resp;
         try {
             resp = await retryFetch(`/activities/${activityId}/streams?${q}`);

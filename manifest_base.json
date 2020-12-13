@@ -74,7 +74,6 @@
             "src/ext/rpc_proxy.js",
             "src/ext/patron.js",
             "src/site/preloader.js",
-            "src/ext/hist.js",
             "src/ext/boot.js"
         ]
     }],

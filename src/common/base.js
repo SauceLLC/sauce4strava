@@ -72,26 +72,28 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     const _modules = {};
     sauce.getModule = async function(url) {
+        // Note: modules are only supported in the site context and the background page.
+        // Content scripts of the extention itself do NOT work and cannot work without
+        // browser support due to isolation issues.
         if (!_modules[url]) {
             const script = document.createElement('script');
             const doneEvent = 'sauceModuleImportDone-' + (Date.now() + Math.random());
+            const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
             _modules[url] = await new Promise((resolve, reject) => {
-                // Inline scripts don't fire load (but they do fire error).  We have to use
-                // a DOM event to capture the ready state of the module and it's imports.
-                function onDone(ev) {
-                    document.removeEventListener(doneEvent, onDone);
-                    resolve(ev.module);
-                }
-                document.addEventListener(doneEvent, onDone);
                 script.addEventListener('error', ev => reject(new Error(`Module load error: ${url}`)));
                 script.type = 'module';
-                script.textContent = `
-                    import * as module from '${url}';
-                    const ev = new Event('${doneEvent}');
-                    ev.module = module;
-                    document.dispatchEvent(ev);
-                `;
-                document.head.appendChild(script);
+                script.src = extUrl + `src/common/module-loader.mjs?doneEvent=${doneEvent}&script=${url}`;
+                function onDone(ev) {
+                    document.removeEventListener(doneEvent, onDone);
+                    script.remove();
+                    if (ev.error) {
+                        reject(ev.error);
+                    } else {
+                        resolve(ev.module);
+                    }
+                }
+                document.addEventListener(doneEvent, onDone);
+                document.documentElement.appendChild(script);
             });
         }
         return _modules[url];

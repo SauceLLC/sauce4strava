@@ -255,6 +255,7 @@ export class RateLimiter {
      * Reset the internal state.  Use with caution
      */
     async reset(ctx) {
+        await this._init;
         this.state.count = 0;
         this.state.first = 0;
         await this._saveState();
@@ -312,6 +313,11 @@ export class RateLimiterGroup extends Array {
         this._lock = new Lock();
     }
 
+    // Just return simple Array for calls like map().
+    static get [Symbol.species]() {
+        return Array;
+    }
+
     /**
      * Add a {RateLimiter} singleton to this group.
      *
@@ -328,6 +334,7 @@ export class RateLimiterGroup extends Array {
     async wait() {
         await this._lock.acquire();
         try {
+            await Promise.all(this.map(x => x._init));
             await Promise.all(this.map(x => x._wait()));
             await Promise.all(this.map(x => x._increment()));
         } finally {
