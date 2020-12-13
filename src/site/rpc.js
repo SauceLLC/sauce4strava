@@ -170,6 +170,7 @@ sauce.ns('rpc', function() {
         return await invoke({system: 'hist', op: 'selfActivities', data: {args}});
     }
 
+
     async function histPeerActivities() {
         const args = Array.from(arguments);
         return await invoke({system: 'hist', op: 'peerActivities', data: {args}});
