@@ -239,22 +239,35 @@ export class RateLimiter {
     }
 
     async _wait() {
-        const elapsed = Date.now() - this.state.first;
-        if (elapsed > this.spec.period) {
-            this.state.count = 0;
-            this.state.first = Date.now();
-            await this._saveState();
+        if (!this.state.first || Date.now() - this.state.first > this.spec.period) {
+            return;
         }
         if (this.state.count >= this.spec.limit) {
-            await this._sleep(this.spec.period - elapsed);
+            const rem = this.spec.period - (Date.now() - this.state.first);
+            await this._sleep(this.spec.period - (Date.now() - this.state.first));
         } else if (this.spec.spread) {
-            await this._sleep(this.spec.period / this.spec.limit);
+            const remTime = this.spec.period - (Date.now() - this.state.first);
+            const remCount = this.spec.limit - this.state.count;
+            await this._sleep(remTime / (remCount + 1));
         }
     }
 
+    /**
+     * Reset the internal state.  Use with caution
+     */
+    async reset(ctx) {
+        this.state.count = 0;
+        this.state.first = 0;
+        await this._saveState();
+    }
+
     async _increment() {
-        this.state.count++;
-        this.state.last = Date.now();
+        if (Date.now() - this.state.first > this.spec.period || this.state.count >= this.spec.limit) {
+            this.state.count = 1;
+            this.state.first = Date.now();
+        } else {
+            this.state.count++;
+        }
         await this._saveState();
     }
 
@@ -272,8 +285,7 @@ export class RateLimiter {
         if (!state || state.version !== this.version) {
             this.state = {
                 version: this.version,
-                first: Date.now(),
-                last: 0,
+                first: 0,
                 count: 0,
                 spec: this.spec
             };
@@ -315,7 +327,7 @@ export class RateLimiterGroup extends Array {
      * Wait for all the limiters in this group to unblock.
      */
     async wait() {
-        await this._lock.wait();
+        await this._lock.acquire();
         try {
             await Promise.all(this.map(x => x._wait()));
             await Promise.all(this.map(x => x._increment()));
