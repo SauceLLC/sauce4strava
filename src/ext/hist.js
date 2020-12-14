@@ -9,6 +9,7 @@
     const actPeersCache = new sauce.cache.TTLCache('hist-activities-peers', Infinity);
     const actSelfCache = new sauce.cache.TTLCache('hist-activities-self', Infinity);
     const streamsCache = new sauce.cache.TTLCache('hist-streams', Infinity);
+    self.foo = streamsCache;
 
     const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
@@ -388,23 +389,29 @@
     };
 
 
+    let _syncing = false;
     ns.syncStreams = async function(acts) {
-        const remaining = new Set(acts.map(x => x.id));
-        for (const id of Array.from(remaining)) {
-            const data = await ns.streams(id, ['time'], {disableFetch: true});
-            if (data && data.time) {
-                remaining.delete(id);
+        if (_syncing) {
+            throw new Error("Sorry a sync job is running");
+        }
+        _syncing = true;
+        try {
+            const remaining = new Set(acts.map(x => x.id));
+            for await (const x of streamsCache.values()) {
+                remaining.delete(Number(x.key.split('-')[0]));
             }
+            if (!remaining.size) {
+                console.info("All activities synchronized");
+                return;
+            }
+            console.info(`Need to synchronize ${remaining.size} of ${acts.length} activities...`);
+            for (const id of remaining) {
+                await ns.getAllStreams(id);
+            }
+            console.info("Completed activities fetch/sync");
+        } finally {
+            _syncing = false;
         }
-        if (!remaining.size) {
-            console.info("All activities synchronized");
-            return;
-        }
-        console.info(`Need to synchronize ${remaining.size} of ${acts.length} activities...`);
-        for (const id of remaining) {
-            await ns.getAllStreams(id);
-        }
-        console.info("Completed activities fetch/sync");
     };
 
 
@@ -468,7 +475,7 @@
 
     ns.exportStreams = async function() {
         const data = [];
-        for await (const x of streamsCache.iter()) {
+        for await (const x of streamsCache.values()) {
             data.push(x);
         }
         const link = document.createElement('a');
