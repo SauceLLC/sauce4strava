@@ -183,21 +183,39 @@ sauce.ns('rpc', function() {
     }
 
 
-    async function histFindPeerAthletePeaks() {
+    async function histFindPeerPeaks() {
         const args = Array.from(arguments);
-        return await invoke({system: 'hist', op: 'findPeerAthletePeaks', data: {args}});
+        return await invoke({system: 'hist', op: 'findPeerPeaks', data: {args}});
     }
 
 
-    async function histFindSelfAthletePeaks() {
+    async function histFindSelfPeaks() {
         const args = Array.from(arguments);
-        return await invoke({system: 'hist', op: 'findSelfAthletePeaks', data: {args}});
+        return await invoke({system: 'hist', op: 'findSelfPeaks', data: {args}});
     }
 
 
-    async function histFindActivityPeaks() {
+    async function histFindPeaks() {
         const args = Array.from(arguments);
-        return await invoke({system: 'hist', op: 'findActivityPeaks', data: {args}});
+        return await invoke({system: 'hist', op: 'findPeaks', data: {args}});
+    }
+
+
+    async function histSyncSelfStreams() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'hist', op: 'syncSelfStreams', data: {args}});
+    }
+
+
+    async function histSyncPeerStreams() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'hist', op: 'syncPeerStreams', data: {args}});
+    }
+
+
+    async function histSyncStreams() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'hist', op: 'syncStreams', data: {args}});
     }
 
 
@@ -289,8 +307,11 @@ sauce.ns('rpc', function() {
         histSelfActivities,
         histPeerActivities,
         histStreams,
-        histFindPeerAthletePeaks,
-        histFindSelfAthletePeaks,
-        histFindActivityPeaks,
+        histFindPeerPeaks,
+        histFindSelfPeaks,
+        histFindPeaks,
+        histSyncPeerStreams,
+        histSyncSelfStreams,
+        histSyncStreams,
     };
 });
