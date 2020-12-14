@@ -183,6 +183,24 @@ sauce.ns('rpc', function() {
     }
 
 
+    async function histFindPeerAthletePeaks() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'hist', op: 'findPeerAthletePeaks', data: {args}});
+    }
+
+
+    async function histFindSelfAthletePeaks() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'hist', op: 'findSelfAthletePeaks', data: {args}});
+    }
+
+
+    async function histFindActivityPeaks() {
+        const args = Array.from(arguments);
+        return await invoke({system: 'hist', op: 'findActivityPeaks', data: {args}});
+    }
+
+
     const _invokePromise = (async () => {
         // Instead of just broadcasting all RPC over generic 'message' events, create a channel
         // which is like a unix pipe pair and transfer one of the ports to the ext for us
@@ -271,5 +289,8 @@ sauce.ns('rpc', function() {
         histSelfActivities,
         histPeerActivities,
         histStreams,
+        histFindPeerAthletePeaks,
+        histFindSelfAthletePeaks,
+        histFindActivityPeaks,
     };
 });

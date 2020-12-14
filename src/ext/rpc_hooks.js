@@ -60,4 +60,8 @@
     addHook('hist', 'peerActivities', ({args}) => sauce.hist.peerActivities.apply(null, args), {bg: true});
 
     addHook('hist', 'streams', ({args}) => sauce.hist.streams.apply(null, args), {bg: true});
+
+    addHook('hist', 'findPeerAthletePeaks', ({args}) => sauce.hist.findPeerAthletePeaks.apply(null, args), {bg: true});
+    addHook('hist', 'findSelfAthletePeaks', ({args}) => sauce.hist.findSelfAthletePeaks.apply(null, args), {bg: true});
+    addHook('hist', 'findActivityPeaks', ({args}) => sauce.hist.findActivityPeaks.apply(null, args), {bg: true});
 })();

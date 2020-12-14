@@ -342,4 +342,77 @@
             }
         }
     };
+
+
+    ns.findPeerAthletePeaks = async function(athleteId, ...args) {
+        const acts = await ns.peerActivities(athleteId);
+        return await ns.findActivityPeaks(acts, ...args);
+    };
+
+
+    ns.findSelfAthletePeaks = async function(athleteId, ...args) {
+        const acts = await ns.selfActivities(athleteId);
+        return await ns.findActivityPeaks(acts, ...args);
+    };
+
+
+    ns.findActivityPeaks = async function(acts, period, type='power') {
+        const ids = acts.map(x => x.id);
+        // Really try to get EVERYTHING.  Sync takes forever but each request is cheap!
+        const streamTypes = [
+            'time', 'heartrate', 'altitude', 'distance', 'moving',
+            'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
+            'grade_adjusted_distance', 'temp',
+        ];
+        const wq = new jobs.UnorderedWorkQueue({maxPending: 20, allowErrors: true});
+        async function producer() {
+            for (const id of ids) {
+                await wq.put((async () => {
+                    for (let i = 1;; i++) {
+                        try {
+                            return await ns.streams(id, streamTypes).then(streams => ({id, streams}));
+                        } catch(e) {
+                            if (e.toString().indexOf('ThrottledFetchError') !== -1) {
+                                const delay = 60000 * i;
+                                console.warn(`Hit Throttle Limits: Delaying next request for ${delay}s`);
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                console.warn("Resuming after throttle period");
+                                continue;
+                            } else {
+                                throw e;
+                            }
+                        }
+                    }
+                })());
+            }
+        }
+        async function consumer() {
+            const peaks = [];
+            for await (const x of wq) {
+                if (x instanceof Error) {
+                    console.warn("Ignoring error from streams():", x);
+                    continue;
+                }
+                const {streams, id} = x;
+                if (type === 'power') {
+                    if (streams && streams.time && streams.watts) {
+                        const s = Date.now();
+                        const roll = sauce.power.peakPower(period, streams.time, streams.watts);
+                        if (roll) {
+                            peaks.push(roll);
+                            const best = sauce.data.max(peaks.map(x => x.avg()));
+                            if (best === roll.avg()) {
+                                console.info("NEW BEST!", `https://www.strava.com/activities/${id}`, roll.avg());
+                            }
+                            console.debug(Math.round(roll.avg()), 'Best', Math.round(best), 'took', Date.now() - s);
+                        }
+                    }
+                } else {
+                    throw new Error("Invalid peak type: " + type);
+                }
+            }
+        }
+        await Promise.all([producer(), consumer()]);
+        console.warn("All done");
+    };
 })();
