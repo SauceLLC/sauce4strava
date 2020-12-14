@@ -40,12 +40,13 @@ export class UnorderedWorkQueue {
         this._maxPending = options.maxPending;
         this._idCounter = 0;
         this._pending = new Map();
+        this._releasing = 0;
         this._fulfilled = new Queue(options.maxFulfilled);
         this._putters = [];
     }
 
     _canPut() {
-        return (!this._maxPending || this._pending.size < this._maxPending) &&
+        return (!this._maxPending || this._pending.size + this._releasing < this._maxPending) &&
             !this._fulfilled.full();
     }
 
@@ -56,10 +57,14 @@ export class UnorderedWorkQueue {
      * @param {external:Promise} promise - The awaitable to enqueue.
      */
     async put(promise) {
-        if (!this._canPut()) {
+        if (this._putters.length && this._canPut()) {
+            console.warn("XXX Cool, fixed this bug!! :)", Array.from(this._putters), promise, this._idCounter);
+        }
+        if (this._putters.length || !this._canPut()) {
             const ev = new Event();
             this._putters.push(ev);
             await ev.wait();
+            this._releasing--;
         }
         if (this._pending.size >= this._maxPending || this._fulfilled.full()) {
             throw new Error("XXX assertion failed in put");
@@ -79,6 +84,7 @@ export class UnorderedWorkQueue {
 
     _maybeReleasePutter() {
         if (this._putters.length && this._canPut()) {
+            this._releasing++;
             this._putters.shift().set();
         }
     }
