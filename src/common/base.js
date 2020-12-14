@@ -369,6 +369,32 @@ self.sauceBaseInit = function sauceBaseInit() {
                 });
             });
         }
+
+        async *iter(bucket, options={}) {
+            const filter = options.filter;
+            const t = this.db.transaction('entries', 'readonly');
+            const store = t.objectStore('entries');
+            const index = store.index('bucket-expiration');
+            const cursorReq = index.openCursor(IDBKeyRange.bound([bucket, Date.now()], [bucket, Infinity]));
+            let resolve;
+            let reject;
+            // Callbacks won't invoke until we release control of the event loop, so this is safe..
+            cursorReq.addEventListener('error', ev => reject(cursorReq.error));
+            cursorReq.addEventListener('success', ev => resolve(ev.target.result));
+            for (;;) {
+                const cursor = await new Promise((_resolve, _reject) => {
+                    resolve = _resolve;
+                    reject = _reject;
+                });
+                if (!cursor) {
+                    return;
+                }
+                if (!filter || filter(cursor.key, cursor.value)) {
+                    yield cursor.value;
+                }
+                cursor.continue();
+            }
+        }
     }
 
 
@@ -454,6 +480,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         async delete(key) {
             await this._initing;
             await this.idb.delete([this.bucket, key]);
+        }
+
+        iter() {
+            return this.idb.iter(this.bucket);
         }
     }
     sauce.cache = {
