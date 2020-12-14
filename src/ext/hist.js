@@ -368,7 +368,7 @@
             } catch(e) {
                 if (e.toString().indexOf('ThrottledFetchError') !== -1) {
                     const delay = 60000 * i;
-                    console.warn(`Hit Throttle Limits: Delaying next request for ${delay}s`);
+                    console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     console.warn("Resuming after throttle period");
                     continue;
@@ -483,15 +483,10 @@
     }
 
 
-    ns.exportStreams = async function() {
-        const data = [];
-        for await (const x of streamsCache.values()) {
-            data.push(x);
-        }
+    function download(blob, name) {
         const link = document.createElement('a');
-        const blob = new Blob([JSON.stringify(data)]);
         link.href = URL.createObjectURL(blob);
-        link.download = 'streams-export.json';
+        link.download = name;
         link.style.display = 'none';
         document.body.appendChild(link);
         try {
@@ -500,15 +495,45 @@
             link.remove();
             URL.revokeObjectURL(link.href);
         }
-        return data;
+    }
+
+
+    ns.exportStreams = async function(name) {
+        name = name || 'streams-export';
+        const valuesIter = streamsCache.values();
+        const entriesPerFile = 5000;  // Blob and JSON.stringify have arbitrary limits.
+        for (let i = 0, done; !done; i++) {
+            const data = [];
+            while (true) {
+                const x = await valuesIter.next();
+                if (x.done) {
+                    done = true;
+                    break;
+                }
+                data.push(x.value);
+                if (data.length === entriesPerFile) {
+                    break;
+                }
+            }
+            const blob = new Blob([JSON.stringify(data)]);
+            download(blob, `${name}-${i}.json`); 
+            if (data.length !== entriesPerFile) {
+                break;
+            }
+        }
+        console.info("Export done");
     };
 
 
     ns.importStreams = async function(url) {
         const resp = await fetch(url);
         const data = await resp.json();
+        let i = 0;
+        const obj = {};
         for (const x of data) {
-            await streamsCache.set(x.key, x.value);
+            obj[x.key] = x.value;
         }
+        await streamsCache.setObject(obj);
+        console.info(`Imported ${data.length} entries`);
     };
 })();
