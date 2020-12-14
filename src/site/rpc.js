@@ -177,12 +177,6 @@ sauce.ns('rpc', function() {
     }
 
 
-    async function histStreams() {
-        const args = Array.from(arguments);
-        return await invoke({system: 'hist', op: 'streams', data: {args}});
-    }
-
-
     async function histFindPeerPeaks() {
         const args = Array.from(arguments);
         return await invoke({system: 'hist', op: 'findPeerPeaks', data: {args}});
@@ -195,12 +189,6 @@ sauce.ns('rpc', function() {
     }
 
 
-    async function histFindPeaks() {
-        const args = Array.from(arguments);
-        return await invoke({system: 'hist', op: 'findPeaks', data: {args}});
-    }
-
-
     async function histSyncSelfStreams() {
         const args = Array.from(arguments);
         return await invoke({system: 'hist', op: 'syncSelfStreams', data: {args}});
@@ -210,12 +198,6 @@ sauce.ns('rpc', function() {
     async function histSyncPeerStreams() {
         const args = Array.from(arguments);
         return await invoke({system: 'hist', op: 'syncPeerStreams', data: {args}});
-    }
-
-
-    async function histSyncStreams() {
-        const args = Array.from(arguments);
-        return await invoke({system: 'hist', op: 'syncStreams', data: {args}});
     }
 
 
@@ -306,12 +288,9 @@ sauce.ns('rpc', function() {
         trailforksIntersections,
         histSelfActivities,
         histPeerActivities,
-        histStreams,
         histFindPeerPeaks,
         histFindSelfPeaks,
-        histFindPeaks,
         histSyncPeerStreams,
         histSyncSelfStreams,
-        histSyncStreams,
     };
 });

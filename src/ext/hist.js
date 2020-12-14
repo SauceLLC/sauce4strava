@@ -9,7 +9,6 @@
     const actPeersCache = new sauce.cache.TTLCache('hist-activities-peers', Infinity);
     const actSelfCache = new sauce.cache.TTLCache('hist-activities-self', Infinity);
     const streamsCache = new sauce.cache.TTLCache('hist-streams', Infinity);
-    self.foo = streamsCache;
 
     const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
@@ -83,7 +82,7 @@
     })();
 
 
-    ns.streams = async function(activityId, streamTypes, options={}) {
+    async function getStreams(activityId, streamTypes, options={}) {
         const cacheKey = stream => `${activityId}-${stream}`;
         const missing = new Set();
         const results = {};
@@ -127,10 +126,10 @@
             await streamsCache.set(cacheKey(x), null);
         }
         return results;
-    };
+    }
 
 
-    ns.selfActivities = async function(athleteId) {
+    ns.selfActivities = async function(athleteId, options={}) {
         async function fetchPage(page) {
             const q = new URLSearchParams();
             q.set('new_activity_only', 'false');
@@ -138,8 +137,10 @@
             const resp = await retryFetch(`/athlete/training_activities?${q}`);
             return await resp.json();
         }
-
         const activities = (await actSelfCache.get(athleteId)) || [];
+        if (options.disableFetch) {
+            return activities;
+        }
         const cachedIds = new Set(activities.map(x => x.id));
         const seed = await fetchPage(1);
         let added = 0;
@@ -186,7 +187,7 @@
     };
 
 
-    ns.peerActivities = async function(athleteId) {
+    ns.peerActivities = async function(athleteId, options={}) {
         const cachedDescs = new Map();
         const fetchedDescs = new Map();
         let cacheEndDate;
@@ -292,36 +293,38 @@
                 lastCacheHit = `${year}-${month}`;
             }
         }
-        if (cachedDescs.size) {
-            // Look for cache consistency with fetched values. Then we can
-            // use bulk mode or just the cache if it's complete.
-            for (const [year, month] of yearMonthRange(now)) {
-                const key = cacheKey(year, month);
-                const fetched = await fetchMonth(year, month);
-                fetchedDescs.set(key, fetched);
-                const cached = cachedDescs.get(key);
-                if (!cached) {
-                    await actPeersCache.set(cacheKey(year, month), fetched);
-                    const prior = year * 12 + month - 1;
-                    bulkStartDate = new Date(`${Math.floor(prior / 12)}-${prior % 12 || 12}`);
-                    break;
-                } else {
-                    if (isSameData(cached, fetched)) {
+        if (!options.disableFetch) {
+            if (cachedDescs.size) {
+                // Look for cache consistency with fetched values. Then we can
+                // use bulk mode or just the cache if it's complete.
+                for (const [year, month] of yearMonthRange(now)) {
+                    const key = cacheKey(year, month);
+                    const fetched = await fetchMonth(year, month);
+                    fetchedDescs.set(key, fetched);
+                    const cached = cachedDescs.get(key);
+                    if (!cached) {
+                        await actPeersCache.set(cacheKey(year, month), fetched);
+                        const prior = year * 12 + month - 1;
+                        bulkStartDate = new Date(`${Math.floor(prior / 12)}-${prior % 12 || 12}`);
                         break;
                     } else {
-                        // Found updated data
-                        await actPeersCache.set(cacheKey(year, month), fetched);
+                        if (isSameData(cached, fetched)) {
+                            break;
+                        } else {
+                            // Found updated data
+                            await actPeersCache.set(cacheKey(year, month), fetched);
+                        }
                     }
                 }
             }
-        }
-        if (bulkStartDate) {
-            // Fill the head...
-            await bulkImport(bulkStartDate);
-        }
-        if (cacheEndDate) {
-            // Fill the tail...
-            await bulkImport(cacheEndDate);
+            if (bulkStartDate) {
+                // Fill the head...
+                await bulkImport(bulkStartDate);
+            }
+            if (cacheEndDate) {
+                // Fill the tail...
+                await bulkImport(cacheEndDate);
+            }
         }
         const activities = [];
         const dedup = new Set();
@@ -361,7 +364,7 @@
         ];
         for (let i = 1;; i++) {
             try {
-                return await ns.streams(id, streamTypes, {disableFetch}).then(streams => ({id, streams}));
+                return await getStreams(id, streamTypes, {disableFetch}).then(streams => ({id, streams}));
             } catch(e) {
                 if (e.toString().indexOf('ThrottledFetchError') !== -1) {
                     const delay = 60000 * i;
@@ -377,20 +380,36 @@
     };
 
 
+    async function availStreamsFilter(acts) {
+        const ids = new Set(acts.map(x => x.id));
+        const avail = new Map();
+        for await (const x of streamsCache.values()) {
+            const id = Number(x.key.split('-')[0]);
+            if (ids.has(id)) {
+                if (!avail.has(id)) {
+                    avail.set(id, {});
+                }
+                avail.get(id)[x.key.split('-')[1]] = x.value;
+            }
+        }
+        return avail;
+    }
+
+
     ns.syncPeerStreams = async function(athleteId) {
         const acts = await ns.peerActivities(athleteId);
-        return await ns.syncStreams(acts);
+        return await syncStreams(acts);
     };
 
 
     ns.syncSelfStreams = async function(athleteId) {
         const acts = await ns.selfActivities(athleteId);
-        return await ns.syncStreams(acts);
+        return await syncStreams(acts);
     };
 
 
     let _syncing = false;
-    ns.syncStreams = async function(acts) {
+    async function syncStreams(acts) {
         if (_syncing) {
             throw new Error("Sorry a sync job is running");
         }
@@ -406,71 +425,62 @@
             }
             console.info(`Need to synchronize ${remaining.size} of ${acts.length} activities...`);
             for (const id of remaining) {
-                await ns.getAllStreams(id);
+                try {
+                    await ns.getAllStreams(id);
+                } catch(e) {
+                    console.warn("Get streams errors:", e);
+                }
             }
             console.info("Completed activities fetch/sync");
         } finally {
             _syncing = false;
         }
-    };
-
-
-    ns.syncSelfPeaks = async function(athleteId, ...args) {
-        const acts = await ns.selfActivities(athleteId);
-        return await ns.findPeaks(acts, ...args);
-    };
+    }
 
 
     ns.findPeerPeaks = async function(athleteId, ...args) {
-        const acts = await ns.peerActivities(athleteId);
-        return await ns.findPeaks(acts, ...args);
+        const acts = await ns.peerActivities(athleteId, {disableFetch: true});
+        const streamsMap = await availStreamsFilter(acts);
+        return await findPeaks(streamsMap, ...args);
     };
 
 
     ns.findSelfPeaks = async function(athleteId, ...args) {
-        const acts = await ns.selfActivities(athleteId);
-        return await ns.findPeaks(acts, ...args);
+        const acts = await ns.selfActivities(athleteId, {disableFetch: true});
+        const streamsMap = await availStreamsFilter(acts);
+        return await findPeaks(streamsMap, ...args);
     };
 
 
-    ns.findPeaks = async function(acts, period, options={}) {
+    async function findPeaks(streamsMap, period, options={}) {
         const type = options.type || 'power';
-        const ids = acts.map(x => x.id);
-        const wq = new jobs.UnorderedWorkQueue({maxPending: 20, allowErrors: true});
-        async function producer() {
-            for (const id of ids) {
-                await wq.put(ns.getAllStreams(id, {disableFetch: true}));
-            }
-        }
-        async function consumer() {
-            const peaks = [];
-            for await (const x of wq) {
-                if (x instanceof Error) {
-                    console.warn("Ignoring error from streams():", x);
-                    continue;
-                }
-                const {streams, id} = x;
-                if (type === 'power') {
-                    if (streams && streams.time && streams.watts) {
-                        const s = Date.now();
-                        const roll = sauce.power.peakPower(period, streams.time, streams.watts);
-                        if (roll) {
-                            peaks.push(roll);
-                            const best = sauce.data.max(peaks.map(x => x.avg()));
-                            if (best === roll.avg()) {
-                                console.info("NEW BEST!", `https://www.strava.com/activities/${id}`, roll.avg());
-                            }
-                            console.debug(Math.round(roll.avg()), 'Best', Math.round(best), 'took', Date.now() - s);
+        const limit = options.limit || 10;
+        const peaks = [];
+        let best = -Infinity;
+        let i = 0;
+        for (const [id, streams] of streamsMap.entries()) {
+            const s = Date.now();
+            if (type === 'power') {
+                if (streams && streams.time && streams.watts) {
+                    const roll = sauce.power.peakPower(period, streams.time, streams.watts);
+                    if (roll) {
+                        const avg = roll.avg();
+                        peaks.push([avg, roll, id]);
+                        peaks.sort((a, b) => b[0] - a[0]);
+                        if (best < avg) {
+                            best = avg;
+                            console.info("NEW BEST!", `https://www.strava.com/activities/${id}`, avg);
                         }
                     }
-                } else {
-                    throw new Error("Invalid peak type: " + type);
                 }
+            } else {
+                throw new Error("Invalid peak type: " + type);
             }
+            i++;
+            console.debug('Processing:', i, 'took', Date.now() - s);
         }
-        await Promise.all([producer(), consumer()]);
-        console.warn("All done");
-    };
+        return peaks.slice(0, limit).map(([avg, roll, id]) => ({roll, id}));
+    }
 
 
     ns.exportStreams = async function() {
