@@ -1,4 +1,4 @@
-/* global sauce, browser */
+/* global sauce */
 
 (async function() {
     'use strict';
@@ -10,7 +10,9 @@
     const actSelfCache = new sauce.cache.TTLCache('hist-activities-self', Infinity);
     const streamsCache = new sauce.cache.TTLCache('hist-streams', Infinity);
 
-    const jobs = await sauce.getModule(browser.runtime.getURL('/src/common/jscoop/jobs.js'));
+    const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
+    const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
+
 
     class FetchError extends Error {
         static fromResp(resp) {
@@ -414,5 +416,35 @@
         }
         await Promise.all([producer(), consumer()]);
         console.warn("All done");
+    };
+
+
+    ns.exportStreams = async function() {
+        const data = [];
+        for await (const x of streamsCache.iter()) {
+            data.push(x);
+        }
+        const link = document.createElement('a');
+        const blob = new Blob([JSON.stringify(data)]);
+        link.href = URL.createObjectURL(blob);
+        link.download = 'streams-export.json';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        try {
+            link.click();
+        } finally {
+            link.remove();
+            URL.revokeObjectURL(link.href);
+        }
+        return data;
+    };
+
+
+    ns.importStreams = async function(url) {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        for (const x of data) {
+            await streamsCache.set(x.key, x.value);
+        }
     };
 })();
