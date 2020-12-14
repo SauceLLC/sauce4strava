@@ -81,8 +81,8 @@
         };
     })();
 
-    ns.streams = async function(activityId, streamTypes) {
-        const q = new URLSearchParams();
+
+    ns.streams = async function(activityId, streamTypes, options={}) {
         const cacheKey = stream => `${activityId}-${stream}`;
         const missing = new Set();
         const results = {};
@@ -94,9 +94,10 @@
                 results[x] = cached;
             }
         }
-        if (!missing.size) {
+        if (!missing.size || options.disableFetch) {
             return results;
         }
+        const q = new URLSearchParams();
         for (const x of missing) {
             q.append('stream_types[]', x);
         }
@@ -346,46 +347,92 @@
     };
 
 
-    ns.findPeerAthletePeaks = async function(athleteId, ...args) {
-        const acts = await ns.peerActivities(athleteId);
-        return await ns.findActivityPeaks(acts, ...args);
-    };
-
-
-    ns.findSelfAthletePeaks = async function(athleteId, ...args) {
-        const acts = await ns.selfActivities(athleteId);
-        return await ns.findActivityPeaks(acts, ...args);
-    };
-
-
-    ns.findActivityPeaks = async function(acts, period, type='power') {
-        const ids = acts.map(x => x.id);
-        // Really try to get EVERYTHING.  Sync takes forever but each request is cheap!
+    // This routine is recommend for most cases as it has throttle handling and
+    // gets all the pertinent streams so we don't abuse the Strava API.
+    // Better to get all the data for each activity so we don't have to fetch it
+    // again.
+    ns.getAllStreams = async function(id, options={}) {
+        const disableFetch = options.disableFetch;
         const streamTypes = [
             'time', 'heartrate', 'altitude', 'distance', 'moving',
             'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
             'grade_adjusted_distance', 'temp',
         ];
+        for (let i = 1;; i++) {
+            try {
+                return await ns.streams(id, streamTypes, {disableFetch}).then(streams => ({id, streams}));
+            } catch(e) {
+                if (e.toString().indexOf('ThrottledFetchError') !== -1) {
+                    const delay = 60000 * i;
+                    console.warn(`Hit Throttle Limits: Delaying next request for ${delay}s`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    console.warn("Resuming after throttle period");
+                    continue;
+                } else {
+                    throw e;
+                }
+            }
+        }
+    };
+
+
+    ns.syncPeerStreams = async function(athleteId) {
+        const acts = await ns.peerActivities(athleteId);
+        return await ns.syncStreams(acts);
+    };
+
+
+    ns.syncSelfStreams = async function(athleteId) {
+        const acts = await ns.selfActivities(athleteId);
+        return await ns.syncStreams(acts);
+    };
+
+
+    ns.syncStreams = async function(acts) {
+        const remaining = new Set(acts.map(x => x.id));
+        for (const id of Array.from(remaining)) {
+            const data = await ns.streams(id, ['time'], {disableFetch: true});
+            if (data && data.time) {
+                remaining.delete(id);
+            }
+        }
+        if (!remaining.size) {
+            console.info("All activities synchronized");
+            return;
+        }
+        console.info(`Need to synchronize ${remaining.size} of ${acts.length} activities...`);
+        for (const id of remaining) {
+            await ns.getAllStreams(id);
+        }
+        console.info("Completed activities fetch/sync");
+    };
+
+
+    ns.syncSelfPeaks = async function(athleteId, ...args) {
+        const acts = await ns.selfActivities(athleteId);
+        return await ns.findPeaks(acts, ...args);
+    };
+
+
+    ns.findPeerPeaks = async function(athleteId, ...args) {
+        const acts = await ns.peerActivities(athleteId);
+        return await ns.findPeaks(acts, ...args);
+    };
+
+
+    ns.findSelfPeaks = async function(athleteId, ...args) {
+        const acts = await ns.selfActivities(athleteId);
+        return await ns.findPeaks(acts, ...args);
+    };
+
+
+    ns.findPeaks = async function(acts, period, options={}) {
+        const type = options.type || 'power';
+        const ids = acts.map(x => x.id);
         const wq = new jobs.UnorderedWorkQueue({maxPending: 20, allowErrors: true});
         async function producer() {
             for (const id of ids) {
-                await wq.put((async () => {
-                    for (let i = 1;; i++) {
-                        try {
-                            return await ns.streams(id, streamTypes).then(streams => ({id, streams}));
-                        } catch(e) {
-                            if (e.toString().indexOf('ThrottledFetchError') !== -1) {
-                                const delay = 60000 * i;
-                                console.warn(`Hit Throttle Limits: Delaying next request for ${delay}s`);
-                                await new Promise(resolve => setTimeout(resolve, delay));
-                                console.warn("Resuming after throttle period");
-                                continue;
-                            } else {
-                                throw e;
-                            }
-                        }
-                    }
-                })());
+                await wq.put(ns.getAllStreams(id, {disableFetch: true}));
             }
         }
         async function consumer() {
