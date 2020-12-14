@@ -370,7 +370,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             });
         }
 
-        async *iter(bucket, options={}) {
+        async *values(bucket, options={}) {
             const filter = options.filter;
             const t = this.db.transaction('entries', 'readonly');
             const store = t.objectStore('entries');
@@ -389,10 +389,36 @@ self.sauceBaseInit = function sauceBaseInit() {
                 if (!cursor) {
                     return;
                 }
-                if (!filter || filter(cursor.key, cursor.value)) {
+                cursor.continue(); // Sched prefetch of next row
+                if (!filter || filter(cursor)) {
                     yield cursor.value;
                 }
-                cursor.continue();
+            }
+        }
+
+        async *keys(bucket, options={}) {
+            const filter = options.filter;
+            const t = this.db.transaction('entries', 'readonly');
+            const store = t.objectStore('entries');
+            const index = store.index('bucket-expiration');
+            const cursorReq = index.openKeyCursor(IDBKeyRange.bound([bucket, Date.now()], [bucket, Infinity]));
+            let resolve;
+            let reject;
+            // Callbacks won't invoke until we release control of the event loop, so this is safe..
+            cursorReq.addEventListener('error', ev => reject(cursorReq.error));
+            cursorReq.addEventListener('success', ev => resolve(ev.target.result));
+            for (;;) {
+                const cursor = await new Promise((_resolve, _reject) => {
+                    resolve = _resolve;
+                    reject = _reject;
+                });
+                if (!cursor) {
+                    return;
+                }
+                cursor.continue(); // Sched prefetch of next row
+                if (!filter || filter(cursor)) {
+                    yield cursor.primaryKey;
+                }
             }
         }
     }
@@ -482,8 +508,14 @@ self.sauceBaseInit = function sauceBaseInit() {
             await this.idb.delete([this.bucket, key]);
         }
 
-        iter() {
-            return this.idb.iter(this.bucket);
+        values(options={}) {
+            const filter = options.filter;
+            return this.idb.values(this.bucket, {filter});
+        }
+
+        keys(options={}) {
+            const filter = options.filter;
+            return this.idb.keys(this.bucket, {filter});
         }
     }
     sauce.cache = {
