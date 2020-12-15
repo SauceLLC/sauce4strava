@@ -265,181 +265,212 @@ self.sauceBaseInit = function sauceBaseInit() {
     sauce.Benchmark = Benchmark;
 
 
-    class IDBExpirationBucket {
-        static async factory() {
-            const instance = new this();
-            instance.db = await new Promise((resolve, reject) => {
-                const request = indexedDB.open('SauceCache', 1);
-                request.addEventListener('error', ev => reject(request.error));
-                request.addEventListener('success', ev => resolve(ev.target.result));
-                request.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
-                request.addEventListener('upgradeneeded', ev => {
-                    const db = ev.target.result;
-                    if (ev.oldVersion < 1) {
-                        const store = db.createObjectStore("entries", {autoIncrement: true});
-                        store.createIndex('bucket-expiration', ['bucket', 'expiration']);
-                        store.createIndex('bucket-key', ['bucket', 'key'], {unique: true});
-                    }
-                });
-            });
-            return instance;
+    class Database {
+        constructor(name) {
+            this.name = name;
+            this._init = new Promise((resolve, reject) => {
+                const req = indexedDB.open(name, this.version);
+                req.addEventListener('error', ev => reject(req.error));
+                req.addEventListener('success', ev => resolve(ev.target.result));
+                req.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
+                req.addEventListener('upgradeneeded', ev => this.migrate(ev.target.result, ev.oldVersion));
+            }).then(x => this._idb = x);
         }
 
-        requestPromise(req) {
+        get version() {
+            throw new Error("Pure Virtual");
+        }
+
+        migrate(idb, oldVersion) {
+            throw new Error("Pure Virtual");
+        }
+
+        async getTransaction(stores, mode) {
+            await this._init;
+            return this._idb.transaction(stores, mode);
+        }
+
+        async getStore(name, mode) {
+            const t = await this.getTransaction([name], mode);
+            return t.objectStore(name);
+        }
+    }
+
+
+    class DBStore {
+        constructor(db, name) {
+            this.db = db;
+            this.name = name;
+        }
+
+        _request(req) {
             return new Promise((resolve, reject) => {
                 req.addEventListener('error', ev => reject(req.error));
                 req.addEventListener('success', ev => resolve(req.result));
             });
         }
 
-        async _storeCall(transactionMode, onStore) {
-            const t = this.db.transaction('entries', transactionMode);
-            const store = t.objectStore('entries');
-            const result = await onStore(store);
-            return await new Promise((resolve, reject) => {
-                t.addEventListener('abort', ev => reject('Transaction Abort'));
-                t.addEventListener('error', ev => reject(t.error));
-                t.addEventListener('complete', ev => resolve(result));
-            });
+        _walkKeyPath(data, keyPath) {
+            let offt = data;
+            for (const x of keyPath.split('.')) {
+                offt = offt[x];
+            }
+            return offt;
         }
 
-        async get(keyOrRange) {
-            return await this._storeCall('readonly', async store => {
-                const index = store.index('bucket-key');
-                return await this.requestPromise(index.get(keyOrRange));
-            });
+        _extractKey(data, keyPath) {
+            // keyPath can be a single key-ident or an array of key-idents where
+            // a key ident can be a dot.notation string or just a solitary string.
+            if (!Array.isArray(keyPath)) {
+                return this._walkKeyPath(data, keyPath);
+            } else {
+                return keyPath.map(x => this._walkKeyPath(data, x));
+            }
         }
 
-        async getMany(keyOrRangeArray) {
-            return await this._storeCall('readonly', async store => {
-                const index = store.index('bucket-key');
-                return await Promise.all(keyOrRangeArray.map(x =>
-                    this.requestPromise(index.get(x))));
-            });
+        async _getStore(mode) {
+            return await this.db.getStore(this.name, mode);
         }
 
-        async put(data) {
-            await this._storeCall('readwrite', async store => {
-                const index = store.index('bucket-key');
-                const key = await this.requestPromise(index.getKey([data.bucket, data.key]));
-                return await this.requestPromise(store.put(data, key));
-            });
+        async _storeCall(storeName, mode, onStore) {
+            const t = this.db.transaction(storeName, mode);
+            const store = t.objectStore(storeName);
+            return await onStore(store);
         }
 
-        async putMany(dataArray) {
-            await this._storeCall('readwrite', async store => {
-                const index = store.index('bucket-key');
-                await Promise.all(dataArray.map(async data => {
-                    const key = await this.requestPromise(index.getKey([data.bucket, data.key]));
-                    return await this.requestPromise(store.put(data, key));
-                }));
-            });
+        async get(query, options={}) {
+            const store = await this._getStore('readonly');
+            const ifc = options.index ? store.index(options.index) : store;
+            return await this._request(ifc.get(query));
         }
 
-        async delete(keyOrRange) {
-            await this._storeCall('readwrite', async store => {
-                const index = store.index('bucket-key');
-                const key = await this.requestPromise(index.getKey(keyOrRange));
-                return await this.requestPromise(store.delete(key));
-            });
+        async getMany(queries, options={}) {
+            const store = await this._getStore('readonly');
+            const ifc = options.index ? store.index(options.index) : store;
+            return await Promise.all(queries.map(q => this._request(ifc.get(q))));
         }
 
+        async put(data, options={}) {
+            const store = await this._getStore('readwrite');
+            let key;
+            if (options.index) {
+                const index = store.index(options.index);
+                key = await this._request(index.getKey(this._extractKey(data, index.keyPath)));
+            }
+            return await this._request(store.put(data, key));
+        }
+
+        async putMany(datas, options={}) {
+            const store = await this._getStore('readwrite');
+            const index = options.index && store.index(options.index);
+            await Promise.all(datas.map(async data => {
+                let key;
+                if (index) {
+                    key = await this._request(index.getKey(this._extractKey(data, index.keyPath)));
+                }
+                return await this._request(store.put(data, key));
+            }));
+        }
+
+        async delete(query, options={}) {
+            const store = await this._getStore('readwrite');
+            let key;
+            if (options.index) {
+                const index = store.index(options.index);
+                key = await this._request(index.getKey(query));
+            } else {
+                key = query;
+            }
+            return await this._request(store.delete(key));
+        }
+
+        async *values(query, options={}) {
+            for await (const c of this._cursor(query, options)) {
+                yield c.primaryKey;
+            }
+        }
+
+        async *keys(query, options={}) {
+            for await (const c of this._cursor(query, Object.assign({keys: true}, options))) {
+                yield c.primaryKey;
+            }
+        }
+
+        async *cursor(query, options={}) {
+            const store = await this._getStore(options.mode);
+            const ifc = options.index ? store.index(options.index) : store;
+            const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
+            const req = curFunc.call(ifc, query, options.direction);
+            let resolve;
+            let reject;
+            // Callbacks won't invoke until we release control of the event loop, so this is safe..
+            req.addEventListener('error', ev => reject(req.error));
+            req.addEventListener('success', ev => resolve(ev.target.result));
+            while (true) {
+                const cursor = await new Promise((_resolve, _reject) => {
+                    resolve = _resolve;
+                    reject = _reject;
+                });
+                if (!cursor) {
+                    return;
+                }
+                if (!options.filter || options.filter(cursor)) {
+                    yield cursor;
+                }
+                cursor.continue();
+            }
+        }
+    }
+
+    sauce.db = {
+        Database,
+        DBStore
+    };
+
+
+    class CacheDatabase extends Database {
+        get version() {
+            return 1;
+        }
+
+        migrate(idb, oldVersion) {
+            if (!oldVersion || oldVersion < 1) {
+                const store = idb.createObjectStore("entries", {autoIncrement: true});
+                store.createIndex('bucket-expiration', ['bucket', 'expiration']);
+                store.createIndex('bucket-key', ['bucket', 'key'], {unique: true});
+            }
+        }
+    }
+
+
+    class CacheStore extends DBStore {
         async purgeExpired(bucket) {
-            return await this._storeCall('readwrite', async store => {
-                const now = Date.now();
-                const index = store.index('bucket-expiration');
-                const cursorReq = index.openCursor(IDBKeyRange.bound([bucket, -Infinity], [bucket, now]));
-                return await new Promise((resolve, reject) => {
-                    let count = 0;
-                    cursorReq.addEventListener('error', ev => reject(cursorReq.error));
-                    cursorReq.addEventListener('success', async ev => {
-                        try {
-                            const cursor = ev.target.result;
-                            if (!cursor) {
-                                resolve(count);
-                                return;
-                            }
-                            await this.requestPromise(cursor.delete());
-                            count++;
-                            cursor.continue();
-                        } catch(e) {
-                            reject(e);
-                        }
-                    });
-                });
-            });
-        }
-
-        async *values(bucket, options={}) {
-            const filter = options.filter;
-            const t = this.db.transaction('entries', 'readonly');
-            const store = t.objectStore('entries');
-            const index = store.index('bucket-expiration');
-            const cursorReq = index.openCursor(IDBKeyRange.bound([bucket, Date.now()], [bucket, Infinity]));
-            let resolve;
-            let reject;
-            // Callbacks won't invoke until we release control of the event loop, so this is safe..
-            cursorReq.addEventListener('error', ev => reject(cursorReq.error));
-            cursorReq.addEventListener('success', ev => resolve(ev.target.result));
-            for (;;) {
-                const cursor = await new Promise((_resolve, _reject) => {
-                    resolve = _resolve;
-                    reject = _reject;
-                });
-                if (!cursor) {
-                    return;
-                }
-                cursor.continue(); // Sched prefetch of next row
-                if (!filter || filter(cursor)) {
-                    yield cursor.value;
-                }
+            const q = IDBKeyRange.bound([bucket, -Infinity], [bucket, Date.now()]);
+            const curIter = this.cursor(q, {mode: 'readwrite', index: 'bucket-expiration'});
+            let count = 0;
+            for await (const c of curIter) {
+                await this._request(c.delete());
+                count++;
             }
-        }
-
-        async *keys(bucket, options={}) {
-            const filter = options.filter;
-            const t = this.db.transaction('entries', 'readonly');
-            const store = t.objectStore('entries');
-            const index = store.index('bucket-expiration');
-            const cursorReq = index.openKeyCursor(IDBKeyRange.bound([bucket, Date.now()], [bucket, Infinity]));
-            let resolve;
-            let reject;
-            // Callbacks won't invoke until we release control of the event loop, so this is safe..
-            cursorReq.addEventListener('error', ev => reject(cursorReq.error));
-            cursorReq.addEventListener('success', ev => resolve(ev.target.result));
-            for (;;) {
-                const cursor = await new Promise((_resolve, _reject) => {
-                    resolve = _resolve;
-                    reject = _reject;
-                });
-                if (!cursor) {
-                    return;
-                }
-                cursor.continue(); // Sched prefetch of next row
-                if (!filter || filter(cursor)) {
-                    yield cursor.primaryKey;
-                }
-            }
+            return count;
         }
     }
 
 
     class TTLCache {
         constructor(bucket, ttl) {
+            const db = new CacheDatabase('SauceCache');
+            this.store = new CacheStore(db, 'entries');
             this.bucket = bucket;
             this.ttl = ttl;
-            this._initing = this.init();
-        }
-
-        async init() {
-            this.idb = await IDBExpirationBucket.factory();
             this.gc();  // bg okay
         }
 
         async gc() {
-            for (let sleep = 10000;; sleep = Math.min(sleep + 1000, 300 * 1000)) {
+            const maxSleep = 6 * 3600 * 1000;
+            for (let sleep = 10000;; sleep = Math.min(sleep * 1.25, maxSleep)) {
                 await new Promise(resolve => setTimeout(resolve, sleep));
-                const count = await this.idb.purgeExpired(this.bucket);
+                const count = await this.store.purgeExpired(this.bucket);
                 if (count) {
                     console.info(`Flushed ${count} objects from TTL cache`);
                 }
@@ -447,8 +478,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getEntry(key) {
-            await this._initing;
-            const entry = await this.idb.get([this.bucket, key]);
+            const entry = await this.store.get([this.bucket, key], {index: 'bucket-key'});
             if (entry && entry.expiration > Date.now()) {
                 return entry;
             }
@@ -460,8 +490,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getEntries(keys) {
-            await this._initing;
-            const entries = await this.idb.getMany(keys.map(k => [this.bucket, k]));
+            const entries = await this.store.getMany(keys.map(k => [this.bucket, k]),
+                {index: 'bucket-key'});
             const now = Date.now();
             return entries.filter(x => x && x.expiration > now);
         }
@@ -476,48 +506,46 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async set(key, value, options={}) {
-            await this._initing;
             const ttl = options.ttl || this.ttl;
             const created = Date.now();
             const expiration = created + ttl;
-            await this.idb.put({
+            await this.store.put({
                 bucket: this.bucket,
                 key,
                 created,
                 expiration,
                 value
-            });
+            }, {index: 'bucket-key'});
         }
 
         async setObject(obj, options={}) {
-            await this._initing;
             const ttl = options.ttl || this.ttl;
             const created = Date.now();
             const expiration = created + ttl;
-            await this.idb.putMany(Object.entries(obj).map(([key, value]) => ({
+            await this.store.putMany(Object.entries(obj).map(([key, value]) => ({
                 bucket: this.bucket,
                 key,
                 created,
                 expiration,
                 value,
-            })));
+            })), {index: 'bucket-key'});
         }
 
         async delete(key) {
-            await this._initing;
-            await this.idb.delete([this.bucket, key]);
+            await this.store.delete([this.bucket, key], {index: 'bucket-key'});
         }
 
-        values(options={}) {
-            const filter = options.filter;
-            return this.idb.values(this.bucket, {filter});
+        values() {
+            const q = IDBKeyRange.bound([this.bucket, Date.now()], [this.bucket, Infinity]);
+            return this.store.values(q, {index: 'bucket-expiration'});
         }
 
-        keys(options={}) {
-            const filter = options.filter;
-            return this.idb.keys(this.bucket, {filter});
+        keys() {
+            const q = IDBKeyRange.bound([this.bucket, Date.now()], [this.bucket, Infinity]);
+            return this.store.keys(q, {index: 'bucket-key'});
         }
     }
+
     sauce.cache = {
         TTLCache
     };
