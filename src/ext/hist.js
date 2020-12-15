@@ -528,7 +528,6 @@
     ns.importStreams = async function(url) {
         const resp = await fetch(url);
         const data = await resp.json();
-        let i = 0;
         const obj = {};
         for (const x of data) {
             obj[x.key] = x.value;
