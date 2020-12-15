@@ -38,11 +38,11 @@
 
         migrate(idb, oldVersion) {
             if (!oldVersion || oldVersion < 1) {
-                let store = idb.createObjectStore("streams", {key: ['activity', 'stream']});
+                let store = idb.createObjectStore("streams", {keyPath: ['activity', 'stream']});
                 store.createIndex('activity', 'activity');
                 store.createIndex('athlete-stream', ['athlete', 'stream']);
-                store = idb.createObjectStore("activities", {key: 'id'});
-                store.createIndex('athlete-ts', ['athlete-ts', 'ts']);
+                store = idb.createObjectStore("activities", {keyPath: 'id'});
+                store.createIndex('athlete-ts', ['athlete', 'ts']);
             }
         }
     }
@@ -54,6 +54,13 @@
         constructor() {
             super(histDatabase, 'streams');
         }
+
+        async *byAthlete(athlete) {
+            const q = IDBKeyRange.only(athlete);
+            for await (const x of super.values(q, {index: 'athlete'})) {
+                yield x;
+            }
+        }
     }
 
 
@@ -62,10 +69,11 @@
             super(histDatabase, 'activities');
         }
 
-        async *values(athlete) {
-            const q = IDBKeyRange.lowerBound([athlete, 0]); // XXX try only?
-            for await (const x of super().values(q, {index: 'athlete-ts'})) {
-                yield x
+        async *byAthlete(athlete, reverse) {
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            const direction = reverse ? 'next' : 'prev';
+            for await (const x of super.values(q, {index: 'athlete-ts', direction})) {
+                yield x;
             }
         }
     }
