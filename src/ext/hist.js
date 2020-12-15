@@ -31,6 +31,50 @@
     }
 
 
+    class HistDatabase extends sauce.db.Database {
+        get version() {
+            return 1;
+        }
+
+        migrate(idb, oldVersion) {
+            if (!oldVersion || oldVersion < 1) {
+                let store = idb.createObjectStore("streams", {key: ['activity', 'stream']});
+                store.createIndex('activity', 'activity');
+                store.createIndex('athlete-stream', ['athlete', 'stream']);
+                store = idb.createObjectStore("activities", {key: 'id'});
+                store.createIndex('athlete-ts', ['athlete-ts', 'ts']);
+            }
+        }
+    }
+
+    const histDatabase = new HistDatabase('SauceHist');
+
+
+    class StreamsStore extends sauce.db.DBStore {
+        constructor() {
+            super(histDatabase, 'streams');
+        }
+    }
+
+
+    class ActivitiesStore extends sauce.db.DBStore {
+        constructor() {
+            super(histDatabase, 'activities');
+        }
+
+        async *values(athlete) {
+            const q = IDBKeyRange.lowerBound([athlete, 0]); // XXX try only?
+            for await (const x of super().values(q, {index: 'athlete-ts'})) {
+                yield x
+            }
+        }
+    }
+
+
+    ns.actsStore = new ActivitiesStore();
+    ns.streamsStore = new StreamsStore();
+
+
     async function retryFetch(urn, options={}) {
         const maxRetries = 5;
         const headers = options.headers || {};
