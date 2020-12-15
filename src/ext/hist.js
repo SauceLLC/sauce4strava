@@ -6,8 +6,6 @@
     self.sauce = self.sauce || {};
     const ns = self.sauce.hist = {};
 
-    const actPeersCache = new sauce.cache.TTLCache('hist-activities-peers', Infinity);
-    const actSelfCache = new sauce.cache.TTLCache('hist-activities-self', Infinity);
     const streamsCache = new sauce.cache.TTLCache('hist-streams', Infinity);
 
     const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
@@ -90,6 +88,20 @@
             const direction = reverse ? 'next' : 'prev';
             for await (const x of super.values(q, {index: 'athlete-ts', direction})) {
                 yield x;
+            }
+        }
+
+        async firstForAthlete(athlete) {
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            for await (const x of super.values(q, {index: 'athlete-ts'})) {
+                return x;
+            }
+        }
+
+        async lastForAthlete(athlete) {
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            for await (const x of super.values(q, {index: 'athlete-ts', direction: 'prev'})) {
+                return x;
             }
         }
     }
@@ -198,13 +210,6 @@
 
 
     ns.selfActivities = async function(athleteId, options={}) {
-        async function fetchPage(page) {
-            const q = new URLSearchParams();
-            q.set('new_activity_only', 'false');
-            q.set('page', page);
-            const resp = await retryFetch(`/athlete/training_activities?${q}`);
-            return await resp.json();
-        }
         const activities = [];
         for await (const x of ns.actsStore.byAthlete(athleteId)) {
             activities.push(x);
@@ -213,16 +218,22 @@
             return activities;
         }
         const localIds = new Set(activities.map(x => x.id));
-        for (let concurrency = 1, page = 1, pageCount, total;; concurrency *= 2) {
-            const work = [];
+        for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
+            const work = new jobs.UnorderedWorkQueue({maxPending: 25});
             for (let i = 0; page === 1 || page <= pageCount && i < concurrency; page++, i++) {
-                work.push(fetchPage(page));
+                await work.put((async () => {
+                    const q = new URLSearchParams();
+                    q.set('new_activity_only', 'false');
+                    q.set('page', page);
+                    const resp = await retryFetch(`/athlete/training_activities?${q}`);
+                    return await resp.json();
+                })());
             }
-            if (!work.length) {
+            if (!work.pending() && !work.fulfilled()) {
                 break;
             }
             const adding = [];
-            for (const data of await Promise.all(work)) {
+            for await (const data of work) {
                 if (total === undefined) {
                     total = data.total;
                     pageCount = Math.ceil(total / data.perPage);
@@ -231,7 +242,7 @@
                     if (!localIds.has(x.id)) {
                         const record = Object.assign({
                             athlete: athleteId,
-                            ts: x.start_date_local_raw
+                            ts: x.start_date_local_raw * 1000
                         }, x);
                         adding.push(record);
                         activities.push(record);  // Sort later.
@@ -242,33 +253,27 @@
             // If a user has deleted acts that we previously fetched our count will
             // be higher.  So we also require than the entire work group had no effect
             // before stopping.
-            if (!adding.length && activities.length >= total) {
-                break;
-            } else if (adding.length) {
+            if (adding.length) {
+                await ns.actsStore.putMany(adding);
                 console.info(`Synchronized ${adding.length} new activities`);
+            } else if (activities.length >= total) {
+                break;
             }
-            await ns.actsStore.putMany(adding);
-            activities.sort((a, b) => b.ts - a.ts);
         }
+        activities.sort((a, b) => b.ts - a.ts);
         return activities;
     };
 
 
     ns.peerActivities = async function(athleteId, options={}) {
-        const cachedDescs = new Map();
-        const fetchedDescs = new Map();
-        let cacheEndDate;
-        let bulkStartDate;
-        let sentinelDate;
-        const now = new Date();
-
-        function cacheKey(year, month) {
-            return `${athleteId}-${year}-${month}`;
+        const activities = [];
+        for await (const x of ns.actsStore.byAthlete(athleteId)) {
+            activities.push(x);
         }
-
-        function isSameData(a, b) {
-            return JSON.stringify(a) === JSON.stringify(b);
+        if (options.disableFetch) {
+            return activities;
         }
+        const knownIds = new Set(activities.map(x => x.id));
 
         function *yearMonthRange(date) {
             for (let year = date.getUTCFullYear(), month = date.getUTCMonth() + 1;; year--, month=12) {
@@ -288,6 +293,7 @@
             const data = await resp.text();
             const batch = [];
             const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
+            const ts = (new Date(`${year}-${month}`)).getTime(); // Just an approximate value for sync.
             for (const [, scriptish] of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
                 const entity = scriptish.match(/entity = \\"(.+?)\\";/);
                 if (!entity || entity[1] !== 'Activity') {
@@ -298,123 +304,77 @@
                     continue;
                 }
                 // NOTE: Maybe someday we can safely get more fields in there.
-                batch.push({id: Number(scriptish.match(/entity_id = \\"(.+?)\\";/)[1])});
+                batch.push({
+                    id: Number(scriptish.match(/entity_id = \\"(.+?)\\";/)[1]),
+                    athlete: athleteId,
+                    ts
+                });
             }
             return batch;
         }
 
-        async function bulkImport(lastImportDate) {
-            // Search for new ids until we reach cache consistency or the end of any data.
-            const iter = yearMonthRange(lastImportDate);
-            for (;;) {
-                const work = new Map();
-                for (let i = 0; i < 12; i++) {
+        async function batchImport(startDate) {
+            const minEmpty = 12;
+            const minRedundant = 2;
+            const iter = yearMonthRange(startDate);
+            for (let concurrency = 1;; concurrency = Math.min(25, concurrency * 2)) {
+                const work = new jobs.UnorderedWorkQueue({maxPending: 25});
+                for (let i = 0; i < concurrency; i++) {
                     const [year, month] = iter.next().value;
-                    work.set(cacheKey(year, month), fetchMonth(year, month));
+                    await work.put(fetchMonth(year, month));
                 }
-                await Promise.all(work.values());
-                let added = 0;
-                let found = 0;
-                for (const [key, p] of work.entries()) {
-                    const fetched = await p;
-                    found += fetched.length;
-                    fetchedDescs.set(key, fetched);
-                    const cached = cachedDescs.get(key);
-                    if (!cached || !isSameData(cached, fetched)) {
-                        added += fetched.length;
+                let empty = 0;
+                let redundant = 0;
+                const adding = [];
+                for await (const data of work) {
+                    if (!data.length) {
+                        empty++;
+                        continue;
                     }
-                    await actPeersCache.set(key, fetched);
-                }
-                if (!added) {
-                    // Full year without an activity or updates.  Stop looking..
-                    if (!found) {
-                        // No data either, don't bother with tail search
-                        if (sentinelDate) {
-                            const oldKey = cacheKey(sentinelDate.getUTCFullYear(), sentinelDate.getUTCMonth() + 1);
-                            await actPeersCache.delete(oldKey);
+                    let foundNew;
+                    for (const x of data) {
+                        if (!knownIds.has(x.id)) {
+                            adding.push(x);
+                            activities.push(x);  // Sort later.
+                            knownIds.add(x.id);
+                            foundNew = true;
                         }
-                        const [year, month] = iter.next().value;
-                        await actPeersCache.set(cacheKey(year, month), 'SENTINEL');
-                        cacheEndDate = null;
                     }
-                    return;
+                    if (!foundNew) {
+                        redundant++;
+                    }
+                }
+                if (adding.length) {
+                    await ns.actsStore.putMany(adding);
+                    console.info(`Synchronized ${adding.length} new activities`);
+                } else if (empty >= minEmpty && empty >= Math.floor(concurrency)) {
+                    const [year, month] = iter.next().value;
+                    const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
+                    console.warn("Place sentinel just before here:", date);
+                    await ns.actsStore.put({id: -athleteId, sentinel: date.getTime()});
+                    break;
+                } else if (redundant >= minRedundant  && redundant >= Math.floor(concurrency)) {
+                    // Entire work set was redundant.  Don't refetch any more.
+                    const date = iter.next().value;
+                    console.warn("Overlapping at:", date);
+                    break;
                 }
             }
         }
 
-        // Load all cached data...
-        let cacheMisses = 0;
-        let lastCacheHit = now;
-        for (const [year, month] of yearMonthRange(now)) {
-            const cached = await actPeersCache.get(cacheKey(year, month));
-            if (cached === undefined) {
-                if (++cacheMisses > 36) {  // 3 years is enough
-                    cacheEndDate = new Date(lastCacheHit);
-                    break;
-                }
-            } else if (cached === 'SENTINEL') {
-                sentinelDate = new Date(`${year}-${month}`);
-                break;
-            } else {
-                cachedDescs.set(cacheKey(year, month), cached);
-                lastCacheHit = `${year}-${month}`;
-            }
+        // Fetch lastest activities (or all of them if this is the first time).
+        await batchImport(new Date());
+        // Sentinel is stashed as a special record to indicate that we have scanned
+        // some distance into the past.  Without this we never know how far back
+        // we looked given there is no page count or total to work with.
+        const sentinel = await ns.actsStore.get(-athleteId);
+        if (!sentinel) {
+            // We never finished a prior sync so find where we left off..
+            const last = await ns.actsStore.firstForAthlete(athleteId);
+            await batchImport(new Date(last.ts));
         }
-        if (!options.disableFetch) {
-            if (cachedDescs.size) {
-                // Look for cache consistency with fetched values. Then we can
-                // use bulk mode or just the cache if it's complete.
-                for (const [year, month] of yearMonthRange(now)) {
-                    const key = cacheKey(year, month);
-                    const fetched = await fetchMonth(year, month);
-                    fetchedDescs.set(key, fetched);
-                    const cached = cachedDescs.get(key);
-                    if (!cached) {
-                        await actPeersCache.set(cacheKey(year, month), fetched);
-                        const prior = year * 12 + month - 1;
-                        bulkStartDate = new Date(`${Math.floor(prior / 12)}-${prior % 12 || 12}`);
-                        break;
-                    } else {
-                        if (isSameData(cached, fetched)) {
-                            break;
-                        } else {
-                            // Found updated data
-                            await actPeersCache.set(cacheKey(year, month), fetched);
-                        }
-                    }
-                }
-            }
-            if (bulkStartDate) {
-                // Fill the head...
-                await bulkImport(bulkStartDate);
-            }
-            if (cacheEndDate) {
-                // Fill the tail...
-                await bulkImport(cacheEndDate);
-            }
-        }
-        const activities = [];
-        const dedup = new Set();
-        for (const [year, month] of yearMonthRange(now)) {
-            const key = cacheKey(year, month);
-            if (fetchedDescs.has(key)) {
-                for (const x of fetchedDescs.get(key)) {
-                    if (!dedup.has(x.id)) {
-                        dedup.add(x.id);
-                        activities.push(x);
-                    }
-                }
-            } else if (cachedDescs.has(key)) {
-                for (const x of cachedDescs.get(key)) {
-                    if (!dedup.has(x.id)) {
-                        dedup.add(x.id);
-                        activities.push(x);
-                    }
-                }
-            } else {
-                return activities;
-            }
-        }
+        activities.sort((a, b) => b.ts - a.ts);
+        return activities;
     };
 
 
@@ -424,14 +384,9 @@
     // again.
     ns.getAllStreams = async function(id, options={}) {
         const disableFetch = options.disableFetch;
-        const streamTypes = [
-            'time', 'heartrate', 'altitude', 'distance', 'moving',
-            'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
-            'grade_adjusted_distance', 'temp',
-        ];
         for (let i = 1;; i++) {
             try {
-                return await getStreams(id, streamTypes, {disableFetch}).then(streams => ({id, streams}));
+                return await getStreams(id, syncStreamTypes, {disableFetch}).then(streams => ({id, streams}));
             } catch(e) {
                 if (e.toString().indexOf('ThrottledFetchError') !== -1) {
                     const delay = 60000 * i;
