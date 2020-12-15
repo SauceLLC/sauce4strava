@@ -13,6 +13,22 @@
     const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
 
+    // NOTE: If this list grows we have to re-sync!
+    const syncStreamTypes = [
+        'time',
+        'heartrate',
+        'altitude',
+        'distance',
+        'moving',
+        'velocity_smooth',
+        'cadence',
+        'latlng',
+        'watts',
+        'watts_calc',
+        'grade_adjusted_distance',
+        'temp',
+    ];
+
 
     class FetchError extends Error {
         static fromResp(resp) {
@@ -189,52 +205,51 @@
             const resp = await retryFetch(`/athlete/training_activities?${q}`);
             return await resp.json();
         }
-        const activities = (await actSelfCache.get(athleteId)) || [];
+        const activities = [];
+        for await (const x of ns.actsStore.byAthlete(athleteId)) {
+            activities.push(x);
+        }
         if (options.disableFetch) {
             return activities;
         }
-        const cachedIds = new Set(activities.map(x => x.id));
-        const seed = await fetchPage(1);
-        let added = 0;
-        for (const x of seed.models) {
-            if (!cachedIds.has(x.id)) {
-                activities.push(x);
-                added++;
-            }
-        }
-        if (!added) {
-            // No new data at all.
-            return activities;
-        } else if (added < seed.models.length) {
-            // Some new data, but we overlap with cache already.
-            await actSelfCache.set(athleteId, activities);
-            return activities;
-        }
-        const pages = Math.ceil(seed.total / seed.perPage);
-        let page = 2;
-        for (let concurrency = 2, done = false; !done && page <= pages; concurrency *= 2) {
+        const localIds = new Set(activities.map(x => x.id));
+        for (let concurrency = 1, page = 1, pageCount, total;; concurrency *= 2) {
             const work = [];
-            for (let i = 0; page <= pages && i < concurrency; page++, i++) {
+            for (let i = 0; page === 1 || page <= pageCount && i < concurrency; page++, i++) {
                 work.push(fetchPage(page));
             }
             if (!work.length) {
                 break;
             }
-            const lastAddCount = added;
+            const adding = [];
             for (const data of await Promise.all(work)) {
+                if (total === undefined) {
+                    total = data.total;
+                    pageCount = Math.ceil(total / data.perPage);
+                }
                 for (const x of data.models) {
-                    if (!cachedIds.has(x.id)) {
-                        activities.push(x);
-                        added++;
+                    if (!localIds.has(x.id)) {
+                        const record = Object.assign({
+                            athlete: athleteId,
+                            ts: x.start_date_local_raw
+                        }, x);
+                        adding.push(record);
+                        activities.push(record);  // Sort later.
                     }
                 }
-                if (lastAddCount === added) {
-                    done = true;
-                    break;
-                }
             }
+            // Don't give up until we've met or exceeded the indicated number of acts.
+            // If a user has deleted acts that we previously fetched our count will
+            // be higher.  So we also require than the entire work group had no effect
+            // before stopping.
+            if (!adding.length && activities.length >= total) {
+                break;
+            } else if (adding.length) {
+                console.info(`Synchronized ${adding.length} new activities`);
+            }
+            await ns.actsStore.putMany(adding);
+            activities.sort((a, b) => b.ts - a.ts);
         }
-        await actSelfCache.set(athleteId, activities);
         return activities;
     };
 
