@@ -275,7 +275,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 req.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
                 req.addEventListener('upgradeneeded', ev => {
                     console.info(`Upgrading DB from v${ev.oldVersion} to v${ev.newVersion}`);
-                    const idb = ev.target.results;
+                    const idb = ev.target.result;
                     const t = ev.target.transaction;
                     this.migrate(idb, t, ev.oldVersion, ev.newVersion);
                 });
