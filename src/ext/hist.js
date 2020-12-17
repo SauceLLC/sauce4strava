@@ -221,9 +221,6 @@
 
     ns.syncSelfActivities = async function(athlete, options={}) {
         const activities = await ns.actsStore.getAllForAthlete(athlete);
-        if (options.disableFetch) {
-            return activities;
-        }
         const localIds = new Set(activities.map(x => x.id));
         for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
             const work = new jobs.UnorderedWorkQueue({maxPending: 25});
@@ -274,9 +271,6 @@
 
     ns.syncPeerActivities = async function(athlete, options={}) {
         const activities = await ns.actsStore.getAllForAthlete(athlete);
-        if (options.disableFetch) {
-            return activities;
-        }
         const knownIds = new Set(activities.map(x => x.id));
 
         function *yearMonthRange(date) {
