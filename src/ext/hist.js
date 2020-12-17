@@ -5,9 +5,6 @@
 
     self.sauce = self.sauce || {};
     const ns = self.sauce.hist = {};
-
-    const streamsCache = new sauce.cache.TTLCache('hist-streams', Infinity);
-
     const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
     const queues = await sauce.getModule(extUrl + 'src/common/jscoop/queues.js');
@@ -124,8 +121,7 @@
             const q = IDBKeyRange.only([athlete, 'time']);
             options.index = 'athlete-stream';
             for await (const x of this.keys(q, options)) {
-                debugger;
-                yield x;
+                yield x[0];
             }
         }
     }
@@ -223,10 +219,8 @@
     })();
 
 
-
-
-    ns.syncSelfActivities = async function(athleteId, options={}) {
-        const activities = await ns.actsStore.getAllForAthlete(athleteId);
+    ns.syncSelfActivities = async function(athlete, options={}) {
+        const activities = await ns.actsStore.getAllForAthlete(athlete);
         if (options.disableFetch) {
             return activities;
         }
@@ -254,7 +248,7 @@
                 for (const x of data.models) {
                     if (!localIds.has(x.id)) {
                         const record = Object.assign({
-                            athlete: athleteId,
+                            athlete,
                             ts: x.start_date_local_raw * 1000
                         }, x);
                         adding.push(record);
@@ -278,8 +272,8 @@
     };
 
 
-    ns.syncPeerActivities = async function(athleteId, options={}) {
-        const activities = await ns.actsStore.getAllForAthlete(athleteId);
+    ns.syncPeerActivities = async function(athlete, options={}) {
+        const activities = await ns.actsStore.getAllForAthlete(athlete);
         if (options.disableFetch) {
             return activities;
         }
@@ -299,7 +293,7 @@
             q.set('chart_type', 'miles');
             q.set('year_offset', '0');
             q.set('interval', '' + year +  month.toString().padStart(2, '0'));
-            const resp = await retryFetch(`/athletes/${athleteId}/interval?${q}`);
+            const resp = await retryFetch(`/athletes/${athlete}/interval?${q}`);
             const data = await resp.text();
             const batch = [];
             const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
@@ -310,13 +304,13 @@
                     continue;
                 }
                 const actAthleteId = scriptish.match(/activity_athlete = {id: \\"([0-9]+)\\"};/);
-                if (!actAthleteId || Number(actAthleteId[1]) !== athleteId) {
+                if (!actAthleteId || Number(actAthleteId[1]) !== athlete) {
                     continue;
                 }
                 // NOTE: Maybe someday we can safely get more fields in there.
                 batch.push({
                     id: Number(scriptish.match(/entity_id = \\"(.+?)\\";/)[1]),
-                    athlete: athleteId,
+                    athlete,
                     ts
                 });
             }
@@ -361,7 +355,7 @@
                     const [year, month] = iter.next().value;
                     const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
                     console.warn("Place sentinel just before here:", date);
-                    await ns.actsStore.put({id: -athleteId, sentinel: date.getTime()});
+                    await ns.actsStore.put({id: -athlete, sentinel: date.getTime()});
                     break;
                 } else if (redundant >= minRedundant  && redundant >= Math.floor(concurrency)) {
                     // Entire work set was redundant.  Don't refetch any more.
@@ -377,10 +371,10 @@
         // Sentinel is stashed as a special record to indicate that we have scanned
         // some distance into the past.  Without this we never know how far back
         // we looked given there is no page count or total to work with.
-        const sentinel = await ns.actsStore.get(-athleteId);
+        const sentinel = await ns.actsStore.get(-athlete);
         if (!sentinel) {
             // We never finished a prior sync so find where we left off..
-            const last = await ns.actsStore.firstForAthlete(athleteId);
+            const last = await ns.actsStore.firstForAthlete(athlete);
             await batchImport(new Date(last.ts));
         }
         activities.sort((a, b) => b.ts - a.ts);
@@ -423,12 +417,10 @@
     }
 
 
-
-
-    ns.syncStreams = async function(athleteId) {
-        const activities = await ns.actsStore.getAllForAthlete(athleteId);
+    ns.syncStreams = async function(athlete) {
+        const activities = await ns.actsStore.getAllForAthlete(athlete);
         const outstanding = new Set(activities.map(x => x.id));
-        for await (const x of ns.streamsStore.activitiesByAthlete(athleteId)) {
+        for await (const x of ns.streamsStore.activitiesByAthlete(athlete)) {
             outstanding.delete(x);
         }
         if (!outstanding.size) {
@@ -436,9 +428,17 @@
             return;
         }
         console.info(`Need to synchronize ${outstanding.size} of ${activities.length} activities...`);
-        for (const id of outstanding) {
+        for (const activity of outstanding) {
             try {
-                await fetchAllStreams(id);
+                const data = await fetchAllStreams(activity);
+                if (data) {
+                    await ns.streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
+                        activity,
+                        athlete,
+                        stream,
+                        data
+                    })));
+                }
             } catch(e) {
                 console.warn("Fetch streams errors:", e);
             }
@@ -447,10 +447,10 @@
     };
 
 
-    ns.findPeaks = async function(athleteId, period, options={}) {
+    ns.findPeaks = async function(athlete, period, options={}) {
         const s = Date.now();
         const streamsMap = new Map();
-        for await (const group of ns.streamsStore.manyByAthlete(athleteId, ['time', 'watts'])) {
+        for await (const group of ns.streamsStore.manyByAthlete(athlete, ['time', 'watts'])) {
             streamsMap.set(group.activity, group.streams);
         }
         console.log('Get streams time:', Date.now() - s);
@@ -465,8 +465,7 @@
                     const roll = sauce.power.peakPower(period, streams.time, streams.watts);
                     if (roll) {
                         const avg = roll.avg();
-                        peaks.push([avg, roll, id]);
-                        peaks.sort((a, b) => b[0] - a[0]);
+                        peaks.push([roll, id]);
                         if (best < avg) {
                             best = avg;
                             console.info("NEW BEST!", `https://www.strava.com/activities/${id}`, avg);
@@ -482,7 +481,12 @@
             }
         }
         console.debug('Done:', i, 'took', Date.now() - s);
-        return peaks.slice(0, limit).map(([avg, roll, id]) => ({roll, id}));
+        peaks.sort((a, b) => b[0].avg() - a[0].avg());
+        const topPeaks = peaks.slice(0, limit);
+        for (const x of topPeaks) {
+            console.info(`https://www.strava.com/activities/${x[1]}`, x[0].avg());
+        }
+        return topPeaks;
     };
 
 
@@ -503,28 +507,44 @@
 
     ns.exportStreams = async function(name) {
         name = name || 'streams-export';
-        const valuesIter = streamsCache.values();
         const entriesPerFile = 5000;  // Blob and JSON.stringify have arbitrary limits.
-        for (let i = 0, done; !done; i++) {
-            const data = [];
-            while (true) {
-                const x = await valuesIter.next();
-                if (x.done) {
-                    done = true;
-                    break;
-                }
-                data.push(x.value);
-                if (data.length === entriesPerFile) {
-                    break;
-                }
-            }
+        const batch = [];
+        let page = 0;
+        function dl(data) {
             const blob = new Blob([JSON.stringify(data)]);
-            download(blob, `${name}-${i}.json`); 
-            if (data.length !== entriesPerFile) {
-                break;
+            download(blob, `${name}-${page++}.json`);
+        }
+        for await (const x of ns.streamsStore.values()) {
+            batch.push(x);
+            if (batch.length === entriesPerFile) {
+                dl(batch);
+                batch.length = 0;
             }
         }
+        if (batch.length) {
+            dl(batch);
+        }
         console.info("Export done");
+    };
+
+
+    ns.importStreams = async function(name='streams-export', host='http://localhost:8001') {
+        let added = 0;
+        for (let i = 0;; i++) {
+            const url = host + `/${name}-${i}.json`;
+            const resp = await fetch(url);
+            if (!resp.ok) {
+                if (resp.status === 404) {
+                    break;
+                }
+                throw new Error('HTTP Error: ' + resp.status);
+            }
+            const data = await resp.json();
+            added += data.length;
+            await ns.streamsStore.putMany(data);
+            console.info(`Imported ${data.length} from:`, url);
+        }
+        console.info(`Imported ${added} entries in total.`);
     };
 
 
