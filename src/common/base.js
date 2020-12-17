@@ -290,13 +290,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             throw new Error("Pure Virtual");
         }
 
-        async getTransaction(stores, mode) {
-            await this._init;
-            return this._idb.transaction(stores, mode);
-        }
-
-        async getStore(name, mode) {
-            const t = await this.getTransaction([name], mode);
+        getStore(name, mode) {
+            const t = this._idb.transaction([name], mode);
             return t.objectStore(name);
         }
     }
@@ -306,6 +301,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         constructor(db, name) {
             this.db = db;
             this.name = name;
+            this._init = db._init;
         }
 
         _request(req) {
@@ -333,8 +329,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
         }
 
-        async _getStore(mode) {
-            return await this.db.getStore(this.name, mode);
+        _getStore(mode) {
+            return this.db.getStore(this.name, mode);
         }
 
         async _storeCall(storeName, mode, onStore) {
@@ -344,19 +340,22 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async get(query, options={}) {
-            const store = await this._getStore('readonly');
+            await this._init;
+            const store = this._getStore('readonly');
             const ifc = options.index ? store.index(options.index) : store;
             return await this._request(ifc.get(query));
         }
 
         async getMany(queries, options={}) {
-            const store = await this._getStore('readonly');
+            await this._init;
+            const store = this._getStore('readonly');
             const ifc = options.index ? store.index(options.index) : store;
             return await Promise.all(queries.map(q => this._request(ifc.get(q))));
         }
 
         async put(data, options={}) {
-            const store = await this._getStore('readwrite');
+            await this._init;
+            const store = this._getStore('readwrite');
             let key;
             if (options.index) {
                 const index = store.index(options.index);
@@ -366,7 +365,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async putMany(datas, options={}) {
-            const store = await this._getStore('readwrite');
+            await this._init;
+            const store = this._getStore('readwrite');
             const index = options.index && store.index(options.index);
             await Promise.all(datas.map(async data => {
                 let key;
@@ -378,7 +378,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async delete(query, options={}) {
-            const store = await this._getStore('readwrite');
+            await this._init;
+            const store = this._getStore('readwrite');
             let key;
             if (options.index) {
                 const index = store.index(options.index);
@@ -402,7 +403,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *cursor(query, options={}) {
-            const store = options.store || await this._getStore(options.mode);
+            await this._init;
+            const store = this._getStore(options.mode);
             const ifc = options.index ? store.index(options.index) : store;
             const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
             const req = curFunc.call(ifc, query, options.direction);
@@ -453,13 +455,10 @@ self.sauceBaseInit = function sauceBaseInit() {
             const q = IDBKeyRange.bound([bucket, -Infinity], [bucket, Date.now()]);
             const curIter = this.cursor(q, {mode: 'readwrite', index: 'bucket-expiration'});
             let count = 0;
-            const deleting = [];
             for await (const c of curIter) {
-                // Don't use await within a cursor as it just causes issues for IDB's transaction model.
-                deleting.push(this._request(c.delete()));
+                await this._request(c.delete());
                 count++;
             }
-            await Promise.all(deleting);
             return count;
         }
     }
