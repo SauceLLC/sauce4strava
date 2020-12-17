@@ -453,10 +453,13 @@ self.sauceBaseInit = function sauceBaseInit() {
             const q = IDBKeyRange.bound([bucket, -Infinity], [bucket, Date.now()]);
             const curIter = this.cursor(q, {mode: 'readwrite', index: 'bucket-expiration'});
             let count = 0;
+            const deleting = [];
             for await (const c of curIter) {
-                await this._request(c.delete());
+                // Don't use await within a cursor as it just causes issues for IDB's transaction model.
+                deleting.push(this._request(c.delete()));
                 count++;
             }
+            await Promise.all(deleting);
             return count;
         }
     }
