@@ -274,8 +274,10 @@ self.sauceBaseInit = function sauceBaseInit() {
                 req.addEventListener('success', ev => resolve(ev.target.result));
                 req.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
                 req.addEventListener('upgradeneeded', ev => {
-                    console.info(`Upgrading DB from v${ev.oldVersion} to v${this.version}`);
-                    this.migrate(ev.target.result, ev.oldVersion);
+                    console.info(`Upgrading DB from v${ev.oldVersion} to v${ev.newVersion}`);
+                    const idb = ev.target.results;
+                    const t = ev.target.transaction;
+                    this.migrate(idb, t, ev.oldVersion, ev.newVersion);
                 });
             }).then(x => this._idb = x);
         }
@@ -284,7 +286,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             throw new Error("Pure Virtual");
         }
 
-        migrate(idb, oldVersion) {
+        migrate(idb, t, oldVersion, newVersion) {
             throw new Error("Pure Virtual");
         }
 
@@ -400,7 +402,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *cursor(query, options={}) {
-            const store = await this._getStore(options.mode);
+            const store = options.store || await this._getStore(options.mode);
             const ifc = options.index ? store.index(options.index) : store;
             const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
             const req = curFunc.call(ifc, query, options.direction);
@@ -436,7 +438,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             return 1;
         }
 
-        migrate(idb, oldVersion) {
+        migrate(idb, t, oldVersion, newVersion) {
             if (!oldVersion || oldVersion < 1) {
                 const store = idb.createObjectStore("entries", {autoIncrement: true});
                 store.createIndex('bucket-expiration', ['bucket', 'expiration']);

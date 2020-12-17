@@ -10,6 +10,7 @@
 
     const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
+    const queues = await sauce.getModule(extUrl + 'src/common/jscoop/queues.js');
 
     // NOTE: If this list grows we have to re-sync!
     const syncStreamTypes = [
@@ -47,16 +48,20 @@
 
     class HistDatabase extends sauce.db.Database {
         get version() {
-            return 1;
+            return 2;
         }
 
-        migrate(idb, oldVersion) {
+        migrate(idb, t, oldVersion, newVersion) {
             if (!oldVersion || oldVersion < 1) {
                 let store = idb.createObjectStore("streams", {keyPath: ['activity', 'stream']});
                 store.createIndex('activity', 'activity');
                 store.createIndex('athlete-stream', ['athlete', 'stream']);
                 store = idb.createObjectStore("activities", {keyPath: 'id'});
                 store.createIndex('athlete-ts', ['athlete', 'ts']);
+            }
+            if (oldVersion < 2) {
+                const store = t.objectStore("streams");
+                store.createIndex('athlete', 'athlete');
             }
         }
     }
@@ -69,9 +74,57 @@
             super(histDatabase, 'streams');
         }
 
-        async *byAthlete(athlete) {
-            const q = IDBKeyRange.only(athlete);
-            for await (const x of super.values(q, {index: 'athlete'})) {
+        async *byAthlete(athlete, stream, options={}) {
+            let q;
+            if (stream != null) {
+                options.index = 'athlete-stream';
+                q = IDBKeyRange.only([athlete, stream]);
+            } else {
+                options.index = 'athlete';
+                q = IDBKeyRange.only(athlete);
+            }
+            for await (const x of this.values(q, options)) {
+                yield x;
+            }
+        }
+
+        async *manyByAthlete(athlete, streams, options={}) {
+            const buffer = new Map();
+            const store = await this._getStore();
+            const ready = new queues.Queue();
+            Promise.all(streams.map(async stream => {
+                for await (const entry of this.byAthlete(athlete, stream, {store})) {
+                    const o = buffer.get(entry.activity);
+                    if (o === undefined) {
+                        buffer.set(entry.activity, {[stream]: entry.data});
+                    } else {
+                        o[stream] = entry.data;
+                        if (Object.keys(o).length === streams.length) {
+                            ready.put({
+                                athlete,
+                                activity: entry.activity,
+                                streams: o
+                            });
+                            buffer.delete(entry.activity);
+                        }
+                    }
+                }
+            })).then(() => ready.put(null));
+            while (true) {
+                const v = await ready.get();
+                if (!v) {
+                    break;
+                }
+                yield v;
+            }
+        }
+
+        async *activitiesByAthlete(athlete, options={}) {
+            // Every real activity has a time stream, so look for just this one.
+            const q = IDBKeyRange.only([athlete, 'time']);
+            options.index = 'athlete-stream';
+            for await (const x of this.keys(q, options)) {
+                debugger;
                 yield x;
             }
         }
@@ -86,21 +139,29 @@
         async *byAthlete(athlete, reverse) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
             const direction = reverse ? 'next' : 'prev';
-            for await (const x of super.values(q, {index: 'athlete-ts', direction})) {
+            for await (const x of this.values(q, {index: 'athlete-ts', direction})) {
                 yield x;
             }
         }
 
+        async getAllForAthlete(athlete, ...args) {
+            const activities = [];
+            for await (const x of this.byAthlete(athlete, ...args)) {
+                activities.push(x);
+            }
+            return activities;
+        }
+
         async firstForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const x of super.values(q, {index: 'athlete-ts'})) {
+            for await (const x of this.values(q, {index: 'athlete-ts'})) {
                 return x;
             }
         }
 
         async lastForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const x of super.values(q, {index: 'athlete-ts', direction: 'prev'})) {
+            for await (const x of this.values(q, {index: 'athlete-ts', direction: 'prev'})) {
                 return x;
             }
         }
@@ -162,58 +223,10 @@
     })();
 
 
-    async function getStreams(activityId, streamTypes, options={}) {
-        const cacheKey = stream => `${activityId}-${stream}`;
-        const missing = new Set();
-        const results = {};
-        for (const x of streamTypes) {
-            const cached = await streamsCache.get(cacheKey(x));
-            if (cached === undefined) {
-                missing.add(x);
-            } else {
-                results[x] = cached;
-            }
-        }
-        if (!missing.size || options.disableFetch) {
-            return results;
-        }
-        const q = new URLSearchParams();
-        for (const x of missing) {
-            q.append('stream_types[]', x);
-        }
-        const rateLimiters = getStreamRateLimiterGroup();
-        await rateLimiters.wait();
-        console.group();
-        for (const x of rateLimiters) {
-            console.info('' + x);
-        }
-        console.groupEnd();
-        let resp;
-        try {
-            resp = await retryFetch(`/activities/${activityId}/streams?${q}`);
-        } catch(e) {
-            if (!e.resp || e.resp.status !== 404) {
-                throw e;
-            }
-        }
-        const data = resp === undefined ? {} : await resp.json();
-        for (const [key, value] of Object.entries(data)) {
-            results[key] = value;
-            missing.delete(key);
-            await streamsCache.set(cacheKey(key), value);
-        }
-        for (const x of missing) {
-            await streamsCache.set(cacheKey(x), null);
-        }
-        return results;
-    }
 
 
-    ns.selfActivities = async function(athleteId, options={}) {
-        const activities = [];
-        for await (const x of ns.actsStore.byAthlete(athleteId)) {
-            activities.push(x);
-        }
+    ns.syncSelfActivities = async function(athleteId, options={}) {
+        const activities = await ns.actsStore.getAllForAthlete(athleteId);
         if (options.disableFetch) {
             return activities;
         }
@@ -265,11 +278,8 @@
     };
 
 
-    ns.peerActivities = async function(athleteId, options={}) {
-        const activities = [];
-        for await (const x of ns.actsStore.byAthlete(athleteId)) {
-            activities.push(x);
-        }
+    ns.syncPeerActivities = async function(athleteId, options={}) {
+        const activities = await ns.actsStore.getAllForAthlete(athleteId);
         if (options.disableFetch) {
             return activities;
         }
@@ -378,110 +388,78 @@
     };
 
 
-    // This routine is recommend for most cases as it has throttle handling and
-    // gets all the pertinent streams so we don't abuse the Strava API.
-    // Better to get all the data for each activity so we don't have to fetch it
-    // again.
-    ns.getAllStreams = async function(id, options={}) {
-        const disableFetch = options.disableFetch;
+    async function fetchAllStreams(activityId) {
+        const q = new URLSearchParams();
+        for (const x of syncStreamTypes) {
+            q.append('stream_types[]', x);
+        }
+        const rateLimiters = getStreamRateLimiterGroup();
         for (let i = 1;; i++) {
+            await rateLimiters.wait();
+            console.group('Fetch All Streams: ' + activityId);
+            for (const x of rateLimiters) {
+                console.info('' + x);
+            }
+            console.groupEnd();
             try {
-                return await getStreams(id, syncStreamTypes, {disableFetch}).then(streams => ({id, streams}));
+                const resp = await retryFetch(`/activities/${activityId}/streams?${q}`);
+                return await resp.json();
             } catch(e) {
-                if (e.toString().indexOf('ThrottledFetchError') !== -1) {
+                if (!e.resp) {
+                    throw e;
+                } else if (e.resp.status === 404) {
+                    return;
+                } else if (e.resp.status === 429) {
                     const delay = 60000 * i;
                     console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    console.warn("Resuming after throttle period");
+                    await sleep(delay);
+                    console.info("Resuming after throttle period");
                     continue;
                 } else {
                     throw e;
                 }
             }
         }
-    };
-
-
-    async function availStreamsFilter(acts) {
-        const ids = new Set(acts.map(x => x.id));
-        const avail = new Map();
-        for await (const x of streamsCache.values()) {
-            const id = Number(x.key.split('-')[0]);
-            if (ids.has(id)) {
-                if (!avail.has(id)) {
-                    avail.set(id, {});
-                }
-                avail.get(id)[x.key.split('-')[1]] = x.value;
-            }
-        }
-        return avail;
     }
 
 
-    ns.syncPeerStreams = async function(athleteId) {
-        const acts = await ns.peerActivities(athleteId);
-        return await syncStreams(acts);
-    };
 
 
-    ns.syncSelfStreams = async function(athleteId) {
-        const acts = await ns.selfActivities(athleteId);
-        return await syncStreams(acts);
-    };
-
-
-    let _syncing = false;
-    async function syncStreams(acts) {
-        if (_syncing) {
-            throw new Error("Sorry a sync job is running");
+    ns.syncStreams = async function(athleteId) {
+        const activities = await ns.actsStore.getAllForAthlete(athleteId);
+        const outstanding = new Set(activities.map(x => x.id));
+        for await (const x of ns.streamsStore.activitiesByAthlete(athleteId)) {
+            outstanding.delete(x);
         }
-        _syncing = true;
-        try {
-            const remaining = new Set(acts.map(x => x.id));
-            for await (const x of streamsCache.values()) {
-                remaining.delete(Number(x.key.split('-')[0]));
-            }
-            if (!remaining.size) {
-                console.info("All activities synchronized");
-                return;
-            }
-            console.info(`Need to synchronize ${remaining.size} of ${acts.length} activities...`);
-            for (const id of remaining) {
-                try {
-                    await ns.getAllStreams(id);
-                } catch(e) {
-                    console.warn("Get streams errors:", e);
-                }
-            }
-            console.info("Completed activities fetch/sync");
-        } finally {
-            _syncing = false;
+        if (!outstanding.size) {
+            console.info("All activities synchronized");
+            return;
         }
-    }
-
-
-    ns.findPeerPeaks = async function(athleteId, ...args) {
-        const acts = await ns.peerActivities(athleteId, {disableFetch: true});
-        const streamsMap = await availStreamsFilter(acts);
-        return await findPeaks(streamsMap, ...args);
+        console.info(`Need to synchronize ${outstanding.size} of ${activities.length} activities...`);
+        for (const id of outstanding) {
+            try {
+                await fetchAllStreams(id);
+            } catch(e) {
+                console.warn("Fetch streams errors:", e);
+            }
+        }
+        console.info("Completed activities fetch/sync");
     };
 
 
-    ns.findSelfPeaks = async function(athleteId, ...args) {
-        const acts = await ns.selfActivities(athleteId, {disableFetch: true});
-        const streamsMap = await availStreamsFilter(acts);
-        return await findPeaks(streamsMap, ...args);
-    };
-
-
-    async function findPeaks(streamsMap, period, options={}) {
+    ns.findPeaks = async function(athleteId, period, options={}) {
+        const s = Date.now();
+        const streamsMap = new Map();
+        for await (const group of ns.streamsStore.manyByAthlete(athleteId, ['time', 'watts'])) {
+            streamsMap.set(group.activity, group.streams);
+        }
+        console.log('Get streams time:', Date.now() - s);
         const type = options.type || 'power';
         const limit = options.limit || 10;
         const peaks = [];
         let best = -Infinity;
         let i = 0;
         for (const [id, streams] of streamsMap.entries()) {
-            const s = Date.now();
             if (type === 'power') {
                 if (streams && streams.time && streams.watts) {
                     const roll = sauce.power.peakPower(period, streams.time, streams.watts);
@@ -499,10 +477,13 @@
                 throw new Error("Invalid peak type: " + type);
             }
             i++;
-            console.debug('Processing:', i, 'took', Date.now() - s);
+            if (!(i % 100)) {
+                console.debug('Processing:', i, 'took', (Date.now() - s) / i);
+            }
         }
+        console.debug('Done:', i, 'took', Date.now() - s);
         return peaks.slice(0, limit).map(([avg, roll, id]) => ({roll, id}));
-    }
+    };
 
 
     function download(blob, name) {
@@ -547,14 +528,48 @@
     };
 
 
-    ns.importStreams = async function(url) {
-        const resp = await fetch(url);
-        const data = await resp.json();
-        const obj = {};
-        for (const x of data) {
-            obj[x.key] = x.value;
+    ns.importLegacyStreams = async function(name, host='http://localhost:8001') {
+        let added = 0;
+        let skipped = 0;
+        for (let i = 0;; i++) {
+            const url = host + `/${name}-${i}.json`;
+            const resp = await fetch(url);
+            if (!resp.ok) {
+                if (resp.status === 404) {
+                    break;
+                }
+                throw new Error('HTTP Error: ' + resp.status);
+            }
+            const data = await resp.json();
+            // Must cross ref every single activity we know of to find the athlete.
+            const activities = new Map();
+            for await (const x of ns.actsStore.values()) {
+                // Filter sentinels
+                if (x.id > 0) {
+                    activities.set(x.id, x.athlete);
+                }
+            }
+            await ns.streamsStore.putMany(data.map(x => {
+                const [activityS, stream] = x.key.split('-', 2);
+                if (!stream) {
+                    return;  // skip empty, we used to keep them.
+                }
+                const activity = Number(activityS);
+                const athlete = activities.get(activity);
+                if (!athlete) {
+                    skipped++;
+                    return;  // removed by filter() after map
+                } else {
+                    added++;
+                    return {
+                        activity,
+                        athlete,
+                        stream,
+                        data: x.value
+                    };
+                }
+            }).filter(x => x));
         }
-        await streamsCache.setObject(obj);
-        console.info(`Imported ${data.length} entries`);
+        console.info(`Imported ${added} entries, skipped ${skipped}`);
     };
 })();
