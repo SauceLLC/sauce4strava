@@ -1530,12 +1530,42 @@ sauce.ns('geo', function(ns) {
     }
 
 
+    function createVAMStream(timeStream, altStream) {
+        const vams = [0];
+        for (let i = 1; i < timeStream.length; i++) {
+            const gain = Math.max(0, altStream[i] - altStream[i - 1]);
+            vams.push((gain / (timeStream[i] - timeStream[i - 1])) * 3600);
+        }
+        return vams;
+    }
+
+
+    function altitudeChanges(stream) {
+        let gain = 0;
+        let loss = 0;
+        if (stream && stream.length) {
+            let last = stream[0];
+            for (const x of stream) {
+                if (x > last) {
+                    gain += x - last;
+                } else {
+                    loss += last - x;
+                }
+                last = x;
+            }
+        }
+        return {gain, loss};
+    }
+
+
     return {
         distance,
         boundingBox,
         boundsOverlap,
         inBounds,
-        BDCC
+        BDCC,
+        createVAMStream,
+        altitudeChanges
     };
 });
 
@@ -1553,44 +1583,128 @@ sauce.ns('research', function() {
             actsStore = new sauce.db.ActivitiesStore();
             streamsStore = new sauce.db.StreamsStore();
         }
-        const streamsMap = new Map();
-        for await (const group of streamsStore.manyByAthlete(athlete, ['time', 'watts'])) {
-            streamsMap.set(group.activity, group.streams);
-        }
-        console.log("streams get took:", Date.now() - s);
         const type = options.type || 'power';
         const limit = options.limit || 10;
-        let i = 0;
+        const manifests = {
+            power: {
+                streams: ['watts'],
+            },
+            np: {
+                streams: ['watts'],
+            },
+            xp: {
+                streams: ['watts'],
+            },
+            seapower: {
+                streams: ['watts', 'altitude'],
+            },
+            pace: {
+                streams: ['distance'],
+                reverseSort: true,
+            },
+            gap: {
+                streams: ['grade_adjusted_distance'],
+                reverseSort: true,
+            },
+            hr: {
+                streams: ['heartrate'],
+            },
+            cadence: {
+                streams: ['cadence'],
+            },
+            vam: {
+                streams: ['altitude'],
+            }
+        };
+        const streamsMap = new Map();
+        const manifest = manifests[type];
+        for await (const group of streamsStore.manyByAthlete(athlete, ['time', ...manifest.streams])) {
+            streamsMap.set(group.activity, group.streams);
+        }
+        if (type === 'seapower') {
+            for (const streams of streamsMap.values()) {
+                streams.watts_sealevel = streams.watts.map((x, i) =>
+                    Math.round(sauce.power.seaLevelPower(x, streams.altitude[i])));
+            }
+        } else if (type === 'vam') {
+            for (const streams of streamsMap.values()) {
+                streams.vam = sauce.geo.createVAMStream(streams.time, streams.altitude);
+            }
+        }
         const results = {};
         for (const period of periods) {
             const peaks = [];
-            let best = -Infinity;
             for (const [id, streams] of streamsMap.entries()) {
                 if (type === 'power') {
-                    if (streams && streams.time && streams.watts) {
-                        const roll = sauce.power.peakPower(period, streams.time, streams.watts);
-                        if (roll) {
-                            const avg = roll.avg();
-                            peaks.push([roll, id]);
-                            if (best < avg) {
-                                best = avg;
-                                console.info("NEW BEST!", `https://www.strava.com/activities/${id}`, avg);
-                            }
-                        }
+                    const roll = sauce.power.peakPower(period, streams.time, streams.watts);
+                    if (roll) {
+                        const value = roll.avg();
+                        peaks.push([roll, id, value]);
+                    }
+                } else if (type === 'np') {
+                    const roll = sauce.power.peakNP(period, streams.time, streams.watts);
+                    if (roll) {
+                        const value = roll.np({external: true});
+                        peaks.push([roll, id, value]);
+                    }
+                } else if (type === 'xp') {
+                    const roll = sauce.power.peakXP(period, streams.time, streams.watts);
+                    if (roll) {
+                        const value = roll.xp({external: true});
+                        peaks.push([roll, id, value]);
+                    }
+                } else if (type === 'seapower') {
+                    const roll = sauce.power.peakPower(period, streams.time, streams.watts_sealevel);
+                    if (roll) {
+                        const value = roll.avg();
+                        peaks.push([roll, id, value]);
+                    }
+                } else if (type === 'pace') {
+                    const roll = sauce.pace.bestPace(period, streams.time, streams.distance);
+                    if (roll) {
+                        const value = roll.avg();
+                        peaks.push([roll, id, value]);
+                    }
+                } else if (type === 'gap') {
+                    const roll = sauce.pace.bestPace(period, streams.time, streams.grade_adjusted_distance);
+                    if (roll) {
+                        const value = roll.avg();
+                        peaks.push([roll, id, value]);
+                    }
+                } else if (type === 'hr') {
+                    const roll = sauce.data.peakAverage(period, streams.time, streams.heartrate, {active: true});
+                    if (roll) {
+                        const value = roll.avg({active: true});
+                        peaks.push([roll, id, value]);
+                    }
+                } else if (type === 'cadence') {
+                    const roll = sauce.data.peakAverage(period, streams.time, streams.cadence,
+                        {active: true, ignoreZeros: true});
+                    if (roll) {
+                        const value = roll.avg({active: true});
+                        peaks.push([roll, id, value]);
+                    }
+                } else if (type === 'vam') {
+                    const roll = sauce.data.peakAverage(period, streams.time, streams.vam);
+                    if (roll) {
+                        const start = streams.time.indexOf(roll.firstTime());
+                        const end = streams.time.indexOf(roll.lastTime());
+                        const gain = sauce.geo.altitudeChanges(streams.altitude.slice(start, end + 1)).gain;
+                        const value = (gain / roll.elapsed()) * 3600;
+                        peaks.push([roll, id, value]);
                     }
                 } else {
                     throw new Error("Invalid peak type: " + type);
                 }
-                i++;
-                if (!(i % 100)) {
-                    console.debug('Processing:', i, 'took', (Date.now() - s) / i);
-                }
             }
-            peaks.sort((a, b) => b[0].avg() - a[0].avg());
+            if (manifest.reverseSort) {
+                peaks.sort((a, b) => a[2] - b[2]);
+            } else {
+                peaks.sort((a, b) => b[2] - a[2]);
+            }
             results[period] = peaks.slice(0, limit);
-            console.debug('Done:', i, 'took', Date.now() - s);
             for (const x of results[period]) {
-                console.info(`https://www.strava.com/activities/${x[1]}`, x[0].avg());
+                console.info(`https://www.strava.com/activities/${x[1]}`, x[2]);
             }
         }
         return results;

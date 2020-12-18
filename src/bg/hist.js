@@ -398,13 +398,6 @@
         const s = Date.now();
         const result = await Promise.all([
             workerPool.exec('findPeaks', ...args),
-            workerPool.exec('findPeaks', ...args),
-            workerPool.exec('findPeaks', ...args),
-            workerPool.exec('findPeaks', ...args),
-            workerPool.exec('findPeaks', ...args),
-            workerPool.exec('findPeaks', ...args),
-            workerPool.exec('findPeaks', ...args),
-            workerPool.exec('findPeaks', ...args)
         ]);
         console.debug('Done: took', Date.now() - s);
         return result;

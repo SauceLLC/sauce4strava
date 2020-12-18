@@ -756,8 +756,6 @@ sauce.ns('analysis', ns => {
                                 rows.push(_rangeRollToRow({range, roll, value, unit}));
                             }
                         }
-                    } else if (source === 'peak_gap') {
-                        attrs.isDistanceRange = true;
                     } else if (source === 'peak_np' || source === 'peak_xp') {
                         const calcs = {
                             peak_np: {peakSearch: sauce.power.peakNP, rollMethod: 'np'},
@@ -795,13 +793,13 @@ sauce.ns('analysis', ns => {
                             }
                         }
                     } else if (source === 'peak_vam') {
-                        const vamStream = createVAMStream(timeStream, altStream);
+                        const vamStream = sauce.geo.createVAMStream(timeStream, altStream);
                         for (const range of periodRanges.filter(x => x.value >= minVAMTime)) {
                             const roll = sauce.data.peakAverage(range.value, timeStream, vamStream);
                             if (roll) {
                                 const start = getStreamTimeIndex(roll.firstTime());
                                 const end = getStreamTimeIndex(roll.lastTime());
-                                const gain = altitudeChanges(altStream.slice(start, end + 1)).gain;
+                                const gain = sauce.geo.altitudeChanges(altStream.slice(start, end + 1)).gain;
                                 const value = humanNumber((gain / roll.elapsed()) * 3600);
                                 rows.push(_rangeRollToRow({range, roll, value, unit: 'Vm/h'}));
                             }
@@ -914,34 +912,6 @@ sauce.ns('analysis', ns => {
 
     function humanNumber(value, precision) {
         return sauce.template.helpers.formatNumber(value, precision == null ? 0 : precision);
-    }
-
-
-    function createVAMStream(timeStream, altStream) {
-        const vams = [0];
-        for (let i = 1; i < timeStream.length; i++) {
-            const gain = Math.max(0, altStream[i] - altStream[i - 1]);
-            vams.push((gain / (timeStream[i] - timeStream[i - 1])) * 3600);
-        }
-        return vams;
-    }
-
-
-    function altitudeChanges(stream) {
-        let gain = 0;
-        let loss = 0;
-        if (stream && stream.length) {
-            let last = stream[0];
-            for (const x of stream) {
-                if (x > last) {
-                    gain += x - last;
-                } else {
-                    loss += last - x;
-                }
-                last = x;
-            }
-        }
-        return {gain, loss};
     }
 
 
@@ -1308,7 +1278,7 @@ sauce.ns('analysis', ns => {
                     });
                 } else if (x === 'vam') {
                     specs.push({
-                        data: createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
+                        data: sauce.geo.createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
                         formatter: x => `VAM: ${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
                         colorSteps: hslValueGradientSteps([-500, 500, 1000, 2000],
                             {hStart: 260, sStart: 65, sEnd: 100, lStart: 75, lend: 50}),
@@ -2316,7 +2286,7 @@ sauce.ns('analysis', ns => {
 
     function elevationData(altStream, elapsed, distance) {
         if (altStream && elapsed && distance) {
-            const {gain, loss} = altitudeChanges(altStream);
+            const {gain, loss} = sauce.geo.altitudeChanges(altStream);
             return {
                 gain: gain > 1 ? humanElevation(gain) : 0,
                 loss: loss && humanElevation(loss),
@@ -2726,7 +2696,7 @@ sauce.ns('analysis', ns => {
         fitParser.addMessage('segment_lap', {
             uuid,
             total_distance: streamDelta(distStream),
-            total_ascent: altitudeChanges(altStream).gain,
+            total_ascent: sauce.geo.altitudeChanges(altStream).gain,
             start_position_lat: latlngStream[0][0],
             start_position_long: latlngStream[0][1],
             end_position_lat: latlngStream[latlngStream.length - 1][0],
