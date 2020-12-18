@@ -8,6 +8,7 @@
     const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
     const queues = await sauce.getModule(extUrl + 'src/common/jscoop/queues.js');
+    const futures = await sauce.getModule(extUrl + 'src/common/jscoop/futures.js');
 
     // NOTE: If this list grows we have to re-sync!
     const syncStreamTypes = [
@@ -43,129 +44,8 @@
     }
 
 
-    class HistDatabase extends sauce.db.Database {
-        get version() {
-            return 2;
-        }
-
-        migrate(idb, t, oldVersion, newVersion) {
-            if (!oldVersion || oldVersion < 1) {
-                let store = idb.createObjectStore("streams", {keyPath: ['activity', 'stream']});
-                store.createIndex('activity', 'activity');
-                store.createIndex('athlete-stream', ['athlete', 'stream']);
-                store = idb.createObjectStore("activities", {keyPath: 'id'});
-                store.createIndex('athlete-ts', ['athlete', 'ts']);
-            }
-            if (oldVersion < 2) {
-                const store = t.objectStore("streams");
-                store.createIndex('athlete', 'athlete');
-            }
-        }
-    }
-
-    const histDatabase = new HistDatabase('SauceHist');
-
-
-    class StreamsStore extends sauce.db.DBStore {
-        constructor() {
-            super(histDatabase, 'streams');
-        }
-
-        async *byAthlete(athlete, stream, options={}) {
-            let q;
-            if (stream != null) {
-                options.index = 'athlete-stream';
-                q = IDBKeyRange.only([athlete, stream]);
-            } else {
-                options.index = 'athlete';
-                q = IDBKeyRange.only(athlete);
-            }
-            for await (const x of this.values(q, options)) {
-                yield x;
-            }
-        }
-
-        async *manyByAthlete(athlete, streams, options={}) {
-            const buffer = new Map();
-            const store = await this._getStore();
-            const ready = new queues.Queue();
-            Promise.all(streams.map(async stream => {
-                for await (const entry of this.byAthlete(athlete, stream, {store})) {
-                    const o = buffer.get(entry.activity);
-                    if (o === undefined) {
-                        buffer.set(entry.activity, {[stream]: entry.data});
-                    } else {
-                        o[stream] = entry.data;
-                        if (Object.keys(o).length === streams.length) {
-                            ready.put({
-                                athlete,
-                                activity: entry.activity,
-                                streams: o
-                            });
-                            buffer.delete(entry.activity);
-                        }
-                    }
-                }
-            })).then(() => ready.put(null));
-            while (true) {
-                const v = await ready.get();
-                if (!v) {
-                    break;
-                }
-                yield v;
-            }
-        }
-
-        async *activitiesByAthlete(athlete, options={}) {
-            // Every real activity has a time stream, so look for just this one.
-            const q = IDBKeyRange.only([athlete, 'time']);
-            options.index = 'athlete-stream';
-            for await (const x of this.keys(q, options)) {
-                yield x[0];
-            }
-        }
-    }
-
-
-    class ActivitiesStore extends sauce.db.DBStore {
-        constructor() {
-            super(histDatabase, 'activities');
-        }
-
-        async *byAthlete(athlete, reverse) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            const direction = reverse ? 'next' : 'prev';
-            for await (const x of this.values(q, {index: 'athlete-ts', direction})) {
-                yield x;
-            }
-        }
-
-        async getAllForAthlete(athlete, ...args) {
-            const activities = [];
-            for await (const x of this.byAthlete(athlete, ...args)) {
-                activities.push(x);
-            }
-            return activities;
-        }
-
-        async firstForAthlete(athlete) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const x of this.values(q, {index: 'athlete-ts'})) {
-                return x;
-            }
-        }
-
-        async lastForAthlete(athlete) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const x of this.values(q, {index: 'athlete-ts', direction: 'prev'})) {
-                return x;
-            }
-        }
-    }
-
-
-    ns.actsStore = new ActivitiesStore();
-    ns.streamsStore = new StreamsStore();
+    ns.actsStore = new sauce.db.ActivitiesStore();
+    ns.streamsStore = new sauce.db.StreamsStore();
 
 
     async function retryFetch(urn, options={}) {
@@ -396,7 +276,7 @@
                 if (!e.resp) {
                     throw e;
                 } else if (e.resp.status === 404) {
-                    return;
+                    return null;
                 } else if (e.resp.status === 429) {
                     const delay = 60000 * i;
                     console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
@@ -412,7 +292,8 @@
 
 
     ns.syncStreams = async function(athlete) {
-        const activities = await ns.actsStore.getAllForAthlete(athlete);
+        const filter = c => !c.value.noStreams;
+        const activities = await ns.actsStore.getAllForAthlete(athlete, {filter});
         const outstanding = new Set(activities.map(x => x.id));
         for await (const x of ns.streamsStore.activitiesByAthlete(athlete)) {
             outstanding.delete(x);
@@ -422,16 +303,20 @@
             return;
         }
         console.info(`Need to synchronize ${outstanding.size} of ${activities.length} activities...`);
-        for (const activity of outstanding) {
+        for (const id of outstanding) {
             try {
-                const data = await fetchAllStreams(activity);
+                const data = await fetchAllStreams(id);
                 if (data) {
                     await ns.streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
-                        activity,
+                        activity: id,
                         athlete,
                         stream,
                         data
                     })));
+                } else if (data === null) {
+                    const activity = await ns.actsStore.get(id);
+                    activity.noStreams = true;
+                    await ns.actsStore.put(activity);
                 }
             } catch(e) {
                 console.warn("Fetch streams errors:", e);
@@ -441,46 +326,88 @@
     };
 
 
-    ns.findPeaks = async function(athlete, period, options={}) {
-        const s = Date.now();
-        const streamsMap = new Map();
-        for await (const group of ns.streamsStore.manyByAthlete(athlete, ['time', 'watts'])) {
-            streamsMap.set(group.activity, group.streams);
+    class WorkerPoolExecutor {
+        constructor(url, options={}) {
+            this.url = url;
+            this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2);
+            this._idle = new queues.Queue();
+            this._busy = new Set();
+            this._id = 0;
         }
-        console.log('Get streams time:', Date.now() - s);
-        const type = options.type || 'power';
-        const limit = options.limit || 10;
-        const peaks = [];
-        let best = -Infinity;
-        let i = 0;
-        for (const [id, streams] of streamsMap.entries()) {
-            if (type === 'power') {
-                if (streams && streams.time && streams.watts) {
-                    const roll = sauce.power.peakPower(period, streams.time, streams.watts);
-                    if (roll) {
-                        const avg = roll.avg();
-                        peaks.push([roll, id]);
-                        if (best < avg) {
-                            best = avg;
-                            console.info("NEW BEST!", `https://www.strava.com/activities/${id}`, avg);
-                        }
-                    }
+
+        async _getWorker() {
+            let worker;
+            if (!this._idle.qsize()) {
+                if (this._busy.size >= this.maxWorkers) {
+                    console.warn("Waiting for available worker...");
+                    worker = await this._idle.get();
+                } else {
+                    worker = new Worker(this.url);
                 }
             } else {
-                throw new Error("Invalid peak type: " + type);
+                worker = await this._idle.get();
             }
-            i++;
-            if (!(i % 100)) {
-                console.debug('Processing:', i, 'took', (Date.now() - s) / i);
+            if (worker.dead) {
+                return await this._getWorker();
+            }
+            if (worker.gcTimeout) {
+                clearTimeout(worker.gcTimeout);
+            }
+            this._busy.add(worker);
+            return worker;
+        }
+
+        async exec(call, ...args) {
+            const id = this._id++;
+            const f = new futures.Future();
+            const onMessage = ev => {
+                if (!ev.data || ev.data.id == null) {
+                    f.setError(new Error("Invalid Worker Message"));
+                } else if (ev.data.id !== id) {
+                    console.warn('Ignoring worker message from other job');
+                    return;
+                } else {
+                    if (ev.data.success) {
+                        f.setResult(ev.data.value);
+                    } else {
+                        f.setError(ev.data.value);
+                    }
+                }
+            };
+            const worker = await this._getWorker();
+            worker.addEventListener('message', onMessage);
+            try {
+                worker.postMessage({call, args, id});
+                return await f;
+            } finally {
+                worker.removeEventListener('message', onMessage);
+                this._busy.delete(worker);
+                worker.gcTimeout = setTimeout(() => {
+                    worker.dead = true;
+                    worker.terminate();
+                }, 30000);
+                this._idle.put(worker);
             }
         }
-        console.debug('Done:', i, 'took', Date.now() - s);
-        peaks.sort((a, b) => b[0].avg() - a[0].avg());
-        const topPeaks = peaks.slice(0, limit);
-        for (const x of topPeaks) {
-            console.info(`https://www.strava.com/activities/${x[1]}`, x[0].avg());
-        }
-        return topPeaks;
+    }
+        
+    const workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist-worker.js');
+
+
+    ns.findPeaks = async function(...args) {
+        const s = Date.now();
+        const result = await Promise.all([
+            workerPool.exec('findPeaks', ...args),
+            workerPool.exec('findPeaks', ...args),
+            workerPool.exec('findPeaks', ...args),
+            workerPool.exec('findPeaks', ...args),
+            workerPool.exec('findPeaks', ...args),
+            workerPool.exec('findPeaks', ...args),
+            workerPool.exec('findPeaks', ...args),
+            workerPool.exec('findPeaks', ...args)
+        ]);
+        console.debug('Done: took', Date.now() - s);
+        return result;
     };
 
 

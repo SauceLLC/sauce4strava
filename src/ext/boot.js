@@ -11,8 +11,8 @@
             'site/rpc.js',
             'site/locale.js',
             'common/template.js',
+            'common/lib.js',
             'site/sparkline.js',
-            'site/lib.js',
             'site/export.js',
             'site/trailforks.js',
             'site/analysis.js',
@@ -93,7 +93,7 @@
             'site/rpc.js',
             'site/locale.js',
             'common/template.js',
-            'site/lib.js',
+            'common/lib.js',
             'site/dashboard.js'
         ]
     }, {

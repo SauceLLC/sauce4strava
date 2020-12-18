@@ -28,13 +28,13 @@
             "src/ext/ga.js",
             "src/common/base.js",
             "src/bg/base_init.js",
+            "src/common/lib.js",
             "src/ext/storage.js",
-            "src/ext/hist.js",
+            "src/bg/hist.js",
             "src/ext/rpc_hooks.js",
             "src/bg/menu.js",
             "src/bg/rpc.js",
             "src/bg/migrate.js",
-            "src/site/lib.js",
             "src/site/trailforks.js"
         ]
     },

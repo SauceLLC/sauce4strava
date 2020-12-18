@@ -266,20 +266,34 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     class Database {
+
         constructor(name) {
             this.name = name;
-            this._init = new Promise((resolve, reject) => {
-                const req = indexedDB.open(name, this.version);
-                req.addEventListener('error', ev => reject(req.error));
-                req.addEventListener('success', ev => resolve(ev.target.result));
-                req.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
-                req.addEventListener('upgradeneeded', ev => {
-                    console.info(`Upgrading DB from v${ev.oldVersion} to v${ev.newVersion}`);
-                    const idb = ev.target.result;
-                    const t = ev.target.transaction;
-                    this.migrate(idb, t, ev.oldVersion, ev.newVersion);
+            this.started = false;
+        }
+
+        async start() {
+            if (this.started) {
+                return;
+            }
+            if (!this.starting) {
+                this.starting = new Promise((resolve, reject) => {
+                    const req = indexedDB.open(this.name, this.version);
+                    req.addEventListener('error', ev => reject(req.error));
+                    req.addEventListener('success', ev => resolve(ev.target.result));
+                    req.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
+                    req.addEventListener('upgradeneeded', ev => {
+                        console.info(`Upgrading DB from v${ev.oldVersion} to v${ev.newVersion}`);
+                        const idb = ev.target.result;
+                        const t = ev.target.transaction;
+                        this.migrate(idb, t, ev.oldVersion, ev.newVersion);
+                    });
+                }).then(x => {
+                    this._idb = x;
+                    this.started = true;
                 });
-            }).then(x => this._idb = x);
+            }
+            await this.starting;
         }
 
         get version() {
@@ -301,7 +315,6 @@ self.sauceBaseInit = function sauceBaseInit() {
         constructor(db, name) {
             this.db = db;
             this.name = name;
-            this._init = db._init;
         }
 
         _request(req) {
@@ -340,21 +353,27 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async get(query, options={}) {
-            await this._init;
+            if (!this.db.started) {
+                await this.db.start();
+            }
             const store = this._getStore('readonly');
             const ifc = options.index ? store.index(options.index) : store;
             return await this._request(ifc.get(query));
         }
 
         async getMany(queries, options={}) {
-            await this._init;
+            if (!this.db.started) {
+                await this.db.start();
+            }
             const store = this._getStore('readonly');
             const ifc = options.index ? store.index(options.index) : store;
             return await Promise.all(queries.map(q => this._request(ifc.get(q))));
         }
 
         async put(data, options={}) {
-            await this._init;
+            if (!this.db.started) {
+                await this.db.start();
+            }
             const store = this._getStore('readwrite');
             let key;
             if (options.index) {
@@ -365,7 +384,9 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async putMany(datas, options={}) {
-            await this._init;
+            if (!this.db.started) {
+                await this.db.start();
+            }
             const store = this._getStore('readwrite');
             const index = options.index && store.index(options.index);
             await Promise.all(datas.map(async data => {
@@ -378,7 +399,9 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async delete(query, options={}) {
-            await this._init;
+            if (!this.db.started) {
+                await this.db.start();
+            }
             const store = this._getStore('readwrite');
             let key;
             if (options.index) {
@@ -403,11 +426,14 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *cursor(query, options={}) {
-            await this._init;
+            if (!this.db.started) {
+                await this.db.start();
+            }
             const store = this._getStore(options.mode);
             const ifc = options.index ? store.index(options.index) : store;
             const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
-            const req = curFunc.call(ifc, query, options.direction);
+            const direction = options.reverse ? 'prev' : 'next';
+            const req = curFunc.call(ifc, query, direction);
             let resolve;
             let reject;
             // Callbacks won't invoke until we release control of the event loop, so this is safe..
@@ -429,9 +455,147 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
     }
 
+
+    class HistDatabase extends Database {
+        get version() {
+            return 2;
+        }
+
+        migrate(idb, t, oldVersion, newVersion) {
+            if (!oldVersion || oldVersion < 1) {
+                let store = idb.createObjectStore("streams", {keyPath: ['activity', 'stream']});
+                store.createIndex('activity', 'activity');
+                store.createIndex('athlete-stream', ['athlete', 'stream']);
+                store = idb.createObjectStore("activities", {keyPath: 'id'});
+                store.createIndex('athlete-ts', ['athlete', 'ts']);
+            }
+            if (oldVersion < 2) {
+                const store = t.objectStore("streams");
+                store.createIndex('athlete', 'athlete');
+            }
+        }
+    }
+
+    const histDatabase = new HistDatabase('SauceHist');
+
+
+    class StreamsStore extends DBStore {
+        constructor() {
+            super(histDatabase, 'streams');
+        }
+
+        async *byAthlete(athlete, stream, options={}) {
+            let q;
+            if (stream != null) {
+                options.index = 'athlete-stream';
+                q = IDBKeyRange.only([athlete, stream]);
+            } else {
+                options.index = 'athlete';
+                q = IDBKeyRange.only(athlete);
+            }
+            for await (const x of this.values(q, options)) {
+                yield x;
+            }
+        }
+
+        async *manyByAthlete(athlete, streams, options={}) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const store = this._getStore();
+            const buffer = new Map();
+            const ready = [];
+            let wake;
+            function add(v) {
+                ready.push(v);
+                if (wake) {
+                    wake();
+                }
+            }
+            Promise.all(streams.map(async stream => {
+                for await (const entry of this.byAthlete(athlete, stream, {store})) {
+                    const o = buffer.get(entry.activity);
+                    if (o === undefined) {
+                        buffer.set(entry.activity, {[stream]: entry.data});
+                    } else {
+                        o[stream] = entry.data;
+                        if (Object.keys(o).length === streams.length) {
+                            add({
+                                athlete,
+                                activity: entry.activity,
+                                streams: o
+                            });
+                            buffer.delete(entry.activity);
+                        }
+                    }
+                }
+            })).then(() => add(null));
+            while (true) {
+                while (ready.length) {
+                    const v = ready.shift();
+                    if (!v) {
+                        return;
+                    }
+                    yield v;
+                }
+                await new Promise(resolve => wake = resolve);
+            }
+        }
+
+        async *activitiesByAthlete(athlete, options={}) {
+            // Every real activity has a time stream, so look for just this one.
+            const q = IDBKeyRange.only([athlete, 'time']);
+            options.index = 'athlete-stream';
+            for await (const x of this.keys(q, options)) {
+                yield x[0];
+            }
+        }
+    }
+
+
+    class ActivitiesStore extends DBStore {
+        constructor() {
+            super(histDatabase, 'activities');
+        }
+
+        async *byAthlete(athlete, options={}) {
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            options.reverse = !options.reverse;  // Go from newest to oldest by default
+            options.index = 'athlete-ts';
+            for await (const x of this.values(q, options)) {
+                yield x;
+            }
+        }
+
+        async getAllForAthlete(athlete, ...args) {
+            const activities = [];
+            for await (const x of this.byAthlete(athlete, ...args)) {
+                activities.push(x);
+            }
+            return activities;
+        }
+
+        async firstForAthlete(athlete) {
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            for await (const x of this.values(q, {index: 'athlete-ts'})) {
+                return x;
+            }
+        }
+
+        async lastForAthlete(athlete) {
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            for await (const x of this.values(q, {index: 'athlete-ts', direction: 'prev'})) {
+                return x;
+            }
+        }
+    }
+
     sauce.db = {
         Database,
-        DBStore
+        DBStore,
+        HistDatabase,
+        ActivitiesStore,
+        StreamsStore,
     };
 
 

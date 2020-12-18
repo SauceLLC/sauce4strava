@@ -1538,3 +1538,65 @@ sauce.ns('geo', function(ns) {
         BDCC
     };
 });
+
+
+sauce.ns('research', function() {
+    'use strict';
+
+    let actsStore;
+    let streamsStore;
+
+
+    async function findPeaks(athlete, periods, options={}) {
+        const s = Date.now();
+        if (!actsStore) {
+            actsStore = new sauce.db.ActivitiesStore();
+            streamsStore = new sauce.db.StreamsStore();
+        }
+        const streamsMap = new Map();
+        for await (const group of streamsStore.manyByAthlete(athlete, ['time', 'watts'])) {
+            streamsMap.set(group.activity, group.streams);
+        }
+        console.log("streams get took:", Date.now() - s);
+        const type = options.type || 'power';
+        const limit = options.limit || 10;
+        let i = 0;
+        const results = {};
+        for (const period of periods) {
+            const peaks = [];
+            let best = -Infinity;
+            for (const [id, streams] of streamsMap.entries()) {
+                if (type === 'power') {
+                    if (streams && streams.time && streams.watts) {
+                        const roll = sauce.power.peakPower(period, streams.time, streams.watts);
+                        if (roll) {
+                            const avg = roll.avg();
+                            peaks.push([roll, id]);
+                            if (best < avg) {
+                                best = avg;
+                                console.info("NEW BEST!", `https://www.strava.com/activities/${id}`, avg);
+                            }
+                        }
+                    }
+                } else {
+                    throw new Error("Invalid peak type: " + type);
+                }
+                i++;
+                if (!(i % 100)) {
+                    console.debug('Processing:', i, 'took', (Date.now() - s) / i);
+                }
+            }
+            peaks.sort((a, b) => b[0].avg() - a[0].avg());
+            results[period] = peaks.slice(0, limit);
+            console.debug('Done:', i, 'took', Date.now() - s);
+            for (const x of results[period]) {
+                console.info(`https://www.strava.com/activities/${x[1]}`, x[0].avg());
+            }
+        }
+        return results;
+    }
+
+    return {
+        findPeaks
+    };
+});
