@@ -8,7 +8,7 @@
         pathMatch: /^\/activities\/.*/,
         stylesheets: ['site/analysis.css'],
         scripts: [
-            'site/rpc.js',
+            'site/proxy.js',
             'site/locale.js',
             'common/template.js',
             'common/lib.js',
@@ -24,7 +24,7 @@
         name: 'Segment Compare',
         pathMatch: /^\/segments\/[0-9]+\/compare\b/,
         scripts: [
-            'site/rpc.js',
+            'site/proxy.js',
             'site/segment-compare.js',
         ],
         callbacks: [
@@ -90,7 +90,7 @@
         name: 'Dashboard',
         pathMatch: /^\/dashboard(\/.*|\b)/,
         scripts: [
-            'site/rpc.js',
+            'site/proxy.js',
             'site/locale.js',
             'common/template.js',
             'common/lib.js',
@@ -99,7 +99,7 @@
     }, {
         pathExclude: /^\/($|subscribe|login|register|legal|challenges)(\/.*|\b|$)/,
         scripts: [
-            'site/rpc.js',
+            'site/proxy.js',
             'site/locale.js',
             'site/usermenu.js',
         ]

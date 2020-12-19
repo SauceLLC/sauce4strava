@@ -228,13 +228,10 @@
                 } else if (empty >= minEmpty && empty >= Math.floor(concurrency)) {
                     const [year, month] = iter.next().value;
                     const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
-                    console.warn("Place sentinel just before here:", date);
                     await ns.actsStore.put({id: -athlete, sentinel: date.getTime()});
                     break;
                 } else if (redundant >= minRedundant  && redundant >= Math.floor(concurrency)) {
                     // Entire work set was redundant.  Don't refetch any more.
-                    const date = iter.next().value;
-                    console.warn("Overlapping at:", date);
                     break;
                 }
             }

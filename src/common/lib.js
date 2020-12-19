@@ -1578,7 +1578,6 @@ sauce.ns('research', function() {
 
 
     async function findPeaks(athlete, periods, options={}) {
-        const s = Date.now();
         if (!actsStore) {
             actsStore = new sauce.db.ActivitiesStore();
             streamsStore = new sauce.db.StreamsStore();

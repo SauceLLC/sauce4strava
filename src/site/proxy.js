@@ -1,6 +1,6 @@
 /* global sauce */
 
-sauce.ns('rpc', function() {
+sauce.ns('proxy', function() {
     'use strict';
 
 
@@ -65,7 +65,7 @@ sauce.ns('rpc', function() {
 
 
     async function reportEvent(eventCategory, eventAction, eventLabel, options) {
-        await sauce.rpc.ga('send', 'event', Object.assign({
+        await sauce.proxy.ga('send', 'event', Object.assign({
             eventCategory,
             eventAction,
             eventLabel,
@@ -108,7 +108,7 @@ sauce.ns('rpc', function() {
         }
         const exDescription = desc.join('\n');
         console.error('Reporting:', exDescription);
-        await sauce.rpc.ga('send', 'exception', {
+        await sauce.proxy.ga('send', 'exception', {
             exDescription,
             exFatal: true,
             page
@@ -201,38 +201,53 @@ sauce.ns('rpc', function() {
     }
 
 
+    function setupExports(exports) {
+        for (const desc of exports) {
+            const path = desc.call.split('.');
+            let offt = sauce;
+            for (const x of path.slice(1)) {
+                offt[x] = offt[x] || {};
+                offt = offt[x];
+            }
+        }
+        console.log(exports);
+        debugger;
+    }
+
+
     const _invokePromise = (async () => {
-        // Instead of just broadcasting all RPC over generic 'message' events, create a channel
+        // Instead of just broadcasting everything over generic 'message' events, create a channel
         // which is like a unix pipe pair and transfer one of the ports to the ext for us
         // to securely and performantly talk over.
-        const rpcCallbacks = new Map();
+        const callbacks = new Map();
         const reqChannel = new MessageChannel();
         const reqPort = reqChannel.port1;
         await new Promise((resolve, reject) => {
             function onMessageEstablishChannelAck(ev) {
                 reqPort.removeEventListener('message', onMessageEstablishChannelAck);
                 if (!ev.data || ev.data.extId !== sauce.extId ||
-                    ev.data.type !== 'sauce-rpc-establish-channel-ack') {
-                    reject(new Error('RPC Protocol Violation [CONTENT] [ACK]!'));
+                    ev.data.type !== 'sauce-proxy-establish-channel-ack') {
+                    reject(new Error('Proxy Protocol Violation [CONTENT] [ACK]!'));
                     return;
                 }
+                setupExports(ev.data.exports);
                 const respPort = ev.ports[0];
                 respPort.addEventListener('message', ev => {
-                    if (!ev.data || ev.data.extId !== sauce.extId || ev.data.type !== 'sauce-rpc-response') {
-                        throw new Error('RPC Protocol Violation [CONTENT] [RESP]!');
+                    if (!ev.data || ev.data.extId !== sauce.extId || ev.data.type !== 'sauce-proxy-response') {
+                        throw new Error('Proxy Protocol Violation [CONTENT] [RESP]!');
                     }
                     if (ev.data.success === true) {
-                        const rid = ev.data.rid;
-                        const {resolve} = rpcCallbacks.get(rid);
-                        rpcCallbacks.delete(rid);
+                        const pid = ev.data.pid;
+                        const {resolve} = callbacks.get(pid);
+                        callbacks.delete(pid);
                         resolve(ev.data.result);
                     } else if (ev.data.success === false) {
-                        const rid = ev.data.rid;
-                        const {reject} = rpcCallbacks.get(rid);
-                        rpcCallbacks.delete(rid);
-                        reject(new Error(ev.data.result || 'unknown rpc error'));
+                        const pid = ev.data.pid;
+                        const {reject} = callbacks.get(pid);
+                        callbacks.delete(pid);
+                        reject(new Error(ev.data.result || 'unknown proxy error'));
                     } else {
-                        throw new TypeError("RPC Protocol Violation [DATA]");
+                        throw new TypeError("Proxy Protocol Violation [DATA]");
                     }
                 });
                 respPort.start();
@@ -242,19 +257,19 @@ sauce.ns('rpc', function() {
             reqPort.addEventListener('messageerror', ev => console.error('Message Error:', ev));
             reqPort.start();
             window.postMessage({
-                type: 'sauce-rpc-establish-channel',
+                type: 'sauce-proxy-establish-channel',
                 extId: sauce.extId,
             }, self.origin, [reqChannel.port2]);
         });
-        let rpcId = 0;
+        let proxyId = 0;
         return msg => {
             return new Promise((resolve, reject) => {
-                const rid = rpcId++;
-                rpcCallbacks.set(rid, {resolve, reject});
+                const pid = proxyId++;
+                callbacks.set(pid, {resolve, reject});
                 reqPort.postMessage({
-                    rid,
+                    pid,
                     msg,
-                    type: 'sauce-rpc-request',
+                    type: 'sauce-proxy-request',
                     extId: sauce.extId
                 });
             });
