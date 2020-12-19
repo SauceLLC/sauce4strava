@@ -69,8 +69,9 @@
             "src/ext/webext.js",
             "src/common/base.js",
             "src/ext/base_init.js",
-            "src/ext/storage.js",
             "src/ext/proxy.js",
+            "src/ext/storage.js",
+            "src/ext/locale.js",
             "src/ext/patron.js",
             "src/site/preloader.js",
             "src/ext/boot.js"
