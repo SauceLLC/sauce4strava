@@ -8,6 +8,7 @@
     const bgInit = browser.runtime.sendMessage({call: 'sauce-proxy-init'});
     const exports = new Map();
 
+
     ns.export = function(fn, options={}) {
         const eventing = !!options.eventing;
         const name = options.name || fn.name;
@@ -23,21 +24,8 @@
 
     function makeBackgroundProxy(desc) {
         return async function(...args) {
-            return await browser.runtime.sendMessage(desc, ...args);
+            return await browser.runtime.sendMessage({call: desc.call, args});
         };
-    }
-
-
-    async function messageHandler(msg) {
-        const hook = sauce.proxy.hooks[msg.system][msg.op];
-        if (!hook) {
-            throw new Error(`Invalid proxy hook: ${msg.system} ${msg.op}`);
-        }
-        if (msg.bg || (hook.options && hook.options.bg)) {
-            return await browser.runtime.sendMessage(msg);
-        } else {
-            return await hook.callback(msg.data);
-        }
     }
 
 
@@ -60,7 +48,8 @@
             }
             let data;
             try {
-                const result = await messageHandler(ev.data.msg);
+                const entry = exports.get(ev.data.call);
+                const result = await entry.fn(...ev.data.args);
                 data = {success: true, pid: ev.data.pid, result};
             } catch(e) {
                 console.error('Proxy Hook Error:', e);

@@ -21,21 +21,15 @@
         });
     };
 
-    /*
-    browser.runtime.onMessage.addListener(async (msg, sender) => {
-        const hook = sauce.proxy.hooks[msg.system][msg.op];
-        if (!msg.bg && !(hook.options && hook.options.bg)) {
-            console.error("Hook should not be running in BG:", msg, hook);
-            throw new Error("Non background-only hook being sent to background page!");
-        }
-        return await hook.callback.call(sender, msg.data);
-    });
-    */
 
     browser.runtime.onMessage.addListener(async (data, sender) => {
-        if (!data || !data.call || data.call !== 'sauce-proxy-init') {
+        if (!data || !data.call) {
             throw new Error("Invalid Message");
         }
-        return Array.from(exports.values()).map(x => x.desc);
+        if (data.call === 'sauce-proxy-init') {
+            return Array.from(exports.values()).map(x => x.desc);
+        }
+        const entry = exports.get(data.call);
+        return await entry.fn.apply(sender, data.args);
     });
 })();

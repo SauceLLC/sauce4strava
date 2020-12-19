@@ -7,7 +7,7 @@
         try {
             await _load();
         } catch(e) {
-            await sauce.rpc.reportError(e);
+            await sauce.proxy.reportError(e);
             throw e;
         }
     }
@@ -27,8 +27,8 @@
         anchor.appendChild(image);
         anchor.href = 'javascript:void(0);';
         anchor.addEventListener('click', () => {
-            sauce.rpc.openOptionsPage().catch(sauce.rpc.reportError);  // bg okay
-            sauce.rpc.reportEvent('UserMenu', 'options');
+            sauce.proxy.openOptionsPage().catch(sauce.proxy.reportError);  // bg okay
+            sauce.proxy.reportEvent('UserMenu', 'options');
         });
         const item = document.createElement('li');
         item.id = 'global-sauce-options-menu-item';

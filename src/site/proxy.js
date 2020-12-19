@@ -4,68 +4,13 @@ sauce.ns('proxy', function() {
     'use strict';
 
 
-    async function storageSet() {
-        const args = Array.from(arguments);
-        return await invoke({system: 'storage', op: 'set', data: {args}});
-    }
-
-
-    async function storageGet() {
-        const args = Array.from(arguments);
-        return await invoke({system: 'storage', op: 'get', data: {args}});
-    }
-
-
-    async function getAthleteInfo(id) {
-        const athlete_info = await storageGet('athlete_info');
-        if (athlete_info && athlete_info[id]) {
-            return athlete_info[id];
-        }
-    }
-
-
-    async function storageUpdate() {
-        const args = Array.from(arguments);
-        return await invoke({system: 'storage', op: 'update', data: {args}});
-    }
-
-
-    async function updateAthleteInfo(id, updates) {
-        return await storageUpdate(`athlete_info.${id}`, updates);
-    }
-
-
-    async function setAthleteProp(id, key, value) {
-        await updateAthleteInfo(id, {[key]: value});
-    }
-
-
-    async function getAthleteProp(id, key) {
-        const info = await getAthleteInfo(id);
-        return info && info[key];
-    }
-
-
-    async function getPref(key) {
-        const prefs = await storageGet('preferences');
-        return prefs && prefs[key];
-    }
-
-
-    async function setPref(key, value) {
-        return await storageUpdate('preferences', {[key]: value});
-    }
-
-
-    async function ga() {
-        const args = Array.from(arguments);
-        const meta = {referrer: document.referrer};
-        return await invoke({system: 'ga', op: 'apply', data: {meta, args}});
+    async function ga(...args) {
+        return await sauce._ga(document.referrer, ...args);
     }
 
 
     async function reportEvent(eventCategory, eventAction, eventLabel, options) {
-        await sauce.proxy.ga('send', 'event', Object.assign({
+        await ga('send', 'event', Object.assign({
             eventCategory,
             eventAction,
             eventLabel,
@@ -108,7 +53,7 @@ sauce.ns('proxy', function() {
         }
         const exDescription = desc.join('\n');
         console.error('Reporting:', exDescription);
-        await sauce.proxy.ga('send', 'exception', {
+        await ga('send', 'exception', {
             exDescription,
             exFatal: true,
             page
@@ -205,13 +150,12 @@ sauce.ns('proxy', function() {
         for (const desc of exports) {
             const path = desc.call.split('.');
             let offt = sauce;
-            for (const x of path.slice(1)) {
+            for (const x of path.slice(0, -1)) {
                 offt[x] = offt[x] || {};
                 offt = offt[x];
             }
+            offt[path[path.length - 1]] = (...args) => invoke(desc.call, ...args);
         }
-        console.log(exports);
-        debugger;
     }
 
 
@@ -262,13 +206,14 @@ sauce.ns('proxy', function() {
             }, self.origin, [reqChannel.port2]);
         });
         let proxyId = 0;
-        return msg => {
+        return (call, ...args) => {
             return new Promise((resolve, reject) => {
                 const pid = proxyId++;
                 callbacks.set(pid, {resolve, reject});
                 reqPort.postMessage({
                     pid,
-                    msg,
+                    call,
+                    args,
                     type: 'sauce-proxy-request',
                     extId: sauce.extId
                 });
@@ -276,22 +221,12 @@ sauce.ns('proxy', function() {
         };
     })();
 
-    let invoke = async msg => {
+    let invoke = async (...args) => {
         invoke = await _invokePromise;
-        return await invoke(msg);
+        return await invoke(...args);
     };
 
     return {
-        getAthleteInfo,
-        updateAthleteInfo,
-        getAthleteProp,
-        setAthleteProp,
-        getPref,
-        setPref,
-        storageSet,
-        storageGet,
-        storageUpdate,
-        ga,
         reportEvent,
         reportError,
         auditStackFrame,

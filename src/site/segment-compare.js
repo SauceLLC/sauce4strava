@@ -61,7 +61,7 @@ sauce.ns('segmentCompare', ns => {
     try {
         await sauce.segmentCompare.load();
     } catch(e) {
-        await sauce.rpc.reportError(e);
+        await sauce.proxy.reportError(e);
         throw e;
     }
 })();

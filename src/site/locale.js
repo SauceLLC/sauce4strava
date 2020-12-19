@@ -42,7 +42,7 @@ sauce.ns('locale', ns => {
         if (entry.hit) {
             return entry.value;
         } else {
-            const value = await sauce.rpc.getLocaleMessage.apply(null, arguments);
+            const value = await sauce.proxy.getLocaleMessage.apply(null, arguments);
             if (!value) {
                 warnOnce(`Locale message not found: ${entry.hashKey}`);
             }
@@ -63,7 +63,7 @@ sauce.ns('locale', ns => {
             hashKeys.push(entry.hashKey);
         }
         if (missing.length) {
-            const values = await sauce.rpc.getLocaleMessages(missing.map(x => x.args));
+            const values = await sauce.proxy.getLocaleMessages(missing.map(x => x.args));
             for (let i = 0; i < missing.length; i++) {
                 const value = values[i];
                 if (!value) {
