@@ -3,6 +3,7 @@
 sauce.ns('trailforks', ns => {
     'use strict';
 
+    const namespace = 'trailforks';
     const tfCache = new sauce.cache.TTLCache('trailforks', 12 * 3600 * 1000);
     const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
 
@@ -262,7 +263,6 @@ sauce.ns('trailforks', ns => {
             status: enums.statuses[data.status],
             condition: enums.conditions[data.condition],
             difficulty: enums.difficulties[data.difficulty],
-            //difficulty: enums.difficulties[Math.round(Math.random() * 10)], // TESTING
             difficultyUserAvg: enums.difficulties[data.difficulty_user_avg],
             trailType: enums.types[data.trailtype],
             bikeType: enums.bikeTypes[data.biketype],
@@ -574,7 +574,7 @@ sauce.ns('trailforks', ns => {
     */
 
 
-    ns.intersections = async function(latlngStream, distStream) {
+    async function intersections(latlngStream, distStream) {
         const hashData = new Float32Array([].concat(
             latlngStream.map(x => x[0]),
             latlngStream.map(x => x[1]),
@@ -663,9 +663,11 @@ sauce.ns('trailforks', ns => {
         }
         await tfCache.set(cacheKey, intersections);
         return intersections;
-    };
+    }
+    sauce.proxy.export(intersections, {namespace});
 
-    ns.trail = async function(id, options={}) {
+
+    async function trail(id, options={}) {
         const q = new URLSearchParams();
         q.set('scope', 'full');
         q.set('api_key', tfApiKey());
@@ -684,19 +686,25 @@ sauce.ns('trailforks', ns => {
             await tfCache.set(cacheKey, data);
         }
         return lookupEnums(convertTrailFields(data.data));
-    };
+    }
+    sauce.proxy.export(trail, {namespace});
 
-    ns.photos = async function(trailId, options={}) {
+
+    async function photos(trailId, options={}) {
         options.pageSize = 3;  // MUST be 3!!!
         return await fetchPagedTrailResource('photos', trailId, options);
-    };
+    }
+    sauce.proxy.export(photos, {namespace});
 
-    ns.videos = async function(trailId, options={}) {
+    
+    async function videos(trailId, options={}) {
         options.pageSize = 6;  // MUST be 6!!!
         return await fetchPagedTrailResource('videos', trailId, options);
-    };
+    }
+    sauce.proxy.export(videos, {namespace});
 
-    ns.reports = async function(trailId, options={}) {
+
+    async function reports(trailId, options={}) {
         options.pageSize = 3;  // MUST be 3!!!
         options.filterKey = 'nid';
         options.pk = 'reportid';
@@ -706,5 +714,15 @@ sauce.ns('trailforks', ns => {
         }
         const data = await fetchPagedTrailResource('reports', trailId, options);
         return data.map(x => lookupEnums(convertReportFields(x)));
+    }
+    sauce.proxy.export(reports, {namespace});
+
+
+    return {
+        intersections,
+        trail,
+        photos,
+        videos,
+        reports,
     };
 });

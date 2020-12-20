@@ -14,7 +14,11 @@
         a = s.createElement(o), m = s.getElementsByTagName(o)[0];
         a.async = 1;
         a.src = g;
-        m.parentNode.insertBefore(a, m);
+        if (m) {
+            m.parentNode.insertBefore(a, m);
+        } else {
+            s.documentElement.appendChild(a);
+        }
     })(self, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
     ns.getTracker = async function(name) {

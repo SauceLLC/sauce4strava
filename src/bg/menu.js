@@ -1,4 +1,4 @@
-/* global browser */
+/* global browser, sauce */
 
 (async function() {
     let agent = navigator.userAgent.match(/ Edg\//) && 'edge';
@@ -6,6 +6,7 @@
     agent = agent || scheme === 'chrome-extension' && 'chrome';
     agent = agent || scheme === 'moz-extension' && 'firefox';
     agent = agent || scheme === 'safari-web-extension' && 'safari';
+    sauce.proxy.export(browser.runtime.openOptionsPage, {namespace: 'menu'});
     const pageActions = {
         review: {
             title: browser.i18n.getMessage('menu_add_review'),

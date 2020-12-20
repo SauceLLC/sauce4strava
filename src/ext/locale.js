@@ -6,18 +6,18 @@
     self.sauce = self.sauce || {};
 
 
-    function getMessage(args) {
+    function _getMessage(key, ...args) {
         try {
-            return browser.i18n.getMessage.apply(null, args);
+            return browser.i18n.getMessage(key, ...args);
         } catch(e) {
-            console.warn(`Failed to get i18n message for: ${args[0]}: ${e.message}`);
+            console.warn(`Failed to get i18n message for: ${key}: ${e.message}`);
         }
     }
-    sauce.proxy.export(getMessage, {namespace: 'locale'});
+    sauce.proxy.export(_getMessage, {namespace: 'locale'});
 
 
-    function getMessages(batch) {
-        return batch.map(x => getMessage(x));
+    function _getMessages(batch) {
+        return batch.map(x => _getMessage(x));
     }
-    sauce.proxy.export(getMessages, {namespace: 'locale'});
+    sauce.proxy.export(_getMessages, {namespace: 'locale'});
 })();

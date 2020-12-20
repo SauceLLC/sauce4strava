@@ -17,53 +17,7 @@
     }
 
 
-    function _getI18nMessage(args) {
-        try {
-            return browser.i18n.getMessage.apply(null, args);
-        } catch(e) {
-            console.warn(`Failed to get i18n message for: ${args[0]}: ${e.message}`);
-        }
-    }
-
-
-    addHook('ga', 'apply', async function({args, meta}) {
-        const tracker = await sauce.ga.getOrCreateTracker(this.tab.id);
-        const url = new URL(this.url);
-        tracker.set('hostname', url.hostname);
-        tracker.set('referrer', meta.referrer);
-        tracker.set('location', url.href.split('#')[0]);
-        tracker.set('viewportSize', `${this.tab.width}x${this.tab.height}`);
-        const method = args.shift();
-        tracker[method].apply(tracker, args);
-    }, {bg: true});
-
-    addHook('locale', 'getMessage', _getI18nMessage);
-
-    addHook('locale', 'getMessages', batch => batch.map(x => _getI18nMessage(x)));
-
-    addHook('util', 'ping', x => x);
-
-    addHook('util', 'bgping', x => x, {bg: true});
-
-    addHook('storage', 'get', ({args}) => sauce.storage.get.apply(null, args));
-
-    addHook('storage', 'set', ({args}) => sauce.storage.set.apply(null, args));
-
-    addHook('storage', 'update', ({args}) => sauce.storage.update.apply(null, args), {bg: true});
-
     addHook('options', 'openOptionsPage', () => browser.runtime.openOptionsPage(), {bg: true});
 
     addHook('trailforks', 'intersections', ({args}) => sauce.trailforks.intersections.apply(null, args), {bg: true});
-
-    addHook('hist', 'selfActivities', ({args}) => sauce.hist.selfActivities.apply(null, args), {bg: true});
-
-    addHook('hist', 'peerActivities', ({args}) => sauce.hist.peerActivities.apply(null, args), {bg: true});
-
-    addHook('hist', 'findPeerPeaks', ({args}) => sauce.hist.findPeerPeaks.apply(null, args), {bg: true});
-
-    addHook('hist', 'findSelfPeaks', ({args}) => sauce.hist.findSelfPeaks.apply(null, args), {bg: true});
-
-    addHook('hist', 'syncSelfStreams', ({args}) => sauce.hist.syncSelfStreams.apply(null, args), {bg: true});
-
-    addHook('hist', 'syncPeerStreams', ({args}) => sauce.hist.syncPeerStreams.apply(null, args), {bg: true});
 })();

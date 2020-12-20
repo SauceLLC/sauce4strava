@@ -5,21 +5,6 @@
 
     self.sauce = self.sauce || {};
     const ns = sauce.proxy = sauce.proxy || {};
-    const exports = new Map();
-
-
-    ns.export = function(fn, options={}) {
-        const eventing = !!options.eventing;
-        const name = options.name || fn.name;
-        const call = options.namespace ? `${options.namespace}.${name}` : name;
-        exports.set(call, {
-            desc: {
-                call,
-                eventing
-            },
-            fn
-        });
-    };
 
 
     browser.runtime.onMessage.addListener(async (data, sender) => {
@@ -27,9 +12,13 @@
             throw new Error("Invalid Message");
         }
         if (data.call === 'sauce-proxy-init') {
-            return Array.from(exports.values()).map(x => x.desc);
+            return Array.from(ns.exports.values()).map(x => x.desc);
         }
-        const entry = exports.get(data.call);
-        return await entry.fn.apply(sender, data.args);
+        const entry = ns.exports.get(data.call);
+        if (!entry) { 
+            return ns._wrapError(new Error('Invalid proxy call: ' + data.call));
+        } else { 
+            return await entry.exec.call(sender, data.pid, ...data.args);
+        }   
     });
 })();

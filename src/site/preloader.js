@@ -386,7 +386,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         Klass.prototype.render = function() {
             const ret = renderSave.apply(this, arguments);
             if (sauce.options) {
-                addButtons.call(this).catch(sauce.proxy.reportError);
+                addButtons.call(this).catch(sauce.ga.reportError);
             }
             return ret;
         };

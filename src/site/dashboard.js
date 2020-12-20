@@ -2,11 +2,11 @@
 
 sauce.ns('dashboard', function(ns) {
 
-    function feedEvent(action, category, count) {
+    async function feedEvent(action, category, count) {
         if (!count) {
             return;
         }
-        sauce.proxy.reportEvent('ActivityFeed', action, category, {
+        await sauce.ga.reportEvent('ActivityFeed', action, category, {
             nonInteraction: true,
             eventValue: count
         });
@@ -123,8 +123,8 @@ sauce.ns('dashboard', function(ns) {
 
 
     async function sendGAPageView(type) {
-        await sauce.proxy.ga('set', 'title', 'Sauce Dashboard');
-        await sauce.proxy.ga('send', 'pageview');
+        await sauce.ga.apply('set', 'title', 'Sauce Dashboard');
+        await sauce.ga.apply('send', 'pageview');
     }
 
 
@@ -135,7 +135,7 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    async function load() {
+    function load() {
         const feedSelector = '.main .feed-container .feed';
         const feedEl = document.querySelector(feedSelector);
         if (!feedEl) {
@@ -171,9 +171,9 @@ sauce.ns('dashboard', function(ns) {
 
 (async function() {
     try {
-        await sauce.dashboard.load();
+        sauce.dashboard.load();
     } catch(e) {
-        await sauce.proxy.reportError(e);
+        await sauce.ga.reportError(e);
         throw e;
     }
 })();

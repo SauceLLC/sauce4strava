@@ -386,7 +386,7 @@ sauce.ns('analysis', ns => {
                     body: '<b>Reloading page to reflect FTP change.</b>'
                 });
                 try {
-                    await sauce.proxy.reportEvent('AthleteInfo', 'edit', 'ftp');
+                    await sauce.ga.reportEvent('AthleteInfo', 'edit', 'ftp');
                 } finally {
                     location.reload();
                 }
@@ -428,7 +428,7 @@ sauce.ns('analysis', ns => {
                     body: '<b>Reloading page to reflect weight change.</b>'
                 });
                 try {
-                    await sauce.proxy.reportEvent('AthleteInfo', 'edit', 'weight');
+                    await sauce.ga.reportEvent('AthleteInfo', 'edit', 'weight');
                 } finally {
                     location.reload();
                 }
@@ -479,10 +479,10 @@ sauce.ns('analysis', ns => {
                         isDistanceRange: !!row.dataset.distanceRange,
                     });
                 } catch (e) {
-                    sauce.proxy.reportError(e);
+                    sauce.ga.reportError(e);
                     throw e;
                 }
-                sauce.proxy.reportEvent('InfoDialog', 'open',
+                sauce.ga.reportEvent('InfoDialog', 'open',
                     `${this._selectedSource}-${row.dataset.rangeValue}`);
             });
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
@@ -526,7 +526,7 @@ sauce.ns('analysis', ns => {
         async setSelectedSource(source) {
             this._selectedSource = source;
             await sauce.storage.update('analysis_peak_ranges', {[this.sourceKey]: source});
-            sauce.proxy.reportEvent('PeakRange', 'select', source);
+            sauce.ga.reportEvent('PeakRange', 'select', source);
         }
     }
 
@@ -573,7 +573,7 @@ sauce.ns('analysis', ns => {
             return;
         }
         //const intersections = await sauce.trailforks.intersections(latlngStream, distStream); // DEBUG
-        const intersections = await sauce.proxy.trailforksIntersections(latlngStream, distStream);
+        const intersections = await sauce.trailforks.intersections(latlngStream, distStream);
         const segmentTrailDescs = new Map();
         for (const intersect of intersections) {
             for (const match of intersect.matches) {
@@ -670,7 +670,7 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
-        assignTrailforksToSegments().catch(sauce.proxy.reportError);
+        assignTrailforksToSegments().catch(sauce.ga.reportError);
         renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
@@ -682,7 +682,7 @@ sauce.ns('analysis', ns => {
             tss,
             np,
             power,
-        }).catch(sauce.proxy.reportError);
+        }).catch(sauce.ga.reportError);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
@@ -1472,8 +1472,8 @@ sauce.ns('analysis', ns => {
         }
         $menu.find('a.tcx').on('click', async () => {
             const laps = await getLaps();
-            exportActivity(sauce.export.TCXSerializer, {laps}).catch(sauce.proxy.reportError);
-            sauce.proxy.reportEvent('ActionsMenu', 'export', 'tcx');
+            exportActivity(sauce.export.TCXSerializer, {laps}).catch(sauce.ga.reportError);
+            sauce.ga.reportEvent('ActionsMenu', 'export', 'tcx');
         });
         if (!$menu.find('a[href$="/export_gpx"]').length) {
             $menu.find('.sauce-group ul').append(jQuery(`
@@ -1482,8 +1482,8 @@ sauce.ns('analysis', ns => {
             `));
             $menu.find('a.gpx').on('click', async () => {
                 const laps = await getLaps();
-                exportActivity(sauce.export.GPXSerializer, {laps}).catch(sauce.proxy.reportError);
-                sauce.proxy.reportEvent('ActionsMenu', 'export', 'gpx');
+                exportActivity(sauce.export.GPXSerializer, {laps}).catch(sauce.ga.reportError);
+                sauce.ga.reportEvent('ActionsMenu', 'export', 'gpx');
             });
         }
     }
@@ -1538,7 +1538,7 @@ sauce.ns('analysis', ns => {
             $genderSelect.on('change', drawGraph);
             $dialog.on('dialogresize', drawGraph);
             drawGraph();
-            sauce.proxy.reportEvent('PowerProfileHelp', 'show');
+            sauce.ga.reportEvent('PowerProfileHelp', 'show');
         });
     }
 
@@ -1630,7 +1630,7 @@ sauce.ns('analysis', ns => {
 
     function submitComment(comment) {
         pageView.commentsController().comment('Activity', pageView.activity().id, comment);
-        sauce.proxy.reportEvent('Comment', 'submit');
+        sauce.ga.reportEvent('Comment', 'submit');
     }
 
 
@@ -1686,13 +1686,13 @@ sauce.ns('analysis', ns => {
         jQuery(document).on('click', `${segView} .sauce-button.live-segment`, async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
-            showLiveSegmentDialog(details).catch(sauce.proxy.reportError);
+            showLiveSegmentDialog(details).catch(sauce.ga.reportError);
         });
         jQuery(document).on('click', `${segView} .sauce-button.perf-predictor`, async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
             const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
-            showPerfPredictor(start, end).catch(sauce.proxy.reportError);
+            showPerfPredictor(start, end).catch(sauce.ga.reportError);
         });
     }
 
@@ -1740,12 +1740,12 @@ sauce.ns('analysis', ns => {
                             timeMultiplier
                         });
                     } catch(e) {
-                        sauce.proxy.reportError(e);
+                        sauce.ga.reportError(e);
                         return;
                     }
                     if (useTrial) {
                         await sauce.storage.set('live_segment_trial_count', trialCount + 1, {sync: true});
-                        sauce.proxy.reportEvent('LiveSegment', 'trial');
+                        sauce.ga.reportEvent('LiveSegment', 'trial');
                     }
                     $dialog.dialog('destroy');
                     modal({
@@ -1768,7 +1768,7 @@ sauce.ns('analysis', ns => {
                     class: 'btn-primary btn-outline',
                     click: () => {
                         $dialog.dialog('destroy');
-                        showLiveSegmentDialog(details, /*useTrial*/ true).catch(sauce.proxy.reportError);
+                        showLiveSegmentDialog(details, /*useTrial*/ true).catch(sauce.ga.reportError);
                     }
                 });
             }
@@ -1794,7 +1794,7 @@ sauce.ns('analysis', ns => {
             const adjustedTime = timeMultiplier * streamDelta(timeStream);
             $dialog.find('.leader-time').text(humanTime(adjustedTime));
         });
-        sauce.proxy.reportEvent('LiveSegment', 'show');
+        sauce.ga.reportEvent('LiveSegment', 'show');
     }
 
 
@@ -1851,7 +1851,7 @@ sauce.ns('analysis', ns => {
             try {
                 addBadge(row);
             } catch(e) {
-                sauce.proxy.reportError(e);
+                sauce.ga.reportError(e);
             }
         }
     }
@@ -1874,7 +1874,7 @@ sauce.ns('analysis', ns => {
         }
         const rows = Array.from(document.querySelectorAll('table.segments > tbody > tr[data-segment-effort-id]'));
         for (const row of rows) {
-            addTrailforksRow(row).catch(sauce.proxy.reportError);
+            addTrailforksRow(row).catch(sauce.ga.reportError);
         }
     }
 
@@ -1936,9 +1936,9 @@ sauce.ns('analysis', ns => {
             ev.stopPropagation();
             try {
                 await showTrailforksModal(descs);
-                sauce.proxy.reportEvent('Trailforks', 'show');
+                sauce.ga.reportEvent('Trailforks', 'show');
             } catch(e) {
-                sauce.proxy.reportError(e);
+                sauce.ga.reportError(e);
                 throw e;
             }
         });
@@ -2010,7 +2010,7 @@ sauce.ns('analysis', ns => {
                     try {
                         return await renderTFDetailedReport(desc.trail.id, this.$el, options);
                     } catch(e) {
-                        sauce.proxy.reportError(e);
+                        sauce.ga.reportError(e);
                         throw e;
                     } finally {
                         docClasses.remove('sauce-loading');
@@ -2449,7 +2449,7 @@ sauce.ns('analysis', ns => {
             const now = Date.now();
             if (!_schedUpdateErrorTS || (now - _schedUpdateErrorTS) > 5000) {
                 _schedUpdateErrorTS = now;
-                sauce.proxy.reportError(e);
+                sauce.ga.reportError(e);
             }
         });
     }
@@ -2566,7 +2566,7 @@ sauce.ns('analysis', ns => {
             $dialog.find('pre').html(data);
             $dialog.dialog('option', 'width', `calc(${width}ch + 4em)`);
         });
-        sauce.proxy.reportEvent('RawData', 'show');
+        sauce.ga.reportEvent('RawData', 'show');
     }
 
 
@@ -2624,7 +2624,7 @@ sauce.ns('analysis', ns => {
         }
         $selector.on('update', renderGraphs);
         await renderGraphs();
-        sauce.proxy.reportEvent('GraphData', 'show');
+        sauce.ga.reportEvent('GraphData', 'show');
     }
 
 
@@ -2721,7 +2721,7 @@ sauce.ns('analysis', ns => {
         const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
         const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
         download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
-        sauce.proxy.reportEvent('LiveSegment', 'create');
+        sauce.ga.reportEvent('LiveSegment', 'create');
     }
 
 
@@ -2917,41 +2917,42 @@ sauce.ns('analysis', ns => {
         });
         $dialog.on('input', 'input', () => setTimeout(recalc, 0));
         recalc(/*noPulse*/ true);
-        sauce.proxy.reportEvent('PerfPredictor', 'show');
+        sauce.ga.reportEvent('PerfPredictor', 'show');
     }
 
 
     function attachAnalysisStats($el) {
         if (!ctx.$analysisStats) {
             ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
-            sauce.storage.getPref('expandAnalysisStats').then(expanded =>
-                ctx.$analysisStats.toggleClass('expanded', expanded));
+            sauce.proxy.connected
+                .then(() => sauce.storage.getPref('expandAnalysisStats'))
+                .then(expanded => ctx.$analysisStats.toggleClass('expanded', expanded));
         }
         $el.find('#stacked-chart').before(ctx.$analysisStats);
-        $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.proxy.reportError));
-        $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.proxy.reportError));
+        $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.ga.reportError));
+        $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.ga.reportError));
         $el.on('click', 'a.sauce-perf-predictor', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            showPerfPredictor(start, end).catch(sauce.proxy.reportError);
+            showPerfPredictor(start, end).catch(sauce.ga.reportError);
         });
         $el.on('click', 'a.sauce-export-tcx', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            exportActivity(sauce.export.TCXSerializer, {start, end}).catch(sauce.proxy.reportError);
-            sauce.proxy.reportEvent('AnalysisStats', 'export', 'tcx');
+            exportActivity(sauce.export.TCXSerializer, {start, end}).catch(sauce.ga.reportError);
+            sauce.ga.reportEvent('AnalysisStats', 'export', 'tcx');
         });
         $el.on('click', 'a.sauce-export-gpx', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            exportActivity(sauce.export.GPXSerializer, {start, end}).catch(sauce.proxy.reportError);
-            sauce.proxy.reportEvent('AnalysisStats', 'export', 'gpx');
+            exportActivity(sauce.export.GPXSerializer, {start, end}).catch(sauce.ga.reportError);
+            sauce.ga.reportEvent('AnalysisStats', 'export', 'gpx');
         });
         $el.on('click', '.expander', async ev => {
             const el = ev.currentTarget.closest('.sauce-analysis-stats');
             const expanded = el.classList.toggle('expanded');
             await sauce.storage.setPref('expandAnalysisStats', expanded);
-            sauce.proxy.reportEvent('AnalysisStats', expanded ? 'expand' : 'collapse');
+            sauce.ga.reportEvent('AnalysisStats', expanded ? 'expand' : 'collapse');
         });
     }
 
@@ -3003,6 +3004,7 @@ sauce.ns('analysis', ns => {
         const activity = pageView.activity();
         ctx.athlete = pageView.activityAthlete();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
+        await sauce.proxy.connected;
         await Promise.all([
             getWeightInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
             getFTPInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
@@ -3054,9 +3056,9 @@ sauce.ns('analysis', ns => {
         } else if (activity.isSwim()) {
             ctx.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
-        updateSideNav().catch(sauce.proxy.reportError);
-        attachActionMenuItems().catch(sauce.proxy.reportError);
-        attachComments().catch(sauce.proxy.reportError);
+        updateSideNav().catch(sauce.ga.reportError);
+        attachActionMenuItems().catch(sauce.ga.reportError);
+        attachComments().catch(sauce.ga.reportError);
         attachSegmentToolHandlers();
         const savedRanges = await sauce.storage.get('analysis_peak_ranges');
         ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
@@ -3213,7 +3215,7 @@ sauce.ns('analysis', ns => {
     async function load() {
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
-            attachMobileMenuExpander().catch(sauce.proxy.reportError);
+            attachMobileMenuExpander().catch(sauce.ga.reportError);
             pageView.unbindScrollListener();
             document.body.classList.add('sauce-disabled-scroll-listener');
             pageView.handlePageScroll = function() {};
@@ -3226,7 +3228,7 @@ sauce.ns('analysis', ns => {
         await pageViewAssembled();
         const activity = pageView.activity();
         const type = activity.get('type');
-        const gaSetTitlePromsie = sauce.proxy.ga('set', 'title', `Sauce Analysis - ${type}`);
+        const gaSetTitlePromsie = sauce.ga.apply('set', 'title', `Sauce Analysis - ${type}`);
         ctx.activityType = {
             'Ride': 'ride',
             'Run': 'run',
@@ -3236,7 +3238,7 @@ sauce.ns('analysis', ns => {
         }[type];
         if (ctx.activityType) {
             // Start network load early..
-            fetchStreams(prefetchStreams).catch(sauce.proxy.reportError);
+            fetchStreams(prefetchStreams).catch(sauce.ga.reportError);
             const pageRouter = pageView.router();
             pageRouter.on('route', page => {
                 document.body.dataset.route = page;
@@ -3268,7 +3270,7 @@ sauce.ns('analysis', ns => {
             ctx.unsupported = true;
             console.info('Unsupported activity type:', type);
         }
-        gaSetTitlePromsie.then(() => sauce.proxy.ga('send', 'pageview'));
+        gaSetTitlePromsie.then(() => sauce.ga.apply('send', 'pageview'));
     }
 
 
@@ -3299,7 +3301,7 @@ sauce.ns('analysis', ns => {
     try {
         await sauce.analysis.load();
     } catch(e) {
-        await sauce.proxy.reportError(e);
+        await sauce.ga.reportError(e);
         throw e;
     }
     setTimeout(sauce.analysis.checkForSafariUpdates, 5000);

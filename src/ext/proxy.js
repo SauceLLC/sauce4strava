@@ -6,25 +6,13 @@
     self.sauce = self.sauce || {};
     const ns = sauce.proxy = sauce.proxy || {};
     const bgInit = browser.runtime.sendMessage({call: 'sauce-proxy-init'});
-    const exports = new Map();
 
 
-    ns.export = function(fn, options={}) {
-        const eventing = !!options.eventing;
-        const name = options.name || fn.name;
-        const call = options.namespace ? `${options.namespace}.${name}` : name;
-        exports.set(call, {
-            desc: {
-                call, eventing
-            },
-            fn
-        });
-    };
-
-
-    function makeBackgroundProxy(desc) {
-        return async function(...args) {
-            return await browser.runtime.sendMessage({call: desc.call, args});
+    function makeBackgroundExec(desc) {
+        return async function(pid, ...args) {
+            const data = await browser.runtime.sendMessage({call: desc.call, args, pid});
+            data.pid = pid;
+            return data;
         };
     }
 
@@ -37,7 +25,7 @@
         }
         window.removeEventListener('message', onMessageEstablishChannel);
         for (const desc of await bgInit) {
-            exports.set(desc.call, {desc, fn: makeBackgroundProxy(desc)});
+            ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
         }
         const reqPort = ev.ports[0];
         const respChannel = new MessageChannel();
@@ -47,13 +35,11 @@
                 throw new TypeError('Proxy Protocol Violation [PAGE]');
             }
             let data;
-            try {
-                const entry = exports.get(ev.data.call);
-                const result = await entry.fn(...ev.data.args);
-                data = {success: true, pid: ev.data.pid, result};
-            } catch(e) {
-                console.error('Proxy Hook Error:', e);
-                data = {success: false, pid: ev.data.pid, result: e.message};
+            const entry = ns.exports.get(ev.data.call);
+            if (!entry) {
+                data = ns._wrapError(new Error('Invalid proxy call: ' + ev.data.call));
+            } else {
+                data = await entry.exec(ev.data.pid, ...ev.data.args);
             }
             data.extId = extId;
             data.type = 'sauce-proxy-response';
@@ -64,7 +50,7 @@
         reqPort.postMessage({
             type: 'sauce-proxy-establish-channel-ack',
             extId,
-            exports: Array.from(exports.values()).map(x => x.desc)
+            exports: Array.from(ns.exports.values()).map(x => x.desc)
         }, [respChannel.port2]);
     }
     window.addEventListener('message', onMessageEstablishChannel);

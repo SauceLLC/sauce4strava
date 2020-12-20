@@ -37,12 +37,13 @@ sauce.ns('locale', ns => {
     }
 
 
-    async function getMessage() {
-        const entry = _getCacheEntry(_formatArgs(arguments));
+    async function getMessage(...args) {
+        const entry = _getCacheEntry(_formatArgs(args));
         if (entry.hit) {
             return entry.value;
         } else {
-            const value = await sauce.proxy.getLocaleMessage.apply(null, arguments);
+            await sauce.proxy.connected;
+            const value = await sauce.locale._getMessage(...args);
             if (!value) {
                 warnOnce(`Locale message not found: ${entry.hashKey}`);
             }
@@ -63,7 +64,8 @@ sauce.ns('locale', ns => {
             hashKeys.push(entry.hashKey);
         }
         if (missing.length) {
-            const values = await sauce.proxy.getLocaleMessages(missing.map(x => x.args));
+            await sauce.proxy.connected;
+            const values = await sauce.locale._getMessages(missing.map(x => x.args[0]));
             for (let i = 0; i < missing.length; i++) {
                 const value = values[i];
                 if (!value) {
@@ -78,7 +80,7 @@ sauce.ns('locale', ns => {
 
     async function getMessagesObject(keys, ns) {
         const prefix = ns ? `${ns}_` : '';
-        const msgs = await sauce.locale.getMessages(keys.map(x => `${prefix}${x}`));
+        const msgs = await getMessages(keys.map(x => `${prefix}${x}`));
         return msgs.reduce((acc, x, i) => (acc[keys[i]] = x, acc), {});
     }
 

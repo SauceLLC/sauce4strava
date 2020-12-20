@@ -59,9 +59,9 @@ sauce.ns('segmentCompare', ns => {
         return;
     }
     try {
-        await sauce.segmentCompare.load();
+        sauce.segmentCompare.load();
     } catch(e) {
-        await sauce.proxy.reportError(e);
+        await sauce.ga.reportError(e);
         throw e;
     }
 })();

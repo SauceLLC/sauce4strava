@@ -7,7 +7,7 @@
         try {
             await _load();
         } catch(e) {
-            await sauce.proxy.reportError(e);
+            await sauce.ga.reportError(e);
             throw e;
         }
     }
@@ -27,8 +27,8 @@
         anchor.appendChild(image);
         anchor.href = 'javascript:void(0);';
         anchor.addEventListener('click', () => {
-            sauce.proxy.openOptionsPage().catch(sauce.proxy.reportError);  // bg okay
-            sauce.proxy.reportEvent('UserMenu', 'options');
+            sauce.menu.openOptionsPage().catch(sauce.ga.reportError);  // bg okay
+            sauce.ga.reportEvent('UserMenu', 'options');
         });
         const item = document.createElement('li');
         item.id = 'global-sauce-options-menu-item';
