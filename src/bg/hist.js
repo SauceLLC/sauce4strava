@@ -145,7 +145,7 @@ sauce.ns('hist', async ns => {
         }
         activities.sort((a, b) => b.ts - a.ts);
         return activities;
-    };
+    }
     sauce.proxy.export(syncSelfActivities, {namespace});
 
 
@@ -250,7 +250,7 @@ sauce.ns('hist', async ns => {
         }
         activities.sort((a, b) => b.ts - a.ts);
         return activities;
-    };
+    }
     sauce.proxy.export(syncPeerActivities, {namespace});
 
 
@@ -321,7 +321,7 @@ sauce.ns('hist', async ns => {
             }
         }
         console.info("Completed activities fetch/sync");
-    };
+    }
     sauce.proxy.export(syncStreams, {namespace});
 
 
@@ -400,7 +400,7 @@ sauce.ns('hist', async ns => {
         ]);
         console.debug('Done: took', Date.now() - s);
         return result;
-    };
+    }
     sauce.proxy.export(findPeaks, {namespace});
 
 
@@ -439,7 +439,7 @@ sauce.ns('hist', async ns => {
             dl(batch);
         }
         console.info("Export done");
-    };
+    }
     sauce.proxy.export(exportStreams, {namespace});
 
 
@@ -460,7 +460,7 @@ sauce.ns('hist', async ns => {
             console.info(`Imported ${data.length} from:`, url);
         }
         console.info(`Imported ${added} entries in total.`);
-    };
+    }
     sauce.proxy.export(importStreams, {namespace});
 
 
