@@ -1,10 +1,9 @@
 /* global sauce */
 
-(async function() {
+sauce.ns('hist', async ns => {
     'use strict';
 
-    self.sauce = self.sauce || {};
-    const ns = self.sauce.hist = {};
+    const namespace = 'hist';
     const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
     const queues = await sauce.getModule(extUrl + 'src/common/jscoop/queues.js');
@@ -44,8 +43,8 @@
     }
 
 
-    ns.actsStore = new sauce.db.ActivitiesStore();
-    ns.streamsStore = new sauce.db.StreamsStore();
+    const actsStore = new sauce.db.ActivitiesStore();
+    const streamsStore = new sauce.db.StreamsStore();
 
 
     async function retryFetch(urn, options={}) {
@@ -99,8 +98,8 @@
     })();
 
 
-    ns.syncSelfActivities = async function(athlete, options={}) {
-        const activities = await ns.actsStore.getAllForAthlete(athlete);
+    async function syncSelfActivities(athlete, options={}) {
+        const activities = await actsStore.getAllForAthlete(athlete);
         const localIds = new Set(activities.map(x => x.id));
         for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
             const work = new jobs.UnorderedWorkQueue({maxPending: 25});
@@ -138,7 +137,7 @@
             // be higher.  So we also require than the entire work group had no effect
             // before stopping.
             if (adding.length) {
-                await ns.actsStore.putMany(adding);
+                await actsStore.putMany(adding);
                 console.info(`Synchronized ${adding.length} new activities`);
             } else if (activities.length >= total) {
                 break;
@@ -147,10 +146,11 @@
         activities.sort((a, b) => b.ts - a.ts);
         return activities;
     };
+    sauce.proxy.export(syncSelfActivities, {namespace});
 
 
-    ns.syncPeerActivities = async function(athlete, options={}) {
-        const activities = await ns.actsStore.getAllForAthlete(athlete);
+    async function syncPeerActivities(athlete, options={}) {
+        const activities = await actsStore.getAllForAthlete(athlete);
         const knownIds = new Set(activities.map(x => x.id));
 
         function *yearMonthRange(date) {
@@ -223,12 +223,12 @@
                     }
                 }
                 if (adding.length) {
-                    await ns.actsStore.putMany(adding);
+                    await actsStore.putMany(adding);
                     console.info(`Synchronized ${adding.length} new activities`);
                 } else if (empty >= minEmpty && empty >= Math.floor(concurrency)) {
                     const [year, month] = iter.next().value;
                     const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
-                    await ns.actsStore.put({id: -athlete, sentinel: date.getTime()});
+                    await actsStore.put({id: -athlete, sentinel: date.getTime()});
                     break;
                 } else if (redundant >= minRedundant  && redundant >= Math.floor(concurrency)) {
                     // Entire work set was redundant.  Don't refetch any more.
@@ -242,15 +242,16 @@
         // Sentinel is stashed as a special record to indicate that we have scanned
         // some distance into the past.  Without this we never know how far back
         // we looked given there is no page count or total to work with.
-        const sentinel = await ns.actsStore.get(-athlete);
+        const sentinel = await actsStore.get(-athlete);
         if (!sentinel) {
             // We never finished a prior sync so find where we left off..
-            const last = await ns.actsStore.firstForAthlete(athlete);
+            const last = await actsStore.firstForAthlete(athlete);
             await batchImport(new Date(last.ts));
         }
         activities.sort((a, b) => b.ts - a.ts);
         return activities;
     };
+    sauce.proxy.export(syncPeerActivities, {namespace});
 
 
     async function fetchAllStreams(activityId) {
@@ -288,11 +289,11 @@
     }
 
 
-    ns.syncStreams = async function(athlete) {
+    async function syncStreams(athlete) {
         const filter = c => !c.value.noStreams;
-        const activities = await ns.actsStore.getAllForAthlete(athlete, {filter});
+        const activities = await actsStore.getAllForAthlete(athlete, {filter});
         const outstanding = new Set(activities.map(x => x.id));
-        for await (const x of ns.streamsStore.activitiesByAthlete(athlete)) {
+        for await (const x of streamsStore.activitiesByAthlete(athlete)) {
             outstanding.delete(x);
         }
         if (!outstanding.size) {
@@ -304,16 +305,16 @@
             try {
                 const data = await fetchAllStreams(id);
                 if (data) {
-                    await ns.streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
+                    await streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
                         activity: id,
                         athlete,
                         stream,
                         data
                     })));
                 } else if (data === null) {
-                    const activity = await ns.actsStore.get(id);
+                    const activity = await actsStore.get(id);
                     activity.noStreams = true;
-                    await ns.actsStore.put(activity);
+                    await actsStore.put(activity);
                 }
             } catch(e) {
                 console.warn("Fetch streams errors:", e);
@@ -321,6 +322,7 @@
         }
         console.info("Completed activities fetch/sync");
     };
+    sauce.proxy.export(syncStreams, {namespace});
 
 
     class WorkerPoolExecutor {
@@ -387,11 +389,11 @@
             }
         }
     }
-        
+
     const workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist-worker.js');
 
 
-    ns.findPeaks = async function(...args) {
+    async function findPeaks(...args) {
         const s = Date.now();
         const result = await Promise.all([
             workerPool.exec('findPeaks', ...args),
@@ -399,6 +401,7 @@
         console.debug('Done: took', Date.now() - s);
         return result;
     };
+    sauce.proxy.export(findPeaks, {namespace});
 
 
     function download(blob, name) {
@@ -416,7 +419,7 @@
     }
 
 
-    ns.exportStreams = async function(name) {
+    async function exportStreams(name) {
         name = name || 'streams-export';
         const entriesPerFile = 5000;  // Blob and JSON.stringify have arbitrary limits.
         const batch = [];
@@ -425,7 +428,7 @@
             const blob = new Blob([JSON.stringify(data)]);
             download(blob, `${name}-${page++}.json`);
         }
-        for await (const x of ns.streamsStore.values()) {
+        for await (const x of streamsStore.values()) {
             batch.push(x);
             if (batch.length === entriesPerFile) {
                 dl(batch);
@@ -437,9 +440,10 @@
         }
         console.info("Export done");
     };
+    sauce.proxy.export(exportStreams, {namespace});
 
 
-    ns.importStreams = async function(name='streams-export', host='http://localhost:8001') {
+    async function importStreams(name='streams-export', host='http://localhost:8001') {
         let added = 0;
         for (let i = 0;; i++) {
             const url = host + `/${name}-${i}.json`;
@@ -452,55 +456,22 @@
             }
             const data = await resp.json();
             added += data.length;
-            await ns.streamsStore.putMany(data);
+            await streamsStore.putMany(data);
             console.info(`Imported ${data.length} from:`, url);
         }
         console.info(`Imported ${added} entries in total.`);
     };
+    sauce.proxy.export(importStreams, {namespace});
 
 
-    ns.importLegacyStreams = async function(name, host='http://localhost:8001') {
-        let added = 0;
-        let skipped = 0;
-        for (let i = 0;; i++) {
-            const url = host + `/${name}-${i}.json`;
-            const resp = await fetch(url);
-            if (!resp.ok) {
-                if (resp.status === 404) {
-                    break;
-                }
-                throw new Error('HTTP Error: ' + resp.status);
-            }
-            const data = await resp.json();
-            // Must cross ref every single activity we know of to find the athlete.
-            const activities = new Map();
-            for await (const x of ns.actsStore.values()) {
-                // Filter sentinels
-                if (x.id > 0) {
-                    activities.set(x.id, x.athlete);
-                }
-            }
-            await ns.streamsStore.putMany(data.map(x => {
-                const [activityS, stream] = x.key.split('-', 2);
-                if (!stream) {
-                    return;  // skip empty, we used to keep them.
-                }
-                const activity = Number(activityS);
-                const athlete = activities.get(activity);
-                if (!athlete) {
-                    skipped++;
-                    return;  // removed by filter() after map
-                } else {
-                    added++;
-                    return {
-                        activity,
-                        athlete,
-                        stream,
-                        data: x.value
-                    };
-                }
-            }).filter(x => x));
-        }
-        console.info(`Imported ${added} entries, skipped ${skipped}`);
+    return {
+        importStreams,
+        exportStreams,
+        syncSelfActivities,
+        syncPeerActivities,
+        syncStreams,
+        findPeaks,
+        streamsStore,
+        actsStore,
     };
-})();
+});
