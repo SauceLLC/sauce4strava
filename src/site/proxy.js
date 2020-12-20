@@ -19,7 +19,6 @@ sauce.ns('proxy', ns => {
     function setupExports(exports) {
         for (const desc of exports) {
             const path = desc.call.split('.');
-            console.warn("Adding ext export:", desc);
             let offt = sauce;
             for (const x of path.slice(0, -1)) {
                 offt[x] = offt[x] || {};
