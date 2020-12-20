@@ -21,7 +21,9 @@ self.sauceBaseInit = function sauceBaseInit() {
     sauce.ns = function(ns, callback) {
         const offt = buildPath(`sauce.${ns}`.split('.'));
         const assignments = callback && callback(offt);
-        if (assignments) {
+        if (assignments instanceof Promise) {
+            assignments.then(x => Object.assign(offt, x));
+        } else if (assignments) {
             Object.assign(offt, assignments);
         }
         return offt;
