@@ -460,7 +460,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     class HistDatabase extends Database {
         get version() {
-            return 2;
+            return 3;
         }
 
         migrate(idb, t, oldVersion, newVersion) {
@@ -474,6 +474,10 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (oldVersion < 2) {
                 const store = t.objectStore("streams");
                 store.createIndex('athlete', 'athlete');
+            }
+            if (oldVersion < 3) {
+                const store = t.objectStore("activities");
+                store.createIndex('athlete-basetype-ts', ['athlete', 'basetype', 'ts']);
             }
         }
     }
@@ -561,9 +565,15 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *byAthlete(athlete, options={}) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            let q;
+            if (options.type) {
+                q = IDBKeyRange.bound([athlete, options.type, -Infinity], [athlete, options.type, Infinity]);
+                options.index = 'athlete-basetype-ts';
+            } else {
+                q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+                options.index = 'athlete-ts';
+            }
             options.reverse = !options.reverse;  // Go from newest to oldest by default
-            options.index = 'athlete-ts';
             for await (const x of this.values(q, options)) {
                 yield x;
             }

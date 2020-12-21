@@ -98,6 +98,17 @@ sauce.ns('hist', async ns => {
     })();
 
 
+    function getBaseType(activity) {
+        if (activity.type.match(/Ride/)) {
+            return 'ride';
+        } else if (activity.type.match(/Run|Hike|Walk/)) {
+            return 'run';
+        } else if (activity.type.match(/Swim/)) {
+            return 'swim';
+        }
+    }
+
+
     async function syncSelfActivities(athlete, options={}) {
         const activities = await actsStore.getAllForAthlete(athlete);
         const localIds = new Set(activities.map(x => x.id));
@@ -127,6 +138,7 @@ sauce.ns('hist', async ns => {
                             athlete,
                             ts: x.start_date_local_raw * 1000
                         }, x);
+                        record.basetype = getBaseType(record);
                         adding.push(record);
                         activities.push(record);  // Sort later.
                     }
@@ -161,7 +173,7 @@ sauce.ns('hist', async ns => {
             }
         }
 
-        async function fetchMonth(year, month) {
+        async function fetchMonthOld(year, month) {
             const q = new URLSearchParams();
             q.set('interval_type', 'month');
             q.set('chart_type', 'miles');
@@ -172,7 +184,8 @@ sauce.ns('hist', async ns => {
             const batch = [];
             const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
             const ts = (new Date(`${year}-${month}`)).getTime(); // Just an approximate value for sync.
-            for (const [, scriptish] of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
+            for (const m of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
+                const scriptish = m[1];
                 const entity = scriptish.match(/entity = \\"(.+?)\\";/);
                 if (!entity || entity[1] !== 'Activity') {
                     continue;
@@ -190,6 +203,121 @@ sauce.ns('hist', async ns => {
             }
             return batch;
         }
+
+        async function fetchMonth(year, month) {
+            // Welcome to hell.  It gets really ugly in here in an effort to avoid
+            // any eval usage which is required to render this HTML into a DOM node.
+            // So are doing horrible HTML parsing with regexps..
+            const q = new URLSearchParams();
+            q.set('interval_type', 'month');
+            q.set('chart_type', 'miles');
+            q.set('year_offset', '0');
+            q.set('interval', '' + year +  month.toString().padStart(2, '0'));
+            const resp = await retryFetch(`/athletes/${athlete}/interval?${q}`);
+            const data = await resp.text();
+            const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
+            const batch = [];
+            const activityIconMap = {
+                'icon-run': 'run',
+                'icon-hike': 'run',
+                'icon-walk': 'run',
+                'icon-ride': 'ride',
+                'icon-virtualride': 'ride',
+                'icon-alpineski': 'ski',
+                'icon-nordicski': 'ski',
+                'icon-backcountryski': 'ski',
+                'icon-ebikeride': 'ebike',
+                'icon-workout': 'workout',
+                'icon-standuppaddling': 'workout',
+                'icon-yoga': 'workout',
+                'icon-snowshoe': 'workout',
+            };
+            const attrSep = String.raw`(?: |\\"|\\')`;
+            function tagWithAttrValue(tag, attrVal, matchVal) {
+                return `<${tag} [^>]*?${attrSep}${matchVal ? '(' : ''}${attrVal}${matchVal ? ')' : ''}${attrSep}`;
+            }
+            const iconRegexps = [];
+            for (const key of Object.keys(activityIconMap)) {
+                iconRegexps.push(new RegExp(tagWithAttrValue('span', key, true)));
+            }
+            const feedEntryExp = tagWithAttrValue('div', 'feed-entry');
+            const subEntryExp = tagWithAttrValue('li', 'feed-entry');
+            const feedEntryRegexp = new RegExp(`(${feedEntryExp}.*?)(?=${feedEntryExp}|$)`, 'g');
+            const subEntryRegexp = new RegExp(`(${subEntryExp}.*?)(?=${subEntryExp}|$)`, 'g');
+            const activityRegexp = new RegExp(`^[^>]*?${attrSep}activity${attrSep}`);
+            const groupActivityRegexp = new RegExp(`^[^>]*?${attrSep}group-activity${attrSep}`);
+            for (const [, entry] of raw.matchAll(feedEntryRegexp)) {
+                let isGroup;
+                if (!entry.match(activityRegexp)) {
+                    if (entry.match(groupActivityRegexp)) {
+                        isGroup = true;
+                    } else {
+                        continue;
+                    }
+                }
+                let basetype;
+                for (const x of iconRegexps) {
+                    const m = entry.match(x);
+                    if (m) {
+                        basetype = activityIconMap[m[1]];
+                        break;
+                    }
+                }
+                if (!basetype) {
+                    console.error("Unhandled activity type for:", entry);
+                    debugger;
+                    basetype = 'workout'; // XXX later this is probably fine to assume.
+                }
+                let ts;
+                const dateM = entry.match(/<time [^>]*?datetime=\\'(.*?)\\'/);
+                if (!dateM) {
+                    console.error("Unable to get timestamp from feed entry"); 
+                    debugger;
+                    ts = (new Date(`${year}-${month}`)).getTime(); // Just an approximate value for sync.
+                } else {
+                    ts = (new Date(dateM[1])).getTime();
+                }
+                let idMatch;
+                if (isGroup) {
+                    for (const [, subEntry] of entry.matchAll(subEntryRegexp)) {
+                        const athleteM = subEntry.match(/<a [^>]*?entry-athlete[^>]*? href=\\'\/(?:athletes|pros)\/([0-9]+)\\'/);
+                        if (!athleteM) {
+                            console.error("Unable to get athlete ID from feed sub entry"); 
+                            debugger;
+                            continue;
+                        }
+                        if (Number(athleteM[1]) !== athlete) {
+                            console.warn("Skipping activity from other athlete");
+                            continue;
+                        }
+                        idMatch = subEntry.match(/id=\\'Activity-([0-9]+)\\'/);
+                        break;
+                    }
+                    if (!idMatch) {
+                        console.error("Group activity parser failed to find activity for this athlete");
+                        debugger;
+                        continue;
+                    }
+                } else {
+                    idMatch = entry.match(/id=\\'Activity-([0-9]+)\\'/);
+                }
+                if (!idMatch) {
+                    console.error("Unable to get activity ID feed entry"); 
+                    debugger;
+                    continue;
+                }
+                const id = Number(idMatch[1]);
+                console.warn({id, ts, basetype, athlete});
+                batch.push({
+                    id,
+                    ts,
+                    basetype,
+                    athlete,
+                });
+            }
+            return batch;
+        }
+
 
         async function batchImport(startDate) {
             const minEmpty = 12;
@@ -419,7 +547,7 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function exportStreams(name) {
+    async function exportStreams(name, athlete) {
         name = name || 'streams-export';
         const entriesPerFile = 5000;  // Blob and JSON.stringify have arbitrary limits.
         const batch = [];
@@ -428,7 +556,8 @@ sauce.ns('hist', async ns => {
             const blob = new Blob([JSON.stringify(data)]);
             download(blob, `${name}-${page++}.json`);
         }
-        for await (const x of streamsStore.values()) {
+        const iter = athlete ? streamsStore.byAthlete(athlete) : streamsStore.values();
+        for await (const x of iter) {
             batch.push(x);
             if (batch.length === entriesPerFile) {
                 dl(batch);
@@ -463,6 +592,13 @@ sauce.ns('hist', async ns => {
     }
     sauce.proxy.export(importStreams, {namespace});
 
+
+    async function getSelfFTPs() {
+        const resp = await fetch("https://www.strava.com/settings/performance");
+        const raw = await resp.text();
+        return JSON.parse(raw.match(/all_ftps = (\[.*\]);/)[1]);
+    }
+    sauce.proxy.export(getSelfFTPs, {namespace});
 
     return {
         importStreams,

@@ -1617,8 +1617,17 @@ sauce.ns('research', function() {
         };
         const streamsMap = new Map();
         const manifest = manifests[type];
+        let includeList;
+        if (options.activityType) {
+            includeList = new Set();
+            for await (const x of actsStore.byAthlete(athlete, {type: options.activityType})) {
+                includeList.add(x.id);
+            }
+        }
         for await (const group of streamsStore.manyByAthlete(athlete, ['time', ...manifest.streams])) {
-            streamsMap.set(group.activity, group.streams);
+            if (!includeList || includeList.has(group.activity)) {
+                streamsMap.set(group.activity, group.streams);
+            }
         }
         if (type === 'seapower') {
             for (const streams of streamsMap.values()) {
