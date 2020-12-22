@@ -24,7 +24,15 @@ sauce.ns('proxy', ns => {
                 offt[x] = offt[x] || {};
                 offt = offt[x];
             }
-            offt[path[path.length - 1]] = (...args) => extCall(desc.call, ...args);
+            const name = path[path.length - 1];
+            let callable;
+            if (desc.isClass) {
+                debugger;
+                callable = buildProxyClass(name, desc);
+            } else {
+                callable = (...args) => extCall(desc, ...args);
+            }
+            offt[name] = callable;
         }
     }
 
@@ -34,7 +42,16 @@ sauce.ns('proxy', ns => {
     }
 
 
-    async function extCall(call, ...nativeArgs) {
+    function buildProxyClass(name, desc) {
+        const Klass = class K {}
+        Klass.name = name;
+        for (const x of desc.properties) {
+            Klass.prototype[x] = 
+        }
+    }
+
+
+    async function extCall(desc, ...nativeArgs) {
         if (!_connected) {
             await ns.connected();
         }
@@ -43,7 +60,7 @@ sauce.ns('proxy', ns => {
             inflight.set(pid, {resolve, reject});
             requestPort.postMessage({
                 pid,
-                call,
+                desc,
                 args: encodeArgs(nativeArgs),
                 type: 'sauce-proxy-request',
                 extId: sauce.extId

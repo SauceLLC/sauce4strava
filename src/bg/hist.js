@@ -327,7 +327,13 @@ sauce.ns('hist', async ns => {
                 const work = new jobs.UnorderedWorkQueue({maxPending: 25});
                 for (let i = 0; i < concurrency; i++) {
                     const [year, month] = iter.next().value;
-                    await work.put(fetchMonth(year, month));
+                    const data1 = await fetchMonth(year, month);
+                    const data2 = await fetchMonthOld(year, month);
+                    if (data1.length !== data2.length || !data1.every((x, i) => data2[i] === x)) {
+                        console.error("Fetch month methods differ!", data1, data2);
+                        debugger;
+                    }
+                    await work.put(data1);
                 }
                 let empty = 0;
                 let redundant = 0;
@@ -599,6 +605,40 @@ sauce.ns('hist', async ns => {
         return JSON.parse(raw.match(/all_ftps = (\[.*\]);/)[1]);
     }
     sauce.proxy.export(getSelfFTPs, {namespace});
+
+
+    class SyncManager extends sauce.proxy.Eventing {
+        a(arg) {
+            console.error("It's alive", arg);
+            debugger;
+        }
+        *genTest(arg) {
+            console.error("It's alive", arg);
+            debugger;
+            yield 1;
+            yield 2;
+        }
+        async *asyncGenTest(arg) {
+            console.error("It's alive", arg);
+            debugger;
+            yield 1;
+            yield 2;
+        }
+        *[Symbol.iterator]() {
+            console.error("It's alive");
+            debugger;
+            yield 1;
+            yield 2;
+        }
+        async *[Symbol.asyncIterator]() {
+            console.error("It's alive");
+            debugger;
+            yield 1;
+            yield 2;
+        }
+    }
+    sauce.proxy.export(SyncManager, {namespace});
+    
 
     return {
         importStreams,

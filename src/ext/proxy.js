@@ -10,7 +10,7 @@
 
     function makeBackgroundExec(desc) {
         return async function(pid, ...args) {
-            const data = await browser.runtime.sendMessage({call: desc.call, args, pid});
+            const data = await browser.runtime.sendMessage({desc, args, pid});
             data.pid = pid;
             return data;
         };
@@ -23,7 +23,7 @@
             ev.data.type !== 'sauce-proxy-establish-channel') {
             return;
         }
-        window.removeEventListener('message', onMessageEstablishChannel);
+        self.removeEventListener('message', onMessageEstablishChannel);
         for (const desc of await bgInit) {
             ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
         }
@@ -35,9 +35,9 @@
                 throw new TypeError('Proxy Protocol Violation [PAGE]');
             }
             let data;
-            const entry = ns.exports.get(ev.data.call);
+            const entry = ns.exports.get(ev.data.desc.call);
             if (!entry) {
-                data = ns._wrapError(new Error('Invalid proxy call: ' + ev.data.call));
+                data = ns._wrapError(new Error('Invalid proxy call: ' + ev.data.desc.call));
             } else {
                 data = await entry.exec(ev.data.pid, ...ev.data.args);
             }
@@ -53,5 +53,5 @@
             exports: Array.from(ns.exports.values()).map(x => x.desc)
         }, [respChannel.port2]);
     }
-    window.addEventListener('message', onMessageEstablishChannel);
+    self.addEventListener('message', onMessageEstablishChannel);
 })();
