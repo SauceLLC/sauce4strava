@@ -10,7 +10,7 @@
 
     function maybeExport(fn) {
         // storage is used in ext pages where proxy is not used.
-        if (sauce.proxy && sauce.proxy.export) {
+        if (sauce.proxy && sauce.proxy.export && !browser.runtime.getBackgroundPage) {
             sauce.proxy.export(fn, {namespace: 'storage'});
         }
     }

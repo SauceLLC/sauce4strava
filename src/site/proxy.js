@@ -27,10 +27,9 @@ sauce.ns('proxy', ns => {
             const name = path[path.length - 1];
             let callable;
             if (desc.isClass) {
-                debugger;
                 callable = buildProxyClass(name, desc);
             } else {
-                callable = (...args) => extCall(desc, ...args);
+                callable = (...args) => extCall({desc}, ...args);
             }
             offt[name] = callable;
         }
@@ -42,16 +41,58 @@ sauce.ns('proxy', ns => {
     }
 
 
-    function buildProxyClass(name, desc) {
-        const Klass = class K {}
-        Klass.name = name;
-        for (const x of desc.properties) {
-            Klass.prototype[x] = 
+    class Proxy {
+        constructor(desc, ...args) {
+            console.log("made one", desc);
+            const channel = new MessageChannel();
+            this._port = channel.port1;
+            extCall({desc, port: channel.port2}, ...args).then(x => {
+                debugger;
+            });
         }
     }
 
 
-    async function extCall(desc, ...nativeArgs) {
+    class EventingProxy extends Proxy {
+        constructor(...args) {
+            super(...args);
+            this._listeners = new Map();
+        }
+
+        addEventListener(name, callback) {
+            if (!this._listeners.has(name)) {
+                this._listeners.set(name, new Set());
+            }
+            this._listeners.get(name).add(callback);
+        }
+
+        removeEventListener(name, callback) {
+            this._listeners.get(name).delete(callback);
+        }
+    }
+
+
+    function buildProxyClass(name, desc) {
+        const SuperClass = desc.eventing ? EventingProxy : Proxy;
+        class Proxied extends SuperClass {
+            constructor(...args) {
+                super(desc, ...args);
+            }
+
+            get [Symbol.toStringTag]() {
+                return name;
+            }
+        }
+        for (const x of desc.methods) {
+            Proxied.prototype[x] = () => {
+                debugger;
+            };
+        }
+        return Proxied;
+    }
+
+
+    async function extCall({desc, port}, ...nativeArgs) {
         if (!_connected) {
             await ns.connected();
         }
@@ -63,8 +104,9 @@ sauce.ns('proxy', ns => {
                 desc,
                 args: encodeArgs(nativeArgs),
                 type: 'sauce-proxy-request',
-                extId: sauce.extId
-            });
+                extId: sauce.extId,
+                port
+            }, port && [port]);
         });
     }
 
@@ -72,7 +114,8 @@ sauce.ns('proxy', ns => {
     async function createChannel() {
         // Instead of just broadcasting everything over generic 'message' events, create a channel
         // which is like a unix pipe pair and transfer one of the ports to the ext for us
-        // to securely and performantly talk over.
+        // to securely and performantly talk over.  We transfer a request port to the ext and they
+        // transfer a response port to us so each channel is directional for clarity.
         const reqChannel = new MessageChannel();
         const reqPort = reqChannel.port1;
         const respPort = await new Promise((resolve, reject) => {
@@ -84,14 +127,15 @@ sauce.ns('proxy', ns => {
                     return;
                 }
                 setupExports(ev.data.exports);
-                resolve(ev.ports[0]);
+                resolve(ev.data.responsePort);
             }
             reqPort.addEventListener('message', onMessageEstablishChannelAck);
             reqPort.addEventListener('messageerror', ev => console.error('Message Error:', ev));
             reqPort.start();
-            window.postMessage({
+            self.postMessage({
                 type: 'sauce-proxy-establish-channel',
                 extId: sauce.extId,
+                requestPort: reqChannel.port2
             }, self.origin, [reqChannel.port2]);
         });
         return [reqPort, respPort];

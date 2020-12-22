@@ -7,7 +7,7 @@
     const ns = sauce.proxy = sauce.proxy || {};
 
 
-    browser.runtime.onMessage.addListener(async (data, sender) => {
+    async function invoke(data, sender) {
         if (!data || !data.desc || !data.desc.call) {
             throw new Error("Invalid Message");
         }
@@ -18,7 +18,23 @@
         if (!entry) { 
             return ns._wrapError(new Error('Invalid proxy call: ' + data.desc.call));
         } else { 
-            return await entry.exec.call(sender, data.pid, ...data.args);
-        }   
+            return await entry.exec.call(sender, data);
+        }
+    }
+
+
+    browser.runtime.onMessage.addListener(invoke);
+
+    browser.runtime.onConnect.addListener(port => {
+        if (port.name !== 'sauce-proxy-port') {
+            debugger;
+            return;
+        }
+        const onEstablish = async data => {
+            port.onMessage.removeListener(onEstablish);
+            data.port = port;
+            port.postMessage(await invoke(data, port.sender));
+        };
+        port.onMessage.addListener(onEstablish);
     });
 })();

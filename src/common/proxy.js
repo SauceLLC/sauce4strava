@@ -5,8 +5,8 @@
 
     self.sauce = self.sauce || {};
     const ns = sauce.proxy = sauce.proxy || {};
-    const instances = new Map();
 
+    ns.instances = new Map();
     ns.exports = new Map();
 
 
@@ -21,14 +21,13 @@
             eventing,
         };
         if (isClass) {
-            const properties = getAllProperties(fn.prototype);
-            properties.remove('constructor');
-            desc.properties = properties;
-            console.error(properties);
+            const methods = getMethodNames(fn.prototype);
+            methods.delete('constructor');
+            desc.methods = Array.from(methods);
         }
         ns.exports.set(call, {
             desc,
-            exec: eventing ? wrapExportEventingClass(fn) : wrapExportFn(fn)
+            exec: eventing ? wrapExportClass(fn) : wrapExportFn(fn)
         });
     };
 
@@ -51,24 +50,25 @@
     }
 
 
-    function getAllProperties(Klass) {
-        let proto = Klass.prototype;
+    function getMethodNames(obj) {
         const props = new Set();
         do {
-            for (const x of Reflect.ownKeys(proto)) {
-                props.add(x);
+            for (const x of Object.getOwnPropertyNames(obj)) {
+                if (typeof obj[x] === 'function') {
+                    props.add(x);
+                }
             }
-        } while ((proto = Reflect.getPrototypeOf(proto)) && proto !== Object.prototype);
+        } while ((obj = Object.getPrototypeOf(obj)) && obj !== Object.prototype);
         return props;
     }
 
 
-    function wrapExportEventingClass(Klass) {
-        return async function(pid, ...args) {
+    function wrapExportClass(Klass) {
+        return async function({pid, port, args}) {
+            debugger;
             try {
                 const instance = new Klass(...decodeArgs(args));
-                instances.set(pid, instance);
-                debugger;
+                ns.instances.set(pid, instance);
                 return {
                     success: true,
                     pid,
@@ -83,7 +83,7 @@
 
 
     function wrapExportFn(fn) {
-        return async function(pid, ...args) {
+        return async function({pid, args}) {
             try {
                 const result = await fn.apply(this, decodeArgs(args));
                 return {
@@ -99,27 +99,13 @@
     }
 
 
-    ns.Proxy = class Proxy {};
+    ns.Proxy = class Proxy {
+        constructor() {
+        }
+    };
 
 
     ns.Eventing = class Eventing extends ns.Proxy {
-
-        constructor() {
-            super();
-            this._listeners = new Map();
-        }
-
-        addEventListener(name, callback) {
-            if (!this._listeners.has(name)) {
-                this._listeners.set(name, new Set());
-            }
-            this._listeners.get(name).add(callback);
-        }
-
-        removeEventListener(name, callback) {
-            this._listeners.get(name).delete(callback);
-        }
-
         dispatchEvent(name, data) {
             throw 'TBD';
         }
