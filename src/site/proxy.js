@@ -116,7 +116,6 @@ sauce.ns('proxy', ns => {
                     cb.call(this, proxyEvent);
                 }
             }
-
         }
     }
 
