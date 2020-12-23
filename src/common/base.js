@@ -732,4 +732,76 @@ self.sauceBaseInit = function sauceBaseInit() {
     sauce.cache = {
         TTLCache
     };
+
+
+    function rgb2hsl(r, g, b) {
+        // Credit to Jon Kantner (https://css-tricks.com/converting-color-spaces-in-javascript/)
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        const cmin = Math.min(r, g, b);
+        const cmax = Math.max(r, g, b);
+        const delta = cmax - cmin;
+        let h = 0;
+        let s = 0;
+        let l = 0;
+        if (delta) {
+            if (cmax === r) {
+                h = ((g - b) / delta) % 6;
+            } else if (cmax === g) {
+                h = ((b - r) / delta) + 2;
+            } else {
+                h = ((r - g) / delta) + 4;
+            }
+        }
+        h = Math.round(h * 60);
+        if (h < 0) {
+            h += 360;
+        }
+        l = (cmax + cmin) / 2;
+        s = !delta ? 0 : delta / (1 - Math.abs(2 * l - 1));
+        s = +(s * 100).toFixed(1);
+        l = +(l * 100).toFixed(1);
+        return [h, s, l];
+    }
+
+    function hsl2rgb(h, s, l) {
+        // Credit to: Garry Tan (https://axonflux.com/handy-rgb-to-hsl-and-rgb-to-hsv-color-model-c)
+        let r;
+        let g;
+        let b;
+        if (!s) {
+            r = g = b = l;
+        } else {
+            const hue2rgb = (p, q, t) => {
+                if (t < 0) {
+                    t += 1;
+                }
+                if (t > 1) {
+                    t -= 1;
+                }
+                if (t < 1 / 6) {
+                    return p + (q - p) * 6 * t;
+                }
+                if (t < 1 / 2) {
+                    return q;
+                }
+                if (t < 2 / 3) {
+                    return p + (q - p) * (2/3 - t) * 6;
+                }
+                return p;
+            };
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1/3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1/3);
+        }
+        return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    }
+
+    sauce.color = {
+        rgb2hsl,
+        hsl2rgb,
+    };
 };
