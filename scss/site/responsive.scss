@@ -515,8 +515,29 @@ html.sauce-responsive,
         }
 
         footer.achievements.row {
+            display: flex;
+            align-items: center;
+
+            &::before {
+                content: initial;
+                display: none;
+            }
+
+            > * {
+                float: none;
+            }
+
             .footer-achievements-title {
                 background-origin: content-box;
+                padding: 0.6em;
+
+                h2, h3, h4 {
+                    font-size: 1.1em;
+                }
+            }
+
+            .footer-achievements-list {
+                margin-bottom: 0;
             }
         }
     }
