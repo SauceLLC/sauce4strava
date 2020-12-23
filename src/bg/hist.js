@@ -608,33 +608,13 @@ sauce.ns('hist', async ns => {
 
 
     class SyncManager extends sauce.proxy.Eventing {
-        a(arg) {
-            console.error("It's alive", arg);
-            debugger;
+        constructor(...args) {
+            super();
+            console.warn("I MaDE it", args);
         }
-        *genTest(arg) {
-            console.error("It's alive", arg);
-            debugger;
-            yield 1;
-            yield 2;
-        }
-        async *asyncGenTest(arg) {
-            console.error("It's alive", arg);
-            debugger;
-            yield 1;
-            yield 2;
-        }
-        *[Symbol.iterator]() {
-            console.error("It's alive");
-            debugger;
-            yield 1;
-            yield 2;
-        }
-        async *[Symbol.asyncIterator]() {
-            console.error("It's alive");
-            debugger;
-            yield 1;
-            yield 2;
+
+        a(...args) {
+            return Math.random();
         }
     }
     sauce.proxy.export(SyncManager, {namespace});

@@ -27,10 +27,12 @@
 
     browser.runtime.onConnect.addListener(port => {
         if (port.name !== 'sauce-proxy-port') {
-            debugger;
+            console.warn("Unexpected extension port usage");
             return;
         }
         const onEstablish = async data => {
+            // The first message is the invocation, after that it's up
+            // to the user how the port is used.
             port.onMessage.removeListener(onEstablish);
             data.port = port;
             port.postMessage(await invoke(data, port.sender));

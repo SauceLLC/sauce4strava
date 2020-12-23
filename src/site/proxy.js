@@ -29,7 +29,7 @@ sauce.ns('proxy', ns => {
             if (desc.isClass) {
                 callable = buildProxyClass(name, desc);
             } else {
-                callable = (...args) => extCall({desc}, ...args);
+                callable = (...args) => extCall({desc}, args);
             }
             offt[name] = callable;
         }
@@ -41,19 +41,54 @@ sauce.ns('proxy', ns => {
     }
 
 
-    class Proxy {
+    class ProxyClient {
+
         constructor(desc, ...args) {
-            console.log("made one", desc);
+            this._inflight = new Map();
             const channel = new MessageChannel();
             this._port = channel.port1;
-            extCall({desc, port: channel.port2}, ...args).then(x => {
-                debugger;
+            this._port.addEventListener('message', this._onPortMessage.bind(this));
+            this._port.start();
+            this._instantiated = extCall({desc, port: channel.port2}, args);
+        }
+
+        async _extMethodCall(call, nativeArgs) {
+            await this._instantiated;
+            return await new Promise((resolve, reject) => {
+                const pid = proxyId++;
+                this._inflight.set(pid, {resolve, reject});
+                this._port.postMessage({
+                    pid,
+                    desc: {call},
+                    args: encodeArgs(nativeArgs),
+                    type: 'sauce-proxy-request'
+                });
             });
+        }
+
+        _onPortMessage(ev) {
+            if (!ev.data || ev.data.type !== 'sauce-proxy-response') {
+                throw new Error('Proxy Protocol Violation [CONTENT] [RESP]!');
+            }
+            const pid = ev.data.pid;
+            const {resolve, reject} = this._inflight.get(pid);
+            this._inflight.delete(pid);
+            if (ev.data.success === true) {
+                resolve(ev.data.result);
+            } else if (ev.data.success === false) {
+                const {name, stack, message} = ev.data.result;
+                const EClass = issubclass(self[name], Error) ? self[name] : Error;
+                const e = new EClass(message);
+                e.stack = stack;
+                reject(e);
+            } else {
+                throw new TypeError("Proxy Protocol Violation [DATA]");
+            }
         }
     }
 
 
-    class EventingProxy extends Proxy {
+    class EventingProxyClient extends ProxyClient {
         constructor(...args) {
             super(...args);
             this._listeners = new Map();
@@ -69,11 +104,26 @@ sauce.ns('proxy', ns => {
         removeEventListener(name, callback) {
             this._listeners.get(name).delete(callback);
         }
+
+        _onPortMessage(ev) {
+            if (!ev.data || ev.data.type !== 'sauce-proxy-event') {
+                return super._onPortMessage(ev);
+            }
+            if (this._listeners.has(ev.data.event)) {
+                const proxyEvent = new Event(ev.data.event);
+                proxyEvent.data = ev.data.data;
+                for (const cb of this._listeners.get(ev.data.event)) {
+                    cb.call(this, proxyEvent);
+                }
+            }
+
+        }
     }
 
 
     function buildProxyClass(name, desc) {
-        const SuperClass = desc.eventing ? EventingProxy : Proxy;
+        const SuperClass = desc.eventing ? EventingProxyClient : ProxyClient;
+
         class Proxied extends SuperClass {
             constructor(...args) {
                 super(desc, ...args);
@@ -83,16 +133,17 @@ sauce.ns('proxy', ns => {
                 return name;
             }
         }
+
         for (const x of desc.methods) {
-            Proxied.prototype[x] = () => {
-                debugger;
+            Proxied.prototype[x] = function(...args) {
+                return this._extMethodCall(x, args);
             };
         }
         return Proxied;
     }
 
 
-    async function extCall({desc, port}, ...nativeArgs) {
+    async function extCall({desc, port}, nativeArgs) {
         if (!_connected) {
             await ns.connected();
         }
@@ -104,7 +155,6 @@ sauce.ns('proxy', ns => {
                 desc,
                 args: encodeArgs(nativeArgs),
                 type: 'sauce-proxy-request',
-                extId: sauce.extId,
                 port
             }, port && [port]);
         });
@@ -121,8 +171,7 @@ sauce.ns('proxy', ns => {
         const respPort = await new Promise((resolve, reject) => {
             function onMessageEstablishChannelAck(ev) {
                 reqPort.removeEventListener('message', onMessageEstablishChannelAck);
-                if (!ev.data || ev.data.extId !== sauce.extId ||
-                    ev.data.type !== 'sauce-proxy-establish-channel-ack') {
+                if (!ev.data || ev.data.type !== 'sauce-proxy-establish-channel-ack') {
                     reject(new Error('Proxy Protocol Violation [CONTENT] [ACK]!'));
                     return;
                 }
@@ -134,7 +183,6 @@ sauce.ns('proxy', ns => {
             reqPort.start();
             self.postMessage({
                 type: 'sauce-proxy-establish-channel',
-                extId: sauce.extId,
                 requestPort: reqChannel.port2
             }, self.origin, [reqChannel.port2]);
         });
@@ -149,7 +197,7 @@ sauce.ns('proxy', ns => {
 
     async function initResponseBroker(port) {
         port.addEventListener('message', ev => {
-            if (!ev.data || ev.data.extId !== sauce.extId || ev.data.type !== 'sauce-proxy-response') {
+            if (!ev.data || ev.data.type !== 'sauce-proxy-response') {
                 throw new Error('Proxy Protocol Violation [CONTENT] [RESP]!');
             }
             if (ev.data.success === true) {
