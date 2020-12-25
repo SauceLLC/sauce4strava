@@ -1570,7 +1570,7 @@ sauce.ns('geo', function(ns) {
 });
 
 
-sauce.ns('research', function() {
+sauce.ns('perf', function() {
     'use strict';
 
     let actsStore;
@@ -1718,7 +1718,96 @@ sauce.ns('research', function() {
         return results;
     }
 
+
+    async function fetchSelfFTPs() {
+        const resp = await fetch("https://www.strava.com/settings/performance");
+        const raw = await resp.text();
+        return JSON.parse(raw.match(/all_ftps = (\[.*\]);/)[1]);
+    }
+
+
+    async function fetchHRZones(activity) {
+        const resp = await fetch(`https://www.strava.com/activities/${activity}/heartrate_zones`);
+        const data = await resp.json();
+        const zones = {};
+        for (const x of data.distribution_buckets) {
+            if (x.max > 0) {
+                zones[x.tag] = x.max;
+            }
+        }
+        return zones;
+    }
+
+
+    async function fetchPaceZones(activity) {
+        const resp = await fetch(`https://www.strava.com/activities/${activity}/pace_zones`);
+        const data = await resp.json();
+        const zones = {};
+        let z = 1;
+        for (const x of data) {
+            if (x.max > 0) {
+                zones[`z${z++}`] = x.max;
+            }
+        }
+        return zones;
+    }
+
+
+    function calcTRIMP(duration, hrr, gender) {
+        const y = hrr * (gender === 'female' ? 1.67 : 1.92);
+        return (duration / 60) * hrr * 0.64 * Math.exp(y);
+    }
+
+
+    /* TRIMP based TSS, more accurate than hrTSS.
+     * See: https://fellrnr.com/wiki/TRIMP
+     */
+    function tTSS(hrStream, timeStream, movingStream, ltHR, minHR, maxHR, gender) {
+        gender = 'female';
+        let t = 0;
+        let lastTime = timeStream[0];
+        for (let i = 1; i < timeStream.length; i++) {
+            if (!movingStream[i]) {
+                lastTime = timeStream[i];
+                continue;
+            }
+            const dur = timeStream[i] - lastTime;
+            lastTime = timeStream[i];
+            const hrr = (hrStream[i] - minHR) / (maxHR - minHR);
+            t += calcTRIMP(dur, hrr, gender);
+        }
+        const tHourAtLT = calcTRIMP(3600, (ltHR - minHR) / (maxHR - minHR), gender);
+        const tTSS = (t / tHourAtLT) * 100;
+        return tTSS;
+    }
+
+
+    function estimateRestingHR(ftp) {
+        // Use handwavy assumption that high FTP = low resting HR.
+        const baselineW = 300;
+        const baselineR = 50;
+        const range = 20;
+        const delta = ftp - baselineW;
+        const diff = range * (delta / baselineW);
+        return baselineR - diff;
+    }
+
+
+    function estimateMaxHR(zones) {
+        // Estimate max from inner zone ranges.
+        const avgRange = ((zones.z4 - zones.z3) + (zones.z3 - zones.z2)) / 2;
+        return zones.z4 + avgRange;
+    }
+
+
     return {
-        findPeaks
+        findPeaks,
+        fetchSelfFTPs,
+        fetchHRZones,
+        fetchPaceZones,
+        calcTRIMP,
+        tTSS,
+        estimateRestingHR,
+        estimateMaxHR,
     };
 });

@@ -55,7 +55,8 @@
         .icon-employee):not(
         .icon-badge-employee):not(
         .icon-pro):not(
-        .kudoed) {
+        .kudoed):not(
+        .icon-local-legend) {
             filter: invert(1);
         }
     }

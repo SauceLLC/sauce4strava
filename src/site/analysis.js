@@ -2338,7 +2338,8 @@ sauce.ns('analysis', ns => {
 
 
     function supportsWeightedPower() {
-        return ctx.activityType === 'ride' && !!_getStream('watts');
+        return (ctx.activityType === 'ride' && !!_getStream('watts')) ||
+            (ctx.activityType === 'run' && !!_getStream('watts_calc'));
     }
 
 
