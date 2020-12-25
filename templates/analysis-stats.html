@@ -116,7 +116,13 @@
                 <key>TSS®</key>
                 <value>{{formatNumber(energy.tss, 0)}}</value>
             </line>
+        <% } else if (energy.tTss) { %>
+            <line title="{{{trimp_tss_tooltip}}}">
+                <key>tTSS®</key>
+                <value>{{formatNumber(energy.tTss, 0)}}</value>
+            </line>
         <% } %>
+
 
         <% if (energy.intensity) { %>
             <line title="{{{intensity_tooltip}}}">

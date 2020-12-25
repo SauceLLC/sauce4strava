@@ -619,6 +619,18 @@ sauce.ns('analysis', ns => {
     }
 
 
+    const _hrZonesCache = new sauce.cache.TTLCache('hr-zones', 1 * 86400 * 1000);
+    async function getHRZones() {
+        const zonesEntry = await _hrZonesCache.getEntry(ctx.athlete.id);
+        if (!zonesEntry) {
+            const zones = await sauce.perf.fetchHRZones(pageView.activity().id);
+            await _hrZonesCache.set(ctx.athlete.id, zones);
+            return zones;
+        }
+        return zonesEntry.value;
+    }
+
+
     async function startActivity() {
         const realWattsStream = await fetchStream('watts');
         const timeStream = await fetchStream('time');
@@ -671,7 +683,7 @@ sauce.ns('analysis', ns => {
                     }
                 }
             } else {
-                const zones = await sauce.perf.fetchHRZones(pageView.activity().id); // XXX cache
+                const zones = await getHRZones();
                 if (zones) {
                     const ltHR = (zones.z4 + zones.z3) / 2;
                     const movingStream = await fetchStream('moving');
@@ -2382,24 +2394,36 @@ sauce.ns('analysis', ns => {
         };
         if (correctedPower) {
             const kj = correctedPower.kj();
-            const np = hasAccurateWatts() && correctedPower.np();
-            const xp = hasAccurateWatts() && correctedPower.xp();
-            tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np, xp});
-            let tss;
-            let intensity;
-            if (ctx.ftp) {
-                if (np) {
-                    tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
-                    intensity = np / ctx.ftp;
-                } else {
-                    tss = sauce.power.calcTSS(tplData.power.activeAvg, activeTime, ctx.ftp);
-                    intensity = tplData.power.activeAvg / ctx.ftp;
+            let tss, tTss, intensity;
+            tplData.power = powerData(kj, activeTime, elapsedTime, altStream);
+            if (hasAccurateWatts()) {
+                const np = tplData.power.np = correctedPower.np();
+                tplData.power.xp = correctedPower.xp();
+                if (ctx.ftp) {
+                    if (np) {
+                        tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
+                        intensity = np / ctx.ftp;
+                    } else {
+                        tss = sauce.power.calcTSS(tplData.power.activeAvg, activeTime, ctx.ftp);
+                        intensity = tplData.power.activeAvg / ctx.ftp;
+                    }
+                }
+            } else {
+                const zones = await getHRZones();
+                if (zones) {
+                    const ltHR = (zones.z4 + zones.z3) / 2;
+                    const movingStream = await fetchStream('moving', start, end);
+                    const hrStream = await fetchStream('heartrate', start, end);
+                    const maxHR = sauce.perf.estimateMaxHR(zones);
+                    const restingHR = ctx.ftp ? sauce.perf.estimateRestingHR(ctx.ftp) : 60;
+                    tTss = sauce.perf.tTSS(hrStream, timeStream, movingStream, ltHR, restingHR, maxHR, ctx.gender);
                 }
             }
             tplData.energy = {
                 kj,
                 kjHour: (kj / activeTime) * 3600,
                 tss,
+                tTss,
                 intensity
             };
         }

@@ -1740,7 +1740,6 @@ sauce.ns('perf', function() {
         return hasZones ? zones : undefined;
     }
 
-    _hrZonesCache = new sauce.cache.TTLCache('hr-zones', 1 * 86400 * 1000);
     async function getHRZones(athlete, activity) {
         // The zones APIs are tied to activiites but they are fixed for HR so just use athlete. 
         //  XXX
