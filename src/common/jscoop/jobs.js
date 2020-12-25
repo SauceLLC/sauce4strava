@@ -296,7 +296,7 @@ export class RateLimiter {
 
     async _sleep(ms) {
         this._sleeping = true;
-        this._resumes = Date.now + ms;
+        this._resumes = Date.now() + ms;
         try {
             await new Promise(resolve => setTimeout(resolve, ms));
         } finally {
