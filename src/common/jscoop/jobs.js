@@ -240,7 +240,7 @@ export class RateLimiter {
         try {
             await this._init;
             await this._wait();
-            await this._increment();
+            await this.increment();
         } finally {
             this._lock.release();
         }
@@ -284,7 +284,10 @@ export class RateLimiter {
         await this._saveState();
     }
 
-    async _increment() {
+    /**
+     * Increment usage by 1
+     */
+    async increment() {
         if (Date.now() - this.state.first > this.spec.period || this.state.count >= this.spec.limit) {
             this.state.count = 1;
             this.state.first = Date.now();
@@ -366,10 +369,17 @@ export class RateLimiterGroup extends Array {
         try {
             await Promise.all(this.map(x => x._init));
             await Promise.all(this.map(x => x._wait()));
-            await Promise.all(this.map(x => x._increment()));
+            await Promise.all(this.map(x => x.increment()));
         } finally {
             this._lock.release();
         }
+    }
+
+    /**
+     * Increment usage by 1 for all the rate limiters in this group.
+     */
+    async increment() {
+        await Promise.all(this.map(x => x.increment()));
     }
 
     /**
@@ -394,18 +404,6 @@ export class RateLimiterGroup extends Array {
         }
         return ts;
     }
-
-    async wait() {
-        await this._lock.acquire();
-        try {
-            await Promise.all(this.map(x => x._init));
-            await Promise.all(this.map(x => x._wait()));
-            await Promise.all(this.map(x => x._increment()));
-        } finally {
-            this._lock.release();
-        }
-    }
-
 }
 
 
