@@ -84,16 +84,17 @@ sauce.ns('hist', async ns => {
 
 
     // We must stay within API limits;  Roughy 40/min, 300/hour and 1000/day...
+    let streamRateLimiterGroup;
     const getStreamRateLimiterGroup = (function() {
-        let group;
         return function() {
-            if (!group) {
-                group = new jobs.RateLimiterGroup();
-                group.push(new SauceRateLimiter('streams-min', {period: (60 + 5) * 1000, limit: 30, spread: true}));
-                group.push(new SauceRateLimiter('streams-hour', {period: (3600 + 500) * 1000, limit: 200}));
-                group.push(new SauceRateLimiter('streams-day', {period: (86400 + 3600) * 1000, limit: 700}));
+            if (!streamRateLimiterGroup) {
+                const g = new jobs.RateLimiterGroup();
+                g.push(new SauceRateLimiter('streams-min', {period: (60 + 5) * 1000, limit: 30, spread: true}));
+                g.push(new SauceRateLimiter('streams-hour', {period: (3600 + 500) * 1000, limit: 200}));
+                g.push(new SauceRateLimiter('streams-day', {period: (86400 + 3600) * 1000, limit: 700}));
+                streamRateLimiterGroup = g;
             }
-            return group;
+            return streamRateLimiterGroup;
         };
     })();
 
@@ -423,7 +424,7 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function syncStreams(athlete) {
+    async function _syncStreams(athlete) {
         const filter = c => !c.value.noStreams;
         const activities = await actsStore.getAllForAthlete(athlete, {filter});
         const outstanding = new Set(activities.map(x => x.id));
@@ -455,6 +456,18 @@ sauce.ns('hist', async ns => {
             }
         }
         console.info("Completed activities fetch/sync");
+    }
+
+
+    const activeStreamSyncs = new Map();
+    async function syncStreams(athlete) {
+        let p = activeStreamSyncs.get(athlete);
+        if (!p) {
+            p = _syncStreams(athlete);
+            activeStreamSyncs.set(athlete, p);
+            p.finally(() => activeStreamsSyncs.delete(p));
+        }
+        await p;
     }
     sauce.proxy.export(syncStreams, {namespace});
 
@@ -608,17 +621,33 @@ sauce.ns('hist', async ns => {
 
 
     class SyncManager extends sauce.proxy.Eventing {
-        constructor(...args) {
-            super();
-            console.warn("I MaDE it", args);
+        activeStreamSyncs() {
+            if (activeStreamSyncs) {
+                return [...activeStreamSyncs.keys()];
+            }
         }
 
-        a(...args) {
-            return Math.random();
+        rateLimiterResumes() {
+            if (streamRateLimiterGroup) {
+                return streamRateLimiterGroup.resumes();
+            }
+        }
+
+        async athletes() {
+            return await streamsStore.getAthletes();
+        }
+
+        async fetchedActivities(athlete) {
+            // XXX look for activities we know to skip because no streams exist and claim credit for having tried.
+            return await streamsStore.getCountForAthlete(athlete, 'time');
+        }
+
+        async availableActivities(athlete) {
+            return await actsStore.getCountForAthlete(athlete);
         }
     }
     sauce.proxy.export(SyncManager, {namespace});
-    
+
 
     return {
         importStreams,
@@ -629,5 +658,6 @@ sauce.ns('hist', async ns => {
         findPeaks,
         streamsStore,
         actsStore,
+        SyncManager,
     };
 });

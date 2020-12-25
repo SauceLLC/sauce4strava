@@ -340,6 +340,15 @@ self.sauceBaseInit = function sauceBaseInit() {
             return await this._request(store.delete(key));
         }
 
+        async count(query, options={}) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const store = this._getStore();
+            const ifc = options.index ? store.index(options.index) : store;
+            return await this._request(ifc.count(query));
+        }
+
         async *values(query, options={}) {
             for await (const c of this.cursor(query, options)) {
                 yield c.value;
@@ -360,7 +369,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             const ifc = options.index ? store.index(options.index) : store;
             const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
             const direction = options.reverse ? 'prev' : 'next';
-            const req = curFunc.call(ifc, query, direction);
+            const uniqueSuffix = options.unique ? 'unique' : '';
+            const req = curFunc.call(ifc, query, direction + uniqueSuffix);
             let resolve;
             let reject;
             // Callbacks won't invoke until we release control of the event loop, so this is safe..
@@ -481,6 +491,21 @@ self.sauceBaseInit = function sauceBaseInit() {
                 yield x[0];
             }
         }
+
+        async getCountForAthlete(athlete, stream='time') {
+            // Every real activity has a time stream, so look for just this one.
+            const q = IDBKeyRange.only([athlete, stream]);
+            return await this.count(q, {index: 'athlete-stream'});
+        }
+
+        async getAthletes(...args) {
+            const athletes = [];
+            const q = IDBKeyRange.bound(-Infinity, Infinity);
+            for await (const x of this.values(q, {unique: true, index: 'athlete'})) {
+                athletes.push(x.athlete);
+            }
+            return athletes;
+        }
     }
 
 
@@ -510,6 +535,11 @@ self.sauceBaseInit = function sauceBaseInit() {
                 activities.push(x);
             }
             return activities;
+        }
+
+        async getCountForAthlete(athlete) {
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            return await this.count(q, {index: 'athlete-ts'});
         }
 
         async firstForAthlete(athlete) {
