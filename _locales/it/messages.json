@@ -109,6 +109,9 @@
     "analysis_tss_tooltip": {
         "message": "Training Stress Score®: un indicatore di carico di stress basato sulla potenza"
     },
+    "analysis_trimp_tss_tooltip": {
+        "message": "TRIMP (TRaining IMPulse) basato su Training Stress Score®: un indicatore del carico di stress basato sulla riserva della frequenza cardiaca"
+    },
     "analysis_start_of_effort_tooltip": {
         "message": "Tempo compensato all'inizio di questo sforzo"
     },

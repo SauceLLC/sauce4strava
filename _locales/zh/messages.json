@@ -107,6 +107,9 @@
     "analysis_tss_tooltip": {
         "message": "训练压力评分®：基于功率的压力负荷指示器"
     },
+    "analysis_trimp_tss_tooltip": {
+        "message": "基于TRIMP（过渡冲动）的Training StressScore®：基于心率储备的压力负荷指标"
+    },
     "analysis_start_of_effort_tooltip": {
         "message": "开始工作的时间偏移"
     },

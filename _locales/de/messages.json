@@ -106,6 +106,9 @@
     "analysis_tss_tooltip": {
         "message": "Training Stress Score®: Ein leistungsbasierter Stresslastindikator"
     },
+    "analysis_trimp_tss_tooltip": {
+        "message": "TRIMP (TRaining IMPulse) -basierter Trainingsstress-Score®: Ein auf der Herzfrequenzreserve basierender Stressbelastungsindikator"
+    },
     "analysis_start_of_effort_tooltip": {
         "message": "Zeitversatz bis zum Beginn dieser Bemühungen"
     },
