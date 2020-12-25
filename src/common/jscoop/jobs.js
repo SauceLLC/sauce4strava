@@ -205,6 +205,8 @@ export class RateLimiter {
         this.spec = spec;
         this._lock = new Lock();
         this._init = this._loadState();
+        this._sleeping = false;
+        this._resumes = null;
     }
 
     /**
@@ -244,6 +246,21 @@ export class RateLimiter {
         }
     }
 
+    /**
+     * @returns {boolean}
+     */
+    sleeping() {
+        return this._sleeping;
+    }
+
+    /**
+     * @returns {Number} Date milliseconds when a sleeping limiter will
+     *                   wake.
+     */
+    resumes() {
+        return this._resumes;
+    }
+
     async _wait() {
         if (!this.state.first || Date.now() - this.state.first > this.spec.period) {
             return;
@@ -277,8 +294,15 @@ export class RateLimiter {
         await this._saveState();
     }
 
-    _sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    async _sleep(ms) {
+        this._sleeping = true;
+        this._resumes = Date.now + ms;
+        try {
+            await new Promise(resolve => setTimeout(resolve, ms));
+        } finally {
+            this._sleeping = false;
+            this._resumes = null;
+        }
     }
 
     toString() {
