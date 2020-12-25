@@ -1728,7 +1728,13 @@ sauce.ns('perf', function() {
 
     async function fetchHRZones(activity) {
         const resp = await fetch(`https://www.strava.com/activities/${activity}/heartrate_zones`);
+        if (!resp.ok) {
+            return;
+        }
         const data = await resp.json();
+        if (!data || !data.distribution_buckets) {
+            return;
+        }
         const zones = {};
         let hasZones;
         for (const x of data.distribution_buckets) {
@@ -1740,14 +1746,12 @@ sauce.ns('perf', function() {
         return hasZones ? zones : undefined;
     }
 
-    async function getHRZones(athlete, activity) {
-        // The zones APIs are tied to activiites but they are fixed for HR so just use athlete. 
-        //  XXX
-    }
-
 
     async function fetchPaceZones(activity) {
         const resp = await fetch(`https://www.strava.com/activities/${activity}/pace_zones`);
+        if (!resp.ok) {
+            return;
+        }
         const data = await resp.json();
         const zones = {};
         let z = 1;
