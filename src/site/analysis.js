@@ -648,28 +648,40 @@ sauce.ns('analysis', ns => {
                 wattsStream = await fetchStream('watts_calc');
             }
         }
-        let tss, np, intensity, power;
+        let tss, tTss, np, intensity, power;
         if (wattsStream) {
             if (supportsSeaPower()) {
                 makeWattsSeaLevelStream(wattsStream, altStream);
             }
-            const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-            if (corrected) {
-                power = corrected.kj() * 1000 / activeTime;
-                np = supportsWeightedPower() ? corrected.np() : null;
-                if (ctx.ftp) {
-                    if (np) {
-                        // Calculate TSS based on elapsed time when NP is being used.
-                        tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
-                        intensity = np / ctx.ftp;
-                    } else {
-                        // Calculate TSS based on active time when just avg is available.
-                        tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
-                        intensity = power / ctx.ftp;
+            if (hasAccurateWatts()) {
+                const corrected = sauce.power.correctedPower(timeStream, wattsStream);
+                if (corrected) {
+                    power = corrected.kj() * 1000 / activeTime;
+                    np = hasAccurateWatts() ? corrected.np() : null;
+                    if (ctx.ftp) {
+                        if (np) {
+                            // Calculate TSS based on elapsed time when NP is being used.
+                            tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
+                            intensity = np / ctx.ftp;
+                        } else {
+                            // Calculate TSS based on active time when just avg is available.
+                            tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
+                            intensity = power / ctx.ftp;
+                        }
                     }
+                }
+            } else {
+                const zones = await sauce.perf.fetchHRZones(pageView.activity().id); // XXX cache
+                if (zones) {
+                    const ltHR = (zones.z4 + zones.z3) / 2;
+                    const movingStream = await fetchStream('moving');
+                    const maxHR = sauce.perf.estimateMaxHR(zones);
+                    const restingHR = ctx.ftp ? sauce.perf.estimateRestingHR(ctx.ftp) : 60;
+                    tTss = sauce.perf.tTSS(hrStream, timeStream, movingStream, ltHR, restingHR, maxHR, ctx.gender);
                 }
             }
         }
+
         assignTrailforksToSegments().catch(sauce.ga.reportError);
         renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
@@ -680,6 +692,7 @@ sauce.ns('analysis', ns => {
             ftpOrigin: ctx.ftpOrigin,
             intensity,
             tss,
+            tTss,
             np,
             power,
         }).catch(sauce.ga.reportError);
@@ -687,7 +700,7 @@ sauce.ns('analysis', ns => {
             const menu = [/*locale keys*/];
             if (wattsStream) {
                 menu.push('peak_power');
-                if (!isWattEstimate && supportsWeightedPower()) {
+                if (hasAccurateWatts()) {
                     menu.push('peak_np');
                     menu.push('peak_xp');
                 }
@@ -2337,9 +2350,9 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function supportsWeightedPower() {
-        return (ctx.activityType === 'ride' && !!_getStream('watts')) ||
-            (ctx.activityType === 'run' && !!_getStream('watts_calc'));
+    function hasAccurateWatts() {
+        // Only trust real watts and watts_calc for runs.  Rides esp are very inaccurate.
+        return !!_getStream('watts') || (ctx.activityType === 'run' && !!_getStream('watts_calc'));
     }
 
 
@@ -2369,8 +2382,8 @@ sauce.ns('analysis', ns => {
         };
         if (correctedPower) {
             const kj = correctedPower.kj();
-            const np = supportsWeightedPower() && correctedPower.np();
-            const xp = supportsWeightedPower() && correctedPower.xp();
+            const np = hasAccurateWatts() && correctedPower.np();
+            const xp = hasAccurateWatts() && correctedPower.xp();
             tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np, xp});
             let tss;
             let intensity;

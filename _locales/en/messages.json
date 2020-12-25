@@ -34,6 +34,7 @@
     "analysis_grade_tooltip": {"message": "Grade of hill"},
     "analysis_vam_tooltip": {"message": "Climbing meters per hour"},
     "analysis_tss_tooltip": {"message": "Training Stress Score®: A power based stress load indicator"},
+    "analysis_trimp_tss_tooltip": {"message": "TRIMP (TRaining IMPulse) based Training Stress Score®: A heart rate reserve based stress load indicator"},
     "analysis_start_of_effort_tooltip": {"message": "Time offset to the start of this effort"},
     "analysis_wkg_tooltip": {"message": "Watts per kilogram of body weight"},
     "analysis_ranking_tooltip": {"message": "World ranking"},

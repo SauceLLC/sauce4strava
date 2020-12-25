@@ -24,7 +24,13 @@
             <strong>{{formatNumber(tss, 0)}}</strong>
             <div class="label">TSS®</div>
         </li>
+    <% } else if (obj.tTss) { %>
+        <li title="{{{trimp_tss_tooltip}}}">
+            <strong>{{formatNumber(tTss, 0)}}</strong>
+            <div class="label">tTSS®</div>
+        </li>
     <% } %>
+
 
     <div class="divider"></div>
 
