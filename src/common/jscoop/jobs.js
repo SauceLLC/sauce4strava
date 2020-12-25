@@ -371,6 +371,41 @@ export class RateLimiterGroup extends Array {
             this._lock.release();
         }
     }
+
+    /**
+     * @returns {boolean} True if any of the limiters are sleeping.
+     */
+    sleeping() {
+        return this.some(x => x.sleeping());
+    }
+
+    /**
+     * @returns {Number} When the group will resume from sleeping.
+     */
+    resumes() {
+        let ts = null; 
+        for (const x of this) {
+            if (x.sleeping()) {
+                const resumes = x.resumes();
+                if (!ts || ts < resumes) {
+                    ts = resumes;
+                }
+            }
+        }
+        return ts;
+    }
+
+    async wait() {
+        await this._lock.acquire();
+        try {
+            await Promise.all(this.map(x => x._init));
+            await Promise.all(this.map(x => x._wait()));
+            await Promise.all(this.map(x => x._increment()));
+        } finally {
+            this._lock.release();
+        }
+    }
+
 }
 
 
