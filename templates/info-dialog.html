@@ -57,13 +57,13 @@
                         <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}<abbr class="unit short">w/kg</abbr></value>
                     </row>
                 <% } %>
-                <% if (power.np && !power.estimate) { %>
+                <% if (power.np) { %>
                     <row title="{{{np_tooltip}}}">
                         <key>NP®</key>
                         <value>{{formatNumber(power.np, 0)}}<abbr class="unit short">w</abbr></value>
                     </row>
                 <% } %>
-                <% if (power.xp && !power.estimate) { %>
+                <% if (power.xp) { %>
                     <row title="{{{xp_tooltip}}}">
                         <key>xPower</key>
                         <value>{{formatNumber(power.xp, 0)}}<abbr class="unit short">w</abbr></value>

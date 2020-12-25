@@ -662,14 +662,14 @@ sauce.ns('analysis', ns => {
         }
         let tss, tTss, np, intensity, power;
         if (wattsStream) {
-            if (supportsSeaPower()) {
+            if (supportsSP()) {
                 makeWattsSeaLevelStream(wattsStream, altStream);
             }
             if (hasAccurateWatts()) {
                 const corrected = sauce.power.correctedPower(timeStream, wattsStream);
                 if (corrected) {
                     power = corrected.kj() * 1000 / activeTime;
-                    np = corrected.np();
+                    np = supportsNP() ? corrected.np() : null;
                     if (ctx.ftp) {
                         if (np) {
                             // Calculate TSS based on elapsed time when NP is being used.
@@ -713,11 +713,13 @@ sauce.ns('analysis', ns => {
             const menu = [/*locale keys*/];
             if (wattsStream) {
                 menu.push('peak_power');
-                if (hasAccurateWatts()) {
+                if (supportsNP()) {
                     menu.push('peak_np');
+                }
+                if (supportsXP()) {
                     menu.push('peak_xp');
                 }
-                if (supportsSeaPower()) {
+                if (supportsSP()) {
                     menu.push('peak_sp');
                 }
             }
@@ -1103,12 +1105,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function supportsSeaPower() {
-        return !isVirtual() && !!_getStream('altitude') &&
-            !!(_getStream('watts') || _getStream('watts_calc'));
-    }
-
-
     function getOverlappingSegments(start, end, threshold=0.1) {
         const segEfforts = pageView.segmentEfforts && pageView.segmentEfforts();
         if (!segEfforts) {
@@ -1193,8 +1189,8 @@ sauce.ns('analysis', ns => {
             elapsed: humanTime(elapsedTime),
             power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
                 max: sauce.data.max(correctedPower.values()),
-                np: ctx.activityType === 'ride' ? correctedPower.np() : null,
-                xp: ctx.activityType === 'ride' ? correctedPower.xp() : null,
+                np: supportsNP() ? correctedPower.np() : null,
+                xp: supportsXP() ? correctedPower.xp() : null,
                 estimate: correctedPower.isEstimate
             }),
             pace: distance && {
@@ -2341,7 +2337,7 @@ sauce.ns('analysis', ns => {
         const elapsedAvg = elapsed ? kj * 1000 / elapsed : null;
         let activeSP;
         let elapsedSP;
-        if (supportsSeaPower()) {
+        if (supportsSP()) {
             const avgEl = sauce.data.avg(altStream);
             if (avgEl >= minSeaPowerElevation) {
                 activeSP = activeAvg && sauce.power.seaLevelPower(activeAvg, avgEl);
@@ -2366,6 +2362,24 @@ sauce.ns('analysis', ns => {
     function hasAccurateWatts() {
         // Only trust real watts and watts_calc for runs.  Rides esp are very inaccurate.
         return !!_getStream('watts') || (ctx.activityType === 'run' && !!_getStream('watts_calc'));
+    }
+
+
+    function supportsNP() {
+        return hasAccurateWatts() && !sauce.options['analysis-disable-np'];
+    }
+
+
+    function supportsXP() {
+        return hasAccurateWatts() && !sauce.options['analysis-disable-xp'];
+    }
+
+
+    function supportsSP() {
+        return !sauce.options['analysis-disable-sp'] &&
+            !isVirtual() &&
+            !!_getStream('altitude') &&
+            !!(_getStream('watts') || _getStream('watts_calc'));
     }
 
 
@@ -2398,8 +2412,8 @@ sauce.ns('analysis', ns => {
             let tss, tTss, intensity;
             tplData.power = powerData(kj, activeTime, elapsedTime, altStream);
             if (hasAccurateWatts()) {
-                const np = tplData.power.np = correctedPower.np();
-                tplData.power.xp = correctedPower.xp();
+                const np = supportsNP() ? (tplData.power.np = correctedPower.np()) : null;
+                tplData.power.xp = supportsXP() ? correctedPower.xp() : null;
                 if (ctx.ftp) {
                     if (np) {
                         tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
