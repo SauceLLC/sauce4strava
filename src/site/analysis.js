@@ -669,7 +669,7 @@ sauce.ns('analysis', ns => {
                 const corrected = sauce.power.correctedPower(timeStream, wattsStream);
                 if (corrected) {
                     power = corrected.kj() * 1000 / activeTime;
-                    np = hasAccurateWatts() ? corrected.np() : null;
+                    np = corrected.np();
                     if (ctx.ftp) {
                         if (np) {
                             // Calculate TSS based on elapsed time when NP is being used.
@@ -682,15 +682,16 @@ sauce.ns('analysis', ns => {
                         }
                     }
                 }
-            } else {
-                const zones = await getHRZones();
-                if (zones) {
-                    const ltHR = (zones.z4 + zones.z3) / 2;
-                    const movingStream = await fetchStream('moving');
-                    const maxHR = sauce.perf.estimateMaxHR(zones);
-                    const restingHR = ctx.ftp ? sauce.perf.estimateRestingHR(ctx.ftp) : 60;
-                    tTss = sauce.perf.tTSS(hrStream, timeStream, movingStream, ltHR, restingHR, maxHR, ctx.gender);
-                }
+            }
+        }
+        if (!tss) {
+            const zones = await getHRZones();
+            if (zones) {
+                const ltHR = (zones.z4 + zones.z3) / 2;
+                const movingStream = await fetchStream('moving');
+                const maxHR = sauce.perf.estimateMaxHR(zones);
+                const restingHR = ctx.ftp ? sauce.perf.estimateRestingHR(ctx.ftp) : 60;
+                tTss = sauce.perf.tTSS(hrStream, timeStream, movingStream, ltHR, restingHR, maxHR, ctx.gender);
             }
         }
 
