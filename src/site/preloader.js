@@ -473,6 +473,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 cacheObj[this._cacheKey(key)] = data[key] === undefined ? null : data[key];
             }
             await _streamsCache.setObject(cacheObj);
+            setTimeout(() => sauce.hist.incrementStreamsUsage(), 100);
             return data;
         }
         async function getStreams(options) {

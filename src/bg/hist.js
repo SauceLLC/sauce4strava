@@ -8,6 +8,7 @@ sauce.ns('hist', async ns => {
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
     const queues = await sauce.getModule(extUrl + 'src/common/jscoop/queues.js');
     const futures = await sauce.getModule(extUrl + 'src/common/jscoop/futures.js');
+    const locks = await sauce.getModule(extUrl + 'src/common/jscoop/locks.js');
 
     // NOTE: If this list grows we have to re-sync!
     const syncStreamTypes = [
@@ -45,6 +46,7 @@ sauce.ns('hist', async ns => {
 
     const actsStore = new sauce.db.ActivitiesStore();
     const streamsStore = new sauce.db.StreamsStore();
+    const syncStore = new sauce.db.SyncStore();
 
 
     async function retryFetch(urn, options={}) {
@@ -97,6 +99,15 @@ sauce.ns('hist', async ns => {
             return streamRateLimiterGroup;
         };
     })();
+
+
+    async function incrementStreamsUsage() {
+        // Used for pages to indicate they used sthe streams API.  This helps
+        // keep us on top of overall stream usage better to avoid throttling.
+        const g = getStreamRateLimiterGroup();
+        await g.increment();
+    }
+    sauce.proxy.export(incrementStreamsUsage, {namespace});
 
 
     function getBaseType(activity) {
@@ -172,37 +183,6 @@ sauce.ns('hist', async ns => {
                     yield [year, m];
                 }
             }
-        }
-
-        async function fetchMonthOld(year, month) {
-            const q = new URLSearchParams();
-            q.set('interval_type', 'month');
-            q.set('chart_type', 'miles');
-            q.set('year_offset', '0');
-            q.set('interval', '' + year +  month.toString().padStart(2, '0'));
-            const resp = await retryFetch(`/athletes/${athlete}/interval?${q}`);
-            const data = await resp.text();
-            const batch = [];
-            const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
-            const ts = (new Date(`${year}-${month}`)).getTime(); // Just an approximate value for sync.
-            for (const m of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
-                const scriptish = m[1];
-                const entity = scriptish.match(/entity = \\"(.+?)\\";/);
-                if (!entity || entity[1] !== 'Activity') {
-                    continue;
-                }
-                const actAthleteId = scriptish.match(/activity_athlete = {id: \\"([0-9]+)\\"};/);
-                if (!actAthleteId || Number(actAthleteId[1]) !== athlete) {
-                    continue;
-                }
-                // NOTE: Maybe someday we can safely get more fields in there.
-                batch.push({
-                    id: Number(scriptish.match(/entity_id = \\"(.+?)\\";/)[1]),
-                    athlete,
-                    ts
-                });
-            }
-            return batch;
         }
 
         async function fetchMonth(year, month) {
@@ -328,13 +308,7 @@ sauce.ns('hist', async ns => {
                 const work = new jobs.UnorderedWorkQueue({maxPending: 25});
                 for (let i = 0; i < concurrency; i++) {
                     const [year, month] = iter.next().value;
-                    const data1 = await fetchMonth(year, month);
-                    const data2 = await fetchMonthOld(year, month);
-                    if (data1.length !== data2.length || !data1.every((x, i) => data2[i] === x)) {
-                        console.error("Fetch month methods differ!", data1, data2);
-                        debugger;
-                    }
-                    await work.put(data1);
+                    await work.put(fetchMonth(year, month));
                 }
                 let empty = 0;
                 let redundant = 0;
@@ -424,18 +398,20 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function _syncStreams(athlete) {
+    async function syncStreams(athlete, options={}) {
         const filter = c => !c.value.noStreams;
         const activities = await actsStore.getAllForAthlete(athlete, {filter});
         const outstanding = new Set(activities.map(x => x.id));
         for await (const x of streamsStore.activitiesByAthlete(athlete)) {
             outstanding.delete(x);
         }
-        if (!outstanding.size) {
+        let count = 0;
+        let remaining = outstanding.size;
+        if (!remaining) {
             console.info("All activities synchronized");
-            return;
+            return count;
         }
-        console.info(`Need to synchronize ${outstanding.size} of ${activities.length} activities...`);
+        console.info(`Need to synchronize ${remaining} of ${activities.length} activities...`);
         for (const id of outstanding) {
             try {
                 const data = await fetchAllStreams(id);
@@ -451,25 +427,20 @@ sauce.ns('hist', async ns => {
                     activity.noStreams = true;
                     await actsStore.put(activity);
                 }
+                count++;
+                if (options.onSync) {
+                    const cont = await options.onSync({id, data, count, remaining});
+                    if (cont === false) {
+                        return count;
+                    }
+                }
             } catch(e) {
                 console.warn("Fetch streams errors:", e);
             }
         }
         console.info("Completed activities fetch/sync");
     }
-
-
-    const activeStreamSyncs = new Map();
-    async function syncStreams(athlete) {
-        let p = activeStreamSyncs.get(athlete);
-        if (!p) {
-            p = _syncStreams(athlete);
-            activeStreamSyncs.set(athlete, p);
-            p.finally(() => activeStreamsSyncs.delete(p));
-        }
-        await p;
-    }
-    sauce.proxy.export(syncStreams, {namespace});
+    sauce.proxy.export(syncStreams);
 
 
     class WorkerPoolExecutor {
@@ -620,13 +591,125 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(getSelfFTPs, {namespace});
 
 
-    class SyncManager extends sauce.proxy.Eventing {
-        activeStreamSyncs() {
-            if (activeStreamSyncs) {
-                return [...activeStreamSyncs.keys()];
+    class SyncJob extends EventTarget {
+        constructor(athlete, isSelf) {
+            super();
+            this.athlete = athlete;
+            this.isSelf = isSelf;
+            this.status = 'init';
+            this.count = 0;
+        }
+
+        run() {
+            this._runPromise = this._run();
+        }
+
+        async wait() {
+            await this._runPromise;
+        }
+
+        async _run() {
+            this.status = 'activities-scan';
+            const filter = c => !c.value.noStreams;
+            const current = await actsStore.getAllForAthlete(this.athlete, {filter});
+            const syncFn = this.isSelf ? ns.syncSelfActivities : ns.syncPeerActivities;
+            const updated = await syncFn(this.athlete);
+            if (updated.length && updated.length === current.length &&
+                updated[0].id === current[0].id) {
+                console.info("No new activities to sync");
+                this.status = 'complete';
+                return;
+            }
+            this.status = 'streams-sync';
+            try {
+                await ns.syncStreams(this.athlete, {onSync: this._onStreamSync.bind(this)});
+            } catch(e) {
+                this.status = 'error';
+                throw e;
+            }
+            this.status = 'complete';
+        }
+
+        _onStreamSync(data) {
+            console.info("On sync info!", data);
+            this.count++;
+            const ev = new Event('streamSync');
+            ev.data = data;
+            this.dispatchEvent(ev);
+        }
+    }
+
+
+    class SyncManager extends EventTarget { 
+        constructor() {
+            super();
+            this.refreshInterval = 12 * 3600 * 1000;  // Or shorter with user intervention
+            this.refreshErrorBackoff = 1 * 3600 * 1000;
+            this._stopping = false;
+            this._activeJobs = new Set();
+            this._refreshRequests = new Set();
+            this._refreshEvent = new locks.Event();
+            this.refreshLoop();
+        }
+
+        async refreshLoop() {
+            let errorBackoff = 1000;
+            while (!this._stopping) {
+                try {
+                    await this._refresh();
+                } catch(e) {
+                    console.error('SyncManager refresh error:', e);
+                    sauce.ga.reportError(e);
+                    await sleep(errorBackoff *= 1.5);
+                }
+                this._refreshEvent.clear();
+                const now = Date.now();
+                let oldest = 0;
+                for await (const state of syncStore.values()) {
+                    const age = now - state.lastSync;
+                    oldest = Math.max(age, oldest);
+                }
+                const deadline = this.refreshInterval - oldest;
+                await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
             }
         }
 
+        async _refresh() {
+            for await (const state of syncStore.values()) {
+                const now = Date.now();
+                if (now - state.lastSync > this.refreshInterval ||
+                    this._refreshRequests.has(state.athlete)) {
+                    if (state.lastErrorTS && now - state.lastErrorTS < this.refreshErrorBackoff) {
+                        console.warn("Defering sync of previously failed job:", state);
+                        continue;
+                    }
+                    this._refreshRequests.delete(state.athlete);
+                    const syncJob = new SyncJob(state.athlete, state.isSelf);
+                    syncJob.addEventListener('streamsSync', ev => {
+                        ev.job = syncJob;
+                        this.dispatchEvent(ev);
+                    });
+                    this._activeJobs.add(syncJob);
+                    syncJob.run();
+                    syncJob.wait().catch(e => {
+                        console.error('Sync error occured:', e);
+                        state.lastError = e;
+                        state.lastErrorTS = Date.now();
+                    }).finally(async () => {
+                        this._activeJobs.delete(syncJob);
+                        state.lastSync = Date.now();
+                        await syncStore.put(state);
+                    });
+                }
+            }
+        }
+
+        refreshRequest(athlete) {
+            this._refreshRequests.add(athlete);
+            this._refreshEvent.set();
+        }
+
+        // suspect all the way down. ...
         rateLimiterResumes() {
             if (streamRateLimiterGroup) {
                 return streamRateLimiterGroup.resumes();
@@ -646,7 +729,13 @@ sauce.ns('hist', async ns => {
             return await actsStore.getCountForAthlete(athlete);
         }
     }
-    sauce.proxy.export(SyncManager, {namespace});
+
+    const syncManager = new SyncManager();
+
+
+    class SyncController extends sauce.proxy.Eventing {
+    }
+    sauce.proxy.export(SyncController, {namespace});
 
 
     return {
@@ -658,6 +747,9 @@ sauce.ns('hist', async ns => {
         findPeaks,
         streamsStore,
         actsStore,
+        syncStore,
         SyncManager,
+        syncManager,
+        SyncController,
     };
 });

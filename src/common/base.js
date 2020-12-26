@@ -395,7 +395,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     class HistDatabase extends Database {
         get version() {
-            return 3;
+            return 4;
         }
 
         migrate(idb, t, oldVersion, newVersion) {
@@ -413,6 +413,9 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (oldVersion < 3) {
                 const store = t.objectStore("activities");
                 store.createIndex('athlete-basetype-ts', ['athlete', 'basetype', 'ts']);
+            }
+            if (oldVersion < 4) {
+                idb.createObjectStore("sync", {keyPath: 'athlete'});
             }
         }
     }
@@ -557,12 +560,35 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
     }
 
+
+    class SyncStore extends DBStore {
+        constructor() {
+            super(histDatabase, 'sync');
+        }
+
+        async *values(...args) {
+            const q = IDBKeyRange.bound(-Infinity, Infinity);
+            for await (const x of super.values(q, ...args)) {
+                yield x;
+            }
+        }
+
+        async *keys(...args) {
+            const q = IDBKeyRange.bound(-Infinity, Infinity);
+            for await (const x of super.keys(q, ...args)) {
+                yield x;
+            }
+        }
+    }
+
+
     sauce.db = {
         Database,
         DBStore,
         HistDatabase,
         ActivitiesStore,
         StreamsStore,
+        SyncStore,
     };
 
 
