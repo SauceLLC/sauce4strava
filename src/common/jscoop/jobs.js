@@ -203,7 +203,7 @@ export class RateLimiter {
         this.version = 1;
         this.label = label;
         this.spec = spec;
-        this._lock = new Lock();
+        this._lock = new Lock();  // XXX Transition to using a Condition and monitor updates while sleeping
         this._init = this._loadState();
         this._sleeping = false;
         this._resumes = null;
@@ -240,7 +240,7 @@ export class RateLimiter {
         try {
             await this._init;
             await this._wait();
-            await this.increment();
+            await this._increment();
         } finally {
             this._lock.release();
         }
@@ -288,6 +288,11 @@ export class RateLimiter {
      * Increment usage by 1
      */
     async increment() {
+        await this._init;
+        await this._increment();
+    }
+
+    async _increment() {
         if (Date.now() - this.state.first > this.spec.period || this.state.count >= this.spec.limit) {
             this.state.count = 1;
             this.state.first = Date.now();
@@ -343,7 +348,7 @@ export class RateLimiterGroup extends Array {
 
     constructor() {
         super();
-        this._lock = new Lock();
+        this._lock = new Lock();  // XXX Transition to a Condition and monitor updates during sleep.
     }
 
     // Just return simple Array for calls like map().
@@ -369,7 +374,7 @@ export class RateLimiterGroup extends Array {
         try {
             await Promise.all(this.map(x => x._init));
             await Promise.all(this.map(x => x._wait()));
-            await Promise.all(this.map(x => x.increment()));
+            await Promise.all(this.map(x => x._increment()));
         } finally {
             this._lock.release();
         }
@@ -379,7 +384,8 @@ export class RateLimiterGroup extends Array {
      * Increment usage by 1 for all the rate limiters in this group.
      */
     async increment() {
-        await Promise.all(this.map(x => x.increment()));
+        await Promise.all(this.map(x => x._init));
+        await Promise.all(this.map(x => x._increment()));
     }
 
     /**
