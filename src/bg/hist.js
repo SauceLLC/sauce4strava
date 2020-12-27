@@ -1,10 +1,10 @@
-/* global sauce */
+/* global sauce, browser */
 
 sauce.ns('hist', async ns => {
     'use strict';
 
     const namespace = 'hist';
-    const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
+    const extUrl = browser.runtime.getURL('');
     const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
     const queues = await sauce.getModule(extUrl + 'src/common/jscoop/queues.js');
     const futures = await sauce.getModule(extUrl + 'src/common/jscoop/futures.js');
@@ -663,7 +663,7 @@ sauce.ns('hist', async ns => {
         constructor(currentUser) {
             super();
             this.refreshInterval = 12 * 3600 * 1000;  // Or shorter with user intervention
-            this.refreshInterval = 30 * 1000;  // XXX
+            this.refreshInterval = 120 * 1000;  // XXX
             this.refreshErrorBackoff = 1 * 3600 * 1000;
             this.refreshErrorBackoff = 60 * 1000; // XXX
             this.currentUser = currentUser;
@@ -672,6 +672,8 @@ sauce.ns('hist', async ns => {
             this._refreshRequests = new Set();
             this._refreshEvent = new locks.Event();
             this.refreshLoop();
+            browser.alarms.create('SyncManagerResume', {periodInMinutes: this.refreshInterval / 60000});
+            console.error("foo");
         }
 
         stop() {
@@ -768,7 +770,6 @@ sauce.ns('hist', async ns => {
         }
 
         async deleteAthlete(athlete) {
-            await syncStore.delete(athlete);
             if (this._activeJobs.has(athlete)) {
                 const syncJob = this._activeJobs.get(athlete);
                 syncJob.cancel();
@@ -777,6 +778,7 @@ sauce.ns('hist', async ns => {
                 } catch {/*no-pragma*/}
                 this._activeJobs.delete(athlete);
             }
+            await syncStore.delete(athlete);
             this._refreshEvent.set();
         }
 
