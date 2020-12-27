@@ -273,12 +273,6 @@ self.sauceBaseInit = function sauceBaseInit() {
             return this.db.getStore(this.name, mode);
         }
 
-        async _storeCall(storeName, mode, onStore) {
-            const t = this.db.transaction(storeName, mode);
-            const store = t.objectStore(storeName);
-            return await onStore(store);
-        }
-
         async get(query, options={}) {
             if (!this.db.started) {
                 await this.db.start();
@@ -443,10 +437,6 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *manyByAthlete(athlete, streams, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
-            }
-            const store = this._getStore();
             const buffer = new Map();
             const ready = [];
             let wake;
@@ -457,7 +447,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 }
             }
             Promise.all(streams.map(async stream => {
-                for await (const entry of this.byAthlete(athlete, stream, {store})) {
+                for await (const entry of this.byAthlete(athlete, stream)) {
                     const o = buffer.get(entry.activity);
                     if (o === undefined) {
                         buffer.set(entry.activity, {[stream]: entry.data});
@@ -558,6 +548,17 @@ self.sauceBaseInit = function sauceBaseInit() {
                 return x;
             }
         }
+
+        async deleteAthlete(athlete) {
+            const deletes = [];
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            for await (const key of this.keys(q, {index: 'athlete-ts'})) {
+                deletes.push(key);
+            }
+            const store = this._getStore('readwrite');
+            await Promise.all(deletes.map(k => this._request(store.delete(k))));
+            return deletes.length;
+        }
     }
 
 
@@ -609,14 +610,14 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     class CacheStore extends DBStore {
         async purgeExpired(bucket) {
+            const deletes = [];
             const q = IDBKeyRange.bound([bucket, -Infinity], [bucket, Date.now()]);
-            const curIter = this.cursor(q, {mode: 'readwrite', index: 'bucket-expiration'});
-            let count = 0;
-            for await (const c of curIter) {
-                await this._request(c.delete());
-                count++;
+            for await (const key of this.keys(q, {index: 'bucket-expiration'})) {
+                deletes.push(key);
             }
-            return count;
+            const store = this._getStore('readwrite');
+            await Promise.all(deletes.map(k => this._request(store.delete(k))));
+            return deletes.length;
         }
     }
 

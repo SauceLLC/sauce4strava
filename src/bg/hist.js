@@ -204,6 +204,7 @@ sauce.ns('hist', async ns => {
                 'icon-walk': 'run',
                 'icon-ride': 'ride',
                 'icon-virtualride': 'ride',
+                'icon-swim': 'swim',
                 'icon-alpineski': 'ski',
                 'icon-nordicski': 'ski',
                 'icon-backcountryski': 'ski',
@@ -288,7 +289,6 @@ sauce.ns('hist', async ns => {
                     continue;
                 }
                 const id = Number(idMatch[1]);
-                console.warn({id, ts, basetype, athlete});
                 batch.push({
                     id,
                     ts,
@@ -363,14 +363,21 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(syncPeerActivities, {namespace});
 
 
-    async function fetchAllStreams(activityId) {
+    async function fetchAllStreams(activityId, {cancelEvent}) {
         const q = new URLSearchParams();
         for (const x of syncStreamTypes) {
             q.append('stream_types[]', x);
         }
         const rateLimiters = getStreamRateLimiterGroup();
         for (let i = 1;; i++) {
-            await rateLimiters.wait();
+            if (cancelEvent) {
+                await Promise.race([rateLimiters.wait(), cancelEvent.wait()]);
+                if (cancelEvent.isSet()) {
+                    return;
+                }
+            } else {
+                await rateLimiters.wait();
+            }
             console.group('Fetch All Streams: ' + activityId);
             for (const x of rateLimiters) {
                 console.info('' + x);
@@ -387,7 +394,14 @@ sauce.ns('hist', async ns => {
                 } else if (e.resp.status === 429) {
                     const delay = 60000 * i;
                     console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
-                    await sleep(delay);
+                    if (cancelEvent) {
+                        await Promise.race([sleep(delay), cancelEvent.wait()]);
+                        if (cancelEvent.isSet()) {
+                            return;
+                        }
+                    } else {
+                        await sleep(delay);
+                    }
                     console.info("Resuming after throttle period");
                     continue;
                 } else {
@@ -402,6 +416,7 @@ sauce.ns('hist', async ns => {
         const filter = c => !c.value.noStreams;
         const activities = await actsStore.getAllForAthlete(athlete, {filter});
         const outstanding = new Set(activities.map(x => x.id));
+        const cancelEvent = options.cancelEvent;
         for await (const x of streamsStore.activitiesByAthlete(athlete)) {
             outstanding.delete(x);
         }
@@ -414,7 +429,11 @@ sauce.ns('hist', async ns => {
         console.info(`Need to synchronize ${remaining} of ${activities.length} activities...`);
         for (const id of outstanding) {
             try {
-                const data = await fetchAllStreams(id);
+                const data = await fetchAllStreams(id, {cancelEvent});
+                if (cancelEvent.isSet()) {
+                    console.warn("Sync streams cancelled for:", athlete);
+                    return;
+                }
                 if (data) {
                     await streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
                         activity: id,
@@ -429,10 +448,7 @@ sauce.ns('hist', async ns => {
                 }
                 count++;
                 if (options.onSync) {
-                    const cont = await options.onSync({id, data, count, remaining});
-                    if (cont === false) {
-                        return count;
-                    }
+                    await options.onSync({id, data, count, remaining});
                 }
             } catch(e) {
                 console.warn("Fetch streams errors:", e);
@@ -598,6 +614,7 @@ sauce.ns('hist', async ns => {
             this.isSelf = isSelf;
             this.status = 'init';
             this.count = 0;
+            this._cancelEvent = new locks.Event();
         }
 
         run() {
@@ -608,21 +625,23 @@ sauce.ns('hist', async ns => {
             await this._runPromise;
         }
 
+        cancel() {
+            this._cancelEvent.set();
+        }
+
         async _run() {
             this.status = 'activities-scan';
-            const filter = c => !c.value.noStreams;
-            const current = await actsStore.getAllForAthlete(this.athlete, {filter});
             const syncFn = this.isSelf ? ns.syncSelfActivities : ns.syncPeerActivities;
-            const updated = await syncFn(this.athlete);
-            if (updated.length && updated.length === current.length &&
-                updated[0].id === current[0].id) {
-                console.info("No new activities to sync");
-                this.status = 'complete';
-                return;
-            }
+            await syncFn(this.athlete);
             this.status = 'streams-sync';
             try {
-                await ns.syncStreams(this.athlete, {onSync: this._onStreamSync.bind(this)});
+                if (Math.random() > 0.75) { // XXX
+                    throw new Error("Random Error");
+                }
+                await syncStreams(this.athlete, {
+                    cancelEvent: this._cancelEvent,
+                    onSync: this._onStreamSync.bind(this)
+                });
             } catch(e) {
                 this.status = 'error';
                 throw e;
@@ -644,8 +663,9 @@ sauce.ns('hist', async ns => {
         constructor(currentUser) {
             super();
             this.refreshInterval = 12 * 3600 * 1000;  // Or shorter with user intervention
-            this.refreshInterval = 30 * 1000;  // Or shorter with user intervention
+            this.refreshInterval = 30 * 1000;  // XXX
             this.refreshErrorBackoff = 1 * 3600 * 1000;
+            this.refreshErrorBackoff = 60 * 1000; // XXX
             this.currentUser = currentUser;
             this._stopping = false;
             this._activeJobs = new Map();
@@ -673,7 +693,7 @@ sauce.ns('hist', async ns => {
                 const now = Date.now();
                 let oldest = 0;
                 for await (const state of syncStore.values()) {
-                    if (this._activeJobs.has(state.athlete)) {
+                    if (this._isActive(state) || this._isDeferred(state)) {
                         continue;
                     }
                     const age = now - state.lastSync;
@@ -687,18 +707,22 @@ sauce.ns('hist', async ns => {
             }
         }
 
+        _isActive(state) {
+            return this._activeJobs.has(state.athlete);
+        }
+
+        _isDeferred(state) {
+            return !!state.lastErrorTS && Date.now() - state.lastErrorTS < this.refreshErrorBackoff;
+        }
+
         async _refresh() {
             for await (const state of syncStore.values()) {
-                if (this._activeJobs.has(state.athlete)) {
+                if (this._isActive(state)) {
                     continue;
                 }
                 const now = Date.now();
-                if (now - state.lastSync > this.refreshInterval ||
+                if ((now - state.lastSync > this.refreshInterval && !this._isDeferred(state)) ||
                     this._refreshRequests.has(state.athlete)) {
-                    if (state.lastErrorTS && now - state.lastErrorTS < this.refreshErrorBackoff) {
-                        console.warn("Deferring sync of previously failed job:", state);
-                        continue;
-                    }
                     this._refreshRequests.delete(state.athlete);
                     console.debug('Starting sync job for:', state.athlete);
                     const isSelf = this.currentUser === state.athlete;
@@ -727,20 +751,57 @@ sauce.ns('hist', async ns => {
             this._refreshEvent.set();
         }
 
-        // suspect all the way down. ...
+        async athletes() {
+            const athletes = [];
+            for await (const x of syncStore.values()) {
+                athletes.push(x.athlete);
+            }
+            return athletes;
+        }
+
+        async addAthlete(athlete) {
+            if (await syncStore.get(athlete)) {
+                throw new Error('Athlete already added: ' + athlete);
+            }
+            await syncStore.put({athlete, lastSync: 0, status: 'new'});
+            this._refreshEvent.set();
+        }
+
+        async deleteAthlete(athlete) {
+            await syncStore.delete(athlete);
+            if (this._activeJobs.has(athlete)) {
+                const syncJob = this._activeJobs.get(athlete);
+                syncJob.cancel();
+                try {
+                    await syncJob.wait();
+                } catch {/*no-pragma*/}
+                this._activeJobs.delete(athlete);
+            }
+            this._refreshEvent.set();
+        }
+
+        async purgeAthleteData(athlete) {
+            // Obviously use with extreme caution!
+            await actsStore.deleteAthlete(athlete);
+        }
+
         rateLimiterResumes() {
-            if (streamRateLimiterGroup) {
-                return streamRateLimiterGroup.resumes();
+            const g = streamRateLimiterGroup;
+            if (g && g.sleeping()) {
+                return streamRateLimiterGroup.resumes() - Date.now();
             }
         }
 
-        async athletes() {
-            return await streamsStore.getAthletes();
+        rateLimiterSleeping() {
+            const g = streamRateLimiterGroup;
+            return g & g.sleeping();
         }
 
         async fetchedActivities(athlete) {
-            // XXX look for activities we know to skip because no streams exist and claim credit for having tried.
-            return await streamsStore.getCountForAthlete(athlete, 'time');
+            const filter = c => c.value.noStreams;
+            const foundNoStreams = (await actsStore.getAllForAthlete(athlete, {filter})).length;
+            const found = await streamsStore.getCountForAthlete(athlete, 'time');
+            return foundNoStreams + found;
         }
 
         async availableActivities(athlete) {
