@@ -47,7 +47,7 @@
 
 
     ns.getLevel = function() {
-        const athleteId = Number(localStorage.getItem('ajs_user_id'));
+        const athleteId = Number(localStorage.getItem('sauce-last-known-user-id')) || undefined;
         if (!athleteId) {
             return 0;
         }

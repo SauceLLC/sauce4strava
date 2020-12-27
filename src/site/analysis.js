@@ -3224,6 +3224,7 @@ sauce.ns('analysis', ns => {
 
 
     async function checkForSafariUpdates() {
+        await sauce.proxy.connected;
         const latest = await sauce.storage.get('safariLatestVersion');
         if (latest) {
             const ignoring = await sauce.storage.get('safariIgnoreVersion');
@@ -3265,8 +3266,19 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function updateUserId() {
+        const lastKnown = Number(localStorage.getItem('sauce-last-known-user-id')) || undefined;
+        const currentId = pageView.currentAthlete().id;
+        if (currentId !== lastKnown) {
+            localStorage.setItem('sauce-last-known-user-id', currentId);
+            console.warn("User ID updated, a page refresh is recommened..");
+        }
+    }
+
+
     async function load() {
         await sauce.propDefined('pageView', {once: true});
+        updateUserId();
         if (sauce.options['responsive']) {
             attachMobileMenuExpander().catch(sauce.ga.reportError);
             pageView.unbindScrollListener();
