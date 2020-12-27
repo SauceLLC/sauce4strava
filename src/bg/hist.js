@@ -672,8 +672,6 @@ sauce.ns('hist', async ns => {
             this._refreshRequests = new Set();
             this._refreshEvent = new locks.Event();
             this.refreshLoop();
-            browser.alarms.create('SyncManagerResume', {periodInMinutes: this.refreshInterval / 60000});
-            console.error("foo");
         }
 
         stop() {
@@ -827,7 +825,6 @@ sauce.ns('hist', async ns => {
     class SyncController extends sauce.proxy.Eventing {
     }
     sauce.proxy.export(SyncController, {namespace});
-
 
     return {
         importStreams,

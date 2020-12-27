@@ -14,6 +14,17 @@
         await sauce.migrate.runMigrations();
     });
 
+    const setTimeoutSave = self.setTimeout;
+    self.setTimeout = (fn, ms) => {
+        const when = Date.now() + ms;
+        const r = setTimeoutSave(fn, ms);
+        browser.alarms.create(`SetTimeoutBackup-${when}`, {when});
+        return r;
+    };
+
+    // Required to make site start with alarms API
+    browser.alarms.onAlarm.addListener(() => void 0);
+
     self.currentUser = Number(localStorage.getItem('currentUser')) || undefined;
     browser.runtime.onMessage.addListener(msg => {
         if (msg && msg.source === 'ext/boot') {
@@ -29,9 +40,4 @@
             }
         }
     });
-
-    function ping(arg) {
-        return arg;
-    }
-    sauce.proxy.export(ping);
 })();
