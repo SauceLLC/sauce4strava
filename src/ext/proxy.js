@@ -5,13 +5,24 @@
 
     self.sauce = self.sauce || {};
     const ns = sauce.proxy = sauce.proxy || {};
-    const bgInit = browser.runtime.sendMessage({desc: {call: 'sauce-proxy-init'}});
+    const mainBGPort = browser.runtime.connect({name: `sauce-proxy-port`});
+    const inflight = new Map();
+
+    mainBGPort.onMessage.addListener(msg => {
+        const resolve = inflight.get(msg.pid);
+        inflight.delete(msg.pid);
+        resolve(msg);
+    });
+
+    const bgInit = new Promise(resolve => inflight.set(-1, resolve));
+    mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: -1});
 
 
     function makeBackgroundExec(desc) {
         return async function({pid, port, args}) {
             if (port) {
-                // Use port based communication where we just setup a router for events.
+                // Make a unique port for this invocation that both sides can
+                // continue to use after the call exce.
                 const bgPort = browser.runtime.connect({name: `sauce-proxy-port`});
                 port.addEventListener('message', ev => bgPort.postMessage(ev.data));
                 port.start();
@@ -23,12 +34,14 @@
                         resolve(msg);
                     };
                     bgPort.onMessage.addListener(onAck);
-                    bgPort.postMessage({desc, args, pid});
+                    bgPort.postMessage({desc, args, pid, once: true});
                 });
                 bgPort.onMessage.addListener(msg => port.postMessage(msg));
                 return response;
             } else {
-                return await browser.runtime.sendMessage({desc, args, pid});
+                const response = new Promise(resolve => inflight.set(pid, resolve));
+                mainBGPort.postMessage({desc, args, pid});
+                return await response;
             }
         };
     }
@@ -39,7 +52,7 @@
             return;
         }
         self.removeEventListener('message', onMessageEstablishChannel);
-        for (const desc of await bgInit) {
+        for (const desc of (await bgInit).exports) {
             ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
         }
         const respChannel = new MessageChannel();

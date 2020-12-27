@@ -12,7 +12,7 @@
             throw new Error("Invalid Message");
         }
         if (data.desc.call === 'sauce-proxy-init') {
-            return Array.from(ns.exports.values()).map(x => x.desc);
+            return {pid: data.pid, exports: Array.from(ns.exports.values()).map(x => x.desc)};
         }
         const entry = ns.exports.get(data.desc.call);
         if (!entry) { 
@@ -23,20 +23,18 @@
     }
 
 
-    browser.runtime.onMessage.addListener(invoke);
-
     browser.runtime.onConnect.addListener(port => {
         if (port.name !== 'sauce-proxy-port') {
             console.warn("Unexpected extension port usage");
             return;
         }
-        const onEstablish = async data => {
-            // The first message is the invocation, after that it's up
-            // to the user how the port is used.
-            port.onMessage.removeListener(onEstablish);
+        const onMessage = async data => {
+            if (data.once) {
+                port.onMessage.removeListener(onMessage);
+            }
             data.port = port;
             port.postMessage(await invoke(data, port.sender));
         };
-        port.onMessage.addListener(onEstablish);
+        port.onMessage.addListener(onMessage);
     });
 })();
