@@ -721,7 +721,7 @@ sauce.ns('hist', async ns => {
         }
 
         _isDeferred(state) {
-            return !!state.lastErrorTS && Date.now() - state.lastErrorTS < this.refreshErrorBackoff;
+            return !!state.lastError && Date.now() - state.lastError < this.refreshErrorBackoff;
         }
 
         async _refresh() {
@@ -744,8 +744,7 @@ sauce.ns('hist', async ns => {
                     syncJob.run();
                     syncJob.wait().catch(e => {
                         console.error('Sync error occurred:', e);
-                        state.lastError = e;
-                        state.lastErrorTS = Date.now();
+                        state.lastError = Date.now();
                     }).finally(async () => {
                         state.lastSync = Date.now();
                         await syncStore.put(state);
