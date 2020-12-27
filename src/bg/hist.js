@@ -809,16 +809,15 @@ sauce.ns('hist', async ns => {
         }
     }
 
-    let syncManager;
     if (self.currentUser) {
-        syncManager = new SyncManager(self.currentUser);
+        ns.syncManager = new SyncManager(self.currentUser);
     }
     addEventListener('currentUserUpdate', ev => {
-        if (syncManager && syncManager.currentUser !== ev.id) {
+        if (ns.syncManager && ns.syncManager.currentUser !== ev.id) {
             console.warn("Stopping old sync manager due to user change.");
-            syncManager.stop();
+            ns.syncManager.stop();
         }
-        syncManager = new SyncManager(ev.id);
+        ns.syncManager = new SyncManager(ev.id);
     });
 
 
@@ -837,7 +836,6 @@ sauce.ns('hist', async ns => {
         actsStore,
         syncStore,
         SyncManager,
-        syncManager,
         SyncController,
     };
 });
