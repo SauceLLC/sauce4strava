@@ -253,7 +253,7 @@ sauce.ns('hist', async ns => {
                 let ts;
                 const dateM = entry.match(/<time [^>]*?datetime=\\'(.*?)\\'/);
                 if (!dateM) {
-                    console.error("Unable to get timestamp from feed entry"); 
+                    console.error("Unable to get timestamp from feed entry");
                     debugger;
                     ts = (new Date(`${year}-${month}`)).getTime(); // Just an approximate value for sync.
                 } else {
@@ -264,7 +264,7 @@ sauce.ns('hist', async ns => {
                     for (const [, subEntry] of entry.matchAll(subEntryRegexp)) {
                         const athleteM = subEntry.match(/<a [^>]*?entry-athlete[^>]*? href=\\'\/(?:athletes|pros)\/([0-9]+)\\'/);
                         if (!athleteM) {
-                            console.error("Unable to get athlete ID from feed sub entry"); 
+                            console.error("Unable to get athlete ID from feed sub entry");
                             debugger;
                             continue;
                         }
@@ -284,7 +284,7 @@ sauce.ns('hist', async ns => {
                     idMatch = entry.match(/id=\\'Activity-([0-9]+)\\'/);
                 }
                 if (!idMatch) {
-                    console.error("Unable to get activity ID feed entry"); 
+                    console.error("Unable to get activity ID feed entry");
                     debugger;
                     continue;
                 }
@@ -659,9 +659,10 @@ sauce.ns('hist', async ns => {
     }
 
 
-    class SyncManager extends EventTarget { 
+    class SyncManager extends EventTarget {
         constructor(currentUser) {
             super();
+            console.info(`Starting Sync Manager for:`, currentUser);
             this.refreshInterval = 12 * 3600 * 1000;  // Or shorter with user intervention
             this.refreshInterval = 120 * 1000;  // XXX
             this.refreshErrorBackoff = 1 * 3600 * 1000;
@@ -671,12 +672,20 @@ sauce.ns('hist', async ns => {
             this._activeJobs = new Map();
             this._refreshRequests = new Set();
             this._refreshEvent = new locks.Event();
-            this.refreshLoop();
+            this._refreshLoop = this.refreshLoop();
         }
 
         stop() {
             this._stopping = true;
+            for (const x of this._activeJobs.values()) {
+                x.cancel();
+            }
             this._refreshEvent.set();
+        }
+
+        async join() {
+            await Promise.allSettled(Array.from(this._activeJobs.values()).map(x => x.wait()));
+            await this._refreshLoop;
         }
 
         async refreshLoop() {
@@ -701,7 +710,7 @@ sauce.ns('hist', async ns => {
                 }
                 const deadline = this.refreshInterval - oldest;
                 if (deadline > 0) {
-                    console.debug(`Suspending for ${Math.round(deadline / 1000)} seconds`);
+                    console.debug(`Next Sync Manager refresh in ${Math.round(deadline / 1000)} seconds`);
                     await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
                 }
             }
@@ -738,9 +747,9 @@ sauce.ns('hist', async ns => {
                         state.lastError = e;
                         state.lastErrorTS = Date.now();
                     }).finally(async () => {
-                        this._activeJobs.delete(state.athlete);
                         state.lastSync = Date.now();
                         await syncStore.put(state);
+                        this._activeJobs.delete(state.athlete);
                     });
                 }
             }
@@ -812,12 +821,14 @@ sauce.ns('hist', async ns => {
     if (self.currentUser) {
         ns.syncManager = new SyncManager(self.currentUser);
     }
-    addEventListener('currentUserUpdate', ev => {
+    addEventListener('currentUserUpdate', async ev => {
         if (ns.syncManager && ns.syncManager.currentUser !== ev.id) {
-            console.warn("Stopping old sync manager due to user change.");
+            console.warn("Stopping Sync Manager due to user change...");
             ns.syncManager.stop();
+            await ns.syncManager.join();
+            console.debug("Sync Manager stopped.");
         }
-        ns.syncManager = new SyncManager(ev.id);
+        ns.syncManager = ev.id ? new SyncManager(ev.id) : null;
     });
 
 

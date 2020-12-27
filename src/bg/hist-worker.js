@@ -34,5 +34,5 @@ self.addEventListener('message', async ev => {
 
 
 async function findPeaks(...args) {
-    return await sauce.research.findPeaks(...args);
+    return await sauce.perf.findPeaks(...args);
 }
