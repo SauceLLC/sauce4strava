@@ -162,7 +162,7 @@ sauce.ns('hist', async ns => {
             // before stopping.
             if (adding.length) {
                 await actsStore.putMany(adding);
-                console.info(`Synchronized ${adding.length} new activities`);
+                console.info(`Found ${adding.length} new activities`);
             } else if (activities.length >= total) {
                 break;
             }
@@ -333,7 +333,7 @@ sauce.ns('hist', async ns => {
                 }
                 if (adding.length) {
                     await actsStore.putMany(adding);
-                    console.info(`Synchronized ${adding.length} new activities`);
+                    console.info(`Found ${adding.length} new activities`);
                 } else if (empty >= minEmpty && empty >= Math.floor(concurrency)) {
                     const [year, month] = iter.next().value;
                     const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
