@@ -203,6 +203,8 @@
 
 
     async function load() {
+        const currentUser = Number(localStorage.getItem('ajs_user_id')) || undefined;
+        browser.runtime.sendMessage({source: 'ext/boot', op: 'setCurrentUser', currentUser});
         const extUrl = browser.runtime.getURL('');
         /* Using the src works but is async, this will block the page from loading while the scripts
          * are evaluated and executed, preventing race conditions in our preloader */

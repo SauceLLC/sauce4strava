@@ -1,13 +1,7 @@
-/* global ga, browser, sauce */
+/* global browser */
 
 (function() {
     'use strict';
-
-
-    function reportLifecycleEvent(action, label) {
-        ga('send', 'event', 'ExtensionLifecycle', action, label);
-    }
-
 
     browser.runtime.onInstalled.addListener(async details => {
         browser.declarativeContent.onPageChanged.removeRules(undefined, () => {
@@ -21,7 +15,5 @@
                 })],
             }]);
         });
-        reportLifecycleEvent('installed', details.reason);
-        await sauce.migrate.runMigrations();
     });
 })();
