@@ -10,7 +10,8 @@
 
     "permissions": [
         "storage",
-        "contextMenus"
+        "contextMenus",
+        "alarms"
     ],
 
     "icons": {
@@ -36,7 +37,8 @@
             "src/bg/migrate.js",
             "src/bg/menu.js",
             "src/bg/hist.js",
-            "src/bg/trailforks.js"
+            "src/bg/trailforks.js",
+            "src/bg/main_common.js"
         ]
     },
 
