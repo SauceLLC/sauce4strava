@@ -641,15 +641,22 @@ sauce.ns('hist', async ns => {
 
 
     class SyncManager extends EventTarget { 
-        constructor() {
+        constructor(currentUser) {
             super();
             this.refreshInterval = 12 * 3600 * 1000;  // Or shorter with user intervention
+            this.refreshInterval = 30 * 1000;  // Or shorter with user intervention
             this.refreshErrorBackoff = 1 * 3600 * 1000;
+            this.currentUser = currentUser;
             this._stopping = false;
-            this._activeJobs = new Set();
+            this._activeJobs = new Map();
             this._refreshRequests = new Set();
             this._refreshEvent = new locks.Event();
             this.refreshLoop();
+        }
+
+        stop() {
+            this._stopping = true;
+            this._refreshEvent.set();
         }
 
         async refreshLoop() {
@@ -666,16 +673,25 @@ sauce.ns('hist', async ns => {
                 const now = Date.now();
                 let oldest = 0;
                 for await (const state of syncStore.values()) {
+                    if (this._activeJobs.has(state.athlete)) {
+                        continue;
+                    }
                     const age = now - state.lastSync;
                     oldest = Math.max(age, oldest);
                 }
                 const deadline = this.refreshInterval - oldest;
-                await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
+                if (deadline > 0) {
+                    console.debug(`Suspending for ${Math.round(deadline / 1000)} seconds`);
+                    await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
+                }
             }
         }
 
         async _refresh() {
             for await (const state of syncStore.values()) {
+                if (this._activeJobs.has(state.athlete)) {
+                    continue;
+                }
                 const now = Date.now();
                 if (now - state.lastSync > this.refreshInterval ||
                     this._refreshRequests.has(state.athlete)) {
@@ -685,19 +701,20 @@ sauce.ns('hist', async ns => {
                     }
                     this._refreshRequests.delete(state.athlete);
                     console.debug('Starting sync job for:', state.athlete);
-                    const syncJob = new SyncJob(state.athlete, state.isSelf);
+                    const isSelf = this.currentUser === state.athlete;
+                    const syncJob = new SyncJob(state.athlete, isSelf);
                     syncJob.addEventListener('streamsSync', ev => {
                         ev.job = syncJob;
                         this.dispatchEvent(ev);
                     });
-                    this._activeJobs.add(syncJob);
+                    this._activeJobs.set(state.athlete, syncJob);
                     syncJob.run();
                     syncJob.wait().catch(e => {
                         console.error('Sync error occurred:', e);
                         state.lastError = e;
                         state.lastErrorTS = Date.now();
                     }).finally(async () => {
-                        this._activeJobs.delete(syncJob);
+                        this._activeJobs.delete(state.athlete);
                         state.lastSync = Date.now();
                         await syncStore.put(state);
                     });
@@ -731,7 +748,17 @@ sauce.ns('hist', async ns => {
         }
     }
 
-    const syncManager = new SyncManager();
+    let syncManager;
+    if (self.currentUser) {
+        syncManager = new SyncManager(self.currentUser);
+    }
+    addEventListener('currentUserUpdate', ev => {
+        if (syncManager && syncManager.currentUser !== ev.id) {
+            console.warn("Stopping old sync manager due to user change.");
+            syncManager.stop();
+        }
+        syncManager = new SyncManager(ev.id);
+    });
 
 
     class SyncController extends sauce.proxy.Eventing {
