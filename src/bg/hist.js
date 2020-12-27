@@ -85,7 +85,7 @@ sauce.ns('hist', async ns => {
     }
 
 
-    // We must stay within API limits;  Roughy 40/min, 300/hour and 1000/day...
+    // We must stay within API limits;  Roughly 40/min, 300/hour and 1000/day...
     let streamRateLimiterGroup;
     const getStreamRateLimiterGroup = (function() {
         return function() {
@@ -102,7 +102,7 @@ sauce.ns('hist', async ns => {
 
 
     async function incrementStreamsUsage() {
-        // Used for pages to indicate they used sthe streams API.  This helps
+        // Used for pages to indicate they used the streams API.  This helps
         // keep us on top of overall stream usage better to avoid throttling.
         const g = getStreamRateLimiterGroup();
         await g.increment();
@@ -346,7 +346,7 @@ sauce.ns('hist', async ns => {
             }
         }
 
-        // Fetch lastest activities (or all of them if this is the first time).
+        // Fetch latest activities (or all of them if this is the first time).
         await batchImport(new Date());
         // Sentinel is stashed as a special record to indicate that we have scanned
         // some distance into the past.  Without this we never know how far back
@@ -680,10 +680,11 @@ sauce.ns('hist', async ns => {
                 if (now - state.lastSync > this.refreshInterval ||
                     this._refreshRequests.has(state.athlete)) {
                     if (state.lastErrorTS && now - state.lastErrorTS < this.refreshErrorBackoff) {
-                        console.warn("Defering sync of previously failed job:", state);
+                        console.warn("Deferring sync of previously failed job:", state);
                         continue;
                     }
                     this._refreshRequests.delete(state.athlete);
+                    console.debug('Starting sync job for:', state.athlete);
                     const syncJob = new SyncJob(state.athlete, state.isSelf);
                     syncJob.addEventListener('streamsSync', ev => {
                         ev.job = syncJob;
@@ -692,7 +693,7 @@ sauce.ns('hist', async ns => {
                     this._activeJobs.add(syncJob);
                     syncJob.run();
                     syncJob.wait().catch(e => {
-                        console.error('Sync error occured:', e);
+                        console.error('Sync error occurred:', e);
                         state.lastError = e;
                         state.lastErrorTS = Date.now();
                     }).finally(async () => {
