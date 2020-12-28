@@ -7,7 +7,7 @@
         try {
             await _load();
         } catch(e) {
-            await sauce.ga.reportError(e);
+            await sauce.report.error(e);
             throw e;
         }
     }
@@ -25,8 +25,8 @@
         anchor.appendChild(image);
         anchor.href = 'javascript:void(0);';
         anchor.addEventListener('click', () => {
-            sauce.menu.openOptionsPage().catch(sauce.ga.reportError);  // bg okay
-            sauce.ga.reportEvent('UserMenu', 'options');
+            sauce.menu.openOptionsPage().catch(sauce.report.error);  // bg okay
+            sauce.report.event('UserMenu', 'options');
         });
         const item = document.createElement('li');
         item.id = 'global-sauce-options-menu-item';

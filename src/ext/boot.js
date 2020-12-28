@@ -10,7 +10,6 @@
         scripts: [
             'site/proxy.js',
             'site/locale.js',
-            'site/ga.js',
             'common/template.js',
             'common/lib.js',
             'site/sparkline.js',
@@ -25,7 +24,6 @@
         pathMatch: /^\/segments\/[0-9]+\/compare\b/,
         scripts: [
             'site/proxy.js',
-            'site/ga.js',
             'site/segment-compare.js',
         ],
         callbacks: [
@@ -92,7 +90,6 @@
         pathMatch: /^\/dashboard(\/.*|\b)/,
         scripts: [
             'site/proxy.js',
-            'site/ga.js',
             'site/locale.js',
             'common/template.js',
             'common/lib.js',
@@ -102,7 +99,6 @@
         pathExclude: /^\/($|subscribe|login|register|legal|challenges)(\/.*|\b|$)/,
         scripts: [
             'site/proxy.js',
-            'site/ga.js',
             'site/locale.js',
             'site/usermenu.js',
         ]

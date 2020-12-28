@@ -6,7 +6,7 @@ sauce.ns('dashboard', function(ns) {
         if (!count) {
             return;
         }
-        await sauce.ga.reportEvent('ActivityFeed', action, category, {
+        await sauce.report.event('ActivityFeed', action, category, {
             nonInteraction: true,
             eventValue: count
         });
@@ -123,8 +123,8 @@ sauce.ns('dashboard', function(ns) {
 
 
     async function sendGAPageView(type) {
-        await sauce.ga.apply('set', 'title', 'Sauce Dashboard');
-        await sauce.ga.apply('send', 'pageview');
+        await sauce.report.ga('set', 'title', 'Sauce Dashboard');
+        await sauce.report.ga('send', 'pageview');
     }
 
 
@@ -173,7 +173,7 @@ sauce.ns('dashboard', function(ns) {
     try {
         sauce.dashboard.load();
     } catch(e) {
-        await sauce.ga.reportError(e);
+        await sauce.report.error(e);
         throw e;
     }
 })();

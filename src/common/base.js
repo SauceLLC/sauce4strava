@@ -324,14 +324,17 @@ self.sauceBaseInit = function sauceBaseInit() {
                 await this.db.start();
             }
             const store = this._getStore('readwrite');
-            let key;
+            const requests = [];
             if (options.index) {
                 const index = store.index(options.index);
-                key = await this._request(index.getKey(query));
+                for (const key of await this._request(index.getAllKeys(query))) {
+                    requests.push(store.delete(key));
+                }
             } else {
-                key = query;
+                requests.push(store.delete(query));
             }
-            return await this._request(store.delete(key));
+            await Promise.all(requests.map(x => this._request(x)));
+            return requests.length;
         }
 
         async count(query, options={}) {
@@ -386,210 +389,9 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
     }
 
-
-    class HistDatabase extends Database {
-        get version() {
-            return 4;
-        }
-
-        migrate(idb, t, oldVersion, newVersion) {
-            if (!oldVersion || oldVersion < 1) {
-                let store = idb.createObjectStore("streams", {keyPath: ['activity', 'stream']});
-                store.createIndex('activity', 'activity');
-                store.createIndex('athlete-stream', ['athlete', 'stream']);
-                store = idb.createObjectStore("activities", {keyPath: 'id'});
-                store.createIndex('athlete-ts', ['athlete', 'ts']);
-            }
-            if (oldVersion < 2) {
-                const store = t.objectStore("streams");
-                store.createIndex('athlete', 'athlete');
-            }
-            if (oldVersion < 3) {
-                const store = t.objectStore("activities");
-                store.createIndex('athlete-basetype-ts', ['athlete', 'basetype', 'ts']);
-            }
-            if (oldVersion < 4) {
-                idb.createObjectStore("sync", {keyPath: 'athlete'});
-            }
-        }
-    }
-
-    const histDatabase = new HistDatabase('SauceHist');
-
-
-    class StreamsStore extends DBStore {
-        constructor() {
-            super(histDatabase, 'streams');
-        }
-
-        async *byAthlete(athlete, stream, options={}) {
-            let q;
-            if (stream != null) {
-                options.index = 'athlete-stream';
-                q = IDBKeyRange.only([athlete, stream]);
-            } else {
-                options.index = 'athlete';
-                q = IDBKeyRange.only(athlete);
-            }
-            for await (const x of this.values(q, options)) {
-                yield x;
-            }
-        }
-
-        async *manyByAthlete(athlete, streams, options={}) {
-            const buffer = new Map();
-            const ready = [];
-            let wake;
-            function add(v) {
-                ready.push(v);
-                if (wake) {
-                    wake();
-                }
-            }
-            Promise.all(streams.map(async stream => {
-                for await (const entry of this.byAthlete(athlete, stream)) {
-                    const o = buffer.get(entry.activity);
-                    if (o === undefined) {
-                        buffer.set(entry.activity, {[stream]: entry.data});
-                    } else {
-                        o[stream] = entry.data;
-                        if (Object.keys(o).length === streams.length) {
-                            add({
-                                athlete,
-                                activity: entry.activity,
-                                streams: o
-                            });
-                            buffer.delete(entry.activity);
-                        }
-                    }
-                }
-            })).then(() => add(null));
-            while (true) {
-                while (ready.length) {
-                    const v = ready.shift();
-                    if (!v) {
-                        return;
-                    }
-                    yield v;
-                }
-                await new Promise(resolve => wake = resolve);
-            }
-        }
-
-        async *activitiesByAthlete(athlete, options={}) {
-            // Every real activity has a time stream, so look for just this one.
-            const q = IDBKeyRange.only([athlete, 'time']);
-            options.index = 'athlete-stream';
-            for await (const x of this.keys(q, options)) {
-                yield x[0];
-            }
-        }
-
-        async getCountForAthlete(athlete, stream='time') {
-            // Every real activity has a time stream, so look for just this one.
-            const q = IDBKeyRange.only([athlete, stream]);
-            return await this.count(q, {index: 'athlete-stream'});
-        }
-
-        async getAthletes(...args) {
-            const athletes = [];
-            const q = IDBKeyRange.bound(-Infinity, Infinity);
-            for await (const x of this.values(q, {unique: true, index: 'athlete'})) {
-                athletes.push(x.athlete);
-            }
-            return athletes;
-        }
-    }
-
-
-    class ActivitiesStore extends DBStore {
-        constructor() {
-            super(histDatabase, 'activities');
-        }
-
-        async *byAthlete(athlete, options={}) {
-            let q;
-            if (options.type) {
-                q = IDBKeyRange.bound([athlete, options.type, -Infinity], [athlete, options.type, Infinity]);
-                options.index = 'athlete-basetype-ts';
-            } else {
-                q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-                options.index = 'athlete-ts';
-            }
-            options.reverse = !options.reverse;  // Go from newest to oldest by default
-            for await (const x of this.values(q, options)) {
-                yield x;
-            }
-        }
-
-        async getAllForAthlete(athlete, ...args) {
-            const activities = [];
-            for await (const x of this.byAthlete(athlete, ...args)) {
-                activities.push(x);
-            }
-            return activities;
-        }
-
-        async getCountForAthlete(athlete) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            return await this.count(q, {index: 'athlete-ts'});
-        }
-
-        async firstForAthlete(athlete) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const x of this.values(q, {index: 'athlete-ts'})) {
-                return x;
-            }
-        }
-
-        async lastForAthlete(athlete) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const x of this.values(q, {index: 'athlete-ts', direction: 'prev'})) {
-                return x;
-            }
-        }
-
-        async deleteAthlete(athlete) {
-            const deletes = [];
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const key of this.keys(q, {index: 'athlete-ts'})) {
-                deletes.push(key);
-            }
-            const store = this._getStore('readwrite');
-            await Promise.all(deletes.map(k => this._request(store.delete(k))));
-            return deletes.length;
-        }
-    }
-
-
-    class SyncStore extends DBStore {
-        constructor() {
-            super(histDatabase, 'sync');
-        }
-
-        async *values(...args) {
-            const q = IDBKeyRange.bound(-Infinity, Infinity);
-            for await (const x of super.values(q, ...args)) {
-                yield x;
-            }
-        }
-
-        async *keys(...args) {
-            const q = IDBKeyRange.bound(-Infinity, Infinity);
-            for await (const x of super.keys(q, ...args)) {
-                yield x;
-            }
-        }
-    }
-
-
     sauce.db = {
         Database,
         DBStore,
-        HistDatabase,
-        ActivitiesStore,
-        StreamsStore,
-        SyncStore,
     };
 
 
@@ -610,14 +412,8 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     class CacheStore extends DBStore {
         async purgeExpired(bucket) {
-            const deletes = [];
             const q = IDBKeyRange.bound([bucket, -Infinity], [bucket, Date.now()]);
-            for await (const key of this.keys(q, {index: 'bucket-expiration'})) {
-                deletes.push(key);
-            }
-            const store = this._getStore('readwrite');
-            await Promise.all(deletes.map(k => this._request(store.delete(k))));
-            return deletes.length;
+            return await this.delete(q, {index: 'bucket-expiration'});
         }
     }
 
@@ -713,5 +509,91 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     sauce.cache = {
         TTLCache
+    };
+
+
+    async function ga(...args) {
+        if (!sauce.ga && !sauce.ga.applyWithContext) {
+            await sauce.proxy.connected;
+        }
+        return await sauce.ga.applyWithContext({referrer: document.referrer}, ...args);
+    }
+
+
+    async function reportEvent(eventCategory, eventAction, eventLabel, options) {
+        await ga('send', 'event', Object.assign({
+            eventCategory,
+            eventAction,
+            eventLabel,
+        }, options));
+    }
+
+
+    async function reportError(e) {
+        if (e && e.disableReport) {
+            console.warn('Ignoring non-reporting error:', e);
+            return;
+        }
+        const page = location.pathname;
+        const version = (sauce && sauce.version) ||
+            (self.browser && self.browser.runtime.getManifest().version);
+        const desc = [`v${version}`];
+        try {
+            if (e == null || !e.stack) {
+                console.error("Non-exception object was thrown:", e);
+                const props = {type: typeof e};
+                try {
+                    props.json = JSON.parse(JSON.stringify(e));
+                } catch(_) {/*no-pragma*/}
+                if (e != null) {
+                    props.klass = e.constructor && e.constructor.name;
+                    props.name = e.name;
+                    props.message = e.message;
+                    props.code = e.code;
+                }
+                desc.push(`Invalid Error: ${JSON.stringify(props)}`);
+                for (const x of _stackFrameAudits) {
+                    desc.push(` Audit frame: ${x}`);
+                }
+            } else {
+                desc.push(e.stack);
+            }
+        } catch(intError) {
+            desc.push(`Internal error during report error: ${intError.stack} ::: ${e}`);
+        }
+        for (const x of getStackFrames().slice(1)) {
+            desc.push(` Stack frame: ${x}`);
+        }
+        const exDescription = desc.join('\n');
+        console.error('Reporting:', exDescription);
+        await ga('send', 'exception', {
+            exDescription,
+            exFatal: true,
+            page
+        });
+        await reportEvent('Error', 'exception', desc, {nonInteraction: true, page});
+    }
+
+
+    function getStackFrames() {
+        const e = new Error();
+        return e.stack.split(/\n/).slice(2).map(x => x.trim());
+    }
+
+
+    let _stackFrameAudits = [];
+    function auditStackFrame() {
+        const frames = getStackFrames();
+        const caller = frames && frames[1];
+        if (typeof caller === 'string') { // be paranoid for now
+            _stackFrameAudits.push(caller);
+        }
+    }
+
+    sauce.report = {
+        ga,
+        event: reportEvent,
+        error: reportError,
+        auditStackFrame,
     };
 };

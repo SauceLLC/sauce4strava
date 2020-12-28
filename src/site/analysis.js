@@ -386,7 +386,7 @@ sauce.ns('analysis', ns => {
                     body: '<b>Reloading page to reflect FTP change.</b>'
                 });
                 try {
-                    await sauce.ga.reportEvent('AthleteInfo', 'edit', 'ftp');
+                    await sauce.report.event('AthleteInfo', 'edit', 'ftp');
                 } finally {
                     location.reload();
                 }
@@ -428,7 +428,7 @@ sauce.ns('analysis', ns => {
                     body: '<b>Reloading page to reflect weight change.</b>'
                 });
                 try {
-                    await sauce.ga.reportEvent('AthleteInfo', 'edit', 'weight');
+                    await sauce.report.event('AthleteInfo', 'edit', 'weight');
                 } finally {
                     location.reload();
                 }
@@ -479,10 +479,10 @@ sauce.ns('analysis', ns => {
                         isDistanceRange: !!row.dataset.distanceRange,
                     });
                 } catch (e) {
-                    sauce.ga.reportError(e);
+                    sauce.report.error(e);
                     throw e;
                 }
-                sauce.ga.reportEvent('InfoDialog', 'open',
+                sauce.report.event('InfoDialog', 'open',
                     `${this._selectedSource}-${row.dataset.rangeValue}`);
             });
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
@@ -526,7 +526,7 @@ sauce.ns('analysis', ns => {
         async setSelectedSource(source) {
             this._selectedSource = source;
             await sauce.storage.update('analysis_peak_ranges', {[this.sourceKey]: source});
-            sauce.ga.reportEvent('PeakRange', 'select', source);
+            sauce.report.event('PeakRange', 'select', source);
         }
     }
 
@@ -695,7 +695,7 @@ sauce.ns('analysis', ns => {
             }
         }
 
-        assignTrailforksToSegments().catch(sauce.ga.reportError);
+        assignTrailforksToSegments().catch(sauce.report.error);
         renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
             weightUnit: ctx.weightFormatter.shortUnitKey(),
@@ -708,7 +708,7 @@ sauce.ns('analysis', ns => {
             tTss,
             np,
             power,
-        }).catch(sauce.ga.reportError);
+        }).catch(sauce.report.error);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
@@ -1494,8 +1494,8 @@ sauce.ns('analysis', ns => {
         }
         $menu.find('a.tcx').on('click', async () => {
             const laps = await getLaps();
-            exportActivity(sauce.export.TCXSerializer, {laps}).catch(sauce.ga.reportError);
-            sauce.ga.reportEvent('ActionsMenu', 'export', 'tcx');
+            exportActivity(sauce.export.TCXSerializer, {laps}).catch(sauce.report.error);
+            sauce.report.event('ActionsMenu', 'export', 'tcx');
         });
         if (!$menu.find('a[href$="/export_gpx"]').length) {
             $menu.find('.sauce-group ul').append(jQuery(`
@@ -1504,8 +1504,8 @@ sauce.ns('analysis', ns => {
             `));
             $menu.find('a.gpx').on('click', async () => {
                 const laps = await getLaps();
-                exportActivity(sauce.export.GPXSerializer, {laps}).catch(sauce.ga.reportError);
-                sauce.ga.reportEvent('ActionsMenu', 'export', 'gpx');
+                exportActivity(sauce.export.GPXSerializer, {laps}).catch(sauce.report.error);
+                sauce.report.event('ActionsMenu', 'export', 'gpx');
             });
         }
     }
@@ -1560,7 +1560,7 @@ sauce.ns('analysis', ns => {
             $genderSelect.on('change', drawGraph);
             $dialog.on('dialogresize', drawGraph);
             drawGraph();
-            sauce.ga.reportEvent('PowerProfileHelp', 'show');
+            sauce.report.event('PowerProfileHelp', 'show');
         });
     }
 
@@ -1652,7 +1652,7 @@ sauce.ns('analysis', ns => {
 
     function submitComment(comment) {
         pageView.commentsController().comment('Activity', pageView.activity().id, comment);
-        sauce.ga.reportEvent('Comment', 'submit');
+        sauce.report.event('Comment', 'submit');
     }
 
 
@@ -1708,13 +1708,13 @@ sauce.ns('analysis', ns => {
         jQuery(document).on('click', `${segView} .sauce-button.live-segment`, async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
-            showLiveSegmentDialog(details).catch(sauce.ga.reportError);
+            showLiveSegmentDialog(details).catch(sauce.report.error);
         });
         jQuery(document).on('click', `${segView} .sauce-button.perf-predictor`, async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
             const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
-            showPerfPredictor(start, end).catch(sauce.ga.reportError);
+            showPerfPredictor(start, end).catch(sauce.report.error);
         });
     }
 
@@ -1762,12 +1762,12 @@ sauce.ns('analysis', ns => {
                             timeMultiplier
                         });
                     } catch(e) {
-                        sauce.ga.reportError(e);
+                        sauce.report.error(e);
                         return;
                     }
                     if (useTrial) {
                         await sauce.storage.set('live_segment_trial_count', trialCount + 1, {sync: true});
-                        sauce.ga.reportEvent('LiveSegment', 'trial');
+                        sauce.report.event('LiveSegment', 'trial');
                     }
                     $dialog.dialog('destroy');
                     modal({
@@ -1790,7 +1790,7 @@ sauce.ns('analysis', ns => {
                     class: 'btn-primary btn-outline',
                     click: () => {
                         $dialog.dialog('destroy');
-                        showLiveSegmentDialog(details, /*useTrial*/ true).catch(sauce.ga.reportError);
+                        showLiveSegmentDialog(details, /*useTrial*/ true).catch(sauce.report.error);
                     }
                 });
             }
@@ -1816,7 +1816,7 @@ sauce.ns('analysis', ns => {
             const adjustedTime = timeMultiplier * streamDelta(timeStream);
             $dialog.find('.leader-time').text(humanTime(adjustedTime));
         });
-        sauce.ga.reportEvent('LiveSegment', 'show');
+        sauce.report.event('LiveSegment', 'show');
     }
 
 
@@ -1873,7 +1873,7 @@ sauce.ns('analysis', ns => {
             try {
                 addBadge(row);
             } catch(e) {
-                sauce.ga.reportError(e);
+                sauce.report.error(e);
             }
         }
     }
@@ -1896,7 +1896,7 @@ sauce.ns('analysis', ns => {
         }
         const rows = Array.from(document.querySelectorAll('table.segments > tbody > tr[data-segment-effort-id]'));
         for (const row of rows) {
-            addTrailforksRow(row).catch(sauce.ga.reportError);
+            addTrailforksRow(row).catch(sauce.report.error);
         }
     }
 
@@ -1958,9 +1958,9 @@ sauce.ns('analysis', ns => {
             ev.stopPropagation();
             try {
                 await showTrailforksModal(descs);
-                sauce.ga.reportEvent('Trailforks', 'show');
+                sauce.report.event('Trailforks', 'show');
             } catch(e) {
-                sauce.ga.reportError(e);
+                sauce.report.error(e);
                 throw e;
             }
         });
@@ -2032,7 +2032,7 @@ sauce.ns('analysis', ns => {
                     try {
                         return await renderTFDetailedReport(desc.trail.id, this.$el, options);
                     } catch(e) {
-                        sauce.ga.reportError(e);
+                        sauce.report.error(e);
                         throw e;
                     } finally {
                         docClasses.remove('sauce-loading');
@@ -2502,7 +2502,7 @@ sauce.ns('analysis', ns => {
             const now = Date.now();
             if (!_schedUpdateErrorTS || (now - _schedUpdateErrorTS) > 5000) {
                 _schedUpdateErrorTS = now;
-                sauce.ga.reportError(e);
+                sauce.report.error(e);
             }
         });
     }
@@ -2619,7 +2619,7 @@ sauce.ns('analysis', ns => {
             $dialog.find('pre').html(data);
             $dialog.dialog('option', 'width', `calc(${width}ch + 4em)`);
         });
-        sauce.ga.reportEvent('RawData', 'show');
+        sauce.report.event('RawData', 'show');
     }
 
 
@@ -2677,7 +2677,7 @@ sauce.ns('analysis', ns => {
         }
         $selector.on('update', renderGraphs);
         await renderGraphs();
-        sauce.ga.reportEvent('GraphData', 'show');
+        sauce.report.event('GraphData', 'show');
     }
 
 
@@ -2774,7 +2774,7 @@ sauce.ns('analysis', ns => {
         const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
         const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
         download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
-        sauce.ga.reportEvent('LiveSegment', 'create');
+        sauce.report.event('LiveSegment', 'create');
     }
 
 
@@ -2970,7 +2970,7 @@ sauce.ns('analysis', ns => {
         });
         $dialog.on('input', 'input', () => setTimeout(recalc, 0));
         recalc(/*noPulse*/ true);
-        sauce.ga.reportEvent('PerfPredictor', 'show');
+        sauce.report.event('PerfPredictor', 'show');
     }
 
 
@@ -2982,30 +2982,30 @@ sauce.ns('analysis', ns => {
                 .then(expanded => ctx.$analysisStats.toggleClass('expanded', expanded));
         }
         $el.find('#stacked-chart').before(ctx.$analysisStats);
-        $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.ga.reportError));
-        $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.ga.reportError));
+        $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.report.error));
+        $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.report.error));
         $el.on('click', 'a.sauce-perf-predictor', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            showPerfPredictor(start, end).catch(sauce.ga.reportError);
+            showPerfPredictor(start, end).catch(sauce.report.error);
         });
         $el.on('click', 'a.sauce-export-tcx', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            exportActivity(sauce.export.TCXSerializer, {start, end}).catch(sauce.ga.reportError);
-            sauce.ga.reportEvent('AnalysisStats', 'export', 'tcx');
+            exportActivity(sauce.export.TCXSerializer, {start, end}).catch(sauce.report.error);
+            sauce.report.event('AnalysisStats', 'export', 'tcx');
         });
         $el.on('click', 'a.sauce-export-gpx', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            exportActivity(sauce.export.GPXSerializer, {start, end}).catch(sauce.ga.reportError);
-            sauce.ga.reportEvent('AnalysisStats', 'export', 'gpx');
+            exportActivity(sauce.export.GPXSerializer, {start, end}).catch(sauce.report.error);
+            sauce.report.event('AnalysisStats', 'export', 'gpx');
         });
         $el.on('click', '.expander', async ev => {
             const el = ev.currentTarget.closest('.sauce-analysis-stats');
             const expanded = el.classList.toggle('expanded');
             await sauce.storage.setPref('expandAnalysisStats', expanded);
-            sauce.ga.reportEvent('AnalysisStats', expanded ? 'expand' : 'collapse');
+            sauce.report.event('AnalysisStats', expanded ? 'expand' : 'collapse');
         });
     }
 
@@ -3109,9 +3109,9 @@ sauce.ns('analysis', ns => {
         } else if (activity.isSwim()) {
             ctx.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
-        updateSideNav().catch(sauce.ga.reportError);
-        attachActionMenuItems().catch(sauce.ga.reportError);
-        attachComments().catch(sauce.ga.reportError);
+        updateSideNav().catch(sauce.report.error);
+        attachActionMenuItems().catch(sauce.report.error);
+        attachComments().catch(sauce.report.error);
         attachSegmentToolHandlers();
         const savedRanges = await sauce.storage.get('analysis_peak_ranges');
         ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
@@ -3280,7 +3280,7 @@ sauce.ns('analysis', ns => {
         await sauce.propDefined('pageView', {once: true});
         updateUserId();
         if (sauce.options['responsive']) {
-            attachMobileMenuExpander().catch(sauce.ga.reportError);
+            attachMobileMenuExpander().catch(sauce.report.error);
             pageView.unbindScrollListener();
             document.body.classList.add('sauce-disabled-scroll-listener');
             pageView.handlePageScroll = function() {};
@@ -3293,7 +3293,7 @@ sauce.ns('analysis', ns => {
         await pageViewAssembled();
         const activity = pageView.activity();
         const type = activity.get('type');
-        const gaSetTitlePromsie = sauce.ga.apply('set', 'title', `Sauce Analysis - ${type}`);
+        const gaSetTitlePromsie = sauce.report.ga('set', 'title', `Sauce Analysis - ${type}`);
         ctx.activityType = {
             'Ride': 'ride',
             'Run': 'run',
@@ -3303,7 +3303,7 @@ sauce.ns('analysis', ns => {
         }[type];
         if (ctx.activityType) {
             // Start network load early..
-            fetchStreams(prefetchStreams).catch(sauce.ga.reportError);
+            fetchStreams(prefetchStreams).catch(sauce.report.error);
             const pageRouter = pageView.router();
             pageRouter.on('route', page => {
                 document.body.dataset.route = page;
@@ -3335,7 +3335,7 @@ sauce.ns('analysis', ns => {
             ctx.unsupported = true;
             console.info('Unsupported activity type:', type);
         }
-        gaSetTitlePromsie.then(() => sauce.ga.apply('send', 'pageview'));
+        gaSetTitlePromsie.then(() => sauce.report.ga('send', 'pageview'));
     }
 
 
@@ -3366,7 +3366,7 @@ sauce.ns('analysis', ns => {
     try {
         await sauce.analysis.load();
     } catch(e) {
-        await sauce.ga.reportError(e);
+        await sauce.report.error(e);
         throw e;
     }
     setTimeout(sauce.analysis.checkForSafariUpdates, 5000);

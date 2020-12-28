@@ -2,10 +2,13 @@
 
 importScripts('/src/common/base.js');
 self.sauceBaseInit();
+importScripts('/src/bg/db.js');
 importScripts('/src/common/lib.js');
 
+
 const calls = {
-    findPeaks,
+    findPeaks: sauce.perf.findPeaks,
+    tss: sauce.perf.tss,
 };
 
 self.addEventListener('message', async ev => {
@@ -31,8 +34,3 @@ self.addEventListener('message', async ev => {
         throw e;
     }
 });
-
-
-async function findPeaks(...args) {
-    return await sauce.perf.findPeaks(...args);
-}

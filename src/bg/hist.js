@@ -44,9 +44,9 @@ sauce.ns('hist', async ns => {
     }
 
 
-    const actsStore = new sauce.db.ActivitiesStore();
-    const streamsStore = new sauce.db.StreamsStore();
-    const syncStore = new sauce.db.SyncStore();
+    const actsStore = new sauce.hist.db.ActivitiesStore();
+    const streamsStore = new sauce.hist.db.StreamsStore();
+    const athletesStore = new sauce.hist.db.AthletesStore();
 
 
     async function retryFetch(urn, options={}) {
@@ -170,7 +170,6 @@ sauce.ns('hist', async ns => {
         activities.sort((a, b) => b.ts - a.ts);
         return activities;
     }
-    sauce.proxy.export(syncSelfActivities, {namespace});
 
 
     async function syncPeerActivities(athlete, options={}) {
@@ -360,7 +359,6 @@ sauce.ns('hist', async ns => {
         activities.sort((a, b) => b.ts - a.ts);
         return activities;
     }
-    sauce.proxy.export(syncPeerActivities, {namespace});
 
 
     async function fetchAllStreams(activityId, {cancelEvent}) {
@@ -423,10 +421,10 @@ sauce.ns('hist', async ns => {
         let count = 0;
         let remaining = outstanding.size;
         if (!remaining) {
-            console.info("All activities synchronized");
+            console.info(`All ${activities.length} activity streams synchronized for:`, athlete);
             return count;
         }
-        console.info(`Need to synchronize ${remaining} of ${activities.length} activities...`);
+        console.info(`Need to synchronize ${remaining} of ${activities.length} activity streams for:`, athlete);
         for (const id of outstanding) {
             try {
                 const data = await fetchAllStreams(id, {cancelEvent});
@@ -455,8 +453,8 @@ sauce.ns('hist', async ns => {
             }
         }
         console.info("Completed activities fetch/sync");
+        return count;
     }
-    sauce.proxy.export(syncStreams);
 
 
     class WorkerPoolExecutor {
@@ -604,7 +602,6 @@ sauce.ns('hist', async ns => {
         const raw = await resp.text();
         return JSON.parse(raw.match(/all_ftps = (\[.*\]);/)[1]);
     }
-    sauce.proxy.export(getSelfFTPs, {namespace});
 
 
     class SyncJob extends EventTarget {
@@ -627,6 +624,10 @@ sauce.ns('hist', async ns => {
 
         cancel() {
             this._cancelEvent.set();
+        }
+
+        cancelled() {
+            return this._cancelEvent.isSet();
         }
 
         async _run() {
@@ -673,6 +674,7 @@ sauce.ns('hist', async ns => {
             this._refreshRequests = new Set();
             this._refreshEvent = new locks.Event();
             this._refreshLoop = this.refreshLoop();
+            this._importAthleteFTPHistory();
         }
 
         stop() {
@@ -688,6 +690,14 @@ sauce.ns('hist', async ns => {
             await this._refreshLoop;
         }
 
+        async getEnabledAthletes() {
+            const athletes = [];
+            for await (const x of athletesStore.values(true, {index: 'sync'})) {
+                athletes.push(x);
+            }
+            return athletes;
+        } 
+
         async refreshLoop() {
             let errorBackoff = 1000;
             while (!this._stopping) {
@@ -695,17 +705,17 @@ sauce.ns('hist', async ns => {
                     await this._refresh();
                 } catch(e) {
                     console.error('SyncManager refresh error:', e);
-                    sauce.ga.reportError(e);
+                    sauce.report.error(e);
                     await sleep(errorBackoff *= 1.5);
                 }
                 this._refreshEvent.clear();
                 const now = Date.now();
                 let oldest = 0;
-                for await (const state of syncStore.values()) {
-                    if (this._isActive(state) || this._isDeferred(state)) {
+                for (const athlete of await this.getEnabledAthletes()) {
+                    if (this._isActive(athlete) || this._isDeferred(athlete)) {
                         continue;
                     }
-                    const age = now - state.lastSync;
+                    const age = now - athlete.lastSync;
                     oldest = Math.max(age, oldest);
                 }
                 const deadline = this.refreshInterval - oldest;
@@ -716,39 +726,47 @@ sauce.ns('hist', async ns => {
             }
         }
 
-        _isActive(state) {
-            return this._activeJobs.has(state.athlete);
+        async _importAthleteFTPHistory() {
+            const athlete = (await athletesStore.get(this.currentUser)) || {id: this.currentUser};
+            athlete.ftpHistory = await getSelfFTPs();
+            await athletesStore.put({athlete});
         }
 
-        _isDeferred(state) {
-            return !!state.lastError && Date.now() - state.lastError < this.refreshErrorBackoff;
+        _isActive(athlete) {
+            return this._activeJobs.has(athlete.id);
+        }
+
+        _isDeferred(athlete) {
+            return !!athlete.lastError && Date.now() - athlete.lastError < this.refreshErrorBackoff;
         }
 
         async _refresh() {
-            for await (const state of syncStore.values()) {
-                if (this._isActive(state)) {
+            for (const athlete of await this.getEnabledAthletes()) {
+                if (this._isActive(athlete)) {
                     continue;
                 }
                 const now = Date.now();
-                if ((now - state.lastSync > this.refreshInterval && !this._isDeferred(state)) ||
-                    this._refreshRequests.has(state.athlete)) {
-                    this._refreshRequests.delete(state.athlete);
-                    console.debug('Starting sync job for:', state.athlete);
-                    const isSelf = this.currentUser === state.athlete;
-                    const syncJob = new SyncJob(state.athlete, isSelf);
+                if ((now - athlete.lastSync > this.refreshInterval && !this._isDeferred(athlete)) ||
+                    this._refreshRequests.has(athlete.id)) {
+                    this._refreshRequests.delete(athlete.id);
+                    console.debug('Starting sync job for:', athlete.id);
+                    const isSelf = this.currentUser === athlete.id;
+                    const syncJob = new SyncJob(athlete.id, isSelf);
                     syncJob.addEventListener('streamsSync', ev => {
                         ev.job = syncJob;
                         this.dispatchEvent(ev);
                     });
-                    this._activeJobs.set(state.athlete, syncJob);
+                    this._activeJobs.set(athlete.id, syncJob);
                     syncJob.run();
                     syncJob.wait().catch(e => {
                         console.error('Sync error occurred:', e);
-                        state.lastError = Date.now();
+                        athlete.lastError = Date.now();
                     }).finally(async () => {
-                        state.lastSync = Date.now();
-                        await syncStore.put(state);
-                        this._activeJobs.delete(state.athlete);
+                        if (!syncJob.cancelled()) {
+                            athlete.lastSync = Date.now();
+                            await athletesStore.put(athlete);
+                        }
+                        this._activeJobs.delete(athlete.athlete);
                     });
                 }
             }
@@ -759,32 +777,32 @@ sauce.ns('hist', async ns => {
             this._refreshEvent.set();
         }
 
-        async athletes() {
-            const athletes = [];
-            for await (const x of syncStore.values()) {
-                athletes.push(x.athlete);
+        async enableAthlete(id) {
+            const athlete = (await athletesStore.get(id)) || {id};
+            if (athlete.sync) {
+                throw new Error('Athlete already syncing: ' + athlete);
             }
-            return athletes;
-        }
-
-        async addAthlete(athlete) {
-            if (await syncStore.get(athlete)) {
-                throw new Error('Athlete already added: ' + athlete);
+            if (id === this.currentUser) {
+                athlete.ftpHistory = await getSelfFTPs();
             }
-            await syncStore.put({athlete, lastSync: 0, status: 'new'});
+            athlete.sync = true;
+            athlete.lastSync = 0;
+            athlete.syncStatus = 'new';
+            await athletesStore.put(athlete);
             this._refreshEvent.set();
         }
 
-        async deleteAthlete(athlete) {
-            if (this._activeJobs.has(athlete)) {
-                const syncJob = this._activeJobs.get(athlete);
-                syncJob.cancel();
-                try {
-                    await syncJob.wait();
-                } catch {/*no-pragma*/}
-                this._activeJobs.delete(athlete);
+        async disableAthlete(id) {
+            const athlete = await athletesStore.get(id);
+            if (athlete && !athlete.sync) {
+                throw new Error('Athlete already disabled: ' + athlete);
             }
-            await syncStore.delete(athlete);
+            athlete.sync = false;
+            await athletesStore.put(athlete);
+            if (this._activeJobs.has(id)) {
+                const syncJob = this._activeJobs.get(id);
+                syncJob.cancel();
+            }
             this._refreshEvent.set();
         }
 
@@ -844,7 +862,7 @@ sauce.ns('hist', async ns => {
         findPeaks,
         streamsStore,
         actsStore,
-        syncStore,
+        athletesStore,
         SyncManager,
         SyncController,
     };

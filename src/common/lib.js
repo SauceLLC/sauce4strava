@@ -1575,12 +1575,13 @@ sauce.ns('perf', function() {
 
     let actsStore;
     let streamsStore;
+    let athletesStore;
 
 
     async function findPeaks(athlete, periods, options={}) {
         if (!actsStore) {
-            actsStore = new sauce.db.ActivitiesStore();
-            streamsStore = new sauce.db.StreamsStore();
+            actsStore = new sauce.hist.db.ActivitiesStore();
+            streamsStore = new sauce.hist.db.StreamsStore();
         }
         const type = options.type || 'power';
         const limit = options.limit || 10;
@@ -1719,6 +1720,37 @@ sauce.ns('perf', function() {
     }
 
 
+    async function bulkTSS(athleteId, options={}) {
+        if (!actsStore) {
+            actsStore = new sauce.hist.db.ActivitiesStore();
+            streamsStore = new sauce.hist.db.StreamsStore();
+            athletesStore = new sauce.hist.db.AthletesStore();
+        }
+        const start = options.start;
+        const end = options.end;
+        const type = options.activityType;
+        const athlete = await athletesStore.get(athleteId);
+        function getValueAt(data, ts) {
+            let ftp = data[0].value;
+            for (const x of data) {
+                if (x.ts > ts) {
+                    break;
+                }
+                ftp = x.value;
+            }
+            return ftp;
+        }
+        const results = [];
+        for await (const x of actsStore.byAthlete(athleteId, {start, end, type})) {
+            const timeStream = await streamsStore.get([x.id, 'time']);
+            const wattsStream = await streamsStore.get([x.id, 'watts']);
+            const ftp = getValueAt(athlete.ftpHistory, x.ts);
+            const weight = getValueAt(athlete.weightHistory, x.ts);
+            console.log(timeStream.length, wattsStream.length, ftp, weight, x);
+        }
+        return results;
+    }
+
     async function fetchSelfFTPs() {
         const resp = await fetch("https://www.strava.com/settings/performance");
         const raw = await resp.text();
@@ -1822,5 +1854,6 @@ sauce.ns('perf', function() {
         tTSS,
         estimateRestingHR,
         estimateMaxHR,
+        bulkTSS,
     };
 });

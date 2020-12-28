@@ -34,6 +34,7 @@
             "src/common/lib.js",
             "src/common/storage.js",
             "src/bg/ga.js",
+            "src/bg/db.js",
             "src/bg/migrate.js",
             "src/bg/menu.js",
             "src/bg/hist.js",
