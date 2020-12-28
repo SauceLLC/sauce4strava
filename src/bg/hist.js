@@ -600,9 +600,16 @@ sauce.ns('hist', async ns => {
     async function getSelfFTPs() {
         const resp = await fetch("https://www.strava.com/settings/performance");
         const raw = await resp.text();
-        return JSON.parse(raw.match(/all_ftps = (\[.*\]);/)[1]);
+        const table = [];
+        for (const x of JSON.parse(raw.match(/all_ftps = (\[.*\]);/)[1])) {
+            table.push({ts: x.start_date * 1000, value: x.value});
+        }
+        return table;
     }
 
+    // Indexed DB doesn't support boolean index values.:w
+    const DBTrue = 1;
+    const DBFalse = 0;
 
     class SyncJob extends EventTarget {
         constructor(athlete, isSelf) {
@@ -690,14 +697,6 @@ sauce.ns('hist', async ns => {
             await this._refreshLoop;
         }
 
-        async getEnabledAthletes() {
-            const athletes = [];
-            for await (const x of athletesStore.values(true, {index: 'sync'})) {
-                athletes.push(x);
-            }
-            return athletes;
-        } 
-
         async refreshLoop() {
             let errorBackoff = 1000;
             while (!this._stopping) {
@@ -709,19 +708,25 @@ sauce.ns('hist', async ns => {
                     await sleep(errorBackoff *= 1.5);
                 }
                 this._refreshEvent.clear();
-                const now = Date.now();
-                let oldest = 0;
-                for (const athlete of await this.getEnabledAthletes()) {
-                    if (this._isActive(athlete) || this._isDeferred(athlete)) {
-                        continue;
+                const enabledAthletes = await athletesStore.getEnabledAthletes();
+                if (!enabledAthletes.length) {
+                    console.debug('No athletes enabled for sync.');
+                    await this._refreshEvent.wait();
+                } else {
+                    let oldest = 0;
+                    const now = Date.now();
+                    for (const athlete of enabledAthletes) {
+                        if (this._isActive(athlete) || this._isDeferred(athlete)) {
+                            continue;
+                        }
+                        const age = now - athlete.lastSync;
+                        oldest = Math.max(age, oldest);
                     }
-                    const age = now - athlete.lastSync;
-                    oldest = Math.max(age, oldest);
-                }
-                const deadline = this.refreshInterval - oldest;
-                if (deadline > 0) {
-                    console.debug(`Next Sync Manager refresh in ${Math.round(deadline / 1000)} seconds`);
-                    await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
+                    const deadline = this.refreshInterval - oldest;
+                    if (deadline > 0) {
+                        console.debug(`Next Sync Manager refresh in ${Math.round(deadline / 1000)} seconds`);
+                        await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
+                    }
                 }
             }
         }
@@ -729,7 +734,7 @@ sauce.ns('hist', async ns => {
         async _importAthleteFTPHistory() {
             const athlete = (await athletesStore.get(this.currentUser)) || {id: this.currentUser};
             athlete.ftpHistory = await getSelfFTPs();
-            await athletesStore.put({athlete});
+            await athletesStore.put(athlete);
         }
 
         _isActive(athlete) {
@@ -741,7 +746,7 @@ sauce.ns('hist', async ns => {
         }
 
         async _refresh() {
-            for (const athlete of await this.getEnabledAthletes()) {
+            for (const athlete of await athletesStore.getEnabledAthletes()) {
                 if (this._isActive(athlete)) {
                     continue;
                 }
@@ -785,7 +790,7 @@ sauce.ns('hist', async ns => {
             if (id === this.currentUser) {
                 athlete.ftpHistory = await getSelfFTPs();
             }
-            athlete.sync = true;
+            athlete.sync = DBTrue;
             athlete.lastSync = 0;
             athlete.syncStatus = 'new';
             await athletesStore.put(athlete);
@@ -797,7 +802,7 @@ sauce.ns('hist', async ns => {
             if (athlete && !athlete.sync) {
                 throw new Error('Athlete already disabled: ' + athlete);
             }
-            athlete.sync = false;
+            athlete.sync = DBFalse;
             await athletesStore.put(athlete);
             if (this._activeJobs.has(id)) {
                 const syncJob = this._activeJobs.get(id);

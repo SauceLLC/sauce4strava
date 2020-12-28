@@ -185,7 +185,16 @@ sauce.ns('hist.db', async ns => {
 
     class AthletesStore extends sauce.db.DBStore {
         constructor() {
-            super(histDatabase, 'sync');
+            super(histDatabase, 'athletes');
+        }
+
+        async getEnabledAthletes() {
+            const athletes = [];
+            const q = IDBKeyRange.only(1);
+            for await (const x of this.values(q, {index: 'sync'})) {
+                athletes.push(x);
+            }
+            return athletes;
         }
     }
 
