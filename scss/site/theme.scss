@@ -1282,6 +1282,13 @@
         background-color: color.get(bg);
         border-color: $hard-border-color;
         color: color.get(fg);
+
+        &.panel-default {
+            > .panel-footer {
+                background-color: color.get(bg);
+                border-color: $hard-border-color;
+            }
+        }
     }
 
     #search-results {
