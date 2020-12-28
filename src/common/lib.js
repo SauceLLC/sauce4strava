@@ -1746,7 +1746,16 @@ sauce.ns('perf', function() {
             const wattsStream = await streamsStore.get([x.id, 'watts']);
             const ftp = getValueAt(athlete.ftpHistory, x.ts);
             const weight = getValueAt(athlete.weightHistory, x.ts);
-            console.log(timeStream.length, wattsStream.length, ftp, weight, x);
+            if (timeStream && wattsStream && ftp) {
+                const corrected = sauce.power.correctedPower(timeStream, wattsStream);
+                if (corrected) {
+                    const np = corrected.np();
+                    // Calculate TSS based on elapsed time when NP is being used.
+                    const tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
+                    intensity = np / ctx.ftp;
+                }
+            }
+            console.log(timeStream, wattsStream, ftp, weight, x);
         }
         return results;
     }

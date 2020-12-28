@@ -527,13 +527,20 @@ sauce.ns('hist', async ns => {
 
     async function findPeaks(...args) {
         const s = Date.now();
-        const result = await Promise.all([
-            workerPool.exec('findPeaks', ...args),
-        ]);
+        const result = await workerPool.exec('findPeaks', ...args);
         console.debug('Done: took', Date.now() - s);
         return result;
     }
     sauce.proxy.export(findPeaks, {namespace});
+
+
+    async function bulkTSS(...args) {
+        const s = Date.now();
+        const result = await workerPool.exec('bulkTSS', ...args);
+        console.debug('Done: took', Date.now() - s);
+        return result;
+    }
+    sauce.proxy.export(bulkTSS, {namespace});
 
 
     function download(blob, name) {
@@ -678,6 +685,7 @@ sauce.ns('hist', async ns => {
             this.currentUser = currentUser;
             this._stopping = false;
             this._activeJobs = new Map();
+            this._athleteLock = new locks.Lock();
             this._refreshRequests = new Set();
             this._refreshEvent = new locks.Event();
             this._refreshLoop = this.refreshLoop();
@@ -732,9 +740,8 @@ sauce.ns('hist', async ns => {
         }
 
         async _importAthleteFTPHistory() {
-            const athlete = (await athletesStore.get(this.currentUser)) || {id: this.currentUser};
-            athlete.ftpHistory = await getSelfFTPs();
-            await athletesStore.put(athlete);
+            const ftpHistory = await getSelfFTPs();
+            await this.updateAthlete(this.currentUser, {ftpHistory});
         }
 
         _isActive(athlete) {
@@ -763,15 +770,12 @@ sauce.ns('hist', async ns => {
                     });
                     this._activeJobs.set(athlete.id, syncJob);
                     syncJob.run();
-                    syncJob.wait().catch(e => {
+                    syncJob.wait().finally(async () => {
+                        await this.updateAthlete(athlete.id, {lastSync: Date.now()});
+                        this._activeJobs.delete(athlete.id);
+                    }).catch(async e => {
                         console.error('Sync error occurred:', e);
-                        athlete.lastError = Date.now();
-                    }).finally(async () => {
-                        if (!syncJob.cancelled()) {
-                            athlete.lastSync = Date.now();
-                            await athletesStore.put(athlete);
-                        }
-                        this._activeJobs.delete(athlete.athlete);
+                        await this.updateAthlete(athlete.id, {lastError: Date.now()});
                     });
                 }
             }
@@ -782,28 +786,25 @@ sauce.ns('hist', async ns => {
             this._refreshEvent.set();
         }
 
+        async updateAthlete(id, obj) {
+            await this._athleteLock.acquire();
+            try {
+                const athlete = (await athletesStore.get(id)) || {id};
+                Object.assign(athlete, obj);
+                await athletesStore.put(athlete);
+                return athlete;
+            } finally {
+                this._athleteLock.release();
+            }
+        }
+
         async enableAthlete(id) {
-            const athlete = (await athletesStore.get(id)) || {id};
-            if (athlete.sync) {
-                throw new Error('Athlete already syncing: ' + athlete);
-            }
-            if (id === this.currentUser) {
-                athlete.ftpHistory = await getSelfFTPs();
-            }
-            athlete.sync = DBTrue;
-            athlete.lastSync = 0;
-            athlete.syncStatus = 'new';
-            await athletesStore.put(athlete);
+            await this.updateAthlete(id, {sync: DBTrue, lastSync: 0, syncStatus: 'new'});
             this._refreshEvent.set();
         }
 
         async disableAthlete(id) {
-            const athlete = await athletesStore.get(id);
-            if (athlete && !athlete.sync) {
-                throw new Error('Athlete already disabled: ' + athlete);
-            }
-            athlete.sync = DBFalse;
-            await athletesStore.put(athlete);
+            await this.updateAthlete(id, {sync: DBFalse});
             if (this._activeJobs.has(id)) {
                 const syncJob = this._activeJobs.get(id);
                 syncJob.cancel();
@@ -865,6 +866,7 @@ sauce.ns('hist', async ns => {
         syncPeerActivities,
         syncStreams,
         findPeaks,
+        bulkTSS,
         streamsStore,
         actsStore,
         athletesStore,

@@ -8,7 +8,7 @@ importScripts('/src/common/lib.js');
 
 const calls = {
     findPeaks: sauce.perf.findPeaks,
-    tss: sauce.perf.tss,
+    bulkTSS: sauce.perf.bulkTSS,
 };
 
 self.addEventListener('message', async ev => {
