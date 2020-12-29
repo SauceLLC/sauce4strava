@@ -28,6 +28,13 @@ sauce.ns('hist', async ns => {
             'temp',
         ])
     }];
+    const latestStreamsVersion = streamManifests[streamManifests.length - 1].version;
+
+    const procManifests = [{
+        version: 1,
+        callback: createActiveStream
+    }];
+    const latestProcVersion = procManifests[procManifests.length - 1].version;
 
 
     class FetchError extends Error {
@@ -364,7 +371,7 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function fetchAllStreams(activityId, {cancelEvent}) {
+    async function fetchStreams(activityId, {cancelEvent}) {
         const q = new URLSearchParams();
         for (const m of streamManifests) {
             for (const x of m.streams) {
@@ -383,7 +390,7 @@ sauce.ns('hist', async ns => {
             }
             console.group('Fetch All Streams: ' + activityId);
             for (const x of rateLimiters) {
-                console.info('' + x);
+                console.debug('' + x);
             }
             console.groupEnd();
             try {
@@ -423,31 +430,38 @@ sauce.ns('hist', async ns => {
         await actsStore.putMany(activities.map(x => Object.assign({streamsVersion: 1}, x)));
         console.warn("XXX Retrofitted streamsVersion on all activities");
         // XXX
-        const outstanding = new Map(activities.map(x => [x.id, x]));
+        const unfetched = new Map(activities.map(x => [x.id, x]));
+        const unprocessed = new queues.Queue();
         const cancelEvent = options.cancelEvent;
-        const latestManifestVersion = streamManifests[streamManifests.length - 1].version;
+        const deferPerError = 86400 * 1000;
         for await (const x of streamsStore.activitiesByAthlete(athlete)) {
-            const act = outstanding.get(x);
+            const act = unfetched.get(x);
             if (!act) {
                 continue;
             }
-            if ((act.streamsVersion && act.streamsVersion >= latestManifestVersion) ||
-                (act.errorTS && Date.now() - act.errorTS < act.errorCount * 86400 * 1000)) {
-                outstanding.delete(x);
+            if (act.streamsVersion && act.streamsVersion >= latestStreamsVersion) {
+                unfetched.delete(x);
+            } else if (act.streamsErrorTS && Date.now() - act.streamsErrorTS < act.streamsErrorCount * deferPerError) {
+                console.warn(`Deferring streams fetch of ${act.id} due to recent error`);
+                unfetched.delete(x);
             }
         }
-        let count = 0;
-        let remaining = outstanding.size;
-        if (!remaining) {
-            console.info(`All ${activities.length} activity streams synchronized for:`, athlete);
-            return count;
+        const deferPerError = 3600 * 1000;
+        for (const act of activities) {
+            if (unfetched.has(act.id)) {
+                continue;
+            }
+            if (!act.procVersion || act.procVersion < latestProcVersion) {
+                unprocessed.putNoWait(act);
+            }
         }
-        console.info(`Need to synchronize ${remaining} of ${activities.length} activity streams for:`, athlete);
-        for (const id of outstanding.keys()) {
+        const procPromise = processWorker(unprocessed);
+        console.info(`Need to fetch ${unfetched.size} of ${activities.length} activity streams for:`, athlete);
+        for (const id of unfetched.keys()) {
             let error;
             let data;
             try {
-                data = await fetchAllStreams(id, {cancelEvent});
+                data = await fetchStreams(id, {cancelEvent});
             } catch(e) {
                 console.warn("Fetch streams error (will retry later):", e);
                 error = e;
@@ -456,7 +470,7 @@ sauce.ns('hist', async ns => {
                 console.warn('Sync streams cancelled for:', athlete);
                 return;
             }
-            const activity = await actsStore.get(id);  // Always refetch after fetchAllStreams
+            const activity = await actsStore.get(id);  // Always refetch after fetchStreams
             if (data) {
                 await streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
                     activity: id,
@@ -469,18 +483,46 @@ sauce.ns('hist', async ns => {
                 activity.noStreams = true;
             } else if (error) {
                 // Often this is an activity converted to private.
-                activity.errorCount = (activity.errorCount || 0) + 1;
-                activity.errorTS = Date.now();
+                activity.streamsErrorCount = (activity.streamsErrorCount || 0) + 1;
+                activity.streamsErrorTS = Date.now();
             }
             await actsStore.put(activity);
-            count++;
-            remaining--;
             if (options.onSync) {
-                await options.onSync({id, data, error, count, remaining});
+                await options.onSync({id, data, error});
             }
         }
+        await procPromise;
         console.info("Completed activities fetch/sync");
-        return count;
+    }
+
+
+    async function processWorker(q) {
+        let act;
+        while ((act = await q.get())) {
+            if (act.procVersion && act.procVersion >= latestProcVersion) {
+                continue;
+            } else if (act.procErrorTS && Date.now() - act.procErrorTS < act.procErrorCount * deferPerError) {
+                console.warn(`Deferring local processing of ${activityId} due to recent error`);
+                return;
+            }
+            for (const x of localManifests) {
+                if (!act.procVersion || act.procVersion < x.version) {
+                    try {
+                        await x.callback(act);
+                    } catch(e) {
+                        act.procErrorCount = (act.procErrorCount || 0) + 1;
+                        act.procErrorTS = Date.now();
+                        break;
+                    }
+                }
+                act.procVersion = x.version;
+            }
+            await actsStore.put(act);
+        }
+    }
+
+
+    async function createActiveStream(activityId) {
     }
 
 
