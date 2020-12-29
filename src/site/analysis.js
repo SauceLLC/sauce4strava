@@ -671,15 +671,8 @@ sauce.ns('analysis', ns => {
                     power = corrected.kj() * 1000 / activeTime;
                     np = supportsNP() ? corrected.np() : null;
                     if (ctx.ftp) {
-                        if (np) {
-                            // Calculate TSS based on elapsed time when NP is being used.
-                            tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
-                            intensity = np / ctx.ftp;
-                        } else {
-                            // Calculate TSS based on active time when just avg is available.
-                            tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
-                            intensity = power / ctx.ftp;
-                        }
+                        tss = sauce.power.calcTSS(np || power, activeTime, ctx.ftp);
+                        intensity = (np || power) / ctx.ftp;
                     }
                 }
             }

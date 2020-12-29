@@ -227,7 +227,6 @@ sauce.ns('data', function() {
         }
     }
 
-
     class Pad extends Number {}
     class Zero extends Pad {}
 
@@ -356,6 +355,11 @@ sauce.ns('data', function() {
             this.popValue(this._values.pop());
             this._times.pop();
         }
+
+        full(options={}) {
+            const offt = options.offt;
+            return this.elapsed({offt}) >= this.period;
+        }
     }
 
 
@@ -373,6 +377,7 @@ sauce.ns('data', function() {
         avg(options) {
             options = options || {};
             if (options.active) {
+                // XXX this is wrong.  active != ignore zeros  It means ignore gaps we zero padded.
                 const count = (this._values.length - this._offt - (this._zeros || 0));
                 return count ? this._sum / count : 0;
             } else {
@@ -381,12 +386,6 @@ sauce.ns('data', function() {
                 }
                 return (this._sum - this._values[this._offt]) / this.elapsed();
             }
-        }
-
-        full(options) {
-            options = options || {};
-            const offt = options.offt;
-            return this.elapsed({offt}) >= this.period;
         }
 
         addValue(value, ts) {
@@ -591,40 +590,39 @@ sauce.ns('power', function() {
 
 
     class RollingPower extends sauce.data.RollingBase {
-        constructor(period, idealGap, maxGap, options) {
+        constructor(period, idealGap, maxGap, options={}) {
             super(period);
             this._joules = 0;
-            this.idealGap = idealGap;
+            this._gapPadCount = 0;
+            this.idealGap = idealGap || 1;
             this.maxGap = maxGap && Math.max(maxGap, idealGap);
-            if (options) {
-                const sampleInterval = idealGap || 1;
-                if (options.inlineNP) {
-                    const sampleRate = 1 / sampleInterval;
-                    const rollSize = Math.round(30 * sampleRate);
-                    this._inlineNP = {
-                        stream: [],
-                        rollSize,
-                        slot: 0,
-                        roll: new Array(rollSize),
-                        rollSum: 0,
-                        total: 0,
-                    };
-                }
-                if (options.inlineXP) {
-                    const samplesPerWindow = 25 / sampleInterval;
-                    this._inlineXP = {
-                        stream: [],
-                        sampleInterval,
-                        samplesPerWindow,
-                        attenuation: samplesPerWindow / (samplesPerWindow + sampleInterval),
-                        sampleWeight: sampleInterval / (samplesPerWindow + sampleInterval),
-                        prevTime: 0,
-                        weighted: 0,
-                        counts: [],
-                        count: 0,
-                        total: 0,
-                    };
-                }
+            this._active = options.active;
+            if (options.inlineNP) {
+                const sampleRate = 1 / this.idealGap;
+                const rollSize = Math.round(30 * sampleRate);
+                this._inlineNP = {
+                    stream: [],
+                    rollSize,
+                    rollFill: 0,
+                    slot: 0,
+                    roll: new Array(rollSize),
+                    rollSum: 0,
+                    total: 0,
+                };
+            }
+            if (options.inlineXP) {
+                const samplesPerWindow = 25 / this.idealGap;
+                this._inlineXP = {
+                    stream: [],
+                    samplesPerWindow,
+                    attenuation: samplesPerWindow / (samplesPerWindow + this.idealGap),
+                    sampleWeight: this.idealGap / (samplesPerWindow + this.idealGap),
+                    prevTime: 0,
+                    weighted: 0,
+                    counts: [],
+                    count: 0,
+                    total: 0,
+                };
             }
         }
 
@@ -635,6 +633,7 @@ sauce.ns('power', function() {
                 if (gap > this.maxGap) {
                     const zeroPad = new sauce.data.Zero();
                     for (let i = this.idealGap; i < gap; i += this.idealGap) {
+                        this._gapPadCount++;
                         super.add(prevTS + i, zeroPad);
                     }
                 } else if (gap > this.idealGap) {
@@ -652,58 +651,82 @@ sauce.ns('power', function() {
             this._joules += value * gap;
             if (this._inlineNP) {
                 const state = this._inlineNP;
-                state.slot = (state.slot + 1) % state.rollSize;
-                state.rollSum += value;
-                state.rollSum -= state.roll[state.slot] || 0;
-                state.roll[state.slot] = value;
-                const npa = state.rollSum / Math.min(state.rollSize, i + 1);
-                const qnpa = npa * npa * npa * npa;  // unrolled for perf
-                state.total += qnpa;
-                state.stream.push(qnpa);
+                const slot = i % state.rollSize;
+                if (value instanceof sauce.data.Zero) {
+                    // Drain the rolling buffer but don't increment the counter.
+                    if (state.rollFill > 0) {
+                        state.rollSum -= state.roll[slot] || 0;
+                        state.roll[slot] = 0;
+                        state.rollFill--;
+                    }
+                    // Maintain alignment so shiftValue is simple.
+                    state.stream.push(null);
+                } else {
+                    state.rollSum += value;
+                    state.rollSum -= state.roll[slot] || 0;
+                    state.roll[slot] = value;
+                    if (state.rollFill < state.rollSize) {
+                        state.rollFill++;
+                    }
+                    const npa = state.rollSum / state.rollFill;
+                    const qnpa = npa * npa * npa * npa;  // unrolled for perf
+                    state.total += qnpa;
+                    state.stream.push(qnpa);
+                }
             }
             if (this._inlineXP) {
                 const state = this._inlineXP;
-                const epsilon = 0.1;
-                const negligible = 0.1;
-                const time = i * state.sampleInterval;
-                let counts = 0;
-                while ((state.weighted > negligible) &&
-                       time > state.prevTime + state.sampleInterval + epsilon) {
-                    // This loop only runs for unpadded streams
+                if (value instanceof sauce.data.Zero) {
+                    // Maintain alignment so shiftValue is simple.
+                    state.stream.push(null);
+                    state.counts.push(null);
+                } else {
+                    const epsilon = 0.1;
+                    const negligible = 0.1;
+                    const time = i * this.idealGap;
+                    let counts = 0;
+                    while ((state.weighted > negligible) &&
+                           time > state.prevTime + this.idealGap + epsilon) {
+                        state.weighted *= state.attenuation;
+                        state.prevTime += this.idealGap;
+                        const w = state.weighted;
+                        state.total += w * w * w * w;  // unroll for perf
+                        state.count++;
+                        counts++;
+                    }
                     state.weighted *= state.attenuation;
-                    state.prevTime += state.sampleInterval;
-                    // unrolled for perf
+                    state.weighted += state.sampleWeight * value;
+                    state.prevTime = time;
                     const w = state.weighted;
-                    state.total += w * w * w * w;  // unroll for perf
+                    const qw = w * w * w * w;  // unrolled for perf
+                    state.total += qw;
                     state.count++;
                     counts++;
+                    state.stream.push(qw);
+                    state.counts.push(counts);
                 }
-                state.weighted *= state.attenuation;
-                state.weighted += state.sampleWeight * value;
-                state.prevTime = time;
-                const w = state.weighted;
-                const qw = w * w * w * w;  // unrolled for perf
-                state.total += qw;
-                state.count++;
-                counts++;
-                state.stream.push(qw);
-                state.counts.push(counts);
             }
             return value;
         }
 
         shiftValue(value) {
+            const isGapPad = value instanceof sauce.data.Zero;
+            if (isGapPad) {
+                this._gapPadCount--;
+            }
             const i = this._offt - 1;
             const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
             this._joules -= this._values[i + 1] * gap;
-            if (this._inlineNP) {
-                const state = this._inlineNP;
-                state.total -= state.stream[i];
-            }
-            if (this._inlineXP) {
-                const state = this._inlineXP;
-                state.total -= state.stream[i];
-                state.count -= state.counts[i];
+            if (!isGapPad) {
+                if (this._inlineNP) {
+                    const state = this._inlineNP;
+                    state.total -= state.stream[i];
+                }
+                if (this._inlineXP) {
+                    const state = this._inlineXP;
+                    state.total -= state.stream[i];
+                    state.count -= state.counts[i];
+                }
             }
         }
 
@@ -720,21 +743,34 @@ sauce.ns('power', function() {
             return this._joules / this.elapsed();
         }
 
-        np(options) {
-            if (this._inlineNP && (!options || !options.external)) {
-                if (this.elapsed() < npMinTime) {
+        active(options={}) {
+            const count = this.size() - (options.offt || 0) - this._gapPadCount;
+            // Subtract the first record as it doesn't indicate a time quanta, just the start ref.
+            return (count - 1) * this.idealGap;
+        }
+
+        full(options={}) {
+            return this._active ? this.active(options) >= this.period : super.full(options);
+        }
+
+        np(options={}) {
+            if (this._inlineNP && !options.external) {
+                if (this.active() < npMinTime) {
                     return;
                 }
                 const state = this._inlineNP;
-                return (state.total / this.size()) ** 0.25;
+                const good = (state.total / (this.size() - this._gapPadCount)) ** 0.25;
+                const bad = (state.total / (this.size())) ** 0.25;
+                if (bad > good) debugger;
+                return good;
             } else {
                 return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt);
             }
         }
 
-        xp(options) {
-            if (this._inlineXP && (!options || !options.external)) {
-                if (this.elapsed() < xpMinTime) {
+        xp(options={}) {
+            if (this._inlineXP && !options.external) {
+                if (this.active() < xpMinTime) {
                     return;
                 }
                 const state = this._inlineXP;
@@ -748,21 +784,17 @@ sauce.ns('power', function() {
             return this._joules / 1000;
         }
 
-        full(options) {
-            options = options || {};
-            const offt = options.offt;
-            return this.elapsed({offt}) >= this.period;
-        }
-
         copy() {
             const instance = super.copy();
             instance.idealGap = this.idealGap;
             instance.maxGap = this.maxGap;
             instance._joules = this._joules;
+            instance._gapPadCount = this._gapPadCount;
             if (this._inlineNP) {
                 const stream = this._inlineNP.stream;
                 instance._inlineNP = Object.assign({}, this._inlineNP);
-                instance._inlineNP.stream = stream.slice(stream.length - instance._times.length);
+                const offt = stream.length - instance._times.length;
+                instance._inlineNP.stream = stream.slice(offt);
             }
             if (this._inlineXP) {
                 const stream = this._inlineXP.stream;
@@ -804,7 +836,8 @@ sauce.ns('power', function() {
 
 
     function peakNP(period, timeStream, wattsStream) {
-        const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null, {inlineNP: true});
+        const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null,
+            {inlineNP: true, active: true});
         if (!roll) {
             return;
         }
@@ -813,7 +846,8 @@ sauce.ns('power', function() {
 
 
     function peakXP(period, timeStream, wattsStream) {
-        const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null, {inlineXP: true});
+        const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null,
+            {inlineXP: true, active: true});
         if (!roll) {
             return;
         }
@@ -847,16 +881,30 @@ sauce.ns('power', function() {
             return;
         }
         const rolling = new Array(rollingSize);
+        let rollFillLevel = 0;
         let total = 0;
         let count = 0;
-        for (let i = _offset, sum = 0, len = stream.length; i < len; i++, count++) {
-            const index = count % rollingSize;
+        for (let i = _offset, sum = 0, len = stream.length; i < len; i++) {
+            const index = (i - _offset) % rollingSize;
             const watts = stream[i];
+            if (watts instanceof sauce.data.Zero) {
+                // Drain the rolling buffer but don't increment the counter.
+                if (rollFillLevel > 0) {
+                    sum -= rolling[index] || 0;
+                    rolling[index] = 0;
+                    rollFillLevel--;
+                }
+                continue;
+            }
             sum += watts;
             sum -= rolling[index] || 0;
             rolling[index] = watts;
-            const avg = sum / Math.min(rollingSize, count + 1);
+            if (rollFillLevel < rollingSize) {
+                rollFillLevel++;
+            }
+            const avg = sum / rollFillLevel;
             total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
+            count++;
         }
         return (total / count) ** 0.25;
     }
@@ -884,6 +932,10 @@ sauce.ns('power', function() {
         let total = 0;
         let count = 0;
         for (let i = _offset, len = stream.length; i < len; i++) {
+            const watts = stream[i];
+            if (watts instanceof sauce.data.Zero) {
+                continue; // Skip Zero pads so after the inner while loop can attenuate on its terms.
+            }
             const time = (i - _offset) * sampleInterval;
             while ((weighted > negligible) && time > prevTime + sampleInterval + epsilon) {
                 weighted *= attenuation;
@@ -892,7 +944,7 @@ sauce.ns('power', function() {
                 count++;
             }
             weighted *= attenuation;
-            weighted += sampleWeight * stream[i];
+            weighted += sampleWeight * watts;
             prevTime = time;
             total += weighted * weighted * weighted * weighted;  // unrolled for perf
             count++;
@@ -1750,9 +1802,10 @@ sauce.ns('perf', function() {
                 const corrected = sauce.power.correctedPower(timeStream, wattsStream);
                 if (corrected) {
                     const np = corrected.np();
-                    // Calculate TSS based on elapsed time when NP is being used.
-                    const tss = sauce.power.calcTSS(np, elapsedTime, ctx.ftp);
-                    intensity = np / ctx.ftp;
+                    const activeTime = 'XXX';
+                    const tss = sauce.power.calcTSS(np, activeTime, ftp);
+                    const intensity = np / ftp;
+                    console.warn({tss, intensity});
                 }
             }
             console.log(timeStream, wattsStream, ftp, weight, x);
