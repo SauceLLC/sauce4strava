@@ -113,7 +113,7 @@ sauce.ns('data', function() {
     }
 
 
-    async function createActiveStream(streams, options={}) {
+    function createActiveStream(streams, options={}) {
         const isTrainer = options.isTrainer;
         const timeStream = streams.time;
         const movingStream = streams.moving;
