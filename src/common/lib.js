@@ -113,13 +113,13 @@ sauce.ns('data', function() {
     }
 
 
-    async function createActiveStream(options={}) {
+    async function createActiveStream(streams, options={}) {
         const isTrainer = options.isTrainer;
-        const timeStream = options.streams.time;
-        const movingStream = options.streams.moving;
-        const cadenceStream = isTrainer && options.streams.cadence;
-        const wattsStream = options.streams.watts;
-        const distStream = options.streams.distance;
+        const timeStream = streams.time;
+        const movingStream = streams.moving;
+        const cadenceStream = isTrainer && streams.cadence;
+        const wattsStream = streams.watts;
+        const distStream = streams.distance;
         const activeStream = [];
         const speedMin = 0.447;  // meter/second (1mph)
         for (let i = 0; i < movingStream.length; i++) {

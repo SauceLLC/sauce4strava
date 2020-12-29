@@ -556,13 +556,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function makeWattsSeaLevelStream(wattsStream, altStream) {
-        const seaWatts = wattsStream.map((x, i) => Math.round(sauce.power.seaLevelPower(x, altStream[i])));
-        pageView.streams().streamData.add('watts_sealevel', seaWatts);
-        return seaWatts;
-    }
-
-
     async function assignTrailforksToSegments() {
         if (!sauce.options['analysis-trailforks']) {
             return;
@@ -639,7 +632,6 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance');
         const gradeDistStream = distStream && await fetchGradeDistStream();
         const cadenceStream = await fetchStream('cadence');
-        const activeTime = await getActiveTime();
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
         const isWattEstimate = !realWattsStream;
@@ -660,10 +652,20 @@ sauce.ns('analysis', ns => {
                 wattsStream = await fetchStream('watts_calc');
             }
         }
+        const isTrainer = pageView.activity().isTrainer();
+        pageView.streams().streamData.add('active', sauce.data.createActiveStream({
+            time: timeStream,
+            moving: await fetchStream('moving'),
+            cadence: cadenceStream,
+            watts: wattsStream,
+            distance: distStream,
+        }, {isTrainer}));
+        const activeTime = getActiveTime();
         let tss, tTss, np, intensity, power;
         if (wattsStream) {
             if (supportsSP()) {
-                makeWattsSeaLevelStream(wattsStream, altStream);
+                const seaWatts = wattsStream.map((x, i) => Math.round(sauce.power.seaLevelPower(x, altStream[i])));
+                pageView.streams().streamData.add('watts_sealevel', seaWatts);
             }
             if (hasAccurateWatts()) {
                 const corrected = sauce.power.correctedPower(timeStream, wattsStream);
@@ -1174,7 +1176,7 @@ sauce.ns('analysis', ns => {
         if (cadence &&
             (ctx.cadenceFormatter.key === 'step_cadence' ||
              ctx.cadenceFormatter.key === 'swim_cadence')) {
-            const activeTime = await getActiveTime(startIdx, endIdx);
+            const activeTime = getActiveTime(startIdx, endIdx);
             stride = distance / activeTime / (cadence * 2 / 60);
         }
         const body = await template({
@@ -1960,6 +1962,7 @@ sauce.ns('analysis', ns => {
         jQuery(tfCol).append($tf);
     }
 
+
     async function showTrailforksModal(descs) {
         const extUrlIcon = await sauce.images.asText('fa/external-link-duotone.svg');
         function selectedTab() {
@@ -2255,40 +2258,17 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function getActiveStream(start, end) {
-        const isTrainer = pageView.activity().isTrainer();
-        const timeStream = await fetchStream('time', start, end);
-        const movingStream = await fetchStream('moving', start, end);
-        const cadenceStream = isTrainer && await fetchStream('cadence', start, end);
-        const wattsStream = await fetchStream('watts', start, end);
-        const distStream = await fetchStream('distance', start, end);
-        const activeStream = [];
-        const speedMin = 0.447;  // meter/second (1mph)
-        for (let i = 0; i < movingStream.length; i++) {
-            activeStream.push(!!(
-                movingStream[i] ||
-                (cadenceStream && cadenceStream[i]) ||
-                (wattsStream && wattsStream[i]) ||
-                (distStream && i &&
-                 (distStream[i] - distStream[i - 1]) /
-                 (timeStream[i] - timeStream[i - 1]) >= speedMin)
-            ));
-        }
-        return activeStream;
-    }
-
-
-    async function getActiveTime(start, end) {
-        const activeStream = await getActiveStream(start, end);
-        const timeStream = await fetchStream('time', start, end);
+    function getActiveTime(start, end) {
+        const activeStream = _getStream('active', start, end);
+        const timeStream = _getStream('time', start, end);
         return sauce.data.activeTime(timeStream, activeStream);
     }
 
 
-    async function getStopCount(start, end) {
+    function getStopCount(start, end) {
         let stops = 0;
         let wasActive = false;
-        const activeStream = await getActiveStream(start, end);
+        const activeStream = _getStream('active', start, end);
         for (const x of activeStream) {
             if (!x && wasActive) {
                 stops++;
@@ -2380,7 +2360,7 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
-        const activeTime = await getActiveTime(start, end);
+        const activeTime = getActiveTime(start, end);
         const correctedPower = await correctedPowerTimeRange(getStreamIndexTime(start), getStreamIndexTime(end));
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
@@ -2392,7 +2372,7 @@ sauce.ns('analysis', ns => {
             elapsed: humanTime(elapsedTime),
             active: humanTime(activeTime),
             paused: ctx.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
-            stops: await getStopCount(start, end),
+            stops: getStopCount(start, end),
             weight: ctx.weight,
             elUnit: ctx.elevationFormatter.shortUnitKey(),
             isSpeed: ctx.paceMode === 'speed',
