@@ -113,6 +113,29 @@ sauce.ns('data', function() {
     }
 
 
+    async function createActiveStream(options={}) {
+        const isTrainer = options.isTrainer;
+        const timeStream = options.streams.time;
+        const movingStream = options.streams.moving;
+        const cadenceStream = isTrainer && options.streams.cadence;
+        const wattsStream = options.streams.watts;
+        const distStream = options.streams.distance;
+        const activeStream = [];
+        const speedMin = 0.447;  // meter/second (1mph)
+        for (let i = 0; i < movingStream.length; i++) {
+            activeStream.push(!!(
+                movingStream[i] ||
+                (cadenceStream && cadenceStream[i]) ||
+                (wattsStream && wattsStream[i]) ||
+                (distStream && i &&
+                 (distStream[i] - distStream[i - 1]) /
+                 (timeStream[i] - timeStream[i - 1]) >= speedMin)
+            ));
+        }
+        return activeStream;
+    }
+
+
     function activeTime(timeStream, activeStream) {
         if (timeStream.length < 2) {
             return 0;
@@ -466,6 +489,7 @@ sauce.ns('data', function() {
         median,
         stddev,
         resample,
+        createActiveStream,
         activeTime,
         recommendedTimeGaps,
         tabulate,
