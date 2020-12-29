@@ -427,7 +427,7 @@ sauce.ns('hist', async ns => {
         const activities = await actsStore.getAllForAthlete(athlete, {filter});
         // XXX
         // This is just to avoid having to manually update my test clients Remove ASAP
-        await actsStore.putMany(activities.map(x => Object.assign({streamsVersion: 1}, x)));
+        await actsStore.putMany(activities.map(x => Object.assign(x, {streamsVersion: 1})));
         console.warn("XXX Retrofitted streamsVersion on all activities");
         // XXX
         const unfetched = new Map(activities.map(x => [x.id, x]));
@@ -446,7 +446,6 @@ sauce.ns('hist', async ns => {
                 unfetched.delete(x);
             }
         }
-        const deferPerError = 3600 * 1000;
         for (const act of activities) {
             if (unfetched.has(act.id)) {
                 continue;
@@ -478,7 +477,7 @@ sauce.ns('hist', async ns => {
                     stream,
                     data
                 })));
-                activity.streamsVersion = latestManifestVersion;
+                activity.streamsVersion = latestStreamsVersion;
             } else if (data === null) {
                 activity.noStreams = true;
             } else if (error) {
@@ -498,14 +497,15 @@ sauce.ns('hist', async ns => {
 
     async function processWorker(q) {
         let act;
+        const deferPerError = 3600 * 1000;
         while ((act = await q.get())) {
             if (act.procVersion && act.procVersion >= latestProcVersion) {
                 continue;
             } else if (act.procErrorTS && Date.now() - act.procErrorTS < act.procErrorCount * deferPerError) {
-                console.warn(`Deferring local processing of ${activityId} due to recent error`);
+                console.warn(`Deferring local processing of ${act.id} due to recent error`);
                 return;
             }
-            for (const x of localManifests) {
+            for (const x of procManifests) {
                 if (!act.procVersion || act.procVersion < x.version) {
                     try {
                         await x.callback(act);
