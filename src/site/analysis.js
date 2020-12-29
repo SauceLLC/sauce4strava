@@ -503,7 +503,7 @@ sauce.ns('analysis', ns => {
                 source,
                 sourceTooltip: source + '_tooltip',
                 sourceIcon: await sauce.images.asText(ctx.peakIcons[source]),
-            }, await this.renderAttrs.call(this, source))));
+            }, this.renderAttrs.call(this, source))));
             navHeightAdjustments();
         }
 
@@ -689,7 +689,6 @@ sauce.ns('analysis', ns => {
                 tTss = sauce.perf.tTSS(hrStream, timeStream, movingStream, ltHR, restingHR, maxHR, ctx.gender);
             }
         }
-
         assignTrailforksToSegments().catch(sauce.report.error);
         renderTertiaryStats({
             weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
@@ -742,7 +741,7 @@ sauce.ns('analysis', ns => {
             }
             const panel = new PeakEffortsPanel({
                 menu,
-                renderAttrs: async source => {
+                renderAttrs: source => {
                     const rows = [];
                     const attrs = {};
                     const activity = pageView.activity();
@@ -751,7 +750,7 @@ sauce.ns('analysis', ns => {
                     if (source === 'peak_power' || source === 'peak_sp') {
                         let dataStream;
                         if (source === 'peak_sp') {
-                            dataStream = await fetchStream('watts_sealevel');
+                            dataStream = _getStream('watts_sealevel');
                             attrs.isWattEstimate = true;
                         } else {
                             dataStream = wattsStream;

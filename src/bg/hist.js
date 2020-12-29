@@ -10,21 +10,24 @@ sauce.ns('hist', async ns => {
     const futures = await sauce.getModule(extUrl + 'src/common/jscoop/futures.js');
     const locks = await sauce.getModule(extUrl + 'src/common/jscoop/locks.js');
 
-    // NOTE: If this list grows we have to re-sync!
-    const syncStreamTypes = [
-        'time',
-        'heartrate',
-        'altitude',
-        'distance',
-        'moving',
-        'velocity_smooth',
-        'cadence',
-        'latlng',
-        'watts',
-        'watts_calc',
-        'grade_adjusted_distance',
-        'temp',
-    ];
+    // NOTE: Do not add new entries to each set, only remove or add new sets.
+    const streamManifests = [{
+        version: 1,
+        streams: new Set([
+            'time',
+            'heartrate',
+            'altitude',
+            'distance',
+            'moving',
+            'velocity_smooth',
+            'cadence',
+            'latlng',
+            'watts',
+            'watts_calc',
+            'grade_adjusted_distance',
+            'temp',
+        ])
+    }];
 
 
     class FetchError extends Error {
@@ -362,8 +365,14 @@ sauce.ns('hist', async ns => {
 
 
     async function fetchAllStreams(activityId, {cancelEvent}) {
+        const streamTypes = new Set();
+        for (const m of streamManifests) {
+            for (const x of m.streams) {
+                streamTypes.add(x);
+            }
+        }
         const q = new URLSearchParams();
-        for (const x of syncStreamTypes) {
+        for (const x of streamTypes) {
             q.append('stream_types[]', x);
         }
         const rateLimiters = getStreamRateLimiterGroup();
@@ -413,10 +422,18 @@ sauce.ns('hist', async ns => {
     async function syncStreams(athlete, options={}) {
         const filter = c => !c.value.noStreams;
         const activities = await actsStore.getAllForAthlete(athlete, {filter});
-        const outstanding = new Set(activities.map(x => x.id));
+        const outstanding = new Map(activities.map(x => [x.id, x]));
         const cancelEvent = options.cancelEvent;
+        const latestManifestVersion = streamManifests[streamManifests.length - 1].version;
         for await (const x of streamsStore.activitiesByAthlete(athlete)) {
-            outstanding.delete(x);
+            const act = outstanding.get(x);
+            if (!act) {
+                continue;
+            }
+            if ((act.streamsVersion && act.streamsVersion >= latestManifestVersion) ||
+                (act.errorTS && Date.now() - act.errorTS < act.errorCount * 86400 * 1000)) {
+                outstanding.delete(x);
+            }
         }
         let count = 0;
         let remaining = outstanding.size;
@@ -425,31 +442,40 @@ sauce.ns('hist', async ns => {
             return count;
         }
         console.info(`Need to synchronize ${remaining} of ${activities.length} activity streams for:`, athlete);
-        for (const id of outstanding) {
+        for (const id of outstanding.keys()) {
+            let error;
+            let data;
             try {
-                const data = await fetchAllStreams(id, {cancelEvent});
-                if (cancelEvent.isSet()) {
-                    console.warn("Sync streams cancelled for:", athlete);
-                    return;
-                }
-                if (data) {
-                    await streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
-                        activity: id,
-                        athlete,
-                        stream,
-                        data
-                    })));
-                } else if (data === null) {
-                    const activity = await actsStore.get(id);
-                    activity.noStreams = true;
-                    await actsStore.put(activity);
-                }
-                count++;
-                if (options.onSync) {
-                    await options.onSync({id, data, count, remaining});
-                }
+                data = await fetchAllStreams(id, {cancelEvent});
             } catch(e) {
-                console.warn("Fetch streams errors:", e);
+                console.warn("Fetch streams error (will retry later):", e);
+                error = e;
+            }
+            if (cancelEvent.isSet()) {
+                console.warn('Sync streams cancelled for:', athlete);
+                return;
+            }
+            const activity = await actsStore.get(id);  // Always refetch after fetchAllStreams
+            if (data) {
+                await streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
+                    activity: id,
+                    athlete,
+                    stream,
+                    data
+                })));
+                activity.streamsVersion = latestManifestVersion;
+            } else if (data === null) {
+                activity.noStreams = true;
+            } else if (error) {
+                // Often this is an activity converted to private.
+                activity.errorCount = (activity.errorCount || 0) + 1;
+                activity.errorTS = Date.now();
+            }
+            await actsStore.put(activity);
+            count++;
+            remaining--;
+            if (options.onSync) {
+                await options.onSync({id, data, error, count, remaining});
             }
         }
         console.info("Completed activities fetch/sync");
@@ -678,9 +704,9 @@ sauce.ns('hist', async ns => {
         constructor(currentUser) {
             super();
             console.info(`Starting Sync Manager for:`, currentUser);
-            this.refreshInterval = 12 * 3600 * 1000;  // Or shorter with user intervention
-            this.refreshInterval = 120 * 1000;  // XXX
-            this.refreshErrorBackoff = 1 * 3600 * 1000;
+            //this.refreshInterval = 12 * 3600 * 1000;  // Or shorter with user intervention
+            this.refreshInterval = 300 * 1000;  // XXX
+            //this.refreshErrorBackoff = 1 * 3600 * 1000;
             this.refreshErrorBackoff = 60 * 1000; // XXX
             this.currentUser = currentUser;
             this._stopping = false;
