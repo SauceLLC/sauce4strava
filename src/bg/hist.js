@@ -425,11 +425,6 @@ sauce.ns('hist', async ns => {
     async function syncStreams(athlete, options={}) {
         const filter = c => !c.value.noStreams;
         const activities = await actsStore.getAllForAthlete(athlete, {filter});
-        // XXX
-        // This is just to avoid having to manually update my test clients Remove ASAP
-        await actsStore.putMany(activities.map(x => Object.assign(x, {streamsVersion: 1})));
-        console.warn("XXX Retrofitted streamsVersion on all activities");
-        // XXX
         const unfetched = new Map(activities.map(x => [x.id, x]));
         const unprocessed = new queues.Queue();
         const cancelEvent = options.cancelEvent;

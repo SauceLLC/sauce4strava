@@ -6,7 +6,7 @@ sauce.ns('hist.db', async ns => {
 
     class HistDatabase extends sauce.db.Database {
         get version() {
-            return 5;
+            return 6;
         }
 
         migrate(idb, t, oldVersion, newVersion) {
@@ -29,6 +29,17 @@ sauce.ns('hist.db', async ns => {
             if (oldVersion < 5) {
                 const store = idb.createObjectStore("athletes", {keyPath: 'id'});
                 store.createIndex('sync', 'sync');
+            }
+            if (oldVersion < 6) {
+                // XXX REmove me... ASAP
+                // This is just to avoid having to manually update my test clients Remove ASAP
+                setTimeout(async () => {
+                    const s = new ActivitiesStore();
+                    const acts = await s.getAll();
+                    await s.putMany(acts.map(x => Object.assign(x, {streamsVersion: 1})));
+                    console.warn("XXX Retrofitted streamsVersion on all activities", acts.length);
+                }, 0);
+                // /XXX
             }
         }
     }
