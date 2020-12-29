@@ -273,13 +273,33 @@ self.sauceBaseInit = function sauceBaseInit() {
             return this.db.getStore(this.name, mode);
         }
 
-        async get(query, options={}) {
+        async _readQuery(getter, query, options={}, ...getterExtraArgs) {
             if (!this.db.started) {
                 await this.db.start();
             }
             const store = this._getStore('readonly');
             const ifc = options.index ? store.index(options.index) : store;
-            return await this._request(ifc.get(query));
+            return await this._request(ifc[getter](query, ...getterExtraArgs));
+        }
+
+        async get(query, options={}) {
+            return await this._readQuery('get', query, options);
+        }
+
+        async getKey(query, options={}) {
+            return await this._readQuery('getKey', query, options);
+        }
+
+        async getAll(query, options={}) {
+            return await this._readQuery('getAll', query, options, options.count);
+        }
+
+        async getAllKeys(query, options={}) {
+            return await this._readQuery('getAllKeys', query, options, options.count);
+        }
+
+        async count(query, options={}) {
+            return await this._readQuery('count', query, options);
         }
 
         async getMany(queries, options={}) {
@@ -335,15 +355,6 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
             await Promise.all(requests.map(x => this._request(x)));
             return requests.length;
-        }
-
-        async count(query, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
-            }
-            const store = this._getStore();
-            const ifc = options.index ? store.index(options.index) : store;
-            return await this._request(ifc.count(query));
         }
 
         async *values(query, options={}) {
