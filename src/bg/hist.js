@@ -672,8 +672,13 @@ sauce.ns('hist', async ns => {
         const resp = await fetch("https://www.strava.com/settings/performance");
         const raw = await resp.text();
         const table = [];
-        for (const x of JSON.parse(raw.match(/all_ftps = (\[.*\]);/)[1])) {
-            table.push({ts: x.start_date * 1000, value: x.value});
+        if (raw) {
+            const encoded = raw.match(/all_ftps = (\[.*\]);/);
+            if (encoded) {
+                for (const x of JSON.parse(encoded[1])) {
+                    table.push({ts: x.start_date * 1000, value: x.value});
+                }
+            }
         }
         return table;
     }
