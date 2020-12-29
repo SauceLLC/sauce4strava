@@ -261,12 +261,14 @@ sauce.ns('hist', async ns => {
                 }
                 let ts;
                 const dateM = entry.match(/<time [^>]*?datetime=\\'(.*?)\\'/);
-                if (!dateM) {
+                if (dateM) {
+                    const isoDate = dateM[1].replace(/ UTC$/, 'Z').replace(/ /, 'T');
+                    ts = (new Date(isoDate)).getTime();
+                }
+                if (!ts) {
                     console.error("Unable to get timestamp from feed entry");
                     debugger;
                     ts = (new Date(`${year}-${month}`)).getTime(); // Just an approximate value for sync.
-                } else {
-                    ts = (new Date(dateM[1])).getTime();
                 }
                 let idMatch;
                 if (isGroup) {
