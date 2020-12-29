@@ -365,15 +365,11 @@ sauce.ns('hist', async ns => {
 
 
     async function fetchAllStreams(activityId, {cancelEvent}) {
-        const streamTypes = new Set();
+        const q = new URLSearchParams();
         for (const m of streamManifests) {
             for (const x of m.streams) {
-                streamTypes.add(x);
+                q.append('stream_types[]', x);
             }
-        }
-        const q = new URLSearchParams();
-        for (const x of streamTypes) {
-            q.append('stream_types[]', x);
         }
         const rateLimiters = getStreamRateLimiterGroup();
         for (let i = 1;; i++) {
@@ -422,6 +418,11 @@ sauce.ns('hist', async ns => {
     async function syncStreams(athlete, options={}) {
         const filter = c => !c.value.noStreams;
         const activities = await actsStore.getAllForAthlete(athlete, {filter});
+        // XXX
+        // This is just to avoid having to manually update my test clients Remove ASAP
+        await actsStore.putMany(activities.map(x => Object.assign({streamsVersion: 1}, x)));
+        console.warn("XXX Retrofitted streamsVersion on all activities");
+        // XXX
         const outstanding = new Map(activities.map(x => [x.id, x]));
         const cancelEvent = options.cancelEvent;
         const latestManifestVersion = streamManifests[streamManifests.length - 1].version;
