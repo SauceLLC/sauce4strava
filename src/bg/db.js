@@ -273,6 +273,7 @@ sauce.ns('hist.db', async ns => {
                 'temp',
             ])
         }],
+
         local: [{
             version: 1,
             errorBackoff: 3600 * 1000,
@@ -316,7 +317,22 @@ sauce.ns('hist.db', async ns => {
 
         canSync(name) {
             const state = this.getSyncState(name);
-            return !state || !state.errorTS || Date.now() - state.errorTS > state.errorCount * state.errorBackoff;
+            if (state && state.errorTS) {
+                const manifest = this.getSyncManifest(name);
+                let backoff;
+                for (const m of manifest) {
+                    if (m.version === state.version) {
+                        backoff = m.errorBackoff;
+                        break;
+                    }
+                }
+                if (!backoff) {
+                    throw new Error('Internal Error: errorBackoff not found for manifest: ' + name);
+                }
+                return Date.now() - state.errorTS > state.errorCount * backoff;
+            } else {
+                return true;
+            }
         }
 
         shouldSync(name) {

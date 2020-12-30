@@ -415,7 +415,7 @@ sauce.ns('hist', async ns => {
                 console.warn(`Deferring streams fetch of ${a.get('id')} due to recent error`);
                 unfetched.delete(a.get('id'));
             } else if (!needsFetch && !a.isSyncLatest('local')) {
-                if (!a.canSync('latest')) {
+                if (!a.canSync('local')) {
                     console.warn(`Deferring local processing of ${a.get('id')} due to recent error`);
                 } else {
                     unprocessed.putNoWait(a);
@@ -722,7 +722,7 @@ sauce.ns('hist', async ns => {
             await syncFn(this.athlete);
             this.status = 'streams-sync';
             try {
-                if (Math.random() > 0.50) { // XXX
+                if (Math.random() > 0.90) { // XXX
                     throw new Error("Random Error");
                 }
                 await syncStreams(this.athlete, {
