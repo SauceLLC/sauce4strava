@@ -210,10 +210,150 @@ sauce.ns('hist.db', async ns => {
     }
 
 
+    class Model {
+        constructor(data, store) {
+            this.data = data;
+            this._store = store;
+            this._updated = new Set();
+            this._savePromise = Promise.resolve();
+        }
+
+        get(key) {
+            return this.data[key];
+        }
+
+        set(keyOrObj, value) {
+            if (value === undefined && typeof keyOrObj === 'object') {
+                Object.assing(this.data, keyOrObj);
+                for (const k of Object.keys(keyOrObj)) {
+                    this._updated.add(k);
+                }
+            } else {
+                this.data[keyOrObj] = value;
+                this._updated.add(keyOrObj);
+            }
+        }
+
+        async save(...args) {
+            if (this._savePromise) {
+                this._savePromise = this._savePromise.finally(this._save(...args));
+                return await this._savePromise;
+            }
+        }
+
+        async _save(obj) {
+            if (obj) {
+                for (const [k, v] of Object.entries(obj)) {
+                    this.set(k, v);
+                }
+            }
+            const act = await this._store.get(this.data.id);
+            for (const k of this._updated) {
+                act[k] = this.data[k];
+            }
+            await this._store.put(act);
+            this._updated.clear();
+        }
+    }
+
+
+    // NOTE: Do not add new entries to each set, only remove or add new sets.
+    const activitySyncManifests = {
+        streams: [{
+            version: 1,
+            errorBackoff: 86400 * 1000,
+            data: new Set([
+                'time',
+                'heartrate',
+                'altitude',
+                'distance',
+                'moving',
+                'velocity_smooth',
+                'cadence',
+                'latlng',
+                'watts',
+                'watts_calc',
+                'grade_adjusted_distance',
+                'temp',
+            ])
+        }],
+        local: [{
+            version: 1,
+            errorBackoff: 3600 * 1000,
+            data: 'createActiveStream'
+        }]
+    };
+
+
+    class ActivityModel extends Model {
+        constructor(data, store) {
+            super(data, store);
+            this._syncManifests = activitySyncManifests;
+        }
+
+        getSyncManifest(name) {
+            return this._syncManifests[name];
+        }
+
+        getSyncState(name) {
+            return (this.data.syncState && this.data.syncState[name]) || undefined;
+        }
+
+        isSyncLatest(name) {
+            const m = this.getSyncManifest(name);
+            const latest = m[m.length - 1].version;
+            const state = this.getSyncState(name);
+            return !!(state && state.version && state.version >= latest);
+        }
+
+        canSync(name) {
+            const state = this.getSyncState(name);
+            return !(state && state.errorTS && Date.now() - state.errorTS < state.errorCount * state.errorBackoff);
+        }
+
+        shouldSync(name) {
+            return !this.isSyncLatests(name) && this.canSync(name);
+        }
+
+        setSyncError(name, error) {
+            this.data.syncState = this.data.syncState || {};
+            const state = this.data.syncState[name] = this.data.syncState[name] || {};
+            state.errorCount = (state.errorCount || 0) + 1;
+            state.errorTS = Date.now();
+            state.errorMessage = error.message;
+            this._updated.add('syncState');
+        }
+
+        clearSyncError(name) {
+            this.data.syncState = this.data.syncState || {};
+            const state = this.data.syncState[name] = this.data.syncState[name] || {};
+            delete state.errorCount;
+            delete state.errorTS;
+            delete state.errorMessage;
+            this._updated.add('syncState');
+        }
+
+        setSyncVersion(name, version) {
+            this.data.syncState = this.data.syncState || {};
+            const state = this.data.syncState[name] = this.data.syncState[name] || {};
+            state.version = version;
+            this._updated.add('syncState');
+        }
+
+        setSyncVersionLatest(name) {
+            const m = this.getSyncManifest(name);
+            const latest = m[m.length - 1].version;
+            return this.setSyncVersion(name, latest);
+        }
+    }
+
+
     return {
         HistDatabase,
         ActivitiesStore,
         StreamsStore,
         AthletesStore,
+        ActivityModel,
+        Model,
     };
 });
