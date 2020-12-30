@@ -6,7 +6,7 @@ sauce.ns('hist.db', async ns => {
 
     class HistDatabase extends sauce.db.Database {
         get version() {
-            return 6;
+            return 7;
         }
 
         migrate(idb, t, oldVersion, newVersion) {
@@ -30,13 +30,17 @@ sauce.ns('hist.db', async ns => {
                 const store = idb.createObjectStore("athletes", {keyPath: 'id'});
                 store.createIndex('sync', 'sync');
             }
-            if (oldVersion < 6) {
+            // Version 6 was deprecated in dev.
+            if (oldVersion < 7) {
                 // XXX REmove me... ASAP
                 // This is just to avoid having to manually update my test clients Remove ASAP
                 setTimeout(async () => {
                     const s = new ActivitiesStore();
-                    const acts = await s.getAll();
-                    await s.putMany(acts.map(x => Object.assign(x, {streamsVersion: 1})));
+                    const acts = (await s.getAll()).map(x => new ActivityModel(x, s));
+                    for (const x of acts) {
+                        x.setSyncVersionLatest('streams');
+                    }
+                    await s.putMany(acts.map(x => x.data));
                     console.warn("XXX Retrofitted streamsVersion on all activities", acts.length);
                 }, 0);
                 // /XXX
@@ -281,6 +285,10 @@ sauce.ns('hist.db', async ns => {
             version: 1,
             errorBackoff: 3600 * 1000,
             data: 'createActiveStream'
+        }, {
+            version: 2,
+            errorBackoff: 3600 * 1000,
+            data: 'createActiveStream'
         }]
     };
 
@@ -312,7 +320,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         shouldSync(name) {
-            return !this.isSyncLatests(name) && this.canSync(name);
+            return !this.isSyncLatest(name) && this.canSync(name);
         }
 
         setSyncError(name, error) {

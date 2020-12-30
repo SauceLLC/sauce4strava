@@ -402,14 +402,13 @@ sauce.ns('hist', async ns => {
         const activities = (await actsStore.getAllForAthlete(athlete, {filter})).map(x =>
             new sauce.hist.db.ActivityModel(x, actsStore));
         const unfetched = new Map(activities.map(x => [x.get('id'), x]));
-        const unprocessed = new queues.Queue();
-        const cancelEvent = options.cancelEvent;
         for await (const id of streamsStore.activitiesByAthlete(athlete)) {
             const a = unfetched.get(id);
             if (a && a.isSyncLatest('streams')) {
                 unfetched.delete(id);
             }
         }
+        const unprocessed = new queues.Queue();
         for (const a of activities) {
             const needsFetch = unfetched.has(a.get('id'));
             if (needsFetch && !a.canSync('streams')) {
@@ -419,9 +418,24 @@ sauce.ns('hist', async ns => {
                 unprocessed.putNoWait(a);
             }
         }
-        const localProcPromise = localProcessWorker(unprocessed);
-        console.info(`Need to fetch ${unfetched.size} of ${activities.length} activity streams for:`, athlete);
-        for (const activity of unfetched.values()) {
+        const workers = [];
+        if (unfetched.size) {
+            workers.push(fetchStreamsWorker([...unfetched.values()], athlete, unprocessed, options));
+        } else if (!unprocessed.qsize()) {
+            console.debug("No activity sync required for:", athlete);
+            return;
+        } else {
+            unprocessed.putNoWait(null);  // sentinel
+            workers.push(localProcessWorker(unprocessed, athlete, options));
+        }
+        await Promise.all(workers);
+        console.debug("Activity sync completed for:", athlete);
+    }
+
+
+    async function fetchStreamsWorker(activities, athlete, unprocessed, options={}) {
+        const cancelEvent = options.cancelEvent;
+        for (const activity of activities) {
             let error;
             let data;
             try {
@@ -431,7 +445,7 @@ sauce.ns('hist', async ns => {
                 error = e;
             }
             if (cancelEvent.isSet()) {
-                console.warn('Sync streams cancelled for:', athlete);
+                console.warn('Sync streams cancelled');
                 return;
             }
             if (data) {
@@ -442,6 +456,7 @@ sauce.ns('hist', async ns => {
                     data
                 })));
                 activity.setSyncVersionLatest('streams');
+                unprocessed.putNoWait(activity);
             } else if (data === null) {
                 activity.set('noStreams', true);
             } else if (error) {
@@ -453,7 +468,6 @@ sauce.ns('hist', async ns => {
                 await options.onSyncStreams({activity, data, error});
             }
         }
-        await localProcPromise;
         console.info("Completed activities fetch/sync");
     }
 
@@ -464,36 +478,39 @@ sauce.ns('hist', async ns => {
     };
 
 
-    async function localProcessWorker(q) {
-        let activity;
-        while ((activity = await q.get())) {
+    async function localProcessWorker(q, athlete, options={}) {
+        const cancelEvent = options.cancelEvent;
+        while (true) {
+            const activity = await Promise.race([q.get(), cancelEvent.wait()]);
+            if (cancelEvent.isSet() || activity === null) {
+                return;
+            }
             if (activity.isSyncLatest('local')) {
                 continue;
             } else if (!activity.canSync('local')) {
                 console.warn(`Deferring local processing of ${activity.get('id')} due to recent error`);
-                return;
+                continue;
             }
-            const state = activity.getSyncState('local');
             for (const manifest of activity.getSyncManifest('local')) {
-                if (!state.version || state.version < manifest.version) {
-                    const fn = localProcessingTable[state.data];
+                const state = activity.getSyncState('local');
+                if (!state || !state.version || state.version < manifest.version) {
+                    const fn = localProcessingTable[manifest.data];
                     try {
                         if (!fn) {
-                            throw new Error('Internal Error: Invalid processing name: ' + state.data);
+                            throw new Error('Internal Error: Invalid processing name: ' + manifest.data);
                         }
-                        await fn(activity);
+                        console.debug(`Running local processing function (${state.data}) on ${activity.get('id')}`);
+                        await fn({activity, athlete});
                     } catch(e) {
                         activity.setSyncError('local', e);
                         break;
                     }
                 }
-                activity.setSyncVersion(manifest.version);
+                activity.setSyncVersion('local', manifest.version);
                 await activity.save();
             }
         }
     }
-
-
 
 
     class WorkerPoolExecutor {
