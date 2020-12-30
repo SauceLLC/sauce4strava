@@ -397,7 +397,7 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function syncStreams(athlete, options={}) {
+    async function syncData(athlete, options={}) {
         const filter = c => !c.value.noStreams;
         const activities = (await actsStore.getAllForAthlete(athlete, {filter})).map(x =>
             new sauce.hist.db.ActivityModel(x, actsStore));
@@ -430,8 +430,8 @@ sauce.ns('hist', async ns => {
             return;
         } else {
             unprocessed.putNoWait(null);  // sentinel
-            workers.push(localProcessWorker(unprocessed, athlete, options));
         }
+        workers.push(localProcessWorker(unprocessed, athlete, options));
         await Promise.all(workers);
         console.debug("Activity sync completed for:", athlete);
     }
@@ -468,17 +468,17 @@ sauce.ns('hist', async ns => {
                 activity.setSyncError('streams', error);
             }
             await activity.save();
-            if (options.onSyncStreams) {
-                await options.onSyncStreams({activity, data, error});
+            if (options.onStreams) {
+                await options.onStreams({activity, data, error});
             }
         }
-        console.info("Completed activities fetch/sync");
+        console.info("Completed streams fetch for:", athlete);
     }
 
 
     const localProcessingTable = {
-        createActiveStream: async function(activity) { },
-        randomError: async function(activity) {
+        createActiveStream: async function(data) { },
+        randomError: async function(data) {
             if (Math.random() > 0.75) {
                 throw new Error("Random error strikes again!");
             }
@@ -499,9 +499,12 @@ sauce.ns('hist', async ns => {
                 console.warn(`Deferring local processing of ${activity.get('id')} due to recent error`);
                 continue;
             }
+            let processed = false;
+            let error;
             for (const manifest of activity.getSyncManifest('local')) {
                 const state = activity.getSyncState('local');
                 if (!state || !state.version || state.version < manifest.version) {
+                    processed = true;
                     const name = manifest.data;
                     const version = manifest.version;
                     const fn = localProcessingTable[name];
@@ -513,6 +516,7 @@ sauce.ns('hist', async ns => {
                         await fn({activity, athlete});
                     } catch(e) {
                         console.warn("Local processing error (will retry later):", name, version, e);
+                        error = e;
                         activity.setSyncError('local', e);
                         await activity.save();
                         break;
@@ -520,6 +524,9 @@ sauce.ns('hist', async ns => {
                     activity.setSyncVersion('local', manifest.version);
                     await activity.save();
                 }
+            }
+            if (processed && options.onLocalProcessing) {
+                await options.onLocalProcessing({activity, athlete, error});
             }
         }
     }
@@ -725,10 +732,10 @@ sauce.ns('hist', async ns => {
                 if (Math.random() > 0.90) { // XXX
                     throw new Error("Random Error");
                 }
-                await syncStreams(this.athlete, {
+                await syncData(this.athlete, {
                     cancelEvent: this._cancelEvent,
-                    onSyncStreams: this._onSyncStreams.bind(this),
-                    onSyncLocal: this._onSyncLocal.bind(this),
+                    onStreams: this._onStreams.bind(this),
+                    onLocalProcessing: this._onLocalProcessing.bind(this),
                 });
             } catch(e) {
                 this.status = 'error';
@@ -737,16 +744,14 @@ sauce.ns('hist', async ns => {
             this.status = 'complete';
         }
 
-        _onSyncStreams(data) {
-            console.info("XXX On streams sync!", data);
-            const ev = new Event('syncStreams');
+        _onStreams(data) {
+            const ev = new Event('streams');
             ev.data = data;
             this.dispatchEvent(ev);
         }
 
-        _onSyncLocal(data) {
-            console.info("XXX On local sync!", data);
-            const ev = new Event('syncLocal');
+        _onLocalProcessing(data) {
+            const ev = new Event('local');
             ev.data = data;
             this.dispatchEvent(ev);
         }
@@ -758,7 +763,7 @@ sauce.ns('hist', async ns => {
             super();
             console.info(`Starting Sync Manager for:`, currentUser);
             //this.refreshInterval = 12 * 3600 * 1000;  // Or shorter with user intervention
-            this.refreshInterval = 300 * 1000;  // XXX
+            this.refreshInterval = 120 * 1000;  // XXX
             //this.refreshErrorBackoff = 1 * 3600 * 1000;
             this.refreshErrorBackoff = 60 * 1000; // XXX
             this.currentUser = currentUser;
@@ -800,7 +805,7 @@ sauce.ns('hist', async ns => {
                     console.debug('No athletes enabled for sync.');
                     await this._refreshEvent.wait();
                 } else {
-                    let oldest = 0;
+                    let oldest = -1;
                     const now = Date.now();
                     for (const athlete of enabledAthletes) {
                         if (this._isActive(athlete) || this._isDeferred(athlete)) {
@@ -809,8 +814,10 @@ sauce.ns('hist', async ns => {
                         const age = now - athlete.lastSync;
                         oldest = Math.max(age, oldest);
                     }
-                    const deadline = this.refreshInterval - oldest;
-                    if (deadline > 0) {
+                    if (oldest === -1) {
+                        await this._refreshEvent.wait();
+                    } else {
+                        const deadline = this.refreshInterval - oldest;
                         console.debug(`Next Sync Manager refresh in ${Math.round(deadline / 1000)} seconds`);
                         await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
                     }
@@ -843,22 +850,15 @@ sauce.ns('hist', async ns => {
                     console.debug('Starting sync job for:', athlete.id);
                     const isSelf = this.currentUser === athlete.id;
                     const syncJob = new SyncJob(athlete.id, isSelf);
-                    syncJob.addEventListener('syncStreams', ev => {
-                        ev.job = syncJob;
-                        //this.dispatchEvent(ev);
-                    });
-                    syncJob.addEventListener('syncLocal', ev => {
-                        ev.job = syncJob;
-                        //this.dispatchEvent(ev);
-                    });
                     this._activeJobs.set(athlete.id, syncJob);
                     syncJob.run();
-                    syncJob.wait().finally(async () => {
-                        await this.updateAthlete(athlete.id, {lastSync: Date.now()});
-                        this._activeJobs.delete(athlete.id);
-                    }).catch(async e => {
+                    syncJob.wait().catch(async e => {
                         console.error('Sync error occurred:', e);
                         await this.updateAthlete(athlete.id, {lastError: Date.now()});
+                    }).finally(async () => {
+                        await this.updateAthlete(athlete.id, {lastSync: Date.now()});
+                        this._activeJobs.delete(athlete.id);
+                        this._refreshEvent.set();
                     });
                 }
             }
@@ -947,7 +947,7 @@ sauce.ns('hist', async ns => {
         exportStreams,
         syncSelfActivities,
         syncPeerActivities,
-        syncStreams,
+        syncData,
         findPeaks,
         bulkTSS,
         streamsStore,
