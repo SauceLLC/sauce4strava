@@ -627,7 +627,6 @@ sauce.ns('power', function() {
                 this._inlineNP = {
                     stream: [],
                     rollSize,
-                    rollFill: 0,
                     slot: 0,
                     roll: new Array(rollSize),
                     rollSum: 0,
@@ -678,21 +677,15 @@ sauce.ns('power', function() {
                 const slot = i % state.rollSize;
                 if (value instanceof sauce.data.Zero) {
                     // Drain the rolling buffer but don't increment the counter.
-                    if (state.rollFill > 0) {
-                        state.rollSum -= state.roll[slot] || 0;
-                        state.roll[slot] = 0;
-                        state.rollFill--;
-                    }
+                    state.rollSum -= state.roll[slot] || 0;
+                    state.roll[slot] = 0;
                     // Maintain alignment so shiftValue is simple.
                     state.stream.push(null);
                 } else {
                     state.rollSum += value;
                     state.rollSum -= state.roll[slot] || 0;
                     state.roll[slot] = value;
-                    if (state.rollFill < state.rollSize) {
-                        state.rollFill++;
-                    }
-                    const npa = state.rollSum / state.rollFill;
+                    const npa = state.rollSum / Math.min(state.rollSize, i + 1 - this._offt);
                     const qnpa = npa * npa * npa * npa;  // unrolled for perf
                     state.total += qnpa;
                     state.stream.push(qnpa);
@@ -783,10 +776,7 @@ sauce.ns('power', function() {
                     return;
                 }
                 const state = this._inlineNP;
-                const good = (state.total / (this.size() - this._gapPadCount)) ** 0.25;
-                const bad = (state.total / (this.size())) ** 0.25;
-                if (bad > good) debugger;
-                return good;
+                return (state.total / (this.size() - this._gapPadCount)) ** 0.25;
             } else {
                 return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt);
             }
@@ -905,7 +895,6 @@ sauce.ns('power', function() {
             return;
         }
         const rolling = new Array(rollingSize);
-        let rollFillLevel = 0;
         let total = 0;
         let count = 0;
         for (let i = _offset, sum = 0, len = stream.length; i < len; i++) {
@@ -913,20 +902,14 @@ sauce.ns('power', function() {
             const watts = stream[i];
             if (watts instanceof sauce.data.Zero) {
                 // Drain the rolling buffer but don't increment the counter.
-                if (rollFillLevel > 0) {
-                    sum -= rolling[index] || 0;
-                    rolling[index] = 0;
-                    rollFillLevel--;
-                }
+                sum -= rolling[index] || 0;
+                rolling[index] = 0;
                 continue;
             }
             sum += watts;
             sum -= rolling[index] || 0;
             rolling[index] = watts;
-            if (rollFillLevel < rollingSize) {
-                rollFillLevel++;
-            }
-            const avg = sum / rollFillLevel;
+            const avg = sum / Math.min(rollingSize, i + 1 - _offset);
             total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
             count++;
         }
