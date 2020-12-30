@@ -219,7 +219,6 @@ sauce.ns('hist.db', async ns => {
             this.data = data;
             this._store = store;
             this._updated = new Set();
-            this._savePromise = Promise.resolve();
         }
 
         get(key) {
@@ -238,25 +237,18 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        async save(...args) {
-            if (this._savePromise) {
-                this._savePromise = this._savePromise.finally(this._save(...args));
-                return await this._savePromise;
-            }
-        }
-
-        async _save(obj) {
+        async save(obj) {
             if (obj) {
                 for (const [k, v] of Object.entries(obj)) {
                     this.set(k, v);
                 }
             }
-            const act = await this._store.get(this.data.id);
+            const updates = {};
             for (const k of this._updated) {
-                act[k] = this.data[k];
+                updates[k] = this.data[k];
             }
-            await this._store.put(act);
             this._updated.clear();
+            await this._store.update(this.data.id, updates);
         }
     }
 
@@ -289,6 +281,14 @@ sauce.ns('hist.db', async ns => {
             version: 2,
             errorBackoff: 3600 * 1000,
             data: 'createActiveStream'
+        }, {
+            version: 3,
+            errorBackoff: 60 * 1000,
+            data: 'randomError'
+        }, {
+            version: 4,
+            errorBackoff: 60 * 1000,
+            data: 'randomError'
         }]
     };
 
@@ -316,7 +316,7 @@ sauce.ns('hist.db', async ns => {
 
         canSync(name) {
             const state = this.getSyncState(name);
-            return !(state && state.errorTS && Date.now() - state.errorTS < state.errorCount * state.errorBackoff);
+            return !state || !state.errorTS || Date.now() - state.errorTS > state.errorCount * state.errorBackoff;
         }
 
         shouldSync(name) {

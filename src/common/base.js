@@ -311,6 +311,18 @@ self.sauceBaseInit = function sauceBaseInit() {
             return await Promise.all(queries.map(q => this._request(ifc.get(q))));
         }
 
+        async update(query, updates, options={}) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const store = this._getStore('readwrite');
+            const ifc = options.index ? store.index(options.index) : store;
+            const data = await this._request(ifc.get(query));
+            Object.assign(data, updates);
+            await this._request(store.put(data));
+            return data;
+        }
+
         async put(data, options={}) {
             if (!this.db.started) {
                 await this.db.start();

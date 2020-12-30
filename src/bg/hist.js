@@ -414,8 +414,12 @@ sauce.ns('hist', async ns => {
             if (needsFetch && !a.canSync('streams')) {
                 console.warn(`Deferring streams fetch of ${a.get('id')} due to recent error`);
                 unfetched.delete(a.get('id'));
-            } else if (!needsFetch && a.shouldSync('local')) {
-                unprocessed.putNoWait(a);
+            } else if (!needsFetch && !a.isSyncLatest('local')) {
+                if (!a.canSync('latest')) {
+                    console.warn(`Deferring local processing of ${a.get('id')} due to recent error`);
+                } else {
+                    unprocessed.putNoWait(a);
+                }
             }
         }
         const workers = [];
@@ -473,7 +477,11 @@ sauce.ns('hist', async ns => {
 
 
     const localProcessingTable = {
-        createActiveStream: async function(activity) {
+        createActiveStream: async function(activity) { },
+        randomError: async function(activity) {
+            if (Math.random() > 0.75) {
+                throw new Error("Random error strikes again!");
+            }
         }
     };
 
@@ -494,20 +502,24 @@ sauce.ns('hist', async ns => {
             for (const manifest of activity.getSyncManifest('local')) {
                 const state = activity.getSyncState('local');
                 if (!state || !state.version || state.version < manifest.version) {
-                    const fn = localProcessingTable[manifest.data];
+                    const name = manifest.data;
+                    const version = manifest.version;
+                    const fn = localProcessingTable[name];
                     try {
                         if (!fn) {
                             throw new Error('Internal Error: Invalid processing name: ' + manifest.data);
                         }
-                        console.debug(`Running local processing function (${state.data}) on ${activity.get('id')}`);
+                        console.debug(`Running local processing function (${name}) v${version} on ${activity.get('id')}`);
                         await fn({activity, athlete});
                     } catch(e) {
+                        console.warn("Local processing error (will retry later):", name, version, e);
                         activity.setSyncError('local', e);
+                        await activity.save();
                         break;
                     }
+                    activity.setSyncVersion('local', manifest.version);
+                    await activity.save();
                 }
-                activity.setSyncVersion('local', manifest.version);
-                await activity.save();
             }
         }
     }
@@ -710,7 +722,7 @@ sauce.ns('hist', async ns => {
             await syncFn(this.athlete);
             this.status = 'streams-sync';
             try {
-                if (Math.random() > 0.75) { // XXX
+                if (Math.random() > 0.50) { // XXX
                     throw new Error("Random Error");
                 }
                 await syncStreams(this.athlete, {
