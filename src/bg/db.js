@@ -290,6 +290,22 @@ sauce.ns('hist.db', async ns => {
             version: 4,
             errorBackoff: 60 * 1000,
             data: 'randomError'
+        }, {
+            version: 5,
+            errorBackoff: 60 * 1000,
+            data: 'slowGuy'
+        }, {
+            version: 6,
+            errorBackoff: 60 * 1000,
+            data: 'slowGuy'
+        }, {
+            version: 7,
+            errorBackoff: 60 * 1000,
+            data: 'slowGuy'
+        }, {
+            version: 8,
+            errorBackoff: 60 * 1000,
+            data: 'fastGuy'
         }]
     };
 

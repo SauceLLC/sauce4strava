@@ -536,7 +536,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     async function ga(...args) {
-        if (!sauce.ga && !sauce.ga.applyWithContext) {
+        if (!sauce.ga || !sauce.ga.applyWithContext) {
             await sauce.proxy.connected;
         }
         return await sauce.ga.applyWithContext({referrer: document.referrer}, ...args);

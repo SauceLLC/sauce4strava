@@ -626,57 +626,27 @@ sauce.ns('analysis', ns => {
 
     async function startActivity() {
         const realWattsStream = await fetchStream('watts');
+        const isWattEstimate = !realWattsStream;
+        const wattsStream = realWattsStream || await fetchStream('watts_calc');
         const timeStream = await fetchStream('time');
         const hrStream = await fetchStream('heartrate');
         const altStream = await fetchSmoothStream('altitude');
         const distStream = await fetchStream('distance');
         const gradeDistStream = distStream && await fetchGradeDistStream();
         const cadenceStream = await fetchStream('cadence');
+        const activeStream = await fetchStream('active');
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
-        const isWattEstimate = !realWattsStream;
-        let wattsStream = realWattsStream;
-        if (!wattsStream) {
-            if (ctx.activityType === 'run') {
-                if (ctx.weight && gradeDistStream) {
-                    wattsStream = [0];
-                    for (let i = 1; i < gradeDistStream.length; i++) {
-                        const dist = gradeDistStream[i] - gradeDistStream[i - 1];
-                        const time = timeStream[i] - timeStream[i - 1];
-                        const kj = sauce.pace.work(ctx.weight, dist);
-                        wattsStream.push(kj * 1000 / time);
-                    }
-                    pageView.streams().streamData.add('watts_calc', wattsStream);
-                }
-            } else {
-                wattsStream = await fetchStream('watts_calc');
-            }
-        }
-        const isTrainer = pageView.activity().isTrainer();
-        const activeStream = sauce.data.createActiveStream({
-            time: timeStream,
-            moving: await fetchStream('moving'),
-            cadence: cadenceStream,
-            watts: wattsStream,
-            distance: distStream,
-        }, {isTrainer});
-        pageView.streams().streamData.add('active', activeStream);
         const activeTime = getActiveTime();
         let tss, tTss, np, intensity, power;
-        if (wattsStream) {
-            if (supportsSP()) {
-                const seaWatts = wattsStream.map((x, i) => Math.round(sauce.power.seaLevelPower(x, altStream[i])));
-                pageView.streams().streamData.add('watts_sealevel', seaWatts);
-            }
-            if (hasAccurateWatts()) {
-                const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-                if (corrected) {
-                    power = corrected.kj() * 1000 / activeTime;
-                    np = supportsNP() ? corrected.np() : null;
-                    if (ctx.ftp) {
-                        tss = sauce.power.calcTSS(np || power, activeTime, ctx.ftp);
-                        intensity = (np || power) / ctx.ftp;
-                    }
+        if (wattsStream && hasAccurateWatts()) {
+            const corrected = sauce.power.correctedPower(timeStream, wattsStream);
+            if (corrected) {
+                power = corrected.kj() * 1000 / activeTime;
+                np = supportsNP() ? corrected.np() : null;
+                if (ctx.ftp) {
+                    tss = sauce.power.calcTSS(np || power, activeTime, ctx.ftp);
+                    intensity = (np || power) / ctx.ftp;
                 }
             }
         }
@@ -887,6 +857,45 @@ sauce.ns('analysis', ns => {
             mobileMedia.addListener(ev => void placeInfo(ev.matches));
             placeInfo(mobileMedia.matches);
         }
+    }
+
+
+    async function attachSyncToggle($el) {
+        const $avatar = jQuery('.activity-summary .details-container a.avatar-athlete');
+        const id = ctx.athlete.id;
+        const athlete = await sauce.hist.getAthlete(id);
+        const enabled = !!(athlete && athlete.sync);
+        const syncController = new sauce.hist.SyncController(id);
+        let count = 0;
+        const $syncStatus = jQuery('<span/>');
+        jQuery('#heading h2').append($syncStatus);
+        syncController.addEventListener('start', ev => {
+            $syncStatus.html('Sync Started');
+            $link.addClass('active');
+        });
+        syncController.addEventListener('stop', ev => {
+            $syncStatus.html('Sync Complete');
+            $link.removeClass('active');
+        });
+        syncController.addEventListener('error', ev => {
+            $syncStatus.html('Sync Error');
+        });
+        syncController.addEventListener('progress', ev => {
+            $syncStatus.html(count++);
+        });
+        const active = enabled && await sauce.hist.isAthleteSyncActive(id);
+        const [sync, check]  = await Promise.all([
+            sauce.images.asText('fa/sync-alt-regular.svg'),
+            sauce.images.asText('fa/check-solid.svg'),
+        ]);
+        $avatar.append(jQuery(`<a href="javascript:void(0)" class="sauce-sync-athlete"></a>`));
+        const $link = $avatar.find('a.sauce-sync-athlete');
+        $link.html(sync + check);
+        $link.toggleClass('enabled', enabled);
+        $link.toggleClass('active', active);
+        $link.on('click', async ev => {
+            $link.toggleClass('enabled');
+        });
     }
 
 
@@ -3106,6 +3115,37 @@ sauce.ns('analysis', ns => {
             }
             range.label = range.label.replace(/\.0 /, ' ');
         }
+        const timeStream = await fetchStream('time');
+        const streamData = pageView.streams().streamData;
+        if (ctx.activityType === 'run' && ctx.weight) {
+            const gradeDistStream = await fetchGradeDistStream();
+            if (gradeDistStream) {
+                const wattsStream = [0];
+                for (let i = 1; i < gradeDistStream.length; i++) {
+                    const dist = gradeDistStream[i] - gradeDistStream[i - 1];
+                    const time = timeStream[i] - timeStream[i - 1];
+                    const kj = sauce.pace.work(ctx.weight, dist);
+                    wattsStream.push(kj * 1000 / time);
+                }
+                streamData.add('watts_calc', wattsStream);
+            }
+        }
+        const wattsStream = (await fetchStream('watts')) || (await fetchStream('watts_calc'));
+        if (wattsStream && supportsSP()) {
+            const altStream = await fetchStream('time');
+            streamData.add('watts_sealevel', wattsStream.map((x, i) =>
+                Math.round(sauce.power.seaLevelPower(x, altStream[i]))));
+        }
+        const isTrainer = pageView.activity().isTrainer();
+        const cadenceStream = await fetchStream('cadence');
+        const distStream = await fetchStream('distance');
+        streamData.add('active', sauce.data.createActiveStream({
+            time: timeStream,
+            moving: await fetchStream('moving'),
+            cadence: cadenceStream,
+            watts: wattsStream,
+            distance: distStream,
+        }, {isTrainer}));
         _resolvePrepared();
     }
 
@@ -3281,6 +3321,7 @@ sauce.ns('analysis', ns => {
             startPageMonitors();
             attachRankBadgeDialog();
             await prepareContext();
+            attachSyncToggle();
             // Make sure this is last thing before start..
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;

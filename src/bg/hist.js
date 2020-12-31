@@ -9,6 +9,8 @@ sauce.ns('hist', async ns => {
     const queues = await sauce.getModule(extUrl + 'src/common/jscoop/queues.js');
     const futures = await sauce.getModule(extUrl + 'src/common/jscoop/futures.js');
     const locks = await sauce.getModule(extUrl + 'src/common/jscoop/locks.js');
+    const DBTrue = 1;
+    const DBFalse = 0;
 
     const actsStore = new sauce.hist.db.ActivitiesStore();
     const streamsStore = new sauce.hist.db.StreamsStore();
@@ -482,7 +484,11 @@ sauce.ns('hist', async ns => {
             if (Math.random() > 0.75) {
                 throw new Error("Random error strikes again!");
             }
-        }
+        },
+        slowGuy: async function(data) {
+            await sleep(400);
+        },
+        fastGuy: async function(data) { }
     };
 
 
@@ -694,9 +700,19 @@ sauce.ns('hist', async ns => {
         return table;
     }
 
-    // Indexed DB doesn't support boolean index values.:w
-    const DBTrue = 1;
-    const DBFalse = 0;
+
+    async function getAthlete(id) {
+        return await athletesStore.get(id);
+    }
+    sauce.proxy.export(getAthlete, {namespace});
+
+
+    async function isAthleteSyncActive(id) {
+        const athlete = await athletesStore.get(id);
+        return !!(ns.syncManager && ns.syncManager.isActive(athlete));
+    }
+    sauce.proxy.export(isAthleteSyncActive, {namespace});
+
 
     class SyncJob extends EventTarget {
         constructor(athlete, isSelf) {
@@ -808,7 +824,7 @@ sauce.ns('hist', async ns => {
                     let oldest = -1;
                     const now = Date.now();
                     for (const athlete of enabledAthletes) {
-                        if (this._isActive(athlete) || this._isDeferred(athlete)) {
+                        if (this.isActive(athlete) || this._isDeferred(athlete)) {
                             continue;
                         }
                         const age = now - athlete.lastSync;
@@ -830,7 +846,7 @@ sauce.ns('hist', async ns => {
             await this.updateAthlete(this.currentUser, {ftpHistory});
         }
 
-        _isActive(athlete) {
+        isActive(athlete) {
             return this._activeJobs.has(athlete.id);
         }
 
@@ -840,7 +856,7 @@ sauce.ns('hist', async ns => {
 
         async _refresh() {
             for (const athlete of await athletesStore.getEnabledAthletes()) {
-                if (this._isActive(athlete)) {
+                if (this.isActive(athlete)) {
                     continue;
                 }
                 const now = Date.now();
@@ -850,18 +866,32 @@ sauce.ns('hist', async ns => {
                     console.debug('Starting sync job for:', athlete.id);
                     const isSelf = this.currentUser === athlete.id;
                     const syncJob = new SyncJob(athlete.id, isSelf);
+                    syncJob.addEventListener('streams', ev =>
+                        this.emitForAthlete(athlete, 'progress', 'streams'));
+                    syncJob.addEventListener('local', ev =>
+                        this.emitForAthlete(athlete, 'progress', 'local'));
                     this._activeJobs.set(athlete.id, syncJob);
+                    this.emitForAthlete(athlete, 'start');
                     syncJob.run();
                     syncJob.wait().catch(async e => {
                         console.error('Sync error occurred:', e);
                         await this.updateAthlete(athlete.id, {lastError: Date.now()});
+                        this.emitForAthlete(athlete, 'error', syncJob.status);
                     }).finally(async () => {
                         await this.updateAthlete(athlete.id, {lastSync: Date.now()});
                         this._activeJobs.delete(athlete.id);
                         this._refreshEvent.set();
+                        this.emitForAthlete(athlete, 'stop', syncJob.status);
                     });
                 }
             }
+        }
+
+        emitForAthlete(athlete, name, data) {
+            const ev = new Event(name);
+            ev.athlete = athlete;
+            ev.data = data;
+            this.dispatchEvent(ev);
         }
 
         refreshRequest(athlete) {
@@ -939,8 +969,25 @@ sauce.ns('hist', async ns => {
 
 
     class SyncController extends sauce.proxy.Eventing {
+        constructor(athleteId) {
+            super();
+            this.athleteId = athleteId;
+            console.warn("I'm alive for", athleteId);
+            this.relayEvent('start');
+            this.relayEvent('stop');
+            this.relayEvent('progress');
+        }
+
+        relayEvent(name) {
+            ns.syncManager.addEventListener(name, ev => {
+                if (ev.athlete.id === this.athleteId) {
+                    this.dispatchEvent(ev);
+                }
+            });
+        }
     }
     sauce.proxy.export(SyncController, {namespace});
+
 
     return {
         importStreams,
