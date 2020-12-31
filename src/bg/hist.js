@@ -473,7 +473,7 @@ sauce.ns('hist', async ns => {
                 await options.onStreams({activity, data, error});
             }
         }
-        console.info("Completed streams fetch for:", athlete);
+        console.info("Completed streams fetch for: " + athlete);
     }
 
 
@@ -748,7 +748,7 @@ sauce.ns('hist', async ns => {
 
 
     async function isAthleteSyncActive(id) {
-        const athlete = await athletesStore.get(id);
+        const athlete = await athletesStore.get(id, {model: true});
         return !!(ns.syncManager && ns.syncManager.isActive(athlete));
     }
     sauce.proxy.export(isAthleteSyncActive, {namespace});
@@ -1041,6 +1041,7 @@ sauce.ns('hist', async ns => {
         syncSelfActivities,
         syncPeerActivities,
         syncData,
+        isAthleteSyncActive,
         findPeaks,
         bulkTSS,
         streamsStore,
