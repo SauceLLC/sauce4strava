@@ -308,6 +308,10 @@ sauce.ns('hist.db', async ns => {
             version: 11,
             errorBackoff: 300 * 1000,
             data: 'createRunningWattsCalcStream'
+        }, {
+            version: 12,
+            errorBackoff: 300 * 1000,
+            data: 'calcStats'
         }]
     };
 

@@ -518,6 +518,39 @@ sauce.ns('hist', async ns => {
             });
         },
 
+        calcStats: async function({activity, athlete}) {
+            const ftp = athlete.getFTPAt(activity.get('ts'));
+            if (!ftp) {
+                throw new Error("No FTP for athlete, try TSS calc later...");
+            }
+            const streams = await streamsStore.activityStreams(activity.get('id'));
+            const stats = {};
+            if (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run')) {
+                const corrected = sauce.power.correctedPower(streams.time, streams.watts || streams.watts_calc);
+                const activeTime = sauce.data.activeTime(streams.time, streams.active);
+                stats.kj = corrected.kj();
+                stats.power = stats.kj * 1000 / activeTime;
+                stats.np = corrected.np();
+                stats.xp = corrected.xp();
+                stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
+                stats.intensity = (stats.np || stats.power) / ftp;
+            } else if (streams.heartrate) {
+                if (athlete.get('hrZones') === undefined) {
+                    console.info("Getting HR zones for: " + athlete);
+                    athlete.set('hrZones', await sauce.perf.fetchHRZones(athlete.get('id')) || null);
+                }
+                const zones = athlete.get('hrZones');
+                if (zones) {
+                    const ltHR = (zones.z4 + zones.z3) / 2;
+                    const maxHR = sauce.perf.estimateMaxHR(zones);
+                    const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
+                    stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
+                        ltHR, restingHR, maxHR, athlete.get('gender')); // XXX get gender wired in.
+                }
+            }
+            await athlete.save({stats});
+        },
+
         randomError: async function(data) {
             if (Math.random() > 0.75) {
                 throw new Error("Random error strikes again!");
@@ -1026,7 +1059,7 @@ sauce.ns('hist', async ns => {
 
         relayEvent(name) {
             ns.syncManager.addEventListener(name, ev => {
-                if (ev.athlete.id === this.athleteId) {
+                if (ev.athlete === this.athleteId) {
                     this.dispatchEvent(ev);
                 }
             });
