@@ -353,9 +353,11 @@ sauce.ns('hist.db', async ns => {
                     }
                 }
                 if (!backoff) {
-                    throw new Error('Internal Error: errorBackoff not found for manifest: ' + name);
+                    // The manifest version we errored was removed.  We can continue..
+                    return true;
+                } else {
+                    return Date.now() - state.errorTS > state.errorCount * backoff;
                 }
-                return Date.now() - state.errorTS > state.errorCount * backoff;
             } else {
                 return true;
             }
