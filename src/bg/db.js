@@ -133,6 +133,15 @@ sauce.ns('hist.db', async ns => {
             }
             return athletes;
         }
+
+        async activityStreams(activity) {
+            const data = await this.getAll(activity, {index: 'activity'});
+            const obj = {};
+            for (const x of data) {
+                obj[x.stream] = x.data;
+            }
+            return obj;
+        }
     }
 
 
@@ -158,12 +167,16 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        async getAllForAthlete(athlete, ...args) {
+        async getAllForAthlete(athlete, options={}) {
             const activities = [];
-            for await (const x of this.byAthlete(athlete, ...args)) {
+            for await (const x of this.byAthlete(athlete, options)) {
                 activities.push(x);
             }
-            return activities;
+            if (options.models) {
+                return activities.map(x => new ActivityModel(x, this));
+            } else {
+                return activities;
+            }
         }
 
         async getCountForAthlete(athlete) {
@@ -203,13 +216,26 @@ sauce.ns('hist.db', async ns => {
             super(histDatabase, 'athletes');
         }
 
-        async getEnabledAthletes() {
+        async get(id, options={}) {
+            const data = await super.get(id);
+            if (options.model) {
+                return new AthleteModel(data, this);
+            } else {
+                return data;
+            }
+        }
+
+        async getEnabledAthletes(options={}) {
             const athletes = [];
             const q = IDBKeyRange.only(1);
             for await (const x of this.values(q, {index: 'sync'})) {
                 athletes.push(x);
             }
-            return athletes;
+            if (options.models) {
+                return athletes.map(x => new AthleteModel(x, this));
+            } else {
+                return athletes;
+            }
         }
     }
 
@@ -275,37 +301,13 @@ sauce.ns('hist.db', async ns => {
         }],
 
         local: [{
-            version: 1,
+            version: 10,
             errorBackoff: 3600 * 1000,
             data: 'createActiveStream'
         }, {
-            version: 2,
-            errorBackoff: 3600 * 1000,
-            data: 'createActiveStream'
-        }, {
-            version: 3,
-            errorBackoff: 60 * 1000,
-            data: 'randomError'
-        }, {
-            version: 4,
-            errorBackoff: 60 * 1000,
-            data: 'randomError'
-        }, {
-            version: 5,
-            errorBackoff: 60 * 1000,
-            data: 'slowGuy'
-        }, {
-            version: 6,
-            errorBackoff: 60 * 1000,
-            data: 'slowGuy'
-        }, {
-            version: 7,
-            errorBackoff: 60 * 1000,
-            data: 'slowGuy'
-        }, {
-            version: 8,
-            errorBackoff: 60 * 1000,
-            data: 'fastGuy'
+            version: 11,
+            errorBackoff: 300 * 1000,
+            data: 'createRunningWattsCalcStream'
         }]
     };
 
@@ -314,6 +316,10 @@ sauce.ns('hist.db', async ns => {
         constructor(data, store) {
             super(data, store);
             this._syncManifests = activitySyncManifests;
+        }
+
+        toString() {
+            return '' + this.get('id');
         }
 
         getSyncManifest(name) {
@@ -388,12 +394,57 @@ sauce.ns('hist.db', async ns => {
     }
 
 
+    class AthleteModel extends Model {
+        toString() {
+            return '' + this.get('id');
+        }
+
+        _getHistoryValueAt(key, ts) {
+            const values = this.data[key];
+            if (values) {
+                let v = values[0].value;
+                for (const x of this.data[key]) {
+                    if (x.ts > ts) {
+                        break;
+                    }
+                    v = x.value;
+                }
+                return v;
+            }
+        }
+
+        _setHistoryValueAt(key, value, ts) {
+            const values = this.data[key] = this.data[key] || [];
+            values.push({ts, value});
+            values.sort((a, b) => b.ts - a.ts);
+            this.set(key, values);
+        }
+
+        getFTPAt(ts) {
+            return this._getHistoryValueAt('ftpHistory', ts);
+        }
+
+        getWeightAt(ts) {
+            return this._getHistoryValueAt('weightHistory', ts);
+        }
+
+        setFTPAt(value, ts) {
+            return this._setHistoryValueAt('ftpHistory', value, ts);
+        }
+
+        setWeightAt(value, ts) {
+            return this._setHistoryValueAt('weightHistory', value, ts);
+        }
+    }
+
+
     return {
         HistDatabase,
         ActivitiesStore,
         StreamsStore,
         AthletesStore,
-        ActivityModel,
         Model,
+        ActivityModel,
+        AthleteModel,
     };
 });
