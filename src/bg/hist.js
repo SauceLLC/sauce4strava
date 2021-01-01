@@ -664,7 +664,7 @@ sauce.ns('hist', async ns => {
                 for (const [m, activities] of versionedBatches.entries()) {
                     const fn = m.data;
                     for (const a of activities) {
-                        a.clearSyncError();
+                        a.clearSyncError('local');
                     }
                     try {
                         console.debug(`Local processing (${fn.name}) v${m.version} on ${activities.size} activities`);
@@ -678,7 +678,7 @@ sauce.ns('hist', async ns => {
                         debugger;
                     }
                     for (const a of activities) {
-                        if (!a.hasSyncError()) {
+                        if (!a.hasSyncError('local')) {
                             a.setSyncVersion('local', m.version);
                         }
                     }

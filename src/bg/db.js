@@ -231,10 +231,14 @@ sauce.ns('hist.db', async ns => {
             const updatesDatas = [];
             const updatedSave = new Map();
             for (const a of activities) {
-                const updates = {};
+                if (!a._updated.size) {
+                    continue;
+                }
+                const updates = {id: a.data.id};
                 for (const k of a._updated) {
                     updates[k] = a.data[k];
                 }
+                updatesDatas.push(updates);
                 // Save a copy of the updated set from each model in case we fail.
                 updatedSave.set(a, new Set(a._updated));
                 a._updated.clear();
@@ -376,6 +380,9 @@ sauce.ns('hist.db', async ns => {
         }
 
         setSyncError(name, error) {
+            if (!name) {
+                throw new TypeError("name required");
+            }
             this.data.syncState = this.data.syncState || {};
             const state = this.data.syncState[name] = this.data.syncState[name] || {};
             state.errorCount = (state.errorCount || 0) + 1;
@@ -385,10 +392,16 @@ sauce.ns('hist.db', async ns => {
         }
 
         hasSyncError(name) {
+            if (!name) {
+                throw new TypeError("name required");
+            }
             return !!this.errorCount;
         }
 
         clearSyncError(name) {
+            if (!name) {
+                throw new TypeError("name required");
+            }
             this.data.syncState = this.data.syncState || {};
             const state = this.data.syncState[name] = this.data.syncState[name] || {};
             delete state.errorCount;
@@ -398,6 +411,9 @@ sauce.ns('hist.db', async ns => {
         }
 
         setSyncVersion(name, version) {
+            if (!name) {
+                throw new TypeError("name required");
+            }
             this.data.syncState = this.data.syncState || {};
             const state = this.data.syncState[name] = this.data.syncState[name] || {};
             state.version = version;
@@ -405,6 +421,9 @@ sauce.ns('hist.db', async ns => {
         }
 
         setSyncVersionLatest(name) {
+            if (!name) {
+                throw new TypeError("name required");
+            }
             const m = this.constructor.getSyncManifest(name);
             const latest = m[m.length - 1].version;
             return this.setSyncVersion(name, latest);

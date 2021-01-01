@@ -330,7 +330,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             const store = this._getStore('readwrite');
             const ifc = options.index ? store.index(options.index) : store;
             return await Promise.all(updatesDatas.map(async updates => {
-                const data = await this._request(ifc.get(this._extractKey(data, ifc.keyPath)));
+                const data = await this._request(ifc.get(this._extractKey(updates, ifc.keyPath)));
                 const updated = Object.assign({}, data, updates);
                 await this._request(store.put(updated));
                 return updated;
