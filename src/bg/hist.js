@@ -17,6 +17,148 @@ sauce.ns('hist', async ns => {
     const athletesStore = new sauce.hist.db.AthletesStore();
 
 
+    sauce.hist.db.ActivityModel.setSyncManifest('streams', [{
+        version: 1,
+        errorBackoff: 86400 * 1000,
+        data: new Set([
+            'time',
+            'heartrate',
+            'altitude',
+            'distance',
+            'moving',
+            'velocity_smooth',
+            'cadence',
+            'latlng',
+            'watts',
+            'watts_calc',
+            'grade_adjusted_distance',
+            'temp',
+        ])
+    }]);
+
+    sauce.hist.db.ActivityModel.setSyncManifest('local', [{
+        version: 10,
+        errorBackoff: 3600 * 1000,
+        data: activeStreamProcessor
+    }/*, {
+        version: 11,
+        errorBackoff: 300 * 1000,
+        data: runningWattsProcessor
+    }, {
+        version: 12,
+        errorBackoff: 300 * 1000,
+        data: activityStatsProcessor
+    }*/]);
+
+
+    async function activeStreamProcessor({activities, athlete}) {
+        const s = Date.now();
+        const ids = new Set(Array.from(activities).map(x => x.get('id')));
+        const actStreams = new Map();
+        if (ids.size > 50) {  // 50 is profile tuned.
+            const streams = new Set(['time', 'moving', 'cadence', 'watts', 'distance']);
+            const allStreamKeys = await streamsStore.getAllKeysForAthlete(athlete.get('id'));
+            const streamKeys = allStreamKeys.filter(([id, stream]) => ids.has(id) && streams.has(stream));
+            for (const x of await streamsStore.getMany(streamKeys)) {
+                if (!actStreams.has(x.activity)) {
+                    actStreams.set(x.activity, {});
+                }
+                actStreams.get(x.activity)[x.stream] = x.data;
+            }
+        } else {
+            for (const x of ids) {
+                actStreams.set(x, await streamsStore.activityStreams(x));
+            }
+        }
+        const activeStreams = [];
+        for (const activity of activities) {
+            const streams = actStreams.get(activity.get('id'));
+            const isTrainer = activity.get('trainer');
+            const activeStream = sauce.data.createActiveStream(streams, {isTrainer});
+            activeStreams.push({
+                activity: activity.get('id'),
+                athlete: athlete.get('id'),
+                stream: 'active',
+                data: activeStream
+            });
+        }
+        await streamsStore.putMany(activeStreams);
+        const elapsed = Date.now() - s;
+        console.warn(`${Math.round(elapsed / ids.size)}ms/activity for ${ids.size} activities`);
+    }
+
+
+    async function runningWattsProcessor({activities, athlete}) {
+        // XXX make batch friendly..
+        for (const activity of activities) {
+            console.debug("running watts proc " + activity, athlete.get('id'));
+            const weight = athlete.getWeightAt(activity.get('ts'));
+            if (!weight) {
+                throw new Error("No weight for athlete, try later...");
+            }
+            if (activity.get('basetype') !== 'run' || !weight) {
+                return;
+            }
+            const streams = await streamsStore.activityStreams(activity.get('id'));
+            const gap = streams.grade_adjusted_distance;
+            if (!gap) {
+                return;
+            }
+            const wattsStream = [0];
+            for (let i = 1; i < gap.length; i++) {
+                const dist = gap[i] - gap[i - 1];
+                const time = streams.time[i] - streams.time[i - 1];
+                const kj = sauce.pace.work(weight, dist);
+                wattsStream.push(kj * 1000 / time);
+            }
+            await streamsStore.put({
+                activity: activity.get('id'),
+                athlete: athlete.get('id'),
+                stream: 'watts_calc',
+                data: wattsStream
+            });
+        }
+    }
+
+
+    async function activityStatsProcessor({activities, athlete}) {
+        // XXX make batch friendly..
+        for (const activity of activities) {
+            console.debug("stats proc " + activity, athlete.get('id'));
+            const ftp = athlete.getFTPAt(activity.get('ts'));
+            if (!ftp) {
+                throw new Error("No FTP for athlete, try TSS calc later...");
+            }
+            const streams = await streamsStore.activityStreams(activity.get('id'));
+            const stats = {};
+            if (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run')) {
+                const corrected = sauce.power.correctedPower(streams.time, streams.watts || streams.watts_calc);
+                const activeTime = sauce.data.activeTime(streams.time, streams.active);
+                stats.kj = corrected.kj();
+                stats.power = stats.kj * 1000 / activeTime;
+                stats.np = corrected.np();
+                stats.xp = corrected.xp();
+                stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
+                stats.intensity = (stats.np || stats.power) / ftp;
+            } else if (streams.heartrate) {
+                if (athlete.get('hrZones') === undefined) {
+                    console.info("Getting HR zones for: " + athlete);
+                    athlete.set('hrZones', await sauce.perf.fetchHRZones(athlete.get('id')) || null);
+                }
+                const zones = athlete.get('hrZones');
+                if (zones) {
+                    const ltHR = (zones.z4 + zones.z3) / 2;
+                    const maxHR = sauce.perf.estimateMaxHR(zones);
+                    const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
+                    stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
+                        ltHR, restingHR, maxHR, athlete.get('gender')); // XXX get gender wired in.
+                }
+            }
+            await athlete.save({stats});
+        }
+    }
+
+
     class FetchError extends Error {
         static fromResp(resp) {
             const msg = `${this.name}: ${resp.url} [${resp.status}]`;
@@ -285,7 +427,6 @@ sauce.ns('hist', async ns => {
             return batch;
         }
 
-
         async function batchImport(startDate) {
             const minEmpty = 12;
             const minRedundant = 2;
@@ -350,7 +491,7 @@ sauce.ns('hist', async ns => {
 
     async function fetchStreams(activity, {cancelEvent}) {
         const q = new URLSearchParams();
-        for (const m of activity.getSyncManifest('streams')) {
+        for (const m of sauce.hist.db.ActivityModel.getSyncManifest('streams')) {
             for (const x of m.data) {
                 q.append('stream_types[]', x);
             }
@@ -412,11 +553,11 @@ sauce.ns('hist', async ns => {
         const unprocessed = new queues.Queue();
         for (const a of activities) {
             const needsFetch = unfetched.has(a.get('id'));
-            if (needsFetch && !a.canSync('streams')) {
+            if (needsFetch && !a.nextSync('streams')) {
                 console.warn(`Deferring streams fetch of ${a.get('id')} due to recent error`);
                 unfetched.delete(a.get('id'));
             } else if (!needsFetch && !a.isSyncLatest('local')) {
-                if (!a.canSync('local')) {
+                if (!a.nextSync('local')) {
                     console.warn(`Deferring local processing of ${a.get('id')} due to recent error`);
                 } else {
                     unprocessed.putNoWait(a);
@@ -477,135 +618,75 @@ sauce.ns('hist', async ns => {
     }
 
 
-    const localProcessingTable = {
-        createActiveStream: async function({activity, athlete}) {
-            const streams = await streamsStore.activityStreams(activity.get('id'));
-            const isTrainer = activity.get('trainer');
-            const activeStream = sauce.data.createActiveStream(streams, {isTrainer});
-            await streamsStore.put({
-                activity: activity.get('id'),
-                athlete: athlete.get('id'),
-                stream: 'active',
-                data: activeStream
-            });
-        },
-
-        createRunningWattsCalcStream: async function({activity, athlete}) {
-            const weight = athlete.getWeightAt(activity.get('ts'));
-            if (!weight) {
-                throw new Error("No weight for athlete, try later...");
-            }
-            if (activity.get('basetype') !== 'run' || !weight) {
-                return;
-            }
-            const streams = await streamsStore.activityStreams(activity.get('id'));
-            const gap = streams.grade_adjusted_distance;
-            if (!gap) {
-                return;
-            }
-            const wattsStream = [0];
-            for (let i = 1; i < gap.length; i++) {
-                const dist = gap[i] - gap[i - 1];
-                const time = streams.time[i] - streams.time[i - 1];
-                const kj = sauce.pace.work(weight, dist);
-                wattsStream.push(kj * 1000 / time);
-            }
-            await streamsStore.put({
-                activity: activity.get('id'),
-                athlete: athlete.get('id'),
-                stream: 'watts_calc',
-                data: wattsStream
-            });
-        },
-
-        calcStats: async function({activity, athlete}) {
-            const ftp = athlete.getFTPAt(activity.get('ts'));
-            if (!ftp) {
-                throw new Error("No FTP for athlete, try TSS calc later...");
-            }
-            const streams = await streamsStore.activityStreams(activity.get('id'));
-            const stats = {};
-            if (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run')) {
-                const corrected = sauce.power.correctedPower(streams.time, streams.watts || streams.watts_calc);
-                const activeTime = sauce.data.activeTime(streams.time, streams.active);
-                stats.kj = corrected.kj();
-                stats.power = stats.kj * 1000 / activeTime;
-                stats.np = corrected.np();
-                stats.xp = corrected.xp();
-                stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
-                stats.intensity = (stats.np || stats.power) / ftp;
-            } else if (streams.heartrate) {
-                if (athlete.get('hrZones') === undefined) {
-                    console.info("Getting HR zones for: " + athlete);
-                    athlete.set('hrZones', await sauce.perf.fetchHRZones(athlete.get('id')) || null);
-                }
-                const zones = athlete.get('hrZones');
-                if (zones) {
-                    const ltHR = (zones.z4 + zones.z3) / 2;
-                    const maxHR = sauce.perf.estimateMaxHR(zones);
-                    const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
-                    stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
-                        ltHR, restingHR, maxHR, athlete.get('gender')); // XXX get gender wired in.
-                }
-            }
-            await athlete.save({stats});
-        },
-
-        randomError: async function(data) {
-            if (Math.random() > 0.75) {
-                throw new Error("Random error strikes again!");
-            }
-        },
-
-        slowGuy: async function(data) {
-            await sleep(400);
-        },
-
-        fastGuy: async function(data) { }
-    };
-
-
     async function localProcessWorker(q, athlete, options={}) {
         const cancelEvent = options.cancelEvent;
-        while (true) {
-            const activity = await Promise.race([q.get(), cancelEvent.wait()]);
-            if (cancelEvent.isSet() || activity === null) {
-                return;
-            }
-            if (activity.isSyncLatest('local')) {
-                continue;
-            } else if (!activity.canSync('local')) {
-                console.warn(`Deferring local processing of ${activity.get('id')} due to recent error`);
-                continue;
-            }
-            let processed = false;
-            let error;
-            for (const manifest of activity.getSyncManifest('local')) {
-                const state = activity.getSyncState('local');
-                if (!state || !state.version || state.version < manifest.version) {
-                    processed = true;
-                    const name = manifest.data;
-                    const version = manifest.version;
-                    const fn = localProcessingTable[name];
-                    try {
-                        if (!fn) {
-                            throw new Error('Internal Error: Invalid processing name: ' + manifest.data);
-                        }
-                        console.debug(`Running local processing function (${name}) v${version} on ${activity.get('id')}`);
-                        await fn({activity, athlete});
-                    } catch(e) {
-                        console.warn("Local processing error (will retry later):", name, version, e);
-                        error = e;
-                        activity.setSyncError('local', e);
-                        await activity.save();
-                        break;
-                    }
-                    activity.setSyncVersion('local', manifest.version);
-                    await activity.save();
+        let done = false;
+        const processed = new Set();
+        while (!done) {
+            const batch = new Set();
+            while (q.qsize()) {
+                const a = q.getNoWait();
+                if (a === null) {
+                    done = true;
+                    break;
+                }
+                batch.add(a);
+                if (batch.size >= 1000) {
+                    break;
                 }
             }
-            if (processed && options.onLocalProcessing) {
-                await options.onLocalProcessing({activity, athlete, error});
+            if (!batch.size && !done) {
+                // For handling single items coming off the streams fetch worker...
+                const a = await Promise.race([q.get(), cancelEvent.wait()]);
+                if (a === null) {
+                    done = true;
+                } else if (a) {
+                    batch.add(a);
+                }
+            }
+            while (batch.size && !cancelEvent.isSet()) {
+                const versionedBatches = new Map();
+                for (const a of batch) {
+                    const m = a.nextSync('local');
+                    if (!m) {
+                        if (!a.isSyncLatest('local')) {
+                            console.warn(`Deferring local processing of ${a} due to recent error`);
+                        }
+                        processed.add(a);
+                        batch.delete(a);
+                        continue;
+                    }
+                    if (!versionedBatches.has(m)) {
+                        versionedBatches.set(m, new Set());
+                    }
+                    versionedBatches.get(m).add(a);
+                }
+                for (const [m, activities] of versionedBatches.entries()) {
+                    const fn = m.data;
+                    for (const a of activities) {
+                        a.clearSyncError();
+                    }
+                    try {
+                        console.debug(`Local processing (${fn.name}) v${m.version} on ${activities.size} activities`);
+                        await fn({activities, athlete});
+                    } catch(e) {
+                        // This is a fallback, we would prefer that the processor func handles errors.
+                        console.error("Top level local processing error [FIXME]:", fn.name, m.version, e);
+                        for (const a of activities) {
+                            a.setSyncError('local', e);
+                        }
+                        debugger;
+                    }
+                    for (const a of activities) {
+                        if (!a.hasSyncError()) {
+                            a.setSyncVersion('local', m.version);
+                        }
+                    }
+                    await actsStore.saveModels(activities);
+                }
+            }
+            if (processed.size && options.onLocalProcessing) {
+                await options.onLocalProcessing({activities: processed, athlete});
             }
         }
     }
@@ -787,6 +868,17 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(isAthleteSyncActive, {namespace});
 
 
+    async function invalidateSyncState(athleteId, name) {
+        const activities = await actsStore.getAllForAthlete(athleteId);
+        for (const a of activities) {
+            if (a.syncState) {
+                delete a.syncState[name];
+            }
+        }
+        await actsStore.putMany(activities);
+    }
+
+
     class SyncJob extends EventTarget {
         constructor(athlete, isSelf) {
             super();
@@ -818,7 +910,7 @@ sauce.ns('hist', async ns => {
             await syncFn(this.athlete.get('id'));
             this.status = 'streams-sync';
             try {
-                if (Math.random() > 0.90) { // XXX
+                if (Math.random() > 0.98) { // XXX
                     throw new Error("Random Error");
                 }
                 await syncData(this.athlete, {
@@ -1075,6 +1167,7 @@ sauce.ns('hist', async ns => {
         syncPeerActivities,
         syncData,
         isAthleteSyncActive,
+        invalidateSyncState,
         findPeaks,
         bulkTSS,
         streamsStore,

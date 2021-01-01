@@ -42,7 +42,7 @@ sauce.ns('hist.db', async ns => {
                     }
                     await s.putMany(acts.map(x => x.data));
                     console.warn("XXX Retrofitted streamsVersion on all activities", acts.length);
-                }, 0);
+                }, 1000);
                 // /XXX
             }
         }
@@ -142,6 +142,12 @@ sauce.ns('hist.db', async ns => {
             }
             return obj;
         }
+
+        async getAllKeysForAthlete(athlete, options={}) {
+            const q = IDBKeyRange.only(athlete);
+            options.index = 'athlete';
+            return await this.getAllKeys(q, options);
+        }
     }
 
 
@@ -207,6 +213,44 @@ sauce.ns('hist.db', async ns => {
             const store = this._getStore('readwrite');
             await Promise.all(deletes.map(k => this._request(store.delete(k))));
             return deletes.length;
+        }
+
+        async update(query, updates, options={}) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const store = this._getStore('readwrite');
+            const ifc = options.index ? store.index(options.index) : store;
+            const data = await this._request(ifc.get(query));
+            Object.assign(data, updates);
+            await this._request(store.put(data));
+            return data;
+        }
+
+        async saveModels(activities) {
+            const updatesDatas = [];
+            const updatedSave = new Map();
+            for (const a of activities) {
+                const updates = {};
+                for (const k of a._updated) {
+                    updates[k] = a.data[k];
+                }
+                // Save a copy of the updated set from each model in case we fail.
+                updatedSave.set(a, new Set(a._updated));
+                a._updated.clear();
+            }
+            try {
+                await this.updateMany(updatesDatas);
+            } catch(e) {
+                // Restore updated keys before throwing, so future saves of the model
+                // might recover and persist their changes.
+                for (const [a, saved] of updatedSave.entries()) {
+                    for (const x of saved) {
+                        a._updated.add(x);
+                    }
+                }
+                throw e;
+            }
         }
     }
 
@@ -279,55 +323,20 @@ sauce.ns('hist.db', async ns => {
     }
 
 
-    // NOTE: Do not add new entries to each set, only remove or add new sets.
-    const activitySyncManifests = {
-        streams: [{
-            version: 1,
-            errorBackoff: 86400 * 1000,
-            data: new Set([
-                'time',
-                'heartrate',
-                'altitude',
-                'distance',
-                'moving',
-                'velocity_smooth',
-                'cadence',
-                'latlng',
-                'watts',
-                'watts_calc',
-                'grade_adjusted_distance',
-                'temp',
-            ])
-        }],
-
-        local: [{
-            version: 10,
-            errorBackoff: 3600 * 1000,
-            data: 'createActiveStream'
-        }, {
-            version: 11,
-            errorBackoff: 300 * 1000,
-            data: 'createRunningWattsCalcStream'
-        }, {
-            version: 12,
-            errorBackoff: 300 * 1000,
-            data: 'calcStats'
-        }]
-    };
-
-
     class ActivityModel extends Model {
-        constructor(data, store) {
-            super(data, store);
-            this._syncManifests = activitySyncManifests;
+        static setSyncManifest(name, manifest) {
+            if (!this._syncManifests) {
+                this._syncManifests = {};
+            }
+            this._syncManifests[name] = manifest;
+        }
+
+        static getSyncManifest(name) {
+            return this._syncManifests[name];
         }
 
         toString() {
             return '' + this.get('id');
-        }
-
-        getSyncManifest(name) {
-            return this._syncManifests[name];
         }
 
         getSyncState(name) {
@@ -335,36 +344,35 @@ sauce.ns('hist.db', async ns => {
         }
 
         isSyncLatest(name) {
-            const m = this.getSyncManifest(name);
+            const m = this.constructor.getSyncManifest(name);
             const latest = m[m.length - 1].version;
             const state = this.getSyncState(name);
             return !!(state && state.version && state.version >= latest);
         }
 
-        canSync(name) {
+        nextSync(name) {
+            const manifest = this.constructor.getSyncManifest(name);
+            if (!manifest || !manifest.length) {
+                console.warn('No sync available for empty manifest:', name);
+                return;
+            }
             const state = this.getSyncState(name);
-            if (state && state.errorTS) {
-                const manifest = this.getSyncManifest(name);
-                let backoff;
-                for (const m of manifest) {
-                    if (m.version === state.version) {
-                        backoff = m.errorBackoff;
-                        break;
+            if (!state) {
+                return manifest[0];
+            }
+            for (const m of manifest) {
+                if (m.version > state.version) {
+                    if (state.errorTS && Date.now() - state.errorTS < state.errorCount * m.errorBackoff) {
+                        return;  // Unavailable until error backoff expires.
+                    } else {
+                        return m;
                     }
                 }
-                if (!backoff) {
-                    // The manifest version we errored was removed.  We can continue..
-                    return true;
-                } else {
-                    return Date.now() - state.errorTS > state.errorCount * backoff;
-                }
-            } else {
-                return true;
             }
         }
 
         shouldSync(name) {
-            return !this.isSyncLatest(name) && this.canSync(name);
+            return !this.isSyncLatest(name) && !!this.nextSync(name);
         }
 
         setSyncError(name, error) {
@@ -374,6 +382,10 @@ sauce.ns('hist.db', async ns => {
             state.errorTS = Date.now();
             state.errorMessage = error.message;
             this._updated.add('syncState');
+        }
+
+        hasSyncError(name) {
+            return !!this.errorCount;
         }
 
         clearSyncError(name) {
@@ -393,7 +405,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         setSyncVersionLatest(name) {
-            const m = this.getSyncManifest(name);
+            const m = this.constructor.getSyncManifest(name);
             const latest = m[m.length - 1].version;
             return this.setSyncVersion(name, latest);
         }

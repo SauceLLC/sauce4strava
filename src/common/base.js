@@ -318,9 +318,23 @@ self.sauceBaseInit = function sauceBaseInit() {
             const store = this._getStore('readwrite');
             const ifc = options.index ? store.index(options.index) : store;
             const data = await this._request(ifc.get(query));
-            Object.assign(data, updates);
-            await this._request(store.put(data));
+            const updated = Object.assign({}, data, updates);
+            await this._request(store.put(updated));
             return data;
+        }
+
+        async updateMany(updatesDatas, options={}) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const store = this._getStore('readwrite');
+            const ifc = options.index ? store.index(options.index) : store;
+            return await Promise.all(updatesDatas.map(async updates => {
+                const data = await this._request(ifc.get(this._extractKey(data, ifc.keyPath)));
+                const updated = Object.assign({}, data, updates);
+                await this._request(store.put(updated));
+                return updated;
+            }));
         }
 
         async put(data, options={}) {
