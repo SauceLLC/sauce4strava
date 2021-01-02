@@ -82,67 +82,60 @@ html.sauce-enabled {
 }
 
 #heading {
-    .activity-summary {
-        .details-container {
-            a.avatar-athlete {
-                position: relative;
-
-                a.sauce-sync-athlete {
+    header {
+        .social {
+            .sauce-sync-athlete {
+                .app-icon-wrapper {
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    position: absolute;
-                    bottom: 0.5em;
-                    right: 0.5em;
                     opacity: 0.85;
+                    position: relative;
+                    transition: opacity 200ms;
 
                     &:hover {
                         opacity: 1;
                     }
 
-                    svg[data-icon] {
-                        position: absolute;
-                    }
-
                     svg[data-icon="sync-alt"] {
-                        width: 1.5em;
+                        width: 1.4em;
                     }
 
                     svg[data-icon="check"] {
-                        width: 0.8em;
+                        width: 0.65em;
+                        position: absolute;
+                    }
+                }
+
+                &:not(.enabled) .app-icon-wrapper {
+                    svg[data-icon="sync-alt"] {
+                        color: color.shade(fg, 20%);
                     }
 
-                    &:not(.enabled) {
-                        svg[data-icon="sync-alt"] {
-                            color: color.shade(fg, 20%);
-                            width: 1em;
-                        }
+                    svg[data-icon="check"] {
+                        display: none;
+                    }
+                }
 
-                        svg[data-icon="check"] {
-                            display: none;
-                        }
+                &.enabled .app-icon-wrapper {
+                    svg[data-icon="sync-alt"] {
+                        color: #ee5c13;
                     }
 
-                    &.enabled {
-                        svg[data-icon="sync-alt"] {
-                            color: #ee5c13;
-                        }
+                    svg[data-icon="check"] {
+                        color: #22ee33;
+                    }
+                }
 
-                        svg[data-icon="check"] {
-                            color: #22ee33;
-                        }
+                &.active .app-icon-wrapper {
+                    svg[data-icon="sync-alt"] {
+                        animation: rotation 3s infinite linear;
+                        color: #22ee33;
+                    }
 
-                        &.active {
-                            svg[data-icon="sync-alt"] {
-                                animation: rotation 3s infinite linear;
-                                color: #22ee33;
-                            }
-
-                            svg[data-icon="check"] {
-                                display: none;
-                            }
-                        }
+                    svg[data-icon="check"] {
+                        display: none;
                     }
                 }
             }
