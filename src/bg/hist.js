@@ -84,7 +84,7 @@ sauce.ns('hist', async ns => {
         }
         await streamsStore.putMany(activeStreams);
         const elapsed = Date.now() - s;
-        console.warn(`${Math.round(elapsed / ids.size)}ms/activity for ${ids.size} activities`);
+        console.warn(`${Math.round(elapsed / ids.size)}ms / activity for ${ids.size} activities`);
     }
 
 
@@ -550,7 +550,7 @@ sauce.ns('hist', async ns => {
                 unfetched.delete(id);
             }
         }
-        const unprocessed = new queues.Queue();
+        const procQueue = new queues.Queue();
         for (const a of activities) {
             const needsFetch = unfetched.has(a.get('id'));
             if (needsFetch && !a.nextSync('streams')) {
@@ -560,26 +560,35 @@ sauce.ns('hist', async ns => {
                 if (!a.nextSync('local')) {
                     console.warn(`Deferring local processing of ${a.get('id')} due to recent error`);
                 } else {
-                    unprocessed.putNoWait(a);
+                    procQueue.putNoWait(a);
                 }
             }
         }
         const workers = [];
         if (unfetched.size) {
-            workers.push(fetchStreamsWorker([...unfetched.values()], athlete, unprocessed, options));
-        } else if (!unprocessed.qsize()) {
+            workers.push(fetchStreamsWorker(procQueue, [...unfetched.values()], athlete, options));
+        } else if (!procQueue.qsize()) {
             console.debug("No activity sync required for: " + athlete);
             return;
         } else {
-            unprocessed.putNoWait(null);  // sentinel
+            procQueue.putNoWait(null);  // sentinel
         }
-        workers.push(localProcessWorker(unprocessed, athlete, options));
+        workers.push(localProcessWorker(procQueue, athlete, options));
         await Promise.all(workers);
         console.debug("Activity sync completed for: " + athlete);
     }
 
 
-    async function fetchStreamsWorker(activities, athlete, unprocessed, options={}) {
+    async function fetchStreamsWorker(procQueue, ...args) {
+        try {
+            return await _fetchStreamsWorker(procQueue, ...args);
+        } finally {
+            procQueue.putNoWait(null);
+        }
+    }
+
+
+    async function _fetchStreamsWorker(procQueue, activities, athlete, options={}) {
         const cancelEvent = options.cancelEvent;
         for (const activity of activities) {
             let error;
@@ -602,7 +611,7 @@ sauce.ns('hist', async ns => {
                     data
                 })));
                 activity.setSyncVersionLatest('streams');
-                unprocessed.putNoWait(activity);
+                procQueue.putNoWait(activity);
             } else if (data === null) {
                 activity.set('noStreams', true);
             } else if (error) {
@@ -621,8 +630,9 @@ sauce.ns('hist', async ns => {
     async function localProcessWorker(q, athlete, options={}) {
         const cancelEvent = options.cancelEvent;
         let done = false;
-        const processed = new Set();
-        while (!done) {
+        const complete = new Set();
+        const incomplete = new Set();
+        while (!done && !cancelEvent.isSet()) {
             const batch = new Set();
             while (q.qsize()) {
                 const a = q.getNoWait();
@@ -640,7 +650,7 @@ sauce.ns('hist', async ns => {
                 const a = await Promise.race([q.get(), cancelEvent.wait()]);
                 if (a === null) {
                     done = true;
-                } else if (a) {
+                } else if (!cancelEvent.isSet()) {
                     batch.add(a);
                 }
             }
@@ -651,8 +661,10 @@ sauce.ns('hist', async ns => {
                     if (!m) {
                         if (!a.isSyncLatest('local')) {
                             console.warn(`Deferring local processing of ${a} due to recent error`);
+                            incomplete.add(a);
+                        } else {
+                            complete.add(a);
                         }
-                        processed.add(a);
                         batch.delete(a);
                         continue;
                     }
@@ -685,8 +697,8 @@ sauce.ns('hist', async ns => {
                     await actsStore.saveModels(activities);
                 }
             }
-            if (processed.size && options.onLocalProcessing) {
-                await options.onLocalProcessing({activities: processed, athlete});
+            if (complete.size + incomplete.size && options.onLocalProcessing) {
+                await options.onLocalProcessing({complete, incomplete, athlete});
             }
         }
     }
@@ -869,13 +881,20 @@ sauce.ns('hist', async ns => {
 
 
     async function invalidateSyncState(athleteId, name) {
+        if (!athleteId || !name) {
+            throw new TypeError('athleteId and name are required args');
+        }
         const activities = await actsStore.getAllForAthlete(athleteId);
         for (const a of activities) {
             if (a.syncState) {
                 delete a.syncState[name];
             }
         }
-        await actsStore.putMany(activities);
+        await actsStore.updateMany(activities.map(x => ({id: x.id, syncState: x.syncState})));
+        if (ns.syncManager) {
+            await ns.syncManager.enableAthlete(athleteId); // Reset sync state
+        }
+        return activities.length;
     }
 
 
@@ -1006,6 +1025,20 @@ sauce.ns('hist', async ns => {
             }
         }
 
+        async _refresh() {
+            for (const athlete of await athletesStore.getEnabledAthletes({models: true})) {
+                if (this.isActive(athlete)) {
+                    continue;
+                }
+                const now = Date.now();
+                if ((now - athlete.get('lastSync') > this.refreshInterval && !this._isDeferred(athlete)) ||
+                    this._refreshRequests.has(athlete.get('id'))) {
+                    this._refreshRequests.delete(athlete.get('id'));
+                    this.runSyncJob(athlete);  // bg okay
+                }
+            }
+        }
+
         async _importAthleteFTPHistory() {
             const ftpHistory = await getSelfFTPs();
             await this.updateAthlete(this.currentUser, {ftpHistory});
@@ -1020,43 +1053,50 @@ sauce.ns('hist', async ns => {
             return !!lastError && Date.now() - lastError < this.refreshErrorBackoff;
         }
 
-        async _refresh() {
-            for (const athlete of await athletesStore.getEnabledAthletes({models: true})) {
-                if (this.isActive(athlete)) {
-                    continue;
-                }
-                const now = Date.now();
-                if ((now - athlete.get('lastSync') > this.refreshInterval && !this._isDeferred(athlete)) ||
-                    this._refreshRequests.has(athlete.get('id'))) {
-                    const athleteId = athlete.get('id');
-                    this._refreshRequests.delete(athleteId);
-                    console.debug('Starting sync job for: ' + athlete);
-                    const isSelf = this.currentUser === athleteId;
-                    const syncJob = new SyncJob(athlete, isSelf);
-                    syncJob.addEventListener('streams', ev =>
-                        this.emitForAthlete(athlete, 'progress', 'streams'));
-                    syncJob.addEventListener('local', ev =>
-                        this.emitForAthlete(athlete, 'progress', 'local'));
-                    this._activeJobs.set(athleteId, syncJob);
-                    this.emitForAthlete(athlete, 'start');
-                    syncJob.run();
-                    syncJob.wait().catch(async e => {
-                        console.error('Sync error occurred:', e);
-                        athlete.set('lastError', Date.now());
-                        this.emitForAthlete(athlete, 'error', syncJob.status);
-                    }).finally(async () => {
-                        athlete.set('lastSync', Date.now());
-                        await this._athleteLock.acquire();
-                        try {
-                            await athlete.save();
-                        } finally {
-                            this._athleteLock.release();
-                        }
-                        this._activeJobs.delete(athleteId);
-                        this._refreshEvent.set();
-                        this.emitForAthlete(athlete, 'stop', syncJob.status);
+        async runSyncJob(athlete) {
+            const start = Date.now();
+            console.debug('Starting sync job for: ' + athlete);
+            const athleteId = athlete.get('id');
+            const isSelf = this.currentUser === athleteId;
+            const syncJob = new SyncJob(athlete, isSelf);
+            syncJob.addEventListener('streams', ev => {
+                // We try to recover from errors, so just hide them from the user for now.
+                if (!ev.data.error) {
+                    this.emitForAthlete(athlete, 'progress', {
+                        sync: 'streams',
+                        activity: ev.data.activity.get('id')
                     });
                 }
+            });
+            syncJob.addEventListener('local', ev => {
+                if (ev.data.complete.size) {
+                    this.emitForAthlete(athlete, 'progress', {
+                        sync: 'local',
+                        activities: Array.from(ev.data.complete).map(x => x.get('id'))
+                    });
+                }
+            });
+            this.emitForAthlete(athlete, 'start');
+            this._activeJobs.set(athleteId, syncJob);
+            syncJob.run();
+            try {
+                await syncJob.wait();
+            } catch(e) {
+                console.error('Sync error occurred:', e);
+                athlete.set('lastError', Date.now());
+                this.emitForAthlete(athlete, 'error', syncJob.status);
+            } finally {
+                athlete.set('lastSync', Date.now());
+                await this._athleteLock.acquire();
+                try {
+                    await athlete.save();
+                } finally {
+                    this._athleteLock.release();
+                }
+                this._activeJobs.delete(athleteId);
+                this._refreshEvent.set();
+                this.emitForAthlete(athlete, 'stop', syncJob.status);
+                console.debug(`Sync completed in ${Date.now() - start}ms for: ` + athlete);
             }
         }
 
@@ -1074,8 +1114,11 @@ sauce.ns('hist', async ns => {
 
         async updateAthlete(id, obj) {
             await this._athleteLock.acquire();
-            const athlete = await athletesStore.get(id, {model: true});
             try {
+                const athlete = await athletesStore.get(id, {model: true});
+                if (!athlete) {
+                    throw new Error('Athlete not found: ' + id);
+                }
                 await athlete.save(obj);
             } finally {
                 this._athleteLock.release();
@@ -1143,18 +1186,30 @@ sauce.ns('hist', async ns => {
         constructor(athleteId) {
             super();
             this.athleteId = athleteId;
-            console.warn("I'm alive for", athleteId);
-            this.relayEvent('start');
-            this.relayEvent('stop');
-            this.relayEvent('progress');
+            this._syncListeners = [];
+            this.setupEventRelay('start');
+            this.setupEventRelay('stop');
+            this.setupEventRelay('progress');
         }
 
-        relayEvent(name) {
-            ns.syncManager.addEventListener(name, ev => {
+        delete() {
+            for (const [name, listener] of this._syncListeners) {
+                const sm = ns.syncManager;
+                if (sm) {
+                    sm.removeEventListener(name, listener);
+                }
+            }
+            this._syncListeners.length = 0;
+        }
+
+        setupEventRelay(name) {
+            const listener = ev => {
                 if (ev.athlete === this.athleteId) {
                     this.dispatchEvent(ev);
                 }
-            });
+            };
+            ns.syncManager.addEventListener(name, listener);
+            this._syncListeners.push([name, listener]);
         }
     }
     sauce.proxy.export(SyncController, {namespace});

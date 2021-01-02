@@ -267,7 +267,7 @@ sauce.ns('hist.db', async ns => {
         async get(id, options={}) {
             const data = await super.get(id);
             if (options.model) {
-                return new AthleteModel(data, this);
+                return data ? new AthleteModel(data, this) : undefined;
             } else {
                 return data;
             }

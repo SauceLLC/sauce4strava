@@ -88,8 +88,15 @@
                 port.addEventListener('message', ev => onPortMessage(ev.data));
                 port.start();
             } else {
-                // bg page has slightly different interface.
+                // bg page has slightly different interface and supports delete.
                 port.onMessage.addListener(onPortMessage);
+                port.onDisconnect.addListener(() => {
+                    try {
+                        instance.delete();
+                    } finally {
+                        instance._port = null;
+                    }
+                });
             }
             return {
                 success: true,
@@ -118,7 +125,8 @@
 
 
     ns.Proxy = class Proxy {
-        constructor() {
+        delete() {
+            // Subclasses should implement ref cleanup and remove event listeners here.
         }
     };
 

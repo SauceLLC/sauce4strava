@@ -881,7 +881,11 @@ sauce.ns('analysis', ns => {
             $syncStatus.html('Sync Error');
         });
         syncController.addEventListener('progress', ev => {
-            $syncStatus.html(count++);
+            if (ev.data.sync === 'local') {
+                console.debug('local sync progress', ev.data);
+                count += ev.data.activities.length;
+                $syncStatus.html(count);
+            }
         });
         const active = enabled && await sauce.hist.isAthleteSyncActive(id);
         const [sync, check]  = await Promise.all([
