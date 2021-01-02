@@ -1,10 +1,8 @@
 /* global sauce, browser */
 
-(function() {
+sauce.ns('proxy', ns => {
     'use strict';
 
-    self.sauce = self.sauce || {};
-    const ns = sauce.proxy = sauce.proxy || {};
     const mainBGPort = browser.runtime.connect({name: `sauce-proxy-port`});
     const inflight = new Map();
 
@@ -55,6 +53,7 @@
         for (const desc of (await bgInit).exports) {
             ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
         }
+        console.warn("make exports available", ns.exports);
         const respChannel = new MessageChannel();
         const respPort = respChannel.port1;
         ev.data.requestPort.addEventListener('message', async ev => {
@@ -70,6 +69,11 @@
         });
         ev.data.requestPort.addEventListener('messageerror', ev => console.error("Message Error:", ev));
         ev.data.requestPort.start();
+        while (sauce._pendingAsyncExports.length) {
+            const pending = Array.from(sauce._pendingAsyncExports);
+            sauce._pendingAsyncExports.length = 0;
+            await Promise.allSettled(pending);
+        }
         ev.data.requestPort.postMessage({
             type: 'sauce-proxy-establish-channel-ack',
             exports: Array.from(ns.exports.values()).map(x => x.desc),
@@ -77,4 +81,4 @@
         }, [respChannel.port2]);
     }
     self.addEventListener('message', onMessageEstablishChannel);
-})();
+});

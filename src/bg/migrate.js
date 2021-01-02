@@ -1,10 +1,7 @@
 /* global sauce, browser */
 
-(async function() {
+sauce.ns('migrate', ns => {
     'use strict';
-
-    self.sauce = self.sauce || {};
-    const ns = self.sauce.migrate = {};
 
     const migrations = [{
         version: 1,
@@ -125,4 +122,4 @@
             await sauce.storage.set('migrationVersion', x.version);
         }
     };
-})();
+});

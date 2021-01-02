@@ -1,10 +1,7 @@
 /* global sauce, browser */
 
-(function() {
+sauce.ns('proxy', ns => {
     'use strict';
-
-    self.sauce = self.sauce || {};
-    const ns = sauce.proxy = sauce.proxy || {};
 
 
     async function invoke(data, sender) {
@@ -12,6 +9,11 @@
             throw new Error("Invalid Message");
         }
         if (data.desc.call === 'sauce-proxy-init') {
+            while (sauce._pendingAsyncExports.length) {
+                const pending = Array.from(sauce._pendingAsyncExports);
+                sauce._pendingAsyncExports.length = 0;
+                await Promise.allSettled(pending);
+            }
             return {pid: data.pid, exports: Array.from(ns.exports.values()).map(x => x.desc)};
         }
         const entry = ns.exports.get(data.desc.call);
@@ -37,4 +39,4 @@
         };
         port.onMessage.addListener(onMessage);
     });
-})();
+});

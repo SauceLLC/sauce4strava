@@ -16,7 +16,7 @@ sauce.ns('proxy', ns => {
     })();
 
 
-    function setupExports(exports) {
+    function bindExports(exports) {
         for (const desc of exports) {
             const path = desc.call.split('.');
             let offt = sauce;
@@ -144,7 +144,8 @@ sauce.ns('proxy', ns => {
 
     async function extCall({desc, port}, nativeArgs) {
         if (!_connected) {
-            await ns.connected();
+            // Unlikely but possible if extCall is called manually.
+            await ns.connected;
         }
         return await new Promise((resolve, reject) => {
             const pid = proxyId++;
@@ -174,7 +175,7 @@ sauce.ns('proxy', ns => {
                     reject(new Error('Proxy Protocol Violation [CONTENT] [ACK]!'));
                     return;
                 }
-                setupExports(ev.data.exports);
+                bindExports(ev.data.exports);
                 resolve(ev.data.responsePort);
             }
             reqPort.addEventListener('message', onMessageEstablishChannelAck);
@@ -194,7 +195,7 @@ sauce.ns('proxy', ns => {
     }
 
 
-    async function initResponseBroker(port) {
+    function initResponseBroker(port) {
         port.addEventListener('message', ev => {
             if (!ev.data || ev.data.type !== 'sauce-proxy-response') {
                 throw new Error('Proxy Protocol Violation [CONTENT] [RESP]!');

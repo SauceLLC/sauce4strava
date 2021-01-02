@@ -1,10 +1,7 @@
 /* global sauce */
 
-(function () {
+sauce.ns('patron', ns => {
     "use strict";
-
-    self.sauce = self.sauce || {};
-    const ns = self.sauce.patron = {};
 
     
     async function sha256(input) {
@@ -86,4 +83,4 @@
             return fetchLevelNames().then(_getName);
         }
     };
-})();
+});

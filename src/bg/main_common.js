@@ -8,6 +8,11 @@
         ga('send', 'event', 'ExtensionLifecycle', action, label);
     }
 
+    if (browser.runtime.getURL('').startsWith('safari-web-extension:')) {
+        // Workaround for visibiltyState = 'prerender' causing GC to pause until unload
+        Object.defineProperty(document, 'visibilityState', {value: 'hidden'});
+        document.dispatchEvent(new Event('visibilitychange'));
+    }
 
     browser.runtime.onInstalled.addListener(async details => {
         reportLifecycleEvent('installed', details.reason);

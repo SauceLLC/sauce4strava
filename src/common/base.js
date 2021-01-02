@@ -5,6 +5,7 @@ self.sauceBaseInit = function sauceBaseInit() {
     'use strict';
 
     self.sauce = self.sauce || {};
+    sauce._pendingAsyncExports = [];
 
     function buildPath(path) {
         let offt = self;
@@ -18,11 +19,14 @@ self.sauceBaseInit = function sauceBaseInit() {
     }
 
 
-    sauce.ns = function(ns, callback) {
+    sauce.ns = function(ns, callback, options={}) {
         const offt = buildPath(`sauce.${ns}`.split('.'));
         const assignments = callback && callback(offt);
         if (assignments instanceof Promise) {
             assignments.then(x => Object.assign(offt, x));
+            if (options.hasAsyncExports) {
+                sauce._pendingAsyncExports.push(assignments);
+            }
         } else if (assignments) {
             Object.assign(offt, assignments);
         }

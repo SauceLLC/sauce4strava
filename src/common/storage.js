@@ -1,11 +1,7 @@
 /* global browser, sauce */
 
-
-(function () {
+sauce.ns('storage', ns => {
     "use strict";
-
-    self.sauce = self.sauce || {};
-    const ns = sauce.storage || (sauce.storage = {});
 
 
     function maybeExport(fn) {
@@ -28,6 +24,7 @@
     };
     maybeExport(ns.set);
 
+
     ns.get = async function get(key, options={}) {
         const store = options.sync ? browser.storage.sync : browser.storage.local;
         const o = await store.get(key);
@@ -35,17 +32,20 @@
     };
     maybeExport(ns.get);
 
+
     ns.remove = async function remove(key, options={}) {
         const store = options.sync ? browser.storage.sync : browser.storage.local;
         return await store.remove(key);
     };
     maybeExport(ns.remove);
 
+
     ns.clear = async function clear(options={}) {
         const store = options.sync ? browser.storage.sync : browser.storage.local;
         return await store.clear();
     };
     maybeExport(ns.clear);
+
 
     ns.getAthleteInfo = async function getAthleteInfo(id) {
         const athlete_info = await ns.get('athlete_info');
@@ -55,15 +55,18 @@
     };
     maybeExport(ns.getAthleteInfo);
 
+
     ns.updateAthleteInfo = async function updateAthleteInfo(id, updates) {
         return await ns.update(`athlete_info.${id}`, updates);
     };
     maybeExport(ns.updateAthleteInfo);
 
+
     ns.setAthleteProp = async function setAthleteProp(id, key, value) {
         await ns.updateAthleteInfo(id, {[key]: value});
     };
     maybeExport(ns.setAthleteProp);
+
 
     ns.getAthleteProp = async function getAthleteProp(id, key) {
         const info = await ns.getAthleteInfo(id);
@@ -71,16 +74,19 @@
     };
     maybeExport(ns.getAthleteProp);
 
+
     ns.getPref = async function getPref(key) {
         const prefs = await ns.get('preferences');
         return prefs && prefs[key];
     };
     maybeExport(ns.getPref);
 
+
     ns.setPref = async function setPref(key, value) {
         return await ns.update('preferences', {[key]: value});
     };
     maybeExport(ns.setPref);
+
 
     let _activeUpdate;
     ns.update = async function update(keyPath, updates, options={}) {
@@ -115,4 +121,4 @@
         }
     };
     maybeExport(ns.update);
-})();
+});

@@ -861,21 +861,35 @@ sauce.ns('analysis', ns => {
 
 
     async function attachSyncToggle($el) {
-        const $avatar = jQuery('.activity-summary .details-container a.avatar-athlete');
+        const [sync, check]  = await Promise.all([
+            sauce.images.asText('fa/sync-alt-regular.svg'),
+            sauce.images.asText('fa/check-solid.svg'),
+        ]);
+        const $buttons = jQuery('#heading header .social');
+        const $btn = jQuery(`
+            <div class="button sauce-sync-athlete">
+                <div class="app-icon-wrapper">
+                    ${sync}
+                    ${check}
+                </div>
+                <span class="status"></span>
+            </div>
+        `);
+        const $syncStatus = $btn.find('.status');
         const id = ctx.athlete.id;
+        console.warn('getathlete', sauce.proxy.connected);
+        console.warn('getathlete', sauce.hist);
         const athlete = await sauce.hist.getAthlete(id);
         const enabled = !!(athlete && athlete.sync);
         const syncController = new sauce.hist.SyncController(id);
         let count = 0;
-        const $syncStatus = jQuery('<span/>');
-        jQuery('#heading h2').append($syncStatus);
         syncController.addEventListener('start', ev => {
             $syncStatus.html('Sync Started');
-            $link.addClass('active');
+            $btn.addClass('active');
         });
         syncController.addEventListener('stop', ev => {
             $syncStatus.html('Sync Complete');
-            $link.removeClass('active');
+            $btn.removeClass('active');
         });
         syncController.addEventListener('error', ev => {
             $syncStatus.html('Sync Error');
@@ -888,20 +902,18 @@ sauce.ns('analysis', ns => {
             }
         });
         const active = enabled && await sauce.hist.isAthleteSyncActive(id);
-        const [sync, check]  = await Promise.all([
-            sauce.images.asText('fa/sync-alt-regular.svg'),
-            sauce.images.asText('fa/check-solid.svg'),
-        ]);
-        $avatar.append(jQuery(`<a href="javascript:void(0)" class="sauce-sync-athlete"></a>`));
-        const $link = $avatar.find('a.sauce-sync-athlete');
-        $link.html(sync + check);
-        $link.toggleClass('enabled', enabled);
-        $link.toggleClass('active', active);
-        $link.on('click', async ev => {
-            $link.toggleClass('enabled');
+        $btn.toggleClass('enabled', enabled);
+        $btn.toggleClass('active', active);
+        $btn.on('click', async ev => {
+            $btn.toggleClass('enabled');
         });
+        $buttons.prepend($btn);
     }
 
+
+    async function athleteSyncDialog(athlete) {
+    }
+    
 
     function humanWeight(kg) {
         return humanNumber(ctx.weightFormatter.convert(kg), 1);

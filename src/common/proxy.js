@@ -1,10 +1,7 @@
 /* global sauce  */
 
-(function() {
+sauce.ns('proxy', ns => {
     'use strict';
-
-    self.sauce = self.sauce || {};
-    const ns = sauce.proxy = sauce.proxy || {};
 
     ns.exports = new Map();
 
@@ -140,4 +137,4 @@
             });
         }
     };
-})();
+});

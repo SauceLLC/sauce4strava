@@ -1,10 +1,7 @@
-/* global ga, browser */
+/* global sauce, browser, ga */
 
-(async function () {
+sauce.ns('ga', ns => {
     "use strict";
-
-    self.sauce = self.sauce || {};
-    const ns = self.sauce.ga = {};
 
     (function(i, s, o, g, r, a, m) {
         i['GoogleAnalyticsObject'] = r;
@@ -21,10 +18,12 @@
         }
     })(self, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
+
     ns.getTracker = async function(name) {
         await new Promise(resolve => ga(resolve)); // Wait for ga to be fully loaded.
         return ga.getByName(name || 't0');  // t0 is the default.
     };
+
 
     ns.createTracker = async function(name) {
         const gaClientIdKey = 'ga:clientId';
@@ -46,6 +45,7 @@
         return tracker;
     };
 
+
     let _trackerCreations = new Map();
     ns.getOrCreateTracker = async function(name) {
         if (!_trackerCreations.has(name)) {
@@ -53,4 +53,4 @@
         }
         return await _trackerCreations.get(name);
     };
-})();
+});

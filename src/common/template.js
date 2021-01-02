@@ -5,11 +5,9 @@
  *  Async support
  *  Localization support via {{{localized_key}}}
  */
-(function() {
+sauce.ns('template', ns => {
     'use strict';
 
-    self.sauce = self.sauce || {};
-    const ns = self.sauce.template = {};
 
     ns.escape = (() => {
         const map = {
@@ -41,6 +39,7 @@
     const escapeChar = match => '\\' + escapes[match];
     const escapeRegExp = /\\|'|\r|\n|\u2028|\u2029/g;
 
+
     ns.helpers = {
         formatNumber: function(value, decimalPlaces) {
             if (value == null || value === '') {
@@ -63,6 +62,7 @@
             return await sauce.images.asText(`fa/${icon}.svg`);
         }
     };
+
 
     ns.compile = (text, settingsOverrides) => {
         const settings = Object.assign({}, {
@@ -150,4 +150,4 @@
         template.source = `async function(obj) {\n${source}\n}`;
         return template;
     };
-}());
+});

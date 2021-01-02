@@ -1,10 +1,7 @@
 /* global sauce, browser */
 
-(function() {
+sauce.ns('locale', ns => {
     'use strict';
-
-    self.sauce = self.sauce || {};
-
 
     function _getMessage(key, ...args) {
         try {
@@ -20,4 +17,4 @@
         return batch.map(x => _getMessage(x));
     }
     sauce.proxy.export(_getMessages, {namespace: 'locale'});
-})();
+});

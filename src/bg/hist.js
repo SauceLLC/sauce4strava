@@ -1231,4 +1231,4 @@ sauce.ns('hist', async ns => {
         SyncManager,
         SyncController,
     };
-});
+}, {hasAsyncExports: true});
