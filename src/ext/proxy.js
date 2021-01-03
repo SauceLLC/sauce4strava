@@ -53,7 +53,6 @@ sauce.ns('proxy', ns => {
         for (const desc of (await bgInit).exports) {
             ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
         }
-        console.warn("make exports available", ns.exports);
         const respChannel = new MessageChannel();
         const respPort = respChannel.port1;
         ev.data.requestPort.addEventListener('message', async ev => {

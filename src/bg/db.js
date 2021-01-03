@@ -31,20 +31,7 @@ sauce.ns('hist.db', async ns => {
                 store.createIndex('sync', 'sync');
             }
             // Version 6 was deprecated in dev.
-            if (oldVersion < 7) {
-                // XXX REmove me... ASAP
-                // This is just to avoid having to manually update my test clients Remove ASAP
-                setTimeout(async () => {
-                    const s = new ActivitiesStore();
-                    const acts = (await s.getAll()).map(x => new ActivityModel(x, s));
-                    for (const x of acts) {
-                        x.setSyncVersionLatest('streams');
-                    }
-                    await s.putMany(acts.map(x => x.data));
-                    console.warn("XXX Retrofitted streamsVersion on all activities", acts.length);
-                }, 1000);
-                // /XXX
-            }
+            // Version 7 was deprecated in dev.
         }
     }
 
@@ -395,7 +382,7 @@ sauce.ns('hist.db', async ns => {
             if (!name) {
                 throw new TypeError("name required");
             }
-            return !!this.errorCount;
+            return !!this.errorTS;
         }
 
         clearSyncError(name) {
@@ -404,9 +391,9 @@ sauce.ns('hist.db', async ns => {
             }
             this.data.syncState = this.data.syncState || {};
             const state = this.data.syncState[name] = this.data.syncState[name] || {};
-            delete state.errorCount;
             delete state.errorTS;
             delete state.errorMessage;
+            // NOTE: Do not delete errorCount.  We need this to perform backoff
             this._updated.add('syncState');
         }
 

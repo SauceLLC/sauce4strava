@@ -130,7 +130,7 @@ html.sauce-enabled {
 
                 &.active .app-icon-wrapper {
                     svg[data-icon="sync-alt"] {
-                        animation: rotation 3s infinite linear;
+                        animation: rotation 3s infinite steps(30 * 3);
                         color: #22ee33;
                     }
 
@@ -138,7 +138,41 @@ html.sauce-enabled {
                         display: none;
                     }
                 }
+
+                .status:not(:empty) {
+                    margin-left: 1em;
+                }
+
+                .status {
+                    font-size: 0.8em;
+                }
             }
+        }
+    }
+}
+
+.sauce-sync-athlete-dialog {
+    .sync-active + .ui-dialog-buttonpane {
+        .sync-recompute,
+        .sync-start {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    }
+
+    :not(.sync-active):not(.sync-disabled) + .ui-dialog-buttonpane {
+        .sync-cancel {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    }
+
+    .sync-disabled + .ui-dialog-buttonpane {
+        .sync-cancel,
+        .sync-recompute,
+        .sync-start {
+            opacity: 0.5;
+            pointer-events: none;
         }
     }
 }

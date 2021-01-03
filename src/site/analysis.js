@@ -4,6 +4,7 @@ sauce.ns('analysis', ns => {
     'use strict';
 
     let _resolvePrepared;
+    let syncController;
     const ctx = {
         ready: false,
         prepared: new Promise(resolve => {
@@ -866,7 +867,7 @@ sauce.ns('analysis', ns => {
             sauce.images.asText('fa/check-solid.svg'),
         ]);
         const $buttons = jQuery('#heading header .social');
-        const $btn = jQuery(`
+        const $sync = jQuery(`
             <div class="button sauce-sync-athlete">
                 <div class="app-icon-wrapper">
                     ${sync}
@@ -875,43 +876,187 @@ sauce.ns('analysis', ns => {
                 <span class="status"></span>
             </div>
         `);
-        const $syncStatus = $btn.find('.status');
         const id = ctx.athlete.id;
-        console.warn('getathlete', sauce.proxy.connected);
-        console.warn('getathlete', sauce.hist);
         const athlete = await sauce.hist.getAthlete(id);
         const enabled = !!(athlete && athlete.sync);
-        const syncController = new sauce.hist.SyncController(id);
+        if (enabled) {
+            $sync.addClass('enabled');
+            if (!syncController) {
+                setupActivitySyncController($sync);
+            }
+            if (await syncController.isActive()) {
+                $sync.addClass('active');
+            }
+        }
+        $buttons.prepend($sync);
+        $sync.on('click', () => activitySyncDialog($sync));
+    }
+
+
+    let _syncStatusTimeout;
+    function setSyncStatus(msg, options={}) {
+        const $status = jQuery('#heading header .sauce-sync-athlete .status');
+        clearTimeout(_syncStatusTimeout);
+        $status.html(msg);
+        if (options.timeout) {
+            _syncStatusTimeout = setTimeout(() => $status.empty(), options.timeout);
+        }
+    }
+
+
+    function setupActivitySyncController($sync) {
+        syncController = new sauce.hist.SyncController(ctx.athlete.id);
         let count = 0;
         syncController.addEventListener('start', ev => {
-            $syncStatus.html('Sync Started');
-            $btn.addClass('active');
+            $sync.addClass('active');
+            setSyncStatus('Starting sync...');
         });
         syncController.addEventListener('stop', ev => {
-            $syncStatus.html('Sync Complete');
-            $btn.removeClass('active');
+            $sync.removeClass('active');
+            setSyncStatus('Sync completed', {timeout: 5000});
         });
         syncController.addEventListener('error', ev => {
-            $syncStatus.html('Sync Error');
+            setSyncStatus('Sync problem occurred');
         });
         syncController.addEventListener('progress', ev => {
             if (ev.data.sync === 'local') {
                 console.debug('local sync progress', ev.data);
                 count += ev.data.activities.length;
-                $syncStatus.html(count);
+                setSyncStatus(`${count}/???`);
             }
         });
-        const active = enabled && await sauce.hist.isAthleteSyncActive(id);
-        $btn.toggleClass('enabled', enabled);
-        $btn.toggleClass('active', active);
-        $btn.on('click', async ev => {
-            $btn.toggleClass('enabled');
+        syncController.addEventListener('enable', ev => {
+            $sync.addClass('enabled');
+            setSyncStatus('Sync enabled', {timeout: 5000});
         });
-        $buttons.prepend($btn);
+        syncController.addEventListener('disable', ev => {
+            $sync.removeClass('enabled active');
+            setSyncStatus('Sync disabled', {timeout: 5000});
+        });
     }
 
 
-    async function athleteSyncDialog(athlete) {
+    async function activitySyncDialog($sync) {
+        const stravaAthlete = ctx.athlete;
+        const sauceAthlete = await sauce.hist.getAthlete(stravaAthlete.id);
+        const enabled = !!(sauceAthlete && sauceAthlete.sync);
+        const $modal = modal({
+            title: `Activity Sync Control Panel - ${stravaAthlete.get('display_name')}`,
+            icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
+            dialogClass: 'sauce-sync-athlete-dialog',
+            body: `
+                <p>Activity sync is an optional feature to import an athlete's
+                entire activity history into the browser's
+                <a href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+                   target="_blank">local database</a> so that advanced performance analysis
+                can be performed for more than just a single activity at a time.  This
+                makes it possible to show training metrics like TSS for all past activities
+                so that cumulative training metrics like
+                <a href="https://www.trainingpeaks.com/coach-blog/a-coachs-guide-to-atl-ctl-tsb/"
+                   target="_blank">ATL, CTL and TSB</a> can be calculated and shown.
+                Additionally Sauce computes the peak performances from every activity and
+                stores the top results so comparisions can be made between multiple activities
+                and top level performances can be easily highlighted.
+                </p>
+
+                <label>
+                    <b>Enabled: </b>
+                    <input type="checkbox" name="enable" ${enabled ? 'checked' : ''}/>
+                </label>
+
+                <b>Sauce Athlete Data:</b>
+                <pre style="font-size: 0.8em; color: yellow;">
+                    ${JSON.stringify(sauceAthlete, null, 2)}
+                </pre>
+            `,
+            flex: true,
+            width: '80vw',
+            autoDestroy: true,
+            closeOnMobileBack: true,
+            extraButtons: [{
+                text: 'Cancel Sync',
+                class: 'btn-primary sync-cancel',
+                click: ev => {
+                    $modal.removeClass('sync-active');
+                    syncController.cancel();
+                }
+            }, {
+                text: 'Recompute Activity Metrics',
+                class: 'btn-primary sync-recompute',
+                click: ev => {
+                    $modal.addClass('sync-active');
+                    syncController.invalidate('local');
+                }
+            }, {
+                text: 'Sync Activity Data',
+                class: 'btn-primary sync-start',
+                click: ev => {
+                    $modal.addClass('sync-active');
+                    syncController.start();
+                }
+            }]
+        });
+        const $en = $modal.find('input[name="enable"]');
+        function onSyncStart(ev) {
+            $modal.addClass('sync-active');
+        }
+        function onSyncStop(ev) {
+            $modal.removeClass('sync-active');
+        }
+        function onSyncError(ev) {
+            $modal.removeClass('sync-active');
+        }
+        function onSyncProgress(ev) {
+            console.warn("not using currently");
+        }
+        function onSyncEnable(ev) {
+            $en[0].checked = true;
+        }
+        function onSyncDisable(ev) {
+            $en[0].checked = false;
+        }
+        function monitorSyncController() {
+            syncController.addEventListener('start', onSyncStart);
+            syncController.addEventListener('stop', onSyncStop);
+            syncController.addEventListener('error', onSyncError);
+            syncController.addEventListener('progress', onSyncProgress);
+            syncController.addEventListener('enable', onSyncEnable);
+            syncController.addEventListener('disable', onSyncDisable);
+        }
+        if (enabled) {
+            monitorSyncController();
+        } else {
+            $modal.addClass('sync-disabled');
+        }
+        $en.on('input', async ev => {
+            const en = ev.target.checked;
+            if (en) {
+                if (!syncController) {
+                    setupActivitySyncController($sync);
+                }
+                await sauce.hist.addAthlete({
+                    id: stravaAthlete.id,
+                    gender: stravaAthlete.get('gender') === 'F' ? 'female' : 'male',
+                    name: stravaAthlete.get('display_name'),
+                    ftpHistory: ctx.ftp ? [{ts: 0, value: ctx.ftp}] : undefined,  // XXX
+                    weightHistory: ctx.weight ? [{ts: 0, value: ctx.weight}] : undefined,  // XXX
+                });
+                await sauce.hist.enableAthlete(ctx.athlete.id);
+            } else if (syncController) {
+                await sauce.hist.disableAthlete(ctx.athlete.id);
+            }
+            $modal.toggleClass('sync-disabled', !en);
+        });
+        $modal.on('dialogclose', () => {
+            if (syncController) {
+                syncController.removeEventListener('start', onSyncStart);
+                syncController.removeEventListener('stop', onSyncStop);
+                syncController.removeEventListener('error', onSyncError);
+                syncController.removeEventListener('progress', onSyncProgress);
+                syncController.removeEventListener('enable', onSyncEnable);
+                syncController.removeEventListener('disable', onSyncDisable);
+            }
+        });
     }
     
 
