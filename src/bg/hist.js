@@ -37,28 +37,36 @@ sauce.ns('hist', async ns => {
     }]);
 
     sauce.hist.db.ActivityModel.setSyncManifest('local', [{
-        version: 1,
+        version: 15,
         errorBackoff: 3600 * 1000,
         data: activeStreamProcessor
     }, {
-        version: 2,
+        version: 16,
         errorBackoff: 300 * 1000,
         data: runningWattsProcessor
     }, {
-        version: 3,
+        version: 17,
         errorBackoff: 300 * 1000,
         data: activityStatsProcessor
     }]);
 
 
-    async function activeStreamProcessor({activities, athlete}) {
-        const s = Date.now();
+    async function getActivitiesStreams(activities, streams) {
         const ids = new Set(Array.from(activities).map(x => x.get('id')));
         const actStreams = new Map();
         if (ids.size > 50) {  // 50 is profile tuned.
-            const streams = new Set(['time', 'moving', 'cadence', 'watts', 'distance']);
-            const allStreamKeys = await streamsStore.getAllKeysForAthlete(athlete.get('id'));
-            const streamKeys = allStreamKeys.filter(([id, stream]) => ids.has(id) && streams.has(stream));
+            const athletes = new Set();
+            for (const x of activities) {
+                athletes.add(x.get('athlete'));
+            }
+            const streamKeys = [];
+            for (const x of athletes) {
+                for (const [id, stream] of await streamsStore.getAllKeysForAthlete(x)) {
+                    if (ids.has(id) && streams.has(stream)) {
+                        streamKeys.push([id, stream]);
+                    }
+                }
+            }
             for (const x of await streamsStore.getMany(streamKeys)) {
                 if (!actStreams.has(x.activity)) {
                     actStreams.set(x.activity, {});
@@ -70,101 +78,124 @@ sauce.ns('hist', async ns => {
                 actStreams.set(x, await streamsStore.activityStreams(x));
             }
         }
+        return actStreams;
+    }
+
+
+    async function activeStreamProcessor({activities, athlete}) {
+        const actStreams = await getActivitiesStreams(activities,
+            new Set(['time', 'moving', 'cadence', 'watts', 'distance']));
         const activeStreams = [];
         for (const activity of activities) {
             const streams = actStreams.get(activity.get('id'));
             const isTrainer = activity.get('trainer');
-            const activeStream = sauce.data.createActiveStream(streams, {isTrainer});
-            activeStreams.push({
-                activity: activity.get('id'),
-                athlete: athlete.get('id'),
-                stream: 'active',
-                data: activeStream
-            });
+            try {
+                const activeStream = sauce.data.createActiveStream(streams, {isTrainer});
+                activeStreams.push({
+                    activity: activity.get('id'),
+                    athlete: athlete.get('id'),
+                    stream: 'active',
+                    data: activeStream
+                });
+            } catch(e) {
+                console.warn("Failed to create active stream for: " + activity);
+                activity.setSyncError('local', e);
+                continue;
+            }
         }
         await streamsStore.putMany(activeStreams);
-        const elapsed = Date.now() - s;
-        console.info(`${Math.round(elapsed / ids.size)}ms / activity for ${ids.size} activities`);
     }
 
 
     async function runningWattsProcessor({activities, athlete}) {
-        // XXX make batch friendly..
-        for (const activity of activities) {
+        const runs = Array.from(activities).filter(x => x.get('basetype') === 'run');
+        const actStreams = await getActivitiesStreams(activities,
+            new Set(['time', 'grade_adjusted_distance']));
+        const wattsStreams = [];
+        for (const activity of runs) {
+            const streams = actStreams.get(activity.get('id'));
+            const gap = streams.grade_adjusted_distance;
+            if (!gap) {
+                continue;
+            }
             const weight = athlete.getWeightAt(activity.get('ts'));
             if (!weight) {
                 activity.setSyncError('local', new Error("No weight for athlete, try later..."));
                 continue;
             }
-            if (activity.get('basetype') !== 'run' || !weight) {
+            try {
+                const wattsStream = [0];
+                for (let i = 1; i < gap.length; i++) {
+                    const dist = gap[i] - gap[i - 1];
+                    const time = streams.time[i] - streams.time[i - 1];
+                    const kj = sauce.pace.work(weight, dist);
+                    wattsStream.push(kj * 1000 / time);
+                }
+                wattsStreams.push({
+                    activity: activity.get('id'),
+                    athlete: athlete.get('id'),
+                    stream: 'watts_calc',
+                    data: wattsStream
+                });
+            } catch(e) {
+                console.warn("Failed to create active stream for: " + activity);
+                activity.setSyncError('local', e);
                 continue;
             }
-            const streams = await streamsStore.activityStreams(activity.get('id'));
-            const gap = streams.grade_adjusted_distance;
-            if (!gap) {
-                continue;
-            }
-            console.debug("running watts proc " + activity, athlete.get('id'));
-            const wattsStream = [0];
-            for (let i = 1; i < gap.length; i++) {
-                const dist = gap[i] - gap[i - 1];
-                const time = streams.time[i] - streams.time[i - 1];
-                const kj = sauce.pace.work(weight, dist);
-                wattsStream.push(kj * 1000 / time);
-            }
-            await streamsStore.put({
-                activity: activity.get('id'),
-                athlete: athlete.get('id'),
-                stream: 'watts_calc',
-                data: wattsStream
-            });
         }
+        await streamsStore.putMany(wattsStreams);
     }
 
 
     async function activityStatsProcessor({activities, athlete}) {
-        // XXX make batch friendly..
+        const actStreams = await getActivitiesStreams(activities,
+            new Set(['time', 'heartrate', 'active', 'watts', 'watts_calc']));
+        if (athlete.get('hrZones') === undefined) {
+            console.info("Getting HR zones for: " + athlete);
+            // The API is based on an activity but it's global to the athlete..
+            await athlete.save({hrZones: (await sauce.perf.fetchHRZones(activities[0].get('id'))) || null});
+        }
+        const hrZones = athlete.get('hrZones');
+        const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
+        const maxHR = hrZones && sauce.perf.estimateMaxHR(hrZones);
         for (const activity of activities) {
             const ftp = athlete.getFTPAt(activity.get('ts'));
-            if (!ftp) {
-                activity.setSyncError('local', new Error("No FTP for athlete, try TSS calc later..."));
-                continue;
-            }
-            const streams = await streamsStore.activityStreams(activity.get('id'));
+            const streams = actStreams.get(activity.get('id'));
             const stats = {};
             if (streams.heartrate) {
-                if (athlete.get('hrZones') === undefined) {
-                    console.info("Getting HR zones for: " + athlete);
-                    // The API is based on an activity but it's global to the athlete..
-                    await athlete.save({hrZones: await sauce.perf.fetchHRZones(activity.get('id')) || null});
-                }
-                const zones = athlete.get('hrZones');
-                if (zones) {
-                    const ltHR = (zones.z4 + zones.z3) / 2;
-                    const maxHR = sauce.perf.estimateMaxHR(zones);
-                    const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
-                    stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
-                        ltHR, restingHR, maxHR, athlete.get('gender'));
+                if (hrZones) {
+                    try {
+                        const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
+                        stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
+                            ltHR, restingHR, maxHR, athlete.get('gender'));
+                    } catch(e) {
+                        activity.setSyncError('local', e);
+                        continue;
+                    }
                 }
             }
-            if (streams.watts || streams.watts_calc) {
-                const corrected = sauce.power.correctedPower(streams.time, streams.watts || streams.watts_calc);
-                if (!corrected) {
+            if (ftp && (streams.watts || streams.watts_calc)) {
+                try {
+                    const corrected = sauce.power.correctedPower(streams.time, streams.watts || streams.watts_calc);
+                    if (!corrected) {
+                        continue;
+                    }
+                    const activeTime = sauce.data.activeTime(streams.time, streams.active);
+                    stats.kj = corrected.kj();
+                    stats.power = stats.kj * 1000 / activeTime;
+                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
+                    if (streams.watts || activity.get('basetype') === 'run') {
+                        stats.np = corrected.np();
+                        stats.xp = corrected.xp();
+                    }
+                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
+                    stats.intensity = (stats.np || stats.power) / ftp;
+                } catch(e) {
+                    activity.setSyncError('local', e);
                     continue;
                 }
-                const activeTime = sauce.data.activeTime(streams.time, streams.active);
-                stats.kj = corrected.kj();
-                stats.power = stats.kj * 1000 / activeTime;
-                stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
-                if (streams.watts || activity.get('basetype') === 'run') {
-                    stats.np = corrected.np();
-                    stats.xp = corrected.xp();
-                }
-                stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
-                stats.intensity = (stats.np || stats.power) / ftp;
             }
-            console.debug("stats proc " + activity, athlete.get('id'), 'TSS', stats.tss, 'tTTS', stats.tTss, 'np', stats.np);
-            await activity.save({stats});
+            activity.set({stats});
         }
     }
 
@@ -259,8 +290,7 @@ sauce.ns('hist', async ns => {
 
 
     async function syncSelfActivities(athlete, options={}) {
-        const activities = await actsStore.getAllForAthlete(athlete);
-        const localIds = new Set(activities.map(x => x.id));
+        const knownIds = new Set(await actsStore.getAllForAthlete(athlete, {keys: true}));
         for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
             const work = new jobs.UnorderedWorkQueue({maxPending: 25});
             for (let i = 0; page === 1 || page <= pageCount && i < concurrency; page++, i++) {
@@ -282,14 +312,13 @@ sauce.ns('hist', async ns => {
                     pageCount = Math.ceil(total / data.perPage);
                 }
                 for (const x of data.models) {
-                    if (!localIds.has(x.id)) {
+                    if (!knownIds.has(x.id)) {
                         const record = Object.assign({
                             athlete,
                             ts: x.start_date_local_raw * 1000
                         }, x);
                         record.basetype = getBaseType(record);
                         adding.push(record);
-                        activities.push(record);  // Sort later.
                     }
                 }
             }
@@ -297,21 +326,21 @@ sauce.ns('hist', async ns => {
             // If a user has deleted acts that we previously fetched our count will
             // be higher.  So we also require than the entire work group had no effect
             // before stopping.
+            //
+            // NOTE: If the user deletes a large number of items we may end up not
+            // syncing some activities.  A full resync will be required to recover.
             if (adding.length) {
                 await actsStore.putMany(adding);
                 console.info(`Found ${adding.length} new activities`);
-            } else if (activities.length >= total) {
+            } else if (knownIds.size >= total) {
                 break;
             }
         }
-        activities.sort((a, b) => b.ts - a.ts);
-        return activities;
     }
 
 
     async function syncPeerActivities(athlete, options={}) {
-        const activities = await actsStore.getAllForAthlete(athlete);
-        const knownIds = new Set(activities.map(x => x.id));
+        const knownIds = new Set(await actsStore.getAllForAthlete(athlete, {keys: true}));
 
         function *yearMonthRange(date) {
             for (let year = date.getUTCFullYear(), month = date.getUTCMonth() + 1;; year--, month=12) {
@@ -459,7 +488,6 @@ sauce.ns('hist', async ns => {
                     for (const x of data) {
                         if (!knownIds.has(x.id)) {
                             adding.push(x);
-                            activities.push(x);  // Sort later.
                             knownIds.add(x.id);
                             foundNew = true;
                         }
@@ -494,8 +522,6 @@ sauce.ns('hist', async ns => {
             const last = await actsStore.firstForAthlete(athlete);
             await batchImport(new Date(last.ts));
         }
-        activities.sort((a, b) => b.ts - a.ts);
-        return activities;
     }
 
 
@@ -551,27 +577,25 @@ sauce.ns('hist', async ns => {
 
 
     async function syncData(athlete, options={}) {
-        //const filter = c => c.value.syncState && c.value.syncState.streams && c.value.syncState.streams.version !== -Infinity;
-        //const activities = await actsStore.getAllForAthlete(athlete.get('id'), {filter, models: true});
-        const streamsManifests = sauce.hist.db.ActivityModel.getSyncManifest('streams');
-        const localManifests = sauce.hist.db.ActivityModel.getSyncManifest('local');
-        const latestStreams = streamsManifests[streamsManifests.length - 1].version;
-        const latestLocal = localManifests[localManifests.length - 1].version;
-        const fetchedIds = new Set(await actsStore.getSyncVersionForAthlete(athlete.get('id'), 'streams',
-            latestStreams, {keys: true}));
-        const localIds = new Set(await actsStore.getSyncVersionForAthlete(athlete.get('id'), 'local',
-            latestLocal, {keys: true}));
-        //const unfetched = new Map(activities.map(x => [x.get('id'), x]));
+        const athleteId = athlete.get('id');
+        const fetchedIds = new Set(await actsStore.getForAthleteWithSyncLatest(athleteId,
+            'streams', {keys: true}));
+        const noStreamIds = new Set(await actsStore.getForAthleteWithSyncVersion(athleteId,
+            'streams', -Infinity, {keys: true}));
+        const localIds = new Set(await actsStore.getForAthleteWithSyncLatest(athleteId,
+            'local', {keys: true}));
         const unfetched = new Map();
         const unprocessed = new Set();
         const activities = new Map();
         for (const id of await actsStore.getAllForAthlete(athlete.get('id'), {keys: true})) {
-            if (!fetchedIds.has(id)) {
-                unfetched.set(id, null);
-                activities.set(id, null);
-            } else if (!localIds.has(id)) {
-                unprocessed.add(id);
-                activities.set(id, null);
+            if (!noStreamIds.has(id)) {
+                if (!fetchedIds.has(id)) {
+                    unfetched.set(id, null);
+                    activities.set(id, null);
+                } else if (!localIds.has(id)) {
+                    unprocessed.add(id);
+                    activities.set(id, null);
+                }
             }
         }
         for (const a of await actsStore.getMany(Array.from(activities.keys()), {models: true})) {
@@ -706,6 +730,7 @@ sauce.ns('hist', async ns => {
                     versionedBatches.get(m).add(a);
                 }
                 for (const [m, activities] of versionedBatches.entries()) {
+                    const s = Date.now();
                     const fn = m.data;
                     for (const a of activities) {
                         a.clearSyncError('local');
@@ -714,12 +739,10 @@ sauce.ns('hist', async ns => {
                         console.debug(`Local processing (${fn.name}) v${m.version} on ${activities.size} activities`);
                         await fn({activities, athlete});
                     } catch(e) {
-                        // This is a fallback, we would prefer that the processor func handles errors.
-                        console.error("Top level local processing error [FIXME]:", fn.name, m.version, e);
+                        console.warn("Top level local processing error:", fn.name, m.version, e);
                         for (const a of activities) {
                             a.setSyncError('local', e);
                         }
-                        debugger;
                     }
                     for (const a of activities) {
                         if (!a.hasSyncError('local')) {
@@ -727,6 +750,9 @@ sauce.ns('hist', async ns => {
                         }
                     }
                     await actsStore.saveModels(activities);
+                    const elapsed = Date.now() - s;
+                    const count = activities.size;
+                    console.info(`${fn.name} ${Math.round(elapsed / count)}ms / activity, ${count} activities`);
                 }
             }
             if (complete.size + incomplete.size && options.onLocalProcessing) {
@@ -1297,25 +1323,31 @@ sauce.ns('hist', async ns => {
         }
 
         async activitiesCount() {
-            return await actsStore.getCountForAthlete(this.athleteId);
+            return await actsStore.countForAthlete(this.athleteId);
         }
 
         async activitiesSynced() {
-            let count = 0;
-            for await (const x of actsStore.byAthlete(this.athleteId, {models: true})) {
-                throw 'xxx';
-                if (x.get('noStreams') || !x.nextSync('local')) {
+            const noStreamIds = new Set(await actsStore.getForAthleteWithSyncVersion(this.athleteId,
+                'streams', -Infinity, {keys: true}));
+            const localIds = new Set(await actsStore.getForAthleteWithSyncLatest(this.athleteId,
+                'local', {keys: true}));
+            const unsynced = new Set();
+            let total = 0;
+            for (const id of await actsStore.getAllForAthlete(this.athleteId, {keys: true})) {
+                total++;
+                if (!noStreamIds.has(id) && !localIds.has(id)) {
+                    unsynced.add(id);
+                }
+            }
+            for (const a of await actsStore.getMany(Array.from(unsynced), {models: true})) {
+                if (!a.nextSync('local')) {
                     // count it it's latest or can't be synced due to error. Some
                     // activities may never recover from some error state, so just
                     // count them as being done.
-                    count++;
+                    unsynced.delete(a.get('id'));
                 }
             }
-            /*for await (const x of actsStore.byAthlete(this.athleteId, {models: false})) {
-                count++;
-            }*/
-
-            return count;
+            return total - unsynced.size;
         }
 
         async lastSync() {

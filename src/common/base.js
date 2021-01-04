@@ -491,7 +491,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
         set(keyOrObj, value) {
             if (value === undefined && typeof keyOrObj === 'object') {
-                Object.assing(this.data, keyOrObj);
+                Object.assign(this.data, keyOrObj);
                 for (const k of Object.keys(keyOrObj)) {
                     this._updated.add(k);
                 }

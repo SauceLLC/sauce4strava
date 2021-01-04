@@ -51,12 +51,13 @@ sauce.ns('hist.db', async ns => {
                     store.createIndex('athlete-local-version', ['athlete', 'syncState.local.version']);
                     next();
                 }
-            }, {
-                version: 10,
+            },
+            // Version 10 was deprecated in dev.
+            // Version 11 was deprecated in dev.
+            {
+                version: 12,
                 migrate: (idb, t, next) => {
                     const store = t.objectStore("activities");
-                    store.deleteIndex('streams-version'); // XXX 
-                    store.deleteIndex('local-version'); // XXX 
                     const curReq = store.openCursor();
                     curReq.onsuccess = ev => {
                         const c = ev.target.result;
@@ -67,6 +68,7 @@ sauce.ns('hist.db', async ns => {
                         if (c.value.noStreams) {
                             delete c.value.noStreams;
                             c.value.syncState = {streams: {version: -Infinity}};
+                            c.update(c.value);
                         }
                         c.continue();
                     };
@@ -146,7 +148,7 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        async getCountForAthlete(athlete, stream='time') {
+        async countForAthlete(athlete, stream='time') {
             // Every real activity has a time stream, so look for just this one.
             const q = IDBKeyRange.only([athlete, stream]);
             return await this.count(q, {index: 'athlete-stream'});
@@ -209,7 +211,7 @@ sauce.ns('hist.db', async ns => {
             return activities;
         }
 
-        async getSyncVersionForAthlete(athlete, syncLabel, syncValue, options={}) {
+        async getForAthleteWithSyncVersion(athlete, syncLabel, syncValue, options={}) {
             // NOTE: There needs to be an index for the syncLabel.
             const q = IDBKeyRange.only([athlete, syncValue]);
             const index = `athlete-${syncLabel}-version`;
@@ -221,7 +223,13 @@ sauce.ns('hist.db', async ns => {
             return activities;
         }
 
-        async getCountForAthlete(athlete) {
+        async getForAthleteWithSyncLatest(athlete, syncLabel, options={}) {
+            const manifest = this.Model.getSyncManifest(syncLabel);
+            const latestVersion = manifest[manifest.length - 1].version;
+            return await this.getForAthleteWithSyncVersion(athlete, syncLabel, latestVersion, options);
+        }
+
+        async countForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
             return await this.count(q, {index: 'athlete-ts'});
         }
@@ -249,6 +257,18 @@ sauce.ns('hist.db', async ns => {
             const store = this._getStore('readwrite');
             await Promise.all(deletes.map(k => this._request(store.delete(k))));
             return deletes.length;
+        }
+
+        async countForAthleteWithSyncVersion(athlete, syncLabel, syncVersion) {
+            const q = IDBKeyRange.only([athlete, syncVersion]);
+            const index = `athlete-${syncLabel}-version`;
+            return await this.count(this, q, {index});
+        }
+
+        async countForAthleteWithSyncLatest(athlete, syncLabel) {
+            const manifest = this.Model.getSyncManifest(syncLabel);
+            const latestVersion = manifest[manifest.length - 1].version;
+            return await this.countForAthleteWithSyncVersion(athlete, syncLabel, latestVersion);
         }
     }
 
