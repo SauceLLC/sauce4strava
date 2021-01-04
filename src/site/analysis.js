@@ -4,7 +4,6 @@ sauce.ns('analysis', ns => {
     'use strict';
 
     let _resolvePrepared;
-    let syncController;
     const ctx = {
         ready: false,
         prepared: new Promise(resolve => {
@@ -881,10 +880,10 @@ sauce.ns('analysis', ns => {
         const enabled = !!(athlete && athlete.sync);
         if (enabled) {
             $sync.addClass('enabled');
-            if (!syncController) {
+            if (!ns.syncController) {
                 setupActivitySyncController($sync);
             }
-            if (await syncController.isActive()) {
+            if (await ns.syncController.isActive()) {
                 $sync.addClass('active');
             }
         }
@@ -905,31 +904,31 @@ sauce.ns('analysis', ns => {
 
 
     function setupActivitySyncController($sync) {
-        syncController = new sauce.hist.SyncController(ctx.athlete.id);
+        ns.syncController = new sauce.hist.SyncController(ctx.athlete.id);
         let count = 0;
-        syncController.addEventListener('start', ev => {
+        ns.syncController.addEventListener('start', ev => {
             $sync.addClass('active');
             setSyncStatus('Starting sync...');
         });
-        syncController.addEventListener('stop', ev => {
+        ns.syncController.addEventListener('stop', ev => {
             $sync.removeClass('active');
             setSyncStatus('Sync completed', {timeout: 5000});
         });
-        syncController.addEventListener('error', ev => {
+        ns.syncController.addEventListener('error', ev => {
             setSyncStatus('Sync problem occurred');
         });
-        syncController.addEventListener('progress', ev => {
+        ns.syncController.addEventListener('progress', ev => {
             if (ev.data.sync === 'local') {
                 console.debug('local sync progress', ev.data);
                 count += ev.data.activities.length;
                 setSyncStatus(`${count}/???`);
             }
         });
-        syncController.addEventListener('enable', ev => {
+        ns.syncController.addEventListener('enable', ev => {
             $sync.addClass('enabled');
             setSyncStatus('Sync enabled', {timeout: 5000});
         });
-        syncController.addEventListener('disable', ev => {
+        ns.syncController.addEventListener('disable', ev => {
             $sync.removeClass('enabled active');
             setSyncStatus('Sync disabled', {timeout: 5000});
         });
@@ -937,40 +936,21 @@ sauce.ns('analysis', ns => {
 
 
     async function activitySyncDialog($sync) {
-        const stravaAthlete = ctx.athlete;
-        const sauceAthlete = await sauce.hist.getAthlete(stravaAthlete.id);
-        const enabled = !!(sauceAthlete && sauceAthlete.sync);
+        const athlete = await sauce.hist.getAthlete(ctx.athlete.id);
+        const enabled = !!(athlete && athlete.sync);
+        const template = await getTemplate('sync-control-panel.html', 'sync_control_panel');
         const $modal = modal({
-            title: `Activity Sync Control Panel - ${stravaAthlete.get('display_name')}`,
+            title: `Activity Sync Control Panel - ${ctx.athlete.get('display_name')}`,
             icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
             dialogClass: 'sauce-sync-athlete-dialog',
-            body: `
-                <p>Activity sync is an optional feature to import an athlete's
-                entire activity history into the browser's
-                <a href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
-                   target="_blank">local database</a> so that advanced performance analysis
-                can be performed for more than just a single activity at a time.  This
-                makes it possible to show training metrics like TSS for all past activities
-                so that cumulative training metrics like
-                <a href="https://www.trainingpeaks.com/coach-blog/a-coachs-guide-to-atl-ctl-tsb/"
-                   target="_blank">ATL, CTL and TSB</a> can be calculated and shown.
-                Additionally Sauce computes the peak performances from every activity and
-                stores the top results so comparisions can be made between multiple activities
-                and top level performances can be easily highlighted.
-                </p>
-
-                <label>
-                    <b>Enabled: </b>
-                    <input type="checkbox" name="enable" ${enabled ? 'checked' : ''}/>
-                </label>
-
-                <b>Sauce Athlete Data:</b>
-                <pre style="font-size: 0.8em; color: yellow;">
-                    ${JSON.stringify(sauceAthlete, null, 2)}
-                </pre>
-            `,
+            body: await template({
+                enabled,
+                athlete,
+                humanWeight,
+                weightUnit: ctx.weightFormatter.shortUnitKey(),
+            }),
             flex: true,
-            width: '80vw',
+            width: '40em',
             autoDestroy: true,
             closeOnMobileBack: true,
             extraButtons: [{
@@ -978,83 +958,65 @@ sauce.ns('analysis', ns => {
                 class: 'btn-primary sync-cancel',
                 click: ev => {
                     $modal.removeClass('sync-active');
-                    syncController.cancel();
+                    ns.syncController.cancel();
                 }
             }, {
                 text: 'Recompute Activity Metrics',
                 class: 'btn-primary sync-recompute',
                 click: ev => {
                     $modal.addClass('sync-active');
-                    syncController.invalidate('local');
+                    ns.syncController.invalidate('local');
                 }
             }, {
                 text: 'Sync Activity Data',
                 class: 'btn-primary sync-start',
                 click: ev => {
                     $modal.addClass('sync-active');
-                    syncController.start();
+                    ns.syncController.start();
                 }
             }]
         });
+        $modal.find('value.synced').html('asdf');
         const $en = $modal.find('input[name="enable"]');
-        function onSyncStart(ev) {
-            $modal.addClass('sync-active');
-        }
-        function onSyncStop(ev) {
-            $modal.removeClass('sync-active');
-        }
-        function onSyncError(ev) {
-            $modal.removeClass('sync-active');
-        }
-        function onSyncProgress(ev) {
-            console.warn("not using currently");
-        }
-        function onSyncEnable(ev) {
-            $en[0].checked = true;
-        }
-        function onSyncDisable(ev) {
-            $en[0].checked = false;
-        }
-        function monitorSyncController() {
-            syncController.addEventListener('start', onSyncStart);
-            syncController.addEventListener('stop', onSyncStop);
-            syncController.addEventListener('error', onSyncError);
-            syncController.addEventListener('progress', onSyncProgress);
-            syncController.addEventListener('enable', onSyncEnable);
-            syncController.addEventListener('disable', onSyncDisable);
-        }
+        const listeners = {
+            start: ev => void $modal.addClass('sync-active'),
+            stop: ev => void $modal.removeClass('sync-active'),
+            error: ev => void $modal.removeClass('sync-active'),
+            progress: ev => void console.warn("not using currently"),
+            enable: ev => void ($en[0].checked = true),
+            disable: ev => void ($en[0].checked = false),
+        };
         if (enabled) {
-            monitorSyncController();
+            for (const [event, cb] of Object.entries(listeners)) {
+                ns.syncController.addEventListener(event, cb);
+            }
         } else {
             $modal.addClass('sync-disabled');
         }
         $en.on('input', async ev => {
             const en = ev.target.checked;
             if (en) {
-                if (!syncController) {
+                if (!ns.syncController) {
                     setupActivitySyncController($sync);
                 }
                 await sauce.hist.addAthlete({
-                    id: stravaAthlete.id,
-                    gender: stravaAthlete.get('gender') === 'F' ? 'female' : 'male',
-                    name: stravaAthlete.get('display_name'),
+                    id: ctx.athlete.id,
+                    gender: ctx.athlete.get('gender') === 'F' ? 'female' : 'male',
+                    name: ctx.athlete.get('display_name'),
                     ftpHistory: ctx.ftp ? [{ts: 0, value: ctx.ftp}] : undefined,  // XXX
                     weightHistory: ctx.weight ? [{ts: 0, value: ctx.weight}] : undefined,  // XXX
                 });
                 await sauce.hist.enableAthlete(ctx.athlete.id);
-            } else if (syncController) {
+            } else if (ns.syncController) {
                 await sauce.hist.disableAthlete(ctx.athlete.id);
             }
             $modal.toggleClass('sync-disabled', !en);
         });
         $modal.on('dialogclose', () => {
-            if (syncController) {
-                syncController.removeEventListener('start', onSyncStart);
-                syncController.removeEventListener('stop', onSyncStop);
-                syncController.removeEventListener('error', onSyncError);
-                syncController.removeEventListener('progress', onSyncProgress);
-                syncController.removeEventListener('enable', onSyncEnable);
-                syncController.removeEventListener('disable', onSyncDisable);
+            if (ns.syncController) {
+                for (const [event, cb] of Object.entries(listeners)) {
+                    ns.syncController.removeEventListener(event, cb);
+                }
             }
         });
     }

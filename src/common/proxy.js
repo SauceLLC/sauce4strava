@@ -51,7 +51,7 @@ sauce.ns('proxy', ns => {
         const props = new Set();
         do {
             for (const x of Object.getOwnPropertyNames(obj)) {
-                if (typeof obj[x] === 'function') {
+                if (typeof obj[x] === 'function' && !x.startsWith('_')) {
                     props.add(x);
                 }
             }

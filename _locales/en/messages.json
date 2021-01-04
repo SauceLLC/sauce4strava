@@ -198,6 +198,23 @@
     "perf_predictor_power_details_gravity_tooltip": {"message": "Power and work requirements to overcome gravity"},
     "perf_predictor_power_details_aero_tooltip": {"message": "Power and work requirements to overcome aerodynamic drag"},
     "perf_predictor_power_details_rr_tooltip": {"message": "Power and work requirements to overcome rolling resistance"},
+
+    "sync_control_panel_intro": {"message": "Activity sync imports all activity history so advanced performance metrics can be calculated."},
+    "sync_control_panel_intro_help": {
+        "message": "Activity sync is an optional feature to import an athlete's entire activity history into the browser's <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">local database</a> so that advanced performance analysis can be performed for more than just a single activity at a time.  This makes it possible to show training metrics like TSS for all past activities so that cumulative training metrics like <a href=\"https://www.trainingpeaks.com/coach-blog/a-coachs-guide-to-atl-ctl-tsb/\" target=\"_blank\">ATL, CTL and TSB</a> can be calculated and shown.  Additionally Sauce computes the peak performances from every activity and stores the top results so comparisions can be made between multiple activities and top level performances can be easily highlighted."
+    },
+    "sync_control_panel_enabled": {"message": "Enabled"},
+    "sync_control_panel_status": {"message": "Status"},
+    "sync_control_panel_synced": {"message": "Synchronized"},
+    "sync_control_panel_last_sync": {"message": "Last sync"},
+    "sync_control_panel_next_sync": {"message": "Next sync"},
+    "sync_control_panel_ftp_history": {"message": "FTP History"},
+    "sync_control_panel_weight_history": {"message": "Weight History"},
+    "sync_control_panel_title": {"message": "Activity Sync Control Panel"},
+    "sync_control_panel_status": {"message": "Status"},
+    "sync_control_panel_resumes": {"message": "Resumes"},
+    "sync_control_panel_activities": {"message": "activities"},
+
     "subscription": {"message": "Subscription"},
     "live_segment_create": {"message": "Create"},
     "live_segment_creator": {"message": "Creator"},

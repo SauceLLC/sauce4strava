@@ -209,7 +209,9 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
             if (!this.starting) {
                 this.starting = new Promise((resolve, reject) => {
-                    const req = indexedDB.open(this.name, this.version);
+                    const migrations = this.migrations;
+                    const latestVersion = migrations[migrations.length - 1].version;
+                    const req = indexedDB.open(this.name, latestVersion);
                     req.addEventListener('error', ev => reject(req.error));
                     req.addEventListener('success', ev => resolve(ev.target.result));
                     req.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
@@ -217,7 +219,18 @@ self.sauceBaseInit = function sauceBaseInit() {
                         console.info(`Upgrading DB from v${ev.oldVersion} to v${ev.newVersion}`);
                         const idb = ev.target.result;
                         const t = ev.target.transaction;
-                        this.migrate(idb, t, ev.oldVersion, ev.newVersion);
+                        const stack = [];
+                        for (let i = 0; i < migrations.length; i++) {
+                            const migration = migrations[i];
+                            if (ev.oldVersion && ev.oldVersion >= migration.version) {
+                                continue;
+                            }
+                            stack.push(() => {
+                                stack.shift();
+                                migration.migrate(idb, t, stack[0] || (() => void 0));
+                            });
+                        }
+                        stack[0]();
                     });
                 }).then(x => {
                     this._idb = x;
@@ -227,11 +240,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             await this.starting;
         }
 
-        get version() {
-            throw new Error("Pure Virtual");
-        }
-
-        migrate(idb, t, oldVersion, newVersion) {
+        get migrations() {
             throw new Error("Pure Virtual");
         }
 
@@ -243,9 +252,10 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     class DBStore {
-        constructor(db, name) {
+        constructor(db, name, options={}) {
             this.db = db;
             this.name = name;
+            this.Model = options.Model;
         }
 
         _request(req) {
@@ -287,7 +297,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async get(query, options={}) {
-            return await this._readQuery('get', query, options);
+            const data = await this._readQuery('get', query, options);
+            return options.model ? new this.Model(data, this) : data;
         }
 
         async getKey(query, options={}) {
@@ -295,7 +306,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getAll(query, options={}) {
-            return await this._readQuery('getAll', query, options, options.count);
+            const data = await this._readQuery('getAll', query, options, options.count);
+            return options.models ? data.map(x => new this.Model(x, this)): data;
         }
 
         async getAllKeys(query, options={}) {
@@ -312,7 +324,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
             const store = this._getStore('readonly');
             const ifc = options.index ? store.index(options.index) : store;
-            return await Promise.all(queries.map(q => this._request(ifc.get(q))));
+            const data = await Promise.all(queries.map(q => this._request(ifc.get(q))));
+            return options.models ? data.map(x => new this.Model(x, this)): data;
         }
 
         async update(query, updates, options={}) {
@@ -389,7 +402,11 @@ self.sauceBaseInit = function sauceBaseInit() {
 
         async *values(query, options={}) {
             for await (const c of this.cursor(query, options)) {
-                yield c.value;
+                if (options.models) {
+                    yield new this.Model(c.value, this);
+                } else {
+                    yield c.value;
+                }
             }
         }
 
@@ -428,25 +445,96 @@ self.sauceBaseInit = function sauceBaseInit() {
                 cursor.continue();
             }
         }
+
+        async saveModels(models) {
+            const updatesDatas = [];
+            const updatedSave = new Map();
+            for (const model of models) {
+                if (!model._updated.size) {
+                    continue;
+                }
+                const updates = {id: model.data.id};
+                for (const k of model._updated) {
+                    updates[k] = model.data[k];
+                }
+                updatesDatas.push(updates);
+                // Save a copy of the updated set from each model in case we fail.
+                updatedSave.set(model, new Set(model._updated));
+                model._updated.clear();
+            }
+            try {
+                await this.updateMany(updatesDatas);
+            } catch(e) {
+                // Restore updated keys before throwing, so future saves of the model
+                // might recover and persist their changes.
+                for (const [model, saved] of updatedSave.entries()) {
+                    for (const x of saved) {
+                        model._updated.add(x);
+                    }
+                }
+                throw e;
+            }
+        }
     }
+
+
+    class Model {
+        constructor(data, store) {
+            this.data = data;
+            this._store = store;
+            this._updated = new Set();
+        }
+
+        get(key) {
+            return this.data[key];
+        }
+
+        set(keyOrObj, value) {
+            if (value === undefined && typeof keyOrObj === 'object') {
+                Object.assing(this.data, keyOrObj);
+                for (const k of Object.keys(keyOrObj)) {
+                    this._updated.add(k);
+                }
+            } else {
+                this.data[keyOrObj] = value;
+                this._updated.add(keyOrObj);
+            }
+        }
+
+        async save(obj) {
+            if (obj) {
+                for (const [k, v] of Object.entries(obj)) {
+                    this.set(k, v);
+                }
+            }
+            const updates = {};
+            for (const k of this._updated) {
+                updates[k] = this.data[k];
+            }
+            this._updated.clear();
+            await this._store.update(this.data.id, updates);
+        }
+    }
+
 
     sauce.db = {
         Database,
         DBStore,
+        Model,
     };
 
 
     class CacheDatabase extends Database {
-        get version() {
-            return 1;
-        }
-
-        migrate(idb, t, oldVersion, newVersion) {
-            if (!oldVersion || oldVersion < 1) {
-                const store = idb.createObjectStore("entries", {autoIncrement: true});
-                store.createIndex('bucket-expiration', ['bucket', 'expiration']);
-                store.createIndex('bucket-key', ['bucket', 'key'], {unique: true});
-            }
+        get migrations() {
+            return [{
+                version: 1,
+                migrate: (idb, t, next) => {
+                    const store = idb.createObjectStore("entries", {autoIncrement: true});
+                    store.createIndex('bucket-expiration', ['bucket', 'expiration']);
+                    store.createIndex('bucket-key', ['bucket', 'key'], {unique: true});
+                    next();
+                }
+            }];
         }
     }
 

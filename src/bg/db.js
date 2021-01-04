@@ -5,33 +5,73 @@ sauce.ns('hist.db', async ns => {
     'use strict';
 
     class HistDatabase extends sauce.db.Database {
-        get version() {
-            return 7;
-        }
-
-        migrate(idb, t, oldVersion, newVersion) {
-            if (!oldVersion || oldVersion < 1) {
-                let store = idb.createObjectStore("streams", {keyPath: ['activity', 'stream']});
-                store.createIndex('activity', 'activity');
-                store.createIndex('athlete-stream', ['athlete', 'stream']);
-                store = idb.createObjectStore("activities", {keyPath: 'id'});
-                store.createIndex('athlete-ts', ['athlete', 'ts']);
-            }
-            if (oldVersion < 2) {
-                const store = t.objectStore("streams");
-                store.createIndex('athlete', 'athlete');
-            }
-            if (oldVersion < 3) {
-                const store = t.objectStore("activities");
-                store.createIndex('athlete-basetype-ts', ['athlete', 'basetype', 'ts']);
-            }
+        get migrations() {
+            return [{
+                version: 1,
+                migrate: (idb, t, next) => {
+                    let store = idb.createObjectStore("streams", {keyPath: ['activity', 'stream']});
+                    store.createIndex('activity', 'activity');
+                    store.createIndex('athlete-stream', ['athlete', 'stream']);
+                    store = idb.createObjectStore("activities", {keyPath: 'id'});
+                    store.createIndex('athlete-ts', ['athlete', 'ts']);
+                    next();
+                }
+            }, {
+                version: 2,
+                migrate: (idb, t, next) => {
+                    const store = t.objectStore("streams");
+                    store.createIndex('athlete', 'athlete');
+                    next();
+                }
+            }, {
+                version: 3,
+                migrate: (idb, t, next) => {
+                    const store = t.objectStore("activities");
+                    store.createIndex('athlete-basetype-ts', ['athlete', 'basetype', 'ts']);
+                    next();
+                }
+            },
             // Version 4 was deprecated in dev.
-            if (oldVersion < 5) {
-                const store = idb.createObjectStore("athletes", {keyPath: 'id'});
-                store.createIndex('sync', 'sync');
-            }
+            {
+                version: 5,
+                migrate: (idb, t, next) => {
+                    const store = idb.createObjectStore("athletes", {keyPath: 'id'});
+                    store.createIndex('sync', 'sync');
+                    next();
+                }
+            },
             // Version 6 was deprecated in dev.
             // Version 7 was deprecated in dev.
+            // Version 8 was deprecated in dev.
+            {
+                version: 9,
+                migrate: (idb, t, next) => {
+                    const store = t.objectStore("activities");
+                    store.createIndex('athlete-streams-version', ['athlete', 'syncState.streams.version']);
+                    store.createIndex('athlete-local-version', ['athlete', 'syncState.local.version']);
+                    next();
+                }
+            }, {
+                version: 10,
+                migrate: (idb, t, next) => {
+                    const store = t.objectStore("activities");
+                    store.deleteIndex('streams-version'); // XXX 
+                    store.deleteIndex('local-version'); // XXX 
+                    const curReq = store.openCursor();
+                    curReq.onsuccess = ev => {
+                        const c = ev.target.result;
+                        if (!c) {
+                            next();
+                            return;
+                        }
+                        if (c.value.noStreams) {
+                            delete c.value.noStreams;
+                            c.value.syncState = {streams: {version: -Infinity}};
+                        }
+                        c.continue();
+                    };
+                }
+            }];
         }
     }
 
@@ -140,7 +180,7 @@ sauce.ns('hist.db', async ns => {
 
     class ActivitiesStore extends sauce.db.DBStore {
         constructor() {
-            super(histDatabase, 'activities');
+            super(histDatabase, 'activities', {Model: ActivityModel});
         }
 
         async *byAthlete(athlete, options={}) {
@@ -155,7 +195,8 @@ sauce.ns('hist.db', async ns => {
                 options.index = 'athlete-ts';
             }
             options.reverse = !options.reverse;  // Go from newest to oldest by default
-            for await (const x of this.values(q, options)) {
+            const iter = options.keys ? this.keys : this.values;
+            for await (const x of iter.call(this, q, options)) {
                 yield x;
             }
         }
@@ -165,11 +206,19 @@ sauce.ns('hist.db', async ns => {
             for await (const x of this.byAthlete(athlete, options)) {
                 activities.push(x);
             }
-            if (options.models) {
-                return activities.map(x => new ActivityModel(x, this));
-            } else {
-                return activities;
+            return activities;
+        }
+
+        async getSyncVersionForAthlete(athlete, syncLabel, syncValue, options={}) {
+            // NOTE: There needs to be an index for the syncLabel.
+            const q = IDBKeyRange.only([athlete, syncValue]);
+            const index = `athlete-${syncLabel}-version`;
+            const activities = [];
+            const iter = options.keys ? this.keys : this.values;
+            for await (const x of iter.call(this, q, {index})) {
+                activities.push(x);
             }
+            return activities;
         }
 
         async getCountForAthlete(athlete) {
@@ -201,120 +250,27 @@ sauce.ns('hist.db', async ns => {
             await Promise.all(deletes.map(k => this._request(store.delete(k))));
             return deletes.length;
         }
-
-        async update(query, updates, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
-            }
-            const store = this._getStore('readwrite');
-            const ifc = options.index ? store.index(options.index) : store;
-            const data = await this._request(ifc.get(query));
-            Object.assign(data, updates);
-            await this._request(store.put(data));
-            return data;
-        }
-
-        async saveModels(activities) {
-            const updatesDatas = [];
-            const updatedSave = new Map();
-            for (const a of activities) {
-                if (!a._updated.size) {
-                    continue;
-                }
-                const updates = {id: a.data.id};
-                for (const k of a._updated) {
-                    updates[k] = a.data[k];
-                }
-                updatesDatas.push(updates);
-                // Save a copy of the updated set from each model in case we fail.
-                updatedSave.set(a, new Set(a._updated));
-                a._updated.clear();
-            }
-            try {
-                await this.updateMany(updatesDatas);
-            } catch(e) {
-                // Restore updated keys before throwing, so future saves of the model
-                // might recover and persist their changes.
-                for (const [a, saved] of updatedSave.entries()) {
-                    for (const x of saved) {
-                        a._updated.add(x);
-                    }
-                }
-                throw e;
-            }
-        }
     }
 
 
     class AthletesStore extends sauce.db.DBStore {
         constructor() {
-            super(histDatabase, 'athletes');
-        }
-
-        async get(id, options={}) {
-            const data = await super.get(id);
-            if (options.model) {
-                return data ? new AthleteModel(data, this) : undefined;
-            } else {
-                return data;
-            }
+            super(histDatabase, 'athletes', {Model: AthleteModel});
         }
 
         async getEnabledAthletes(options={}) {
             const athletes = [];
             const q = IDBKeyRange.only(1);
-            for await (const x of this.values(q, {index: 'sync'})) {
+            options.index = 'sync';
+            for await (const x of this.values(q, options)) {
                 athletes.push(x);
             }
-            if (options.models) {
-                return athletes.map(x => new AthleteModel(x, this));
-            } else {
-                return athletes;
-            }
+            return athletes;
         }
     }
 
 
-    class Model {
-        constructor(data, store) {
-            this.data = data;
-            this._store = store;
-            this._updated = new Set();
-        }
-
-        get(key) {
-            return this.data[key];
-        }
-
-        set(keyOrObj, value) {
-            if (value === undefined && typeof keyOrObj === 'object') {
-                Object.assing(this.data, keyOrObj);
-                for (const k of Object.keys(keyOrObj)) {
-                    this._updated.add(k);
-                }
-            } else {
-                this.data[keyOrObj] = value;
-                this._updated.add(keyOrObj);
-            }
-        }
-
-        async save(obj) {
-            if (obj) {
-                for (const [k, v] of Object.entries(obj)) {
-                    this.set(k, v);
-                }
-            }
-            const updates = {};
-            for (const k of this._updated) {
-                updates[k] = this.data[k];
-            }
-            this._updated.clear();
-            await this._store.update(this.data.id, updates);
-        }
-    }
-
-
-    class ActivityModel extends Model {
+    class ActivityModel extends sauce.db.Model {
         static setSyncManifest(name, manifest) {
             if (!this._syncManifests) {
                 this._syncManifests = {};
@@ -418,7 +374,7 @@ sauce.ns('hist.db', async ns => {
     }
 
 
-    class AthleteModel extends Model {
+    class AthleteModel extends sauce.db.Model {
         toString() {
             return '' + this.get('id');
         }
@@ -467,7 +423,6 @@ sauce.ns('hist.db', async ns => {
         ActivitiesStore,
         StreamsStore,
         AthletesStore,
-        Model,
         ActivityModel,
         AthleteModel,
     };

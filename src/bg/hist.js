@@ -551,27 +551,49 @@ sauce.ns('hist', async ns => {
 
 
     async function syncData(athlete, options={}) {
-        const filter = c => !c.value.noStreams;
-        const activities = await actsStore.getAllForAthlete(athlete.get('id'), {filter, models: true});
-        const unfetched = new Map(activities.map(x => [x.get('id'), x]));
-        for await (const id of streamsStore.activitiesByAthlete(athlete.get('id'))) {
-            const a = unfetched.get(id);
-            if (a && a.isSyncLatest('streams')) {
-                unfetched.delete(id);
+        //const filter = c => c.value.syncState && c.value.syncState.streams && c.value.syncState.streams.version !== -Infinity;
+        //const activities = await actsStore.getAllForAthlete(athlete.get('id'), {filter, models: true});
+        const streamsManifests = sauce.hist.db.ActivityModel.getSyncManifest('streams');
+        const localManifests = sauce.hist.db.ActivityModel.getSyncManifest('local');
+        const latestStreams = streamsManifests[streamsManifests.length - 1].version;
+        const latestLocal = localManifests[localManifests.length - 1].version;
+        const fetchedIds = new Set(await actsStore.getSyncVersionForAthlete(athlete.get('id'), 'streams',
+            latestStreams, {keys: true}));
+        const localIds = new Set(await actsStore.getSyncVersionForAthlete(athlete.get('id'), 'local',
+            latestLocal, {keys: true}));
+        //const unfetched = new Map(activities.map(x => [x.get('id'), x]));
+        const unfetched = new Map();
+        const unprocessed = new Set();
+        const activities = new Map();
+        for (const id of await actsStore.getAllForAthlete(athlete.get('id'), {keys: true})) {
+            if (!fetchedIds.has(id)) {
+                unfetched.set(id, null);
+                activities.set(id, null);
+            } else if (!localIds.has(id)) {
+                unprocessed.add(id);
+                activities.set(id, null);
             }
         }
+        for (const a of await actsStore.getMany(Array.from(activities.keys()), {models: true})) {
+            activities.set(a.get('id'), a);
+        }
         const procQueue = new queues.Queue();
-        for (const a of activities) {
-            const needsFetch = unfetched.has(a.get('id'));
-            if (needsFetch && !a.nextSync('streams')) {
-                console.info(`Deferring streams fetch of ${a.get('id')} due to recent error`);
-                unfetched.delete(a.get('id'));
-            } else if (!needsFetch && !a.isSyncLatest('local')) {
-                if (!a.nextSync('local')) {
-                    console.info(`Deferring local processing of ${a.get('id')} due to recent error`);
-                } else {
-                    procQueue.putNoWait(a);
-                }
+        // After getting all our raw data we need to check that we can sync based on error backoff...
+        for (const id of unfetched.keys()) {
+            const a = activities.get(id);
+            if (!a.nextSync('streams')) {
+                console.info(`Deferring streams fetch of ${id} due to recent error`);
+                unfetched.delete(id);
+            } else {
+                unfetched.set(id, a);
+            }
+        }
+        for (const id of unprocessed) {
+            const a = activities.get(id);
+            if (!a.nextSync('local')) {
+                console.info(`Deferring local processing of ${id} due to error`);
+            } else {
+                procQueue.putNoWait(a);
             }
         }
         const workers = [];
@@ -623,7 +645,7 @@ sauce.ns('hist', async ns => {
                 activity.setSyncVersionLatest('streams');
                 procQueue.putNoWait(activity);
             } else if (data === null) {
-                activity.set('noStreams', true);
+                activity.setSyncVersion('streams', -Infinity);
             } else if (error) {
                 // Often this is an activity converted to private.
                 activity.setSyncError('streams', error);
@@ -973,9 +995,6 @@ sauce.ns('hist', async ns => {
             await syncFn(this.athlete.get('id'));
             this.status = 'streams-sync';
             try {
-                if (Math.random() > 0.98) { // XXX
-                    throw new Error("Random Error");
-                }
                 await syncData(this.athlete, {
                     cancelEvent: this._cancelEvent,
                     onStreams: this._onStreams.bind(this),
@@ -1188,28 +1207,6 @@ sauce.ns('hist', async ns => {
             await actsStore.deleteAthlete(athlete);
         }
 
-        rateLimiterResumes() {
-            const g = streamRateLimiterGroup;
-            if (g && g.sleeping()) {
-                return streamRateLimiterGroup.resumes() - Date.now();
-            }
-        }
-
-        rateLimiterSleeping() {
-            const g = streamRateLimiterGroup;
-            return g & g.sleeping();
-        }
-
-        async fetchedActivities(athlete) {
-            const filter = c => c.value.noStreams;
-            const foundNoStreams = (await actsStore.getAllForAthlete(athlete, {filter})).length;
-            const found = await streamsStore.getCountForAthlete(athlete, 'time');
-            return foundNoStreams + found;
-        }
-
-        async availableActivities(athlete) {
-            return await actsStore.getCountForAthlete(athlete);
-        }
     }
 
     if (self.currentUser) {
@@ -1231,11 +1228,11 @@ sauce.ns('hist', async ns => {
             super();
             this.athleteId = athleteId;
             this._syncListeners = [];
-            this.setupEventRelay('start');
-            this.setupEventRelay('stop');
-            this.setupEventRelay('progress');
-            this.setupEventRelay('enable');
-            this.setupEventRelay('disable');
+            this._setupEventRelay('start');
+            this._setupEventRelay('stop');
+            this._setupEventRelay('progress');
+            this._setupEventRelay('enable');
+            this._setupEventRelay('disable');
         }
 
         delete() {
@@ -1248,7 +1245,7 @@ sauce.ns('hist', async ns => {
             this._syncListeners.length = 0;
         }
 
-        setupEventRelay(name) {
+        _setupEventRelay(name) {
             const listener = ev => {
                 if (ev.athlete === this.athleteId) {
                     this.dispatchEvent(ev);
@@ -1285,6 +1282,48 @@ sauce.ns('hist', async ns => {
                 throw new Error("Sync Manager is not available");
             }
             await invalidateSyncState(this.athleteId, name);
+        }
+
+        rateLimiterResumes() {
+            const g = streamRateLimiterGroup;
+            if (g && g.sleeping()) {
+                return streamRateLimiterGroup.resumes();
+            }
+        }
+
+        rateLimiterSleeping() {
+            const g = streamRateLimiterGroup;
+            return g & g.sleeping();
+        }
+
+        async activitiesCount() {
+            return await actsStore.getCountForAthlete(this.athleteId);
+        }
+
+        async activitiesSynced() {
+            let count = 0;
+            for await (const x of actsStore.byAthlete(this.athleteId, {models: true})) {
+                throw 'xxx';
+                if (x.get('noStreams') || !x.nextSync('local')) {
+                    // count it it's latest or can't be synced due to error. Some
+                    // activities may never recover from some error state, so just
+                    // count them as being done.
+                    count++;
+                }
+            }
+            /*for await (const x of actsStore.byAthlete(this.athleteId, {models: false})) {
+                count++;
+            }*/
+
+            return count;
+        }
+
+        async lastSync() {
+            return (await athletesStore.get(this.athleteId)).lastSync;
+        }
+
+        async nextSync() {
+            return ns.syncManager.refreshInterval + await this.lastSync();
         }
     }
     sauce.proxy.export(SyncController, {namespace});
