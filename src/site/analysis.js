@@ -905,7 +905,6 @@ sauce.ns('analysis', ns => {
 
     function setupActivitySyncController($sync) {
         ns.syncController = new sauce.hist.SyncController(ctx.athlete.id);
-        let count = 0;
         ns.syncController.addEventListener('start', ev => {
             $sync.addClass('active');
             setSyncStatus('Starting sync...');
@@ -917,11 +916,14 @@ sauce.ns('analysis', ns => {
         ns.syncController.addEventListener('error', ev => {
             setSyncStatus('Sync problem occurred');
         });
-        ns.syncController.addEventListener('progress', ev => {
+        ns.syncController.addEventListener('progress', async ev => {
             if (ev.data.sync === 'local') {
-                console.debug('local sync progress', ev.data);
-                count += ev.data.activities.length;
-                setSyncStatus(`${count}/???`);
+                const [synced, total] = await Promise.all([
+                    ns.syncController.activitiesSynced(),
+                    ns.syncController.activitiesCount(),
+                ]);
+                setSyncStatus(`${synced}/${total}`);
+                jQuery('value.synced').text(`${synced}/${total}`);
             }
         });
         ns.syncController.addEventListener('enable', ev => {
@@ -976,7 +978,6 @@ sauce.ns('analysis', ns => {
                 }
             }]
         });
-        $modal.find('value.synced').html('asdf');
         const $en = $modal.find('input[name="enable"]');
         const listeners = {
             start: ev => void $modal.addClass('sync-active'),
@@ -990,6 +991,10 @@ sauce.ns('analysis', ns => {
             for (const [event, cb] of Object.entries(listeners)) {
                 ns.syncController.addEventListener(event, cb);
             }
+            Promise.all([
+                ns.syncController.activitiesSynced(),
+                ns.syncController.activitiesCount(),
+            ]).then(([synced, total]) => $modal.find('value.synced').text(`${synced}/${total}`));
         } else {
             $modal.addClass('sync-disabled');
         }
@@ -998,6 +1003,10 @@ sauce.ns('analysis', ns => {
             if (en) {
                 if (!ns.syncController) {
                     setupActivitySyncController($sync);
+                    Promise.all([
+                        ns.syncController.activitiesSynced(),
+                        ns.syncController.activitiesCount(),
+                    ]).then(([synced, total]) => $modal.find('value.synced').text(`${synced}/${total}`));
                 }
                 await sauce.hist.addAthlete({
                     id: ctx.athlete.id,

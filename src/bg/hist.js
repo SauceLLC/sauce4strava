@@ -999,10 +999,6 @@ sauce.ns('hist', async ns => {
             this._cancelEvent = new locks.Event();
         }
 
-        run() {
-            this._runPromise = this._run();
-        }
-
         async wait() {
             await this._runPromise;
         }
@@ -1013,6 +1009,10 @@ sauce.ns('hist', async ns => {
 
         cancelled() {
             return this._cancelEvent.isSet();
+        }
+
+        run() {
+            this._runPromise = this._run();
         }
 
         async _run() {
