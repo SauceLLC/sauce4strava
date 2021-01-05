@@ -244,8 +244,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             throw new Error("Pure Virtual");
         }
 
-        getStore(name, mode) {
-            const t = this._idb.transaction([name], mode);
+        getStore(name, mode='readonly', durability='relaxed') {
+            const t = this._idb.transaction([name], mode, {durability});
             return t.objectStore(name);
         }
     }
@@ -258,7 +258,11 @@ self.sauceBaseInit = function sauceBaseInit() {
             this.Model = options.Model;
         }
 
-        _request(req) {
+        _request(req, options={}) {
+            if (options.commit) {
+                //console.warn("COMIT!", req);
+                //req.transaction.commit();
+            }
             return new Promise((resolve, reject) => {
                 req.addEventListener('error', ev => reject(req.error));
                 req.addEventListener('success', ev => resolve(req.result));
@@ -273,7 +277,23 @@ self.sauceBaseInit = function sauceBaseInit() {
             return offt;
         }
 
-        _extractKey(data, keyPath) {
+        _getIDBStore(mode) {
+            if (!this.db.started) {
+                throw new TypeError('Misuse of _getIDBStore: db is not started');
+            }
+            return this.db.getStore(this.name, mode);
+        }
+
+        async _readQuery(getter, query, options={}, ...getterExtraArgs) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const idbStore = this._getIDBStore('readonly');
+            const ifc = options.index ? idbStore.index(options.index) : idbStore;
+            return [await this._request(ifc[getter](query, ...getterExtraArgs)), idbStore];
+        }
+
+        extractKey(data, keyPath) {
             // keyPath can be a single key-ident or an array of key-idents where
             // a key ident can be a dot.notation string or just a solitary string.
             if (!Array.isArray(keyPath)) {
@@ -283,73 +303,64 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
         }
 
-        _getStore(mode) {
-            return this.db.getStore(this.name, mode);
-        }
-
-        async _readQuery(getter, query, options={}, ...getterExtraArgs) {
-            if (!this.db.started) {
-                await this.db.start();
-            }
-            const store = this._getStore('readonly');
-            const ifc = options.index ? store.index(options.index) : store;
-            return await this._request(ifc[getter](query, ...getterExtraArgs));
-        }
-
         async get(query, options={}) {
-            const data = await this._readQuery('get', query, options);
-            return options.model ? new this.Model(data, this) : data;
+            const [data, idbStore] = await this._readQuery('get', query, options);
+            return options.model ? new this.Model(data, this, idbStore.keyPath) : data;
         }
 
         async getKey(query, options={}) {
-            return await this._readQuery('getKey', query, options);
+            return (await this._readQuery('getKey', query, options))[0];
         }
 
         async getAll(query, options={}) {
-            const data = await this._readQuery('getAll', query, options, options.count);
-            return options.models ? data.map(x => new this.Model(x, this)): data;
+            const [data, idbStore] = await this._readQuery('getAll', query, options, options.count);
+            return options.models ? data.map(x => new this.Model(x, this, idbStore.keyPath)): data;
         }
 
         async getAllKeys(query, options={}) {
-            return await this._readQuery('getAllKeys', query, options, options.count);
+            return (await this._readQuery('getAllKeys', query, options, options.count))[0];
         }
 
         async count(query, options={}) {
-            return await this._readQuery('count', query, options);
+            return (await this._readQuery('count', query, options))[0];
         }
 
         async getMany(queries, options={}) {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const store = this._getStore('readonly');
-            const ifc = options.index ? store.index(options.index) : store;
+            const idbStore = this._getIDBStore('readonly');
+            const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = await Promise.all(queries.map(q => this._request(ifc.get(q))));
-            return options.models ? data.map(x => new this.Model(x, this)): data;
+            return options.models ? data.map(x => new this.Model(x, this, idbStore.keyPath)): data;
         }
 
         async update(query, updates, options={}) {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const store = this._getStore('readwrite');
-            const ifc = options.index ? store.index(options.index) : store;
+            const idbStore = this._getIDBStore('readwrite');
+            const ifc = options.index ? idbStore.index(options.index) : idbStore;
+            let xxx = 0;
+            console.warn(xxx++);
             const data = await this._request(ifc.get(query));
             const updated = Object.assign({}, data, updates);
-            await this._request(store.put(updated));
+            console.warn(xxx++, updated, idbStore);
+            await this._request(idbStore.put(updated), {commit: true});
+            console.warn(xxx++);
             return data;
         }
 
-        async updateMany(updatesDatas, options={}) {
+        async updateMany(updatesMap, options={}) {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const store = this._getStore('readwrite');
-            const ifc = options.index ? store.index(options.index) : store;
-            return await Promise.all(updatesDatas.map(async updates => {
-                const data = await this._request(ifc.get(this._extractKey(updates, ifc.keyPath)));
+            const idbStore = this._getIDBStore('readwrite');
+            const ifc = options.index ? idbStore.index(options.index) : idbStore;
+            return await Promise.all(Array.from(updatesMap.entries()).map(async ([key, updates]) => {
+                const data = await this._request(ifc.get(key));
                 const updated = Object.assign({}, data, updates);
-                await this._request(store.put(updated));
+                await this._request(idbStore.put(updated));
                 return updated;
             }));
         }
@@ -358,27 +369,27 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const store = this._getStore('readwrite');
+            const idbStore = this._getIDBStore('readwrite');
             let key;
             if (options.index) {
-                const index = store.index(options.index);
-                key = await this._request(index.getKey(this._extractKey(data, index.keyPath)));
+                const index = idbStore.index(options.index);
+                key = await this._request(index.getKey(this.extractKey(data, index.keyPath)));
             }
-            return await this._request(store.put(data, key));
+            await this._request(idbStore.put(data, key));
         }
 
         async putMany(datas, options={}) {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const store = this._getStore('readwrite');
-            const index = options.index && store.index(options.index);
+            const idbStore = this._getIDBStore('readwrite');
+            const index = options.index && idbStore.index(options.index);
             await Promise.all(datas.map(async data => {
                 let key;
                 if (index) {
-                    key = await this._request(index.getKey(this._extractKey(data, index.keyPath)));
+                    key = await this._request(index.getKey(this.extractKey(data, index.keyPath)));
                 }
-                return await this._request(store.put(data, key));
+                await this._request(idbStore.put(data, key));
             }));
         }
 
@@ -386,24 +397,52 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const store = this._getStore('readwrite');
+            const idbStore = this._getIDBStore('readwrite');
             const requests = [];
             if (options.index) {
-                const index = store.index(options.index);
+                const index = idbStore.index(options.index);
                 for (const key of await this._request(index.getAllKeys(query))) {
-                    requests.push(store.delete(key));
+                    requests.push(idbStore.delete(key));
                 }
             } else {
-                requests.push(store.delete(query));
+                requests.push(idbStore.delete(query));
             }
             await Promise.all(requests.map(x => this._request(x)));
             return requests.length;
         }
 
+        async deleteMany(queries, options={}) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const idbStore = this._getIDBStore('readwrite');
+            let keys;
+            if (options.index) {
+                const index = idbStore.index(options.index);
+                keys = [];
+                for (const q of queries) {
+                    for (const key of await this._request(index.getAllKeys(q))) {
+                        keys.push(key);
+                    }
+                }
+            } else {
+                keys = queries;
+            }
+            await Promise.all(keys.map(k => this._request(idbStore.delete(k))));
+        }
+
         async *values(query, options={}) {
+            let keyPath;
             for await (const c of this.cursor(query, options)) {
                 if (options.models) {
-                    yield new this.Model(c.value, this);
+                    if (keyPath === undefined) {
+                        if (c.source instanceof IDBIndex) {
+                            keyPath = c.source.objectStore.keyPath;
+                        } else {
+                            keyPath = c.source.keyPath;
+                        }
+                    }
+                    yield new this.Model(c.value, this, keyPath);
                 } else {
                     yield c.value;
                 }
@@ -420,8 +459,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const store = this._getStore(options.mode);
-            const ifc = options.index ? store.index(options.index) : store;
+            const idbStore = this._getIDBStore(options.mode);
+            const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
             const direction = options.reverse ? 'prev' : 'next';
             const uniqueSuffix = options.unique ? 'unique' : '';
@@ -447,23 +486,23 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async saveModels(models) {
-            const updatesDatas = [];
+            const updatesMap = new Map();
             const updatedSave = new Map();
             for (const model of models) {
                 if (!model._updated.size) {
                     continue;
                 }
-                const updates = {id: model.data.id};
+                const updates = {};
                 for (const k of model._updated) {
                     updates[k] = model.data[k];
                 }
-                updatesDatas.push(updates);
+                updatesMap.set(model.pk, updates);
                 // Save a copy of the updated set from each model in case we fail.
                 updatedSave.set(model, new Set(model._updated));
                 model._updated.clear();
             }
             try {
-                await this.updateMany(updatesDatas);
+                await this.updateMany(updatesMap);
             } catch(e) {
                 // Restore updated keys before throwing, so future saves of the model
                 // might recover and persist their changes.
@@ -479,8 +518,12 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     class Model {
-        constructor(data, store) {
+        constructor(data, store, keyPath) {
             this.data = data;
+            this.keyPath = keyPath;
+            if (data && store) {
+                this.pk = store.extractKey(data, keyPath);
+            }
             this._store = store;
             this._updated = new Set();
         }
@@ -512,7 +555,10 @@ self.sauceBaseInit = function sauceBaseInit() {
                 updates[k] = this.data[k];
             }
             this._updated.clear();
-            await this._store.update(this.data.id, updates);
+            await this._store.update(this.pk, updates);
+            if (this.pk == null) {
+                this.pk = this._store.extractKey(this.data, this.keyPath);
+            }
         }
     }
 
@@ -529,9 +575,9 @@ self.sauceBaseInit = function sauceBaseInit() {
             return [{
                 version: 1,
                 migrate: (idb, t, next) => {
-                    const store = idb.createObjectStore("entries", {autoIncrement: true});
-                    store.createIndex('bucket-expiration', ['bucket', 'expiration']);
-                    store.createIndex('bucket-key', ['bucket', 'key'], {unique: true});
+                    const idbStore = idb.createObjectStore("entries", {autoIncrement: true});
+                    idbStore.createIndex('bucket-expiration', ['bucket', 'expiration']);
+                    idbStore.createIndex('bucket-key', ['bucket', 'key'], {unique: true});
                     next();
                 }
             }];
