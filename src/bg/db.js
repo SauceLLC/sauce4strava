@@ -73,6 +73,14 @@ sauce.ns('hist.db', async ns => {
                         c.continue();
                     };
                 }
+            }, {
+                version: 13,
+                migrate: (idb, t, next) => {
+                    const store = t.objectStore("activities");
+                    store.createIndex('athlete-streams-error', ['athlete', 'syncState.streams.errorTS']);
+                    store.createIndex('athlete-local-error', ['athlete', 'syncState.local.errorTS']);
+                    next();
+                }
             }];
         }
     }
@@ -139,40 +147,7 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        async *activitiesByAthlete(athlete, options={}) {
-            // Every real activity has a time stream, so look for just this one.
-            const q = IDBKeyRange.only([athlete, 'time']);
-            options.index = 'athlete-stream';
-            for await (const x of this.keys(q, options)) {
-                yield x[0];
-            }
-        }
-
-        async countForAthlete(athlete, stream='time') {
-            // Every real activity has a time stream, so look for just this one.
-            const q = IDBKeyRange.only([athlete, stream]);
-            return await this.count(q, {index: 'athlete-stream'});
-        }
-
-        async getAthletes(...args) {
-            const athletes = [];
-            const q = IDBKeyRange.bound(-Infinity, Infinity);
-            for await (const x of this.values(q, {unique: true, index: 'athlete'})) {
-                athletes.push(x.athlete);
-            }
-            return athletes;
-        }
-
-        async activityStreams(activity) {
-            const data = await this.getAll(activity, {index: 'activity'});
-            const obj = {};
-            for (const x of data) {
-                obj[x.stream] = x.data;
-            }
-            return obj;
-        }
-
-        async getAllKeysForAthlete(athlete, options={}) {
+        async getKeysForAthlete(athlete, options={}) {
             const q = IDBKeyRange.only(athlete);
             options.index = 'athlete';
             return await this.getAllKeys(q, options);
@@ -203,7 +178,7 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        async getAllForAthlete(athlete, options={}) {
+        async getForAthlete(athlete, options={}) {
             const activities = [];
             for await (const x of this.byAthlete(athlete, options)) {
                 activities.push(x);
@@ -229,11 +204,6 @@ sauce.ns('hist.db', async ns => {
             return await this.getForAthleteWithSyncVersion(athlete, syncLabel, latestVersion, options);
         }
 
-        async countForAthlete(athlete) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            return await this.count(q, {index: 'athlete-ts'});
-        }
-
         async firstForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
             for await (const x of this.values(q, {index: 'athlete-ts'})) {
@@ -248,21 +218,24 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        async deleteAthlete(athlete) {
-            const deletes = [];
+        async deleteForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const key of this.keys(q, {index: 'athlete-ts'})) {
-                deletes.push(key);
-            }
-            const store = this._getStore('readwrite');
-            await Promise.all(deletes.map(k => this._request(store.delete(k))));
-            return deletes.length;
+            return this.delete(q, {index: 'athlete-ts'});
+        }
+
+        async countForAthlete(athlete) {
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            return await this.count(q, {index: 'athlete-ts'});
+        }
+
+        async countForAthleteWithSyncError(athlete, syncLabel) {
+            const q = IDBKeyRange.bound([athlete, 0], [athlete, Infinity], /*exclude lower*/ true);
+            return await this.count(q, {index: `athlete-${syncLabel}-error`});
         }
 
         async countForAthleteWithSyncVersion(athlete, syncLabel, syncVersion) {
             const q = IDBKeyRange.only([athlete, syncVersion]);
-            const index = `athlete-${syncLabel}-version`;
-            return await this.count(this, q, {index});
+            return await this.count(q, {index: `athlete-${syncLabel}-version`});
         }
 
         async countForAthleteWithSyncLatest(athlete, syncLabel) {
@@ -278,7 +251,7 @@ sauce.ns('hist.db', async ns => {
             super(histDatabase, 'athletes', {Model: AthleteModel});
         }
 
-        async getEnabledAthletes(options={}) {
+        async getEnabled(options={}) {
             const athletes = [];
             const q = IDBKeyRange.only(1);
             options.index = 'sync';
@@ -299,25 +272,39 @@ sauce.ns('hist.db', async ns => {
         }
 
         static getSyncManifest(name) {
+            if (!name) {
+                throw new TypeError("name required");
+            }
             return this._syncManifests[name];
         }
 
         toString() {
-            return '' + this.get('id');
+            if (this.data && this.data.ts) {
+                return `<Activity (${this.pk}) - ${(new Date(this.data.ts)).toLocaleDateString()}>`;
+            } else {
+                return `<Activity (${this.pk})>`;
+            }
         }
 
         getSyncState(name) {
+            if (!name) {
+                throw new TypeError("name required");
+            }
             return (this.data.syncState && this.data.syncState[name]) || undefined;
         }
 
         isSyncLatest(name) {
-            const m = this.constructor.getSyncManifest(name);
-            const latest = m[m.length - 1].version;
             const state = this.getSyncState(name);
-            return !!(state && state.version && state.version >= latest);
+            if (state && state.version) {
+                const m = this.constructor.getSyncManifest(name);
+                const latest = m[m.length - 1].version;
+                return state.version >= latest;
+            } else {
+                return false;
+            }
         }
 
-        nextSync(name) {
+        nextAvailSync(name) {
             const manifest = this.constructor.getSyncManifest(name);
             if (!manifest || !manifest.length) {
                 console.warn('No sync available for empty manifest:', name);
@@ -339,7 +326,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         shouldSync(name) {
-            return !this.isSyncLatest(name) && !!this.nextSync(name);
+            return !this.isSyncLatest(name) && !!this.nextAvailSync(name);
         }
 
         setSyncError(name, error) {
@@ -355,10 +342,8 @@ sauce.ns('hist.db', async ns => {
         }
 
         hasSyncError(name) {
-            if (!name) {
-                throw new TypeError("name required");
-            }
-            return !!this.errorTS;
+            const state = this.getSyncState(name);
+            return !!(state && state.errorTS);
         }
 
         clearSyncError(name) {
@@ -384,9 +369,6 @@ sauce.ns('hist.db', async ns => {
         }
 
         setSyncVersionLatest(name) {
-            if (!name) {
-                throw new TypeError("name required");
-            }
             const m = this.constructor.getSyncManifest(name);
             const latest = m[m.length - 1].version;
             return this.setSyncVersion(name, latest);
@@ -396,7 +378,11 @@ sauce.ns('hist.db', async ns => {
 
     class AthleteModel extends sauce.db.Model {
         toString() {
-            return '' + this.get('id');
+            if (this.data && this.data.name) {
+                return `<${this.data.name} (${this.pk})>`;
+            } else {
+                return `<Athlete (${this.pk})>`;
+            }
         }
 
         _getHistoryValueAt(key, ts) {
