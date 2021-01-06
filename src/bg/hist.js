@@ -143,7 +143,8 @@ sauce.ns('hist', async ns => {
         if (athlete.get('hrZones') === undefined) {
             console.info("Getting HR zones for: " + athlete);
             // The API is based on an activity but it's global to the athlete..
-            await athlete.save({hrZones: (await sauce.perf.fetchHRZones(activities[0].pk)) || null});
+            const anActivity = activities.values().next();
+            await athlete.save({hrZones: (await sauce.perf.fetchHRZones(anActivity.pk)) || null});
         }
         const hrZones = athlete.get('hrZones');
         const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
@@ -690,8 +691,10 @@ sauce.ns('hist', async ns => {
         const athlete = await athletesStore.get(id, {model: true});
         if (athlete) {
             await athlete.save(data);
+            return athlete.data;
         } else {
             await athletesStore.put({id, ...data});
+            return {id, ...data};
         }
     }
     sauce.proxy.export(addAthlete, {namespace});

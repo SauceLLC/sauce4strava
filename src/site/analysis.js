@@ -932,7 +932,22 @@ sauce.ns('analysis', ns => {
 
 
     async function activitySyncDialog($sync) {
-        const athlete = await sauce.hist.getAthlete(ctx.athlete.id);
+        let athlete = await sauce.hist.getAthlete(ctx.athlete.id);
+        if (!athlete) {
+            let ftpHistory;
+            if (ctx.athlete.id === pageView.currentAthlete().id) {
+                ftpHistory = await sauce.hist.getSelfFTPHistory();
+            } else {
+                ftpHistory = ctx.ftp ? [{ts: 0, value: ctx.ftp}] : undefined;
+            }
+            athlete = await sauce.hist.addAthlete({
+                id: ctx.athlete.id,
+                gender: ctx.athlete.get('gender') === 'F' ? 'female' : 'male',
+                name: ctx.athlete.get('display_name'),
+                ftpHistory,
+                weightHistory: ctx.weight ? [{ts: 0, value: ctx.weight}] : undefined,
+            });
+        }
         const enabled = !!(athlete && athlete.sync);
         const template = await getTemplate('sync-control-panel.html', 'sync_control_panel');
         const $modal = modal({
@@ -1047,8 +1062,6 @@ sauce.ns('analysis', ns => {
                     id: ctx.athlete.id,
                     gender: ctx.athlete.get('gender') === 'F' ? 'female' : 'male',
                     name: ctx.athlete.get('display_name'),
-                    ftpHistory: ctx.ftp ? [{ts: 0, value: ctx.ftp}] : undefined,  // XXX
-                    weightHistory: ctx.weight ? [{ts: 0, value: ctx.weight}] : undefined,  // XXX
                 });
                 await sauce.hist.enableAthlete(ctx.athlete.id);
             } else if (ns.syncController) {

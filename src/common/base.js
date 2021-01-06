@@ -307,7 +307,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
         async get(query, options={}) {
             const [data, idbStore] = await this._readQuery('get', query, options);
-            return options.model ? new this.Model(data, this, idbStore.keyPath) : data;
+            return options.model ? data && new this.Model(data, this, idbStore.keyPath) : data;
         }
 
         async getKey(query, options={}) {
