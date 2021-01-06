@@ -1329,7 +1329,7 @@ sauce.ns('hist', async ns => {
 
         rateLimiterSleeping() {
             const g = streamRateLimiterGroup;
-            return g & g.sleeping();
+            return g && g.sleeping();
         }
 
         async lastSync() {
