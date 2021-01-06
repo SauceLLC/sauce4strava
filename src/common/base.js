@@ -252,7 +252,6 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     let perf1 = 0;
     let perf2 = 0;
-    let perf3 = 0;
 
     class DBStore {
         constructor(db, name, options={}) {
@@ -388,7 +387,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             const f = performance.now();
             perf1 += f - s;
             perf2 += updatesMap.size;
-            console.warn("updateMany perf", updatesMap.size, perf1, perf2);
+            console.warn("updateMany perf", updatesMap.size, perf1, perf2, (perf1/perf2).toFixed(4));
             return r;
         }
 

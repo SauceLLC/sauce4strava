@@ -968,10 +968,15 @@ sauce.ns('hist', async ns => {
                         const s = Date.now();
                         const fn = m.data;
                         const count = activities.size;
-                        let syncCount = 0;
+                        let doneCount = 0;
                         let errorCount = 0;
+                        let errorsClearedCount = 0;
+                        let wasErrorState = new Set();
                         for (const a of activities) {
-                            a.clearSyncError('local');
+                            if (a.hasSyncError('local')) {
+                                wasErrorState.add(a);
+                                a.clearSyncError('local');
+                            }
                         }
                         try {
                             console.debug(`Local processing (${fn.name}) v${m.version} on ${count} activities`);
@@ -986,20 +991,36 @@ sauce.ns('hist', async ns => {
                         for (const a of activities) {
                             if (!a.hasSyncError('local')) {
                                 a.setSyncVersion('local', m.version);
-                                syncCount++;
+                                if (wasErrorState.has(a)) {
+                                    errorsClearedCount++;
+                                }
+                                doneCount++;
                             } else {
                                 batch.delete(a);  // Do not attempt further action..
-                                errorCount++;
+                                if (!wasErrorState.has(a)) {
+                                    errorCount++;
+                                }
                             }
                         }
                         await actsStore.saveModels(activities);
                         const elapsed = Date.now() - s;
                         console.info(`${fn.name} ${Math.round(elapsed / count)}ms / activity, ${count} activities`);
                         if (m.version === latestVersion) {
+                            this.counts.processed += doneCount;
+                            this.counts.unprocessable += errorCount - errorsClearedCount;
+                            const counts = await activityCounts(this.athlete.pk);
+                            if (counts.processed !== this.counts.processed ||
+                                counts.unprocessable !== this.counts.unprocessable) {
+                                debugger;
+                            }
+
                             const ev = new Event('progress');
                             ev.data = {
-                                syncCount,
-                                errorCount
+                                totals: this.counts,
+                                batch: {
+                                    processed: doneCount,
+                                    unprocessable: errorCount
+                                }
                             };
                             this.dispatchEvent(ev);
                         }
@@ -1308,11 +1329,11 @@ sauce.ns('hist', async ns => {
             return g & g.sleeping();
         }
 
-        async lastSyncTime() {
+        async lastSync() {
             return (await athletesStore.get(this.athleteId)).lastSync;
         }
 
-        async nextSyncTime() {
+        async nextSync() {
             return ns.syncManager.refreshInterval + await this.lastSync();
         }
     }
@@ -1330,6 +1351,7 @@ sauce.ns('hist', async ns => {
         streamsStore,
         actsStore,
         athletesStore,
+        activityCounts,
         SyncManager,
         SyncController,
     };

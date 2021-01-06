@@ -13,24 +13,24 @@
         <input name="enable" type="checkbox" {{enabled ? 'checked' : ''}}/>
     </div>
 
-    <div class="entry">
+    <div class="entry status">
         <key>{{{status}}}:</key>
-        <value class="status"></value>
+        <value></value>
     </div>
 
-    <div class="entry">
+    <div class="entry synced">
         <key>{{{synced}}}:</key>
-        <value class="synced"></value>
+        <value><progress></progress> <span class="text"></span></value>
     </div>
 
-    <div class="entry">
+    <div class="entry last-sync">
         <key>{{{last_sync}}}:</key>
-        <value class="last-sync"></value>
+        <value></value>
     </div>
 
-    <div class="entry">
+    <div class="entry next-sync">
         <key>{{{next_sync}}}:</key>
-        <value class="next-sync"></value>
+        <value></value>
     </div>
 
     <div class="entry">
@@ -74,6 +74,4 @@
             <button class="add btn-sm btn-block">Add new entry</button>
         </div>
     </div>
-
-    <pre>{{JSON.stringify(athlete)}}</pre>
 </form>

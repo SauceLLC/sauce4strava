@@ -883,9 +883,6 @@ sauce.ns('analysis', ns => {
             if (!ns.syncController) {
                 setupActivitySyncController($sync);
             }
-            if (await ns.syncController.isActive()) {
-                $sync.addClass('active');
-            }
         }
         $buttons.prepend($sync);
         $sync.on('click', () => activitySyncDialog($sync));
@@ -917,14 +914,10 @@ sauce.ns('analysis', ns => {
             setSyncStatus('Sync problem occurred');
         });
         ns.syncController.addEventListener('progress', async ev => {
-            if (ev.data.sync === 'local') {
-                const [synced, total] = await Promise.all([
-                    ns.syncController.activitiesSynced(),
-                    ns.syncController.activitiesCount(),
-                ]);
-                setSyncStatus(`${synced}/${total}`);
-                jQuery('value.synced').text(`${synced}/${total}`);
-            }
+            const totals = ev.data.totals;
+            const synced = totals.processed + totals.unprocessable;
+            const total = totals.total - totals.unavailable - totals.deleted;
+            setSyncStatus(`${synced}/${total}`);
         });
         ns.syncController.addEventListener('enable', ev => {
             $sync.addClass('enabled');
@@ -934,6 +927,7 @@ sauce.ns('analysis', ns => {
             $sync.removeClass('enabled active');
             setSyncStatus('Sync disabled', {timeout: 5000});
         });
+        ns.syncController.isActive().then(x => $sync.toggleClass('active', x));
     }
 
 
@@ -967,6 +961,8 @@ sauce.ns('analysis', ns => {
                 class: 'btn-primary sync-recompute',
                 click: ev => {
                     $modal.addClass('sync-active');
+                    $modal.find('.entry.synced progress').removeAttr('value');
+                    $modal.find('.entry.synced .text').empty();
                     ns.syncController.invalidate('local');
                 }
             }, {
@@ -978,23 +974,61 @@ sauce.ns('analysis', ns => {
                 }
             }]
         });
+        function updateSyncTotals(totals) {
+            const synced = totals.processed + totals.unprocessable;
+            const total = totals.total - totals.unavailable - totals.deleted;
+            $modal.find('.entry.synced').attr('title', `${synced} / ${total}`);
+            $modal.find('.entry.synced progress').attr('value', synced / total);
+            $modal.find('.entry.synced .text').text(`${Math.round(synced / total * 100)}%`);
+        }
+        async function updateSyncTimes() {
+            const lastSync = await ns.syncController.lastSync();
+            const nextSync = await ns.syncController.nextSync();
+            $modal.find('.entry.last-sync value').text(lastSync ? (new Date(lastSync).toLocaleString()): '');
+            $modal.find('.entry.next-sync value').text(nextSync ? (new Date(nextSync).toLocaleString()): '');
+        }
+        function setActive() {
+            $modal.addClass('sync-active');
+            $modal.find('.entry.status value').text('Running...');
+            $modal.find('.entry.last-sync value').empty();
+            $modal.find('.entry.next-sync value').empty();
+            $modal.find('.entry.synced progress').removeAttr('value');
+            $modal.find('.entry.synced .text').empty();
+        }
         const $en = $modal.find('input[name="enable"]');
         const listeners = {
-            start: ev => void $modal.addClass('sync-active'),
-            stop: ev => void $modal.removeClass('sync-active'),
-            error: ev => void $modal.removeClass('sync-active'),
-            progress: ev => void console.warn("not using currently"),
+            start: ev => {
+                setActive();
+                console.warn("foo", ev);
+            },
+            stop: async ev => {
+                $modal.removeClass('sync-active');
+                $modal.find('.entry.status value').text('Completed');
+                updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
+                await updateSyncTimes();
+            },
+            error: async ev => {
+                $modal.removeClass('sync-active');
+                $modal.find('.entry.status value').text('Error');
+                await updateSyncTimes();
+            },
+            progress: ev => void updateSyncTotals(ev.data.totals),
             enable: ev => void ($en[0].checked = true),
             disable: ev => void ($en[0].checked = false),
         };
-        if (enabled) {
+        if (ns.syncController) {
             for (const [event, cb] of Object.entries(listeners)) {
                 ns.syncController.addEventListener(event, cb);
             }
-            Promise.all([
-                ns.syncController.activitiesSynced(),
-                ns.syncController.activitiesCount(),
-            ]).then(([synced, total]) => $modal.find('value.synced').text(`${synced}/${total}`));
+        }
+        if (enabled) {
+            updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
+            await updateSyncTimes();
+            if (await ns.syncController.isActive()) {
+                setActive();
+            } else {
+                $modal.find('.entry.status value').text('Idle');
+            }
         } else {
             $modal.addClass('sync-disabled');
         }
@@ -1003,11 +1037,12 @@ sauce.ns('analysis', ns => {
             if (en) {
                 if (!ns.syncController) {
                     setupActivitySyncController($sync);
-                    Promise.all([
-                        ns.syncController.activitiesSynced(),
-                        ns.syncController.activitiesCount(),
-                    ]).then(([synced, total]) => $modal.find('value.synced').text(`${synced}/${total}`));
+                    for (const [event, cb] of Object.entries(listeners)) {
+                        ns.syncController.addEventListener(event, cb);
+                    }
                 }
+                updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
+                await updateSyncTimes();
                 await sauce.hist.addAthlete({
                     id: ctx.athlete.id,
                     gender: ctx.athlete.get('gender') === 'F' ? 'female' : 'male',
