@@ -992,9 +992,11 @@ sauce.ns('analysis', ns => {
         function updateSyncTotals(totals) {
             const synced = totals.processed + totals.unprocessable;
             const total = totals.total - totals.unavailable - totals.deleted;
-            $modal.find('.entry.synced').attr('title', `${synced} / ${total}`);
+            $modal.find('.entry.synced').attr('title',
+                `Synchronized ${synced.toLocaleString()} of ${total.toLocaleString()} activities`);
             $modal.find('.entry.synced progress').attr('value', synced / total);
-            $modal.find('.entry.synced .text').text(`${Math.round(synced / total * 100)}%`);
+            const pct = Math.round(synced / total * 100);
+            $modal.find('.entry.synced .text').html(`${pct}% <small>(${synced.toLocaleString()} activities)</small>`);
         }
         async function updateSyncTimes() {
             const lastSync = await ns.syncController.lastSync();
@@ -1002,6 +1004,7 @@ sauce.ns('analysis', ns => {
             $modal.find('.entry.last-sync value').text(lastSync ? (new Date(lastSync).toLocaleString()): '');
             $modal.find('.entry.next-sync value').text(nextSync ? (new Date(nextSync).toLocaleString()): '');
         }
+        let rateLimiterInterval;
         function setActive() {
             $modal.addClass('sync-active');
             $modal.find('.entry.status value').text('Running...');
@@ -1009,20 +1012,27 @@ sauce.ns('analysis', ns => {
             $modal.find('.entry.next-sync value').empty();
             $modal.find('.entry.synced progress').removeAttr('value');
             $modal.find('.entry.synced .text').empty();
+            clearInterval(rateLimiterInterval);
+            rateLimiterInterval = setInterval(async () => {
+                const resumes = await ns.syncController.rateLimiterResumes();
+                if (resumes && resumes - Date.now() > 3000) {
+                    const resumesLocale = (new Date(resumes)).toLocaleString();
+                    $modal.find('.entry.status value').text(`Rate limited until: ${resumesLocale}`);
+                }
+            }, 5000);
         }
         const $en = $modal.find('input[name="enable"]');
         const listeners = {
-            start: ev => {
-                setActive();
-                console.warn("foo", ev);
-            },
+            start: ev => void setActive(),
             stop: async ev => {
+                clearInterval(rateLimiterInterval);
                 $modal.removeClass('sync-active');
                 $modal.find('.entry.status value').text('Completed');
                 updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
                 await updateSyncTimes();
             },
             error: async ev => {
+                clearInterval(rateLimiterInterval);
                 $modal.removeClass('sync-active');
                 $modal.find('.entry.status value').text('Error');
                 await updateSyncTimes();
@@ -1041,6 +1051,7 @@ sauce.ns('analysis', ns => {
             await updateSyncTimes();
             if (await ns.syncController.isActive()) {
                 setActive();
+                updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
             } else {
                 $modal.find('.entry.status value').text('Idle');
             }

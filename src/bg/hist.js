@@ -938,7 +938,7 @@ sauce.ns('hist', async ns => {
                 // Grow the batch size over time for more responsive UI feedback and to
                 // favor total completion of individual activities over the completion
                 // of the entire dataset.
-                batchSize = Math.min(1000, batchSize * 2);
+                batchSize = Math.min(500, batchSize * 1.33);
                 if (!batch.size && !done) {
                     // For handling single items coming off the streams fetch worker...
                     const a = await Promise.race([this._procQueue.get(), this._cancelEvent.wait()]);
