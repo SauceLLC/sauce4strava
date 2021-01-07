@@ -903,11 +903,11 @@ sauce.ns('analysis', ns => {
     function setupActivitySyncController($sync) {
         ns.syncController = new sauce.hist.SyncController(ctx.athlete.id);
         ns.syncController.addEventListener('start', ev => {
-            $sync.addClass('active');
+            $sync.addClass('sync-active');
             setSyncStatus('Starting sync...');
         });
         ns.syncController.addEventListener('stop', ev => {
-            $sync.removeClass('active');
+            $sync.removeClass('sync-active');
             setSyncStatus('Sync completed', {timeout: 5000});
         });
         ns.syncController.addEventListener('error', ev => {
@@ -924,10 +924,10 @@ sauce.ns('analysis', ns => {
             setSyncStatus('Sync enabled', {timeout: 5000});
         });
         ns.syncController.addEventListener('disable', ev => {
-            $sync.removeClass('enabled active');
+            $sync.removeClass('enabled sync-active');
             setSyncStatus('Sync disabled', {timeout: 5000});
         });
-        ns.syncController.isActive().then(x => $sync.toggleClass('active', x));
+        ns.syncController.isActive().then(x => $sync.toggleClass('sync-active', x));
     }
 
 

@@ -311,6 +311,7 @@ sauce.ns('hist', async ns => {
                         }, x);
                         record.basetype = getBaseType(record);
                         adding.push(record);
+                        knownIds.add(x.id);
                     }
                 }
             }

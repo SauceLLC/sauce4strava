@@ -128,7 +128,7 @@ html.sauce-enabled {
                     }
                 }
 
-                &.active .app-icon-wrapper {
+                &.sync-active .app-icon-wrapper {
                     svg[data-icon="sync-alt"] {
                         animation: rotation 3s infinite steps(30 * 3);
                         color: #22ee33;
