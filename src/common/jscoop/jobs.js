@@ -57,9 +57,6 @@ export class UnorderedWorkQueue {
      * @param {external:Promise} promise - The awaitable to enqueue.
      */
     async put(promise) {
-        if (this._putters.length && this._canPut()) {
-            console.warn("XXX Cool, fixed this bug!! :)", Array.from(this._putters), promise, this._idCounter);
-        }
         if (this._putters.length || !this._canPut()) {
             const ev = new Event();
             this._putters.push(ev);
@@ -200,7 +197,7 @@ export class RateLimiter {
     }
 
     constructor(label, spec) {
-        this.version = 1;
+        this.version = 2;
         this.label = label;
         this.spec = spec;
         this._lock = new Lock();  // XXX Transition to using a Condition and monitor updates while sleeping
@@ -261,16 +258,31 @@ export class RateLimiter {
         return this._resumes;
     }
 
-    async _wait() {
-        if (!this.state.first || Date.now() - this.state.first > this.spec.period) {
-            return;
+    _drain() {
+        const b = this.state.bucket;
+        const now = Date.now();
+        while (b.length) {
+            if (now - b[0] > this.spec.period) {
+                b.shift();
+            } else {
+                break;
+            }
         }
-        if (this.state.count >= this.spec.limit) {
-            await this._sleep(this.spec.period - (Date.now() - this.state.first));
-        } else if (this.spec.spread) {
-            const remTime = this.spec.period - (Date.now() - this.state.first);
-            const remCount = this.spec.limit - this.state.count;
-            await this._sleep(remTime / (remCount + 1));
+    }
+
+    async _wait() {
+        this._drain();
+        if (this.state.bucket.length) {
+            if (this.state.bucket.length >= this.spec.limit) {
+                await this._sleep(this.spec.period - (Date.now() - this.state.bucket[0]));
+            } else if (this.spec.spread) {
+                const lastTime = this.state.bucket[this.state.bucket.length - 1];
+                const normalWait = this.spec.period / this.spec.limit;
+                const wait = normalWait - (Date.now() - lastTime);
+                if (wait > 0) {
+                    await this._sleep(wait);
+                }
+            }
         }
     }
 
@@ -279,8 +291,7 @@ export class RateLimiter {
      */
     async reset(ctx) {
         await this._init;
-        this.state.count = 0;
-        this.state.first = 0;
+        this.state.bucket.length = 0;
         await this._saveState();
     }
 
@@ -293,12 +304,8 @@ export class RateLimiter {
     }
 
     async _increment() {
-        if (Date.now() - this.state.first > this.spec.period || this.state.count >= this.spec.limit) {
-            this.state.count = 1;
-            this.state.first = Date.now();
-        } else {
-            this.state.count++;
-        }
+        this._drain();
+        this.state.bucket.push(Date.now());
         await this._saveState();
     }
 
@@ -315,7 +322,7 @@ export class RateLimiter {
 
     toString() {
         return `RateLimiter [${this.label}]: period: ${this.spec.period / 1000}s, ` +
-            `usage: ${this.state.count}/${this.spec.limit}`;
+            `usage: ${this.state.bucket.length}/${this.spec.limit}`;
     }
 
     async _loadState() {
@@ -323,8 +330,7 @@ export class RateLimiter {
         if (!state || state.version !== this.version) {
             this.state = {
                 version: this.version,
-                first: 0,
-                count: 0,
+                bucket: [],
                 spec: this.spec
             };
             await this._saveState();
