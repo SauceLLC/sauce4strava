@@ -17,7 +17,9 @@ sauce.ns('hist', async ns => {
     const athletesStore = new sauce.hist.db.AthletesStore();
 
 
-    sauce.hist.db.ActivityModel.setSyncManifest('streams', [{
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'streams',
+        name: 'fetch',
         version: 1,
         errorBackoff: 86400 * 1000,
         data: new Set([
@@ -34,21 +36,33 @@ sauce.ns('hist', async ns => {
             'grade_adjusted_distance',
             'temp',
         ])
-    }]);
+    });
 
-    sauce.hist.db.ActivityModel.setSyncManifest('local', [{
-        version: 15,
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'active-stream',
+        version: 1,
         errorBackoff: 3600 * 1000,
         data: activeStreamProcessor
-    }, {
-        version: 16,
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'running-watts-stream',
+        version: 1,
+        depends: ['active-stream'],
         errorBackoff: 300 * 1000,
         data: runningWattsProcessor
-    }, {
-        version: 17,
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'activity-stats',
+        version: 1,
+        depends: ['active-stream', 'running-watts-stream'],
         errorBackoff: 300 * 1000,
         data: activityStatsProcessor
-    }]);
+    });
 
 
     async function getActivitiesStreams(activities, streams) {
@@ -282,6 +296,22 @@ sauce.ns('hist', async ns => {
 
 
     async function updateSelfActivities(athlete, options={}) {
+        const filteredKeys = [
+            'activity_url',
+            'activity_url_for_twitter',
+            'distance',
+            'elapsed_time',
+            'elevation_gain',
+            'elevation_unit',
+            'moving_time',
+            'long_unit',
+            'short_unit',
+            'start_date',
+            'start_day',
+            'start_time',
+            'static_map',
+            'twitter_msg',
+        ];
         const knownIds = new Set(await actsStore.getForAthlete(athlete, {keys: true}));
         for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
             const work = new jobs.UnorderedWorkQueue({maxPending: 25});
@@ -310,6 +340,9 @@ sauce.ns('hist', async ns => {
                             ts: x.start_date_local_raw * 1000
                         }, x);
                         record.basetype = getBaseType(record);
+                        for (const x of filteredKeys) {
+                            delete record[x];
+                        }
                         adding.push(record);
                         knownIds.add(x.id);
                     }
@@ -752,9 +785,9 @@ sauce.ns('hist', async ns => {
     async function activityCounts(athleteId) {
         const [total, imported, deleted, unavailable, processed, unprocessable] = await Promise.all([
             actsStore.countForAthlete(athleteId),
-            actsStore.countForAthleteWithSyncLatest(athleteId, 'streams'),
-            actsStore.countForAthleteWithSyncVersion(athleteId, 'streams', -Infinity),
-            actsStore.countForAthleteWithSyncError(athleteId, 'streams'),
+            actsStore.countForAthleteWithSyncLatest(athleteId, 'streams', 'fetch'),
+            actsStore.countForAthleteWithSyncVersion(athleteId, 'streams', 'fetch', -Infinity),
+            actsStore.countForAthleteWithSyncError(athleteId, 'streams', 'fetch'),
             actsStore.countForAthleteWithSyncLatest(athleteId, 'local'),
             actsStore.countForAthleteWithSyncError(athleteId, 'local'),
         ]);
@@ -815,11 +848,11 @@ sauce.ns('hist', async ns => {
         async _syncData() {
             const athleteId = this.athlete.pk;
             const fetchedIds = new Set(await actsStore.getForAthleteWithSyncLatest(athleteId,
-                'streams', {keys: true}));
+                'streams', 'fetch', {keys: true}));
             const noStreamIds = new Set(await actsStore.getForAthleteWithSyncVersion(athleteId,
-                'streams', -Infinity, {keys: true}));
+                'streams', 'fetch', -Infinity, {keys: true}));
             const localIds = new Set(await actsStore.getForAthleteWithSyncLatest(athleteId,
-                'local', {keys: true}));
+                'local', null, {keys: true}));
             const unfetched = new Map();
             const unprocessed = new Set();
             const activities = new Map();
@@ -918,8 +951,6 @@ sauce.ns('hist', async ns => {
 
         async _localProcessWorker() {
             let done = false;
-            const complete = new Set();
-            const incomplete = new Set();
             const manifest = sauce.hist.db.ActivityModel.getSyncManifest('local');
             const latestVersion = manifest[manifest.length - 1].version;
             let batchSize = 12;
@@ -954,12 +985,7 @@ sauce.ns('hist', async ns => {
                     for (const a of batch) {
                         const m = a.nextAvailSync('local');
                         if (!m) {
-                            if (!a.isSyncLatest('local')) {
-                                console.error(`Unexpected deferral of local processing: ${a}`);
-                                incomplete.add(a);
-                            } else {
-                                complete.add(a);
-                            }
+                            debugger;
                             batch.delete(a);
                             continue;
                         }
@@ -982,6 +1008,7 @@ sauce.ns('hist', async ns => {
                                 a.clearSyncError('local');
                             }
                         }
+                        await sleep(2000); // XXX just be careful bud
                         try {
                             console.debug(`Local processing (${fn.name}) v${m.version} on ${count} activities`);
                             await fn({activities, athlete: this.athlete});
@@ -1246,19 +1273,6 @@ sauce.ns('hist', async ns => {
 
     }
 
-    if (self.currentUser) {
-        ns.syncManager = new SyncManager(self.currentUser);
-    }
-    addEventListener('currentUserUpdate', async ev => {
-        if (ns.syncManager && ns.syncManager.currentUser !== ev.id) {
-            console.warn("Stopping Sync Manager due to user change...");
-            ns.syncManager.stop();
-            await ns.syncManager.join();
-            console.debug("Sync Manager stopped.");
-        }
-        ns.syncManager = ev.id ? new SyncManager(ev.id) : null;
-    });
-
 
     class SyncController extends sauce.proxy.Eventing {
         constructor(athleteId) {
@@ -1342,6 +1356,20 @@ sauce.ns('hist', async ns => {
         }
     }
     sauce.proxy.export(SyncController, {namespace});
+
+
+    if (self.currentUser) {
+        ns.syncManager = new SyncManager(self.currentUser);
+    }
+    addEventListener('currentUserUpdate', async ev => {
+        if (ns.syncManager && ns.syncManager.currentUser !== ev.id) {
+            console.warn("Stopping Sync Manager due to user change...");
+            ns.syncManager.stop();
+            await ns.syncManager.join();
+            console.debug("Sync Manager stopped.");
+        }
+        ns.syncManager = ev.id ? new SyncManager(ev.id) : null;
+    });
 
 
     return {

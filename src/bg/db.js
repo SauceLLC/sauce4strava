@@ -4,6 +4,18 @@ sauce.ns('hist.db', async ns => {
 
     'use strict';
 
+
+    function setUnion(...sets) {
+        const union = new Set();
+        for (const s of sets) {
+            for (const x of s) {
+                union.add(x);
+            }
+        }
+        return union;
+    }
+
+
     class HistDatabase extends sauce.db.Database {
         get migrations() {
             return [{
@@ -40,45 +52,12 @@ sauce.ns('hist.db', async ns => {
                     next();
                 }
             },
-            // Version 6 was deprecated in dev.
-            // Version 7 was deprecated in dev.
-            // Version 8 was deprecated in dev.
+            // Versions 6 -> 14 were deprecated in dev.
             {
-                version: 9,
+                version: 15,
                 migrate: (idb, t, next) => {
                     const store = t.objectStore("activities");
-                    store.createIndex('athlete-streams-version', ['athlete', 'syncState.streams.version']);
-                    store.createIndex('athlete-local-version', ['athlete', 'syncState.local.version']);
-                    next();
-                }
-            },
-            // Version 10 was deprecated in dev.
-            // Version 11 was deprecated in dev.
-            {
-                version: 12,
-                migrate: (idb, t, next) => {
-                    const store = t.objectStore("activities");
-                    const curReq = store.openCursor();
-                    curReq.onsuccess = ev => {
-                        const c = ev.target.result;
-                        if (!c) {
-                            next();
-                            return;
-                        }
-                        if (c.value.noStreams) {
-                            delete c.value.noStreams;
-                            c.value.syncState = {streams: {version: -Infinity}};
-                            c.update(c.value);
-                        }
-                        c.continue();
-                    };
-                }
-            }, {
-                version: 13,
-                migrate: (idb, t, next) => {
-                    const store = t.objectStore("activities");
-                    store.createIndex('athlete-streams-error', ['athlete', 'syncState.streams.errorTS']);
-                    store.createIndex('athlete-local-error', ['athlete', 'syncState.local.errorTS']);
+                    store.createIndex('sync', 'sync', {multiEntry: true});
                     next();
                 }
             }];
@@ -186,22 +165,71 @@ sauce.ns('hist.db', async ns => {
             return activities;
         }
 
-        async getForAthleteWithSyncVersion(athlete, syncLabel, syncValue, options={}) {
-            // NOTE: There needs to be an index for the syncLabel.
-            const q = IDBKeyRange.only([athlete, syncValue]);
-            const index = `athlete-${syncLabel}-version`;
+        _syncQuery(athlete, processor, name, version, error) {
+            // Do some lexicographic magic when name is null to trick indedexdb into giving
+            // us an open result for that "column".
+            const maxNameSize = 1000;
+            const lower = [athlete, processor];
+            const upper = [athlete, processor];
+            // The rules for this are quite insane...
+            if (name == null) {
+                lower.push('');
+                upper.push(''.padStart(maxNameSize, 'z'));
+                if (version != null || error != null) {
+                    throw new TypeError('Invalid Query: name unset with version and error set');
+                }
+            } else if (version == null) {
+                lower.splice(100, 0, name, -Infinity);
+                upper.splice(100, 0, name, Infinity);
+                if (error != null) {
+                    throw new TypeError('Invalid Query: version unset with error set');
+                }
+            } else {
+                lower.splice(100, 0, name, version, error == null ? -Infinity : Number(error));
+                upper.splice(100, 0, name, version, error == null ? Infinity : Number(error));
+            }
+            return IDBKeyRange.bound(lower, upper);
+        }
+
+        async getForAthleteWithSyncVersion(athlete, processor, name, version, options={}) {
+            const q = this._syncQuery(athlete, processor, name, version);
             const activities = [];
             const iter = options.keys ? this.keys : this.values;
-            for await (const x of iter.call(this, q, {index})) {
+            for await (const x of iter.call(this, q, {index: 'sync'})) {
                 activities.push(x);
             }
             return activities;
         }
 
-        async getForAthleteWithSyncLatest(athlete, syncLabel, options={}) {
-            const manifest = this.Model.getSyncManifest(syncLabel);
-            const latestVersion = manifest[manifest.length - 1].version;
-            return await this.getForAthleteWithSyncVersion(athlete, syncLabel, latestVersion, options);
+        async getForAthleteWithSyncLatest(athlete, processor, name, options={}) {
+            let manifests;
+            if (name) {
+                manifests = [this.Model.getSyncManifest(processor, name)];
+            } else {
+                manifests = this.Model.getSyncManifests(processor);
+            }
+            const acts = new Map();
+            for (const x of await this.getForAthleteWithSyncVersion(athlete, processor,
+                manifests[0].name, manifests[0].version, options)) {
+                const pk = options.models ? x.pk : options.keys ? x : x.id;
+                acts.set(pk, {obj: x, count: 1});
+            }
+            for (let i = 1; i < manifests.length; i++) {
+                for (const k of await this.getForAthleteWithSyncVersion(athlete, processor,
+                    manifests[i].name, manifests[i].version, {keys: true})) {
+                    // If this is new, we don't care, cause the filter will eliminate it later.
+                    if (acts.has(k)) {
+                        acts.get(k).count++;
+                    }
+                }
+            }
+            const latest = [];
+            for (const x of acts.values()) {
+                if (x.count === manifests.length) {
+                    latest.push(x.obj);
+                }
+            }
+            return latest;
         }
 
         async firstForAthlete(athlete) {
@@ -228,20 +256,20 @@ sauce.ns('hist.db', async ns => {
             return await this.count(q, {index: 'athlete-ts'});
         }
 
-        async countForAthleteWithSyncError(athlete, syncLabel) {
-            const q = IDBKeyRange.bound([athlete, 0], [athlete, Infinity], /*exclude lower*/ true);
-            return await this.count(q, {index: `athlete-${syncLabel}-error`});
+        async countForAthleteWithSyncError(athlete, processor, name, version) {
+            const q = this._syncQuery(athlete, processor, name, version, true);
+            return await this.count(q, {index: 'sync'});
         }
 
-        async countForAthleteWithSyncVersion(athlete, syncLabel, syncVersion) {
-            const q = IDBKeyRange.only([athlete, syncVersion]);
-            return await this.count(q, {index: `athlete-${syncLabel}-version`});
+        async countForAthleteWithSyncVersion(athlete, processor, name, version) {
+            const q = this._syncQuery(athlete, processor, name, version);
+            return await this.count(q, {index: 'sync'});
         }
 
-        async countForAthleteWithSyncLatest(athlete, syncLabel) {
-            const manifest = this.Model.getSyncManifest(syncLabel);
+        async countForAthleteWithSyncLatest(athlete, processor, name) {
+            const manifest = this.Model.getSyncManifest(processor, name);
             const latestVersion = manifest[manifest.length - 1].version;
-            return await this.countForAthleteWithSyncVersion(athlete, syncLabel, latestVersion);
+            return await this.countForAthleteWithSyncVersion(athlete, processor, latestVersion);
         }
     }
 
@@ -264,18 +292,29 @@ sauce.ns('hist.db', async ns => {
 
 
     class ActivityModel extends sauce.db.Model {
-        static setSyncManifest(name, manifest) {
+        static addSyncManifest(manifest) {
             if (!this._syncManifests) {
                 this._syncManifests = {};
             }
-            this._syncManifests[name] = manifest;
+            if (!this._syncManifests[manifest.processor]) {
+                this._syncManifests[manifest.processor] = {};
+            }
+            this._syncManifests[manifest.processor][manifest.name] = manifest;
         }
 
-        static getSyncManifest(name) {
-            if (!name) {
-                throw new TypeError("name required");
+        static getSyncManifests(processor) {
+            if (!processor) {
+                throw new TypeError("processor required");
             }
-            return this._syncManifests[name];
+            return Object.values(this._syncManifests[processor]);
+        }
+
+        static getSyncManifest(processor, name) {
+            if (!processor || !name) {
+                throw new TypeError("processor and name required");
+            }
+            const proc = this._syncManifests[processor];
+            return proc && proc[name];
         }
 
         toString() {
@@ -286,50 +325,86 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        getSyncState(name) {
-            if (!name) {
-                throw new TypeError("name required");
+        getSyncState(processor, name) {
+            if (!processor || !name) {
+                throw new TypeError("processor and name required");
             }
-            return (this.data.syncState && this.data.syncState[name]) || undefined;
-        }
-
-        isSyncLatest(name) {
-            const state = this.getSyncState(name);
-            if (state && state.version) {
-                const m = this.constructor.getSyncManifest(name);
-                const latest = m[m.length - 1].version;
-                return state.version >= latest;
-            } else {
-                return false;
-            }
-        }
-
-        nextAvailSync(name) {
-            const manifest = this.constructor.getSyncManifest(name);
-            if (!manifest || !manifest.length) {
-                console.warn('No sync available for empty manifest:', name);
-                return;
-            }
-            const state = this.getSyncState(name);
-            if (!state) {
-                return manifest[0];
-            }
-            for (const m of manifest) {
-                if (m.version > state.version) {
-                    if (state.errorTS && Date.now() - state.errorTS < state.errorCount * m.errorBackoff) {
-                        return;  // Unavailable until error backoff expires.
-                    } else {
-                        return m;
+            if (this.data.sync) {
+                for (const x of this.data.sync) {
+                    if (x[this.SYNC.processor] === processor &&
+                        x[this.SYNC.name] === name) {
+                        const version = x[this.SYNC.version];
+                        return {
+                            processor,
+                            name,
+                            version,
+                            error: this.data.syncErrors[`${processor}-${name}-${version}`],
+                        };
                     }
                 }
             }
         }
 
-        shouldSync(name) {
-            return !this.isSyncLatest(name) && !!this.nextAvailSync(name);
+        nextAvailSync(processor) {
+            debugger;
+            const manifests = this.constructor.getSyncManifests(processor);
+            if (!manifests) {
+                throw new TypeError("Invalid sync processor");
+            }
+            const states = new Map(Object.keys(manifests).map(x => [x, this.getSyncState(processor, x)]));
+            const completed = new Set();
+            const pending = new Set();
+            const tainted = new Set();
+            // Pass 1: Compile completed and pending sets without dep evaluation.
+            for (const [name, manifest] of Object.entries(manifests)) {
+                if (!tainted.has(name)) {
+                    const state = states.get(name);
+                    if (state && state.version >= manifest.version) {
+                        completed.add(name);
+                    } else {
+                        pending.add(name);
+                    }
+                    idle = false;
+                }
+            }
+            let idle;
+            do {
+                idle = true;
+                // Pass 2: Triage the deps until no further taints are discovered...
+                for (const name of setUnion(completed, pending)) {
+                    const manifest = manifests[name];
+                    if (!manifest.depends) {
+                        continue;
+                    }
+                    for (const x of setUnion(pending, tainted)) {
+                        if (manifest.depends.indexOf(x) !== -1) {
+                            console.warn("Tainting:", name, 'because of',  x);
+                            completed.delete(name);
+                            pending.delete(name);
+                            tainted.add(name);
+                            idle = false;
+                            break;
+                        }
+                    }
+                }
+            } while (!idle);
+            if (!pending.size) {
+                return;
+            }
+            for (const name of pending) {
+                const m = manifests[name];
+                const state = states.get(name);
+                const e = state.error;
+                if (e && e.ts && Date.now() - e.ts < e.count * m.errorBackoff) {
+                    return;  // Unavailable until error backoff expires.
+                } else {
+                    return m;
+                }
+            }
         }
 
         setSyncError(name, error) {
+            throw new TypeError("PORT ME");
             if (!name) {
                 throw new TypeError("name required");
             }
@@ -342,11 +417,13 @@ sauce.ns('hist.db', async ns => {
         }
 
         hasSyncError(name) {
+            throw new TypeError("PORT ME");
             const state = this.getSyncState(name);
             return !!(state && state.errorTS);
         }
 
         clearSyncError(name) {
+            throw new TypeError("PORT ME");
             if (!name) {
                 throw new TypeError("name required");
             }
@@ -359,6 +436,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         setSyncVersion(name, version) {
+            throw new TypeError("PORT ME");
             if (!name) {
                 throw new TypeError("name required");
             }
@@ -369,11 +447,21 @@ sauce.ns('hist.db', async ns => {
         }
 
         setSyncVersionLatest(name) {
+            throw new TypeError("PORT ME");
             const m = this.constructor.getSyncManifest(name);
             const latest = m[m.length - 1].version;
             return this.setSyncVersion(name, latest);
         }
     }
+
+    // For indexeddb we have to use nested arrays when using multiEntry indexes.
+    ActivityModel.prototype.SYNC = {
+        athlete: 0,
+        processor: 1,
+        name: 2,
+        version: 3,
+        error: 4,
+    };
 
 
     class AthleteModel extends sauce.db.Model {
