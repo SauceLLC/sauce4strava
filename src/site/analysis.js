@@ -997,6 +997,22 @@ sauce.ns('analysis', ns => {
                     $modal.addClass('sync-active');
                     ns.syncController.start();
                 }
+            }, {
+                text: 'Import Data',
+                click: ev => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'application/json';
+                    input.multiple = true;
+                    input.addEventListener('input', ev => {
+                        debugger;
+                    });
+                    document.body.appendChild(input);
+                    input.click();
+                }
+            }, {
+                text: 'Export Data',
+                click: ev => void sauce.hist.exportData(athlete.id)
             }]
         });
         async function updateSyncCounts(counts) {
