@@ -336,7 +336,13 @@ self.sauceBaseInit = function sauceBaseInit() {
             await new Promise((resolve, reject) => {
                 let pending = 0;
                 const onSuccess = ev => {
-                    data.push(ev.target.result);
+                    if (options.index) {
+                        for (const x of ev.target.result) {
+                            data.push(x);
+                        }
+                    } else {
+                        data.push(ev.target.result);
+                    }
                     if (!--pending) {
                         resolve();
                     }
@@ -344,7 +350,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 const onError = ev => reject(ev.target.error);
                 for (const q of queries) {
                     pending++;
-                    const req = ifc.get(q);
+                    const req = options.index ? ifc.getAll(q) : ifc.get(q);
                     req.addEventListener('success', onSuccess);
                     req.addEventListener('error', onError);
                 }
