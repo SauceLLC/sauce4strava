@@ -250,8 +250,6 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
     }
 
-    let perf1 = 0;
-    let perf2 = 0;
 
     class DBStore {
         constructor(db, name, options={}) {
@@ -334,23 +332,24 @@ self.sauceBaseInit = function sauceBaseInit() {
             const idbStore = this._getIDBStore('readonly');
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = [];
-            let remaining = queries.length;
-            if (!remaining) {
-                return data;
-            }
             // Performance tuned to avoid Promise.all
             await new Promise((resolve, reject) => {
+                let pending = 0;
                 const onSuccess = ev => {
                     data.push(ev.target.result);
-                    if (!--remaining) {
+                    if (!--pending) {
                         resolve();
                     }
                 };
                 const onError = ev => reject(ev.target.error);
                 for (const q of queries) {
+                    pending++;
                     const req = ifc.get(q);
                     req.addEventListener('success', onSuccess);
                     req.addEventListener('error', onError);
+                }
+                if (!pending) {
+                    resolve();
                 }
             });
             return options.models ? data.map(x => new this.Model(x, this, idbStore.keyPath)): data;
@@ -375,20 +374,14 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const s = performance.now();
             const idbStore = this._getIDBStore('readwrite');
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
-            const r = await Promise.all(Array.from(updatesMap.entries()).map(async ([key, updates]) => {
+            return await Promise.all(Array.from(updatesMap.entries()).map(async ([key, updates]) => {
                 const data = await this._request(ifc.get(key));
                 const updated = Object.assign({}, data, updates);
                 await this._request(idbStore.put(updated));
                 return updated;
             }));
-            const f = performance.now();
-            perf1 += f - s;
-            perf2 += updatesMap.size;
-            console.warn("updateMany perf", updatesMap.size, perf1, perf2, (perf1/perf2).toFixed(4));
-            return r;
         }
 
         async put(data, options={}) {

@@ -83,7 +83,7 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function activeStreamProcessor({activities, athlete}) {
+    async function activeStreamProcessor({manifest, activities, athlete}) {
         const actStreams = await getActivitiesStreams(activities,
             ['time', 'moving', 'cadence', 'watts', 'distance']);
         const activeStreams = [];
@@ -103,7 +103,7 @@ sauce.ns('hist', async ns => {
                 });
             } catch(e) {
                 console.warn("Failed to create active stream for: " + activity, e);
-                activity.setSyncError('local', e);
+                activity.setSyncError(manifest, e);
                 continue;
             }
         }
@@ -111,10 +111,9 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function runningWattsProcessor({activities, athlete}) {
-        const runs = Array.from(activities).filter(x => x.get('basetype') === 'run');
-        const actStreams = await getActivitiesStreams(activities,
-            ['time', 'grade_adjusted_distance']);
+    async function runningWattsProcessor({manifest, activities, athlete}) {
+        const runs = activities.filter(x => x.get('basetype') === 'run');
+        const actStreams = await getActivitiesStreams(runs, ['time', 'grade_adjusted_distance']);
         const wattsStreams = [];
         for (const activity of runs) {
             const streams = actStreams.get(activity.pk);
@@ -124,7 +123,7 @@ sauce.ns('hist', async ns => {
             }
             const weight = athlete.getWeightAt(activity.get('ts'));
             if (!weight) {
-                activity.setSyncError('local', new Error("No weight for athlete, try later..."));
+                activity.setSyncError(manifest, new Error("no-weight"));
                 continue;
             }
             try {
@@ -143,7 +142,7 @@ sauce.ns('hist', async ns => {
                 });
             } catch(e) {
                 console.warn("Failed to create active stream for: " + activity);
-                activity.setSyncError('local', e);
+                activity.setSyncError(manifest, e);
                 continue;
             }
         }
@@ -151,15 +150,9 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function activityStatsProcessor({activities, athlete}) {
+    async function activityStatsProcessor({manifest, activities, athlete}) {
         const actStreams = await getActivitiesStreams(activities,
             ['time', 'heartrate', 'active', 'watts', 'watts_calc']);
-        if (athlete.get('hrZones') === undefined) {
-            console.info("Getting HR zones for: " + athlete);
-            // The API is based on an activity but it's global to the athlete..
-            const anActivity = activities.values().next();
-            await athlete.save({hrZones: (await sauce.perf.fetchHRZones(anActivity.pk)) || null});
-        }
         const hrZones = athlete.get('hrZones');
         const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
         const maxHR = hrZones && sauce.perf.estimateMaxHR(hrZones);
@@ -174,7 +167,7 @@ sauce.ns('hist', async ns => {
                         stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
                             ltHR, restingHR, maxHR, athlete.get('gender'));
                     } catch(e) {
-                        activity.setSyncError('local', e);
+                        activity.setSyncError(manifest, e);
                         continue;
                     }
                 }
@@ -196,7 +189,7 @@ sauce.ns('hist', async ns => {
                     stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
                     stats.intensity = (stats.np || stats.power) / ftp;
                 } catch(e) {
-                    activity.setSyncError('local', e);
+                    activity.setSyncError(manifest, e);
                     continue;
                 }
             }
@@ -764,37 +757,37 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(disableAthlete, {namespace});
 
 
-    async function invalidateSyncState(athleteId, name) {
-        if (!athleteId || !name) {
-            throw new TypeError('athleteId and name are required args');
+    async function invalidateSyncState(athleteId, processor, name) {
+        if (!athleteId || !processor) {
+            throw new TypeError("'athleteId' and 'processor' are required args");
         }
-        const activities = await actsStore.getForAthlete(athleteId);
-        for (const a of activities) {
-            if (a.syncState) {
-                delete a.syncState[name];
+        const athlete = await athletesStore.get(athleteId, {model: true});
+        if (athlete.isEnabled() && ns.syncManager) {
+            const job = ns.syncManager.activeJobs.get(athleteId);
+            if (job) {
+                job.cancel();
+                await job.wait();
             }
         }
-        await actsStore.updateMany(new Map(activities.map(x => [x.id, {syncState: x.syncState}])));
-        if (ns.syncManager) {
-            await ns.syncManager.enableAthlete(athleteId); // Reset sync state
+        await actsStore.invalidateForAthleteWithSync(athleteId, processor, name);
+        if (athlete.isEnabled() && ns.syncManager) {
+            await ns.syncManager.resetAthlete(athleteId);
         }
-        return activities.length;
     }
+    sauce.proxy.export(invalidateSyncState, {namespace});
 
 
     async function activityCounts(athleteId) {
-        const [total, imported, deleted, unavailable, processed, unprocessable] = await Promise.all([
+        const [total, imported, unavailable, processed, unprocessable] = await Promise.all([
             actsStore.countForAthlete(athleteId),
-            actsStore.countForAthleteWithSyncLatest(athleteId, 'streams', 'fetch'),
-            actsStore.countForAthleteWithSyncVersion(athleteId, 'streams', 'fetch', -Infinity),
-            actsStore.countForAthleteWithSyncError(athleteId, 'streams', 'fetch'),
-            actsStore.countForAthleteWithSyncLatest(athleteId, 'local'),
-            actsStore.countForAthleteWithSyncError(athleteId, 'local'),
+            actsStore.countForAthleteWithSync(athleteId, 'streams'),
+            actsStore.countForAthleteWithSync(athleteId, 'streams', {name: 'fetch', error: true}),
+            actsStore.countForAthleteWithSync(athleteId, 'local'),
+            actsStore.countForAthleteWithSync(athleteId, 'local', {error: true}),
         ]);
         return {
             total,
             imported,
-            deleted,
             unavailable,
             processed,
             unprocessable
@@ -847,24 +840,18 @@ sauce.ns('hist', async ns => {
 
         async _syncData() {
             const athleteId = this.athlete.pk;
-            const fetchedIds = new Set(await actsStore.getForAthleteWithSyncLatest(athleteId,
-                'streams', 'fetch', {keys: true}));
-            const noStreamIds = new Set(await actsStore.getForAthleteWithSyncVersion(athleteId,
-                'streams', 'fetch', -Infinity, {keys: true}));
-            const localIds = new Set(await actsStore.getForAthleteWithSyncLatest(athleteId,
-                'local', null, {keys: true}));
+            const fetchedIds = new Set(await actsStore.getForAthleteWithSync(athleteId, 'streams', {keys: true}));
+            const localIds = new Set(await actsStore.getForAthleteWithSync(athleteId, 'local', {keys: true}));
             const unfetched = new Map();
             const unprocessed = new Set();
             const activities = new Map();
             for (const id of await actsStore.getForAthlete(athleteId, {keys: true})) {
-                if (!noStreamIds.has(id)) {
-                    if (!fetchedIds.has(id)) {
-                        unfetched.set(id, null);
-                        activities.set(id, null);
-                    } else if (!localIds.has(id)) {
-                        unprocessed.add(id);
-                        activities.set(id, null);
-                    }
+                if (!fetchedIds.has(id)) {
+                    unfetched.set(id, null);
+                    activities.set(id, null);
+                } else if (!localIds.has(id)) {
+                    unprocessed.add(id);
+                    activities.set(id, null);
                 }
             }
             for (const a of await actsStore.getMany(Array.from(activities.keys()), {models: true})) {
@@ -874,7 +861,7 @@ sauce.ns('hist', async ns => {
             let deferCount = 0;
             for (const id of unfetched.keys()) {
                 const a = activities.get(id);
-                if (!a.nextAvailSync('streams')) {
+                if (!a.nextAvailManifest('streams')) {
                     deferCount++;
                     unfetched.delete(id);
                 } else {
@@ -883,7 +870,7 @@ sauce.ns('hist', async ns => {
             }
             for (const id of unprocessed) {
                 const a = activities.get(id);
-                if (!a.nextAvailSync('local')) {
+                if (!a.nextAvailManifest('local')) {
                     deferCount++;
                 } else {
                     this._procQueue.putNoWait(a);
@@ -915,12 +902,17 @@ sauce.ns('hist', async ns => {
         }
 
         async __fetchStreamsWorker(activities) {
+            const q = new URLSearchParams();
+            const manifest = sauce.hist.db.ActivityModel.getSyncManifest('streams', 'fetch');
+            for (const x of manifest.data) {
+                q.append('stream_types[]', x);
+            }
             for (const activity of activities) {
                 let error;
                 let data;
-                activity.clearSyncError('streams');
+                activity.clearSyncState(manifest);
                 try {
-                    data = await this._fetchStreams(activity);
+                    data = await this._fetchStreams(activity, q);
                 } catch(e) {
                     console.warn("Fetch streams error (will retry later):", e);
                     error = e;
@@ -936,13 +928,13 @@ sauce.ns('hist', async ns => {
                         stream,
                         data
                     })));
-                    activity.setSyncVersionLatest('streams');
+                    activity.setSyncSuccess(manifest);
                     this._procQueue.putNoWait(activity);
                 } else if (data === null) {
-                    activity.setSyncVersion('streams', -Infinity);
+                    activity.setSyncError(manifest, new Error('no-streams'));
                 } else if (error) {
                     // Often this is an activity converted to private.
-                    activity.setSyncError('streams', error);
+                    activity.setSyncError(manifest, error);
                 }
                 await activity.save();
             }
@@ -951,11 +943,14 @@ sauce.ns('hist', async ns => {
 
         async _localProcessWorker() {
             let done = false;
-            const manifest = sauce.hist.db.ActivityModel.getSyncManifest('local');
-            const latestVersion = manifest[manifest.length - 1].version;
             let batchSize = 12;
             while (!done && !this._cancelEvent.isSet()) {
+                if (!this._procQueue.qsize()) {
+                    await Promise.race([this._procQueue.wait(), this._cancelEvent.wait()]);
+                    continue;
+                }
                 const batch = new Set();
+                const wasInErrorState = new Set();
                 while (this._procQueue.qsize()) {
                     const a = this._procQueue.getNoWait();
                     if (a === null) {
@@ -963,110 +958,97 @@ sauce.ns('hist', async ns => {
                         break;
                     }
                     batch.add(a);
+                    if (a.hasAnySyncErrors('local')) {
+                        wasInErrorState.add(a);
+                    }
                     if (batch.size >= batchSize) {
                         break;
                     }
                 }
-                // Grow the batch size over time for more responsive UI feedback and to
-                // favor total completion of individual activities over the completion
-                // of the entire dataset.
                 batchSize = Math.min(500, batchSize * 1.33);
-                if (!batch.size && !done) {
-                    // For handling single items coming off the streams fetch worker...
-                    const a = await Promise.race([this._procQueue.get(), this._cancelEvent.wait()]);
-                    if (a === null) {
-                        done = true;
-                    } else if (!this._cancelEvent.isSet()) {
-                        batch.add(a);
-                    }
-                }
                 while (batch.size && !this._cancelEvent.isSet()) {
-                    const versionedBatches = new Map();
+                    // Step 1: Group activities by manifest...
+                    const manifestBatches = new Map();
                     for (const a of batch) {
-                        const m = a.nextAvailSync('local');
+                        const m = a.nextAvailManifest('local');
                         if (!m) {
                             debugger;
                             batch.delete(a);
                             continue;
                         }
-                        if (!versionedBatches.has(m)) {
-                            versionedBatches.set(m, new Set());
+                        if (!manifestBatches.has(m)) {
+                            manifestBatches.set(m, []);
                         }
-                        versionedBatches.get(m).add(a);
+                        manifestBatches.get(m).push(a);
+                        a.clearSyncState(m);
                     }
-                    for (const [m, activities] of versionedBatches.entries()) {
+                    // Step 2: Process each manifest grouping...
+                    for (const [m, activities] of manifestBatches.entries()) {
                         const s = Date.now();
                         const fn = m.data;
-                        const count = activities.size;
-                        let doneCount = 0;
-                        let errorCount = 0;
-                        let errorsClearedCount = 0;
-                        let wasErrorState = new Set();
-                        for (const a of activities) {
-                            if (a.hasSyncError('local')) {
-                                wasErrorState.add(a);
-                                a.clearSyncError('local');
-                            }
-                        }
-                        await sleep(2000); // XXX just be careful bud
+                        const count = activities.length;
                         try {
-                            console.debug(`Local processing (${fn.name}) v${m.version} on ${count} activities`);
-                            await fn({activities, athlete: this.athlete});
+                            console.debug(`Local processing (${fn.name}) v${m.version} for ` +
+                                          `${count} activities`);
+                            await fn({manifest: m, activities, athlete: this.athlete});
                         } catch(e) {
-                            console.warn("Top level local processing error:", fn.name, m.version, e);
+                            console.warn(`Top level local processing error (${fn.name}) ` +
+                                         `v${m.version} for ${count} activities`);
                             for (const a of activities) {
-                                a.setSyncError('local', e);
+                                a.setSyncError(m, e);
                             }
                         }
-                        // Tabulate results and promote version on non-error.
+                        // NOTE: The processor is free to use setSyncError(), but we really can't
+                        // trust them to consistently use setSyncSuccess().  Failing to do so would
+                        // be a disaster, so we handle that here.  The model is: Optionally tag the
+                        // activity as having a sync error otherwise we assume it worked or does
+                        // not need further processing, so mark it as done (success).
                         for (const a of activities) {
-                            if (!a.hasSyncError('local')) {
-                                a.setSyncVersion('local', m.version);
-                                if (wasErrorState.has(a)) {
-                                    errorsClearedCount++;
-                                }
-                                doneCount++;
-                            } else {
-                                batch.delete(a);  // Do not attempt further action..
-                                if (!wasErrorState.has(a)) {
-                                    errorCount++;
-                                }
+                            if (!a.hasSyncError(m)) {
+                                a.setSyncSuccess(m);
                             }
                         }
                         await actsStore.saveModels(activities);
                         const elapsed = Date.now() - s;
-                        console.info(`${fn.name} ${Math.round(elapsed / count)}ms / activity, ${count} activities`);
-                        if (m.version === latestVersion) {
-                            this.counts.processed += doneCount;
-                            this.counts.unprocessable += errorCount - errorsClearedCount;
-                            const counts = await activityCounts(this.athlete.pk);
-                            if (counts.processed !== this.counts.processed ||
-                                counts.unprocessable !== this.counts.unprocessable) {
-                                debugger;
-                            }
-
-                            const ev = new Event('progress');
-                            ev.data = {
-                                totals: this.counts,
-                                batch: {
-                                    processed: doneCount,
-                                    unprocessable: errorCount
+                        console.info(`${fn.name} ${Math.round(elapsed / count)}ms / activity, ` +
+                                     `${count} activities`);
+                    }
+                    // Step 3: Perform accounting and consolidation...
+                    const lastBatchSize = batch.size;
+                    for (const a of batch) {
+                        const m = a.nextAvailManifest('local');
+                        if (!m) {
+                            // Activity is done...
+                            if (a.isSyncComplete('local')) {
+                                // Finished successfully.
+                                this.counts.processed++;
+                                if (wasInErrorState.has(a)) {
+                                    this.counts.unprocessable--;
                                 }
-                            };
-                            this.dispatchEvent(ev);
+                            } else {
+                                // Finished with error.
+                                if (!a.hasAnySyncErrors('local')) {
+                                    // XXX remove once validated..
+                                    throw new Error("NOPE should for sure have errors if isSyncComplete is empty");
+                                }
+                                if (!wasInErrorState.has(a)) {
+                                    this.counts.unprocessable++;
+                                }
+                            }
+                            batch.delete(a);
                         }
+                    }
+                    // Step 4: Conditionally notify listeners of any progress...
+                    if (batch.size !== lastBatchSize) {
+                        const ev = new Event('progress');
+                        ev.data = {counts: this.counts};
+                        this.dispatchEvent(ev);
                     }
                 }
             }
         }
 
-        async _fetchStreams(activity) {
-            const q = new URLSearchParams();
-            for (const m of sauce.hist.db.ActivityModel.getSyncManifest('streams')) {
-                for (const x of m.data) {
-                    q.append('stream_types[]', x);
-                }
-            }
+        async _fetchStreams(activity, q) {
             for (let i = 1;; i++) {
                 await Promise.race([this._rateLimiters.wait(), this._cancelEvent.wait()]);
                 if (this._cancelEvent.isSet()) {
@@ -1150,7 +1132,7 @@ sauce.ns('hist', async ns => {
                     let oldest = -1;
                     const now = Date.now();
                     for (const athlete of enabledAthletes) {
-                        if (this.isActive(athlete) || this._isDeferred(athlete)) {
+                        if (this.isActiveSync(athlete) || this._isDeferred(athlete)) {
                             continue;
                         }
                         const age = now - athlete.get('lastSync');
@@ -1169,7 +1151,7 @@ sauce.ns('hist', async ns => {
 
         async _refresh() {
             for (const athlete of await athletesStore.getEnabled({models: true})) {
-                if (this.isActive(athlete)) {
+                if (this.isActiveSync(athlete)) {
                     continue;
                 }
                 const now = Date.now();
@@ -1181,7 +1163,7 @@ sauce.ns('hist', async ns => {
             }
         }
 
-        isActive(athlete) {
+        isActiveSync(athlete) {
             return this.activeJobs.has(athlete.pk);
         }
 
@@ -1250,6 +1232,11 @@ sauce.ns('hist', async ns => {
             }
         }
 
+        async resetAthlete(id) {
+            await this.updateAthlete(id, {lastSync: 0, lastError: 0});
+            this._refreshEvent.set();
+        }
+
         async enableAthlete(id) {
             await this.updateAthlete(id, {sync: DBTrue, lastSync: 0, lastError: 0});
             this._refreshEvent.set();
@@ -1270,7 +1257,6 @@ sauce.ns('hist', async ns => {
             // Obviously use with extreme caution!
             await actsStore.deleteForAthlete(athlete);
         }
-
     }
 
 
@@ -1306,7 +1292,7 @@ sauce.ns('hist', async ns => {
             this._syncListeners.push([name, listener]);
         }
 
-        isActive() {
+        isActiveSync() {
             return !!(ns.syncManager && ns.syncManager.activeJobs.has(this.athleteId));
         }
 
@@ -1326,13 +1312,6 @@ sauce.ns('hist', async ns => {
                     return true;
                 }
             }
-        }
-
-        async invalidate(name) {
-            if (!ns.syncManager) {
-                throw new Error("Sync Manager is not available");
-            }
-            await invalidateSyncState(this.athleteId, name);
         }
 
         rateLimiterResumes() {

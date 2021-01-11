@@ -129,11 +129,9 @@ export class Queue {
     }
 
     /**
-     * Get an item from the queue if it is not empty.  Otherwise block until an item is available.
-     *
-     * @returns {*} An item from the head of the queue.
+     * Wait for an item to be available.
      */
-    async get() {
+    async wait() {
         while (this.empty()) {
             const getter = new Future();
             this._getters.push(getter);
@@ -146,6 +144,15 @@ export class Queue {
                 throw e;
             }
         }
+    }
+
+    /**
+     * Get an item from the queue if it is not empty.  Otherwise block until an item is available.
+     *
+     * @returns {*} An item from the head of the queue.
+     */
+    async get() {
+        await this.wait();
         return this.getNoWait();
     }
 

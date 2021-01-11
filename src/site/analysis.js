@@ -612,6 +612,7 @@ sauce.ns('analysis', ns => {
     }
 
 
+    // XXX Transition to using our Athlete record for this.
     const _hrZonesCache = new sauce.cache.TTLCache('hr-zones', 1 * 86400 * 1000);
     async function getHRZones() {
         const zonesEntry = await _hrZonesCache.getEntry(ctx.athlete.id);
@@ -914,10 +915,10 @@ sauce.ns('analysis', ns => {
             setSyncStatus('Sync problem occurred');
         });
         ns.syncController.addEventListener('progress', async ev => {
-            const totals = ev.data.totals;
-            const synced = totals.processed + totals.unprocessable;
-            const total = totals.total - totals.unavailable - totals.deleted;
-            setSyncStatus(`${synced}/${total}`);
+            const counts = ev.data.counts;
+            const synced = counts.processed;
+            const total = counts.total - counts.unavailable - counts.unprocessable;
+            setSyncStatus(`${synced.toLocaleString()}/${total.toLocaleString()}`);
         });
         ns.syncController.addEventListener('enable', ev => {
             $sync.addClass('enabled');
@@ -927,26 +928,35 @@ sauce.ns('analysis', ns => {
             $sync.removeClass('enabled sync-active');
             setSyncStatus('Sync disabled', {timeout: 5000});
         });
-        ns.syncController.isActive().then(x => $sync.toggleClass('sync-active', x));
+        ns.syncController.isActiveSync().then(x => $sync.toggleClass('sync-active', x));
+    }
+
+
+    // XXX Probably temporary while we are not monitoring the places where FTP, Weight and HRZones can
+    // be altered.  Later we should always keep the athlete record in sync so it's continually trusted.
+    // Also when any of the relevant params change we'll need to invalidate sync manifests affected by it.
+    async function buildAthleteRecord() {
+        let ftpHistory;
+        if (ctx.athlete.id === pageView.currentAthlete().id) {
+            ftpHistory = await sauce.hist.getSelfFTPHistory();
+        } else {
+            ftpHistory = ctx.ftp ? [{ts: 0, value: ctx.ftp}] : undefined;
+        }
+        return {
+            id: ctx.athlete.id,
+            gender: ctx.athlete.get('gender') === 'F' ? 'female' : 'male',
+            name: ctx.athlete.get('display_name'),
+            ftpHistory,
+            weightHistory: ctx.weight ? [{ts: 0, value: ctx.weight}] : undefined,
+            hrZones: await getHRZones(),
+        };
     }
 
 
     async function activitySyncDialog($sync) {
         let athlete = await sauce.hist.getAthlete(ctx.athlete.id);
         if (!athlete) {
-            let ftpHistory;
-            if (ctx.athlete.id === pageView.currentAthlete().id) {
-                ftpHistory = await sauce.hist.getSelfFTPHistory();
-            } else {
-                ftpHistory = ctx.ftp ? [{ts: 0, value: ctx.ftp}] : undefined;
-            }
-            athlete = await sauce.hist.addAthlete({
-                id: ctx.athlete.id,
-                gender: ctx.athlete.get('gender') === 'F' ? 'female' : 'male',
-                name: ctx.athlete.get('display_name'),
-                ftpHistory,
-                weightHistory: ctx.weight ? [{ts: 0, value: ctx.weight}] : undefined,
-            });
+            athlete = await sauce.hist.addAthlete(await buildAthleteRecord());
         }
         const enabled = !!(athlete && athlete.sync);
         const template = await getTemplate('sync-control-panel.html', 'sync_control_panel');
@@ -974,11 +984,11 @@ sauce.ns('analysis', ns => {
             }, {
                 text: 'Recompute Activity Metrics',
                 class: 'btn-primary sync-recompute',
-                click: ev => {
+                click: async ev => {
                     $modal.addClass('sync-active');
                     $modal.find('.entry.synced progress').removeAttr('value');
                     $modal.find('.entry.synced .text').empty();
-                    ns.syncController.invalidate('local');
+                    await sauce.hist.invalidateSyncState(athlete.id, 'local');
                 }
             }, {
                 text: 'Sync Activity Data',
@@ -989,9 +999,12 @@ sauce.ns('analysis', ns => {
                 }
             }]
         });
-        function updateSyncTotals(totals) {
-            const synced = totals.processed + totals.unprocessable;
-            const total = totals.total - totals.unavailable - totals.deleted;
+        async function updateSyncCounts(counts) {
+            if (!counts) {
+                counts = await sauce.hist.activityCounts(athlete.id);
+            }
+            const synced = counts.processed;
+            const total = counts.total - counts.unavailable - counts.unprocessable;
             $modal.find('.entry.synced').attr('title',
                 `Synchronized ${synced.toLocaleString()} of ${total.toLocaleString()} activities`);
             $modal.find('.entry.synced progress').attr('value', synced / total);
@@ -1015,7 +1028,7 @@ sauce.ns('analysis', ns => {
             clearInterval(rateLimiterInterval);
             rateLimiterInterval = setInterval(async () => {
                 const resumes = await ns.syncController.rateLimiterResumes();
-                if (resumes && resumes - Date.now() > 3000) {
+                if (resumes && resumes - Date.now() > 10000) {
                     const resumesLocale = (new Date(resumes)).toLocaleString();
                     $modal.find('.entry.status value').text(`Rate limited until: ${resumesLocale}`);
                 }
@@ -1028,8 +1041,7 @@ sauce.ns('analysis', ns => {
                 clearInterval(rateLimiterInterval);
                 $modal.removeClass('sync-active');
                 $modal.find('.entry.status value').text('Completed');
-                updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
-                await updateSyncTimes();
+                await Promise.all([updateSyncCounts(), updateSyncTimes()]);
             },
             error: async ev => {
                 clearInterval(rateLimiterInterval);
@@ -1037,7 +1049,7 @@ sauce.ns('analysis', ns => {
                 $modal.find('.entry.status value').text('Error');
                 await updateSyncTimes();
             },
-            progress: ev => void updateSyncTotals(ev.data.totals),
+            progress: ev => void updateSyncCounts(ev.data.counts),
             enable: ev => void ($en[0].checked = true),
             disable: ev => void ($en[0].checked = false),
         };
@@ -1047,11 +1059,9 @@ sauce.ns('analysis', ns => {
             }
         }
         if (enabled) {
-            updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
-            await updateSyncTimes();
-            if (await ns.syncController.isActive()) {
+            await Promise.all([updateSyncCounts(), updateSyncTimes()]);
+            if (await ns.syncController.isActiveSync()) {
                 setActive();
-                updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
             } else {
                 $modal.find('.entry.status value').text('Idle');
             }
@@ -1067,16 +1077,10 @@ sauce.ns('analysis', ns => {
                         ns.syncController.addEventListener(event, cb);
                     }
                 }
-                updateSyncTotals(await sauce.hist.activityCounts(ctx.athlete.id));
-                await updateSyncTimes();
-                await sauce.hist.addAthlete({
-                    id: ctx.athlete.id,
-                    gender: ctx.athlete.get('gender') === 'F' ? 'female' : 'male',
-                    name: ctx.athlete.get('display_name'),
-                });
-                await sauce.hist.enableAthlete(ctx.athlete.id);
+                await Promise.all([updateSyncCounts(), updateSyncTimes()]);
+                await sauce.hist.enableAthlete(athlete.id);
             } else if (ns.syncController) {
-                await sauce.hist.disableAthlete(ctx.athlete.id);
+                await sauce.hist.disableAthlete(athlete.id);
             }
             $modal.toggleClass('sync-disabled', !en);
         });
