@@ -1334,25 +1334,22 @@ sauce.ns('hist', async ns => {
                 }
                 this.importing[x.store].push(x.data);
             }
-            console.log("imported", data.length);
             const size = sauce.data.sum(Object.values(this.importing).map(x => x.length));
             if (size > 1000) {
-                console.warn("flushing");
                 await this.flush();
             }
         }
 
         async flush() {
-            if (this.importing.streams) {
-                await streamsStore.putMany(this.importing.streams.splice(0, Infinity));
+            if (this.importing.athletes) {
+                await athletesStore.putMany(this.importing.athletes.splice(0, Infinity));
             }
             if (this.importing.activities) {
                 await actsStore.putMany(this.importing.activities.splice(0, Infinity));
             }
-            if (this.importing.athletes) {
-                await athletesStore.putMany(this.importing.athletes.splice(0, Infinity));
+            if (this.importing.streams) {
+                await streamsStore.putMany(this.importing.streams.splice(0, Infinity));
             }
-            console.warn("flushing done");
         }
     }
     sauce.proxy.export(DataExchange, {namespace});

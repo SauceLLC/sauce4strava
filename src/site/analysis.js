@@ -1009,24 +1009,18 @@ sauce.ns('analysis', ns => {
                     input.addEventListener('change', async ev => {
                         btn.classList.add('sauce-loading', 'disabled');
                         try {
-                            const s = Date.now();
-                            const importing = [];
                             const dataEx = new sauce.hist.DataExchange();
                             for (const f of input.files) {
                                 const ab = await sauce.blobToArrayBuffer(f);
                                 const batch = sauce.decodeBundle(ab);
                                 const stride = 100;  // Stay within String limits.
-                                for (let i = 0; i < batch.length; i += 100) {
+                                const importing = [];
+                                for (let i = 0; i < batch.length; i += stride) {
                                     importing.push(dataEx.import(batch.slice(i, i + stride)));
-                                    console.warn("stride", i / 100);
-                                    if (importing.length > 20) {
-                                        await Promise.all(importing.splice(0, 10));
-                                    }
                                 }
+                                await Promise.all(importing);
                             }
-                            await Promise.all(importing);
                             await dataEx.flush();
-                            console.warn("import took", (Date.now() - s) / 1000);
                         } finally {
                             btn.classList.remove('sauce-loading', 'disabled');
                         }
@@ -1047,10 +1041,8 @@ sauce.ns('analysis', ns => {
                         batch.length = 0;
                     };
                     try {
-                        const dataEx = new sauce.hist.DataExchange();
-                        //const dataEx = new sauce.hist.DataExchange(athlete.id);
+                        const dataEx = new sauce.hist.DataExchange(athlete.id);
                         dataEx.addEventListener('data', async ev => {
-                            console.warn("data", ev.data.length);
                             for (const x of ev.data) {
                                 batch.push(x);
                                 if (batch.length > 20000) {
