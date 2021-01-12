@@ -631,91 +631,6 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(bulkTSS, {namespace});
 
 
-    function download(blob, name) {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = name;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        try {
-            link.click();
-        } finally {
-            link.remove();
-            URL.revokeObjectURL(link.href);
-        }
-    }
-
-
-    async function exportData(name, athleteId) {
-        name = name || 'sauce-activity-sync-export';
-        const entriesPerFile = 5000;  // Blob and JSON.stringify have arbitrary limits.
-        const batch = [];
-        let page = 0;
-        function dl(data) {
-            const blob = new Blob([JSON.stringify(data)]);
-            download(blob, `${name}-${page++}.json`);
-        }
-        if (athleteId) {
-            batch.push({store: 'athletes', data: await athletesStore.get(athleteId)});
-        } else {
-            for (const data of await athletesStore.getAll()) {
-                batch.push({store: 'athletes', data});
-            }
-        }
-        const pendingActStreams = [];
-        const actsIter = athleteId ? actsStore.getForAthlete(athleteId) : actsStore.getAll();
-        for (const activity of await actsIter) {
-            batch.push({store: 'activities', data: activity});
-            pendingActStreams.push(activity.id);
-            if (pendingActStreams.length >= entriesPerFile / 100) {
-                const streams = await streamsStore.getMany(pendingActStreams, {index: 'activity'});
-                for (const data of streams) {
-                    batch.push({store: 'streams', data});
-                }
-                pendingActStreams.length = 0;
-            }
-            if (batch.length >= entriesPerFile) {
-                dl(batch);
-                batch.length = 0;
-            }
-        }
-        if (pendingActStreams.length) {
-            const streams = await streamsStore.getMany(pendingActStreams, {index: 'activity'});
-            for (const data of streams) {
-                batch.push({store: 'streams', data});
-            }
-        }
-        if (batch.length) {
-            dl(batch);
-        }
-        console.info("Export done");
-    }
-    sauce.proxy.export(exportData, {namespace});
-
-
-    async function importData(name='streams-export', host='http://localhost:8001') {
-        let added = 0;
-        for (let i = 0;; i++) {
-            const url = host + `/${name}-${i}.json`;
-            const resp = await fetch(url);
-            if (!resp.ok) {
-                if (resp.status === 404) {
-                    break;
-                }
-                throw new Error('HTTP Error: ' + resp.status);
-            }
-            const data = await resp.json();
-            added += data.length;
-            await streamsStore.putMany(data.filter(x => x.store === 'streams'));
-            await actsStore.putMany(data.filter(x => x.store === 'activities'));
-            await athletesStore.putMany(data.filter(x => x.store === 'athletes'));
-            console.info(`Imported ${data.length} from:`, url);
-        }
-        console.info(`Imported ${added} entries in total.`);
-    }
-    sauce.proxy.export(importData, {namespace});
-
-
     // XXX maybe move to analysis page until we figure out the strategy for all
     // historical data.
     async function getSelfFTPHistory() {
@@ -849,7 +764,7 @@ sauce.ns('hist', async ns => {
 
         async _run() {
             this.status = 'activities-update';
-            const updateFn = this.isSelf ? ns.updateSelfActivities : ns.updatePeerActivities;
+            const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
             await updateFn(this.athlete.pk);
             this.counts = await activityCounts(this.athlete.pk);
             this.status = 'activities-sync';
@@ -1361,6 +1276,88 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(SyncController, {namespace});
 
 
+    class DataExchange extends sauce.proxy.Eventing {
+        constructor(athleteId) {
+            super();
+            this.athleteId = athleteId;
+            this.importing = {};
+        }
+
+        async export() {
+            const entriesPerEvent = 500;  // Stay within String limits
+            let batch = [];
+            const dispatch = () => {
+                while (batch.length) {
+                    const ev = new Event('data');
+                    ev.data = batch.splice(0, entriesPerEvent);
+                    this.dispatchEvent(ev);
+                }
+            };
+            if (this.athleteId) {
+                batch.push({store: 'athletes', data: await athletesStore.get(this.athleteId)});
+            } else {
+                for (const data of await athletesStore.getAll()) {
+                    batch.push({store: 'athletes', data});
+                }
+            }
+            const pendingActStreams = [];
+            const actsIter = this.athleteId ? actsStore.getForAthlete(this.athleteId) : actsStore.getAll();
+            for (const activity of await actsIter) {
+                batch.push({store: 'activities', data: activity});
+                pendingActStreams.push(activity.id);
+                if (pendingActStreams.length >= entriesPerEvent) {
+                    const streams = await streamsStore.getMany(pendingActStreams, {index: 'activity'});
+                    for (const data of streams) {
+                        batch.push({store: 'streams', data});
+                    }
+                    pendingActStreams.length = 0;
+                }
+                if (batch.length >= entriesPerEvent) {
+                    dispatch();
+                }
+            }
+            if (pendingActStreams.length) {
+                const streams = await streamsStore.getMany(pendingActStreams, {index: 'activity'});
+                for (const data of streams) {
+                    batch.push({store: 'streams', data});
+                }
+            }
+            if (batch.length) {
+                dispatch();
+            }
+        }
+
+        async import(data) {
+            for (const x of data) {
+                if (!this.importing[x.store]) {
+                    this.importing[x.store] = [];
+                }
+                this.importing[x.store].push(x.data);
+            }
+            console.log("imported", data.length);
+            const size = sauce.data.sum(Object.values(this.importing).map(x => x.length));
+            if (size > 1000) {
+                console.warn("flushing");
+                await this.flush();
+            }
+        }
+
+        async flush() {
+            if (this.importing.streams) {
+                await streamsStore.putMany(this.importing.streams.splice(0, Infinity));
+            }
+            if (this.importing.activities) {
+                await actsStore.putMany(this.importing.activities.splice(0, Infinity));
+            }
+            if (this.importing.athletes) {
+                await athletesStore.putMany(this.importing.athletes.splice(0, Infinity));
+            }
+            console.warn("flushing done");
+        }
+    }
+    sauce.proxy.export(DataExchange, {namespace});
+
+
     if (self.currentUser) {
         ns.syncManager = new SyncManager(self.currentUser);
     }
@@ -1376,10 +1373,6 @@ sauce.ns('hist', async ns => {
 
 
     return {
-        importData,
-        exportData,
-        updateSelfActivities,
-        updatePeerActivities,
         invalidateSyncState,
         findPeaks,
         bulkTSS,
@@ -1388,6 +1381,5 @@ sauce.ns('hist', async ns => {
         athletesStore,
         activityCounts,
         SyncManager,
-        SyncController,
     };
 }, {hasAsyncExports: true});

@@ -20,6 +20,15 @@
         outline-color: color.shade(accent, -5%, 0.5);
     }
 
+    button,
+    .button {
+        &.sauce-loading:not(.btn-primary) {
+            &::before {
+                filter: invert(1);
+            }
+        }
+    }
+
     .leaflet-container {
         background: color.shade(bg, 8%);
         color: color.shade(fg, 8%);

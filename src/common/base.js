@@ -76,6 +76,59 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    sauce.encodeBundle = function(datas) {
+        // To stay within ES string limits that are quite small on Safari,
+        // we bundle many smaller json strings together in a simple size
+        // prefixed binary scheme.
+        const text = new TextEncoder('utf-8');
+        let dataSize = 0;
+        const bins = [];
+        for (const data of datas) {
+            const bin = text.encode(JSON.stringify(data));
+            dataSize += bin.byteLength;
+            bins.push(bin);
+        }
+        const output = new Uint8Array(dataSize + (datas.length * 4));
+        const view = new DataView(output.buffer);
+        let idx = 0;
+        while (bins.length) {
+            const bin = bins.shift();
+            view.setUint32(idx, bin.byteLength);
+            output.set(bin, idx + 4);
+            idx += bin.byteLength + 4;
+        }
+        return output.buffer;
+    };
+
+
+    sauce.decodeBundle = function(buffer) {
+        const input = new Uint8Array(buffer);
+        const view = new DataView(buffer);
+        const text = new TextDecoder('utf-8');
+        const datas = [];
+        let idx = 0;
+        while (idx < input.byteLength) {
+            const size = view.getUint32(idx);
+            idx += 4;
+            datas.push(JSON.parse(text.decode(input.slice(idx, idx + size))));
+            idx += size;
+        }
+        return datas;
+    };
+
+
+    sauce.blobToArrayBuffer = async function(blob) {
+        const reader = new FileReader();
+        const done = new Promise((resolve, reject) => {
+            reader.addEventListener('load', resolve);
+            reader.addEventListener('error', () => reject(new Error('invalid blob')));
+        });
+        reader.readAsArrayBuffer(blob);
+        await done;
+        return reader.result;
+    };
+
+
     const _modules = {};
     sauce.getModule = async function(url) {
         // Note: modules are only supported in the site context and the background page.

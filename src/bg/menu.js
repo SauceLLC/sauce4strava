@@ -6,7 +6,8 @@
     agent = agent || scheme === 'chrome-extension' && 'chrome';
     agent = agent || scheme === 'moz-extension' && 'firefox';
     agent = agent || scheme === 'safari-web-extension' && 'safari';
-    sauce.proxy.export(browser.runtime.openOptionsPage, {namespace: 'menu'});
+    sauce.proxy.export(browser.runtime.openOptionsPage,
+        {namespace: 'menu', name: 'openOptionsPage'});  // Need to set name for FF
     const pageActions = {
         review: {
             title: browser.i18n.getMessage('menu_add_review'),
