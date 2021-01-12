@@ -31,7 +31,7 @@ sauce.ns('proxy', ns => {
             return;
         }
         const onMessage = async data => {
-            if (data.once) {
+            if (data.type && data.type === 'sauce-proxy-establish-port') {
                 port.onMessage.removeListener(onMessage);
             }
             data.port = port;

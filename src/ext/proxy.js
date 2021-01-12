@@ -32,7 +32,7 @@ sauce.ns('proxy', ns => {
                         resolve(msg);
                     };
                     bgPort.onMessage.addListener(onAck);
-                    bgPort.postMessage({desc, args, pid, once: true});
+                    bgPort.postMessage({desc, args, pid, type: 'sauce-proxy-establish-port'});
                 });
                 bgPort.onMessage.addListener(msg => port.postMessage(msg));
                 return response;

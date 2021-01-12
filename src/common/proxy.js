@@ -67,6 +67,14 @@ sauce.ns('proxy', ns => {
             const wrappedMethods = new Map(desc.methods.map(x => [x, wrapExportFn(instance[x])]));
 
             async function onPortMessage(data) {
+                if (data && data.type === 'sauce-proxy-establish-port') {
+                    // This is a safari only condition where they dispatch the establishing
+                    // postMessage to this event listener despite it being added DURING
+                    // the handling of the very same message.  And even then it's not consistent,
+                    // so there seems to be a race condition in their impl.
+                    console.warn("Safari workaround for backgrand message race condition deployed.");
+                    return;
+                }
                 if (!data || data.type !== 'sauce-proxy-request') {
                     throw new Error("Protocol error in class method request handler");
                 }
