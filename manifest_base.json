@@ -81,6 +81,12 @@
             "src/site/preloader.js",
             "src/ext/boot.js"
         ]
+    }, {
+        "run_at": "document_start",
+        "matches": ["https://www.strava.com/sauce/*"],
+        "css": [
+            "css/site/repurpose.css"
+        ]
     }],
 
     "web_accessible_resources": [
