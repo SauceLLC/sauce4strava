@@ -130,18 +130,18 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     const _modules = {};
-    sauce.getModule = async function(url) {
+    sauce.getModule = async function(urn) {
         // Note: modules are only supported in the site context and the background page.
         // Content scripts of the extention itself do NOT work and cannot work without
         // browser support due to isolation issues.
-        if (!_modules[url]) {
+        if (!_modules[urn]) {
             const script = document.createElement('script');
-            const doneEvent = 'sauceModuleImportDone-' + (Date.now() + Math.random());
+            const doneEvent = 'smid-' + (Date.now() + Math.random());
             const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
-            _modules[url] = await new Promise((resolve, reject) => {
-                script.addEventListener('error', ev => reject(new Error(`Module load error: ${url}`)));
+            _modules[urn] = await new Promise((resolve, reject) => {
+                script.addEventListener('error', ev => reject(new Error(`Module load error: ${urn}`)));
                 script.type = 'module';
-                script.src = extUrl + `src/common/module-loader.mjs?doneEvent=${doneEvent}&script=${url}`;
+                script.src = extUrl + `src/common/module-loader.mjs?ondone=${doneEvent}&module=${urn}`;
                 function onDone(ev) {
                     document.removeEventListener(doneEvent, onDone);
                     script.remove();
@@ -155,18 +155,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 document.documentElement.appendChild(script);
             });
         }
-        return _modules[url];
-    };
-
-
-    sauce.loadModule = async function(namespace, url) {
-        const path = namespace.split('.');
-        const root = buildPath(path.slice(0, -1));
-        const name = path.pop();
-        if (!root[name]) {
-            root[name] = await sauce.getModule(url);
-        }
-        return root[name];
+        return _modules[urn];
     };
 
 

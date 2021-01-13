@@ -1,10 +1,10 @@
 const url = new URL(import.meta.url);
-const target = url.searchParams.get('script');
+const module = url.searchParams.get('module');
 
 (async function() {
-    const ev = new Event(url.searchParams.get('doneEvent'));
+    const ev = new Event(url.searchParams.get('ondone'));
     try {
-        ev.module = await import(`${target}`);
+        ev.module = await import(`${module}`);
     } catch(e) {
         ev.error = e;
     }
