@@ -4,11 +4,10 @@ sauce.ns('hist', async ns => {
     'use strict';
 
     const namespace = 'hist';
-    const extUrl = browser.runtime.getURL('');
-    const jobs = await sauce.getModule(extUrl + 'src/common/jscoop/jobs.js');
-    const queues = await sauce.getModule(extUrl + 'src/common/jscoop/queues.js');
-    const futures = await sauce.getModule(extUrl + 'src/common/jscoop/futures.js');
-    const locks = await sauce.getModule(extUrl + 'src/common/jscoop/locks.js');
+    const jobs = await sauce.getModule('/src/common/jscoop/jobs.js');
+    const queues = await sauce.getModule('/src/common/jscoop/queues.js');
+    const futures = await sauce.getModule('/src/common/jscoop/futures.js');
+    const locks = await sauce.getModule('/src/common/jscoop/locks.js');
     const DBTrue = 1;
     const DBFalse = 0;
 
@@ -610,6 +609,7 @@ sauce.ns('hist', async ns => {
         }
     }
 
+    const extUrl = browser.runtime.getURL('');
     const workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist-worker.js');
 
 

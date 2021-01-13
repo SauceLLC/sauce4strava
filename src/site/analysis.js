@@ -1,4 +1,4 @@
-/* global Strava, sauce, jQuery, pageView, jsfit */
+/* global Strava, sauce, jQuery, pageView */
 
 sauce.ns('analysis', ns => {
     'use strict';
@@ -1751,7 +1751,7 @@ sauce.ns('analysis', ns => {
         }
         $menu.find('a.tcx').on('click', async () => {
             const laps = await getLaps();
-            exportActivity(sauce.export.TCXSerializer, {laps}).catch(sauce.report.error);
+            exportActivity('tcx', {laps}).catch(sauce.report.error);
             sauce.report.event('ActionsMenu', 'export', 'tcx');
         });
         if (!$menu.find('a[href$="/export_gpx"]').length) {
@@ -1761,7 +1761,7 @@ sauce.ns('analysis', ns => {
             `));
             $menu.find('a.gpx').on('click', async () => {
                 const laps = await getLaps();
-                exportActivity(sauce.export.GPXSerializer, {laps}).catch(sauce.report.error);
+                exportActivity('gpx', {laps}).catch(sauce.report.error);
                 sauce.report.event('ActionsMenu', 'export', 'gpx');
             });
         }
@@ -1877,7 +1877,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function exportActivity(Serializer, {start, end, laps}) {
+    async function exportActivity(type, {start, end, laps}) {
         const streamTypes = ['time', 'watts', 'heartrate', 'altitude',
                              'cadence', 'temp', 'latlng', 'distance'];
         const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
@@ -1900,6 +1900,8 @@ sauce.ns('analysis', ns => {
         }
         const descEl = document.querySelector('#heading .activity-description .content');
         const desc = descEl && descEl.textContent;
+        const exportModule = await sauce.getModule('/src/site/export.mjs');
+        const Serializer = type === 'tcx' ? exportModule.TCXSerializer : exportModule.GPXSerializer;
         const serializer = new Serializer(name, desc, pageView.activity().get('type'), startDate, laps);
         serializer.start();
         serializer.loadStreams(streams);
@@ -2931,18 +2933,11 @@ sauce.ns('analysis', ns => {
         await sauce.storage.setAthleteProp(ctx.athlete.id, 'bikes', bikes);
     }
 
+
     async function createLiveSegment({start, end, uuid, segmentName, leaderName, leaderType,
         timeMultiplier}) {
-        if (!window.jsfit) {
-            const script = document.createElement('script');
-            await new Promise((resolve, reject) => {
-                script.addEventListener('load', resolve);
-                script.addEventListener('error', reject);
-                script.type = 'module';
-                script.src = `${sauce.extUrl}src/site/jsfit/web.js`;
-                document.head.appendChild(script);
-            });
-        }
+        const m = await sauce.getModule('/src/site/jsfit/fit-parser.js');
+        const FitParser = m.default;
         const timeStreamOrig = await fetchStream('time', start, end);
         const timeStream = (timeMultiplier && timeMultiplier !== 1) ?
             timeStreamOrig.map(x => x * timeMultiplier) : timeStreamOrig;
@@ -2963,7 +2958,7 @@ sauce.ns('analysis', ns => {
                 message_index: {flags: [], value: i}
             });
         }
-        const fitParser = new jsfit.FitParser();
+        const fitParser = new FitParser();
         fitParser.addMessage('file_id', {
             manufacturer: 'strava',
             type: 'segment',
@@ -3223,13 +3218,13 @@ sauce.ns('analysis', ns => {
         $el.on('click', 'a.sauce-export-tcx', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            exportActivity(sauce.export.TCXSerializer, {start, end}).catch(sauce.report.error);
+            exportActivity('tcx', {start, end}).catch(sauce.report.error);
             sauce.report.event('AnalysisStats', 'export', 'tcx');
         });
         $el.on('click', 'a.sauce-export-gpx', () => {
             const start = ctx.$analysisStats.data('start');
             const end = ctx.$analysisStats.data('end');
-            exportActivity(sauce.export.GPXSerializer, {start, end}).catch(sauce.report.error);
+            exportActivity('gpx', {start, end}).catch(sauce.report.error);
             sauce.report.event('AnalysisStats', 'export', 'gpx');
         });
         $el.on('click', '.expander', async ev => {

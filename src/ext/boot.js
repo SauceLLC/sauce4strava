@@ -13,7 +13,6 @@
             'common/template.js',
             'common/lib.js',
             'site/sparkline.js',
-            'site/export.js',
             'site/analysis.js',
         ],
         callbacks: [
@@ -34,6 +33,21 @@
         pathMatch: /^\/routes\/new\b/,
         callbacks: [
             config => void document.documentElement.classList.add('sauce-route-builder')
+        ]
+    }, {
+        name: 'Sauce Performance',
+        pathMatch: /^\/sauce\/performance\b/,
+        stylesheets: ['site/performance.css'],
+        scripts: [
+            'site/proxy.js',
+            'site/locale.js',
+            'common/template.js',
+            'common/lib.js',
+            'site/sparkline.js',
+            'site/performance.js',
+        ],
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-performance')
         ]
     }, {
         stylesheets: ['site/responsive.css'],
