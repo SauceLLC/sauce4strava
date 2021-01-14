@@ -249,5 +249,6 @@
     "live_segment_beg2": {"message": "I'm working hard to make Sauce the best Strava upgrade possible but without support I won't be able to dedicate the time and energy into making this possible.  Please consider becoming a patron to enable this feature, and more, so yo      u can get the full Sauce experience."},
     "live_segment_beg3": {"message": "Thank you so much for understanding and contributing to making Sauce even better!"},
     "menu_add_review": {"message": "Add Review"},
-    "menu_supporters": {"message": "Supporters"}
+    "menu_supporters": {"message": "Supporters"},
+    "performance": {"message": "Performance"}
 }
