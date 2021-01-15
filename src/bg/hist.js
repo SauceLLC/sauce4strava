@@ -672,6 +672,18 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(getAthlete, {namespace});
 
 
+    async function getEnabledAthletes() {
+        return await athletesStore.getEnabled();
+    }
+    sauce.proxy.export(getEnabledAthletes, {namespace});
+
+
+    async function getActivitiesForAthlete(athleteId, options={}) {
+        return await actsStore.getForAthlete(athleteId, options);
+    }
+    sauce.proxy.export(getActivitiesForAthlete, {namespace});
+
+
     async function enableAthlete(id) {
         if (!id) {
             throw new TypeError('id is required');

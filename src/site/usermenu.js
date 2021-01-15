@@ -37,6 +37,9 @@
 
     async function _loadPerf() {
         const options = document.querySelector('#global-header .global-nav [data-log-category="training"] .options');
+        if (!options) {
+            return;
+        }
         const anchor = document.createElement('a');
         anchor.textContent = `Sauce ${await sauce.locale.getMessage('performance')}`;
         const image = document.createElement('img');

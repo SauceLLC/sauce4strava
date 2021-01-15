@@ -26,12 +26,43 @@ sauce.ns('performance', ns => {
 
 
     async function load() {
-        console.warn("Let there be light");
         const tpl = await getTemplate('performance.html');
         const $replace = jQuery('#error404');
-        $replace.html(await tpl({}));
+        const athletes = await sauce.hist.getEnabledAthletes();
+        const start = Date.now() - 86400 * 1000 * 30;
+        $replace.html(await tpl({
+            athletes
+        }));
         $replace.removeClass();  // removes all
         $replace.attr('id', 'sauce-performance');
+
+        const activities = await sauce.hist.getActivitiesForAthlete(athletes[1].id, {start});
+        activities.reverse();
+        console.warn(activities);
+        const tssCtx = document.querySelector('#tss').getContext('2d');
+        const tssChart = new Chart(tssCtx, {
+            type: 'line',
+            data: {
+                labels: activities.map(x => x.name || new Date(x.ts)),
+                datasets: [{
+                    label: 'TSS',
+                    data: activities.map(x => Math.round(x.stats.tss || x.stats.tTss))
+                }]
+            }
+        });
+
+        const hoursCtx = document.querySelector('#hours').getContext('2d');
+        const hourChart = new Chart(hoursCtx, {
+            type: 'line',
+            data: {
+                labels: ['one', 'two', 'three', 'four', 'five'],
+                datasets: [{
+                    label: 'Hours',
+                    data: [100, 20, 33, 44, 100]
+                }]
+            }
+        });
+
     }
 
 
