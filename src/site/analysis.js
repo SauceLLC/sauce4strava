@@ -2936,7 +2936,7 @@ sauce.ns('analysis', ns => {
 
     async function createLiveSegment({start, end, uuid, segmentName, leaderName, leaderType,
         timeMultiplier}) {
-        const m = await sauce.getModule('/src/site/jsfit/fit-parser.js');
+        const m = await sauce.getModule('/src/site/jsfit/fit-parser.mjs');
         const FitParser = m.default;
         const timeStreamOrig = await fetchStream('time', start, end);
         const timeStream = (timeMultiplier && timeMultiplier !== 1) ?

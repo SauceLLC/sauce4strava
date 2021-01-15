@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, jQuery */
 
 sauce.ns('performance', ns => {
     'use strict';

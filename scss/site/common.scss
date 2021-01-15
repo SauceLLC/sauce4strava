@@ -30,7 +30,7 @@
         }
     }
 
-    li#global-sauce-options-menu-item {
+    li.sauce-options-menu-item {
         a {
             color: color.shade(accent, 60%) !important;
             background-image: linear-gradient(color.shade(accent, 10%),

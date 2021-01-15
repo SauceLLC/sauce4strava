@@ -1,6 +1,6 @@
 /* global sauce */
 
-
+a
 class DOMSerializer {
     constructor(name, desc, type, start, laps) {
         this.activity = {

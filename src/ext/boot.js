@@ -44,6 +44,7 @@
             'common/template.js',
             'common/lib.js',
             'site/sparkline.js',
+            'site/chart.js',
             'site/performance.js',
         ],
         callbacks: [
