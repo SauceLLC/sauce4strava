@@ -1,6 +1,7 @@
 // vim: ts=4:sw=4:expandtab
+/* eslint indent: "off" */
 
-import * as fit from './fit.js';
+import * as fit from './fit.mjs';
 
 export function addEndian(littleEndian, bytes) {
     let result = 0;
