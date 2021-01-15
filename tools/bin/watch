@@ -1,0 +1,2 @@
+#!/bin/sh -e
+find $1 -type f -name $2 | xargs fswatch --event Updated -1 --latency 0.001

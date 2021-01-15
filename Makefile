@@ -62,4 +62,8 @@ sass-watch:
 	$(TOOLPATH)/sassrender --watch
 
 
+lint-watch:
+	$(TOOLPATH)/lintwatch
+
+
 .PHONY: lint sass clean realclean package packages manifest build

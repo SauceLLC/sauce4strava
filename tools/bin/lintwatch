@@ -1,0 +1,7 @@
+#!/bin/sh -e
+TOOLS=$(dirname $0)
+(
+    trap 'kill 0' SIGINT
+        (while true ; do FILE=$($TOOLS/watch src '*.js') ; clear ; eslint "$FILE" && echo CLEAN; done) &
+        (while true ; do FILE=$($TOOLS/watch src '*.mjs') ; clear ; eslint --config $TOOLS/../../.eslintrc.modules.json "$FILE" && echo CLEAN; done)
+)
