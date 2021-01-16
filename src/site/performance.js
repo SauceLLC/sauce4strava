@@ -7,6 +7,77 @@ sauce.ns('performance', ns => {
 
     const DAY = 86400 * 1000;
 
+    function htmlTooltip(tooltipModel) {
+        // Tooltip Element
+        var tooltipEl = document.getElementById('chartjs-tooltip');
+
+        // Create element on first render
+        if (!tooltipEl) {
+            tooltipEl = document.createElement('div');
+            tooltipEl.id = 'chartjs-tooltip';
+            tooltipEl.innerHTML = '<table></table>';
+            document.body.appendChild(tooltipEl);
+        }
+
+        // Hide if no tooltip
+        if (tooltipModel.opacity === 0) {
+            tooltipEl.style.opacity = 0;
+            return;
+        }
+
+        // Set caret Position
+        tooltipEl.classList.remove('above', 'below', 'no-transform');
+        if (tooltipModel.yAlign) {
+            tooltipEl.classList.add(tooltipModel.yAlign);
+        } else {
+            tooltipEl.classList.add('no-transform');
+        }
+
+        function getBody(bodyItem) {
+            return bodyItem.lines;
+        }
+
+        // Set Text
+        if (tooltipModel.body) {
+            var titleLines = tooltipModel.title || [];
+            var bodyLines = tooltipModel.body.map(getBody);
+
+            var innerHtml = '<thead>';
+
+            titleLines.forEach(function(title) {
+                innerHtml += '<tr><th>' + title + '</th></tr>';
+            });
+            innerHtml += '</thead><tbody>';
+
+            bodyLines.forEach(function(body, i) {
+                var colors = tooltipModel.labelColors[i];
+                var style = 'background:' + colors.backgroundColor;
+                style += '; border-color:' + colors.borderColor;
+                style += '; border-width: 2px';
+                var span = '<span style="' + style + '"></span>';
+                innerHtml += '<tr><td>' + span + body + '</td></tr>';
+            });
+            innerHtml += '</tbody>';
+
+            var tableRoot = tooltipEl.querySelector('table');
+            tableRoot.innerHTML = innerHtml;
+        }
+
+        // `this` will be the overall tooltip
+        var position = this._chart.canvas.getBoundingClientRect();
+
+        // Display, position, and set styles for font
+        tooltipEl.style.opacity = 1;
+        tooltipEl.style.position = 'absolute';
+        tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+        tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY + 'px';
+        tooltipEl.style.fontFamily = tooltipModel._bodyFontFamily;
+        tooltipEl.style.fontSize = tooltipModel.bodyFontSize + 'px';
+        tooltipEl.style.fontStyle = tooltipModel._bodyFontStyle;
+        tooltipEl.style.padding = tooltipModel.yPadding + 'px ' + tooltipModel.xPadding + 'px';
+        tooltipEl.style.pointerEvents = 'none';
+    }
+
     // XXX Move from here and analysis to the template file..
     const tplUrl = sauce.extUrl + 'templates';
     const _tplCache = new Map();
@@ -34,16 +105,18 @@ sauce.ns('performance', ns => {
         const days = [];
         let i = 0;
         for (let ts = end; ts > start; ts -= DAY) {
-            const day = {ts, activities: []};
-            days.push(day);
+            const acts = [];
             while (i < activities.length) {
                 const a = activities[i];
                 if (a.ts >= ts - DAY && a.ts < ts) {
-                    day.activities.push(a);
+                    acts.push(a);
                     i++;
                 } else {
                     break;
                 }
+            }
+            if (acts.length) {
+                days.push({ts, activities: acts});
             }
         }
         return days;
@@ -62,29 +135,19 @@ sauce.ns('performance', ns => {
         const actsByDay = activitiesByDay(activities, start, now);
         actsByDay.reverse();
         const predDays = 7;
-        for (let i = 1; i < predDays; i++) {
-            actsByDay.push({ts: now + (i * DAY)});
-        }
-        console.warn(actsByDay);
+        actsByDay.push({ts: now + (predDays * DAY), activities: []});
+
         const tssCtx = document.querySelector('#tss').getContext('2d');
         const tssChart = new Chart(tssCtx, {
             type: 'bar',
-            plugins: [
-                //self.ChartRegressions
-            ],
+            plugins: [self.ChartRegressions],
             options: {
-                plugins: {
-                    colorschemes: {
-                        scheme: 'brewer.RdYlBu4',
-                    }
-                },
                 scales: {
                     xAxes: [{
+                        offset: true,  // Fixes clipping on start/end
                         type: 'time',
                         time: {
                             isoWeekday: true,  // mon - sun
-                            unit: 'day',
-                            round: true,
                             minUnit: 'day',
                         },
                         gridLines: {
@@ -105,17 +168,63 @@ sauce.ns('performance', ns => {
                             min: 0,
                             suggestedMax: 300,
                         },
-                    }, {
+                    }]
+                },
+                tooltips: {
+                    mode: 'index',
+                    enabled: false,
+                    custom: htmlTooltip,
+                    callbacks: {
+                        label: item => Math.round(item.value).toLocaleString(),
+                        footer: items => {
+                            const idx = items[0].index;
+                            const day = actsByDay[idx];
+                            return day.activities.map(x => `<a href="/activities/${x.id}">${x.name}</a>`).join('<br/>');
+                        }
+                    }
+                }
+            },
+            data: {
+                datasets: [{
+                    label: 'TSS',
+                    yAxisID: 'tss',
+                    backgroundColor: '#ff4444',
+                    data: actsByDay.map(d => ({
+                        x: (new Date(d.ts)).toDateString(),
+                        y: sauce.data.sum(d.activities.map(a => a.stats ? (a.stats.tss || a.stats.tTss) : 0)),
+                    })),
+                }]
+            }
+        });
+
+        const hoursCtx = document.querySelector('#hours').getContext('2d');
+        const hoursChart = new Chart(hoursCtx, {
+            type: 'bar',
+            plugins: [self.ChartRegressions],
+            options: {
+                scales: {
+                    xAxes: [{
+                        offset: true,  // Fixes clipping on start/end
+                        type: 'time',
+                        time: {
+                            isoWeekday: true,  // mon - sun
+                            minUnit: 'day',
+                        },
+                        gridLines: {
+                            display: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 14,
+                        }
+                    }],
+                    yAxes: [{
                         id: 'time',
                         type: 'linear',
                         position: 'right',
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Hours'
-                        },
                         ticks: {
                             min: 0,
                             suggestedMax: 5 * 3600,
+                            stepSize: 3600,
                             callback: v => sauce.locale.humanDuration(v)
                         },
                         gridLines: {
@@ -123,39 +232,21 @@ sauce.ns('performance', ns => {
                         }
                     }]
                 },
-                tooltips: {
-                    mode: 'index'
-                }
+                tooltips: {mode: 'index'}
             },
             data: {
                 datasets: [{
-                    label: 'TSS',
-                    yAxisID: 'tss',
-                    data: actsByDay.filter(d => d.activities && d.activities.length).map(d => ({
-                        x: new Date(d.ts),
-                        y: sauce.data.sum(d.activities.map(a => a.stats ? (a.stats.tss || a.stats.tTss) : 0)),
-                    })),
-                }, {
                     label: 'Time',
                     yAxisID: 'time',
-                    data: actsByDay.filter(d => d.activities && d.activities.length).map(d => ({
-                        x: new Date(d.ts),
+                    backgroundColor: '#33ffaa',
+                    data: actsByDay.map(d => ({
+                        x: (new Date(d.ts)).toDateString(),
                         y: sauce.data.sum(d.activities.map(a => a.stats ? a.stats.activeTime : 0))
                     })),
                 }]
             }
         });
-        const hoursCtx = document.querySelector('#hours').getContext('2d');
-        const hourChart = new Chart(hoursCtx, {
-            type: 'bar',
-            data: {
-                labels: ['one', 'two', 'three', 'four', 'five'],
-                datasets: [{
-                    label: 'Hours',
-                    data: [100, 20, 33, 44, 100]
-                }]
-            }
-        });
+
 
         const activityCtx = document.querySelector('#activity').getContext('2d');
         const activityChart = new Chart(activityCtx, {
