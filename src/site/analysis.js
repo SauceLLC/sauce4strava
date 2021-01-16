@@ -3284,6 +3284,7 @@ sauce.ns('analysis', ns => {
         ctx.athlete = pageView.activityAthlete();
         ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
         await sauce.proxy.connected;
+        await sauce.locale.humanInit();
         await Promise.all([
             getWeightInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
             getFTPInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
@@ -3342,7 +3343,7 @@ sauce.ns('analysis', ns => {
         const savedRanges = await sauce.storage.get('analysis_peak_ranges');
         ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
         for (const range of ctx.allPeriodRanges) {
-            range.label = await sauce.locale.humanDuration(range.value);
+            range.label = sauce.locale.humanDuration(range.value);
         }
         ctx.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
         const imperialDistanceFormatter = new Strava.I18n.DistanceFormatter(

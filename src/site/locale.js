@@ -85,7 +85,22 @@ sauce.ns('locale', ns => {
     }
 
 
-    async function humanDuration(elapsed, options) {
+    let _hdUnits;
+    async function humanInit() {
+        if (_hdUnits) {
+            return;
+        }
+        const units = ['year', 'week', 'day', 'hour', 'min', 'sec',
+                       'years', 'weeks', 'days', 'hours', 'mins', 'secs',
+                       'ago', 'now'];
+        _hdUnits = await getMessagesObject(units, 'time');
+    }
+
+
+    function humanDuration(elapsed, options) {
+        if (!_hdUnits) {
+            throw new TypeError('humanInit() must be called first');
+        }
         options = options || {};
         const min = 60;
         const hour = min * 60;
@@ -111,7 +126,7 @@ sauce.ns('locale', ns => {
                 if (elapsed >= 2 * period) {
                     key += 's';
                 }
-                const suffix = await getMessage(`time_${key}`);
+                const suffix = _hdUnits[key];
                 stack.push(`${Math.floor(elapsed / period)} ${suffix}`);
                 elapsed %= period;
             }
@@ -120,13 +135,16 @@ sauce.ns('locale', ns => {
     }
 
 
-    async function humanTimeAgo(date, options) {
+    function humanTimeAgo(date, options) {
+        if (!_hdUnits) {
+            throw new TypeError('humanInit() must be called first');
+        }
         const elapsed = (Date.now() - date) / 1000;
-        const duration = await humanDuration(elapsed, options);
+        const duration = humanDuration(elapsed, options);
         if (duration) {
-            return `${duration} ${await getMessage('time_ago')}`;
+            return `${duration} ${_hdUnits.ago}`;
         } else {
-            return getMessage('time_now');
+            return _hdUnits.now;
         }
     }
 
@@ -134,6 +152,7 @@ sauce.ns('locale', ns => {
         getMessage,
         getMessages,
         getMessagesObject,
+        humanInit,
         humanDuration,
         humanTimeAgo
     };

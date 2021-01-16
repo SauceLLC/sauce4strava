@@ -1,7 +1,11 @@
-/* global sauce, jQuery */
+/* global sauce, jQuery, Chart */
 
 sauce.ns('performance', ns => {
     'use strict';
+
+    Chart.plugins.unregister(self.ChartDataLabels);  // Disable data labels by default.
+
+    const DAY = 86400 * 1000;
 
     // XXX Move from here and analysis to the template file..
     const tplUrl = sauce.extUrl + 'templates';
@@ -25,35 +29,125 @@ sauce.ns('performance', ns => {
     }
 
 
+    function activitiesByDay(activities, start, end) {
+        // NOTE: Activities should be in chronological order
+        const days = [];
+        let i = 0;
+        for (let ts = end; ts > start; ts -= DAY) {
+            const day = {ts, activities: []};
+            days.push(day);
+            while (i < activities.length) {
+                const a = activities[i];
+                if (a.ts >= ts - DAY && a.ts < ts) {
+                    day.activities.push(a);
+                    i++;
+                } else {
+                    break;
+                }
+            }
+        }
+        return days;
+    }
+
+
     async function load() {
-        const tpl = await getTemplate('performance.html');
+        const {tpl, athletes} = await initing;
         const $replace = jQuery('#error404');
-        const athletes = await sauce.hist.getEnabledAthletes();
-        const start = Date.now() - 86400 * 1000 * 30;
-        $replace.html(await tpl({
-            athletes
-        }));
+        const now = Date.now();
+        const start = now - 86400 * 1000 * 30;
+        $replace.html(await tpl({athletes}));
         $replace.removeClass();  // removes all
         $replace.attr('id', 'sauce-performance');
-
-        const activities = await sauce.hist.getActivitiesForAthlete(athletes[1].id, {start});
-        activities.reverse();
-        console.warn(activities);
+        const activities = await sauce.hist.getActivitiesForAthlete(athletes[0].id, {start});
+        const actsByDay = activitiesByDay(activities, start, now);
+        actsByDay.reverse();
+        const predDays = 7;
+        for (let i = 1; i < predDays; i++) {
+            actsByDay.push({ts: now + (i * DAY)});
+        }
+        console.warn(actsByDay);
         const tssCtx = document.querySelector('#tss').getContext('2d');
         const tssChart = new Chart(tssCtx, {
-            type: 'line',
+            type: 'bar',
+            plugins: [
+                //self.ChartRegressions
+            ],
+            options: {
+                plugins: {
+                    colorschemes: {
+                        scheme: 'brewer.RdYlBu4',
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            isoWeekday: true,  // mon - sun
+                            unit: 'day',
+                            round: true,
+                            minUnit: 'day',
+                        },
+                        gridLines: {
+                            display: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 14,
+                        }
+                    }],
+                    yAxes: [{
+                        id: 'tss',
+                        type: 'linear',
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'TSS'
+                        },
+                        ticks: {
+                            min: 0,
+                            suggestedMax: 300,
+                        },
+                    }, {
+                        id: 'time',
+                        type: 'linear',
+                        position: 'right',
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Hours'
+                        },
+                        ticks: {
+                            min: 0,
+                            suggestedMax: 5 * 3600,
+                            callback: v => sauce.locale.humanDuration(v)
+                        },
+                        gridLines: {
+                            display: false
+                        }
+                    }]
+                },
+                tooltips: {
+                    mode: 'index'
+                }
+            },
             data: {
-                labels: activities.map(x => x.name || new Date(x.ts)),
                 datasets: [{
                     label: 'TSS',
-                    data: activities.map(x => Math.round(x.stats.tss || x.stats.tTss))
+                    yAxisID: 'tss',
+                    data: actsByDay.filter(d => d.activities && d.activities.length).map(d => ({
+                        x: new Date(d.ts),
+                        y: sauce.data.sum(d.activities.map(a => a.stats ? (a.stats.tss || a.stats.tTss) : 0)),
+                    })),
+                }, {
+                    label: 'Time',
+                    yAxisID: 'time',
+                    data: actsByDay.filter(d => d.activities && d.activities.length).map(d => ({
+                        x: new Date(d.ts),
+                        y: sauce.data.sum(d.activities.map(a => a.stats ? a.stats.activeTime : 0))
+                    })),
                 }]
             }
         });
-
         const hoursCtx = document.querySelector('#hours').getContext('2d');
         const hourChart = new Chart(hoursCtx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: ['one', 'two', 'three', 'four', 'five'],
                 datasets: [{
@@ -63,10 +157,37 @@ sauce.ns('performance', ns => {
             }
         });
 
+        const activityCtx = document.querySelector('#activity').getContext('2d');
+        const activityChart = new Chart(activityCtx, {
+            type: 'matrix',
+            data: {
+                labels: ['one', 'two', 'three', 'four', 'five'],
+                datasets: [{
+                    label: 'Activity',
+                    data: [100, 20, 33, 44, 100]
+                }]
+            }
+        });
     }
 
 
+    async function init() {
+        await sauce.proxy.connected;
+        const [, tpl, athletes] = await Promise.all([
+            sauce.locale.humanInit(),
+            getTemplate('performance.html'),
+            sauce.hist.getEnabledAthletes(),
+        ]);
+        return {
+            tpl,
+            athletes,
+        };
+    }
+
+    const initing = init();
+
     return {
+        init,
         load,
     };
 });

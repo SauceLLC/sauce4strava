@@ -45,6 +45,10 @@
             'common/lib.js',
             'site/sparkline.js',
             'site/chart.js',
+            'site/chartjs/plugin-datalabels.js',
+            'site/chartjs/plugin-colorschemes.js',
+            'site/chartjs/plugin-regression.js',
+            'site/chartjs/chart-matrix.js',
             'site/performance.js',
         ],
         callbacks: [

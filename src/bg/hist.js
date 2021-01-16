@@ -57,7 +57,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'activity-stats',
-        version: 1,
+        version: 2,
         depends: ['active-stream', 'running-watts-stream'],
         errorBackoff: 300 * 1000,
         data: activityStatsProcessor
@@ -177,15 +177,15 @@ sauce.ns('hist', async ns => {
                     if (!corrected) {
                         continue;
                     }
-                    const activeTime = sauce.data.activeTime(streams.time, streams.active);
+                    stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
                     stats.kj = corrected.kj();
-                    stats.power = stats.kj * 1000 / activeTime;
-                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
+                    stats.power = stats.kj * 1000 / stats.activeTime;
+                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
                     if (streams.watts || activity.get('basetype') === 'run') {
                         stats.np = corrected.np();
                         stats.xp = corrected.xp();
                     }
-                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, activeTime, ftp);
+                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
                     stats.intensity = (stats.np || stats.power) / ftp;
                 } catch(e) {
                     activity.setSyncError(manifest, e);
