@@ -444,7 +444,6 @@ sauce.ns('hist', async ns => {
                     debugger;
                     ts = (new Date(`${year}-${month}`)).getTime(); // Just an approximate value for sync.
                 }
-                let idMatch;
                 if (isGroup) {
                     for (const [, subEntry] of entry.matchAll(subEntryRegexp)) {
                         const athleteM = subEntry.match(/<a [^>]*?entry-athlete[^>]*? href=\\'\/(?:athletes|pros)\/([0-9]+)\\'/);
@@ -454,32 +453,28 @@ sauce.ns('hist', async ns => {
                             continue;
                         }
                         if (Number(athleteM[1]) !== athlete) {
-                            console.warn("Skipping activity from other athlete");
                             continue;
                         }
-                        idMatch = subEntry.match(/id=\\'Activity-([0-9]+)\\'/);
-                        break;
+                        const idMatch = subEntry.match(/id=\\'Activity-([0-9]+)\\'/);
+                        if (!idMatch) {
+                            console.error("Group activity parser failed to find activity for this athlete");
+                            debugger;
+                            continue;
+                        }
+                        // Although rare, sometimes a user will double record and show up in a group activity more than once..
+                        const id = Number(idMatch[1]);
+                        batch.push({id, ts, basetype, athlete});
                     }
+                } else {
+                    const idMatch = entry.match(/id=\\'Activity-([0-9]+)\\'/);
                     if (!idMatch) {
-                        console.error("Group activity parser failed to find activity for this athlete");
+                        console.error("Unable to get activity ID feed entry");
                         debugger;
                         continue;
                     }
-                } else {
-                    idMatch = entry.match(/id=\\'Activity-([0-9]+)\\'/);
+                    const id = Number(idMatch[1]);
+                    batch.push({id, ts, basetype, athlete});
                 }
-                if (!idMatch) {
-                    console.error("Unable to get activity ID feed entry");
-                    debugger;
-                    continue;
-                }
-                const id = Number(idMatch[1]);
-                batch.push({
-                    id,
-                    ts,
-                    basetype,
-                    athlete,
-                });
             }
             return batch;
         }
