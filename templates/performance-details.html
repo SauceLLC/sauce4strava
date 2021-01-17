@@ -1,0 +1,8 @@
+<% for (const a of activities) { %>
+    <a href="/activities/{{a.id}}">{{a.name || moment(a.ts).calendar()}}</a><br/>
+    <% if (a.name) { %>
+        {{moment(a.ts).calendar()}}<br/>
+    <% } %>
+    <pre>{{JSON.stringify(a.stats, null, 4)}}</pre>
+<% } %>
+

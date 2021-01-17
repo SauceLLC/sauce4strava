@@ -1,3 +1,5 @@
 src/ext/webext.js
+src/site/moment.js
+src/site/regression.js
 src/site/chart.js
 src/site/chartjs/

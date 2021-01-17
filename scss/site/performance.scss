@@ -14,15 +14,51 @@
     flex-wrap: wrap;
 
     > nav {
-        flex: 1 0 14rem;
+        flex: 1 0 15rem;
         background: color.shade(bg, 10%);
         padding: 1em;
     }
 
     > main {
-        flex: 10 1 auto;
-        min-width: 300px;
-        background: color.shade(bg, 0%);
+        // We can't use a basis with chart.js's responsive mode.
+        // Make the grow flex massive instead.
+        flex: 100000 1 0;
+        min-width: min(460px, 100%);
+        background: color.shade(bg, 2%);
         padding: 1em;
+        display: flex;
+        flex-direction: column;
+
+        section.charts {
+            padding: 1em;
+
+            header {
+                font-variant: small-caps;
+                font-size: 0.9em;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                > * {
+                    padding: 0 1em;
+                }
+            }
+
+            canvas {
+                flex: 1 1 auto;
+            }
+        }
+    }
+
+    > aside {
+        padding: 1em;
+        overflow: auto;
+        flex: 1 0 14rem;
+        color: color.shade(bg, 5%);
+        background-image: linear-gradient(to right,
+                                          #{color.shade(fg, 0%)},
+                                          #{color.shade(fg, -18%)} 1.5em,
+                                          #{color.shade(fg, 10%)});
     }
 }
