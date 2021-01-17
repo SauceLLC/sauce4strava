@@ -211,7 +211,6 @@
     "sync_control_panel_ftp_history": {"message": "FTP History"},
     "sync_control_panel_weight_history": {"message": "Weight History"},
     "sync_control_panel_title": {"message": "Activity Sync Control Panel"},
-    "sync_control_panel_status": {"message": "Status"},
     "sync_control_panel_resumes": {"message": "Resumes"},
     "sync_control_panel_activities": {"message": "activities"},
 
