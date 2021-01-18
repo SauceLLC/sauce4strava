@@ -3,6 +3,8 @@
 sauce.ns('hist', async ns => {
     'use strict';
 
+    const activityListVersion = 1;  // Increment to force full update of activities.
+
     const namespace = 'hist';
     const jobs = await sauce.getModule('/src/common/jscoop/jobs.js');
     const queues = await sauce.getModule('/src/common/jscoop/queues.js');
@@ -288,6 +290,7 @@ sauce.ns('hist', async ns => {
 
 
     async function updateSelfActivities(athlete, options={}) {
+        const forceUpdate = options.forceUpdate;
         const filteredKeys = [
             'activity_url',
             'activity_url_for_twitter',
@@ -304,7 +307,7 @@ sauce.ns('hist', async ns => {
             'static_map',
             'twitter_msg',
         ];
-        const knownIds = new Set(await actsStore.getForAthlete(athlete, {keys: true}));
+        const knownIds = new Set(forceUpdate ? [] : await actsStore.getForAthlete(athlete.pk, {keys: true}));
         for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
             const work = new jobs.UnorderedWorkQueue({maxPending: 25});
             for (let i = 0; page === 1 || page <= pageCount && i < concurrency; page++, i++) {
@@ -328,8 +331,8 @@ sauce.ns('hist', async ns => {
                 for (const x of data.models) {
                     if (!knownIds.has(x.id)) {
                         const record = Object.assign({
-                            athlete,
-                            ts: x.start_date_local_raw * 1000
+                            athlete: athlete.pk,
+                            ts: (new Date(x.start_time)).getTime()
                         }, x);
                         record.basetype = getBaseType(record);
                         for (const x of filteredKeys) {
@@ -348,8 +351,13 @@ sauce.ns('hist', async ns => {
             // NOTE: If the user deletes a large number of items we may end up not
             // syncing some activities.  A full resync will be required to recover.
             if (adding.length) {
-                await actsStore.putMany(adding);
-                console.info(`Found ${adding.length} new activities`);
+                if (forceUpdate) {
+                    console.info(`Updating ${adding.length} activities`);
+                    await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
+                } else {
+                    console.info(`Adding ${adding.length} new activities`);
+                    await actsStore.putMany(adding);
+                }
             } else if (knownIds.size >= total) {
                 break;
             }
@@ -358,7 +366,8 @@ sauce.ns('hist', async ns => {
 
 
     async function updatePeerActivities(athlete, options={}) {
-        const knownIds = new Set(await actsStore.getForAthlete(athlete, {keys: true}));
+        const forceUpdate = options.forceUpdate;
+        const knownIds = new Set(forceUpdate ? [] : await actsStore.getForAthlete(athlete.pk, {keys: true}));
 
         function *yearMonthRange(date) {
             for (let year = date.getUTCFullYear(), month = date.getUTCMonth() + 1;; year--, month=12) {
@@ -372,12 +381,15 @@ sauce.ns('hist', async ns => {
             // Welcome to hell.  It gets really ugly in here in an effort to avoid
             // any eval usage which is required to render this HTML into a DOM node.
             // So are doing horrible HTML parsing with regexps..
+            //
+            // Note this code is littered with debugger statements.  All of them are
+            // cases I'd like to personally inspect if they happen.
             const q = new URLSearchParams();
             q.set('interval_type', 'month');
             q.set('chart_type', 'miles');
             q.set('year_offset', '0');
             q.set('interval', '' + year +  month.toString().padStart(2, '0'));
-            const resp = await retryFetch(`/athletes/${athlete}/interval?${q}`);
+            const resp = await retryFetch(`/athletes/${athlete.pk}/interval?${q}`);
             const data = await resp.text();
             const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
             const batch = [];
@@ -411,6 +423,54 @@ sauce.ns('hist', async ns => {
             const subEntryRegexp = new RegExp(`(${subEntryExp}.*?)(?=${subEntryExp}|$)`, 'g');
             const activityRegexp = new RegExp(`^[^>]*?${attrSep}activity${attrSep}`);
             const groupActivityRegexp = new RegExp(`^[^>]*?${attrSep}group-activity${attrSep}`);
+            const scriptData = {};
+            function addEntry(id, ts, basetype) {
+                if (!id) {
+                    sauce.report.error(new Error('Invalid activity id for: ' + athlete.pk));
+                    debugger;
+                    return;
+                }
+                batch.push({
+                    id,
+                    ts,
+                    basetype,
+                    athlete: athlete.pk,
+                    name: scriptData[id] && scriptData[id].name,
+                });
+            }
+            for (const m of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
+                const scriptish = m[1];
+                const idMatch = scriptish.match(/entity_id = \\"(.+?)\\";/);
+                if (!idMatch) {
+                    continue;
+                }
+                const id = Number(idMatch[1]);
+                if (!id) {
+                    sauce.report.error(new Error('Unable to find activity id from script tag for: ' + athlete.pk));
+                    debugger;
+                    continue;
+                }
+                let escapedName = scriptish.match(/ title: \\"(.*?)\\",\\n/)[1];
+                if (escapedName == null) {
+                    sauce.report.error(new Error('Unable to get name from script tag for act: ' + id));
+                    debugger;
+                    continue;
+                }
+                // This is just terrible, but we can't use eval..  Strava does some very particular escaping
+                // that mostly has no effect but does break JSON.parse.  Sadly we MUST run JSON.parse to do
+                // unicode sequence unescape, ie. "\u1234"
+                escapedName = escapedName.replace(/\\'/g, "'");
+                escapedName = escapedName.replace(/\\\\"/g, '"');
+                escapedName = escapedName.replace(/\\\\(u[0-9]{4})/g, "\\$1");
+                let name;
+                try {
+                    name = JSON.parse('"' + escapedName + '"');
+                } catch(e) {
+                    sauce.report.error(new Error('Unable to use JSON.parse on name for: ' + id));
+                    name = escapedName;
+                }
+                scriptData[id] = {name};
+            }
             for (const [, entry] of raw.matchAll(feedEntryRegexp)) {
                 let isGroup;
                 if (!entry.match(activityRegexp)) {
@@ -429,7 +489,7 @@ sauce.ns('hist', async ns => {
                     }
                 }
                 if (!basetype) {
-                    console.error("Unhandled activity type for:", entry);
+                    sauce.report.error(new Error('Unhandled activity type for: ' + athlete.pk));
                     debugger;
                     basetype = 'workout'; // XXX later this is probably fine to assume.
                 }
@@ -440,40 +500,37 @@ sauce.ns('hist', async ns => {
                     ts = (new Date(isoDate)).getTime();
                 }
                 if (!ts) {
-                    console.error("Unable to get timestamp from feed entry");
+                    sauce.report.error(new Error('Unable to get timestamp for: ' + athlete.pk));
                     debugger;
-                    ts = (new Date(`${year}-${month}`)).getTime(); // Just an approximate value for sync.
+                    continue;
                 }
                 if (isGroup) {
                     for (const [, subEntry] of entry.matchAll(subEntryRegexp)) {
                         const athleteM = subEntry.match(/<a [^>]*?entry-athlete[^>]*? href=\\'\/(?:athletes|pros)\/([0-9]+)\\'/);
                         if (!athleteM) {
-                            console.error("Unable to get athlete ID from feed sub entry");
+                            sauce.report.error(new Error('Unable to get athlete ID from feed for: ' + athlete.pk));
                             debugger;
                             continue;
                         }
-                        if (Number(athleteM[1]) !== athlete) {
+                        if (Number(athleteM[1]) !== athlete.pk) {
                             continue;
                         }
                         const idMatch = subEntry.match(/id=\\'Activity-([0-9]+)\\'/);
                         if (!idMatch) {
-                            console.error("Group activity parser failed to find activity for this athlete");
+                            sauce.report.error(new Error('Group parser failed to find activity for: ' + athlete.pk));
                             debugger;
                             continue;
                         }
-                        // Although rare, sometimes a user will double record and show up in a group activity more than once..
-                        const id = Number(idMatch[1]);
-                        batch.push({id, ts, basetype, athlete});
+                        addEntry(Number(idMatch[1]), ts, basetype);
                     }
                 } else {
                     const idMatch = entry.match(/id=\\'Activity-([0-9]+)\\'/);
                     if (!idMatch) {
-                        console.error("Unable to get activity ID feed entry");
+                        sauce.report.error(new Error('Unable to get activity ID for: ' + athlete.pk));
                         debugger;
                         continue;
                     }
-                    const id = Number(idMatch[1]);
-                    batch.push({id, ts, basetype, athlete});
+                    addEntry(Number(idMatch[1]), ts, basetype);
                 }
             }
             return batch;
@@ -510,12 +567,17 @@ sauce.ns('hist', async ns => {
                     }
                 }
                 if (adding.length) {
-                    await actsStore.putMany(adding);
-                    console.info(`Found ${adding.length} new activities`);
+                    if (forceUpdate) {
+                        console.info(`Updating ${adding.length} activities`);
+                        await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
+                    } else {
+                        console.info(`Adding ${adding.length} new activities`);
+                        await actsStore.putMany(adding);
+                    }
                 } else if (empty >= minEmpty && empty >= Math.floor(concurrency)) {
                     const [year, month] = iter.next().value;
                     const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
-                    await actsStore.put({id: -athlete, sentinel: date.getTime()});
+                    await athlete.save({activitySentinel: date.getTime()});
                     break;
                 } else if (redundant >= minRedundant  && redundant >= Math.floor(concurrency)) {
                     // Entire work set was redundant.  Don't refetch any more.
@@ -526,13 +588,10 @@ sauce.ns('hist', async ns => {
 
         // Fetch latest activities (or all of them if this is the first time).
         await batchImport(new Date());
-        // Sentinel is stashed as a special record to indicate that we have scanned
-        // some distance into the past.  Without this we never know how far back
-        // we looked given there is no page count or total to work with.
-        const sentinel = await actsStore.get(-athlete);
+        const sentinel = await athlete.get('activitySentinel');
         if (!sentinel) {
             // We never finished a prior sync so find where we left off..
-            const last = await actsStore.firstForAthlete(athlete);
+            const last = await actsStore.oldestForAthlete(athlete.pk);
             await batchImport(new Date(last.ts));
         }
     }
@@ -765,14 +824,18 @@ sauce.ns('hist', async ns => {
             return this._cancelEvent.isSet();
         }
 
-        run() {
-            this._runPromise = this._run();
+        run(options) {
+            this._runPromise = this._run(options);
         }
 
-        async _run() {
+        async _run(options={}) {
             this.status = 'activities-update';
             const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
-            await updateFn(this.athlete.pk);
+            try {
+                await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
+            } finally {
+                await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
+            }
             this.counts = await activityCounts(this.athlete.pk);
             this.status = 'activities-sync';
             try {
@@ -971,15 +1034,8 @@ sauce.ns('hist', async ns => {
                                 if (wasInErrorState.has(a)) {
                                     this.counts.unprocessable--;
                                 }
-                            } else {
-                                // Finished with error.
-                                if (!a.hasAnySyncErrors('local')) {
-                                    // XXX remove once validated..
-                                    throw new Error("NOPE should for sure have errors if isSyncComplete is empty");
-                                }
-                                if (!wasInErrorState.has(a)) {
-                                    this.counts.unprocessable++;
-                                }
+                            } else if (!wasInErrorState.has(a)) {
+                                this.counts.unprocessable++;
                             }
                             batch.delete(a);
                         }
@@ -1059,13 +1115,27 @@ sauce.ns('hist', async ns => {
             await this._refreshLoop;
         }
 
+        async syncVersionHash() {
+            const manifests = [].concat(
+                sauce.hist.db.ActivityModel.getSyncManifests('local'),
+                sauce.hist.db.ActivityModel.getSyncManifests('streams'));
+            const records = [];
+            for (const x of manifests) {
+                records.push(`${x.processor}-${x.name}-v${x.version}`);
+            }
+            records.sort();
+            const text = new TextEncoder();
+            const buf = await crypto.subtle.digest('SHA-256', text.encode(JSON.stringify(records)));
+            return Array.from(new Uint8Array(buf)).map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+
         async refreshLoop() {
             let errorBackoff = 1000;
+            const syncHash = await this.syncVersionHash();
             while (!this._stopping) {
                 try {
-                    await this._refresh();
+                    await this._refresh(syncHash);
                 } catch(e) {
-                    console.error('SyncManager refresh error:', e);
                     sauce.report.error(e);
                     await sleep(errorBackoff *= 1.5);
                 }
@@ -1078,7 +1148,7 @@ sauce.ns('hist', async ns => {
                     let oldest = -1;
                     const now = Date.now();
                     for (const athlete of enabledAthletes) {
-                        if (this.isActiveSync(athlete) || this._isDeferred(athlete)) {
+                        if (this.isActiveSync(athlete)) {
                             continue;
                         }
                         const age = now - athlete.get('lastSync');
@@ -1095,16 +1165,20 @@ sauce.ns('hist', async ns => {
             }
         }
 
-        async _refresh() {
-            for (const athlete of await athletesStore.getEnabled({models: true})) {
-                if (this.isActiveSync(athlete)) {
+        async _refresh(syncHash) {
+            for (const a of await athletesStore.getEnabled({models: true})) {
+                if (this.isActiveSync(a)) {
                     continue;
                 }
-                const now = Date.now();
-                if ((now - athlete.get('lastSync') > this.refreshInterval && !this._isDeferred(athlete)) ||
-                    this._refreshRequests.has(athlete.pk)) {
-                    this._refreshRequests.delete(athlete.pk);
-                    this.runSyncJob(athlete);  // bg okay
+                const forceActivityUpdate = a.get('lastSyncActivityListVersion') !== activityListVersion;
+                const shouldRun =
+                    forceActivityUpdate ||
+                    a.get('lastSyncVersionHash') !== syncHash ||
+                    this._refreshRequests.has(a.pk) ||
+                    (Date.now() - a.get('lastSync') > this.refreshInterval && !this._isDeferred(a));
+                if (shouldRun) {
+                    this._refreshRequests.delete(a.pk);
+                    this.runSyncJob(a, {forceActivityUpdate, syncHash});  // bg okay
                 }
             }
         }
@@ -1118,7 +1192,7 @@ sauce.ns('hist', async ns => {
             return !!lastError && Date.now() - lastError < this.refreshErrorBackoff;
         }
 
-        async runSyncJob(athlete) {
+        async runSyncJob(athlete, options) {
             const start = Date.now();
             console.debug('Starting sync job for: ' + athlete);
             const athleteId = athlete.pk;
@@ -1127,11 +1201,12 @@ sauce.ns('hist', async ns => {
             syncJob.addEventListener('progress', ev => this.emitForAthlete(athlete, 'progress', ev.data));
             this.emitForAthlete(athlete, 'start');
             this.activeJobs.set(athleteId, syncJob);
-            syncJob.run();
+            syncJob.run(options);
             try {
                 await syncJob.wait();
+                athlete.set('lastSyncVersionHash', options.syncHash);
             } catch(e) {
-                console.error('Sync error occurred:', e);
+                sauce.report.error(e);
                 athlete.set('lastError', Date.now());
                 this.emitForAthlete(athlete, 'error', syncJob.status);
             } finally {
