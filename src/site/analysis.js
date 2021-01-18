@@ -2658,10 +2658,10 @@ sauce.ns('analysis', ns => {
                 }
             } else {
                 const zones = await getHRZones();
-                if (zones) {
+                const hrStream = await fetchStream('heartrate', start, end);
+                if (zones && hrStream) {
                     const ltHR = (zones.z4 + zones.z3) / 2;
                     const activeStream = await fetchStream('active', start, end);
-                    const hrStream = await fetchStream('heartrate', start, end);
                     const maxHR = sauce.perf.estimateMaxHR(zones);
                     const restingHR = ctx.ftp ? sauce.perf.estimateRestingHR(ctx.ftp) : 60;
                     tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ctx.gender);
