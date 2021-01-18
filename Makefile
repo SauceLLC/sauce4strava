@@ -55,6 +55,8 @@ packages:
 	$(TOOLPATH)/package gecko
 	$(TOOLPATH)/package chromium
 
+alpha-packages:
+	$(TOOLPATH)/package gecko_alpha
 
 ########################################################
 # Runtime-only targets
