@@ -845,11 +845,8 @@ sauce.ns('hist', async ns => {
         async _run(options={}) {
             this.status = 'activities-update';
             const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
-            try {
-                await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
-            } finally {
-                await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
-            }
+            await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
+            await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
             this.counts = await activityCounts(this.athlete.pk);
             this.status = 'activities-sync';
             try {
@@ -1185,11 +1182,12 @@ sauce.ns('hist', async ns => {
                     continue;
                 }
                 const forceActivityUpdate = a.get('lastSyncActivityListVersion') !== activityListVersion;
-                const shouldRun =
+                const shouldRun = !this._isDeferred(a) && (
                     forceActivityUpdate ||
                     a.get('lastSyncVersionHash') !== syncHash ||
                     this._refreshRequests.has(a.pk) ||
-                    (Date.now() - a.get('lastSync') > this.refreshInterval && !this._isDeferred(a));
+                    Date.now() - a.get('lastSync') > this.refreshInterval
+                );
                 if (shouldRun) {
                     this._refreshRequests.delete(a.pk);
                     this.runSyncJob(a, {forceActivityUpdate, syncHash});  // bg okay
