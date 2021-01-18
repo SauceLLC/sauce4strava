@@ -408,6 +408,11 @@ sauce.ns('hist', async ns => {
                 'icon-standuppaddling': 'workout',
                 'icon-yoga': 'workout',
                 'icon-snowshoe': 'workout',
+                'icon-kayaking': 'workout',
+                'icon-golf': 'workout',
+                'icon-weighttraining': 'workout',
+                'icon-rowing': 'workout',
+                'icon-elliptical': 'workout',
             };
             const attrSep = String.raw`(?: |\\"|\\')`;
             function tagWithAttrValue(tag, attrVal, matchVal) {
@@ -462,6 +467,7 @@ sauce.ns('hist', async ns => {
                 escapedName = escapedName.replace(/\\'/g, "'");
                 escapedName = escapedName.replace(/\\\\"/g, '"');
                 escapedName = escapedName.replace(/\\\\(u[0-9]{4})/g, "\\$1");
+                escapedName = escapedName.replace(/\\\$/g, "$");
                 let name;
                 try {
                     name = JSON.parse('"' + escapedName + '"');
@@ -595,7 +601,6 @@ sauce.ns('hist', async ns => {
             await batchImport(new Date(last.ts));
         }
     }
-
 
 
     class WorkerPoolExecutor {
