@@ -259,14 +259,14 @@ sauce.ns('hist.db', async ns => {
             return conjuction;
         }
 
-        async firstForAthlete(athlete) {
+        async oldestForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
             for await (const x of this.values(q, {index: 'athlete-ts'})) {
                 return x;
             }
         }
 
-        async lastForAthlete(athlete) {
+        async latestForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
             for await (const x of this.values(q, {index: 'athlete-ts', direction: 'prev'})) {
                 return x;
