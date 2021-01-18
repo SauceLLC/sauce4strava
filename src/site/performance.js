@@ -147,6 +147,7 @@ sauce.ns('performance', ns => {
             const ds = chart.getElementsAtEvent(ev);
             if (ds.length) {
                 const data = chart.actsByDay[ds[0]._index];
+                console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString());
                 const t = await getTemplate('performance-details.html');
                 $page.find('aside.details').html(await t({
                     moment,
