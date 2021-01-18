@@ -411,6 +411,8 @@ sauce.ns('hist', async ns => {
                 'icon-weighttraining': 'workout',
                 'icon-rowing': 'workout',
                 'icon-elliptical': 'workout',
+                'icon-rockclimbing': 'workout',
+                'icon-iceskate': 'workout',
             };
             const attrSep = String.raw`(?: |\\"|\\')`;
             function tagWithAttrValue(tag, attrVal, matchVal) {
@@ -1271,7 +1273,12 @@ sauce.ns('hist', async ns => {
         }
 
         async enableAthlete(id) {
-            await this.updateAthlete(id, {sync: DBTrue, lastSync: 0, lastError: 0});
+            await this.updateAthlete(id, {
+                sync: DBTrue,
+                lastSync: 0,
+                lastError: 0,
+                lastSyncActivityListVersion: null
+            });
             this._refreshEvent.set();
             this.emitForAthleteId(id, 'enable');
         }
