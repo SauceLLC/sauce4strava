@@ -651,7 +651,7 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
-        if (!tss) {
+        if (!tss && hrStream) {
             const zones = await getHRZones();
             if (zones) {
                 const ltHR = (zones.z4 + zones.z3) / 2;
