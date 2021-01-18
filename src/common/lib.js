@@ -1914,6 +1914,25 @@ sauce.ns('perf', function() {
     }
 
 
+    // See:
+    //  https://www.trainerroad.com/forum/t/tss-spreadsheets-with-atl-ctl-form/7613/10
+    //  http://www.timetriallingforum.co.uk/index.php?/topic/74961-calculating-ctl-and-atl/#comment-1045764
+    const chronicTrainingLoadConstant = 1 - Math.exp(-1 / 42);
+    const acuteTrainingLoadConstant = 1 - Math.exp(-1 / 7);
+    function _makeTrainingLoadCalc(c) {
+        return function(tssPerDayStream) {
+            // incominig stream should be indexed by day and zero padded.
+            let tl = 0;
+            for (const tss of tssPerDayStream) {
+                tl = (tl * (1 - c)) + (tss * c);
+            }
+        };
+    }
+
+    const calcCTL = _makeTrainingLoadCalc(chronicTrainingLoadConstant);
+    const calcATL = _makeTrainingLoadCalc(acuteTrainingLoadConstant);
+
+
     return {
         findPeaks,
         fetchSelfFTPs,
@@ -1924,5 +1943,7 @@ sauce.ns('perf', function() {
         estimateRestingHR,
         estimateMaxHR,
         bulkTSS,
+        calcCTL,
+        calcATL,
     };
 });
