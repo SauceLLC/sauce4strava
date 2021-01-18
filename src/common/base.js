@@ -159,6 +159,21 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    sauce.download = function(blob, name) {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = blob.name || name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        try {
+            link.click();
+        } finally {
+            link.remove();
+            URL.revokeObjectURL(link.href);
+        }
+    };
+
+
     sauce.propDefined = function(propertyAccessor, callback, options) {
         if (typeof callback === 'object' && options === undefined) {
             options = callback;

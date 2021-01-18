@@ -7,27 +7,6 @@ sauce.ns('performance', ns => {
 
     const DAY = 86400 * 1000;
 
-    // XXX Move from here and analysis to the template file..
-    const tplUrl = sauce.extUrl + 'templates';
-    const _tplCache = new Map();
-    const _tplFetching = new Map();
-    async function getTemplate(filename, localeKey) {
-        const cacheKey = '' + filename + localeKey;
-        if (!_tplCache.has(cacheKey)) {
-            if (!_tplFetching.has(cacheKey)) {
-                _tplFetching.set(cacheKey, (async () => {
-                    const resp = await fetch(`${tplUrl}/${filename}`);
-                    const tplText = await resp.text();
-                    localeKey = localeKey || 'analysis';
-                    _tplCache.set(cacheKey, sauce.template.compile(tplText, {localePrefix: `${localeKey}_`}));
-                    _tplFetching.delete(cacheKey);
-                })());
-            }
-            await _tplFetching.get(cacheKey);
-        }
-        return _tplCache.get(cacheKey);
-    }
-
 
     function activitiesByDay(activities, start, end) {
         // NOTE: Activities should be in chronological order
@@ -148,7 +127,7 @@ sauce.ns('performance', ns => {
             if (ds.length) {
                 const data = chart.actsByDay[ds[0]._index];
                 console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString());
-                const t = await getTemplate('performance-details.html');
+                const t = await sauce.tpl.getTemplate('performance-details.html');
                 $page.find('aside.details').html(await t({
                     moment,
                     activities: data.activities

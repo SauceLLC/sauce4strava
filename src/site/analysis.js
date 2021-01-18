@@ -4,17 +4,17 @@ sauce.ns('analysis', ns => {
     'use strict';
 
     let _resolvePrepared;
-    const ctx = {
-        ready: false,
-        prepared: new Promise(resolve => {
-            _resolvePrepared = () => {
-                ctx.ready = true;
-                resolve();
-            };
-        })
-    };
+    ns.ready = false;
+    ns.prepared = new Promise(resolve => {
+        _resolvePrepared = () => {
+            ns.ready = true;
+            resolve();
+        };
+    });
 
     const tplUrl = sauce.extUrl + 'templates';
+    const L = sauce.locale;
+    const H = sauce.locale.human;
 
     const minVAMTime = 60;
     const minHRTime = 60;
@@ -298,7 +298,7 @@ sauce.ns('analysis', ns => {
         if (options.autoDestroy) {
             $dialog.on('dialogclose', ev => void $dialog.dialog('destroy'));
         }
-        if (options.closeOnMobileBack && ctx.isMobile) {
+        if (options.closeOnMobileBack && ns.isMobile) {
             const dialogId = Math.random();
             history.pushState({dialogId}, null);
             const onPop = ev => $dialog.dialog('close');
@@ -357,7 +357,7 @@ sauce.ns('analysis', ns => {
     function attachEditableFTP($parent) {
         const $field = $parent.find('.sauce-editable-field.ftp');
         async function save(ftp_override) {
-            await updateAthleteInfo(ctx.athlete, {ftp_override});
+            await updateAthleteInfo(ns.athlete, {ftp_override});
         }
         editableField($field, {
             validator: rawValue => {
@@ -398,8 +398,8 @@ sauce.ns('analysis', ns => {
     function attachEditableWeight($parent) {
         const $field = $parent.find('.sauce-editable-field.weight');
         async function save(v) {
-            const weight_override = weightUnconvert(v);
-            await updateAthleteInfo(ctx.athlete, {weight_override});
+            const weight_override = L.weightUnconvert(v);
+            await updateAthleteInfo(ns.athlete, {weight_override});
         }
         editableField($field, {
             validator: rawValue => {
@@ -461,7 +461,7 @@ sauce.ns('analysis', ns => {
         constructor({menu, renderAttrs}) {
             this.$el = jQuery(`<ul id="sauce-infopanel" class="pagenav"/>`);
             this.menu = menu;
-            this.sourceKey = `${ctx.activityType}_source`;
+            this.sourceKey = `${ns.activityType}_source`;
             this.renderAttrs = renderAttrs;
             this.$el.on('click', '.group tr[data-range-value]', async ev => {
                 ev.stopPropagation();  // prevent click-away detection from closing dialog.
@@ -497,12 +497,12 @@ sauce.ns('analysis', ns => {
             this.$el.html(await template(Object.assign({
                 menuInfo: await Promise.all(this.menu.map(async x => ({
                     source: x,
-                    icon: await sauce.images.asText(ctx.peakIcons[x]),
+                    icon: await sauce.images.asText(ns.peakIcons[x]),
                     tooltip: x + '_tooltip'
                 }))),
                 source,
                 sourceTooltip: source + '_tooltip',
-                sourceIcon: await sauce.images.asText(ctx.peakIcons[source]),
+                sourceIcon: await sauce.images.asText(ns.peakIcons[source]),
             }, this.renderAttrs.call(this, source))));
             navHeightAdjustments();
         }
@@ -547,12 +547,12 @@ sauce.ns('analysis', ns => {
 
 
     function filterPeriodRanges(elapsed, ...filterArgs) {
-        return ctx.allPeriodRanges.filter(x => x.value <= elapsed && (!x.filter || x.filter.apply(x, filterArgs)));
+        return ns.allPeriodRanges.filter(x => x.value <= elapsed && (!x.filter || x.filter.apply(x, filterArgs)));
     }
 
 
     function filterDistRanges(distance, ...filterArgs) {
-        return ctx.allDistRanges.filter(x => x.value <= distance && (!x.filter || x.filter.apply(x, filterArgs)));
+        return ns.allDistRanges.filter(x => x.value <= distance && (!x.filter || x.filter.apply(x, filterArgs)));
     }
 
 
@@ -615,10 +615,10 @@ sauce.ns('analysis', ns => {
     // XXX Transition to using our Athlete record for this.
     const _hrZonesCache = new sauce.cache.TTLCache('hr-zones', 1 * 86400 * 1000);
     async function getHRZones() {
-        const zonesEntry = await _hrZonesCache.getEntry(ctx.athlete.id);
+        const zonesEntry = await _hrZonesCache.getEntry(ns.athlete.id);
         if (!zonesEntry) {
             const zones = await sauce.perf.fetchHRZones(pageView.activity().id);
-            await _hrZonesCache.set(ctx.athlete.id, zones);
+            await _hrZonesCache.set(ns.athlete.id, zones);
             return zones;
         }
         return zonesEntry.value;
@@ -645,9 +645,9 @@ sauce.ns('analysis', ns => {
             if (corrected) {
                 power = corrected.kj() * 1000 / activeTime;
                 np = supportsNP() ? corrected.np() : null;
-                if (ctx.ftp) {
-                    tss = sauce.power.calcTSS(np || power, activeTime, ctx.ftp);
-                    intensity = (np || power) / ctx.ftp;
+                if (ns.ftp) {
+                    tss = sauce.power.calcTSS(np || power, activeTime, ns.ftp);
+                    intensity = (np || power) / ns.ftp;
                 }
             }
         }
@@ -656,18 +656,18 @@ sauce.ns('analysis', ns => {
             if (zones) {
                 const ltHR = (zones.z4 + zones.z3) / 2;
                 const maxHR = sauce.perf.estimateMaxHR(zones);
-                const restingHR = ctx.ftp ? sauce.perf.estimateRestingHR(ctx.ftp) : 60;
-                tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ctx.gender);
+                const restingHR = ns.ftp ? sauce.perf.estimateRestingHR(ns.ftp) : 60;
+                tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ns.gender);
             }
         }
         assignTrailforksToSegments().catch(sauce.report.error);
         renderTertiaryStats({
-            weight: humanNumber(ctx.weightFormatter.convert(ctx.weight), 2),
-            weightUnit: ctx.weightFormatter.shortUnitKey(),
-            weightNorm: humanWeight(ctx.weight),
-            weightOrigin: ctx.weightOrigin,
-            ftp: ctx.ftp,
-            ftpOrigin: ctx.ftpOrigin,
+            weight: H.number(L.weightFormatter.convert(ns.weight), 2),
+            weightUnit: L.weightFormatter.shortUnitKey(),
+            weightNorm: H.weight(ns.weight),
+            weightOrigin: ns.weightOrigin,
+            ftp: ns.ftp,
+            ftpOrigin: ns.ftpOrigin,
             intensity,
             tss,
             tTss,
@@ -692,7 +692,7 @@ sauce.ns('analysis', ns => {
                 if (gradeDistStream) {
                     menu.unshift('peak_gap');  // At top because its a run
                 }
-                if (ctx.activityType === 'run' || ctx.activityType === 'swim') {
+                if (ns.activityType === 'run' || ns.activityType === 'swim') {
                     menu.unshift('peak_pace');  // Place at top (above gap too)
                 } else {
                     menu.push('peak_pace');
@@ -731,7 +731,7 @@ sauce.ns('analysis', ns => {
                         for (const range of periodRanges.filter(x => !attrs.isWattEstimate || x.value >= minWattEstTime)) {
                             const roll = sauce.power.peakPower(range.value, timeStream, dataStream);
                             if (roll) {
-                                const value = prefix + humanNumber(roll.avg());
+                                const value = prefix + H.number(roll.avg());
                                 rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
                             }
                         }
@@ -741,7 +741,7 @@ sauce.ns('analysis', ns => {
                             peak_pace: distStream,
                             peak_gap: gradeDistStream
                         }[source];
-                        const unit = ctx.paceFormatter.shortUnitKey();
+                        const unit = ns.paceFormatter.shortUnitKey();
                         for (const range of distRanges) {
                             const roll = sauce.pace.bestPace(range.value, timeStream, dataStream);
                             if (roll) {
@@ -761,27 +761,27 @@ sauce.ns('analysis', ns => {
                             // only examines the trimmed date set.
                             const power = roll && roll[calcs.rollMethod].call(roll, {external: true});
                             if (power) {
-                                const value = humanNumber(power);
+                                const value = H.number(power);
                                 rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
                             }
                         }
                     } else if (source === 'peak_hr') {
-                        const unit = ctx.hrFormatter.shortUnitKey();
+                        const unit = L.hrFormatter.shortUnitKey();
                         for (const range of periodRanges.filter(x => x.value >= minHRTime)) {
                             const roll = sauce.data.peakAverage(range.value, timeStream, hrStream,
                                 {active: true});
                             if (roll) {
-                                const value = humanNumber(roll.avg({active: true}));
+                                const value = H.number(roll.avg({active: true}));
                                 rows.push(_rangeRollToRow({range, roll, value, unit}));
                             }
                         }
                     } else if (source === 'peak_cadence') {
-                        const unit = ctx.cadenceFormatter.shortUnitKey();
+                        const unit = ns.cadenceFormatter.shortUnitKey();
                         for (const range of periodRanges.filter(x => x.value >= minHRTime)) {
                             const roll = sauce.data.peakAverage(range.value, timeStream, cadenceStream,
                                 {active: true, ignoreZeros: true});
                             if (roll) {
-                                const value = ctx.cadenceFormatter.format(roll.avg({active: true}));
+                                const value = ns.cadenceFormatter.format(roll.avg({active: true}));
                                 rows.push(_rangeRollToRow({range, roll, value, unit}));
                             }
                         }
@@ -793,7 +793,7 @@ sauce.ns('analysis', ns => {
                                 const start = getStreamTimeIndex(roll.firstTime());
                                 const end = getStreamTimeIndex(roll.lastTime());
                                 const gain = sauce.geo.altitudeChanges(altStream.slice(start, end + 1)).gain;
-                                const value = humanNumber((gain / roll.elapsed()) * 3600);
+                                const value = H.number((gain / roll.elapsed()) * 3600);
                                 rows.push(_rangeRollToRow({range, roll, value, unit: 'Vm/h'}));
                             }
                         }
@@ -876,8 +876,8 @@ sauce.ns('analysis', ns => {
                 <span class="status"></span>
             </div>
         `);
-        const id = ctx.athlete.id;
-        const athlete = await sauce.hist.getAthlete(id);
+        const id = ns.athlete.id;
+        let athlete = await sauce.hist.getAthlete(id);
         const enabled = !!(athlete && athlete.sync);
         if (enabled) {
             $sync.addClass('enabled');
@@ -886,7 +886,17 @@ sauce.ns('analysis', ns => {
             }
         }
         $buttons.prepend($sync);
-        $sync.on('click', () => activitySyncDialog($sync));
+        $sync.on('click', async () => {
+            if (!ns.syncController) {
+                setupActivitySyncController($sync);
+            }
+            if (!athlete) {
+                athlete = await buildAthleteRecord();
+                await sauce.hist.addAthlete(athlete);
+            }
+            const mod = await sauce.getModule('/src/site/sync-panel.mjs');
+            await mod.activitySyncDialog(athlete, ns.syncController);
+        });
     }
 
 
@@ -902,7 +912,7 @@ sauce.ns('analysis', ns => {
 
 
     function setupActivitySyncController($sync) {
-        ns.syncController = new sauce.hist.SyncController(ctx.athlete.id);
+        ns.syncController = new sauce.hist.SyncController(ns.athlete.id);
         ns.syncController.addEventListener('start', ev => {
             $sync.addClass('sync-active');
             setSyncStatus('Starting sync...');
@@ -932,296 +942,9 @@ sauce.ns('analysis', ns => {
     }
 
 
-    // XXX Probably temporary while we are not monitoring the places where FTP, Weight and HRZones can
-    // be altered.  Later we should always keep the athlete record in sync so it's continually trusted.
-    // Also when any of the relevant params change we'll need to invalidate sync manifests affected by it.
-    async function buildAthleteRecord() {
-        let ftpHistory;
-        if (ctx.athlete.id === pageView.currentAthlete().id) {
-            ftpHistory = await sauce.hist.getSelfFTPHistory();
-        } else {
-            ftpHistory = ctx.ftp ? [{ts: 0, value: ctx.ftp}] : undefined;
-        }
-        return {
-            id: ctx.athlete.id,
-            gender: ctx.athlete.get('gender') === 'F' ? 'female' : 'male',
-            name: ctx.athlete.get('display_name'),
-            ftpHistory,
-            weightHistory: ctx.weight ? [{ts: 0, value: ctx.weight}] : undefined,
-            hrZones: await getHRZones(),
-        };
-    }
-
-
-    async function activitySyncDialog($sync) {
-        let athlete = await sauce.hist.getAthlete(ctx.athlete.id);
-        if (!athlete) {
-            athlete = await sauce.hist.addAthlete(await buildAthleteRecord());
-        }
-        const enabled = !!(athlete && athlete.sync);
-        const template = await getTemplate('sync-control-panel.html', 'sync_control_panel');
-        const $modal = modal({
-            title: `Activity Sync Control Panel - ${ctx.athlete.get('display_name')}`,
-            icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
-            dialogClass: 'sauce-sync-athlete-dialog',
-            body: await template({
-                enabled,
-                athlete,
-                humanWeight,
-                weightUnit: ctx.weightFormatter.shortUnitKey(),
-            }),
-            flex: true,
-            width: '40em',
-            autoDestroy: true,
-            closeOnMobileBack: true,
-            extraButtons: [{
-                text: 'Cancel Sync',
-                class: 'btn-primary sync-cancel',
-                click: ev => {
-                    $modal.removeClass('sync-active');
-                    ns.syncController.cancel();
-                }
-            }, {
-                text: 'Recompute Activity Metrics',
-                class: 'btn-primary sync-recompute',
-                click: async ev => {
-                    $modal.addClass('sync-active');
-                    $modal.find('.entry.synced progress').removeAttr('value');
-                    $modal.find('.entry.synced .text').empty();
-                    await sauce.hist.invalidateSyncState(athlete.id, 'local');
-                }
-            }, {
-                text: 'Sync Activity Data',
-                class: 'btn-primary sync-start',
-                click: ev => {
-                    $modal.addClass('sync-active');
-                    ns.syncController.start();
-                }
-            }, {
-                text: 'Import Data',
-                click: ev => {
-                    const btn = ev.target;
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '*.sbin';
-                    input.multiple = true;
-                    input.style.display = 'none';
-                    input.addEventListener('change', async ev => {
-                        btn.classList.add('sauce-loading', 'disabled');
-                        try {
-                            const dataEx = new sauce.hist.DataExchange();
-                            for (const f of input.files) {
-                                const ab = await sauce.blobToArrayBuffer(f);
-                                const batch = sauce.decodeBundle(ab);
-                                const stride = 100;  // Stay within String limits.
-                                const importing = [];
-                                for (let i = 0; i < batch.length; i += stride) {
-                                    importing.push(dataEx.import(batch.slice(i, i + stride)));
-                                }
-                                await Promise.all(importing);
-                            }
-                            await dataEx.flush();
-                        } finally {
-                            btn.classList.remove('sauce-loading', 'disabled');
-                        }
-                    });
-                    document.body.appendChild(input);
-                    input.click();
-                    input.remove();
-                }
-            }, {
-                text: 'Export Data',
-                click: async ev => {
-                    ev.target.classList.add('sauce-loading', 'disabled');
-                    const batch = [];
-                    let page = 0;
-                    const dl = () => {
-                        download(new Blob([sauce.encodeBundle(batch)]),
-                            `${athlete.name}-${page++}.sbin`);
-                        batch.length = 0;
-                    };
-                    try {
-                        const dataEx = new sauce.hist.DataExchange(athlete.id);
-                        dataEx.addEventListener('data', async ev => {
-                            for (const x of ev.data) {
-                                batch.push(x);
-                                if (batch.length > 20000) {
-                                    dl();
-                                }
-                            }
-                        });
-                        await dataEx.export();
-                        dl();
-                    } finally {
-                        ev.target.classList.remove('sauce-loading', 'disabled');
-                    }
-                }
-            }]
-        });
-        async function updateSyncCounts(counts) {
-            if (!counts) {
-                counts = await sauce.hist.activityCounts(athlete.id);
-            }
-            const synced = counts.processed;
-            const total = counts.total - counts.unavailable - counts.unprocessable;
-            $modal.find('.entry.synced').attr('title',
-                `Synchronized ${synced.toLocaleString()} of ${total.toLocaleString()} activities`);
-            $modal.find('.entry.synced progress').attr('value', synced / total);
-            const pct = Math.round(synced / total * 100);
-            $modal.find('.entry.synced .text').html(`${pct}% <small>(${synced.toLocaleString()} activities)</small>`);
-        }
-        async function updateSyncTimes() {
-            const lastSync = await ns.syncController.lastSync();
-            const nextSync = await ns.syncController.nextSync();
-            $modal.find('.entry.last-sync value').text(lastSync ? (new Date(lastSync).toLocaleString()): '');
-            $modal.find('.entry.next-sync value').text(nextSync ? (new Date(nextSync).toLocaleString()): '');
-        }
-        let rateLimiterInterval;
-        function setActive() {
-            $modal.addClass('sync-active');
-            $modal.find('.entry.status value').text('Running...');
-            $modal.find('.entry.last-sync value').empty();
-            $modal.find('.entry.next-sync value').empty();
-            $modal.find('.entry.synced progress').removeAttr('value');
-            $modal.find('.entry.synced .text').empty();
-            clearInterval(rateLimiterInterval);
-            rateLimiterInterval = setInterval(async () => {
-                const resumes = await ns.syncController.rateLimiterResumes();
-                if (resumes && resumes - Date.now() > 10000) {
-                    const resumesLocale = (new Date(resumes)).toLocaleString();
-                    $modal.find('.entry.status value').text(`Rate limited until: ${resumesLocale}`);
-                }
-            }, 5000);
-        }
-        const $en = $modal.find('input[name="enable"]');
-        const listeners = {
-            start: ev => void setActive(),
-            stop: async ev => {
-                clearInterval(rateLimiterInterval);
-                $modal.removeClass('sync-active');
-                $modal.find('.entry.status value').text('Completed');
-                await Promise.all([updateSyncCounts(), updateSyncTimes()]);
-            },
-            error: async ev => {
-                clearInterval(rateLimiterInterval);
-                $modal.removeClass('sync-active');
-                $modal.find('.entry.status value').text('Error');
-                await updateSyncTimes();
-            },
-            progress: ev => void updateSyncCounts(ev.data.counts),
-            enable: ev => void ($en[0].checked = true),
-            disable: ev => void ($en[0].checked = false),
-        };
-        if (ns.syncController) {
-            for (const [event, cb] of Object.entries(listeners)) {
-                ns.syncController.addEventListener(event, cb);
-            }
-        }
-        if (enabled) {
-            await Promise.all([updateSyncCounts(), updateSyncTimes()]);
-            if (await ns.syncController.isActiveSync()) {
-                setActive();
-            } else {
-                $modal.find('.entry.status value').text('Idle');
-            }
-        } else {
-            $modal.addClass('sync-disabled');
-        }
-        $en.on('input', async ev => {
-            const en = ev.target.checked;
-            if (en) {
-                if (!ns.syncController) {
-                    setupActivitySyncController($sync);
-                    for (const [event, cb] of Object.entries(listeners)) {
-                        ns.syncController.addEventListener(event, cb);
-                    }
-                }
-                await Promise.all([updateSyncCounts(), updateSyncTimes()]);
-                await sauce.hist.enableAthlete(athlete.id);
-            } else if (ns.syncController) {
-                await sauce.hist.disableAthlete(athlete.id);
-            }
-            $modal.toggleClass('sync-disabled', !en);
-        });
-        $modal.on('dialogclose', () => {
-            if (ns.syncController) {
-                for (const [event, cb] of Object.entries(listeners)) {
-                    ns.syncController.removeEventListener(event, cb);
-                }
-            }
-        });
-    }
-    
-
-    function humanWeight(kg) {
-        return humanNumber(ctx.weightFormatter.convert(kg), 1);
-    }
-
-
-    function humanTime(seconds) {
-        /* Convert seconds to a human string */
-        return ctx.timeFormatter.display(seconds);
-    }
-
-
-    function humanDistance(meters, precision) {
-        return ctx.distanceFormatter.format(meters, precision || 2);
-    }
-
-
-    function humanPace(raw, options) {
-        options = options || {};
-        const mps = options.velocity ? raw : 1 / raw;
-        const value = ctx.paceFormatter.key === 'distance_per_time' ? mps * 3600 : mps;
-        const minPace = 0.1;  // About 4.5 hours / mile
-        if (options.suffix) {
-            if (options.html) {
-                if (value < minPace) {
-                    return '<abbr class="unit short" title="Stopped">-</abbr>';
-                }
-                return ctx.paceFormatter.abbreviated(value);
-            } else {
-                if (value < minPace) {
-                    return '-';
-                }
-                return ctx.paceFormatter.formatShort(value);
-            }
-        } else {
-            if (value < minPace) {
-                return '-';
-            }
-            return ctx.paceFormatter.format(value);
-        }
-    }
-
-
-    function humanNumber(value, precision) {
-        return sauce.template.helpers.formatNumber(value, precision == null ? 0 : precision);
-    }
-
-
-    function humanElevation(meters, options) {
-        options = options || {};
-        if (options.suffix) {
-            if (options.longSuffix) {
-                return ctx.elevationFormatter.formatLong(meters);
-            } else {
-                return ctx.elevationFormatter.formatShort(meters);
-            }
-        } else {
-            return ctx.elevationFormatter.format(meters);
-        }
-    }
-
-
-    function humanStride(meters) {
-        const metric = ctx.weightFormatter.unitSystem === 'metric';
-        if (metric) {
-            return humanNumber(meters, 2);
-        } else {
-            const feet = meters / metersPerMile * 5280;
-            return humanNumber(feet, 1);
-        }
+    function humanPace(raw, options={}) {
+        return H.pace(raw,
+            Object.assign({type: options.paceType}, options));
     }
 
 
@@ -1266,7 +989,7 @@ sauce.ns('analysis', ns => {
         }
         const $dialog = dialog({
             title: `${options.heading}: ${options.textLabel}`,
-            icon: await sauce.images.asText(ctx.peakIcons[options.source]),
+            icon: await sauce.images.asText(ns.peakIcons[options.source]),
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             flex: true,
@@ -1313,7 +1036,7 @@ sauce.ns('analysis', ns => {
 
     async function fetchGradeDistStream(options) {
         options = options || {};
-        if (ctx.activityType !== 'run') {
+        if (ns.activityType !== 'run') {
             return;
         }
         if (options.startTime != null && options.endTime != null) {
@@ -1426,24 +1149,24 @@ sauce.ns('analysis', ns => {
         const startIdx = getStreamTimeIndex(wallStartTime);
         const endIdx = getStreamTimeIndex(wallEndTime);
         let gap, gradeDistStream;
-        if (ctx.activityType === 'run') {
+        if (ns.activityType === 'run') {
             gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
             gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
         }
-        const heading = await sauce.locale.getMessage(`analysis_${source}`);
+        const heading = await L.getMessage(`analysis_${source}`);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
         const cadence = cadenceStream && sauce.data.avg(cadenceStream); // XXX ignore zeros and only active time
         let stride;
         if (cadence &&
-            (ctx.cadenceFormatter.key === 'step_cadence' ||
-             ctx.cadenceFormatter.key === 'swim_cadence')) {
+            (ns.cadenceFormatter.key === 'step_cadence' ||
+             ns.cadenceFormatter.key === 'swim_cadence')) {
             const activeTime = getActiveTime(startIdx, endIdx);
             stride = distance / activeTime / (cadence * 2 / 60);
         }
         const body = await template({
-            startsAt: humanTime(wallStartTime),
-            elapsed: humanTime(elapsedTime),
+            startsAt: H.time(wallStartTime),
+            elapsed: H.time(elapsedTime),
             power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
                 max: sauce.data.max(correctedPower.values()),
                 np: supportsNP() ? correctedPower.np() : null,
@@ -1455,21 +1178,21 @@ sauce.ns('analysis', ns => {
                 max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
                 gap: gap && humanPace(gap, {velocity: true}),
             },
-            isSpeed: ctx.paceMode === 'speed',
+            isSpeed: ns.paceMode === 'speed',
             hr: hrInfo(hrStream),
-            hrUnit: ctx.hrFormatter.shortUnitKey(),
-            cadence: cadenceStream && ctx.cadenceFormatter.format(cadence),
-            cadenceUnit: ctx.cadenceFormatter.shortUnitKey(),
-            distance: distance && humanDistance(distance),
-            distanceUnit: ctx.distanceFormatter.shortUnitKey(),
-            stride: stride && humanStride(stride),
-            strideUnit: ctx.elevationFormatter.shortUnitKey(),  // for meters/feet
+            hrUnit: L.hrFormatter.shortUnitKey(),
+            cadence: cadenceStream && ns.cadenceFormatter.format(cadence),
+            cadenceUnit: ns.cadenceFormatter.shortUnitKey(),
+            distance: distance && H.distance(distance),
+            distanceUnit: L.distanceFormatter.shortUnitKey(),
+            stride: stride && H.stride(stride),
+            strideUnit: L.elevationFormatter.shortUnitKey(),  // for meters/feet
             elevation: elevationData(altStream, elapsedTime, distance),
-            elevationUnit: ctx.elevationFormatter.shortUnitKey(),
-            elevationUnitLong: ctx.elevationFormatter.longUnitKey(),
-            temp: tempStream && ctx.tempFormatter.format(sauce.data.avg(tempStream)), // XXX check gap handling
-            tempUnit: ctx.tempFormatter.shortUnitKey(),
-            paceUnit: ctx.paceFormatter.shortUnitKey(),
+            elevationUnit: L.elevationFormatter.shortUnitKey(),
+            elevationUnitLong: L.elevationFormatter.longUnitKey(),
+            temp: tempStream && L.tempFormatter.format(sauce.data.avg(tempStream)), // XXX check gap handling
+            tempUnit: L.tempFormatter.shortUnitKey(),
+            paceUnit: ns.paceFormatter.shortUnitKey(),
             source,
             isDistanceRange,
             overlappingSegments: getOverlappingSegments(startIdx, endIdx)
@@ -1481,20 +1204,20 @@ sauce.ns('analysis', ns => {
             const specs = [];
             for (const x of _activeGraphs) {
                 if (x === 'power') {
-                    const label = await sauce.locale.getMessage('analysis_power');
+                    const label = await L.getMessage('analysis_power');
                     specs.push({
                         data: correctedPower.values(),
-                        formatter: x => `${label}: ${humanNumber(x)}<abbr class="unit short">w</abbr>`,
+                        formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">w</abbr>`,
                         colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
                             {hStart: 360, hEnd: 280, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
                     });
                 } else if (x === 'sp') {
                     const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
                         {stream: 'watts_sealevel'});
-                    const label = await sauce.locale.getMessage('analysis_sea_power');
+                    const label = await L.getMessage('analysis_sea_power');
                     specs.push({
                         data: correctedSP.values(),
-                        formatter: x => `${label}: ${humanNumber(x)}<abbr class="unit short">w (SP)</abbr>`,
+                        formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">w (SP)</abbr>`,
                         colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
                             {hStart: 208, hEnd: 256, sStart: 0, sEnd: 100, lStart: 80, lEnd: 40})
                     });
@@ -1504,9 +1227,9 @@ sauce.ns('analysis', ns => {
                         run: [0.5, 2, 5, 10],
                         swim: [0.5, 0.85, 1.1, 1.75],
                         other: [0.5, 10, 15, 30],
-                    }[ctx.activityType];
-                    const labelKey = ctx.paceMode === 'speed' ? 'speed' : 'pace';
-                    const label = await sauce.locale.getMessage(`analysis_${labelKey}`);
+                    }[ns.activityType];
+                    const labelKey = ns.paceMode === 'speed' ? 'speed' : 'pace';
+                    const label = await L.getMessage(`analysis_${labelKey}`);
                     specs.push({
                         data: velocityStream,
                         formatter: x => `${label}: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
@@ -1514,15 +1237,15 @@ sauce.ns('analysis', ns => {
                             {hStart: 216, sStart: 100, lStart: 84, lEnd: 20}),
                     });
                 } else if (x === 'cadence') {
-                    const unit = ctx.cadenceFormatter.shortUnitKey();
-                    const format = x => ctx.cadenceFormatter.format(x);
-                    const label = await sauce.locale.getMessage('analysis_cadence');
+                    const unit = ns.cadenceFormatter.shortUnitKey();
+                    const format = x => ns.cadenceFormatter.format(x);
+                    const label = await L.getMessage('analysis_cadence');
                     const thresholds = {
                         ride: [40, 80, 120, 150],
                         run: [50, 80, 90, 100],
                         swim: [20, 25, 30, 35],
                         other: [10, 50, 100, 160]
-                    }[ctx.activityType];
+                    }[ns.activityType];
                     specs.push({
                         data: cadenceStream,
                         formatter: x => `${label}: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
@@ -1535,7 +1258,7 @@ sauce.ns('analysis', ns => {
                         const elapsed = timeStream[i] - timeStream[i - 1];
                         gradeVelocity.push(dist / elapsed);
                     }
-                    const label = await sauce.locale.getMessage('analysis_gap');
+                    const label = await L.getMessage('analysis_gap');
                     specs.push({
                         data: gradeVelocity,
                         formatter: x => `${label}: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
@@ -1547,27 +1270,27 @@ sauce.ns('analysis', ns => {
                         }),
                     });
                 } else if (x === 'hr') {
-                    const unit = ctx.hrFormatter.shortUnitKey();
-                    const label = await sauce.locale.getMessage('analysis_heartrate');
+                    const unit = L.hrFormatter.shortUnitKey();
+                    const label = await L.getMessage('analysis_heartrate');
                     specs.push({
                         data: hrStream,
-                        formatter: x => `${label}: ${humanNumber(x)}<abbr class="unit short">${unit}</abbr>`,
+                        formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">${unit}</abbr>`,
                         colorSteps: hslValueGradientSteps([40, 100, 150, 200],
                             {hStart: 0, sStart: 50, sEnd: 100, lStart: 50})
                     });
                 } else if (x === 'vam') {
                     specs.push({
                         data: sauce.geo.createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
-                        formatter: x => `VAM: ${humanNumber(x)}<abbr class="unit short">Vm/h</abbr>`,
+                        formatter: x => `VAM: ${H.number(x)}<abbr class="unit short">Vm/h</abbr>`,
                         colorSteps: hslValueGradientSteps([-500, 500, 1000, 2000],
                             {hStart: 260, sStart: 65, sEnd: 100, lStart: 75, lend: 50}),
                     });
                 } else if (x === 'elevation') {
-                    const unit = ctx.elevationFormatter.shortUnitKey();
-                    const label = await sauce.locale.getMessage('analysis_elevation');
+                    const unit = L.elevationFormatter.shortUnitKey();
+                    const label = await L.getMessage('analysis_elevation');
                     specs.push({
                         data: altStream,
-                        formatter: x => `${label}: ${humanElevation(x)}<abbr class="unit short">${unit}</abbr>`,
+                        formatter: x => `${label}: ${H.elevation(x)}<abbr class="unit short">${unit}</abbr>`,
                         colorSteps: hslValueGradientSteps([0, 1000, 2000, 4000],
                             {hStart: 0, sStart: 0, lStart: 60, lEnd: 20}),
                     });
@@ -1678,7 +1401,7 @@ sauce.ns('analysis', ns => {
         const id = pageView.activity().id;
         const a = pageNav.querySelector('[data-menu="analysis"]');
         a.setAttribute('href', `/activities/${id}/analysis`);
-        a.textContent = await sauce.locale.getMessage('analysis_title');
+        a.textContent = await L.getMessage('analysis_title');
         a.parentNode.classList.remove('sauce-stub');
         a.parentNode.style.display = null;
         const premiumGroup = pageNav.querySelector('#premium-views');
@@ -1694,34 +1417,19 @@ sauce.ns('analysis', ns => {
             if (pageView.activity().isRun()) {
                 const titleEl = premiumGroup.querySelector('.title');
                 titleEl.classList.add('small');
-                titleEl.innerText = await sauce.locale.getMessage('subscription');
+                titleEl.innerText = await L.getMessage('subscription');
             }
         }
     }
 
 
-    const _tplCache = new Map();
-    const _tplFetching = new Map();
     async function getTemplate(filename, localeKey) {
-        const cacheKey = '' + filename + localeKey;
-        if (!_tplCache.has(cacheKey)) {
-            if (!_tplFetching.has(cacheKey)) {
-                _tplFetching.set(cacheKey, (async () => {
-                    const resp = await fetch(`${tplUrl}/${filename}`);
-                    const tplText = await resp.text();
-                    localeKey = localeKey || 'analysis';
-                    _tplCache.set(cacheKey, sauce.template.compile(tplText, {localePrefix: `${localeKey}_`}));
-                    _tplFetching.delete(cacheKey);
-                })());
-            }
-            await _tplFetching.get(cacheKey);
-        }
-        return _tplCache.get(cacheKey);
+        return await sauce.template.getTemplate(filename, localeKey || 'analysis');
     }
 
 
     async function attachActionMenuItems() {
-        const exportLocale = await sauce.locale.getMessage('analysis_export');
+        const exportLocale = await L.getMessage('analysis_export');
         const $menu = jQuery('nav.sidenav .actions-menu .drop-down-menu ul.options');
         if (!$menu.length) {
             console.warn('Side nav menu not found: Probably a flagged activity');
@@ -1744,9 +1452,9 @@ sauce.ns('analysis', ns => {
             if (lapEfforts && !lapEfforts.length) {
                 await new Promise(resolve => lapEfforts.fetch().always(resolve));
             }
-            const ctx = pageView.chartContext();
+            const context = pageView.chartContext();
             return (lapEfforts && lapEfforts.length) ?
-                lapEfforts.models.map(x => ctx.convertStreamIndices(x.indices())) :
+                lapEfforts.models.map(x => context.convertStreamIndices(x.indices())) :
                 null;
         }
         $menu.find('a.tcx').on('click', async () => {
@@ -1795,9 +1503,9 @@ sauce.ns('analysis', ns => {
                 const level = Number($levelSelect.val());
                 const pct = level / 8;
                 let tooltipFormatterAbs;
-                if (ctx.weight) {
+                if (ns.weight) {
                     tooltipFormatterAbs = wKg => `
-                        ${humanNumber(wKg * ctx.weight)}<abbr class="unit short">W</abbr>
+                        ${H.number(wKg * ns.weight)}<abbr class="unit short">W</abbr>
                         (with current athlete's weight)<br/>`;
                 } else {
                     tooltipFormatterAbs = wKg => ``;
@@ -1808,9 +1516,9 @@ sauce.ns('analysis', ns => {
                     height: 100,
                     chartRangeMin: 0,
                     tooltipFormatter: (_, __, data) => `
-                        ${humanNumber(data.y, 1)}<abbr class="unit short">W/kg</abbr><br/>
+                        ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr><br/>
                         ${tooltipFormatterAbs(data.y)}
-                        Duration: ${humanTime(times[data.x])}`
+                        Duration: ${H.time(times[data.x])}`
                 });
             }
             $levelSelect.on('change', drawGraph);
@@ -1843,7 +1551,7 @@ sauce.ns('analysis', ns => {
             }
             if (longitude == null) {
                 // Take a wild guess that the activity should match the geo location of the athlete.
-                const athleteGeo = ctx.athlete.get('geo');
+                const athleteGeo = ns.athlete.get('geo');
                 if (athleteGeo && athleteGeo.lat_lng) {
                     longitude = athleteGeo.lat_lng[1];
                     console.info('Getting longitude of activity based on athlete\'s location');
@@ -1862,18 +1570,24 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function download(blob, name) {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = blob.name || name;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        try {
-            link.click();
-        } finally {
-            link.remove();
-            URL.revokeObjectURL(link.href);
+    // XXX Probably temporary while we are not monitoring the places where FTP, Weight and HRZones can
+    // be altered.  Later we should always keep the athlete record in sync so it's continually trusted.
+    // Also when any of the relevant params change we'll need to invalidate sync manifests affected by it.
+    async function buildAthleteRecord() {
+        let ftpHistory;
+        if (ns.athlete.id === pageView.currentAthlete().id) {
+            ftpHistory = await sauce.hist.getSelfFTPHistory();
+        } else {
+            ftpHistory = ns.ftp ? [{ts: 0, value: ns.ftp}] : undefined;
         }
+        return {
+            id: ns.athlete.id,
+            gender: ns.athlete.get('gender') === 'F' ? 'female' : 'male',
+            name: ns.athlete.get('display_name'),
+            ftpHistory,
+            weightHistory: ns.weight ? [{ts: 0, value: ns.weight}] : undefined,
+            hrZones: await getHRZones(),
+        };
     }
 
 
@@ -1905,7 +1619,7 @@ sauce.ns('analysis', ns => {
         const serializer = new Serializer(name, desc, pageView.activity().get('type'), startDate, laps);
         serializer.start();
         serializer.loadStreams(streams);
-        download(serializer.toFile());
+        sauce.download(serializer.toFile());
     }
 
 
@@ -1933,7 +1647,7 @@ sauce.ns('analysis', ns => {
                 comments.push({
                     tokens: x.comment,
                     athlete: x.athlete,
-                    timeago: await sauce.locale.humanTimeAgo(date, {precision: 60}),
+                    timeago: H.timeAgo(date, {precision: 60}),
                 });
             }
             $section.find('.sauce-inline-comments').html((await commentsTpl({comments})).trim());
@@ -1979,7 +1693,7 @@ sauce.ns('analysis', ns => {
 
 
     async function showLiveSegmentDialog(details, useTrial) {
-        const locale = await sauce.locale.getMessagesObject([
+        const locale = await L.getMessagesObject([
             'create', 'success_create_title', 'success_create_body1', 'success_create_body2',
             'success_create_body3', 'become_patron', 'remaining', 'use_trial', 'creator'
         ], 'live_segment');
@@ -1997,7 +1711,7 @@ sauce.ns('analysis', ns => {
             segmentName: details.get('name'),
             leaderName: athlete.get('display_name'),
             isSelf: athlete.id === pageView.currentAthlete().id,
-            leaderTime: humanTime(streamDelta(timeStream)),
+            leaderTime: H.time(streamDelta(timeStream)),
             selfImageUrl: sauce.extUrl + 'images/jen_and_i_europe.jpg',
             hasPatronRequirement,
             useTrial,
@@ -2073,14 +1787,14 @@ sauce.ns('analysis', ns => {
             const speedAdj = Number($dialog.find(`[name="speed-adjust"]`).val());
             timeMultiplier = 1 - (speedAdj / 100);
             const adjustedTime = timeMultiplier * streamDelta(timeStream);
-            $dialog.find('.leader-time').text(humanTime(adjustedTime));
+            $dialog.find('.leader-time').text(H.time(adjustedTime));
         });
         sauce.report.event('LiveSegment', 'show');
     }
 
 
     function addBadge(row) {
-        if (!ctx.weight || row.querySelector(':scope > td.sauce-mark')) {
+        if (!ns.weight || row.querySelector(':scope > td.sauce-mark')) {
             return;
         }
         const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
@@ -2088,8 +1802,8 @@ sauce.ns('analysis', ns => {
             console.warn('Segment data not found for:', row.dataset.segmentEffortId);
             return;
         }
-        const wKg = segment.get('avg_watts_raw') / ctx.weight;
-        const rank = sauce.power.rank(segment.get('elapsed_time_raw'), wKg, ctx.gender);
+        const wKg = segment.get('avg_watts_raw') / ns.weight;
+        const rank = sauce.power.rank(segment.get('elapsed_time_raw'), wKg, ns.gender);
         if (!rank || !rank.badge) {
             return;  // Too slow/weak
         }
@@ -2116,14 +1830,14 @@ sauce.ns('analysis', ns => {
             <div class="sauce-rank-holder">
                 <div>${targetTD.innerHTML}</div>
                 <img src="${rank.badge}" class="sauce-rank"
-                     title="World Ranking: ${levelPct}%\nWatts/kg: ${humanNumber(wKg, 1)}"/>
+                     title="World Ranking: ${levelPct}%\nWatts/kg: ${H.number(wKg, 1)}"/>
             </div>
         `);
     }
 
 
     function addSegmentBadges() {
-        if (!ctx.weight) {
+        if (!ns.weight) {
             return;
         }
         const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
@@ -2319,11 +2033,7 @@ sauce.ns('analysis', ns => {
             photos,
             videos,
             reports,
-            humanNumber,
-            humanDistance,
-            humanTime,
-            humanTimeAgo: sauce.locale.humanTimeAgo,
-            distanceUnit: ctx.distanceFormatter.shortUnitKey(),
+            distanceUnit: L.distanceFormatter.shortUnitKey(),
         }));
         $into.html($el);
         const altStream = trail.track.altitude.split(',').map(Number);
@@ -2354,8 +2064,8 @@ sauce.ns('analysis', ns => {
                 map.map.getRabbit(lat, lng);
                 return [
                     // XXX localize
-                    `Altitude: ${humanElevation(data.y, {suffix: true})}`,
-                    `Distance: ${humanDistance(data.x, 2)} ${ctx.distanceFormatter.shortUnitKey()}`
+                    `Altitude: ${H.elevation(data.y, {suffix: true})}`,
+                    `Distance: ${H.distance(data.x, 2)} ${L.distanceFormatter.shortUnitKey()}`
                 ].join('<br/>');
             }
         });
@@ -2457,8 +2167,8 @@ sauce.ns('analysis', ns => {
                 // Runs never display ftp, so if the athlete is multisport and
                 // we've seen one activity (ride) with ftp, remember it for looking
                 // at runs later.
-                if (athleteId === ctx.athlete.id) {
-                    await updateAthleteInfo(ctx.athlete, {ftp_lastknown: stravaFtp});
+                if (athleteId === ns.athlete.id) {
+                    await updateAthleteInfo(ns.athlete, {ftp_lastknown: stravaFtp});
                 } else {
                     await sauce.storage.setAthleteProp(athleteId, 'ftp_lastknown', stravaFtp);
                 }
@@ -2491,8 +2201,8 @@ sauce.ns('analysis', ns => {
                 // Runs never display weight, so if the athlete is multisport and
                 // we've seen one activity (ride) with weight, remember it for looking
                 // at runs later.
-                if (athleteId === ctx.athlete.id) {
-                    await updateAthleteInfo(ctx.athlete, {weight_lastknown: stravaWeight});
+                if (athleteId === ns.athlete.id) {
+                    await updateAthleteInfo(ns.athlete, {weight_lastknown: stravaWeight});
                 } else {
                     await sauce.storage.setAthleteProp(athleteId, 'weight_lastknown', stravaWeight);
                 }
@@ -2547,11 +2257,11 @@ sauce.ns('analysis', ns => {
         if (altStream && elapsed && distance) {
             const {gain, loss} = sauce.geo.altitudeChanges(altStream);
             return {
-                gain: gain > 1 ? humanElevation(gain) : 0,
-                loss: loss && humanElevation(loss),
+                gain: gain > 1 ? H.elevation(gain) : 0,
+                loss: loss && H.elevation(loss),
                 grade: ((gain - loss) / distance) * 100,
                 vam: elapsed >= minVAMTime ? (gain / elapsed) * 3600 : 0,
-                avg: humanElevation(sauce.data.avg(altStream))
+                avg: H.elevation(sauce.data.avg(altStream))
             };
         }
     }
@@ -2559,7 +2269,7 @@ sauce.ns('analysis', ns => {
 
     function hrInfo(hrStream) {
         if (hrStream) {
-            const fmt = ctx.hrFormatter;
+            const fmt = L.hrFormatter;
             return {
                 min: fmt.format(sauce.data.min(hrStream)),
                 avg: fmt.format(sauce.data.avg(hrStream)),
@@ -2588,17 +2298,17 @@ sauce.ns('analysis', ns => {
             elapsedSP,
             activeSPAdjust: activeSP && activeSP / activeAvg,
             elapsedSPAdjust: elapsedSP && elapsedSP / elapsedAvg,
-            activeWKg: (ctx.weight && activeAvg != null) && activeAvg / ctx.weight,
-            elapsedWKg: (ctx.weight && elapsedAvg != null) && elapsedAvg / ctx.weight,
-            rank: (ctx.weight && elapsedAvg != null) &&
-                sauce.power.rank(elapsed, elapsedAvg / ctx.weight, ctx.gender),
+            activeWKg: (ns.weight && activeAvg != null) && activeAvg / ns.weight,
+            elapsedWKg: (ns.weight && elapsedAvg != null) && elapsedAvg / ns.weight,
+            rank: (ns.weight && elapsedAvg != null) &&
+                sauce.power.rank(elapsed, elapsedAvg / ns.weight, ns.gender),
         }, extra);
     }
 
 
     function hasAccurateWatts() {
         // Only trust real watts and watts_calc for runs.  Rides esp are very inaccurate.
-        return !!_getStream('watts') || (ctx.activityType === 'run' && !!_getStream('watts_calc'));
+        return !!_getStream('watts') || (ns.activityType === 'run' && !!_getStream('watts_calc'));
     }
 
 
@@ -2633,14 +2343,14 @@ sauce.ns('analysis', ns => {
             logo: sauce.extUrl + 'images/logo_vert_48x128.png',
             supportsRankBadge: pageView.activity().isRide(),
             supportsPerfPredictor: !!(pageView.activity().isRide() && distance && altStream),
-            elapsed: humanTime(elapsedTime),
-            active: humanTime(activeTime),
-            paused: ctx.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
+            elapsed: H.time(elapsedTime),
+            active: H.time(activeTime),
+            paused: L.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
             stops: getStopCount(start, end),
-            weight: ctx.weight,
-            elUnit: ctx.elevationFormatter.shortUnitKey(),
-            isSpeed: ctx.paceMode === 'speed',
-            paceUnit: ctx.paceFormatter.shortUnitKey(),
+            weight: ns.weight,
+            elUnit: L.elevationFormatter.shortUnitKey(),
+            isSpeed: ns.paceMode === 'speed',
+            paceUnit: ns.paceFormatter.shortUnitKey(),
             samples: timeStream.length,
             elevation: elevationData(altStream, elapsedTime, distance)
         };
@@ -2651,10 +2361,10 @@ sauce.ns('analysis', ns => {
             if (hasAccurateWatts()) {
                 tplData.power.np = supportsNP() ? correctedPower.np() : null;
                 tplData.power.xp = supportsXP() ? correctedPower.xp() : null;
-                if (ctx.ftp) {
+                if (ns.ftp) {
                     const power = tplData.power.np || tplData.power.activeAvg;
-                    tss = sauce.power.calcTSS(power, activeTime, ctx.ftp);
-                    intensity = power / ctx.ftp;
+                    tss = sauce.power.calcTSS(power, activeTime, ns.ftp);
+                    intensity = power / ns.ftp;
                 }
             } else {
                 const zones = await getHRZones();
@@ -2663,8 +2373,8 @@ sauce.ns('analysis', ns => {
                     const ltHR = (zones.z4 + zones.z3) / 2;
                     const activeStream = await fetchStream('active', start, end);
                     const maxHR = sauce.perf.estimateMaxHR(zones);
-                    const restingHR = ctx.ftp ? sauce.perf.estimateRestingHR(ctx.ftp) : 60;
-                    tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ctx.gender);
+                    const restingHR = ns.ftp ? sauce.perf.estimateRestingHR(ns.ftp) : 60;
+                    tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ns.gender);
                 }
             }
             tplData.energy = {
@@ -2685,8 +2395,8 @@ sauce.ns('analysis', ns => {
             };
         }
         const tpl = await getTemplate('analysis-stats.html');
-        ctx.$analysisStats.data({start, end});
-        ctx.$analysisStats.html(await tpl(tplData));
+        ns.$analysisStats.data({start, end});
+        ns.$analysisStats.html(await tpl(tplData));
     }
 
 
@@ -2705,13 +2415,13 @@ sauce.ns('analysis', ns => {
             return;  // dedup
         }
         _schedUpdateAnalysisPending = [start, end];
-        if (!ctx.ready) {
-            if (!ctx.unsupported) {
-                ctx.prepared.then(() => schedUpdateAnalysisStats(null));
+        if (!ns.ready) {
+            if (!ns.unsupported) {
+                ns.prepared.then(() => schedUpdateAnalysisStats(null));
             }
             return;
         }
-        if (!ctx.$analysisStats) {
+        if (!ns.$analysisStats) {
             const $el = jQuery('#basic-analysis section.chart');
             if (!$el.length) {
                 setTimeout(() => schedUpdateAnalysisStats(null), 200);
@@ -2752,7 +2462,7 @@ sauce.ns('analysis', ns => {
             {name: 'watts_calc'},
             {name: 'watts_sealevel'},
             {name: 'heartrate'},
-            {name: 'cadence', formatter: x => ctx.cadenceFormatter.format(x)},
+            {name: 'cadence', formatter: x => ns.cadenceFormatter.format(x)},
             {name: 'velocity_smooth'},
             {name: 'pace'},
             {name: 'grade_adjusted_pace', label: 'gap'},
@@ -2819,8 +2529,8 @@ sauce.ns('analysis', ns => {
 
 
     async function showRawData() {
-        const start = ctx.$analysisStats.data('start');
-        const end = ctx.$analysisStats.data('end');
+        const start = ns.$analysisStats.data('start');
+        const end = ns.$analysisStats.data('end');
         const $selector = await _dataViewStreamSelector();
         async function renderData() {
             const samples = await _fetchDataSamples($selector.skip(), start, end);
@@ -2841,7 +2551,7 @@ sauce.ns('analysis', ns => {
                 "Download CSV": () => {
                     const range = start && end ? `-${start}-${end}` : '';
                     const name = `${pageView.activity().id}${range}.csv`;
-                    download(new Blob([currentData], {type: 'text/csv'}), name);
+                    sauce.download(new Blob([currentData], {type: 'text/csv'}), name);
                 }
             }
         });
@@ -2856,29 +2566,9 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function weightUnconvert(localeWeight) {
-        return ctx.weightFormatter.unitSystem === 'metric' ? localeWeight : localeWeight / 2.20462;
-    }
-
-
-    function elevationUnconvert(localeEl) {
-        return ctx.elevationFormatter.unitSystem === 'metric' ? localeEl : localeEl * 0.3048;
-    }
-
-
-    function velocityUnconvert(localeV) {
-        return (ctx.paceFormatter.unitSystem === 'metric' ? localeV * 1000 : localeV * metersPerMile) / 3600;
-    }
-
-
-    function distanceUnconvert(localeDist) {
-        return ctx.distanceFormatter.unitSystem === 'metric' ? localeDist * 1000 : localeDist * metersPerMile;
-    }
-
-
     async function showGraphData() {
-        const start = ctx.$analysisStats.data('start');
-        const end = ctx.$analysisStats.data('end');
+        const start = ns.$analysisStats.data('start');
+        const end = ns.$analysisStats.data('end');
         const $selector = await _dataViewStreamSelector();
         const $dialog = modal({
             title: 'Graph Data',
@@ -2917,7 +2607,7 @@ sauce.ns('analysis', ns => {
     async function getAthleteBike() {
         const bikeEl = document.querySelector('.gear-name');
         const bikeName = (bikeEl && bikeEl.textContent.trim()) || '_default_';
-        const bikes = await sauce.storage.getAthleteProp(ctx.athlete.id, 'bikes');
+        const bikes = await sauce.storage.getAthleteProp(ns.athlete.id, 'bikes');
         return bikes && bikes[bikeName];
     }
 
@@ -2925,12 +2615,12 @@ sauce.ns('analysis', ns => {
     async function updateAthleteBike(settings) {
         const bikeEl = document.querySelector('.gear-name');
         const bikeName = (bikeEl && bikeEl.textContent.trim()) || '_default_';
-        const bikes = (await sauce.storage.getAthleteProp(ctx.athlete.id, 'bikes')) || {};
+        const bikes = (await sauce.storage.getAthleteProp(ns.athlete.id, 'bikes')) || {};
         if (!bikes[bikeName]) {
             bikes[bikeName] = {};
         }
         Object.assign(bikes[bikeName], settings);
-        await sauce.storage.setAthleteProp(ctx.athlete.id, 'bikes', bikes);
+        await sauce.storage.setAthleteProp(ns.athlete.id, 'bikes', bikes);
     }
 
 
@@ -2999,7 +2689,7 @@ sauce.ns('analysis', ns => {
         const buf = fitParser.encode();
         const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
         const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
-        download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
+        sauce.download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
         sauce.report.event('LiveSegment', 'create');
     }
 
@@ -3034,24 +2724,24 @@ sauce.ns('analysis', ns => {
         }
         const body = await template({
             power: power && Math.round(power),
-            hasWeight: !!ctx.weight,
-            wkg: power && ctx.weight && humanNumber(power / ctx.weight, 1),
-            bodyWeight: ctx.weightFormatter.convert(ctx.weight).toFixed(1),
-            gearWeight: ctx.weightFormatter.convert(bikeDefaults.gearWeight).toFixed(1),
+            hasWeight: !!ns.weight,
+            wkg: power && ns.weight && H.number(power / ns.weight, 1),
+            bodyWeight: L.weightFormatter.convert(ns.weight).toFixed(1),
+            gearWeight: L.weightFormatter.convert(bikeDefaults.gearWeight).toFixed(1),
             slope: (slope * 100).toFixed(1),
-            distance: ctx.distanceFormatter.convert(origDistance).toFixed(3),
+            distance: L.distanceFormatter.convert(origDistance).toFixed(3),
             cda: bikeDefaults.cda,
             crr: bikeDefaults.crr,
             bike: bikeDefaults.bike,
             terrain: bikeDefaults.terrain,
             wind: 0,
-            elevation: Math.round(ctx.elevationFormatter.convert(el)),
+            elevation: Math.round(L.elevationFormatter.convert(el)),
             speed: humanPace(origVelocity, {velocity: true}),
-            time: humanTime(origTime),
-            weightUnit: ctx.weightFormatter.shortUnitKey(),
-            speedUnit: ctx.paceFormatter.shortUnitKey(),
-            elevationUnit: ctx.elevationFormatter.shortUnitKey(),
-            distanceUnit: ctx.distanceFormatter.shortUnitKey(),
+            time: H.time(origTime),
+            weightUnit: L.weightFormatter.shortUnitKey(),
+            speedUnit: ns.paceFormatter.shortUnitKey(),
+            elevationUnit: L.elevationFormatter.shortUnitKey(),
+            distanceUnit: L.distanceFormatter.shortUnitKey(),
             powerColors
         });
         const $dialog = modal({
@@ -3068,7 +2758,7 @@ sauce.ns('analysis', ns => {
         function fget(name) {
             return Number($dialog.find(`[name="${name}"]`).val());
         }
-        const locale = await sauce.locale.getMessagesObject([
+        const locale = await L.getMessagesObject([
             'faster', 'slower', 'power_details_rr', 'power_details_gravity', 'power_details_aero'
         ], 'perf_predictor');
         let lazySaveTimeout;
@@ -3077,13 +2767,13 @@ sauce.ns('analysis', ns => {
             const crr = fget('crr');
             const cda = fget('cda');
             const power = fget('power');
-            const bodyWeight = weightUnconvert(fget('body-weight'));
-            const gearWeight = weightUnconvert(fget('gear-weight'));
+            const bodyWeight = L.weightUnconvert(fget('body-weight'));
+            const gearWeight = L.weightUnconvert(fget('gear-weight'));
             const sysWeight = bodyWeight + gearWeight;
             const slope = fget('slope') / 100;
-            const distance = distanceUnconvert(fget('distance'));
-            const el = elevationUnconvert(fget('elevation'));
-            const wind = velocityUnconvert(fget('wind'));
+            const distance = L.distanceUnconvert(fget('distance'));
+            const el = L.elevationUnconvert(fget('elevation'));
+            const wind = L.velocityUnconvert(fget('wind'), {type: ns.paceType});
             const powerEsts = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
                 cda, el, wind, 0.035).filter(x => x.velocity > 0);
             $pred.toggleClass('valid', powerEsts.length > 0);
@@ -3096,19 +2786,19 @@ sauce.ns('analysis', ns => {
             const $timeAhead = $pred.find('.time + .ahead-behind');
             if (powerEst.velocity && time < origTime) {
                 const pct = (origTime / time - 1) * 100;
-                $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.faster}`);
+                $timeAhead.text(`${H.number(pct, 1)}% ${locale.faster}`);
                 $timeAhead.addClass('sauce-positive').removeClass('sauce-negative');
             } else if (powerEst.velocity && time > origTime) {
                 const pct = (time / origTime - 1) * 100;
-                $timeAhead.text(`${humanNumber(pct, 1)}% ${locale.slower}`);
+                $timeAhead.text(`${H.number(pct, 1)}% ${locale.slower}`);
                 $timeAhead.addClass('sauce-negative').removeClass('sauce-positive');
             } else {
                 $timeAhead.empty();
             }
             $pred.find('.speed').text(humanPace(powerEst.velocity, {velocity: true}));
-            $pred.find('.time').text(humanTime(time));
-            $pred.find('.distance').text(humanDistance(distance));
-            $pred.find('.wkg').text(humanNumber(power / bodyWeight, 1));
+            $pred.find('.time').text(H.time(time));
+            $pred.find('.distance').text(H.distance(distance));
+            $pred.find('.wkg').text(H.number(power / bodyWeight, 1));
             const watts = [powerEst.gWatts, powerEst.aWatts, powerEst.rWatts];
             const wattRange = sauce.data.sum(watts.map(Math.abs));
             const pcts = {
@@ -3117,14 +2807,14 @@ sauce.ns('analysis', ns => {
                 rr: powerEst.rWatts / wattRange * 100
             };
             const $gravity = $pred.find('.power-details .gravity');
-            $gravity.find('.power').text(humanNumber(powerEst.gWatts));
-            $gravity.find('.pct').text(humanNumber(pcts.gravity));
+            $gravity.find('.power').text(H.number(powerEst.gWatts));
+            $gravity.find('.pct').text(H.number(pcts.gravity));
             const $aero = $pred.find('.power-details .aero');
-            $aero.find('.power').text(humanNumber(powerEst.aWatts));
-            $aero.find('.pct').text(humanNumber(pcts.aero));
+            $aero.find('.power').text(H.number(powerEst.aWatts));
+            $aero.find('.pct').text(H.number(pcts.aero));
             const $rr = $pred.find('.power-details .rr');
-            $rr.find('.power').text(humanNumber(powerEst.rWatts));
-            $rr.find('.pct').text(humanNumber(pcts.rr));
+            $rr.find('.power').text(H.number(powerEst.rWatts));
+            $rr.find('.pct').text(H.number(pcts.rr));
             $pred.find('.power-details .sparkline').sparkline(
                 watts,
                 {
@@ -3143,10 +2833,10 @@ sauce.ns('analysis', ns => {
                         const key = ['gravity', 'aero', 'rr'][data[0].offset];
                         const force = powerEst[['g', 'a', 'r'][data[0].offset] + 'Force'];
                         return `
-                            <b>${locale[`power_details_${key}`]}: ${humanNumber(pcts[key])}%</b>
+                            <b>${locale[`power_details_${key}`]}: ${H.number(pcts[key])}%</b>
                             <ul>
                                 <li>&nbsp;&nbsp;${Math.round(data[0].value)} Watts</li>
-                                <li>&nbsp;&nbsp;${humanNumber(force)} Newtons</li>
+                                <li>&nbsp;&nbsp;${H.number(force)} Newtons</li>
                             </ul>
                         `;
                     }
@@ -3201,29 +2891,29 @@ sauce.ns('analysis', ns => {
 
 
     function attachAnalysisStats($el) {
-        if (!ctx.$analysisStats) {
-            ctx.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
+        if (!ns.$analysisStats) {
+            ns.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
             sauce.proxy.connected
                 .then(() => sauce.storage.getPref('expandAnalysisStats'))
-                .then(expanded => ctx.$analysisStats.toggleClass('expanded', expanded));
+                .then(expanded => ns.$analysisStats.toggleClass('expanded', expanded));
         }
-        $el.find('#stacked-chart').before(ctx.$analysisStats);
+        $el.find('#stacked-chart').before(ns.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.report.error));
         $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.report.error));
         $el.on('click', 'a.sauce-perf-predictor', () => {
-            const start = ctx.$analysisStats.data('start');
-            const end = ctx.$analysisStats.data('end');
+            const start = ns.$analysisStats.data('start');
+            const end = ns.$analysisStats.data('end');
             showPerfPredictor(start, end).catch(sauce.report.error);
         });
         $el.on('click', 'a.sauce-export-tcx', () => {
-            const start = ctx.$analysisStats.data('start');
-            const end = ctx.$analysisStats.data('end');
+            const start = ns.$analysisStats.data('start');
+            const end = ns.$analysisStats.data('end');
             exportActivity('tcx', {start, end}).catch(sauce.report.error);
             sauce.report.event('AnalysisStats', 'export', 'tcx');
         });
         $el.on('click', 'a.sauce-export-gpx', () => {
-            const start = ctx.$analysisStats.data('start');
-            const end = ctx.$analysisStats.data('end');
+            const start = ns.$analysisStats.data('start');
+            const end = ns.$analysisStats.data('end');
             exportActivity('gpx', {start, end}).catch(sauce.report.error);
             sauce.report.event('AnalysisStats', 'export', 'gpx');
         });
@@ -3279,47 +2969,26 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function prepareContext() {
+    async function prepare() {
         const activity = pageView.activity();
-        ctx.athlete = pageView.activityAthlete();
-        ctx.gender = ctx.athlete.get('gender') === 'F' ? 'female' : 'male';
+        ns.athlete = pageView.activityAthlete();
+        ns.gender = ns.athlete.get('gender') === 'F' ? 'female' : 'male';
         await sauce.proxy.connected;
-        await sauce.locale.humanInit();
+        await sauce.locale.init();
         await Promise.all([
-            getWeightInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
-            getFTPInfo(ctx.athlete.id).then(x => Object.assign(ctx, x)),
+            getWeightInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
+            getFTPInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
         ]);
-        ctx.elevationFormatter = new Strava.I18n.ElevationFormatter();
-        ctx.hrFormatter = new Strava.I18n.HeartRateFormatter();
-        ctx.tempFormatter = new Strava.I18n.TemperatureFormatter();
-        ctx.cadenceFormatter = activity.isRun() ?
-            new Strava.I18n.DoubledStepCadenceFormatter() :
-            new Strava.I18n.CadenceFormatter();
-        if (activity.isSwim()) {
-            Strava.I18n.FormatterTranslations.swim_cadence = {
-                abbr: "%{value} <abbr class='unit short' title='strokes per minute'>spm</abbr>",
-                "long": {
-                    one: "%{count} strokes per minute",
-                    other: "%{count} strokes per minute"
-                },
-                "short": "%{value} spm",
-                name_long: "strokes per minute",
-                name_short: "spm"
-            };
-            ctx.cadenceFormatter.key = 'swim_cadence';
-        }
-        ctx.timeFormatter = new Strava.I18n.TimespanFormatter();
-        ctx.weightFormatter = new Strava.I18n.WeightFormatter();
-        ctx.distanceFormatter = new Strava.I18n.DistanceFormatter();
-        const speedUnit = activity.get('speedUnit') || (activity.isRide() ? 'mph' : 'mpm');
-        const PaceFormatter = {
-            mp100m: Strava.I18n.SwimPaceFormatter,
-            mph: Strava.I18n.DistancePerTimeFormatter,
-            mpm: Strava.I18n.PaceFormatter,
-        }[speedUnit];
-        ctx.paceFormatter = new PaceFormatter();
-        ctx.paceMode = speedUnit === 'mph' ? 'speed' : 'pace';
-        ctx.peakIcons = {
+        ns.cadenceFormatter = activity.isRun() ?
+            L.cadenceFormatterRun :
+            activity.isSwim() ?
+                L.cadenceFormatterSwim :
+                L.cadenceFormatter;
+        ns.speedUnit = activity.get('speedUnit') || (activity.isRide() ? 'mph' : 'mpm');
+        ns.paceType = {mp100m: 'swim', mph: 'speed', mpm: 'pace'}[ns.speedUnit];
+        ns.paceFormatter = L.getPaceFormatter(ns.paceType);
+        ns.paceMode = ns.speedUnit === 'mph' ? 'speed' : 'pace';
+        ns.peakIcons = {
             peak_power: 'fa/bolt-duotone.svg',
             peak_np: 'fa/atom-alt-duotone.svg',
             peak_xp: 'fa/atom-duotone.svg',
@@ -3331,26 +3000,26 @@ sauce.ns('analysis', ns => {
             peak_cadence: 'fa/solar-system-duotone.svg',
         };
         if (activity.isRun()) {
-            ctx.peakIcons.peak_pace = 'fa/running-duotone.svg';
-            ctx.peakIcons.peak_cadence = 'fa/shoe-prints-duotone.svg';
+            ns.peakIcons.peak_pace = 'fa/running-duotone.svg';
+            ns.peakIcons.peak_cadence = 'fa/shoe-prints-duotone.svg';
         } else if (activity.isSwim()) {
-            ctx.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
+            ns.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
         updateSideNav().catch(sauce.report.error);
         attachActionMenuItems().catch(sauce.report.error);
         attachComments().catch(sauce.report.error);
         attachSegmentToolHandlers();
         const savedRanges = await sauce.storage.get('analysis_peak_ranges');
-        ctx.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
-        for (const range of ctx.allPeriodRanges) {
-            range.label = sauce.locale.humanDuration(range.value);
+        ns.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
+        for (const range of ns.allPeriodRanges) {
+            range.label = H.duration(range.value);
         }
-        ctx.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
+        ns.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
         const imperialDistanceFormatter = new Strava.I18n.DistanceFormatter(
             Strava.I18n.UnitSystemSource.IMPERIAL);
         const metricDistanceFormatter = new Strava.I18n.DistanceFormatter(
             Strava.I18n.UnitSystemSource.METRIC);
-        for (const range of ctx.allDistRanges) {
+        for (const range of ns.allDistRanges) {
             if (range.value < 1000) {
                 range.label = `${range.value} m`;
             } else {
@@ -3367,14 +3036,14 @@ sauce.ns('analysis', ns => {
         }
         const timeStream = await fetchStream('time');
         const streamData = pageView.streams().streamData;
-        if (ctx.activityType === 'run' && ctx.weight) {
+        if (ns.activityType === 'run' && ns.weight) {
             const gradeDistStream = await fetchGradeDistStream();
             if (gradeDistStream) {
                 const wattsStream = [0];
                 for (let i = 1; i < gradeDistStream.length; i++) {
                     const dist = gradeDistStream[i] - gradeDistStream[i - 1];
                     const time = timeStream[i] - timeStream[i - 1];
-                    const kj = sauce.pace.work(ctx.weight, dist);
+                    const kj = sauce.pace.work(ns.weight, dist);
                     wattsStream.push(kj * 1000 / time);
                 }
                 streamData.add('watts_calc', wattsStream);
@@ -3475,7 +3144,7 @@ sauce.ns('analysis', ns => {
             type: 'line',
             width: '100%',
             height: '100%',
-            tooltipFormatter: (_, __, data) => `${humanNumber(data.x, 6)}: ${humanNumber(data.y, 6)}`
+            tooltipFormatter: (_, __, data) => `${H.number(data.x, 6)}: ${H.number(data.y, 6)}`
         }, options));
         return $dialog;
     }
@@ -3546,20 +3215,20 @@ sauce.ns('analysis', ns => {
             const mobileMedia = window.matchMedia('(max-width: 768px)');
             mobileMedia.addListener(ev => void (jQuery.fx.off = ev.matches));
             jQuery.fx.off = mobileMedia.matches;
-            ctx.isMobile = mobileMedia.matches;
+            ns.isMobile = mobileMedia.matches;
         }
         await pageViewAssembled();
         const activity = pageView.activity();
         const type = activity.get('type');
         const gaSetTitlePromsie = sauce.report.ga('set', 'title', `Sauce Analysis - ${type}`);
-        ctx.activityType = {
+        ns.activityType = {
             'Ride': 'ride',
             'Run': 'run',
             'Swim': 'swim',
             'Other': 'other',
             'StationaryOther': 'other',
         }[type];
-        if (ctx.activityType) {
+        if (ns.activityType) {
             // Start network load early..
             fetchStreams(prefetchStreams).catch(sauce.report.error);
             const pageRouter = pageView.router();
@@ -3570,7 +3239,7 @@ sauce.ns('analysis', ns => {
             document.body.dataset.route = pageRouter.context.startMenu();
             startPageMonitors();
             attachRankBadgeDialog();
-            await prepareContext();
+            await prepare();
             attachSyncToggle();
             // Make sure this is last thing before start..
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
@@ -3591,7 +3260,7 @@ sauce.ns('analysis', ns => {
                 throw e;
             }
         } else {
-            ctx.unsupported = true;
+            ns.unsupported = true;
             console.info('Unsupported activity type:', type);
         }
         gaSetTitlePromsie.then(() => sauce.report.ga('send', 'pageview'));
@@ -3605,10 +3274,7 @@ sauce.ns('analysis', ns => {
         dialog,
         modal,
         mapDialog,
-        humanWeight,
-        humanTime,
         humanPace,
-        humanElevation,
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,

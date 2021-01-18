@@ -54,44 +54,44 @@
         <line class="heading" title="{{{active_power_tooltip}}}">
             <key>{{{power}}}</key>
             <value>
-                {{power.estimate ? '~' : ''}}{{formatNumber(power.activeAvg, 0)}}<abbr class="unit">w</abbr>
+                {{power.estimate ? '~' : ''}}{{humanNumber(power.activeAvg)}}<abbr class="unit">w</abbr>
             </value>
         </line>
 
         <% if (power.activeWKg) { %>
             <line title="{{{wkg_tooltip}}}">
                 <key>{{{watts}}}/kg</key>
-                <value>{{formatNumber(power.activeWKg, 1)}}</value>
+                <value>{{humanNumber(power.activeWKg, 1)}}</value>
             </line>
         <% } %>
 
         <% if (obj.power.np) { %>
             <line title="{{{np_tooltip}}}">
                 <key>NP®</key>
-                <value>{{formatNumber(power.np, 0)}}<abbr class="unit">w</abbr></value>
+                <value>{{humanNumber(power.np)}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
 
         <% if (obj.power.xp) { %>
             <line title="{{{xp_tooltip}}}">
                 <key>xPower</key>
-                <value>{{formatNumber(power.xp, 0)}}<abbr class="unit">w</abbr></value>
+                <value>{{humanNumber(power.xp)}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
 
         <% if (power.elapsedAvg && Math.round(power.elapsedAvg) !== Math.round(power.activeAvg)) { %>
             <line title="{{{elapsed_power_tooltip}}}">
                 <key>{{{elapsed}}}</key>
-                <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedAvg, 0)}}<abbr class="unit">w</abbr></value>
+                <value>{{power.estimate ? '~' : ''}}{{humanNumber(power.elapsedAvg)}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
 
         <% if (obj.power.activeSP) { %>
             <line title="{{{sp_tooltip}}}">
                 <key>SP</key>
-                <value>{{formatNumber(power.activeSP, 0)}}<abbr class="unit">w</abbr>
+                <value>{{humanNumber(power.activeSP)}}<abbr class="unit">w</abbr>
                     <sup class="sauce-positive"
-                         title="{{{sp_adjust_tooltip}}}">+{{formatNumber((power.activeSPAdjust - 1) * 100, 1)}}%</sup>
+                         title="{{{sp_adjust_tooltip}}}">+{{humanNumber((power.activeSPAdjust - 1) * 100, 1)}}%</sup>
                 </value>
             </line>
         <% } %>
@@ -103,23 +103,23 @@
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{energy_tooltip}}}">
             <key>{{{energy}}}</key>
-            <value>{{formatNumber(energy.kj, 0)}}<abbr class="unit">kJ</abbr></value>
+            <value>{{humanNumber(energy.kj)}}<abbr class="unit">kJ</abbr></value>
         </line>
 
         <line title="{{{energy_rate_tooltip}}}">
             <key>{{{rate}}}</key>
-            <value>{{formatNumber(energy.kjHour, 0)}}<abbr class="unit">kJ/h</abbr></value>
+            <value>{{humanNumber(energy.kjHour)}}<abbr class="unit">kJ/h</abbr></value>
         </line>
 
         <% if (energy.tss) { %>
             <line title="{{{tss_tooltip}}}">
                 <key>TSS®</key>
-                <value>{{formatNumber(energy.tss, 0)}}</value>
+                <value>{{humanNumber(energy.tss)}}</value>
             </line>
         <% } else if (energy.tTss) { %>
             <line title="{{{trimp_tss_tooltip}}}">
                 <key>tTSS®</key>
-                <value>{{formatNumber(energy.tTss, 0)}}</value>
+                <value>{{humanNumber(energy.tTss)}}</value>
             </line>
         <% } %>
 
@@ -127,7 +127,7 @@
         <% if (energy.intensity) { %>
             <line title="{{{intensity_tooltip}}}">
                 <key>IF®</key>
-                <value>{{formatNumber(energy.intensity * 100, 0)}}<abbr class="unit">%</abbr></value>
+                <value>{{humanNumber(energy.intensity * 100)}}<abbr class="unit">%</abbr></value>
             </line>
         <% } %>
 
@@ -150,7 +150,7 @@
             <line title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                 <key>VAM</key>
                 <value>
-                    {{formatNumber(elevation.vam, 0)}}<abbr class="unit">Vm/h</abbr>
+                    {{humanNumber(elevation.vam)}}<abbr class="unit">Vm/h</abbr>
                 </value>
             </line>
         <% } %>
@@ -228,11 +228,11 @@
     <div class="sauce-data-tuple sauce-rank-badge">
         <line class="heading">
             <key>{{{rank}}}</key>
-            <value>{{formatNumber(power.rank.level * 100, 1)}}%</value>
+            <value>{{humanNumber(power.rank.level * 100, 1)}}%</value>
         </line>
         <% if (power.rank.badge) { %>
             <img src="{{power.rank.badge}}" class="sauce-rank"
-                 title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 1)}}%"/>
+                 title="{{{ranking_tooltip}}}: {{humanNumber(power.rank.level * 100, 1)}}%"/>
         <% } %>
     </div>
 <% } %>

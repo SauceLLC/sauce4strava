@@ -8,7 +8,7 @@
             <heading><div class="title">{{{timing}}} / {{{rank}}}</div></heading>
 
             <column class="highlight"
-                    title="{{{ranking_tooltip}}}: {{formatNumber(power.rank.level * 100, 0)}}%">
+                    title="{{{ranking_tooltip}}}: {{humanNumber(power.rank.level * 100)}}%">
                 <img src="{{power.rank.badge}}" class="sauce-rank"/>
             </column>
         <% } else { %>
@@ -39,7 +39,7 @@
             <column class="highlight" title="{{{elapsed_power_tooltip}}}">
                 <div class="icon-background power">{-await faIcon('bolt-duotone')-}</div>
                 <value>
-                    {-power.estimate ? '<prefix>~</prefix>' : ''-}{{formatNumber(power.elapsedAvg, 0)}}
+                    {-power.estimate ? '<prefix>~</prefix>' : ''-}{{humanNumber(power.elapsedAvg)}}
                 </value>
                 <key>{{{watts}}}</key>
             </column>
@@ -48,32 +48,32 @@
                 <% if (!power.estimate) { %>
                     <row title="{{{max_power_tooltip}}}">
                         <key>{{{max}}}</key>
-                        <value>{{formatNumber(power.max, 0)}}<abbr class="unit short">w</abbr></value>
+                        <value>{{humanNumber(power.max)}}<abbr class="unit short">w</abbr></value>
                     </row>
                 <% } %>
                 <% if (power.elapsedWKg) { %>
                     <row "title="{{{wkg_tooltip}}}">
                         <key>{{{Watts}}}/kg</key>
-                        <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedWKg, 1)}}<abbr class="unit short">w/kg</abbr></value>
+                        <value>{{power.estimate ? '~' : ''}}{{humanNumber(power.elapsedWKg, 1)}}<abbr class="unit short">w/kg</abbr></value>
                     </row>
                 <% } %>
                 <% if (power.np) { %>
                     <row title="{{{np_tooltip}}}">
                         <key>NP®</key>
-                        <value>{{formatNumber(power.np, 0)}}<abbr class="unit short">w</abbr></value>
+                        <value>{{humanNumber(power.np)}}<abbr class="unit short">w</abbr></value>
                     </row>
                 <% } %>
                 <% if (power.xp) { %>
                     <row title="{{{xp_tooltip}}}">
                         <key>xPower</key>
-                        <value>{{formatNumber(power.xp, 0)}}<abbr class="unit short">w</abbr></value>
+                        <value>{{humanNumber(power.xp)}}<abbr class="unit short">w</abbr></value>
                     </row>
                 <% } %>
                 <% if (power.elapsedSP) { %>
                     <row class="selectable" data-graph="sp" title="{{{sp_tooltip}}}">
                         <div class="graph-select"></div>
                         <key>{{{sea_power}}}</key>
-                        <value>{{power.estimate ? '~' : ''}}{{formatNumber(power.elapsedSP, 0)}}<abbr class="unit short">w</abbr></value>
+                        <value>{{power.estimate ? '~' : ''}}{{humanNumber(power.elapsedSP)}}<abbr class="unit short">w</abbr></value>
                     </row>
                 <% } %>
             </column>
@@ -202,7 +202,7 @@
                 <row>
                     <key>{{{grade}}}</key>
                     <value title="{{{grade_tooltip}}}">
-                        {{formatNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
+                        {{humanNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
                     </value>
                 </row>
 
@@ -210,7 +210,7 @@
                     <row class="selectable" data-graph="vam" title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                         <div class="graph-select"></div>
                         <key>VAM</key>
-                        <value>{{formatNumber(elevation.vam, 0)}}<abbr class="unit short">Vm/h</abbr></value>
+                        <value>{{humanNumber(elevation.vam)}}<abbr class="unit short">Vm/h</abbr></value>
                     </row>
                 <% } %>
 
@@ -246,7 +246,7 @@
                         </td>
                         <td class="segment-time">{-x.segment.get('elapsed_time')-}</td>
                         <td class="segment-overlap" title="{{{overlap_tooltip}}}">
-                            {{formatNumber(x.correlation * 100, 0)}}<abbr class="unit short">%</abbr>
+                            {{humanNumber(x.correlation * 100)}}<abbr class="unit short">%</abbr>
                         </td>
                         <td class="segment-achievement">
                             <% if (x.segment.get('has_achievement')) { %>

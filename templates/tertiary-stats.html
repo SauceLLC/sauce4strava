@@ -1,12 +1,12 @@
 <ul class="inline-stats section secondary-stats sauce-stats">
     <% if (obj.np) { %>
         <li title="{{{np_tooltip}}}">
-            <strong>{{formatNumber(np, 0)}}<abbr class="unit">w</abbr></strong>
+            <strong>{{humanNumber(np)}}<abbr class="unit">w</abbr></strong>
             <div class="label">NP®</div>
         </li>
     <% } else if (obj.power) { %>
         <li>
-            <strong>{{formatNumber(power, 0)}}<abbr class="unit">w</abbr></strong>
+            <strong>{{humanNumber(power)}}<abbr class="unit">w</abbr></strong>
             <div class="label">{{{power}}}</div>
         </li>
     <% } %>
@@ -14,19 +14,19 @@
 
     <% if (obj.intensity) { %>
         <li title="{{{intensity_tooltip}}}">
-            <strong>{{formatNumber(intensity * 100, 0)}}<abbr class="unit">%</abbr></strong>
+            <strong>{{humanNumber(intensity * 100)}}<abbr class="unit">%</abbr></strong>
             <div class="label">IF®</div>
         </li>
     <% } %>
 
     <% if (obj.tss) { %>
         <li title="{{{tss_tooltip}}}">
-            <strong>{{formatNumber(tss, 0)}}</strong>
+            <strong>{{humanNumber(tss)}}</strong>
             <div class="label">TSS®</div>
         </li>
     <% } else if (obj.tTss) { %>
         <li title="{{{trimp_tss_tooltip}}}">
-            <strong>{{formatNumber(tTss, 0)}}</strong>
+            <strong>{{humanNumber(tTss)}}</strong>
             <div class="label">tTSS®</div>
         </li>
     <% } %>
@@ -38,7 +38,7 @@
         <li>
             <strong class="sauce-editable-field ftp">
                 <a class="origin-{{ftpOrigin}}"
-                   title="{{{ftp_link_tooltip}}}">{{formatNumber(ftp, 0)}}</a><!--
+                   title="{{{ftp_link_tooltip}}}">{{humanNumber(ftp)}}</a><!--
                 --><input data-width="5ch" type="text" value="{{ftp}}"
                        title="{{{ftp_input_tooltip}}}"/><!--
                 --><abbr class="unit" title="Watts">W</abbr>

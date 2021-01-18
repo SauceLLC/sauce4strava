@@ -10,7 +10,7 @@
         scripts: [
             'site/proxy.js',
             'site/locale.js',
-            'common/template.js',
+            'site/template.js',
             'common/lib.js',
             'site/sparkline.js',
             'site/analysis.js',
@@ -41,7 +41,7 @@
         scripts: [
             'site/proxy.js',
             'site/locale.js',
-            'common/template.js',
+            'site/template.js',
             'common/lib.js',
             'site/sparkline.js',
             'site/moment.js',
@@ -111,7 +111,7 @@
         scripts: [
             'site/proxy.js',
             'site/locale.js',
-            'common/template.js',
+            'site/template.js',
             'common/lib.js',
             'site/dashboard.js'
         ]

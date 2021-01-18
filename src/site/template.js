@@ -8,6 +8,32 @@
 sauce.ns('template', ns => {
     'use strict';
 
+    const _tplCache = new Map();
+    const _tplFetching = new Map();
+
+
+    ns.getTemplate = async function(filename, localeKey) {
+        const cacheKey = '' + filename + localeKey;
+        if (!_tplCache.has(cacheKey)) {
+            if (!_tplFetching.has(cacheKey)) {
+                const extUrl = self.browser ? self.browser.getURL('') : sauce.extUrl;
+                const tplUrl = extUrl + 'templates';
+                if (sauce.locale) {
+                    await sauce.locale.init();
+                }
+                _tplFetching.set(cacheKey, (async () => {
+                    const resp = await fetch(`${tplUrl}/${filename}`);
+                    const tplText = await resp.text();
+                    const localePrefix = localeKey && `${localeKey}_`;
+                    _tplCache.set(cacheKey, sauce.template.compile(tplText, {localePrefix}));
+                    _tplFetching.delete(cacheKey);
+                })());
+            }
+            await _tplFetching.get(cacheKey);
+        }
+        return _tplCache.get(cacheKey);
+    };
+
 
     ns.escape = (() => {
         const map = {
@@ -41,27 +67,13 @@ sauce.ns('template', ns => {
 
 
     ns.helpers = {
-        formatNumber: function(value, decimalPlaces) {
-            if (value == null || value === '') {
-                return '';
-            }
-            const n = Number(value);
-            if (isNaN(n)) {
-                console.warn("Value is not a number:", value);
-                return value;
-            }
-            if (decimalPlaces == null) {
-                return n.toLocaleString();
-            } else if (decimalPlaces === 0) {
-                return Math.round(n).toLocaleString();
-            } else {
-                return Number(n.toFixed(decimalPlaces)).toLocaleString();
-            }
-        },
         faIcon: async function(icon) {
             return await sauce.images.asText(`fa/${icon}.svg`);
         }
     };
+    if (sauce.locale && sauce.locale.templateHelpers) {
+        Object.assign(ns.helpers, sauce.locale.templateHelpers);
+    }
 
 
     ns.compile = (text, settingsOverrides) => {
@@ -104,7 +116,7 @@ sauce.ns('template', ns => {
                     prefix = '';
                 } else {
                     lookup = localeLookup;
-                    prefix = settings.localePrefix;
+                    prefix = settings.localePrefix || '';
                 }
                 code.push(`__p.push(await sauce.locale.getMessage('${prefix}' + ${lookup}));\n`);
             } else if (locale) {

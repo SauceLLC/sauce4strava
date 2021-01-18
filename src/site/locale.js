@@ -1,17 +1,23 @@
-/* global sauce */
+/* global sauce, Strava */
 
 sauce.ns('locale', ns => {
     'use strict';
 
-    const cache = new Map();
+    const metersPerMile = 1609.344;
+    const msgCache = new Map();
+    const warned = new Set();
 
-    const _warned = new Set();
+    let initialized;
+    let hdUnits;
+
+
     function warnOnce(msg) {
-        if (!_warned.has(msg)) {
-            _warned.add(msg);
+        if (!warned.has(msg)) {
+            warned.add(msg);
             console.warn(msg);
         }
     }
+
 
     function _getCacheEntry(args) {
         const hashKey = JSON.stringify(args);
@@ -19,14 +25,15 @@ sauce.ns('locale', ns => {
             hashKey,
             args
         };
-        if (!cache.has(hashKey)) {
+        if (!msgCache.has(hashKey)) {
             entry.miss = true;
         } else {
             entry.hit = true;
-            entry.value = cache.get(hashKey);
+            entry.value = msgCache.get(hashKey);
         }
         return entry;
     }
+
 
     function _formatArgs(args) {
         if (typeof args === 'string') {
@@ -47,7 +54,7 @@ sauce.ns('locale', ns => {
             if (!value) {
                 warnOnce(`Locale message not found: ${entry.hashKey}`);
             }
-            cache.set(entry.hashKey, value);
+            msgCache.set(entry.hashKey, value);
             return value;
         }
     }
@@ -71,10 +78,10 @@ sauce.ns('locale', ns => {
                 if (!value) {
                     warnOnce(`Locale message not found: ${missing[i].hashKey}`);
                 }
-                cache.set(missing[i].hashKey, value);
+                msgCache.set(missing[i].hashKey, value);
             }
         }
-        return hashKeys.map(x => cache.get(x));
+        return hashKeys.map(x => msgCache.get(x));
     }
 
 
@@ -85,23 +92,68 @@ sauce.ns('locale', ns => {
     }
 
 
-    let _hdUnits;
-    async function humanInit() {
-        if (_hdUnits) {
+    let _initing;
+    async function init() {
+        if (initialized) {
             return;
         }
-        const units = ['year', 'week', 'day', 'hour', 'min', 'sec',
-                       'years', 'weeks', 'days', 'hours', 'mins', 'secs',
-                       'ago', 'now'];
-        _hdUnits = await getMessagesObject(units, 'time');
+        if (!_initing) {
+            _initing = _init();
+        }
+        await _initing;
     }
 
 
-    function humanDuration(elapsed, options) {
-        if (!_hdUnits) {
-            throw new TypeError('humanInit() must be called first');
+    async function _init() {
+        const units = ['year', 'week', 'day', 'hour', 'min', 'sec',
+                       'years', 'weeks', 'days', 'hours', 'mins', 'secs',
+                       'ago', 'now'];
+        hdUnits = await getMessagesObject(units, 'time');
+        ns.elevationFormatter = new Strava.I18n.ElevationFormatter();
+        ns.hrFormatter = new Strava.I18n.HeartRateFormatter();
+        ns.tempFormatter = new Strava.I18n.TemperatureFormatter();
+        Strava.I18n.FormatterTranslations.swim_cadence = {
+            abbr: "%{value} <abbr class='unit short' title='strokes per minute'>spm</abbr>",
+            "long": {
+                one: "%{count} strokes per minute",
+                other: "%{count} strokes per minute"
+            },
+            "short": "%{value} spm",
+            name_long: "strokes per minute",
+            name_short: "spm"
+        };
+        ns.cadenceFormatter = new Strava.I18n.CadenceFormatter();
+        ns.cadenceFormatterRun = new Strava.I18n.DoubledStepCadenceFormatter();
+        ns.cadenceFormatterSwim = new Strava.I18n.CadenceFormatter();
+        ns.cadenceFormatterSwim.key = 'swim_cadence';
+        ns.timeFormatter = new Strava.I18n.TimespanFormatter();
+        ns.weightFormatter = new Strava.I18n.WeightFormatter();
+        ns.distanceFormatter = new Strava.I18n.DistanceFormatter();
+        ns.paceFormatter = new Strava.I18n.PaceFormatter();
+        ns.speedFormatter = new Strava.I18n.DistancePerTimeFormatter();
+        ns.swimPaceFormatter = new Strava.I18n.SwimPaceFormatter;
+        initialized = true;
+    }
+
+
+    function assertInit() {
+        if (!initialized) {
+            throw new TypeError('init() must be called first');
         }
-        options = options || {};
+    }
+
+
+    function getPaceFormatter(type) {
+        return {
+            swim: ns.swimPaceFormatter,
+            speed: ns.speedFormatter,
+            pace: ns.paceFormatter
+        }[type || 'pace'];
+    }
+
+
+    function humanDuration(elapsed, options={}) {
+        assertInit();
         const min = 60;
         const hour = min * 60;
         const day = hour * 24;
@@ -126,7 +178,7 @@ sauce.ns('locale', ns => {
                 if (elapsed >= 2 * period) {
                     key += 's';
                 }
-                const suffix = _hdUnits[key];
+                const suffix = hdUnits[key];
                 stack.push(`${Math.floor(elapsed / period)} ${suffix}`);
                 elapsed %= period;
             }
@@ -136,24 +188,163 @@ sauce.ns('locale', ns => {
 
 
     function humanTimeAgo(date, options) {
-        if (!_hdUnits) {
-            throw new TypeError('humanInit() must be called first');
-        }
+        assertInit();
         const elapsed = (Date.now() - date) / 1000;
         const duration = humanDuration(elapsed, options);
         if (duration) {
-            return `${duration} ${_hdUnits.ago}`;
+            return `${duration} ${hdUnits.ago}`;
         } else {
-            return _hdUnits.now;
+            return hdUnits.now;
         }
     }
 
+
+    function humanWeight(kg) {
+        return humanNumber(ns.weightFormatter.convert(kg), 1);
+    }
+
+
+    function humanTime(seconds) {
+        assertInit();
+        return ns.timeFormatter.display(seconds);
+    }
+
+
+    function humanDistance(meters, precision) {
+        assertInit();
+        return ns.distanceFormatter.format(meters, precision || 2);
+    }
+
+
+    function humanPace(raw, options={}) {
+        assertInit();
+        const mps = options.velocity ? raw : 1 / raw;
+        const formatter = getPaceFormatter(options.type);
+        const value = formatter.key === 'distance_per_time' ? mps * 3600 : mps;
+        const minPace = 0.1;  // About 4.5 hours / mile
+        if (options.suffix) {
+            if (options.html) {
+                if (value < minPace) {
+                    return '<abbr class="unit short" title="Stopped">-</abbr>';
+                }
+                return formatter.abbreviated(value);
+            } else {
+                if (value < minPace) {
+                    return '-';
+                }
+                return formatter.formatShort(value);
+            }
+        } else {
+            if (value < minPace) {
+                return '-';
+            }
+            return formatter.format(value);
+        }
+    }
+
+
+    function humanNumber(value, precision=0) {
+        assertInit();
+        if (value == null || value === '') {
+            return '';
+        }
+        const n = Number(value);
+        if (isNaN(n)) {
+            console.warn("Value is not a number:", value);
+            return value;
+        }
+        if (precision === null) {
+            return n.toLocaleString();
+        } else if (precision === 0) {
+            return Math.round(n).toLocaleString();
+        } else {
+            return Number(n.toFixed(precision)).toLocaleString();
+        }
+    }
+
+
+    function humanElevation(meters, options={}) {
+        assertInit();
+        if (options.suffix) {
+            if (options.longSuffix) {
+                return ns.elevationFormatter.formatLong(meters);
+            } else {
+                return ns.elevationFormatter.formatShort(meters);
+            }
+        } else {
+            return ns.elevationFormatter.format(meters);
+        }
+    }
+
+
+    function humanStride(meters) {
+        assertInit();
+        const metric = ns.weightFormatter.unitSystem === 'metric';
+        if (metric) {
+            return humanNumber(meters, 2);
+        } else {
+            const feet = meters / metersPerMile * 5280;
+            return humanNumber(feet, 1);
+        }
+    }
+
+
+    function weightUnconvert(localeWeight) {
+        assertInit();
+        return ns.weightFormatter.unitSystem === 'metric' ? localeWeight : localeWeight / 2.20462;
+    }
+
+
+    function elevationUnconvert(localeEl) {
+        assertInit();
+        return ns.elevationFormatter.unitSystem === 'metric' ? localeEl : localeEl * 0.3048;
+    }
+
+
+    function velocityUnconvert(localeV, options={}) {
+        assertInit();
+        const f = getPaceFormatter(options.type);
+        return (f.unitSystem === 'metric' ? localeV * 1000 : localeV * metersPerMile) / 3600;
+    }
+
+
+    function distanceUnconvert(localeDist) {
+        assertInit();
+        return ns.distanceFormatter.unitSystem === 'metric' ? localeDist * 1000 : localeDist * metersPerMile;
+    }
+
+
     return {
+        init,
         getMessage,
         getMessages,
         getMessagesObject,
-        humanInit,
-        humanDuration,
-        humanTimeAgo
+        getPaceFormatter,
+        weightUnconvert,
+        elevationUnconvert,
+        velocityUnconvert,
+        distanceUnconvert,
+        human: {
+            duration: humanDuration,
+            timeAgo: humanTimeAgo,
+            weight: humanWeight,
+            elevation: humanElevation,
+            number: humanNumber,
+            pace: humanPace,
+            distance: humanDistance,
+            time: humanTime,
+            stride: humanStride,
+        },
+        templateHelpers: {
+            humanDuration,
+            humanTimeAgo,
+            humanWeight,
+            humanElevation,
+            humanNumber,
+            humanPace,
+            humanDistance,
+            humanTime,
+            humanStride,
+        },
     };
 });
