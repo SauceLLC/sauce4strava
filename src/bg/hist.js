@@ -161,19 +161,17 @@ sauce.ns('hist', async ns => {
             const ftp = athlete.getFTPAt(activity.get('ts'));
             const streams = actStreams.get(activity.pk);
             const stats = {};
-            if (streams.heartrate) {
-                if (hrZones) {
-                    try {
-                        const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
-                        stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
-                            ltHR, restingHR, maxHR, athlete.get('gender'));
-                    } catch(e) {
-                        activity.setSyncError(manifest, e);
-                        continue;
-                    }
+            if (streams.heartrate && hrZones) {
+                try {
+                    const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
+                    stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
+                        ltHR, restingHR, maxHR, athlete.get('gender'));
+                } catch(e) {
+                    activity.setSyncError(manifest, e);
+                    continue;
                 }
             }
-            if (ftp && (streams.watts || streams.watts_calc)) {
+            if (ftp && (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run'))) {
                 try {
                     const corrected = sauce.power.correctedPower(streams.time, streams.watts || streams.watts_calc);
                     if (!corrected) {
@@ -443,6 +441,17 @@ sauce.ns('hist', async ns => {
                     name: scriptData[id] && scriptData[id].name,
                 });
             }
+            function getBaseType(entry) {
+                for (const x of iconRegexps) {
+                    const m = entry.match(x);
+                    if (m) {
+                        return activityIconMap[m[1]];
+                    }
+                }
+                sauce.report.error(new Error('Unhandled activity type for: ' + athlete.pk));
+                debugger;
+                return 'workout'; // XXX later this is probably fine to assume.
+            }
             for (const m of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
                 const scriptish = m[1];
                 const idMatch = scriptish.match(/entity_id = \\"(.+?)\\";/);
@@ -527,7 +536,7 @@ sauce.ns('hist', async ns => {
                             debugger;
                             continue;
                         }
-                        addEntry(Number(idMatch[1]), ts, basetype);
+                        addEntry(Number(idMatch[1]), ts, getBaseType(subEntry));
                     }
                 } else {
                     const idMatch = entry.match(/id=\\'Activity-([0-9]+)\\'/);
@@ -536,7 +545,7 @@ sauce.ns('hist', async ns => {
                         debugger;
                         continue;
                     }
-                    addEntry(Number(idMatch[1]), ts, basetype);
+                    addEntry(Number(idMatch[1]), ts, getBaseType(entry));
                 }
             }
             return batch;
