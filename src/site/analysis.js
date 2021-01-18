@@ -225,7 +225,7 @@ sauce.ns('analysis', ns => {
             try {
                 cleanValue = options.validator($input.val());
             } catch(invalid) {
-                modal({
+                sauce.modal({
                     title: invalid.title,
                     body: invalid.message
                 });
@@ -260,80 +260,6 @@ sauce.ns('analysis', ns => {
             $input.css('width', `calc(${padding}px + ${$input.data('width')})`);
             $input.focus();
         });
-    }
-
-
-    function dialog(options) {
-        options = options || {};
-        const $dialog = jQuery(`<div>${options.body || ''}</div>`);
-        const dialogClass = `sauce-dialog ${options.dialogClass || ''}`;
-        if (options.flex) {
-            $dialog.addClass('flex');
-        }
-        // Assign default button(s) (will be clobbered if options.buttons is defined)
-        const buttons = [{
-            text: 'Close', // XXX locale
-            click: () => $dialog.dialog('close')
-        }];
-        if (Array.isArray(options.extraButtons)) {
-            for (const x of options.extraButtons) {
-                buttons.push(x);
-            }
-        } else if (options.extraButtons && typeof options.extraButtons === 'object') {
-            for (const [text, click] of Object.entries(options.extraButtons)) {
-                buttons.push({text, click});
-            }
-        }
-        $dialog.dialog(Object.assign({buttons}, options, {dialogClass}));
-        $dialog.on('click', 'a.help-info', ev => {
-            const helpFor = ev.currentTarget.dataset.help;
-            ev.currentTarget.classList.add('hidden');
-            $dialog.find(`.help[data-for="${helpFor}"]`).toggleClass('visible');
-        });
-        $dialog.on('click', '.help a.dismiss', ev => {
-            const help = ev.currentTarget.closest('.help');
-            help.classList.remove('visible');
-            $dialog.find(`a.help-info[data-help="${help.dataset.for}"]`).removeClass('hidden');
-        });
-        if (options.autoDestroy) {
-            $dialog.on('dialogclose', ev => void $dialog.dialog('destroy'));
-        }
-        if (options.closeOnMobileBack && ns.isMobile) {
-            const dialogId = Math.random();
-            history.pushState({dialogId}, null);
-            const onPop = ev => $dialog.dialog('close');
-            window.addEventListener('popstate', onPop);
-            $dialog.on('dialogclose', ev => {
-                window.removeEventListener('popstate', onPop);
-                if (history.state.dialogId === dialogId) {
-                    history.go(-1);
-                }
-            });
-        }
-        return $dialog;
-    }
-
-
-    function modal(options) {
-        return dialog(Object.assign({
-            modal: true,
-        }, options));
-    }
-
-
-    function mapDialog(latlngStream, options) {
-        const $dialog = dialog(Object.assign({
-            width: '80vw',
-            height: '400',
-        }, options));
-        $dialog.css('overflow', 'hidden');
-        const map = createPolylineMap(latlngStream, $dialog);
-        map.showGpxDownload(false);
-        map.showCreateRoute(false);
-        map.showPrivacyToggle(false);
-        map.showFullScreenToggle(false);
-        map.initializeMap();
-        $dialog.on('dialogresize', () => void map.map.resize());
     }
 
 
@@ -381,7 +307,7 @@ sauce.ns('analysis', ns => {
             onBlur: save,
             onSubmit: async v => {
                 await save(v);
-                modal({
+                sauce.modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect FTP change.</b>'
                 });
@@ -423,7 +349,7 @@ sauce.ns('analysis', ns => {
             onBlur: save,
             onSubmit: async v => {
                 await save(v);
-                modal({
+                sauce.modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect weight change.</b>'
                 });
@@ -987,7 +913,7 @@ sauce.ns('analysis', ns => {
                 }
             });
         }
-        const $dialog = dialog({
+        const $dialog = sauce.dialog({
             title: `${options.heading}: ${options.textLabel}`,
             icon: await sauce.images.asText(ns.peakIcons[options.source]),
             dialogClass: 'sauce-info-dialog',
@@ -995,7 +921,7 @@ sauce.ns('analysis', ns => {
             flex: true,
             resizable: false,
             autoOpen: false, // Defer till after graph render so position is correct
-            closeOnMobileBack: true,
+            closeOnMobileBack: ns.isMobile,
             position: {
                 my: 'left center',
                 at: 'right center',
@@ -1480,10 +1406,10 @@ sauce.ns('analysis', ns => {
         jQuery('body').on('click', 'img.sauce-rank', async ev => {
             closeCurrentInfoDialog();
             const powerProfileTpl = await getTemplate('power-profile-help.html');
-            const $dialog = modal({
+            const $dialog = sauce.modal({
                 title: 'Power Profile Badges Explained',
                 body: await powerProfileTpl(),
-                closeOnMobileBack: true,
+                closeOnMobileBack: ns.isMobile,
                 width: 600
             });
             const times = [];
@@ -1743,7 +1669,7 @@ sauce.ns('analysis', ns => {
                         sauce.report.event('LiveSegment', 'trial');
                     }
                     $dialog.dialog('destroy');
-                    modal({
+                    sauce.modal({
                         title: locale.success_create_title,
                         icon,
                         body: `
@@ -1774,7 +1700,7 @@ sauce.ns('analysis', ns => {
             });
         }
         const trialTitle = useTrial ? ` - Trial ${trialCount + 1} / ${maxTrials}` : '';
-        const $dialog = modal({
+        const $dialog = sauce.modal({
             title: `Live Segment ${locale.creator}${trialTitle}`,
             icon,
             body,
@@ -1951,7 +1877,7 @@ sauce.ns('analysis', ns => {
             }
             throw new Error("No Selected Tab");
         }
-        const $tfModal = modal({
+        const $tfModal = sauce.modal({
             title: `Trailforks Overviews`,
             dialogClass: 'trailforks-overviews no-pad',
             icon: `<img src="${sauce.extUrl}images/trailforks-250x250.png"/>`,
@@ -1968,7 +1894,7 @@ sauce.ns('analysis', ns => {
             width: 'min(80vw, 70em)',
             height: 600,
             flex: true,
-            closeOnMobileBack: true,
+            closeOnMobileBack: ns.isMobile,
             extraButtons: [{
                 text: 'Refresh',
                 click: () => selectedTab().renderer.refresh(),
@@ -2072,7 +1998,7 @@ sauce.ns('analysis', ns => {
         $el.on('click', 'a.tf-media.video', ev => {
             const id = ev.currentTarget.dataset.id;
             function videoModal({title, body}) {
-                return modal({
+                return sauce.modal({
                     title,
                     body,
                     dialogClass: 'no-pad',
@@ -2541,7 +2467,7 @@ sauce.ns('analysis', ns => {
         }
         const [initialData, initialWidth] = await renderData();
         let currentData = initialData;
-        const $dialog = modal({
+        const $dialog = sauce.modal({
             title: 'Raw Data',
             body: `<pre class="overflow">${initialData}</pre>`,
             flex: true,
@@ -2570,7 +2496,7 @@ sauce.ns('analysis', ns => {
         const start = ns.$analysisStats.data('start');
         const end = ns.$analysisStats.data('end');
         const $selector = await _dataViewStreamSelector();
-        const $dialog = modal({
+        const $dialog = sauce.modal({
             title: 'Graph Data',
             body: '<div class="graphs padded-info overflow"></div>',
             flex: true,
@@ -2744,7 +2670,7 @@ sauce.ns('analysis', ns => {
             distanceUnit: L.distanceFormatter.shortUnitKey(),
             powerColors
         });
-        const $dialog = modal({
+        const $dialog = sauce.modal({
             title: 'Performance Predictor',
             icon: await sauce.images.asText('fa/analytics-duotone.svg'),
             body,
@@ -2753,7 +2679,7 @@ sauce.ns('analysis', ns => {
             dialogClass: 'sauce-perf-predictor no-pad',
             resizable: false,
             draggable: false,
-            closeOnMobileBack: true,
+            closeOnMobileBack: ns.isMobile,
         });
         function fget(name) {
             return Number($dialog.find(`[name="${name}"]`).val());
@@ -3134,22 +3060,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function graphDialog(data, options) {
-        const $dialog = dialog(Object.assign({
-            title: 'Graph Dialog',
-            width: 600,
-            height: 300,
-        }, options));
-        $dialog.sparkline(data, Object.assign({
-            type: 'line',
-            width: '100%',
-            height: '100%',
-            tooltipFormatter: (_, __, data) => `${H.number(data.x, 6)}: ${H.number(data.y, 6)}`
-        }, options));
-        return $dialog;
-    }
-
-
     async function checkForSafariUpdates() {
         await sauce.proxy.connected;
         const latest = await sauce.storage.get('safariLatestVersion');
@@ -3165,7 +3075,7 @@ sauce.ns('analysis', ns => {
             }
             const build = await (await fetch(sauce.extUrl + 'build.json')).json();
             if (build.git_commit !== latest.commit) {
-                const $dialog = dialog({
+                const $dialog = sauce.dialog({
                     title: 'Sauce Update Available',
                     width: 500,
                     autoDestroy: true,
@@ -3271,14 +3181,10 @@ sauce.ns('analysis', ns => {
         load,
         fetchStream,
         fetchStreams,
-        dialog,
-        modal,
-        mapDialog,
         humanPace,
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,
-        graphDialog,
         checkForSafariUpdates,
     };
 });

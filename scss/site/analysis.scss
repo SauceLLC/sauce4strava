@@ -165,53 +165,6 @@ html.sauce-enabled {
     }
 }
 
-.sauce-sync-athlete-dialog {
-    .ui-dialog-content.sync-active {
-        .last-sync,
-        .next-sync {
-            display: none;
-        }
-
-        + .ui-dialog-buttonpane {
-            .sync-recompute,
-            .sync-start {
-                opacity: 0.5;
-                pointer-events: none;
-            }
-        }
-    }
-
-    .ui-dialog-content:not(.sync-active):not(.sync-disabled) + .ui-dialog-buttonpane {
-        .sync-cancel {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-    }
-
-    .ui-dialog-content.sync-disabled {
-        .entry.synced,
-        .entry.last-sync,
-        .entry.next-sync,
-        .entry.status {
-            display: none;
-        }
-
-        + .ui-dialog-buttonpane {
-            .sync-cancel,
-            .sync-recompute,
-            .sync-start {
-                opacity: 0.5;
-                pointer-events: none;
-            }
-        }
-    }
-
-    .ui-dialog-content:not(.sync-active) {
-        .entry.synced value progress {
-            display: none;
-        }
-    }
-}
 
 .actions-menu {
     .slide-menu .options {

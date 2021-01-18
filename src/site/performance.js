@@ -62,6 +62,7 @@ sauce.ns('performance', ns => {
         let period = 30;  // days // XXX remember last and or opt use URL params
         let periodEnd = maxEnd;  // opt use URL params
         let periodStart = periodEnd - 86400 * 1000 * period;
+        const controllers = {};
         const $page = jQuery('#error404');
         $page.html(await tpl({athletes}));
         $page.removeClass();  // removes all
@@ -86,6 +87,13 @@ sauce.ns('performance', ns => {
             periodEnd += period * DAY * (next ? 1 : -1);
             periodStart += period * DAY * (next ? 1 : -1);
             await render($page, athlete, periodStart, periodEnd);
+        });
+        $page.on('click', '.sync-info button.sync-panel', async ev => {
+            const mod = await sauce.getModule('/src/site/sync-panel.mjs');
+            if (!controllers[athlete.id]) {
+                controllers[athlete.id] = new sauce.hist.SyncController(athlete.id);
+            }
+            await mod.activitySyncDialog(athlete, controllers[athlete.id]);
         });
         await render($page, athlete, periodStart, periodEnd);
     }
@@ -127,7 +135,7 @@ sauce.ns('performance', ns => {
             if (ds.length) {
                 const data = chart.actsByDay[ds[0]._index];
                 console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString());
-                const t = await sauce.tpl.getTemplate('performance-details.html');
+                const t = await sauce.template.getTemplate('performance-details.html');
                 $page.find('aside.details').html(await t({
                     moment,
                     activities: data.activities
@@ -229,14 +237,14 @@ sauce.ns('performance', ns => {
                                 min: 0,
                                 suggestedMax: 5 * 3600,
                                 stepSize: 3600,
-                                callback: v => sauce.locale.humanDuration(v)
+                                callback: v => sauce.locale.human.duration(v)
                             }
                         }]
                     },
                     tooltips: {
                         mode: 'x',
                         callbacks: {
-                            label: item => sauce.locale.humanDuration(item.value),
+                            label: item => sauce.locale.human.duration(item.value),
                             footer: tooltipSummaryHandler
                         }
                     },
@@ -277,9 +285,10 @@ sauce.ns('performance', ns => {
 
     async function init() {
         await sauce.proxy.connected;
+        await sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter', {once: true}); // XXX find something just after all the locale stuff.
         const [, tpl, athletes] = await Promise.all([
-            sauce.locale.humanInit(),
-            getTemplate('performance.html'),
+            sauce.locale.init(),
+            sauce.template.getTemplate('performance.html'),
             sauce.hist.getEnabledAthletes(),
         ]);
         return {

@@ -174,6 +174,63 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    sauce.dialog = function(options={}) {
+        const $dialog = self.jQuery(`<div>${options.body || ''}</div>`);
+        const dialogClass = `sauce-dialog ${options.dialogClass || ''}`;
+        if (options.flex) {
+            $dialog.addClass('flex');
+        }
+        // Assign default button(s) (will be clobbered if options.buttons is defined)
+        const buttons = [{
+            text: 'Close', // XXX locale
+            click: () => $dialog.dialog('close')
+        }];
+        if (Array.isArray(options.extraButtons)) {
+            for (const x of options.extraButtons) {
+                buttons.push(x);
+            }
+        } else if (options.extraButtons && typeof options.extraButtons === 'object') {
+            for (const [text, click] of Object.entries(options.extraButtons)) {
+                buttons.push({text, click});
+            }
+        }
+        $dialog.dialog(Object.assign({buttons}, options, {dialogClass}));
+        $dialog.on('click', 'a.help-info', ev => {
+            const helpFor = ev.currentTarget.dataset.help;
+            ev.currentTarget.classList.add('hidden');
+            $dialog.find(`.help[data-for="${helpFor}"]`).toggleClass('visible');
+        });
+        $dialog.on('click', '.help a.dismiss', ev => {
+            const help = ev.currentTarget.closest('.help');
+            help.classList.remove('visible');
+            $dialog.find(`a.help-info[data-help="${help.dataset.for}"]`).removeClass('hidden');
+        });
+        if (options.autoDestroy) {
+            $dialog.on('dialogclose', ev => void $dialog.dialog('destroy'));
+        }
+        if (options.closeOnMobileBack) {
+            const dialogId = Math.random();
+            history.pushState({dialogId}, null);
+            const onPop = ev => $dialog.dialog('close');
+            window.addEventListener('popstate', onPop);
+            $dialog.on('dialogclose', ev => {
+                window.removeEventListener('popstate', onPop);
+                if (history.state.dialogId === dialogId) {
+                    history.go(-1);
+                }
+            });
+        }
+        return $dialog;
+    };
+
+
+    sauce.modal = function(options) {
+        return sauce.dialog(Object.assign({
+            modal: true,
+        }, options));
+    };
+
+
     sauce.propDefined = function(propertyAccessor, callback, options) {
         if (typeof callback === 'object' && options === undefined) {
             options = callback;

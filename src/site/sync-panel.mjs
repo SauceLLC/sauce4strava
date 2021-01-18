@@ -4,15 +4,14 @@
 export async function activitySyncDialog(athlete, syncController) {
     const enabled = athlete.sync;
     const template = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
-    const $modal = modal({
-        title: `Activity Sync Control Panel - ${ctx.athlete.get('display_name')}`,
+    const $modal = sauce.modal({
+        title: `Activity Sync Control Panel - ${athlete.name}`,
         icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
         dialogClass: 'sauce-sync-athlete-dialog',
         body: await template({
             enabled,
             athlete,
-            humanWeight,
-            weightUnit: ctx.weightFormatter.shortUnitKey(),
+            weightUnit: sauce.locale.weightFormatter.shortUnitKey(),
         }),
         flex: true,
         width: '40em',
@@ -80,7 +79,7 @@ export async function activitySyncDialog(athlete, syncController) {
                 const batch = [];
                 let page = 0;
                 const dl = () => {
-                    download(new Blob([sauce.encodeBundle(batch)]),
+                    sauce.download(new Blob([sauce.encodeBundle(batch)]),
                         `${athlete.name}-${page++}.sbin`);
                     batch.length = 0;
                 };
