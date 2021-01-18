@@ -1,0 +1,20 @@
+{
+    "name": "Sauce for Strava™ [ALPHA]",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "{0f1b4c25-4ab0-411e-ba22-e56c27f3d152}",
+            "strict_min_version": "68.0",
+            "update_url": "https://saucellc.io/alpha_updates.json"
+        }
+    },
+    "permissions": [
+        "tabs",
+        "https://saucellc.io/*",
+        "https://www.strava.com/*"
+    ],
+    "background": {
+        "scripts": [
+            "src/bg/main_legacy.js"
+        ]
+    }
+}
