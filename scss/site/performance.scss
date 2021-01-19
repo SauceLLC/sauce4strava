@@ -15,9 +15,30 @@
     flex-wrap: wrap;
 
     > nav {
-        flex: 1 0 15rem;
+        flex: 1 0 16rem;
         background: color.shade(bg, 10%);
         padding: 1em;
+
+        .athlete-info {
+            padding: 1em;
+            background: red;
+
+            row {
+                padding: 1em;
+                background: blue;
+                display: flex;
+                margin: 1em;
+
+                key {
+                    flex: 1 0 40%;
+                    font-variant: small-caps;
+                }
+
+                value {
+                    flex: 1 0 60%;
+                }
+            }
+        }
     }
 
     > main {
@@ -55,7 +76,7 @@
     > aside {
         padding: 1em;
         overflow: auto;
-        flex: 1 0 14rem;
+        flex: 1 0 18rem;
         color: color.shade(bg, 5%);
         background-image: linear-gradient(to right,
                                           #{color.shade(fg, 0%)},

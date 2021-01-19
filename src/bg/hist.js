@@ -1355,15 +1355,19 @@ sauce.ns('hist', async ns => {
         }
 
         rateLimiterResumes() {
-            const g = streamRateLimiterGroup;
-            if (g && g.sleeping()) {
-                return streamRateLimiterGroup.resumes();
+            if (this.isActiveSync()) {
+                const g = streamRateLimiterGroup;
+                if (g && g.sleeping()) {
+                    return streamRateLimiterGroup.resumes();
+                }
             }
         }
 
         rateLimiterSleeping() {
-            const g = streamRateLimiterGroup;
-            return g && g.sleeping();
+            if (this.isActiveSync()) {
+                const g = streamRateLimiterGroup;
+                return g && g.sleeping();
+            }
         }
 
         async lastSync() {

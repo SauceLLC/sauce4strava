@@ -879,7 +879,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             desc.push(` Stack frame: ${x}`);
         }
         const exDescription = desc.join('\n');
-        console.error('Reporting:', exDescription);
+        console.error('Reporting:', e);
         await ga('send', 'exception', {
             exDescription,
             exFatal: true,

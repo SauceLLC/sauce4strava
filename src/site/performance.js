@@ -1,9 +1,11 @@
-/* global sauce, jQuery, Chart, moment, regression */
+/* global sauce, jQuery, Chart, moment, regression, Backbone */
 
-sauce.ns('performance', ns => {
+sauce.ns('performance', async ns => {
     'use strict';
 
     Chart.plugins.unregister(self.ChartDataLabels);  // Disable data labels by default.
+    const initing = init();
+    await sauce.propDefined('Backbone.View', {once: true}); // XXX find something just after all the locale stuff.
 
     const DAY = 86400 * 1000;
 
@@ -55,27 +57,30 @@ sauce.ns('performance', ns => {
     }
 
 
+    class PageView extends Backbone.View {
+    }
+
+
     async function load() {
         const {tpl, athletes} = await initing;
         const maxEnd = Number(moment().endOf('day').toDate());
-        let athlete = athletes[0];  // XXX remember last or opt use URL param
         let period = 30;  // days // XXX remember last and or opt use URL params
         let periodEnd = maxEnd;  // opt use URL params
         let periodStart = periodEnd - 86400 * 1000 * period;
+        let athlete = athletes.values().next().value;  // XXX remember last or opt use URL param
         const controllers = {};
+        const syncCounts = {};
         const $page = jQuery('#error404');
-        $page.html(await tpl({athletes}));
+        const counting = sauce.hist.activityCounts(athlete.id).then(async counts => {
+            syncCounts[athlete.id] = counts;
+            await renderAthleteInfo($page, athlete, counts);
+        });
+        $page.html(await tpl({athletes: Array.from(athletes.values())}));
         $page.removeClass();  // removes all
         $page.attr('id', 'sauce-performance');
         $page.on('change', 'nav select[name="athlete"]', async ev => {
-            const athleteId = Number(ev.target.value);
-            for (const x of athletes) {
-                if (x.id === athleteId) {
-                    athlete = x;
-                    await render($page, athlete, periodStart, periodEnd);
-                    break;
-                }
-            }
+            athlete = athletes.get(Number(ev.target.value));
+            await render($page, athlete, periodStart, periodEnd);
         });
         $page.on('change', 'main header select[name="period"]', async ev => {
             period = Number(ev.target.value);
@@ -88,14 +93,35 @@ sauce.ns('performance', ns => {
             periodStart += period * DAY * (next ? 1 : -1);
             await render($page, athlete, periodStart, periodEnd);
         });
-        $page.on('click', '.sync-info button.sync-panel', async ev => {
+        $page.on('click', '.athlete-info button.sync-panel', async ev => {
             const mod = await sauce.getModule('/src/site/sync-panel.mjs');
             if (!controllers[athlete.id]) {
-                controllers[athlete.id] = new sauce.hist.SyncController(athlete.id);
+                const id = athlete.id;
+                const c = new sauce.hist.SyncController(id);
+                c.addEventListener('progress', async ev => {
+                    syncCounts[id] = ev.data.counts;
+                    if (id === athlete.id) {
+                        await renderAthleteInfo($page, athlete, ev.data.counts);
+                    }
+                });
+                controllers[athlete.id] = c;
             }
             await mod.activitySyncDialog(athlete, controllers[athlete.id]);
         });
         await render($page, athlete, periodStart, periodEnd);
+        await counting;  // propagate any errors
+    }
+
+
+    async function renderAthleteInfo($page, athlete, syncCounts) {
+        const athInfoTpl = await sauce.template.getTemplate('performance-athlete-info.html');
+        console.warn(10);
+        console.warn(20);
+        $page.find('nav .athlete-info').html(await athInfoTpl({
+            athlete,
+            syncCounts,
+        }));
+        console.warn(30);
     }
 
 
@@ -134,7 +160,7 @@ sauce.ns('performance', ns => {
             const ds = chart.getElementsAtEvent(ev);
             if (ds.length) {
                 const data = chart.actsByDay[ds[0]._index];
-                console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString());
+                console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString()); // XXX
                 const t = await sauce.template.getTemplate('performance-details.html');
                 $page.find('aside.details').html(await t({
                     moment,
@@ -284,42 +310,27 @@ sauce.ns('performance', ns => {
 
 
     async function init() {
+        console.warn(0);
         await sauce.proxy.connected;
+        console.warn(1);
         await sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter', {once: true}); // XXX find something just after all the locale stuff.
+        console.warn(2);
+        console.warn(3);
         const [, tpl, athletes] = await Promise.all([
             sauce.locale.init(),
             sauce.template.getTemplate('performance.html'),
-            sauce.hist.getEnabledAthletes(),
+            sauce.hist.getEnabledAthletes().then(data => new Map(data.map(x => [x.id, x])))
         ]);
+        console.warn(4);
         return {
             tpl,
             athletes,
         };
     }
 
-    const initing = init();
-
-    return {
-        init,
-        load,
-    };
+    if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
+        addEventListener('DOMContentLoaded', () => load().catch(sauce.report.error));
+    } else {
+        load().catch(sauce.report.error);
+    }
 });
-
-
-async function start() {
-    if (sauce.testing) {
-        return;
-    }
-    try {
-        await sauce.performance.load();
-    } catch(e) {
-        await sauce.report.error(e);
-        throw e;
-    }
-}
-
-if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
-    addEventListener('DOMContentLoaded', start);
-} else {
-    start();
-}
