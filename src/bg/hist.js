@@ -17,7 +17,6 @@ sauce.ns('hist', async ns => {
     const streamsStore = new sauce.hist.db.StreamsStore();
     const athletesStore = new sauce.hist.db.AthletesStore();
 
-
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'streams',
         name: 'fetch',
@@ -158,9 +157,15 @@ sauce.ns('hist', async ns => {
         const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
         const maxHR = hrZones && sauce.perf.estimateMaxHR(hrZones);
         for (const activity of activities) {
-            const ftp = athlete.getFTPAt(activity.get('ts'));
             const streams = actStreams.get(activity.pk);
-            const stats = {};
+            if (!streams.time || !streams.active) {
+                continue;
+            }
+            const ftp = athlete.getFTPAt(activity.get('ts'));
+            const stats = {
+                activeTime: sauce.data.activeTime(streams.time, streams.active)
+            };
+            activity.set({stats});
             if (streams.heartrate && hrZones) {
                 try {
                     const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
@@ -171,22 +176,21 @@ sauce.ns('hist', async ns => {
                     continue;
                 }
             }
-            if (ftp && (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run'))) {
+            if (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run')) {
+                const watts = streams.watts || streams.watts_calc;
                 try {
-                    const corrected = sauce.power.correctedPower(streams.time, streams.watts || streams.watts_calc);
+                    const corrected = sauce.power.correctedPower(streams.time, watts);
                     if (!corrected) {
                         continue;
                     }
-                    stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
                     stats.kj = corrected.kj();
                     stats.power = stats.kj * 1000 / stats.activeTime;
-                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
-                    if (streams.watts || activity.get('basetype') === 'run') {
-                        stats.np = corrected.np();
-                        stats.xp = corrected.xp();
+                    stats.np = corrected.np();
+                    stats.xp = corrected.xp();
+                    if (ftp) {
+                        stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
+                        stats.intensity = (stats.np || stats.power) / ftp;
                     }
-                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
-                    stats.intensity = (stats.np || stats.power) / ftp;
                 } catch(e) {
                     activity.setSyncError(manifest, e);
                     continue;
