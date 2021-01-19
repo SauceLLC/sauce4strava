@@ -1920,12 +1920,12 @@ sauce.ns('perf', function() {
     const chronicTrainingLoadConstant = 1 - Math.exp(-1 / 42);
     const acuteTrainingLoadConstant = 1 - Math.exp(-1 / 7);
     function _makeTrainingLoadCalc(c) {
-        return function(tssPerDayStream) {
+        return function(tssPerDayStream, tl=0) {
             // incominig stream should be indexed by day and zero padded.
-            let tl = 0;
             for (const tss of tssPerDayStream) {
                 tl = (tl * (1 - c)) + (tss * c);
             }
+            return tl;
         };
     }
 
