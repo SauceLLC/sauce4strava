@@ -1,11 +1,23 @@
 <div class="stats">
+    <button class="btn btn-block btn-secondary sync-panel">Sync Control</button>
     <row>
-        <key>Activities</key>
+        <key>Activities:</key>
         <value>{{humanNumber(syncCounts.total)}}</value>
     </row>
     <row>
-        <key>Synchronized</key>
-        <value>{{humanNumber(syncCounts.imported + syncCounts.unavailable)}}</value>
+        <key>Imported:</key>
+        <value>{{humanNumber(syncCounts.imported)}}</value>
     </row>
-    <button class="btn btn-block sync-panel">Control Panel</button>
+    <row>
+        <key>Unavailable:</key>
+        <value>{{humanNumber(syncCounts.unavailable)}}</value>
+    </row>
+    <row>
+        <key>Processed:</key>
+        <value>{{humanNumber(syncCounts.processed)}}</value>
+    </row>
+    <row>
+        <key>Unprocessable:</key>
+        <value>{{humanNumber(syncCounts.unprocessable)}}</value>
+    </row>
 </div>
