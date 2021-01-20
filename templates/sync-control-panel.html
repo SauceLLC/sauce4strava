@@ -54,10 +54,10 @@
                 <div class="entry">
                     <key>{{(new Date(x.ts)).toLocaleDateString()}}:</key>
                     <value>{{x.value.toLocaleString()}}<abbr class="unit">w</abbr>
-                    <button class="delete btn-sm">X</button></value>
+                    <button class="delete btn btn-sm btn-secondary">X</button></value>
                 </div>
             <% } %>
-            <button class="add btn-sm btn-block">Add new entry</button>
+            <button class="add btn btn-sm btn-block">Add new entry</button>
         </div>
     </div>
 
@@ -68,10 +68,10 @@
                 <div class="entry">
                     <key>{{(new Date(x.ts)).toLocaleDateString()}}:</key>
                     <value>{{humanWeight(x.value)}}<abbr class="unit">{{weightUnit}}</abbr></value>
-                    <button class="delete btn-sm">X</button></value>
+                    <button class="delete btn btn-sm btn-secondary">X</button></value>
                 </div>
             <% } %>
-            <button class="add btn-sm btn-block">Add new entry</button>
+            <button class="add btn btn-sm btn-block">Add new entry</button>
         </div>
     </div>
 </form>

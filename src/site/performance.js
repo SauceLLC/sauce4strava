@@ -99,7 +99,6 @@ sauce.ns('performance', async ns => {
         constructor(canvasSelector, view, config) {
             const ctx = document.querySelector(canvasSelector).getContext('2d');
             config = config || {};
-            console.log('before', JSON.stringify(config, null, 4));
             setDefault(config, 'type', 'bar');
             setDefault(config, 'options.plugins.colorschemes.scheme', 'brewer.Blues9');
             setDefault(config, 'options.plugins.colorschemes.reverse', true);
@@ -155,12 +154,12 @@ sauce.ns('performance', async ns => {
             return 'performance-athlete-info.html';
         }
 
-        async init({page}) {
+        async init({pageView}) {
             this.syncCounts = {};
             this.syncControllers = {};
             this.onSyncProgress = this._onSyncProgress.bind(this);
-            this.athlete = page.athlete;
-            this.listenTo(page, 'athlete', this.setAthlete);
+            this.athlete = pageView.athlete;
+            this.listenTo(pageView, 'change-athlete', this.setAthlete);
             await this.setAthlete(this.athlete, {noRender: true});
             await super.init();
         }
@@ -204,6 +203,32 @@ sauce.ns('performance', async ns => {
     }
 
 
+    class AsideDetailsView extends SauceView {
+        get tpl() {
+            return 'performance-details.html';
+        }
+
+        async init({pageView}) {
+            this.listenTo(pageView, 'change-athlete', async () => {
+                this.activities = null;
+                await this.render();
+            });
+            this.listenTo(pageView.mainView, 'select-activities', async activities => {
+                this.activities = activities;
+                await this.render();
+            });
+            await super.init();
+        }
+
+        async renderAttrs() {
+            return {
+                moment,
+                activities: this.activities
+            };
+        }
+    }
+
+
     class MainView extends SauceView {
         get events() {
             return {
@@ -216,14 +241,14 @@ sauce.ns('performance', async ns => {
             return 'performance-main.html';
         }
 
-        async init({page}) {
+        async init({pageView}) {
             this.period = 30;  // days // XXX remember last and or opt use URL params
             this.periodEndMax = Number(moment().endOf('day').toDate());
             this.periodEnd = this.periodEndMax;  // opt use URL params
             this.periodStart = this.periodEnd - (this.period * DAY);
             this.charts = {};
-            this.athlete = page.athlete;
-            this.listenTo(page, 'athlete', this.setAthlete);
+            this.athlete = pageView.athlete;
+            this.listenTo(pageView, 'change-athlete', this.setAthlete);
             await super.init();
         }
 
@@ -334,11 +359,7 @@ sauce.ns('performance', async ns => {
             if (ds.length) {
                 const data = this.actsByDay[ds[0]._index];
                 console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString()); // XXX
-                const t = await sauce.template.getTemplate('performance-details.html');
-                this.$('aside.details').html(await t({
-                    moment,
-                    activities: data.activities
-                }));
+                this.trigger('select-activities', data.activities);
             }
         }
 
@@ -377,8 +398,9 @@ sauce.ns('performance', async ns => {
         async init({athletes}) {
             this.athletes = athletes;
             this.athlete = athletes.values().next().value;  // XXX remember last or opt use URL param
-            this.athleteInfoView = new AthleteInfoView({page: this});
-            this.mainView = new MainView({page: this});
+            this.athleteInfoView = new AthleteInfoView({pageView: this});
+            this.mainView = new MainView({pageView: this});
+            this.asideDetailsView = new AsideDetailsView({pageView: this});
             await super.init();
         }
 
@@ -392,6 +414,7 @@ sauce.ns('performance', async ns => {
             await super.render();
             this.athleteInfoView.setElement(this.$('nav .athlete-info'));
             this.mainView.setElement(this.$('main'));
+            this.asideDetailsView.setElement(this.$('aside.details'));
             await Promise.all([
                 this.athleteInfoView.render(),
                 this.mainView.render(),
@@ -400,7 +423,7 @@ sauce.ns('performance', async ns => {
 
         onAthleteChange(ev) {
             this.athlete = this.athletes.get(Number(ev.target.value));
-            this.trigger('athlete', this.athlete);
+            this.trigger('change-athlete', this.athlete);
         }
     }
 
@@ -410,8 +433,8 @@ sauce.ns('performance', async ns => {
         const $page = jQuery('#error404');  // replace the 404 content
         $page.removeClass();  // removes all
         $page.attr('id', 'sauce-performance');
-        const page = new PageView({athletes, el: $page});
-        await page.render();
+        const pageView = new PageView({athletes, el: $page});
+        await pageView.render();
     }
 
 
