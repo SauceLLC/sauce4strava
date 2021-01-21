@@ -401,6 +401,7 @@ sauce.ns('hist', async ns => {
                 'icon-alpineski': 'ski',
                 'icon-nordicski': 'ski',
                 'icon-backcountryski': 'ski',
+                'icon-snowboard': 'ski',
                 'icon-ebikeride': 'ebike',
                 'icon-workout': 'workout',
                 'icon-standuppaddling': 'workout',
