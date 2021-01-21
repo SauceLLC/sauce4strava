@@ -5,30 +5,8 @@
 @use 'peakinfo';
 @use 'color';
 @use 'trailforks';
-
-
-@keyframes rotation {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(359deg);
-    }
-}
-
-// XXX move to _buttons.scss
-.button,
-button {
-    &.sauce-loading::before {
-        content: url(../../images/fa/spinner-third-duotone.svg);
-        width: 2em;
-        margin: -0.5em 0.5em -0.5em 0;
-        line-height: 0;
-        animation: rotation 3s infinite steps(30 * 3);
-    }
-}
-// /XXX
-
+@use 'buttons';
+@use 'animations';
 
 
 html.sauce-enabled {

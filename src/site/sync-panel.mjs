@@ -19,14 +19,14 @@ export async function activitySyncDialog(athlete, syncController) {
         closeOnMobileBack: true,
         extraButtons: [{
             text: 'Cancel Sync',
-            class: 'btn-primary sync-cancel',
+            class: 'btn btn-primary sync-cancel',
             click: ev => {
                 $modal.removeClass('sync-active');
                 syncController.cancel();
             }
         }, {
             text: 'Recompute Activity Metrics',
-            class: 'btn-primary sync-recompute',
+            class: 'btn btn-primary sync-recompute',
             click: async ev => {
                 $modal.addClass('sync-active');
                 $modal.find('.entry.synced progress').removeAttr('value');
@@ -35,7 +35,7 @@ export async function activitySyncDialog(athlete, syncController) {
             }
         }, {
             text: 'Sync Activity Data',
-            class: 'btn-primary sync-start',
+            class: 'btn btn-primary sync-start',
             click: ev => {
                 $modal.addClass('sync-active');
                 syncController.start();

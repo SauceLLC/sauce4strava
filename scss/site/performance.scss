@@ -1,6 +1,7 @@
 @use 'chart';
 @use 'color';
 @use 'dialog';
+@use 'buttons';
 
 
 #sauce-performance {
@@ -37,7 +38,7 @@
         background: color.shade(bg, 10%);
         padding: 1em;
 
-        .athlete-info {
+        .summary {
             padding: 0.5em;
             background: color.shade(bg, 4%);
             border-radius: 0.28em;

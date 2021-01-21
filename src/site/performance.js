@@ -143,7 +143,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class AthleteInfoView extends SauceView {
+    class SummaryView extends SauceView {
         get events() {
             return {
                 'click button.sync-panel': 'onControlPanelClick',
@@ -151,7 +151,7 @@ sauce.ns('performance', async ns => {
         }
 
         get tpl() {
-            return 'performance-athlete-info.html';
+            return 'performance-summary.html';
         }
 
         async init({pageView}) {
@@ -195,15 +195,10 @@ sauce.ns('performance', async ns => {
             this.syncCounts[this.athlete.id] = ev.data.counts;
             await this.render();
         }
-
-        async onControlPanelClick(ev) {
-            const mod = await sauce.getModule('/src/site/sync-panel.mjs');
-            await mod.activitySyncDialog(this.athlete, this.syncControllers[this.athlete.id]);
-        }
     }
 
 
-    class AsideDetailsView extends SauceView {
+    class DetailsView extends SauceView {
         get tpl() {
             return 'performance-details.html';
         }
@@ -387,7 +382,8 @@ sauce.ns('performance', async ns => {
     class PageView extends SauceView {
         get events() {
             return {
-                'change nav select[name=athlete]': 'onAthleteChange'
+                'change nav select[name=athlete]': 'onAthleteChange',
+                'click button.sync-panel': 'onControlPanelClick',
             };
         }
 
@@ -398,9 +394,9 @@ sauce.ns('performance', async ns => {
         async init({athletes}) {
             this.athletes = athletes;
             this.athlete = athletes.values().next().value;  // XXX remember last or opt use URL param
-            this.athleteInfoView = new AthleteInfoView({pageView: this});
+            this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
-            this.asideDetailsView = new AsideDetailsView({pageView: this});
+            this.detailsView = new DetailsView({pageView: this});
             await super.init();
         }
 
@@ -412,18 +408,25 @@ sauce.ns('performance', async ns => {
 
         async render() {
             await super.render();
-            this.athleteInfoView.setElement(this.$('nav .athlete-info'));
+            this.summaryView.setElement(this.$('nav .summary'));
             this.mainView.setElement(this.$('main'));
-            this.asideDetailsView.setElement(this.$('aside.details'));
+            this.detailsView.setElement(this.$('aside.details'));
             await Promise.all([
-                this.athleteInfoView.render(),
+                this.summaryView.render(),
                 this.mainView.render(),
+                this.detailsView.render(),
             ]);
         }
 
         onAthleteChange(ev) {
             this.athlete = this.athletes.get(Number(ev.target.value));
             this.trigger('change-athlete', this.athlete);
+        }
+
+        async onControlPanelClick(ev) {
+            const mod = await sauce.getModule('/src/site/sync-panel.mjs');
+            const syncControllers = this.summaryView.syncControllers;
+            await mod.activitySyncDialog(this.athlete, syncControllers[this.athlete.id]);
         }
     }
 

@@ -8,10 +8,12 @@
                 <option value="{{x.id}}">{{x.name}}</option>
             <% } %>
         </select>
+        <button class="btn btn-icon-only sync-panel"
+                title="Open control panel for this athlete.">{-await fa('cog-duotone')-}</button>
 
         <br/>
 
-        <div class="athlete-info"></div>
+        <div class="summary"></div>
     </nav>
 
     <main></main>

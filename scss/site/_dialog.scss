@@ -10,6 +10,7 @@
 html .ui-dialog {
     background: transparent;
     border: none;
+    font-size: 1em; // This is the default in analysis but not other pages, so we need to set it.
 
     .ui-widget-content,
     .ui-dialog-content {
@@ -28,6 +29,15 @@ html .ui-dialog {
 
     .ui-widget-header {
         border-color: color.shade(bg, 20%);
+    }
+
+    // Copy from analysis page so behavior is same elsewhere (perf page)
+    form {
+        > button,
+        >input[type="submit"],
+        form>input[type="button"] {
+            margin-top: 10px;
+        }
     }
 }
 

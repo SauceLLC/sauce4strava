@@ -67,7 +67,7 @@ sauce.ns('template', ns => {
 
 
     ns.helpers = {
-        faIcon: async function(icon) {
+        fa: async function(icon) {
             return await sauce.images.asText(`fa/${icon}.svg`);
         }
     };
