@@ -3233,11 +3233,25 @@ sauce.ns('analysis', ns => {
 
 
     function updateUserId() {
-        const lastKnown = Number(localStorage.getItem('sauce-last-known-user-id')) || undefined;
+        const idKey = 'sauce-last-known-user-id';
+        // Look in session storage first as it is the safest value.  It's possible we could be
+        // failing to update localStorage and a stale value is stuck there.
+        const lastKnown = Number(sessionStorage.getItem(idKey)) ||
+                          Number(localStorage.getItem(idKey)) ||
+                          undefined;
         const currentId = pageView.currentAthlete().id;
         if (currentId !== lastKnown) {
-            localStorage.setItem('sauce-last-known-user-id', currentId);
             console.warn("User ID updated, a page refresh is recommened..");
+            try {
+                sessionStorage.setItem(idKey, currentId);
+            } catch(e) {
+                console.error("Unable to store user ID in sessionStorage:", e);
+            }
+            try {
+                localStorage.setItem(idKey, currentId);
+            } catch(e) {
+                console.warn("Unable to store user ID in localStorage:", e);
+            }
         }
     }
 

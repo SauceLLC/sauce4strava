@@ -30,28 +30,40 @@
             exp = Date.now() + (3600 * 1000);
         }
         sauce.storage.set({patronLevel});  // bg okay (only for ext pages)
-        localStorage.setItem(`sp-${athleteId}`, JSON.stringify([exp, patronLevel]));
+        const encoded = JSON.stringify([exp, patronLevel]);
+        try {
+            sessionStorage.setItem(`sp-${athleteId}`, encoded);
+        } catch(e) {
+            console.error("Unable to cache patron level in sessionStorage:", e);
+        }
+        try {
+            localStorage.setItem(`sp-${athleteId}`, encoded);
+        } catch(e) {
+            console.warn("Unable to cache patron level in localStorage:", e);
+        }
         return patronLevel;
     }
 
 
-    async function fetchLevelNames() {
+    async function updateLevelNames() {
         const resp = await fetch('https://saucellc.io/patron_levels.json');
         const patronLevelNames = await resp.json();
         patronLevelNames.sort((a, b) => b.level - a.level);
-        sauce.storage.set({patronLevelNames});  // bg okay (only for ext pages)
-        const exp = Date.now() + (1 * 86400 * 1000);
-        localStorage.setItem(`sp-level-names`, JSON.stringify([exp, patronLevelNames]));
+        const patronLevelNamesTimestamp = Date.now();
+        await sauce.storage.set({patronLevelNames, patronLevelNamesTimestamp});
         return patronLevelNames;
     }
 
 
     ns.getLevel = function() {
-        const athleteId = Number(localStorage.getItem('sauce-last-known-user-id')) || undefined;
+        const idKey = 'sauce-last-known-user-id';
+        const athleteId = Number(sessionStorage.getItem(idKey)) ||
+                          Number(localStorage.getItem(idKey)) || undefined;
         if (!athleteId) {
             return 0;
         }
-        const cacheEntry = localStorage.getItem(`sp-${athleteId}`);
+        const cacheEntry = sessionStorage.getItem(`sp-${athleteId}`) ||
+                           localStorage.getItem(`sp-${athleteId}`);
         if (cacheEntry) {
             const [exp, level] = JSON.parse(cacheEntry);
             if (exp > Date.now()) {
@@ -63,27 +75,18 @@
     };
 
 
-    ns.getLevelName = function(level) {
-        const cacheEntry = localStorage.getItem(`sp-level-names`);
-        let exp, levels;
-        if (cacheEntry) {
-            [exp, levels] = JSON.parse(cacheEntry);
-            if (exp <= Date.now()) {
-                // expired
-                levels = null;
-            }
-        }
-        function _getName(levels) {
-            for (const x of levels) {
-                if (x.level <= level) {
-                    return x.name;
-                }
-            }
-        }
-        if (levels) {
-            return _getName(levels);
+    ns.getLevelName = async function(level) {
+        const ts = await sauce.storage.get('patronLevelNamesTimestamp');
+        let levels;
+        if (!ts || ts < Date.now() - 7 * 86400 * 1000) {
+            levels = await updateLevelNames();
         } else {
-            return fetchLevelNames().then(_getName);
+            levels = await sauce.storage.get('patronLevelNames');
+        }
+        for (const x of levels) {
+            if (x.level <= level) {
+                return x.name;
+            }
         }
     };
 })();

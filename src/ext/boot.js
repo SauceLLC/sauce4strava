@@ -218,15 +218,11 @@
         document.documentElement.classList.add('sauce-enabled');
         const ext = browser.runtime.getManifest();
         let patronLevel;
-        let patronLevelName;
         try {
             const p = sauce.patron.getLevel();
             patronLevel = (p instanceof Promise) ? await p : p;
-            if (patronLevel) {
-                const n = sauce.patron.getLevelName(patronLevel);
-                patronLevelName = (n instanceof Promise) ? await n : n;
-            }
         } catch(e) {
+            console.error("Unable to get patron level:", e);
             patronLevel = 0;
         }
         insertScript(`
@@ -237,7 +233,6 @@
             sauce.name = "${ext.name}";
             sauce.version = "${ext.version}";
             sauce.patronLevel = ${patronLevel};
-            sauce.patronLevelName = "${patronLevelName || ''}";
         `);
         for (const m of manifests) {
             if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||
