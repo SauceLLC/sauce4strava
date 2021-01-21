@@ -1,47 +1,57 @@
-<section class="stats">
-    <button class="btn btn-block btn-secondary sync-panel">Sync Control</button>
+<section class="overview">
+    <header>Overview</header>
     <row>
-        <key>Activities:</key>
-        <value>{{humanNumber(syncCounts.total)}}</value>
+        <key>Weekly TSS:</key>
+        <value>{{humanNumber(weeklyTSS)}}</value>
     </row>
     <row>
-        <key>Imported:</key>
-        <value>{{humanNumber(syncCounts.imported)}}</value>
+        <key>Weekly Volume:</key>
+        <value>{{humanDuration(weeklyTime)}}</value>
     </row>
     <row>
-        <key>Unavailable:</key>
-        <value>{{humanNumber(syncCounts.unavailable)}}</value>
+        <key>Best 5 sec power:</key>
+        <value>{{humanNumber(peaks.s5)}}w</value>
     </row>
     <row>
-        <key>Processed:</key>
-        <value>{{humanNumber(syncCounts.processed)}}</value>
+        <key>Best 1 min power:</key>
+        <value>{{humanNumber(peaks.s60)}}w</value>
     </row>
     <row>
-        <key>Unprocessable:</key>
-        <value>{{humanNumber(syncCounts.unprocessable)}}</value>
+        <key>Best 5 min power:</key>
+        <value>{{humanNumber(peaks.s300)}}w</value>
+    </row>
+    <row>
+        <key>Best 20 min power:</key>
+        <value>{{humanNumber(peaks.s1200)}}w</value>
+    </row>
+    <row>
+        <key>Best 60 min power:</key>
+        <value>{{humanNumber(peaks.s3600)}}w</value>
     </row>
 </section>
 
-<section class="overview">
-    <button class="btn btn-block btn-secondary sync-panel">Sync Control</button>
-    <row>
-        <key>Activities:</key>
-        <value>{{humanNumber(syncCounts.total)}}</value>
-    </row>
-    <row>
-        <key>Imported:</key>
-        <value>{{humanNumber(syncCounts.imported)}}</value>
-    </row>
-    <row>
-        <key>Unavailable:</key>
-        <value>{{humanNumber(syncCounts.unavailable)}}</value>
-    </row>
-    <row>
-        <key>Processed:</key>
-        <value>{{humanNumber(syncCounts.processed)}}</value>
-    </row>
-    <row>
-        <key>Unprocessable:</key>
-        <value>{{humanNumber(syncCounts.unprocessable)}}</value>
-    </row>
-</section>
+<% if (obj.syncCounts) { %>
+    <section class="stats">
+        <header>Sync Counts</header>
+        <row>
+            <key>Activities:</key>
+            <value>{{humanNumber(syncCounts.total)}}</value>
+        </row>
+        <row>
+            <key>Imported:</key>
+            <value>{{humanNumber(syncCounts.imported)}}</value>
+        </row>
+        <row>
+            <key>Unavailable:</key>
+            <value>{{humanNumber(syncCounts.unavailable)}}</value>
+        </row>
+        <row>
+            <key>Processed:</key>
+            <value>{{humanNumber(syncCounts.processed)}}</value>
+        </row>
+        <row>
+            <key>Unprocessable:</key>
+            <value>{{humanNumber(syncCounts.unprocessable)}}</value>
+        </row>
+    </section>
+<% } %>

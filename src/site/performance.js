@@ -23,6 +23,7 @@ sauce.ns('performance', async ns => {
             while (i < activities.length) {
                 const a = activities[i];
                 if (a.ts >= ts && a.ts < ts + DAY) {
+                    console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString()); // XXX
                     acts.push(a);
                     i++;
                 } else {
@@ -160,6 +161,7 @@ sauce.ns('performance', async ns => {
             this.onSyncProgress = this._onSyncProgress.bind(this);
             this.athlete = pageView.athlete;
             this.listenTo(pageView, 'change-athlete', this.setAthlete);
+            this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
             await this.setAthlete(this.athlete, {noRender: true});
             await super.init();
         }
@@ -167,7 +169,16 @@ sauce.ns('performance', async ns => {
         renderAttrs() {
             return {
                 athlete: this.athlete,
-                syncCounts: this.syncCounts[this.athlete.id]
+                syncCounts: this.syncCounts[this.athlete.id],
+                weeklyTSS: 1000 * Math.random(),
+                weeklyTime: 3600 * 10 * Math.random(),
+                peaks: {
+                    s5: 2000 * Math.random(),
+                    s60: 1000 * Math.random(),
+                    s300: 800 * Math.random(),
+                    s1200: 600 * Math.random(),
+                    s3600: 400 * Math.random(),
+                }
             };
         }
 
@@ -195,6 +206,11 @@ sauce.ns('performance', async ns => {
             this.syncCounts[this.athlete.id] = ev.data.counts;
             await this.render();
         }
+
+        async onUpdatePeriod({activitiesByDay}) {
+            console.warn("XXX");
+            await this.render();
+        }
     }
 
 
@@ -208,7 +224,7 @@ sauce.ns('performance', async ns => {
                 this.activities = null;
                 await this.render();
             });
-            this.listenTo(pageView.mainView, 'select-activities', async activities => {
+            this.listenTo(pageView, 'select-activities', async activities => {
                 this.activities = activities;
                 await this.render();
             });
@@ -237,6 +253,7 @@ sauce.ns('performance', async ns => {
         }
 
         async init({pageView}) {
+            this.pageView = pageView;
             this.period = 30;  // days // XXX remember last and or opt use URL params
             this.periodEndMax = Number(moment().endOf('day').toDate());
             this.periodEnd = this.periodEndMax;  // opt use URL params
@@ -290,6 +307,7 @@ sauce.ns('performance', async ns => {
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id, {start, end});
             activities.reverse();
             this.actsByDay = activitiesByDay(activities, this.periodStart, this.periodEnd);
+            this.pageView.trigger('update-period', {start, end, activities, activitiesByDay: this.actsByDay});
             const actsDataStacks = activitiesByDayToDateStacks(this.actsByDay);
             const $start = this.$('header span.period.start');
             const $end = this.$('header span.period.end');
@@ -354,7 +372,7 @@ sauce.ns('performance', async ns => {
             if (ds.length) {
                 const data = this.actsByDay[ds[0]._index];
                 console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString()); // XXX
-                this.trigger('select-activities', data.activities);
+                this.pageView.trigger('select-activities', data.activities);
             }
         }
 
