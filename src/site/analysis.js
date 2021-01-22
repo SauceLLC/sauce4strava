@@ -3103,19 +3103,19 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function updateUserId() {
-        const lastKnown = Number(localStorage.getItem('sauce-last-known-user-id')) || undefined;
+    async function updateUserId() {
+        const lastKnown = await sauce.storage.get('currentUser');
         const currentId = pageView.currentAthlete().id;
         if (currentId !== lastKnown) {
-            localStorage.setItem('sauce-last-known-user-id', currentId);
-            console.warn("User ID updated, a page refresh is recommened..");
+            await sauce.storage.set('currentUser', currentId);
+            console.warn("User ID updated, a page refresh is recommened.");
         }
     }
 
 
     async function load() {
         await sauce.propDefined('pageView', {once: true});
-        updateUserId();
+        updateUserId().catch(sauce.report.error);
         if (sauce.options['responsive']) {
             attachMobileMenuExpander().catch(sauce.report.error);
             pageView.unbindScrollListener();

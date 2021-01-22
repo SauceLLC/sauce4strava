@@ -30,12 +30,28 @@
     // Required to make site start with alarms API
     browser.alarms.onAlarm.addListener(() => void 0);
 
+    self.disabled = Boolean(Number(localStorage.getItem('disabled')));
     self.currentUser = Number(localStorage.getItem('currentUser')) || undefined;
     browser.runtime.onMessage.addListener(msg => {
         if (msg && msg.source === 'ext/boot') {
-            if (msg.op === 'setCurrentUser') {
+            if (msg.op === 'setEnabled') {
+                if (self.disabled) {
+                    console.info("Extension enabled.");
+                    self.disabled = false;
+                    localStorage.removeItem('disabled');
+                    self.dispatchEvent(new Event('enabled'));
+                }
+            } else if (msg.op === 'setDisabled') {
+                if (!self.disabled) {
+                    console.info("Extension disabled.");
+                    self.disabled = true;
+                    localStorage.setItem('disabled', '1');
+                    self.dispatchEvent(new Event('disabled'));
+                }
+            } else if (msg.op === 'setCurrentUser') {
                 const id = msg.currentUser || undefined;
                 if (self.currentUser !== id) {
+                    console.info("Current user updated.");
                     self.currentUser = id;
                     localStorage.setItem('currentUser', id);
                     const ev = new Event('currentUserUpdate');

@@ -1461,17 +1461,33 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(DataExchange, {namespace});
 
 
-    if (self.currentUser) {
+    if (!self.disabled && self.currentUser) {
         ns.syncManager = new SyncManager(self.currentUser);
     }
     addEventListener('currentUserUpdate', async ev => {
         if (ns.syncManager && ns.syncManager.currentUser !== ev.id) {
-            console.warn("Stopping Sync Manager due to user change...");
+            console.info("Stopping Sync Manager due to user change...");
             ns.syncManager.stop();
             await ns.syncManager.join();
             console.debug("Sync Manager stopped.");
         }
         ns.syncManager = ev.id ? new SyncManager(ev.id) : null;
+    });
+    addEventListener('enabled', ev => {
+        if (!ns.syncManager && self.currentUser) {
+            console.info("Starting Sync Manager...");
+            ns.syncManager = new SyncManager(self.currentUser);
+        }
+    });
+    addEventListener('disabled', async ev => {
+        if (ns.syncManager) {
+            console.info("Stopping Sync Manager...");
+            const mgr = ns.syncManager;
+            ns.syncManager = null;
+            mgr.stop();
+            await mgr.join();
+            console.debug("Sync Manager stopped.");
+        }
     });
 
 

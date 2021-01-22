@@ -218,10 +218,38 @@
     }
 
 
+    async function sha256(input) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(input);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hash));
+        return hashArray.map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+
+
+    async function refreshPatronLevel(athleteId) {
+        const resp = await fetch('https://saucellc.io/patrons.json');
+        const fullPatrons = await resp.json();
+        const hash = await sha256(athleteId);
+        let patronLevel = 0;
+        if (fullPatrons[hash]) {
+            const ts = await sauce.storage.get('patronLevelNamesTimestamp');
+            if (!ts || ts < Date.now() - (7 * 86400 * 1000)) {
+                const resp2 = await fetch('https://saucellc.io/patron_levels.json');
+                const patronLevelNames = await resp2.json();
+                patronLevelNames.sort((a, b) => b.level - a.level);
+                const patronLevelNamesTimestamp = Date.now();
+                await sauce.storage.set({patronLevelNames, patronLevelNamesTimestamp});
+            }
+            patronLevel = fullPatrons[hash].level || 0;
+        }
+        const patronLevelExpiration = Date.now() + (patronLevel ? (7 * 86400 * 1000) : (3600 * 1000));
+        await sauce.storage.set({patronLevel, patronLevelExpiration});
+        return patronLevel;
+    }
+
+
     async function load() {
-        const currentUser = Number(localStorage.getItem('sauce-last-known-user-id')) || undefined;
-        browser.runtime.sendMessage({source: 'ext/boot', op: 'setCurrentUser', currentUser});
-        const extUrl = browser.runtime.getURL('');
         /* Using the src works but is async, this will block the page from loading while the scripts
          * are evaluated and executed, preventing race conditions in our preloader */
         insertScript([
@@ -232,24 +260,27 @@
         ].join('\n'));
         const config = await sauce.storage.get(null);
         if (config.enabled === false) {
-            document.documentElement.classList.add('sauce-disabled');
             console.info("Sauce is disabled");
+            document.documentElement.classList.add('sauce-disabled');
+            browser.runtime.sendMessage({source: 'ext/boot', op: 'setDisabled'});
             return;
         }
         document.documentElement.classList.add('sauce-enabled');
-        const ext = browser.runtime.getManifest();
+        const currentUser = config.currentUser;
         let patronLevel;
-        let patronLevelName;
-        try {
-            const p = sauce.patron.getLevel();
-            patronLevel = (p instanceof Promise) ? await p : p;
-            if (patronLevel) {
-                const n = sauce.patron.getLevelName(patronLevel);
-                patronLevelName = (n instanceof Promise) ? await n : n;
+        if (!config.patronLevelExpiration || config.patronLevelExpiration < Date.now()) {
+            try {
+                patronLevel = await refreshPatronLevel(currentUser);
+            } catch(e) {
+                console.error('Failed to refresh patron level:', e);
+                // Fallback to stale value;  Might just be infra issue...
+                patronLevel = config.patronLevel || 0;
             }
-        } catch(e) {
-            patronLevel = 0;
+        } else {
+            patronLevel = config.patronLevel || 0;
         }
+        const ext = browser.runtime.getManifest();
+        const extUrl = browser.runtime.getURL('');
         insertScript(`
             self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(config.options)};
@@ -258,7 +289,6 @@
             sauce.name = "${ext.name}";
             sauce.version = "${ext.version}";
             sauce.patronLevel = ${patronLevel};
-            sauce.patronLevelName = "${patronLevelName || ''}";
         `);
         for (const m of manifests) {
             if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||
@@ -282,6 +312,8 @@
                 await loadScripts(m.scripts.map(x => `${extUrl}src/${x}`));
             }
         }
+        browser.runtime.sendMessage({source: 'ext/boot', op: 'setEnabled'});
+        browser.runtime.sendMessage({source: 'ext/boot', op: 'setCurrentUser', currentUser});
         if (isSafari()) {
             const lastCheck = config.lastSafariUpdateCheck || 0;
             const lastVersion = config.lastSafariVersion || ext.version;

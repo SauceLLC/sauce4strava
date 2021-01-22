@@ -23,7 +23,6 @@ sauce.ns('performance', async ns => {
             while (i < activities.length) {
                 const a = activities[i];
                 if (a.ts >= ts && a.ts < ts + DAY) {
-                    console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString()); // XXX
                     acts.push(a);
                     i++;
                 } else {
