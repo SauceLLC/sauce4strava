@@ -102,7 +102,9 @@ sauce.ns('proxy', ns => {
         }
 
         removeEventListener(name, callback) {
-            this._listeners.get(name).delete(callback);
+            if (this._listeners.has(name)) {
+                this._listeners.get(name).delete(callback);
+            }
         }
 
         _onPortMessage(ev) {

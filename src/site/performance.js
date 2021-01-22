@@ -144,19 +144,13 @@ sauce.ns('performance', async ns => {
 
 
     class SummaryView extends SauceView {
-        get events() {
-            return {
-                'click button.sync-panel': 'onControlPanelClick',
-            };
-        }
-
         get tpl() {
             return 'performance-summary.html';
         }
 
         async init({pageView}) {
+            this.pageView = pageView;
             this.syncCounts = {};
-            this.syncControllers = {};
             this.onSyncProgress = this._onSyncProgress.bind(this);
             this.athlete = pageView.athlete;
             this.listenTo(pageView, 'change-athlete', this.setAthlete);
@@ -183,19 +177,15 @@ sauce.ns('performance', async ns => {
 
         async setAthlete(athlete, options={}) {
             await this.initialized;
-            if (this.syncControllers[this.athlete.id]) {
-                this.syncControllers[this.athlete.id].removeEventListener('progress', this.onSyncProgress);
-            }
             const id = athlete.id;
+            if (this.syncController) {
+                this.syncController.removeEventListener('progress', this.onSyncProgress);
+            }
+            this.syncController = this.pageView.syncControllers[id];
+            this.syncController.addEventListener('progress', this.onSyncProgress);
             this.athlete = athlete;
-            if (!this.syncCounts[id]) {
-                const counts = await sauce.hist.activityCounts(this.athlete.id);
-                this.syncCounts[this.athlete.id] = counts;
-            }
-            if (!this.syncControllers[id]) {
-                this.syncControllers[id] = new sauce.hist.SyncController(id);
-                this.syncControllers[id].addEventListener('progress', this.onSyncProgress);
-            }
+            const counts = await sauce.hist.activityCounts(this.athlete.id);
+            this.syncCounts[this.athlete.id] = counts;
             if (!options.noRender) {
                 await this.render();
             }
@@ -411,6 +401,8 @@ sauce.ns('performance', async ns => {
         async init({athletes}) {
             this.athletes = athletes;
             this.athlete = athletes.values().next().value;  // XXX remember last or opt use URL param
+            this.syncControllers = {};
+            this.syncControllers[this.athlete.id] = new sauce.hist.SyncController(this.athlete.id);
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
@@ -436,14 +428,18 @@ sauce.ns('performance', async ns => {
         }
 
         onAthleteChange(ev) {
+            const id = Number(ev.target.value);
+            this.athlete = this.athletes.get(id);
+            if (!this.syncControllers[id]) {
+                this.syncControllers[id] = new sauce.hist.SyncController(id);
+            }
             this.athlete = this.athletes.get(Number(ev.target.value));
             this.trigger('change-athlete', this.athlete);
         }
 
         async onControlPanelClick(ev) {
             const mod = await sauce.getModule('/src/site/sync-panel.mjs');
-            const syncControllers = this.summaryView.syncControllers;
-            await mod.activitySyncDialog(this.athlete, syncControllers[this.athlete.id]);
+            await mod.activitySyncDialog(this.athlete, this.syncControllers[this.athlete.id]);
         }
     }
 

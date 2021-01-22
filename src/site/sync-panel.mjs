@@ -36,9 +36,9 @@ export async function activitySyncDialog(athlete, syncController) {
         }, {
             text: 'Sync Activity Data',
             class: 'btn btn-primary sync-start',
-            click: ev => {
+            click: async ev => {
                 $modal.addClass('sync-active');
-                syncController.start();
+                await sauce.hist.refreshRequest(athlete.id);
             }
         }, {
             text: 'Import Data',
