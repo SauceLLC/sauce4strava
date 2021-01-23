@@ -1,4 +1,4 @@
-/* global sauce, jQuery, Chart, moment, regression, Backbone */
+/* global sauce, jQuery, Chart, moment, regression */
 
 sauce.ns('performance', async ns => {
     'use strict';
@@ -8,6 +8,7 @@ sauce.ns('performance', async ns => {
     await sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter', {once: true});
     await sauce.locale.init();
     await sauce.propDefined('Backbone.View', {once: true});
+    const view = await sauce.getModule('/src/site/view.mjs');
 
     const DAY = 86400 * 1000;
 
@@ -122,28 +123,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class SauceView extends Backbone.View {
-        constructor(...args) {
-            super(...args);
-            this.initializing = this.init(...args);
-        }
-
-        async init() {
-            this._tpl = await sauce.template.getTemplate(this.tpl);
-        }
-
-        async renderAttrs(options={}) {
-            return options;
-        }
-
-        async render(options) {
-            await this.initializing;
-            this.$el.html(await this._tpl(await this.renderAttrs(options)));
-        }
-    }
-
-
-    class SummaryView extends SauceView {
+    class SummaryView extends view.SauceView {
         get tpl() {
             return 'performance-summary.html';
         }
@@ -206,7 +186,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class DetailsView extends SauceView {
+    class DetailsView extends view.SauceView {
         get tpl() {
             return 'performance-details.html';
         }
@@ -232,7 +212,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class MainView extends SauceView {
+    class MainView extends view.SauceView {
         get events() {
             return {
                 'change header select[name="period"]': 'onPeriodChange',
@@ -392,7 +372,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class PageView extends SauceView {
+    class PageView extends view.SauceView {
         get events() {
             return {
                 'change nav select[name=athlete]': 'onAthleteChange',

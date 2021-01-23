@@ -13,6 +13,7 @@ sauce.ns('template', ns => {
 
 
     ns.getTemplate = async function(filename, localeKey) {
+        localeKey = localeKey || '';
         const cacheKey = '' + filename + localeKey;
         if (!_tplCache.has(cacheKey)) {
             if (!_tplFetching.has(cacheKey)) {

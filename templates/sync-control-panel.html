@@ -39,54 +39,6 @@
         <value></value>
     </div>
 
-    <div class="entry history {{dirty.ftp ? 'dirty' : ''}}" data-type="ftp">
-        <b>{{{ftp_history}}}:</b>
-        <button class="btn btn-unstyled btn-icon-only entry-add"
-                title="{{{add_entry_tooltip}}}">{-await fa('plus-square-duotone')-}</button>
-        <div class="indent">
-            <% for (let i = 0; i < (athlete.ftpHistory || []).length; i++) { %>
-                <% const x = athlete.ftpHistory[i]; %>
-                <div class="entry" data-index="{{i}}">
-                    <key>
-                        <input min="0" max="1000" type="number" value="{{!isNaN(x.value) ? x.value : ''}}" required/>
-                        <abbr class="unit">w</abbr>
-                    </key>
-                    <value>
-                        <input type="date" min="1969-01-01" required
-                               value="{{!isNaN(x.ts) ? (new Date(x.ts)).toISOString().split('T')[0] : ''}}"/>
-                    </value>
-                    <button class="btn btn-unstyled btn-icon-only entry-delete"
-                            title="{{{delete_entry_tooltip}}}">{-await fa('times-circle-duotone')-}</button>
-                </div>
-            <% } %>
-        </div>
-        <button class="btn btn-primary btn-block btn-icon-right btn-sm save"
-                title="{{{save_history_tooltip}}}">{{{save_changes}}} {-await fa('save-duotone')-}</button>
-    </div>
-
-    <div class="entry history {{dirty.weight ? 'dirty' : ''}}" data-type="weight">
-        <b>{{{weight_history}}}:</b>
-        <button class="btn btn-unstyled btn-icon-only entry-add"
-                title="{{{add_entry_tooltip}}}">{-await fa('plus-square-duotone')-}</button>
-        <div class="indent">
-            <% for (let i = 0; i < (athlete.weightHistory || []).length; i++) { %>
-                <% const x = athlete.weightHistory[i]; %>
-                <div class="entry" data-index="{{i}}">
-                    <key>
-                        <input type="number" required
-                               value="{{!isNaN(x.value) ? weightConvert(x.value).toFixed(1) : ''}}"/>
-                        <abbr class="unit">{{weightUnit}}</abbr>
-                    </key>
-                    <value>
-                        <input type="date" required
-                               value="{{!isNaN(x.ts) ? (new Date(x.ts)).toISOString().split('T')[0] : ''}}"/>
-                    </value>
-                    <button class="btn btn-unstyled btn-icon-only entry-delete"
-                            title="{{{delete_entry_tooltip}}}">{-await fa('times-circle-duotone')-}</button>
-                </div>
-            <% } %>
-        </div>
-        <button class="btn btn-primary btn-block btn-icon-right btn-sm save"
-                title="{{{save_history_tooltip}}}">{{{save_changes}}} {-await fa('save-duotone')-}</button>
-    </div>
+    <div class="entry history ftp"></div>
+    <div class="entry history weight"></div>
 </form>

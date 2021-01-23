@@ -1,0 +1,10 @@
+<b>{{{[localeTitleKey]}}}:</b>
+<button class="btn btn-unstyled btn-icon-only history-entry-add"
+        title="{{{add_entry_tooltip}}}">{-await fa('plus-square-duotone')-}</button>
+<div class="history-entries">
+    <% for (const x of data) { %>
+        {-await entryTpl(Object.assign({}, obj, {ts: x.ts, value: x.value}))-}
+    <% } %>
+</div>
+<button class="btn btn-primary btn-block btn-icon-right btn-sm history-save"
+        title="{{{save_history_tooltip}}}">{{{save_changes}}} {-await fa('save-duotone')-}</button>

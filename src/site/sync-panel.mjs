@@ -1,17 +1,19 @@
 /* global sauce */
 
+import * as hist from './history-views.mjs';
+
 
 export async function activitySyncDialog(athlete, syncController) {
-    const template = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
-    const state = {
-        enabled: !!athlete.sync,
-        dirty: {},
-    };
+    const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
+    const initiallyEnabled = !!athlete.sync;
     const $modal = sauce.modal({
         title: `Activity Sync Control Panel - ${athlete.name}`,
         icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
         dialogClass: 'sauce-sync-athlete-dialog',
-        autoOpen: false,  // lazy render
+        body: await tpl({
+            athlete,
+            enabled: initiallyEnabled
+        }),
         flex: true,
         width: '35em',
         autoDestroy: true,
@@ -77,33 +79,13 @@ export async function activitySyncDialog(athlete, syncController) {
             }
         }]
     });
+    const ftpHistView = new hist.FTPHistoryView({athlete, el: $modal.find('.entry.history.ftp')});
+    const weightHistView = new hist.WeightHistoryView({athlete, el: $modal.find('.entry.history.weight')});
+    const rendering = [ftpHistView.render(), weightHistView.render()];
 
-    async function render() {
-        const f = sauce.locale.weightFormatter;
-        const weightConvert = f.convert.bind(f);
-        $modal.html(await template(Object.assign({
-            athlete,
-            weightUnit: sauce.locale.weightFormatter.shortUnitKey(),
-            weightConvert,
-        }, state)));
-        if (!state.opened) {
-            $modal.dialog('open');
-            state.opened = true;
-        }
-        if (state.enabled) {
-            await Promise.all([updateSyncCounts(), updateSyncTimes()]);
-            if (await syncController.isActiveSync()) {
-                setActive();
-            } else {
-                $modal.find('.entry.status value').text('Idle');
-            }
-        } else {
-            $modal.addClass('sync-disabled');
-        }
-    }
-
+    let _recentCounts;
     async function updateSyncCounts(counts) {
-        counts = counts || state.counts || (state.counts = await sauce.hist.activityCounts(athlete.id));
+        counts = counts || _recentCounts || (_recentCounts = await sauce.hist.activityCounts(athlete.id));
         const synced = counts.processed;
         const total = counts.total - counts.unavailable - counts.unprocessable;
         $modal.find('.entry.synced progress').attr('value', synced / total);
@@ -161,14 +143,14 @@ export async function activitySyncDialog(athlete, syncController) {
     }
 
     $modal.on('input', 'input[name="enable"]', async ev => {
-        state.enabled = ev.currentTarget.checked;
-        if (state.enabled) {
+        const enabled = ev.currentTarget.checked;
+        if (enabled) {
             await Promise.all([updateSyncCounts(), updateSyncTimes()]);
             await sauce.hist.enableAthlete(athlete.id);
         } else {
             await sauce.hist.disableAthlete(athlete.id);
         }
-        $modal.toggleClass('sync-disabled', !state.enabled);
+        $modal.toggleClass('sync-disabled', !enabled);
     });
     $modal.on('click', '.sync-stop.btn', ev => {
         ev.preventDefault();
@@ -187,65 +169,12 @@ export async function activitySyncDialog(athlete, syncController) {
         $modal.addClass('sync-active');
         await sauce.hist.refreshRequest(athlete.id);
     });
-    $modal.on('click', '.entry-delete.btn', async ev => {
-        ev.preventDefault();
-        const history = ev.currentTarget.closest('[data-type]');
-        const type = history.dataset.type;
-        const entry = ev.currentTarget.closest('.entry');
-        const index = Number(entry.dataset.index);
-        entry.remove();
-        const data = athlete[type + 'History'];
-        data.splice(index, 1);
-        if (!state.dirty[type]) {
-            state.dirty[type] = true;
-            history.classList.add('dirty');
-        }
-    });
-    $modal.on('click', '.entry-add.btn', async ev => {
-        ev.preventDefault();
-        const type = ev.currentTarget.closest('[data-type]').dataset.type;
-        if (type === 'ftp') {
-            athlete.ftpHistory.unshift({ts: Date.now()});
-        } else {
-            athlete.weightHistory.unshift({ts: Date.now()});
-        }
-        state.dirty[type] = true;
-        await render();
-    });
-    $modal.on('input', '.entry.history input', ev => {
-        const history = ev.currentTarget.closest('[data-type]');
-        const type = history.dataset.type;
-        const data = athlete[type + 'History'];
-        const entry = ev.currentTarget.closest('.entry');
-        const index = Number(entry.dataset.index);
-        const ts = (new Date(entry.querySelector('[type="date"]').value)).getTime();
-        const rawValue = entry.querySelector('[type="number"]').value;
-        let value = rawValue ? Number(rawValue) : NaN;
-        if (type === 'weight' && !isNaN(value)) {
-            value = sauce.locale.weightUnconvert(value);
-        }
-        data[index] = {ts, value};
-        if (!state.dirty[type]) {
-            state.dirty[type] = true;
-            history.classList.add('dirty');
-        }
-    });
-    $modal.on('click', '.entry.history .save.btn', async ev => {
-        ev.preventDefault();
-        const history = ev.currentTarget.closest('[data-type]');
-        const type = history.dataset.type;
-        const data = athlete[type + 'History'].filter(x => !isNaN(x.ts) && !isNaN(x.value));
-        const clean = await sauce.hist.setAthleteHistoryValues(athlete.id, type, data);
-        athlete[type + 'History'] = clean;
-        state.dirty[type] = false;
-        await render();
-    });
     $modal.on('dialogclose', () => {
         for (const [event, cb] of Object.entries(listeners)) {
             syncController.removeEventListener(event, cb);
         }
     });
-    if (state.enabled) {
+    if (initiallyEnabled) {
         await Promise.all([updateSyncCounts(), updateSyncTimes()]);
         if (await syncController.isActiveSync()) {
             setActive();
@@ -255,6 +184,5 @@ export async function activitySyncDialog(athlete, syncController) {
     } else {
         $modal.addClass('sync-disabled');
     }
-    await render();
+    await Promise.all(rendering);
 }
-

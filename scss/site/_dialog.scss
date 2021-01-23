@@ -3,6 +3,7 @@
 @use 'perf_predictor';
 @use 'live_segment';
 @use 'trailforks';
+@use 'history_view';
 
 
 // Use more specific selector to avoid race with application-xyz.css that strava loads
@@ -362,78 +363,15 @@ html .ui-dialog {
                 margin-right: 0.8em;
             }
 
-            input {
-                background-color: transparent;
-                border: 1px solid color.shade(bg, 14%);
-                padding: 0.1em 0.4em;
-
-                &:invalid {
-                    border: 1px dashed red;
-                }
-            }
-
-            input[type="number"] {
-                width: 7ch;
-                text-align: right;
-            }
-
-            input[type="date"] {
-                width: auto;
-            }
-
-            &.history {
+            &.history-view {
+                font-size: 0.9em;
+                margin: 1em 2em;
                 border: solid 1px color.shade(bg, 15%);
                 border-radius: 0.28em;
                 background: color.shade(bg, 0%);
-                margin: 1em 2em;
-                padding: 1em;
-                font-size: 0.9em;
 
                 &:last-child {
                     margin-bottom: 0;
-                }
-
-                .indent {
-                    padding: 0.4em;
-                    margin-bottom: 0.2em;
-
-                    .entry {
-                        padding: 0.1em 1.2em;
-                        display: flex;
-                        align-items: center;
-
-                        &:hover {
-                            background-color: color.shade(bg, 2%);
-                            border-radius: 0.28em;
-                        }
-                    }
-                }
-
-                &:not(.dirty) {
-                    .save.btn {
-                        display: none;
-                    }
-                }
-
-                .btn.entry-add,
-                .btn.entry-delete {
-                    svg {
-                        .fa-secondary {
-                            color: color.shade(bg, 25%);
-                            opacity: 0.8;
-                        }
-                    }
-                }
-
-                .btn.entry-add {
-                    color: green;
-                }
-
-                .btn.entry-delete {
-                    color: red;
-                    flex: 1 0;
-                    display: flex;
-                    justify-content: flex-end;
                 }
             }
         }

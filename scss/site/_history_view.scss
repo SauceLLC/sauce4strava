@@ -1,0 +1,67 @@
+@use 'color';
+
+.history-view {
+    padding: 1em;
+
+    input {
+        background-color: transparent;
+        border: 1px solid color.shade(bg, 14%);
+        padding: 0.1em 0.4em;
+
+        &:invalid {
+            border: 1px dashed red;
+        }
+    }
+
+    input[type="number"] {
+        width: 7ch;
+        text-align: right;
+    }
+
+    input[type="date"] {
+        width: auto;
+    }
+
+    .history-entries {
+        padding: 0.4em;
+        margin-bottom: 0.2em;
+
+        .history-entry {
+            padding: 0.1em 1.2em;
+            display: flex;
+            align-items: center;
+
+            &:hover {
+                background-color: color.shade(bg, 2%);
+                border-radius: 0.28em;
+            }
+        }
+    }
+
+    &:not(.dirty) {
+        .history-save.btn {
+            display: none;
+        }
+    }
+
+    .btn.history-entry-add,
+    .btn.history-entry-delete {
+        svg {
+            .fa-secondary {
+                color: color.shade(bg, 25%);
+                opacity: 0.8;
+            }
+        }
+    }
+
+    .btn.history-entry-add {
+        color: green;
+    }
+
+    .btn.history-entry-delete {
+        color: red;
+        flex: 1 0;
+        display: flex;
+        justify-content: flex-end;
+    }
+}
