@@ -7,21 +7,21 @@
                      src="{{sauce.extUrl}}images/trail_difficulty/{{mostDifficult.image}}"/>
             <%  } else if (mostDifficult.icon) { %>
                 <div class="tf-difficulty tf-{{mostDifficult.class}} tf-icon"
-                     style="color: {{mostDifficult.color}};">{-await faIcon(mostDifficult.icon)-}</div>
+                     style="color: {{mostDifficult.color}};">{-await fa(mostDifficult.icon)-}</div>
             <% } %>
         </div>
     <% } %>
     <% if (worstCondition) { %>
         <div class="tf-icon-stack">
             <div class="tf-condition tf-{{worstCondition.class}} tf-icon">
-                {-await faIcon(worstCondition.icon || 'certificate-duotone')-}
+                {-await fa(worstCondition.icon || 'certificate-duotone')-}
             </div>
         </div>
     <% } %>
     <% if (worstStatus) { %>
         <div class="tf-icon-stack">
             <div class="tf-status tf-{{worstStatus.class}} tf-icon">
-                {-await faIcon('circle-duotone')-}
+                {-await fa('circle-duotone')-}
             </div>
         </div>
     <% } %>

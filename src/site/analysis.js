@@ -1646,7 +1646,7 @@ sauce.ns('analysis', ns => {
         if (hasPatronRequirement || useTrial) {
             extraButtons.push({
                 text: `${locale.create} Live Segment`,
-                class: 'btn-primary',
+                class: 'btn btn-primary',
                 click: async () => {
                     const $form = $dialog.find('form');
                     try {
@@ -1686,7 +1686,7 @@ sauce.ns('analysis', ns => {
             if (trialCount < maxTrials) {
                 extraButtons.push({
                     text: `${locale.use_trial} (${maxTrials - trialCount} ${locale.remaining})`,
-                    class: 'btn-primary btn-outline',
+                    class: 'btn btn-primary btn-outline',
                     click: () => {
                         $dialog.dialog('destroy');
                         showLiveSegmentDialog(details, /*useTrial*/ true).catch(sauce.report.error);
@@ -1695,7 +1695,7 @@ sauce.ns('analysis', ns => {
             }
             extraButtons.push({
                 text: locale.become_patron,
-                class: 'btn-primary',
+                class: 'btn btn-primary',
                 click: () => window.open('https://www.patreon.com/bePatron?u=32064618', '_blank')
             });
         }
@@ -3103,19 +3103,19 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function updateUserId() {
-        const lastKnown = Number(localStorage.getItem('sauce-last-known-user-id')) || undefined;
+    async function updateUserId() {
+        const lastKnown = await sauce.storage.get('currentUser');
         const currentId = pageView.currentAthlete().id;
         if (currentId !== lastKnown) {
-            localStorage.setItem('sauce-last-known-user-id', currentId);
-            console.warn("User ID updated, a page refresh is recommened..");
+            await sauce.storage.set('currentUser', currentId);
+            console.warn("User ID updated, a page refresh is recommened.");
         }
     }
 
 
     async function load() {
         await sauce.propDefined('pageView', {once: true});
-        updateUserId();
+        updateUserId().catch(sauce.report.error);
         if (sauce.options['responsive']) {
             attachMobileMenuExpander().catch(sauce.report.error);
             pageView.unbindScrollListener();

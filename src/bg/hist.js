@@ -405,6 +405,7 @@ sauce.ns('hist', async ns => {
                 'icon-alpineski': 'ski',
                 'icon-nordicski': 'ski',
                 'icon-backcountryski': 'ski',
+                'icon-snowboard': 'ski',
                 'icon-ebikeride': 'ebike',
                 'icon-workout': 'workout',
                 'icon-standuppaddling': 'workout',
@@ -759,27 +760,21 @@ sauce.ns('hist', async ns => {
 
 
     async function enableAthlete(id) {
-        if (!id) {
-            throw new TypeError('id is required');
-        }
-        if (!ns.syncManager) {
-            throw new Error("Sync Manager is not available");
-        }
-        await ns.syncManager.enableAthlete(id);
+        return await ns.syncManager.enableAthlete(id);
     }
     sauce.proxy.export(enableAthlete, {namespace});
 
 
     async function disableAthlete(id) {
-        if (!id) {
-            throw new TypeError('id is required');
-        }
-        if (!ns.syncManager) {
-            throw new Error("Sync Manager is not available");
-        }
-        await ns.syncManager.disableAthlete(id);
+        return await ns.syncManager.disableAthlete(id);
     }
     sauce.proxy.export(disableAthlete, {namespace});
+
+
+    async function refreshRequest(id, options) {
+        return await ns.syncManager.refreshRequest(id, options);
+    }
+    sauce.proxy.export(refreshRequest, {namespace});
 
 
     async function invalidateSyncState(athleteId, processor, name) {
@@ -796,7 +791,7 @@ sauce.ns('hist', async ns => {
         }
         await actsStore.invalidateForAthleteWithSync(athleteId, processor, name);
         if (athlete.isEnabled() && ns.syncManager) {
-            await ns.syncManager.resetAthlete(athleteId);
+            await ns.syncManager.refreshRequest(athleteId, {skipUpdate: true});
         }
     }
     sauce.proxy.export(invalidateSyncState, {namespace});
@@ -849,12 +844,14 @@ sauce.ns('hist', async ns => {
         }
 
         async _run(options={}) {
-            this.status = 'activities-update';
-            const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
-            await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
-            await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
-            this.counts = await activityCounts(this.athlete.pk);
+            if (!options.skipUpdate) {
+                this.status = 'activities-update';
+                const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
+                await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
+                await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
+            }
             this.status = 'activities-sync';
+            this.counts = await activityCounts(this.athlete.pk);
             try {
                 await this._syncData();
             } catch(e) {
@@ -1114,7 +1111,7 @@ sauce.ns('hist', async ns => {
             this.activeJobs = new Map();
             this._stopping = false;
             this._athleteLock = new locks.Lock();
-            this._refreshRequests = new Set();
+            this._refreshRequests = new Map();
             this._refreshEvent = new locks.Event();
             this._refreshLoop = this.refreshLoop();
         }
@@ -1195,8 +1192,12 @@ sauce.ns('hist', async ns => {
                     Date.now() - a.get('lastSync') > this.refreshInterval
                 );
                 if (shouldRun) {
+                    const options = Object.assign({
+                        forceActivityUpdate,
+                        syncHash,
+                    }, this._refreshRequests.get(a.pk));
                     this._refreshRequests.delete(a.pk);
-                    this.runSyncJob(a, {forceActivityUpdate, syncHash});  // bg okay
+                    this.runSyncJob(a, options);  // bg okay
                 }
             }
         }
@@ -1253,12 +1254,18 @@ sauce.ns('hist', async ns => {
             this.dispatchEvent(ev);
         }
 
-        refreshRequest(athleteId) {
-            this._refreshRequests.add(athleteId);
+        refreshRequest(id, options={}) {
+            if (!id) {
+                throw new TypeError('Athlete ID arg required');
+            }
+            this._refreshRequests.set(id, options);
             this._refreshEvent.set();
         }
 
         async updateAthlete(id, obj) {
+            if (!id) {
+                throw new TypeError('Athlete ID arg required');
+            }
             await this._athleteLock.acquire();
             try {
                 const athlete = await athletesStore.get(id, {model: true});
@@ -1271,12 +1278,10 @@ sauce.ns('hist', async ns => {
             }
         }
 
-        async resetAthlete(id) {
-            await this.updateAthlete(id, {lastSync: 0, lastError: 0});
-            this._refreshEvent.set();
-        }
-
         async enableAthlete(id) {
+            if (!id) {
+                throw new TypeError('Athlete ID arg required');
+            }
             await this.updateAthlete(id, {
                 sync: DBTrue,
                 lastSync: 0,
@@ -1288,6 +1293,9 @@ sauce.ns('hist', async ns => {
         }
 
         async disableAthlete(id) {
+            if (!id) {
+                throw new TypeError('Athlete ID arg required');
+            }
             await this.updateAthlete(id, {sync: DBFalse});
             if (this.activeJobs.has(id)) {
                 const syncJob = this.activeJobs.get(id);
@@ -1298,6 +1306,9 @@ sauce.ns('hist', async ns => {
         }
 
         async purgeAthleteData(athlete) {
+            if (!athlete) {
+                throw new TypeError('Athlete arg required');
+            }
             // Obviously use with extreme caution!
             await actsStore.deleteForAthlete(athlete);
         }
@@ -1340,13 +1351,6 @@ sauce.ns('hist', async ns => {
             return !!(ns.syncManager && ns.syncManager.activeJobs.has(this.athleteId));
         }
 
-        async start() {
-            if (!ns.syncManager) {
-                throw new Error("Sync Manager is not available");
-            }
-            await ns.syncManager.enableAthlete(this. athleteId);
-        }
-
         async cancel() {
             if (ns.syncManager) {
                 const job = ns.syncManager.activeJobs.get(this.athleteId);
@@ -1359,15 +1363,19 @@ sauce.ns('hist', async ns => {
         }
 
         rateLimiterResumes() {
-            const g = streamRateLimiterGroup;
-            if (g && g.sleeping()) {
-                return streamRateLimiterGroup.resumes();
+            if (this.isActiveSync()) {
+                const g = streamRateLimiterGroup;
+                if (g && g.sleeping()) {
+                    return streamRateLimiterGroup.resumes();
+                }
             }
         }
 
         rateLimiterSleeping() {
-            const g = streamRateLimiterGroup;
-            return g && g.sleeping();
+            if (this.isActiveSync()) {
+                const g = streamRateLimiterGroup;
+                return g && g.sleeping();
+            }
         }
 
         async lastSync() {
@@ -1460,17 +1468,33 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(DataExchange, {namespace});
 
 
-    if (self.currentUser) {
+    if (!self.disabled && self.currentUser) {
         ns.syncManager = new SyncManager(self.currentUser);
     }
     addEventListener('currentUserUpdate', async ev => {
         if (ns.syncManager && ns.syncManager.currentUser !== ev.id) {
-            console.warn("Stopping Sync Manager due to user change...");
+            console.info("Stopping Sync Manager due to user change...");
             ns.syncManager.stop();
             await ns.syncManager.join();
             console.debug("Sync Manager stopped.");
         }
         ns.syncManager = ev.id ? new SyncManager(ev.id) : null;
+    });
+    addEventListener('enabled', ev => {
+        if (!ns.syncManager && self.currentUser) {
+            console.info("Starting Sync Manager...");
+            ns.syncManager = new SyncManager(self.currentUser);
+        }
+    });
+    addEventListener('disabled', async ev => {
+        if (ns.syncManager) {
+            console.info("Stopping Sync Manager...");
+            const mgr = ns.syncManager;
+            ns.syncManager = null;
+            mgr.stop();
+            await mgr.join();
+            console.debug("Sync Manager stopped.");
+        }
     });
 
 

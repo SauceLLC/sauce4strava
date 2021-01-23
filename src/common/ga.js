@@ -37,7 +37,9 @@ sauce.ns('ga', ns => {
             tracker.set('transport', 'beacon');
         }
         tracker.set('checkProtocolTask', () => undefined);  // needed when used in an ext.
-        localStorage.setItem(gaClientIdKey, tracker.get('clientId'));
+        try {
+            localStorage.setItem(gaClientIdKey, tracker.get('clientId'));
+        } catch(e) {/*no-pragma*/}
         if (await browser.runtime.getBackgroundPage() !== self) {
             // An ext option page tracker.  Must override page to avoid getting filtered at ga.
             tracker.set('page', `/EXTENTION_PAGE${location.pathname}`);

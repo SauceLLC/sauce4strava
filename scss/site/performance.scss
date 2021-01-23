@@ -1,6 +1,7 @@
 @use 'chart';
 @use 'color';
 @use 'dialog';
+@use 'buttons';
 
 
 #sauce-performance {
@@ -14,10 +15,38 @@
     display: flex;
     flex-wrap: wrap;
 
+    row {
+        padding: 0.5em;
+        display: flex;
+        margin: 0.5em 0;
+        align-items: center;
+
+        key {
+            flex: 1 0 50%;
+            margin-right: 0.4em;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        value {
+            flex: 1 0 50%;
+        }
+    }
+
     > nav {
-        flex: 1 0 15rem;
+        flex: 1 0 16rem;
         background: color.shade(bg, 10%);
         padding: 1em;
+
+        .summary {
+            section {
+                padding: 0.5em;
+                background: color.shade(bg, 4%);
+                border-radius: 0.28em;
+                margin-top: 1em;
+                margin-bottom: 1em;
+            }
+        }
     }
 
     > main {
@@ -55,11 +84,14 @@
     > aside {
         padding: 1em;
         overflow: auto;
-        flex: 1 0 14rem;
+        flex: 1 0 18rem;
         color: color.shade(bg, 5%);
         background-image: linear-gradient(to right,
                                           #{color.shade(fg, 0%)},
                                           #{color.shade(fg, -18%)} 1.5em,
                                           #{color.shade(fg, 10%)});
+        a {
+            color: color.shade(accent4, -20%) !important;
+        }
     }
 }

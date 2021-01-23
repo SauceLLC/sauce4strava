@@ -181,17 +181,22 @@ self.sauceBaseInit = function sauceBaseInit() {
             $dialog.addClass('flex');
         }
         // Assign default button(s) (will be clobbered if options.buttons is defined)
+        const defaultClass = 'btn';
         const buttons = [{
             text: 'Close', // XXX locale
-            click: () => $dialog.dialog('close')
+            click: () => $dialog.dialog('close'),
+            class: defaultClass,
         }];
         if (Array.isArray(options.extraButtons)) {
             for (const x of options.extraButtons) {
+                if (!x.class) {
+                    x.class = defaultClass;
+                }
                 buttons.push(x);
             }
         } else if (options.extraButtons && typeof options.extraButtons === 'object') {
             for (const [text, click] of Object.entries(options.extraButtons)) {
-                buttons.push({text, click});
+                buttons.push({text, click, class: defaultClass});
             }
         }
         $dialog.dialog(Object.assign({buttons}, options, {dialogClass}));
@@ -879,7 +884,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             desc.push(` Stack frame: ${x}`);
         }
         const exDescription = desc.join('\n');
-        console.error('Reporting:', exDescription);
+        console.error('Reporting:', e);
         await ga('send', 'exception', {
             exDescription,
             exFatal: true,

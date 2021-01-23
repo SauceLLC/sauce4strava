@@ -1,0 +1,37 @@
+@use 'animations';
+
+button {
+    &.sauce-loading::before {
+        content: url(../../images/fa/spinner-third-duotone.svg);
+        width: 2em;
+        margin: -0.5em 0.5em -0.5em 0;
+        line-height: 0;
+        animation: rotation 3s infinite steps(30 * 3);
+    }
+}
+
+button, .button {
+    &.btn {
+        > svg[data-icon] {
+            height: 1.4em;
+            margin: -0.2em 0.2em;
+        }
+
+        &.btn-icon-only > svg[data-icon] {
+            margin: -0.2em 0;
+        }
+
+        &.btn-icon-right {
+            > svg[data-icon] {
+                margin-right: -1em;
+                margin-left: 1em;
+            }
+
+            &.btn-sm {
+                > svg[data-icon] {
+                    margin-right: 0;
+                }
+            }
+        }
+    }
+}

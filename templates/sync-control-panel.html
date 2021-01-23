@@ -4,7 +4,7 @@
             <a class="dismiss"></a>
             {{{intro_help}}}
         </div>
-        <a class="help-info" data-help="intro" title="{{{/dialog_help_info_tooltip}}}">{- await faIcon('info-circle-duotone') -}</a>
+        <a class="help-info" data-help="intro" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
         {{{intro}}}
     </div>
 
@@ -16,6 +16,12 @@
     <div class="entry status">
         <key>{{{status}}}:</key>
         <value></value>
+        <button class="btn btn-unstyled btn-icon-only sync-stop"
+                title="{{{sync_stop_tooltip}}}">{-await fa('stop-circle-regular')-}</button>
+        <button class="btn btn-unstyled btn-icon-only sync-start"
+                title="{{{sync_start_tooltip}}}">{-await fa('play-circle-regular')-}</button>
+        <button class="btn btn-unstyled btn-icon-only sync-recompute"
+                title="{{{sync_recompute_tooltip}}}">{-await fa('redo-solid')-}</button>
     </div>
 
     <div class="entry synced">
@@ -33,45 +39,47 @@
         <value></value>
     </div>
 
-    <div class="entry">
-        <div class="help" data-for="ftp">
-            <a class="dismiss"></a>
-            {{{cda_help1}}}
-            <br/><br/>
-            {{{cda_help_table_heading}}}:
-            <table class="unstyled">
-                <tr><td>0.17 to 0.23:</td><td>{{{cda_help_table_elite_tt}}}</td>
-                <tr><td>0.23 to 0.30:</td><td>{{{cda_help_table_good_tt}}}</td>
-                <tr><td>0.30 to 0.35:</td><td>{{{cda_help_table_road}}}</td>
-                <tr><td>0.35 to 0.50:</td><td>{{{cda_help_table_climbing}}}</td>
-                <tr><td>0.50+:</td><td>{{{cda_help_table_upright}}}</td>
-            </table>
-        </div>
-        <a class="help-info" data-help="ftp" title="{{{/dialog_help_info_tooltip}}}">{- await faIcon('info-circle-duotone') -}</a>
+    <div class="entry history">
         <b>{{{ftp_history}}}:</b>
+        <button class="btn btn-unstyled btn-icon-only entry-add" data-type="ftp"
+                title="{{{add_entry_tooltip}}}">{-await fa('plus-square-duotone')-}</button>
         <div class="indent">
             <% for (const x of (athlete.ftpHistory || [])) { %>
                 <div class="entry">
-                    <key>{{(new Date(x.ts)).toLocaleDateString()}}:</key>
-                    <value>{{x.value.toLocaleString()}}<abbr class="unit">w</abbr>
-                    <button class="delete btn-sm">X</button></value>
+                    <key>
+                        <input type="number" value="{{x.value}}"/><abbr class="unit">w</abbr>
+                    </key>
+                    <value>
+                        <input type="date" value="{{(new Date(x.ts)).toISOString().split('T')[0]}}"/>
+                    </value>
+                    <button class="btn btn-unstyled btn-icon-only entry-delete" data-ts="{{x.ts}}"
+                            title="{{{delete_entry_tooltip}}}">{-await fa('times-circle-duotone')-}</button>
                 </div>
             <% } %>
-            <button class="add btn-sm btn-block">Add new entry</button>
         </div>
+        <button class="btn btn-primary btn-block btn-icon-right btn-sm save"
+                title="{{{save_history_tooltip}}}">{{{save_changes}}} {-await fa('save-duotone')-}</button>
     </div>
 
-    <div class="entry">
+    <div class="entry history">
         <b>{{{weight_history}}}:</b>
+        <button class="btn btn-unstyled btn-icon-only entry-add" data-type="weight"
+                title="{{{add_entry_tooltip}}}">{-await fa('plus-square-duotone')-}</button>
         <div class="indent">
             <% for (const x of (athlete.weightHistory || [])) { %>
                 <div class="entry">
-                    <key>{{(new Date(x.ts)).toLocaleDateString()}}:</key>
-                    <value>{{humanWeight(x.value)}}<abbr class="unit">{{weightUnit}}</abbr></value>
-                    <button class="delete btn-sm">X</button></value>
+                    <key>
+                        <input type="number" value="{{weightConvert(x.value).toFixed(1)}}"/><abbr class="unit">{{weightUnit}}</abbr>
+                    </key>
+                    <value>
+                        <input type="date" value="{{(new Date(x.ts)).toISOString().split('T')[0]}}"/>
+                    </value>
+                    <button class="btn btn-unstyled btn-icon-only entry-delete" data-ts="{{x.ts}}"
+                            title="{{{delete_entry_tooltip}}}">{-await fa('times-circle-duotone')-}</button>
                 </div>
             <% } %>
-            <button class="add btn-sm btn-block">Add new entry</button>
         </div>
+        <button class="btn btn-primary btn-block btn-icon-right btn-sm save"
+                title="{{{save_history_tooltip}}}">{{{save_changes}}} {-await fa('save-duotone')-}</button>
     </div>
 </form>

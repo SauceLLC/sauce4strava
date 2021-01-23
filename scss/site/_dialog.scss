@@ -10,6 +10,7 @@
 html .ui-dialog {
     background: transparent;
     border: none;
+    font-size: 1em; // This is the default in analysis but not other pages, so we need to set it.
 
     .ui-widget-content,
     .ui-dialog-content {
@@ -28,6 +29,15 @@ html .ui-dialog {
 
     .ui-widget-header {
         border-color: color.shade(bg, 20%);
+    }
+
+    // Copy from analysis page so behavior is same elsewhere (perf page)
+    form {
+        > button,
+        >input[type="submit"],
+        form>input[type="button"] {
+            margin-top: 10px;
+        }
     }
 }
 
@@ -206,7 +216,8 @@ html .ui-dialog {
         }
 
         input[type="number"],
-        input[type="text"] {
+        input[type="text"],
+        input[type="date"] {
             border-radius: 0.22em;
             padding: 0.2em 0.5em;
             height: auto;
@@ -305,50 +316,138 @@ html .ui-dialog {
 }
 
 
-.sauce-sync-athlete-dialog {
-    .ui-dialog-content.sync-active {
-        .last-sync,
-        .next-sync {
-            display: none;
+.ui-dialog.sauce-dialog.sauce-sync-athlete-dialog {
+    .btn-icon-only {
+        opacity: 0.7;
+        transition: opacity 200ms;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    .btn.sync-start {
+        color: green; 
+    }
+    .btn.sync-stop {
+        color: red; 
+    }
+    .btn.sync-recompute {
+        color: orange; 
+    }
+
+    form.sauce-key-value {
+        .entry {
+            padding: 0.5em 1.2em;
+
+            progress {
+                margin-right: 0.8em;
+            }
+
+            input {
+                background-color: transparent;
+                border: 1px solid color.shade(bg, 14%);
+                padding: 0.1em 0.4em;
+            }
+
+            input[type="number"] {
+                width: 7ch;
+            }
+
+            &.history {
+                border: solid 1px color.shade(bg, 15%);
+                border-radius: 0.25em;
+                background: color.shade(bg, -3%);
+                margin: 1em 1.6em;
+                padding: 1em;
+                font-size: 0.9em;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+
+                .indent {
+                    padding: 0.4em;
+                    margin-bottom: 0.2em;
+
+                    .entry {
+                        padding: 0.1em 1.2em;
+                    }
+                }
+
+                &:not(.dirty) {
+                    .save.btn {
+                        display: none;
+                    }
+                }
+
+
+                .btn.save {
+                    color: red;
+                }
+
+                .btn.entry-add,
+                .btn.entry-delete {
+                    svg {
+                        .fa-secondary {
+                            color: color.shade(bg, 25%);
+                            opacity: 0.8;
+                        }
+                    }
+                }
+
+                .btn.entry-add {
+                    color: green;
+                }
+
+                .btn.entry-delete {
+                    color: red;
+                }
+            }
+        }
+    }
+
+    .ui-dialog-content {
+        padding: 0;
+
+        &.sync-active {
+            .last-sync,
+            .next-sync {
+                display: none;
+            }
+
+            .sync-recompute,
+            .sync-start {
+                display: none;
+            }
         }
 
-        + .ui-dialog-buttonpane {
+        &:not(.sync-active):not(.sync-disabled) {
+            .sync-stop {
+                display: none;
+            }
+        }
+
+        &.sync-disabled {
+            .entry.synced,
+            .entry.last-sync,
+            .entry.next-sync,
+            .entry.status {
+                display: none;
+            }
+
+            .sync-stop,
             .sync-recompute,
             .sync-start {
                 opacity: 0.5;
                 pointer-events: none;
             }
         }
-    }
 
-    .ui-dialog-content:not(.sync-active):not(.sync-disabled) + .ui-dialog-buttonpane {
-        .sync-cancel {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-    }
-
-    .ui-dialog-content.sync-disabled {
-        .entry.synced,
-        .entry.last-sync,
-        .entry.next-sync,
-        .entry.status {
-            display: none;
-        }
-
-        + .ui-dialog-buttonpane {
-            .sync-cancel,
-            .sync-recompute,
-            .sync-start {
-                opacity: 0.5;
-                pointer-events: none;
+        &:not(.sync-active) {
+            .entry.synced value progress {
+                display: none;
             }
-        }
-    }
-
-    .ui-dialog-content:not(.sync-active) {
-        .entry.synced value progress {
-            display: none;
         }
     }
 }
