@@ -205,7 +205,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             ev.currentTarget.classList.add('hidden');
             $dialog.find(`.help[data-for="${helpFor}"]`).toggleClass('visible');
         });
-        $dialog.on('click', '.help a.dismiss', ev => {
+        $dialog.on('click', '.help a.sauce-dismiss', ev => {
             const help = ev.currentTarget.closest('.help');
             help.classList.remove('visible');
             $dialog.find(`a.help-info[data-help="${help.dataset.for}"]`).removeClass('hidden');

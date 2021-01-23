@@ -133,13 +133,16 @@ html .ui-dialog {
         height: 1.1em;
         margin: 0.25em 0 0.35em 0.35em;
         color: color.get(fg);
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 200ms;
 
         &.hidden {
             display: none;
         }
 
         &:hover {
-            color: color.shade(fg, -12%);
+            opacity: 1;
         }
     }
 
@@ -162,11 +165,22 @@ html .ui-dialog {
             color: color.get(accent2);
         }
 
-        a.dismiss {
+        a.sauce-dismiss {
             float: right;
             margin-right: -0.75em;
             margin-top: -0.75em;
-            filter: invert(1);
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 200ms;
+
+            &:hover {
+                opacity: 1;
+            }
+
+            svg[data-icon] {
+                color: white;
+                width: 1em;
+            }
         }
 
         &::after {
