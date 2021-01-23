@@ -403,6 +403,7 @@ sauce.ns('hist.db', async ns => {
             if (state.error && state.error.ts) {
                 throw new TypeError("'clearSyncState' not used before 'setSyncSuccess'");
             }
+            delete state.error;
             state.version = manifest.version;
             this._setSyncState(manifest, state);
         }
@@ -461,7 +462,7 @@ sauce.ns('hist.db', async ns => {
             for (const m of manifests) {
                 if (!tainted.has(m.name)) {
                     const state = states.get(m.name);
-                    if (state && state.version >= m.version && !state.error) {
+                    if (state && state.version >= m.version && (!state.error || !state.error.ts)) {
                         completed.add(m.name);
                     } else {
                         pending.add(m.name);
@@ -533,20 +534,6 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        _getHistoryValueAt(key, ts) {
-            const values = this.data[key + 'History'];
-            if (values) {
-                let v = values[0].value;
-                for (const x of this.data[key]) {
-                    if (x.ts > ts) {
-                        break;
-                    }
-                    v = x.value;
-                }
-                return v;
-            }
-        }
-
         setHistoryValues(key, values) {
             values.sort((a, b) => b.ts - a.ts);
             this.set(key + 'History', values);
@@ -558,11 +545,11 @@ sauce.ns('hist.db', async ns => {
         }
 
         getFTPAt(ts) {
-            return this._getHistoryValueAt('ftp', ts);
+            return sauce.db.getAthleteHistoryValueAt(this.data.ftpHistory, ts);
         }
 
         getWeightAt(ts) {
-            return this._getHistoryValueAt('weight', ts);
+            return sauce.db.getAthleteHistoryValueAt(this.data.weightHistory, ts);
         }
 
         setFTPHistory(data) {
