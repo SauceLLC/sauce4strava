@@ -3108,6 +3108,7 @@ sauce.ns('analysis', ns => {
         const currentId = pageView.currentAthlete().id;
         if (currentId !== lastKnown) {
             await sauce.storage.set('currentUser', currentId);
+            await sauce.setCurrentUser(currentId);
             console.warn("User ID updated, a page refresh is recommened.");
         }
     }

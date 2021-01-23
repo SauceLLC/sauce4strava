@@ -249,6 +249,32 @@
     }
 
 
+    async function bgCommand(op, data) {
+        return await browser.runtime.sendMessage(Object.assign({
+            source: 'ext/boot',
+            op
+        }, data));
+    }
+
+
+    function setEnabled() {
+        return bgCommand('setEnabled');
+    }
+    sauce.proxy.export(setEnabled);
+
+
+    function setDisabled() {
+        return bgCommand('setDisabled');
+    }
+    sauce.proxy.export(setDisabled);
+
+
+    function setCurrentUser(currentUser) {
+        return bgCommand('setCurrentUser', {currentUser});
+    }
+    sauce.proxy.export(setCurrentUser);
+
+
     async function load() {
         /* Using the src works but is async, this will block the page from loading while the scripts
          * are evaluated and executed, preventing race conditions in our preloader */
@@ -262,7 +288,7 @@
         if (config.enabled === false) {
             console.info("Sauce is disabled");
             document.documentElement.classList.add('sauce-disabled');
-            browser.runtime.sendMessage({source: 'ext/boot', op: 'setDisabled'});
+            setDisabled();
             return;
         }
         document.documentElement.classList.add('sauce-enabled');
@@ -312,8 +338,8 @@
                 await loadScripts(m.scripts.map(x => `${extUrl}src/${x}`));
             }
         }
-        browser.runtime.sendMessage({source: 'ext/boot', op: 'setEnabled'});
-        browser.runtime.sendMessage({source: 'ext/boot', op: 'setCurrentUser', currentUser});
+        setEnabled();
+        setCurrentUser(currentUser);
         if (isSafari()) {
             const lastCheck = config.lastSafariUpdateCheck || 0;
             const lastVersion = config.lastSafariVersion || ext.version;

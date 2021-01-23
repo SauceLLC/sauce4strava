@@ -534,7 +534,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         _getHistoryValueAt(key, ts) {
-            const values = this.data[key];
+            const values = this.data[key + 'History'];
             if (values) {
                 let v = values[0].value;
                 for (const x of this.data[key]) {
@@ -547,11 +547,10 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        _setHistoryValueAt(key, value, ts) {
-            const values = this.data[key] = this.data[key] || [];
-            values.push({ts, value});
+        setHistoryValues(key, values) {
             values.sort((a, b) => b.ts - a.ts);
-            this.set(key, values);
+            this.set(key + 'History', values);
+            return values;
         }
 
         isEnabled() {
@@ -559,19 +558,19 @@ sauce.ns('hist.db', async ns => {
         }
 
         getFTPAt(ts) {
-            return this._getHistoryValueAt('ftpHistory', ts);
+            return this._getHistoryValueAt('ftp', ts);
         }
 
         getWeightAt(ts) {
-            return this._getHistoryValueAt('weightHistory', ts);
+            return this._getHistoryValueAt('weight', ts);
         }
 
-        setFTPAt(value, ts) {
-            return this._setHistoryValueAt('ftpHistory', value, ts);
+        setFTPHistory(data) {
+            return this.setHistoryValues('ftp', data);
         }
 
-        setWeightAt(value, ts) {
-            return this._setHistoryValueAt('weightHistory', value, ts);
+        setWeightHistory(data) {
+            return this.setHistoryValues('weight', data);
         }
     }
 

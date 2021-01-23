@@ -765,6 +765,24 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(enableAthlete, {namespace});
 
 
+    async function updateAthlete(id, updates) {
+        return await ns.syncManager.updateAthlete(id, updates);
+    }
+    sauce.proxy.export(updateAthlete, {namespace});
+
+
+    async function setAthleteHistoryValues(id, key, data) {
+        const athlete = await athletesStore.get(id, {model: true});
+        if (!athlete) {
+            throw new Error('Athlete not found: ' + id);
+        }
+        const clean = athlete.setHistoryValues(key, data);
+        await athlete.save();
+        return clean;
+    }
+    sauce.proxy.export(setAthleteHistoryValues, {namespace});
+
+
     async function disableAthlete(id) {
         return await ns.syncManager.disableAthlete(id);
     }

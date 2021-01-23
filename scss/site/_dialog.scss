@@ -120,7 +120,8 @@ html .ui-dialog {
         overflow: auto;
     }
 
-    a {
+    a,
+    .btn {
         &:focus {
             outline: none;
         }
@@ -327,13 +328,16 @@ html .ui-dialog {
     }
 
     .btn.sync-start {
-        color: green; 
+        color: #00a900;
     }
+
     .btn.sync-stop {
-        color: red; 
+        color: #c10000;
     }
+
     .btn.sync-recompute {
-        color: orange; 
+        color: #c37e00;
+        font-size: 0.9em;
     }
 
     form.sauce-key-value {
@@ -348,17 +352,26 @@ html .ui-dialog {
                 background-color: transparent;
                 border: 1px solid color.shade(bg, 14%);
                 padding: 0.1em 0.4em;
+
+                &:invalid {
+                    border: 1px dashed red;
+                }
             }
 
             input[type="number"] {
                 width: 7ch;
+                text-align: right;
+            }
+
+            input[type="date"] {
+                width: auto;
             }
 
             &.history {
                 border: solid 1px color.shade(bg, 15%);
-                border-radius: 0.25em;
-                background: color.shade(bg, -3%);
-                margin: 1em 1.6em;
+                border-radius: 0.28em;
+                background: color.shade(bg, 0%);
+                margin: 1em 2em;
                 padding: 1em;
                 font-size: 0.9em;
 
@@ -372,6 +385,13 @@ html .ui-dialog {
 
                     .entry {
                         padding: 0.1em 1.2em;
+                        display: flex;
+                        align-items: center;
+
+                        &:hover {
+                            background-color: color.shade(bg, 2%);
+                            border-radius: 0.28em;
+                        }
                     }
                 }
 
@@ -379,11 +399,6 @@ html .ui-dialog {
                     .save.btn {
                         display: none;
                     }
-                }
-
-
-                .btn.save {
-                    color: red;
                 }
 
                 .btn.entry-add,
@@ -402,6 +417,9 @@ html .ui-dialog {
 
                 .btn.entry-delete {
                     color: red;
+                    flex: 1 0;
+                    display: flex;
+                    justify-content: flex-end;
                 }
             }
         }
