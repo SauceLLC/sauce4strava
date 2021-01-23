@@ -162,7 +162,7 @@ sauce.ns('performance', async ns => {
         renderAttrs() {
             return {
                 athlete: this.athlete,
-                syncCounts: this.syncCounts[this.athlete.id],
+                syncCounts: this.athlete && this.syncCounts[this.athlete.id],
                 weeklyTSS: 1000 * Math.random(),
                 weeklyTime: 3600 * 10 * Math.random(),
                 peaks: {
@@ -177,15 +177,18 @@ sauce.ns('performance', async ns => {
 
         async setAthlete(athlete, options={}) {
             await this.initialized;
-            const id = athlete.id;
+            this.athlete = athlete;
+            const id = athlete && athlete.id;
             if (this.syncController) {
                 this.syncController.removeEventListener('progress', this.onSyncProgress);
             }
-            this.syncController = this.pageView.syncControllers[id];
-            this.syncController.addEventListener('progress', this.onSyncProgress);
-            this.athlete = athlete;
-            const counts = await sauce.hist.activityCounts(this.athlete.id);
-            this.syncCounts[this.athlete.id] = counts;
+            if (id) {
+                this.syncController = this.pageView.syncControllers[id];
+                this.syncController.addEventListener('progress', this.onSyncProgress);
+                this.syncCounts[id] = await sauce.hist.activityCounts(id);
+            } else {
+                this.syncController = null;
+            }
             if (!options.noRender) {
                 await this.render();
             }
@@ -255,6 +258,9 @@ sauce.ns('performance', async ns => {
 
         async render() {
             await super.render();
+            if (!this.athlete) {
+                return;
+            }
             this.charts.tss = new ActivityTimeRangeChart('#tss', this, {
                 options: {
                     plugins: {colorschemes: {scheme: 'brewer.Blues9'}},
@@ -402,7 +408,9 @@ sauce.ns('performance', async ns => {
             this.athletes = athletes;
             this.athlete = athletes.values().next().value;  // XXX remember last or opt use URL param
             this.syncControllers = {};
-            this.syncControllers[this.athlete.id] = new sauce.hist.SyncController(this.athlete.id);
+            if (this.athlete) {
+                this.syncControllers[this.athlete.id] = new sauce.hist.SyncController(this.athlete.id);
+            }
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});

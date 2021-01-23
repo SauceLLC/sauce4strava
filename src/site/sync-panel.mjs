@@ -2,45 +2,21 @@
 
 
 export async function activitySyncDialog(athlete, syncController) {
-    const enabled = athlete.sync;
     const template = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
+    const state = {
+        enabled: !!athlete.sync,
+        counts: null
+    };
     const $modal = sauce.modal({
         title: `Activity Sync Control Panel - ${athlete.name}`,
         icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
         dialogClass: 'sauce-sync-athlete-dialog',
-        body: await template({
-            enabled,
-            athlete,
-            weightUnit: sauce.locale.weightFormatter.shortUnitKey(),
-        }),
+        autoOpen: false,  // lazy render
         flex: true,
-        width: '40em',
+        width: '35em',
         autoDestroy: true,
         closeOnMobileBack: true,
         extraButtons: [{
-            text: 'Cancel Sync',
-            class: 'btn btn-primary sync-cancel',
-            click: ev => {
-                $modal.removeClass('sync-active');
-                syncController.cancel();
-            }
-        }, {
-            text: 'Recompute Activity Metrics',
-            class: 'btn btn-primary sync-recompute',
-            click: async ev => {
-                $modal.addClass('sync-active');
-                $modal.find('.entry.synced progress').removeAttr('value');
-                $modal.find('.entry.synced .text').empty();
-                await sauce.hist.invalidateSyncState(athlete.id, 'local');
-            }
-        }, {
-            text: 'Sync Activity Data',
-            class: 'btn btn-primary sync-start',
-            click: async ev => {
-                $modal.addClass('sync-active');
-                await sauce.hist.refreshRequest(athlete.id);
-            }
-        }, {
             text: 'Import Data',
             click: ev => {
                 const btn = ev.target;
@@ -101,24 +77,50 @@ export async function activitySyncDialog(athlete, syncController) {
             }
         }]
     });
+
+    async function render() {
+        $modal.html(await template(Object.assign({
+            athlete,
+            weightUnit: sauce.locale.weightFormatter.shortUnitKey(),
+            weightConvert: sauce.locale.weightFormatter.convert,
+        }, state)));
+        if (!state.opened) {
+            $modal.dialog('open');
+            state.opened = true;
+        }
+        if (state.enabled) {
+            await Promise.all([updateSyncCounts(), updateSyncTimes()]);
+            if (await syncController.isActiveSync()) {
+                setActive();
+            } else {
+                $modal.find('.entry.status value').text('Idle');
+            }
+        } else {
+            $modal.addClass('sync-disabled');
+        }
+    }
+
     async function updateSyncCounts(counts) {
         if (!counts) {
-            counts = await sauce.hist.activityCounts(athlete.id);
+            counts = state.counts || await sauce.hist.activityCounts(athlete.id);
         }
         const synced = counts.processed;
         const total = counts.total - counts.unavailable - counts.unprocessable;
-        $modal.find('.entry.synced').attr('title',
-            `Synchronized ${synced.toLocaleString()} of ${total.toLocaleString()} activities`);
         $modal.find('.entry.synced progress').attr('value', synced / total);
-        const pct = Math.round(synced / total * 100);
-        $modal.find('.entry.synced .text').html(`${pct}% <small>(${synced.toLocaleString()} activities)</small>`);
+        if (synced === total) {
+            $modal.find('.entry.synced .text').html(`100% <small>(${synced.toLocaleString()} activities)</small>`);
+        } else {
+            $modal.find('.entry.synced .text').html(`${synced.toLocaleString()} of ${total.toLocaleString()} activities`);
+        }
     }
+
     async function updateSyncTimes() {
         const lastSync = await syncController.lastSync();
         const nextSync = await syncController.nextSync();
         $modal.find('.entry.last-sync value').text(lastSync ? (new Date(lastSync).toLocaleString()): '');
         $modal.find('.entry.next-sync value').text(nextSync ? (new Date(nextSync).toLocaleString()): '');
     }
+
     let rateLimiterInterval;
     function setActive() {
         $modal.addClass('sync-active');
@@ -136,13 +138,13 @@ export async function activitySyncDialog(athlete, syncController) {
             }
         }, 5000);
     }
-    const $en = $modal.find('input[name="enable"]');
+
     const listeners = {
         start: ev => void setActive(),
         stop: async ev => {
             clearInterval(rateLimiterInterval);
             $modal.removeClass('sync-active');
-            $modal.find('.entry.status value').text('Completed');
+            $modal.find('.entry.status value').text('Idle');
             await Promise.all([updateSyncCounts(), updateSyncTimes()]);
         },
         error: async ev => {
@@ -152,23 +154,14 @@ export async function activitySyncDialog(athlete, syncController) {
             await updateSyncTimes();
         },
         progress: ev => void updateSyncCounts(ev.data.counts),
-        enable: ev => void ($en[0].checked = true),
-        disable: ev => void ($en[0].checked = false),
+        enable: ev => void ($modal.find('input[name="enable"]')[0].checked = true),
+        disable: ev => void ($modal.find('input[name="enable"]')[0].checked = false),
     };
     for (const [event, cb] of Object.entries(listeners)) {
         syncController.addEventListener(event, cb);
     }
-    if (enabled) {
-        await Promise.all([updateSyncCounts(), updateSyncTimes()]);
-        if (await syncController.isActiveSync()) {
-            setActive();
-        } else {
-            $modal.find('.entry.status value').text('Idle');
-        }
-    } else {
-        $modal.addClass('sync-disabled');
-    }
-    $en.on('input', async ev => {
+
+    $modal.on('input', 'input[name="enable"]', async ev => {
         const en = ev.target.checked;
         if (en) {
             await Promise.all([updateSyncCounts(), updateSyncTimes()]);
@@ -178,10 +171,41 @@ export async function activitySyncDialog(athlete, syncController) {
         }
         $modal.toggleClass('sync-disabled', !en);
     });
+    $modal.on('click', '.sync-stop.btn', ev => {
+        ev.preventDefault();
+        $modal.removeClass('sync-active');
+        syncController.cancel();
+    });
+    $modal.on('click', '.sync-recompute.btn', async ev => {
+        ev.preventDefault();
+        $modal.addClass('sync-active');
+        $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
+        $modal.find('.entry.synced .text').empty();
+        await sauce.hist.invalidateSyncState(athlete.id, 'local');
+    });
+    $modal.on('click', '.sync-start.btn', async ev => {
+        ev.preventDefault();
+        $modal.addClass('sync-active');
+        await sauce.hist.refreshRequest(athlete.id);
+    });
+    $modal.on('click', '.entry-delete.btn', async ev => {
+        ev.preventDefault();
+        console.error('XXX');
+    });
+    $modal.on('click', '.entry-add.btn', async ev => {
+        ev.preventDefault();
+        console.error('XXX');
+    });
+    $modal.on('click', '.save-changes.btn', async ev => {
+        ev.preventDefault();
+        console.error('XXX');
+    });
     $modal.on('dialogclose', () => {
         for (const [event, cb] of Object.entries(listeners)) {
             syncController.removeEventListener(event, cb);
         }
     });
+
+    await render();
 }
 
