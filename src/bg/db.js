@@ -346,6 +346,21 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
+        getLocaleDay() {
+            const date = new Date(this.data.ts);
+            // The set___ calls are locale specific, so this gives us local midnight time.
+            date.setHours(0);
+            date.setMinutes(0);
+            date.setSeconds(0);
+            date.setMilliseconds(0);
+            return date;
+        }
+
+        getTSS() {
+            const stats = this.data.stats;
+            return stats && stats.tssOverride || stats.tss || stats.tTss || 0;
+        }
+
         _getSyncState(manifest) {
             const processor = manifest.processor;
             const name = manifest.name;
