@@ -1132,8 +1132,9 @@ sauce.ns('hist', async ns => {
                         try {
                             await fn({manifest: m, activities, athlete: this.athlete, syncJob: this});
                         } catch(e) {
+                            debugger;
                             console.warn(`Top level local processing error (${fn.name}) ` +
-                                         `v${m.version} for ${count} activities`);
+                                         `v${m.version} for ${count} activities`, e);
                             for (const a of activities) {
                                 a.setSyncError(m, e);
                             }

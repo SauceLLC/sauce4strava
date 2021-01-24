@@ -1,7 +1,66 @@
-/* global sauce, jQuery, Chart, moment, regression */
+/* global sauce, jQuery, Chart, moment, regression, Backbone */
 
 sauce.ns('performance', async ns => {
     'use strict';
+
+    const DAY = 86400 * 1000;
+
+    const urn = 'sauce/performance';
+    const defaultPeriod = 30;
+
+    await sauce.propDefined('Backbone.Router', {once: true});
+    const AppRouter = Backbone.Router.extend({
+        constructor: function() {
+            this.filters = {};
+            Backbone.Router.prototype.constructor.apply(this, arguments);
+        },
+
+        routes: {
+            [`${urn}/:athleteId/:period/:start/:end`]: 'onNav',
+            [`${urn}/:athleteId/:period`]: 'onNav',
+            [`${urn}/:athleteId`]: 'onNav',
+            [urn]: 'onNav',
+        },
+
+        onNav: function(athleteId, period, start, end) {
+            console.debug("onNav", athleteId, period, start, end);
+            this.filters = {
+                athleteId: athleteId && Number(athleteId),
+                period: period && Number(period),
+                periodStart: start && Number(start),
+                periodEnd: end && Number(end)
+            };
+        },
+
+        setAthlete: function(athleteId, options) {
+            this.filters.athleteId = athleteId;
+            this.filterNavigate(options);
+        },
+
+        setPeriod: function(period, start, end) {
+            this.filters.period = period;
+            this.filters.periodStart = start;
+            this.filters.periodEnd = end;
+            this.filterNavigate();
+        },
+
+        filterNavigate: function(options={}) {
+            const f = this.filters;
+            if (f.periodEnd != null && f.periodStart != null &&f.period != null &&
+                f.athleteId != null) {
+                this.navigate(`${urn}/${f.athleteId}/${f.period}/${f.periodStart}/${f.periodEnd}`,
+                    options);
+            } else if (f.period != null && f.athleteId != null) {
+                this.navigate(`${urn}/${f.athleteId}/${f.period}`, options);
+            } else if (f.athleteId != null) {
+                this.navigate(`${urn}/${f.athleteId}`, options);
+            } else {
+                this.navigate(`${urn}`, options);
+            }
+        }
+    });
+    ns.router = new AppRouter();
+    Backbone.history.start({pushState: true});
 
     await sauce.proxy.connected;
     // XXX find something just after all the locale stuff.
@@ -10,7 +69,7 @@ sauce.ns('performance', async ns => {
     await sauce.propDefined('Backbone.View', {once: true});
     const view = await sauce.getModule('/src/site/view.mjs');
 
-    const DAY = 86400 * 1000;
+    const currentUser = await sauce.storage.get('currentUser');
 
     Chart.plugins.unregister(self.ChartDataLabels);  // Disable data labels by default.
 
@@ -130,12 +189,12 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
+            this.period = ns.router.filters.period || defaultPeriod;
             this.syncCounts = {};
             this.onSyncProgress = this._onSyncProgress.bind(this);
-            this.athlete = pageView.athlete;
-            this.listenTo(pageView, 'change-athlete', this.setAthlete);
+            this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
-            await this.setAthlete(this.athlete, {noRender: true});
+            ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
         }
 
@@ -155,8 +214,14 @@ sauce.ns('performance', async ns => {
             };
         }
 
-        async setAthlete(athlete, options={}) {
-            await this.initialized;
+        async render() {
+            if (this.pageView.athlete !== this.athlete) {
+                await this.setAthlete(this.pageView.athlete);
+            }
+            await super.render();
+        }
+
+        async setAthlete(athlete) {
             this.athlete = athlete;
             const id = athlete && athlete.id;
             if (this.syncController) {
@@ -169,9 +234,19 @@ sauce.ns('performance', async ns => {
             } else {
                 this.syncController = null;
             }
-            if (!options.noRender) {
+        }
+
+        async onRouterNav(_, period) {
+            period = period && Number(period);
+            if (period !== this.period) {
+                this.period = period;
                 await this.render();
             }
+        }
+
+        async onChangeAthlete(athlete) {
+            await this.setAthlete(athlete);
+            await this.render();
         }
 
         async _onSyncProgress(ev) {
@@ -180,7 +255,7 @@ sauce.ns('performance', async ns => {
         }
 
         async onUpdatePeriod({activitiesByDay}) {
-            console.warn("XXX");
+            //console.warn("XXX");
             await this.render();
         }
     }
@@ -226,14 +301,19 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.period = 30;  // days // XXX remember last and or opt use URL params
+            this.period = ns.router.filters.period || defaultPeriod;
             this.periodEndMax = Number(moment().endOf('day').toDate());
-            this.periodEnd = this.periodEndMax;  // opt use URL params
-            this.periodStart = this.periodEnd - (this.period * DAY);
+            this.periodEnd = ns.router.filters.periodEnd || this.periodEndMax;
+            this.periodStart = ns.router.filters.periodStart || this.periodEnd - (this.period * DAY);
             this.charts = {};
             this.athlete = pageView.athlete;
             this.listenTo(pageView, 'change-athlete', this.setAthlete);
+            ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
+        }
+
+        renderAttrs() {
+            return {period: this.period};
         }
 
         async render() {
@@ -294,7 +374,7 @@ sauce.ns('performance', async ns => {
             const actsDataStacks = activitiesByDayToDateStacks(this.actsByDay);
             const $start = this.$('header span.period.start');
             const $end = this.$('header span.period.end');
-            $start.text(moment(start).calendar());
+            $start.text(moment(start).format('ll'));
             $end.text(moment(end).format('ll'));
             this.$('button.period.next').prop('disabled', end >= Date.now());
             this.charts.tss.data.datasets = [].concat(actsDataStacks.map((row, i) => ({
@@ -370,7 +450,7 @@ sauce.ns('performance', async ns => {
         }
 
         async onChartClick(ev) {
-            const chart = this.charts[ev.target.id];
+            const chart = this.charts[ev.currentTarget.id];
             const ds = chart.getElementsAtEvent(ev);
             if (ds.length) {
                 const data = this.actsByDay[ds[0]._index];
@@ -379,17 +459,41 @@ sauce.ns('performance', async ns => {
             }
         }
 
+        async onRouterNav(_, period, start, end) {
+            period = period && Number(period);
+            start = start && Number(start);
+            end = end && Number(end);
+            let needRender;
+            if (period !== this.period) {
+                this.period = period;
+                needRender = true;
+            }
+            if (start !== this.periodStart) {
+                this.periodStart = start;
+                needRender = true;
+            }
+            if (end !== this.periodEnd) {
+                this.periodEnd = end;
+                needRender = true;
+            }
+            if (needRender) {
+                await this.update();
+            }
+        }
+
         async onPeriodChange(ev) {
-            this.period = Number(ev.target.value);
+            this.period = Number(ev.currentTarget.value);
             this.periodStart = this.periodEnd - (86400 * 1000 * this.period);
+            ns.router.setPeriod(this.period, this.periodStart, this.periodEnd);
             await this.update();
         }
 
         async onPeriodShift(ev) {
-            const next = ev.target.classList.contains('next');
+            const next = ev.currentTarget.classList.contains('next');
             this.periodEnd = Math.min(this.periodEnd + this.period * DAY * (next ? 1 : -1),
                 this.periodEndMax);
             this.periodStart = this.periodEnd - (this.period * DAY);
+            ns.router.setPeriod(this.period, this.periodStart, this.periodEnd);
             await this.update();
         }
 
@@ -413,21 +517,20 @@ sauce.ns('performance', async ns => {
         }
 
         async init({athletes}) {
-            this.athletes = athletes;
-            this.athlete = athletes.values().next().value;  // XXX remember last or opt use URL param
             this.syncControllers = {};
-            if (this.athlete) {
-                this.syncControllers[this.athlete.id] = new sauce.hist.SyncController(this.athlete.id);
-            }
+            this.athletes = athletes;
+            this.setAthlete(ns.router.filters.athleteId);
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
+            ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
         }
 
         renderAttrs() {
             return {
-                athletes: Array.from(this.athletes.values())
+                athletes: Array.from(this.athletes.values()),
+                athleteId: this.athlete.id,
             };
         }
 
@@ -443,19 +546,44 @@ sauce.ns('performance', async ns => {
             ]);
         }
 
-        onAthleteChange(ev) {
-            const id = Number(ev.target.value);
-            this.athlete = this.athletes.get(id);
-            if (!this.syncControllers[id]) {
+        setAthlete(athleteId) {
+            let success = true;
+            if (athleteId && this.athletes.has(athleteId)) {
+                this.athlete = this.athletes.get(athleteId);
+            } else {
+                if (athleteId) {
+                    console.warn("Invalid athlete:", athleteId);
+                    ns.router.setAthlete(undefined, {replace: true});
+                    success = false;
+                }
+                this.athlete = this.athletes.get(currentUser) || this.athletes.values().next().value;
+            }
+            const id = this.athlete && this.athlete.id;
+            if (id && !this.syncControllers[id]) {
                 this.syncControllers[id] = new sauce.hist.SyncController(id);
             }
-            this.athlete = this.athletes.get(Number(ev.target.value));
+            return success;
+        }
+
+        onAthleteChange(ev) {
+            const id = Number(ev.currentTarget.value);
+            if (this.setAthlete(id)) {
+                ns.router.setAthlete(id);
+            }
             this.trigger('change-athlete', this.athlete);
         }
 
         async onControlPanelClick(ev) {
             const mod = await sauce.getModule('/src/site/sync-panel.mjs');
             await mod.activitySyncDialog(this.athlete, this.syncControllers[this.athlete.id]);
+        }
+
+        async onRouterNav(athleteId) {
+            athleteId = athleteId && Number(athleteId);
+            if (athleteId !== this.athlete.id) {
+                this.setAthlete(athleteId);
+                await this.render();
+            }
         }
     }
 
@@ -468,8 +596,6 @@ sauce.ns('performance', async ns => {
         const pageView = new PageView({athletes, el: $page});
         await pageView.render();
     }
-
-
 
     if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
         addEventListener('DOMContentLoaded', () => load().catch(sauce.report.error));

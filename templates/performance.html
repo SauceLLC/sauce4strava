@@ -5,7 +5,7 @@
         <b>Athlete:</b><br/>
         <select name="athlete">
             <% for (const x of athletes) { %>
-                <option value="{{x.id}}">{{x.name}}</option>
+                <option value="{{x.id}}" {{x.id === athleteId ? 'selected' : ''}}>{{x.name}}</option>
             <% } %>
         </select>
         <button class="btn btn-icon-only sync-panel"
