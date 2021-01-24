@@ -466,15 +466,15 @@ sauce.ns('performance', async ns => {
             end = end && Number(end);
             let needRender;
             if (period !== this.period) {
-                this.period = period;
-                needRender = true;
-            }
-            if (start !== this.periodStart) {
-                this.periodStart = start;
+                this.period = period || defaultPeriod;
                 needRender = true;
             }
             if (end !== this.periodEnd) {
-                this.periodEnd = end;
+                this.periodEnd = end || this.periodEndMax;
+                needRender = true;
+            }
+            if (start !== this.periodStart) {
+                this.periodStart = start || this.periodEnd - (DAY * this.period);
                 needRender = true;
             }
             if (needRender) {
@@ -484,7 +484,7 @@ sauce.ns('performance', async ns => {
 
         async onPeriodChange(ev) {
             this.period = Number(ev.currentTarget.value);
-            this.periodStart = this.periodEnd - (86400 * 1000 * this.period);
+            this.periodStart = this.periodEnd - (DAY * this.period);
             this.updateNav();
             await this.update();
         }
