@@ -485,7 +485,7 @@ sauce.ns('performance', async ns => {
         async onPeriodChange(ev) {
             this.period = Number(ev.currentTarget.value);
             this.periodStart = this.periodEnd - (86400 * 1000 * this.period);
-            ns.router.setPeriod(this.athlete.id, this.period, this.periodStart, this.periodEnd);
+            this.updateNav();
             await this.update();
         }
 
@@ -494,8 +494,16 @@ sauce.ns('performance', async ns => {
             this.periodEnd = Math.min(this.periodEnd + this.period * DAY * (next ? 1 : -1),
                 this.periodEndMax);
             this.periodStart = this.periodEnd - (this.period * DAY);
-            ns.router.setPeriod(this.athlete.id, this.period, this.periodStart, this.periodEnd);
+            this.updateNav();
             await this.update();
+        }
+
+        updateNav() {
+            if (this.periodEnd === this.periodEndMax) {
+                ns.router.setPeriod(this.athlete.id, this.period);
+            } else {
+                ns.router.setPeriod(this.athlete.id, this.period, this.periodStart, this.periodEnd);
+            }
         }
 
         async setAthlete(athlete) {
