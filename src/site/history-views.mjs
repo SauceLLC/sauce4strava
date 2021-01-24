@@ -113,6 +113,7 @@ export class WeightHistoryView extends HistoryView {
             localeTitleKey: 'weight_title',
             localeHelpKey: 'weight_help',
             valueMin: 0,
+            valueStep: 'any',
             valueConvert: x => sauce.locale.weightFormatter.convert(x).toFixed(1),
             valueUnconvert: x => sauce.locale.weightUnconvert(x),
             valueUnit: sauce.locale.weightFormatter.shortUnitKey(),

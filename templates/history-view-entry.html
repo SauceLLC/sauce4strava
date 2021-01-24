@@ -1,7 +1,8 @@
 <div class="history-entry">
     <key>
-        <input min="{{obj.valueMin != null ? valueMin : ''}}"
-               max="{{obj.valueMax != null ? valueMax : ''}}"
+        <input <% if (obj.valueMin != null) { %>min="{{valueMin}}"<% } %>
+               <% if (obj.valueMax != null) { %>max="{{valueMax}}"<% } %>
+               <% if (obj.valueStep != null) { %>step="{{valueStep}}"<% } %>
                type="number" required
                value="{{!isNaN(value) && value != null ? valueConvert(value): ''}}"/>
         <% if (obj.valueUnit) { %>
