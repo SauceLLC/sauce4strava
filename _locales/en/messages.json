@@ -220,6 +220,8 @@
     "history_view_save_changes": {"message": "Save changes"},
     "history_view_ftp_title": {"message": "FTP History"},
     "history_view_weight_title": {"message": "Weight History"},
+    "history_view_ftp_help": {"message": "Sauce supports setting FTP values for any point in your history.  Depending on the date an activity took place on, the corresponding value will be used for any FTP based calculations, such as TSS."},
+    "history_view_weight_help": {"message": "Sauce supports setting weight values for any point in your history.  Depending on the date an activity took place on, the corresponding value will be used for any weight based calculations."},
     "subscription": {"message": "Subscription"},
     "live_segment_create": {"message": "Create"},
     "live_segment_creator": {"message": "Creator"},

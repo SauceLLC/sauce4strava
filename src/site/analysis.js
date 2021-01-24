@@ -377,8 +377,41 @@ sauce.ns('analysis', ns => {
     async function renderTertiaryStats(attrs) {
         const template = await getTemplate('tertiary-stats.html');
         const $stats = jQuery(await template(attrs));
-        attachEditableFTP($stats);
-        attachEditableWeight($stats);
+        if (ns.sauceAthlete) {
+            $stats.on('click', '.sauce-editable-field', async ev => {
+                const m = await sauce.getModule('/src/site/history-views.mjs');
+                const isFTP = ev.currentTarget.classList.contains('ftp');
+                let view;
+                if (isFTP) {
+                    view = new m.FTPHistoryView({athlete: ns.sauceAthlete});
+                } else {
+                    view = new m.WeightHistoryView({athlete: ns.sauceAthlete});
+                }
+                await view.render();
+                const $modal = sauce.modal({
+                    title: `Edit Athlete ${isFTP ? 'FTP': 'Weight'}`, // XXX locale
+                    el: view.$el,
+                    width: '35em',
+                });
+                $modal.on('dialogclose', async () => {
+                    if (!view.edited) {
+                        return;
+                    }
+                    sauce.modal({
+                        title: 'Reloading...',
+                        body: '<b>Reloading page to reflect change.</b>'
+                    });
+                    try {
+                        await sauce.report.event('AthleteInfo', 'edit', isFTP ? 'ftp' : 'weight');
+                    } finally {
+                        location.reload();
+                    }
+                });
+            });
+        } else {
+            attachEditableFTP($stats);
+            attachEditableWeight($stats);
+        }
         jQuery('.activity-stats .inline-stats').last().after($stats);
     }
 
@@ -2065,6 +2098,16 @@ sauce.ns('analysis', ns => {
 
 
     async function getFTPInfo(athleteId) {
+        if (ns.sauceAthlete) {
+            // XXX this is a weak intergration for now.  Will need complete overhaul...
+            const dbFTP = ns.sauceAthlete.getFTPAt(pageView.activity().get('startDateLocal') * 1000);
+            if (dbFTP) {
+                return {
+                    ftp: dbFTP,
+                    ftpOrigin: 'sauce',
+                };
+            }
+        }
         const info = {};
         const override = await sauce.storage.getAthleteProp(athleteId, 'ftp_override');
         if (override) {
@@ -2114,6 +2157,16 @@ sauce.ns('analysis', ns => {
 
 
     async function getWeightInfo(athleteId) {
+        if (ns.sauceAthlete) {
+            // XXX this is a weak intergration for now.  Will need complete overhaul...
+            const dbWeight = ns.sauceAthlete.getWeightAt(pageView.activity().get('startDateLocal') * 1000);
+            if (dbWeight) {
+                return {
+                    weight: dbWeight,
+                    weightOrigin: 'sauce',
+                };
+            }
+        }
         const info = {};
         const override = await sauce.storage.getAthleteProp(athleteId, 'weight_override');
         if (override) {
@@ -2895,13 +2948,32 @@ sauce.ns('analysis', ns => {
     }
 
 
+    class SauceAthlete {
+        constructor(data) {
+            Object.assign(this, data);
+        }
+
+        getFTPAt(ts) {
+            return sauce.db.getAthleteHistoryValueAt(this.ftpHistory, ts);
+        }
+
+        getWeightAt(ts) {
+            return sauce.db.getAthleteHistoryValueAt(this.weightHistory, ts);
+        }
+    }
+
+
     async function prepare() {
         const activity = pageView.activity();
         ns.athlete = pageView.activityAthlete();
         ns.gender = ns.athlete.get('gender') === 'F' ? 'female' : 'male';
         await sauce.proxy.connected;
-        await sauce.locale.init();
+        const athleteData = await sauce.hist.getAthlete(ns.athlete.id);
+        if (athleteData) {
+            ns.sauceAthlete = new SauceAthlete(athleteData);
+        }
         await Promise.all([
+            sauce.locale.init(),
             getWeightInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
             getFTPInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
         ]);
@@ -3104,6 +3176,7 @@ sauce.ns('analysis', ns => {
 
 
     async function updateUserId() {
+        await sauce.proxy.connected;
         const lastKnown = await sauce.storage.get('currentUser');
         const currentId = pageView.currentAthlete().id;
         if (currentId !== lastKnown) {

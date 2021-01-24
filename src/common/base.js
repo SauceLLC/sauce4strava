@@ -175,7 +175,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     sauce.dialog = function(options={}) {
-        const $dialog = self.jQuery(`<div>${options.body || ''}</div>`);
+        const $dialog = options.el || self.jQuery(`<div>${options.body || ''}</div>`);
         const dialogClass = `sauce-dialog ${options.dialogClass || ''}`;
         if (options.flex) {
             $dialog.addClass('flex');
@@ -707,10 +707,25 @@ self.sauceBaseInit = function sauceBaseInit() {
     }
 
 
+    function getAthleteHistoryValueAt(values, ts) {
+        if (values) {
+            let v = values[0].value;
+            for (const x of values) {
+                if (x.ts > ts) {
+                    break;
+                }
+                v = x.value;
+            }
+            return v;
+        }
+    }
+
+
     sauce.db = {
         Database,
         DBStore,
         Model,
+        getAthleteHistoryValueAt
     };
 
 

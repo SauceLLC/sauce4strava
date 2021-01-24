@@ -30,6 +30,7 @@ class HistoryView extends SauceView {
         this.valueConvert = options.valueConvert || (x => x);
         this.entryTpl = await sauce.template.getTemplate('history-view-entry.html', this.tplNamespace);
         this.attrs = options;
+        this.edited = false;
         await super.init();
     }
 
@@ -38,6 +39,7 @@ class HistoryView extends SauceView {
             data: this.athlete[this.athleteKey] || [],
             entryTpl: this.entryTpl,
             valueConvert: this.valueConvert,
+            cid: this.cid,
         }, this.attrs));
     }
     
@@ -76,6 +78,7 @@ class HistoryView extends SauceView {
         const ordered = await sauce.hist.setAthleteHistoryValues(this.athlete.id, this.ident, data);
         this.athlete[this.athleteKey] = ordered;
         this.$el.removeClass('dirty');
+        this.edited = true;
         await this.render();
     }
 
@@ -92,6 +95,7 @@ export class FTPHistoryView extends HistoryView {
             athlete,
             ident: 'ftp',
             localeTitleKey: 'ftp_title',
+            localeHelpKey: 'ftp_help',
             valueMin: 0,
             valueMax: 1000,
             valueUnit: 'w',
@@ -107,6 +111,7 @@ export class WeightHistoryView extends HistoryView {
             athlete,
             ident: 'weight',
             localeTitleKey: 'weight_title',
+            localeHelpKey: 'weight_help',
             valueMin: 0,
             valueConvert: x => sauce.locale.weightFormatter.convert(x).toFixed(1),
             valueUnconvert: x => sauce.locale.weightUnconvert(x),
