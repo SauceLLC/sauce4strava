@@ -217,25 +217,34 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function trainingLoadProcessor({manifest, activities, athlete}) {
+    async function trainingLoadProcessor({manifest, activities, athlete, syncJob}) {
         // Activities come in from newest to oldest.  We must update all entries
         // newer than the oldest record.
         let oldest = activities[activities.length - 1];
-        const loaded = new Map(activities.map(x => [x.pk, x]));
-        const needed = [];
+        const externalActivities = syncJob.activities;
+        const models = new Map(activities.map(x => [x.pk, x]));
+        const external = [];
+        const need = [];
         // Leverage the activities array provided as a cache.  Fill in any missing values
-        // using bulk calls and maintain strict order.
+        // using the SyncJob collection first as the very same activities are likely to
+        // be getting updated by other manifests in this same job.  If any activities
+        // are not available in the SyncJob collection load from the DB.
         const orderedIds = await actsStore.getForAthlete(athlete.pk,
             {keys: true, start: oldest.get('ts')});
         for (const id of orderedIds) {
-            if (!loaded.has(id)) {
-                needed.push(id);
+            if (!models.has(id)) {
+                if (externalActivities.has(id)) {
+                    models.set(id, externalActivities.get(id));
+                } else {
+                    need.push(id);
+                }
+                external.push(id);
             }
         }
-        for (const x of await actsStore.getMany(needed, {models: true})) {
-            loaded.set(x.pk, x);
+        for (const x of await actsStore.getMany(need, {models: true})) {
+            models.set(x.pk, x);
         }
-        const ordered = orderedIds.map(x => loaded.get(x));
+        const ordered = orderedIds.map(x => models.get(x));
         ordered.reverse();  // oldest -> newest
 
         let atl = 0;
@@ -252,10 +261,14 @@ sauce.ns('hist', async ns => {
                 break;
             } else if (x.pk !== oldest.pk) {
                 // Prior activity is same day as oldest in this set, we must lump it in.
-                oldest = x;
-                ordered.unshift(x);
-                loaded.set(x.pk, x);
-                needed.push(x.pk);
+                let model;
+                if (externalActivities.has(x.pk)) {
+                    model = externalActivities.get(x.pk);
+                }
+                oldest = model;
+                ordered.unshift(model);
+                models.set(model.pk, model);
+                external.push(model.pk);
             }
         }
         if (seed) {
@@ -285,8 +298,8 @@ sauce.ns('hist', async ns => {
                 x.set('training', {atl, ctl});
             }
         }
-        // Manually save activities we paged-in.  The rest are saved externally.
-        await actsStore.saveModels(needed.map(x => loaded.get(x)));
+        // Manually save externally referenced or loaded activities.
+        await actsStore.saveModels(external.map(x => models.get(x)));
     }
 
 
@@ -932,6 +945,7 @@ sauce.ns('hist', async ns => {
             this._cancelEvent = new locks.Event();
             this._rateLimiters = getStreamRateLimiterGroup();
             this._procQueue = new queues.Queue();
+            this.activities = new Map();
         }
 
         async wait() {
@@ -974,23 +988,23 @@ sauce.ns('hist', async ns => {
             const localIds = new Set(await actsStore.getForAthleteWithSync(athleteId, 'local', {keys: true}));
             const unfetched = new Map();
             const unprocessed = new Set();
-            const activities = new Map();
+            const unloaded = [];
             for (const id of await actsStore.getForAthlete(athleteId, {keys: true})) {
                 if (!fetchedIds.has(id)) {
                     unfetched.set(id, null);
-                    activities.set(id, null);
+                    unloaded.push(id);
                 } else if (!localIds.has(id)) {
                     unprocessed.add(id);
-                    activities.set(id, null);
+                    unloaded.push(id);
                 }
             }
-            for (const a of await actsStore.getMany(Array.from(activities.keys()), {models: true})) {
-                activities.set(a.pk, a);
+            for (const a of await actsStore.getMany(unloaded, {models: true})) {
+                this.activities.set(a.pk, a);
             }
             // After getting all our raw data we need to check that we can sync based on error backoff...
             let deferCount = 0;
             for (const id of unfetched.keys()) {
-                const a = activities.get(id);
+                const a = this.activities.get(id);
                 if (!a.nextAvailManifest('streams')) {
                     deferCount++;
                     unfetched.delete(id);
@@ -999,7 +1013,7 @@ sauce.ns('hist', async ns => {
                 }
             }
             for (const id of unprocessed) {
-                const a = activities.get(id);
+                const a = this.activities.get(id);
                 if (!a.nextAvailManifest('local')) {
                     deferCount++;
                 } else {
@@ -1071,34 +1085,6 @@ sauce.ns('hist', async ns => {
             console.info("Completed streams fetch for: " + this.athlete);
         }
 
-        async processBatch(m, activities) {
-            const s = Date.now();
-            const fn = m.data;
-            const count = activities.length;
-            try {
-                await fn({manifest: m, activities, athlete: this.athlete});
-            } catch(e) {
-                console.warn(`Top level local processing error (${fn.name}) ` +
-                             `v${m.version} for ${count} activities`);
-                for (const a of activities) {
-                    a.setSyncError(m, e);
-                }
-            }
-            // NOTE: The processor is free to use setSyncError(), but we really can't
-            // trust them to consistently use setSyncSuccess().  Failing to do so would
-            // be a disaster, so we handle that here.  The model is: Optionally tag the
-            // activity as having a sync error otherwise we assume it worked or does
-            // not need further processing, so mark it as done (success).
-            for (const a of activities) {
-                if (!a.hasSyncError(m)) {
-                    a.setSyncSuccess(m);
-                }
-            }
-            await actsStore.saveModels(activities);
-            const elapsed = Date.now() - s;
-            console.debug(`${fn.name} ${(elapsed / count).toFixed(1)}ms / activity, ${count} activities`);
-        }
-
         async _localProcessWorker() {
             let done = false;
             let autoBatchLimit = 20;
@@ -1139,11 +1125,33 @@ sauce.ns('hist', async ns => {
                         a.clearSyncState(m);
                     }
                     // Step 2: Process each manifest grouping...
-                    const work = [];
                     for (const [m, activities] of manifestBatches.entries()) {
-                        work.push(this.processBatch(m, activities));
+                        const s = Date.now();
+                        const fn = m.data;
+                        const count = activities.length;
+                        try {
+                            await fn({manifest: m, activities, athlete: this.athlete, syncJob: this});
+                        } catch(e) {
+                            console.warn(`Top level local processing error (${fn.name}) ` +
+                                         `v${m.version} for ${count} activities`);
+                            for (const a of activities) {
+                                a.setSyncError(m, e);
+                            }
+                        }
+                        // NOTE: The processor is free to use setSyncError(), but we really can't
+                        // trust them to consistently use setSyncSuccess().  Failing to do so would
+                        // be a disaster, so we handle that here.  The model is: Optionally tag the
+                        // activity as having a sync error otherwise we assume it worked or does
+                        // not need further processing, so mark it as done (success).
+                        for (const a of activities) {
+                            if (!a.hasSyncError(m)) {
+                                a.setSyncSuccess(m);
+                            }
+                        }
+                        await actsStore.saveModels(activities);
+                        const elapsed = Date.now() - s;
+                        console.debug(`${fn.name} ${(elapsed / count).toFixed(1)}ms / activity, ${count} activities`);
                     }
-                    await Promise.all(work);
                     // Step 3: Perform accounting and consolidation...
                     const lastBatchSize = batch.size;
                     for (const a of batch) {
