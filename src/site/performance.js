@@ -37,7 +37,8 @@ sauce.ns('performance', async ns => {
             this.filterNavigate(options);
         },
 
-        setPeriod: function(period, start, end) {
+        setPeriod: function(athleteId, period, start, end) {
+            this.filters.athleteId = athleteId;
             this.filters.period = period;
             this.filters.periodStart = start;
             this.filters.periodEnd = end;
@@ -46,7 +47,7 @@ sauce.ns('performance', async ns => {
 
         filterNavigate: function(options={}) {
             const f = this.filters;
-            if (f.periodEnd != null && f.periodStart != null &&f.period != null &&
+            if (f.periodEnd != null && f.periodStart != null && f.period != null &&
                 f.athleteId != null) {
                 this.navigate(`${urn}/${f.athleteId}/${f.period}/${f.periodStart}/${f.periodEnd}`,
                     options);
@@ -484,7 +485,7 @@ sauce.ns('performance', async ns => {
         async onPeriodChange(ev) {
             this.period = Number(ev.currentTarget.value);
             this.periodStart = this.periodEnd - (86400 * 1000 * this.period);
-            ns.router.setPeriod(this.period, this.periodStart, this.periodEnd);
+            ns.router.setPeriod(this.athlete.id, this.period, this.periodStart, this.periodEnd);
             await this.update();
         }
 
@@ -493,7 +494,7 @@ sauce.ns('performance', async ns => {
             this.periodEnd = Math.min(this.periodEnd + this.period * DAY * (next ? 1 : -1),
                 this.periodEndMax);
             this.periodStart = this.periodEnd - (this.period * DAY);
-            ns.router.setPeriod(this.period, this.periodStart, this.periodEnd);
+            ns.router.setPeriod(this.athlete.id, this.period, this.periodStart, this.periodEnd);
             await this.update();
         }
 
@@ -551,7 +552,7 @@ sauce.ns('performance', async ns => {
             if (athleteId && this.athletes.has(athleteId)) {
                 this.athlete = this.athletes.get(athleteId);
             } else {
-                if (athleteId) {
+                if (athleteId || isNaN(athleteId)) {
                     console.warn("Invalid athlete:", athleteId);
                     ns.router.setAthlete(undefined, {replace: true});
                     success = false;
