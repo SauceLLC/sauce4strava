@@ -103,7 +103,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'type', 'bar');
             setDefault(config, 'options.plugins.colorschemes.scheme', 'brewer.Blues9');
             setDefault(config, 'options.plugins.colorschemes.reverse', true);
-            setDefault(config, 'options.legend.display', false);
+            //setDefault(config, 'options.legend.display', false);
             setDefault(config, 'options.scales.xAxes[0].offset', true);
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
             setDefault(config, 'options.scales.xAxes[0].stacked', true);
@@ -249,6 +249,14 @@ sauce.ns('performance', async ns => {
                             id: 'tss',
                             scaleLabel: {labelString: 'TSS'},
                             ticks: {suggestedMax: 300},
+                        }, {
+                            id: 'atl',
+                            scaleLabel: {labelString: 'ATL (Fatigue)'},
+                            ticks: {suggestedMax: 250},
+                        }, {
+                            id: 'ctl',
+                            scaleLabel: {labelString: 'CTL (Fitness)'},
+                            ticks: {suggestedMax: 250},
                         }]
                     },
                     tooltips: {callbacks: {label: item => Math.round(item.value).toLocaleString()}},
@@ -289,7 +297,7 @@ sauce.ns('performance', async ns => {
             $start.text(moment(start).calendar());
             $end.text(moment(end).format('ll'));
             this.$('button.period.next').prop('disabled', end >= Date.now());
-            this.charts.tss.data.datasets = actsDataStacks.map((row, i) => ({
+            this.charts.tss.data.datasets = [].concat(actsDataStacks.map((row, i) => ({
                 label: 'TSS', // currently hidden.
                 stack: 'tss',
                 yAxisID: 'tss',
@@ -301,7 +309,27 @@ sauce.ns('performance', async ns => {
                     x: a.ts,
                     y: (a.activity && a.activity.stats) ? (a.activity.stats.tss || a.activity.stats.tTss) : null,
                 })),
-            }));
+            })), [{
+                label: 'ATL (Fatigue)',
+                type: 'line',
+                yAxisID: 'atl',
+                spanGaps: true,
+                order: 10,
+                data: this.actsByDay.map(a => ({
+                    x: a.ts,
+                    y: a.activities && a.activities[0] && a.activities[0].training && a.activities[0].training.atl
+                }))
+            }, {
+                label: 'CTL - Fitness',
+                type: 'line',
+                yAxisID: 'ctl',
+                spanGaps: true,
+                order: 10,
+                data: this.actsByDay.map(a => ({
+                    x: a.ts,
+                    y: a.activities && a.activities[0] && a.activities[0].training && a.activities[0].training.ctl
+                }))
+            }]);
             this.charts.tss.update();
             const cleanActs = this.actsByDay.filter(x => x.activities);
             const offts = cleanActs[0].ts;
