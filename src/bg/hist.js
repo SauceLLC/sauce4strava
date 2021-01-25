@@ -891,10 +891,41 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(disableAthlete, {namespace});
 
 
-    async function refreshRequest(id, options) {
-        return await ns.syncManager.refreshRequest(id, options);
+    async function refreshRequest(athleteId, options) {
+        return await ns.syncManager.refreshRequest(athleteId, options);
     }
     sauce.proxy.export(refreshRequest, {namespace});
+
+
+    async function streamsIntegrityCheck(athleteId, options={}) {
+        const have = new Set();
+        const missing = new Set();
+        for await (const [id,] of streamsStore.byAthlete(athleteId, 'time', {keys: true})) {
+            have.add(id);
+        }
+        for await (const id of await actsStore.getForAthleteWithSync(athleteId, 'streams', {keys: true})) {
+            if (have.has(id)) {
+                have.delete(id);
+            } else {
+                missing.add(id);
+            }
+        }
+        if (options.repair && missing.size) {
+            const acts = await actsStore.getMany(missing, {models: true});
+            const streamManifest = sauce.hist.db.ActivityModel.getSyncManifest('streams', 'fetch');
+            const localManifests = sauce.hist.db.ActivityModel.getSyncManifests('local');
+            for (const a of acts) {
+                console.info('Attempting to repair activity:', a.pk);
+                a.clearSyncState(streamManifest);
+                for (const m of localManifests) {
+                    a.clearSyncState(m);
+                }
+            }
+            await actsStore.saveModels(acts);
+        }
+        return {missingStreams: missing, missingActivities: have};
+    }
+    sauce.proxy.export(streamsIntegrityCheck);
 
 
     async function invalidateSyncState(athleteId, processor, name) {
@@ -1116,7 +1147,9 @@ sauce.ns('hist', async ns => {
                     for (const a of batch) {
                         const m = a.nextAvailManifest('local');
                         if (!m) {
-                            throw new Error("Internal Error");
+                            console.error("Already completed activity enqueued to processor:", a.pk);
+                            batch.delete(a);
+                            continue;
                         }
                         if (!manifestBatches.has(m)) {
                             manifestBatches.set(m, []);
@@ -1616,6 +1649,7 @@ sauce.ns('hist', async ns => {
 
 
     return {
+        streamsIntegrityCheck,
         invalidateSyncState,
         findPeaks,
         bulkTSS,
