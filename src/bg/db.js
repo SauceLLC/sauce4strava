@@ -84,7 +84,8 @@ sauce.ns('hist.db', async ns => {
                 options.index = 'athlete';
                 q = IDBKeyRange.only(athlete);
             }
-            for await (const x of this.values(q, options)) {
+            const iter = options.keys ? this.keys : this.values;
+            for await (const x of iter.call(this, q, options)) {
                 yield x;
             }
         }
@@ -358,7 +359,8 @@ sauce.ns('hist.db', async ns => {
 
         getTSS() {
             const stats = this.data.stats;
-            return stats && stats.tssOverride || stats.tss || stats.tTss || 0;
+            if (!stats) { console.warn("activity without stats", this.pk); }
+            return stats && (stats.tssOverride || stats.tss || stats.tTss) || 0;
         }
 
         _getSyncState(manifest) {
