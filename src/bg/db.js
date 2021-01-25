@@ -358,9 +358,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         getTSS() {
-            const stats = this.data.stats;
-            if (!stats) { console.warn("activity without stats", this.pk); }
-            return stats && (stats.tssOverride || stats.tss || stats.tTss) || 0;
+            return sauce.db.getActivityTSS(this.data);
         }
 
         _getSyncState(manifest) {

@@ -388,7 +388,7 @@ sauce.ns('performance', async ns => {
                 categoryPercentage: 1,
                 data: row.map(a => ({
                     x: a.ts,
-                    y: (a.activity && a.activity.stats) ? (a.activity.stats.tss || a.activity.stats.tTss) : null,
+                    y: a.activity ? sauce.db.getActivityTSS(a.activity) : null,
                 })),
             })), [{
                 label: 'ATL (Fatigue)',
