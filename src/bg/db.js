@@ -348,17 +348,11 @@ sauce.ns('hist.db', async ns => {
         }
 
         getLocaleDay() {
-            const date = new Date(this.data.ts);
-            // The set___ calls are locale specific, so this gives us local midnight time.
-            date.setHours(0);
-            date.setMinutes(0);
-            date.setSeconds(0);
-            date.setMilliseconds(0);
-            return date;
+            return sauce.date.toLocaleDayDate(this.data.ts);
         }
 
         getTSS() {
-            return sauce.db.getActivityTSS(this.data);
+            return sauce.model.getActivityTSS(this.data);
         }
 
         _getSyncState(manifest) {
@@ -560,11 +554,11 @@ sauce.ns('hist.db', async ns => {
         }
 
         getFTPAt(ts) {
-            return sauce.db.getAthleteHistoryValueAt(this.data.ftpHistory, ts);
+            return sauce.model.getAthleteHistoryValueAt(this.data.ftpHistory, ts);
         }
 
         getWeightAt(ts) {
-            return sauce.db.getAthleteHistoryValueAt(this.data.weightHistory, ts);
+            return sauce.model.getAthleteHistoryValueAt(this.data.weightHistory, ts);
         }
 
         setFTPHistory(data) {

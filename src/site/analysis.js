@@ -2954,11 +2954,11 @@ sauce.ns('analysis', ns => {
         }
 
         getFTPAt(ts) {
-            return sauce.db.getAthleteHistoryValueAt(this.ftpHistory, ts);
+            return sauce.model.getAthleteHistoryValueAt(this.ftpHistory, ts);
         }
 
         getWeightAt(ts) {
-            return sauce.db.getAthleteHistoryValueAt(this.weightHistory, ts);
+            return sauce.model.getAthleteHistoryValueAt(this.weightHistory, ts);
         }
     }
 

@@ -388,7 +388,7 @@ sauce.ns('performance', async ns => {
                 categoryPercentage: 1,
                 data: row.map(a => ({
                     x: a.ts,
-                    y: a.activity ? sauce.db.getActivityTSS(a.activity) : null,
+                    y: a.activity ? sauce.model.getActivityTSS(a.activity) : null,
                 })),
             })), [{
                 label: 'ATL (Fatigue)',
@@ -560,7 +560,7 @@ sauce.ns('performance', async ns => {
             if (athleteId && this.athletes.has(athleteId)) {
                 this.athlete = this.athletes.get(athleteId);
             } else {
-                if (athleteId || isNaN(athleteId)) {
+                if (athleteId || Object.is(athleteId, NaN)) {
                     console.warn("Invalid athlete:", athleteId);
                     ns.router.setAthlete(undefined, {replace: true});
                     success = false;

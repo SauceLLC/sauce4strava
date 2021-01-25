@@ -93,18 +93,6 @@ sauce.ns('hist', async ns => {
     }
 
 
-    function *dateRange(start, end) {
-        // This function uses some caveats of Date.setDate() to handle daylight
-        // savings properly.  The returned date object will always be exactly
-        // midnight.
-        const date = new Date(start);
-        for (let day = date.getDate(); date.getTime() < end.getTime(); day = date.getDate() + 1) {
-            date.setDate(day);
-            yield new Date(date);
-        }
-    }
-
-
     async function activeStreamProcessor({manifest, activities, athlete}) {
         const actStreams = await getActivitiesStreams(activities,
             ['time', 'moving', 'cadence', 'watts', 'distance']);
@@ -266,7 +254,8 @@ sauce.ns('hist', async ns => {
         }
         if (seed) {
             // Drain the current training loads based on gap to our first entry
-            const zeros = Array.from(dateRange(seed.getLocaleDay(), oldest.getLocaleDay())).map(x => 0);
+            const zeros = Array.from(sauce.date.dayRange(seed.getLocaleDay(),
+                oldest.getLocaleDay())).map(x => 0);
             zeros.pop();  // Exclude seed day.
             if (zeros.length) {
                 atl = sauce.perf.calcATL(zeros, atl);
@@ -274,7 +263,7 @@ sauce.ns('hist', async ns => {
             }
         }
         const future = new Date(Date.now() + 7 * 86400 * 1000);
-        for (const day of dateRange(oldest.getLocaleDay(), future)) {
+        for (const day of sauce.date.dayRange(oldest.getLocaleDay(), future)) {
             if (!ordered.length) {
                 break;
             }
@@ -795,15 +784,6 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(findPeaks, {namespace});
 
 
-    async function bulkTSS(...args) {
-        const s = Date.now();
-        const result = await workerPool.exec('bulkTSS', ...args);
-        console.debug('Done: took', Date.now() - s);
-        return result;
-    }
-    sauce.proxy.export(bulkTSS, {namespace});
-
-
     // XXX maybe move to analysis page until we figure out the strategy for all
     // historical data.
     async function getSelfFTPHistory() {
@@ -855,6 +835,12 @@ sauce.ns('hist', async ns => {
         return await actsStore.getForAthlete(athleteId, options);
     }
     sauce.proxy.export(getActivitiesForAthlete, {namespace});
+
+
+    async function getActivity(id) {
+        return await actsStore.get(id);
+    }
+    sauce.proxy.export(getActivity, {namespace});
 
 
     async function enableAthlete(id) {
@@ -1653,7 +1639,6 @@ sauce.ns('hist', async ns => {
         streamsIntegrityCheck,
         invalidateSyncState,
         findPeaks,
-        bulkTSS,
         streamsStore,
         actsStore,
         athletesStore,

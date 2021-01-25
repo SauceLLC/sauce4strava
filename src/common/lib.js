@@ -1634,7 +1634,6 @@ sauce.ns('perf', function() {
 
     let actsStore;
     let streamsStore;
-    let athletesStore;
 
 
     async function findPeaks(athlete, periods, options={}) {
@@ -1779,47 +1778,6 @@ sauce.ns('perf', function() {
     }
 
 
-    async function bulkTSS(athleteId, options={}) {
-        if (!actsStore) {
-            actsStore = new sauce.hist.db.ActivitiesStore();
-            streamsStore = new sauce.hist.db.StreamsStore();
-            athletesStore = new sauce.hist.db.AthletesStore();
-        }
-        const start = options.start;
-        const end = options.end;
-        const type = options.activityType;
-        const athlete = await athletesStore.get(athleteId);
-        function getValueAt(data, ts) {
-            let ftp = data[0].value;
-            for (const x of data) {
-                if (x.ts > ts) {
-                    break;
-                }
-                ftp = x.value;
-            }
-            return ftp;
-        }
-        const results = [];
-        for await (const x of actsStore.byAthlete(athleteId, {start, end, type})) {
-            const timeStream = await streamsStore.get([x.id, 'time']);
-            const wattsStream = await streamsStore.get([x.id, 'watts']);
-            const ftp = getValueAt(athlete.ftpHistory, x.ts);
-            const weight = getValueAt(athlete.weightHistory, x.ts);
-            if (timeStream && wattsStream && ftp) {
-                const corrected = sauce.power.correctedPower(timeStream, wattsStream);
-                if (corrected) {
-                    const np = corrected.np();
-                    const activeTime = 'XXX';
-                    const tss = sauce.power.calcTSS(np, activeTime, ftp);
-                    const intensity = np / ftp;
-                    console.warn({tss, intensity});
-                }
-            }
-            console.log(timeStream, wattsStream, ftp, weight, x);
-        }
-        return results;
-    }
-
     async function fetchSelfFTPs() {
         const resp = await fetch("https://www.strava.com/settings/performance");
         const raw = await resp.text();
@@ -1942,8 +1900,69 @@ sauce.ns('perf', function() {
         tTSS,
         estimateRestingHR,
         estimateMaxHR,
-        bulkTSS,
         calcCTL,
         calcATL,
+    };
+});
+
+
+sauce.ns('date', function() {
+    'use strict';
+
+    function *dayRange(start, end) {
+        // This function uses some caveats of Date.setDate() to handle daylight
+        // savings properly.  The returned date object will always be exactly
+        // midnight.
+        const date = new Date(start);
+        for (let day = date.getDate(); date.getTime() < end.getTime(); day = date.getDate() + 1) {
+            date.setDate(day);
+            yield new Date(date);
+        }
+    }
+
+
+    function toLocaleDayDate(dateArg) {
+        const date = new Date(dateArg);
+        // The set___ calls are locale specific, so this gives us local midnight time.
+        date.setHours(0);
+        date.setMinutes(0);
+        date.setSeconds(0);
+        date.setMilliseconds(0);
+        return date;
+    }
+
+    return {
+        dayRange,
+        toLocaleDayDate,
+    };
+});
+
+
+sauce.ns('model', function() {
+    'use strict';
+
+    function getAthleteHistoryValueAt(values, ts) {
+        ts = ts || Date.now();
+        if (values) {
+            const sorted = values.sort((a, b) => (b.ts - a.ts));
+            let v;
+            for (const x of sorted) {
+                v = x.value;
+                if (x.ts <= ts) {
+                    break;
+                }
+            }
+            return v;
+        }
+    }
+
+
+    function getActivityTSS(a) {
+        return Math.min(0, a.stats && ((a.overrides && a.overrides.tss) || a.stats.tss || a.stats.tTss) || 0);
+    }
+
+    return {
+        getAthleteHistoryValueAt,
+        getActivityTSS,
     };
 });

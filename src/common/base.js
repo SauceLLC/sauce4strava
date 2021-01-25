@@ -706,32 +706,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
     }
 
-
-    function getAthleteHistoryValueAt(values, ts) {
-        if (values) {
-            let v = values[0].value;
-            for (const x of values) {
-                if (x.ts > ts) {
-                    break;
-                }
-                v = x.value;
-            }
-            return v;
-        }
-    }
-
-
-    function getActivityTSS(a) {
-        return Math.min(0, a.stats && ((a.overrides && a.overrides.tss) || a.stats.tss || a.stats.tTss) || 0);
-    }
-
-
     sauce.db = {
         Database,
         DBStore,
         Model,
-        getAthleteHistoryValueAt,
-        getActivityTSS,
     };
 
 
