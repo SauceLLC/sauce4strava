@@ -148,10 +148,12 @@ sauce.ns('hist.db', async ns => {
             const start = options.start || -Infinity;
             const end = options.end || Infinity;
             if (options.type) {
-                q = IDBKeyRange.bound([athlete, options.type, start], [athlete, options.type, end]);
+                q = IDBKeyRange.bound([athlete, options.type, start], [athlete, options.type, end],
+                    options.excludeLower, options.excludeUpper);
                 options.index = 'athlete-basetype-ts';
             } else {
-                q = IDBKeyRange.bound([athlete, start], [athlete, end]);
+                q = IDBKeyRange.bound([athlete, start], [athlete, end],
+                    options.excludeLower, options.excludeUpper);
                 options.index = 'athlete-ts';
             }
             options.reverse = !options.reverse;  // Go from newest to oldest by default
@@ -167,6 +169,23 @@ sauce.ns('hist.db', async ns => {
                 activities.push(x);
             }
             return activities;
+        }
+
+        async *siblings(id, options={}) {
+            const act = await this.get(id);
+            let start;
+            let end;
+            if (options.direction === 'prev') {
+                options.excludeUpper = true;
+                start = -Infinity;
+                end = act.ts;
+            } else {
+                options.reverse = true;
+                options.excludeLower = true;
+                start = act.ts;
+                end = Infinity;
+            }
+            yield *this.byAthlete(act.athlete, Object.assign({start, end}, options));
         }
 
         _syncQuery(athlete, processor, name, version, options={}) {

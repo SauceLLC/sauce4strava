@@ -633,6 +633,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             // Callbacks won't invoke until we release control of the event loop, so this is safe..
             req.addEventListener('error', ev => reject(req.error));
             req.addEventListener('success', ev => resolve(ev.target.result));
+            let count = 0;
             while (true) {
                 const cursor = await new Promise((_resolve, _reject) => {
                     resolve = _resolve;
@@ -642,7 +643,11 @@ self.sauceBaseInit = function sauceBaseInit() {
                     return;
                 }
                 if (!options.filter || options.filter(cursor)) {
+                    count++;
                     yield cursor;
+                    if (options.limit && count >= options.limit) {
+                        return;
+                    }
                 }
                 cursor.continue();
             }

@@ -4,6 +4,7 @@ sauce.ns('performance', async ns => {
     'use strict';
 
     const DAY = 86400 * 1000;
+    const TZ = (new Date()).getTimezoneOffset() * 60000;
 
     const urn = 'sauce/performance';
     const defaultPeriod = 30;
@@ -16,19 +17,19 @@ sauce.ns('performance', async ns => {
         },
 
         routes: {
-            [`${urn}/:athleteId/:period/:start/:end`]: 'onNav',
+            [`${urn}/:athleteId/:period/:startDay/:endDay`]: 'onNav',
             [`${urn}/:athleteId/:period`]: 'onNav',
             [`${urn}/:athleteId`]: 'onNav',
             [urn]: 'onNav',
         },
 
-        onNav: function(athleteId, period, start, end) {
-            console.debug("onNav", athleteId, period, start, end);
+        onNav: function(athleteId, period, startDay, endDay) {
+            console.debug("onNav", athleteId, period, startDay, endDay);
             this.filters = {
                 athleteId: athleteId && Number(athleteId),
                 period: period && Number(period),
-                periodStart: start && Number(start),
-                periodEnd: end && Number(end)
+                periodStart: startDay && startDay * DAY + TZ,
+                periodEnd: endDay && endDay * DAY + TZ,
             };
         },
 
@@ -49,8 +50,9 @@ sauce.ns('performance', async ns => {
             const f = this.filters;
             if (f.periodEnd != null && f.periodStart != null && f.period != null &&
                 f.athleteId != null) {
-                this.navigate(`${urn}/${f.athleteId}/${f.period}/${f.periodStart}/${f.periodEnd}`,
-                    options);
+                const startDay = (f.periodStart - TZ) / DAY;
+                const endDay = (f.periodEnd - TZ) / DAY;
+                this.navigate(`${urn}/${f.athleteId}/${f.period}/${startDay}/${endDay}`, options);
             } else if (f.period != null && f.athleteId != null) {
                 this.navigate(`${urn}/${f.athleteId}/${f.period}`, options);
             } else if (f.athleteId != null) {
@@ -75,34 +77,34 @@ sauce.ns('performance', async ns => {
     Chart.plugins.unregister(self.ChartDataLabels);  // Disable data labels by default.
 
 
-    function activitiesByDay(acts, callback) {
+    function activitiesByDay(acts, start, end, callback) {
         // NOTE: Activities should be in chronological order
         if (!acts.length) {
             return [];
         }
-        const days = [];
-        const startDay = sauce.date.toLocaleDayDate(acts[0].ts);
-        const end = new Date(acts[acts.length - 1].ts + 1); // Add 1 ms for exact midnight.
+        const slots = [];
+        const startDay = sauce.date.toLocaleDayDate(start);
         let i = 0;
-        for (const day of sauce.date.dayRange(startDay, end)) {
+        for (const date of sauce.date.dayRange(startDay, new Date(end))) {
             if (!acts.length) {
                 break;
             }
+            const ts = date.getTime();
             const daily = [];
-            while (i < acts.length && sauce.date.toLocaleDayDate(acts[i].ts).getTime() === day.getTime()) {
+            while (i < acts.length && sauce.date.toLocaleDayDate(acts[i].ts).getTime() === ts) {
                 const m = acts[i++];
                 daily.push(m);
             }
-            const entry = {day, activities: daily};
+            const entry = {date, activities: daily};
             if (callback) {
-                callback(entry, days);
+                callback(entry, slots);
             }
-            days.push(entry);
+            slots.push(entry);
         }
         if (i !== acts.length) {
             throw new Error('Internal Error');
         }
-        return days;
+        return slots;
     }
 
 
@@ -144,22 +146,39 @@ sauce.ns('performance', async ns => {
         constructor(canvasSelector, view, config) {
             const ctx = document.querySelector(canvasSelector).getContext('2d');
             config = config || {};
-            setDefault(config, 'type', 'bar');
-            setDefault(config, 'options.plugins.colorschemes.scheme', 'brewer.Blues9');
-            setDefault(config, 'options.plugins.colorschemes.reverse', true);
-            //setDefault(config, 'options.legend.display', false);
+            setDefault(config, 'type', 'line');
+            setDefault(config, 'options.animation.duration', 200);
+            setDefault(config, 'options.legend.position', 'bottom');
+            setDefault(config, 'options.scales.xAxes[0].id', 'days');
             setDefault(config, 'options.scales.xAxes[0].offset', true);
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
-            setDefault(config, 'options.scales.xAxes[0].stacked', true);
-            setDefault(config, 'options.scales.xAxes[0].time.minUnit', 'day');
+            setDefault(config, 'options.scales.xAxes[0].time.unit', 'day');
             setDefault(config, 'options.scales.xAxes[0].time.tooltipFormat', 'll');  // Jan 16, 2021
             setDefault(config, 'options.scales.xAxes[0].gridLines.display', false);
             setDefault(config, 'options.scales.xAxes[0].ticks.maxTicksLimit', 12);
+
+            setDefault(config, 'options.scales.xAxes[1].id', 'weeks');
+            setDefault(config, 'options.scales.xAxes[1].offset', true);
+            setDefault(config, 'options.scales.xAxes[1].display', false);
+            setDefault(config, 'options.scales.xAxes[1].type', 'time');
+            setDefault(config, 'options.scales.xAxes[1].time.unit', 'week');
+            setDefault(config, 'options.scales.xAxes[1].time.tooltipFormat', 'll');  // Jan 16, 2021
+            setDefault(config, 'options.scales.xAxes[1].gridLines.display', false);
+            setDefault(config, 'options.scales.xAxes[1].ticks.maxTicksLimit', 12);
+
+            setDefault(config, 'options.scales.xAxes[2].id', 'months');
+            setDefault(config, 'options.scales.xAxes[2].offset', true);
+            setDefault(config, 'options.scales.xAxes[2].display', false);
+            setDefault(config, 'options.scales.xAxes[2].type', 'time');
+            setDefault(config, 'options.scales.xAxes[2].time.unit', 'month');
+            setDefault(config, 'options.scales.xAxes[2].time.tooltipFormat', 'MMM');  // Jan
+            setDefault(config, 'options.scales.xAxes[2].gridLines.display', false);
+            setDefault(config, 'options.scales.xAxes[2].ticks.maxTicksLimit', 12);
+
             setDefault(config, 'options.scales.yAxes[0].type', 'linear');
-            setDefault(config, 'options.scales.yAxes[0].stacked', true);
             setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
-            setDefault(config, 'options.tooltips.mode', 'x');
+            setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.callbacks.footer', view.onTooltipSummary.bind(view));
             setDefault(config, 'options.onClick', view.onChartClick.bind(view));
             super(ctx, config);
@@ -239,7 +258,7 @@ sauce.ns('performance', async ns => {
             await this.render();
         }
 
-        async onUpdatePeriod({activitiesByDay}) {
+        async onUpdatePeriod({daily}) {
             //console.warn("XXX");
             await this.render();
         }
@@ -287,7 +306,7 @@ sauce.ns('performance', async ns => {
         async init({pageView}) {
             this.pageView = pageView;
             this.period = ns.router.filters.period || defaultPeriod;
-            this.periodEndMax = Number(moment().endOf('day').toDate());
+            this.periodEndMax = Number(moment().add(1, 'day').startOf('day').toDate());
             this.periodEnd = ns.router.filters.periodEnd || this.periodEndMax;
             this.periodStart = ns.router.filters.periodStart || this.periodEnd - (this.period * DAY);
             this.charts = {};
@@ -308,20 +327,18 @@ sauce.ns('performance', async ns => {
             }
             this.charts.tss = new ActivityTimeRangeChart('#tss', this, {
                 options: {
-                    plugins: {colorschemes: {scheme: 'brewer.Blues9'}},
+                    plugins: {colorschemes: {scheme: 'tableau.ClassicBlueRed6'}},
                     scales: {
                         yAxes: [{
                             id: 'tss',
                             scaleLabel: {labelString: 'TSS'},
-                            ticks: {suggestedMax: 300},
+                            ticks: {min: 0, maxTicksLimit: 8},
                         }, {
-                            id: 'atl',
-                            scaleLabel: {labelString: 'ATL (Fatigue)'},
-                            ticks: {suggestedMax: 250},
-                        }, {
-                            id: 'ctl',
-                            scaleLabel: {labelString: 'CTL (Fitness)'},
-                            ticks: {suggestedMax: 250},
+                            id: 'tsb',
+                            scaleLabel: {labelString: 'TSB'},
+                            ticks: {maxTicksLimit: 8},
+                            position: 'right',
+                            gridLines: {display: false},
                         }]
                     },
                     tooltips: {callbacks: {label: item => Math.round(item.value).toLocaleString()}},
@@ -354,91 +371,171 @@ sauce.ns('performance', async ns => {
             const end = this.periodEnd;
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id, {start, end});
             activities.reverse();
-            this.actsByDay = activitiesByDay(activities, entry => {
+            let atl = 0;
+            let ctl = 0;
+            if (activities.length) {
+                const first = activities[0];
+                const seed = (await sauce.hist.getActivitySiblings(first.id,
+                    {direction: 'prev', limit: 1}))[0];
+                if (seed && seed.training) {
+                    atl = seed.training.atl || 0;
+                    ctl = seed.training.ctl || 0;
+                    // Drain inactive days between the seed and the first entry.
+                    const seedDay = sauce.date.toLocaleDayDate(seed.ts);
+                    const firstDay = sauce.date.toLocaleDayDate(first.ts);
+                    const zeros = [...sauce.date.dayRange(seedDay, firstDay)].map(() => 0);
+                    zeros.pop();  // Exclude seed day.
+                    if (zeros.length) {
+                        atl = sauce.perf.calcATL(zeros, atl);
+                        ctl = sauce.perf.calcCTL(zeros, ctl);
+                    }
+                }
+            }
+            this.daily = activitiesByDay(activities, start, end, entry => {
                 let tss = 0;
+                let duration = 0;
                 for (const x of entry.activities) {
                     tss += sauce.model.getActivityTSS(x) || 0;
+                    duration += x.stats && x.stats.activeTime || 0;
                 }
                 entry.tss = tss;
+                entry.duration = duration;
+                atl = entry.atl = sauce.perf.calcATL([tss], atl);
+                ctl = entry.ctl = sauce.perf.calcCTL([tss], ctl);
             });
-            if (activities.length) {
-                // XXX Eventually find the ATL from the activity just before this window (need new bg call).
-                const seedATL = activities[0].at;
-            this.pageView.trigger('update-period', {start, end, activities, activitiesByDay: this.actsByDay});
+            const metric = this.period >= 365 ? 'months' : this.period >= 90 ? 'weeks' : 'days';
+            this.pageView.trigger('update-period', {
+                start,
+                end,
+                metric,
+                activities,
+                daily: this.daily
+            });
+            let tssData;
+            let borderWidth;
+            if (metric === 'weeks') {
+                borderWidth = 2;
+                tssData = [];
+                for (let i = 0; i < this.daily.length; i++) {
+                    const slot = this.daily[i];
+                    const week = Math.floor(i / 7);
+                    if (!tssData[week]) {
+                        tssData[week] = {
+                            date: slot.date,
+                            tss: slot.tss,
+                            activities: [...slot.activities],
+                        };
+                    } else {
+                        tssData[week].tss += slot.tss;
+                        tssData[week].activities.push(...slot.activities);
+                    }
+                }
+                for (const x of tssData) {
+                    x.tss /= 7;
+                }
+            } else if (metric === 'months') {
+                borderWidth = 1;
+                tssData = [];
+                for (let i = 0; i < this.daily.length; i++) {
+                    const slot = this.daily[i];
+                    const month = Math.floor(i / (365 / 12));
+                    if (!tssData[month]) {
+                        tssData[month] = {
+                            date: slot.date,
+                            tss: slot.tss,
+                            activities: [...slot.activities],
+                        };
+                    } else {
+                        tssData[month].tss += slot.tss;
+                        tssData[month].activities.push(...slot.activities);
+                    }
+                }
+                for (const x of tssData) {
+                    x.tss /= (365 / 12);
+                }
+            } else {
+                tssData = this.daily;
+            }
             const $start = this.$('header span.period.start');
             const $end = this.$('header span.period.end');
             $start.text(moment(start).format('ll'));
-            $end.text(moment(end).format('ll'));
+            $end.text(moment(end - 1).format('ll'));
             this.$('button.period.next').prop('disabled', end >= Date.now());
-            this.charts.tss.data.datasets = [].concat(this.actsByDay.map((col, i) => ({
-                label: 'TSS', // currently hidden.
-                stack: 'tss',
-                yAxisID: 'tss',
-                borderColor: '#8888',
-                borderWidth: 1,
-                barPercentage: 0.9,
-                categoryPercentage: 1,
-                data: col.map(a => ({
-                    x: a.ts,
-                    y: a.activity ? sauce.model.getActivityTSS(a.activity) : null,
-                })),
-            })), [{
-                label: 'ATL (Fatigue)',
-                type: 'line',
-                yAxisID: 'atl',
-                spanGaps: true,
+            this.charts.tss.data.datasets = [{
+                label: 'TSS',
+                type: 'bar',
                 order: 10,
-                data: this.actsByDay.map(a => ({
-                    x: a.ts,
-                    y: a.activities && a.activities[0] && a.activities[0].training && a.activities[0].training.atl
+                borderColor: '#4448',
+                backgroundColor: '#05f5',
+                xAxisID: metric,
+                yAxisID: 'tss',
+                borderWidth: 1,
+                data: tssData.map(a => ({
+                    x: a.date,
+                    y: a.tss,
+                })),
+            }, {
+                label: 'CTL (Fitness)',
+                yAxisID: 'tss',
+                borderWidth,
+                fill: false,
+                pointRadius: 0,
+                data: this.daily.map(a => ({
+                    x: a.date,
+                    y: a.ctl,
                 }))
             }, {
-                label: 'CTL - Fitness',
-                type: 'line',
-                yAxisID: 'ctl',
-                spanGaps: true,
-                order: 10,
-                data: this.actsByDay.map(a => ({
-                    x: a.ts,
-                    y: a.activities && a.activities[0] && a.activities[0].training && a.activities[0].training.ctl
+                label: 'ATL (Fatigue)',
+                yAxisID: 'tss',
+                borderWidth,
+                fill: false,
+                pointRadius: 0,
+                data: this.daily.map(a => ({
+                    x: a.date,
+                    y: a.atl,
                 }))
-            }]);
+            }, {
+                label: 'TSB (Form)',
+                yAxisID: 'tsb',
+                borderWidth,
+                fill: 'origin',
+                pointRadius: 0,
+                data: this.daily.map(a => ({
+                    x: a.date,
+                    y: a.ctl - a.atl,
+                }))
+            }];
             this.charts.tss.update();
-            const cleanActs = this.actsByDay.filter(x => x.activities);
-            const offts = cleanActs[0].ts;
-            const hoursReg = regression.polynomial(cleanActs.map(x => [
-                (x.ts - offts) / DAY,
-                sauce.data.sum(x.activities.map(a => a.stats && a.stats.activeTime ? a.stats.activeTime : 0))
-            ]), {order: 5, precision: 10});
-            this.charts.hours.data.datasets = [].concat(actsDataStacks.map((row, i) => ({
-                stack: 'hours',
+
+            const smoothed = sauce.data.smooth(30, this.daily.map(x => x.duration));
+            this.charts.hours.data.datasets = [{
                 yAxisID: 'hours',
+                type: 'bar',
                 borderColor: '#8888',
                 borderWidth: 1,
                 barPercentage: 0.9,
                 categoryPercentage: 1,
-                data: row.map(a => ({
-                    x: a.ts,
-                    y: (a.activity && a.activity.stats) ? a.activity.stats.activeTime : null,
+                data: this.daily.map(a => ({
+                    x: a.date,
+                    y: a.duration,
                 })),
-            })), [{
-                type: 'line',
+            }, {
                 yAxisID: 'hours',
-                data: hoursReg.points.map(([day, val]) => ({
-                    x: day * DAY + offts,
-                    y: val
+                data: smoothed.map((y, i) => ({
+                    x: this.daily[i].date,
+                    y,
                 })),
-            }]);
+            }];
             this.charts.hours.update();
         }
 
         onTooltipSummary(items) {
             const idx = items[0].index;
-            const day = this.actsByDay[idx];
-            if (day.activities.length === 1) {
+            const slot = this.daily[idx];
+            if (slot.activities.length === 1) {
                 return `1 activity - click for details`;
             } else {
-                return `${day.activities.length} activities - click for details`;
+                return `${slot.activities.length} activities - click for details`;
             }
         }
 
@@ -446,16 +543,17 @@ sauce.ns('performance', async ns => {
             const chart = this.charts[ev.currentTarget.id];
             const ds = chart.getElementsAtEvent(ev);
             if (ds.length) {
-                const data = this.actsByDay[ds[0]._index];
-                console.warn(new Date(data.ts).toLocaleString(), new Date(data.activities[0].ts).toLocaleString()); // XXX
+                const data = this.daily[ds[0]._index];
+                console.warn(new Date(data.ts).toLocaleString(),
+                             new Date(data.activities[0].ts).toLocaleString()); // XXX
                 this.pageView.trigger('select-activities', data.activities);
             }
         }
 
-        async onRouterNav(_, period, start, end) {
+        async onRouterNav(_, period, startDay, endDay) {
             period = period && Number(period);
-            start = start && Number(start);
-            end = end && Number(end);
+            const start = startDay && Number(startDay) * DAY;
+            const end = endDay && Number(endDay) * DAY;
             let needRender;
             if (period !== this.period) {
                 this.period = period || defaultPeriod;

@@ -837,6 +837,16 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
+    async function getActivitySiblings(activityId, options={}) {
+        const siblings = [];
+        for await (const x of actsStore.siblings(activityId, options)) {
+            siblings.push(x);
+        }
+        return siblings;
+    }
+    sauce.proxy.export(getActivitySiblings, {namespace});
+
+
     async function getActivity(id) {
         return await actsStore.get(id);
     }
@@ -1647,6 +1657,7 @@ sauce.ns('hist', async ns => {
     return {
         streamsIntegrityCheck,
         invalidateSyncState,
+        getActivitySiblings,
         findPeaks,
         streamsStore,
         actsStore,
