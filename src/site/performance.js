@@ -1,4 +1,4 @@
-/* global sauce, jQuery, Chart, moment, regression, Backbone */
+/* global sauce, jQuery, Chart, moment, Backbone */
 
 sauce.ns('performance', async ns => {
     'use strict';
@@ -145,11 +145,17 @@ sauce.ns('performance', async ns => {
     class ActivityTimeRangeChart extends Chart {
         constructor(canvasSelector, view, config) {
             const ctx = document.querySelector(canvasSelector).getContext('2d');
+            const defaultLegendOnClick = Chart.defaults.global.legend.onClick;
+            function onLegendClick(ev, item) {
+                defaultLegendOnClick.apply(this, arguments);
+                this.chart.onLegendClick(ev, item);
+            }
             config = config || {};
             setDefault(config, 'type', 'line');
             setDefault(config, 'options.animation.duration', 200);
             setDefault(config, 'options.aspectRatio', 3/1);
             setDefault(config, 'options.legend.position', 'bottom');
+            setDefault(config, 'options.legend.onClick', onLegendClick);
             setDefault(config, 'options.scales.xAxes[0].id', 'days');
             setDefault(config, 'options.scales.xAxes[0].offset', true);
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
@@ -184,8 +190,14 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.onClick', view.onChartClick.bind(view));
             super(ctx, config);
         }
-    }
 
+        onLegendClick(ev, item) {
+            const index = item.datasetIndex;
+            console.info(this.getDatasetMeta(0));
+            //meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
+            debugger;
+        }
+    }
 
     class SummaryView extends view.SauceView {
         get tpl() {
