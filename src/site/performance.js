@@ -148,6 +148,7 @@ sauce.ns('performance', async ns => {
             config = config || {};
             setDefault(config, 'type', 'line');
             setDefault(config, 'options.animation.duration', 200);
+            setDefault(config, 'options.aspectRatio', 3/1);
             setDefault(config, 'options.legend.position', 'bottom');
             setDefault(config, 'options.scales.xAxes[0].id', 'days');
             setDefault(config, 'options.scales.xAxes[0].offset', true);
@@ -466,7 +467,7 @@ sauce.ns('performance', async ns => {
                 type: 'bar',
                 order: 10,
                 borderColor: '#4448',
-                backgroundColor: '#05f5',
+                backgroundColor: '#05f3',
                 xAxisID: metric,
                 yAxisID: 'tss',
                 borderWidth: 1,
@@ -498,6 +499,8 @@ sauce.ns('performance', async ns => {
                 label: 'TSB (Form)',
                 yAxisID: 'tsb',
                 borderWidth,
+                borderColor: '#db0',
+                backgroundColor: '#ffcb0730',
                 fill: 'origin',
                 pointRadius: 0,
                 data: this.daily.map(a => ({
