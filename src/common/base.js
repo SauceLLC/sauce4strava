@@ -101,6 +101,16 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    sauce.concatBundles = function(...bundles) {
+        const dataSize = bundles.reduce((sz, b) => b.byteLength + sz, 0);
+        const output = new Uint8Array(dataSize);
+        for (let offt = 0, i = 0; offt < dataSize; offt += bundles[i++].byteLength) {
+            output.set(new Uint8Array(bundles[i]), offt);
+        }
+        return output.buffer;
+    };
+
+
     sauce.decodeBundle = function(buffer) {
         const input = new Uint8Array(buffer);
         const view = new DataView(buffer);
@@ -159,17 +169,26 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
-    sauce.download = function(blob, name) {
+    sauce.downloadBlob = function(blob, name) {
+        const url = URL.createObjectURL(blob);
+        try {
+            sauce.downloadURL(url, name || blob.name);
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    };
+
+
+    sauce.downloadURL = function(url, name) {
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = blob.name || name;
+        link.href = url;
+        link.download = name;
         link.style.display = 'none';
         document.body.appendChild(link);
         try {
             link.click();
         } finally {
             link.remove();
-            URL.revokeObjectURL(link.href);
         }
     };
 

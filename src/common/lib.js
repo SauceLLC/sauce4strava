@@ -1958,7 +1958,7 @@ sauce.ns('model', function() {
 
 
     function getActivityTSS(a) {
-        return Math.min(0, a.stats && ((a.overrides && a.overrides.tss) || a.stats.tss || a.stats.tTss) || 0);
+        return Math.max(0, a.stats && ((a.overrides && a.overrides.tss) || a.stats.tss || a.stats.tTss) || 0);
     }
 
     return {

@@ -1534,44 +1534,53 @@ sauce.ns('hist', async ns => {
         }
 
         async export() {
-            const entriesPerEvent = 500;  // Stay within String limits
+            // Use a size estimate scheme to try and stay within platform limits.
+            let sizeEstimate = 0;
+            const sizeLimit = 10 * 1024 * 1024;
             let batch = [];
             const dispatch = () => {
-                while (batch.length) {
-                    const ev = new Event('data');
-                    ev.data = batch.splice(0, entriesPerEvent);
-                    this.dispatchEvent(ev);
-                }
+                const ev = new Event('data');
+                ev.data = Array.from(batch);
+                batch.length = 0;
+                sizeEstimate = 0;
+                this.dispatchEvent(ev);
             };
             if (this.athleteId) {
                 batch.push({store: 'athletes', data: await athletesStore.get(this.athleteId)});
+                sizeEstimate += 1000;
             } else {
                 for (const data of await athletesStore.getAll()) {
+                    sizeEstimate += 1000;
                     batch.push({store: 'athletes', data});
                 }
             }
-            const pendingActStreams = [];
-            const actsIter = this.athleteId ? actsStore.getForAthlete(this.athleteId) : actsStore.getAll();
-            for (const activity of await actsIter) {
-                batch.push({store: 'activities', data: activity});
-                pendingActStreams.push(activity.id);
-                if (pendingActStreams.length >= entriesPerEvent) {
-                    const streams = await streamsStore.getMany(pendingActStreams, {index: 'activity'});
-                    for (const data of streams) {
-                        batch.push({store: 'streams', data});
+            const actsWork = (async () => {
+                const iter = this.athleteId ?
+                    actsStore.byAthlete(this.athleteId) :
+                    actsStore.values();
+                for await (const data of iter) {
+                    batch.push({store: 'activities', data});
+                    sizeEstimate += 1500;  // Tuned on my data + headroom.
+                    if (sizeEstimate >= sizeLimit) {
+                        dispatch();
                     }
-                    pendingActStreams.length = 0;
                 }
-                if (batch.length >= entriesPerEvent) {
-                    dispatch();
-                }
-            }
-            if (pendingActStreams.length) {
-                const streams = await streamsStore.getMany(pendingActStreams, {index: 'activity'});
-                for (const data of streams) {
+            })();
+            const streamsWork = (async () => {
+                const iter = this.athleteId ?
+                    streamsStore.byAthlete(this.athleteId) :
+                    streamsStore.values();
+                const estSizePerArrayEntry = 6.4;  // Tuned on my data + headroom.
+                for await (const data of iter) {
                     batch.push({store: 'streams', data});
+                    sizeEstimate += 100 + (data && data.data) ?
+                        data.data.length * estSizePerArrayEntry : 0;
+                    if (sizeEstimate >= sizeLimit) {
+                        dispatch();
+                    }
                 }
-            }
+            })();
+            await Promise.all([actsWork, streamsWork]);
             if (batch.length) {
                 dispatch();
             }

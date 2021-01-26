@@ -1578,7 +1578,7 @@ sauce.ns('analysis', ns => {
         const serializer = new Serializer(name, desc, pageView.activity().get('type'), startDate, laps);
         serializer.start();
         serializer.loadStreams(streams);
-        sauce.download(serializer.toFile());
+        sauce.downloadBlob(serializer.toFile());
     }
 
 
@@ -2530,7 +2530,7 @@ sauce.ns('analysis', ns => {
                 "Download CSV": () => {
                     const range = start && end ? `-${start}-${end}` : '';
                     const name = `${pageView.activity().id}${range}.csv`;
-                    sauce.download(new Blob([currentData], {type: 'text/csv'}), name);
+                    sauce.downloadBlob(new Blob([currentData], {type: 'text/csv'}), name);
                 }
             }
         });
@@ -2668,7 +2668,7 @@ sauce.ns('analysis', ns => {
         const buf = fitParser.encode();
         const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
         const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
-        sauce.download(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
+        sauce.downloadBlob(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
         sauce.report.event('LiveSegment', 'create');
     }
 

@@ -28,18 +28,22 @@ export async function activitySyncDialog(athlete, syncController) {
                 input.multiple = true;
                 input.style.display = 'none';
                 input.addEventListener('change', async ev => {
+                    const jobs = await sauce.getModule('/src/common/jscoop/jobs.js');
+                    const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
                     btn.classList.add('sauce-loading', 'disabled');
                     try {
                         const dataEx = new sauce.hist.DataExchange();
                         for (const f of input.files) {
                             const ab = await sauce.blobToArrayBuffer(f);
                             const batch = sauce.decodeBundle(ab);
-                            const stride = 100;  // Stay within String limits.
-                            const importing = [];
-                            for (let i = 0; i < batch.length; i += stride) {
-                                importing.push(dataEx.import(batch.slice(i, i + stride)));
-                            }
-                            await Promise.all(importing);
+                            const stride = 250;  // ~10MB
+                            const producer = (async () => {
+                                for (let i = 0; i < batch.length; i += stride) {
+                                    await importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
+                                }
+                            })();
+                            await producer;
+                            for await (const x of importingQueue) { void x; }
                         }
                         await dataEx.flush();
                     } finally {
@@ -53,22 +57,21 @@ export async function activitySyncDialog(athlete, syncController) {
         }, {
             text: 'Export Data',
             click: async ev => {
-                ev.currentTarget.classList.add('sauce-loading', 'disabled');
-                const batch = [];
-                let page = 0;
+                let bigBundle;
+                let page = 1;
+                const rid = Math.floor(Math.random() * 1000000);
                 const dl = () => {
-                    sauce.download(new Blob([sauce.encodeBundle(batch)]),
-                        `${athlete.name}-${page++}.sbin`);
-                    batch.length = 0;
+                    sauce.downloadBlob(new Blob([bigBundle]), `${athlete.name}-${rid}-${page++}.sbin`);
+                    bigBundle = null;
                 };
+                ev.currentTarget.classList.add('sauce-loading', 'disabled');
                 try {
                     const dataEx = new sauce.hist.DataExchange(athlete.id);
                     dataEx.addEventListener('data', async ev => {
-                        for (const x of ev.data) {
-                            batch.push(x);
-                            if (batch.length > 20000) {
-                                dl();
-                            }
+                        const bundle = sauce.encodeBundle(ev.data);
+                        bigBundle = bigBundle ? sauce.concatBundles(bigBundle, bundle) : bundle;
+                        if (bigBundle.byteLength > 256 * 1024 * 1024) {
+                            dl();
                         }
                     });
                     await dataEx.export();
