@@ -75,50 +75,34 @@ sauce.ns('performance', async ns => {
     Chart.plugins.unregister(self.ChartDataLabels);  // Disable data labels by default.
 
 
-    function activitiesByDay(activities, start, end) {
+    function activitiesByDay(acts, callback) {
         // NOTE: Activities should be in chronological order
-        const days = [];
-        let i = 0;
-        for (let ts = start; ts < end; ts += DAY) {
-            const acts = [];
-            while (i < activities.length) {
-                const a = activities[i];
-                if (a.ts >= ts && a.ts < ts + DAY) {
-                    acts.push(a);
-                    i++;
-                } else {
-                    break;
-                }
-            }
-            days.push({ts, activities: acts});
+        if (!acts.length) {
+            return [];
         }
-        return days;
-    }
-
-
-    function activitiesByDayToDateStacks(data) {
-        // Turn the by-day data into an arrangment suitable for stacked chart datasets.
-        const stacks = [];
-        let level = 0;
-        while (true) {
-            const stack = [];
-            let added = 0;
-            for (const x of data) {
-                if (x.activities && x.activities.length > level) {
-                    stack.push({ts: x.ts, activity: x.activities[level]});
-                    added++;
-                } else {
-                    // Required to avoid time axis issues in chart.js
-                    stack.push({ts: x.ts});
-                }
-            }
-            if (!added) {
+        const days = [];
+        const startDay = sauce.date.toLocaleDayDate(acts[0].ts);
+        const end = new Date(acts[acts.length - 1].ts + 1); // Add 1 ms for exact midnight.
+        let i = 0;
+        for (const day of sauce.date.dayRange(startDay, end)) {
+            if (!acts.length) {
                 break;
             }
-            stacks.push(stack);
-            level++;
+            const daily = [];
+            while (i < acts.length && sauce.date.toLocaleDayDate(acts[i].ts).getTime() === day.getTime()) {
+                const m = acts[i++];
+                daily.push(m);
+            }
+            const entry = {day, activities: daily};
+            if (callback) {
+                callback(entry, days);
+            }
+            days.push(entry);
         }
-        return stacks;
+        if (i !== acts.length) {
+            throw new Error('Internal Error');
+        }
+        return days;
     }
 
 
@@ -370,15 +354,23 @@ sauce.ns('performance', async ns => {
             const end = this.periodEnd;
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id, {start, end});
             activities.reverse();
-            this.actsByDay = activitiesByDay(activities, this.periodStart, this.periodEnd);
+            this.actsByDay = activitiesByDay(activities, entry => {
+                let tss = 0;
+                for (const x of entry.activities) {
+                    tss += sauce.model.getActivityTSS(x) || 0;
+                }
+                entry.tss = tss;
+            });
+            if (activities.length) {
+                // XXX Eventually find the ATL from the activity just before this window (need new bg call).
+                const seedATL = activities[0].at;
             this.pageView.trigger('update-period', {start, end, activities, activitiesByDay: this.actsByDay});
-            const actsDataStacks = activitiesByDayToDateStacks(this.actsByDay);
             const $start = this.$('header span.period.start');
             const $end = this.$('header span.period.end');
             $start.text(moment(start).format('ll'));
             $end.text(moment(end).format('ll'));
             this.$('button.period.next').prop('disabled', end >= Date.now());
-            this.charts.tss.data.datasets = [].concat(actsDataStacks.map((row, i) => ({
+            this.charts.tss.data.datasets = [].concat(this.actsByDay.map((col, i) => ({
                 label: 'TSS', // currently hidden.
                 stack: 'tss',
                 yAxisID: 'tss',
@@ -386,7 +378,7 @@ sauce.ns('performance', async ns => {
                 borderWidth: 1,
                 barPercentage: 0.9,
                 categoryPercentage: 1,
-                data: row.map(a => ({
+                data: col.map(a => ({
                     x: a.ts,
                     y: a.activity ? sauce.model.getActivityTSS(a.activity) : null,
                 })),
