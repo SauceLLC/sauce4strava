@@ -142,6 +142,102 @@ sauce.ns('performance', async ns => {
     }
 
 
+    const chartOverUnderFillPlugin = {
+        _fillGradientSize: 100,
+
+        _buildFillGradient: function(chart, startColor, endColor) {
+            const size = this._fillGradientSize;
+            const refCanvas = document.createElement('canvas');
+            refCanvas.width = size;
+            refCanvas.height = 2;
+            const refContext = refCanvas.getContext('2d');
+            const refGradient = refContext.createLinearGradient(0, 0, size, 0);
+            refGradient.addColorStop(0, startColor);
+            refGradient.addColorStop(1, endColor);
+            refContext.fillStyle = refGradient;
+            refContext.fillRect(0, 0, size, 2);
+            return refContext;
+        },
+
+        _getFillGradientColor(ref, pct) {
+            const size = this._fillGradientSize;
+            pct = Math.max(0, Math.min(1, pct));
+            const aPct = (Math.abs(ref.alphaMax - ref.alphaMin) * pct);
+            const a = ref.alphaMax > ref.alphaMin ? aPct + ref.alphaMin : ref.alphaMin - aPct;
+            const refOffset = Math.max(0, Math.min(size - 1, Math.round(pct * size)));
+            const [r, g, b] = ref.gradient.getImageData(refOffset, 0, refOffset + 1, 1).data.slice(0, 3);
+            return [r, g, b, a];
+        },
+
+        beforeRender: function (chart, options) {
+            //var model = chart.data.datasets[3]._meta[Object.keys(dataset._meta)[0]].dataset._model;
+            for (const ds of chart.data.datasets) {
+                if (!ds.overUnder) {
+                    continue;
+                }
+                for (const meta of Object.values(ds._meta)) {
+                    if (!meta.dataset) {
+                        continue;
+                    }
+                    if (!ds._overUnderRef) {
+                        // We have to preserve the alpha components externally.
+                        const color = c => Chart.helpers.color(c);
+                        const overMax = color(ds.overBackgroundColorMax);
+                        const overMin = color(ds.overBackgroundColorMin);
+                        const underMin = color(ds.underBackgroundColorMin);
+                        const underMax = color(ds.underBackgroundColorMax);
+                        ds._overUnderRef = {
+                            over: {
+                                gradient: this._buildFillGradient(chart,
+                                    overMin.rgbString(), overMax.rgbString()),
+                                alphaMin: overMin.alpha(),
+                                alphaMax: overMax.alpha(),
+                            },
+                            under: {
+                                gradient: this._buildFillGradient(chart,
+                                    underMin.rgbString(), underMax.rgbString()),
+                                alphaMin: underMin.alpha(),
+                                alphaMax: underMax.alpha(),
+                            }
+                        };
+                    }
+                    const ref = ds._overUnderRef;
+                    const model = meta.dataset._model;
+                    const scale = chart.scales[ds.yAxisID];
+                    const zeroPct = Math.min(1, Math.max(0, scale.getPixelForValue(0) / scale.height));
+                    const gFill = chart.ctx.createLinearGradient(0, 0, 0, scale.height);
+                    const max = ds.overBackgroundMax != null ? ds.overBackgroundMax : scale.max;
+                    const min = ds.underBackgroundMin != null ? ds.underBackgroundMin : scale.min;
+                    const midPointMarginPct = 0.001;
+                    try {
+                        if (scale.max > 0) {
+                            const overMaxColor = this._getFillGradientColor(ref.over, scale.max / max);
+                            const overMinColor = this._getFillGradientColor(ref.over, scale.min / max);
+                            const topPct = Math.max(0, scale.getPixelForValue(max) / scale.height);
+                            gFill.addColorStop(topPct, `rgba(${overMaxColor.join()}`);
+                            gFill.addColorStop(Math.max(0, zeroPct - midPointMarginPct),
+                                `rgba(${overMinColor.join()}`);
+                            gFill.addColorStop(Math.max(0, zeroPct),
+                                `rgba(${overMinColor.slice(0, 3).join()}, 0)`);
+                        }
+                        if (scale.min < 0) {
+                            const underMinColor = this._getFillGradientColor(ref.under, scale.max / min);
+                            const underMaxColor = this._getFillGradientColor(ref.under, scale.min / min);
+                            const bottomPct = Math.min(1, scale.getPixelForValue(min) / scale.height);
+                            gFill.addColorStop(Math.min(1, zeroPct),
+                                `rgba(${underMinColor.slice(0, 3).join()}, 0`);
+                            gFill.addColorStop(Math.min(1, zeroPct + midPointMarginPct),
+                                `rgba(${underMinColor.join()}`);
+                            gFill.addColorStop(bottomPct, `rgba(${underMaxColor.join()}`);
+                        }
+                        model.backgroundColor = gFill;
+                    } catch(e) { console.error(e); }
+                }
+            }
+        }
+    };
+
+
     class ActivityTimeRangeChart extends Chart {
         constructor(canvasSelector, view, config) {
             const ctx = document.querySelector(canvasSelector).getContext('2d');
@@ -193,9 +289,15 @@ sauce.ns('performance', async ns => {
 
         onLegendClick(ev, item) {
             const index = item.datasetIndex;
-            console.info(this.getDatasetMeta(0));
-            //meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
-            debugger;
+            const id = this.data.datasets[index].id;
+            if (!id) {
+                console.warn("No ID for dataset");
+                return;
+            }
+            jQuery(this.canvas).trigger('dataVisibilityChange', {
+                id,
+                visible: this.isDatasetVisible(index)
+            });
         }
     }
 
@@ -309,6 +411,7 @@ sauce.ns('performance', async ns => {
             return {
                 'change header select[name="period"]': 'onPeriodChange',
                 'click header button.period': 'onPeriodShift',
+                'dataVisibilityChange canvas': 'onDataVisibilityChange',
             };
         }
 
@@ -326,6 +429,7 @@ sauce.ns('performance', async ns => {
             this.athlete = pageView.athlete;
             this.listenTo(pageView, 'change-athlete', this.setAthlete);
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
+            this.dataVisibility = await sauce.storage.getPref('perfChartDataVisibility') || {};
             await super.init();
         }
 
@@ -338,7 +442,8 @@ sauce.ns('performance', async ns => {
             if (!this.athlete) {
                 return;
             }
-            this.charts.tss = new ActivityTimeRangeChart('#tss', this, {
+            this.charts.training = new ActivityTimeRangeChart('#training', this, {
+                plugins: [chartOverUnderFillPlugin],
                 options: {
                     plugins: {colorschemes: {scheme: 'tableau.ClassicBlueRed6'}},
                     scales: {
@@ -354,7 +459,7 @@ sauce.ns('performance', async ns => {
                             gridLines: {display: false},
                         }]
                     },
-                    tooltips: {callbacks: {label: item => Math.round(item.value).toLocaleString()}},
+                    //tooltips: {callbacks: {label: item => Math.round(item.value).toLocaleString()}},
                 }
             });
             this.charts.hours = new ActivityTimeRangeChart('#hours', this, {
@@ -416,7 +521,7 @@ sauce.ns('performance', async ns => {
                 atl = entry.atl = sauce.perf.calcATL([tss], atl);
                 ctl = entry.ctl = sauce.perf.calcCTL([tss], ctl);
             });
-            const metric = this.period >= 365 ? 'months' : this.period >= 90 ? 'weeks' : 'days';
+            const metric = this.period > 365 ? 'months' : this.period > 90 ? 'weeks' : 'days';
             this.pageView.trigger('update-period', {
                 start,
                 end,
@@ -425,9 +530,9 @@ sauce.ns('performance', async ns => {
                 daily: this.daily
             });
             let tssData;
-            let borderWidth;
+            let borderWidth = 2;
             if (metric === 'weeks') {
-                borderWidth = 2;
+                borderWidth = 1;
                 tssData = [];
                 for (let i = 0; i < this.daily.length; i++) {
                     const slot = this.daily[i];
@@ -447,7 +552,7 @@ sauce.ns('performance', async ns => {
                     x.tss /= 7;
                 }
             } else if (metric === 'months') {
-                borderWidth = 1;
+                borderWidth = 0.5;
                 tssData = [];
                 for (let i = 0; i < this.daily.length; i++) {
                     const slot = this.daily[i];
@@ -474,22 +579,26 @@ sauce.ns('performance', async ns => {
             $start.text(moment(start).format('ll'));
             $end.text(moment(end - 1).format('ll'));
             this.$('button.period.next').prop('disabled', end >= Date.now());
-            this.charts.tss.data.datasets = [{
-                label: 'TSS',
+            this.charts.training.data.datasets = [{
+                id: 'tss',
+                label: 'Training Load', // XXX Localize
                 type: 'bar',
                 order: 10,
                 borderColor: '#4448',
                 backgroundColor: '#05f3',
                 xAxisID: metric,
                 yAxisID: 'tss',
+                hidden: this.dataVisibility['training-tss'] === false,
                 borderWidth: 1,
                 data: tssData.map(a => ({
                     x: a.date,
                     y: a.tss,
                 })),
             }, {
-                label: 'CTL (Fitness)',
+                id: 'ctl',
+                label: 'CTL (Fitness)', // XXX Localize
                 yAxisID: 'tss',
+                hidden: this.dataVisibility['training-ctl'] === false,
                 borderWidth,
                 fill: false,
                 pointRadius: 0,
@@ -498,8 +607,10 @@ sauce.ns('performance', async ns => {
                     y: a.ctl,
                 }))
             }, {
-                label: 'ATL (Fatigue)',
+                id: 'atl',
+                label: 'ATL (Fatigue)', // XXX Localize
                 yAxisID: 'tss',
+                hidden: this.dataVisibility['training-atl'] === false,
                 borderWidth,
                 fill: false,
                 pointRadius: 0,
@@ -508,19 +619,26 @@ sauce.ns('performance', async ns => {
                     y: a.atl,
                 }))
             }, {
-                label: 'TSB (Form)',
+                id: 'tsb',
+                label: 'TSB (Form)', // XXX Localize
                 yAxisID: 'tsb',
+                hidden: this.dataVisibility['training-tsb'] === false,
                 borderWidth,
-                borderColor: '#db0',
-                backgroundColor: '#ffcb0730',
-                fill: 'origin',
+                borderColor: '#db0', // XXX
+                overUnder: true,
+                overBackgroundColorMax: '#7fe78a',
+                overBackgroundColorMin: '#bfe58a22',
+                underBackgroundColorMin: '#d9940422',
+                underBackgroundColorMax: '#bc0000ff',
+                overBackgroundMax: 50,
+                underBackgroundMin: -50,
                 pointRadius: 0,
                 data: this.daily.map(a => ({
                     x: a.date,
                     y: a.ctl - a.atl,
                 }))
             }];
-            this.charts.tss.update();
+            this.charts.training.update();
 
             const smoothed = sauce.data.smooth(30, this.daily.map(x => x.duration));
             this.charts.hours.data.datasets = [{
@@ -548,9 +666,9 @@ sauce.ns('performance', async ns => {
             const idx = items[0].index;
             const slot = this.daily[idx];
             if (slot.activities.length === 1) {
-                return `1 activity - click for details`;
+                return `1 activity - click for details`; // XXX Localize
             } else {
-                return `${slot.activities.length} activities - click for details`;
+                return `${slot.activities.length} activities - click for details`; // XXX Localize
             }
         }
 
@@ -560,7 +678,7 @@ sauce.ns('performance', async ns => {
             if (ds.length) {
                 const data = this.daily[ds[0]._index];
                 console.warn(new Date(data.ts).toLocaleString(),
-                             new Date(data.activities[0].ts).toLocaleString()); // XXX
+                    new Date(data.activities[0].ts).toLocaleString()); // XXX
                 this.pageView.trigger('select-activities', data.activities);
             }
         }
@@ -601,6 +719,12 @@ sauce.ns('performance', async ns => {
             this.periodStart = this.periodEnd - (this.period * DAY);
             this.updateNav();
             await this.update();
+        }
+
+        async onDataVisibilityChange(ev, data) {
+            const chartId = ev.currentTarget.id;
+            this.dataVisibility[`${chartId}-${data.id}`] = data.visible;
+            await sauce.storage.setPref('perfChartDataVisibility', this.dataVisibility);
         }
 
         updateNav() {
@@ -644,7 +768,7 @@ sauce.ns('performance', async ns => {
         renderAttrs() {
             return {
                 athletes: Array.from(this.athletes.values()),
-                athleteId: this.athlete.id,
+                athleteId: this.athlete && this.athlete.id,
             };
         }
 
