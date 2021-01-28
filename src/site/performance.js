@@ -77,37 +77,7 @@ sauce.ns('performance', async ns => {
     Chart.plugins.unregister(self.ChartDataLabels);  // Disable data labels by default.
 
 
-    function activitiesByDay(acts, start, end, callback) {
-        // NOTE: Activities should be in chronological order
-        if (!acts.length) {
-            return [];
-        }
-        const slots = [];
-        const startDay = sauce.date.toLocaleDayDate(start);
-        let i = 0;
-        for (const date of sauce.date.dayRange(startDay, new Date(end))) {
-            if (!acts.length) {
-                break;
-            }
-            const ts = date.getTime();
-            const daily = [];
-            while (i < acts.length && sauce.date.toLocaleDayDate(acts[i].ts).getTime() === ts) {
-                const m = acts[i++];
-                daily.push(m);
-            }
-            const entry = {date, activities: daily};
-            if (callback) {
-                callback(entry, slots);
-            }
-            slots.push(entry);
-        }
-        if (i !== acts.length) {
-            throw new Error('Internal Error');
-        }
-        return slots;
-    }
-
-
+    // XXX maybe Chart.helpers has something like this..
     function setDefault(obj, path, value) {
         path = path.split('.');
         let offt = obj;
@@ -138,6 +108,172 @@ sauce.ns('performance', async ns => {
             offt[Number(m[2])] = value;
         } else {
             offt[edge] = value;
+        }
+    }
+
+
+    function activitiesByDay(acts, start, end, atl=0, ctl=0) {
+        // NOTE: Activities should be in chronological order
+        if (!acts.length) {
+            return [];
+        }
+        const slots = [];
+        const startDay = sauce.date.toLocaleDayDate(start);
+        let i = 0;
+        for (const date of sauce.date.dayRange(startDay, new Date(end))) {
+            if (!acts.length) {
+                break;
+            }
+            let tss = 0;
+            let duration = 0;
+            const ts = date.getTime();
+            const daily = [];
+            while (i < acts.length && sauce.date.toLocaleDayDate(acts[i].ts).getTime() === ts) {
+                const a = acts[i++];
+                daily.push(a);
+                tss += sauce.model.getActivityTSS(a) || 0;
+                duration += a.stats && a.stats.activeTime || 0;
+            }
+            atl = sauce.perf.calcATL([tss], atl);
+            ctl = sauce.perf.calcCTL([tss], ctl);
+            slots.push({
+                date,
+                activities: daily,
+                tss,
+                duration,
+                atl,
+                ctl,
+            });
+        }
+        if (i !== acts.length) {
+            throw new Error('Internal Error');
+        }
+        return slots;
+    }
+
+
+    function aggregateActivitiesByFn(daily, indexFn, aggregateFn) {
+        const metricData = [];
+        function agg(entry) {
+            entry.tss = entry.tssSum / entry.days;
+            if (aggregateFn) {
+                aggregateFn(entry);
+            }
+        }
+        for (let i = 0; i < daily.length; i++) {
+            const slot = daily[i];
+            const index = indexFn(slot, i);
+            if (!metricData[index]) {
+                if (index) {
+                    agg(metricData[index - 1]);
+                }
+                metricData[index] = {
+                    date: slot.date,
+                    tssSum: slot.tss,
+                    duration: slot.duration,
+                    days: 1,
+                    activities: [...slot.activities],
+                };
+            } else {
+                const entry = metricData[index];
+                entry.days++;
+                entry.tssSum += slot.tss;
+                entry.activities.push(...slot.activities);
+            }
+        }
+        agg(metricData[metricData.length - 1]);
+        return metricData;
+    }
+
+
+    function aggregateActivitiesByWeek(daily, options={}) {
+        let week = null;
+        return aggregateActivitiesByFn(daily, (x, i) => {
+            if (options.isoWeekStart) {
+                if (week === null) {
+                    week = 0;
+                } else if (x.date.getDay() === /*monday*/ 1) {
+                    week++;
+                }
+                return week;
+            } else {
+                return Math.floor(i / 7);
+            }
+        });
+    }
+
+
+    function aggregateActivitiesByMonth(daily, options={}) {
+        let month = null;
+        let curMonth;
+        return aggregateActivitiesByFn(daily, x => {
+            const m = x.date.getMonth();
+            if (month === null) {
+                month = 0;
+            } else if (m !== curMonth) {
+                month++;
+            }
+            curMonth = m;
+            return month;
+        });
+    }
+
+
+    async function getSeedTrainingLoad(activity) {
+        const seed = (await sauce.hist.getActivitySiblings(activity.id,
+            {direction: 'prev', limit: 1}))[0];
+        let atl = 0;
+        let ctl = 0;
+        if (seed && seed.training) {
+            atl = seed.training.atl || 0;
+            ctl = seed.training.ctl || 0;
+            // Drain inactive days between the seed and the activity...
+            const seedDay = sauce.date.toLocaleDayDate(seed.ts);
+            const firstDay = sauce.date.toLocaleDayDate(activity.ts);
+            const zeros = [...sauce.date.dayRange(seedDay, firstDay)].map(() => 0);
+            zeros.pop();  // Exclude seed day.
+            if (zeros.length) {
+                atl = sauce.perf.calcATL(zeros, atl);
+                ctl = sauce.perf.calcCTL(zeros, ctl);
+            }
+        }
+        return {atl, ctl};
+    }
+
+    
+    class ChartVisibilityPlugin {
+        constructor(config, view) {
+            setDefault(config, 'options.legend.onClick', this.onLegendClick);
+            this.view = view;
+        }
+
+        onLegendClick(ev, item) {
+            Chart.defaults.global.legend.onClick.apply(this, arguments);
+            const index = item.datasetIndex;
+            const id = this.chart.data.datasets[index].id;
+            if (!id) {
+                console.warn("No ID for dataset");
+                return;
+            }
+            jQuery(this.chart.canvas).trigger('dataVisibilityChange', {
+                id,
+                visible: this.chart.isDatasetVisible(index)
+            });
+        }
+
+        beforeUpdate(chart) {
+            const chartId = chart.canvas.id;
+            if (!chartId) {
+                console.error("Missing canvas ID needed for visibility mgmt.");
+                return;
+            }
+            for (const ds of chart.data.datasets) {
+                if (!ds.id) {
+                    console.warn("Missing ID on dataset: visiblity state unmanaged");
+                    continue;
+                }
+                ds.hidden = this.view.dataVisibility[`${chartId}-${ds.id}`] === false;
+            }
         }
     }
 
@@ -238,68 +374,75 @@ sauce.ns('performance', async ns => {
     };
 
 
+    const drawSave = Chart.controllers.line.prototype.draw;
+    Chart.controllers.line.prototype.draw = function(ease) {
+        drawSave.apply(this, arguments);
+        if (!this.chart.options.tooltipLine) {
+            return;
+        }
+        const active = this.chart.tooltip._active;
+        if (active && active.length) {
+            const activePoint = active[0];
+            const ctx = this.chart.ctx;
+            const x = activePoint.tooltipPosition().x;
+            const top = this.chart.chartArea.top;
+            const bottom = this.chart.chartArea.bottom;
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, top);
+            ctx.lineTo(x, bottom);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = this.chart.options.tooltipLineColor || '#777';
+            ctx.stroke();
+            ctx.restore();
+        }
+    };
+
+
     class ActivityTimeRangeChart extends Chart {
         constructor(canvasSelector, view, config) {
             const ctx = document.querySelector(canvasSelector).getContext('2d');
-            const defaultLegendOnClick = Chart.defaults.global.legend.onClick;
-            function onLegendClick(ev, item) {
-                defaultLegendOnClick.apply(this, arguments);
-                this.chart.onLegendClick(ev, item);
-            }
             config = config || {};
             setDefault(config, 'type', 'line');
-            setDefault(config, 'options.animation.duration', 200);
+            setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
             setDefault(config, 'options.aspectRatio', 3/1);
+            setDefault(config, 'options.tooltipLine', true);
+            setDefault(config, 'options.tooltipLineColor', '#07c');
+            setDefault(config, 'options.animation.duration', 200);
             setDefault(config, 'options.legend.position', 'bottom');
-            setDefault(config, 'options.legend.onClick', onLegendClick);
+
             setDefault(config, 'options.scales.xAxes[0].id', 'days');
             setDefault(config, 'options.scales.xAxes[0].offset', true);
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
-            setDefault(config, 'options.scales.xAxes[0].time.unit', 'day');
-            setDefault(config, 'options.scales.xAxes[0].time.tooltipFormat', 'll');  // Jan 16, 2021
             setDefault(config, 'options.scales.xAxes[0].gridLines.display', false);
-            setDefault(config, 'options.scales.xAxes[0].ticks.maxTicksLimit', 12);
-
-            setDefault(config, 'options.scales.xAxes[1].id', 'weeks');
-            setDefault(config, 'options.scales.xAxes[1].offset', true);
-            setDefault(config, 'options.scales.xAxes[1].display', false);
-            setDefault(config, 'options.scales.xAxes[1].type', 'time');
-            setDefault(config, 'options.scales.xAxes[1].time.unit', 'week');
-            setDefault(config, 'options.scales.xAxes[1].time.tooltipFormat', 'll');  // Jan 16, 2021
-            setDefault(config, 'options.scales.xAxes[1].gridLines.display', false);
-            setDefault(config, 'options.scales.xAxes[1].ticks.maxTicksLimit', 12);
-
-            setDefault(config, 'options.scales.xAxes[2].id', 'months');
-            setDefault(config, 'options.scales.xAxes[2].offset', true);
-            setDefault(config, 'options.scales.xAxes[2].display', false);
-            setDefault(config, 'options.scales.xAxes[2].type', 'time');
-            setDefault(config, 'options.scales.xAxes[2].time.unit', 'month');
-            setDefault(config, 'options.scales.xAxes[2].time.tooltipFormat', 'MMM');  // Jan
-            setDefault(config, 'options.scales.xAxes[2].gridLines.display', false);
-            setDefault(config, 'options.scales.xAxes[2].ticks.maxTicksLimit', 12);
+            setDefault(config, 'options.scales.xAxes[0].ticks.maxTicksLimit', 16);
+            setDefault(config, 'options.scales.xAxes[0].ticks.callback', (label, index, ticks) => {
+                const data = ticks[index];
+                const d = new Date(data.value);
+                const span = ticks[ticks.length - 1].value - ticks[0].value;
+                const format = span >= 200 * DAY ? 'MMM' : 'MMM Do';
+                if (!d.getMonth()) {
+                    return moment(d).format(format) + '\n' + d.getFullYear();
+                } else {
+                    return moment(d).format(format);
+                }
+            });
 
             setDefault(config, 'options.scales.yAxes[0].type', 'linear');
             setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
+
             setDefault(config, 'options.tooltips.mode', 'index');
-            setDefault(config, 'options.tooltips.callbacks.footer', view.onTooltipSummary.bind(view));
-            setDefault(config, 'options.onClick', view.onChartClick.bind(view));
+            setDefault(config, 'options.tooltips.callbacks.label', (item, data) => {
+                const ds = data.datasets[item.datasetIndex];
+                const label = ds.label || '';
+                const val = ds.tooltipFormat ? ds.tooltipFormat(item.value, ds, this) : item.value;
+                return `${label}: ${val}`;
+            });
             super(ctx, config);
         }
-
-        onLegendClick(ev, item) {
-            const index = item.datasetIndex;
-            const id = this.data.datasets[index].id;
-            if (!id) {
-                console.warn("No ID for dataset");
-                return;
-            }
-            jQuery(this.canvas).trigger('dataVisibilityChange', {
-                id,
-                visible: this.isDatasetVisible(index)
-            });
-        }
     }
+
 
     class SummaryView extends view.SauceView {
         get tpl() {
@@ -419,10 +562,13 @@ sauce.ns('performance', async ns => {
             return 'performance-main.html';
         }
 
+        get periodEndMax() {
+            return Number(moment().add(1, 'day').startOf('day').toDate());
+        }
+
         async init({pageView}) {
             this.pageView = pageView;
             this.period = ns.router.filters.period || defaultPeriod;
-            this.periodEndMax = Number(moment().add(1, 'day').startOf('day').toDate());
             this.periodEnd = ns.router.filters.periodEnd || this.periodEndMax;
             this.periodStart = ns.router.filters.periodStart || this.periodEnd - (this.period * DAY);
             this.charts = {};
@@ -459,18 +605,31 @@ sauce.ns('performance', async ns => {
                             gridLines: {display: false},
                         }]
                     },
-                    //tooltips: {callbacks: {label: item => Math.round(item.value).toLocaleString()}},
+                    tooltips: {
+                        intersect: false,
+                        callbacks: {
+                            footer: items => this.onTooltipSummary(items)
+                        }
+                    },
                 }
             });
-            this.charts.hours = new ActivityTimeRangeChart('#hours', this, {
+
+            this.charts.activities = new ActivityTimeRangeChart('#activities', this, {
                 options: {
-                    plugins: {colorschemes: {scheme: 'brewer.Reds9'}},
+                    plugins: {colorschemes: {scheme: 'tableau.ClassicBlueRed6'}},
                     scales: {
                         yAxes: [{
-                            id: 'hours',
-                            scaleLabel: {
-                                labelString: 'Duration'
-                            },
+                            id: 'tss',
+                            scaleLabel: {labelString: 'TSS'}, // XXX localize
+                            ticks: {min: 0, maxTicksLimit: 3},
+                            gridLines: {
+                                display: 'auto',
+                            }
+                        }, {
+                            id: 'duration',
+                            position: 'right',
+                            gridLines: {display: false},
+                            scaleLabel: {labelString: 'Duration'}, // XXX localize
                             ticks: {
                                 suggestedMax: 5 * 3600,
                                 stepSize: 3600,
@@ -478,7 +637,11 @@ sauce.ns('performance', async ns => {
                             }
                         }]
                     },
-                    tooltips: {callbacks: {label: item => sauce.locale.human.duration(item.value)}},
+                    tooltips: {
+                        callbacks: {
+                            footer: items => this.onTooltipSummary(items, {useMetricData: true})
+                        }
+                    }
                 }
             });
             await this.update();
@@ -492,116 +655,40 @@ sauce.ns('performance', async ns => {
             let atl = 0;
             let ctl = 0;
             if (activities.length) {
-                const first = activities[0];
-                const seed = (await sauce.hist.getActivitySiblings(first.id,
-                    {direction: 'prev', limit: 1}))[0];
-                if (seed && seed.training) {
-                    atl = seed.training.atl || 0;
-                    ctl = seed.training.ctl || 0;
-                    // Drain inactive days between the seed and the first entry.
-                    const seedDay = sauce.date.toLocaleDayDate(seed.ts);
-                    const firstDay = sauce.date.toLocaleDayDate(first.ts);
-                    const zeros = [...sauce.date.dayRange(seedDay, firstDay)].map(() => 0);
-                    zeros.pop();  // Exclude seed day.
-                    if (zeros.length) {
-                        atl = sauce.perf.calcATL(zeros, atl);
-                        ctl = sauce.perf.calcCTL(zeros, ctl);
-                    }
-                }
+                ({atl, ctl} = await getSeedTrainingLoad(activities[0]));
             }
-            this.daily = activitiesByDay(activities, start, end, entry => {
-                let tss = 0;
-                let duration = 0;
-                for (const x of entry.activities) {
-                    tss += sauce.model.getActivityTSS(x) || 0;
-                    duration += x.stats && x.stats.activeTime || 0;
-                }
-                entry.tss = tss;
-                entry.duration = duration;
-                atl = entry.atl = sauce.perf.calcATL([tss], atl);
-                ctl = entry.ctl = sauce.perf.calcCTL([tss], ctl);
-            });
-            const metric = this.period > 365 ? 'months' : this.period > 90 ? 'weeks' : 'days';
+            this.daily = activitiesByDay(activities, start, end, atl, ctl);
+            this.metric = this.period > 365 ? 'months' : this.period > 90 ? 'weeks' : 'days';
+            if (this.metric === 'weeks') {
+                this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
+            } else if (this.metric === 'months') {
+                this.metricData = aggregateActivitiesByMonth(this.daily);
+            } else {
+                this.metricData = this.daily;
+            }
             this.pageView.trigger('update-period', {
                 start,
                 end,
-                metric,
+                metric: this.metric,
                 activities,
-                daily: this.daily
+                daily: this.daily,
+                metricData: this.metricData,
             });
-            let tssData;
-            let borderWidth = 2;
-            if (metric === 'weeks') {
-                borderWidth = 1;
-                tssData = [];
-                for (let i = 0; i < this.daily.length; i++) {
-                    const slot = this.daily[i];
-                    const week = Math.floor(i / 7);
-                    if (!tssData[week]) {
-                        tssData[week] = {
-                            date: slot.date,
-                            tss: slot.tss,
-                            activities: [...slot.activities],
-                        };
-                    } else {
-                        tssData[week].tss += slot.tss;
-                        tssData[week].activities.push(...slot.activities);
-                    }
-                }
-                for (const x of tssData) {
-                    x.tss /= 7;
-                }
-            } else if (metric === 'months') {
-                borderWidth = 0.5;
-                tssData = [];
-                for (let i = 0; i < this.daily.length; i++) {
-                    const slot = this.daily[i];
-                    const month = Math.floor(i / (365 / 12));
-                    if (!tssData[month]) {
-                        tssData[month] = {
-                            date: slot.date,
-                            tss: slot.tss,
-                            activities: [...slot.activities],
-                        };
-                    } else {
-                        tssData[month].tss += slot.tss;
-                        tssData[month].activities.push(...slot.activities);
-                    }
-                }
-                for (const x of tssData) {
-                    x.tss /= (365 / 12);
-                }
-            } else {
-                tssData = this.daily;
-            }
             const $start = this.$('header span.period.start');
             const $end = this.$('header span.period.end');
             $start.text(moment(start).format('ll'));
             $end.text(moment(end - 1).format('ll'));
-            this.$('button.period.next').prop('disabled', end >= Date.now());
+            this.$('button.period.next').prop('disabled', end >= this.periodEndMax);
+            const lineWidth = this.period > 365 ? 0.5 : this.period > 90 ? 1 : 1.5;
+            this.charts.training.data.labels = this.daily.map(a => a.date);
             this.charts.training.data.datasets = [{
-                id: 'tss',
-                label: 'Training Load', // XXX Localize
-                type: 'bar',
-                order: 10,
-                borderColor: '#4448',
-                backgroundColor: '#05f3',
-                xAxisID: metric,
-                yAxisID: 'tss',
-                hidden: this.dataVisibility['training-tss'] === false,
-                borderWidth: 1,
-                data: tssData.map(a => ({
-                    x: a.date,
-                    y: a.tss,
-                })),
-            }, {
                 id: 'ctl',
                 label: 'CTL (Fitness)', // XXX Localize
                 yAxisID: 'tss',
-                hidden: this.dataVisibility['training-ctl'] === false,
-                borderWidth,
+                borderWidth: lineWidth,
                 fill: false,
                 pointRadius: 0,
+                tooltipFormat: x => Math.round(x).toLocaleString(),
                 data: this.daily.map(a => ({
                     x: a.date,
                     y: a.ctl,
@@ -610,10 +697,10 @@ sauce.ns('performance', async ns => {
                 id: 'atl',
                 label: 'ATL (Fatigue)', // XXX Localize
                 yAxisID: 'tss',
-                hidden: this.dataVisibility['training-atl'] === false,
-                borderWidth,
+                borderWidth: lineWidth,
                 fill: false,
                 pointRadius: 0,
+                tooltipFormat: x => Math.round(x).toLocaleString(),
                 data: this.daily.map(a => ({
                     x: a.date,
                     y: a.atl,
@@ -622,8 +709,7 @@ sauce.ns('performance', async ns => {
                 id: 'tsb',
                 label: 'TSB (Form)', // XXX Localize
                 yAxisID: 'tsb',
-                hidden: this.dataVisibility['training-tsb'] === false,
-                borderWidth,
+                borderWidth: lineWidth,
                 borderColor: '#db0', // XXX
                 overUnder: true,
                 overBackgroundColorMax: '#7fe78a',
@@ -633,6 +719,7 @@ sauce.ns('performance', async ns => {
                 overBackgroundMax: 50,
                 underBackgroundMin: -50,
                 pointRadius: 0,
+                tooltipFormat: x => Math.round(x).toLocaleString(),
                 data: this.daily.map(a => ({
                     x: a.date,
                     y: a.ctl - a.atl,
@@ -640,39 +727,62 @@ sauce.ns('performance', async ns => {
             }];
             this.charts.training.update();
 
-            const smoothed = sauce.data.smooth(30, this.daily.map(x => x.duration));
-            this.charts.hours.data.datasets = [{
-                yAxisID: 'hours',
+            this.charts.activities.data.datasets = [{
+                id: 'tss',
+                label: 'TSS', // XXX Localize
                 type: 'bar',
-                borderColor: '#8888',
+                //borderColor: '#4448',
+                //backgroundColor: '#05f3',
+                //xAxisID: this.metric,
+                yAxisID: 'tss',
                 borderWidth: 1,
+                tooltipFormat: x => Math.round(x).toLocaleString(),
+                data: this.metricData.map(a => ({
+                    x: a.date,
+                    y: a.tss,
+                })),
+            }, {
+                id: 'duration',
+                label: 'Duration', // XXX Localize
+                type: 'bar',
+                //xAxisID: this.metric,
+                yAxisID: 'duration',
                 barPercentage: 0.9,
                 categoryPercentage: 1,
-                data: this.daily.map(a => ({
+                tooltipFormat: x => sauce.locale.human.duration(x),
+                data: this.metricData.map(a => ({
                     x: a.date,
                     y: a.duration,
                 })),
-            }, {
-                yAxisID: 'hours',
-                data: smoothed.map((y, i) => ({
-                    x: this.daily[i].date,
-                    y,
-                })),
             }];
-            this.charts.hours.update();
+            this.charts.activities.update();
         }
 
-        onTooltipSummary(items) {
+        onTooltipSummary(items, options={}) {
+            return 'XXX';
             const idx = items[0].index;
-            const slot = this.daily[idx];
+            const slot = options.useDaily ? this.daily[idx] : this.metricData[idx];
             if (slot.activities.length === 1) {
-                return `1 activity - click for details`; // XXX Localize
+                return `\n\n1 activity - click for details`; // XXX Localize
             } else {
-                return `${slot.activities.length} activities - click for details`; // XXX Localize
+                return `\n\n${slot.activities.length} activities - click for details`; // XXX Localize
             }
         }
 
         async onChartClick(ev) {
+            // XXX broken
+            const chart = this.charts[ev.currentTarget.id];
+            const ds = chart.getElementsAtEvent(ev);
+            if (ds.length) {
+                const data = this.daily[ds[0]._index];
+                console.warn(new Date(data.ts).toLocaleString(),
+                    new Date(data.activities[0].ts).toLocaleString()); // XXX
+                this.pageView.trigger('select-activities', data.activities);
+            }
+        }
+
+        async onTSSChartClick(ev) {
+            // XXX broken
             const chart = this.charts[ev.currentTarget.id];
             const ds = chart.getElementsAtEvent(ev);
             if (ds.length) {

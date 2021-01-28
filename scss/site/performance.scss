@@ -82,14 +82,21 @@
     }
 
     > aside {
-        padding: 1em;
-        overflow: auto;
-        flex: 1 0 18rem;
+        padding: 1em 0;
+        overflow: hidden;
+        flex: 0 0 0;
+        transition: padding 200ms, flex 200ms;
         color: color.shade(bg, 5%);
         background-image: linear-gradient(to right,
                                           #{color.shade(fg, 0%)},
                                           #{color.shade(fg, -18%)} 1.5em,
                                           #{color.shade(fg, 10%)});
+
+        &.expanded {
+            flex-basis: 18rem;
+            padding: 1em;
+        }
+
         a {
             color: color.shade(accent4, -20%) !important;
         }
