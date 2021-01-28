@@ -181,7 +181,9 @@ sauce.ns('performance', async ns => {
                 entry.activities.push(...slot.activities);
             }
         }
-        agg(metricData[metricData.length - 1]);
+        if (metricData.length) {
+            agg(metricData[metricData.length - 1]);
+        }
         return metricData;
     }
 
@@ -243,25 +245,37 @@ sauce.ns('performance', async ns => {
     
     class ChartVisibilityPlugin {
         constructor(config, view) {
-            setDefault(config, 'options.legend.onClick', this.onLegendClick);
+            const _this = this;
+            setDefault(config, 'options.legend.onClick', function(...args) {
+                _this.onLegendClick(this, ...args);
+            });
             this.view = view;
         }
 
-        onLegendClick(ev, item) {
-            Chart.defaults.global.legend.onClick.apply(this, arguments);
+        onLegendClick(element, ev, item) {
+            this.legendClicking = true;
+            try {
+                Chart.defaults.global.legend.onClick.call(element, ev, item);
+            } finally {
+                this.legendClicking = false;
+            }
             const index = item.datasetIndex;
-            const id = this.chart.data.datasets[index].id;
+            const id = element.chart.data.datasets[index].id;
             if (!id) {
                 console.warn("No ID for dataset");
                 return;
             }
-            jQuery(this.chart.canvas).trigger('dataVisibilityChange', {
+            jQuery(element.chart.canvas).trigger('dataVisibilityChange', {
                 id,
-                visible: this.chart.isDatasetVisible(index)
+                visible: element.chart.isDatasetVisible(index)
             });
         }
 
         beforeUpdate(chart) {
+            // Skip setting the hidden state when the update is from the legend click.
+            if (this.legendClicking) {
+                return;
+            }
             const chartId = chart.canvas.id;
             if (!chartId) {
                 console.error("Missing canvas ID needed for visibility mgmt.");
@@ -680,7 +694,6 @@ sauce.ns('performance', async ns => {
             $end.text(moment(end - 1).format('ll'));
             this.$('button.period.next').prop('disabled', end >= this.periodEndMax);
             const lineWidth = this.period > 365 ? 0.5 : this.period > 90 ? 1 : 1.5;
-            this.charts.training.data.labels = this.daily.map(a => a.date);
             this.charts.training.data.datasets = [{
                 id: 'ctl',
                 label: 'CTL (Fitness)', // XXX Localize
@@ -770,18 +783,6 @@ sauce.ns('performance', async ns => {
         }
 
         async onChartClick(ev) {
-            // XXX broken
-            const chart = this.charts[ev.currentTarget.id];
-            const ds = chart.getElementsAtEvent(ev);
-            if (ds.length) {
-                const data = this.daily[ds[0]._index];
-                console.warn(new Date(data.ts).toLocaleString(),
-                    new Date(data.activities[0].ts).toLocaleString()); // XXX
-                this.pageView.trigger('select-activities', data.activities);
-            }
-        }
-
-        async onTSSChartClick(ev) {
             // XXX broken
             const chart = this.charts[ev.currentTarget.id];
             const ds = chart.getElementsAtEvent(ev);
