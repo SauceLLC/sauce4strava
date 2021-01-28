@@ -24,7 +24,6 @@ sauce.ns('performance', async ns => {
         },
 
         onNav: function(athleteId, period, startDay, endDay) {
-            console.debug("onNav", athleteId, period, startDay, endDay);
             this.filters = {
                 athleteId: athleteId && Number(athleteId),
                 period: period && Number(period),
@@ -417,6 +416,7 @@ sauce.ns('performance', async ns => {
     class ActivityTimeRangeChart extends Chart {
         constructor(canvasSelector, view, config) {
             const ctx = document.querySelector(canvasSelector).getContext('2d');
+            let _this;
             config = config || {};
             setDefault(config, 'type', 'line');
             setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
@@ -429,6 +429,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.xAxes[0].id', 'days');
             setDefault(config, 'options.scales.xAxes[0].offset', true);
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
+            setDefault(config, 'options.scales.xAxes[0].time.tooltipFormat', 'll'); // XXX use func
             setDefault(config, 'options.scales.xAxes[0].distribution', 'series');
             setDefault(config, 'options.scales.xAxes[0].gridLines.display', false);
             setDefault(config, 'options.scales.xAxes[0].ticks.maxTicksLimit', 16);
@@ -437,11 +438,14 @@ sauce.ns('performance', async ns => {
                 const d = new Date(data.value);
                 const span = ticks[ticks.length - 1].value - ticks[0].value;
                 const format = span >= 200 * DAY ? 'MMM' : 'MMM Do';
+                return moment(d).format(format); // XXX need to figure out when to actually show year
+                /*
                 if (!d.getMonth()) {
                     return moment(d).format(format) + '\n' + d.getFullYear();
                 } else {
                     return moment(d).format(format);
                 }
+                */
             });
 
             setDefault(config, 'options.scales.yAxes[0].type', 'linear');
@@ -455,7 +459,24 @@ sauce.ns('performance', async ns => {
                 const val = ds.tooltipFormat ? ds.tooltipFormat(item.value, ds, this) : item.value;
                 return `${label}: ${val}`;
             });
+            setDefault(config, 'options.tooltips.callbacks.footer',
+                items => this.onTooltipSummary(items));
             super(ctx, config);
+            this.view = view;
+            _this = this;
+        }
+
+        onTooltipSummary(items) {
+            const idx = items[0].index;
+            const slot = this.options.useMetricData ? this.view.metricData[idx] : this.view.daily[idx];
+            if (!slot.activities.length) {
+                return '';
+            }
+            if (slot.activities.length === 1) {
+                return `\n1 activity - click for details`; // XXX Localize
+            } else {
+                return `\n${slot.activities.length} activities - click for details`; // XXX Localize
+            }
         }
     }
 
@@ -550,6 +571,7 @@ sauce.ns('performance', async ns => {
                 await this.render();
             });
             this.listenTo(pageView, 'select-activities', async activities => {
+                this.$el.addClass('expanded');
                 this.activities = activities;
                 await this.render();
             });
@@ -570,6 +592,7 @@ sauce.ns('performance', async ns => {
             return {
                 'change header select[name="period"]': 'onPeriodChange',
                 'click header button.period': 'onPeriodShift',
+                'click canvas': 'onChartClick',
                 'dataVisibilityChange canvas': 'onDataVisibilityChange',
             };
         }
@@ -623,9 +646,6 @@ sauce.ns('performance', async ns => {
                     },
                     tooltips: {
                         intersect: false,
-                        callbacks: {
-                            footer: items => this.onTooltipSummary(items)
-                        }
                     },
                 }
             });
@@ -633,6 +653,7 @@ sauce.ns('performance', async ns => {
             this.charts.activities = new ActivityTimeRangeChart('#activities', this, {
                 options: {
                     plugins: {colorschemes: {scheme: 'tableau.ClassicBlueRed6'}},
+                    useMetricData: true,
                     scales: {
                         yAxes: [{
                             id: 'tss',
@@ -651,11 +672,6 @@ sauce.ns('performance', async ns => {
                             }
                         }]
                     },
-                    tooltips: {
-                        callbacks: {
-                            footer: items => this.onTooltipSummary(items, {useMetricData: true})
-                        }
-                    }
                 }
             });
             await this.update();
@@ -723,7 +739,7 @@ sauce.ns('performance', async ns => {
                 label: 'TSB (Form)', // XXX Localize
                 yAxisID: 'tsb',
                 borderWidth: lineWidth,
-                borderColor: '#db0', // XXX
+                borderColor: '#444',
                 overUnder: true,
                 overBackgroundColorMax: '#7fe78a',
                 overBackgroundColorMin: '#bfe58a22',
@@ -765,26 +781,20 @@ sauce.ns('performance', async ns => {
             this.charts.activities.update();
         }
 
-        onTooltipSummary(items, options={}) {
-            return 'XXX';
-            const idx = items[0].index;
-            const slot = options.useDaily ? this.daily[idx] : this.metricData[idx];
-            if (slot.activities.length === 1) {
-                return `\n\n1 activity - click for details`; // XXX Localize
-            } else {
-                return `\n\n${slot.activities.length} activities - click for details`; // XXX Localize
-            }
-        }
-
         async onChartClick(ev) {
-            // XXX broken
             const chart = this.charts[ev.currentTarget.id];
-            const ds = chart.getElementsAtEvent(ev);
-            if (ds.length) {
-                const data = this.daily[ds[0]._index];
-                console.warn(new Date(data.ts).toLocaleString(),
-                    new Date(data.activities[0].ts).toLocaleString()); // XXX
-                this.pageView.trigger('select-activities', data.activities);
+            let elements;
+            if (chart.options.tooltips.intersect === false) {
+                elements = chart.getElementsAtXAxis(ev);
+            } else {
+                elements = chart.getElementsAtEvent(ev);
+            }
+            if (elements.length) {
+                const idx = elements[0]._index;
+                const slot = chart.options.useMetricData ? this.metricData[idx] : this.daily[idx];
+                if (slot && slot.activities && slot.activities.length) {
+                    this.pageView.trigger('select-activities', slot.activities);
+                }
             }
         }
 
