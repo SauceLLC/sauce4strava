@@ -585,26 +585,28 @@
         }
     }
 
-    section,
-    .section {
-        header,
-        .header {
-            background-color: color.shade(bg, 10%);
-            border: none;
+    &.sauce-analysis {
+        section,
+        .section {
+            header,
+            .header {
+                background-color: color.shade(bg, 10%);
+                border: none;
+            }
+
+            footer,
+            .footer {
+                box-shadow: none;
+            }
+
+            &.with-border {
+                border-color: $soft-border-color;
+            }
         }
 
-        footer,
-        .footer {
-            box-shadow: none;
+        .section {
+            border-color: $hard-border-color;
         }
-
-        &.with-border {
-            border-color: $soft-border-color;
-        }
-    }
-
-    .section {
-        border-color: $hard-border-color;
     }
 
     footer.achievements {
