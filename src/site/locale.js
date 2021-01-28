@@ -166,7 +166,7 @@ sauce.ns('locale', ns => {
             ['hour', hour],
             ['min', min],
             ['sec', 1]
-        ];
+        ].filter(([, period]) => options.maxPeriod ? period <= options.maxPeriod : true);
         const stack = [];
         const precision = options.precision || 1;
         elapsed = Math.round(elapsed / precision) * precision;

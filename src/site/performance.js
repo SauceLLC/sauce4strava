@@ -176,8 +176,9 @@ sauce.ns('performance', async ns => {
                 };
             } else {
                 const entry = metricData[index];
-                entry.days++;
                 entry.tssSum += slot.tss;
+                entry.duration += slot.duration;
+                entry.days++;
                 entry.activities.push(...slot.activities);
             }
         }
@@ -242,7 +243,7 @@ sauce.ns('performance', async ns => {
         return {atl, ctl};
     }
 
-    
+
     class ChartVisibilityPlugin {
         constructor(config, view) {
             const _this = this;
@@ -428,6 +429,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.xAxes[0].id', 'days');
             setDefault(config, 'options.scales.xAxes[0].offset', true);
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
+            setDefault(config, 'options.scales.xAxes[0].distribution', 'series');
             setDefault(config, 'options.scales.xAxes[0].gridLines.display', false);
             setDefault(config, 'options.scales.xAxes[0].ticks.maxTicksLimit', 16);
             setDefault(config, 'options.scales.xAxes[0].ticks.callback', (label, index, ticks) => {
@@ -636,9 +638,6 @@ sauce.ns('performance', async ns => {
                             id: 'tss',
                             scaleLabel: {labelString: 'TSS'}, // XXX localize
                             ticks: {min: 0, maxTicksLimit: 3},
-                            gridLines: {
-                                display: 'auto',
-                            }
                         }, {
                             id: 'duration',
                             position: 'right',
@@ -647,7 +646,8 @@ sauce.ns('performance', async ns => {
                             ticks: {
                                 suggestedMax: 5 * 3600,
                                 stepSize: 3600,
-                                callback: v => sauce.locale.human.duration(v)
+                                maxTicksLimit: 7,
+                                callback: v => sauce.locale.human.duration(v, {maxPeriod: 3600})
                             }
                         }]
                     },
@@ -672,7 +672,7 @@ sauce.ns('performance', async ns => {
                 ({atl, ctl} = await getSeedTrainingLoad(activities[0]));
             }
             this.daily = activitiesByDay(activities, start, end, atl, ctl);
-            this.metric = this.period > 365 ? 'months' : this.period > 90 ? 'weeks' : 'days';
+            this.metric = this.period > 240 ? 'months' : this.period > 60 ? 'weeks' : 'days';
             if (this.metric === 'weeks') {
                 this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
             } else if (this.metric === 'months') {
@@ -744,9 +744,6 @@ sauce.ns('performance', async ns => {
                 id: 'tss',
                 label: 'TSS', // XXX Localize
                 type: 'bar',
-                //borderColor: '#4448',
-                //backgroundColor: '#05f3',
-                //xAxisID: this.metric,
                 yAxisID: 'tss',
                 borderWidth: 1,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
@@ -758,11 +755,8 @@ sauce.ns('performance', async ns => {
                 id: 'duration',
                 label: 'Duration', // XXX Localize
                 type: 'bar',
-                //xAxisID: this.metric,
                 yAxisID: 'duration',
-                barPercentage: 0.9,
-                categoryPercentage: 1,
-                tooltipFormat: x => sauce.locale.human.duration(x),
+                tooltipFormat: x => sauce.locale.human.duration(x, {maxPeriod: 3600}),
                 data: this.metricData.map(a => ({
                     x: a.date,
                     y: a.duration,
