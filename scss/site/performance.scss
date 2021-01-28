@@ -75,8 +75,12 @@
                 }
             }
 
-            canvas {
+            .chart-holder {
                 flex: 1 1 auto;
+                position: relative; // required for responive chart.js
+
+                canvas {
+                }
             }
         }
     }
