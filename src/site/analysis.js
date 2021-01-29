@@ -1602,11 +1602,10 @@ sauce.ns('analysis', ns => {
             const comments = [];
             const commentsHash = `Activity-${pageView.activity().id}`;
             for (const x of pageView.commentsController().getFromHash(commentsHash)) {
-                const date = new Date(jQuery(x.timestamp).attr('datetime'));
                 comments.push({
                     tokens: x.comment,
                     athlete: x.athlete,
-                    timeago: H.timeAgo(date, {precision: 60}),
+                    date: new Date(jQuery(x.timestamp).attr('datetime'))
                 });
             }
             $section.find('.sauce-inline-comments').html((await commentsTpl({comments})).trim());

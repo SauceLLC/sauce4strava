@@ -107,7 +107,7 @@ sauce.ns('locale', ns => {
     async function _init() {
         const units = ['year', 'week', 'day', 'hour', 'min', 'sec',
                        'years', 'weeks', 'days', 'hours', 'mins', 'secs',
-                       'ago', 'now'];
+                       'ago', 'in', 'now', 'today'];
         hdUnits = await getMessagesObject(units, 'time');
         ns.elevationFormatter = new Strava.I18n.ElevationFormatter();
         ns.hrFormatter = new Strava.I18n.HeartRateFormatter();
@@ -187,14 +187,25 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanTimeAgo(date, options) {
+    function humanRelTime(date, options={}) {
         assertInit();
-        const elapsed = (Date.now() - date) / 1000;
-        const duration = humanDuration(elapsed, options);
+        if (!(date instanceof Date)) {
+            date = new Date(date);
+        }
+        const elapsed = (Date.now() - date.getTime()) / 1000;
+        const duration = humanDuration(Math.abs(elapsed), options);
         if (duration) {
-            return `${duration} ${hdUnits.ago}`;
+            if (elapsed > 0) {
+                return `${duration} ${hdUnits.ago}`;
+            } else {
+                return `${hdUnits.in} ${duration}`;
+            }
         } else {
-            return hdUnits.now;
+            if (options.precision && options.precision >= 86400) {
+                return hdUnits.today;
+            } else {
+                return hdUnits.now;
+            }
         }
     }
 
@@ -326,7 +337,7 @@ sauce.ns('locale', ns => {
         distanceUnconvert,
         human: {
             duration: humanDuration,
-            timeAgo: humanTimeAgo,
+            relTime: humanRelTime,
             weight: humanWeight,
             elevation: humanElevation,
             number: humanNumber,
@@ -337,7 +348,7 @@ sauce.ns('locale', ns => {
         },
         templateHelpers: {
             humanDuration,
-            humanTimeAgo,
+            humanRelTime,
             humanWeight,
             humanElevation,
             humanNumber,
