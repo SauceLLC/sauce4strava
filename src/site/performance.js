@@ -562,6 +562,7 @@ sauce.ns('performance', async ns => {
         get events() {
             return {
                 'click header .collapser': 'onCollapserClick',
+                'click .activity .edit-activity': 'onEditActivityClick',
             };
         }
 
@@ -570,6 +571,7 @@ sauce.ns('performance', async ns => {
         }
 
         async init({pageView}) {
+            this.pageView = pageView;
             this.listenTo(pageView, 'change-athlete', async () => {
                 this.activities = null;
                 await this.render();
@@ -613,6 +615,51 @@ sauce.ns('performance', async ns => {
 
         async onCollapserClick(ev) {
             await this.setExpanded(false);
+        }
+
+        async onEditActivityClick(ev) {
+            const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
+            let activity;
+            for (const a of this.activities) {
+                if (a.id === id) {
+                    activity = a;
+                    break;
+                }
+            }
+            // XXX Viewify this...
+            const $modal = await sauce.modal({
+                title: 'Edit Activity', // XXX localize
+                body: `
+                    <b>${activity.name}</b><hr/>
+                    <label>TSS Override:
+                        <input name="tss_override" type="number"
+                               value="${sauce.model.getActivityTSS(activity)}"/>
+                    </label>
+                    <hr/>
+                    <label>Exclude power data from performance calculations:
+                        <input name="power_exclude" type="checkbox"
+                               ${activity.perfExclude ? 'checked' : ''}"/>
+                    </label>
+                `,
+                extraButtons: [{
+                    text: 'Save', // XXX localize
+                    click: async ev => {
+                        const tssOverride = Number($modal.find('input[name="tss_override"]').val()) || null;
+                        const powerExclude = $modal.find('input[name="power_exclude"]').is(':checked');
+                        ev.currentTarget.classList.add('sauce-loading');
+                        try {
+                            await sauce.hist.updateActivity(id, {tssOverride, powerExclude});
+                            await sauce.hist.invalidateSyncState(activity.athlete, 'local', 'training-load');
+                            // TODO: Listen to sync controller and refresh views after this finishes.
+                            await new Promise(resolve => setTimeout(resolve, 10000));
+                            await this.pageView.render();
+                        } finally {
+                            ev.currentTarget.classList.remove('sauce-loading');
+                        }
+                        $modal.dialog('destroy');
+                    }
+                }]
+            });
         }
     }
 

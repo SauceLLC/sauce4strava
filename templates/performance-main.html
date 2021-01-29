@@ -1,28 +1,30 @@
 <header class="filters">
-    <b class="title">Period:</b><br/>
+    <div class="period">
+        <b class="title">Period:</b><br/>
+        <select name="period">
+            <option value="30" {{period === 30 ? 'selected' : ''}}>30 days</option>
+            <option value="90" {{period === 90 ? 'selected' : ''}}>90 days</option>
+            <option value="182" {{period === 182 ? 'selected' : ''}}>6 months</option>
+            <option value="365" {{period === 365 ? 'selected' : ''}}>1 year</option>
+            <option value="730" {{period === 730 ? 'selected' : ''}}>2 years</option>
+            <option value="1825" {{period === 1825 ? 'selected' : ''}}>5 years</option>
+        </select>
+    </div>
 
-    <select name="period">
-        <option value="30" {{period === 30 ? 'selected' : ''}}>30 days</option>
-        <option value="90" {{period === 90 ? 'selected' : ''}}>90 days</option>
-        <option value="182" {{period === 182 ? 'selected' : ''}}>6 months</option>
-        <option value="365" {{period === 365 ? 'selected' : ''}}>1 year</option>
-        <option value="730" {{period === 730 ? 'selected' : ''}}>2 years</option>
-        <option value="1825" {{period === 1825 ? 'selected' : ''}}>5 years</option>
-    </select>
-
-
-    <button class="btn btn-sm prev period">{-await fa('angle-double-left-solid')-}</button>
-    <b>
-        <span class="start period"></span>
-        <button style="pointer-events: none; opacity: 0.5; font-size: 0.8em;" class="btn btn-unstyled btn-icon-only btn-sm">{-await fa('arrow-alt-right-duotone')-}</button>
-        <span class="end period"></span>
-    </b>
-    <button class="btn btn-sm next period">{-await fa('angle-double-right-solid')-}</button>
+    <div class="start-end">
+        <button class="btn btn-sm prev period">{-await fa('angle-double-left-solid')-}</button>
+        <b>
+            <span class="start period"></span>
+            <button style="pointer-events: none; opacity: 0.5; font-size: 0.8em;" class="btn btn-unstyled btn-icon-only btn-sm">{-await fa('arrow-alt-right-duotone')-}</button>
+            <span class="end period"></span>
+        </b>
+        <button class="btn btn-sm next period">{-await fa('angle-double-right-solid')-}</button>
+    </div>
 </header>
 
 <section class="charts">
     <header class="title">
-        Training Load - Fitness, Fatigue and Form
+        Training Load - Fitness, Fatigue and Form <!-- XXX localize -->
         <a href="https://www.cyclingweekly.com/fitness/training-software-369155">more info</a>
     </header>
     <div class="chart-holder">
@@ -31,7 +33,7 @@
 
     <hr/>
 
-    <header class="title">Activities</header>
+    <header class="title">Activities</header> <!-- XXX localize -->
     <div class="chart-holder">
         <canvas id="activities"/>
     </div>

@@ -11,11 +11,10 @@ $aside-width: 260px;
 
 
 #sauce-performance {
-
     select {
         border-radius: 0.22em;
-        padding: 0.3em 0.4em;
-        margin: 0.2em;
+        padding: 0.3em 0.5em;
+        margin: 0.2em 0.4em;
     }
 
     display: flex;
@@ -30,6 +29,18 @@ $aside-width: 260px;
         display: flex;
         margin: 0.15em 0;
         align-items: center;
+
+        &.rows {
+            flex-direction: column;
+            align-items: flex-start;
+
+            key {
+            }
+
+            value {
+                font-size: 0.9em;
+            }
+        }
 
         key {
             flex: 1 0 50%;
@@ -88,6 +99,33 @@ $aside-width: 260px;
         padding: 1em;
         display: flex;
         flex-direction: column;
+
+        > header.filters {
+            display: flex;
+            align-items: flex-end;
+            border-bottom: 1px solid color.shade(bg, 10%);
+            margin-bottom: 1em;
+
+            .start-end {
+                display: flex;
+                align-items: center;
+                margin-bottom: 0.2em; // match select.
+                margin-left: 1em;
+
+                button.prev {
+                    margin-right: 1em;
+                }
+
+                button.next {
+                    margin-left: 1em;
+                }
+
+                span.period {
+                    margin: 0 0.3em;
+                    text-transform: capitalize;
+                }
+            }
+        }
 
         section.charts {
             padding: 1em;
@@ -183,7 +221,21 @@ $aside-width: 260px;
                 margin-bottom: 1em;
                 padding: 0.5em;
 
-                row {
+                header {
+                    button.edit-activity {
+                        float: right;
+                        color: color.get(bg);
+                        font-size: 0.7em;
+                    }
+                }
+
+                .issue {
+                    color: red;
+
+                    a {
+                        color: inherit !important;
+                        cursor: pointer;
+                    }
                 }
             }
         }

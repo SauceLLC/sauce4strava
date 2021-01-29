@@ -853,6 +853,12 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(getActivity, {namespace});
 
 
+    async function updateActivity(id, updates) {
+        return await actsStore.update(id, updates);
+    }
+    sauce.proxy.export(updateActivity, {namespace});
+
+
     async function enableAthlete(id) {
         return await ns.syncManager.enableAthlete(id);
     }

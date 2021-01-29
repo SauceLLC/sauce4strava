@@ -7,22 +7,31 @@
         <i>Click on a graph item to see activity details...<!--XXX localize--></i>
     <% } else { %>
         <% for (const a of activities) { %>
-            <div class="activity">
+            <div class="activity" data-id="{{a.id}}">
                 <header class="title">
+                    <button class="btn btn-icon-only btn-unstyled edit-activity"
+                            title="Edit activity">{-await fa('edit-duotone')-}</button> <!-- XXX localize -->
                     <small>{{humanDate(a.ts, {includeDayOfWeek: true})}}</small>
                     <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
                 </header>
                 <% if (a.stats) { %>
-                    <row>
-                        <key>Active:</key>
-                        <value>{{humanTime(a.stats.activeTime)}}</value>
-                    </row>
                     <% if (getTSS(a)) { %>
                         <row>
                             <key>TSS:</key>
                             <value>{{humanNumber(getTSS(a))}}</value>
                         </row>
+                    <% } else { %>
+                        <row class="rows">
+                            <key>TSS:</key>
+                            <value class="issue">
+                                Unavailable - <a class="edit-activity">Click to override</a> <!-- XXX localize -->
+                            </value>
+                        </row>
                     <% } %>
+                    <row>
+                        <key>Active:</key>
+                        <value>{{humanTime(a.stats.activeTime)}}</value>
+                    </row>
                     <% if (a.stats.power) { %>
                         <row>
                             <key>Power:</key>
