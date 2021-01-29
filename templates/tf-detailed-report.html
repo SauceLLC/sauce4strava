@@ -151,7 +151,7 @@
             <% for (const x of reports) { %>
                 <div class="report">
                     <span class="age" title="{{x.created.toLocaleString()}}">
-                        <a href="https://www.trailforks.com/profile/{{x.username}}/" target="_blank">{{x.username}}</a> • {-await humanTimeAgo(x.created)-} ago
+                        <a href="https://www.trailforks.com/profile/{{x.username}}/" target="_blank">{{x.username}}</a> • {-await humanRelTime(x.created)-}
                     </span>
 
                     <div class="item">
