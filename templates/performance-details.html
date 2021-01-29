@@ -1,13 +1,18 @@
-<a class="collapse">{-await fa('window-close-light')-}</a>
-<% if (!activities) { %>
-    <i>Click on a graph item to see activity details...</i>
-<% } else { %>
-    <% for (const a of activities) { %>
-        <a href="/activities/{{a.id}}">{{a.name || moment(a.ts).calendar()}}</a><br/>
-        <% if (a.name) { %>
-            {{moment(a.ts).calendar()}}<br/>
+<header>
+    <div class="title">Activity Details<!--XXX Localize--></div>
+    <a class="collapser">{-await fa('window-close-regular')-}</a>
+</header>
+<section class="content">
+    <% if (!activities) { %>
+        <i>Click on a graph item to see activity details...<!--XXX localize--></i>
+    <% } else { %>
+        <% for (const a of activities) { %>
+            <a href="/activities/{{a.id}}">{{a.name || moment(a.ts).calendar()}}</a><br/>
+            <% if (a.name) { %>
+                {{moment(a.ts).calendar()}}<br/>
+            <% } %>
+            <pre>{{JSON.stringify(a.stats, null, 4)}}</pre>
+            <pre>{{JSON.stringify(a.training, null, 4)}}</pre>
         <% } %>
-        <pre>{{JSON.stringify(a.stats, null, 4)}}</pre>
-        <pre>{{JSON.stringify(a.training, null, 4)}}</pre>
     <% } %>
-<% } %>
+</section>

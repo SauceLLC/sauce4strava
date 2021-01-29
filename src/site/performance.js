@@ -416,7 +416,6 @@ sauce.ns('performance', async ns => {
     class ActivityTimeRangeChart extends Chart {
         constructor(canvasSelector, view, config) {
             const ctx = document.querySelector(canvasSelector).getContext('2d');
-            let _this;
             config = config || {};
             setDefault(config, 'type', 'line');
             setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
@@ -463,7 +462,6 @@ sauce.ns('performance', async ns => {
                 items => this.onTooltipSummary(items));
             super(ctx, config);
             this.view = view;
-            _this = this;
         }
 
         onTooltipSummary(items) {
@@ -561,6 +559,12 @@ sauce.ns('performance', async ns => {
 
 
     class DetailsView extends view.SauceView {
+        get events() {
+            return {
+                'click header .collapser': 'onCollapserClick',
+            };
+        }
+
         get tpl() {
             return 'performance-details.html';
         }
@@ -571,11 +575,18 @@ sauce.ns('performance', async ns => {
                 await this.render();
             });
             this.listenTo(pageView, 'select-activities', async activities => {
-                this.$el.addClass('expanded');
                 this.activities = activities;
                 await this.render();
+                await this.setExpanded();
             });
             await super.init();
+        }
+
+        setElement(el, ...args) {
+            const r = super.setElement(el, ...args);
+            sauce.storage.getPref('perfDetailsAsideVisible').then(vis =>
+                this.setExpanded(vis, {noSave: true}));
+            return r;
         }
 
         async renderAttrs() {
@@ -583,6 +594,18 @@ sauce.ns('performance', async ns => {
                 moment,
                 activities: this.activities
             };
+        }
+
+        async setExpanded(en, options={}) {
+            const visible = en !== false;
+            this.$el.toggleClass('expanded', visible);
+            if (!options.noSave) {
+                await sauce.storage.setPref('perfDetailsAsideVisible', visible);
+            }
+        }
+
+        async onCollapserClick(ev) {
+            await this.setExpanded(false);
         }
     }
 

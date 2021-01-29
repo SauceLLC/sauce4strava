@@ -1,5 +1,5 @@
 <header class="filters">
-    <b>Period:</b><br/>
+    <b class="title">Period:</b><br/>
 
     <select name="period">
         <option value="30" {{period === 30 ? 'selected' : ''}}>30 days</option>
@@ -21,7 +21,7 @@
 </header>
 
 <section class="charts">
-    <header>
+    <header class="title">
         Training Load - Fitness, Fatigue and Form
         <a href="https://www.cyclingweekly.com/fitness/training-software-369155">more info</a>
     </header>
@@ -31,7 +31,7 @@
 
     <hr/>
 
-    <header>Activities</header>
+    <header class="title">Activities</header>
     <div class="chart-holder">
         <canvas id="activities"/>
     </div>

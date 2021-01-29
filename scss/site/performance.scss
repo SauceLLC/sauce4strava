@@ -4,6 +4,12 @@
 @use 'buttons';
 
 
+// Use px for media query compat..
+$nav-width: 240px;
+$main-width: 600px;
+$aside-width: 260px;
+
+
 #sauce-performance {
 
     select {
@@ -14,6 +20,10 @@
 
     display: flex;
     flex-wrap: wrap;
+
+    .title {
+        font-weight: bold;
+    }
 
     row {
         padding: 0.5em;
@@ -34,8 +44,13 @@
     }
 
     > nav {
-        flex: 1 0 16rem;
-        background: color.shade(bg, 10%);
+        overflow: auto;
+        flex: 1 0 $nav-width;
+        background-attachment: local;
+        background-image: linear-gradient(to left,
+                                    #{color.shade(bg, 16%)},
+                                    #{color.shade(bg, 12%)} 0.5em,
+                                    #{color.shade(bg, 10%)});
         padding: 1em;
 
         .summary {
@@ -53,7 +68,7 @@
         // We can't use a basis with chart.js's responsive mode.
         // Make the grow flex massive instead.
         flex: 100000 1 0;
-        min-width: min(460px, 100%);
+        min-width: min(#{$main-width}, 100%);
         background: color.shade(bg, 2%);
         padding: 1em;
         display: flex;
@@ -77,7 +92,7 @@
 
             .chart-holder {
                 flex: 1 1 auto;
-                position: relative; // required for responive chart.js
+                position: relative; // required for responsive chart.js
 
                 canvas {
                 }
@@ -85,24 +100,85 @@
         }
     }
 
-    > aside {
-        padding: 1em 0;
-        overflow: hidden;
-        flex: 0 0 0;
-        transition: padding 200ms, flex 200ms;
+    > aside.details {
+        overflow: auto;
+        flex: 1 0 0;
+        transition: flex 200ms;
         color: color.shade(bg, 5%);
-        background-image: linear-gradient(to right,
-                                          #{color.shade(fg, 0%)},
-                                          #{color.shade(fg, -18%)} 1.5em,
-                                          #{color.shade(fg, 10%)});
+        background-attachment: local;
+        $bg-gradient: linear-gradient(to right,
+                                      #{color.shade(bg, 70%)},
+                                      #{color.shade(bg, 118%)} 0.5em,
+                                      #{color.shade(bg, 90%)});
+        background-image: $bg-gradient;
 
         &.expanded {
-            flex-basis: 18rem;
+            flex-basis: $aside-width;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            padding: 1em;
+            background-image: linear-gradient(to bottom,
+                                              #{color.shade(bg, 50%, 0.15)},
+                                              #{color.shade(bg, 30%, 0.15)} 1em,
+                                              #{color.shade(bg, 60%, 0.15)}),
+                              $bg-gradient;
+            border-bottom: 1px solid color.shade(fg, 50%, 0.5);
+            z-index: 10;
+
+            .title {
+                font-size: 1em;
+            }
+
+            .collapser svg[data-icon] {
+                width: 1em;
+                color: color.shade(bg, 0%);
+                opacity: 0.8;
+                transition: opacity 200ms;
+                cursor: pointer;
+
+                &:hover,
+                &:active {
+                    opacity: 1;
+                }
+                &:active {
+                    color: color.shade(bg, 10%);
+                }
+            }
+        }
+
+        section.content {
+            display: flex;
+            flex-direction: column;
             padding: 1em;
         }
 
         a {
-            color: color.shade(accent4, -20%) !important;
+            color: color.shade(accent4, -10%) !important;
+        }
+    }
+
+}
+
+@media only screen and (min-width: #{$nav-width + $main-width + $aside-width}) {
+    #sauce-performance {
+        > nav {
+            position: sticky;
+            top: 0;
+            max-height: 100vh;
+        }
+
+        > aside.details {
+            position: sticky;
+            top: 0;
+            max-height: 100vh;
+
+            header {
+                position: sticky;
+                top: 0;
+            }
         }
     }
 }
