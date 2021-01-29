@@ -26,9 +26,9 @@ $aside-width: 260px;
     }
 
     row {
-        padding: 0.5em;
+        padding: 0.15em 0.6em;;
         display: flex;
-        margin: 0.5em 0;
+        margin: 0.15em 0;
         align-items: center;
 
         key {
@@ -131,7 +131,16 @@ $aside-width: 260px;
             flex-basis: $aside-width;
         }
 
-        header {
+        .activity-name {
+            font-size: 0.7em;
+            display: block;
+
+            &::first-line {
+                font-size: 1.4em;
+            }
+        }
+
+        > header {
             display: flex;
             justify-content: space-between;
             padding: 1em;
@@ -141,7 +150,6 @@ $aside-width: 260px;
                                               #{color.shade(bg, 60%, 0.15)}),
                               $bg-gradient;
             border-bottom: 1px solid color.shade(fg, 50%, 0.5);
-            z-index: 10;
 
             .title {
                 font-size: 1em;
@@ -168,6 +176,16 @@ $aside-width: 260px;
             display: flex;
             flex-direction: column;
             padding: 1em;
+
+            .activity {
+                background: color.shade(fg, 20%);
+                border-radius: 0.28em;
+                margin-bottom: 1em;
+                padding: 0.5em;
+
+                row {
+                }
+            }
         }
 
         a {
@@ -190,7 +208,7 @@ $aside-width: 260px;
             top: 0;
             max-height: 100vh;
 
-            header {
+            > header {
                 position: sticky;
                 top: 0;
             }

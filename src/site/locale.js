@@ -221,6 +221,20 @@ sauce.ns('locale', ns => {
     }
 
 
+    const _intlDateFormats = {
+        'long': new Intl.DateTimeFormat([], {dateStyle: 'long'}),
+        'medium': new Intl.DateTimeFormat([], {dateStyle: 'medium'}),
+        'short': new Intl.DateTimeFormat([], {dateStyle: 'short'}),
+    };
+    function humanDate(date, options={}) {
+        if (!(date instanceof Date)) {
+            date = new Date(date);
+        }
+        const style = options.style || 'medium';
+        return _intlDateFormats[style].format(date);
+    }
+
+
     function humanDistance(meters, precision) {
         assertInit();
         return ns.distanceFormatter.format(meters, precision || 2);
@@ -344,6 +358,7 @@ sauce.ns('locale', ns => {
             pace: humanPace,
             distance: humanDistance,
             time: humanTime,
+            date: humanDate,
             stride: humanStride,
         },
         templateHelpers: {
@@ -355,6 +370,7 @@ sauce.ns('locale', ns => {
             humanPace,
             humanDistance,
             humanTime,
+            humanDate,
             humanStride,
         },
     };

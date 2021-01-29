@@ -577,7 +577,14 @@ sauce.ns('performance', async ns => {
             this.listenTo(pageView, 'select-activities', async activities => {
                 this.activities = activities;
                 await this.render();
+                const expanded = this.$el.hasClass('expanded');
                 await this.setExpanded();
+                if (expanded) {
+                    this.el.scrollIntoView({behavior: 'smooth'});
+                } else {
+                    this.$el.one('transitionend', () =>
+                        this.el.scrollIntoView({behavior: 'smooth'}));
+                }
             });
             await super.init();
         }
@@ -591,7 +598,7 @@ sauce.ns('performance', async ns => {
 
         async renderAttrs() {
             return {
-                moment,
+                getTSS: sauce.model.getActivityTSS,
                 activities: this.activities
             };
         }
@@ -625,7 +632,8 @@ sauce.ns('performance', async ns => {
         }
 
         get periodEndMax() {
-            return Number(moment().add(1, 'day').startOf('day').toDate());
+            const d = sauce.date.toLocaleDayDate(new Date());
+            return d.getTime() + (86400 * 1000);
         }
 
         async init({pageView}) {
@@ -729,9 +737,12 @@ sauce.ns('performance', async ns => {
             });
             const $start = this.$('header span.period.start');
             const $end = this.$('header span.period.end');
-            $start.text(moment(start).format('ll'));
-            $end.text(moment(end - 1).format('ll'));
-            this.$('button.period.next').prop('disabled', end >= this.periodEndMax);
+            $start.text(sauce.locale.human.date(start));
+            const isEnd = end >= this.periodEndMax;
+            this.$('button.period.next').toggleClass('hidden', isEnd);
+            $end.text(isEnd ?
+                new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
+                sauce.locale.human.date(end));
             const lineWidth = this.period > 365 ? 0.5 : this.period > 90 ? 1 : 1.5;
             this.charts.training.data.datasets = [{
                 id: 'ctl',

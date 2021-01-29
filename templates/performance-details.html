@@ -7,12 +7,36 @@
         <i>Click on a graph item to see activity details...<!--XXX localize--></i>
     <% } else { %>
         <% for (const a of activities) { %>
-            <a href="/activities/{{a.id}}">{{a.name || moment(a.ts).calendar()}}</a><br/>
-            <% if (a.name) { %>
-                {{moment(a.ts).calendar()}}<br/>
-            <% } %>
-            <pre>{{JSON.stringify(a.stats, null, 4)}}</pre>
-            <pre>{{JSON.stringify(a.training, null, 4)}}</pre>
+            <div class="activity">
+                <header class="title">
+                    <small>{{humanDate(a.ts, {includeDayOfWeek: true})}}</small>
+                    <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
+                </header>
+                <% if (a.stats) { %>
+                    <row>
+                        <key>Active:</key>
+                        <value>{{humanTime(a.stats.activeTime)}}</value>
+                    </row>
+                    <% if (getTSS(a)) { %>
+                        <row>
+                            <key>TSS:</key>
+                            <value>{{humanNumber(getTSS(a))}}</value>
+                        </row>
+                    <% } %>
+                    <% if (a.stats.power) { %>
+                        <row>
+                            <key>Power:</key>
+                            <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
+                        </row>
+                    <% } %>
+                    <% if (a.stats.np) { %>
+                        <row>
+                            <key>NP:</key>
+                            <value>{{humanNumber(a.stats.np)}}<abbr class="unit short">w</abbr></value>
+                        </row>
+                    <% } %>
+                <% } %>
+            </div>
         <% } %>
     <% } %>
 </section>
