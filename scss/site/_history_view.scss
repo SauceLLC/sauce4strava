@@ -63,11 +63,11 @@
     }
 
     .btn.history-entry-add {
-        color: green;
+        color: green !important;
     }
 
     .btn.history-entry-delete {
-        color: red;
+        color: red !important;
         flex: 1 0;
         display: flex;
         justify-content: flex-end;
