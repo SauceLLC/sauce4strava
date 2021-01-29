@@ -44,14 +44,29 @@ $aside-width: 260px;
     }
 
     > nav {
+        display: flex;
+        flex-direction: column;
         overflow: auto;
         flex: 1 0 $nav-width;
+        padding: 1em;
         background-attachment: local;
         background-image: linear-gradient(to left,
                                     #{color.shade(bg, 16%)},
                                     #{color.shade(bg, 12%)} 0.5em,
                                     #{color.shade(bg, 10%)});
-        padding: 1em;
+
+        .athlete {
+            display: flex;
+
+            select {
+                flex: 1 1;
+                min-width: 0;
+            }
+
+            button {
+                flex: 0 0 auto;
+            }
+        }
 
         .summary {
             section {
