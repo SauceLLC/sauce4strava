@@ -121,11 +121,8 @@ html .ui-dialog {
         overflow: auto;
     }
 
-    a,
-    .btn {
-        &:focus {
-            outline: none;
-        }
+    a:focus {
+        outline: none;
     }
 
     a.help-info {
@@ -333,15 +330,6 @@ html .ui-dialog {
 
 
 .ui-dialog.sauce-dialog.sauce-sync-athlete-dialog {
-    .btn-icon-only {
-        opacity: 0.7;
-        transition: opacity 200ms;
-
-        &:hover {
-            opacity: 1;
-        }
-    }
-
     .btn.sync-start {
         color: #00a900;
     }

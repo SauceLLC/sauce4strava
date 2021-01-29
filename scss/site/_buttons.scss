@@ -1,4 +1,5 @@
 @use 'animations';
+@use 'color';
 
 button {
     &.sauce-loading::before {
@@ -12,6 +13,39 @@ button {
 
 button, .button {
     &.btn {
+        transition-property: filter, background-color, color, box-shadow, opacity;
+        transition-duration: 200ms;
+
+        &:hover {
+            filter: contrast(1.15);
+        }
+
+        &:focus {
+            outline: none;
+        }
+
+        &.btn-unstyled.btn-icon-only {
+            opacity: 0.8;
+
+            &:hover {
+                opacity: 1;
+            }
+
+            &:active {
+                filter: brightness(0.9) contrast(1.15);
+            }
+        }
+
+        &:not(.btn-unstyled) {
+            &:hover {
+                box-shadow: 0.03em 0.03em 0.2em color.shade(fg, 0%, 0.4);
+            }
+
+            &:active {
+                box-shadow: 0 0 0.3em color.shade(fg, 0%, 0.4) inset;
+            }
+        }
+
         > svg[data-icon] {
             height: 1.4em;
             margin: -0.2em 0.2em;
@@ -33,5 +67,6 @@ button, .button {
                 }
             }
         }
+
     }
 }
