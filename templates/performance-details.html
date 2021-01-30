@@ -1,8 +1,8 @@
-<header>
+<header class="sauce-swapped-background">
     <div class="title">Activity Details<!--XXX Localize--></div>
-    <a class="collapser">{-await fa('window-close-regular')-}</a>
+    <a class="view-control collapser">{-await fa('window-close-regular')-}</a>
 </header>
-<section class="content">
+<section class="content sauce-swapped-background">
     <% if (!activities) { %>
         <i>Click on a graph item to see activity details...<!--XXX localize--></i>
     <% } else { %>
@@ -21,10 +21,11 @@
                             <value>{{humanNumber(getTSS(a))}}</value>
                         </row>
                     <% } else { %>
-                        <row class="rows">
+                        <row>
                             <key>TSS:</key>
-                            <value class="issue">
-                                Unavailable - <a class="edit-activity">Click to override</a> <!-- XXX localize -->
+                            <value class="sauce-negative">
+                                <a class="edit-activity sauce-negative"
+                                   title="Click to edit">Unavailable</a><!-- XXX localize -->
                             </value>
                         </row>
                     <% } %>

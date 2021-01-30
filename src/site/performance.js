@@ -480,6 +480,14 @@ sauce.ns('performance', async ns => {
 
 
     class SummaryView extends view.SauceView {
+        get events() {
+            return {
+                'click a.collapser': 'onCollapserClick',
+                'click a.expander': 'onExpanderClick',
+                'dblclick section > header': 'onDblClickHeader',
+            };
+        }
+
         get tpl() {
             return 'performance-summary.html';
         }
@@ -495,11 +503,15 @@ sauce.ns('performance', async ns => {
             await super.init();
         }
 
-        renderAttrs() {
+        async renderAttrs() {
             return {
                 athlete: this.athlete,
+                collapsed: (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {},
                 syncCounts: this.athlete && this.syncCounts[this.athlete.id],
-                weeklyTSS: 1000 * Math.random(),
+                syncStatus: 'Foobar',
+                activeDays: Math.random() * 1000,
+                tss: 300 * Math.random(),
+                peakCTL: 200 * Math.random(),
                 weeklyTime: 3600 * 10 * Math.random(),
                 peaks: {
                     s5: 2000 * Math.random(),
@@ -555,13 +567,33 @@ sauce.ns('performance', async ns => {
             //console.warn("XXX");
             await this.render();
         }
+
+        async onCollapserClick(ev) {
+            await this.setCollapsed(ev.currentTarget.closest('section'), true);
+        }
+
+        async onExpanderClick(ev) {
+            await this.setCollapsed(ev.currentTarget.closest('section'), false);
+        }
+
+        async onDblClickHeader(ev) {
+            const section = ev.currentTarget.closest('section');
+            await this.setCollapsed(section, !section.classList.contains('collapsed'));
+        }
+
+        async setCollapsed(section, en) {
+            const id = section.dataset.id;
+            const collapsed = en !== false;
+            section.classList.toggle('collapsed', collapsed);
+            await sauce.storage.setPref(`perfSummarySectionCollapsed.${id}`, collapsed);
+        }
     }
 
 
     class DetailsView extends view.SauceView {
         get events() {
             return {
-                'click header .collapser': 'onCollapserClick',
+                'click header a.collapser': 'onCollapserClick',
                 'click .activity .edit-activity': 'onEditActivityClick',
             };
         }

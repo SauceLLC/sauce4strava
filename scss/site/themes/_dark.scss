@@ -1,10 +1,10 @@
 @use '../color';
 
 @mixin theme {
-    --sauce-bg-light: 8%;
+    --sauce-bg-light: 5%;
     --sauce-bg-shade-dir: 1;
 
-    --sauce-fg-light: 80%;
+    --sauce-fg-light: 95%;
     --sauce-fg-shade-dir: -1;
 
     --sauce-accent4-hue: 200;

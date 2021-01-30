@@ -75,15 +75,35 @@ sauce.ns('storage', ns => {
     maybeExport(ns.getAthleteProp);
 
 
-    ns.getPref = async function getPref(key) {
+    ns.getPref = async function getPref(path) {
         const prefs = await ns.get('preferences');
-        return prefs && prefs[key];
+        let ref = prefs || {};
+        for (const key of path.split('.')) {
+            if (ref[key] == null) {
+                return ref[key];
+            }
+            ref = ref[key];
+        }
+        return ref;
     };
     maybeExport(ns.getPref);
 
 
-    ns.setPref = async function setPref(key, value) {
-        return await ns.update('preferences', {[key]: value});
+    ns.setPref = async function setPref(path, value) {
+        const keys = path.split('.');
+        // update() uses Object.assign, so we need to feed it single entry object.
+        let o;
+        let fqPath = 'preferences';
+        if (keys.length === 1) {
+            o = {[path]: value};
+        } else if (keys.length > 1) {
+            const leaf = keys.pop();
+            fqPath += '.' + keys.join('.');
+            o = {[leaf]: value};
+        } else {
+            throw new TypeError("setPref misuse");
+        }
+        await ns.update(fqPath, o);
     };
     maybeExport(ns.setPref);
 

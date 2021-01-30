@@ -1,57 +1,91 @@
 <% if (obj.athlete) { %>
-    <section class="overview">
-        <header class="title">Overview</header>
+    <section class="overview {{collapsed.overview === true ? 'collapsed' : ''}}"
+             data-id="overview">
+        <header>
+            <i>{-await fa('info-circle-duotone')-}</i>
+            <div class="title">Overview<!--XXX Localize--></div>
+            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
+            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+        </header>
         <row>
-            <key>Weekly TSS:</key>
-            <value>{{humanNumber(weeklyTSS)}}</value>
+            <key>Active days:</key><!--XXX localize-->
+            <value>{{humanNumber(activeDays)}}</value>
         </row>
         <row>
-            <key>Weekly Volume:</key>
+            <key>TSS:</key><!--XXX localize-->
+            <value>{{humanNumber(tss)}}</value>
+        </row>
+        <row>
+            <key>Peak fitness (CTL):</key><!--XXX localize-->
+            <value>{{humanNumber(peakCTL)}}</value>
+        </row>
+        <row>
+            <key>Avg weekly duration:</key><!--XXX localize-->
             <value>{{humanDuration(weeklyTime)}}</value>
         </row>
+    </section>
+
+    <section class="results {{collapsed.results === true ? 'collapsed' : ''}}"
+             data-id="results">
+        <header>
+            <i>{-await fa('medal-duotone')-}</i>
+            <div class="title">Best Performances<!--XXX Localize--></div>
+            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
+            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+        </header>
         <row>
-            <key>Best 5 sec power:</key>
+            <key>Best 5 sec power:</key><!--XXX localize-->
             <value>{{humanNumber(peaks.s5)}}w</value>
         </row>
         <row>
-            <key>Best 1 min power:</key>
+            <key>Best 1 min power:</key><!--XXX localize-->
             <value>{{humanNumber(peaks.s60)}}w</value>
         </row>
         <row>
-            <key>Best 5 min power:</key>
+            <key>Best 5 min power:</key><!--XXX localize-->
             <value>{{humanNumber(peaks.s300)}}w</value>
         </row>
         <row>
-            <key>Best 20 min power:</key>
+            <key>Best 20 min power:</key><!--XXX localize-->
             <value>{{humanNumber(peaks.s1200)}}w</value>
         </row>
         <row>
-            <key>Best 60 min power:</key>
+            <key>Best 60 min power:</key><!--XXX localize-->
             <value>{{humanNumber(peaks.s3600)}}w</value>
         </row>
     </section>
 
     <% if (obj.syncCounts) { %>
-        <section class="stats">
-            <header class="title">Sync Counts</header>
+        <section class="sync-stats {{collapsed.sync_stats === true  ? 'collapsed' : ''}}"
+                 data-id="sync_stats">
+            <header>
+                <i>{-await fa('sync-alt-duotone')-}</i>
+                <div class="title">Activity Sync<!--XXX Localize--></div>
+                <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
+                <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+            </header>
             <row>
-                <key>Activities:</key>
+                <key>Status:</key><!--XXX localize-->
+                <value>{{syncStatus}}</value>
+            </row>
+            <row>
+                <key>Activities:</key><!--XXX localize-->
                 <value>{{humanNumber(syncCounts.total)}}</value>
             </row>
             <row>
-                <key>Imported:</key>
+                <key>Imported:</key><!--XXX localize-->
                 <value>{{humanNumber(syncCounts.imported)}}</value>
             </row>
             <row>
-                <key>Unavailable:</key>
+                <key>Unavailable:</key><!--XXX localize-->
                 <value>{{humanNumber(syncCounts.unavailable)}}</value>
             </row>
             <row>
-                <key>Processed:</key>
+                <key>Processed:</key><!--XXX localize-->
                 <value>{{humanNumber(syncCounts.processed)}}</value>
             </row>
             <row>
-                <key>Unprocessable:</key>
+                <key>Unprocessable:</key><!--XXX localize-->
                 <value>{{humanNumber(syncCounts.unprocessable)}}</value>
             </row>
         </section>

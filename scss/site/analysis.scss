@@ -24,14 +24,6 @@ html.sauce-enabled {
     @include trailforks.enums;
 }
 
-.sauce-positive {
-    color: var(--sauce-positive) !important;
-}
-
-.sauce-negative {
-    color: var(--sauce-negative) !important;
-}
-
 .pagenav.sauce-error {
     font-size: 0.8em;
     padding: 0.5em;

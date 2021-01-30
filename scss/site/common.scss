@@ -62,4 +62,28 @@
             display: none !important;
         }
     }
+
+    .sauce-positive {
+        color: var(--sauce-positive) !important;
+    }
+
+    .sauce-negative {
+        color: var(--sauce-negative) !important;
+    }
+
+    .sauce-swapped-background {
+        a,
+        a:link,
+        a:visited {
+            color: color.shade(accent4, -10%);
+
+            &:hover {
+                color: color.shade(accent4, -20%);
+            }
+
+            &:active {
+                color: color.shade(accent4, 0%);
+            }
+        }
+    }
 }

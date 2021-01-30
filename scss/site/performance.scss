@@ -11,6 +11,8 @@ $aside-width: 260px;
 
 
 #sauce-performance {
+    line-height: initial;
+
     select {
         border-radius: 0.22em;
         padding: 0.3em 0.5em;
@@ -22,11 +24,44 @@ $aside-width: 260px;
 
     .title {
         font-weight: bold;
+
+        small {
+            font-size: 0.8em;
+        }
+    }
+
+    a {
+        cursor: pointer;
+    }
+
+    a.view-control {
+        opacity: 0.7;
+        transition: opacity 200ms;
+        color: color.shade(fg, 0%);
+        line-height: 0;
+
+        svg[data-icon] {
+            width: 1em;
+        }
+
+        &:hover,
+        &:active {
+            opacity: 1;
+        }
+        &:active {
+            svg[data-icon] .fa-secondary {
+                opacity: 0.6;
+            }
+        }
+    }
+    .sauce-swapped-background a.view-control {
+        color: color.shade(bg, 0%);
     }
 
     row {
-        padding: 0.15em 0.6em;;
+        padding: 0.2em 0.5em;;
         display: flex;
+        flex-wrap: wrap;
         margin: 0.15em 0;
         align-items: center;
 
@@ -44,13 +79,18 @@ $aside-width: 260px;
 
         key {
             flex: 1 0 50%;
-            margin-right: 0.4em;
+            padding-right: 0.4em;
             font-weight: bold;
             font-size: 0.85em;
         }
 
         value {
-            flex: 1 0 50%;
+            flex: 1 1 50%;
+        }
+
+        footer {
+            border: none;
+            flex: 1 1 100%;
         }
     }
 
@@ -63,7 +103,7 @@ $aside-width: 260px;
         background-attachment: local;
         background-image: linear-gradient(to left,
                                     #{color.shade(bg, 16%)},
-                                    #{color.shade(bg, 12%)} 0.5em,
+                                    #{color.shade(bg, 12%)} 0.8em,
                                     #{color.shade(bg, 10%)});
 
         .athlete {
@@ -80,12 +120,60 @@ $aside-width: 260px;
         }
 
         .summary {
+            display: flex;
+            flex-direction: column;
+            padding-top: 0.5em;
+
             section {
                 padding: 0.5em;
                 background: color.shade(bg, 4%);
                 border-radius: 0.28em;
-                margin-top: 1em;
-                margin-bottom: 1em;
+                margin-top: 0.5em;
+                margin-bottom: 0.5em;
+
+                &.collapsed {
+                    order: 10;
+                    padding-top: 0;
+                    padding-bottom: 0;
+                    opacity: 0.8;
+
+                    &:hover {
+                        opacity: 1;
+                    }
+
+                    > header {
+                        border: none;
+                        margin: 0;
+
+                        .collapser {
+                            display: none;
+                        }
+                    }
+                    > *:not(header) {
+                        display: none;
+                    }
+                }
+
+                &:not(.collapsed) {
+                    > header {
+                        .expander {
+                            display: none;
+                        }
+                    }
+                }
+
+                > header {
+                    padding: 0.5em 0.25em 0.75em;
+                    border-bottom: 1px solid color.shade(bg, 30%, 0.2);
+                    margin-bottom: 0.5em;
+                    display: flex;
+                    justify-content: space-between;
+                    user-select: none;
+
+                    i svg[data-icon] {
+                        width: 2em;
+                    }
+                }
             }
         }
     }
@@ -160,8 +248,8 @@ $aside-width: 260px;
         color: color.shade(bg, 5%);
         background-attachment: local;
         $bg-gradient: linear-gradient(to right,
-                                      #{color.shade(bg, 70%)},
-                                      #{color.shade(bg, 118%)} 0.5em,
+                                      #{color.shade(bg, 80%)},
+                                      #{color.shade(bg, 95%)} 0.8em,
                                       #{color.shade(bg, 90%)});
         background-image: $bg-gradient;
 
@@ -183,30 +271,14 @@ $aside-width: 260px;
             justify-content: space-between;
             padding: 1em;
             background-image: linear-gradient(to bottom,
-                                              #{color.shade(bg, 50%, 0.15)},
-                                              #{color.shade(bg, 30%, 0.15)} 1em,
-                                              #{color.shade(bg, 60%, 0.15)}),
+                                              #{color.shade(bg, 70%, 0.15)},
+                                              #{color.shade(bg, 50%, 0.15)} 1em,
+                                              #{color.shade(bg, 80%, 0.15)}),
                               $bg-gradient;
             border-bottom: 1px solid color.shade(fg, 50%, 0.5);
 
             .title {
                 font-size: 1em;
-            }
-
-            .collapser svg[data-icon] {
-                width: 1em;
-                color: color.shade(bg, 0%);
-                opacity: 0.8;
-                transition: opacity 200ms;
-                cursor: pointer;
-
-                &:hover,
-                &:active {
-                    opacity: 1;
-                }
-                &:active {
-                    color: color.shade(bg, 10%);
-                }
             }
         }
 
@@ -216,37 +288,42 @@ $aside-width: 260px;
             padding: 1em;
 
             .activity {
-                background: color.shade(fg, 20%);
+                background-color: color.shade(fg, 18%);
                 border-radius: 0.28em;
                 margin-bottom: 1em;
                 padding: 0.5em;
 
                 header {
+                    padding-bottom: 0.5em;
+                    border-bottom: 1px solid color.shade(bg, 10%, 0.2);
+                    margin-bottom: 0.5em;
+
                     button.edit-activity {
                         float: right;
                         color: color.get(bg);
                         font-size: 0.7em;
                     }
                 }
-
-                .issue {
-                    color: red;
-
-                    a {
-                        color: inherit !important;
-                        cursor: pointer;
-                    }
-                }
             }
         }
-
-        a {
-            color: color.shade(accent4, -10%) !important;
-        }
     }
-
 }
 
+// I don't like this, but i can't find a way to consistently deal with color shading.
+.sauce-theme-dark #sauce-performance {
+    > aside.details {
+        section.content {
+            display: flex;
+            flex-direction: column;
+            padding: 1em;
+
+            .activity {
+                background-color: color.shade(fg, 2%);
+            }
+        }
+    }
+}
+ 
 @media only screen and (min-width: #{$nav-width + $main-width + $aside-width}) {
     #sauce-performance {
         > nav {
@@ -263,6 +340,7 @@ $aside-width: 260px;
             > header {
                 position: sticky;
                 top: 0;
+                z-index: 2;  // fix float element passthrough.
             }
         }
     }
