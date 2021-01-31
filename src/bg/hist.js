@@ -17,63 +17,6 @@ sauce.ns('hist', async ns => {
     const streamsStore = new sauce.hist.db.StreamsStore();
     const athletesStore = new sauce.hist.db.AthletesStore();
 
-    sauce.hist.db.ActivityModel.addSyncManifest({
-        processor: 'streams',
-        name: 'fetch',
-        version: 1,
-        errorBackoff: 86400 * 1000,
-        data: new Set([
-            'time',
-            'heartrate',
-            'altitude',
-            'distance',
-            'moving',
-            'velocity_smooth',
-            'cadence',
-            'latlng',
-            'watts',
-            'watts_calc',
-            'grade_adjusted_distance',
-            'temp',
-        ])
-    });
-
-    sauce.hist.db.ActivityModel.addSyncManifest({
-        processor: 'local',
-        name: 'active-stream',
-        version: 1,
-        errorBackoff: 3600 * 1000,
-        data: activeStreamProcessor
-    });
-
-    sauce.hist.db.ActivityModel.addSyncManifest({
-        processor: 'local',
-        name: 'running-watts-stream',
-        version: 1,
-        depends: ['active-stream'],
-        errorBackoff: 300 * 1000,
-        data: runningWattsProcessor
-    });
-
-    sauce.hist.db.ActivityModel.addSyncManifest({
-        processor: 'local',
-        name: 'activity-stats',
-        version: 2,
-        depends: ['active-stream', 'running-watts-stream'],
-        errorBackoff: 300 * 1000,
-        data: activityStatsProcessor
-    });
-
-    sauce.hist.db.ActivityModel.addSyncManifest({
-        processor: 'local',
-        name: 'training-load',
-        version: 1,
-        depends: ['activity-stats'],
-        errorBackoff: 300 * 1000,
-        data: trainingLoadProcessor,
-        disableBatching: true
-    });
-
 
     async function getActivitiesStreams(activities, streams) {
         const streamKeys = [];
@@ -211,82 +154,169 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function trainingLoadProcessor({manifest, activities, athlete}) {
-        // Activities come in from newest to oldest.  We must update all entries
-        // newer than the oldest record.
-        let oldest = activities[activities.length - 1];
-        const models = new Map(activities.map(x => [x.pk, x]));
-        const external = [];
-        const need = [];
-        const orderedIds = await actsStore.getForAthlete(athlete.pk,
-            {keys: true, start: oldest.get('ts')});
-        for (const id of orderedIds) {
-            if (!models.has(id)) {
-                need.push(id);
+    class TrainingLoadProcessor {
+        static singleton({activities, athlete, cancelEvent}) {
+            if (!this._instances) {
+                this._instances = {};
             }
+            const ident = athlete.pk;
+            if (!this._instances[ident]) {
+                this._instances[ident] = new this(athlete, cancelEvent);
+            }
+            const instance = this._instances[ident];
+            return instance.enqueue(activities);
         }
-        for (const a of await actsStore.getMany(need, {models: true})) {
-            if (!a.hasAnySyncErrors('streams') && !a.hasAnySyncErrors('local')) {
-                models.set(a.pk, a);
-                external.push(a.pk);
-            }
+
+        constructor(athlete, cancelEvent) {
+            cancelEvent.wait().then(() => this.cancel());
+            this.athlete = athlete;
+            this.inQueue = new queues.PriorityQueue();
+            this.outQueue = new queues.Queue();
         }
-        const ordered = orderedIds.map(x => models.get(x)).filter(x => x);
-        ordered.reverse();  // oldest -> newest
-        let atl = 0;
-        let ctl = 0;
-        let seed;
-        // Rewind until we find a seed record from a prior day...
-        for await (const a of actsStore.byAthlete(athlete.pk, {models: true, end: oldest.get('ts')})) {
-            if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
-                seed = a;
-                const tl = seed.get('training');
-                atl = tl && tl.atl || 0;
-                ctl = tl && tl.ctl || 0;
-                break;
-            } else if (a.pk !== oldest.pk) {
-                // Prior activity is same day as oldest in this set, we must lump it in.
-                oldest = a;
-                ordered.unshift(a);
-                models.set(a.pk, a);
-                external.push(a.pk);
-            }
+
+        cancel() {
+            delete this.constructor._instances[this.athlete];
         }
-        if (seed) {
-            // Drain the current training loads based on gap to our first entry
-            const zeros = Array.from(sauce.date.dayRange(seed.getLocaleDay(),
-                oldest.getLocaleDay())).map(x => 0);
-            zeros.pop();  // Exclude seed day.
-            if (zeros.length) {
-                atl = sauce.perf.calcATL(zeros, atl);
-                ctl = sauce.perf.calcCTL(zeros, ctl);
+
+        enqueue(activities) {
+            for (const a of activities) {
+                this.inQueue.putNoWait(a, a.get('ts'));
             }
+            return this.outQueue;
         }
-        const future = new Date(Date.now() + 7 * 86400 * 1000);
-        for (const day of sauce.date.dayRange(oldest.getLocaleDay(), future)) {
-            if (!ordered.length) {
-                break;
+
+        async processor() {
+            debugger;
+            let oldest = activities[activities.length - 1];
+            const models = new Map(activities.map(x => [x.pk, x]));
+            const external = [];
+            const need = [];
+            const orderedIds = await actsStore.getForAthlete(this.athlete.pk,
+                {keys: true, start: oldest.get('ts')});
+            for (const id of orderedIds) {
+                if (!models.has(id)) {
+                    need.push(id);
+                }
             }
-            const daily = [];
-            let tss = 0;
-            while (ordered.length && ordered[0].getLocaleDay().getTime() === day.getTime()) {
-                const m = ordered.shift();
-                daily.push(m);
-                tss += m.getTSS();
+            for (const a of await actsStore.getMany(need, {models: true})) {
+                if (!a.hasAnySyncErrors('streams') && !a.hasAnySyncErrors('local')) {
+                    models.set(a.pk, a);
+                    external.push(a.pk);
+                }
             }
-            atl = sauce.perf.calcATL([tss], atl);
-            ctl = sauce.perf.calcCTL([tss], ctl);
-            for (const x of daily) {
-                x.set('training', {atl, ctl});
+            const ordered = orderedIds.map(x => models.get(x)).filter(x => x);
+            ordered.reverse();  // oldest -> newest
+            let atl = 0;
+            let ctl = 0;
+            let seed;
+            // Rewind until we find a seed record from a prior day...
+            for await (const a of actsStore.byAthlete(this.athlete.pk, {models: true, end: oldest.get('ts')})) {
+                if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
+                    seed = a;
+                    const tl = seed.get('training');
+                    atl = tl && tl.atl || 0;
+                    ctl = tl && tl.ctl || 0;
+                    break;
+                } else if (a.pk !== oldest.pk) {
+                    // Prior activity is same day as oldest in this set, we must lump it in.
+                    oldest = a;
+                    ordered.unshift(a);
+                    models.set(a.pk, a);
+                    external.push(a.pk);
+                }
             }
+            if (seed) {
+                // Drain the current training loads based on gap to our first entry
+                const zeros = Array.from(sauce.date.dayRange(seed.getLocaleDay(),
+                    oldest.getLocaleDay())).map(x => 0);
+                zeros.pop();  // Exclude seed day.
+                if (zeros.length) {
+                    atl = sauce.perf.calcATL(zeros, atl);
+                    ctl = sauce.perf.calcCTL(zeros, ctl);
+                }
+            }
+            const future = new Date(Date.now() + 7 * 86400 * 1000);
+            for (const day of sauce.date.dayRange(oldest.getLocaleDay(), future)) {
+                if (!ordered.length) {
+                    break;
+                }
+                const daily = [];
+                let tss = 0;
+                while (ordered.length && ordered[0].getLocaleDay().getTime() === day.getTime()) {
+                    const m = ordered.shift();
+                    daily.push(m);
+                    tss += m.getTSS();
+                }
+                atl = sauce.perf.calcATL([tss], atl);
+                ctl = sauce.perf.calcCTL([tss], ctl);
+                for (const x of daily) {
+                    x.set('training', {atl, ctl});
+                }
+            }
+            if (ordered.length) {
+                throw new Error("Internal Error");
+            }
+            // Manually save externally referenced or loaded activities.
+            await actsStore.saveModels(external.map(x => models.get(x)));
         }
-        if (ordered.length) {
-            throw new Error("Internal Error");
-        }
-        // Manually save externally referenced or loaded activities.
-        await actsStore.saveModels(external.map(x => models.get(x)));
     }
 
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'streams',
+        name: 'fetch',
+        version: 1,
+        errorBackoff: 86400 * 1000,
+        data: new Set([
+            'time',
+            'heartrate',
+            'altitude',
+            'distance',
+            'moving',
+            'velocity_smooth',
+            'cadence',
+            'latlng',
+            'watts',
+            'watts_calc',
+            'grade_adjusted_distance',
+            'temp',
+        ])
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'active-stream',
+        version: 1,
+        errorBackoff: 3600 * 1000,
+        data: {processor: activeStreamProcessor}
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'running-watts-stream',
+        version: 1,
+        depends: ['active-stream'],
+        errorBackoff: 300 * 1000,
+        data: {processor: runningWattsProcessor}
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'activity-stats',
+        version: 2,
+        depends: ['active-stream', 'running-watts-stream'],
+        errorBackoff: 300 * 1000,
+        data: {processor: activityStatsProcessor}
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'training-load',
+        version: 1,
+        depends: ['activity-stats'],
+        errorBackoff: 300 * 1000,
+        data: {processor: TrainingLoadProcessor.singleton.bind(TrainingLoadProcessor)}
+    });
 
     class FetchError extends Error {
         static fromResp(resp) {
@@ -1114,30 +1144,58 @@ sauce.ns('hist', async ns => {
             console.info("Completed streams fetch for: " + this.athlete);
         }
 
+        async _localSetSyncDone(finished, manifest) {
+            // NOTE: The processor is free to use setSyncError(), but we really can't
+            // trust them to consistently use setSyncSuccess().  Failing to do so would
+            // be a disaster, so we handle that here.  The model is: Optionally tag the
+            // activity as having a sync error otherwise we assume it worked or does
+            // not need further processing, so mark it as done (success).
+            for (const a of finished) {
+                if (!a.hasSyncError(manifest)) {
+                    a.setSyncSuccess(manifest);
+                }
+            }
+            await actsStore.saveModels(finished);
+        }
+
         async _localProcessWorker() {
-            let done = false;
             let autoBatchLimit = 12;
-            while (!done && !this._cancelEvent.isSet()) {
-                if (!this._procQueue.qsize()) {
-                    await Promise.race([this._procQueue.wait(), this._cancelEvent.wait()]);
+            const batch = new Set();
+            const offloaded = new Map();
+            const wasInErrorState = new Set();
+            const queues = new Set([this._procQueue]);
+            while (queues.size && !this._cancelEvent.isSet()) {
+                if ([...queues].every(x => !x.qsize())) {
+                    await Promise.race([...queues, this._cancelEvent].map(x => x.wait()));
                     continue;
                 }
-                const batch = new Set();
-                const wasInErrorState = new Set();
-                while (this._procQueue.qsize()) {
-                    const a = this._procQueue.getNoWait();
-                    if (a === null) {
-                        done = true;
-                        break;
+                for (const q of queues) {
+                    const finished = [];
+                    while (q.qsize()) {
+                        const a = q.getNoWait();
+                        if (a === null) {
+                            queues.delete(q);
+                            break;
+                        }
+                        batch.add(a);
+                        if (a.hasAnySyncErrors('local')) {
+                            wasInErrorState.add(a);
+                        }
+                        if (offloaded.has(q)) {
+                            finished.push(a);
+                        }
+                        if (batch.size >= autoBatchLimit) {
+                            break;
+                        }
                     }
-                    batch.add(a);
-                    if (a.hasAnySyncErrors('local')) {
-                        wasInErrorState.add(a);
+                    // Handle state mgmt for offboarded activities rejoining us.
+                    if (finished.length) {
+                        await this._localSetSyncDone(finished, offloaded.get(q));
                     }
                 }
+                autoBatchLimit = Math.min(500, autoBatchLimit * 1.30);
                 while (batch.size && !this._cancelEvent.isSet()) {
                     // Step 1: Group activities by manifest...
-                    autoBatchLimit = Math.min(500, autoBatchLimit * 1.30);
                     const manifestBatches = new Map();
                     for (const a of batch) {
                         const m = a.nextAvailManifest('local');
@@ -1150,52 +1208,49 @@ sauce.ns('hist', async ns => {
                             manifestBatches.set(m, []);
                         }
                         const manifestBatch = manifestBatches.get(m);
-                        if (m.disableBatching || manifestBatch.length < autoBatchLimit) {
-                            manifestBatch.push(a);
-                            a.clearSyncState(m);
-                        }
+                        manifestBatch.push(a);
+                        a.clearSyncState(m);
                     }
                     // Step 2: Process each manifest grouping...
                     for (const [m, activities] of manifestBatches.entries()) {
-                        if (m.disableBatching) {
-                            if (activities.length < batch.size) {
-                                continue;
-                            }
-                        }
                         const s = Date.now();
-                        const fn = m.data;
-                        const count = activities.length;
+                        const processor = m.data.processor;
+                        let offloadQueue;
                         try {
-                            await fn({manifest: m, activities, athlete: this.athlete});
+                            offloadQueue = await processor({
+                                manifest: m,
+                                activities,
+                                athlete: this.athlete,
+                                cancelEvent: this._cancelEvent,
+                            });
                         } catch(e) {
                             debugger; // XXX
-                            console.warn(`Top level local processing error (${fn.name}) ` +
-                                         `v${m.version} for ${count} activities`, e);
+                            console.warn(`Top level local processing error (${m.name}) ` +
+                                         `v${m.version} for ${activities.length} activities`, e);
                             for (const a of activities) {
                                 a.setSyncError(m, e);
                             }
                         }
-                        // NOTE: The processor is free to use setSyncError(), but we really can't
-                        // trust them to consistently use setSyncSuccess().  Failing to do so would
-                        // be a disaster, so we handle that here.  The model is: Optionally tag the
-                        // activity as having a sync error otherwise we assume it worked or does
-                        // not need further processing, so mark it as done (success).
-                        for (const a of activities) {
-                            if (!a.hasSyncError(m)) {
-                                a.setSyncSuccess(m);
+                        if (offloadQueue) {
+                            for (const a of activities) {
+                                batch.delete(a);
                             }
+                            offloaded.set(offloadQueue, m);
+                            queues.add(offloadQueue);
+                        } else {
+                            await this._localSetSyncDone(activities, m);
                         }
-                        await actsStore.saveModels(activities);
-                        const elapsed = Date.now() - s;
-                        console.debug(`${fn.name} ${(elapsed / count).toFixed(1)}ms / activity, ${count} activities`);
+                        const elapsed = Math.round((Date.now() - s)).toLocaleString();
+                        console.debug(`${m.name}: ${elapsed}ms for ${activities.length} activities`);
                     }
                     // Step 3: Perform accounting and consolidation...
-                    const lastBatchSize = batch.size;
+                    let progress;
                     for (const a of batch) {
                         const m = a.nextAvailManifest('local');
                         if (!m) {
                             // Activity is done...
                             batch.delete(a);
+                            progress = true;
                             if (a.isSyncComplete('local')) {
                                 // Finished successfully.
                                 this.counts.processed++;
@@ -1208,7 +1263,7 @@ sauce.ns('hist', async ns => {
                         }
                     }
                     // Step 4: Conditionally notify listeners of any progress...
-                    if (batch.size !== lastBatchSize) {
+                    if (progress) {
                         const ev = new Event('progress');
                         ev.data = {counts: this.counts};
                         this.dispatchEvent(ev);
