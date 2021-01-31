@@ -309,7 +309,7 @@ sauce.ns('performance', async ns => {
             return refContext;
         },
 
-        _getFillGradientColor(ref, pct) {
+        _getFillGradientColor: function(ref, pct) {
             const size = this._fillGradientSize;
             pct = Math.max(0, Math.min(1, pct));
             const aPct = (Math.abs(ref.alphaMax - ref.alphaMin) * pct);
@@ -317,6 +317,11 @@ sauce.ns('performance', async ns => {
             const refOffset = Math.max(0, Math.min(size - 1, Math.round(pct * size)));
             const [r, g, b] = ref.gradient.getImageData(refOffset, 0, refOffset + 1, 1).data.slice(0, 3);
             return [r, g, b, a];
+        },
+
+        safePct: function(pct) {
+            // Return a value that won't blow up Canvas' addColorStop().
+            return Math.min(1, Math.max(0, pct));
         },
 
         beforeRender: function (chart, options) {
@@ -328,6 +333,10 @@ sauce.ns('performance', async ns => {
                 for (const meta of Object.values(ds._meta)) {
                     if (!meta.dataset) {
                         continue;
+                    }
+                    const scale = chart.scales[ds.yAxisID];
+                    if (scale.height <= 0) {
+                        return;  // Ignore renders to nonvisible layouts (prob a transition)
                     }
                     if (!ds._overUnderRef) {
                         // We have to preserve the alpha components externally.
@@ -353,8 +362,7 @@ sauce.ns('performance', async ns => {
                     }
                     const ref = ds._overUnderRef;
                     const model = meta.dataset._model;
-                    const scale = chart.scales[ds.yAxisID];
-                    const zeroPct = Math.min(1, Math.max(0, scale.getPixelForValue(0) / scale.height));
+                    const zeroPct = this.safePct(scale.getPixelForValue(0) / scale.height);
                     const gFill = chart.ctx.createLinearGradient(0, 0, 0, scale.height);
                     const max = ds.overBackgroundMax != null ? ds.overBackgroundMax : scale.max;
                     const min = ds.underBackgroundMin != null ? ds.underBackgroundMin : scale.min;
@@ -363,20 +371,18 @@ sauce.ns('performance', async ns => {
                         if (scale.max > 0) {
                             const overMaxColor = this._getFillGradientColor(ref.over, scale.max / max);
                             const overMinColor = this._getFillGradientColor(ref.over, scale.min / max);
-                            const topPct = Math.max(0, scale.getPixelForValue(max) / scale.height);
+                            const topPct = this.safePct(scale.getPixelForValue(max) / scale.height);
                             gFill.addColorStop(topPct, `rgba(${overMaxColor.join()}`);
-                            gFill.addColorStop(Math.max(0, zeroPct - midPointMarginPct),
+                            gFill.addColorStop(this.safePct(zeroPct - midPointMarginPct),
                                 `rgba(${overMinColor.join()}`);
-                            gFill.addColorStop(Math.max(0, zeroPct),
-                                `rgba(${overMinColor.slice(0, 3).join()}, 0)`);
+                            gFill.addColorStop(zeroPct, `rgba(${overMinColor.slice(0, 3).join()}, 0)`);
                         }
                         if (scale.min < 0) {
                             const underMinColor = this._getFillGradientColor(ref.under, scale.max / min);
                             const underMaxColor = this._getFillGradientColor(ref.under, scale.min / min);
-                            const bottomPct = Math.min(1, scale.getPixelForValue(min) / scale.height);
-                            gFill.addColorStop(Math.min(1, zeroPct),
-                                `rgba(${underMinColor.slice(0, 3).join()}, 0`);
-                            gFill.addColorStop(Math.min(1, zeroPct + midPointMarginPct),
+                            const bottomPct = this.safePct(scale.getPixelForValue(min) / scale.height);
+                            gFill.addColorStop(zeroPct, `rgba(${underMinColor.slice(0, 3).join()}, 0`);
+                            gFill.addColorStop(this.safePct(zeroPct + midPointMarginPct),
                                 `rgba(${underMinColor.join()}`);
                             gFill.addColorStop(bottomPct, `rgba(${underMaxColor.join()}`);
                         }
@@ -1055,10 +1061,11 @@ sauce.ns('performance', async ns => {
 
 
     async function load() {
-        const athletes = new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
         const $page = jQuery('#error404');  // replace the 404 content
+        $page.empty();
         $page.removeClass();  // removes all
         $page.attr('id', 'sauce-performance');
+        const athletes = new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
         const pageView = new PageView({athletes, el: $page});
         await pageView.render();
     }
