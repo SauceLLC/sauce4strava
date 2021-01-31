@@ -395,6 +395,9 @@ sauce.ns('hist.db', async ns => {
             if (hasError && !state.version) {
                 throw new TypeError("Cannot set 'error' without 'version'");
             }
+            for (const dep of this.dependantManifests(manifest.processor, manifest.name)) {
+                this.clearSyncState(dep);
+            }
             const sync = this.data.syncState = this.data.syncState || {};
             const proc = sync[processor] = sync[processor] || {};
             proc[name] = state;
@@ -476,6 +479,21 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
+        dependantManifests(processor, manifest) {
+            const allManifests = this.constructor.getSyncManifests(processor);
+            const deps = new Set();
+            function dependants(name) {
+                for (const x of allManifests) {
+                    if (x.depends && x.depends.includes(name)) {
+                        deps.add(x);
+                        dependants(x.name);
+                    }
+                }
+            }
+            dependants(manifest);
+            return [...deps];
+        }
+
         nextAvailManifest(processor) {
             const manifests = this.constructor.getSyncManifests(processor);
             const manifestsMap = new Map(manifests.map(x => [x.name, x]));
@@ -507,7 +525,7 @@ sauce.ns('hist.db', async ns => {
                         continue;
                     }
                     for (const x of setUnion(pending, tainted)) {
-                        if (manifest.depends.indexOf(x) !== -1) {
+                        if (manifest.depends.includes(x)) {
                             completed.delete(name);
                             pending.delete(name);
                             tainted.add(name);

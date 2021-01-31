@@ -188,15 +188,39 @@ sauce.ns('hist', async ns => {
         }
 
         async processor() {
+            const deadline = Date.now() + (60 * 1000);
+            const debounce = 5 * 1000;
+            let lastSize = this.inQueue.qsize();
+            let lastUpdate;
             while (!this.cancelEvent.isSet() && this.inQueue.qsize()) {
-                await Promise.race([this.inQueue.wait(), this.cancelEvent.wait()]);
+                const size = this.inQueue.qsize();
+                if (size !== lastSize) {
+                    lastSize = size;
+                    lastUpdate = Date.now();
+                }
+                await Promise.race([
+                    this.inQueue.wait(),
+                    this.cancelEvent.wait(),
+                    sleep(deadline - Date.now()),
+                    sleep(debounce)]);
                 if (this.cancelEvent.isSet()) {
                     return;
                 }
+                if (this.inQueue.qsize() !== lastSize &&
+                    Date.now() - lastUpdate < debounce &&
+                    Date.now() < deadline) {
+                    console.warn("debounce");
+                    continue;
+                }
+                await this.drain();
             }
         }
 
-        async processor() {
+        async drain() {
+            const activities = [];
+            while (this.inQueue.qsize()) {
+                activities.push(this.inQueue.getNoWait());
+            }
             let oldest = activities[activities.length - 1];
             const models = new Map(activities.map(x => [x.pk, x]));
             const external = [];
@@ -268,6 +292,12 @@ sauce.ns('hist', async ns => {
             }
             // Manually save externally referenced or loaded activities.
             await actsStore.saveModels(external.map(x => models.get(x)));
+			for (const a of activities) {
+				this.outQueue.putNoWait(a);
+			}
+			for (const x of external) {
+				this.outQueue.putNoWait(models.get(x));
+			}
         }
     }
 
