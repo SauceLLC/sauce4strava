@@ -10,8 +10,52 @@ $main-width: 600px;
 $aside-width: 260px;
 
 
+@media only screen and (min-width: 991px) {
+    html.sauce-performance {
+        #global-header {
+            nav.nav-bar::before {
+                background-image: url(../../images/logo_vert_48x128.png);
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain;
+                transform: rotate(-22deg);
+                width: 25px;
+                content: '';
+                height: 65%;
+                display: block;
+                position: absolute;
+                top: 13%;
+                left: -17px;
+                filter: drop-shadow(2px 1px 3px #0003);
+                opacity: 0.82;
+                transition: opacity 200ms;
+            }
+            nav.nav-bar:hover::before {
+                opacity: 1;
+            }
+
+            nav.nav-bar .branding {
+                &::before {
+                    content: 'SAUCE FOR...';
+                    position: absolute;
+                    top: 5px;
+                    color: color.shade(fg, 40%);
+                    text-shadow: 1px 1px 3px #0001;
+                    font-size: 0.9rem;
+                    line-height: 1.2;
+                    font-weight: 900;
+                    letter-spacing: -0.04em;
+                    transform: scaleY(0.8);
+                }
+            }
+        }
+    }
+}
+
+
 #sauce-performance {
     line-height: initial;
+
 
     select {
         border-radius: 0.22em;

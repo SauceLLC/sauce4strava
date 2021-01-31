@@ -35,7 +35,7 @@ html.sauce-responsive,
 
 // global style
 .sauce-responsive {
-    &:not(.responsive) header#global-header {
+    header#global-header {
         nav.nav-bar {
             min-width: initial;
             width: auto;
@@ -44,10 +44,6 @@ html.sauce-responsive,
             margin: 0 2.5vw;
             padding: 0;
             font-size: 14px; // Must used absolute font sizes due to hard coded height.
-
-            .btn-mobile-menu {
-                display: none !important;
-            }
 
             .branding {
                 margin: 0 0 0 1em;
@@ -92,17 +88,6 @@ html.sauce-responsive,
                 }
             }
 
-            #global-search-button {
-                position: initial;
-            }
-
-            &:not(.search-mode) {
-                #global-search-field {
-                    width: 0;
-                    padding: 0;
-                }
-            }
-
             &.search-mode {
                 #global-search-filter {
                     display: initial;
@@ -118,8 +103,6 @@ html.sauce-responsive,
                 }
 
                 #global-search-bar {
-                    flex: 1 1 100%;
-
                     .input-group {
                         overflow: hidden;
                         max-width: 30em;
@@ -132,6 +115,81 @@ html.sauce-responsive,
             float: initial;
             flex: 1 0 auto;
             justify-content: flex-end;
+        }
+    }
+    &:not(.responsive) {
+        // Style for pages like analysis only (one's Strava claims are not responsive)...
+        header#global-header {
+            nav.nav-bar {
+                &:not(.search-mode) {
+                    #global-search-field {
+                        width: 0;
+                        min-width: 0;
+                        padding: 0;
+                    }
+
+                    #global-search-button {
+                        position: initial;
+                    }
+                }
+                &.search-mode {
+                    #global-search-bar {
+                        flex: 1 1 100%;
+                    }
+                }
+
+                .btn-mobile-menu {
+                    display: none !important;
+                }
+            }
+        }
+    }
+    &.responsive {
+        // Pages like the dashboard and our performance page (i.e. error pages)...
+        @media only screen and (max-width: 991px) {
+            &:not(.mobile-menu-open) {
+                #container-nav {
+                    display: none !important;
+                }
+            }
+            &.mobile-menu-open {
+                #container-nav {
+                    flex-direction: column;
+                }
+
+                .user-nav,
+                .global-nav {
+                    display: initial !important; // XXX clobering our own rules from mobile.scss
+                }
+            }
+
+            #global-search-button {
+                transform: initial;
+                display: none;
+            }
+        }
+
+        @media only screen and (min-width: 991px) {
+            header#global-header {
+                nav.nav-bar {
+                    &:not(.search-mode) {
+                        #global-search-field {
+                            width: 0;
+                            min-width: 0;
+                            padding: 0;
+                        }
+
+                        #global-search-button {
+                            position: initial;
+                        }
+                    }
+                    &.search-mode {
+                        #global-search-bar {
+                            flex: 1 1 100%;
+                        }
+                    }
+                }
+            }
         }
     }
 
