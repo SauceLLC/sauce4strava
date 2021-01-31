@@ -168,10 +168,12 @@ sauce.ns('hist', async ns => {
         }
 
         constructor(athlete, cancelEvent) {
-            cancelEvent.wait().then(() => this.cancel());
             this.athlete = athlete;
             this.inQueue = new queues.PriorityQueue();
             this.outQueue = new queues.Queue();
+            this.cancelEvent = cancelEvent;
+            this.cancelEvent.wait().then(() => this.cancel());
+            this._proc = this.processor();
         }
 
         cancel() {
@@ -186,7 +188,15 @@ sauce.ns('hist', async ns => {
         }
 
         async processor() {
-            debugger;
+            while (!this.cancelEvent.isSet() && this.inQueue.qsize()) {
+                await Promise.race([this.inQueue.wait(), this.cancelEvent.wait()]);
+                if (this.cancelEvent.isSet()) {
+                    return;
+                }
+            }
+        }
+
+        async processor() {
             let oldest = activities[activities.length - 1];
             const models = new Map(activities.map(x => [x.pk, x]));
             const external = [];
