@@ -17,6 +17,7 @@ export async function activitySyncDialog(athlete, syncController) {
         flex: true,
         width: '35em',
         autoDestroy: true,
+        autoOpen: false,
         closeOnMobileBack: true,
         extraButtons: [{
             text: 'Import Data',
@@ -188,4 +189,6 @@ export async function activitySyncDialog(athlete, syncController) {
         $modal.addClass('sync-disabled');
     }
     await Promise.all(rendering);
+    $modal.dialog('open');
+    return $modal;
 }
