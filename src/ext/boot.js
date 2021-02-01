@@ -52,7 +52,7 @@
             'site/performance.js',
         ],
         callbacks: [
-            config => void document.documentElement.classList.add('sauce-performance')
+            config => void document.documentElement.classList.add('sauce-performance', 'sauce-responsive')
         ]
     }, {
         stylesheets: ['site/responsive.css'],
