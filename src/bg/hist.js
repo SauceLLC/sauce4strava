@@ -1065,46 +1065,6 @@ sauce.ns('hist', async ns => {
 
 
     async function activityCounts(athleteId) {
-        const s = Date.now();
-        const [total, imported, unavailable, processed, unprocessable] = await Promise.all([
-            actsStore.countForAthlete(athleteId),
-            actsStore.countForAthleteWithSync(athleteId, 'streams'),
-            actsStore.countForAthleteWithSync(athleteId, 'streams', {name: 'fetch', error: true}),
-            actsStore.countForAthleteWithSync(athleteId, 'local'),
-            actsStore.countForAthleteWithSync(athleteId, 'local', {error: true}),
-        ]);
-        console.warn('time', Date.now() - s);
-        return {
-            total,
-            imported,
-            unavailable,
-            processed,
-            unprocessable
-        };
-    }
-    sauce.proxy.export(activityCounts, {namespace});
-
-    async function activityCounts2(athleteId) {
-        const s = Date.now();
-        const [total, imported, unavailable, processed, unprocessable] = await Promise.all([
-            actsStore.countForAthlete(athleteId),
-            actsStore.getAllForAthleteWithSync(athleteId, 'streams', {count: true}),
-            actsStore.getAllForAthleteWithSync(athleteId, 'streams', {count: true, name: 'fetch', error: true}),
-            actsStore.getAllForAthleteWithSync(athleteId, 'local', {count: true}),
-            actsStore.getAllForAthleteWithSync(athleteId, 'local', {count: true, error: true}),
-        ]);
-        console.warn('time', Date.now() - s);
-        return {
-            total,
-            imported,
-            unavailable,
-            processed,
-            unprocessable
-        };
-    }
-
-    async function activityCounts3(athleteId) {
-        const s = Date.now();
         const activities = await actsStore.getAllForAthlete(athleteId, {models: true});
         const streamManifests = sauce.hist.db.ActivityModel.getSyncManifests('streams');
         const localManifests = sauce.hist.db.ActivityModel.getSyncManifests('local');
@@ -1126,12 +1086,12 @@ sauce.ns('hist', async ns => {
                     break;
                 }
             }
-            if (success === false) {
-                unavailable++;
-                continue;
-            } else if (success) {
+            if (success) {
                 imported++;
             } else {
+                if (success === false) {
+                    unavailable++;
+                }
                 continue;
             }
             success = null;
@@ -1146,13 +1106,14 @@ sauce.ns('hist', async ns => {
                     break;
                 }
             }
-            if (success === false) {
-                unprocessable++;
-            } else if (success) {
+            if (success) {
                 processed++;
+            } else {
+                if (success === false) {
+                    unprocessable++;
+                }
             }
         }
-        console.warn('time', Date.now() - s);
         return {
             total,
             imported,
@@ -1161,8 +1122,10 @@ sauce.ns('hist', async ns => {
             unprocessable
         };
     }
+    sauce.proxy.export(activityCounts, {namespace});
 
 
+let xxx = 0;
     class SyncJob extends EventTarget {
         constructor(athlete, isSelf) {
             super();
@@ -1209,52 +1172,33 @@ sauce.ns('hist', async ns => {
         }
 
         async _syncData() {
-            const athleteId = this.athlete.pk;
             const s = Date.now();
-            const fetchedIds = new Set(await actsStore.getForAthleteWithSync(athleteId, 'streams', {keys: true}));
-            const localIds = new Set(await actsStore.getForAthleteWithSync(athleteId, 'local', {keys: true}));
-            console.warn("syncdata getids time...", Date.now() - s);
-            const activities = new Map();
-            const unfetched = new Map();
-            const unprocessed = new Set();
-            const unloaded = [];
-            for (const id of await actsStore.getForAthlete(athleteId, {keys: true})) {
-                if (!fetchedIds.has(id)) {
-                    unfetched.set(id, null);
-                    unloaded.push(id);
-                } else if (!localIds.has(id)) {
-                    unprocessed.add(id);
-                    unloaded.push(id);
-                }
-            }
-            for (const a of await actsStore.getMany(unloaded, {models: true})) {
-                activities.set(a.pk, a);
-            }
-            // After getting all our raw data we need to check that we can sync based on error backoff...
+            const activities = await actsStore.getAllForAthlete(this.athlete.pk, {models: true});
+            const unfetched = [];
             let deferCount = 0;
-            for (const id of unfetched.keys()) {
-                const a = activities.get(id);
-                if (!a.nextAvailManifest('streams')) {
-                    deferCount++;
-                    unfetched.delete(id);
-                } else {
-                    unfetched.set(id, a);
-                }
-            }
-            for (const id of unprocessed) {
-                const a = activities.get(id);
-                if (!a.nextAvailManifest('local')) {
-                    deferCount++;
-                } else {
-                    this._procQueue.putNoWait(a);
+            for (const a of activities) {
+                if (a.isSyncComplete('streams')) {
+                    if (!a.isSyncComplete('local')) {
+                        if (a.nextAvailManifest('local')) {
+                            this._procQueue.putNoWait(a);
+                        } else {
+                            deferCount++;
+                        }
+                    }
+                } else if (a.nextAvailManifest('streams')) {
+                    if (a.nextAvailManifest('streams')) {
+                        unfetched.push(a);
+                    } else {
+                        deferCount++;
+                    }
                 }
             }
             if (deferCount) {
                 console.warn(`Deferring sync of ${deferCount} activities due to error`);
             }
             const workers = [];
-            if (unfetched.size) {
-                workers.push(this._fetchStreamsWorker([...unfetched.values()]));
+            if (unfetched.length) {
+                workers.push(this._fetchStreamsWorker(unfetched));
             } else if (!this._procQueue.qsize()) {
                 console.debug("No activity sync required for: " + this.athlete);
                 return;
@@ -1438,6 +1382,7 @@ sauce.ns('hist', async ns => {
                     if (progress) {
                         const ev = new Event('progress');
                         ev.data = {counts: this.counts};
+                        console.warn("counts from progress (suspect):", this.counts);
                         this.dispatchEvent(ev);
                     }
                 }
@@ -1565,12 +1510,11 @@ sauce.ns('hist', async ns => {
                     continue;
                 }
                 const forceActivityUpdate = a.get('lastSyncActivityListVersion') !== activityListVersion;
-                const shouldRun = !this._isDeferred(a) && (
-                    forceActivityUpdate ||
-                    a.get('lastSyncVersionHash') !== syncHash ||
+                const shouldRun =
                     this._refreshRequests.has(a.pk) ||
-                    Date.now() - a.get('lastSync') > this.refreshInterval
-                );
+                    a.get('lastSyncVersionHash') !== syncHash ||
+                    forceActivityUpdate ||
+                    (!this._isDeferred(a) && Date.now() - a.get('lastSync') > this.refreshInterval);
                 if (shouldRun) {
                     const options = Object.assign({
                         forceActivityUpdate,
@@ -1896,8 +1840,6 @@ sauce.ns('hist', async ns => {
         actsStore,
         athletesStore,
         activityCounts,
-        activityCounts2,
-        activityCounts3,
         SyncManager,
     };
 }, {hasAsyncExports: true});

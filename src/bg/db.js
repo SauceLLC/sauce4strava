@@ -284,7 +284,6 @@ sauce.ns('hist.db', async ns => {
             for (const m of manifests) {
                 const version = options.version != null ? options.version : options.error == null ? m.version : null;
                 const q = this._syncQuery(athlete, processor, m.name, version, options);
-                console.info("Query", q);
                 for await (const k of this.keys(q, {index: 'sync_lookup'})) {
                     // If this is new, we don't care, cause the filter will eliminate it later.
                     if (acts.has(k)) {
@@ -628,11 +627,11 @@ sauce.ns('hist.db', async ns => {
             const manifests = this.constructor.getSyncManifests(processor);
             for (const m of manifests) {
                 const state = this._getSyncState(m);
-                if (state && state.version === m.version && !(state.error && state.error.ts)) {
-                    return true;
+                if (!state || state.version !== m.version || (state.error && state.error.ts)) {
+                    return false;
                 }
             }
-            return false;
+            return true;
         }
     }
 
