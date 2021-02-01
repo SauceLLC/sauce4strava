@@ -162,7 +162,6 @@ sauce.ns('hist', async ns => {
             const ident = athlete.pk;
             let instance = this._instances[ident];
             if (!instance) {
-                console.error("making new instance for:", ident);
                 instance = this._instances[ident] = new this(ident, athlete, cancelEvent);
                 instance.enqueue(activities);
                 instance.start();
@@ -175,6 +174,7 @@ sauce.ns('hist', async ns => {
         constructor(ident, athlete, cancelEvent) {
             this.ident = ident;
             this.athlete = athlete;
+            this.flushEvent = new locks.Event();
             this.cancelEvent = cancelEvent;
             this.inQueue = new queues.PriorityQueue();
             this.outQueue = new queues.Queue();
@@ -188,7 +188,6 @@ sauce.ns('hist', async ns => {
         }
 
         delete() {
-            console.error("DELETING instance for:", this.ident);
             delete this.constructor._instances[this.ident];
             this._proc = null;
             this.outQueue.putNoWait(null);
@@ -198,8 +197,12 @@ sauce.ns('hist', async ns => {
             if (this._proc === null) {
                 throw Error('Internal Error: enqueue attempt to deleted processor');
             }
-            for (const a of activities) {
-                this.inQueue.putNoWait(a, a.get('ts'));
+            if (activities == null) {
+                this.flushEvent.set();
+            } else {
+                for (const a of activities) {
+                    this.inQueue.putNoWait(a, a.get('ts'));
+                }
             }
         }
 
@@ -207,7 +210,6 @@ sauce.ns('hist', async ns => {
             const deadline = Date.now() + (60 * 1000);
             const debounce = 5 * 1000;
             let lastSize;
-            // TODO Add signal/sentinel for flush when nothing new is coming.
             while (!this.cancelEvent.isSet() && this.inQueue.qsize()) {
                 const size = this.inQueue.qsize();
                 if (size !== lastSize) {
@@ -215,19 +217,21 @@ sauce.ns('hist', async ns => {
                 }
                 const waiters = [
                     this.cancelEvent.wait(),
+                    this.flushEvent.wait(),
                     sleep(deadline - Date.now()),
-                    sleep(debounce)
+                    sleep(debounce),
                 ];
-                /*if (!size) {
-                    waiters.push(this.inQueue.wait());
-                }*/
                 await Promise.race(waiters);
                 if (this.cancelEvent.isSet()) {
                     return;
                 }
-                if (this.inQueue.qsize() !== lastSize && Date.now() < deadline) {
-                    console.warn("debounce");
-                    continue;
+                if (!this.flushEvent.isSet()) {
+                    if (this.inQueue.qsize() !== lastSize && Date.now() < deadline) {
+                        console.warn("debounce");
+                        continue;
+                    }
+                } else {
+                    this.flushEvent.clear();
                 }
                 console.warn("DRAIN", this.inQueue.qsize());
                 await this.drain();
@@ -367,7 +371,7 @@ sauce.ns('hist', async ns => {
         data: {processor: TrainingLoadProcessor.queueFactory.bind(TrainingLoadProcessor)}
     });
 
-    sauce.hist.db.ActivityModel.addSyncManifest({
+    /*sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'fast-blowup-test',
         version: 1,
@@ -387,7 +391,7 @@ sauce.ns('hist', async ns => {
         depends: ['fast-blowup-test'],
         errorBackoff: 1000,
         data: {processor: () => void 0}
-    });
+    });*/
 
 
     class FetchError extends Error {
@@ -1263,6 +1267,17 @@ sauce.ns('hist', async ns => {
             const queues = new Set([this._procQueue]);
             while (queues.size && !this._cancelEvent.isSet()) {
                 if ([...queues].every(x => !x.qsize())) {
+                    if (batch.length) {
+                        debugger;
+                    }
+                    for (const x of offloaded.values()) {
+                        await x.processor({
+                            manifest: x.manifest,
+                            activities: null,  // flush
+                            athlete: this.athlete,
+                            cancelEvent: this._cancelEvent,
+                        });
+                    }
                     await Promise.race([...queues, this._cancelEvent].map(x => x.wait()));
                     continue;
                 }
@@ -1292,7 +1307,7 @@ sauce.ns('hist', async ns => {
                     }
                     // Handle state mgmt for offboarded activities rejoining us.
                     if (finished.length) {
-                        await this._localSetSyncDone(finished, offloaded.get(q));
+                        await this._localSetSyncDone(finished, offloaded.get(q).manifest);
                     }
                 }
                 autoBatchLimit = Math.min(500, autoBatchLimit * 1.30);
@@ -1333,7 +1348,10 @@ sauce.ns('hist', async ns => {
                             for (const a of activities) {
                                 batch.delete(a);
                             }
-                            offloaded.set(offloadQueue, m);
+                            offloaded.set(offloadQueue, {
+                                manifest: m,
+                                processor
+                            });
                             queues.add(offloadQueue);
                         } else {
                             await this._localSetSyncDone(activities, m);
