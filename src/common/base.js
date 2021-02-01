@@ -618,16 +618,23 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
         }
 
-        async *cursor(query, options={}) {
+        _cursorRequest(query, options) {
             if (!this.db.started) {
-                await this.db.start();
+                throw new TypeError("DB not started");
             }
             const idbStore = this._getIDBStore(options.mode);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
             const direction = options.reverse ? 'prev' : 'next';
             const uniqueSuffix = options.unique ? 'unique' : '';
-            const req = curFunc.call(ifc, query, direction + uniqueSuffix);
+            return curFunc.call(ifc, query, direction + uniqueSuffix);
+        }
+
+        async *cursor(query, options={}) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const req = this._cursorRequest(query, options);
             let resolve;
             let reject;
             // Callbacks won't invoke until we release control of the event loop, so this is safe..
@@ -651,6 +658,34 @@ self.sauceBaseInit = function sauceBaseInit() {
                 }
                 cursor.continue();
             }
+        }
+
+        async cursorAll(query, resultFn, options={}) {
+            // This is ever so slightly faster than cursor.. Might remove..
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const req = this._cursorRequest(query, options);
+            const results = [];
+            await new Promise((resolve, reject) => {
+                let count = 0;
+                req.addEventListener('error', ev => reject(req.error));
+                req.addEventListener('success', ev => {
+                    const cursor = ev.target.result;
+                    if (!cursor) {
+                        resolve();
+                    } else if (!options.filter || options.filter(cursor)) {
+                        count++;
+                        results.push(resultFn(cursor));
+                        if (options.limit && count >= options.limit) {
+                            resolve();
+                        } else {
+                            cursor.continue();
+                        }
+                    }
+                });
+            });
+            return results;
         }
 
         async saveModels(models) {

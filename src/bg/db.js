@@ -4,6 +4,8 @@ sauce.ns('hist.db', async ns => {
 
     'use strict';
 
+    const defaultSyncErrorBackoff = 300 * 1000;  // Actual is (<value-ms> * errorCount)
+
 
     function setUnion(...sets) {
         const union = new Set();
@@ -130,7 +132,7 @@ sauce.ns('hist.db', async ns => {
             }
         }
 
-        async getKeysForAthlete(athlete, options={}) {
+        async getAllKeysForAthlete(athlete, options={}) {
             const q = IDBKeyRange.only(athlete);
             options.index = 'athlete';
             return await this.getAllKeys(q, options);
@@ -171,6 +173,20 @@ sauce.ns('hist.db', async ns => {
             return activities;
         }
 
+        async getAllKeysForAthlete(athlete, options={}) {
+            // Less flexible than byAthlete, but MUCH faster.
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            options.index = 'athlete-ts';
+            return await this.getAllKeys(q, options);
+        }
+
+        async getAllForAthlete(athlete, options={}) {
+            // Less flexible than byAthlete, but MUCH faster.
+            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
+            options.index = 'athlete-ts';
+            return await this.getAll(q, options);
+        }
+
         async *siblings(id, options={}) {
             const act = await this.get(id);
             let start;
@@ -195,6 +211,8 @@ sauce.ns('hist.db', async ns => {
             // a disjunction but only when a range is used.  Exact matches cause further
             // evaluation of each array index to happen.  So the first open bounds must also
             // be the last array index to apply a query to.
+            let excludeLower;
+            let excludeUpper;
             if (name == null) {
                 // Do some lexicographic magic when name is null to trick indedexdb into giving
                 // us an open result for that "column".
@@ -211,9 +229,10 @@ sauce.ns('hist.db', async ns => {
                     lowerVer = -Infinity;
                     upperVer = Infinity;
                 } else if (version == null && options.error != null) {
-                    const epsilon = 0.000001;  // We have to use an inclusive query, so avoid 0 for bounds.
-                    lowerVer = options.error ? -Infinity : epsilon;
-                    upperVer = options.error ? -epsilon : Infinity;
+                    lowerVer = options.error ? -Infinity : 0;
+                    upperVer = options.error ? 0 : Infinity;
+                    excludeLower = lowerVer === 0;
+                    excludeUpper = upperVer === 0;
                 } else if (version != null && options.error == null) {
                     lowerVer = upperVer = version;
                 } else if (version != null && options.error != null) {
@@ -222,7 +241,7 @@ sauce.ns('hist.db', async ns => {
                 lower.splice(2, 0, name, lowerVer);
                 upper.splice(2, 0, name, upperVer);
             }
-            return IDBKeyRange.bound(lower, upper);
+            return IDBKeyRange.bound(lower, upper, excludeLower, excludeUpper);
         }
 
         async invalidateForAthleteWithSync(athlete, processor, name) {
@@ -247,6 +266,7 @@ sauce.ns('hist.db', async ns => {
             if (options.version != null && options.name == null) {
                 throw new TypeError("'version' set without 'name' set");
             }
+            const s = Date.now();
             const manifests = this.Model.getSyncManifests(processor, options.name);
             const acts = new Map();
             const seed = manifests.shift();
@@ -257,12 +277,14 @@ sauce.ns('hist.db', async ns => {
                 const pk = options.models ? obj.pk : options.keys ? obj : obj.id;
                 acts.set(pk, {obj, count: 1});
             }
+            console.warn('withSync 1', Date.now() - s);
             if (!manifests.length) {
                 return Array.from(acts.values()).map(x => x.obj);
             }
             for (const m of manifests) {
                 const version = options.version != null ? options.version : options.error == null ? m.version : null;
                 const q = this._syncQuery(athlete, processor, m.name, version, options);
+                console.info("Query", q);
                 for await (const k of this.keys(q, {index: 'sync_lookup'})) {
                     // If this is new, we don't care, cause the filter will eliminate it later.
                     if (acts.has(k)) {
@@ -270,13 +292,51 @@ sauce.ns('hist.db', async ns => {
                     }
                 }
             }
+            console.warn('withSync 2', Date.now() - s);
             const conjuction = [];
             for (const x of acts.values()) {
                 if (x.count === manifests.length + 1) {
                     conjuction.push(x.obj);
                 }
             }
+            console.warn('withSync 3', Date.now() - s);
             return conjuction;
+        }
+
+        async getAllForAthleteWithSync(athlete, processor, options={}) {
+            if (options.version != null && options.name == null) {
+                throw new TypeError("'version' set without 'name' set");
+            }
+            const s = Date.now();
+            const activities = await this.getAllForAthlete(athlete, {models: true});
+            const manifests = this.Model.getSyncManifests(processor, options.name);
+            const filtered = new Map();
+            for (const a of activities) {
+                for (const m of manifests) {
+                    if (options.error) {
+                        if (a.hasSyncError(m)) {
+                            filtered.set(a.pk, a);
+                            break;
+                        }
+                    } else {
+                        if (a.hasSyncSuccess(m)) {
+                            filtered.set(a.pk, a);
+                        } else if (filtered.has(a.pk)) {
+                            filtered.delete(a.pk);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (options.keys) {
+                return [...filtered.keys()];
+            } else if (options.models) {
+                return [...filtered.values()];
+            } else if (options.count) {
+                return filtered.size;
+            } else {
+                return [...filtered.values()].map(x => x.data);
+            }
         }
 
         async oldestForAthlete(athlete) {
@@ -335,7 +395,9 @@ sauce.ns('hist.db', async ns => {
             if (!this._syncManifests[manifest.processor]) {
                 this._syncManifests[manifest.processor] = {};
             }
-            this._syncManifests[manifest.processor][manifest.name] = manifest;
+            this._syncManifests[manifest.processor][manifest.name] = Object.assign({
+                errorBackoff: defaultSyncErrorBackoff,
+            }, manifest);
         }
 
         static getSyncManifests(processor, name) {
@@ -385,7 +447,7 @@ sauce.ns('hist.db', async ns => {
                 this.data.syncState[processor][name];
         }
 
-        _setSyncState(manifest, state) {
+        _setSyncState(manifest, state, options={}) {
             const processor = manifest.processor;
             const name = manifest.name;
             if (!processor || !name) {
@@ -395,8 +457,15 @@ sauce.ns('hist.db', async ns => {
             if (hasError && !state.version) {
                 throw new TypeError("Cannot set 'error' without 'version'");
             }
-            for (const dep of this.dependantManifests(manifest.processor, manifest.name)) {
-                this.clearSyncState(dep);
+            if (!options.noRecurse) {
+                for (const dep of this.dependantManifests(manifest.processor, manifest.name)) {
+                    // It might be safe to clear deps in error state too, but I'm being
+                    // paranoid for now in the offchance that I'm missing a way that this
+                    // could break backoff handling (i.e. runaway processing).
+                    if (!this.hasSyncError(dep)) {
+                        this.clearSyncState(dep);
+                    }
+                }
             }
             const sync = this.data.syncState = this.data.syncState || {};
             const proc = sync[processor] = sync[processor] || {};
@@ -447,6 +516,11 @@ sauce.ns('hist.db', async ns => {
             error.ts = Date.now();
             error.message = e.message;
             this._setSyncState(manifest, state);
+        }
+
+        hasSyncSuccess(manifest) {
+            const state = this._getSyncState(manifest);
+            return !!(state && state.version === manifest.version);
         }
 
         hasSyncError(manifest) {

@@ -155,90 +155,106 @@ sauce.ns('hist', async ns => {
 
 
     class TrainingLoadProcessor {
-        static singleton({activities, athlete, cancelEvent}) {
+        static queueFactory({activities, athlete, cancelEvent}) {
             if (!this._instances) {
                 this._instances = {};
             }
             const ident = athlete.pk;
-            if (!this._instances[ident]) {
-                this._instances[ident] = new this(athlete, cancelEvent);
+            let instance = this._instances[ident];
+            if (!instance) {
+                console.error("making new instance for:", ident);
+                instance = this._instances[ident] = new this(ident, athlete, cancelEvent);
+                instance.enqueue(activities);
+                instance.start();
+            } else {
+                instance.enqueue(activities);
             }
-            const instance = this._instances[ident];
-            return instance.enqueue(activities);
+            return instance.outQueue;
         }
 
-        constructor(athlete, cancelEvent) {
+        constructor(ident, athlete, cancelEvent) {
+            this.ident = ident;
             this.athlete = athlete;
+            this.cancelEvent = cancelEvent;
             this.inQueue = new queues.PriorityQueue();
             this.outQueue = new queues.Queue();
-            this.cancelEvent = cancelEvent;
-            this.cancelEvent.wait().then(() => this.cancel());
-            this._proc = this.processor();
         }
 
-        cancel() {
-            delete this.constructor._instances[this.athlete];
+        start() {
+            if (this._proc) {
+                throw new Error("Internal Error: already started");
+            }
+            this._proc = this.processor().finally(() => this.delete());
+        }
+
+        delete() {
+            console.error("DELETING instance for:", this.ident);
+            delete this.constructor._instances[this.ident];
+            this._proc = null;
+            this.outQueue.putNoWait(null);
         }
 
         enqueue(activities) {
+            if (this._proc === null) {
+                throw Error('Internal Error: enqueue attempt to deleted processor');
+            }
             for (const a of activities) {
                 this.inQueue.putNoWait(a, a.get('ts'));
             }
-            return this.outQueue;
         }
 
         async processor() {
             const deadline = Date.now() + (60 * 1000);
             const debounce = 5 * 1000;
-            let lastSize = this.inQueue.qsize();
-            let lastUpdate;
+            let lastSize;
+            // TODO Add signal/sentinel for flush when nothing new is coming.
             while (!this.cancelEvent.isSet() && this.inQueue.qsize()) {
                 const size = this.inQueue.qsize();
                 if (size !== lastSize) {
                     lastSize = size;
-                    lastUpdate = Date.now();
                 }
-                await Promise.race([
-                    this.inQueue.wait(),
+                const waiters = [
                     this.cancelEvent.wait(),
                     sleep(deadline - Date.now()),
-                    sleep(debounce)]);
+                    sleep(debounce)
+                ];
+                /*if (!size) {
+                    waiters.push(this.inQueue.wait());
+                }*/
+                await Promise.race(waiters);
                 if (this.cancelEvent.isSet()) {
                     return;
                 }
-                if (this.inQueue.qsize() !== lastSize &&
-                    Date.now() - lastUpdate < debounce &&
-                    Date.now() < deadline) {
+                if (this.inQueue.qsize() !== lastSize && Date.now() < deadline) {
                     console.warn("debounce");
                     continue;
                 }
+                console.warn("DRAIN");
                 await this.drain();
             }
         }
 
         async drain() {
-            const activities = [];
+            const activities = new Map();
+            let oldest;
             while (this.inQueue.qsize()) {
-                activities.push(this.inQueue.getNoWait());
+                const a = this.inQueue.getNoWait();
+                if (!oldest || oldest.get('ts') > a.get('ts')) {
+                    oldest = a;
+                }
+                activities.set(a.pk, a);
             }
-            let oldest = activities[activities.length - 1];
-            const models = new Map(activities.map(x => [x.pk, x]));
-            const external = [];
-            const need = [];
+            const external = []; // XXX phase out
             const orderedIds = await actsStore.getForAthlete(this.athlete.pk,
                 {keys: true, start: oldest.get('ts')});
-            for (const id of orderedIds) {
-                if (!models.has(id)) {
-                    need.push(id);
-                }
-            }
+            const need = orderedIds.filter(x => !activities.has(x));
             for (const a of await actsStore.getMany(need, {models: true})) {
                 if (!a.hasAnySyncErrors('streams') && !a.hasAnySyncErrors('local')) {
-                    models.set(a.pk, a);
-                    external.push(a.pk);
+                    activities.set(a.pk, a);
+                    external.push(a.pk); // XXX phase out
                 }
             }
-            const ordered = orderedIds.map(x => models.get(x)).filter(x => x);
+            const ordered = orderedIds.map(x => activities.get(x)).filter(x => x);
             ordered.reverse();  // oldest -> newest
             let atl = 0;
             let ctl = 0;
@@ -246,6 +262,18 @@ sauce.ns('hist', async ns => {
             // Rewind until we find a seed record from a prior day...
             for await (const a of actsStore.byAthlete(this.athlete.pk, {models: true, end: oldest.get('ts')})) {
                 if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
+                    console.warn('a seed', a.pk, a.data.athlete);
+                    break;
+                } else if (a.pk !== oldest.pk) {
+                    // Prior activity is same day as oldest in this set, we must lump it in.
+                    console.warn('a sameday', a.pk, a.data.athlete);
+                } else {
+                    console.warn('a else (ONLY A)', a.pk, a.data.athlete);
+                }
+            }
+            for await (const a of actsStore.siblings(oldest.pk, {models: true, direction: 'prev'})) {
+                if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
+                    console.warn('b seed', a.pk, a.data.athlete);
                     seed = a;
                     const tl = seed.get('training');
                     atl = tl && tl.atl || 0;
@@ -253,10 +281,13 @@ sauce.ns('hist', async ns => {
                     break;
                 } else if (a.pk !== oldest.pk) {
                     // Prior activity is same day as oldest in this set, we must lump it in.
+                    console.warn('b sameday', a.pk, a.data.athlete);
                     oldest = a;
                     ordered.unshift(a);
-                    models.set(a.pk, a);
-                    external.push(a.pk);
+                    activities.set(a.pk, a);
+                    external.push(a.pk); // XXX phase out
+                } else {
+                    console.warn('b else (UNLIKELY)', a.pk, a.data.athlete);
                 }
             }
             if (seed) {
@@ -270,14 +301,15 @@ sauce.ns('hist', async ns => {
                 }
             }
             const future = new Date(Date.now() + 7 * 86400 * 1000);
+            let i = 0;
             for (const day of sauce.date.dayRange(oldest.getLocaleDay(), future)) {
-                if (!ordered.length) {
+                if (i >= ordered.length) {
                     break;
                 }
                 const daily = [];
                 let tss = 0;
-                while (ordered.length && ordered[0].getLocaleDay().getTime() === day.getTime()) {
-                    const m = ordered.shift();
+                while (i < ordered.length && ordered[i].getLocaleDay().getTime() === day.getTime()) {
+                    const m = ordered[i++];
                     daily.push(m);
                     tss += m.getTSS();
                 }
@@ -287,17 +319,14 @@ sauce.ns('hist', async ns => {
                     x.set('training', {atl, ctl});
                 }
             }
-            if (ordered.length) {
+            if (i < ordered.length) {
                 throw new Error("Internal Error");
             }
             // Manually save externally referenced or loaded activities.
-            await actsStore.saveModels(external.map(x => models.get(x)));
-			for (const a of activities) {
-				this.outQueue.putNoWait(a);
-			}
-			for (const x of external) {
-				this.outQueue.putNoWait(models.get(x));
-			}
+            //await actsStore.saveModels(external.map(x => activities.get(x))); // XXX
+            for (const a of ordered) {
+                this.outQueue.putNoWait(a);
+            }
         }
     }
 
@@ -306,7 +335,7 @@ sauce.ns('hist', async ns => {
         processor: 'streams',
         name: 'fetch',
         version: 1,
-        errorBackoff: 86400 * 1000,
+        errorBackoff: 3600 * 1000,
         data: new Set([
             'time',
             'heartrate',
@@ -327,7 +356,6 @@ sauce.ns('hist', async ns => {
         processor: 'local',
         name: 'active-stream',
         version: 1,
-        errorBackoff: 3600 * 1000,
         data: {processor: activeStreamProcessor}
     });
 
@@ -336,7 +364,6 @@ sauce.ns('hist', async ns => {
         name: 'running-watts-stream',
         version: 1,
         depends: ['active-stream'],
-        errorBackoff: 300 * 1000,
         data: {processor: runningWattsProcessor}
     });
 
@@ -345,7 +372,6 @@ sauce.ns('hist', async ns => {
         name: 'activity-stats',
         version: 2,
         depends: ['active-stream', 'running-watts-stream'],
-        errorBackoff: 300 * 1000,
         data: {processor: activityStatsProcessor}
     });
 
@@ -354,9 +380,31 @@ sauce.ns('hist', async ns => {
         name: 'training-load',
         version: 1,
         depends: ['activity-stats'],
-        errorBackoff: 300 * 1000,
-        data: {processor: TrainingLoadProcessor.singleton.bind(TrainingLoadProcessor)}
+        data: {processor: TrainingLoadProcessor.queueFactory.bind(TrainingLoadProcessor)}
     });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'fast-blowup-test',
+        version: 1,
+        depends: ['active-stream', 'training-load'],
+        errorBackoff: 1000,
+        data: {processor: () => {
+            if (Math.random() > 0.5) {
+                throw new Error("RANDOM fast blowup test");
+            }
+        }}
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'depend-onblowup-test',
+        version: 2,
+        depends: ['fast-blowup-test'],
+        errorBackoff: 1000,
+        data: {processor: () => void 0}
+    });
+
 
     class FetchError extends Error {
         static fromResp(resp) {
@@ -1017,6 +1065,7 @@ sauce.ns('hist', async ns => {
 
 
     async function activityCounts(athleteId) {
+        const s = Date.now();
         const [total, imported, unavailable, processed, unprocessable] = await Promise.all([
             actsStore.countForAthlete(athleteId),
             actsStore.countForAthleteWithSync(athleteId, 'streams'),
@@ -1024,6 +1073,7 @@ sauce.ns('hist', async ns => {
             actsStore.countForAthleteWithSync(athleteId, 'local'),
             actsStore.countForAthleteWithSync(athleteId, 'local', {error: true}),
         ]);
+        console.warn('time', Date.now() - s);
         return {
             total,
             imported,
@@ -1033,6 +1083,84 @@ sauce.ns('hist', async ns => {
         };
     }
     sauce.proxy.export(activityCounts, {namespace});
+
+    async function activityCounts2(athleteId) {
+        const s = Date.now();
+        const [total, imported, unavailable, processed, unprocessable] = await Promise.all([
+            actsStore.countForAthlete(athleteId),
+            actsStore.getAllForAthleteWithSync(athleteId, 'streams', {count: true}),
+            actsStore.getAllForAthleteWithSync(athleteId, 'streams', {count: true, name: 'fetch', error: true}),
+            actsStore.getAllForAthleteWithSync(athleteId, 'local', {count: true}),
+            actsStore.getAllForAthleteWithSync(athleteId, 'local', {count: true, error: true}),
+        ]);
+        console.warn('time', Date.now() - s);
+        return {
+            total,
+            imported,
+            unavailable,
+            processed,
+            unprocessable
+        };
+    }
+
+    async function activityCounts3(athleteId) {
+        const s = Date.now();
+        const activities = await actsStore.getAllForAthlete(athleteId, {models: true});
+        const streamManifests = sauce.hist.db.ActivityModel.getSyncManifests('streams');
+        const localManifests = sauce.hist.db.ActivityModel.getSyncManifests('local');
+        const total = activities.length;
+        let imported = 0;
+        let unavailable = 0;
+        let processed = 0;
+        let unprocessable = 0;
+        for (const a of activities) {
+            let success = null;
+            for (const m of streamManifests) {
+                if (a.hasSyncError(m)) {
+                    success = false;
+                    break;
+                } else if (a.hasSyncSuccess(m)) {
+                    success = true;
+                } else {
+                    success = null;
+                    break;
+                }
+            }
+            if (success === false) {
+                unavailable++;
+                continue;
+            } else if (success) {
+                imported++;
+            } else {
+                continue;
+            }
+            success = null;
+            for (const m of localManifests) {
+                if (a.hasSyncError(m)) {
+                    success = false;
+                    break;
+                } else if (a.hasSyncSuccess(m)) {
+                    success = true;
+                } else {
+                    success = null;
+                    break;
+                }
+            }
+            if (success === false) {
+                unprocessable++;
+            } else if (success) {
+                processed++;
+            }
+        }
+        console.warn('time', Date.now() - s);
+        return {
+            total,
+            imported,
+            unavailable,
+            processed,
+            unprocessable
+        };
+    }
 
 
     class SyncJob extends EventTarget {
@@ -1082,8 +1210,10 @@ sauce.ns('hist', async ns => {
 
         async _syncData() {
             const athleteId = this.athlete.pk;
+            const s = Date.now();
             const fetchedIds = new Set(await actsStore.getForAthleteWithSync(athleteId, 'streams', {keys: true}));
             const localIds = new Set(await actsStore.getForAthleteWithSync(athleteId, 'local', {keys: true}));
+            console.warn("syncdata getids time...", Date.now() - s);
             const activities = new Map();
             const unfetched = new Map();
             const unprocessed = new Set();
@@ -1203,6 +1333,7 @@ sauce.ns('hist', async ns => {
             const batch = new Set();
             const offloaded = new Map();
             const wasInErrorState = new Set();
+            const wasInNewState = new Set();
             const queues = new Set([this._procQueue]);
             while (queues.size && !this._cancelEvent.isSet()) {
                 if ([...queues].every(x => !x.qsize())) {
@@ -1218,11 +1349,12 @@ sauce.ns('hist', async ns => {
                             break;
                         }
                         batch.add(a);
-                        if (a.hasAnySyncErrors('local')) {
-                            wasInErrorState.add(a);
-                        }
                         if (offloaded.has(q)) {
                             finished.push(a);
+                        } else if (a.hasAnySyncErrors('local')) {
+                            wasInErrorState.add(a);
+                        } else {
+                            wasInNewState.add(a);
                         }
                         if (batch.size >= autoBatchLimit) {
                             break;
@@ -1240,7 +1372,7 @@ sauce.ns('hist', async ns => {
                     for (const a of batch) {
                         const m = a.nextAvailManifest('local');
                         if (!m) {
-                            console.error("Already completed activity enqueued to processor:", a.pk);
+                            // Requeued activities with no more work to do will land here.
                             batch.delete(a);
                             continue;
                         }
@@ -1264,7 +1396,6 @@ sauce.ns('hist', async ns => {
                                 cancelEvent: this._cancelEvent,
                             });
                         } catch(e) {
-                            debugger; // XXX
                             console.warn(`Top level local processing error (${m.name}) ` +
                                          `v${m.version} for ${activities.length} activities`, e);
                             for (const a of activities) {
@@ -1293,11 +1424,12 @@ sauce.ns('hist', async ns => {
                             progress = true;
                             if (a.isSyncComplete('local')) {
                                 // Finished successfully.
-                                this.counts.processed++;
-                                if (wasInErrorState.has(a)) {
+                                if (wasInNewState.has(a)) {
+                                    this.counts.processed++;
+                                } else if (wasInErrorState.has(a)) {
                                     this.counts.unprocessable--;
                                 }
-                            } else if (!wasInErrorState.has(a)) {
+                            } else if (wasInNewState.has(a)) {
                                 this.counts.unprocessable++;
                             }
                         }
@@ -1764,6 +1896,8 @@ sauce.ns('hist', async ns => {
         actsStore,
         athletesStore,
         activityCounts,
+        activityCounts2,
+        activityCounts3,
         SyncManager,
     };
 }, {hasAsyncExports: true});
