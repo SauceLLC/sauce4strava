@@ -625,9 +625,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             const idbStore = this._getIDBStore(options.mode);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
-            const direction = options.reverse ? 'prev' : 'next';
-            const uniqueSuffix = options.unique ? 'unique' : '';
-            return curFunc.call(ifc, query, direction + uniqueSuffix);
+            return curFunc.call(ifc, query, options.direction);
         }
 
         async *cursor(query, options={}) {

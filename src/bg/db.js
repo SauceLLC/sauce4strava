@@ -145,12 +145,15 @@ sauce.ns('hist.db', async ns => {
             super(histDatabase, 'activities', {Model: ActivityModel});
         }
 
-        async *byAthlete(athlete, options={}) {
+        _queryForAthlete(athlete, inOptions) {
             let q;
+            const options = Object.assign({}, inOptions);
             const start = options.start || -Infinity;
             const end = options.end || Infinity;
             if (options.type) {
-                q = IDBKeyRange.bound([athlete, options.type, start], [athlete, options.type, end],
+                q = IDBKeyRange.bound(
+                    [athlete, options.type, start],
+                    [athlete, options.type, end],
                     options.excludeLower, options.excludeUpper);
                 options.index = 'athlete-basetype-ts';
             } else {
@@ -158,14 +161,18 @@ sauce.ns('hist.db', async ns => {
                     options.excludeLower, options.excludeUpper);
                 options.index = 'athlete-ts';
             }
-            options.reverse = !options.reverse;  // Go from newest to oldest by default
+            return [q, options];
+        }
+
+        async *byAthlete(athlete, options={}) {
             const iter = options.keys ? this.keys : this.values;
-            for await (const x of iter.call(this, q, options)) {
+            for await (const x of iter.call(this, ...this._queryForAthlete(athlete, options))) {
                 yield x;
             }
         }
 
         async getForAthlete(athlete, options={}) {
+            console.warn("DEPRECATED");
             const activities = [];
             for await (const x of this.byAthlete(athlete, options)) {
                 activities.push(x);
@@ -174,17 +181,11 @@ sauce.ns('hist.db', async ns => {
         }
 
         async getAllKeysForAthlete(athlete, options={}) {
-            // Less flexible than byAthlete, but MUCH faster.
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            options.index = 'athlete-ts';
-            return await this.getAllKeys(q, options);
+            return await this.getAllKeys(...this._queryForAthlete(athlete, options));
         }
 
         async getAllForAthlete(athlete, options={}) {
-            // Less flexible than byAthlete, but MUCH faster.
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            options.index = 'athlete-ts';
-            return await this.getAll(q, options);
+            return await this.getAll(...this._queryForAthlete(athlete, options));
         }
 
         async *siblings(id, options={}) {
@@ -196,7 +197,6 @@ sauce.ns('hist.db', async ns => {
                 start = -Infinity;
                 end = act.ts;
             } else {
-                options.reverse = true;
                 options.excludeLower = true;
                 start = act.ts;
                 end = Infinity;
@@ -205,6 +205,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         _syncQuery(athlete, processor, name, version, options={}) {
+            // DEPRECATED
             const lower = [athlete, processor];
             const upper = [athlete, processor];
             // The rules for this are quite insane because the array evaluation acts like
@@ -263,6 +264,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         async getForAthleteWithSync(athlete, processor, options={}) {
+            console.warn("DEPRECATED");
             if (options.version != null && options.name == null) {
                 throw new TypeError("'version' set without 'name' set");
             }
@@ -306,7 +308,6 @@ sauce.ns('hist.db', async ns => {
             if (options.version != null && options.name == null) {
                 throw new TypeError("'version' set without 'name' set");
             }
-            const s = Date.now();
             const activities = await this.getAllForAthlete(athlete, {models: true});
             const manifests = this.Model.getSyncManifests(processor, options.name);
             const filtered = new Map();
@@ -363,6 +364,7 @@ sauce.ns('hist.db', async ns => {
         }
 
         async countForAthleteWithSync(athlete, processor, options={}) {
+            // DEPRECATED || needs update
             options.keys = true;
             return (await this.getForAthleteWithSync(athlete, processor, options)).length;
         }

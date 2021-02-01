@@ -229,7 +229,7 @@ sauce.ns('hist', async ns => {
                     console.warn("debounce");
                     continue;
                 }
-                console.warn("DRAIN");
+                console.warn("DRAIN", this.inQueue.qsize());
                 await this.drain();
             }
         }
@@ -244,36 +244,21 @@ sauce.ns('hist', async ns => {
                 }
                 activities.set(a.pk, a);
             }
-            const external = []; // XXX phase out
-            const orderedIds = await actsStore.getForAthlete(this.athlete.pk,
-                {keys: true, start: oldest.get('ts')});
+            const orderedIds = await actsStore.getAllKeysForAthlete(this.athlete.pk,
+                {start: oldest.get('ts')});
             const need = orderedIds.filter(x => !activities.has(x));
             for (const a of await actsStore.getMany(need, {models: true})) {
                 if (!a.hasAnySyncErrors('streams') && !a.hasAnySyncErrors('local')) {
                     activities.set(a.pk, a);
-                    external.push(a.pk); // XXX phase out
                 }
             }
             const ordered = orderedIds.map(x => activities.get(x)).filter(x => x);
-            ordered.reverse();  // oldest -> newest
             let atl = 0;
             let ctl = 0;
             let seed;
             // Rewind until we find a seed record from a prior day...
-            for await (const a of actsStore.byAthlete(this.athlete.pk, {models: true, end: oldest.get('ts')})) {
-                if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
-                    console.warn('a seed', a.pk, a.data.athlete);
-                    break;
-                } else if (a.pk !== oldest.pk) {
-                    // Prior activity is same day as oldest in this set, we must lump it in.
-                    console.warn('a sameday', a.pk, a.data.athlete);
-                } else {
-                    console.warn('a else (ONLY A)', a.pk, a.data.athlete);
-                }
-            }
             for await (const a of actsStore.siblings(oldest.pk, {models: true, direction: 'prev'})) {
                 if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
-                    console.warn('b seed', a.pk, a.data.athlete);
                     seed = a;
                     const tl = seed.get('training');
                     atl = tl && tl.atl || 0;
@@ -281,13 +266,12 @@ sauce.ns('hist', async ns => {
                     break;
                 } else if (a.pk !== oldest.pk) {
                     // Prior activity is same day as oldest in this set, we must lump it in.
-                    console.warn('b sameday', a.pk, a.data.athlete);
                     oldest = a;
                     ordered.unshift(a);
                     activities.set(a.pk, a);
                     external.push(a.pk); // XXX phase out
                 } else {
-                    console.warn('b else (UNLIKELY)', a.pk, a.data.athlete);
+                    throw new TypeError("Internal Error: sibling search produced non sensical result");
                 }
             }
             if (seed) {
@@ -514,7 +498,7 @@ sauce.ns('hist', async ns => {
             'static_map',
             'twitter_msg',
         ];
-        const knownIds = new Set(forceUpdate ? [] : await actsStore.getForAthlete(athlete.pk, {keys: true}));
+        const knownIds = new Set(forceUpdate ?  [] : await actsStore.getAllKeysForAthlete(athlete.pk));
         for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
             const work = new jobs.UnorderedWorkQueue({maxPending: 25});
             for (let i = 0; page === 1 || page <= pageCount && i < concurrency; page++, i++) {
@@ -574,7 +558,7 @@ sauce.ns('hist', async ns => {
 
     async function updatePeerActivities(athlete, options={}) {
         const forceUpdate = options.forceUpdate;
-        const knownIds = new Set(forceUpdate ? [] : await actsStore.getForAthlete(athlete.pk, {keys: true}));
+        const knownIds = new Set(forceUpdate ? [] : await actsStore.getAllKeysForAthlete(athlete.pk));
 
         function *yearMonthRange(date) {
             for (let year = date.getUTCFullYear(), month = date.getUTCMonth() + 1;; year--, month=12) {
@@ -950,7 +934,7 @@ sauce.ns('hist', async ns => {
 
 
     async function getActivitiesForAthlete(athleteId, options={}) {
-        return await actsStore.getForAthlete(athleteId, options);
+        return await actsStore.getAllForAthlete(athleteId, options);
     }
     sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
@@ -1064,8 +1048,8 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(invalidateSyncState, {namespace});
 
 
-    async function activityCounts(athleteId) {
-        const activities = await actsStore.getAllForAthlete(athleteId, {models: true});
+    async function activityCounts(athleteId, activities) {
+        activities = activities || await actsStore.getAllForAthlete(athleteId, {models: true});
         const streamManifests = sauce.hist.db.ActivityModel.getSyncManifests('streams');
         const localManifests = sauce.hist.db.ActivityModel.getSyncManifests('local');
         const total = activities.length;
@@ -1125,7 +1109,6 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(activityCounts, {namespace});
 
 
-let xxx = 0;
     class SyncJob extends EventTarget {
         constructor(athlete, isSelf) {
             super();
@@ -1161,7 +1144,6 @@ let xxx = 0;
                 await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
             }
             this.status = 'activities-sync';
-            this.counts = await activityCounts(this.athlete.pk);
             try {
                 await this._syncData();
             } catch(e) {
@@ -1172,8 +1154,8 @@ let xxx = 0;
         }
 
         async _syncData() {
-            const s = Date.now();
             const activities = await actsStore.getAllForAthlete(this.athlete.pk, {models: true});
+            this.allActivities = new Map(activities.map(x => [x.pk, x]));
             const unfetched = [];
             let deferCount = 0;
             for (const a of activities) {
@@ -1292,6 +1274,10 @@ let xxx = 0;
                             queues.delete(q);
                             break;
                         }
+                        if (this.allActivities.get(a.pk) !== a) {
+                            // For event accounting replace our model with the one (apparently) being updated.
+                            this.allActivities.set(a.pk, a);
+                        }
                         batch.add(a);
                         if (offloaded.has(q)) {
                             finished.push(a);
@@ -1311,12 +1297,10 @@ let xxx = 0;
                 }
                 autoBatchLimit = Math.min(500, autoBatchLimit * 1.30);
                 while (batch.size && !this._cancelEvent.isSet()) {
-                    // Step 1: Group activities by manifest...
                     const manifestBatches = new Map();
                     for (const a of batch) {
                         const m = a.nextAvailManifest('local');
                         if (!m) {
-                            // Requeued activities with no more work to do will land here.
                             batch.delete(a);
                             continue;
                         }
@@ -1327,7 +1311,6 @@ let xxx = 0;
                         manifestBatch.push(a);
                         a.clearSyncState(m);
                     }
-                    // Step 2: Process each manifest grouping...
                     for (const [m, activities] of manifestBatches.entries()) {
                         const s = Date.now();
                         const processor = m.data.processor;
@@ -1358,33 +1341,10 @@ let xxx = 0;
                         const elapsed = Math.round((Date.now() - s)).toLocaleString();
                         console.debug(`${m.name}: ${elapsed}ms for ${activities.length} activities`);
                     }
-                    // Step 3: Perform accounting and consolidation...
-                    let progress;
-                    for (const a of batch) {
-                        const m = a.nextAvailManifest('local');
-                        if (!m) {
-                            // Activity is done...
-                            batch.delete(a);
-                            progress = true;
-                            if (a.isSyncComplete('local')) {
-                                // Finished successfully.
-                                if (wasInNewState.has(a)) {
-                                    this.counts.processed++;
-                                } else if (wasInErrorState.has(a)) {
-                                    this.counts.unprocessable--;
-                                }
-                            } else if (wasInNewState.has(a)) {
-                                this.counts.unprocessable++;
-                            }
-                        }
-                    }
-                    // Step 4: Conditionally notify listeners of any progress...
-                    if (progress) {
-                        const ev = new Event('progress');
-                        ev.data = {counts: this.counts};
-                        console.warn("counts from progress (suspect):", this.counts);
-                        this.dispatchEvent(ev);
-                    }
+                    const ev = new Event('progress');
+                    const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
+                    ev.data = {counts};
+                    this.dispatchEvent(ev);
                 }
             }
         }

@@ -797,7 +797,6 @@ sauce.ns('performance', async ns => {
             const start = this.periodStart;
             const end = this.periodEnd;
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id, {start, end});
-            activities.reverse();
             let atl = 0;
             let ctl = 0;
             if (activities.length) {
