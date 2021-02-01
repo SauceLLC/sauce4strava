@@ -4,7 +4,7 @@ sauce.ns('hist.db', async ns => {
 
     'use strict';
 
-    const defaultSyncErrorBackoff = 300 * 1000;  // Actual is (<value-ms> * errorCount)
+    const defaultSyncErrorBackoff = 300 * 1000;  // Actual is (<value-ms> * 2^errorCount)
 
 
     function setUnion(...sets) {
@@ -617,7 +617,7 @@ sauce.ns('hist.db', async ns => {
                 const m = manifestsMap.get(name);
                 const state = states.get(name);
                 const e = state && state.error;
-                if (e && e.ts && Date.now() - e.ts < e.count * m.errorBackoff) {
+                if (e && e.ts && Date.now() - e.ts < m.errorBackoff * (2 ** e.count)) {
                     return;  // Unavailable until error backoff expires.
                 } else {
                     return m;
