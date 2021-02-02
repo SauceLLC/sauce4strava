@@ -18,6 +18,11 @@ sauce.ns('hist', async ns => {
     const athletesStore = new sauce.hist.db.AthletesStore();
 
 
+    function issubclass(A, B) {
+        return A && B && (A.prototype instanceof B || A === B);
+    }
+
+
     async function getActivitiesStreams(activities, streams) {
         const streamKeys = [];
         const actStreams = new Map();
@@ -154,91 +159,89 @@ sauce.ns('hist', async ns => {
     }
 
 
-    class TrainingLoadProcessor {
-        static queueFactory({activities, athlete, cancelEvent}) {
-            if (!this._instances) {
-                this._instances = {};
-            }
-            const ident = athlete.pk;
-            let instance = this._instances[ident];
-            if (!instance) {
-                instance = this._instances[ident] = new this(ident, athlete, cancelEvent);
-                instance.enqueue(activities);
-                instance.start();
-            } else {
-                instance.enqueue(activities);
-            }
-            return instance.outQueue;
-        }
-
-        constructor(ident, athlete, cancelEvent) {
-            this.ident = ident;
+    class OffloadProcessor extends futures.Future {
+        constructor({manifest, athlete, cancelEvent}) {
+            super();
+            this.manifest = manifest;
             this.athlete = athlete;
-            this.flushEvent = new locks.Event();
-            this.cancelEvent = cancelEvent;
+            this.pending = new Set();
             this.inQueue = new queues.PriorityQueue();
             this.outQueue = new queues.Queue();
+            this.flushEvent = new locks.Event();
+            this.enqueueEvent = new locks.Event();
+            this.cancelEvent = cancelEvent;
+            this._runProcessor();
         }
 
-        start() {
-            if (this._proc) {
-                throw new Error("Internal Error: already started");
-            }
-            this._proc = this.processor().finally(() => this.delete());
+        flush() {
+            this.flushEvent.set();
         }
 
-        delete() {
-            delete this.constructor._instances[this.ident];
-            this._proc = null;
-            this.outQueue.putNoWait(null);
+        enqueue(activity) {
+            this.pending.add(activity);
+            this.inQueue.putNoWait(activity, activity.get('ts'));
+            this.enqueueEvent.set();
         }
 
-        enqueue(activities) {
-            if (this._proc === null) {
-                throw Error('Internal Error: enqueue attempt to deleted processor');
-            }
-            if (activities == null) {
-                this.flushEvent.set();
-            } else {
-                for (const a of activities) {
-                    this.inQueue.putNoWait(a, a.get('ts'));
-                }
-            }
+        dequeue() {
+            const a = this.outQueue.getNoWait();
+            this.pending.delete(a);
+            return a;
+        }
+
+        available() {
+            return this.outQueue.qsize();
+        }
+
+        async wait() {
+            return await this.outQueue.wait();
         }
 
         async processor() {
-            const deadline = Date.now() + (60 * 1000);
-            const debounce = 5 * 1000;
-            let lastSize;
-            while (!this.cancelEvent.isSet() && this.inQueue.qsize()) {
-                const size = this.inQueue.qsize();
-                if (size !== lastSize) {
-                    lastSize = size;
-                }
-                const waiters = [
+            throw new TypeError("Pure virutal method");
+            /* Subclass should keep this alive for the duration of their execution.
+             * It is also their job to monitor flushEvent and cancelEvent
+             */
+        }
+
+        async _runProcessor() {
+            try {
+                this.setResult(await this.processor());
+            } catch(e) {
+                this.setError(e);
+            }
+        }
+    }
+
+
+    class TrainingLoadProcessor extends OffloadProcessor {
+        async processor() {
+            const deadline = Date.now() + (90 * 1000);
+            const debounce = 3 * 1000;
+            do {
+                await Promise.race([
                     this.cancelEvent.wait(),
                     this.flushEvent.wait(),
-                    sleep(deadline - Date.now()),
-                    sleep(debounce),
-                ];
-                await Promise.race(waiters);
+                    sleep(Math.min(debounce, deadline - Date.now())),
+                ]);
                 if (this.cancelEvent.isSet()) {
                     return;
                 }
-                if (!this.flushEvent.isSet()) {
-                    if (this.inQueue.qsize() !== lastSize && Date.now() < deadline) {
-                        console.warn("debounce");
-                        continue;
+                if (!this.flushEvent.isSet() && this.enqueueEvent.isSet() && Date.now() < deadline) {
+                    console.warn("debounce");
+                    if (Math.random() > 0.5) {
+                        throw new Error("TESTING");
                     }
-                } else {
-                    this.flushEvent.clear();
+                    continue;
                 }
-                console.warn("DRAIN", this.inQueue.qsize());
-                await this.drain();
-            }
+                this.flushEvent.clear();
+                this.enqueueEvent.clear();
+                await this.dispatch();
+            } while (this.inQueue.qsize());
         }
 
-        async drain() {
+        async dispatch() {
+            console.warn("Processing", this.inQueue.qsize(), 'activities');
             const activities = new Map();
             let oldest;
             while (this.inQueue.qsize()) {
@@ -273,7 +276,6 @@ sauce.ns('hist', async ns => {
                     oldest = a;
                     ordered.unshift(a);
                     activities.set(a.pk, a);
-                    external.push(a.pk); // XXX phase out
                 } else {
                     throw new TypeError("Internal Error: sibling search produced non sensical result");
                 }
@@ -310,8 +312,6 @@ sauce.ns('hist', async ns => {
             if (i < ordered.length) {
                 throw new Error("Internal Error");
             }
-            // Manually save externally referenced or loaded activities.
-            //await actsStore.saveModels(external.map(x => activities.get(x))); // XXX
             for (const a of ordered) {
                 this.outQueue.putNoWait(a);
             }
@@ -368,7 +368,7 @@ sauce.ns('hist', async ns => {
         name: 'training-load',
         version: 1,
         depends: ['activity-stats'],
-        data: {processor: TrainingLoadProcessor.queueFactory.bind(TrainingLoadProcessor)}
+        data: {processor: TrainingLoadProcessor}
     });
 
     /*sauce.hist.db.ActivityModel.addSyncManifest({
@@ -1269,70 +1269,102 @@ sauce.ns('hist', async ns => {
             console.info("Completed streams fetch for: " + this.athlete);
         }
 
-        async _localSetSyncDone(finished, manifest) {
+        async _localSetSyncError(activities, manifest, e) {
+            console.warn(`Top level local processing error (${manifest.name}) v${manifest.version}`, e);
+            sauce.report.error(e);
+            for (const a of activities) {
+                a.setSyncError(manifest, e);
+            }
+            await actsStore.saveModels(activities);
+        }
+
+        async _localSetSyncDone(activities, manifest) {
             // NOTE: The processor is free to use setSyncError(), but we really can't
             // trust them to consistently use setSyncSuccess().  Failing to do so would
             // be a disaster, so we handle that here.  The model is: Optionally tag the
             // activity as having a sync error otherwise we assume it worked or does
             // not need further processing, so mark it as done (success).
-            for (const a of finished) {
+            for (const a of activities) {
                 if (!a.hasSyncError(manifest)) {
                     a.setSyncSuccess(manifest);
                 }
             }
-            await actsStore.saveModels(finished);
+            await actsStore.saveModels(activities);
         }
 
         async _localProcessWorker() {
             let autoBatchLimit = 12;
             const batch = new Set();
-            const offloaded = new Map();
-            const wasInErrorState = new Set();
-            const wasInNewState = new Set();
-            const queues = new Set([this._procQueue]);
-            while (queues.size && !this._cancelEvent.isSet()) {
-                if ([...queues].every(x => !x.qsize())) {
-                    if (batch.length) {
-                        debugger;
+            const offloaded = new Set();
+            const offloadedActive = new Map();
+            let procQueue = this._procQueue;
+            while ((procQueue || offloaded.size) && !this._cancelEvent.isSet()) {
+                const queues = [...offloaded].map(x => x.outQueue);
+                if (procQueue) {
+                    queues.push(procQueue);
+                }
+                const available = [...offloaded].some(x => x.available()) ||
+                    (procQueue && procQueue.qsize());
+                if (!available) {
+                    const waiters = [...offloaded, this._cancelEvent];
+                    if (!procQueue) {
+                        // No new incoming data, instruct offload queues to get busy..
+                        for (const x of offloaded) {
+                            console.debug('Flushing offload processor:', x.manifest.name);
+                            x.flush();
+                        }
+                    } else {
+                        waiters.push(procQueue);
                     }
-                    for (const x of offloaded.values()) {
-                        await x.processor({
-                            manifest: x.manifest,
-                            activities: null,  // flush
-                            athlete: this.athlete,
-                            cancelEvent: this._cancelEvent,
-                        });
-                    }
-                    await Promise.race([...queues, this._cancelEvent].map(x => x.wait()));
+                    await Promise.race(waiters.map(x => x.wait()));
                     continue;
                 }
-                for (const q of queues) {
-                    const finished = [];
-                    while (q.qsize()) {
-                        const a = q.getNoWait();
+                let full;
+                if (procQueue) {
+                    while (procQueue.qsize()) {
+                        const a = procQueue.getNoWait();
                         if (a === null) {
-                            queues.delete(q);
+                            procQueue = null;
                             break;
                         }
-                        if (this.allActivities.get(a.pk) !== a) {
-                            // For event accounting replace our model with the one (apparently) being updated.
-                            this.allActivities.set(a.pk, a);
-                        }
                         batch.add(a);
-                        if (offloaded.has(q)) {
-                            finished.push(a);
-                        } else if (a.hasAnySyncErrors('local')) {
-                            wasInErrorState.add(a);
-                        } else {
-                            wasInNewState.add(a);
-                        }
                         if (batch.size >= autoBatchLimit) {
+                            full = true;
                             break;
                         }
                     }
-                    // Handle state mgmt for offboarded activities rejoining us.
+                }
+                for (const proc of offloaded) {
+                    if (full) {
+                        break;
+                    }
+                    const finished = [];
+                    while (proc.available()) {
+                        const a = proc.dequeue();
+                        if (this.allActivities.get(a.pk) !== a) {
+                            // For event accounting replace our model with the one being updated.
+                            this.allActivities.set(a.pk, a);
+                        }
+                        finished.push(a);
+                        batch.add(a);
+                        if (batch.size >= autoBatchLimit) {
+                            full = true;
+                            break;
+                        }
+                    }
+                    if (proc.done() && !proc.available()) {
+                        try {
+                            await proc;
+                        } catch(e) {
+                            await this._localSetSyncError(proc.pending, proc.manifest, e);
+                        }
+                        if (!full) {
+                            console.debug("Offload processor finished:", proc.manifest.name);
+                            offloaded.delete(proc);
+                        }
+                    }
                     if (finished.length) {
-                        await this._localSetSyncDone(finished, offloaded.get(q).manifest);
+                        await this._localSetSyncDone(finished, proc.manifest);
                     }
                 }
                 autoBatchLimit = Math.min(500, autoBatchLimit * 1.30);
@@ -1352,37 +1384,44 @@ sauce.ns('hist', async ns => {
                         a.clearSyncState(m);
                     }
                     for (const [m, activities] of manifestBatches.entries()) {
-                        const s = Date.now();
                         const processor = m.data.processor;
-                        let offloadQueue;
-                        try {
-                            offloadQueue = await processor({
-                                manifest: m,
-                                activities,
-                                athlete: this.athlete,
-                                cancelEvent: this._cancelEvent,
-                            });
-                        } catch(e) {
-                            console.warn(`Top level local processing error (${m.name}) ` +
-                                         `v${m.version} for ${activities.length} activities`, e);
-                            for (const a of activities) {
-                                a.setSyncError(m, e);
+                        if (issubclass(processor, OffloadProcessor)) {
+                            let procInstance = offloadedActive.get(processor);
+                            if (!procInstance) {
+                                console.info("Creating new offload processor:", m.name);
+                                procInstance = new processor({
+                                    manifest: m,
+                                    athlete: this.athlete,
+                                    cancelEvent: this._cancelEvent
+                                });
+                                offloadedActive.set(processor, procInstance);
+                                offloaded.add(procInstance);
+                                // The processor can remain in the offloaded set until it's fully drained
+                                // in the upper queue mgmt section, but we need to remove it from the active
+                                // set immediately so we don't requeue data to it.
+                                procInstance.finally(() => void offloadedActive.delete(processor));
                             }
-                        }
-                        if (offloadQueue) {
                             for (const a of activities) {
+                                await procInstance.enqueue(a);
                                 batch.delete(a);
                             }
-                            offloaded.set(offloadQueue, {
-                                manifest: m,
-                                processor
-                            });
-                            queues.add(offloadQueue);
+                            console.debug(`${m.name}: enqueued ${activities.length} activities`);
                         } else {
-                            await this._localSetSyncDone(activities, m);
+                            const s = Date.now();
+                            try {
+                                await processor({
+                                    manifest: m,
+                                    activities,
+                                    athlete: this.athlete,
+                                    cancelEvent: this._cancelEvent,
+                                });
+                                await this._localSetSyncDone(activities, m);
+                            } catch(e) {
+                                await this._localSetSyncError(activities, m, e);
+                            }
+                            const elapsed = Math.round((Date.now() - s)).toLocaleString();
+                            console.debug(`${m.name}: ${elapsed}ms for ${activities.length} activities`);
                         }
-                        const elapsed = Math.round((Date.now() - s)).toLocaleString();
-                        console.debug(`${m.name}: ${elapsed}ms for ${activities.length} activities`);
                     }
                     const ev = new Event('progress');
                     const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
