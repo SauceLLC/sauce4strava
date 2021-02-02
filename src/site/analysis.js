@@ -1794,10 +1794,11 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function addSegmentBadges() {
+    async function addSegmentBadges() {
         if (!ns.weight) {
             return;
         }
+        await sauce.locale.init();
         const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
         rows.push.apply(rows, document.querySelectorAll('table.hidden-segments tr[data-segment-effort-id]'));
         for (const row of rows) {
