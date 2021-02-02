@@ -268,10 +268,10 @@
     sauce.proxy.export(setDisabled);
 
 
-    function setCurrentUser(currentUser) {
+    function setBackgroundPageCurrentUser(currentUser) {
         return bgCommand('setCurrentUser', {currentUser});
     }
-    sauce.proxy.export(setCurrentUser);
+    sauce.proxy.export(setBackgroundPageCurrentUser);
 
 
     async function load() {
@@ -291,11 +291,11 @@
             return;
         }
         document.documentElement.classList.add('sauce-enabled');
-        const currentUser = config.currentUser;
+        self.currentUser = config.currentUser;
         let patronLevel;
         if (!config.patronLevelExpiration || config.patronLevelExpiration < Date.now()) {
             try {
-                patronLevel = await refreshPatronLevel(currentUser);
+                patronLevel = await refreshPatronLevel(self.currentUser);
             } catch(e) {
                 console.error('Failed to refresh patron level:', e);
                 // Fallback to stale value;  Might just be infra issue...
@@ -338,7 +338,6 @@
             }
         }
         setEnabled();
-        setCurrentUser(currentUser);
         if (isSafari()) {
             const lastCheck = config.lastSafariUpdateCheck || 0;
             const lastVersion = config.lastSafariVersion || ext.version;
@@ -349,6 +348,23 @@
             }
         }
     }
+
+    document.documentElement.addEventListener('sauceCurrentUserUpdate', async ev => {
+        // Handle message from the preloader which has access to more user info.
+        // This works on almost every strava page thankfully.
+        const id = Number(ev.currentTarget.dataset.sauceCurrentUser) || undefined;
+        delete ev.currentTarget.dataset.sauceCurrentUser;
+        if (id !== self.currentUser) {
+            if (!id) {
+                console.info("Detected user logout");
+            } else {
+                console.info("Detected new current user:", id);
+            }
+            self.currentUser = id;
+            setBackgroundPageCurrentUser(self.currentUser);
+            await sauce.storage.set('currentUser', id);
+        }
+    });
 
     load();
 })();

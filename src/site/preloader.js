@@ -577,4 +577,10 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
         Klass.prototype.fetch = interceptModelFetch(Klass.prototype.fetch, getSegmentLeaderboard);
     });
+
+
+    sauce.propDefined('currentAthlete', athlete => {
+        document.documentElement.dataset.sauceCurrentUser = athlete.id || '';
+        document.documentElement.dispatchEvent(new Event('sauceCurrentUserUpdate'));
+    });
 };

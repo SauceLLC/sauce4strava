@@ -3174,21 +3174,8 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function updateUserId() {
-        await sauce.proxy.connected;
-        const lastKnown = await sauce.storage.get('currentUser');
-        const currentId = pageView.currentAthlete().id;
-        if (currentId !== lastKnown) {
-            await sauce.storage.set('currentUser', currentId);
-            await sauce.setCurrentUser(currentId);
-            console.warn("User ID updated, a page refresh is recommened.");
-        }
-    }
-
-
     async function load() {
         await sauce.propDefined('pageView', {once: true});
-        updateUserId().catch(sauce.report.error);
         if (sauce.options['responsive']) {
             attachMobileMenuExpander().catch(sauce.report.error);
             pageView.unbindScrollListener();
