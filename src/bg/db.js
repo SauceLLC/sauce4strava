@@ -54,16 +54,30 @@ sauce.ns('hist.db', async ns => {
                     next();
                 }
             },
-            // Versions 6 -> 15 were deprecated in dev.
+            // Versions 6 -> 16 were deprecated in dev.
             {
-                version: 16,
+                version: 17,
                 migrate: (idb, t, next) => {
                     const store = t.objectStore("activities");
-                    if ((new Set(store.indexNames)).has('sync')) {
-                        store.deleteIndex('sync');  // XXX dev clients only, remove later.
+                    // XXX dev clients only, remove later.
+                    if ((new Set(store.indexNames)).has('sync_lookup')) {
+                        store.deleteIndex('sync_lookup');
+                        const curReq = store.openCursor();
+                        curReq.onsuccess = ev => {
+                            const c = ev.target.result;
+                            if (!c) {
+                                next();
+                                return;
+                            }
+                            if (c.value._syncLookup) {
+                                delete c.value._syncLookup;
+                                c.update(c.value);
+                            }
+                            c.continue();
+                        };
+                    } else {
+                        next();
                     }
-                    store.createIndex('sync_lookup', '_syncLookup', {multiEntry: true});
-                    next();
                 }
             }];
         }
@@ -204,139 +218,15 @@ sauce.ns('hist.db', async ns => {
             yield *this.byAthlete(act.athlete, Object.assign({start, end}, options));
         }
 
-        _syncQuery(athlete, processor, name, version, options={}) {
-            // DEPRECATED
-            const lower = [athlete, processor];
-            const upper = [athlete, processor];
-            // The rules for this are quite insane because the array evaluation acts like
-            // a disjunction but only when a range is used.  Exact matches cause further
-            // evaluation of each array index to happen.  So the first open bounds must also
-            // be the last array index to apply a query to.
-            let excludeLower;
-            let excludeUpper;
-            if (name == null) {
-                // Do some lexicographic magic when name is null to trick indedexdb into giving
-                // us an open result for that "column".
-                const maxNameSize = 1000;
-                lower.push('');
-                upper.push(''.padStart(maxNameSize, 'z'));
-                if (version != null || options.error != null) {
-                    throw new TypeError("Invalid Query: 'name' unset with 'version' and/or 'error' set");
-                }
-            } else {
-                let lowerVer;
-                let upperVer;
-                if (version == null && options.error == null) {
-                    lowerVer = -Infinity;
-                    upperVer = Infinity;
-                } else if (version == null && options.error != null) {
-                    lowerVer = options.error ? -Infinity : 0;
-                    upperVer = options.error ? 0 : Infinity;
-                    excludeLower = lowerVer === 0;
-                    excludeUpper = upperVer === 0;
-                } else if (version != null && options.error == null) {
-                    lowerVer = upperVer = version;
-                } else if (version != null && options.error != null) {
-                    lowerVer = upperVer = (version * options.error ? -1 : 1);
-                }
-                lower.splice(2, 0, name, lowerVer);
-                upper.splice(2, 0, name, upperVer);
-            }
-            return IDBKeyRange.bound(lower, upper, excludeLower, excludeUpper);
-        }
-
         async invalidateForAthleteWithSync(athlete, processor, name) {
+            const activities = await this.getAllForAthlete(athlete, {models: true});
             const manifests = this.Model.getSyncManifests(processor, name);
-            const keys = new Set();
-            for (const m of manifests) {
-                const q = this._syncQuery(athlete, processor, m.name);
-                for await (const k of this.keys(q, {index: 'sync_lookup'})) {
-                    keys.add(k);
-                }
-            }
-            const acts = await this.getMany(keys, {models: true});
-            for (const a of acts) {
+            for (const a of activities) {
                 for (const m of manifests) {
                     a.clearSyncState(m);
                 }
             }
-            await this.saveModels(acts);
-        }
-
-        async getForAthleteWithSync(athlete, processor, options={}) {
-            console.warn("DEPRECATED");
-            if (options.version != null && options.name == null) {
-                throw new TypeError("'version' set without 'name' set");
-            }
-            const s = Date.now();
-            const manifests = this.Model.getSyncManifests(processor, options.name);
-            const acts = new Map();
-            const seed = manifests.shift();
-            const version = options.version != null ? options.version : options.error == null ? seed.version : null;
-            const q = this._syncQuery(athlete, processor, seed.name, version, options);
-            const iter = options.keys ? this.keys : this.values;
-            for await (const obj of iter.call(this, q, {index: 'sync_lookup'})) {
-                const pk = options.models ? obj.pk : options.keys ? obj : obj.id;
-                acts.set(pk, {obj, count: 1});
-            }
-            console.warn('withSync 1', Date.now() - s);
-            if (!manifests.length) {
-                return Array.from(acts.values()).map(x => x.obj);
-            }
-            for (const m of manifests) {
-                const version = options.version != null ? options.version : options.error == null ? m.version : null;
-                const q = this._syncQuery(athlete, processor, m.name, version, options);
-                for await (const k of this.keys(q, {index: 'sync_lookup'})) {
-                    // If this is new, we don't care, cause the filter will eliminate it later.
-                    if (acts.has(k)) {
-                        acts.get(k).count++;
-                    }
-                }
-            }
-            console.warn('withSync 2', Date.now() - s);
-            const conjuction = [];
-            for (const x of acts.values()) {
-                if (x.count === manifests.length + 1) {
-                    conjuction.push(x.obj);
-                }
-            }
-            console.warn('withSync 3', Date.now() - s);
-            return conjuction;
-        }
-
-        async getAllForAthleteWithSync(athlete, processor, options={}) {
-            if (options.version != null && options.name == null) {
-                throw new TypeError("'version' set without 'name' set");
-            }
-            const activities = await this.getAllForAthlete(athlete, {models: true});
-            const manifests = this.Model.getSyncManifests(processor, options.name);
-            const filtered = new Map();
-            for (const a of activities) {
-                for (const m of manifests) {
-                    if (options.error) {
-                        if (a.hasSyncError(m)) {
-                            filtered.set(a.pk, a);
-                            break;
-                        }
-                    } else {
-                        if (a.hasSyncSuccess(m)) {
-                            filtered.set(a.pk, a);
-                        } else if (filtered.has(a.pk)) {
-                            filtered.delete(a.pk);
-                            break;
-                        }
-                    }
-                }
-            }
-            if (options.keys) {
-                return [...filtered.keys()];
-            } else if (options.models) {
-                return [...filtered.values()];
-            } else if (options.count) {
-                return filtered.size;
-            } else {
-                return [...filtered.values()].map(x => x.data);
-            }
+            await this.saveModels(activities);
         }
 
         async oldestForAthlete(athlete) {
@@ -361,12 +251,6 @@ sauce.ns('hist.db', async ns => {
         async countForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
             return await this.count(q, {index: 'athlete-ts'});
-        }
-
-        async countForAthleteWithSync(athlete, processor, options={}) {
-            // DEPRECATED || needs update
-            options.keys = true;
-            return (await this.getForAthleteWithSync(athlete, processor, options)).length;
         }
     }
 
@@ -472,31 +356,6 @@ sauce.ns('hist.db', async ns => {
             const proc = sync[processor] = sync[processor] || {};
             proc[name] = state;
             this._updated.add('syncState');
-            this._updated.add('_syncLookup');
-            if (!this.data._syncLookup) {
-                this.data._syncLookup = [];
-            }
-            const versionAndError = (state.version || 0) * (hasError ? -1 : 1);
-            const deleteIndex = state.version == null && state.error == null;
-            for (let i = 0; i < this.data._syncLookup.length; i++) {
-                const x = this.data._syncLookup[i];
-                if (x[this.SYNC_LOOKUP.processor] === processor && x[this.SYNC_LOOKUP.name] === name) {
-                    if (deleteIndex) {
-                        this.data._syncLookup.splice(i, 1);
-                    } else {
-                        x[this.SYNC_LOOKUP.versionAndError] = versionAndError;
-                    }
-                    return;
-                }
-            }
-            if (!deleteIndex) {
-                const syncLookup = Object.keys(this.SYNC_LOOKUP).map(() => 0);  // IDB can't handle empty items
-                syncLookup[this.SYNC_LOOKUP.athlete] = this.data.athlete;
-                syncLookup[this.SYNC_LOOKUP.processor] = processor;
-                syncLookup[this.SYNC_LOOKUP.name] = name;
-                syncLookup[this.SYNC_LOOKUP.versionAndError] = versionAndError;
-                this.data._syncLookup.push(syncLookup);
-            }
         }
 
         setSyncSuccess(manifest) {
@@ -521,7 +380,7 @@ sauce.ns('hist.db', async ns => {
 
         hasSyncSuccess(manifest) {
             const state = this._getSyncState(manifest);
-            return !!(state && state.version === manifest.version);
+            return !!(state && state.version === manifest.version && !(state.error && state.error.ts));
         }
 
         hasSyncError(manifest) {
@@ -636,14 +495,6 @@ sauce.ns('hist.db', async ns => {
             return true;
         }
     }
-
-    // For indexeddb we have to use nested arrays when using multiEntry indexes.
-    ActivityModel.prototype.SYNC_LOOKUP = {
-        athlete: 0,
-        processor: 1,
-        name: 2,
-        versionAndError: 3,
-    };
 
 
     class AthleteModel extends sauce.db.Model {

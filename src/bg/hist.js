@@ -1001,35 +1001,60 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(refreshRequest, {namespace});
 
 
-    async function streamsIntegrityCheck(athleteId, options={}) {
-        const have = new Set();
-        const missing = new Set();
+    async function integrityCheck(athleteId, options={}) {
+        const haveStreamsFor = new Set();
+        const missingStreamsFor = new Set();
+        const inFalseErrorState = new Set();
         for await (const [id,] of streamsStore.byAthlete(athleteId, 'time', {keys: true})) {
-            have.add(id);
+            haveStreamsFor.add(id);
         }
-        for await (const id of await actsStore.getForAthleteWithSync(athleteId, 'streams', {keys: true})) {
-            if (have.has(id)) {
-                have.delete(id);
+        const streamManifest = sauce.hist.db.ActivityModel.getSyncManifest('streams', 'fetch');
+        const activities = new Map((await actsStore.getAllForAthlete(athleteId, {models: true}))
+            .map(x => [x.pk, x]));
+        for (const a of activities.values()) {
+            if (haveStreamsFor.has(a.pk)) {
+                if (a.hasAnySyncErrors('streams')) {
+                    inFalseErrorState.add(a.pk);
+                }
+                haveStreamsFor.delete(a.pk);
             } else {
-                missing.add(id);
+                if (a.hasSyncSuccess(streamManifest)) {
+                    missingStreamsFor.add(a.pk);
+                }
             }
         }
-        if (options.repair && missing.size) {
-            const acts = await actsStore.getMany(missing, {models: true});
-            const streamManifest = sauce.hist.db.ActivityModel.getSyncManifest('streams', 'fetch');
+        if (options.repair) {
             const localManifests = sauce.hist.db.ActivityModel.getSyncManifests('local');
-            for (const a of acts) {
-                console.info('Attempting to repair activity:', a.pk);
+            for (const id of missingStreamsFor) {
+                console.warn('Repairing activity with missing streams:', id);
+                const a = activities.get(id);
                 a.clearSyncState(streamManifest);
                 for (const m of localManifests) {
                     a.clearSyncState(m);
                 }
+                await a.save();
             }
-            await actsStore.saveModels(acts);
+            for (const id of inFalseErrorState) {
+                console.warn('Repairing activity with false-error state:', id);
+                const a = activities.get(id);
+                a.setSyncSuccess(streamManifest);
+                for (const m of localManifests) {
+                    a.clearSyncState(m);
+                }
+                await a.save();
+            }
+            for (const id of haveStreamsFor) {
+                if (!options.prune) {
+                    console.warn('Ignoring missing activity repair (use "prune" to override):', id);
+                } else {
+                    console.warn('Removing detached stream for activity:', id);
+                    await streamsStore.delete(id, {index: 'activity'});
+                }
+            }
         }
-        return {missingStreams: missing, missingActivities: have};
+        return {missingStreamsFor, haveStreamsFor, inFalseErrorState};
     }
-    sauce.proxy.export(streamsIntegrityCheck);
+    sauce.proxy.export(integrityCheck);
 
 
     async function invalidateSyncState(athleteId, processor, name) {
@@ -1810,7 +1835,7 @@ sauce.ns('hist', async ns => {
 
 
     return {
-        streamsIntegrityCheck,
+        integrityCheck,
         invalidateSyncState,
         getActivitySiblings,
         findPeaks,
