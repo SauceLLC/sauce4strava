@@ -319,7 +319,7 @@ sauce.ns('hist', async ns => {
         processor: 'streams',
         name: 'fetch',
         version: 1,
-        errorBackoff: 3600 * 1000,
+        errorBackoff: 8 * 3600 * 1000,
         data: new Set([
             'time',
             'heartrate',
