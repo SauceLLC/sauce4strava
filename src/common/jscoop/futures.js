@@ -92,7 +92,7 @@ export class Future extends Promise {
             throw new Error('Already fulfilled');
         }
         this._error = e;
-        this._pending = true;
+        this._pending = false;
         this._reject(e);
     }
 }
