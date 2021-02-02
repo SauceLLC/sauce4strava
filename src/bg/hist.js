@@ -216,8 +216,9 @@ sauce.ns('hist', async ns => {
 
     class TrainingLoadProcessor extends OffloadProcessor {
         async processor() {
-            const deadline = Date.now() + (90 * 1000);
             const debounce = 3 * 1000;
+            const maxWait = 90 * 1000;
+            let deadline = Date.now() + maxWait;
             do {
                 await Promise.race([
                     this.cancelEvent.wait(),
@@ -227,12 +228,14 @@ sauce.ns('hist', async ns => {
                 if (this.cancelEvent.isSet()) {
                     return;
                 }
-                if (!this.flushEvent.isSet() && this.enqueueEvent.isSet() && Date.now() < deadline) {
+                const newData = this.enqueueEvent.isSet();
+                this.enqueueEvent.clear();
+                if (!this.flushEvent.isSet() && newData && Date.now() < deadline) {
                     continue;
                 }
                 this.flushEvent.clear();
-                this.enqueueEvent.clear();
                 await this.dispatch();
+                deadline = Date.now() + maxWait;
             } while (this.inQueue.qsize());
         }
 
@@ -1231,6 +1234,7 @@ sauce.ns('hist', async ns => {
         }
 
         async __fetchStreamsWorker(activities) {
+            activities.sort((a, b) => b.get('ts') - a.get('ts'));  // newest -> oldest
             const q = new URLSearchParams();
             const manifest = sauce.hist.db.ActivityModel.getSyncManifest('streams', 'fetch');
             for (const x of manifest.data) {
