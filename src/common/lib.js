@@ -1914,8 +1914,8 @@ sauce.ns('date', function() {
         // savings properly.  The returned date object will always be exactly
         // midnight.
         for (const date = new Date(start);
-             date.getTime() < end.getTime();
-             date.setDate(date.getDate() + days)) {
+            date.getTime() < end.getTime();
+            date.setDate(date.getDate() + days)) {
             yield new Date(date);
         }
     }

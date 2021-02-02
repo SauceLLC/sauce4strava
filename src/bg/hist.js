@@ -228,10 +228,6 @@ sauce.ns('hist', async ns => {
                     return;
                 }
                 if (!this.flushEvent.isSet() && this.enqueueEvent.isSet() && Date.now() < deadline) {
-                    console.warn("debounce");
-                    if (Math.random() > 0.5) {
-                        throw new Error("TESTING");
-                    }
                     continue;
                 }
                 this.flushEvent.clear();
@@ -241,7 +237,7 @@ sauce.ns('hist', async ns => {
         }
 
         async dispatch() {
-            console.warn("Processing", this.inQueue.qsize(), 'activities');
+            console.info("Processing", this.inQueue.qsize(), 'activities');
             const activities = new Map();
             let oldest;
             while (this.inQueue.qsize()) {
@@ -371,7 +367,7 @@ sauce.ns('hist', async ns => {
         data: {processor: TrainingLoadProcessor}
     });
 
-    /*sauce.hist.db.ActivityModel.addSyncManifest({
+    sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'fast-blowup-test',
         version: 1,
@@ -391,7 +387,7 @@ sauce.ns('hist', async ns => {
         depends: ['fast-blowup-test'],
         errorBackoff: 1000,
         data: {processor: () => void 0}
-    });*/
+    });
 
 
     class FetchError extends Error {

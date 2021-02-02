@@ -1124,8 +1124,8 @@ sauce.ns('analysis', ns => {
             stride = distance / activeTime / (cadence * 2 / 60);
         }
         const body = await template({
-            startsAt: H.time(wallStartTime),
-            elapsed: H.time(elapsedTime),
+            startsAt: H.timer(wallStartTime),
+            elapsed: H.timer(elapsedTime),
             power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
                 max: sauce.data.max(correctedPower.values()),
                 np: supportsNP() ? correctedPower.np() : null,
@@ -1477,7 +1477,7 @@ sauce.ns('analysis', ns => {
                     tooltipFormatter: (_, __, data) => `
                         ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr><br/>
                         ${tooltipFormatterAbs(data.y)}
-                        Duration: ${H.time(times[data.x])}`
+                        Duration: ${H.timer(times[data.x])}`
                 });
             }
             $levelSelect.on('change', drawGraph);
@@ -1669,7 +1669,7 @@ sauce.ns('analysis', ns => {
             segmentName: details.get('name'),
             leaderName: athlete.get('display_name'),
             isSelf: athlete.id === pageView.currentAthlete().id,
-            leaderTime: H.time(streamDelta(timeStream)),
+            leaderTime: H.timer(streamDelta(timeStream)),
             selfImageUrl: sauce.extUrl + 'images/jen_and_i_europe.jpg',
             hasPatronRequirement,
             useTrial,
@@ -1745,7 +1745,7 @@ sauce.ns('analysis', ns => {
             const speedAdj = Number($dialog.find(`[name="speed-adjust"]`).val());
             timeMultiplier = 1 - (speedAdj / 100);
             const adjustedTime = timeMultiplier * streamDelta(timeStream);
-            $dialog.find('.leader-time').text(H.time(adjustedTime));
+            $dialog.find('.leader-time').text(H.timer(adjustedTime));
         });
         sauce.report.event('LiveSegment', 'show');
     }
@@ -2321,8 +2321,8 @@ sauce.ns('analysis', ns => {
             logo: sauce.extUrl + 'images/logo_vert_48x128.png',
             supportsRankBadge: pageView.activity().isRide(),
             supportsPerfPredictor: !!(pageView.activity().isRide() && distance && altStream),
-            elapsed: H.time(elapsedTime),
-            active: H.time(activeTime),
+            elapsed: H.timer(elapsedTime),
+            active: H.timer(activeTime),
             paused: L.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
             stops: getStopCount(start, end),
             weight: ns.weight,
@@ -2715,7 +2715,7 @@ sauce.ns('analysis', ns => {
             wind: 0,
             elevation: Math.round(L.elevationFormatter.convert(el)),
             speed: humanPace(origVelocity, {velocity: true}),
-            time: H.time(origTime),
+            time: H.timer(origTime),
             weightUnit: L.weightFormatter.shortUnitKey(),
             speedUnit: ns.paceFormatter.shortUnitKey(),
             elevationUnit: L.elevationFormatter.shortUnitKey(),
@@ -2774,7 +2774,7 @@ sauce.ns('analysis', ns => {
                 $timeAhead.empty();
             }
             $pred.find('.speed').text(humanPace(powerEst.velocity, {velocity: true}));
-            $pred.find('.time').text(H.time(time));
+            $pred.find('.time').text(H.timer(time));
             $pred.find('.distance').text(H.distance(distance));
             $pred.find('.wkg').text(H.number(power / bodyWeight, 1));
             const watts = [powerEst.gWatts, powerEst.aWatts, powerEst.rWatts];

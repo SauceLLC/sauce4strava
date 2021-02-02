@@ -87,23 +87,22 @@ export async function activitySyncDialog(athlete, syncController) {
     const weightHistView = new hist.WeightHistoryView({athlete, el: $modal.find('.entry.history.weight')});
     const rendering = [ftpHistView.render(), weightHistView.render()];
 
-    let _recentCounts;
     async function updateSyncCounts(counts) {
-        counts = counts || _recentCounts || (_recentCounts = await sauce.hist.activityCounts(athlete.id));
+        counts = counts || await sauce.hist.activityCounts(athlete.id);
         const synced = counts.processed;
         const total = counts.total - counts.unavailable - counts.unprocessable;
         $modal.find('.entry.synced progress').attr('value', synced / total);
         if (synced === total) {
             $modal.find('.entry.synced .text').html(`100% <small>(${synced.toLocaleString()} activities)</small>`);
         } else {
-            $modal.find('.entry.synced .text').html(`${synced.toLocaleString()} of ${total.toLocaleString()} activities`);
+            $modal.find('.entry.synced .text').html(`<small>${synced.toLocaleString()} of ${total.toLocaleString()} activities</small>`);
         }
     }
 
     async function updateSyncTimes() {
         const [lastSync, nextSync] = await Promise.all([syncController.lastSync(), syncController.nextSync()]);
-        $modal.find('.entry.last-sync value').text(lastSync ? (new Date(lastSync).toLocaleString()) : '');
-        $modal.find('.entry.next-sync value').text(nextSync ? (new Date(nextSync).toLocaleString()) : '');
+        $modal.find('.entry.last-sync value').text(lastSync ? (sauce.locale.human.datetime(lastSync)) : '');
+        $modal.find('.entry.next-sync value').text(nextSync ? (sauce.locale.human.datetime(nextSync)) : '');
     }
 
     let rateLimiterInterval;

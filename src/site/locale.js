@@ -215,7 +215,7 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanTime(seconds) {
+    function humanTimer(seconds) {
         assertInit();
         return ns.timeFormatter.display(seconds);
     }
@@ -232,6 +232,40 @@ sauce.ns('locale', ns => {
         }
         const style = options.style || 'medium';
         return _intlDateFormats[style].format(date);
+    }
+
+
+    const _intlTimeFormats = {
+        'long': new Intl.DateTimeFormat([], {timeStyle: 'long'}),
+        'medium': new Intl.DateTimeFormat([], {timeStyle: 'medium'}),
+        'short': new Intl.DateTimeFormat([], {timeStyle: 'short'}),
+    };
+    function humanTime(date, options={}) {
+        if (!(date instanceof Date)) {
+            date = new Date(date);
+        }
+        const style = options.style || 'medium';
+        return _intlTimeFormats[style].format(date);
+    }
+
+
+    const _intlDateTimeFormats = {
+        'long': new Intl.DateTimeFormat([], {dateStyle: 'long', timeStyle: 'long'}),
+        'medium': new Intl.DateTimeFormat([], {dateStyle: 'medium', timeStyle: 'medium'}),
+        'short': new Intl.DateTimeFormat([], {dateStyle: 'short', timeStyle: 'short'}),
+    };
+    function humanDateTime(date, options={}) {
+        if (!(date instanceof Date)) {
+            date = new Date(date);
+        }
+        const now = new Date();
+        if (now.getDay() === date.getDay() &&
+            now.getMonth() === date.getMonth() &&
+            now.getFullYear() === date.getFullYear()) {
+            return humanTime(date, options);
+        }
+        const style = options.style || 'medium';
+        return _intlDateTimeFormats[style].format(date);
     }
 
 
@@ -357,8 +391,10 @@ sauce.ns('locale', ns => {
             number: humanNumber,
             pace: humanPace,
             distance: humanDistance,
-            time: humanTime,
+            timer: humanTimer,
             date: humanDate,
+            datetime: humanDateTime,
+            time: humanTime,
             stride: humanStride,
         },
         templateHelpers: {
@@ -369,8 +405,10 @@ sauce.ns('locale', ns => {
             humanNumber,
             humanPace,
             humanDistance,
-            humanTime,
+            humanTimer,
             humanDate,
+            humanDateTime,
+            humanTime,
             humanStride,
         },
     };
