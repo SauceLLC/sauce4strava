@@ -85,7 +85,13 @@
         }
 
         .branding {
+            overflow: visible; // required for ::before on perf page
             filter: saturate(0) contrast(14) invert(1) drop-shadow(2px 2px 1px #3334);
+
+            &::before {
+                top: -13px !important;  // Using a filter breaks the position for unknown reasons.
+                color: color.shade(bg, 43%) !important;  // subject to filter so the value is very tuned!
+            }
         }
 
         .nav-group .drop-down-menu {

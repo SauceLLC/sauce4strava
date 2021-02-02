@@ -91,6 +91,11 @@
 
         .branding {
             filter: saturate(0) brightness(10);
+            overflow: visible; // required for ::before on perf page
+
+            &::before {
+                top: -13px !important;  // Using a filter breaks the position for unknown reasons.
+            }
         }
 
         .nav-bar {
