@@ -367,6 +367,7 @@ sauce.ns('hist', async ns => {
         data: {processor: TrainingLoadProcessor}
     });
 
+    /*
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'fast-blowup-test',
@@ -388,6 +389,7 @@ sauce.ns('hist', async ns => {
         errorBackoff: 1000,
         data: {processor: () => void 0}
     });
+    */
 
 
     class FetchError extends Error {
@@ -595,6 +597,7 @@ sauce.ns('hist', async ns => {
                 'icon-nordicski': 'ski',
                 'icon-backcountryski': 'ski',
                 'icon-snowboard': 'ski',
+                'icon-rollerski': 'ski',
                 'icon-ebikeride': 'ebike',
                 'icon-workout': 'workout',
                 'icon-standuppaddling': 'workout',
@@ -604,9 +607,11 @@ sauce.ns('hist', async ns => {
                 'icon-golf': 'workout',
                 'icon-weighttraining': 'workout',
                 'icon-rowing': 'workout',
+                'icon-canoeing': 'workout',
                 'icon-elliptical': 'workout',
                 'icon-rockclimbing': 'workout',
                 'icon-iceskate': 'workout',
+                'icon-watersport': 'workout',
             };
             const attrSep = String.raw`(?: |\\"|\\')`;
             function tagWithAttrValue(tag, attrVal, matchVal) {
