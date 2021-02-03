@@ -89,13 +89,22 @@ export async function activitySyncDialog(athlete, syncController) {
 
     async function updateSyncCounts(counts) {
         counts = counts || await sauce.hist.activityCounts(athlete.id);
+        const total = counts.total - counts.unavailable;
         const synced = counts.processed;
-        const total = counts.total - counts.unavailable - counts.unprocessable;
-        $modal.find('.entry.synced progress').attr('value', synced / total);
+        const title =
+            `Total: ${counts.total}\n` +
+            `Downloaded: ${counts.imported}\n` +
+            `Unavailable: ${counts.unavailable}\n` +
+            `Remaining: ${counts.total - counts.unavailable - counts.imported}\n` +
+            `Processed: ${counts.processed}\n` +
+            `Unprocessable: ${counts.unprocessable}\n`;
+        const $synced = $modal.find('.entry.synced');
+        $synced.attr('title', title);
+        $synced.find('progress').attr('value', synced / total);
         if (synced === total) {
-            $modal.find('.entry.synced .text').html(`100% <small>(${synced.toLocaleString()} activities)</small>`);
+            $synced.find('.text').html(`100% - ${synced.toLocaleString()} activities`);
         } else {
-            $modal.find('.entry.synced .text').html(`<small>${synced.toLocaleString()} of ${total.toLocaleString()} activities</small>`);
+            $synced.find('.text').html(`${synced.toLocaleString()} of ${total.toLocaleString()} activities`);
         }
     }
 
@@ -117,7 +126,7 @@ export async function activitySyncDialog(athlete, syncController) {
         rateLimiterInterval = setInterval(async () => {
             const resumes = await syncController.rateLimiterResumes();
             if (resumes && resumes - Date.now() > 10000) {
-                const resumesLocale = (new Date(resumes)).toLocaleString();
+                const resumesLocale = sauce.locale.human.datetime(resumes);
                 $modal.find('.entry.status value').text(`Suspended until: ${resumesLocale}`);
             }
         }, 2000);

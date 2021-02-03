@@ -347,8 +347,19 @@ html .ui-dialog {
         .entry {
             padding: 0.5em 1.2em;
 
-            progress {
-                margin-right: 0.8em;
+            &:not(.block) {
+                display: flex;
+                align-items: center;
+            }
+
+            &.synced value {
+                display: inline-flex;
+                flex-direction: column;
+                align-items: center;
+
+                progress {
+                    //display: block;
+                }
             }
 
             &.history-view {
@@ -369,14 +380,14 @@ html .ui-dialog {
         padding: 0;
 
         &.sync-active {
-            .last-sync,
-            .next-sync {
-                display: none;
+            .entry.last-sync,
+            .entry.next-sync {
+                display: none !important;
             }
 
             .sync-recompute,
             .sync-start {
-                display: none;
+                display: none !important;
             }
         }
 
@@ -391,7 +402,7 @@ html .ui-dialog {
             .entry.last-sync,
             .entry.next-sync,
             .entry.status {
-                display: none;
+                display: none !important;
             }
 
             .sync-stop,
