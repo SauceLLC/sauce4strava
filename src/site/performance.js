@@ -502,7 +502,10 @@ sauce.ns('performance', async ns => {
             this.pageView = pageView;
             this.period = ns.router.filters.period || defaultPeriod;
             this.syncCounts = {};
+            this.syncState;
+            this.syncError;
             this.onSyncProgress = this._onSyncProgress.bind(this);
+            this.onSyncStateChange = this._onSyncStateChange.bind(this);
             this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
@@ -514,7 +517,8 @@ sauce.ns('performance', async ns => {
                 athlete: this.athlete,
                 collapsed: (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {},
                 syncCounts: this.athlete && this.syncCounts[this.athlete.id],
-                syncStatus: 'Foobar',
+                syncState: this.syncState,
+                syncError: this.syncError,
                 activeDays: Math.random() * 1000,
                 tss: 300 * Math.random(),
                 peakCTL: 200 * Math.random(),
@@ -545,6 +549,11 @@ sauce.ns('performance', async ns => {
             if (id) {
                 this.syncController = this.pageView.syncControllers[id];
                 this.syncController.addEventListener('progress', this.onSyncProgress);
+                this.syncController.addEventListener('start', this.onSyncStateChange);
+                this.syncController.addEventListener('stop', this.onSyncStateChange);
+                this.syncController.addEventListener('error', this.onSyncStateChange);
+                this.syncController.addEventListener('enable', this.onSyncStateChange);
+                this.syncController.addEventListener('disable', this.onSyncStateChange);
                 this.syncCounts[id] = await sauce.hist.activityCounts(id);
             } else {
                 this.syncController = null;
@@ -566,6 +575,12 @@ sauce.ns('performance', async ns => {
 
         async _onSyncProgress(ev) {
             this.syncCounts[this.athlete.id] = ev.data.counts;
+            await this.render();
+        }
+
+        async _onSyncStateChange(ev) {
+            this.syncState = ev.data.status.state;
+            this.syncError = ev.data.status.error;
             await this.render();
         }
 

@@ -276,7 +276,6 @@ sauce.ns('hist', async ns => {
         }
 
         async _process(batch) {
-            console.info("Processing ATL and CTL for", batch.length, 'activities');
             let oldest = batch[0];
             const activities = new Map();
             const external = new Set();
@@ -290,9 +289,10 @@ sauce.ns('hist', async ns => {
                 }
             }
             if (!unseen) {
-                console.error("skipping redundant work! Yay!");
+                console.debug("No training load updates required");
                 return batch;
             }
+            console.info("Processing ATL and CTL for", batch.length, 'activities');
             const orderedIds = await actsStore.getAllKeysForAthlete(this.athlete.pk,
                 {start: oldest.get('ts')});
             const need = orderedIds.filter(x => !activities.has(x));
@@ -1349,6 +1349,7 @@ sauce.ns('hist', async ns => {
 
         async _localProcessWorker() {
             let autoBatchLimit = 12;
+            let lastProgressHash;
             const batch = new Set();
             const offloaded = new Set();
             const offloadedActive = new Map();
@@ -1477,10 +1478,14 @@ sauce.ns('hist', async ns => {
                             console.debug(`${m.name}: ${elapsed}ms for ${activities.length} activities`);
                         }
                     }
-                    const ev = new Event('progress');
                     const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
-                    ev.data = {counts};
-                    this.dispatchEvent(ev);
+                    const progressHash = JSON.stringify(counts);
+                    if (progressHash !== lastProgressHash) {
+                        lastProgressHash = progressHash;
+                        const ev = new Event('progress');
+                        ev.data = {counts};
+                        this.dispatchEvent(ev);
+                    }
                 }
             }
         }
@@ -1647,7 +1652,7 @@ sauce.ns('hist', async ns => {
             } catch(e) {
                 sauce.report.error(e);
                 athlete.set('lastError', Date.now());
-                this.emitForAthlete(athlete, 'error', syncJob.status);
+                this.emitForAthlete(athlete, 'error', {error: e.message});
             } finally {
                 athlete.set('lastSync', Date.now());
                 await this._athleteLock.acquire();
@@ -1658,7 +1663,7 @@ sauce.ns('hist', async ns => {
                 }
                 this.activeJobs.delete(athleteId);
                 this._refreshEvent.set();
-                this.emitForAthlete(athlete, 'stop', syncJob.status);
+                this.emitForAthlete(athlete, 'stop');
                 console.debug(`Sync completed in ${Date.now() - start}ms for: ` + athlete);
             }
         }
@@ -1740,11 +1745,15 @@ sauce.ns('hist', async ns => {
             super();
             this.athleteId = athleteId;
             this._syncListeners = [];
-            this._setupEventRelay('start');
-            this._setupEventRelay('stop');
+            this.status = {
+                state: this.isActiveSync() ? 'running' : 'idle'
+            };
+            this._setupEventRelay('start', ev => this.status = {state: 'running'});
+            this._setupEventRelay('stop', ev => this.status.state = 'stopped');
+            this._setupEventRelay('error', ev => this.status.error = ev.data.error);
             this._setupEventRelay('progress');
-            this._setupEventRelay('enable');
-            this._setupEventRelay('disable');
+            this._setupEventRelay('enable', ev => this.status = {state: 'idle'});
+            this._setupEventRelay('disable', ev => this.status.state = 'disabled');
         }
 
         delete() {
@@ -1757,9 +1766,13 @@ sauce.ns('hist', async ns => {
             this._syncListeners.length = 0;
         }
 
-        _setupEventRelay(name) {
+        _setupEventRelay(name, internalCallback) {
             const listener = ev => {
                 if (ev.athlete === this.athleteId) {
+                    if (internalCallback) {
+                        internalCallback(ev);
+                    }
+                    ev.data = Object.assign({}, ev.data, {status: this.status});
                     this.dispatchEvent(ev);
                 }
             };
@@ -1804,6 +1817,10 @@ sauce.ns('hist', async ns => {
 
         async nextSync() {
             return ns.syncManager.refreshInterval + await this.lastSync();
+        }
+
+        getStatus() {
+            this.status;
         }
     }
     sauce.proxy.export(SyncController, {namespace});
