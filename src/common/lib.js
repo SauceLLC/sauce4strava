@@ -114,6 +114,8 @@ sauce.ns('data', function() {
 
 
     function createActiveStream(streams, options={}) {
+        // Some broken time streams have enormous gaps.
+        const maxImmobileGap = options.maxImmobileGap != null ? options.maxImmobileGap : 300;
         const isTrainer = options.isTrainer;
         const timeStream = streams.time;
         const movingStream = streams.moving;
@@ -125,11 +127,12 @@ sauce.ns('data', function() {
         for (let i = 0; i < movingStream.length; i++) {
             activeStream.push(!!(
                 movingStream[i] ||
-                (cadenceStream && cadenceStream[i]) ||
-                (wattsStream && wattsStream[i]) ||
-                (distStream && i &&
-                 (distStream[i] - distStream[i - 1]) /
-                 (timeStream[i] - timeStream[i - 1]) >= speedMin)
+                (!i || timeStream[i] - timeStream[i - 1] < maxImmobileGap) && (
+                    (cadenceStream && cadenceStream[i]) ||
+                    (wattsStream && wattsStream[i]) ||
+                    (distStream && i &&
+                     (distStream[i] - distStream[i - 1]) /
+                     (timeStream[i] - timeStream[i - 1]) >= speedMin))
             ));
         }
         return activeStream;
