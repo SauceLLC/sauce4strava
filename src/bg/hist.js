@@ -177,9 +177,11 @@ sauce.ns('hist', async ns => {
             this.flushEvent.set();
         }
 
-        enqueue(activity) {
-            this.pending.add(activity);
-            this.inQueue.putNoWait(activity, activity.get('ts'));
+        enqueueMany(activities) {
+            for (const a of activities) {
+                this.pending.add(a);
+                this.inQueue.putNoWait(a, a.get('ts'));
+            }
             this.enqueueEvent.set();
         }
 
@@ -215,40 +217,81 @@ sauce.ns('hist', async ns => {
 
 
     class TrainingLoadProcessor extends OffloadProcessor {
+        constructor(...args) {
+            super(...args);
+            this.updated = new Set();
+        }
+
+        async fillLevelWait(level) {
+            while (this.inQueue.qsize() < level) {
+                await this.enqueueEvent.wait();
+                this.enqueueEvent.clear();
+            }
+        }
+
         async processor() {
-            const debounce = 3 * 1000;
+            const debounce = 10 * 1000;
             const maxWait = 90 * 1000;
+            const maxSize = 100;
             let deadline = Date.now() + maxWait;
-            do {
+            let lastSize;
+            while (true) {
                 await Promise.race([
                     this.cancelEvent.wait(),
                     this.flushEvent.wait(),
+                    this.fillLevelWait(maxSize),
                     sleep(Math.min(debounce, deadline - Date.now())),
                 ]);
                 if (this.cancelEvent.isSet()) {
                     return;
                 }
-                const newData = this.enqueueEvent.isSet();
-                this.enqueueEvent.clear();
-                if (!this.flushEvent.isSet() && newData && Date.now() < deadline) {
+                const size = this.inQueue.qsize();
+                const newData = lastSize !== size;
+                lastSize = size;
+                if (!size) {
+                    if (this.flushEvent.isSet()) {
+                        console.info('Shutting down training load processor');
+                        return;
+                    }
+                    deadline = Date.now() + maxWait;
+                    continue;
+                } else if (!this.flushEvent.isSet() &&
+                    newData &&
+                    Date.now() < deadline &&
+                    size < maxSize) {
                     continue;
                 }
+                const batch = [];
+                while (this.inQueue.qsize()) {
+                    batch.push(this.inQueue.getNoWait());
+                }
+                batch.sort((a, b) => a.get('ts') - b.get('ts'));  // oldest -> newest
                 this.flushEvent.clear();
-                await this.dispatch();
+                await this._process(batch);
+                for (const a of batch) {
+                    this.outQueue.putNoWait(a);
+                }
                 deadline = Date.now() + maxWait;
-            } while (this.inQueue.qsize());
+            }
         }
 
-        async dispatch() {
-            console.info("Processing", this.inQueue.qsize(), 'activities');
+        async _process(batch) {
+            console.info("Processing ATL and CTL for", batch.length, 'activities');
+            let oldest = batch[0];
             const activities = new Map();
-            let oldest;
-            while (this.inQueue.qsize()) {
-                const a = this.inQueue.getNoWait();
-                if (!oldest || oldest.get('ts') > a.get('ts')) {
-                    oldest = a;
-                }
+            const external = new Set();
+            let unseen = 0;
+            for (const a of batch) {
                 activities.set(a.pk, a);
+                if (!this.updated.has(a.pk)) {
+                    unseen++;
+                } else {
+                    this.updated.add(a.pk);
+                }
+            }
+            if (!unseen) {
+                console.error("skipping redundant work! Yay!");
+                return batch;
             }
             const orderedIds = await actsStore.getAllKeysForAthlete(this.athlete.pk,
                 {start: oldest.get('ts')});
@@ -256,6 +299,8 @@ sauce.ns('hist', async ns => {
             for (const a of await actsStore.getMany(need, {models: true})) {
                 if (!a.hasAnySyncErrors('streams') && !a.hasAnySyncErrors('local')) {
                     activities.set(a.pk, a);
+                    this.updated.add(a.pk);
+                    external.add(a);
                 }
             }
             const ordered = orderedIds.map(x => activities.get(x)).filter(x => x);
@@ -275,6 +320,8 @@ sauce.ns('hist', async ns => {
                     oldest = a;
                     ordered.unshift(a);
                     activities.set(a.pk, a);
+                    this.updated.add(a.pk);
+                    external.add(a);
                 } else {
                     throw new TypeError("Internal Error: sibling search produced non sensical result");
                 }
@@ -311,9 +358,8 @@ sauce.ns('hist', async ns => {
             if (i < ordered.length) {
                 throw new Error("Internal Error");
             }
-            for (const a of ordered) {
-                this.outQueue.putNoWait(a);
-            }
+            console.warn("SAving external", external.size);
+            await actsStore.saveModels(external);
         }
     }
 
@@ -1237,6 +1283,7 @@ sauce.ns('hist', async ns => {
             activities.sort((a, b) => b.get('ts') - a.get('ts'));  // newest -> oldest
             const q = new URLSearchParams();
             const manifest = sauce.hist.db.ActivityModel.getSyncManifest('streams', 'fetch');
+            const localManifests = sauce.hist.db.ActivityModel.getSyncManifests('local');
             for (const x of manifest.data) {
                 q.append('stream_types[]', x);
             }
@@ -1244,6 +1291,9 @@ sauce.ns('hist', async ns => {
                 let error;
                 let data;
                 activity.clearSyncState(manifest);
+                for (const m of localManifests) {
+                    activity.clearSyncState(m);
+                }
                 try {
                     data = await this._fetchStreams(activity, q);
                 } catch(e) {
@@ -1321,34 +1371,19 @@ sauce.ns('hist', async ns => {
                     } else {
                         waiters.push(procQueue);
                     }
-                    await Promise.race(waiters.map(x => x.wait()));
-                    continue;
+                    // Wait for all queues or offloaded procs to be done.
+                    await Promise.any([...waiters.map(x => x.wait()), ...offloaded]);
+                    if (this._cancelEvent.isSet()) {
+                        return;
+                    }
                 }
                 let full;
-                if (procQueue) {
-                    while (procQueue.qsize()) {
-                        const a = procQueue.getNoWait();
-                        if (a === null) {
-                            procQueue = null;
-                            break;
-                        }
-                        batch.add(a);
-                        if (batch.size >= autoBatchLimit) {
-                            full = true;
-                            break;
-                        }
-                    }
-                }
                 for (const proc of offloaded) {
-                    if (full) {
-                        break;
-                    }
                     const finished = [];
                     while (proc.available()) {
                         const a = proc.dequeue();
                         if (this.allActivities.get(a.pk) !== a) {
-                            // For event accounting replace our model with the one being updated.
-                            this.allActivities.set(a.pk, a);
+                            throw new TypeError("No long supported");
                         }
                         finished.push(a);
                         batch.add(a);
@@ -1356,6 +1391,9 @@ sauce.ns('hist', async ns => {
                             full = true;
                             break;
                         }
+                    }
+                    if (finished.length) {
+                        await this._localSetSyncDone(finished, proc.manifest);
                     }
                     if (proc.done() && !proc.available()) {
                         try {
@@ -1368,8 +1406,19 @@ sauce.ns('hist', async ns => {
                             offloaded.delete(proc);
                         }
                     }
-                    if (finished.length) {
-                        await this._localSetSyncDone(finished, proc.manifest);
+                }
+                if (procQueue && !full) {
+                    while (procQueue.qsize()) {
+                        const a = procQueue.getNoWait();
+                        if (a === null) {
+                            procQueue = null;
+                            break;
+                        }
+                        batch.add(a);
+                        if (batch.size >= autoBatchLimit) {
+                            full = true;
+                            break;
+                        }
                     }
                 }
                 autoBatchLimit = Math.min(500, autoBatchLimit * 1.30);
@@ -1406,8 +1455,8 @@ sauce.ns('hist', async ns => {
                                 // set immediately so we don't requeue data to it.
                                 procInstance.finally(() => void offloadedActive.delete(processor));
                             }
+                            await procInstance.enqueueMany(activities);
                             for (const a of activities) {
-                                await procInstance.enqueue(a);
                                 batch.delete(a);
                             }
                             console.debug(`${m.name}: enqueued ${activities.length} activities`);
