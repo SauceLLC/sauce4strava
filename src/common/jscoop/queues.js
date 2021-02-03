@@ -16,6 +16,11 @@ export class QueueEmpty extends Error {}
  */
 export class QueueFull extends Error {}
 
+/**
+ * @typedef QueueWaitOptions
+ * @type {Object}
+ * @property {Number} [size] - Wait until the available items meets or exceeds this value.
+ */
 
 /**
  * A classic producer/consumer construct for regulating work.
@@ -59,30 +64,26 @@ export class Queue {
     }
 
     /**
-     *  @returns {Number} The number of items waiting to be dequeued.
+     * The number of items waiting to be dequeued.
+     * @type {Number}
      */
-    qsize() {
+    get size() {
         return this._queue.length;
     }
 
     /**
-     *  @returns {Number} The maximum number of items that can be enqueued.
+     * The maximum number of items that can be enqueued.
+     * @type {Number}
      */
-    maxsize() {
+    get maxsize() {
         return this._maxsize;
     }
 
     /**
-     *  @returns {boolean} {@link true} if no items are enqueued.
+     * {@link true} if a call to [put]{@link Queue#put} would block.
+     * @type {boolean}
      */
-    empty() {
-        return this._queue.length === 0;
-    }
-
-    /**
-     *  @returns {boolean} {@link true} if a call to [put]{@link Queue#put} would block.
-     */
-    full() {
+    get full() {
         if (this._maxsize <= 0) {
             return false;
         } else {
@@ -97,13 +98,13 @@ export class Queue {
      * @param {*} item - Any object to pass to the caller of [dequeue]{@link Queue#dequeue}.
      */
     async put(item) {
-        while (this.full()) {
+        while (this.full) {
             const putter = new Future();
             this._putters.push(putter);
             try {
                 await putter;
             } catch(e) {
-                if (!this.full()) {
+                if (!this.full) {
                     this._wakeupNext(this._putters);
                 }
                 throw e;
@@ -119,7 +120,7 @@ export class Queue {
      * @throws {QueueFull}
      */
     putNoWait(item) {
-        if (this.full()) {
+        if (this.full) {
             throw new QueueFull();
         }
         this._put.apply(this, arguments);
@@ -130,15 +131,18 @@ export class Queue {
 
     /**
      * Wait for an item to be available.
+     *
+     * @param {QueueWaitOptions} [options]
      */
-    async wait() {
-        while (this.empty()) {
+    async wait(options={}) {
+        const size = options.size == null ? 1 : options.size;
+        while (this.size < size) {
             const getter = new Future();
             this._getters.push(getter);
             try {
                 await getter;
             } catch(e) {
-                if (!this.empty()) {
+                if (this.size) {
                     this._wakeupNext(this._getters);
                 }
                 throw e;
@@ -149,10 +153,11 @@ export class Queue {
     /**
      * Get an item from the queue if it is not empty.  Otherwise block until an item is available.
      *
+     * @param {QueueWaitOptions} [options]
      * @returns {*} An item from the head of the queue.
      */
-    async get() {
-        await this.wait();
+    async get(options) {
+        await this.wait(options);
         return this.getNoWait();
     }
 
@@ -163,12 +168,35 @@ export class Queue {
      * @returns {*} An item from the head of the queue.
      */
     getNoWait() {
-        if (this.empty()) {
+        if (!this.size) {
             throw new QueueEmpty();
         }
         const item = this._get();
         this._wakeupNext(this._putters);
         return item;
+    }
+
+    /**
+     * Get all items from the queue.
+     *
+     * @param {QueueWaitOptions} [options]
+     * @returns {Array} An array of items from the queue.
+     */
+    async getAll(options) {
+        await this.wait(options);
+        return this.getAllNoWait();
+    }
+
+    /**
+     * Get all items from the queue without waiting.
+     */
+    getAllNoWait() {
+        const items = [];
+        while (this.size) {
+            items.push(this._get());
+        }
+        this._wakeupNext(this._putters);
+        return items;
     }
 
     /**

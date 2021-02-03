@@ -47,7 +47,7 @@ export class UnorderedWorkQueue {
 
     _canPut() {
         return (!this._maxPending || this._pending.size + this._releasing < this._maxPending) &&
-            !this._fulfilled.full();
+            !this._fulfilled.full;
     }
 
     /**
@@ -63,7 +63,7 @@ export class UnorderedWorkQueue {
             await ev.wait();
             this._releasing--;
         }
-        if (this._pending.size >= this._maxPending || this._fulfilled.full()) {
+        if (this._pending.size >= this._maxPending || this._fulfilled.full) {
             throw new Error("XXX assertion failed in put");
         }
         const id = this._idCounter++;
@@ -119,7 +119,7 @@ export class UnorderedWorkQueue {
      * @returns {Number} Jobs that are finished but have not be retrieved yet.
      */
     fulfilled() {
-        return this._fulfilled.qsize();
+        return this._fulfilled.size;
     }
 
     /**
@@ -147,7 +147,7 @@ export class UnorderedWorkQueue {
      * }
      */
     async *asCompleted() {
-        while (this._pending.size || this._fulfilled.qsize()) {
+        while (this._pending.size || this._fulfilled.size) {
             yield await this.get();
         }
     }
