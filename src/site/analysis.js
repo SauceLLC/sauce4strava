@@ -902,8 +902,7 @@ sauce.ns('analysis', ns => {
 
 
     function humanPace(raw, options={}) {
-        return H.pace(raw,
-            Object.assign({type: options.paceType}, options));
+        return H.pace(raw, Object.assign({type: ns.paceType}, options));
     }
 
 
