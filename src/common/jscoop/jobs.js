@@ -272,16 +272,16 @@ export class RateLimiter {
 
     async _wait() {
         this._drain();
-        if (this.state.bucket.length) {
-            if (this.state.bucket.length >= this.spec.limit) {
-                await this._sleep(this.spec.period - (Date.now() - this.state.bucket[0]));
-            } else if (this.spec.spread) {
-                const lastTime = this.state.bucket[this.state.bucket.length - 1];
-                const normalWait = this.spec.period / this.spec.limit;
-                const wait = normalWait - (Date.now() - lastTime);
-                if (wait > 0) {
-                    await this._sleep(wait);
-                }
+        while (this.state.bucket.length >= this.spec.limit) {
+            await this._sleep(this.spec.period - (Date.now() - this.state.bucket[0]));
+            this._drain();
+        }
+        if (this.spec.spread) {
+            const lastTime = this.state.bucket[this.state.bucket.length - 1];
+            const normalWait = this.spec.period / this.spec.limit;
+            const wait = normalWait - (Date.now() - lastTime);
+            if (wait > 0) {
+                await this._sleep(wait);
             }
         }
     }
