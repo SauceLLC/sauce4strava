@@ -93,7 +93,7 @@ export async function activitySyncDialog(athlete, syncController) {
         const synced = counts.processed;
         const title =
             `Total: ${counts.total}\n` +
-            `Downloaded: ${counts.imported}\n` +
+            `Imported: ${counts.imported}\n` +
             `Unavailable: ${counts.unavailable}\n` +
             `Remaining: ${counts.total - counts.unavailable - counts.imported}\n` +
             `Processed: ${counts.processed}\n` +
@@ -115,36 +115,37 @@ export async function activitySyncDialog(athlete, syncController) {
     }
 
     let rateLimiterInterval;
-    function setActive() {
-        $modal.addClass('sync-active');
-        $modal.find('.entry.status value').text('Running...');
-        $modal.find('.entry.last-sync value').empty();
-        $modal.find('.entry.next-sync value').empty();
-        $modal.find('.entry.synced progress').removeAttr('value');
-        $modal.find('.entry.synced .text').empty();
-        clearInterval(rateLimiterInterval);
-        rateLimiterInterval = setInterval(async () => {
-            const resumes = await syncController.rateLimiterResumes();
-            if (resumes && resumes - Date.now() > 10000) {
-                const resumesLocale = sauce.locale.human.datetime(resumes);
-                $modal.find('.entry.status value').text(`Suspended until: ${resumesLocale}`);
-            }
-        }, 2000);
-    }
-
-    const listeners = {
-        start: ev => void setActive(),
-        stop: async ev => {
+    async function setActive(active) {
+        if (active) {
+            $modal.addClass('sync-active');
+            $modal.removeClass('has-error');
+            $modal.find('.entry.status value').text('Running...');
+            $modal.find('.entry.last-sync value').empty();
+            $modal.find('.entry.next-sync value').empty();
+            $modal.find('.entry.error value').empty();
+            $modal.find('.entry.synced progress').removeAttr('value');
+            $modal.find('.entry.synced .text').empty();
+            clearInterval(rateLimiterInterval);
+            rateLimiterInterval = setInterval(async () => {
+                const resumes = await syncController.rateLimiterResumes();
+                if (resumes && resumes - Date.now() > 10000) {
+                    const resumesLocale = sauce.locale.human.datetime(resumes);
+                    $modal.find('.entry.status value').text(`Suspended until: ${resumesLocale}`);
+                }
+            }, 2000);
+        } else {
             clearInterval(rateLimiterInterval);
             $modal.removeClass('sync-active');
             $modal.find('.entry.status value').text('Idle');
             await Promise.all([updateSyncCounts(), updateSyncTimes()]);
-        },
+        }
+    }
+
+    const listeners = {
+        active: ev => void setActive(ev.data),
         error: async ev => {
-            clearInterval(rateLimiterInterval);
-            $modal.removeClass('sync-active');
-            $modal.find('.entry.status value').text('Error');
-            await updateSyncTimes();
+            $modal.addClass('has-error');
+            $modal.find('.entry.error value').text(ev.data.error);
         },
         progress: ev => void updateSyncCounts(ev.data.counts),
         enable: ev => void ($modal.find('input[name="enable"]')[0].checked = true),
@@ -189,7 +190,7 @@ export async function activitySyncDialog(athlete, syncController) {
     if (initiallyEnabled) {
         await Promise.all([updateSyncCounts(), updateSyncTimes()]);
         if (await syncController.isActiveSync()) {
-            setActive();
+            setActive(true);
         } else {
             $modal.find('.entry.status value').text('Idle');
         }

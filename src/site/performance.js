@@ -502,12 +502,16 @@ sauce.ns('performance', async ns => {
             this.pageView = pageView;
             this.period = ns.router.filters.period || defaultPeriod;
             this.syncCounts = {};
-            this.syncState;
+            this.syncActive;
+            this.syncStatus;
             this.syncError;
+            this.onSyncActive = this._onSyncActive.bind(this);
+            this.onSyncStatus = this._onSyncStatus.bind(this);
+            this.onSyncError = this._onSyncError.bind(this);
             this.onSyncProgress = this._onSyncProgress.bind(this);
-            this.onSyncStateChange = this._onSyncStateChange.bind(this);
             this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
+            this.collapsed = (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {};
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
         }
@@ -515,9 +519,10 @@ sauce.ns('performance', async ns => {
         async renderAttrs() {
             return {
                 athlete: this.athlete,
-                collapsed: (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {},
-                syncCounts: this.athlete && this.syncCounts[this.athlete.id],
-                syncState: this.syncState,
+                collapsed: this.collapsed,
+                syncCounts: this.syncCounts,
+                syncActive: this.syncActive,
+                syncStatus: this.syncStatus,
                 syncError: this.syncError,
                 activeDays: Math.random() * 1000,
                 tss: 300 * Math.random(),
@@ -544,17 +549,22 @@ sauce.ns('performance', async ns => {
             this.athlete = athlete;
             const id = athlete && athlete.id;
             if (this.syncController) {
+                this.syncController.removeEventListener('active', this.onSyncActive);
+                this.syncController.removeEventListener('status', this.onSyncStatus);
+                this.syncController.removeEventListener('error', this.onSyncError);
                 this.syncController.removeEventListener('progress', this.onSyncProgress);
             }
             if (id) {
                 this.syncController = this.pageView.syncControllers[id];
+                this.syncController.addEventListener('active', this.onSyncActive);
+                this.syncController.addEventListener('status', this.onSyncStatus);
+                this.syncController.addEventListener('error', this.onSyncError);
                 this.syncController.addEventListener('progress', this.onSyncProgress);
-                this.syncController.addEventListener('start', this.onSyncStateChange);
-                this.syncController.addEventListener('stop', this.onSyncStateChange);
-                this.syncController.addEventListener('error', this.onSyncStateChange);
-                this.syncController.addEventListener('enable', this.onSyncStateChange);
-                this.syncController.addEventListener('disable', this.onSyncStateChange);
-                this.syncCounts[id] = await sauce.hist.activityCounts(id);
+                this.syncCounts = await sauce.hist.activityCounts(id);
+                const state = await this.syncController.getState();
+                this.syncActive = state.active;
+                this.syncStatus = state.status;
+                this.syncError = state.error;
             } else {
                 this.syncController = null;
             }
@@ -573,14 +583,26 @@ sauce.ns('performance', async ns => {
             await this.render();
         }
 
-        async _onSyncProgress(ev) {
-            this.syncCounts[this.athlete.id] = ev.data.counts;
+        async _onSyncActive(ev) {
+            if (ev.data) {
+                this.syncError = null;
+            }
+            this.syncActive = ev.data;
             await this.render();
         }
 
-        async _onSyncStateChange(ev) {
-            this.syncState = ev.data.status.state;
-            this.syncError = ev.data.status.error;
+        async _onSyncStatus(ev) {
+            this.syncStatus = ev.data;
+            await this.render();
+        }
+
+        async _onSyncError(ev) {
+            this.syncError = ev.data.error;
+            await this.render();
+        }
+
+        async _onSyncProgress(ev) {
+            this.syncCounts = ev.data.counts;
             await this.render();
         }
 
@@ -606,6 +628,7 @@ sauce.ns('performance', async ns => {
             const id = section.dataset.id;
             const collapsed = en !== false;
             section.classList.toggle('collapsed', collapsed);
+            this.collapsed[id] = collapsed;
             await sauce.storage.setPref(`perfSummarySectionCollapsed.${id}`, collapsed);
         }
     }
