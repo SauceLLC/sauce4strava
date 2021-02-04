@@ -165,38 +165,78 @@ sauce.ns('hist', async ns => {
             this.manifest = manifest;
             this.athlete = athlete;
             this.pending = new Set();
-            this.inQueue = new queues.PriorityQueue();
-            this.outQueue = new queues.Queue();
-            this.flushEvent = new locks.Event();
-            this.enqueueEvent = new locks.Event();
-            this.cancelEvent = cancelEvent;
+            this._incoming = new queues.PriorityQueue();
+            this._finished = new queues.Queue();
+            this._flushEvent = new locks.Event();
+            this._cancelEvent = cancelEvent;
             this._runProcessor();
         }
 
         flush() {
-            this.flushEvent.set();
+            this._flushEvent.set();
         }
 
-        enqueueMany(activities) {
+        putIncoming(activities) {
             for (const a of activities) {
                 this.pending.add(a);
-                this.inQueue.putNoWait(a, a.get('ts'));
+                this._incoming.putNoWait(a, a.get('ts'));
             }
-            this.enqueueEvent.set();
         }
 
-        dequeue() {
-            const a = this.outQueue.getNoWait();
-            this.pending.delete(a);
-            return a;
+        getAll() {
+            const activities = this._finished.getAllNoWait();
+            for (const a of activities) {
+                this.pending.delete(a);
+            }
+            return activities;
         }
 
-        available() {
-            return this.outQueue.size;
+        get size() {
+            return this._finished.size;
         }
 
         async wait() {
-            return await this.outQueue.wait();
+            return await this._finished.wait();
+        }
+
+        putFinished(activities) {
+            for (const a of activities) {
+                this._finished.putNoWait(a);
+            }
+        }
+
+        async getIncomingDebounced(options={}) {
+            const minWait = options.minWait;
+            const maxWait = options.maxWait;
+            const maxSize = options.maxSize;
+            let deadline = Date.now() + maxWait;
+            let lastSize;
+            while (true) {
+                await Promise.race([
+                    this._cancelEvent.wait(),
+                    this._flushEvent.wait(),
+                    this._incoming.wait({size: maxSize}),
+                    sleep(Math.min(minWait, deadline - Date.now())),
+                ]);
+                if (this._cancelEvent.isSet()) {
+                    return null;
+                }
+                const size = this._incoming.size;
+                if (this._flushEvent.isSet()) {
+                    if (!size) {
+                        return null;
+                    }
+                } else if (size != lastSize && size < maxSize && Date.now() < deadline) {
+                    lastSize = size;
+                    continue;
+                }
+                deadline = Date.now() + maxWait;
+                if (!size) {
+                    continue;
+                }
+                this._flushEvent.clear();
+                return this._incoming.getAllNoWait();
+            }
         }
 
         async processor() {
@@ -222,50 +262,18 @@ sauce.ns('hist', async ns => {
             this.updated = new Set();
         }
 
-        async fillLevelWait(level) {
-            while (this.inQueue.size < level) {
-                await this.enqueueEvent.wait();
-                this.enqueueEvent.clear();
-            }
-        }
-
         async processor() {
-            const debounce = 10 * 1000;
+            const minWait = 10 * 1000;
             const maxWait = 90 * 1000;
             const maxSize = 100;
-            let deadline = Date.now() + maxWait;
-            let lastSize;
             while (true) {
-                await Promise.race([
-                    this.cancelEvent.wait(),
-                    this.flushEvent.wait(),
-                    this.inQueue.wait({size: maxSize}),
-                    sleep(Math.min(debounce, deadline - Date.now())),
-                ]);
-                if (this.cancelEvent.isSet()) {
+                const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
+                if (batch === null) {
                     return;
                 }
-                const size = this.inQueue.size;
-                lastSize = size;
-                if (this.flushEvent.isSet()) {
-                    if (!this.inQueue.size) {
-                        console.info('Shutting down training load processor');
-                        return;
-                    }
-                } else if (size != lastSize && size < maxSize && Date.now() < deadline) {
-                    continue;
-                }
-                deadline = Date.now() + maxWait;
-                if (!size) {
-                    continue;
-                }
-                const batch = this.inQueue.getAllNoWait();
                 batch.sort((a, b) => a.get('ts') - b.get('ts'));  // oldest -> newest
-                this.flushEvent.clear();
                 await this._process(batch);
-                for (const a of batch) {
-                    this.outQueue.putNoWait(a);
-                }
+                this.putFinished(batch);
             }
         }
 
@@ -1335,11 +1343,7 @@ sauce.ns('hist', async ns => {
             const offloadedActive = new Map();
             let procQueue = this._procQueue;
             while ((procQueue || offloaded.size) && !this._cancelEvent.isSet()) {
-                const queues = [...offloaded].map(x => x.outQueue);
-                if (procQueue) {
-                    queues.push(procQueue);
-                }
-                const available = [...offloaded].some(x => x.available()) ||
+                const available = [...offloaded].some(x => x.size) ||
                     (procQueue && procQueue.size);
                 if (!available) {
                     const waiters = [...offloaded, this._cancelEvent];
@@ -1352,7 +1356,6 @@ sauce.ns('hist', async ns => {
                     } else {
                         waiters.push(procQueue);
                     }
-                    // Wait for all queues or offloaded procs to be done.
                     await Promise.any([...waiters.map(x => x.wait()), ...offloaded]);
                     if (this._cancelEvent.isSet()) {
                         return;
@@ -1360,23 +1363,18 @@ sauce.ns('hist', async ns => {
                 }
                 let full;
                 for (const proc of offloaded) {
-                    const finished = [];
-                    while (proc.available()) {
-                        const a = proc.dequeue();
-                        if (this.allActivities.get(a.pk) !== a) {
-                            throw new TypeError("No long supported");
-                        }
-                        finished.push(a);
-                        batch.add(a);
-                        if (batch.size >= autoBatchLimit) {
-                            full = true;
-                            break;
-                        }
-                    }
+                    const finished = proc.getAll();
                     if (finished.length) {
+                        for (const a of finished) {
+                            batch.add(a);
+                            if (batch.size >= autoBatchLimit) {
+                                full = true;
+                                break;
+                            }
+                        }
                         await this._localSetSyncDone(finished, proc.manifest);
                     }
-                    if (proc.done() && !proc.available()) {
+                    if (proc.done() && !proc.size) {
                         try {
                             await proc;
                         } catch(e) {
@@ -1436,7 +1434,7 @@ sauce.ns('hist', async ns => {
                                 // set immediately so we don't requeue data to it.
                                 procInstance.finally(() => void offloadedActive.delete(processor));
                             }
-                            await procInstance.enqueueMany(activities);
+                            await procInstance.putIncoming(activities);
                             for (const a of activities) {
                                 batch.delete(a);
                             }
