@@ -192,7 +192,7 @@ sauce.ns('hist', async ns => {
         }
 
         available() {
-            return this.outQueue.qsize();
+            return this.outQueue.size;
         }
 
         async wait() {
@@ -223,7 +223,7 @@ sauce.ns('hist', async ns => {
         }
 
         async fillLevelWait(level) {
-            while (this.inQueue.qsize() < level) {
+            while (this.inQueue.size < level) {
                 await this.enqueueEvent.wait();
                 this.enqueueEvent.clear();
             }
@@ -239,39 +239,33 @@ sauce.ns('hist', async ns => {
                 await Promise.race([
                     this.cancelEvent.wait(),
                     this.flushEvent.wait(),
-                    this.fillLevelWait(maxSize),
+                    this.inQueue.wait({size: maxSize}),
                     sleep(Math.min(debounce, deadline - Date.now())),
                 ]);
                 if (this.cancelEvent.isSet()) {
                     return;
                 }
-                const size = this.inQueue.qsize();
-                const newData = lastSize !== size;
+                const size = this.inQueue.size;
                 lastSize = size;
-                if (!size) {
-                    if (this.flushEvent.isSet()) {
+                if (this.flushEvent.isSet()) {
+                    if (!this.inQueue.size) {
                         console.info('Shutting down training load processor');
                         return;
                     }
-                    deadline = Date.now() + maxWait;
-                    continue;
-                } else if (!this.flushEvent.isSet() &&
-                    newData &&
-                    Date.now() < deadline &&
-                    size < maxSize) {
+                } else if (size != lastSize && size < maxSize && Date.now() < deadline) {
                     continue;
                 }
-                const batch = [];
-                while (this.inQueue.qsize()) {
-                    batch.push(this.inQueue.getNoWait());
+                deadline = Date.now() + maxWait;
+                if (!size) {
+                    continue;
                 }
+                const batch = this.inQueue.getAllNoWait();
                 batch.sort((a, b) => a.get('ts') - b.get('ts'));  // oldest -> newest
                 this.flushEvent.clear();
                 await this._process(batch);
                 for (const a of batch) {
                     this.outQueue.putNoWait(a);
                 }
-                deadline = Date.now() + maxWait;
             }
         }
 
@@ -358,7 +352,6 @@ sauce.ns('hist', async ns => {
             if (i < ordered.length) {
                 throw new Error("Internal Error");
             }
-            console.warn("SAving external", external.size);
             await actsStore.saveModels(external);
         }
     }
@@ -388,7 +381,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'active-stream',
-        version: 1,
+        version: 2,
         data: {processor: activeStreamProcessor}
     });
 
@@ -415,30 +408,6 @@ sauce.ns('hist', async ns => {
         depends: ['activity-stats'],
         data: {processor: TrainingLoadProcessor}
     });
-
-    /*
-    sauce.hist.db.ActivityModel.addSyncManifest({
-        processor: 'local',
-        name: 'fast-blowup-test',
-        version: 1,
-        depends: ['active-stream', 'training-load'],
-        errorBackoff: 1000,
-        data: {processor: () => {
-            if (Math.random() > 0.5) {
-                throw new Error("RANDOM fast blowup test");
-            }
-        }}
-    });
-
-    sauce.hist.db.ActivityModel.addSyncManifest({
-        processor: 'local',
-        name: 'depend-onblowup-test',
-        version: 2,
-        depends: ['fast-blowup-test'],
-        errorBackoff: 1000,
-        data: {processor: () => void 0}
-    });
-    */
 
 
     class FetchError extends Error {
@@ -873,7 +842,7 @@ sauce.ns('hist', async ns => {
 
         async _getWorker() {
             let worker;
-            if (!this._idle.qsize()) {
+            if (!this._idle.size) {
                 if (this._busy.size >= this.maxWorkers) {
                     console.warn("Waiting for available worker...");
                     worker = await this._idle.get();
@@ -1193,10 +1162,10 @@ sauce.ns('hist', async ns => {
             super();
             this.athlete = athlete;
             this.isSelf = isSelf;
-            this.status = 'init';
             this._cancelEvent = new locks.Event();
             this._rateLimiters = getStreamRateLimiterGroup();
             this._procQueue = new queues.Queue();
+            this.setStatus('init');
         }
 
         async wait() {
@@ -1215,21 +1184,32 @@ sauce.ns('hist', async ns => {
             this._runPromise = this._run(options);
         }
 
+        emit(name, data) {
+            const ev = new Event(name);
+            ev.data = data;
+            this.dispatchEvent(ev);
+        }
+
+        setStatus(status) {
+            this.status = status;
+            this.emit('status', status);
+        }
+
         async _run(options={}) {
             if (!options.skipUpdate) {
-                this.status = 'activities-update';
+                this.setStatus('activity-scan');
                 const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
                 await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
                 await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
             }
-            this.status = 'activities-sync';
+            this.setStatus('data-sync');
             try {
                 await this._syncData();
             } catch(e) {
-                this.status = 'error';
+                this.setStatus('error');
                 throw e;
             }
-            this.status = 'complete';
+            this.setStatus('complete');
         }
 
         async _syncData() {
@@ -1260,7 +1240,7 @@ sauce.ns('hist', async ns => {
             const workers = [];
             if (unfetched.length) {
                 workers.push(this._fetchStreamsWorker(unfetched));
-            } else if (!this._procQueue.qsize()) {
+            } else if (!this._procQueue.size) {
                 console.debug("No activity sync required for: " + this.athlete);
                 return;
             } else {
@@ -1360,7 +1340,7 @@ sauce.ns('hist', async ns => {
                     queues.push(procQueue);
                 }
                 const available = [...offloaded].some(x => x.available()) ||
-                    (procQueue && procQueue.qsize());
+                    (procQueue && procQueue.size);
                 if (!available) {
                     const waiters = [...offloaded, this._cancelEvent];
                     if (!procQueue) {
@@ -1409,7 +1389,7 @@ sauce.ns('hist', async ns => {
                     }
                 }
                 if (procQueue && !full) {
-                    while (procQueue.qsize()) {
+                    while (procQueue.size) {
                         const a = procQueue.getNoWait();
                         if (a === null) {
                             procQueue = null;
@@ -1492,15 +1472,28 @@ sauce.ns('hist', async ns => {
 
         async _fetchStreams(activity, q) {
             for (let i = 1;; i++) {
+                const impendingSuspend = this._rateLimiters.willSuspendFor();
+                const minRateLimit = 10000;
+                if (impendingSuspend > minRateLimit) {
+                    console.info(`Rate limited for ${Math.round(impendingSuspend / 60 / 1000)} minutes`);
+                    for (const x of this._rateLimiters) {
+                        if (x.willSuspendFor()) {
+                            console.debug('' + x);
+                        }
+                    }
+                    this.emit('ratelimiter', {
+                        suspended: true,
+                        until: Date.now() + impendingSuspend
+                    });
+                }
                 await Promise.race([this._rateLimiters.wait(), this._cancelEvent.wait()]);
                 if (this._cancelEvent.isSet()) {
                     return;
                 }
-                console.group(`Fetching streams for: ${activity.pk} ${new Date(activity.get('ts'))}`);
-                for (const x of this._rateLimiters) {
-                    console.debug('' + x);
+                if (impendingSuspend > minRateLimit) {
+                    this.emit('ratelimiter', {suspended: false});
                 }
-                console.groupEnd();
+                console.debug(`Fetching streams for: ${activity.pk} ${new Date(activity.get('ts'))}`);
                 try {
                     const resp = await retryFetch(`/activities/${activity.pk}/streams?${q}`);
                     return await resp.json();
@@ -1632,7 +1625,7 @@ sauce.ns('hist', async ns => {
         }
 
         _isDeferred(athlete) {
-            const lastError = athlete.get('lastError');
+            const lastError = athlete.get('lastSyncError');
             return !!lastError && Date.now() - lastError < this.refreshErrorBackoff;
         }
 
@@ -1642,8 +1635,10 @@ sauce.ns('hist', async ns => {
             const athleteId = athlete.pk;
             const isSelf = this.currentUser === athleteId;
             const syncJob = new SyncJob(athlete, isSelf);
+            syncJob.addEventListener('status', ev => this.emitForAthlete(athlete, 'status', ev.data));
             syncJob.addEventListener('progress', ev => this.emitForAthlete(athlete, 'progress', ev.data));
-            this.emitForAthlete(athlete, 'start');
+            syncJob.addEventListener('ratelimiter', ev => this.emitForAthlete(athlete, 'ratelimiter', ev.data));
+            this.emitForAthlete(athlete, 'active', true);
             this.activeJobs.set(athleteId, syncJob);
             syncJob.run(options);
             try {
@@ -1651,7 +1646,7 @@ sauce.ns('hist', async ns => {
                 athlete.set('lastSyncVersionHash', options.syncHash);
             } catch(e) {
                 sauce.report.error(e);
-                athlete.set('lastError', Date.now());
+                athlete.set('lastSyncError', Date.now());
                 this.emitForAthlete(athlete, 'error', {error: e.message});
             } finally {
                 athlete.set('lastSync', Date.now());
@@ -1663,7 +1658,7 @@ sauce.ns('hist', async ns => {
                 }
                 this.activeJobs.delete(athleteId);
                 this._refreshEvent.set();
-                this.emitForAthlete(athlete, 'stop');
+                this.emitForAthlete(athlete, 'active', false);
                 console.debug(`Sync completed in ${Date.now() - start}ms for: ` + athlete);
             }
         }
@@ -1710,7 +1705,7 @@ sauce.ns('hist', async ns => {
             await this.updateAthlete(id, {
                 sync: DBTrue,
                 lastSync: 0,
-                lastError: 0,
+                lastSyncError: 0,
                 lastSyncActivityListVersion: null
             });
             this._refreshEvent.set();
@@ -1745,15 +1740,22 @@ sauce.ns('hist', async ns => {
             super();
             this.athleteId = athleteId;
             this._syncListeners = [];
-            this.status = {
-                state: this.isActiveSync() ? 'running' : 'idle'
+            const activeJob = ns.syncManager && ns.syncManager.activeJobs.get(athleteId);
+            this.state = {
+                active: !!activeJob,
+                status: activeJob && activeJob.status,
+                error: null
             };
-            this._setupEventRelay('start', ev => this.status = {state: 'running'});
-            this._setupEventRelay('stop', ev => this.status.state = 'stopped');
-            this._setupEventRelay('error', ev => this.status.error = ev.data.error);
+            this._setupEventRelay('active', ev => {
+                this.state.active = ev.data;
+                if (this.state.active) {
+                    this.state.error = null;
+                }
+            });
+            this._setupEventRelay('status', ev => this.state.status = ev.data);
+            this._setupEventRelay('error', ev => this.state.error = ev.data.error);
             this._setupEventRelay('progress');
-            this._setupEventRelay('enable', ev => this.status = {state: 'idle'});
-            this._setupEventRelay('disable', ev => this.status.state = 'disabled');
+            this._setupEventRelay('ratelimiter');
         }
 
         delete() {
@@ -1772,7 +1774,6 @@ sauce.ns('hist', async ns => {
                     if (internalCallback) {
                         internalCallback(ev);
                     }
-                    ev.data = Object.assign({}, ev.data, {status: this.status});
                     this.dispatchEvent(ev);
                 }
             };
@@ -1798,16 +1799,16 @@ sauce.ns('hist', async ns => {
         rateLimiterResumes() {
             if (this.isActiveSync()) {
                 const g = streamRateLimiterGroup;
-                if (g && g.sleeping()) {
+                if (g && g.suspended()) {
                     return streamRateLimiterGroup.resumes();
                 }
             }
         }
 
-        rateLimiterSleeping() {
+        rateLimiterSuspended() {
             if (this.isActiveSync()) {
                 const g = streamRateLimiterGroup;
-                return g && g.sleeping();
+                return g && g.suspended();
             }
         }
 
@@ -1819,8 +1820,8 @@ sauce.ns('hist', async ns => {
             return ns.syncManager.refreshInterval + await this.lastSync();
         }
 
-        getStatus() {
-            this.status;
+        getState() {
+            return this.state;
         }
     }
     sauce.proxy.export(SyncController, {namespace});
