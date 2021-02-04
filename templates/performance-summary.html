@@ -9,7 +9,7 @@
         </header>
         <% if (missingTSS.length) { %>
             <row>
-                <key>{-await fa('exclamation-circle-duotone')-}Missing TSS:</key><!--XXX localize-->
+                <key>{-await fa('exclamation-triangle-duotone')-}Missing TSS:</key><!--XXX localize-->
                 <value>{-await fa('exclamation-circle-duotone')-} <a href="foo">{{missingTSS.length}} activities</a></value>
             </row>
         <% } %>
