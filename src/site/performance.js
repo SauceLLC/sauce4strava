@@ -125,6 +125,7 @@ sauce.ns('performance', async ns => {
             }
             let tss = 0;
             let duration = 0;
+            let altGain = 0;
             const ts = date.getTime();
             const daily = [];
             while (i < acts.length && sauce.date.toLocaleDayDate(acts[i].ts).getTime() === ts) {
@@ -132,6 +133,7 @@ sauce.ns('performance', async ns => {
                 daily.push(a);
                 tss += sauce.model.getActivityTSS(a) || 0;
                 duration += a.stats && a.stats.activeTime || 0;
+                altGain += a.stats && a.stats.altitudeGain || 0;
             }
             atl = sauce.perf.calcATL([tss], atl);
             ctl = sauce.perf.calcCTL([tss], ctl);
@@ -142,6 +144,7 @@ sauce.ns('performance', async ns => {
                 duration,
                 atl,
                 ctl,
+                altGain,
             });
         }
         if (i !== acts.length) {
@@ -170,6 +173,7 @@ sauce.ns('performance', async ns => {
                     date: slot.date,
                     tssSum: slot.tss,
                     duration: slot.duration,
+                    altGain: slot.altGain,
                     days: 1,
                     activities: [...slot.activities],
                 };
@@ -177,6 +181,7 @@ sauce.ns('performance', async ns => {
                 const entry = metricData[index];
                 entry.tssSum += slot.tss;
                 entry.duration += slot.duration;
+                entry.altGain += slot.altGain;
                 entry.days++;
                 entry.activities.push(...slot.activities);
             }
@@ -290,6 +295,36 @@ sauce.ns('performance', async ns => {
             }
         }
     }
+
+
+    const betterTooltipPlugin = {
+        beforeEvent: function(chart, event) {
+            if (event.type !== 'mousemove' || chart.options.tooltips.intersect !== false) {
+                return;
+            }
+            const box = chart.chartArea;
+            if (event.x < box.left ||
+                event.x > box.right ||
+                event.y < box.top ||
+                event.y > box.bottom) {
+                return false;
+            }
+        }
+    };
+
+
+    Chart.Tooltip.positioners.sides = function (elements, pos) {
+        const box = this._chart.chartArea;
+        const intersect = this._chart.options.tooltips.intersect;
+        const xAlign = pos.x - box.left > (box.right - box.left) / 2 ? 'right' : 'left';
+        this._options.xAlign = xAlign;
+        this._options.yAlign = intersect === false ? 'center' : undefined;
+        const yPos = intersect === false ? (box.bottom - box.top) / 3 : pos.y;
+        return {
+            x: pos.x,
+            y: yPos
+        };
+    };
 
 
     const chartOverUnderFillPlugin = {
@@ -425,6 +460,7 @@ sauce.ns('performance', async ns => {
             config = config || {};
             setDefault(config, 'type', 'line');
             setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
+            setDefault(config, 'plugins[]', betterTooltipPlugin);
             setDefault(config, 'options.aspectRatio', 3/1);
             setDefault(config, 'options.tooltipLine', true);
             setDefault(config, 'options.tooltipLineColor', '#07c');
@@ -457,6 +493,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
 
+            setDefault(config, 'options.tooltips.position', 'sides');
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.callbacks.label', (item, data) => {
                 const ds = data.datasets[item.datasetIndex];
@@ -815,7 +852,7 @@ sauce.ns('performance', async ns => {
                         yAxes: [{
                             id: 'tss',
                             scaleLabel: {labelString: 'TSS'}, // XXX localize
-                            ticks: {min: 0, maxTicksLimit: 3},
+                            ticks: {min: 0, maxTicksLimit: 4},
                         }, {
                             id: 'duration',
                             position: 'right',
@@ -831,6 +868,30 @@ sauce.ns('performance', async ns => {
                     },
                 }
             });
+
+            const thousandFeet = 1609.344 / 5280 * 100;
+            const stepSize = sauce.locale.elevationFormatter.unitSystem === 'imperial' ? thousandFeet : 1000;
+            this.charts.elevation = new ActivityTimeRangeChart('#elevation', this, {
+                options: {
+                    plugins: {colorschemes: {scheme: 'brewer.Greys3', reverse: true}},
+                    scales: {
+                        yAxes: [{
+                            id: 'elevation',
+                            scaleLabel: {labelString: 'Gain'}, // XXX localize
+                            ticks: {
+                                min: 0,
+                                maxTicksLimit: 8,
+                                stepSize,
+                                callback: v => sauce.locale.human.elevation(v, {suffix: true}),
+                            },
+                        }]
+                    },
+                    tooltips: {
+                        intersect: false,
+                    },
+                }
+            });
+
             await this.update();
         }
 
@@ -847,9 +908,12 @@ sauce.ns('performance', async ns => {
             this.metric = this.period > 240 ? 'months' : this.period > 60 ? 'weeks' : 'days';
             if (this.metric === 'weeks') {
                 this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
+                this.$('.metric-display').text('Weekly'); // XXX localize
             } else if (this.metric === 'months') {
                 this.metricData = aggregateActivitiesByMonth(this.daily);
+                this.$('.metric-display').text('Monthly'); // XXX localize
             } else {
+                this.$('.metric-display').text('Daily'); // XXX localize
                 this.metricData = this.daily;
             }
             this.pageView.trigger('update-period', {
@@ -917,7 +981,7 @@ sauce.ns('performance', async ns => {
 
             this.charts.activities.data.datasets = [{
                 id: 'tss',
-                label: 'TSS', // XXX Localize
+                label: 'TSS',
                 type: 'bar',
                 yAxisID: 'tss',
                 borderWidth: 1,
@@ -928,7 +992,7 @@ sauce.ns('performance', async ns => {
                 })),
             }, {
                 id: 'duration',
-                label: 'Duration', // XXX Localize
+                label: 'Time', // XXX Localize
                 type: 'bar',
                 yAxisID: 'duration',
                 tooltipFormat: x => sauce.locale.human.duration(x, {maxPeriod: 3600}),
@@ -938,10 +1002,35 @@ sauce.ns('performance', async ns => {
                 })),
             }];
             this.charts.activities.update();
+
+            let gain = 0;
+            const gains = this.daily.map(x => {
+                gain += x.altGain;
+                return {x: x.date, y: gain};
+            });
+            this.charts.elevation.data.datasets = [{
+                id: 'elevation',
+                label: 'Elevation', // XXX Localize
+                type: 'line',
+                pointRadius: 0,
+                yAxisID: 'elevation',
+                borderWidth: lineWidth,
+                tooltipFormat: x => sauce.locale.human.elevation(x, {suffix: true}),
+                data: gains,
+            }];
+            this.charts.elevation.update();
+
         }
 
         async onChartClick(ev) {
             const chart = this.charts[ev.currentTarget.id];
+            const box = chart.chartArea;
+            if (ev.offsetX < box.left ||
+                ev.offsetX > box.right ||
+                ev.offsetY < box.top ||
+                ev.offsetY > box.bottom) {
+                return;
+            }
             let elements;
             if (chart.options.tooltips.intersect === false) {
                 elements = chart.getElementsAtXAxis(ev);

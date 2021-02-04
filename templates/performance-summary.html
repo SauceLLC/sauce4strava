@@ -8,9 +8,9 @@
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
         <% if (missingTSS.length) { %>
-            <row>
+            <row class="warning">
                 <key>{-await fa('exclamation-triangle-duotone')-}Missing TSS:</key><!--XXX localize-->
-                <value>{-await fa('exclamation-circle-duotone')-} <a href="foo">{{missingTSS.length}} activities</a></value>
+                <value><a href="javascript:void(0);">{{missingTSS.length}} activities</a></value><!--XXX localize-->
             </row>
         <% } %>
         <row>

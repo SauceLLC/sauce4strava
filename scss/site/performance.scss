@@ -109,12 +109,13 @@ $aside-width: 260px;
         margin: 0.15em 0;
         align-items: center;
 
+        &.warning {
+            color: color.shade(accent, 10%);
+        }
+
         &.rows {
             flex-direction: column;
             align-items: flex-start;
-
-            key {
-            }
 
             value {
                 font-size: 0.9em;
@@ -126,6 +127,10 @@ $aside-width: 260px;
             padding-right: 0.4em;
             font-weight: bold;
             font-size: 0.85em;
+
+            svg[data-icon] {
+                width: 1em;
+            }
         }
 
         value {
@@ -305,6 +310,7 @@ $aside-width: 260px;
             .chart-holder {
                 flex: 1 1 auto;
                 position: relative; // required for responsive chart.js
+                margin-bottom: 4em;
 
                 canvas {
                 }
