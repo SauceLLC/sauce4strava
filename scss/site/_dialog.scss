@@ -391,6 +391,12 @@ html .ui-dialog {
             }
         }
 
+        &:not(.has-error) {
+            .entry.error {
+                display: none !important;
+            }
+        }
+
         &:not(.sync-active):not(.sync-disabled) {
             .sync-stop {
                 display: none;

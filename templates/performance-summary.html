@@ -55,23 +55,27 @@
         </row>
     </section>
 
-    <% if (obj.syncCounts) { %>
-        <section class="sync-stats {{collapsed.sync_stats === true  ? 'collapsed' : ''}}"
-                 data-id="sync_stats">
-            <header>
-                <i>{-await fa('sync-alt-duotone')-}</i>
-                <div class="title">Activity Sync<!--XXX Localize--></div>
-                <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
-                <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
-            </header>
+    <section class="sync-stats {{collapsed.sync_stats === true  ? 'collapsed' : ''}}"
+             data-id="sync_stats">
+        <header>
+            <i>{-await fa('sync-alt-duotone')-}</i>
+            <div class="title">Activity Sync<!--XXX Localize--></div>
+            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
+            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+        </header>
+        <% if (syncActive) { %>
             <row>
-                <key>State:</key><!--XXX localize-->
-                <value>{{syncState}}</value>
+                <key>Status:</key><!--XXX localize-->
+                <value>{{syncStatus}}</value>
             </row>
+        <% } %>
+        <% if (syncError) { %>
             <row>
                 <key>Last Error:</key><!--XXX localize-->
                 <value>{{syncError}}</value>
             </row>
+        <% } %>
+        <% if (syncCounts) { %>
             <row>
                 <key>Activities:</key><!--XXX localize-->
                 <value>{{humanNumber(syncCounts.total)}}</value>
@@ -79,6 +83,10 @@
             <row>
                 <key>Imported:</key><!--XXX localize-->
                 <value>{{humanNumber(syncCounts.imported)}}</value>
+            </row>
+            <row>
+                <key>Remaining:</key><!--XXX localize-->
+                <value>{{humanNumber(syncCounts.total - syncCounts.unavailable - syncCounts.imported)}}</value>
             </row>
             <row>
                 <key>Unavailable:</key><!--XXX localize-->
@@ -92,6 +100,6 @@
                 <key>Unprocessable:</key><!--XXX localize-->
                 <value>{{humanNumber(syncCounts.unprocessable)}}</value>
             </row>
-        </section>
-    <% } %>
+        <% } %>
+    </section>
 <% } %>

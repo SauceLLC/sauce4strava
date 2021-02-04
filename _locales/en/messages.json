@@ -207,6 +207,7 @@
     },
     "sync_control_panel_enabled": {"message": "Enabled"},
     "sync_control_panel_status": {"message": "Status"},
+    "sync_control_panel_last_error": {"message": "Last Error"},
     "sync_control_panel_synced": {"message": "Synchronized"},
     "sync_control_panel_last_sync": {"message": "Last sync"},
     "sync_control_panel_next_sync": {"message": "Next sync"},
