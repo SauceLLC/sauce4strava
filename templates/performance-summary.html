@@ -7,6 +7,12 @@
             <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
+        <% if (missingTSS.length) { %>
+            <row>
+                <key>{-await fa('exclamation-circle-duotone')-}Missing TSS:</key><!--XXX localize-->
+                <value>{-await fa('exclamation-circle-duotone')-} <a href="foo">{{missingTSS.length}} activities</a></value>
+            </row>
+        <% } %>
         <row>
             <key>Active time:</key><!--XXX localize-->
             <value>{{humanDuration(totalTime, {maxPeriod: 3600, precision: 3600})}}</value>

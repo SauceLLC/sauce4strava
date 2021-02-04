@@ -1963,8 +1963,13 @@ sauce.ns('model', function() {
     function getActivityTSS(a) {
         if (a.tssOverride != null) {
             return a.tssOverride;
+        } else if (a.stats) {
+            if (a.stats.tss != null) {
+                return a.stats.tss;
+            } else if (a.stats.tTss != null) {
+                return a.stats.tTss;
+            }
         }
-        return Math.max(0, a.stats && (a.stats.tss || a.stats.tTss) || 0);
     }
 
     return {

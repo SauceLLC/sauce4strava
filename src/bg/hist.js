@@ -349,7 +349,7 @@ sauce.ns('hist', async ns => {
                 while (i < ordered.length && ordered[i].getLocaleDay().getTime() === day.getTime()) {
                     const m = ordered[i++];
                     daily.push(m);
-                    tss += m.getTSS();
+                    tss += m.getTSS() || 0;
                 }
                 atl = sauce.perf.calcATL([tss], atl);
                 ctl = sauce.perf.calcCTL([tss], ctl);

@@ -504,6 +504,7 @@ sauce.ns('performance', async ns => {
             this.sync = {};
             this.daily = [];
             this.weekly = [];
+            this.missingTSS = [];
             this.onSyncActive = this._onSyncActive.bind(this);
             this.onSyncStatus = this._onSyncStatus.bind(this);
             this.onSyncError = this._onSyncError.bind(this);
@@ -521,11 +522,12 @@ sauce.ns('performance', async ns => {
                 collapsed: this.collapsed,
                 sync: this.sync,
                 activeDays: this.daily.filter(x => x.activities.length).length,
-                tssAvg: sauce.data.sum(this.daily.map(x => x.tss)) / this.daily.length,
+                tssAvg: this.daily.length ? sauce.data.sum(this.daily.map(x => x.tss)) / this.daily.length : 0,
                 maxCTL: sauce.data.max(this.daily.map(x => x.ctl)),
                 minTSB: sauce.data.min(this.daily.map(x => x.ctl - x.atl)),
                 weeklyTime: sauce.data.avg(this.weekly.map(x => x.duration)),
                 totalTime: sauce.data.sum(this.daily.map(x => x.duration)),
+                missingTSS: this.missingTSS,
                 peaks: {
                     s5: 2000 * Math.random(),
                     s60: 1000 * Math.random(),
@@ -575,7 +577,6 @@ sauce.ns('performance', async ns => {
 
         async onChangeAthlete(athlete) {
             await this.setAthlete(athlete);
-            //await this.render();
         }
 
         async _onSyncActive(ev) {
@@ -609,6 +610,7 @@ sauce.ns('performance', async ns => {
             } else {
                 this.weekly = aggregateActivitiesByWeek(daily, {isoWeekStart: true});
             }
+            this.missingTSS = activities.filter(x => sauce.model.getActivityTSS(x) == null);
             await this.render();
         }
 
