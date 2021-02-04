@@ -110,7 +110,7 @@ sauce.ns('hist', async ns => {
 
     async function activityStatsProcessor({manifest, activities, athlete}) {
         const actStreams = await getActivitiesStreams(activities,
-            ['time', 'heartrate', 'active', 'watts', 'watts_calc']);
+            ['time', 'heartrate', 'active', 'watts', 'watts_calc', 'altitude']);
         const hrZones = athlete.get('hrZones');
         const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
         const maxHR = hrZones && sauce.perf.estimateMaxHR(hrZones);
@@ -133,6 +133,9 @@ sauce.ns('hist', async ns => {
                     activity.setSyncError(manifest, e);
                     continue;
                 }
+            }
+            if (streams.altitude) {
+                stats.altitudeGain = sauce.geo.altitudeChanges(streams.altitude).gain;
             }
             if (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run')) {
                 const watts = streams.watts || streams.watts_calc;
@@ -404,7 +407,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'activity-stats',
-        version: 2,
+        version: 3,
         depends: ['active-stream', 'running-watts-stream'],
         data: {processor: activityStatsProcessor}
     });
