@@ -186,6 +186,7 @@ $aside-width: 260px;
                     }
 
                     > header {
+                        padding: 0.5em 0.25em;
                         border: none;
                         margin: 0;
 
@@ -200,6 +201,7 @@ $aside-width: 260px;
 
                 &:not(.collapsed) {
                     > header {
+                        padding: 0.5em 0.25em 0.75em;
                         .expander {
                             display: none;
                         }
@@ -207,16 +209,41 @@ $aside-width: 260px;
                 }
 
                 > header {
-                    padding: 0.5em 0.25em 0.75em;
                     border-bottom: 1px solid color.shade(bg, 30%, 0.2);
                     margin-bottom: 0.5em;
                     display: flex;
                     justify-content: space-between;
+                    align-items: center;
                     user-select: none;
 
-                    i svg[data-icon] {
-                        width: 2em;
+                    i.icon {
+                        line-height: 0;
+                        margin: -0.5em 0.2em;
+
+                        svg[data-icon] {
+                            width: 1.3em;
+                        }
                     }
+                }
+
+                &.results i.icon {
+                    .fa-primary {
+                        color: #ffc100;
+                    }
+                }
+
+                &.overview i.icon {
+                    .fa-secondary {
+                        color: #006dff;
+                    }
+
+                    .fa-primary {
+                        color: white;
+                    }
+                }
+
+                &.sync-stats i.icon {
+                    color: #ee5c13;
                 }
             }
         }
