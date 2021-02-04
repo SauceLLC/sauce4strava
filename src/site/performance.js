@@ -501,10 +501,9 @@ sauce.ns('performance', async ns => {
         async init({pageView}) {
             this.pageView = pageView;
             this.period = ns.router.filters.period || defaultPeriod;
-            this.syncCounts = {};
-            this.syncActive;
-            this.syncStatus;
-            this.syncError;
+            this.sync = {};
+            this.daily = [];
+            this.weekly = [];
             this.onSyncActive = this._onSyncActive.bind(this);
             this.onSyncStatus = this._onSyncStatus.bind(this);
             this.onSyncError = this._onSyncError.bind(this);
@@ -520,14 +519,13 @@ sauce.ns('performance', async ns => {
             return {
                 athlete: this.athlete,
                 collapsed: this.collapsed,
-                syncCounts: this.syncCounts,
-                syncActive: this.syncActive,
-                syncStatus: this.syncStatus,
-                syncError: this.syncError,
-                activeDays: Math.random() * 1000,
-                tss: 300 * Math.random(),
-                peakCTL: 200 * Math.random(),
-                weeklyTime: 3600 * 10 * Math.random(),
+                sync: this.sync,
+                activeDays: this.daily.filter(x => x.activities.length).length,
+                tssAvg: sauce.data.sum(this.daily.map(x => x.tss)) / this.daily.length,
+                maxCTL: sauce.data.max(this.daily.map(x => x.ctl)),
+                minTSB: sauce.data.min(this.daily.map(x => x.ctl - x.atl)),
+                weeklyTime: sauce.data.avg(this.weekly.map(x => x.duration)),
+                totalTime: sauce.data.sum(this.daily.map(x => x.duration)),
                 peaks: {
                     s5: 2000 * Math.random(),
                     s60: 1000 * Math.random(),
@@ -560,11 +558,8 @@ sauce.ns('performance', async ns => {
                 this.syncController.addEventListener('status', this.onSyncStatus);
                 this.syncController.addEventListener('error', this.onSyncError);
                 this.syncController.addEventListener('progress', this.onSyncProgress);
-                this.syncCounts = await sauce.hist.activityCounts(id);
-                const state = await this.syncController.getState();
-                this.syncActive = state.active;
-                this.syncStatus = state.status;
-                this.syncError = state.error;
+                this.sync = await this.syncController.getState();
+                this.sync.counts = await sauce.hist.activityCounts(id);
             } else {
                 this.syncController = null;
             }
@@ -580,34 +575,40 @@ sauce.ns('performance', async ns => {
 
         async onChangeAthlete(athlete) {
             await this.setAthlete(athlete);
-            await this.render();
+            //await this.render();
         }
 
         async _onSyncActive(ev) {
             if (ev.data) {
                 this.syncError = null;
             }
-            this.syncActive = ev.data;
+            this.sync.active = ev.data;
             await this.render();
         }
 
         async _onSyncStatus(ev) {
-            this.syncStatus = ev.data;
+            this.sync.status = ev.data;
             await this.render();
         }
 
         async _onSyncError(ev) {
-            this.syncError = ev.data.error;
+            this.sync.error = ev.data.error;
             await this.render();
         }
 
         async _onSyncProgress(ev) {
-            this.syncCounts = ev.data.counts;
+            this.sync.counts = ev.data.counts;
             await this.render();
         }
 
-        async onUpdatePeriod({daily}) {
-            //console.warn("XXX");
+        async onUpdatePeriod({activities, daily, start, end, metricData, metric}) {
+            this.daily = daily;
+            this.activities = activities;
+            if (metric === 'week') {
+                this.weekly = metricData;
+            } else {
+                this.weekly = aggregateActivitiesByWeek(daily, {isoWeekStart: true});
+            }
             await this.render();
         }
 

@@ -8,20 +8,28 @@
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
         <row>
+            <key>Active time:</key><!--XXX localize-->
+            <value>{{humanDuration(totalTime, {maxPeriod: 3600, precision: 3600})}}</value>
+        </row>
+        <row>
             <key>Active days:</key><!--XXX localize-->
             <value>{{humanNumber(activeDays)}}</value>
         </row>
         <row>
-            <key>TSS:</key><!--XXX localize-->
-            <value>{{humanNumber(tss)}}</value>
+            <key>Avg week:</key><!--XXX localize-->
+            <value>{{humanDuration(weeklyTime)}}</value>
+        </row>
+        <row>
+            <key>Avg TSS:</key><!--XXX localize-->
+            <value>{{humanNumber(tssAvg)}}</value>
         </row>
         <row>
             <key>Peak fitness (CTL):</key><!--XXX localize-->
-            <value>{{humanNumber(peakCTL)}}</value>
+            <value>{{humanNumber(maxCTL)}}</value>
         </row>
         <row>
-            <key>Avg weekly duration:</key><!--XXX localize-->
-            <value>{{humanDuration(weeklyTime)}}</value>
+            <key>Least form (TSB):</key><!--XXX localize-->
+            <value>{{humanNumber(minTSB)}}</value>
         </row>
     </section>
 
@@ -63,42 +71,42 @@
             <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
-        <% if (syncActive) { %>
+        <% if (sync.active) { %>
             <row>
                 <key>Status:</key><!--XXX localize-->
-                <value>{{syncStatus}}</value>
+                <value>{{sync.status}}</value>
             </row>
         <% } %>
-        <% if (syncError) { %>
+        <% if (sync.error) { %>
             <row>
                 <key>Last Error:</key><!--XXX localize-->
-                <value>{{syncError}}</value>
+                <value>{{sync.error}}</value>
             </row>
         <% } %>
-        <% if (syncCounts) { %>
+        <% if (sync.counts) { %>
             <row>
                 <key>Activities:</key><!--XXX localize-->
-                <value>{{humanNumber(syncCounts.total)}}</value>
+                <value>{{humanNumber(sync.counts.total)}}</value>
             </row>
             <row>
                 <key>Imported:</key><!--XXX localize-->
-                <value>{{humanNumber(syncCounts.imported)}}</value>
+                <value>{{humanNumber(sync.counts.imported)}}</value>
             </row>
             <row>
                 <key>Remaining:</key><!--XXX localize-->
-                <value>{{humanNumber(syncCounts.total - syncCounts.unavailable - syncCounts.imported)}}</value>
+                <value>{{humanNumber(sync.counts.total - sync.counts.unavailable - sync.counts.imported)}}</value>
             </row>
             <row>
                 <key>Unavailable:</key><!--XXX localize-->
-                <value>{{humanNumber(syncCounts.unavailable)}}</value>
+                <value>{{humanNumber(sync.counts.unavailable)}}</value>
             </row>
             <row>
                 <key>Processed:</key><!--XXX localize-->
-                <value>{{humanNumber(syncCounts.processed)}}</value>
+                <value>{{humanNumber(sync.counts.processed)}}</value>
             </row>
             <row>
                 <key>Unprocessable:</key><!--XXX localize-->
-                <value>{{humanNumber(syncCounts.unprocessable)}}</value>
+                <value>{{humanNumber(sync.counts.unprocessable)}}</value>
             </row>
         <% } %>
     </section>
