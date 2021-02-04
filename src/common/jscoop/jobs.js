@@ -200,9 +200,9 @@ export class RateLimiter {
         this.version = 2;
         this.label = label;
         this.spec = spec;
-        this._lock = new Lock();  // XXX Transition to using a Condition and monitor updates while sleeping
+        this._lock = new Lock();  // XXX Transition to using a Condition and monitor updates while suspended
         this._init = this._loadState();
-        this._sleeping = false;
+        this._suspended = false;
         this._resumes = null;
     }
 
@@ -244,15 +244,30 @@ export class RateLimiter {
     }
 
     /**
-     * @returns {boolean}
+     * If the rate limiter will suspend on the next usage this will return
+     * the number of milliseconds of the expected wait.  Note that the wait
+     * might actually end up being longer if increment is being called
+     * externally.
+     *
+     * @returns {Number} Milliseconds of pending suspend or 0.
      */
-    sleeping() {
-        return this._sleeping;
+    willSuspendFor() {
+        this._drain();
+        if (this.state.bucket.length >= this.spec.limit) {
+            return this.spec.period - (Date.now() - this.state.bucket[0]);
+        }
+        return 0;
     }
 
     /**
-     * @returns {Number} Date milliseconds when a sleeping limiter will
-     *                   wake.
+     * @returns {boolean}
+     */
+    suspended() {
+        return this._suspended;
+    }
+
+    /**
+     * @returns {Number} Timestamp (ms) when a suspended limiter will wake.
      */
     resumes() {
         return this._resumes;
@@ -273,7 +288,7 @@ export class RateLimiter {
     async _wait() {
         this._drain();
         while (this.state.bucket.length >= this.spec.limit) {
-            await this._sleep(this.spec.period - (Date.now() - this.state.bucket[0]));
+            await this._suspend(this.spec.period - (Date.now() - this.state.bucket[0]));
             this._drain();
         }
         if (this.spec.spread) {
@@ -281,7 +296,7 @@ export class RateLimiter {
             const normalWait = this.spec.period / this.spec.limit;
             const wait = normalWait - (Date.now() - lastTime);
             if (wait > 0) {
-                await this._sleep(wait);
+                await this._suspend(wait);
             }
         }
     }
@@ -309,13 +324,13 @@ export class RateLimiter {
         await this._saveState();
     }
 
-    async _sleep(ms) {
-        this._sleeping = true;
+    async _suspend(ms) {
+        this._suspended = true;
         this._resumes = Date.now() + ms;
         try {
             await new Promise(resolve => setTimeout(resolve, ms));
         } finally {
-            this._sleeping = false;
+            this._suspended = false;
             this._resumes = null;
         }
     }
@@ -354,7 +369,7 @@ export class RateLimiterGroup extends Array {
 
     constructor() {
         super();
-        this._lock = new Lock();  // XXX Transition to a Condition and monitor updates during sleep.
+        this._lock = new Lock();  // XXX Transition to a Condition and monitor updates during suspend.
     }
 
     // Just return simple Array for calls like map().
@@ -395,19 +410,35 @@ export class RateLimiterGroup extends Array {
     }
 
     /**
-     * @returns {boolean} True if any of the limiters are sleeping.
+     * Return the max suspend time for all the rate limiters in this group.
+     *
+     * @returns {Number} Milliseconds of pending suspend or 0.
      */
-    sleeping() {
-        return this.some(x => x.sleeping());
+    willSuspendFor() {
+        let maxWait = 0;
+        for (const x of this) {
+            const ms = x.willSuspendFor();
+            if (ms > maxWait) {
+                maxWait = ms;
+            }
+        }
+        return maxWait;
     }
 
     /**
-     * @returns {Number} When the group will resume from sleeping.
+     * @returns {boolean} True if any of the limiters are suspended.
+     */
+    suspended() {
+        return this.some(x => x.suspended());
+    }
+
+    /**
+     * @returns {Number} When the group will resume from all suspensions.
      */
     resumes() {
         let ts = null; 
         for (const x of this) {
-            if (x.sleeping()) {
+            if (x.suspended()) {
                 const resumes = x.resumes();
                 if (!ts || ts < resumes) {
                     ts = resumes;

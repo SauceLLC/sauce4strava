@@ -205,12 +205,14 @@ export class Queue {
      *
      * When all dequeued items have been accounted for with an accompanying call to
      * this function [join]{@link Queue#join} will unblock.
+     *
+     * @param {Number} [count=1] - The number of tasks to mark as done.
      */
-    taskDone() {
-        if (this._unfinishedTasks <= 0) {
+    taskDone(count=1) {
+        if (this._unfinishedTasks - count < 0) {
             throw new Error('Called too many times');
         }
-        this._unfinishedTasks--;
+        this._unfinishedTasks -= count;
         if (this._unfinishedTasks === 0) {
             this._finished.set();
         }
