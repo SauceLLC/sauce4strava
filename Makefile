@@ -57,6 +57,7 @@ packages:
 
 alpha-packages:
 	$(TOOLPATH)/package gecko_alpha
+	$(TOOLPATH)/package chromium_alpha
 
 ########################################################
 # Runtime-only targets
