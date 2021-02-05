@@ -447,6 +447,9 @@ sauce.ns('data', function() {
 
 
     function peakAverage(period, timeStream, valuesStream, options) {
+        if (timeStream.length < 2 || timeStream[timeStream.length - 1] < period) {
+            return;
+        }
         options = options || {};
         const active = options.active;
         const ignoreZeros = options.ignoreZeros;
@@ -827,7 +830,7 @@ sauce.ns('power', function() {
 
 
     function _correctedRollingPower(timeStream, wattsStream, period, idealGap, maxGap, options) {
-        if (timeStream.length < 2) {
+        if (timeStream.length < 2 || timeStream[timeStream.length - 1] < period) {
             return;
         }
         if (idealGap == null || maxGap == null) {
@@ -1203,7 +1206,7 @@ sauce.ns('pace', function() {
 
 
     function bestPace(distance, timeStream, distStream) {
-        if (timeStream.length < 2) {
+        if (timeStream.length < 2 || distance[distance.length - 1] < distance) {
             return;
         }
         const roll = new RollingPace(distance);
