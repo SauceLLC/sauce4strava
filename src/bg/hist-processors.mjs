@@ -35,7 +35,7 @@ async function getActivitiesStreams(activities, streams) {
 class WorkerPoolExecutor {
     constructor(url, options={}) {
         this.url = url;
-        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2);
+        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency || 4);
         this._idle = new queues.Queue();
         this._busy = new Set();
         this._id = 0;
@@ -76,7 +76,7 @@ class WorkerPoolExecutor {
                 if (ev.data.success) {
                     f.setResult(ev.data.value);
                 } else {
-                    f.setError(ev.data.value);
+                    f.setError(new Error(ev.data.value));
                 }
             }
         };
@@ -132,12 +132,14 @@ export class OffloadProcessor extends futures.Future {
         }
     }
 
-    getAll() {
-        const activities = this._finished.getAllNoWait();
-        for (const a of activities) {
+    getBatch(count) {
+        const batch = [];
+        while (this._finished.size && batch.length < count) {
+            const a = this._finished.getNoWait();
             this.pending.delete(a);
+            batch.push(a);
         }
-        return activities;
+        return batch;
     }
 
     get size() {
@@ -327,7 +329,7 @@ export class peaksProcessor extends OffloadProcessor {
     async processor() {
         const minWait = null; //10 * 1000;
         const maxWait = null; //90 * 1000;
-        const maxSize = 1000;
+        const maxSize = null;
         while (true) {
             const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
             if (batch === null) {
@@ -339,20 +341,27 @@ export class peaksProcessor extends OffloadProcessor {
     }
 
     async _process(activities) {
+        console.warn("WAIT for it...");
+        await sleep(5000);
+        console.warn("release");
+        return;
         const activityMap = new Map(activities.map(x => [x.pk, x]));
         const work = [];
-        const step = Math.max(6, Math.floor(activities.length / navigator.hardwareConcurrency || 8));
+        const concurrency = Math.max(1, (navigator.hardwareConcurrency || 6) / 2);
+        const step = Math.max(10, Math.round(activities.length / concurrency));
         for (let i = 0; i < activities.length; i += step) {
-            work.push(this.wp.exec('findPeaks', this.athlete.pk, activities.slice(i, i + step).map(x => x.data)));
+            work.push(this.wp.exec('findPeaks', this.athlete.pk,
+                activities.slice(i, i + step).map(x => x.data)));
         }
-        console.info("Find peaks workers:", work.length);
+        const s = Date.now();
+        console.warn("Find peaks workers:", work.length, step, concurrency);
         for (const errors of await Promise.all(work)) {
             for (const x of errors) {
                 const activity = activityMap.get(x.activity);
                 activity.setSyncError(this.manifest, new Error(x.error));
             }
         }
-        console.info("done");
+        console.info("done", Date.now() - s, 'concurrency', concurrency, 'step', step, 'acts', activities.length);
     }
 }
 
@@ -361,9 +370,11 @@ export async function peaksProcessor2({manifest, activities, athlete}) {
     const wp = getWorkerPool();
     const activityMap = new Map(activities.map(x => [x.pk, x]));
     const work = [];
-    const step = Math.max(6, Math.floor(activities.length / navigator.hardwareConcurrency || 8));
+    const concurrency = Math.max(1, (navigator.hardwareConcurrency || 6) / 2);
+    const step = Math.max(10, Math.round(activities.length / concurrency));
     for (let i = 0; i < activities.length; i += step) {
-        work.push(wp.exec('findPeaks', athlete.pk, activities.slice(i, i + step).map(x => x.data)));
+        work.push(wp.exec('findPeaks', athlete.pk,
+            activities.slice(i, i + step).map(x => x.data)));
     }
     console.info("Find peaks workers:", work.length);
     for (const errors of await Promise.all(work)) {
@@ -372,7 +383,7 @@ export async function peaksProcessor2({manifest, activities, athlete}) {
             activity.setSyncError(manifest, new Error(x.error));
         }
     }
-    console.info("done");
+    console.info("done", Date.now() - s, 'concurrency', concurrency, 'step', step, 'acts', activities.length);
 }
 
 

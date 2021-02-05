@@ -995,7 +995,7 @@ sauce.ns('hist', async ns => {
         }
 
         async _localProcessWorker() {
-            let autoBatchLimit = 12;
+            let batchLimit = 20;
             let lastProgressHash;
             const batch = new Set();
             const offloaded = new Set();
@@ -1008,6 +1008,7 @@ sauce.ns('hist', async ns => {
                     const waiters = [...offloaded, this._cancelEvent];
                     if (!procQueue) {
                         // No new incoming data, instruct offload queues to get busy..
+                        debugger;
                         for (const x of offloaded) {
                             console.debug('Flushing offload processor:', x.manifest.name);
                             x.flush();
@@ -1020,16 +1021,11 @@ sauce.ns('hist', async ns => {
                         return;
                     }
                 }
-                let full;
                 for (const proc of offloaded) {
-                    const finished = proc.getAll();
+                    const finished = proc.getBatch(batchLimit - batch.size);
                     if (finished.length) {
                         for (const a of finished) {
                             batch.add(a);
-                            if (batch.size >= autoBatchLimit) {
-                                full = true;
-                                break;
-                            }
                         }
                         await this._localSetSyncDone(finished, proc.manifest);
                     }
@@ -1039,27 +1035,24 @@ sauce.ns('hist', async ns => {
                         } catch(e) {
                             await this._localSetSyncError(proc.pending, proc.manifest, e);
                         }
-                        if (!full) {
-                            console.debug("Offload processor finished:", proc.manifest.name);
-                            offloaded.delete(proc);
-                        }
+                        console.error("Offload processor finished:", proc.manifest.name); // XXX lower to debug
+                        offloaded.delete(proc);
+                    }
+                    if (batch.size >= batchLimit) {
+                        break;
                     }
                 }
-                if (procQueue && !full) {
-                    while (procQueue.size) {
+                if (procQueue) {
+                    while (procQueue.size && batch.size < batchLimit) {
                         const a = procQueue.getNoWait();
                         if (a === null) {
                             procQueue = null;
                             break;
                         }
                         batch.add(a);
-                        if (batch.size >= autoBatchLimit) {
-                            full = true;
-                            break;
-                        }
                     }
                 }
-                autoBatchLimit = Math.min(500, autoBatchLimit * 1.30);
+                batchLimit = Math.min(500, Math.ceil(batchLimit * 1.30));
                 while (batch.size && !this._cancelEvent.isSet()) {
                     const manifestBatches = new Map();
                     for (const a of batch) {
