@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, browser */
 
 import * as queues from '/src/common/jscoop/queues.js';
 import * as futures from '/src/common/jscoop/futures.js';
@@ -29,6 +29,82 @@ async function getActivitiesStreams(activities, streams) {
         }
     }
     return actStreams;
+}
+
+
+class WorkerPoolExecutor {
+    constructor(url, options={}) {
+        this.url = url;
+        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2);
+        this._idle = new queues.Queue();
+        this._busy = new Set();
+        this._id = 0;
+    }
+
+    async _getWorker() {
+        let worker;
+        if (!this._idle.size) {
+            if (this._busy.size >= this.maxWorkers) {
+                console.warn("Waiting for available worker...");
+                worker = await this._idle.get();
+            } else {
+                worker = new Worker(this.url);
+            }
+        } else {
+            worker = await this._idle.get();
+        }
+        if (worker.dead) {
+            return await this._getWorker();
+        }
+        if (worker.gcTimeout) {
+            clearTimeout(worker.gcTimeout);
+        }
+        this._busy.add(worker);
+        return worker;
+    }
+
+    async exec(call, ...args) {
+        const id = this._id++;
+        const f = new futures.Future();
+        const onMessage = ev => {
+            if (!ev.data || ev.data.id == null) {
+                f.setError(new Error("Invalid Worker Message"));
+            } else if (ev.data.id !== id) {
+                console.warn('Ignoring worker message from other job');
+                return;
+            } else {
+                if (ev.data.success) {
+                    f.setResult(ev.data.value);
+                } else {
+                    f.setError(ev.data.value);
+                }
+            }
+        };
+        const worker = await this._getWorker();
+        worker.addEventListener('message', onMessage);
+        try {
+            worker.postMessage({call, args, id});
+            return await f;
+        } finally {
+            worker.removeEventListener('message', onMessage);
+            this._busy.delete(worker);
+            worker.gcTimeout = setTimeout(() => {
+                worker.dead = true;
+                worker.terminate();
+            }, 30000);
+            this._idle.putNoWait(worker);
+        }
+    }
+}
+
+
+let _workerPool;
+function getWorkerPool() {
+    if (!_workerPool) {
+        const extUrl = browser.runtime.getURL('');
+        _workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist-worker.js');
+    }
+    return _workerPool;
 }
 
 
@@ -82,15 +158,24 @@ export class OffloadProcessor extends futures.Future {
         const minWait = options.minWait;
         const maxWait = options.maxWait;
         const maxSize = options.maxSize;
-        let deadline = Date.now() + maxWait;
+        let deadline = maxWait && Date.now() + maxWait;
         let lastSize;
         while (true) {
-            await Promise.race([
+            const waiters = [
                 this._cancelEvent.wait(),
                 this._flushEvent.wait(),
-                this._incoming.wait({size: maxSize}),
-                sleep(Math.min(minWait, deadline - Date.now())),
-            ]);
+            ];
+            if (maxSize) {
+                waiters.push(this._incoming.wait({size: maxSize}));
+            }
+            if (minWait && maxWait) {
+                waiters.push(sleep(Math.min(minWait, deadline - Date.now())));
+            } else if (minWait) {
+                waiters.push(sleep(minWait));
+            } else if (maxWait) {
+                waiters.push(sleep(maxWait));
+            }
+            await Promise.race(waiters);
             if (this._cancelEvent.isSet()) {
                 return null;
             }
@@ -103,7 +188,7 @@ export class OffloadProcessor extends futures.Future {
                 lastSize = size;
                 continue;
             }
-            deadline = Date.now() + maxWait;
+            deadline = maxWait && Date.now() + maxWait;
             if (!size) {
                 continue;
             }
@@ -233,7 +318,65 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
 }
 
 
-export async function peaksProcessor({manifest, activities, athlete}) {
+export class peaksProcessor extends OffloadProcessor {
+    constructor(...args) {
+        super(...args);
+        this.wp = getWorkerPool();
+    }
+
+    async processor() {
+        const minWait = null; //10 * 1000;
+        const maxWait = null; //90 * 1000;
+        const maxSize = 1000;
+        while (true) {
+            const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
+            if (batch === null) {
+                return;
+            }
+            await this._process(batch);
+            this.putFinished(batch);
+        }
+    }
+
+    async _process(activities) {
+        const activityMap = new Map(activities.map(x => [x.pk, x]));
+        const work = [];
+        const step = Math.max(6, Math.floor(activities.length / navigator.hardwareConcurrency || 8));
+        for (let i = 0; i < activities.length; i += step) {
+            work.push(this.wp.exec('findPeaks', this.athlete.pk, activities.slice(i, i + step).map(x => x.data)));
+        }
+        console.info("Find peaks workers:", work.length);
+        for (const errors of await Promise.all(work)) {
+            for (const x of errors) {
+                const activity = activityMap.get(x.activity);
+                activity.setSyncError(this.manifest, new Error(x.error));
+            }
+        }
+        console.info("done");
+    }
+}
+
+
+export async function peaksProcessor2({manifest, activities, athlete}) {
+    const wp = getWorkerPool();
+    const activityMap = new Map(activities.map(x => [x.pk, x]));
+    const work = [];
+    const step = Math.max(6, Math.floor(activities.length / navigator.hardwareConcurrency || 8));
+    for (let i = 0; i < activities.length; i += step) {
+        work.push(wp.exec('findPeaks', athlete.pk, activities.slice(i, i + step).map(x => x.data)));
+    }
+    console.info("Find peaks workers:", work.length);
+    for (const errors of await Promise.all(work)) {
+        for (const x of errors) {
+            const activity = activityMap.get(x.activity);
+            activity.setSyncError(manifest, new Error(x.error));
+        }
+    }
+    console.info("done");
+}
+
+
+export async function peaksProcessorOrig({manifest, activities, athlete}) {
     const metersPerMile = 1609.344;
     const actStreams = await getActivitiesStreams(activities,
         ['time', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate']);

@@ -1,6 +1,6 @@
 /* global sauce */
 
-sauce.ns('hist.db', async ns => {
+sauce.ns('hist.db', ns => {
 
     'use strict';
 
