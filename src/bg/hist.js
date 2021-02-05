@@ -47,25 +47,25 @@ sauce.ns('hist', async ns => {
 
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
-        name: 'active-stream',
-        version: 2,
-        data: {processor: processors.activeStreamProcessor}
-    });
-
-    sauce.hist.db.ActivityModel.addSyncManifest({
-        processor: 'local',
-        name: 'running-watts-stream',
+        name: 'extra-streams',
         version: 1,
-        depends: ['active-stream'],
-        data: {processor: processors.runningWattsProcessor}
+        data: {processor: processors.extraStreamsProcessor}
     });
 
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'activity-stats',
         version: 3,
-        depends: ['active-stream', 'running-watts-stream'],
+        depends: ['extra-streams'],
         data: {processor: processors.activityStatsProcessor}
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
+        name: 'peaks',
+        version: 1,
+        depends: ['extra-streams'],
+        data: {processor: processors.peaksProcessor}
     });
 
     sauce.hist.db.ActivityModel.addSyncManifest({

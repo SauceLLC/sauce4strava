@@ -79,6 +79,15 @@ sauce.ns('hist.db', async ns => {
                         next();
                     }
                 }
+            },
+            // Version 18 was deprecated in dev.
+            {
+                version: 19,
+                migrate: (idb, t, next) => {
+                    const store = idb.createObjectStore("peaks", {autoIncrement: true});
+                    store.createIndex('athlete-type-value-ts', ['athlete', 'type', 'value', 'ts']);
+                    next();
+                }
             }];
         }
     }
@@ -150,6 +159,13 @@ sauce.ns('hist.db', async ns => {
             const q = IDBKeyRange.only(athlete);
             options.index = 'athlete';
             return await this.getAllKeys(q, options);
+        }
+    }
+
+
+    class PeaksStore extends sauce.db.DBStore {
+        constructor() {
+            super(histDatabase, 'peaks');
         }
     }
 
@@ -538,6 +554,7 @@ sauce.ns('hist.db', async ns => {
         HistDatabase,
         ActivitiesStore,
         StreamsStore,
+        PeaksStore,
         AthletesStore,
         ActivityModel,
         AthleteModel,
