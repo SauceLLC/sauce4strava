@@ -134,7 +134,7 @@ export class Queue {
      *
      * @param {QueueWaitOptions} [options]
      */
-    async wait(options={}) {
+    async wait(options={}, _callback) {
         const size = options.size == null ? 1 : options.size;
         while (this.size < size) {
             const getter = new Future();
@@ -148,6 +148,9 @@ export class Queue {
                 throw e;
             }
         }
+        if (_callback) {
+            return _callback();
+        }
     }
 
     /**
@@ -157,8 +160,7 @@ export class Queue {
      * @returns {*} An item from the head of the queue.
      */
     async get(options) {
-        await this.wait(options);
-        return this.getNoWait();
+        return await this.wait(options, () => this.getNoWait());
     }
 
     /**
@@ -183,8 +185,7 @@ export class Queue {
      * @returns {Array} An array of items from the queue.
      */
     async getAll(options) {
-        await this.wait(options);
-        return this.getAllNoWait();
+        return await this.wait(options, () => this.getAllNoWait());
     }
 
     /**
