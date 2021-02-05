@@ -65,6 +65,21 @@ export class Future extends Promise {
     }
 
     /**
+     * Add a callback that is executed immediately on fulfillment of the Future.
+     * For some use cases it is not acceptable to let the event loop run other
+     * tasks before a finalizer of some sort is run.  E.g. Lock and Queue.
+     *
+     * @param {Function} callback - A callback that is invoked with this Future.
+     */
+    addImmediateCallback(callback) {
+        if (this._callbacks === undefined) {
+            this._callbacks = [callback];
+        } else {
+            this._callbacks.push(callback);
+        }
+    }
+
+    /**
      * Set the result of a Future and resolve it.  The Future will be put into
      * the fulfilled state and any functions awaiting the result will be resumed
      * on the next event loop tick.
@@ -78,6 +93,7 @@ export class Future extends Promise {
         this._result = result;
         this._pending = false;
         this._resolve(result);
+        this._runCallbacks();
     }
 
     /**
@@ -94,6 +110,15 @@ export class Future extends Promise {
         this._error = e;
         this._pending = false;
         this._reject(e);
+        this._runCallbacks();
+    }
+
+    _runCallbacks() {
+        if (this._callbacks !== undefined) {
+            for (const cb of this._callbacks) {
+                cb(this);
+            }
+        }
     }
 }
 

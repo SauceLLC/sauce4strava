@@ -143,10 +143,14 @@ export class Lock {
             return true;
         }
         const f = new Future();
+        f.addImmediateCallback(() => {
+            if (!f.error()) {
+                this._locked = true;
+            }
+        });
         this._waiters.push(f);
         try {
             await f;
-            this._locked = true;
             return true;
         } finally {
             this._waiters.splice(this._waiters.indexOf(f), 1);
