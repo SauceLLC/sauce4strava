@@ -1,0 +1,13 @@
+{
+    "name": "Sauce for Strava™ [ALPHA]",
+    "minimum_chrome_version": "71",
+    "permissions": [
+        "declarativeContent"
+    ],
+    "background": {
+        "scripts": [
+            "src/bg/main_declaritive.js"
+        ],
+        "persistent": false
+    }
+}
