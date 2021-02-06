@@ -505,8 +505,8 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function filterPeriodRanges(elapsed, ...filterArgs) {
-        return ns.allPeriodRanges.filter(x => x.value <= elapsed && (!x.filter || x.filter.apply(x, filterArgs)));
+    function filterPeriodRanges(duration, ...filterArgs) {
+        return ns.allPeriodRanges.filter(x => x.value <= duration && (!x.filter || x.filter.apply(x, filterArgs)));
     }
 
 
@@ -595,7 +595,6 @@ sauce.ns('analysis', ns => {
         const gradeDistStream = distStream && await fetchGradeDistStream();
         const cadenceStream = await fetchStream('cadence');
         const activeStream = await fetchStream('active');
-        const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
         const activeTime = getActiveTime();
         let tss, tTss, np, intensity, power;
@@ -675,7 +674,7 @@ sauce.ns('analysis', ns => {
                     const rows = [];
                     const attrs = {};
                     const activity = pageView.activity();
-                    const periodRanges = filterPeriodRanges(elapsedTime, activity);
+                    const periodRanges = filterPeriodRanges(activeTime, activity);
                     const distRanges = filterDistRanges(distance, activity);
                     if (source === 'peak_power' || source === 'peak_sp') {
                         let dataStream;
