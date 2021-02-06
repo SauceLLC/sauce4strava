@@ -627,10 +627,11 @@ sauce.ns('power', function() {
         const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ? '-darkbg.png' : '.png';
         for (const x of rankLevels) {
             if (level > x.levelRequirement) {
-                return Object.assign({
+                return {
                     level,
-                    badge: x.cat && `${badgeURN}/${x.cat}${suffix}`
-                }, x);
+                    badge: x.cat && `${badgeURN}/${x.cat}${suffix}`,
+                    ...x
+                };
             }
         }
     }
@@ -643,7 +644,7 @@ sauce.ns('power', function() {
             this._gapPadCount = 0;
             this.idealGap = options.idealGap || 1;
             this.maxGap = options.maxGap && Math.max(options.maxGap, this.idealGap);
-            this.breakGap = options.breakGap || 10000;
+            this.breakGap = options.breakGap || 3600;
             this._active = options.active;
             if (options.inlineNP) {
                 const sampleRate = 1 / this.idealGap;
@@ -678,13 +679,23 @@ sauce.ns('power', function() {
                 const prevTS = this._times[this._times.length - 1];
                 const gap = ts - prevTS;
                 if (gap > this.maxGap) {
+                    const zeroPad = new sauce.data.Zero();
                     if (gap > this.breakGap) {
-                        console.warn("Ride break detected:", gap, this.maxGap, this.idealGap);
-                        super.add(prevTS + this.idealGap, new sauce.data.Break(gap - (this.idealGap * 2)));
-                        super.add(ts - this.idealGap, new sauce.data.Zero());
-                        this._gapPadCount += 2;
+                        // Handle massive gaps between time stamps seen by Garmin devices glitching.
+                        // Note, to play nice with elapsed time based rolling avgs, we include the
+                        // max number of zero pads on either end of the gap.
+                        const bookEndTime = Math.floor(this.breakGap / 2) - this.idealGap;
+                        for (let i = this.idealGap; i < bookEndTime; i += this.idealGap) {
+                            this._gapPadCount++;
+                            super.add(prevTS + i, zeroPad);
+                        }
+                        super.add(prevTS + bookEndTime, new sauce.data.Break(gap - (bookEndTime * 2)));
+                        this._gapPadCount++;
+                        for (let i = gap - bookEndTime; i < gap; i += this.idealGap) {
+                            this._gapPadCount++;
+                            super.add(prevTS + i, zeroPad);
+                        }
                     } else {
-                        const zeroPad = new sauce.data.Zero();
                         for (let i = this.idealGap; i < gap; i += this.idealGap) {
                             this._gapPadCount++;
                             super.add(prevTS + i, zeroPad);
@@ -733,7 +744,7 @@ sauce.ns('power', function() {
                 } else {
                     const epsilon = 0.1;
                     const negligible = 0.1;
-                    const time = (i + state.breakPadding) * this.idealGap;
+                    const time = (i * this.idealGap) + state.breakPadding;
                     let count = 0;
                     while ((state.weighted > negligible) &&
                            time > state.prevTime + this.idealGap + epsilon) {
@@ -850,7 +861,7 @@ sauce.ns('power', function() {
 
         _copyInlineState(key, target) {
             const saved = this[key].saved;
-            target[key] = Object.assign({}, this[key]);
+            target[key] = {...this[key]};
             const offt = saved.length - target._times.length;
             target[key].saved = saved.slice(offt);
         }
@@ -885,7 +896,7 @@ sauce.ns('power', function() {
 
     function peakNP(period, timeStream, wattsStream, options) {
         const roll = _correctedRollingPower(timeStream, period,
-            Object.assign({inlineNP: true, active: true}, options));
+            {inlineNP: true, active: true, ...options});
         if (!roll) {
             return;
         }
@@ -895,7 +906,7 @@ sauce.ns('power', function() {
 
     function peakXP(period, timeStream, wattsStream, options) {
         const roll = _correctedRollingPower(timeStream, period,
-            Object.assign({inlineXP: true, active: true}, options));
+            {inlineXP: true, active: true, ...options});
         if (!roll) {
             return;
         }
@@ -994,7 +1005,7 @@ sauce.ns('power', function() {
                 }
                 continue; // Skip Zero pads so after the inner while loop can attenuate on its terms.
             }
-            const time = (i - _offset + breakPadding) * sampleInterval;
+            const time = ((i - _offset) * sampleInterval) + breakPadding;
             while ((weighted > negligible) && time > prevTime + sampleInterval + epsilon) {
                 weighted *= attenuation;
                 prevTime += sampleInterval;
@@ -1190,7 +1201,7 @@ sauce.ns('power', function() {
                     // are needed!
                     if (Math.abs(est.watts - power) < epsilon ||
                         Math.abs(1 - ((est.watts || epsilon) / (power || epsilon))) < epsilon) {
-                        matches.push(Object.assign({velocity: rangeVs[0]}, est));
+                        matches.push({velocity: rangeVs[0], ...est});
                     }
                 }
             }
