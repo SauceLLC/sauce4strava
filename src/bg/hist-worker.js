@@ -31,8 +31,11 @@ async function getActivitiesStreams(activities, streams) {
 
 async function findPeaks(athleteId, activities) {
     const metersPerMile = 1609.344;
+    const s = Date.now();
+    let t = Date.now();
     const actStreams = await getActivitiesStreams(activities,
         ['time', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate']);
+    console.warn('streamget', athleteId, Date.now() - s);
     const periods = [5, 15, 30, 60, 120, 300, 600, 900, 1200, 1800, 3600, 10800];
     const distances = [100, 200, 400, 1000, Math.round(metersPerMile), 3000, 5000, 10000,
         Math.round(metersPerMile * 13.1), Math.round(metersPerMile * 26.2), 50000, 100000,
@@ -97,7 +100,10 @@ async function findPeaks(athleteId, activities) {
             }
         }
     }
+    console.warn('proc', athleteId, Date.now() - t);
+    t = Date.now();
     await peaksStore.putMany(peaks);
+    console.warn('peaksput', athleteId, Date.now() - t, Date.now() - s);
     return errors;
 }
 

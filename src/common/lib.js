@@ -253,8 +253,19 @@ sauce.ns('data', function() {
         }
     }
 
+
     class Pad extends Number {}
+
+
     class Zero extends Pad {}
+
+
+    class Break extends Zero {
+        constructor(length) {
+            super(0);
+            this.length = length;
+        }
+    }
 
 
     class RollingBase {
@@ -296,7 +307,12 @@ sauce.ns('data', function() {
         }
 
         importData(times, values) {
-            for (const x of this._importIter(times, values)) {void x;}
+            if (times.length !== values.length) {
+                throw new TypeError("times and values not same length");
+            }
+            for (let i = 0; i < times.length; i++) {
+                this.add(times[i], values[i]);
+            }
         }
 
         importReduce(times, values, comparator) {
@@ -502,6 +518,7 @@ sauce.ns('data', function() {
         range,
         RollingBase,
         RollingAverage,
+        Break,
         Zero,
         Pad,
         peakAverage,
@@ -620,12 +637,13 @@ sauce.ns('power', function() {
 
 
     class RollingPower extends sauce.data.RollingBase {
-        constructor(period, idealGap, maxGap, options={}) {
+        constructor(period, options={}) {
             super(period);
             this._joules = 0;
             this._gapPadCount = 0;
-            this.idealGap = idealGap || 1;
-            this.maxGap = maxGap && Math.max(maxGap, idealGap);
+            this.idealGap = options.idealGap || 1;
+            this.maxGap = options.maxGap && Math.max(options.maxGap, this.idealGap);
+            this.breakGap = options.breakGap || 10000;
             this._active = options.active;
             if (options.inlineNP) {
                 const sampleRate = 1 / this.idealGap;
@@ -660,10 +678,15 @@ sauce.ns('power', function() {
                 const prevTS = this._times[this._times.length - 1];
                 const gap = ts - prevTS;
                 if (gap > this.maxGap) {
-                    const zeroPad = new sauce.data.Zero();
-                    for (let i = this.idealGap; i < gap; i += this.idealGap) {
-                        this._gapPadCount++;
-                        super.add(prevTS + i, zeroPad);
+                    if (gap > this.breakGap) {
+                        console.warn("Ride break detected:", gap, this.maxGap, this.idealGap);
+                        super.add(prevTS + this.idealGap, new sauce.data.Break(gap - this.idealGap));
+                    } else {
+                        const zeroPad = new sauce.data.Zero();
+                        for (let i = this.idealGap; i < gap; i += this.idealGap) {
+                            this._gapPadCount++;
+                            super.add(prevTS + i, zeroPad);
+                        }
                     }
                 } else if (gap > this.idealGap) {
                     for (let i = this.idealGap; i < gap; i += this.idealGap) {
@@ -735,7 +758,8 @@ sauce.ns('power', function() {
         shiftValue(value) {
             const isGapPad = value instanceof sauce.data.Zero;
             if (isGapPad) {
-                this._gapPadCount--;
+                debugger;
+                this._gapPadCount -= value.length || 1;
             }
             const i = this._offt - 1;
             const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
@@ -808,6 +832,7 @@ sauce.ns('power', function() {
             const instance = super.copy();
             instance.idealGap = this.idealGap;
             instance.maxGap = this.maxGap;
+            instance.breakGap = this.breakGap;
             instance._joules = this._joules;
             instance._gapPadCount = this._gapPadCount;
             if (this._inlineNP) {
@@ -829,25 +854,25 @@ sauce.ns('power', function() {
     }
 
 
-    function _correctedRollingPower(timeStream, wattsStream, period, idealGap, maxGap, options) {
+    function _correctedRollingPower(timeStream, period, options={}) {
         if (timeStream.length < 2 || timeStream[timeStream.length - 1] < period) {
             return;
         }
-        if (idealGap == null || maxGap == null) {
+        if (options.idealGap == null || options.maxGap == null) {
             const gaps = sauce.data.recommendedTimeGaps(timeStream);
-            if (idealGap == null) {
-                idealGap = gaps.ideal;
+            if (options.idealGap == null) {
+                options.idealGap = gaps.ideal;
             }
-            if (maxGap == null) {
-                maxGap = gaps.max;
+            if (options.maxGap == null) {
+                options.maxGap = gaps.max;
             }
         }
-        return new RollingPower(period, idealGap, maxGap, options);
+        return new RollingPower(period, options);
     }
 
 
-    function peakPower(period, timeStream, wattsStream) {
-        const roll = _correctedRollingPower(timeStream, wattsStream, period);
+    function peakPower(period, timeStream, wattsStream, options) {
+        const roll = _correctedRollingPower(timeStream, period, options);
         if (!roll) {
             return;
         }
@@ -855,9 +880,9 @@ sauce.ns('power', function() {
     }
 
 
-    function peakNP(period, timeStream, wattsStream) {
-        const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null,
-            {inlineNP: true, active: true});
+    function peakNP(period, timeStream, wattsStream, options) {
+        const roll = _correctedRollingPower(timeStream, period,
+            Object.assign({inlineNP: true, active: true}, options));
         if (!roll) {
             return;
         }
@@ -865,9 +890,9 @@ sauce.ns('power', function() {
     }
 
 
-    function peakXP(period, timeStream, wattsStream) {
-        const roll = _correctedRollingPower(timeStream, wattsStream, period, null, null,
-            {inlineXP: true, active: true});
+    function peakXP(period, timeStream, wattsStream, options) {
+        const roll = _correctedRollingPower(timeStream, period,
+            Object.assign({inlineXP: true, active: true}, options));
         if (!roll) {
             return;
         }
@@ -875,12 +900,12 @@ sauce.ns('power', function() {
     }
 
 
-    function correctedPower(timeStream, wattsStream, idealGap, maxGap) {
-        const roll = _correctedRollingPower(timeStream, wattsStream, null, idealGap, maxGap);
+    function correctedPower(timeStream, wattsStream, options) {
+        const roll = _correctedRollingPower(timeStream, null, options);
         if (!roll) {
             return;
         }
-        roll.importData(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
+        roll.importData(timeStream, wattsStream);
         return roll;
     }
 
@@ -903,11 +928,20 @@ sauce.ns('power', function() {
         const rolling = new Array(rollingSize);
         let total = 0;
         let count = 0;
+        let breakPadding = 0;
         for (let i = _offset, sum = 0, len = stream.length; i < len; i++) {
             const index = (i - _offset) % rollingSize;
             const watts = stream[i];
-            if (watts instanceof sauce.data.Zero) {
-                // Drain the rolling buffer but don't increment the counter.
+            // Drain the rolling buffer but don't increment the counter for gaps...
+            if (watts instanceof sauce.data.Break) {
+                for (let j = 0; j < Math.min(rollingSize, watts.length); j++) {
+                    const rollIndex = (index + j) % rollingSize;
+                    sum -= rolling[rollIndex] || 0;
+                    rolling[rollIndex] = 0;
+                }
+                breakPadding += watts.length;
+                continue;
+            } else if (watts instanceof sauce.data.Zero) {
                 sum -= rolling[index] || 0;
                 rolling[index] = 0;
                 continue;
@@ -915,7 +949,7 @@ sauce.ns('power', function() {
             sum += watts;
             sum -= rolling[index] || 0;
             rolling[index] = watts;
-            const avg = sum / Math.min(rollingSize, i + 1 - _offset);
+            const avg = sum / Math.min(rollingSize, i + 1 - _offset + breakPadding);
             total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
             count++;
         }
@@ -944,12 +978,16 @@ sauce.ns('power', function() {
         let weighted = 0;
         let total = 0;
         let count = 0;
+        let breakPadding = 0;
         for (let i = _offset, len = stream.length; i < len; i++) {
             const watts = stream[i];
             if (watts instanceof sauce.data.Zero) {
+                if (watts instanceof sauce.data.Break) {
+                    breakPadding += watts.length;
+                }
                 continue; // Skip Zero pads so after the inner while loop can attenuate on its terms.
             }
-            const time = (i - _offset) * sampleInterval;
+            const time = (i - _offset + breakPadding) * sampleInterval;
             while ((weighted > negligible) && time > prevTime + sampleInterval + epsilon) {
                 weighted *= attenuation;
                 prevTime += sampleInterval;
