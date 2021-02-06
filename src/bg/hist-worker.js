@@ -15,7 +15,8 @@ async function getActivitiesStreams(activities, streams) {
     const streamKeys = [];
     const actStreams = new Map();
     for (const a of activities) {
-        for (const stream of streams) {
+        const type = a.basetype === 'run' ? 'run' : a.basetype === 'ride' ? 'ride' : 'other';
+        for (const stream of streams[type]) {
             streamKeys.push([a.id, stream]);
         }
         actStreams.set(a.id, {});
@@ -33,8 +34,11 @@ async function findPeaks(athleteId, activities) {
     const metersPerMile = 1609.344;
     const s = Date.now();
     let t = Date.now();
-    const actStreams = await getActivitiesStreams(activities,
-        ['time', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate']);
+    const actStreams = await getActivitiesStreams(activities, {
+        run: ['time', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
+        ride: ['time', 'watts', 'distance', 'heartrate'],
+        other: ['time', 'watts', 'watts_calc', 'distance', 'heartrate'],
+    });
     console.warn('streamget', athleteId, Date.now() - s);
     const periods = [5, 15, 30, 60, 120, 300, 600, 900, 1200, 1800, 3600, 10800];
     const distances = [100, 200, 400, 1000, Math.round(metersPerMile), 3000, 5000, 10000,
