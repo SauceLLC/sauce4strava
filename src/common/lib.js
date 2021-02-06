@@ -649,7 +649,7 @@ sauce.ns('power', function() {
                 const sampleRate = 1 / this.idealGap;
                 const rollSize = Math.round(30 * sampleRate);
                 this._inlineNP = {
-                    stream: [],
+                    saved: [],
                     rollSize,
                     slot: 0,
                     roll: new Array(rollSize),
@@ -660,13 +660,13 @@ sauce.ns('power', function() {
             if (options.inlineXP) {
                 const samplesPerWindow = 25 / this.idealGap;
                 this._inlineXP = {
-                    stream: [],
+                    saved: [],
                     samplesPerWindow,
                     attenuation: samplesPerWindow / (samplesPerWindow + this.idealGap),
                     sampleWeight: this.idealGap / (samplesPerWindow + this.idealGap),
                     prevTime: 0,
                     weighted: 0,
-                    counts: [],
+                    breakPadding: 0,
                     count: 0,
                     total: 0,
                 };
@@ -680,7 +680,9 @@ sauce.ns('power', function() {
                 if (gap > this.maxGap) {
                     if (gap > this.breakGap) {
                         console.warn("Ride break detected:", gap, this.maxGap, this.idealGap);
-                        super.add(prevTS + this.idealGap, new sauce.data.Break(gap - this.idealGap));
+                        super.add(prevTS + this.idealGap, new sauce.data.Break(gap - (this.idealGap * 2)));
+                        super.add(ts - this.idealGap, new sauce.data.Zero());
+                        this._gapPadCount += 2;
                     } else {
                         const zeroPad = new sauce.data.Zero();
                         for (let i = this.idealGap; i < gap; i += this.idealGap) {
@@ -703,13 +705,12 @@ sauce.ns('power', function() {
             this._joules += value * gap;
             if (this._inlineNP) {
                 const state = this._inlineNP;
+                const saved = {};
                 const slot = i % state.rollSize;
                 if (value instanceof sauce.data.Zero) {
                     // Drain the rolling buffer but don't increment the counter.
                     state.rollSum -= state.roll[slot] || 0;
                     state.roll[slot] = 0;
-                    // Maintain alignment so shiftValue is simple.
-                    state.stream.push(null);
                 } else {
                     state.rollSum += value;
                     state.rollSum -= state.roll[slot] || 0;
@@ -717,28 +718,30 @@ sauce.ns('power', function() {
                     const npa = state.rollSum / Math.min(state.rollSize, i + 1 - this._offt);
                     const qnpa = npa * npa * npa * npa;  // unrolled for perf
                     state.total += qnpa;
-                    state.stream.push(qnpa);
+                    saved.value = qnpa;
                 }
+                state.saved.push(saved);
             }
             if (this._inlineXP) {
                 const state = this._inlineXP;
+                const saved = {};
                 if (value instanceof sauce.data.Zero) {
-                    // Maintain alignment so shiftValue is simple.
-                    state.stream.push(null);
-                    state.counts.push(null);
+                    if (value instanceof sauce.data.Break) {
+                        state.breakPadding += value.length;
+                        saved.breakPadding = value.length;
+                    }
                 } else {
                     const epsilon = 0.1;
                     const negligible = 0.1;
-                    const time = i * this.idealGap;
-                    let counts = 0;
+                    const time = (i + state.breakPadding) * this.idealGap;
+                    let count = 0;
                     while ((state.weighted > negligible) &&
                            time > state.prevTime + this.idealGap + epsilon) {
                         state.weighted *= state.attenuation;
                         state.prevTime += this.idealGap;
                         const w = state.weighted;
                         state.total += w * w * w * w;  // unroll for perf
-                        state.count++;
-                        counts++;
+                        count++;
                     }
                     state.weighted *= state.attenuation;
                     state.weighted += state.sampleWeight * value;
@@ -746,11 +749,12 @@ sauce.ns('power', function() {
                     const w = state.weighted;
                     const qw = w * w * w * w;  // unrolled for perf
                     state.total += qw;
-                    state.count++;
-                    counts++;
-                    state.stream.push(qw);
-                    state.counts.push(counts);
+                    count++;
+                    state.count += count;
+                    saved.value = qw;
+                    saved.count = count;
                 }
+                state.saved.push(saved);
             }
             return value;
         }
@@ -758,22 +762,22 @@ sauce.ns('power', function() {
         shiftValue(value) {
             const isGapPad = value instanceof sauce.data.Zero;
             if (isGapPad) {
-                debugger;
-                this._gapPadCount -= value.length || 1;
+                this._gapPadCount--;
             }
             const i = this._offt - 1;
             const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
             this._joules -= this._values[i + 1] * gap;
-            if (!isGapPad) {
-                if (this._inlineNP) {
-                    const state = this._inlineNP;
-                    state.total -= state.stream[i];
-                }
-                if (this._inlineXP) {
-                    const state = this._inlineXP;
-                    state.total -= state.stream[i];
-                    state.count -= state.counts[i];
-                }
+            if (this._inlineNP) {
+                const state = this._inlineNP;
+                const saved = state.saved[i];
+                state.total -= saved.value || 0;
+            }
+            if (this._inlineXP) {
+                const state = this._inlineXP;
+                const saved = state.saved[i];
+                state.total -= saved.value || 0;
+                state.count -= saved.count || 0;
+                state.breakPadding -= saved.breakPadding || 0;
             }
         }
 
@@ -802,25 +806,25 @@ sauce.ns('power', function() {
 
         np(options={}) {
             if (this._inlineNP && !options.external) {
-                if (this.active() < npMinTime) {
+                if (this.active() < npMinTime && !options.force) {
                     return;
                 }
                 const state = this._inlineNP;
                 return (state.total / (this.size() - this._gapPadCount)) ** 0.25;
             } else {
-                return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt);
+                return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt, options);
             }
         }
 
         xp(options={}) {
             if (this._inlineXP && !options.external) {
-                if (this.active() < xpMinTime) {
+                if (this.active() < xpMinTime && !options.force) {
                     return;
                 }
                 const state = this._inlineXP;
                 return (state.total / state.count) ** 0.25;
             } else {
-                return sauce.power.calcXP(this._values, 1 / this.idealGap, this._offt);
+                return sauce.power.calcXP(this._values, 1 / this.idealGap, this._offt, options);
             }
         }
 
@@ -836,20 +840,19 @@ sauce.ns('power', function() {
             instance._joules = this._joules;
             instance._gapPadCount = this._gapPadCount;
             if (this._inlineNP) {
-                const stream = this._inlineNP.stream;
-                instance._inlineNP = Object.assign({}, this._inlineNP);
-                const offt = stream.length - instance._times.length;
-                instance._inlineNP.stream = stream.slice(offt);
+                this._copyInlineState('_inlineNP', instance);
             }
             if (this._inlineXP) {
-                const stream = this._inlineXP.stream;
-                const counts = this._inlineXP.counts;
-                instance._inlineXP = Object.assign({}, this._inlineXP);
-                const offt = stream.length - instance._times.length;
-                instance._inlineXP.stream = stream.slice(offt);
-                instance._inlineXP.counts = counts.slice(offt);
+                this._copyInlineState('_inlineXP', instance);
             }
             return instance;
+        }
+
+        _copyInlineState(key, target) {
+            const saved = this[key].saved;
+            target[key] = Object.assign({}, this[key]);
+            const offt = saved.length - target._times.length;
+            target[key].saved = saved.slice(offt);
         }
     }
 
@@ -910,15 +913,17 @@ sauce.ns('power', function() {
     }
 
 
-    function calcNP(stream, sampleRate, _offset) {
+    function calcNP(stream, sampleRate, _offset, options={}) {
         /* Coggan doesn't recommend NP for less than 20 mins, but we're outlaws
          * and we go as low as 5 mins now! (10-08-2020) */
         sampleRate = sampleRate || 1;
         _offset = _offset || 0;
-        const size = stream.length - _offset;
-        const elapsed = size / sampleRate;
-        if (!stream || elapsed < npMinTime) {
-            return;
+        if (!options.force) {
+            const size = stream.length - _offset;
+            const elapsed = size / sampleRate;
+            if (!stream || elapsed < npMinTime) {
+                return;
+            }
         }
         const rollingSize = Math.round(30 * sampleRate);
         if (rollingSize < 2) {
@@ -957,16 +962,18 @@ sauce.ns('power', function() {
     }
 
 
-    function calcXP(stream, sampleRate, _offset) {
+    function calcXP(stream, sampleRate, _offset, options={}) {
         /* See: https://perfprostudio.com/BETA/Studio/scr/BikeScore.htm
          * xPower is more accurate version of NP that better correlates to how
          * humans recover from oxygen debt. */
         sampleRate = sampleRate || 1;
         _offset = _offset || 0;
-        const size = stream.length - _offset;
-        const elapsed = size / sampleRate;
-        if (!stream || elapsed < xpMinTime) {
-            return;
+        if (!options.force) {
+            const size = stream.length - _offset;
+            const elapsed = size / sampleRate;
+            if (!stream || elapsed < xpMinTime) {
+                return;
+            }
         }
         const epsilon = 0.1;
         const negligible = 0.1;
