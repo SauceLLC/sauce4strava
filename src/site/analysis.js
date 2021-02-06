@@ -3047,7 +3047,7 @@ sauce.ns('analysis', ns => {
         }
         const wattsStream = (await fetchStream('watts')) || (await fetchStream('watts_calc'));
         if (wattsStream && supportsSP()) {
-            const altStream = await fetchStream('time');
+            const altStream = await fetchStream('altitude');
             streamData.add('watts_sealevel', wattsStream.map((x, i) =>
                 Math.round(sauce.power.seaLevelPower(x, altStream[i]))));
         }
