@@ -1008,7 +1008,6 @@ sauce.ns('hist', async ns => {
                     const waiters = [...offloaded, this._cancelEvent];
                     if (!procQueue) {
                         // No new incoming data, instruct offload queues to get busy..
-                        debugger;
                         for (const x of offloaded) {
                             console.debug('Flushing offload processor:', x.manifest.name);
                             x.flush();
@@ -1035,7 +1034,7 @@ sauce.ns('hist', async ns => {
                         } catch(e) {
                             await this._localSetSyncError(proc.pending, proc.manifest, e);
                         }
-                        console.error("Offload processor finished:", proc.manifest.name); // XXX lower to debug
+                        console.debug("Offload processor finished:", proc.manifest.name);
                         offloaded.delete(proc);
                     }
                     if (batch.size >= batchLimit) {

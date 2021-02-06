@@ -327,9 +327,9 @@ export class peaksProcessor extends OffloadProcessor {
     }
 
     async processor() {
-        const minWait = null; //10 * 1000;
-        const maxWait = null; //90 * 1000;
-        const maxSize = null;
+        const minWait = null;
+        const maxWait = 10000;
+        const maxSize = 50;
         while (true) {
             const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
             if (batch === null) {
@@ -341,36 +341,33 @@ export class peaksProcessor extends OffloadProcessor {
     }
 
     async _process(activities) {
-        console.warn("WAIT for it...");
-        await sleep(5000);
-        console.warn("release");
-        return;
         const activityMap = new Map(activities.map(x => [x.pk, x]));
         const work = [];
-        const concurrency = Math.max(1, (navigator.hardwareConcurrency || 6) / 2);
-        const step = Math.max(10, Math.round(activities.length / concurrency));
+        const concurrency = Math.max(1, (navigator.hardwareConcurrency || 6) / 1);
+        const step = Math.max(20, Math.round(activities.length / concurrency));
         for (let i = 0; i < activities.length; i += step) {
             work.push(this.wp.exec('findPeaks', this.athlete.pk,
                 activities.slice(i, i + step).map(x => x.data)));
         }
         const s = Date.now();
-        console.warn("Find peaks workers:", work.length, step, concurrency);
+        console.info("Find peaks workers:", work.length, step);
         for (const errors of await Promise.all(work)) {
             for (const x of errors) {
                 const activity = activityMap.get(x.activity);
                 activity.setSyncError(this.manifest, new Error(x.error));
             }
         }
-        console.info("done", Date.now() - s, 'concurrency', concurrency, 'step', step, 'acts', activities.length);
+        console.info("find peaks done", Date.now() - s, activities.length, Math.round(Date.now() / activities.length));
     }
 }
 
 
-export async function peaksProcessor2({manifest, activities, athlete}) {
+export async function peaksProcessorNONO({manifest, activities, athlete}) {
+    const s = Date.now();
     const wp = getWorkerPool();
     const activityMap = new Map(activities.map(x => [x.pk, x]));
     const work = [];
-    const concurrency = Math.max(1, (navigator.hardwareConcurrency || 6) / 2);
+    const concurrency = Math.max(1, (navigator.hardwareConcurrency || 6) / 1);
     const step = Math.max(10, Math.round(activities.length / concurrency));
     for (let i = 0; i < activities.length; i += step) {
         work.push(wp.exec('findPeaks', athlete.pk,
@@ -387,7 +384,7 @@ export async function peaksProcessor2({manifest, activities, athlete}) {
 }
 
 
-export async function peaksProcessorOrig({manifest, activities, athlete}) {
+export async function peaksProcessorWayTooSlow({manifest, activities, athlete}) {
     const metersPerMile = 1609.344;
     const actStreams = await getActivitiesStreams(activities,
         ['time', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate']);
@@ -465,9 +462,9 @@ export class TrainingLoadProcessor extends OffloadProcessor {
     }
 
     async processor() {
-        const minWait = 10 * 1000;
+        const minWait = 8 * 1000;
         const maxWait = 90 * 1000;
-        const maxSize = 100;
+        const maxSize = 50;
         while (true) {
             const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
             if (batch === null) {
