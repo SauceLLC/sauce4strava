@@ -261,9 +261,9 @@ sauce.ns('data', function() {
 
 
     class Break extends Zero {
-        constructor(length) {
+        constructor(time) {
             super(0);
-            this.length = length;
+            this.time = time;
         }
     }
 
@@ -275,26 +275,27 @@ sauce.ns('data', function() {
             this._times = [];
             this._values = [];
             this._offt = 0;
+            this._length = 0;
         }
 
-        copy() {
+        clone() {
             const instance = new this.constructor(this.period);
-            const safeOffset = this._offt > 0 ? this._offt - 1 : 0;
-            instance._times = this._times.slice(safeOffset);
-            instance._values = this._values.slice(safeOffset);
-            instance._offt = this._offt > 0 ? 1 : 0;
+            instance._times = this._times;
+            instance._values = this._values;
+            instance._offt = this._offt;
+            instance._length = this._length;
             return instance;
         }
 
         slice(startTime, endTime) {
-            const copy = this.copy();
-            while (copy.firstTime() < startTime) {
-                copy.shift();
+            const clone = this.clone();
+            while (clone.firstTime() < startTime) {
+                clone.shift();
             }
-            while (copy.lastTime() > endTime) {
-                copy.pop();
+            while (clone.lastTime() > endTime) {
+                clone.pop();
             }
-            return copy;
+            return clone;
         }
 
         *_importIter(times, values) {
@@ -320,7 +321,7 @@ sauce.ns('data', function() {
             for (const x of this._importIter(times, values)) {
                 void x;
                 if (this.full() && (!leader || comparator(this, leader))) {
-                    leader = this.copy();
+                    leader = this.clone();
                 }
             }
             return leader;
@@ -328,7 +329,7 @@ sauce.ns('data', function() {
 
         elapsed(options) {
             options = options || {};
-            const len = this._times.length;
+            const len = this._length;
             const offt = (options.offt || 0) + this._offt;
             if (len - offt <= 1) {
                 return 0;
@@ -339,6 +340,7 @@ sauce.ns('data', function() {
         add(ts, value) {
             this._values.push(this.addValue(value, ts));
             this._times.push(ts);
+            this._length++;
             while (this.full({offt: 1})) {
                 this.shift();
             }
@@ -358,7 +360,7 @@ sauce.ns('data', function() {
         firstTime(options) {
             options = options || {};
             if (options.noPad) {
-                for (let i = this._offt; i < this._values.length; i++) {
+                for (let i = this._offt; i < this._length; i++) {
                     if (!(this._values[i] instanceof Pad)) {
                         return this._times[i];
                     }
@@ -371,22 +373,22 @@ sauce.ns('data', function() {
         lastTime(options) {
             options = options || {};
             if (options.noPad) {
-                for (let i = this._values.length - 1; i >= this._offt; i--) {
+                for (let i = this._length - 1; i >= this._offt; i--) {
                     if (!(this._values[i] instanceof Pad)) {
                         return this._times[i];
                     }
                 }
             } else {
-                return this._times[this._times.length - 1];
+                return this._times[this._length - 1];
             }
         }
 
         size() {
-            return this._times.length - this._offt;
+            return this._length - this._offt;
         }
 
         values() {
-            return this._values.slice(this._offt);
+            return this._values.slice(this._offt, this._length);
         }
 
         shift() {
@@ -394,8 +396,9 @@ sauce.ns('data', function() {
         }
 
         pop() {
-            this.popValue(this._values.pop());
-            this._times.pop();
+            this._length--;
+            const value = this._values[this._length];
+            this.popValue(value, this._length);
         }
 
         full(options={}) {
@@ -420,7 +423,7 @@ sauce.ns('data', function() {
             options = options || {};
             if (options.active) {
                 // XXX this is wrong.  active != ignore zeros  It means ignore gaps we zero padded.
-                const count = (this._values.length - this._offt - (this._zeros || 0));
+                const count = (this._length - this._offt - (this._zeros || 0));
                 return count ? this._sum / count : 0;
             } else {
                 if (this._ignoreZeros) {
@@ -452,8 +455,8 @@ sauce.ns('data', function() {
             }
         }
 
-        copy() {
-            const instance = super.copy();
+        clone() {
+            const instance = super.clone();
             instance._sum = this._sum;
             instance._ignoreZeros = this._ignoreZeros;
             instance._zeros = this._zeros;
@@ -675,8 +678,8 @@ sauce.ns('power', function() {
         }
 
         add(ts, value) {
-            if (this._times.length) {
-                const prevTS = this._times[this._times.length - 1];
+            if (this._length) {
+                const prevTS = this._times[this._length - 1];
                 const gap = ts - prevTS;
                 if (gap > this.maxGap) {
                     const zeroPad = new sauce.data.Zero();
@@ -711,7 +714,7 @@ sauce.ns('power', function() {
         }
 
         addValue(value, ts) {
-            const i = this._times.length;
+            const i = this._length;
             const gap = i ? ts - this._times[i - 1] : 0;
             this._joules += value * gap;
             if (this._inlineNP) {
@@ -776,7 +779,7 @@ sauce.ns('power', function() {
                 this._gapPadCount--;
             }
             const i = this._offt - 1;
-            const gap = this._times.length > 1 ? this._times[i + 1] - this._times[i] : 0;
+            const gap = this._length > 1 ? this._times[i + 1] - this._times[i] : 0;
             this._joules -= this._values[i + 1] * gap;
             if (this._inlineNP) {
                 const state = this._inlineNP;
@@ -792,9 +795,8 @@ sauce.ns('power', function() {
             }
         }
 
-        popValue(value) {
-            const lastIdx = this._times.length - 1;
-            const gap = lastIdx >= 1 ? this._times[lastIdx] - this._times[lastIdx - 1] : 0;
+        popValue(value, popIndex) {
+            const gap = popIndex >= 1 ? this._times[popIndex] - this._times[popIndex - 1] : 0;
             this._joules -= value * gap;
             if (this._inlineNP || this._inlineXP) {
                 throw new Error("Unsupported");
@@ -823,7 +825,7 @@ sauce.ns('power', function() {
                 const state = this._inlineNP;
                 return (state.total / (this.size() - this._gapPadCount)) ** 0.25;
             } else {
-                return sauce.power.calcNP(this._values, 1 / this.idealGap, this._offt, options);
+                return sauce.power.calcNP(this.values(), 1 / this.idealGap, options);
             }
         }
 
@@ -835,7 +837,7 @@ sauce.ns('power', function() {
                 const state = this._inlineXP;
                 return (state.total / state.count) ** 0.25;
             } else {
-                return sauce.power.calcXP(this._values, 1 / this.idealGap, this._offt, options);
+                return sauce.power.calcXP(this.values(), 1 / this.idealGap, options);
             }
         }
 
@@ -843,8 +845,8 @@ sauce.ns('power', function() {
             return this._joules / 1000;
         }
 
-        copy() {
-            const instance = super.copy();
+        clone() {
+            const instance = super.clone();
             instance.idealGap = this.idealGap;
             instance.maxGap = this.maxGap;
             instance.breakGap = this.breakGap;
@@ -862,7 +864,7 @@ sauce.ns('power', function() {
         _copyInlineState(key, target) {
             const saved = this[key].saved;
             target[key] = {...this[key]};
-            const offt = saved.length - target._times.length;
+            const offt = saved.length - target._length;
             target[key].saved = saved.slice(offt);
         }
     }
@@ -885,12 +887,23 @@ sauce.ns('power', function() {
     }
 
 
+    let t = 0;
+    let c = 0;
     function peakPower(period, timeStream, wattsStream, options) {
+        const s = performance.now();
         const roll = _correctedRollingPower(timeStream, period, options);
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
+        try {
+            return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
+        } finally {
+            t += performance.now() - s;
+            c++;
+            if (!(c % 1000)) {
+                console.warn((t / c).toFixed(2), t, c);
+            }
+        }
     }
 
 
@@ -924,14 +937,12 @@ sauce.ns('power', function() {
     }
 
 
-    function calcNP(stream, sampleRate, _offset, options={}) {
+    function calcNP(stream, sampleRate, options={}) {
         /* Coggan doesn't recommend NP for less than 20 mins, but we're outlaws
          * and we go as low as 5 mins now! (10-08-2020) */
         sampleRate = sampleRate || 1;
-        _offset = _offset || 0;
         if (!options.force) {
-            const size = stream.length - _offset;
-            const elapsed = size / sampleRate;
+            const elapsed = stream.length / sampleRate;
             if (!stream || elapsed < npMinTime) {
                 return;
             }
@@ -945,8 +956,8 @@ sauce.ns('power', function() {
         let total = 0;
         let count = 0;
         let breakPadding = 0;
-        for (let i = _offset, sum = 0, len = stream.length; i < len; i++) {
-            const index = (i - _offset) % rollingSize;
+        for (let i = 0, sum = 0, len = stream.length; i < len; i++) {
+            const index = i % rollingSize;
             const watts = stream[i];
             // Drain the rolling buffer but don't increment the counter for gaps...
             if (watts instanceof sauce.data.Break) {
@@ -965,7 +976,7 @@ sauce.ns('power', function() {
             sum += watts;
             sum -= rolling[index] || 0;
             rolling[index] = watts;
-            const avg = sum / Math.min(rollingSize, i + 1 - _offset + breakPadding);
+            const avg = sum / Math.min(rollingSize, i + 1 + breakPadding);
             total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
             count++;
         }
@@ -973,15 +984,13 @@ sauce.ns('power', function() {
     }
 
 
-    function calcXP(stream, sampleRate, _offset, options={}) {
+    function calcXP(stream, sampleRate, options={}) {
         /* See: https://perfprostudio.com/BETA/Studio/scr/BikeScore.htm
          * xPower is more accurate version of NP that better correlates to how
          * humans recover from oxygen debt. */
         sampleRate = sampleRate || 1;
-        _offset = _offset || 0;
         if (!options.force) {
-            const size = stream.length - _offset;
-            const elapsed = size / sampleRate;
+            const elapsed = stream.length / sampleRate;
             if (!stream || elapsed < xpMinTime) {
                 return;
             }
@@ -997,7 +1006,7 @@ sauce.ns('power', function() {
         let total = 0;
         let count = 0;
         let breakPadding = 0;
-        for (let i = _offset, len = stream.length; i < len; i++) {
+        for (let i = 0, len = stream.length; i < len; i++) {
             const watts = stream[i];
             if (watts instanceof sauce.data.Zero) {
                 if (watts instanceof sauce.data.Break) {
@@ -1005,7 +1014,7 @@ sauce.ns('power', function() {
                 }
                 continue; // Skip Zero pads so after the inner while loop can attenuate on its terms.
             }
-            const time = ((i - _offset) * sampleInterval) + breakPadding;
+            const time = (i * sampleInterval) + breakPadding;
             while ((weighted > negligible) && time > prevTime + sampleInterval + epsilon) {
                 weighted *= attenuation;
                 prevTime += sampleInterval;
@@ -1238,7 +1247,7 @@ sauce.ns('pace', function() {
             options = options || {};
             const offt = (options.offt || 0) + this._offt;
             const start = this._values[offt];
-            const end = this._values[this._values.length - 1];
+            const end = this._values[this._length - 1];
             if (start != null && end != null) {
                 return end - start;
             }
@@ -1694,147 +1703,6 @@ sauce.ns('geo', function(ns) {
 sauce.ns('perf', function() {
     'use strict';
 
-    let actsStore;
-    let streamsStore;
-
-
-    async function findPeaks(athlete, type, period, options={}) {
-        if (!actsStore) {
-            actsStore = new sauce.hist.db.ActivitiesStore();
-            streamsStore = new sauce.hist.db.StreamsStore();
-        }
-        const limit = options.limit;
-        const manifests = {
-            power: {
-                streams: ['watts'],
-            },
-            np: {
-                streams: ['watts'],
-            },
-            xp: {
-                streams: ['watts'],
-            },
-            seapower: {
-                streams: ['watts', 'altitude'],
-            },
-            pace: {
-                streams: ['distance'],
-                reverseSort: true,
-            },
-            gap: {
-                streams: ['grade_adjusted_distance'],
-                reverseSort: true,
-            },
-            hr: {
-                streams: ['heartrate'],
-            },
-            cadence: {
-                streams: ['cadence'],
-            },
-            vam: {
-                streams: ['altitude'],
-            }
-        };
-        const streamsMap = new Map();
-        const manifest = manifests[type];
-        let includeList;
-        if (options.activityType) {
-            includeList = new Set();
-            for await (const x of actsStore.byAthlete(athlete, {type: options.activityType})) {
-                includeList.add(x.id);
-            }
-        }
-        for await (const group of streamsStore.manyByAthlete(athlete, ['time', ...manifest.streams])) {
-            if (!includeList || includeList.has(group.activity)) {
-                streamsMap.set(group.activity, group.streams);
-            }
-        }
-        if (type === 'seapower') {
-            for (const streams of streamsMap.values()) {
-                streams.watts_sealevel = streams.watts.map((x, i) =>
-                    Math.round(sauce.power.seaLevelPower(x, streams.altitude[i])));
-            }
-        } else if (type === 'vam') {
-            for (const streams of streamsMap.values()) {
-                streams.vam = sauce.geo.createVAMStream(streams.time, streams.altitude);
-            }
-        }
-        const peaks = [];
-        for (const [id, streams] of streamsMap.entries()) {
-            if (type === 'power') {
-                const roll = sauce.power.peakPower(period, streams.time, streams.watts);
-                if (roll) {
-                    const value = roll.avg();
-                    peaks.push([roll, id, value]);
-                }
-            } else if (type === 'np') {
-                const roll = sauce.power.peakNP(period, streams.time, streams.watts);
-                if (roll) {
-                    const value = roll.np({external: true});
-                    peaks.push([roll, id, value]);
-                }
-            } else if (type === 'xp') {
-                const roll = sauce.power.peakXP(period, streams.time, streams.watts);
-                if (roll) {
-                    const value = roll.xp({external: true});
-                    peaks.push([roll, id, value]);
-                }
-            } else if (type === 'seapower') {
-                const roll = sauce.power.peakPower(period, streams.time, streams.watts_sealevel);
-                if (roll) {
-                    const value = roll.avg();
-                    peaks.push([roll, id, value]);
-                }
-            } else if (type === 'pace') {
-                const roll = sauce.pace.bestPace(period, streams.time, streams.distance);
-                if (roll) {
-                    const value = roll.avg();
-                    peaks.push([roll, id, value]);
-                }
-            } else if (type === 'gap') {
-                const roll = sauce.pace.bestPace(period, streams.time, streams.grade_adjusted_distance);
-                if (roll) {
-                    const value = roll.avg();
-                    peaks.push([roll, id, value]);
-                }
-            } else if (type === 'hr') {
-                const roll = sauce.data.peakAverage(period, streams.time, streams.heartrate, {active: true});
-                if (roll) {
-                    const value = roll.avg({active: true});
-                    peaks.push([roll, id, value]);
-                }
-            } else if (type === 'cadence') {
-                const roll = sauce.data.peakAverage(period, streams.time, streams.cadence,
-                    {active: true, ignoreZeros: true});
-                if (roll) {
-                    const value = roll.avg({active: true});
-                    peaks.push([roll, id, value]);
-                }
-            } else if (type === 'vam') {
-                const roll = sauce.data.peakAverage(period, streams.time, streams.vam);
-                if (roll) {
-                    const start = streams.time.indexOf(roll.firstTime());
-                    const end = streams.time.indexOf(roll.lastTime());
-                    const gain = sauce.geo.altitudeChanges(streams.altitude.slice(start, end + 1)).gain;
-                    const value = (gain / roll.elapsed()) * 3600;
-                    peaks.push([roll, id, value]);
-                }
-            } else {
-                throw new Error("Invalid peak type: " + type);
-            }
-        }
-        if (manifest.reverseSort) {
-            peaks.sort((a, b) => a[2] - b[2]);
-        } else {
-            peaks.sort((a, b) => b[2] - a[2]);
-        }
-        const results = peaks.slice(0, limit);
-        for (const x of results) {
-            console.info(`https://www.strava.com/activities/${x[1]}`, x[2]);
-        }
-        return results;
-    }
-
 
     async function fetchSelfFTPs() {
         const resp = await fetch("https://www.strava.com/settings/performance");
@@ -1950,7 +1818,6 @@ sauce.ns('perf', function() {
 
 
     return {
-        findPeaks,
         fetchSelfFTPs,
         fetchHRZones,
         fetchPaceZones,
