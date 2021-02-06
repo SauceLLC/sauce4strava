@@ -6,7 +6,6 @@ import * as locks from '/src/common/jscoop/locks.js';
 
 const actsStore = new sauce.hist.db.ActivitiesStore();
 const streamsStore = new sauce.hist.db.StreamsStore();
-const peaksStore = new sauce.hist.db.PeaksStore();
 
 
 async function sleep(ms) {
@@ -384,85 +383,14 @@ export async function peaksProcessorNONO({manifest, activities, athlete}) {
 }
 
 
-export async function peaksProcessorWayTooSlow({manifest, activities, athlete}) {
-    const metersPerMile = 1609.344;
-    const actStreams = await getActivitiesStreams(activities,
-        ['time', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate']);
-    const periods = [5, 15, 30, 60, 120, 300, 600, 900, 1200, 1800, 3600, 10800];
-    const distances = [100, 200, 400, 1000, Math.round(metersPerMile), 3000, 5000, 10000,
-        Math.round(metersPerMile * 13.1), Math.round(metersPerMile * 26.2), 50000, 100000,
-        Math.round(metersPerMile * 100), 200000];
-    const peaks = [];
-    for (const activity of activities) {
-        const addPeak = (type, value) => peaks.push({
-            type,
-            value,
-            athlete: athlete.pk,
-            activity: activity.pk,
-            ts: activity.get('ts')
-        });
-        const streams = actStreams.get(activity.pk);
-        const isRun = activity.get('basetype') === 'run';
-        if (streams.watts || isRun && streams.watts_calc) {
-            try {
-                let roll;
-                const watts = streams.watts || streams.watts_calc;
-                for (const period of periods) {
-                    if (watts && !isRun || period >= 300) {
-                        roll = sauce.power.peakPower(period, streams.time, watts);
-                        if (roll) {
-                            addPeak('power', roll.avg());
-                        }
-                    }
-                    if (watts && period >= 300) {
-                        roll = sauce.power.peakNP(period, streams.time, watts);
-                        if (roll) {
-                            addPeak('np', roll.np({external: true}));
-                        }
-                        roll = sauce.power.peakXP(period, streams.time, watts);
-                        if (roll) {
-                            addPeak('xp', roll.xp({external: true}));
-                        }
-                    }
-                    if (streams.heartrate) {
-                        roll = sauce.data.peakAverage(period, streams.time, streams.heartrate, {active: true});
-                        if (roll) {
-                            addPeak('hr', roll.avg({active: true}));
-                        }
-                    }
-                }
-                for (const distance of distances) {
-                    if (streams.distance) {
-                        roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
-                        if (roll) {
-                            addPeak('pace', roll.avg());
-                        }
-                        if (isRun && streams.grade_adjusted_distance) {
-                            roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance);
-                            if (roll) {
-                                addPeak('gap', roll.avg());
-                            }
-                        }
-                    }
-                }
-            } catch(e) {
-                console.warn("Failed to create peaks for: " + activity, e);
-                activity.setSyncError(manifest, e);
-            }
-        }
-    }
-    await peaksStore.putMany(peaks);
-}
-
-
 export class TrainingLoadProcessor extends OffloadProcessor {
     constructor(...args) {
         super(...args);
-        this.updated = new Set();
+        this.completedWith = new Map();
     }
 
     async processor() {
-        const minWait = 8 * 1000;
+        const minWait = 10 * 1000;
         const maxWait = 90 * 1000;
         const maxSize = 50;
         while (true) {
@@ -481,17 +409,25 @@ export class TrainingLoadProcessor extends OffloadProcessor {
         const activities = new Map();
         const external = new Set();
         let unseen = 0;
+        let seen = 0;
         for (const a of batch) {
             activities.set(a.pk, a);
-            if (!this.updated.has(a.pk)) {
+            if (!this.completedWith.has(a.pk)) {
                 unseen++;
             } else {
-                this.updated.add(a.pk);
+                const priorTSS = this.completedWith.get(a.pk);
+                if (a.getTSS() !== priorTSS) {
+                    unseen++;
+                } else {
+                    seen++;
+                }
             }
         }
         if (!unseen) {
             console.debug("No training load updates required");
             return batch;
+        } else {
+            console.info("Updating training loads for:", {seen, unseen});
         }
         console.info("Processing ATL and CTL for", batch.length, 'activities');
         const orderedIds = await actsStore.getAllKeysForAthlete(this.athlete.pk,
@@ -500,7 +436,6 @@ export class TrainingLoadProcessor extends OffloadProcessor {
         for (const a of await actsStore.getMany(need, {models: true})) {
             if (!a.hasAnySyncErrors('streams') && !a.hasAnySyncErrors('local')) {
                 activities.set(a.pk, a);
-                this.updated.add(a.pk);
                 external.add(a);
             }
         }
@@ -521,7 +456,6 @@ export class TrainingLoadProcessor extends OffloadProcessor {
                 oldest = a;
                 ordered.unshift(a);
                 activities.set(a.pk, a);
-                this.updated.add(a.pk);
                 external.add(a);
             } else {
                 throw new TypeError("Internal Error: sibling search produced non sensical result");
@@ -546,9 +480,11 @@ export class TrainingLoadProcessor extends OffloadProcessor {
             const daily = [];
             let tss = 0;
             while (i < ordered.length && ordered[i].getLocaleDay().getTime() === day.getTime()) {
-                const m = ordered[i++];
-                daily.push(m);
-                tss += m.getTSS() || 0;
+                const act = ordered[i++];
+                daily.push(act);
+                const actTSS = act.getTSS();
+                tss += actTSS || 0;
+                this.completedWith.set(act.pk, actTSS);
             }
             atl = sauce.perf.calcATL([tss], atl);
             ctl = sauce.perf.calcCTL([tss], ctl);
