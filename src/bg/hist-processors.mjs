@@ -329,15 +329,13 @@ export class peaksProcessor extends OffloadProcessor {
         const minWait = null;
         const maxWait = 30000;
         const maxSize = 200;
-        const jobs = [];
         while (true) {
             const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
             if (batch === null) {
                 break;
             }
-            jobs.push(this._process(batch));
+            await this._process(batch);
         }
-        await Promise.all(jobs);
     }
 
     async _process(activities) {
@@ -356,7 +354,6 @@ export class peaksProcessor extends OffloadProcessor {
                     activity.setSyncError(this.manifest, new Error(x.error));
                 }
                 this.putFinished(chunk);
-                console.warn("chunk done", Date.now() - s, 'ms', chunk.length, 'acts', Math.round((Date.now() - s) / chunk.length), 'ms/act');
             });
             work.push(p);
         }

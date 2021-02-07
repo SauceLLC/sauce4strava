@@ -80,12 +80,17 @@ sauce.ns('hist.db', ns => {
                     }
                 }
             },
-            // Version 18 was deprecated in dev.
+            // Version 18 -> 24 were deprecated in dev.
             {
-                version: 19,
+                version: 24,
                 migrate: (idb, t, next) => {
-                    const store = idb.createObjectStore("peaks", {autoIncrement: true});
-                    store.createIndex('athlete-type-value-ts', ['athlete', 'type', 'value', 'ts']);
+                    if (idb.objectStoreNames.contains('peaks')) {
+                        idb.deleteObjectStore('peaks'); // XXX dev only
+                    }
+                    const store = idb.createObjectStore("peaks", {keyPath: ['activity', 'type', 'period']});
+                    store.createIndex('activity', 'activity');
+                    store.createIndex('athlete-type-period-value', ['athlete', 'type', 'period', 'value']);
+                    store.createIndex('type-period-value', ['type', 'period', 'value']);
                     next();
                 }
             }];
@@ -166,6 +171,23 @@ sauce.ns('hist.db', ns => {
     class PeaksStore extends sauce.db.DBStore {
         constructor() {
             super(histDatabase, 'peaks');
+        }
+
+        async getPeaksForAthlete(athleteId, type, period, options={}) {
+            const peaks = [];
+            const q = IDBKeyRange.bound([athleteId, type, period, -Infinity], [athleteId, type, period, Infinity]);
+            for await (const x of this.values(q, {index: 'athlete-type-period-value', ...options})) {
+                peaks.push(x);
+            }
+            return peaks;
+        }
+
+        async list(...args) {
+            const data = [];
+            for await (const x of this.values(...args)) {
+                data.push(x);
+            }
+            return data;
         }
     }
 

@@ -44,8 +44,9 @@ async function findPeaks(athleteId, activities) {
     const peaks = [];
     const errors = [];
     for (const activity of activities) {
-        const addPeak = (type, value) => peaks.push({
+        const addPeak = (type, period, value) => peaks.push({
             type,
+            period,
             value,
             athlete: athleteId,
             activity: activity.id,
@@ -91,33 +92,33 @@ async function findPeaks(athleteId, activities) {
                                 }
                             }
                             if (leaderRolls.power) {
-                                addPeak('power', leaderRolls.power.avg());
+                                addPeak('power', period, leaderRolls.power.avg());
                             }
                             if (leaderRolls.np) {
-                                addPeak('np', leaderRolls.np.np({external: true}));
+                                addPeak('np', period, leaderRolls.np.np({external: true}));
                             }
                             if (leaderRolls.xp) {
-                                addPeak('xp', leaderRolls.xp.xp({external: true}));
+                                addPeak('xp', period, leaderRolls.xp.xp({external: true}));
                             }
                         }
                     }
                     if (streams.heartrate) {
                         roll = sauce.data.peakAverage(period, streams.time, streams.heartrate, {active: true});
                         if (roll) {
-                            addPeak('hr', roll.avg({active: true}));
+                            addPeak('hr', period, roll.avg({active: true}));
                         }
                     }
                 }
-                for (const distance of distances) {
-                    if (streams.distance) {
+                if (isRun && streams.distance) {
+                    for (const distance of distances) {
                         roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
                         if (roll) {
-                            addPeak('pace', roll.avg());
+                            addPeak('pace', distance, roll.avg());
                         }
-                        if (isRun && streams.grade_adjusted_distance) {
+                        if (streams.grade_adjusted_distance) {
                             roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance);
                             if (roll) {
-                                addPeak('gap', roll.avg());
+                                addPeak('gap', distance, roll.avg());
                             }
                         }
                     }

@@ -17,6 +17,7 @@ sauce.ns('hist', async ns => {
     const actsStore = new sauce.hist.db.ActivitiesStore();
     const streamsStore = new sauce.hist.db.StreamsStore();
     const athletesStore = new sauce.hist.db.AthletesStore();
+    const peaksStore = new sauce.hist.db.PeaksStore();
 
 
     function issubclass(A, B) {
@@ -63,7 +64,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'peaks',
-        version: 1,
+        version: 2,
         depends: ['extra-streams'],
         data: {processor: processors.peaksProcessor}
     });
@@ -71,7 +72,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'training-load',
-        version: 1,
+        version: 2,
         depends: ['activity-stats'],
         data: {processor: processors.TrainingLoadProcessor}
     });
@@ -1602,6 +1603,7 @@ sauce.ns('hist', async ns => {
         streamsStore,
         actsStore,
         athletesStore,
+        peaksStore,
         activityCounts,
         SyncManager,
     };
