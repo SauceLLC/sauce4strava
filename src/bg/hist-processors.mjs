@@ -343,7 +343,7 @@ export class peaksProcessor extends OffloadProcessor {
         const s = Date.now();
         const activityMap = new Map(activities.map(x => [x.pk, x]));
         const work = [];
-        const concurrency = Math.max(1, navigator.hardwareConcurrency || 6);
+        const concurrency = Math.min(8, Math.max(1, navigator.hardwareConcurrency || 6));
         const step = Math.ceil(activities.length / concurrency);
         for (let i = 0; i < activities.length; i += step) {
             const chunk = activities.slice(i, i + step);
