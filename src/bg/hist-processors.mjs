@@ -327,36 +327,42 @@ export class peaksProcessor extends OffloadProcessor {
 
     async processor() {
         const minWait = null;
-        const maxWait = 10000;
-        const maxSize = 50;
+        const maxWait = 30000;
+        const maxSize = 200;
+        const jobs = [];
         while (true) {
             const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
             if (batch === null) {
-                return;
+                break;
             }
-            await this._process(batch);
-            this.putFinished(batch);
+            jobs.push(this._process(batch));
         }
+        await Promise.all(jobs);
     }
 
     async _process(activities) {
+        console.error("New incoming batch", activities.length);
+        const s = Date.now();
         const activityMap = new Map(activities.map(x => [x.pk, x]));
         const work = [];
-        const concurrency = Math.max(1, (navigator.hardwareConcurrency || 6) / 1);
-        const step = Math.max(20, Math.round(activities.length / concurrency));
+        const concurrency = Math.max(1, navigator.hardwareConcurrency || 6);
+        const step = Math.ceil(activities.length / concurrency);
         for (let i = 0; i < activities.length; i += step) {
-            work.push(this.wp.exec('findPeaks', this.athlete.pk,
-                activities.slice(i, i + step).map(x => x.data)));
+            const chunk = activities.slice(i, i + step);
+            const p = this.wp.exec('findPeaks', this.athlete.pk, chunk.map(x => x.data));
+            p.then(errors => {
+                for (const x of errors) {
+                    const activity = activityMap.get(x.activity);
+                    activity.setSyncError(this.manifest, new Error(x.error));
+                }
+                this.putFinished(chunk);
+                console.warn("chunk done", Date.now() - s, 'ms', chunk.length, 'acts', Math.round((Date.now() - s) / chunk.length), 'ms/act');
+            });
+            work.push(p);
         }
-        const s = Date.now();
-        console.info("Find peaks workers:", work.length, step);
-        for (const errors of await Promise.all(work)) {
-            for (const x of errors) {
-                const activity = activityMap.get(x.activity);
-                activity.setSyncError(this.manifest, new Error(x.error));
-            }
-        }
-        console.info("find peaks done", Date.now() - s, activities.length, Math.round(Date.now() / activities.length));
+        console.info("Find peaks workers:", work.length, 'workers', step, 'acts / worker');
+        await Promise.all(work);
+        console.warn("find peaks done", Date.now() - s, 'ms', activities.length, 'acts', Math.round((Date.now() - s) / activities.length), 'ms/act');
     }
 }
 

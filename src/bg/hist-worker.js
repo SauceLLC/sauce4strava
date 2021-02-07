@@ -32,14 +32,11 @@ async function getActivitiesStreams(activities, streams) {
 
 async function findPeaks(athleteId, activities) {
     const metersPerMile = 1609.344;
-    const s = Date.now();
-    let t = Date.now();
     const actStreams = await getActivitiesStreams(activities, {
         run: ['time', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
         ride: ['time', 'watts', 'distance', 'heartrate'],
         other: ['time', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
-    console.warn('streamget', athleteId, Date.now() - s);
     const periods = [5, 15, 30, 60, 120, 300, 600, 900, 1200, 1800, 3600, 10800];
     const distances = [100, 200, 400, 1000, Math.round(metersPerMile), 3000, 5000, 10000,
         Math.round(metersPerMile * 13.1), Math.round(metersPerMile * 26.2), 50000, 100000,
@@ -56,25 +53,52 @@ async function findPeaks(athleteId, activities) {
         });
         const streams = actStreams.get(activity.id);
         const isRun = activity.basetype === 'run';
+        const isRide = activity.basetype === 'ride';
         if (streams.watts || isRun && streams.watts_calc) {
             try {
                 let roll;
                 const watts = streams.watts || streams.watts_calc;
+                // Instead of using peakPower, peakNP, we do our own reduction to save
+                // repeative iterations on the same dataset.  it's about 50% faster.
                 for (const period of periods) {
-                    if (watts && !isRun || period >= 300) {
-                        roll = sauce.power.peakPower(period, streams.time, watts);
-                        if (roll) {
-                            addPeak('power', roll.avg());
-                        }
-                    }
-                    if (watts && period >= 300) {
-                        roll = sauce.power.peakNP(period, streams.time, watts);
-                        if (roll) {
-                            addPeak('np', roll.np({external: true}));
-                        }
-                        roll = sauce.power.peakXP(period, streams.time, watts);
-                        if (roll) {
-                            addPeak('xp', roll.xp({external: true}));
+                    if (watts && isRide || period >= 300) {
+                        const inlineCalcs = period >= 300;
+                        const rp = sauce.power.correctedRollingPower(streams.time, period, {
+                            inlineNP: inlineCalcs, inlineXP: inlineCalcs});
+                        if (rp) {
+                            const leaderRolls = {};
+                            const leaderValues = {};
+                            for (let i = 0; i < streams.time.length; i++) {
+                                rp.add(streams.time[i], watts[i]);
+                                if (rp.full()) {
+                                    const power = rp.avg();
+                                    if (!leaderValues.power || power >= leaderValues.power) {
+                                        leaderRolls.power = rp.clone();
+                                        leaderValues.power = power;
+                                    }
+                                    if (inlineCalcs) {
+                                        const np = rp.np();
+                                        if (!leaderValues.np || np >= leaderValues.np) {
+                                            leaderRolls.np = rp.clone();
+                                            leaderValues.np = np;
+                                        }
+                                        const xp = rp.xp();
+                                        if (!leaderValues.xp || xp >= leaderValues.xp) {
+                                            leaderRolls.xp = rp.clone();
+                                            leaderValues.xp = xp;
+                                        }
+                                    }
+                                }
+                            }
+                            if (leaderRolls.power) {
+                                addPeak('power', leaderRolls.power.avg());
+                            }
+                            if (leaderRolls.np) {
+                                addPeak('np', leaderRolls.np.np({external: true}));
+                            }
+                            if (leaderRolls.xp) {
+                                addPeak('xp', leaderRolls.xp.xp({external: true}));
+                            }
                         }
                     }
                     if (streams.heartrate) {
@@ -99,15 +123,12 @@ async function findPeaks(athleteId, activities) {
                     }
                 }
             } catch(e) {
-                console.warn("Failed to create peaks for: " + activity.id, e);
+                console.error("Failed to create peaks for: " + activity.id, e);
                 errors.push({activity: activity.id, error: e.message});
             }
         }
     }
-    console.warn('proc', athleteId, Date.now() - t);
-    t = Date.now();
     await peaksStore.putMany(peaks);
-    console.warn('peaksput', athleteId, Date.now() - t, Date.now() - s);
     return errors;
 }
 
