@@ -870,7 +870,7 @@ sauce.ns('power', function() {
     }
 
 
-    function _correctedRollingPower(timeStream, period, options={}) {
+    function correctedRollingPower(timeStream, period, options={}) {
         if (timeStream.length < 2 || timeStream[timeStream.length - 1] < period) {
             return;
         }
@@ -887,28 +887,17 @@ sauce.ns('power', function() {
     }
 
 
-    let t = 0;
-    let c = 0;
     function peakPower(period, timeStream, wattsStream, options) {
-        const s = performance.now();
-        const roll = _correctedRollingPower(timeStream, period, options);
+        const roll = correctedRollingPower(timeStream, period, options);
         if (!roll) {
             return;
         }
-        try {
-            return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
-        } finally {
-            t += performance.now() - s;
-            c++;
-            if (!(c % 1000)) {
-                console.warn((t / c).toFixed(2), t, c);
-            }
-        }
+        return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
     }
 
 
     function peakNP(period, timeStream, wattsStream, options) {
-        const roll = _correctedRollingPower(timeStream, period,
+        const roll = correctedRollingPower(timeStream, period,
             {inlineNP: true, active: true, ...options});
         if (!roll) {
             return;
@@ -918,7 +907,7 @@ sauce.ns('power', function() {
 
 
     function peakXP(period, timeStream, wattsStream, options) {
-        const roll = _correctedRollingPower(timeStream, period,
+        const roll = correctedRollingPower(timeStream, period,
             {inlineXP: true, active: true, ...options});
         if (!roll) {
             return;
@@ -928,7 +917,7 @@ sauce.ns('power', function() {
 
 
     function correctedPower(timeStream, wattsStream, options) {
-        const roll = _correctedRollingPower(timeStream, null, options);
+        const roll = correctedRollingPower(timeStream, null, options);
         if (!roll) {
             return;
         }
@@ -1226,6 +1215,7 @@ sauce.ns('power', function() {
         peakNP,
         peakXP,
         correctedPower,
+        correctedRollingPower,
         calcNP,
         calcXP,
         calcTSS,
