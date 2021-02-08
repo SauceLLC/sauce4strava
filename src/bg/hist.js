@@ -63,7 +63,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'peaks',
-        version: 2,
+        version: 3,
         depends: ['extra-streams'],
         data: {processor: processors.peaksProcessor}
     });
