@@ -16,10 +16,24 @@
                 </header>
                 <% if (a.stats) { %>
                     <% if (getTSS(a)) { %>
-                        <row>
-                            <key>TSS:</key>
-                            <value>{{humanNumber(getTSS(a))}}</value>
-                        </row>
+                        <% if (a.tssOverride != null) { %>
+                            <row>
+                                <key>TSS Override:</key>
+                                <value>{{humanNumber(a.tssOverride)}}</value>
+                            </row>
+                        <% } %>
+                        <% if (a.stats.tss != null) { %>
+                            <row>
+                                <key>TSS:</key>
+                                <value>{{humanNumber(getTSS(a))}}</value>
+                            </row>
+                        <% } %>
+                        <% if (a.stats.tTss != null) { %>
+                            <row>
+                                <key>tTSS:</key>
+                                <value>{{humanNumber(a.stats.tTss)}}</value>
+                            </row>
+                        <% } %>
                     <% } else { %>
                         <row>
                             <key>TSS:</key>

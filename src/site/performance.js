@@ -111,6 +111,76 @@ sauce.ns('performance', async ns => {
     }
 
 
+    async function editActivityDialogXXX(activity, pageView) {
+        // XXX replace this trash with a view and module
+        const tss = sauce.model.getActivityTSS(activity);
+        // XXX Viewify this...
+        async function waitForSyncFinish() {
+            const sc = pageView.syncControllers[activity.athlete];
+            if (sc) {
+                await new Promise(resolve => {
+                    sc.addEventListener('active', ev => {
+                        if (ev.data === false) {
+                            resolve();
+                        }
+                    });
+                });
+            }
+        }
+        const $modal = await sauce.modal({
+            title: 'Edit Activity', // XXX localize
+            body: `
+                <b>${activity.name}</b><hr/>
+                <label>TSS Override:
+                    <input name="tss_override" type="number"
+                           value="${activity.tssOverride != null ? activity.tssOverride : ''}"
+                           placeholder="${tss != null ? Math.round(tss) : ''}"/>
+                </label>
+                <hr/>
+                <label>Exclude this activity from peak performances:
+                    <input name="peaks_exclude" type="checkbox"
+                           ${activity.peaksExclude ? 'checked' : ''}"/>
+                </label>
+            `,
+            extraButtons: [{
+                text: 'Save', // XXX localize
+                click: async ev => {
+                    const tssOverride = Number($modal.find('input[name="tss_override"]').val()) || null;
+                    const peaksExclude = $modal.find('input[name="peaks_exclude"]').is(':checked');
+                    ev.currentTarget.disabled = true;
+                    ev.currentTarget.classList.add('sauce-loading');
+                    try {
+                        await sauce.hist.updateActivity(activity.id, {tssOverride, peaksExclude});
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'training-load', {disableSync: true});
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks');
+                        await waitForSyncFinish();
+                        await pageView.render();
+                    } finally {
+                        ev.currentTarget.classList.remove('sauce-loading');
+                        ev.currentTarget.disabled = false;
+                    }
+                    $modal.dialog('destroy');
+                }
+            }, {
+                text: 'Resync', // XXX localize
+                click: async ev => {
+                    ev.currentTarget.disabled = true;
+                    ev.currentTarget.classList.add('sauce-loading');
+                    try {
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local');
+                        await waitForSyncFinish();
+                        await pageView.render();
+                    } finally {
+                        ev.currentTarget.classList.remove('sauce-loading');
+                        ev.currentTarget.disabled = false;
+                    }
+                }
+            }]
+        });
+        return $modal;
+    }
+
+
     function activitiesByDay(acts, start, end, atl=0, ctl=0) {
         // NOTE: Activities should be in chronological order
         if (!acts.length) {
@@ -742,40 +812,192 @@ sauce.ns('performance', async ns => {
                     break;
                 }
             }
-            // XXX Viewify this...
-            const $modal = await sauce.modal({
-                title: 'Edit Activity', // XXX localize
-                body: `
-                    <b>${activity.name}</b><hr/>
-                    <label>TSS Override:
-                        <input name="tss_override" type="number"
-                               value="${sauce.model.getActivityTSS(activity)}"/>
-                    </label>
-                    <hr/>
-                    <label>Exclude power data from performance calculations:
-                        <input name="power_exclude" type="checkbox"
-                               ${activity.perfExclude ? 'checked' : ''}"/>
-                    </label>
-                `,
-                extraButtons: [{
-                    text: 'Save', // XXX localize
-                    click: async ev => {
-                        const tssOverride = Number($modal.find('input[name="tss_override"]').val()) || null;
-                        const powerExclude = $modal.find('input[name="power_exclude"]').is(':checked');
-                        ev.currentTarget.classList.add('sauce-loading');
-                        try {
-                            await sauce.hist.updateActivity(id, {tssOverride, powerExclude});
-                            await sauce.hist.invalidateSyncState(activity.athlete, 'local', 'training-load');
-                            // TODO: Listen to sync controller and refresh views after this finishes.
-                            await new Promise(resolve => setTimeout(resolve, 10000));
-                            await this.pageView.render();
-                        } finally {
-                            ev.currentTarget.classList.remove('sauce-loading');
-                        }
-                        $modal.dialog('destroy');
-                    }
-                }]
-            });
+            editActivityDialogXXX(activity, this.pageView);
+        }
+    }
+
+
+    class PeaksView extends view.SauceView {
+        get events() {
+            return {
+                'change .peak-controls select[name="type"]': 'onTypeChange',
+                'change .peak-controls select[name="time"]': 'onTimeChange',
+                'change .peak-controls select[name="distance"]': 'onDistanceChange',
+                'change .peak-controls select[name="limit"]': 'onLimitChange',
+                'input .peak-controls input[name="include-all-athletes"]': 'onIncludeAllAthletesInput',
+                'input .peak-controls input[name="include-all-dates"]': 'onIncludeAllDatesInput',
+                'click .results table tbody tr': 'onResultClick',
+                'click .edit-activity': 'onEditActivityClick',
+            };
+        }
+
+        get tpl() {
+            return 'performance-peaks.html';
+        }
+
+        async init({pageView}) {
+            this.pageView = pageView;
+            this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
+            this.periodEnd = null;
+            this.periodStart = null;
+            this.athlete = pageView.athlete;
+            this.athleteNameCache = new Map();
+            this.listenTo(pageView, 'change-athlete', this.setAthlete);
+            const savedPrefs = await sauce.storage.getPref('peaksView') || {};
+            this.prefs = {
+                type: 'power',
+                limit: 10,
+                time: 300,
+                distance: 10000,
+                includeAllAthletes: false,
+                includeAllDates: false,
+                ...savedPrefs
+            };
+            await super.init();
+        }
+
+        renderAttrs() {
+            return {
+                prefs: this.prefs,
+                peaks: this.peaks,
+                mile: 1609.344,
+                unit: this.getUnit(),
+                valueFormatter: this.getValueFormatter(),
+                athleteName: this.athleteName.bind(this),
+            };
+        }
+
+        async render() {
+            await this.loadPeaks();
+            await super.render();
+        }
+
+        async athleteName(id) {
+            if (!this.athleteNameCache.has(id)) {
+                const athlete = await sauce.hist.getAthlete(id);
+                this.athleteNameCache.set(id, athlete.name);
+            }
+            return this.athleteNameCache.get(id);
+        }
+
+        async savePrefs(updates) {
+            Object.assign(this.prefs, updates);
+            await sauce.storage.setPref('peaksView', this.prefs);
+        }
+
+        getWindow() {
+            if (['power', 'np', 'xp', 'hr'].includes(this.prefs.type)) {
+                return this.prefs.time;
+            } else {
+                return this.prefs.distance;
+            }
+        }
+
+        getUnit() {
+            const paceUnit = sauce.locale.paceFormatter.shortUnitKey();
+            return {
+                power: 'w',
+                np: 'w',
+                xp: 'w',
+                hr: 'bpm',
+                pace: paceUnit,
+                gap: paceUnit,
+            }[this.prefs.type];
+        }
+
+        getValueFormatter() {
+            return {
+                power: sauce.locale.human.number,
+                np: sauce.locale.human.number,
+                xp: sauce.locale.human.number,
+                hr: sauce.locale.human.number,
+                pace: sauce.locale.human.pace,
+                gap: sauce.locale.human.pace,
+            }[this.prefs.type];
+        }
+
+        getTypeDirection() {
+            if (['pace', 'gap'].includes(this.prefs.type)) {
+                return 'next';
+            } else {
+                return 'prev';
+            }
+        }
+
+        async loadPeaks() {
+            const options = {
+                limit: this.prefs.limit,
+                expandActivities: true,
+                direction: this.getTypeDirection(),
+            };
+            if (!this.prefs.includeAllDates) {
+                options.start = this.periodStart;
+                options.end = this.periodEnd;
+            }
+            if (!this.prefs.includeAllAthletes) {
+                this.peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.prefs.type,
+                    this.getWindow(), options);
+            } else {
+                this.peaks = await sauce.hist.getPeaksFor(this.prefs.type,
+                    this.getWindow(), options);
+            }
+        }
+
+        async onUpdatePeriod({start, end}) {
+            this.periodStart = start;
+            this.periodEnd = end;
+            await this.render();
+        }
+
+        async onTypeChange(ev) {
+            await this.savePrefs({type: ev.currentTarget.value});
+            await this.render();
+        }
+
+        async onTimeChange(ev) {
+            await this.savePrefs({time: Number(ev.currentTarget.value)});
+            await this.render();
+        }
+
+        async onDistanceChange(ev) {
+            await this.savePrefs({distance: Number(ev.currentTarget.value)});
+            await this.render();
+        }
+
+        async onLimitChange(ev) {
+            await this.savePrefs({limit: Number(ev.currentTarget.value)});
+            await this.render();
+        }
+
+        async onIncludeAllAthletesInput(ev) {
+            await this.savePrefs({includeAllAthletes: ev.currentTarget.checked});
+            await this.render();
+        }
+
+        async onIncludeAllDatesInput(ev) {
+            await this.savePrefs({includeAllDates: ev.currentTarget.checked});
+            await this.render();
+        }
+
+        async onResultClick(ev) {
+            if (ev.target.closest('.results tr a, .results tr button')) {
+                return;
+            }
+            const id = Number(ev.currentTarget.dataset.id);
+            const activity = await sauce.hist.getActivity(id);
+            this.pageView.trigger('select-activities', [activity]);
+        }
+
+        async onEditActivityClick(ev) {
+            const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
+            const activity = await sauce.hist.getActivity(id);
+            editActivityDialogXXX(activity, this.pageView);
+        }
+
+        async setAthlete(athlete) {
+            this.athlete = athlete;
+            this.athleteNameCache.set(athlete.id, athlete.name);
+            await this.render();
         }
     }
 
@@ -800,6 +1022,7 @@ sauce.ns('performance', async ns => {
         }
 
         async init({pageView}) {
+            this.peaksView = new PeaksView({pageView});
             this.pageView = pageView;
             this.period = ns.router.filters.period || defaultPeriod;
             this.periodEnd = ns.router.filters.periodEnd || this.periodEndMax;
@@ -821,6 +1044,8 @@ sauce.ns('performance', async ns => {
             if (!this.athlete) {
                 return;
             }
+            // NOTE We don't call peaksView.render() because update() will trigger it.
+            this.peaksView.setElement(this.$('.peaks-view'));
             this.charts.training = new ActivityTimeRangeChart('#training', this, {
                 plugins: [chartOverUnderFillPlugin],
                 options: {

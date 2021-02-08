@@ -254,6 +254,82 @@ $aside-width: 260px;
         }
     }
 
+    .peaks-view {
+        background-color: color.shade(bg, 3%);
+        border: 1px solid color.shade(fg, 20%, 0.2);
+        border-radius: 0.28em;
+        overflow: hidden;
+        font-size: 0.92em;
+
+        .peak-controls {
+            padding: 0.5em;
+            background-color: color.shade(bg, 5%);
+            font-size: 0.92em;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+
+            > * {
+                margin-right: 1em !important;
+            }
+
+            label {
+                margin: 0;
+            }
+        }
+
+        .results {
+            padding: 1em;
+            max-height: min(18rem, 30vh);
+            overflow-y: auto;
+            font-size: 0.92em;
+            display: flex;
+            flex-direction: column;
+
+            table {
+                td, th {
+                    padding: 0.2em 0.6em 0.2em 0.2em;
+                    white-space: nowrap;
+                }
+                tbody tr {
+                    cursor: pointer;
+
+                    td.activity-name {
+                        display: flex;
+                        max-width: 22ch;
+                        align-items: center;
+
+                        a {
+                            flex: 1 1 auto;
+                            text-overflow: ellipsis;
+                            word-break: break-word;
+                            white-space: nowrap;
+                            overflow: hidden;
+                        }
+
+                        .edit-activity.btn {
+                            flex: 0 0 auto;
+
+                            svg[data-icon] {
+                                height: 0.9em;
+                                margin-bottom: 0;
+                                opacity: 0;
+                            }
+                        }
+                    }
+
+                    &:hover {
+                        background-color: color.shade(bg, 0%);
+
+                        td.activity-name .edit-activity.btn svg[data-icon] {
+                            opacity: 0.8;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     > main {
         // We can't use a basis with chart.js's responsive mode.
         // Make the grow flex massive instead.
@@ -295,15 +371,17 @@ $aside-width: 260px;
             padding: 1em;
 
             header {
-                font-variant: small-caps;
-                font-size: 0.9em;
+                font-size: 0.92em;
                 font-weight: bold;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                margin-bottom: 1em;
 
-                > * {
-                    padding: 0 1em;
+                .more-info {
+                    padding-left: 1em;
+                    font-size: 0.86em;
+                    opacity: 0.7;
                 }
             }
 

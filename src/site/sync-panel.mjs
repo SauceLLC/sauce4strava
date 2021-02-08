@@ -175,7 +175,7 @@ export async function activitySyncDialog(athlete, syncController) {
         $modal.addClass('sync-active');
         $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
         $modal.find('.entry.synced .text').empty();
-        await sauce.hist.invalidateSyncState(athlete.id, 'local');
+        await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local');
     });
     $modal.on('click', '.sync-start.btn', async ev => {
         ev.preventDefault();
