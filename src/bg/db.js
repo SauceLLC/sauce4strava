@@ -80,9 +80,9 @@ sauce.ns('hist.db', ns => {
                     }
                 }
             },
-            // Version 18 -> 24 were deprecated in dev.
+            // Version 18 -> 25 were deprecated in dev.
             {
-                version: 24,
+                version: 26,
                 migrate: (idb, t, next) => {
                     if (idb.objectStoreNames.contains('peaks')) {
                         idb.deleteObjectStore('peaks'); // XXX dev only
@@ -91,6 +91,8 @@ sauce.ns('hist.db', ns => {
                     store.createIndex('activity', 'activity');
                     store.createIndex('athlete-type-period-value', ['athlete', 'type', 'period', 'value']);
                     store.createIndex('type-period-value', ['type', 'period', 'value']);
+                    store.createIndex('athlete-activitytype-type-period-value', ['athlete', 'activityType', 'type', 'period', 'value']);
+                    store.createIndex('activitytype-type-period-value', ['activityType', 'type', 'period', 'value']);
                     next();
                 }
             }];
@@ -173,15 +175,47 @@ sauce.ns('hist.db', ns => {
             super(histDatabase, 'peaks');
         }
 
-        async getPeaksForAthlete(athleteId, type, period, options={}) {
+        makeTimeFilter(options={}) {
+            const start = options.start;
+            const end = options.end;
+            if (start && end) {
+                return x => x.value.ts >= start && x.value.ts <= end;
+            } else if (start) {
+                return x => x.value.ts >= start;
+            } else if (end) {
+                return x => x.value.ts <= start;
+            }
+        }
+
+        async getForAthlete(athleteId, type, period, options={}) {
             const peaks = [];
-            const q = IDBKeyRange.bound([athleteId, type, period, -Infinity], [athleteId, type, period, Infinity]);
-            for await (const x of this.values(q, {index: 'athlete-type-period-value', ...options})) {
+            const filter = this.makeTimeFilter(options);
+            const q = IDBKeyRange.bound(
+                [athleteId, type, period, -Infinity],
+                [athleteId, type, period, Infinity]);
+            for await (const x of this.values(q,
+                {index: 'athlete-type-period-value', direction: 'prev', filter, ...options})) {
                 peaks.push(x);
             }
             return peaks;
         }
 
+        async getFor(type, period, options={}) {
+            const peaks = [];
+            const filter = this.makeTimeFilter(options);
+            const q = IDBKeyRange.bound([type, period, -Infinity], [type, period, Infinity]);
+            for await (const x of this.values(q,
+                {index: 'type-period-value', direction: 'prev', filter, ...options})) {
+                peaks.push(x);
+            }
+            return peaks;
+        }
+
+        async deleteForActivity(activityId) {
+            return await this.delete(activityId, {index: 'activity'});
+        }
+
+        // XXX
         async list(...args) {
             const data = [];
             for await (const x of this.values(...args)) {
@@ -283,7 +317,7 @@ sauce.ns('hist.db', ns => {
 
         async deleteForAthlete(athlete) {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            return this.delete(q, {index: 'athlete-ts'});
+            return await this.delete(q, {index: 'athlete-ts'});
         }
 
         async countForAthlete(athlete) {

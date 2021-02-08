@@ -319,7 +319,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
 }
 
 
-export class peaksProcessor extends OffloadProcessor {
+export class peaksProcessorNONO extends OffloadProcessor {
     constructor(...args) {
         super(...args);
         this.wp = getWorkerPool();
@@ -339,13 +339,15 @@ export class peaksProcessor extends OffloadProcessor {
     }
 
     async _process(activities) {
-        console.error("New incoming batch", activities.length);
+        console.warn("New incoming batch", activities.length);
         const s = Date.now();
         const activityMap = new Map(activities.map(x => [x.pk, x]));
         const work = [];
-        const concurrency = Math.min(8, Math.max(1, navigator.hardwareConcurrency || 6));
-        const step = Math.ceil(activities.length / concurrency);
-        for (let i = 0; i < activities.length; i += step) {
+        const len = activities.length;
+        const maxWorkers = Math.ceil(len / 50);
+        const concurrency = Math.min(maxWorkers, navigator.hardwareConcurrency || 6);
+        const step = Math.ceil(len / concurrency);
+        for (let i = 0; i < len; i += step) {
             const chunk = activities.slice(i, i + step);
             const p = this.wp.exec('findPeaks', this.athlete.pk, chunk.map(x => x.data));
             p.then(errors => {
@@ -364,25 +366,29 @@ export class peaksProcessor extends OffloadProcessor {
 }
 
 
-export async function peaksProcessorNONO({manifest, activities, athlete}) {
+export async function peaksProcessor({manifest, activities, athlete}) {
+    console.warn("New incoming batch", activities.length);
     const s = Date.now();
     const wp = getWorkerPool();
     const activityMap = new Map(activities.map(x => [x.pk, x]));
     const work = [];
-    const concurrency = Math.max(1, (navigator.hardwareConcurrency || 6) / 1);
-    const step = Math.max(10, Math.round(activities.length / concurrency));
-    for (let i = 0; i < activities.length; i += step) {
-        work.push(wp.exec('findPeaks', athlete.pk,
-            activities.slice(i, i + step).map(x => x.data)));
+    const len = activities.length;
+    const maxWorkers = Math.ceil(len / 30);
+    const concurrency = Math.min(maxWorkers, navigator.hardwareConcurrency || 6);
+    const step = Math.ceil(len / concurrency);
+    for (let i = 0; i < len; i += step) {
+        const chunk = activities.slice(i, i + step);
+        work.push(wp.exec('findPeaks', athlete.pk, chunk.map(x => x.data)));
     }
-    console.info("Find peaks workers:", work.length);
+    console.info("Find peaks workers:", work.length, 'workers', step, 'acts / worker');
     for (const errors of await Promise.all(work)) {
         for (const x of errors) {
             const activity = activityMap.get(x.activity);
             activity.setSyncError(manifest, new Error(x.error));
         }
     }
-    console.info("done", Date.now() - s, 'concurrency', concurrency, 'step', step, 'acts', activities.length);
+    await Promise.all(work);
+    console.warn("find peaks done", Date.now() - s, 'ms', activities.length, 'acts', Math.round((Date.now() - s) / activities.length), 'ms/act');
 }
 
 

@@ -37,27 +37,48 @@ async function findPeaks(athleteId, activities) {
         ride: ['time', 'watts', 'distance', 'heartrate'],
         other: ['time', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
-    const periods = [5, 15, 30, 60, 120, 300, 600, 900, 1200, 1800, 3600, 10800];
-    const distances = [100, 200, 400, 1000, Math.round(metersPerMile), 3000, 5000, 10000,
-        Math.round(metersPerMile * 13.1), Math.round(metersPerMile * 26.2), 50000, 100000,
-        Math.round(metersPerMile * 100), 200000];
+    const periods = [5, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600];
+    const distances = [400, 1000, Math.round(metersPerMile), 5000, 10000,
+        Math.round(metersPerMile * 13.1), Math.round(metersPerMile * 26.2), 50000];
     const peaks = [];
     const errors = [];
     for (const activity of activities) {
+        if (activity.peaksExclude) {
+            const count = await peaksStore.deleteForActivity(activity.id);
+            if (count) {
+                console.warn(`Deleted ${count} peaks for activity: ${activity.id}`);
+            }
+            continue;
+        }
         const addPeak = (type, period, value) => peaks.push({
             type,
             period,
             value,
             athlete: athleteId,
             activity: activity.id,
+            activityType: activity.basetype,
             ts: activity.ts
         });
         const streams = actStreams.get(activity.id);
         const isRun = activity.basetype === 'run';
         const isRide = activity.basetype === 'ride';
+        if (streams.heartrate) {
+            try {
+                for (const period of periods) {
+                    const roll = sauce.data.peakAverage(period, streams.time,
+                        streams.heartrate, {active: true});
+                    if (roll) {
+                        addPeak('hr', period, roll.avg({active: true}));
+                    }
+                }
+            } catch(e) {
+                // XXX make this better than a big try/catch
+                console.error("Failed to create peaks for: " + activity.id, e);
+                errors.push({activity: activity.id, error: e.message});
+            }
+        }
         if (streams.watts || isRun && streams.watts_calc) {
             try {
-                let roll;
                 const watts = streams.watts || streams.watts_calc;
                 // Instead of using peakPower, peakNP, we do our own reduction to save
                 // repeative iterations on the same dataset.  it's about 50% faster.
@@ -102,24 +123,23 @@ async function findPeaks(athleteId, activities) {
                             }
                         }
                     }
-                    if (streams.heartrate) {
-                        roll = sauce.data.peakAverage(period, streams.time, streams.heartrate, {active: true});
-                        if (roll) {
-                            addPeak('hr', period, roll.avg({active: true}));
-                        }
-                    }
                 }
-                if (isRun && streams.distance) {
-                    for (const distance of distances) {
-                        roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
+            } catch(e) {
+                console.error("Failed to create peaks for: " + activity.id, e);
+                errors.push({activity: activity.id, error: e.message});
+            }
+        }
+        if (isRun && streams.distance) {
+            try {
+                for (const distance of distances) {
+                    let roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
+                    if (roll) {
+                        addPeak('pace', distance, roll.avg());
+                    }
+                    if (streams.grade_adjusted_distance) {
+                        roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance);
                         if (roll) {
-                            addPeak('pace', distance, roll.avg());
-                        }
-                        if (streams.grade_adjusted_distance) {
-                            roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance);
-                            if (roll) {
-                                addPeak('gap', distance, roll.avg());
-                            }
+                            addPeak('gap', distance, roll.avg());
                         }
                     }
                 }

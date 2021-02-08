@@ -1,4 +1,4 @@
-/* global sauce, browser */
+/* global sauce */
 
 sauce.ns('hist', async ns => {
     'use strict';
@@ -8,7 +8,6 @@ sauce.ns('hist', async ns => {
     const namespace = 'hist';
     const jobs = await sauce.getModule('/src/common/jscoop/jobs.js');
     const queues = await sauce.getModule('/src/common/jscoop/queues.js');
-    const futures = await sauce.getModule('/src/common/jscoop/futures.js');
     const locks = await sauce.getModule('/src/common/jscoop/locks.js');
     const processors = await sauce.getModule('/src/bg/hist-processors.mjs');
     const DBTrue = 1;
@@ -499,82 +498,34 @@ sauce.ns('hist', async ns => {
     }
 
 
-    class WorkerPoolExecutor {
-        constructor(url, options={}) {
-            this.url = url;
-            this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2);
-            this._idle = new queues.Queue();
-            this._busy = new Set();
-            this._id = 0;
-        }
-
-        async _getWorker() {
-            let worker;
-            if (!this._idle.size) {
-                if (this._busy.size >= this.maxWorkers) {
-                    console.warn("Waiting for available worker...");
-                    worker = await this._idle.get();
-                } else {
-                    worker = new Worker(this.url);
-                }
-            } else {
-                worker = await this._idle.get();
-            }
-            if (worker.dead) {
-                return await this._getWorker();
-            }
-            if (worker.gcTimeout) {
-                clearTimeout(worker.gcTimeout);
-            }
-            this._busy.add(worker);
-            return worker;
-        }
-
-        async exec(call, ...args) {
-            const id = this._id++;
-            const f = new futures.Future();
-            const onMessage = ev => {
-                if (!ev.data || ev.data.id == null) {
-                    f.setError(new Error("Invalid Worker Message"));
-                } else if (ev.data.id !== id) {
-                    console.warn('Ignoring worker message from other job');
-                    return;
-                } else {
-                    if (ev.data.success) {
-                        f.setResult(ev.data.value);
-                    } else {
-                        f.setError(ev.data.value);
-                    }
-                }
-            };
-            const worker = await this._getWorker();
-            worker.addEventListener('message', onMessage);
-            try {
-                worker.postMessage({call, args, id});
-                return await f;
-            } finally {
-                worker.removeEventListener('message', onMessage);
-                this._busy.delete(worker);
-                worker.gcTimeout = setTimeout(() => {
-                    worker.dead = true;
-                    worker.terminate();
-                }, 30000);
-                this._idle.put(worker);
-            }
+    async function expandPeakActivities(peaks) {
+        const activities = await actsStore.getMany(peaks.map(x => x.activity));
+        for (let i = 0; i < activities.length; i++) {
+            peaks[i].activity = activities[i];
         }
     }
 
-    const extUrl = browser.runtime.getURL('');
-    const workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist-worker.js');
 
-
-    async function findPeaks(...args) {
-        const s = Date.now();
-        const result = await workerPool.exec('findPeaks', ...args);
-        console.debug('Done: took', Date.now() - s);
-        return result;
+    async function getPeaksForAthlete(athleteId, type, period, options={}) {
+        console.warn([...arguments]);
+        const peaks = await peaksStore.getForAthlete(athleteId, type, period, options);
+        if (options.expandActivities) {
+            await expandPeakActivities(peaks);
+        }
+        return peaks;
     }
-    sauce.proxy.export(findPeaks, {namespace});
+    sauce.proxy.export(getPeaksForAthlete, {namespace});
+
+
+    async function getPeaksFor(type, period, options={}) {
+        console.warn([...arguments]);
+        const peaks = await peaksStore.getFor(type, period, options);
+        if (options.expandActivities) {
+            await expandPeakActivities(peaks);
+        }
+        return peaks;
+    }
+    sauce.proxy.export(getPeaksFor, {namespace});
 
 
     // XXX maybe move to analysis page until we figure out the strategy for all
@@ -744,24 +695,55 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(integrityCheck);
 
 
-    async function invalidateSyncState(athleteId, processor, name) {
+    async function invalidateAthleteSyncState(athleteId, processor, name, options={}) {
         if (!athleteId || !processor) {
             throw new TypeError("'athleteId' and 'processor' are required args");
         }
-        const athlete = await athletesStore.get(athleteId, {model: true});
-        if (athlete.isEnabled() && ns.syncManager) {
-            const job = ns.syncManager.activeJobs.get(athleteId);
-            if (job) {
-                job.cancel();
-                await job.wait();
+        let athlete;
+        if (!options.disableSync) {
+            athlete = await athletesStore.get(athleteId, {model: true});
+            if (athlete.isEnabled() && ns.syncManager) {
+                const job = ns.syncManager.activeJobs.get(athleteId);
+                if (job) {
+                    job.cancel();
+                    await job.wait();
+                }
             }
         }
         await actsStore.invalidateForAthleteWithSync(athleteId, processor, name);
-        if (athlete.isEnabled() && ns.syncManager) {
+        if (!options.disableSync && athlete.isEnabled() && ns.syncManager) {
             await ns.syncManager.refreshRequest(athleteId, {skipUpdate: true});
         }
     }
-    sauce.proxy.export(invalidateSyncState, {namespace});
+    sauce.proxy.export(invalidateAthleteSyncState, {namespace});
+
+
+    async function invalidateActivitySyncState(activityId, processor, name, options={}) {
+        if (!activityId || !processor) {
+            throw new TypeError("'activityId' and 'processor' are required args");
+        }
+        const activity = await actsStore.get(activityId, {model: true});
+        let athlete;
+        if (!options.disableSync) {
+            athlete = await athletesStore.get(activity.get('athlete'), {model: true});
+            if (athlete.isEnabled() && ns.syncManager) {
+                const job = ns.syncManager.activeJobs.get(athlete.pk);
+                if (job) {
+                    job.cancel();
+                    await job.wait();
+                }
+            }
+        }
+        const manifests = sauce.hist.db.ActivityModel.getSyncManifests(processor, name);
+        for (const m of manifests) {
+            activity.clearSyncState(m);
+        }
+        await activity.save();
+        if (!options.disableSync && athlete.isEnabled() && ns.syncManager) {
+            await ns.syncManager.refreshRequest(athlete.pk, {skipUpdate: true});
+        }
+    }
+    sauce.proxy.export(invalidateActivitySyncState, {namespace});
 
 
     async function activityCounts(athleteId, activities) {
@@ -1597,9 +1579,11 @@ sauce.ns('hist', async ns => {
 
     return {
         integrityCheck,
-        invalidateSyncState,
+        invalidateAthleteSyncState,
+        invalidateActivitySyncState,
         getActivitySiblings,
-        findPeaks,
+        getPeaksForAthlete,
+        getPeaksFor,
         streamsStore,
         actsStore,
         athletesStore,
