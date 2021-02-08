@@ -297,11 +297,21 @@ sauce.ns('performance', async ns => {
 
 
     async function getSeedTrainingLoad(activity) {
-        const seed = (await sauce.hist.getActivitySiblings(activity.id,
-            {direction: 'prev', limit: 1}))[0];
+        let oldestActivityID = activity.id;
         let atl = 0;
         let ctl = 0;
-        if (seed && seed.training) {
+        while (true) {
+            const seed = (await sauce.hist.getActivitySiblings(oldestActivityID,
+                {direction: 'prev', limit: 1}))[0];
+            if (!seed) {
+                break;
+            }
+            if (!seed.training) {
+                // Keep scanning backwards until we find an activity with legit training data.
+                // This could be a workout without streams, or otherwise has errors.
+                oldestActivityID = seed.id;
+                continue;
+            }
             atl = seed.training.atl || 0;
             ctl = seed.training.ctl || 0;
             // Drain inactive days between the seed and the activity...
@@ -313,6 +323,7 @@ sauce.ns('performance', async ns => {
                 atl = sauce.perf.calcATL(zeros, atl);
                 ctl = sauce.perf.calcCTL(zeros, ctl);
             }
+            break;
         }
         return {atl, ctl};
     }

@@ -71,7 +71,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'training-load',
-        version: 2,
+        version: 3,
         depends: ['activity-stats'],
         data: {processor: processors.TrainingLoadProcessor}
     });

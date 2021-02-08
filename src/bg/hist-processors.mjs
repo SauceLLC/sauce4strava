@@ -452,14 +452,21 @@ export class TrainingLoadProcessor extends OffloadProcessor {
         let atl = 0;
         let ctl = 0;
         let seed;
-        // Rewind until we find a seed record from a prior day...
+        // Rewind until we find a valid seed record from a prior day...
         for await (const a of actsStore.siblings(oldest.pk, {models: true, direction: 'prev'})) {
             if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
-                seed = a;
-                const tl = seed.get('training');
-                atl = tl && tl.atl || 0;
-                ctl = tl && tl.ctl || 0;
-                break;
+                const tl = a.get('training');
+                if (!tl) {
+                    ordered.unshift(a);
+                    activities.set(a.pk, a);
+                    external.add(a);
+                    continue;  // Keep searching backwards until we find a valid activity.
+                } else {
+                    seed = a;
+                    atl = tl.atl || 0;
+                    ctl = tl.ctl || 0;
+                    break;
+                }
             } else if (a.pk !== oldest.pk) {
                 // Prior activity is same day as oldest in this set, we must lump it in.
                 oldest = a;
