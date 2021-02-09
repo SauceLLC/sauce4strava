@@ -408,6 +408,7 @@ export class TrainingLoadProcessor extends OffloadProcessor {
             if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
                 const tl = a.get('training');
                 if (!tl) {
+                    oldest = a;
                     ordered.unshift(a);
                     activities.set(a.pk, a);
                     external.add(a);
