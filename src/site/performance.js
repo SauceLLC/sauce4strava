@@ -156,7 +156,6 @@ sauce.ns('performance', async ns => {
     }
 
 
-
     async function editActivityDialogXXX(activity, pageView) {
         // XXX replace this trash with a view and module
         const tss = sauce.model.getActivityTSS(activity);
@@ -645,7 +644,7 @@ sauce.ns('performance', async ns => {
                 'click a.collapser': 'onCollapserClick',
                 'click a.expander': 'onExpanderClick',
                 'dblclick section > header': 'onDblClickHeader',
-                'change .peak-controls select[name="type"]': 'onTypeChange',
+                'change select[name="type"]': 'onTypeChange',
             };
         }
 
@@ -673,15 +672,25 @@ sauce.ns('performance', async ns => {
         }
 
         async renderAttrs() {
-            console.info(1);
             const peaks = [];
             const direction = getPeaksSortDirection(this.type);
-            const peaksData = await Promise.all([5, 60, 300, 1200, 3600].map(x =>
+            let periods;
+            let keyFormatter;
+            const mile = 1609.344;
+            if (['gap', 'pace'].includes(this.type)) {
+                periods = [400, 1000, mile, 10000, mile * 13.1, mile * 26.2];
+                keyFormatter = sauce.locale.human.raceDistance;
+            } else {
+                periods = [5, 60, 300, 1200, 3600];
+                keyFormatter = sauce.locale.human.duration;
+            }
+            const peaksData = await Promise.all(periods.map(x =>
                 sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, x, {direction, limit: 1})));
-            for (const x of peaksData) {
+            const valueFormatter = getPeaksValueFormatter(this.type);
+            for (const x of peaksData.filter(x => x.length).map(x => x[0])) {
                 peaks.push({
-                    key: sauce.locale.human.duration(x[0].period),
-                    prettyValue: sauce.locale.human.number(x[0].value),
+                    key: keyFormatter(x.period),
+                    prettyValue: valueFormatter(x.value),
                     unit: getPeaksUnit(this.type)
                 });
             }

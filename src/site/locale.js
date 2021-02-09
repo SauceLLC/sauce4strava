@@ -19,6 +19,13 @@ sauce.ns('locale', ns => {
     }
 
 
+    function isRoughlyEqual(a, b, sameness) {
+        sameness = sameness || 0.01;
+        const delta = Math.abs(a - b);
+        return delta < sameness;
+    }
+
+
     function _getCacheEntry(args) {
         const hashKey = JSON.stringify(args);
         const entry = {
@@ -132,6 +139,10 @@ sauce.ns('locale', ns => {
         ns.paceFormatter = new Strava.I18n.PaceFormatter();
         ns.speedFormatter = new Strava.I18n.DistancePerTimeFormatter();
         ns.swimPaceFormatter = new Strava.I18n.SwimPaceFormatter;
+        ns.imperialDistanceFormatter = new Strava.I18n.DistanceFormatter(
+            Strava.I18n.UnitSystemSource.IMPERIAL);
+        ns.metricDistanceFormatter = new Strava.I18n.DistanceFormatter(
+            Strava.I18n.UnitSystemSource.METRIC);
         initialized = true;
     }
 
@@ -184,6 +195,24 @@ sauce.ns('locale', ns => {
             }
         }
         return stack.slice(0, 2).join(', ');
+    }
+
+
+    function humanRaceDistance(value) {
+        let label;
+        if (value < 1000) {
+            label = `${value} m`;
+        } else {
+            const miles = value / metersPerMile;
+            if (isRoughlyEqual(miles, 13.1) ||
+                isRoughlyEqual(miles, 26.2) ||
+                isRoughlyEqual(miles, Math.round(miles))) {
+                label = ns.imperialDistanceFormatter.formatShort(value);
+            } else {
+                label = ns.metricDistanceFormatter.formatShort(value);
+            }
+        }
+        return label.replace(/\.0 /, ' ');
     }
 
 
@@ -391,6 +420,7 @@ sauce.ns('locale', ns => {
             number: humanNumber,
             pace: humanPace,
             distance: humanDistance,
+            raceDistance: humanRaceDistance,
             timer: humanTimer,
             date: humanDate,
             datetime: humanDateTime,
@@ -405,6 +435,7 @@ sauce.ns('locale', ns => {
             humanNumber,
             humanPace,
             humanDistance,
+            humanRaceDistance,
             humanTimer,
             humanDate,
             humanDateTime,

@@ -765,13 +765,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function isRoughlyEqual(a, b, sameness) {
-        sameness = sameness || 0.01;
-        const delta = Math.abs(a - b);
-        return delta < sameness;
-    }
-
-
     function onMobileNavClickaway(ev) {
         if (!ev.target.closest('nav.sidenav')) {
             ev.stopImmediatePropagation();  // noops menu-expander listener.
@@ -3011,24 +3004,8 @@ sauce.ns('analysis', ns => {
             range.label = H.duration(range.value);
         }
         ns.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
-        const imperialDistanceFormatter = new Strava.I18n.DistanceFormatter(
-            Strava.I18n.UnitSystemSource.IMPERIAL);
-        const metricDistanceFormatter = new Strava.I18n.DistanceFormatter(
-            Strava.I18n.UnitSystemSource.METRIC);
         for (const range of ns.allDistRanges) {
-            if (range.value < 1000) {
-                range.label = `${range.value} m`;
-            } else {
-                const miles = range.value / metersPerMile;
-                if (isRoughlyEqual(miles, 13.1) ||
-                    isRoughlyEqual(miles, 26.2) ||
-                    isRoughlyEqual(miles, Math.round(miles))) {
-                    range.label = imperialDistanceFormatter.formatShort(range.value);
-                } else {
-                    range.label = metricDistanceFormatter.formatShort(range.value);
-                }
-            }
-            range.label = range.label.replace(/\.0 /, ' ');
+            range.label = H.raceDistance(range.value);
         }
         const timeStream = await fetchStream('time');
         const streamData = pageView.streams().streamData;

@@ -51,13 +51,13 @@
 
             <!--XXX Localize-->
             <select name="type">
-                <option value="power" {{type === 'power' ? 'checked' : ''}}>Power</option>
-                <option value="power_wkg" {{type === 'power' ? 'checked' : ''}}>Power (w/kg)</option>
-                <option value="np" {{type === 'power' ? 'checked' : ''}}>NP</option>
-                <option value="xp" {{type === 'power' ? 'checked' : ''}}>xPower</option>
-                <option value="pace" {{type === 'power' ? 'checked' : ''}}>Pace</option>
-                <option value="gap" {{type === 'power' ? 'checked' : ''}}>GAP</option>
-                <option value="hr" {{type === 'power' ? 'checked' : ''}}>Heartrate</option>
+                <option value="power" {{type === 'power' ? 'selected' : ''}}>Power</option>
+                <option value="power_wkg" {{type === 'power_wkg' ? 'selected' : ''}}>Power (w/kg)</option>
+                <option value="np" {{type === 'np' ? 'selected' : ''}}>NP</option>
+                <option value="xp" {{type === 'xp' ? 'selected' : ''}}>xPower</option>
+                <option value="pace" {{type === 'pace' ? 'selected' : ''}}>Pace</option>
+                <option value="gap" {{type === 'gap' ? 'selected' : ''}}>GAP</option>
+                <option value="hr" {{type === 'hr' ? 'selected' : ''}}>Heartrate</option>
             </select>
 
             <% for (const x of peaks) { %>
