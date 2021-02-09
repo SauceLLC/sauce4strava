@@ -75,11 +75,18 @@ class HistoryView extends SauceView {
                 data.push({ts, value});
             }
         }
-        const ordered = await sauce.hist.setAthleteHistoryValues(this.athlete.id, this.ident, data);
-        this.athlete[this.athleteKey] = ordered;
-        this.$el.removeClass('dirty');
-        this.edited = true;
-        await this.render();
+        ev.currentTarget.disabled = true;
+        ev.currentTarget.classList.add('sauce-loading');
+        try {
+            const ordered = await sauce.hist.setAthleteHistoryValues(this.athlete.id, this.ident, data);
+            this.athlete[this.athleteKey] = ordered;
+            this.$el.removeClass('dirty');
+            this.edited = true;
+            await this.render();
+        } finally {
+            ev.currentTarget.classList.remove('sauce-loading');
+            ev.currentTarget.disabled = false;
+        }
     }
 
     onInput(ev) {
