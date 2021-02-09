@@ -506,22 +506,32 @@ sauce.ns('hist', async ns => {
     }
 
 
-    async function getPeaksForAthlete(athleteId, type, period, options={}) {
-        const peaks = await peaksStore.getForAthlete(athleteId, type, period, options);
+    async function _aggregatePeaks(work, options={}) {
+        const peaks = [];
+        for (const x of await Promise.all(work)) {
+            for (const xx of x) {
+                peaks.push(xx);
+            }
+        }
         if (options.expandActivities) {
             await expandPeakActivities(peaks);
         }
         return peaks;
     }
+
+
+    async function getPeaksForAthlete(athleteId, type, periods, options={}) {
+        periods = Array.isArray(periods) ? periods : [periods];
+        return _aggregatePeaks(periods.map(x =>
+            peaksStore.getForAthlete(athleteId, type, x, options)), options);
+    }
     sauce.proxy.export(getPeaksForAthlete, {namespace});
 
 
-    async function getPeaksFor(type, period, options={}) {
-        const peaks = await peaksStore.getFor(type, period, options);
-        if (options.expandActivities) {
-            await expandPeakActivities(peaks);
-        }
-        return peaks;
+    async function getPeaksFor(type, periods, options={}) {
+        periods = Array.isArray(periods) ? periods : [periods];
+        return _aggregatePeaks(periods.map(x =>
+            peaksStore.getFor(type, x, options)), options);
     }
     sauce.proxy.export(getPeaksFor, {namespace});
 

@@ -688,11 +688,10 @@ sauce.ns('performance', async ns => {
             }
             const start = this.periodStart;
             const end = this.periodEnd;
-            const peaksData = await Promise.all(periods.map(x =>
-                sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, x,
-                    {direction, limit: 1, start, end})));
+            const peaksData = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type,
+                periods, {direction, limit: 1, start, end});
             const valueFormatter = getPeaksValueFormatter(this.type);
-            for (const x of peaksData.filter(x => x.length).map(x => x[0])) {
+            for (const x of peaksData) {
                 peaks.push({
                     key: keyFormatter(x.period),
                     prettyValue: valueFormatter(x.value),
