@@ -53,6 +53,38 @@ $aside-width: 260px;
 }
 
 
+table.sauce-perf {
+    td, th {
+        padding: 0.4em 0.6em 0.4em 0.2em;
+        white-space: nowrap;
+
+        &:first-child {
+            padding-left: 1em;
+        }
+    }
+    tbody tr {
+        &:nth-child(even) {
+            background-color: color.shade(bg, 6%);
+        }
+
+        td.activity-name {
+            .name-container {
+                display: flex;
+                max-width: 30ch;
+                align-items: center;
+
+                a {
+                    text-overflow: ellipsis;
+                    word-break: break-word;
+                    white-space: nowrap;
+                    overflow: hidden;
+                }
+            }
+        }
+    }
+}
+
+
 #sauce-performance {
     line-height: initial;
 
@@ -74,6 +106,7 @@ $aside-width: 260px;
             background-color: color.shade(bg, 8%);
         }
     }
+
 
     abbr.unit {
         font-size: 0.8em;
@@ -334,35 +367,8 @@ $aside-width: 260px;
             flex-direction: column;
 
             table {
-                td, th {
-                    padding: 0.4em 0.6em 0.4em 0.2em;
-                    white-space: nowrap;
-
-                    &:first-child {
-                        padding-left: 1em;
-                    }
-                }
                 tbody tr {
                     cursor: pointer;
-
-                    &:nth-child(even) {
-                        background-color: color.shade(bg, 6%);
-                    }
-
-                    td.activity-name {
-                        .name-container {
-                            display: flex;
-                            max-width: 30ch;
-                            align-items: center;
-
-                            a {
-                                text-overflow: ellipsis;
-                                word-break: break-word;
-                                white-space: nowrap;
-                                overflow: hidden;
-                            }
-                        }
-                    }
 
                     &:hover {
                         background-color: color.shade(bg, 10%);
