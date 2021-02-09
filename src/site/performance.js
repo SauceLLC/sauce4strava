@@ -684,8 +684,11 @@ sauce.ns('performance', async ns => {
                 periods = [5, 60, 300, 1200, 3600];
                 keyFormatter = sauce.locale.human.duration;
             }
+            const start = this.periodStart;
+            const end = this.periodEnd;
             const peaksData = await Promise.all(periods.map(x =>
-                sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, x, {direction, limit: 1})));
+                sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, x,
+                    {direction, limit: 1, start, end})));
             const valueFormatter = getPeaksValueFormatter(this.type);
             for (const x of peaksData.filter(x => x.length).map(x => x[0])) {
                 peaks.push({
@@ -789,6 +792,8 @@ sauce.ns('performance', async ns => {
                 this.weekly = aggregateActivitiesByWeek(daily, {isoWeekStart: true});
             }
             this.missingTSS = activities.filter(x => sauce.model.getActivityTSS(x) == null);
+            this.periodStart = start;
+            this.periodEnd = end;
             await this.render();
         }
 
@@ -907,11 +912,11 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
             this.periodEnd = null;
             this.periodStart = null;
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
+            this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
             this.listenTo(pageView, 'change-athlete', this.setAthlete);
             const savedPrefs = await sauce.storage.getPref('peaksView') || {};
             this.prefs = {
