@@ -71,7 +71,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'training-load',
-        version: 3,
+        version: 4,
         depends: ['activity-stats'],
         data: {processor: processors.TrainingLoadProcessor}
     });
@@ -727,7 +727,11 @@ sauce.ns('hist', async ns => {
         }
         await actsStore.invalidateForAthleteWithSync(athleteId, processor, name);
         if (!options.disableSync && athlete.isEnabled() && ns.syncManager) {
-            await syncAthlete(athleteId, {skipUpdate: true, ...options});
+            await syncAthlete(athleteId, {
+                noActivityScan: true,
+                noStreamsFetch: true,
+                ...options
+            });
         }
     }
     sauce.proxy.export(invalidateAthleteSyncState, {namespace});
@@ -736,6 +740,10 @@ sauce.ns('hist', async ns => {
     async function invalidateActivitySyncState(activityId, processor, name, options={}) {
         if (!activityId || !processor) {
             throw new TypeError("'activityId' and 'processor' are required args");
+        }
+        const manifests = sauce.hist.db.ActivityModel.getSyncManifests(processor, name);
+        if (!manifests.length) {
+            throw new TypeError('Invalid sync processor/name');
         }
         const activity = await actsStore.get(activityId, {model: true});
         let athlete;
@@ -749,13 +757,16 @@ sauce.ns('hist', async ns => {
                 }
             }
         }
-        const manifests = sauce.hist.db.ActivityModel.getSyncManifests(processor, name);
         for (const m of manifests) {
             activity.clearSyncState(m);
         }
         await activity.save();
         if (!options.disableSync && athlete.isEnabled() && ns.syncManager) {
-            await syncAthlete(athlete.pk, {skipUpdate: true, ...options});
+            await syncAthlete(athlete.pk, {
+                noActivityScan: true,
+                noStreamsFetch: true,
+                ...options
+            });
         }
     }
     sauce.proxy.export(invalidateActivitySyncState, {namespace});
@@ -861,7 +872,7 @@ sauce.ns('hist', async ns => {
         }
 
         async _run(options={}) {
-            if (!options.skipUpdate) {
+            if (!options.noActivityScan) {
                 this.setStatus('activity-scan');
                 const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
                 await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
@@ -869,7 +880,7 @@ sauce.ns('hist', async ns => {
             }
             this.setStatus('data-sync');
             try {
-                await this._syncData();
+                await this._syncData(options);
             } catch(e) {
                 this.setStatus('error');
                 throw e;
@@ -877,13 +888,14 @@ sauce.ns('hist', async ns => {
             this.setStatus('complete');
         }
 
-        async _syncData() {
+        async _syncData(options={}) {
             const activities = await actsStore.getAllForAthlete(this.athlete.pk, {models: true});
             this.allActivities = new Map(activities.map(x => [x.pk, x]));
             const unfetched = [];
             let deferCount = 0;
+            const streamManifest = sauce.hist.db.ActivityModel.getSyncManifest('streams', 'fetch');
             for (const a of activities) {
-                if (a.isSyncComplete('streams')) {
+                if (a.isSyncComplete('streams') || a.getSyncError(streamManifest) === 'no-streams') {
                     if (!a.isSyncComplete('local')) {
                         if (a.nextAvailManifest('local')) {
                             this._procQueue.putNoWait(a);
@@ -903,7 +915,7 @@ sauce.ns('hist', async ns => {
                 console.warn(`Deferring sync of ${deferCount} activities due to error`);
             }
             const workers = [];
-            if (unfetched.length) {
+            if (unfetched.length && !options.noStreamsFetch) {
                 workers.push(this._fetchStreamsWorker(unfetched));
             } else if (!this._procQueue.size) {
                 console.debug("No activity sync required for: " + this.athlete);

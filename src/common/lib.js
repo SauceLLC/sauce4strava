@@ -1884,8 +1884,15 @@ sauce.ns('model', function() {
         }
     }
 
+
+    function getActivityActiveTime(a) {
+        const t = a.stats && a.stats.activeTime;
+        return t != null ? t : a.moving_time_raw;
+    }
+
     return {
         getAthleteHistoryValueAt,
         getActivityTSS,
+        getActivityActiveTime,
     };
 });

@@ -236,7 +236,7 @@ sauce.ns('performance', async ns => {
                 const a = acts[i++];
                 daily.push(a);
                 tss += sauce.model.getActivityTSS(a) || 0;
-                duration += a.stats && a.stats.activeTime || 0;
+                duration += a.stats && sauce.model.getActivityActiveTime(a) || 0;
                 altGain += a.stats && a.stats.altitudeGain || 0;
             }
             atl = sauce.perf.calcATL([tss], atl);
@@ -857,8 +857,7 @@ sauce.ns('performance', async ns => {
 
         async renderAttrs() {
             return {
-                getTSS: sauce.model.getActivityTSS,
-                activities: this.activities
+                activities: this.activities,
             };
         }
 

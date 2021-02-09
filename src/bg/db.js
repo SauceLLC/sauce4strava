@@ -457,6 +457,12 @@ sauce.ns('hist.db', ns => {
             return !!(state && state.version === manifest.version && !(state.error && state.error.ts));
         }
 
+        getSyncError(manifest) {
+            const state = this._getSyncState(manifest);
+            const error = state && state.error;
+            return (error && error.ts) ? (error.message || 'error') : undefined;
+        }
+
         hasSyncError(manifest) {
             const state = this._getSyncState(manifest);
             return !!(state && state.error && state.error.ts);
@@ -516,7 +522,7 @@ sauce.ns('hist.db', ns => {
             for (const m of manifests) {
                 if (!tainted.has(m.name)) {
                     const state = states.get(m.name);
-                    if (state && state.version >= m.version && (!state.error || !state.error.ts)) {
+                    if (state && state.version === m.version && (!state.error || !state.error.ts)) {
                         completed.add(m.name);
                     } else {
                         pending.add(m.name);

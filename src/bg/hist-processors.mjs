@@ -394,10 +394,8 @@ export class TrainingLoadProcessor extends OffloadProcessor {
             {start: oldest.get('ts')});
         const need = orderedIds.filter(x => !activities.has(x));
         for (const a of await actsStore.getMany(need, {models: true})) {
-            if (!a.hasAnySyncErrors('streams') && !a.hasAnySyncErrors('local')) {
-                activities.set(a.pk, a);
-                external.add(a);
-            }
+            activities.set(a.pk, a);
+            external.add(a);
         }
         const ordered = orderedIds.map(x => activities.get(x)).filter(x => x);
         let atl = 0;
