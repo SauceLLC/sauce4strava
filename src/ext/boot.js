@@ -44,7 +44,6 @@
             'site/template.js',
             'common/lib.js',
             'site/sparkline.js',
-            'site/moment.js',
             'site/chart.js',
             'site/chartjs/plugin-datalabels.js',
             'site/chartjs/plugin-colorschemes.js',
