@@ -643,6 +643,8 @@ sauce.ns('performance', async ns => {
             return {
                 'click a.collapser': 'onCollapserClick',
                 'click a.expander': 'onExpanderClick',
+                'click section.overview a.missing-tss': 'onMissingTSSClick',
+                'click section.results a[data-id]': 'onResultClick',
                 'dblclick section > header': 'onDblClickHeader',
                 'change select[name="type"]': 'onTypeChange',
             };
@@ -694,7 +696,8 @@ sauce.ns('performance', async ns => {
                 peaks.push({
                     key: keyFormatter(x.period),
                     prettyValue: valueFormatter(x.value),
-                    unit: getPeaksUnit(this.type)
+                    unit: getPeaksUnit(this.type),
+                    activity: x.activity,
                 });
             }
             return {
@@ -803,6 +806,15 @@ sauce.ns('performance', async ns => {
 
         async onExpanderClick(ev) {
             await this.setCollapsed(ev.currentTarget.closest('section'), false);
+        }
+
+        async onResultClick(ev) {
+            const activity = await sauce.hist.getActivity(Number(ev.currentTarget.dataset.id));
+            this.pageView.trigger('select-activities', [activity]);
+        }
+
+        async onMissingTSSClick(ev) {
+            this.pageView.trigger('select-activities', this.missingTSS);
         }
 
         async onDblClickHeader(ev) {

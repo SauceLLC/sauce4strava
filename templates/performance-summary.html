@@ -7,12 +7,14 @@
             <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
+
         <% if (missingTSS.length) { %>
             <row class="warning">
                 <key>{-await fa('exclamation-triangle-duotone')-}Missing TSS:</key><!--XXX localize-->
-                <value><a href="javascript:void(0);">{{missingTSS.length}} activities</a></value><!--XXX localize-->
+                <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} activities</a></value><!--XXX localize-->
             </row>
         <% } %>
+
         <row>
             <key>Active time:</key><!--XXX localize-->
             <value>{{humanDuration(totalTime, {maxPeriod: 3600, precision: 3600})}}</value>
@@ -63,7 +65,9 @@
             <% for (const x of peaks) { %>
                 <row>
                     <key>{{x.key}}:</key>
-                    <value>{{x.prettyValue}}<% if (x.unit) { %><abbr class="unit short">{{x.unit}}</abbr><% } %></value>
+                    <value><a href="javascript:void(0);"
+                              data-id="{{x.activity}}">{{x.prettyValue}}<% if (x.unit) { %><abbr
+                                  class="unit short">{{x.unit}}</abbr><% } %></a></value>
                 </row>
             <% } %>
         </section>
