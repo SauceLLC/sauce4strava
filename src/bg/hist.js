@@ -707,7 +707,7 @@ sauce.ns('hist', async ns => {
         }
         return {missingStreamsFor, haveStreamsFor, inFalseErrorState};
     }
-    sauce.proxy.export(integrityCheck);
+    sauce.proxy.export(integrityCheck, {namespace: true});
 
 
     async function invalidateAthleteSyncState(athleteId, processor, name, options={}) {
