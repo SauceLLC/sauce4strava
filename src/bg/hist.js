@@ -615,13 +615,16 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(updateAthlete, {namespace});
 
 
-    async function setAthleteHistoryValues(id, key, data) {
-        const athlete = await athletesStore.get(id, {model: true});
+    async function setAthleteHistoryValues(athleteId, key, data, options={}) {
+        const athlete = await athletesStore.get(athleteId, {model: true});
         if (!athlete) {
-            throw new Error('Athlete not found: ' + id);
+            throw new Error('Athlete not found: ' + athleteId);
         }
         const clean = athlete.setHistoryValues(key, data);
         await athlete.save();
+        if (!options.disableSync) {
+            await invalidateAthleteSyncState(athleteId, 'local', 'activity-stats');
+        }
         return clean;
     }
     sauce.proxy.export(setAthleteHistoryValues, {namespace});
@@ -633,10 +636,24 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(disableAthlete, {namespace});
 
 
-    async function refreshRequest(athleteId, options) {
-        return await ns.syncManager.refreshRequest(athleteId, options);
+    async function syncAthlete(athleteId, options={}) {
+        let syncDone;
+        if (!options.noWait) {
+            syncDone = new Promise((resolve, reject) => {
+                const onSyncActive = ev => {
+                    if (ev.athlete === athleteId && ev.data === false) {
+                        ns.syncManager.removeEventListener('active', onSyncActive);
+                        resolve();
+                    }
+                };
+                ns.syncManager.addEventListener('active', onSyncActive);
+                ns.syncManager.addEventListener('error', ev => reject(new Error(ev.data.error)));
+            });
+        }
+        await ns.syncManager.refreshRequest(athleteId, options);
+        await syncDone;
     }
-    sauce.proxy.export(refreshRequest, {namespace});
+    sauce.proxy.export(syncAthlete, {namespace});
 
 
     async function integrityCheck(athleteId, options={}) {
@@ -712,7 +729,7 @@ sauce.ns('hist', async ns => {
         }
         await actsStore.invalidateForAthleteWithSync(athleteId, processor, name);
         if (!options.disableSync && athlete.isEnabled() && ns.syncManager) {
-            await ns.syncManager.refreshRequest(athleteId, {skipUpdate: true});
+            await syncAthlete(athleteId, {skipUpdate: true, ...options});
         }
     }
     sauce.proxy.export(invalidateAthleteSyncState, {namespace});
@@ -740,7 +757,7 @@ sauce.ns('hist', async ns => {
         }
         await activity.save();
         if (!options.disableSync && athlete.isEnabled() && ns.syncManager) {
-            await ns.syncManager.refreshRequest(athlete.pk, {skipUpdate: true});
+            await syncAthlete(athlete.pk, {skipUpdate: true, ...options});
         }
     }
     sauce.proxy.export(invalidateActivitySyncState, {namespace});
