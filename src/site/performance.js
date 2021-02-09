@@ -215,6 +215,68 @@ sauce.ns('performance', async ns => {
     }
 
 
+    async function bulkEditActivitiesDialogXXX(activities, pageView) {
+        // XXX replace this trash with a view and module
+        const data = [];
+        for (const x of activities) {
+            data.push({tss: sauce.model.getActivityTSS(x), ...x});
+        }
+        const $modal = await sauce.modal({
+            title: 'Edit Activity', // XXX localize
+            body: `
+                <b>${activity.name}</b><hr/>
+                <label>TSS Override:
+                    <input name="tss_override" type="number"
+                           value="${activity.tssOverride != null ? activity.tssOverride : ''}"
+                           placeholder="${tss != null ? Math.round(tss) : ''}"/>
+                </label>
+                <hr/>
+                <label>Exclude this activity from peak performances:
+                    <input name="peaks_exclude" type="checkbox"
+                           ${activity.peaksExclude ? 'checked' : ''}/>
+                </label>
+            `,
+            extraButtons: [{
+                text: 'Save', // XXX localize
+                click: async ev => {
+                    const updates = {
+                        tssOverride: Number($modal.find('input[name="tss_override"]').val()) || null,
+                        peaksExclude: $modal.find('input[name="peaks_exclude"]').is(':checked'),
+                    };
+                    ev.currentTarget.disabled = true;
+                    ev.currentTarget.classList.add('sauce-loading');
+                    try {
+                        await sauce.hist.updateActivity(activity.id, updates);
+                        Object.assign(activity, updates);
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'training-load',
+                            {disableSync: true});
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks');
+                        await pageView.render();
+                    } finally {
+                        ev.currentTarget.classList.remove('sauce-loading');
+                        ev.currentTarget.disabled = false;
+                    }
+                    $modal.dialog('destroy');
+                }
+            }, {
+                text: 'Resync', // XXX localize
+                click: async ev => {
+                    ev.currentTarget.disabled = true;
+                    ev.currentTarget.classList.add('sauce-loading');
+                    try {
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local');
+                        await pageView.render();
+                    } finally {
+                        ev.currentTarget.classList.remove('sauce-loading');
+                        ev.currentTarget.disabled = false;
+                    }
+                }
+            }]
+        });
+        return $modal;
+    }
+
+
     function activitiesByDay(acts, start, end, atl=0, ctl=0) {
         // NOTE: Activities should be in chronological order
         if (!acts.length) {
@@ -813,7 +875,43 @@ sauce.ns('performance', async ns => {
         }
 
         async onMissingTSSClick(ev) {
-            this.pageView.trigger('select-activities', this.missingTSS);
+            const bulkView = new BulkActivityEditView({activities: this.missingTSS});
+            await bulkView.render();
+            sauce.modal({
+                title: 'Edit Activities',
+                el: bulkView.$el,
+                flex: true,
+                width: '40em',
+                extraButtons: [{
+                    text: 'Save', // XXX localize
+                    click: async ev => {
+                        const updates = {};
+                        for (const tr of bulkView.$('table tbody tr')) {
+                            updates[Number(tr.dataset.id)] = {
+                                tssOverride: Number(tr.querySelector('input[name="tss_override"]').value) || null,
+                                peaksExclude: tr.querySelector('input[name="peaks_exclude"]').checked,
+                            };
+                        }
+                        ev.currentTarget.disabled = true;
+                        ev.currentTarget.classList.add('sauce-loading');
+                        try {
+                            await sauce.hist.updateActivities(updates);
+                            for (const x of updates) {
+                                await sauce.hist.invalidateActivitySyncState(x.id, 'local',
+                                    'training-load', {disableSync: true});
+                                await sauce.hist.invalidateActivitySyncState(x.id, 'local',
+                                    'peaks', {disableSync: true});
+                            }
+                            await sauce.hist.syncAthlete(this.athlete.id);
+                            await pageView.render();
+                        } finally {
+                            ev.currentTarget.classList.remove('sauce-loading');
+                            ev.currentTarget.disabled = false;
+                        }
+                        $modal.dialog('destroy');
+                    }
+                }]
+            });
         }
 
         async onDblClickHeader(ev) {
@@ -899,6 +997,30 @@ sauce.ns('performance', async ns => {
                 }
             }
             editActivityDialogXXX(activity, this.pageView);
+        }
+    }
+
+
+    class BulkActivityEditView extends view.SauceView {
+        get events() {
+            return {
+                'click .edit-activity': 'onEditActivityClick',
+            };
+        }
+
+        get tpl() {
+            return 'performance-bulkedit.html';
+        }
+
+        async init({activities}) {
+            this.activities = activities;
+            await super.init();
+        }
+
+        renderAttrs() {
+            return {
+                activities: this.activities,
+            };
         }
     }
 

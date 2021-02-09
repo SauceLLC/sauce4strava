@@ -1,0 +1,30 @@
+<table class="sauce-perf">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Date</th>
+            <th>TSS Override</th>
+            <th>Exclude Peaks</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% for (const a of activities) { %>
+            <tr data-id="{{a.id}}">
+                <td class="activity-name">
+                    <div class="name-container">
+                        <a href="https://www.strava.com/activities/{{a.id}}"
+                           title="{{a.name}}">{{a.name}}</a>
+                    </div>
+                </td>
+                <td class="date">{{humanDate(a.ts)}}</td>
+                <td class="tss_override">
+                    <input type="number" value="{{a.tssOverride}}"
+                           placeholder="{{sauce.model.getActivityTSS(a)}}"/>
+                </td>
+                <td class="peaks_exclude">
+                    <input type="checkbox" {{a.peaksExclude ? 'checked' : ''}}/>
+                </td>
+            </tr>
+        <% } %>
+    </tbody>
+</table>
