@@ -62,6 +62,16 @@ table.sauce-perf {
             padding-left: 1em;
         }
     }
+
+    thead tr {
+        background-color: color.shade(bg, 8%);
+
+        th {
+            padding-top: 0.8em;
+            padding-bottom: 0.8em;
+        }
+    }
+
     tbody tr {
         &:nth-child(even) {
             background-color: color.shade(bg, 6%);
@@ -70,7 +80,7 @@ table.sauce-perf {
         td.activity-name {
             .name-container {
                 display: flex;
-                max-width: 30ch;
+                max-width: min(30ch, 25vw);
                 align-items: center;
 
                 a {
@@ -83,7 +93,32 @@ table.sauce-perf {
         }
     }
 }
+@media only screen and (max-width: 768px) {
+    table.sauce-perf {
+        td, th {
+            white-space: initial;
+        }
+    }
+}
 
+
+.sauce-edit-activities-dialog.ui-dialog {
+    .ui-dialog-content {
+        padding: 0;
+
+        table {
+            font-size: 0.9em;
+
+            .name-container {
+                max-width: min(20ch, 25vw) !important;
+            }
+        }
+
+        input[name="tss_override"] {
+            width: 6ch;
+        }
+    }
+}
 
 #sauce-performance {
     line-height: initial;
@@ -359,7 +394,6 @@ table.sauce-perf {
         }
 
         .results {
-            padding: 1em 0;
             max-height: min(18rem, 25vh);
             overflow-y: auto;
             font-size: 0.96em;
@@ -526,6 +560,7 @@ table.sauce-perf {
     }
 }
 
+
 // I don't like this, but i can't find a way to consistently deal with color shading.
 .sauce-theme-dark #sauce-performance {
     > aside.details {
@@ -541,6 +576,7 @@ table.sauce-perf {
     }
 }
  
+
 @media only screen and (min-width: #{$nav-width + $main-width + $aside-width}) {
     #sauce-performance {
         > nav {
@@ -559,6 +595,19 @@ table.sauce-perf {
                 top: 0;
                 z-index: 2;  // fix float element passthrough.
             }
+        }
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    #sauce-performance > main {
+        section.charts {
+            padding: 1em 0;
+        }
+
+        .peaks-view {
+            margin-left: 0;
+            margin-right: 0;
         }
     }
 }

@@ -426,3 +426,45 @@ html .ui-dialog {
         }
     }
 }
+
+@media only screen and (max-width: 600px) {
+    .ui-dialog.sauce-dialog {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        top: 0 !important;
+        left: 0 !important;
+        font-size: 1.2em;
+        border: none;
+        border-radius: 0;
+
+        .ui-dialog-buttonpane {
+            font-size: 1.1em;
+        }
+
+        .ui-resizable-handle {
+            display: none !important;
+        }
+
+        form.sauce-key-value {
+            .entry {
+                &.history-view {
+                    margin: 1em 0 !important;
+                    border: none !important;
+                    border-radius: 0 !important;
+                    background: unset !important;
+
+                    .history-entries {
+                        max-height: initial !important;
+                        padding: 1em 0 !important;
+
+                        .history-entry {
+                            padding: 0.4em 0 !important;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

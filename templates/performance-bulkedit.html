@@ -18,11 +18,12 @@
                 </td>
                 <td class="date">{{humanDate(a.ts)}}</td>
                 <td class="tss_override">
-                    <input type="number" value="{{a.tssOverride}}"
+                    <input type="number" name="tss_override" value="{{a.tssOverride}}"
                            placeholder="{{sauce.model.getActivityTSS(a)}}"/>
                 </td>
                 <td class="peaks_exclude">
-                    <input type="checkbox" {{a.peaksExclude ? 'checked' : ''}}/>
+                    <input type="checkbox" name="peaks_exclude"
+                           {{a.peaksExclude ? 'checked' : ''}}/>
                 </td>
             </tr>
         <% } %>
