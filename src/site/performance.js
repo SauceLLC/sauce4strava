@@ -1,4 +1,4 @@
-/* global sauce, jQuery, Chart, moment, Backbone */
+/* global sauce, jQuery, Chart, Backbone */
 
 sauce.ns('performance', async ns => {
     'use strict';
@@ -118,6 +118,43 @@ sauce.ns('performance', async ns => {
             offt[edge] = value;
         }
     }
+
+
+    function getPeaksUnit(type) {
+        const paceUnit = sauce.locale.paceFormatter.shortUnitKey();
+        return {
+            power_wkg: 'w/kg',
+            power: 'w',
+            np: 'w',
+            xp: 'w',
+            hr: 'bpm', // XXX
+            pace: paceUnit,
+            gap: paceUnit,
+        }[type];
+    }
+
+
+    function getPeaksValueFormatter(type) {
+        return {
+            power: sauce.locale.human.number,
+            power_wkg: x => sauce.locale.human.number(x, 1),
+            np: sauce.locale.human.number,
+            xp: sauce.locale.human.number,
+            hr: sauce.locale.human.number,
+            pace: sauce.locale.human.pace,
+            gap: sauce.locale.human.pace,
+        }[type];
+    }
+
+
+    function getPeaksSortDirection(type) {
+        if (['pace', 'gap'].includes(type)) {
+            return 'next';
+        } else {
+            return 'prev';
+        }
+    }
+
 
 
     async function editActivityDialogXXX(activity, pageView) {
@@ -556,9 +593,10 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.xAxes[0].ticks.callback', (label, index, ticks) => {
                 const data = ticks[index];
                 const d = new Date(data.value);
-                const span = ticks[ticks.length - 1].value - ticks[0].value;
-                const format = span >= 200 * DAY ? 'MMM' : 'MMM Do';
-                return moment(d).format(format); // XXX need to figure out when to actually show year
+                //const span = ticks[ticks.length - 1].value - ticks[0].value;
+                //const format = span >= 200 * DAY ? 'MMM' : 'MMM Do';
+                return sauce.locale.human.date(d);
+                //return moment(d).format(format); // XXX need to figure out when to actually show year
                 /*
                 if (!d.getMonth()) {
                     return moment(d).format(format) + '\n' + d.getFullYear();
@@ -607,6 +645,7 @@ sauce.ns('performance', async ns => {
                 'click a.collapser': 'onCollapserClick',
                 'click a.expander': 'onExpanderClick',
                 'dblclick section > header': 'onDblClickHeader',
+                'change .peak-controls select[name="type"]': 'onTypeChange',
             };
         }
 
@@ -628,14 +667,28 @@ sauce.ns('performance', async ns => {
             this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
             this.collapsed = (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {};
+            this.type = (await sauce.storage.getPref('perfSummarySectionType')) || 'power';
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
         }
 
         async renderAttrs() {
+            console.info(1);
+            const peaks = [];
+            const direction = getPeaksSortDirection(this.type);
+            const peaksData = await Promise.all([5, 60, 300, 1200, 3600].map(x =>
+                sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, x, {direction, limit: 1})));
+            for (const x of peaksData) {
+                peaks.push({
+                    key: sauce.locale.human.duration(x[0].period),
+                    prettyValue: sauce.locale.human.number(x[0].value),
+                    unit: getPeaksUnit(this.type)
+                });
+            }
             return {
                 athlete: this.athlete,
                 collapsed: this.collapsed,
+                type: this.type,
                 sync: this.sync,
                 activeDays: this.daily.filter(x => x.activities.length).length,
                 tssAvg: this.daily.length ? sauce.data.sum(this.daily.map(x => x.tss)) / this.daily.length : 0,
@@ -644,13 +697,7 @@ sauce.ns('performance', async ns => {
                 weeklyTime: sauce.data.avg(this.weekly.map(x => x.duration)),
                 totalTime: sauce.data.sum(this.daily.map(x => x.duration)),
                 missingTSS: this.missingTSS,
-                peaks: {
-                    s5: 2000 * Math.random(),
-                    s60: 1000 * Math.random(),
-                    s300: 800 * Math.random(),
-                    s1200: 600 * Math.random(),
-                    s3600: 400 * Math.random(),
-                }
+                peaks,
             };
         }
 
@@ -693,6 +740,12 @@ sauce.ns('performance', async ns => {
 
         async onChangeAthlete(athlete) {
             await this.setAthlete(athlete);
+        }
+
+        async onTypeChange(ev) {
+            this.type = ev.currentTarget.value;
+            await sauce.storage.setPref(`perfSummarySectionType`, this.type);
+            await this.render();
         }
 
         async _onSyncActive(ev) {
@@ -870,8 +923,8 @@ sauce.ns('performance', async ns => {
                 prefs: this.prefs,
                 peaks: this.peaks,
                 mile: 1609.344,
-                unit: this.getUnit(),
-                valueFormatter: this.getValueFormatter(),
+                unit: getPeaksUnit(this.prefs.type),
+                valueFormatter: getPeaksValueFormatter(this.prefs.type),
                 athleteName: this.athleteName.bind(this),
             };
         }
@@ -900,41 +953,10 @@ sauce.ns('performance', async ns => {
         }
 
         getWindow() {
-            if (['power', 'np', 'xp', 'hr'].includes(this.prefs.type)) {
-                return this.prefs.time;
-            } else {
-                return this.prefs.distance;
-            }
-        }
-
-        getUnit() {
-            const paceUnit = sauce.locale.paceFormatter.shortUnitKey();
-            return {
-                power: 'w',
-                np: 'w',
-                xp: 'w',
-                hr: 'bpm',
-                pace: paceUnit,
-                gap: paceUnit,
-            }[this.prefs.type];
-        }
-
-        getValueFormatter() {
-            return {
-                power: sauce.locale.human.number,
-                np: sauce.locale.human.number,
-                xp: sauce.locale.human.number,
-                hr: sauce.locale.human.number,
-                pace: sauce.locale.human.pace,
-                gap: sauce.locale.human.pace,
-            }[this.prefs.type];
-        }
-
-        getTypeDirection() {
             if (['pace', 'gap'].includes(this.prefs.type)) {
-                return 'next';
+                return this.prefs.distance;
             } else {
-                return 'prev';
+                return this.prefs.time;
             }
         }
 
@@ -942,7 +964,7 @@ sauce.ns('performance', async ns => {
             const options = {
                 limit: this.prefs.limit,
                 expandActivities: true,
-                direction: this.getTypeDirection(),
+                direction: getPeaksSortDirection(this.prefs.type),
             };
             if (!this.prefs.includeAllDates) {
                 options.start = this.periodStart;

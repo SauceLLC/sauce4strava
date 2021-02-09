@@ -1,13 +1,25 @@
 <div class="peak-controls">
     <select name="type">
         <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>Power</option>
+        <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>Power (w/kg)</option>
         <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP</option>
         <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
         <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>Pace</option>
         <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>GAP</option>
         <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>Heartrate</option>
     </select>
-    <% if (['power', 'np', 'xp', 'hr'].includes(prefs.type)) { %>
+    <% if (['pace', 'gap'].includes(prefs.type)) { %>
+        <select name="distance">
+            <option value="400" {{prefs.distance === 400 ? 'selected' : ''}}>400 meters</option>
+            <option value="1000" {{prefs.distance === 1000 ? 'selected' : ''}}>1k</option>
+            <option value="{{mile}}" {{prefs.distance === mile ? 'selected' : ''}}>1 mile</option>
+            <option value="5000" {{prefs.distance === 5000 ? 'selected' : ''}}>5k</option>
+            <option value="10000" {{prefs.distance === 10000 ? 'selected' : ''}}>10k</option>
+            <option value="{{mile * 13.1}}" {{prefs.distance === mile * 13.1 ? 'selected' : ''}}>13.1 miles</option>
+            <option value="{{mile * 26.2}}" {{prefs.distance === mile * 26.2 ? 'selected' : ''}}>26.2 miles</option>
+            <option value="50000" {{prefs.distance === 50000 ? 'selected' : ''}}>50k</option>
+        </select>
+    <% } else { %>
         <select name="time">
             <option value="5" {{prefs.time === 5 ? 'selected' : ''}}>5 seconds</option>
             <option value="15" {{prefs.time === 15 ? 'selected' : ''}}>15 seconds</option>
@@ -19,17 +31,6 @@
             <option value="1200" {{prefs.time === 1200 ? 'selected' : ''}}>20 minutes</option>
             <option value="1800" {{prefs.time === 1800 ? 'selected' : ''}}>30 minutes</option>
             <option value="3600" {{prefs.time === 3600 ? 'selected' : ''}}>1 hour</option>
-        </select>
-    <% } else { %>
-        <select name="distance">
-            <option value="400" {{prefs.distance === 400 ? 'selected' : ''}}>400 meters</option>
-            <option value="1000" {{prefs.distance === 1000 ? 'selected' : ''}}>1k</option>
-            <option value="{{mile}}" {{prefs.distance === mile ? 'selected' : ''}}>1 mile</option>
-            <option value="5000" {{prefs.distance === 5000 ? 'selected' : ''}}>5k</option>
-            <option value="10000" {{prefs.distance === 10000 ? 'selected' : ''}}>10k</option>
-            <option value="{{mile * 13.1}}" {{prefs.distance === mile * 13.1 ? 'selected' : ''}}>13.1 miles</option>
-            <option value="{{mile * 26.2}}" {{prefs.distance === mile * 26.2 ? 'selected' : ''}}>26.2 miles</option>
-            <option value="50000" {{prefs.distance === 50000 ? 'selected' : ''}}>50k</option>
         </select>
     <% } %>
 

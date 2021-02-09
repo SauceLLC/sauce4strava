@@ -39,35 +39,35 @@
         </row>
     </section>
 
-    <section class="results {{collapsed.results === true ? 'collapsed' : ''}}"
-             data-id="results">
-        <header>
-            <i class="icon">{-await fa('medal-duotone')-}</i>
-            <div class="title">Best Performances<!--XXX Localize--></div>
-            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
-            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
-        </header>
-        <row>
-            <key>Best 5 sec power:</key><!--XXX localize-->
-            <value>{{humanNumber(peaks.s5)}}w</value>
-        </row>
-        <row>
-            <key>Best 1 min power:</key><!--XXX localize-->
-            <value>{{humanNumber(peaks.s60)}}w</value>
-        </row>
-        <row>
-            <key>Best 5 min power:</key><!--XXX localize-->
-            <value>{{humanNumber(peaks.s300)}}w</value>
-        </row>
-        <row>
-            <key>Best 20 min power:</key><!--XXX localize-->
-            <value>{{humanNumber(peaks.s1200)}}w</value>
-        </row>
-        <row>
-            <key>Best 60 min power:</key><!--XXX localize-->
-            <value>{{humanNumber(peaks.s3600)}}w</value>
-        </row>
-    </section>
+    <% if (peaks.length) { %>
+        <section class="results {{collapsed.results === true ? 'collapsed' : ''}}"
+                 data-id="results">
+            <header>
+                <i class="icon">{-await fa('medal-duotone')-}</i>
+                <div class="title">Best Performances<!--XXX Localize--></div>
+                <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
+                <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+            </header>
+
+            <!--XXX Localize-->
+            <select name="type">
+                <option value="power" {{type === 'power' ? 'checked' : ''}}>Power</option>
+                <option value="power_wkg" {{type === 'power' ? 'checked' : ''}}>Power (w/kg)</option>
+                <option value="np" {{type === 'power' ? 'checked' : ''}}>NP</option>
+                <option value="xp" {{type === 'power' ? 'checked' : ''}}>xPower</option>
+                <option value="pace" {{type === 'power' ? 'checked' : ''}}>Pace</option>
+                <option value="gap" {{type === 'power' ? 'checked' : ''}}>GAP</option>
+                <option value="hr" {{type === 'power' ? 'checked' : ''}}>Heartrate</option>
+            </select>
+
+            <% for (const x of peaks) { %>
+                <row>
+                    <key>{{x.key}}:</key>
+                    <value>{{x.prettyValue}}<% if (x.unit) { %><abbr class="unit short">{{x.unit}}</abbr><% } %></value>
+                </row>
+            <% } %>
+        </section>
+    <% } %>
 
     <section class="sync-stats {{collapsed.sync_stats === true  ? 'collapsed' : ''}}"
              data-id="sync_stats">

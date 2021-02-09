@@ -56,11 +56,29 @@ $aside-width: 260px;
 #sauce-performance {
     line-height: initial;
 
-
     select {
-        border-radius: 0.22em;
-        padding: 0.3em 0.5em;
-        margin: 0.2em 0.4em;
+        appearance: none;
+        border-radius: 0.25em;
+        padding: 0.3em 1.6em 0.3em 0.5em;
+        margin: 0.2em 0;
+        background-image: url(../../images/fa/chevron-down-duotone.svg);
+        background-position: right 0.3em center;
+        background-repeat: no-repeat;
+        background-size: auto 60%;
+        background-color: color.shade(bg, 5%);
+        border: 1px solid color.shade(fg, 20%, 0.2);
+        outline: none;
+
+        &:hover {
+            border-color: color.shade(fg, 20%, 0.3);
+            background-color: color.shade(bg, 8%);
+        }
+    }
+
+    abbr.unit {
+        font-size: 0.8em;
+        opacity: 0.9;
+        margin-left: 0.1em;
     }
 
     display: flex;
@@ -174,6 +192,8 @@ $aside-width: 260px;
             padding-top: 0.5em;
 
             section {
+                display: flex;
+                flex-direction: column;
                 padding: 0.5em;
                 background: color.shade(bg, 4%);
                 border-radius: 0.28em;
