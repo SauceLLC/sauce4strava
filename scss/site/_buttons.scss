@@ -2,12 +2,42 @@
 @use 'color';
 
 button {
-    &.sauce-loading::before {
-        content: url(../../images/fa/spinner-third-duotone.svg);
-        width: 2em;
-        margin: -0.5em 0.5em -0.5em 0;
-        line-height: 0;
-        animation: rotation 3s infinite steps(30 * 3);
+    &.sauce-loading {
+        svg[data-icon] {
+            display: none;
+        }
+
+        &.btn-primary,
+        &.btn-secondary {
+            &::before,
+            &::after {
+                filter: invert(1);
+            }
+
+            &.btn-outline:not(:hover) {
+                &::before,
+                &::after {
+                    filter: initial;
+                }
+            }
+        }
+
+        &::before,
+        &::after {
+            width: 1.8em;
+            margin: -0.5em 0.5em -0.5em;
+            line-height: 0;
+            animation: rotation 3s infinite steps(30 * 3);
+        }
+
+        &:not(.btn-icon-right)::before {
+            content: url(../../images/fa/spinner-third-duotone.svg);
+            margin-left: 0;
+        }
+        &.btn-icon-right::after {
+            content: url(../../images/fa/spinner-third-duotone.svg);
+            margin-right: 0;
+        }
     }
 }
 
