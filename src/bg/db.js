@@ -190,6 +190,7 @@ sauce.ns('hist.db', ns => {
         async getForAthlete(athleteId, type, period, options={}) {
             const peaks = [];
             const filter = this.makeTimeFilter(options);
+            period = period && Math.round(period);
             const q = IDBKeyRange.bound(
                 [athleteId, type, period, -Infinity],
                 [athleteId, type, period, Infinity]);
@@ -203,6 +204,7 @@ sauce.ns('hist.db', ns => {
         async getFor(type, period, options={}) {
             const peaks = [];
             const filter = this.makeTimeFilter(options);
+            period = period && Math.round(period);
             const q = IDBKeyRange.bound([type, period, -Infinity], [type, period, Infinity]);
             for await (const x of this.values(q,
                 {index: 'type-period-value', direction: 'prev', filter, ...options})) {

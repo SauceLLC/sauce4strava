@@ -63,7 +63,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'peaks',
-        version: 3,
+        version: 4,
         depends: ['extra-streams'],
         data: {processor: processors.peaksProcessor}
     });
@@ -507,7 +507,6 @@ sauce.ns('hist', async ns => {
 
 
     async function getPeaksForAthlete(athleteId, type, period, options={}) {
-        console.warn([...arguments]);
         const peaks = await peaksStore.getForAthlete(athleteId, type, period, options);
         if (options.expandActivities) {
             await expandPeakActivities(peaks);
@@ -518,7 +517,6 @@ sauce.ns('hist', async ns => {
 
 
     async function getPeaksFor(type, period, options={}) {
-        console.warn([...arguments]);
         const peaks = await peaksStore.getFor(type, period, options);
         if (options.expandActivities) {
             await expandPeakActivities(peaks);

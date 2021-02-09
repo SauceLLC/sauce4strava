@@ -44,7 +44,6 @@ class WorkerPoolExecutor {
         let worker;
         if (!this._idle.size) {
             if (this._busy.size >= this.maxWorkers) {
-                console.warn("Waiting for available worker...");
                 worker = await this._idle.get();
             } else {
                 worker = new Worker(this.url);
@@ -319,55 +318,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
 }
 
 
-export class peaksProcessorNONO extends OffloadProcessor {
-    constructor(...args) {
-        super(...args);
-        this.wp = getWorkerPool();
-    }
-
-    async processor() {
-        const minWait = null;
-        const maxWait = 30000;
-        const maxSize = 200;
-        while (true) {
-            const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
-            if (batch === null) {
-                break;
-            }
-            await this._process(batch);
-        }
-    }
-
-    async _process(activities) {
-        console.warn("New incoming batch", activities.length);
-        const s = Date.now();
-        const activityMap = new Map(activities.map(x => [x.pk, x]));
-        const work = [];
-        const len = activities.length;
-        const maxWorkers = Math.ceil(len / 50);
-        const concurrency = Math.min(maxWorkers, navigator.hardwareConcurrency || 6);
-        const step = Math.ceil(len / concurrency);
-        for (let i = 0; i < len; i += step) {
-            const chunk = activities.slice(i, i + step);
-            const p = this.wp.exec('findPeaks', this.athlete.pk, chunk.map(x => x.data));
-            p.then(errors => {
-                for (const x of errors) {
-                    const activity = activityMap.get(x.activity);
-                    activity.setSyncError(this.manifest, new Error(x.error));
-                }
-                this.putFinished(chunk);
-            });
-            work.push(p);
-        }
-        console.info("Find peaks workers:", work.length, 'workers', step, 'acts / worker');
-        await Promise.all(work);
-        console.warn("find peaks done", Date.now() - s, 'ms', activities.length, 'acts', Math.round((Date.now() - s) / activities.length), 'ms/act');
-    }
-}
-
-
 export async function peaksProcessor({manifest, activities, athlete}) {
-    console.warn("New incoming batch", activities.length);
     const s = Date.now();
     const wp = getWorkerPool();
     const activityMap = new Map(activities.map(x => [x.pk, x]));
@@ -378,7 +329,7 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const step = Math.ceil(len / concurrency);
     for (let i = 0; i < len; i += step) {
         const chunk = activities.slice(i, i + step);
-        work.push(wp.exec('findPeaks', athlete.pk, chunk.map(x => x.data)));
+        work.push(wp.exec('findPeaks', athlete.data, chunk.map(x => x.data)));
     }
     console.info("Find peaks workers:", work.length, 'workers', step, 'acts / worker');
     for (const errors of await Promise.all(work)) {

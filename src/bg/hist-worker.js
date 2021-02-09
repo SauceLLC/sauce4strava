@@ -30,7 +30,7 @@ async function getActivitiesStreams(activities, streams) {
 }
 
 
-async function findPeaks(athleteId, activities) {
+async function findPeaks(athlete, activities) {
     const metersPerMile = 1609.344;
     const actStreams = await getActivitiesStreams(activities, {
         run: ['time', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
@@ -50,11 +50,12 @@ async function findPeaks(athleteId, activities) {
             }
             continue;
         }
+        let weight;
         const addPeak = (type, period, value) => peaks.push({
             type,
             period,
             value,
-            athlete: athleteId,
+            athlete: athlete.id,
             activity: activity.id,
             activityType: activity.basetype,
             ts: activity.ts
@@ -113,7 +114,14 @@ async function findPeaks(athleteId, activities) {
                                 }
                             }
                             if (leaderRolls.power) {
-                                addPeak('power', period, leaderRolls.power.avg());
+                                const watts = leaderRolls.power.avg();
+                                addPeak('power', period, watts);
+                                if (weight === undefined) {
+                                    weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
+                                }
+                                if (weight) {
+                                    addPeak('power_wkg', period, watts / weight);
+                                }
                             }
                             if (leaderRolls.np) {
                                 addPeak('np', period, leaderRolls.np.np({external: true}));
