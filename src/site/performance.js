@@ -76,6 +76,15 @@ sauce.ns('performance', async ns => {
     Chart.plugins.unregister(self.ChartDataLabels);  // Disable data labels by default.
 
 
+    const _syncControllers = new Map();
+    function getSyncController(athleteId) {
+        if (!_syncControllers.has(athleteId)) {
+            _syncControllers.set(athleteId, new sauce.hist.SyncController(athleteId));
+        }
+        return _syncControllers.get(athleteId);
+    }
+
+
     // XXX maybe Chart.helpers has something like this..
     function setDefault(obj, path, value) {
         path = path.split('.');
@@ -114,19 +123,6 @@ sauce.ns('performance', async ns => {
     async function editActivityDialogXXX(activity, pageView) {
         // XXX replace this trash with a view and module
         const tss = sauce.model.getActivityTSS(activity);
-        // XXX Viewify this...
-        async function waitForSyncFinish() {
-            const sc = pageView.syncControllers[activity.athlete];
-            if (sc) {
-                await new Promise(resolve => {
-                    sc.addEventListener('active', ev => {
-                        if (ev.data === false) {
-                            resolve();
-                        }
-                    });
-                });
-            }
-        }
         const $modal = await sauce.modal({
             title: 'Edit Activity', // XXX localize
             body: `
@@ -139,21 +135,24 @@ sauce.ns('performance', async ns => {
                 <hr/>
                 <label>Exclude this activity from peak performances:
                     <input name="peaks_exclude" type="checkbox"
-                           ${activity.peaksExclude ? 'checked' : ''}"/>
+                           ${activity.peaksExclude ? 'checked' : ''}/>
                 </label>
             `,
             extraButtons: [{
                 text: 'Save', // XXX localize
                 click: async ev => {
-                    const tssOverride = Number($modal.find('input[name="tss_override"]').val()) || null;
-                    const peaksExclude = $modal.find('input[name="peaks_exclude"]').is(':checked');
+                    const updates = {
+                        tssOverride: Number($modal.find('input[name="tss_override"]').val()) || null,
+                        peaksExclude: $modal.find('input[name="peaks_exclude"]').is(':checked'),
+                    };
                     ev.currentTarget.disabled = true;
                     ev.currentTarget.classList.add('sauce-loading');
                     try {
-                        await sauce.hist.updateActivity(activity.id, {tssOverride, peaksExclude});
-                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'training-load', {disableSync: true});
+                        await sauce.hist.updateActivity(activity.id, updates);
+                        Object.assign(activity, updates);
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'training-load',
+                            {disableSync: true});
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks');
-                        await waitForSyncFinish();
                         await pageView.render();
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');
@@ -168,7 +167,6 @@ sauce.ns('performance', async ns => {
                     ev.currentTarget.classList.add('sauce-loading');
                     try {
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'local');
-                        await waitForSyncFinish();
                         await pageView.render();
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');
@@ -673,7 +671,7 @@ sauce.ns('performance', async ns => {
                 this.syncController.removeEventListener('progress', this.onSyncProgress);
             }
             if (id) {
-                this.syncController = this.pageView.syncControllers[id];
+                this.syncController = getSyncController(id);
                 this.syncController.addEventListener('active', this.onSyncActive);
                 this.syncController.addEventListener('status', this.onSyncStatus);
                 this.syncController.addEventListener('error', this.onSyncError);
@@ -879,8 +877,13 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
-            await this.loadPeaks();
-            await super.render();
+            this.$el.addClass('loading');
+            try {
+                await this.loadPeaks();
+                await super.render();
+            } finally {
+                this.$el.removeClass('loading');
+            }
         }
 
         async athleteName(id) {
@@ -1354,7 +1357,6 @@ sauce.ns('performance', async ns => {
         }
 
         async init({athletes}) {
-            this.syncControllers = {};
             this.athletes = athletes;
             this.setAthlete(ns.router.filters.athleteId);
             this.summaryView = new SummaryView({pageView: this});
@@ -1395,10 +1397,6 @@ sauce.ns('performance', async ns => {
                 }
                 this.athlete = this.athletes.get(currentUser) || this.athletes.values().next().value;
             }
-            const id = this.athlete && this.athlete.id;
-            if (id && !this.syncControllers[id]) {
-                this.syncControllers[id] = new sauce.hist.SyncController(id);
-            }
             return success;
         }
 
@@ -1412,7 +1410,7 @@ sauce.ns('performance', async ns => {
 
         async onControlPanelClick(ev) {
             const mod = await sauce.getModule('/src/site/sync-panel.mjs');
-            await mod.activitySyncDialog(this.athlete, this.syncControllers[this.athlete.id]);
+            await mod.activitySyncDialog(this.athlete, getSyncController(this.athlete.id));
         }
 
         async onRouterNav(athleteId) {

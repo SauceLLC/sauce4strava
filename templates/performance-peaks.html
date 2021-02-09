@@ -56,13 +56,14 @@
     <table>
         <thead>
             <tr>
-                <th>Place</th>
+                <th>Rank</th>
                 <th>Value</th>
                 <% if (prefs.includeAllAthletes) { %>
                     <th>Athlete</th>
                 <% } %>
                 <th>Activity</th>
                 <th>Date</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -75,12 +76,17 @@
                         <td>{{await athleteName(x.activity.athlete)}}</td>
                     <% } %>
                     <td class="activity-name">
-                        <a href="https://www.strava.com/activities/{{x.activity.id}}"
-                           title="{{x.activity.name}}">{{x.activity.name}}</a>
-                        <button class="btn btn-icon-only btn-unstyled edit-activity" data-id="{{x.activity.id}}"
-                                title="Edit activity">{-await fa('edit-duotone')-}</button>
+                        <div class="name-container">
+                            <a href="https://www.strava.com/activities/{{x.activity.id}}"
+                               title="{{x.activity.name}}">{{x.activity.name}}</a>
+                        </div>
                     </td>
                     <td>{{humanDate(x.activity.ts)}}</td>
+                    <td>
+                        <button class="btn btn-icon-only btn-unstyled edit-activity"
+                                data-id="{{x.activity.id}}"
+                                title="Edit activity">{-await fa('edit-duotone')-}</button>
+                    </td>
                 </tr>
             <% } %>
         </tbody>

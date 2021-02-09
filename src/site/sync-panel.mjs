@@ -180,7 +180,7 @@ export async function activitySyncDialog(athlete, syncController) {
     $modal.on('click', '.sync-start.btn', async ev => {
         ev.preventDefault();
         $modal.addClass('sync-active');
-        await sauce.hist.refreshRequest(athlete.id);
+        await sauce.hist.syncAthlete(athlete.id, {noWait: true});
     });
     $modal.on('dialogclose', () => {
         for (const [event, cb] of Object.entries(listeners)) {

@@ -260,6 +260,26 @@ $aside-width: 260px;
         border-radius: 0.28em;
         overflow: hidden;
         font-size: 0.92em;
+        position: relative;
+
+        &:empty {
+            min-height: 12em;
+            background-image: linear-gradient(to bottom,
+                                  #{color.shade(bg, 1%)},
+                                  #{color.shade(bg, 5%)},
+                                  #{color.shade(bg, 2%)});
+
+            &::before {
+                content: url(../../images/fa/spinner-third-duotone.svg);
+                position: absolute;
+                z-index: 1;
+                width: 4em;
+                top: calc(50% - 2em);
+                left: calc(50% - 2em);
+                line-height: 0;
+                animation: rotation 3s infinite steps(30 * 3);
+            }
+        }
 
         .peak-controls {
             padding: 0.5em;
@@ -279,8 +299,8 @@ $aside-width: 260px;
         }
 
         .results {
-            padding: 1em;
-            max-height: min(18rem, 30vh);
+            padding: 1em 0;
+            max-height: min(12rem, 25vh);
             overflow-y: auto;
             font-size: 0.92em;
             display: flex;
@@ -290,39 +310,48 @@ $aside-width: 260px;
                 td, th {
                     padding: 0.2em 0.6em 0.2em 0.2em;
                     white-space: nowrap;
+
+                    &:first-child {
+                        padding-left: 1em;
+                    }
                 }
                 tbody tr {
                     cursor: pointer;
 
+                    &:nth-child(even) {
+                        background-color: color.shade(bg, 6%);
+                    }
+
                     td.activity-name {
-                        display: flex;
-                        max-width: 22ch;
-                        align-items: center;
+                        .name-container {
+                            display: flex;
+                            max-width: 30ch;
+                            align-items: center;
 
-                        a {
-                            flex: 1 1 auto;
-                            text-overflow: ellipsis;
-                            word-break: break-word;
-                            white-space: nowrap;
-                            overflow: hidden;
-                        }
-
-                        .edit-activity.btn {
-                            flex: 0 0 auto;
-
-                            svg[data-icon] {
-                                height: 0.9em;
-                                margin-bottom: 0;
-                                opacity: 0;
+                            a {
+                                text-overflow: ellipsis;
+                                word-break: break-word;
+                                white-space: nowrap;
+                                overflow: hidden;
                             }
                         }
                     }
 
                     &:hover {
-                        background-color: color.shade(bg, 0%);
+                        background-color: color.shade(bg, 10%);
 
-                        td.activity-name .edit-activity.btn svg[data-icon] {
+                        .edit-activity.btn svg[data-icon] {
                             opacity: 0.8;
+                        }
+                    }
+
+                    .edit-activity.btn {
+                        min-width: initial;
+
+                        svg[data-icon] {
+                            height: 0.9em;
+                            margin-bottom: 0;
+                            opacity: 0;
                         }
                     }
                 }
