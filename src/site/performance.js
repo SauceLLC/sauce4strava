@@ -1184,12 +1184,11 @@ sauce.ns('performance', async ns => {
         setElement(el, ...args) {
             const r = super.setElement(el, ...args);
             sauce.storage.getPref('perfMainViewExpanded').then(expanded =>
-                this.setExpanded(expanded, {noSave: true, noAside: true}));
+                this.toggleExpanded(!!expanded, {noSave: true, noAside: true}));
             return r;
         }
 
-        async setExpanded(en, options={}) {
-            const expanded = en !== false;
+        async toggleExpanded(expanded, options={}) {
             this.$el.toggleClass('expanded', expanded);
             this.$el.prev('nav').toggleClass('compressed', expanded);
             if (!options.noAside) {
@@ -1421,11 +1420,11 @@ sauce.ns('performance', async ns => {
         }
 
         async onExpandClick(ev) {
-            await this.setExpanded(true);
+            await this.toggleExpanded(true);
         }
 
         async onCompressClick(ev) {
-            await this.setExpanded(false);
+            await this.toggleExpanded(false);
         }
 
         async onChartClick(ev) {
