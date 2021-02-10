@@ -214,6 +214,47 @@ export class OffloadProcessor extends futures.Future {
 }
 
 
+export async function hrZonesProcessor({manifest, activities, athlete}) {
+    const ts = athlete.get('hrZonesTS');
+    if (ts != null && Date.now() - ts < 86400 * 1000) {
+        return;
+    }
+    // The HR zones API is based on activities, so we just look for an activity in this
+    // batch with HR and ask for updated zones.  The trick is that if the zones are
+    // updated we need to trigger an invalidation of all activities. E.g. we force a
+    // resync.
+    const actStreams = await getActivitiesStreams(activities, ['heartrate']);
+    let remainingAttempts = 10;
+    const origZones = athlete.get('hrZones');
+    const origHash = origZones ? JSON.stringify(origZones) : null;
+    for (const activity of activities) {
+        const streams = actStreams.get(activity.pk);
+        if (streams.heartrate) {
+            const zones = await sauce.perf.fetchHRZones(activity.pk);
+            if (!zones) {
+                if (--remainingAttempts) {
+                    throw new Error("hr-zones-unavailable");
+                }
+                continue;
+            }
+            const invalidate = !origHash || JSON.stringify(zones) !== origHash;
+            athlete.set('hrZones', zones);
+            athlete.set('hrZonesTS', Date.now());
+            await athlete.save();
+            if (invalidate) {
+                console.info("HR zones updated for:", athlete.pk, athlete.get('name'), zones);
+                sauce.hist.invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name,
+                    {noStreamsFetch: false}).catch(e => {
+                    console.error("Failed to force resync during HR zones update:", e);
+                    sauce.report.error(e);
+                });
+            }
+            return;
+        }
+    }
+}
+
+
 export async function extraStreamsProcessor({manifest, activities, athlete}) {
     const actStreams = await getActivitiesStreams(activities,
         ['time', 'moving', 'cadence', 'watts', 'distance', 'grade_adjusted_distance']);

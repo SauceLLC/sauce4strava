@@ -47,6 +47,13 @@ sauce.ns('hist', async ns => {
 
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
+        name: 'hr-zones',
+        version: 1,
+        data: {processor: processors.hrZonesProcessor}
+    });
+
+    sauce.hist.db.ActivityModel.addSyncManifest({
+        processor: 'local',
         name: 'extra-streams',
         version: 1,
         data: {processor: processors.extraStreamsProcessor}
@@ -56,7 +63,7 @@ sauce.ns('hist', async ns => {
         processor: 'local',
         name: 'activity-stats',
         version: 3,
-        depends: ['extra-streams'],
+        depends: ['extra-streams', 'hr-zones'],
         data: {processor: processors.activityStatsProcessor}
     });
 
@@ -1625,6 +1632,7 @@ sauce.ns('hist', async ns => {
         integrityCheck,
         invalidateAthleteSyncState,
         invalidateActivitySyncState,
+        getActivity,
         getActivitySiblings,
         getPeaksForAthlete,
         getPeaksFor,
@@ -1634,5 +1642,10 @@ sauce.ns('hist', async ns => {
         peaksStore,
         activityCounts,
         SyncManager,
+        getAthlete,
+        enableAthlete,
+        disableAthlete,
+        updateAthlete,
+        updateActivity,
     };
 }, {hasAsyncExports: true});
