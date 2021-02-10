@@ -55,6 +55,8 @@ $scrollbar-safety: 25px;
 
 
 table.sauce-perf {
+    width: 100%; // For firefox
+
     td, th {
         padding: 0.4em 0.6em 0.4em 0.2em;
         white-space: nowrap;
