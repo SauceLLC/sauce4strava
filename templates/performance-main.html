@@ -20,28 +20,49 @@
         </b>
         <button class="btn btn-sm next period">{-await fa('angle-double-right-solid')-}</button>
     </div>
+
+    <div class="window-controls">
+        <button class="btn btn-sm btn-icon-only btn-unstyled expand">{-await fa('expand-alt-duotone')-}</button>
+        <button class="btn btn-sm btn-icon-only btn-unstyled compress">{-await fa('compress-alt-duotone')-}</button>
+    </div>
 </header>
 
-<section class="charts">
-    <header class="title">Peak Performances</header> <!-- XXX localize -->
-    <div class="chart-holder peaks-view loading"></div>
+<section class="sauce-panels">
+    <div class="sauce-panel">
+        <header class="title">Peak Performances</header> <!-- XXX localize -->
 
-    <header class="title">
-        Training Load - Fitness, Fatigue and Form <!-- XXX localize -->
-        <a href="https://www.cyclingweekly.com/fitness/training-software-369155"
-           class="more-info">[more info]</a><!--XXX localize-->
-    </header>
-    <div class="chart-holder">
-        <canvas id="training"/>
+        <div class="sauce-panel-content peaks-view loading-mask loading"></div>
     </div>
 
-    <header class="title"><span>Activities - <span class="metric-display"></span></span></header> <!-- XXX localize -->
-    <div class="chart-holder">
-        <canvas id="activities"/>
+    <div class="sauce-panel">
+        <header class="title">
+            Training Load - Fitness, Fatigue and Form <!-- XXX localize -->
+            <a href="https://www.cyclingweekly.com/fitness/training-software-369155"
+               class="more-info">[more info]</a><!--XXX localize-->
+        </header>
+
+        <div class="sauce-panel-content">
+            <canvas id="training"/>
+        </div>
     </div>
 
-    <header class="title">Elevation Gained</header> <!-- XXX localize -->
-    <div class="chart-holder">
-        <canvas id="elevation"/>
+    <div class="sauce-panel">
+        <header class="title">
+            <span>Activities - <span class="metric-display"></span></span> <!-- XXX localize -->
+        </header>
+
+        <div class="sauce-panel-content">
+            <canvas id="activities"/>
+        </div>
+    </div>
+
+    <div class="sauce-panel">
+        <header class="title">
+            Elevation Gained <!-- XXX localize -->
+        </header>
+
+        <div class="sauce-panel-content">
+            <canvas id="elevation"/>
+        </div>
     </div>
 </section>

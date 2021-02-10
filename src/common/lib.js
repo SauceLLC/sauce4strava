@@ -20,34 +20,42 @@ sauce.ns('data', function() {
     }
 
 
-    function max(data) {
+    function max(data, options={}) {
         // Avoid stack overflow by only use Math.max on small arrays
-        if (!data || data.length < 65535) {
+        if (!data || (!options.index && data.length < 65535)) {
             return Math.max.apply(null, data);
         } else {
-            let m = -Infinity;
+            let m;
+            let index;
+            let i = 0;
             for (const x of data) {
-                if (x > m) {
+                if (m === undefined || x > m) {
                     m = x;
+                    index = i;
                 }
+                i++;
             }
-            return m;
+            return options.index ? index : m;
         }
     }
 
 
-    function min(data) {
+    function min(data, options={}) {
         // Avoid stack overflow by only use Math.min on small arrays
-        if (!data || data.length < 65535) {
+        if (!data || (!options.index && data.length < 65535)) {
             return Math.min.apply(null, data);
         } else {
-            let m = Infinity;
+            let m;
+            let index;
+            let i = 0;
             for (const x of data) {
-                if (x < m) {
+                if (m === undefined || x < m) {
                     m = x;
+                    index = i;
                 }
+                i++;
             }
-            return m;
+            return options.index ? index : m;
         }
     }
 

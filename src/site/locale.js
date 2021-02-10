@@ -177,7 +177,9 @@ sauce.ns('locale', ns => {
             ['hour', hour],
             ['min', min],
             ['sec', 1]
-        ].filter(([, period]) => options.maxPeriod ? period <= options.maxPeriod : true);
+        ].filter(([, period]) =>
+            (options.maxPeriod ? period <= options.maxPeriod : true) &&
+            (options.minPeriod ? period >= options.minPeriod : true));
         const stack = [];
         const precision = options.precision || 1;
         elapsed = Math.round(elapsed / precision) * precision;
@@ -190,7 +192,13 @@ sauce.ns('locale', ns => {
                     key += 's';
                 }
                 const suffix = hdUnits[key];
-                stack.push(`${Math.floor(elapsed / period)} ${suffix}`);
+                let val;
+                if (options.digits && units[units.length - 1][1] === period) {
+                    val = humanNumber(elapsed / period, options.digits);
+                } else {
+                    val = humanNumber(Math.floor(elapsed / period));
+                }
+                stack.push(`${val} ${suffix}`);
                 elapsed %= period;
             }
         }

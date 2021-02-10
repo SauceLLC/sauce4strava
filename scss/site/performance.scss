@@ -5,9 +5,9 @@
 
 
 // Use px for media query compat..
-$nav-width: 240px;
+$nav-width: 280px;
 $main-width: 600px;
-$aside-width: 260px;
+$aside-width: 280px;
 
 
 @media only screen and (min-width: 991px) {
@@ -122,6 +122,8 @@ table.sauce-perf {
 
 #sauce-performance {
     line-height: initial;
+    display: flex;
+    flex-wrap: wrap;
 
     select {
         appearance: none;
@@ -142,15 +144,54 @@ table.sauce-perf {
         }
     }
 
-
     abbr.unit {
         font-size: 0.8em;
         opacity: 0.9;
         margin-left: 0.1em;
     }
 
-    display: flex;
-    flex-wrap: wrap;
+    .loading-mask {
+        position: relative;
+
+        &::before,
+        &::after {
+            visibility: hidden;
+            position: absolute;
+            pointer-events: none;
+            z-index: -10;
+            opacity: 0;
+        }
+        &::before {
+            width: 4em;
+            top: calc(50% - 2em);
+            left: calc(50% - 2em);
+            line-height: 0;
+            content: url(../../images/fa/spinner-third-duotone.svg);
+        }
+        &::after {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0001;
+            content: '';
+        }
+        &.loading {
+            &::before,
+            &::after {
+                visibility: visible;
+                opacity: 1;
+                z-index: 2;
+                transition: visibility, opacity;
+                transition-duration: 1s;
+                pointer-events: initial;
+            }
+            &::before {
+                animation: rotation 3s infinite steps(30 * 3);
+                z-index: 3;
+            }
+        }
+    }
 
     .title {
         font-weight: bold;
@@ -241,6 +282,10 @@ table.sauce-perf {
                                     #{color.shade(bg, 16%)},
                                     #{color.shade(bg, 12%)} 0.8em,
                                     #{color.shade(bg, 10%)});
+
+        &.compressed {
+            display: none;
+        }
 
         .athlete {
             display: flex;
@@ -348,6 +393,8 @@ table.sauce-perf {
     }
 
     .peaks-view {
+        $results-height: min(18rem, 25vh);
+
         background-color: color.shade(bg, 3%);
         border: 1px solid color.shade(fg, 20%, 0.2);
         border-radius: 0.28em;
@@ -355,26 +402,15 @@ table.sauce-perf {
         font-size: 0.96em;
         margin-left: 2rem;
         margin-right: 2rem;
-        position: relative;
 
         &:empty {
-            min-height: 12em;
+            min-height: calc(#{$results-height} + 2em);
             background-image: linear-gradient(to bottom,
                                   #{color.shade(bg, 1%)},
                                   #{color.shade(bg, 5%)},
                                   #{color.shade(bg, 2%)});
-
-            &::before {
-                content: url(../../images/fa/spinner-third-duotone.svg);
-                position: absolute;
-                z-index: 1;
-                width: 4em;
-                top: calc(50% - 2em);
-                left: calc(50% - 2em);
-                line-height: 0;
-                animation: rotation 3s infinite steps(30 * 3);
-            }
         }
+
 
         .peak-controls {
             padding: 1em;
@@ -394,7 +430,7 @@ table.sauce-perf {
         }
 
         .results {
-            max-height: min(18rem, 25vh);
+            max-height: $results-height;
             overflow-y: auto;
             font-size: 0.96em;
             display: flex;
@@ -436,17 +472,37 @@ table.sauce-perf {
         display: flex;
         flex-direction: column;
 
+        &.expanded {
+            .window-controls button.expand {
+                display: none;
+            }
+        }
+        &:not(.expanded) {
+            .window-controls button.compress {
+                display: none;
+            }
+        }
+
         > header.filters {
             display: flex;
             align-items: flex-end;
-            border-bottom: 1px solid color.shade(bg, 10%);
+            border-bottom: 1px solid color.shade(fg, 20%, 0.2);
             margin-bottom: 1em;
+            justify-content: space-between;
+            padding: 1em;
+
+            .window-controls,
+            .period {
+                flex: 1 0 15%; // same basis keeps start-end in center.
+            }
 
             .start-end {
                 display: flex;
                 align-items: center;
                 margin-bottom: 0.2em; // match select.
                 margin-left: 1em;
+                margin-right: 1em;
+                white-space: nowrap;
 
                 button.prev {
                     margin-right: 1em;
@@ -461,33 +517,41 @@ table.sauce-perf {
                     text-transform: capitalize;
                 }
             }
+
+            .window-controls {
+                display: flex;
+                align-self: flex-start;
+                align-items: center;
+                justify-content: flex-end;
+                margin-bottom: 0.2em; // match select.
+                margin-left: 1em;
+            }
         }
 
-        section.charts {
+        section.sauce-panels {
             padding: 1em;
 
-            header {
-                font-size: 0.92em;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 1em;
+            .sauce-panel {
+                > header {
+                    font-size: 0.92em;
+                    font-weight: bold;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 1em;
 
-                .more-info {
-                    padding-left: 1em;
-                    font-size: 0.86em;
-                    opacity: 0.7;
+                    .more-info {
+                        padding-left: 1em;
+                        font-size: 0.86em;
+                        opacity: 0.7;
+                    }
                 }
             }
 
-            .chart-holder {
+            .sauce-panel-content {
                 flex: 1 1 auto;
                 position: relative; // required for responsive chart.js
                 margin-bottom: 4em;
-
-                canvas {
-                }
             }
         }
     }
@@ -542,7 +606,7 @@ table.sauce-perf {
                 background-color: color.shade(fg, 18%);
                 border-radius: 0.28em;
                 margin-bottom: 1em;
-                padding: 0.5em;
+                padding: 1em;
 
                 header {
                     padding-bottom: 0.5em;
@@ -601,7 +665,7 @@ table.sauce-perf {
 
 @media only screen and (max-width: 768px) {
     #sauce-performance > main {
-        section.charts {
+        section.sauce-panels {
             padding: 1em 0;
         }
 

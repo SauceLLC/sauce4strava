@@ -8,6 +8,7 @@ sauce.ns('performance', async ns => {
 
     const urn = 'sauce/performance';
     const defaultPeriod = 30;
+    const chartTopPad = 30;  // Helps prevent tooltip clipping.
 
     await sauce.propDefined('Backbone.Router', {once: true});
     const AppRouter = Backbone.Router.extend({
@@ -72,8 +73,6 @@ sauce.ns('performance', async ns => {
     const view = await sauce.getModule('/src/site/view.mjs');
 
     const currentUser = await sauce.storage.get('currentUser');
-
-    Chart.plugins.unregister(self.ChartDataLabels);  // Disable data labels by default.
 
 
     const _syncControllers = new Map();
@@ -435,7 +434,7 @@ sauce.ns('performance', async ns => {
         const xAlign = pos.x - box.left > (box.right - box.left) / 2 ? 'right' : 'left';
         this._options.xAlign = xAlign;
         this._options.yAlign = intersect === false ? 'center' : undefined;
-        const yPos = intersect === false ? (box.bottom - box.top) / 3 : pos.y;
+        const yPos = intersect === false ? ((box.bottom - box.top) / 3) + chartTopPad : pos.y;
         return {
             x: pos.x,
             y: yPos
@@ -578,6 +577,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
             setDefault(config, 'plugins[]', betterTooltipPlugin);
             setDefault(config, 'options.aspectRatio', 3/1);
+            setDefault(config, 'options.layout.padding.top', chartTopPad);
             setDefault(config, 'options.tooltipLine', true);
             setDefault(config, 'options.tooltipLineColor', '#07c');
             setDefault(config, 'options.animation.duration', 200);
@@ -620,6 +620,17 @@ sauce.ns('performance', async ns => {
             });
             setDefault(config, 'options.tooltips.callbacks.footer',
                 items => this.onTooltipSummary(items));
+            setDefault(config, 'options.plugins.datalabels.display', ctx =>
+                ctx.dataset.data[ctx.dataIndex].showDataLabel === true);
+            setDefault(config, 'options.plugins.datalabels.formatter', (value, ctx) =>
+                ctx.dataset.tooltipFormat(value.y));
+            setDefault(config, 'options.plugins.datalabels.backgroundColor',
+                ctx => ctx.dataset.backgroundColor);
+            setDefault(config, 'options.plugins.datalabels.borderRadius', 4);
+            setDefault(config, 'options.plugins.datalabels.color', 'white');
+            setDefault(config, 'options.plugins.datalabels.padding', 5);
+            setDefault(config, 'options.plugins.datalabels.align', 'end');
+            setDefault(config, 'options.plugins.datalabels.anchor', 'center');
             super(ctx, config);
             this.view = view;
         }
@@ -708,7 +719,7 @@ sauce.ns('performance', async ns => {
                 activeDays: this.daily.filter(x => x.activities.length).length,
                 tssAvg: this.daily.length ? sauce.data.sum(this.daily.map(x => x.tss)) / this.daily.length : 0,
                 maxCTL: sauce.data.max(this.daily.map(x => x.ctl)),
-                minTSB: sauce.data.min(this.daily.map(x => x.ctl - x.atl)),
+                minTSB: sauce.data.max(this.daily.map(x => x.ctl - x.atl)),
                 weeklyTime: sauce.data.avg(this.weekly.map(x => x.duration)),
                 totalTime: sauce.data.sum(this.daily.map(x => x.duration)),
                 missingTSS: this.missingTSS,
@@ -1137,8 +1148,10 @@ sauce.ns('performance', async ns => {
     class MainView extends view.SauceView {
         get events() {
             return {
-                'change header select[name="period"]': 'onPeriodChange',
-                'click header button.period': 'onPeriodShift',
+                'change header.filters select[name="period"]': 'onPeriodChange',
+                'click header.filters button.period': 'onPeriodShift',
+                'click header.filters button.expand': 'onExpandClick',
+                'click header.filters button.compress': 'onCompressClick',
                 'click canvas': 'onChartClick',
                 'dataVisibilityChange canvas': 'onDataVisibilityChange',
             };
@@ -1165,6 +1178,23 @@ sauce.ns('performance', async ns => {
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             this.dataVisibility = await sauce.storage.getPref('perfChartDataVisibility') || {};
             await super.init();
+        }
+
+        setElement(el, ...args) {
+            const r = super.setElement(el, ...args);
+            sauce.storage.getPref('perfMainViewExpanded').then(expanded =>
+                this.setExpanded(expanded, {noSave: true}));
+            return r;
+        }
+
+        async setExpanded(en, options={}) {
+            const expanded = en !== false;
+            this.$el.toggleClass('expanded', expanded);
+            this.$el.prev('nav').toggleClass('compressed', expanded);
+            await this.pageView.detailsView.setExpanded(!expanded);
+            if (!options.noSave) {
+                await sauce.storage.setPref('perfMainViewExpanded', expanded);
+            }
         }
 
         renderAttrs() {
@@ -1290,17 +1320,21 @@ sauce.ns('performance', async ns => {
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
                 sauce.locale.human.date(end));
             const lineWidth = this.period > 365 ? 0.5 : this.period > 90 ? 1 : 1.5;
+            const maxCTLIndex = sauce.data.max(this.daily.map(x => x.ctl), {index: true});
+            const minTSBIndex = sauce.data.min(this.daily.map(x => x.ctl - x.atl), {index: true});
+            console.log(maxCTLIndex, minTSBIndex);
             this.charts.training.data.datasets = [{
                 id: 'ctl',
                 label: 'CTL (Fitness)', // XXX Localize
                 yAxisID: 'tss',
                 borderWidth: lineWidth,
                 fill: false,
-                pointRadius: 0,
+                pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 3 : 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                data: this.daily.map(a => ({
+                data: this.daily.map((a, i) => ({
                     x: a.date,
                     y: a.ctl,
+                    showDataLabel: i === maxCTLIndex,
                 }))
             }, {
                 id: 'atl',
@@ -1327,11 +1361,15 @@ sauce.ns('performance', async ns => {
                 underBackgroundColorMax: '#bc0000ff',
                 overBackgroundMax: 50,
                 underBackgroundMin: -50,
-                pointRadius: 0,
+                pointRadius: ctx => ctx.dataIndex === minTSBIndex ? 3 : 0,
+                datalabels: {
+                    align: 'start'
+                },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                data: this.daily.map(a => ({
+                data: this.daily.map((a, i) => ({
                     x: a.date,
                     y: a.ctl - a.atl,
+                    showDataLabel: i === minTSBIndex,
                 }))
             }];
             this.charts.training.update();
@@ -1343,7 +1381,7 @@ sauce.ns('performance', async ns => {
                 yAxisID: 'tss',
                 borderWidth: 1,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                data: this.metricData.map(a => ({
+                data: this.metricData.map((a, i) => ({
                     x: a.date,
                     y: a.tss,
                 })),
@@ -1353,7 +1391,7 @@ sauce.ns('performance', async ns => {
                 type: 'bar',
                 yAxisID: 'duration',
                 tooltipFormat: x => sauce.locale.human.duration(x, {maxPeriod: 3600}),
-                data: this.metricData.map(a => ({
+                data: this.metricData.map((a, i) => ({
                     x: a.date,
                     y: a.duration,
                 })),
@@ -1377,6 +1415,14 @@ sauce.ns('performance', async ns => {
             }];
             this.charts.elevation.update();
 
+        }
+
+        async onExpandClick(ev) {
+            await this.setExpanded(true);
+        }
+
+        async onCompressClick(ev) {
+            await this.setExpanded(false);
         }
 
         async onChartClick(ev) {
