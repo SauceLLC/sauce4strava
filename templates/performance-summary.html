@@ -25,19 +25,19 @@
         </row>
         <row>
             <key>Avg week:</key><!--XXX localize-->
-            <value>{{humanDuration(weeklyTime)}}</value>
+            <value>{{humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1})}}</value>
         </row>
         <row>
             <key>Avg TSS:</key><!--XXX localize-->
             <value>{{humanNumber(tssAvg)}}</value>
         </row>
         <row>
-            <key>Peak fitness (CTL):</key><!--XXX localize-->
-            <value>{{humanNumber(maxCTL)}}</value>
+            <key>Peak fitness:</key><!--XXX localize-->
+            <value>{{humanNumber(maxCTL)}}<abbr class="unit">CTL</abbr></value>
         </row>
         <row>
-            <key>Least form (TSB):</key><!--XXX localize-->
-            <value>{{humanNumber(minTSB)}}</value>
+            <key>Least form:</key><!--XXX localize-->
+            <value>{{humanNumber(minTSB)}}<abbr class="unit">TSB</abbr></value>
         </row>
     </section>
 

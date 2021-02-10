@@ -611,6 +611,13 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(updateActivity, {namespace});
 
 
+    async function updateActivities(updates) {
+        const updateMap = new Map(Object.entries(updates).map(([id, data]) => [Number(id), data]));
+        return await actsStore.updateMany(updateMap);
+    }
+    sauce.proxy.export(updateActivities, {namespace});
+
+
     async function enableAthlete(id) {
         return await ns.syncManager.enableAthlete(id);
     }

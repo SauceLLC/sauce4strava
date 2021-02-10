@@ -576,7 +576,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'type', 'line');
             setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
             setDefault(config, 'plugins[]', betterTooltipPlugin);
-            setDefault(config, 'options.aspectRatio', 3/1);
+            setDefault(config, 'options.maintainAspectRatio', false);
             setDefault(config, 'options.layout.padding.top', chartTopPad);
             setDefault(config, 'options.tooltipLine', true);
             setDefault(config, 'options.tooltipLineColor', '#07c');
@@ -934,6 +934,7 @@ sauce.ns('performance', async ns => {
         async init({activities, pageView}) {
             this.activities = activities;
             this.pageView = pageView;
+            this.athletes = new Set(activities.map(x => x.athlete));
             this.icon = await sauce.images.asText('fa/list-duotone.svg');
             await super.init();
         }
@@ -966,13 +967,13 @@ sauce.ns('performance', async ns => {
                         ev.currentTarget.classList.add('sauce-loading');
                         try {
                             await sauce.hist.updateActivities(updates);
-                            for (const x of updates) {
-                                await sauce.hist.invalidateActivitySyncState(x.id, 'local',
+                            for (const id of Object.keys(updates)) {
+                                await sauce.hist.invalidateActivitySyncState(Number(id), 'local',
                                     'training-load', {disableSync: true});
-                                await sauce.hist.invalidateActivitySyncState(x.id, 'local',
+                                await sauce.hist.invalidateActivitySyncState(Number(id), 'local',
                                     'peaks', {disableSync: true});
                             }
-                            await sauce.hist.syncAthlete(this.athlete.id);
+                            await Promise.all([...this.athletes].map(x => sauce.hist.syncAthlete(x)));
                             await this.pageView.render();
                         } finally {
                             ev.currentTarget.classList.remove('sauce-loading');
@@ -1183,7 +1184,7 @@ sauce.ns('performance', async ns => {
         setElement(el, ...args) {
             const r = super.setElement(el, ...args);
             sauce.storage.getPref('perfMainViewExpanded').then(expanded =>
-                this.setExpanded(expanded, {noSave: true}));
+                this.setExpanded(expanded, {noSave: true, noAside: true}));
             return r;
         }
 
@@ -1191,7 +1192,9 @@ sauce.ns('performance', async ns => {
             const expanded = en !== false;
             this.$el.toggleClass('expanded', expanded);
             this.$el.prev('nav').toggleClass('compressed', expanded);
-            await this.pageView.detailsView.setExpanded(!expanded);
+            if (!options.noAside) {
+                await this.pageView.detailsView.setExpanded(!expanded);
+            }
             if (!options.noSave) {
                 await sauce.storage.setPref('perfMainViewExpanded', expanded);
             }

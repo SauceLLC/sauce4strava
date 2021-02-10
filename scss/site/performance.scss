@@ -8,6 +8,7 @@
 $nav-width: 280px;
 $main-width: 600px;
 $aside-width: 280px;
+$scrollbar-safety: 25px;
 
 
 @media only screen and (min-width: 991px) {
@@ -276,7 +277,7 @@ table.sauce-perf {
         flex-direction: column;
         overflow: auto;
         flex: 1 0 $nav-width;
-        padding: 1em;
+        padding: 1.2em;
         background-attachment: local;
         background-image: linear-gradient(to left,
                                     #{color.shade(bg, 16%)},
@@ -552,6 +553,12 @@ table.sauce-perf {
                 flex: 1 1 auto;
                 position: relative; // required for responsive chart.js
                 margin-bottom: 4em;
+
+                &.chart {
+                    min-height: 18em;
+                    height: 30vh;
+                    max-height: 24em;
+                }
             }
         }
     }
@@ -559,7 +566,6 @@ table.sauce-perf {
     > aside.details {
         overflow: auto;
         flex: 1 0 0;
-        transition: flex 200ms;
         color: color.shade(bg, 5%);
         background-attachment: local;
         $bg-gradient: linear-gradient(to right,
@@ -641,7 +647,7 @@ table.sauce-perf {
 }
  
 
-@media only screen and (min-width: #{$nav-width + $main-width + $aside-width}) {
+@media only screen and (min-width: #{$nav-width + $main-width + $aside-width + $scrollbar-safety}) {
     #sauce-performance {
         > nav {
             position: sticky;
@@ -653,6 +659,7 @@ table.sauce-perf {
             position: sticky;
             top: 0;
             max-height: 100vh;
+            transition: flex 200ms;
 
             > header {
                 position: sticky;
