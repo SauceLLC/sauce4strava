@@ -380,7 +380,8 @@ export async function peaksProcessor({manifest, activities, athlete}) {
         }
     }
     await Promise.all(work);
-    console.warn("find peaks done", Date.now() - s, 'ms', activities.length, 'acts', Math.round((Date.now() - s) / activities.length), 'ms/act');
+    console.info("find peaks done", Date.now() - s, 'ms', activities.length,
+        'acts', Math.round((Date.now() - s) / activities.length), 'ms/act');
 }
 
 

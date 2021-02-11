@@ -6,7 +6,6 @@ importScripts('/src/bg/db.js');
 importScripts('/src/common/lib.js');
 
 
-//const actsStore = new sauce.hist.db.ActivitiesStore();
 const streamsStore = new sauce.hist.db.StreamsStore();
 const peaksStore = new sauce.hist.db.PeaksStore();
 
@@ -51,25 +50,27 @@ async function findPeaks(athlete, activities) {
             continue;
         }
         let weight;
-        const addPeak = (type, period, value) => peaks.push({
+        const streams = actStreams.get(activity.id);
+        const isRun = activity.basetype === 'run';
+        const isRide = activity.basetype === 'ride';
+        const addPeak = (type, period, value, roll) => peaks.push({
             type,
             period,
             value,
+            start: streams.time.indexOf(roll.firstTime({noPad: true})),
+            end: streams.time.indexOf(roll.lastTime({noPad: true})),
             athlete: athlete.id,
             activity: activity.id,
             activityType: activity.basetype,
             ts: activity.ts
         });
-        const streams = actStreams.get(activity.id);
-        const isRun = activity.basetype === 'run';
-        const isRide = activity.basetype === 'ride';
         if (streams.heartrate) {
             try {
                 for (const period of periods) {
                     const roll = sauce.data.peakAverage(period, streams.time,
                         streams.heartrate, {active: true});
                     if (roll) {
-                        addPeak('hr', period, roll.avg({active: true}));
+                        addPeak('hr', period, roll.avg({active: true}), roll);
                     }
                 }
             } catch(e) {
@@ -115,19 +116,19 @@ async function findPeaks(athlete, activities) {
                             }
                             if (leaderRolls.power) {
                                 const watts = leaderRolls.power.avg();
-                                addPeak('power', period, watts);
+                                addPeak('power', period, watts, leaderRolls.power);
                                 if (weight === undefined) {
                                     weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
                                 }
                                 if (weight) {
-                                    addPeak('power_wkg', period, watts / weight);
+                                    addPeak('power_wkg', period, watts / weight, leaderRolls.power);
                                 }
                             }
                             if (leaderRolls.np) {
-                                addPeak('np', period, leaderRolls.np.np({external: true}));
+                                addPeak('np', period, leaderRolls.np.np({external: true}), leaderRolls.np);
                             }
                             if (leaderRolls.xp) {
-                                addPeak('xp', period, leaderRolls.xp.xp({external: true}));
+                                addPeak('xp', period, leaderRolls.xp.xp({external: true}), leaderRolls.xp);
                             }
                         }
                     }
@@ -142,12 +143,12 @@ async function findPeaks(athlete, activities) {
                 for (const distance of distances) {
                     let roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
                     if (roll) {
-                        addPeak('pace', distance, roll.avg());
+                        addPeak('pace', distance, roll.avg(), roll);
                     }
                     if (streams.grade_adjusted_distance) {
                         roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance);
                         if (roll) {
-                            addPeak('gap', distance, roll.avg());
+                            addPeak('gap', distance, roll.avg(), roll);
                         }
                     }
                 }
