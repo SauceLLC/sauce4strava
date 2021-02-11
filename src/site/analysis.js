@@ -2088,10 +2088,16 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function getActivityTS() {
+        return (ns.sauceActivity && ns.sauceActivity.ts) ||
+            pageView.activity().get('startDateLocal') * 1000;
+    }
+
+
     async function getFTPInfo(athleteId) {
         if (ns.sauceAthlete) {
             // XXX this is a weak intergration for now.  Will need complete overhaul...
-            const dbFTP = ns.sauceAthlete.getFTPAt(pageView.activity().get('startDateLocal') * 1000);
+            const dbFTP = ns.sauceAthlete.getFTPAt(getActivityTS());
             if (dbFTP) {
                 return {
                     ftp: dbFTP,
@@ -2150,7 +2156,7 @@ sauce.ns('analysis', ns => {
     async function getWeightInfo(athleteId) {
         if (ns.sauceAthlete) {
             // XXX this is a weak intergration for now.  Will need complete overhaul...
-            const dbWeight = ns.sauceAthlete.getWeightAt(pageView.activity().get('startDateLocal') * 1000);
+            const dbWeight = ns.sauceAthlete.getWeightAt(getActivityTS());
             if (dbWeight) {
                 return {
                     weight: dbWeight,
@@ -2962,6 +2968,7 @@ sauce.ns('analysis', ns => {
         const athleteData = await sauce.hist.getAthlete(ns.athlete.id);
         if (athleteData) {
             ns.sauceAthlete = new SauceAthlete(athleteData);
+            ns.sauceActivity = await sauce.hist.getActivity(activity.id);
         }
         await Promise.all([
             sauce.locale.init(),
