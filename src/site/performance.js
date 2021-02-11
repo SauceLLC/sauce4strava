@@ -725,7 +725,7 @@ sauce.ns('performance', async ns => {
                 activeDays: this.daily.filter(x => x.activities.length).length,
                 tssAvg: this.daily.length ? sauce.data.sum(this.daily.map(x => x.tss)) / this.daily.length : 0,
                 maxCTL: sauce.data.max(this.daily.map(x => x.ctl)),
-                minTSB: sauce.data.max(this.daily.map(x => x.ctl - x.atl)),
+                minTSB: sauce.data.min(this.daily.map(x => x.ctl - x.atl)),
                 weeklyTime: sauce.data.avg(this.weekly.map(x => x.duration)),
                 totalTime: sauce.data.sum(this.daily.map(x => x.duration)),
                 missingTSS: this.missingTSS,
