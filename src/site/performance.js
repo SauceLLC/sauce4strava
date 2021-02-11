@@ -7,7 +7,6 @@ sauce.ns('performance', async ns => {
     const TZ = (new Date()).getTimezoneOffset() * 60000;
 
     const urn = 'sauce/performance';
-    const defaultPeriod = 30;
     const chartTopPad = 30;  // Helps prevent tooltip clipping.
 
     await sauce.propDefined('Backbone.Router', {once: true});
@@ -81,6 +80,13 @@ sauce.ns('performance', async ns => {
             _syncControllers.set(athleteId, new sauce.hist.SyncController(athleteId));
         }
         return _syncControllers.get(athleteId);
+    }
+
+
+    async function getCurrentPeriod() {
+        return ns.router.filters.period ||
+            await sauce.storage.getPref('perfMainViewDefaultPeriod') ||
+            182;
     }
 
 
@@ -668,7 +674,7 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.period = ns.router.filters.period || defaultPeriod;
+            this.period = await getCurrentPeriod();
             this.sync = {};
             this.daily = [];
             this.weekly = [];
@@ -1170,7 +1176,7 @@ sauce.ns('performance', async ns => {
         async init({pageView}) {
             this.peaksView = new PeaksView({pageView});
             this.pageView = pageView;
-            this.period = ns.router.filters.period || defaultPeriod;
+            this.period = await getCurrentPeriod();
             this.periodEnd = ns.router.filters.periodEnd || this.periodEndMax;
             this.periodStart = ns.router.filters.periodStart || this.periodEnd - (this.period * DAY);
             this.charts = {};
@@ -1457,7 +1463,7 @@ sauce.ns('performance', async ns => {
             const end = endDay && Number(endDay) * DAY;
             let needRender;
             if (period !== this.period) {
-                this.period = period || defaultPeriod;
+                this.period = period || await getCurrentPeriod();
                 needRender = true;
             }
             if (end !== this.periodEnd) {
@@ -1478,6 +1484,7 @@ sauce.ns('performance', async ns => {
             this.periodStart = this.periodEnd - (DAY * this.period);
             this.updateNav();
             await this.update();
+            await sauce.storage.setPref('perfMainViewDefaultPeriod', this.period);
         }
 
         async onPeriodShift(ev) {
