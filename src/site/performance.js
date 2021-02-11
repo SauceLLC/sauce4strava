@@ -1004,6 +1004,7 @@ sauce.ns('performance', async ns => {
                 'input .peak-controls input[name="include-all-dates"]': 'onIncludeAllDatesInput',
                 'click .results table tbody tr': 'onResultClick',
                 'click .edit-activity': 'onEditActivityClick',
+                'pointerdown .resize-drag': 'onResizePointerDown',
             };
         }
 
@@ -1142,6 +1143,26 @@ sauce.ns('performance', async ns => {
             const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
             const activity = await sauce.hist.getActivity(id);
             editActivityDialogXXX(activity, this.pageView);
+        }
+
+        onResizePointerDown(ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            const origHeight = this.$el.height();
+            const origPageY = ev.pageY;
+            this.$el.height(origHeight);
+            this.$el.addClass('fixed-height');
+            const onDragDone = () => {
+                removeEventListener('pointermove', onDrag);
+                removeEventListener('pointerup', onDragDone);
+                removeEventListener('pointercancel', onDragDone);
+            };
+            const onDrag = ev => {
+                this.$el.height(origHeight + (ev.pageY - origPageY));
+            };
+            addEventListener('pointermove', onDrag);
+            addEventListener('pointerup', onDragDone);
+            addEventListener('pointercancel', onDragDone);
         }
 
         async setAthlete(athlete) {
@@ -1330,7 +1351,6 @@ sauce.ns('performance', async ns => {
             const lineWidth = this.period > 365 ? 0.5 : this.period > 90 ? 1 : 1.5;
             const maxCTLIndex = sauce.data.max(this.daily.map(x => x.ctl), {index: true});
             const minTSBIndex = sauce.data.min(this.daily.map(x => x.ctl - x.atl), {index: true});
-            console.log(maxCTLIndex, minTSBIndex);
             this.charts.training.data.datasets = [{
                 id: 'ctl',
                 label: 'CTL (Fitness)', // XXX Localize

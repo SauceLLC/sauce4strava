@@ -397,7 +397,6 @@ table.sauce-perf {
 
     .peaks-view {
         $results-height: min(18rem, 25vh);
-
         background-color: color.shade(bg, 3%);
         border: 1px solid color.shade(fg, 20%, 0.2);
         border-radius: 0.28em;
@@ -436,6 +435,7 @@ table.sauce-perf {
             max-height: $results-height;
             overflow-y: auto;
             font-size: 0.96em;
+            flex: 1 1 100%;
             display: flex;
             flex-direction: column;
 
@@ -461,6 +461,33 @@ table.sauce-perf {
                         }
                     }
                 }
+            }
+        }
+
+        &.fixed-height .results {
+            max-height: initial;
+        }
+
+        .resize-drag {
+            height: 0.65em;
+            background-color: color.shade(bg, 10%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: row-resize;
+            opacity: 0.7;
+            transition: opacity 200ms, box-shadow 200ms;
+
+            &:hover {
+                opacity: 1;
+            }
+
+            &:active {
+                box-shadow: 0 0 0 3px color.shade(fg, 40%, 0.1) inset;
+            }
+
+            svg[data-icon] {
+                height: 100%;
             }
         }
     }
@@ -555,6 +582,8 @@ table.sauce-perf {
                 flex: 1 1 auto;
                 position: relative; // required for responsive chart.js
                 margin-bottom: 4em;
+                display: flex;
+                flex-direction: column;
 
                 &.chart {
                     min-height: 18em;
