@@ -63,6 +63,7 @@
                     <th>Athlete</th>
                 <% } %>
                 <th>Activity</th>
+                <th>Type</th>
                 <th>Date</th>
                 <th></th>
             </tr>
@@ -78,10 +79,11 @@
                     <% } %>
                     <td class="activity-name">
                         <div class="name-container">
-                            <a href="https://www.strava.com/activities/{{x.activity.id}}"
+                            <a href="https://www.strava.com/activities/{{x.activity.id}}/analysis/{{x.start}}/{{x.end}}"
                                title="{{x.activity.name}}">{{x.activity.name}}</a>
                         </div>
                     </td>
+                    <td>{{x.activityType}}</td>
                     <td>{{humanDate(x.activity.ts)}}</td>
                     <td>
                         <button class="btn btn-icon-only btn-unstyled edit-activity"
