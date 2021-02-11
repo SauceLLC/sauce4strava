@@ -360,9 +360,9 @@
                 console.info("Detected new current user:", id);
             }
             self.currentUser = id;
-            setBackgroundPageCurrentUser(self.currentUser);
             await sauce.storage.set('currentUser', id);
         }
+        setBackgroundPageCurrentUser(self.currentUser);
     });
 
     load();

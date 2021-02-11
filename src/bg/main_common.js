@@ -30,21 +30,6 @@
     }
 
 
-    async function fetchCurrentUser() {
-        // A last resort technique for learning the current user.
-        const resp = await fetch("https://www.strava.com/settings/profile");
-        if (resp.ok) {
-            const html = await resp.text();
-            const idMatch = html.match(/athlete_id: ([0-9]+),/);
-            if (idMatch) {
-                const id = Number(idMatch[1]);
-                if (!isNaN(id)) {
-                    return id;
-                }
-            }
-        }
-    }
-
     const setTimeoutSave = self.setTimeout;
     self.setTimeout = (fn, ms) => {
         try {
@@ -92,25 +77,4 @@
             }
         }
     });
-
-    if (self.currentUser == null) {
-        (async function() {
-            console.info('Using profile page hack to learn current user...');
-            let id;
-            try {
-                id = await fetchCurrentUser();
-            } catch(e) {
-                console.warn('Failed to learn current user:', e);
-                return;
-            }
-            if (id == null) {
-                console.warn('User ID not found: Possibly logged out');
-            } else {
-                setCurrentUser(id);
-                // Since we are the first to learn of this, put it in storage so the UI
-                // can pick it up immediately without having to visit an analysis page.
-                await sauce.storage.set('currentUser', id);
-            }
-        })();
-    }
 })();
