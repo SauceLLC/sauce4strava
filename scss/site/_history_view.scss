@@ -1,13 +1,13 @@
 @use 'color';
 
 .history-view {
-    padding: 1em;
-
     input {
         background-color: transparent;
         border: 1px solid color.shade(bg, 14%);
-        padding: 0.1em 0.4em;
-        border-radius: 0.28em;
+        padding: 0.28em 0.4em;
+        border-radius: 0.22em;
+        line-height: normal;
+        height: initial;
 
         &:invalid {
             border: 1px dashed red;
@@ -23,8 +23,21 @@
         width: auto;
     }
 
+    .history-header {
+        padding: 0.6em 1em 0.2em 1em;
+    }
+
+    .history-footer {
+        padding: 0 1em;
+
+        button {
+            display: flex;
+            margin: 0.6em 0;
+        }
+    }
+
     .history-entries {
-        padding: 0.4em;
+        padding: 0.4em 0;
         margin-bottom: 0.2em;
         max-height: 10em;
         overflow: auto;

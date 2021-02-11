@@ -4,6 +4,7 @@
 @use 'live_segment';
 @use 'trailforks';
 @use 'history_view';
+@use 'sync_panel';
 
 
 // Use more specific selector to avoid race with application-xyz.css that strava loads
@@ -150,7 +151,7 @@ html .ui-dialog {
                                           color.get(accent3));
         color: color.shade(accent3, 60%);
         padding: 1.2em;
-        margin: 0 0 1em;
+        margin: 0.4em 0 1em;
         border-radius: 0.5em;
         position: relative;
         font-size: 0.85em;
@@ -266,6 +267,7 @@ html .ui-dialog {
     @include perf_predictor.dialog;
     @include live_segment.dialog;
     @include trailforks.dialog;
+    @include sync_panel.dialog;
 
     .ui-dialog-titlebar {
         min-height: 0;
@@ -328,104 +330,6 @@ html .ui-dialog {
     }
 }
 
-
-.ui-dialog.sauce-dialog.sauce-sync-athlete-dialog {
-    .btn.sync-start {
-        color: #00a900;
-    }
-
-    .btn.sync-stop {
-        color: #c10000;
-    }
-
-    .btn.sync-recompute {
-        color: #c37e00;
-        font-size: 0.9em;
-    }
-
-    form.sauce-key-value {
-        .entry {
-            padding: 0.5em 1.2em;
-
-            &:not(.block) {
-                display: flex;
-                align-items: center;
-            }
-
-            &.synced value {
-                display: inline-flex;
-                flex-direction: column;
-                align-items: center;
-
-                progress {
-                    //display: block;
-                }
-            }
-
-            &.history-view {
-                font-size: 0.9em;
-                margin: 1em 2em;
-                border: solid 1px color.shade(bg, 15%);
-                border-radius: 0.28em;
-                background: color.shade(bg, 0%);
-
-                &:last-child {
-                    margin-bottom: 0;
-                }
-            }
-        }
-    }
-
-    .ui-dialog-content {
-        padding: 0;
-
-        &.sync-active {
-            .entry.last-sync,
-            .entry.next-sync {
-                display: none !important;
-            }
-
-            .sync-recompute,
-            .sync-start {
-                display: none !important;
-            }
-        }
-
-        &:not(.has-error) {
-            .entry.error {
-                display: none !important;
-            }
-        }
-
-        &:not(.sync-active):not(.sync-disabled) {
-            .sync-stop {
-                display: none;
-            }
-        }
-
-        &.sync-disabled {
-            .entry.synced,
-            .entry.last-sync,
-            .entry.next-sync,
-            .entry.status {
-                display: none !important;
-            }
-
-            .sync-stop,
-            .sync-recompute,
-            .sync-start {
-                opacity: 0.5;
-                pointer-events: none;
-            }
-        }
-
-        &:not(.sync-active) {
-            .entry.synced value progress {
-                display: none;
-            }
-        }
-    }
-}
 
 @media only screen and (max-width: 600px) {
     .ui-dialog.sauce-dialog {

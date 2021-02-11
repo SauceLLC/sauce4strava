@@ -15,7 +15,7 @@ export async function activitySyncDialog(athlete, syncController) {
             enabled: initiallyEnabled
         }),
         flex: true,
-        width: '35em',
+        width: '60em',
         autoDestroy: true,
         autoOpen: false,
         closeOnMobileBack: true,
@@ -176,6 +176,13 @@ export async function activitySyncDialog(athlete, syncController) {
         $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
         $modal.find('.entry.synced .text').empty();
         await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local');
+    });
+    $modal.on('click', '.sync-hr-zones.btn', async ev => {
+        $modal.addClass('sync-active');
+        $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
+        $modal.find('.entry.synced .text').empty();
+        await sauce.hist.updateAthlete(athlete.id, {hrZonesTS: null});
+        await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', 'hr-zones');
     });
     $modal.on('click', '.sync-start.btn', async ev => {
         ev.preventDefault();
