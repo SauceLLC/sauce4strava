@@ -57,6 +57,7 @@ async function findPeaks(athlete, activities) {
             type,
             period,
             value,
+            timeOffset: roll.firstTime(),
             start: streams.time.indexOf(roll.firstTime({noPad: true})),
             end: streams.time.indexOf(roll.lastTime({noPad: true})),
             athlete: athlete.id,

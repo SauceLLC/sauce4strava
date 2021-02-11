@@ -35,30 +35,20 @@ class WorkerPoolExecutor {
     constructor(url, options={}) {
         this.url = url;
         this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency || 4);
-        this._idle = new queues.Queue();
-        this._busy = new Set();
+        this._idle = new Set();
+        this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
     }
 
-    async _getWorker() {
-        let worker;
-        if (!this._idle.size) {
-            if (this._busy.size >= this.maxWorkers) {
-                worker = await this._idle.get();
-            } else {
-                worker = new Worker(this.url);
-            }
-        } else {
-            worker = await this._idle.get();
-        }
-        if (worker.dead) {
-            return await this._getWorker();
-        }
-        if (worker.gcTimeout) {
+    _getWorker() {
+        if (this._idle.size) {
+            const worker = this._idle.values().next().value;
             clearTimeout(worker.gcTimeout);
+            this._idle.delete(worker);
+            return worker;
+        } else {
+            return new Worker(this.url);
         }
-        this._busy.add(worker);
-        return worker;
     }
 
     async exec(call, ...args) {
@@ -68,7 +58,7 @@ class WorkerPoolExecutor {
             if (!ev.data || ev.data.id == null) {
                 f.setError(new Error("Invalid Worker Message"));
             } else if (ev.data.id !== id) {
-                console.warn('Ignoring worker message from other job');
+                console.error('Ignoring worker message from other job');
                 return;
             } else {
                 if (ev.data.success) {
@@ -78,19 +68,23 @@ class WorkerPoolExecutor {
                 }
             }
         };
-        const worker = await this._getWorker();
-        worker.addEventListener('message', onMessage);
+        await this._sem.acquire();
         try {
-            worker.postMessage({call, args, id});
-            return await f;
+            const worker = this._getWorker();
+            worker.addEventListener('message', onMessage);
+            try {
+                worker.postMessage({call, args, id});
+                return await f;
+            } finally {
+                worker.removeEventListener('message', onMessage);
+                worker.gcTimeout = setTimeout(() => {
+                    this._idle.delete(worker);
+                    worker.terminate();
+                }, 30000);
+                this._idle.add(worker);
+            }
         } finally {
-            worker.removeEventListener('message', onMessage);
-            this._busy.delete(worker);
-            worker.gcTimeout = setTimeout(() => {
-                worker.dead = true;
-                worker.terminate();
-            }, 30000);
-            this._idle.putNoWait(worker);
+            this._sem.release();
         }
     }
 }
