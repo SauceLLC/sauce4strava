@@ -1240,7 +1240,6 @@ sauce.ns('performance', async ns => {
             this.charts.training = new ActivityTimeRangeChart('#training', this, {
                 plugins: [chartOverUnderFillPlugin],
                 options: {
-                    plugins: {colorschemes: {scheme: 'tableau.ClassicBlueRed6'}},
                     scales: {
                         yAxes: [{
                             id: 'tss',
@@ -1262,7 +1261,6 @@ sauce.ns('performance', async ns => {
 
             this.charts.activities = new ActivityTimeRangeChart('#activities', this, {
                 options: {
-                    plugins: {colorschemes: {scheme: 'tableau.ClassicBlueRed6'}},
                     useMetricData: true,
                     scales: {
                         yAxes: [{
@@ -1289,7 +1287,6 @@ sauce.ns('performance', async ns => {
             const stepSize = sauce.locale.elevationFormatter.unitSystem === 'imperial' ? thousandFeet : 1000;
             this.charts.elevation = new ActivityTimeRangeChart('#elevation', this, {
                 options: {
-                    plugins: {colorschemes: {scheme: 'brewer.Greys3', reverse: true}},
                     scales: {
                         yAxes: [{
                             id: 'elevation',
@@ -1356,6 +1353,8 @@ sauce.ns('performance', async ns => {
                 label: 'CTL (Fitness)', // XXX Localize
                 yAxisID: 'tss',
                 borderWidth: lineWidth,
+                backgroundColor: '#4c89d0e0',
+                borderColor: '#2c69b0f0',
                 fill: false,
                 pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 3 : 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
@@ -1369,6 +1368,8 @@ sauce.ns('performance', async ns => {
                 label: 'ATL (Fatigue)', // XXX Localize
                 yAxisID: 'tss',
                 borderWidth: lineWidth,
+                backgroundColor: '#ff3730e0',
+                borderColor: '#f02720f0',
                 fill: false,
                 pointRadius: 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
@@ -1381,7 +1382,8 @@ sauce.ns('performance', async ns => {
                 label: 'TSB (Form)', // XXX Localize
                 yAxisID: 'tsb',
                 borderWidth: lineWidth,
-                borderColor: '#444',
+                backgroundColor: '#bc714cc0',
+                borderColor: '#0008',
                 overUnder: true,
                 overBackgroundColorMax: '#7fe78a',
                 overBackgroundColorMin: '#bfe58a22',
@@ -1406,8 +1408,11 @@ sauce.ns('performance', async ns => {
                 id: 'tss',
                 label: 'TSS',
                 type: 'bar',
+                backgroundColor: '#1d86cdd0',
+                borderColor: '#0d76bdf0',
                 yAxisID: 'tss',
                 borderWidth: 1,
+                barPercentage: 0.92,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 data: this.metricData.map((a, i) => ({
                     x: a.date,
@@ -1417,7 +1422,11 @@ sauce.ns('performance', async ns => {
                 id: 'duration',
                 label: 'Time', // XXX Localize
                 type: 'bar',
+                backgroundColor: '#fc7d0bd0',
+                borderColor: '#dc5d00f0',
+                borderWidth: 1,
                 yAxisID: 'duration',
+                barPercentage: 0.92,
                 tooltipFormat: x => sauce.locale.human.duration(x, {maxPeriod: 3600}),
                 data: this.metricData.map((a, i) => ({
                     x: a.date,
@@ -1435,6 +1444,8 @@ sauce.ns('performance', async ns => {
                 id: 'elevation',
                 label: 'Elevation', // XXX Localize
                 type: 'line',
+                backgroundColor: '#8f8782e0',
+                borderColor: '#6f6762f0',
                 pointRadius: 0,
                 yAxisID: 'elevation',
                 borderWidth: lineWidth,
