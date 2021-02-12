@@ -80,7 +80,7 @@ sauce.ns('profile', ns => {
                 setupActivitySyncController($sync);
             }
             if (!athlete) {
-                athlete = await buildAthleteRecord();
+                athlete = await buildAthleteRecord(); // XXX NOPE Move to bg page.
                 await sauce.hist.addAthlete(athlete);
             }
             const mod = await sauce.getModule('/src/site/sync-panel.mjs');
