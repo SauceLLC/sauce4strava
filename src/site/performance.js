@@ -873,7 +873,8 @@ sauce.ns('performance', async ns => {
                 await this.render();
             });
             this.listenTo(pageView, 'select-activities', async activities => {
-                this.activities = activities;
+                this.activities = Array.from(activities);
+                this.activities.sort((a, b) => b.ts - a.ts);
                 await this.render();
                 const expanded = this.$el.hasClass('expanded');
                 await this.setExpanded();

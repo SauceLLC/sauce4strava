@@ -1,4 +1,7 @@
 @use 'color';
+@use 'history_view';
+@use 'buttons';
+
 
 @mixin dialog {
     &.sauce-sync-athlete-dialog {

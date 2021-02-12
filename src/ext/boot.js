@@ -53,6 +53,20 @@
             config => void document.documentElement.classList.add('sauce-performance', 'sauce-responsive')
         ]
     }, {
+        name: 'Profile',
+        pathMatch: /^\/(athletes|pros)\/.*/,
+        stylesheets: ['site/profile.css'],
+        scripts: [
+            'site/proxy.js',
+            'site/locale.js',
+            'site/template.js',
+            'common/lib.js',
+            'site/profile.js',
+        ],
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-profile')
+        ]
+    }, {
         stylesheets: ['site/responsive.css'],
         callbacks: [
             config => {

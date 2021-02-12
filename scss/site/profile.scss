@@ -1,0 +1,9 @@
+@use 'defines';
+@use 'dialog';
+@use 'color';
+@use 'sync_button';
+
+
+.sauce-sync-button {
+    @include sync_button.sync-button;
+}
