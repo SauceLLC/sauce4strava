@@ -41,37 +41,35 @@
         </row>
     </section>
 
-    <% if (peaks.length) { %>
-        <section class="results {{collapsed.results === true ? 'collapsed' : ''}}"
-                 data-id="results">
-            <header>
-                <i class="icon">{-await fa('medal-duotone')-}</i>
-                <div class="title">Best Performances<!--XXX Localize--></div>
-                <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
-                <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
-            </header>
+    <section class="results {{collapsed.results === true ? 'collapsed' : ''}}"
+             data-id="results">
+        <header>
+            <i class="icon">{-await fa('medal-duotone')-}</i>
+            <div class="title">Best Performances<!--XXX Localize--></div>
+            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
+            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+        </header>
 
-            <!--XXX Localize-->
-            <select name="type">
-                <option value="power" {{type === 'power' ? 'selected' : ''}}>Power</option>
-                <option value="power_wkg" {{type === 'power_wkg' ? 'selected' : ''}}>Power (w/kg)</option>
-                <option value="np" {{type === 'np' ? 'selected' : ''}}>NP</option>
-                <option value="xp" {{type === 'xp' ? 'selected' : ''}}>xPower</option>
-                <option value="pace" {{type === 'pace' ? 'selected' : ''}}>Pace</option>
-                <option value="gap" {{type === 'gap' ? 'selected' : ''}}>GAP</option>
-                <option value="hr" {{type === 'hr' ? 'selected' : ''}}>Heartrate</option>
-            </select>
+        <!--XXX Localize-->
+        <select name="type">
+            <option value="power" {{type === 'power' ? 'selected' : ''}}>Power</option>
+            <option value="power_wkg" {{type === 'power_wkg' ? 'selected' : ''}}>Power (w/kg)</option>
+            <option value="np" {{type === 'np' ? 'selected' : ''}}>NP</option>
+            <option value="xp" {{type === 'xp' ? 'selected' : ''}}>xPower</option>
+            <option value="pace" {{type === 'pace' ? 'selected' : ''}}>Pace</option>
+            <option value="gap" {{type === 'gap' ? 'selected' : ''}}>GAP</option>
+            <option value="hr" {{type === 'hr' ? 'selected' : ''}}>Heartrate</option>
+        </select>
 
-            <% for (const x of peaks) { %>
-                <row>
-                    <key>{{x.key}}:</key>
-                    <value><a href="javascript:void(0);"
-                              data-id="{{x.activity}}">{{x.prettyValue}}<% if (x.unit) { %><abbr
-                                  class="unit short">{{x.unit}}</abbr><% } %></a></value>
-                </row>
-            <% } %>
-        </section>
-    <% } %>
+        <% for (const x of peaks) { %>
+            <row>
+                <key>{{x.key}}:</key>
+                <value><a href="javascript:void(0);"
+                          data-id="{{x.activity}}">{{x.prettyValue}}<% if (x.unit) { %><abbr
+                              class="unit short">{{x.unit}}</abbr><% } %></a></value>
+            </row>
+        <% } %>
+    </section>
 
     <section class="sync-stats {{collapsed.sync_stats === true  ? 'collapsed' : ''}}"
              data-id="sync_stats">

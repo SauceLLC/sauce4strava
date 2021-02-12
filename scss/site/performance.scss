@@ -5,7 +5,7 @@
 
 
 // Use px for media query compat..
-$nav-width: 280px;
+$nav-width: 260px;
 $main-width: 600px;
 $aside-width: 280px;
 $scrollbar-safety: 25px;
@@ -402,8 +402,8 @@ table.sauce-perf {
         border-radius: 0.28em;
         overflow: hidden;
         font-size: 0.96em;
-        margin-left: 2rem;
-        margin-right: 2rem;
+        margin-left: 1rem;
+        margin-right: 1rem;
 
         &:empty {
             min-height: calc(#{$results-height} + 2em);
