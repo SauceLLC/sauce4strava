@@ -53,8 +53,23 @@
             }
 
             key {
-                width: 16ch;
+                flex: 1 0 auto;
+                max-width: 16ch;
                 display: inline-block;
+                white-space: nowrap;
+
+                abbr {
+                    margin-right: 0.5em;
+                }
+            }
+
+            value {
+                flex: 1 1 auto;
+                overflow: hidden;
+
+                input[type="date"] {
+                    max-width: 100%;
+                }
             }
         }
     }
