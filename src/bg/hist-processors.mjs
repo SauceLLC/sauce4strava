@@ -423,7 +423,6 @@ export class TrainingLoadProcessor extends OffloadProcessor {
         const activities = new Map();
         const external = new Set();
         let unseen = 0;
-        let seen = 0;
         for (const a of batch) {
             activities.set(a.pk, a);
             if (!this.completedWith.has(a.pk)) {
@@ -432,18 +431,12 @@ export class TrainingLoadProcessor extends OffloadProcessor {
                 const priorTSS = this.completedWith.get(a.pk);
                 if (a.getTSS() !== priorTSS) {
                     unseen++;
-                } else {
-                    seen++;
                 }
             }
         }
         if (!unseen) {
-            console.debug("No training load updates required");
             return batch;
-        } else {
-            console.info("Updating training loads for:", {seen, unseen});
         }
-        console.info("Processing ATL and CTL for", batch.length, 'activities');
         const orderedIds = await actsStore.getAllKeysForAthlete(this.athlete.pk,
             {start: oldest.get('ts')});
         const need = orderedIds.filter(x => !activities.has(x));
@@ -481,6 +474,7 @@ export class TrainingLoadProcessor extends OffloadProcessor {
                 throw new TypeError("Internal Error: sibling search produced non sensical result");
             }
         }
+        console.debug("Processing training load for", activities.size, 'activities');
         if (seed) {
             // Drain the current training loads based on gap to our first entry
             const zeros = Array.from(sauce.date.dayRange(seed.getLocaleDay(),

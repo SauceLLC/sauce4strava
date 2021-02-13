@@ -510,25 +510,26 @@ sauce.ns('hist.db', ns => {
 
         nextAvailManifest(processor) {
             const manifests = this.constructor.getSyncManifests(processor);
-            const manifestsMap = new Map(manifests.map(x => [x.name, x]));
             if (!manifests) {
                 throw new TypeError("Invalid sync processor");
             }
             const states = new Map(manifests.map(m => [m.name, this._getSyncState(m)]));
             const completed = new Set();
             const pending = new Set();
-            const tainted = new Set();
             // Pass 1: Compile completed and pending sets without dep evaluation.
             for (const m of manifests) {
-                if (!tainted.has(m.name)) {
-                    const state = states.get(m.name);
-                    if (state && state.version === m.version && (!state.error || !state.error.ts)) {
-                        completed.add(m.name);
-                    } else {
-                        pending.add(m.name);
-                    }
+                const state = states.get(m.name);
+                if (state && state.version === m.version && (!state.error || !state.error.ts)) {
+                    completed.add(m.name);
+                } else {
+                    pending.add(m.name);
                 }
             }
+            if (!pending.size) {
+                return;
+            }
+            const manifestsMap = new Map(manifests.map(x => [x.name, x]));
+            const tainted = new Set();
             let idle;
             do {
                 idle = true;
@@ -549,9 +550,6 @@ sauce.ns('hist.db', ns => {
                     }
                 }
             } while (!idle);
-            if (!pending.size) {
-                return;
-            }
             for (const name of pending) {
                 const m = manifestsMap.get(name);
                 const state = states.get(name);

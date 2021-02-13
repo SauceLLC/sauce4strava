@@ -48,7 +48,7 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'athlete-settings',
-        version: 1,
+        version: 2,
         data: {processor: processors.AthleteSettingsProcessor}
     });
 
@@ -1122,7 +1122,7 @@ sauce.ns('hist', async ns => {
                         if (issubclass(processor, processors.OffloadProcessor)) {
                             let procInstance = offloadedActive.get(processor);
                             if (!procInstance) {
-                                console.info("Creating new offload processor:", m.name);
+                                console.debug("Creating new offload processor:", m.name);
                                 procInstance = new processor({
                                     manifest: m,
                                     athlete: this.athlete,
@@ -1330,7 +1330,7 @@ sauce.ns('hist', async ns => {
 
         async runSyncJob(athlete, options) {
             const start = Date.now();
-            console.debug('Starting sync job for: ' + athlete);
+            console.info('Starting sync job for: ' + athlete);
             const athleteId = athlete.pk;
             const isSelf = this.currentUser === athleteId;
             const syncJob = new SyncJob(athlete, isSelf);
@@ -1358,7 +1358,7 @@ sauce.ns('hist', async ns => {
                 this.activeJobs.delete(athleteId);
                 this._refreshEvent.set();
                 this.emitForAthlete(athlete, 'active', false);
-                console.debug(`Sync completed in ${Date.now() - start}ms for: ` + athlete);
+                console.info(`Sync completed in ${Date.now() - start}ms for: ` + athlete);
             }
         }
 

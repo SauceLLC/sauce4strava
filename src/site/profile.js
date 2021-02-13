@@ -1,4 +1,4 @@
-/* global sauce, jQuery, currentAthlete */
+/* global sauce, jQuery */
 
 sauce.ns('profile', ns => {
     'use strict';
