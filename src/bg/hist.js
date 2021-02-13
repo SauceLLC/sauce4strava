@@ -47,9 +47,9 @@ sauce.ns('hist', async ns => {
 
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
-        name: 'hr-zones',
+        name: 'athlete-settings',
         version: 1,
-        data: {processor: processors.hrZonesProcessor}
+        data: {processor: processors.AthleteSettingsProcessor}
     });
 
     sauce.hist.db.ActivityModel.addSyncManifest({
@@ -62,8 +62,8 @@ sauce.ns('hist', async ns => {
     sauce.hist.db.ActivityModel.addSyncManifest({
         processor: 'local',
         name: 'activity-stats',
-        version: 3,
-        depends: ['extra-streams', 'hr-zones'],
+        version: 1,
+        depends: ['extra-streams', 'athlete-settings'],
         data: {processor: processors.activityStatsProcessor}
     });
 

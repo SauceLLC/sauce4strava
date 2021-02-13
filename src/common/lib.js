@@ -1709,6 +1709,19 @@ sauce.ns('perf', function() {
     }
 
 
+    async function fetchPeerGender(activity) {
+        const resp = await fetch(`https://www.strava.com/activities/${activity}`);
+        if (!resp.ok) {
+            return;
+        }
+        const raw = await resp.text();
+        const genderMatch = raw.match(/new Strava\.Models\.Athlete\(.*?"gender":"(.*?)"/);
+        if (genderMatch) {
+            return genderMatch[1] === 'F' ? 'female' : 'male';
+        }
+    }
+
+
     async function fetchHRZones(activity) {
         const resp = await fetch(`https://www.strava.com/activities/${activity}/heartrate_zones`);
         if (!resp.ok) {
@@ -1819,6 +1832,7 @@ sauce.ns('perf', function() {
         fetchSelfFTPs,
         fetchHRZones,
         fetchPaceZones,
+        fetchPeerGender,
         calcTRIMP,
         tTSS,
         estimateRestingHR,

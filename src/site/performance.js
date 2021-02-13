@@ -1614,8 +1614,7 @@ sauce.ns('performance', async ns => {
         }
 
         async onControlPanelClick(ev) {
-            const mod = await sauce.getModule('/src/site/sync-panel.mjs');
-            await mod.activitySyncDialog(this.athlete, getSyncController(this.athlete.id));
+            await sauce.sync.activitySyncDialog(this.athlete, getSyncController(this.athlete.id));
         }
 
         async onRouterNav(athleteId) {

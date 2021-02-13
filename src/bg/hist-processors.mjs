@@ -208,43 +208,61 @@ export class OffloadProcessor extends futures.Future {
 }
 
 
-export async function hrZonesProcessor({manifest, activities, athlete}) {
-    const ts = athlete.get('hrZonesTS');
-    if (ts != null && Date.now() - ts < 86400 * 1000) {
-        return;
+export async function AthleteSettingsProcessor({manifest, activities, athlete}) {
+    let invalidate;
+    const hrTS = athlete.get('hrZonesTS');
+    if (hrTS == null || Date.now() - hrTS > 86400 * 1000) {
+        // The HR zones API is based on activities, so we just look for an activity in this
+        // batch with HR and ask for updated zones.  The trick is that if the zones are
+        // updated we need to trigger an invalidation of all activities. E.g. we force a
+        // resync.
+        const actStreams = await getActivitiesStreams(activities, ['heartrate']);
+        let remainingAttempts = 10;
+        const origZones = athlete.get('hrZones');
+        const origHash = origZones ? JSON.stringify(origZones) : null;
+        for (const activity of activities) {
+            const streams = actStreams.get(activity.pk);
+            if (streams.heartrate) {
+                const zones = await sauce.perf.fetchHRZones(activity.pk);
+                if (!zones) {
+                    if (--remainingAttempts) {
+                        sauce.report.error(new Error("Unable to to learn HR zones"));
+                        break;
+                    }
+                    continue;
+                }
+                invalidate = !origHash || JSON.stringify(zones) !== origHash;
+                athlete.set('hrZones', zones);
+                athlete.set('hrZonesTS', Date.now());
+                await athlete.save();
+                break;
+            }
+        }
     }
-    // The HR zones API is based on activities, so we just look for an activity in this
-    // batch with HR and ask for updated zones.  The trick is that if the zones are
-    // updated we need to trigger an invalidation of all activities. E.g. we force a
-    // resync.
-    const actStreams = await getActivitiesStreams(activities, ['heartrate']);
-    let remainingAttempts = 10;
-    const origZones = athlete.get('hrZones');
-    const origHash = origZones ? JSON.stringify(origZones) : null;
-    for (const activity of activities) {
-        const streams = actStreams.get(activity.pk);
-        if (streams.heartrate) {
-            const zones = await sauce.perf.fetchHRZones(activity.pk);
-            if (!zones) {
+    const gender = athlete.get('gender');
+    if (!gender) {
+        let remainingAttempts = 10;
+        for (const activity of activities) {
+            const gender = await sauce.perf.fetchPeerGender(activity.pk);
+            if (!gender) {
                 if (--remainingAttempts) {
-                    throw new Error("hr-zones-unavailable");
+                    sauce.report.error(new Error("Unable to to learn gender"));
+                    break;
                 }
                 continue;
             }
-            const invalidate = !origHash || JSON.stringify(zones) !== origHash;
-            athlete.set('hrZones', zones);
-            athlete.set('hrZonesTS', Date.now());
+            athlete.set('gender', gender);
             await athlete.save();
-            if (invalidate) {
-                console.info("HR zones updated for:", athlete.pk, athlete.get('name'), zones);
-                sauce.hist.invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name,
-                    {noStreamsFetch: false}).catch(e => {
-                    console.error("Failed to force resync during HR zones update:", e);
-                    sauce.report.error(e);
-                });
-            }
-            return;
+            invalidate = true;
         }
+    }
+    if (invalidate) {
+        console.info("Athlete settings updated for:", athlete.pk, athlete.get('name'));
+        sauce.hist.invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name,
+            {noStreamsFetch: false}).catch(e => {
+            console.error("Failed to force resync during athlete settings update:", e);
+            sauce.report.error(e);
+        });
     }
 }
 

@@ -50,9 +50,9 @@ sauce.ns('sync', ns => {
     }
 
 
-    async function createSyncButton({id, gender, name}, options={}) {
-        if (!id || !gender || !name) {
-            throw new TypeError("id, gender, and name required");
+    async function createSyncButton({id, name, ...extra}, options={}) {
+        if (!id || !name) {
+            throw new TypeError("id and name required");
         }
         await sauce.proxy.connected;
         await sauce.locale.init();
@@ -87,7 +87,7 @@ sauce.ns('sync', ns => {
                 setupSyncController($btn, controllers.get(id));
             }
             if (!athlete) {
-                athlete = await sauce.hist.addAthlete({id, gender, name});
+                athlete = await sauce.hist.addAthlete({id, name, ...extra});
             }
             await activitySyncDialog(athlete, controllers.get(id));
         });
@@ -307,6 +307,7 @@ sauce.ns('sync', ns => {
 
 
     return {
-        createSyncButton
+        createSyncButton,
+        activitySyncDialog,
     };
 });
