@@ -543,8 +543,6 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(getPeaksFor, {namespace});
 
 
-    // XXX maybe move to analysis page until we figure out the strategy for all
-    // historical data.
     async function getSelfFTPHistory() {
         const resp = await fetch("https://www.strava.com/settings/performance");
         const raw = await resp.text();
@@ -567,6 +565,24 @@ sauce.ns('hist', async ns => {
             throw new TypeError('id, gender and name values are required');
         }
         const athlete = await athletesStore.get(id, {model: true});
+        if (!data.ftpHistory && (!athlete || !athlete.get('ftpHistory'))) {
+            if (id === self.currentUser) {
+                data.ftpHistory = await getSelfFTPHistory();
+            } else {
+                const ftp = (await sauce.storage.getAthleteProp(id, 'ftp_override')) ||
+                            (await sauce.storage.getAthleteProp(id, 'ftp_lastknown'));
+                if (ftp) {
+                    data.ftpHistory = [{ts: Date.now(), value: ftp}];
+                }
+            }
+        }
+        if (!data.weightHistory && (!athlete || !athlete.get('weightHistory'))) {
+            const w = (await sauce.storage.getAthleteProp(id, 'weight_override')) ||
+                      (await sauce.storage.getAthleteProp(id, 'weight_lastknown'));
+            if (w) {
+                data.weightHistory = [{ts: Date.now(), value: w}];
+            }
+        }
         if (athlete) {
             await athlete.save(data);
             return athlete.data;

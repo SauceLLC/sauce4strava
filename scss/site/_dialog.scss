@@ -4,7 +4,7 @@
 @use 'live_segment';
 @use 'trailforks';
 @use 'history_view';
-@use 'sync_panel';
+@use 'sync';
 
 
 // Use more specific selector to avoid race with application-xyz.css that strava loads
@@ -273,7 +273,7 @@ html .ui-dialog {
     @include perf_predictor.dialog;
     @include live_segment.dialog;
     @include trailforks.dialog;
-    @include sync_panel.dialog;
+    @include sync.dialog;
 
     .ui-dialog-titlebar {
         min-height: 0;

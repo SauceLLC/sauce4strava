@@ -8,6 +8,7 @@
 @use 'buttons';
 @use 'animations';
 @use 'history_view';
+@use 'sync';
 
 
 html.sauce-enabled {
@@ -69,68 +70,8 @@ html.sauce-enabled {
 #heading {
     header {
         .social {
-            .sauce-sync-athlete {
-                .app-icon-wrapper {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    opacity: 0.85;
-                    position: relative;
-                    transition: opacity 200ms;
-
-                    &:hover {
-                        opacity: 1;
-                    }
-
-                    svg[data-icon="sync-alt"] {
-                        width: 1.4em;
-                    }
-
-                    svg[data-icon="check"] {
-                        width: 0.65em;
-                        position: absolute;
-                    }
-                }
-
-                &:not(.enabled) .app-icon-wrapper {
-                    svg[data-icon="sync-alt"] {
-                        color: color.shade(fg, 20%);
-                    }
-
-                    svg[data-icon="check"] {
-                        display: none;
-                    }
-                }
-
-                &.enabled .app-icon-wrapper {
-                    svg[data-icon="sync-alt"] {
-                        color: #ee5c13;
-                    }
-
-                    svg[data-icon="check"] {
-                        color: #22ee33;
-                    }
-                }
-
-                &.sync-active .app-icon-wrapper {
-                    svg[data-icon="sync-alt"] {
-                        animation: rotation 3s infinite steps(30 * 3);
-                        color: #22ee33;
-                    }
-
-                    svg[data-icon="check"] {
-                        display: none;
-                    }
-                }
-
-                .status:not(:empty) {
-                    margin-left: 1em;
-                }
-
-                .status {
-                    font-size: 0.8em;
-                }
+            .sauce-sync-button {
+                @include sync.button;
             }
         }
     }

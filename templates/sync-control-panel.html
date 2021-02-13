@@ -11,7 +11,12 @@
         {{{intro}}}
     </div>
 
-    <div class="entry">
+    <div class="perf-promo">
+        <img src="{{sauce.extUrl}}images/performance_cap1.png"/>
+        <button class="btn btn-block btn-primary">Enable Sync and Get Started!</button> <!--XXX localize-->
+    </div>
+
+    <div class="entry enable">
         <key>{{{enabled}}}:</key>
         <input name="enable" type="checkbox" {{enabled ? 'checked' : ''}}/>
     </div>
@@ -25,11 +30,6 @@
                 title="{{{sync_start_tooltip}}}">{-await fa('play-circle-regular')-}</button>
         <button class="btn btn-unstyled btn-icon-only sync-recompute"
                 title="{{{sync_recompute_tooltip}}}">{-await fa('redo-solid')-}</button>
-    </div>
-
-    <div class="entry error">
-        <key>{{{last_error}}}:</key>
-        <value></value>
     </div>
 
     <div class="entry synced">

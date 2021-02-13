@@ -813,83 +813,13 @@ sauce.ns('analysis', ns => {
 
 
     async function attachSyncToggle($el) {
-        const [sync, check]  = await Promise.all([
-            sauce.images.asText('fa/sync-alt-regular.svg'),
-            sauce.images.asText('fa/check-solid.svg'),
-        ]);
-        const $buttons = jQuery('#heading header .social');
-        const $sync = jQuery(`
-            <div class="button sauce-sync-athlete">
-                <div class="app-icon-wrapper">
-                    ${sync}
-                    ${check}
-                </div>
-                <span class="status"></span>
-            </div>
-        `);
-        const id = ns.athlete.id;
-        let athlete = await sauce.hist.getAthlete(id);
-        const enabled = !!(athlete && athlete.sync);
-        if (enabled) {
-            $sync.addClass('enabled');
-            if (!ns.syncController) {
-                setupActivitySyncController($sync);
-            }
-        }
-        $buttons.prepend($sync);
-        $sync.on('click', async () => {
-            if (!ns.syncController) {
-                setupActivitySyncController($sync);
-            }
-            if (!athlete) {
-                athlete = await buildAthleteRecord();
-                await sauce.hist.addAthlete(athlete);
-            }
-            const mod = await sauce.getModule('/src/site/sync-panel.mjs');
-            await mod.activitySyncDialog(athlete, ns.syncController);
+        const $btn = await sauce.sync.createSyncButton({
+            id: ns.athlete.id,
+            gender: ns.athlete.get('gender') === 'F' ? 'female' : 'male',
+            name: ns.athlete.get('display_name'),
         });
-    }
-
-
-    let _syncStatusTimeout;
-    function setSyncStatus(msg, options={}) {
-        const $status = jQuery('#heading header .sauce-sync-athlete .status');
-        clearTimeout(_syncStatusTimeout);
-        $status.html(msg);
-        if (options.timeout) {
-            _syncStatusTimeout = setTimeout(() => $status.empty(), options.timeout);
-        }
-    }
-
-
-    function setupActivitySyncController($sync) {
-        ns.syncController = new sauce.hist.SyncController(ns.athlete.id);
-        ns.syncController.addEventListener('start', ev => {
-            $sync.addClass('sync-active');
-            setSyncStatus('Starting sync...');
-        });
-        ns.syncController.addEventListener('stop', ev => {
-            $sync.removeClass('sync-active');
-            setSyncStatus('Sync completed', {timeout: 5000});
-        });
-        ns.syncController.addEventListener('error', ev => {
-            setSyncStatus('Sync problem occurred');
-        });
-        ns.syncController.addEventListener('progress', async ev => {
-            const counts = ev.data.counts;
-            const synced = counts.processed;
-            const total = counts.total - counts.unavailable - counts.unprocessable;
-            setSyncStatus(`${synced.toLocaleString()}/${total.toLocaleString()}`);
-        });
-        ns.syncController.addEventListener('enable', ev => {
-            $sync.addClass('enabled');
-            setSyncStatus('Sync enabled', {timeout: 5000});
-        });
-        ns.syncController.addEventListener('disable', ev => {
-            $sync.removeClass('enabled sync-active');
-            setSyncStatus('Sync disabled', {timeout: 5000});
-        });
-        ns.syncController.isActiveSync().then(x => $sync.toggleClass('sync-active', x));
+        $btn.addClass('button').removeClass('btn');
+        jQuery('#heading header .social').prepend($btn);
     }
 
 
@@ -1517,27 +1447,6 @@ sauce.ns('analysis', ns => {
         // Sadly we would have to resort to HTML scraping here. Which for now, I won't..
         console.info('No activity start date could be acquired');
         return new Date();
-    }
-
-
-    // XXX Probably temporary while we are not monitoring the places where FTP, Weight and HRZones can
-    // be altered.  Later we should always keep the athlete record in sync so it's continually trusted.
-    // Also when any of the relevant params change we'll need to invalidate sync manifests affected by it.
-    async function buildAthleteRecord() {
-        let ftpHistory;
-        if (ns.athlete.id === pageView.currentAthlete().id) {
-            ftpHistory = await sauce.hist.getSelfFTPHistory();
-        } else {
-            ftpHistory = ns.ftp ? [{ts: 0, value: ns.ftp}] : undefined;
-        }
-        return {
-            id: ns.athlete.id,
-            gender: ns.athlete.get('gender') === 'F' ? 'female' : 'male',
-            name: ns.athlete.get('display_name'),
-            ftpHistory,
-            weightHistory: ns.weight ? [{ts: 0, value: ns.weight}] : undefined,
-            hrZones: await getHRZones(),
-        };
     }
 
 

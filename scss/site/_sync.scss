@@ -1,6 +1,72 @@
 @use 'color';
+@use 'animations';
 @use 'history_view';
 @use 'buttons';
+
+
+@mixin button {
+    .sauce-sync-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.80;
+        position: relative;
+        transition: opacity 100ms;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        svg[data-icon="sync-alt"] {
+            width: 1.4em;
+        }
+
+        svg[data-icon="check"] {
+            width: 0.65em;
+            position: absolute;
+        }
+    }
+
+    &:not(.enabled) .sauce-sync-icon {
+        svg[data-icon="sync-alt"] {
+            color: color.shade(fg, 20%);
+        }
+
+        svg[data-icon="check"] {
+            display: none;
+        }
+    }
+
+    &.enabled .sauce-sync-icon {
+        svg[data-icon="sync-alt"] {
+            color: #ee5c13;
+        }
+
+        svg[data-icon="check"] {
+            color: #22ee33;
+        }
+    }
+
+    &.sync-active .sauce-sync-icon {
+        svg[data-icon="sync-alt"] {
+            animation: rotation 3s infinite steps(30 * 3);
+            color: #22ee33;
+        }
+
+        svg[data-icon="check"] {
+            display: none;
+        }
+    }
+
+    .sauce-sync-status:not(:empty) {
+        margin-left: 1em;
+    }
+
+    .sauce-sync-status {
+        font-size: 0.8em;
+    }
+}
 
 
 @mixin dialog {
@@ -35,7 +101,10 @@
             .sync-mgmt {
                 flex: 1 1;
                 max-width: 100%;
-                padding: 1rem 0;
+                padding-top: 1rem;
+                padding-bottom: 0;
+                display: flex;
+                flex-direction: column;
 
                 h1, h2, h3, h4 {
                     padding-left: 1rem;
@@ -69,9 +138,9 @@
                 }
             }
 
-            &:not(.has-error) {
-                .entry.error {
-                    display: none !important;
+            &.has-error {
+                .status {
+                    color: darkred;
                 }
             }
 
@@ -85,7 +154,8 @@
                 .entry.synced,
                 .entry.last-sync,
                 .entry.next-sync,
-                .entry.status {
+                .entry.status,
+                .entry.enable {
                     display: none !important;
                 }
 
@@ -99,6 +169,12 @@
 
             &:not(.sync-active) {
                 .entry.synced value progress {
+                    display: none;
+                }
+            }
+
+            &:not(.sync-disabled) {
+                .perf-promo {
                     display: none;
                 }
             }
@@ -126,6 +202,26 @@
                 td {
                     padding: 0.3em 0.8em;
                 }
+            }
+        }
+
+        .perf-promo {
+            padding: 2rem;
+            background-color: color.shade(fg, 50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1 0 auto;
+
+            > img {
+                width: 100%;
+                border-radius: 0.3em;
+                box-shadow: 1px 1px 3px color.shade(fg, 20%, 0.3);
+            }
+
+            button {
+                margin: 1em 0;
             }
         }
 

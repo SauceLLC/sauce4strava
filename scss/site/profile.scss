@@ -1,9 +1,12 @@
 @use 'defines';
 @use 'dialog';
 @use 'color';
-@use 'sync_button';
+@use 'sync';
 
 
 .sauce-sync-button {
-    @include sync_button.sync-button;
+    margin-left: 1em;
+    vertical-align: text-top;
+
+    @include sync.button;
 }
