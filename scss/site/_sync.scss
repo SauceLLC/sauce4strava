@@ -214,10 +214,84 @@
             justify-content: center;
             flex: 1 0 auto;
 
-            > img {
-                width: 100%;
-                border-radius: 0.3em;
-                box-shadow: 1px 1px 3px color.shade(fg, 20%, 0.3);
+            .slides {
+                position: relative;
+
+                > img {
+                    width: 100%;
+                    border-radius: 0.3em;
+                    box-shadow: 1px 1px 3px color.shade(fg, 20%, 0.3);
+
+                    &:not(.selected) {
+                        display: none;
+                    }
+                }
+
+                .nav-left,
+                .nav-right {
+                    position: absolute;
+                    width: 5em;
+                    height: 100%;
+                    top: 0;
+                    background-color: #0005;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    opacity: 0;
+                    transition: opacity 200ms;
+                    z-index: 2;
+
+                    &.hidden {
+                        display: none;
+                    }
+
+                    &:hover {
+                        opacity: 0.8;
+                        visibility: visible;
+                    }
+
+                    &:active {
+                        opacity: 1;
+                        box-shadow: 0 0 5px #0003 inset;
+                    }
+
+                    svg[data-icon] {
+                        color: white;
+                        width: 1em;
+                    }
+                }
+
+                .nav-left {
+                    left: 0;
+                    cursor: w-resize;
+                }
+
+                .nav-right {
+                    right: 0;
+                    cursor: e-resize;
+                }
+
+                .nav-placement {
+                    display: flex;
+                    position: absolute;
+                    bottom: 0;
+                    width: 100%;
+                    justify-content: center;
+                    margin-bottom: 1em;
+                    pointer-events: none;
+
+                    .bubble {
+                        margin: 0 0.15em;
+                        width: 0.65em;
+                        height: 0.65em;
+                        background-color: color.shade(fg, 5%);
+                        border-radius: 50%;
+
+                        &:not(.selected) {
+                            opacity: 0.3;
+                        }
+                    }
+                }
             }
 
             button {

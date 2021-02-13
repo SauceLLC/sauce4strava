@@ -261,6 +261,24 @@ sauce.ns('sync', ns => {
             ev.preventDefault();
             $modal.find('input[name="enable"]').click();
         });
+        $modal.on('click', '.perf-promo .nav-left', ev => {
+            const $promo = jQuery(ev.currentTarget.closest('.perf-promo'));
+            const $selected = $promo.find('.selected');
+            $selected.removeClass('selected').prev().addClass('selected');
+            const isFirst = $promo.find('.nav-placement .selected').is(':first-child');
+            const isLast = $promo.find('.nav-placement .selected').is(':last-child');
+            $promo.find('.nav-left').toggleClass('hidden', isFirst);
+            $promo.find('.nav-right').toggleClass('hidden', isLast);
+        });
+        $modal.on('click', '.perf-promo .nav-right', ev => {
+            const $promo = jQuery(ev.currentTarget.closest('.perf-promo'));
+            const $selected = $promo.find('.selected');
+            $selected.removeClass('selected').next().addClass('selected');
+            const isFirst = $promo.find('.nav-placement .selected').is(':first-child');
+            const isLast = $promo.find('.nav-placement .selected').is(':last-child');
+            $promo.find('.nav-left').toggleClass('hidden', isFirst);
+            $promo.find('.nav-right').toggleClass('hidden', isLast);
+        });
         $modal.on('click', '.sync-stop.btn', ev => {
             ev.preventDefault();
             $modal.removeClass('sync-active');

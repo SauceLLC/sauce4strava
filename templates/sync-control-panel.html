@@ -12,7 +12,18 @@
     </div>
 
     <div class="perf-promo">
-        <img src="{{sauce.extUrl}}images/performance_cap1.png"/>
+        <div class="slides">
+            <div class="nav-left hidden">{-await fa('angle-left-duotone')-}</div>
+            <div class="nav-right">{-await fa('angle-right-duotone')-}</div>
+
+            <img class="selected" src="{{sauce.extUrl}}images/performance_cap1.png"/>
+            <img src="{{sauce.extUrl}}images/performance_cap1.png"/>
+
+            <div class="nav-placement">
+                <div class="bubble selected"></div>
+                <div class="bubble"></div>
+            </div>
+        </div>
         <button class="btn btn-block btn-primary">Enable Sync and Get Started!</button> <!--XXX localize-->
     </div>
 
