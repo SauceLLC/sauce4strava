@@ -14,35 +14,35 @@
                     <small>{{humanDate(a.ts, {includeDayOfWeek: true})}}</small>
                     <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
                 </header>
-                <% if (a.stats) { %>
-                    <% if (sauce.model.getActivityTSS(a) != null) { %>
-                        <% if (a.tssOverride != null) { %>
-                            <row>
-                                <key>TSS Override:</key>
-                                <value>{{humanNumber(a.tssOverride)}}</value>
-                            </row>
-                        <% } %>
-                        <% if (a.stats.tss != null) { %>
-                            <row>
-                                <key>TSS:</key>
-                                <value>{{humanNumber(sauce.model.getActivityTSS(a))}}</value>
-                            </row>
-                        <% } %>
-                        <% if (a.stats.tTss != null) { %>
-                            <row>
-                                <key>tTSS:</key>
-                                <value>{{humanNumber(a.stats.tTss)}}</value>
-                            </row>
-                        <% } %>
-                    <% } else { %>
+                <% if (sauce.model.getActivityTSS(a) != null || a.tssOverride != null) { %>
+                    <% if (a.tssOverride != null) { %>
                         <row>
-                            <key>TSS:</key>
-                            <value class="sauce-negative">
-                                <a class="edit-activity sauce-negative"
-                                   title="Click to edit">Unavailable</a><!-- XXX localize -->
-                            </value>
+                            <key>TSS Override:</key>
+                            <value>{{humanNumber(a.tssOverride)}}</value>
                         </row>
                     <% } %>
+                    <% if (a.stats && a.stats.tss != null) { %>
+                        <row>
+                            <key>TSS:</key>
+                            <value>{{humanNumber(sauce.model.getActivityTSS(a))}}</value>
+                        </row>
+                    <% } %>
+                    <% if (a.stats && a.stats.tTss != null) { %>
+                        <row>
+                            <key>tTSS:</key>
+                            <value>{{humanNumber(a.stats.tTss)}}</value>
+                        </row>
+                    <% } %>
+                <% } else { %>
+                    <row>
+                        <key>TSS:</key>
+                        <value class="sauce-negative">
+                            <a class="edit-activity sauce-negative"
+                               title="Click to edit">Unavailable</a><!-- XXX localize -->
+                        </value>
+                    </row>
+                <% } %>
+                <% if (a.stats) { %>
                     <row>
                         <key>Active:</key>
                         <value>{{humanTimer(sauce.model.getActivityActiveTime(a))}}</value>

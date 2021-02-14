@@ -3,7 +3,7 @@
 sauce.ns('hist', async ns => {
     'use strict';
 
-    const activityListVersion = 1;  // Increment to force full update of activities.
+    const activityListVersion = 2;  // Increment to force full update of activities.
 
     const namespace = 'hist';
     const jobs = await sauce.getModule('/src/common/jscoop/jobs.js');
@@ -170,6 +170,8 @@ sauce.ns('hist', async ns => {
             return 'run';
         } else if (activity.type.match(/Swim/)) {
             return 'swim';
+        } else {
+            return 'workout';
         }
     }
 
@@ -769,7 +771,7 @@ sauce.ns('hist', async ns => {
         if (!options.disableSync && athlete.isEnabled() && ns.syncManager) {
             await syncAthlete(athleteId, {
                 noActivityScan: true,
-                noStreamsFetch: true,
+                noStreamsFetch: processor === 'local',
                 ...options
             });
         }
@@ -804,7 +806,7 @@ sauce.ns('hist', async ns => {
         if (!options.disableSync && athlete.isEnabled() && ns.syncManager) {
             await syncAthlete(athlete.pk, {
                 noActivityScan: true,
-                noStreamsFetch: true,
+                noStreamsFetch: processor === 'local',
                 ...options
             });
         }

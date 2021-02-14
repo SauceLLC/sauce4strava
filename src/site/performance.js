@@ -203,12 +203,12 @@ sauce.ns('performance', async ns => {
                     $modal.dialog('destroy');
                 }
             }, {
-                text: 'Resync', // XXX localize
+                text: 'Reimport', // XXX localize
                 click: async ev => {
                     ev.currentTarget.disabled = true;
                     ev.currentTarget.classList.add('sauce-loading');
                     try {
-                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local');
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'streams');
                         await pageView.render();
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');
