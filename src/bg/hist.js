@@ -273,7 +273,7 @@ sauce.ns('hist', async ns => {
             // cases I'd like to personally inspect if they happen.
             const q = new URLSearchParams();
             q.set('interval_type', 'month');
-            q.set('chart_type', 'miles');
+            q.set('chart_type', 'hours');
             q.set('year_offset', '0');
             q.set('interval', '' + year +  month.toString().padStart(2, '0'));
             const resp = await retryFetch(`/athletes/${athlete.pk}/interval?${q}`);
@@ -917,8 +917,11 @@ sauce.ns('hist', async ns => {
             if (!options.noActivityScan) {
                 this.setStatus('activity-scan');
                 const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
-                await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
-                await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
+                try {
+                    await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
+                } finally {
+                    await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
+                }
             }
             this.setStatus('data-sync');
             try {
@@ -1344,12 +1347,12 @@ sauce.ns('hist', async ns => {
             syncJob.run(options);
             try {
                 await syncJob.wait();
-                athlete.set('lastSyncVersionHash', options.syncHash);
             } catch(e) {
                 sauce.report.error(e);
                 athlete.set('lastSyncError', Date.now());
                 this.emitForAthlete(athlete, 'error', {error: e.message});
             } finally {
+                athlete.set('lastSyncVersionHash', options.syncHash);
                 athlete.set('lastSync', Date.now());
                 await this._athleteLock.acquire();
                 try {
