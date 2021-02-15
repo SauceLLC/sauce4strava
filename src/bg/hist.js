@@ -663,7 +663,7 @@ sauce.ns('hist', async ns => {
         const clean = athlete.setHistoryValues(key, data);
         await athlete.save();
         if (!options.disableSync) {
-            await invalidateAthleteSyncState(athleteId, 'local', 'activity-stats');
+            await invalidateAthleteSyncState(athleteId, 'local', 'activity-stats', {noWait: true});
         }
         return clean;
     }
@@ -1026,7 +1026,6 @@ sauce.ns('hist', async ns => {
             }
             workers.push(this._localProcessWorker());
             await Promise.all(workers);
-            console.debug("Activity sync completed for: " + this.athlete);
         }
 
         async _fetchStreamsWorker(...args) {
@@ -1351,7 +1350,8 @@ sauce.ns('hist', async ns => {
                         await this._refreshEvent.wait();
                     } else {
                         const deadline = this.refreshInterval - oldest;
-                        console.debug(`Next Sync Manager refresh in ${Math.round(deadline / 1000)} seconds`);
+                        const next = Math.round(deadline / 1000).toLocaleString();
+                        console.debug(`Next Sync Manager refresh in ${next} seconds`);
                         await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
                     }
                 }
@@ -1419,7 +1419,7 @@ sauce.ns('hist', async ns => {
                 this.activeJobs.delete(athleteId);
                 this._refreshEvent.set();
                 this.emitForAthlete(athlete, 'active', false);
-                console.info(`Sync completed in ${Date.now() - start}ms for: ` + athlete);
+                console.info(`Sync completed in ${Math.round((Date.now() - start) / 1000)} seconds for: ` + athlete);
             }
         }
 
