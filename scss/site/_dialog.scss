@@ -36,8 +36,8 @@ html .ui-dialog {
     // Copy from analysis page so behavior is same elsewhere (perf page)
     form {
         > button,
-        >input[type="submit"],
-        form>input[type="button"] {
+        > input[type="submit"],
+        form > input[type="button"] {
             margin-top: 10px;
         }
     }
@@ -68,9 +68,12 @@ html .ui-dialog {
     }
 
     .ui-dialog-buttonpane  .ui-dialog-buttonset {
-        button svg[data-icon] {
-            width: 1em;
-            margin-left: 0.44em;
+        button,
+        .btn {
+             svg[data-icon] {
+                width: 1em;
+                margin-left: 0.44em;
+             }
         }
     }
 
@@ -322,12 +325,15 @@ html .ui-dialog {
         padding: 0.4em;
     }
 
-    .ui-dialog-buttonpane button {
-        min-height: unset;
-        border-radius: 0.25em;
-        padding: 0.5em 0.8em;
-        margin: 0.3em 0.5em;
-        font-size: 0.85em;
+    .ui-dialog-buttonpane {
+        button,
+        .btn {
+            min-height: unset;
+            border-radius: 0.25em;
+            padding: 0.5em 0.8em;
+            margin: 0.3em 0.5em;
+            font-size: 0.85em;
+        }
     }
 
     footer {

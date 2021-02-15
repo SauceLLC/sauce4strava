@@ -206,7 +206,7 @@
         }
 
         .perf-promo {
-            padding: 1rem;
+            padding: 2rem;
             background-color: color.shade(fg, 50%);
             display: flex;
             flex-direction: column;
@@ -214,19 +214,50 @@
             justify-content: center;
             flex: 1 0 auto;
 
+            .btn.zoom-out {
+                position: absolute;
+                top: 1em;
+                right: 1em;
+                font-size: 2em;
+                color: #eee;
+            }
+
+            &:not(.expanded) {
+                .btn.zoom-out {
+                    display: none;
+                }
+
+                .slides img {
+                    cursor: zoom-in;
+                }
+            }
+
             &.expanded {
                 position: fixed;
                 width: 100%;
                 height: 100%;
                 z-index: 100;
+                top: 0;
+                left: 0;
+                background-color: #000d;
+
+                .btn.enable {
+                    display: none;
+                }
+
+                .slides img {
+                    cursor: zoom-out;
+                }
             }
 
             .slides {
                 position: relative;
+                overflow: hidden;
 
                 > img {
-                    padding: 1rem;
                     width: 100%;
+                    max-height: 100%;
+                    object-fit: contain;
                     border-radius: 0.3em;
                     box-shadow: 1px 1px 3px color.shade(fg, 20%, 0.3);
 
@@ -238,7 +269,7 @@
                 .nav-left,
                 .nav-right {
                     position: absolute;
-                    width: 5em;
+                    width: 30%;
                     height: 100%;
                     top: 0;
                     background-color: #0005;
@@ -302,7 +333,7 @@
                 }
             }
 
-            button {
+            .btn.enable {
                 margin: 1em 0;
             }
         }

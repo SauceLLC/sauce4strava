@@ -9,8 +9,8 @@
         <% for (const a of activities) { %>
             <div class="activity" data-id="{{a.id}}">
                 <header class="title">
-                    <button class="btn btn-icon-only btn-unstyled edit-activity"
-                            title="Edit activity">{-await fa('edit-duotone')-}</button> <!-- XXX localize -->
+                    <div class="btn btn-icon-only btn-unstyled edit-activity"
+                         title="Edit activity">{-await fa('edit-duotone')-}</div> <!-- XXX localize -->
                     <small>{{humanDate(a.ts, {includeDayOfWeek: true})}}</small>
                     <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
                 </header>

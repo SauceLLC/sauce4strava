@@ -44,7 +44,6 @@ class HistoryView extends SauceView {
     }
     
     async onAddEntry(ev) {
-        ev.preventDefault();
         const entry = await this.entryTpl(Object.assign(
             {ts: Date.now(), value: undefined},
             await this.renderAttrs()));
@@ -53,14 +52,12 @@ class HistoryView extends SauceView {
     }
 
     async onDeleteEntry(ev) {
-        ev.preventDefault();
         const entry = ev.currentTarget.closest('.history-entry');
         entry.remove();
         this.$el.addClass('dirty');
     }
 
     async onSave(ev) {
-        ev.preventDefault();
         const data = [];
         for (const x of this.$('.history-entry')) {
             const ts = (new Date(x.querySelector('[type="date"]').value)).getTime();

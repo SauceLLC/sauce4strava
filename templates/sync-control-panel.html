@@ -24,7 +24,8 @@
                 <div class="bubble"></div>
             </div>
         </div>
-        <button class="btn btn-block btn-primary">Enable Sync and Get Started!</button> <!--XXX localize-->
+        <div class="btn btn-unstyled btn-icon-only zoom-out">{-await fa('times-circle-duotone')-}</div>
+        <div class="btn btn-block btn-primary enable">Enable Sync and Get Started!</div> <!--XXX localize-->
     </div>
 
     <div class="entry enable">
@@ -35,12 +36,12 @@
     <div class="entry status">
         <key>{{{status}}}:</key>
         <value></value>
-        <button class="btn btn-unstyled btn-icon-only sync-stop"
-                title="{{{sync_stop_tooltip}}}">{-await fa('stop-circle-regular')-}</button>
-        <button class="btn btn-unstyled btn-icon-only sync-start"
-                title="{{{sync_start_tooltip}}}">{-await fa('play-circle-regular')-}</button>
-        <button class="btn btn-unstyled btn-icon-only sync-recompute"
-                title="{{{sync_recompute_tooltip}}}">{-await fa('redo-solid')-}</button>
+        <div class="btn btn-unstyled btn-icon-only sync-stop"
+             title="{{{sync_stop_tooltip}}}">{-await fa('stop-circle-regular')-}</div>
+        <div class="btn btn-unstyled btn-icon-only sync-start"
+             title="{{{sync_start_tooltip}}}">{-await fa('play-circle-regular')-}</div>
+        <div class="btn btn-unstyled btn-icon-only sync-recompute"
+             title="{{{sync_recompute_tooltip}}}">{-await fa('redo-solid')-}</div>
     </div>
 
     <div class="entry synced">

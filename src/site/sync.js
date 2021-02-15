@@ -51,6 +51,9 @@ sauce.ns('sync', ns => {
 
 
     async function createSyncButton(id, athleteData, options={}) {
+        if (athleteData && !athleteData.name) {
+            throw new TypeError('athleteData.name is required');
+        }
         await sauce.proxy.connected;
         await sauce.locale.init();
         if (options.syncController) {
@@ -69,7 +72,7 @@ sauce.ns('sync', ns => {
         }
         $btn.on('click', async () => {
             if (!athlete) {
-                athlete = await sauce.hist.addAthlete({id, name, ...extra});
+                athlete = await sauce.hist.addAthlete({id, ...athleteData});
             }
             if (!controllers.has(id)) {
                 controllers.set(id, new sauce.hist.SyncController(id));
@@ -248,6 +251,15 @@ sauce.ns('sync', ns => {
             syncController.addEventListener(event, cb);
         }
 
+        function onPromoKeyDown(ev) {
+            if (ev.key === 'Escape') {
+                ev.preventDefault();
+                ev.stopPropagation();
+                removeEventListener('keydown', onPromoKeyDown, {capture: true});
+                $modal.find('.perf-promo').removeClass('expanded');
+            }
+        }
+
         $modal.on('input', 'input[name="enable"]', async ev => {
             const enabled = ev.currentTarget.checked;
             if (enabled) {
@@ -258,8 +270,7 @@ sauce.ns('sync', ns => {
             }
             $modal.toggleClass('sync-disabled', !enabled);
         });
-        $modal.on('click', '.perf-promo button', async ev => {
-            ev.preventDefault();
+        $modal.on('click', '.perf-promo .btn.enable', async ev => {
             $modal.find('input[name="enable"]').click();
         });
         $modal.on('click', '.perf-promo .nav-left', ev => {
@@ -280,13 +291,23 @@ sauce.ns('sync', ns => {
             $promo.find('.nav-left').toggleClass('hidden', isFirst);
             $promo.find('.nav-right').toggleClass('hidden', isLast);
         });
+        $modal.on('click', '.perf-promo .slides img', ev => {
+            const $el = $modal.find('.perf-promo').toggleClass('expanded');
+            if ($el.hasClass('expanded')) {
+                addEventListener('keydown', onPromoKeyDown, {capture: true});
+            } else {
+                removeEventListener('keydown', onPromoKeyDown, {capture: true});
+            }
+        });
+        $modal.on('click', '.perf-promo .btn.zoom-out', ev => {
+            $modal.find('.perf-promo').removeClass('expanded');
+            removeEventListener('keydown', onPromoKeyDown, {capture: true});
+        });
         $modal.on('click', '.sync-stop.btn', ev => {
-            ev.preventDefault();
             $modal.removeClass('sync-active');
             syncController.cancel();
         });
         $modal.on('click', '.sync-recompute.btn', async ev => {
-            ev.preventDefault();
             $modal.addClass('sync-active');
             $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
             $modal.find('.entry.synced .text').empty();
@@ -302,9 +323,8 @@ sauce.ns('sync', ns => {
             await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', 'athlete-settings');
         });
         $modal.on('click', '.sync-start.btn', async ev => {
-            ev.preventDefault();
             $modal.addClass('sync-active');
-            await sauce.hist.syncAthlete(athlete.id, {noWait: true});
+            await sauce.hist.syncAthlete(athlete.id);
         });
         $modal.on('dialogclose', () => {
             for (const [event, cb] of Object.entries(listeners)) {

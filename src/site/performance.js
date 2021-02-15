@@ -194,7 +194,7 @@ sauce.ns('performance', async ns => {
                         Object.assign(activity, updates);
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'training-load',
                             {disableSync: true});
-                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks');
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks', {wait: true});
                         await pageView.render();
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');
@@ -980,7 +980,7 @@ sauce.ns('performance', async ns => {
                                 await sauce.hist.invalidateActivitySyncState(Number(id), 'local',
                                     'peaks', {disableSync: true});
                             }
-                            await Promise.all([...this.athletes].map(x => sauce.hist.syncAthlete(x)));
+                            await Promise.all([...this.athletes].map(x => sauce.hist.syncAthlete(x, {wait: true})));
                             await this.pageView.render();
                         } finally {
                             ev.currentTarget.classList.remove('sauce-loading');
@@ -1132,7 +1132,7 @@ sauce.ns('performance', async ns => {
         }
 
         async onResultClick(ev) {
-            if (ev.target.closest('.results tr a, .results tr button')) {
+            if (ev.target.closest('.results tr a, .results tr .btn')) {
                 return;
             }
             const id = Number(ev.currentTarget.dataset.id);
@@ -1178,9 +1178,9 @@ sauce.ns('performance', async ns => {
         get events() {
             return {
                 'change header.filters select[name="period"]': 'onPeriodChange',
-                'click header.filters button.period': 'onPeriodShift',
-                'click header.filters button.expand': 'onExpandClick',
-                'click header.filters button.compress': 'onCompressClick',
+                'click header.filters .btn.period': 'onPeriodShift',
+                'click header.filters .btn.expand': 'onExpandClick',
+                'click header.filters .btn.compress': 'onCompressClick',
                 'click canvas': 'onChartClick',
                 'dataVisibilityChange canvas': 'onDataVisibilityChange',
             };
@@ -1342,7 +1342,7 @@ sauce.ns('performance', async ns => {
             const $end = this.$('header span.period.end');
             $start.text(sauce.locale.human.date(start));
             const isEnd = end >= this.periodEndMax;
-            this.$('button.period.next').toggleClass('hidden', isEnd);
+            this.$('.btn.period.next').toggleClass('hidden', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
                 sauce.locale.human.date(end));
@@ -1553,7 +1553,7 @@ sauce.ns('performance', async ns => {
         get events() {
             return {
                 'change nav select[name=athlete]': 'onAthleteChange',
-                'click button.sync-panel': 'onControlPanelClick',
+                'click .btn.sync-panel': 'onControlPanelClick',
             };
         }
 

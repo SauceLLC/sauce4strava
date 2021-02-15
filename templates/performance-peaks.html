@@ -86,9 +86,9 @@
                     <td>{{x.activityType}}</td>
                     <td>{{humanDate(x.activity.ts)}}</td>
                     <td>
-                        <button class="btn btn-icon-only btn-unstyled edit-activity"
-                                data-id="{{x.activity.id}}"
-                                title="Edit activity">{-await fa('edit-duotone')-}</button>
+                        <div class="btn btn-icon-only btn-unstyled edit-activity"
+                             data-id="{{x.activity.id}}"
+                             title="Edit activity">{-await fa('edit-duotone')-}</div>
                     </td>
                 </tr>
             <% } %>

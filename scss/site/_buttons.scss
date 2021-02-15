@@ -1,7 +1,9 @@
 @use 'animations';
 @use 'color';
 
-button {
+button,
+.button,
+.btn {
     &.sauce-loading {
         svg[data-icon] {
             display: none;
@@ -29,6 +31,13 @@ button {
             line-height: 0;
             animation: rotation 3s infinite steps(30 * 3);
         }
+        &.btn-sm,
+        &.btn-xs {
+            &::before,
+            &::after {
+                width: 1.4em;
+            }
+        }
 
         &:not(.btn-icon-right)::before {
             content: url(../../images/fa/spinner-third-duotone.svg);
@@ -41,62 +50,59 @@ button {
     }
 }
 
-button, .button {
-    &.btn {
-        transition-property: filter, background-color, color, box-shadow, opacity;
-        transition-duration: 200ms;
+.btn {
+    transition-property: filter, background-color, color, box-shadow, opacity;
+    transition-duration: 200ms;
+
+    &:hover {
+        filter: contrast(1.15);
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    &.btn-unstyled.btn-icon-only {
+        opacity: 0.8;
 
         &:hover {
-            filter: contrast(1.15);
+            opacity: 1;
         }
 
-        &:focus {
-            outline: none;
+        &:active {
+            filter: brightness(0.9) contrast(1.15);
+        }
+    }
+
+    &:not(.btn-unstyled) {
+        &:hover {
+            box-shadow: 0.03em 0.03em 0.2em color.shade(fg, 0%, 0.4);
         }
 
-        &.btn-unstyled.btn-icon-only {
-            opacity: 0.8;
-
-            &:hover {
-                opacity: 1;
-            }
-
-            &:active {
-                filter: brightness(0.9) contrast(1.15);
-            }
+        &:active {
+            box-shadow: 0 0 0.3em color.shade(fg, 0%, 0.4) inset;
         }
+    }
 
-        &:not(.btn-unstyled) {
-            &:hover {
-                box-shadow: 0.03em 0.03em 0.2em color.shade(fg, 0%, 0.4);
-            }
+    > svg[data-icon] {
+        height: 1.4em;
+        margin: -0.2em 0.2em;
+    }
 
-            &:active {
-                box-shadow: 0 0 0.3em color.shade(fg, 0%, 0.4) inset;
-            }
-        }
+    &.btn-icon-only > svg[data-icon] {
+        margin: -0.2em 0;
+    }
 
+    &.btn-icon-right {
         > svg[data-icon] {
-            height: 1.4em;
-            margin: -0.2em 0.2em;
+            margin-right: -1em;
+            margin-left: 1em;
         }
 
-        &.btn-icon-only > svg[data-icon] {
-            margin: -0.2em 0;
-        }
-
-        &.btn-icon-right {
+        &.btn-sm {
             > svg[data-icon] {
-                margin-right: -1em;
-                margin-left: 1em;
-            }
-
-            &.btn-sm {
-                > svg[data-icon] {
-                    margin-right: 0;
-                }
+                margin-right: 0;
             }
         }
-
     }
 }

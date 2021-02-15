@@ -287,10 +287,6 @@ table.sauce-perf {
                                     #{color.shade(bg, 12%)} 0.8em,
                                     #{color.shade(bg, 10%)});
 
-        .sauce-sync-button {
-            @include sync.button;
-        }
-
         &.compressed {
             display: none;
         }
@@ -303,8 +299,9 @@ table.sauce-perf {
                 min-width: 0;
             }
 
-            button {
+            .sauce-sync-button {
                 flex: 0 0 auto;
+                @include sync.button;
             }
         }
 
@@ -508,12 +505,12 @@ table.sauce-perf {
         flex-direction: column;
 
         &.expanded {
-            .window-controls button.expand {
+            .window-controls .btn.expand {
                 display: none;
             }
         }
         &:not(.expanded) {
-            .window-controls button.compress {
+            .window-controls .btn.compress {
                 display: none;
             }
         }
@@ -539,11 +536,11 @@ table.sauce-perf {
                 margin-right: 1em;
                 white-space: nowrap;
 
-                button.prev {
+                .btn.prev {
                     margin-right: 1em;
                 }
 
-                button.next {
+                .btn.next {
                     margin-left: 1em;
                 }
 
@@ -655,7 +652,7 @@ table.sauce-perf {
                     border-bottom: 1px solid color.shade(bg, 10%, 0.2);
                     margin-bottom: 0.5em;
 
-                    button.edit-activity {
+                    .btn.edit-activity {
                         float: right;
                         color: color.get(bg);
                         font-size: 0.7em;
