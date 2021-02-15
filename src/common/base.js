@@ -456,7 +456,15 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getAllKeys(query, options={}) {
-            return (await this._readQuery('getAllKeys', query, options, options.count))[0];
+            if (!options.indexKey) {
+                return (await this._readQuery('getAllKeys', query, options, options.count))[0];
+            } else {
+                const keys = [];
+                for await (const k of this.keys(query, options)) {
+                    keys.push(k);
+                }
+                return keys;
+            }
         }
 
         async count(query, options={}) {
@@ -614,7 +622,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
         async *keys(query, options={}) {
             for await (const c of this.cursor(query, Object.assign({keys: true}, options))) {
-                yield c.primaryKey;
+                yield options.indexKey ? c.key : c.primaryKey;
             }
         }
 

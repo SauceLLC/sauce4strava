@@ -698,8 +698,8 @@ sauce.ns('hist', async ns => {
 
     async function integrityCheck(athleteId, options={}) {
         const haveStreamsFor = new Set();
-        const missingStreamsFor = new Set();
-        const inFalseErrorState = new Set();
+        const missingStreamsFor = [];
+        const inFalseErrorState = [];
         for await (const [id,] of streamsStore.byAthlete(athleteId, 'time', {keys: true})) {
             haveStreamsFor.add(id);
         }
@@ -709,12 +709,12 @@ sauce.ns('hist', async ns => {
         for (const a of activities.values()) {
             if (haveStreamsFor.has(a.pk)) {
                 if (a.hasAnySyncErrors('streams')) {
-                    inFalseErrorState.add(a.pk);
+                    inFalseErrorState.push(a.pk);
                 }
                 haveStreamsFor.delete(a.pk);
             } else {
                 if (a.hasSyncSuccess(streamManifest)) {
-                    missingStreamsFor.add(a.pk);
+                    missingStreamsFor.push(a.pk);
                 }
             }
         }
@@ -747,9 +747,65 @@ sauce.ns('hist', async ns => {
                 }
             }
         }
-        return {missingStreamsFor, haveStreamsFor, inFalseErrorState};
+        return {
+            missingStreamsFor,
+            haveStreamsFor: Array.from(haveStreamsFor),
+            inFalseErrorState
+        };
     }
-    sauce.proxy.export(integrityCheck, {namespace: true});
+    sauce.proxy.export(integrityCheck, {namespace});
+
+
+    async function danglingActivities(options={}) {
+        const athletes = new Map((await athletesStore.getAll()).map(x => [x.id, x]));
+        const noAthleteFor = [];
+        const syncDisabledFor = [];
+        for await (const c of actsStore.cursor(null, {index: 'athlete-ts'})) {
+            const athleteId = c.key[0];
+            if (!athletes.has(athleteId)) {
+                noAthleteFor.push(c.primaryKey);
+            } else if (!athletes.get(athleteId).sync) {
+                syncDisabledFor.push(c.primaryKey);
+            }
+        }
+        return {noAthleteFor, syncDisabledFor};
+    }
+    sauce.proxy.export(danglingActivities, {namespace});
+
+
+    async function danglingStreams(options={}) {
+        const athletes = new Map((await athletesStore.getAll()).map(x => [x.id, x]));
+        const activities = new Set(await actsStore.getAllKeys());
+        const noActivityFor = [];
+        const noAthleteFor = [];
+        const syncDisabledFor = [];
+        const mode = options.prune ? 'readwrite' : 'readonly';
+        for await (const c of streamsStore.cursor(null, {index: 'athlete', mode})) {
+            const [activity, stream] = c.primaryKey;
+            const athlete = c.key;
+            if (!activities.has(activity)) {
+                if (options.prune) {
+                    c.delete();
+                } else {
+                    noActivityFor.push({activity, stream, athlete});
+                }
+            } else if (!athletes.has(athlete)) {
+                if (options.prune) {
+                    c.delete();
+                } else {
+                    noAthleteFor.push({activity, stream, athlete});
+                }
+            } else if (!athletes.get(athlete).sync) {
+                if (options.prune) {
+                    c.delete();
+                } else {
+                    syncDisabledFor.push({activity, stream, athlete});
+                }
+            }
+        }
+        return {noActivityFor, noAthleteFor, syncDisabledFor};
+    }
+    sauce.proxy.export(danglingActivities, {namespace});
 
 
     async function invalidateAthleteSyncState(athleteId, processor, name, options={}) {
@@ -1651,6 +1707,8 @@ sauce.ns('hist', async ns => {
 
     return {
         integrityCheck,
+        danglingActivities,
+        danglingStreams,
         invalidateAthleteSyncState,
         invalidateActivitySyncState,
         getActivity,
