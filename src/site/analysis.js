@@ -813,8 +813,7 @@ sauce.ns('analysis', ns => {
 
 
     async function attachSyncToggle($el) {
-        const $btn = await sauce.sync.createSyncButton({
-            id: ns.athlete.id,
+        const $btn = await sauce.sync.createSyncButton(ns.athlete.id, {
             gender: ns.athlete.get('gender') === 'F' ? 'female' : 'male',
             name: ns.athlete.get('display_name'),
         });

@@ -10,7 +10,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        opacity: 0.80;
+        opacity: 0.90;
         position: relative;
         transition: opacity 100ms;
 
@@ -44,14 +44,13 @@
         }
 
         svg[data-icon="check"] {
-            color: #22ee33;
+            color: color.get(fg);
         }
     }
 
     &.sync-active .sauce-sync-icon {
         svg[data-icon="sync-alt"] {
             animation: rotation 3s infinite steps(30 * 3);
-            color: #22ee33;
         }
 
         svg[data-icon="check"] {
@@ -207,7 +206,7 @@
         }
 
         .perf-promo {
-            padding: 2rem;
+            padding: 1rem;
             background-color: color.shade(fg, 50%);
             display: flex;
             flex-direction: column;
@@ -215,10 +214,18 @@
             justify-content: center;
             flex: 1 0 auto;
 
+            &.expanded {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                z-index: 100;
+            }
+
             .slides {
                 position: relative;
 
                 > img {
+                    padding: 1rem;
                     width: 100%;
                     border-radius: 0.3em;
                     box-shadow: 1px 1px 3px color.shade(fg, 20%, 0.3);
@@ -239,7 +246,7 @@
                     align-items: center;
                     justify-content: center;
                     opacity: 0;
-                    transition: opacity 200ms;
+                    transition: opacity 100ms;
                     z-index: 2;
 
                     &.hidden {

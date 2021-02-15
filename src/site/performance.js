@@ -1567,6 +1567,7 @@ sauce.ns('performance', async ns => {
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
+            this.syncButtons = new Map();
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
         }
@@ -1580,6 +1581,7 @@ sauce.ns('performance', async ns => {
 
         async render() {
             await super.render();
+            this.$('nav .athlete select').after(await this.getSyncButton(this.athlete.id));
             this.summaryView.setElement(this.$('nav .summary'));
             this.mainView.setElement(this.$('main'));
             this.detailsView.setElement(this.$('aside.details'));
@@ -1602,7 +1604,20 @@ sauce.ns('performance', async ns => {
                 }
                 this.athlete = this.athletes.get(currentUser) || this.athletes.values().next().value;
             }
+            const $oldBtn = this.$('nav .athlete .sauce-sync-button');
+            if ($oldBtn.length) {
+                this.getSyncButton(this.athlete.id).then($btn => $oldBtn.before($btn).detach());
+            }
             return success;
+        }
+
+        async getSyncButton(id) {
+            if (!this.syncButtons.has(id)) {
+                const $btn = await sauce.sync.createSyncButton(id, null, {noStatus: true});
+                $btn.addClass('btn-icon-only btn-unstyled');
+                this.syncButtons.set(id, $btn);
+            }
+            return this.syncButtons.get(id);
         }
 
         onAthleteChange(ev) {

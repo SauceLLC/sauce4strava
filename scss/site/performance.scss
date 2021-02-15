@@ -287,6 +287,10 @@ table.sauce-perf {
                                     #{color.shade(bg, 12%)} 0.8em,
                                     #{color.shade(bg, 10%)});
 
+        .sauce-sync-button {
+            @include sync.button;
+        }
+
         &.compressed {
             display: none;
         }

@@ -50,28 +50,14 @@ sauce.ns('sync', ns => {
     }
 
 
-    async function createSyncButton({id, name, ...extra}, options={}) {
-        if (!id || !name) {
-            throw new TypeError("id and name required");
-        }
+    async function createSyncButton(id, athleteData, options={}) {
         await sauce.proxy.connected;
         await sauce.locale.init();
         if (options.syncController) {
             controllers.set(id, options.syncController);
         }
-        const [sync, check]  = await Promise.all([
-            sauce.images.asText('fa/sync-alt-regular.svg'),
-            sauce.images.asText('fa/check-solid.svg'),
-        ]);
-        const $btn = jQuery(`
-            <button class="btn sauce-sync-button">
-                <div class="sauce-sync-icon">
-                    ${sync}
-                    ${check}
-                </div>
-                <span class="sauce-sync-status"></span>
-            </button>
-        `);
+        const tpl = await sauce.template.getTemplate('sync-button.html');
+        const $btn = jQuery(await tpl({status: !options.noStatus}));
         let athlete = await sauce.hist.getAthlete(id);
         const enabled = !!(athlete && athlete.sync);
         if (enabled) {
