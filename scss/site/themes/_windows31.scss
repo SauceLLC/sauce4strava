@@ -67,22 +67,17 @@
     .pagination a,
     .pagination span,
     .pagination em {
-        border-width: 3px;
-        border-style: outset;
-        border-color: color.shade(bg, 10%);
-        background-color: color.shade(bg, 10%);
 
-        &:hover,
-        &:focus {
-        }
+        &:not(.btn-unstyled) {
+            border-width: 3px;
+            border-style: outset;
+            border-color: color.shade(bg, 10%);
+            background-color: color.shade(bg, 10%);
 
-        &:active,
-        &.active {
-        }
-
-        &[disabled],
-        &.disabled {
-            background-color: color.shade(bg, 12%);
+            &[disabled],
+            &.disabled {
+                background-color: color.shade(bg, 12%);
+            }
         }
     }
 
@@ -128,6 +123,10 @@
         margin-bottom: 2em;
     }
 
+    .ui-dialog {
+        @include windows-border;
+    }
+
     body {
         background-color: color.shade(bg, 10%);
 
@@ -143,5 +142,21 @@
     .feed > .card {
         border-radius: 0;
         @include windows-border;
+    }
+
+    .sauce-swapped-background {
+        a,
+        a:link,
+        a:visited {
+            color: #3fa4ff;
+
+            &:hover {
+                color: #4fb4ff;
+            }
+
+            &:active {
+                color: #2f94ef;
+            }
+        }
     }
 }
