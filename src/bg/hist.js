@@ -663,7 +663,7 @@ sauce.ns('hist', async ns => {
         const clean = athlete.setHistoryValues(key, data);
         await athlete.save();
         if (!options.disableSync) {
-            await invalidateAthleteSyncState(athleteId, 'local', 'activity-stats', {noWait: true});
+            await invalidateAthleteSyncState(athleteId, 'local', 'activity-stats');
         }
         return clean;
     }
@@ -678,7 +678,7 @@ sauce.ns('hist', async ns => {
 
     async function syncAthlete(athleteId, options={}) {
         let syncDone;
-        if (!options.noWait) {
+        if (options.wait) {
             syncDone = new Promise((resolve, reject) => {
                 const onSyncActive = ev => {
                     if (ev.athlete === athleteId && ev.data === false) {
