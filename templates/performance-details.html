@@ -8,9 +8,11 @@
         <br/>
         <center><b>- or -</b></center>
         <br/>
-        <div class="btn">Show recent activities</div>
+        <div class="btn load-more recent">Show recent activities</div>
     <% } else { %>
-        <div class="btn btn-sm btn-secondary load-more">Load newer</div>
+        <% if (hasNewer) { %>
+            <div class="btn btn-sm btn-secondary load-more newer">Load newer</div>
+        <% } %>
         <% for (const a of activities) { %>
             <div class="activity" data-id="{{a.id}}">
                 <header class="title">
@@ -67,6 +69,6 @@
                 <% } %>
             </div>
         <% } %>
-        <div class="btn btn-sm btn-secondary load-more">Load older</div>
+        <div class="btn btn-sm btn-secondary load-more older">Load older</div>
     <% } %>
 </section>

@@ -859,6 +859,9 @@ sauce.ns('performance', async ns => {
             return {
                 'click header a.collapser': 'onCollapserClick',
                 'click .activity .edit-activity': 'onEditActivityClick',
+                'click .btn.load-more.older': 'onLoadOlderClick',
+                'click .btn.load-more.newer': 'onLoadNewerClick',
+                'click .btn.load-more.recent': 'onLoadRecentClick',
             };
         }
 
@@ -872,10 +875,15 @@ sauce.ns('performance', async ns => {
                 this.activities = null;
                 await this.render();
             });
-            this.listenTo(pageView, 'select-activities', async activities => {
-                this.activities = Array.from(activities);
-                this.activities.sort((a, b) => b.ts - a.ts);
-                await this.render();
+            this.listenTo(pageView, 'select-activities', this.setActivities);
+            await super.init();
+        }
+
+        async setActivities(activities, options={}) {
+            this.activities = Array.from(activities);
+            this.activities.sort((a, b) => b.ts - a.ts);
+            await this.render();
+            if (!options.noHighlight) {
                 const expanded = this.$el.hasClass('expanded');
                 await this.setExpanded();
                 if (expanded) {
@@ -884,8 +892,7 @@ sauce.ns('performance', async ns => {
                     this.$el.one('transitionend', () =>
                         this.el.scrollIntoView({behavior: 'smooth'}));
                 }
-            });
-            await super.init();
+            }
         }
 
         setElement(el, ...args) {
@@ -898,6 +905,7 @@ sauce.ns('performance', async ns => {
         async renderAttrs() {
             return {
                 activities: this.activities,
+                hasNewer: this.pageView.mainView.periodEnd < this.pageView.mainView.periodEndMax,
             };
         }
 
@@ -923,6 +931,32 @@ sauce.ns('performance', async ns => {
                 }
             }
             editActivityDialogXXX(activity, this.pageView);
+        }
+
+        async onLoadOlderClick(ev) {
+            if (!this.activities.length) {
+                return;
+            }
+            const oldest = this.activities[this.activities.length - 1];
+            const more = await sauce.hist.getActivitySiblings(oldest.id, {direction: 'prev', limit: 1});
+            await this.setActivities(this.activities.concat(more), {noHighlight: true});
+        }
+
+        async onLoadNewerClick(ev) {
+            if (!this.activities.length) {
+                return;
+            }
+            const newest = this.activities[0];
+            const more = await sauce.hist.getActivitySiblings(newest.id, {direction: 'next', limit: 1});
+            await this.setActivities(this.activities.concat(more), {noHighlight: true});
+        }
+
+        async onLoadRecentClick(ev) {
+            const start = this.pageView.mainView.periodStart;
+            const end = this.pageView.mainView.periodEnd;
+            const activities = await sauce.hist.getActivitiesForAthlete(this.pageView.athlete.id,
+                {start, end, limit: 10, direction: 'prev'});
+            await this.setActivities(activities, {noHighlight: true});
         }
     }
 

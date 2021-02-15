@@ -609,7 +609,15 @@ sauce.ns('hist', async ns => {
 
 
     async function getActivitiesForAthlete(athleteId, options={}) {
-        return await actsStore.getAllForAthlete(athleteId, options);
+        if (options.limit) {
+            const activities = [];
+            for await (const a of actsStore.byAthlete(athleteId, options)) {
+                activities.push(a);
+            }
+            return activities;
+        } else {
+            return await actsStore.getAllForAthlete(athleteId, options);
+        }
     }
     sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
