@@ -1,6 +1,9 @@
 @use 'color';
+@use 'buttons';
 
 .history-view {
+    @include buttons.uniform;
+
     input {
         background-color: transparent;
         border: 1px solid color.shade(bg, 14%);

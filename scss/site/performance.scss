@@ -11,6 +11,7 @@ $main-width: 600px;
 $aside-width: 280px;
 $scrollbar-safety: 25px;
 
+@include buttons.uniform;
 
 @media only screen and (min-width: 991px) {
     html.sauce-performance {
@@ -320,7 +321,7 @@ table.sauce-perf {
                 margin-bottom: 0.5em;
 
                 a {
-                    color: inherit;
+                    //color: inherit;
                 }
 
                 &.collapsed {
@@ -667,6 +668,8 @@ table.sauce-perf {
                         color: color.get(bg);
                         font-size: 0.7em;
                         min-width: initial;
+                        margin-left: 0.8em;
+                        margin-bottom: 0.8em;
                     }
                 }
             }

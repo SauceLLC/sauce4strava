@@ -70,6 +70,8 @@
 
 @mixin dialog {
     &.sauce-sync-athlete-dialog {
+        @include buttons.uniform;
+
         .btn.sync-start {
             color: #00a900;
         }

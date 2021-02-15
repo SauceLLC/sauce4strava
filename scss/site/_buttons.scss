@@ -1,133 +1,131 @@
 @use 'animations';
 @use 'color';
 
-button,
-.button,
-.btn {
-    &.sauce-loading {
-        svg[data-icon] {
-            display: none;
+@mixin uniform {
+    .btn {
+        transition-property: filter, background-color, color, box-shadow, opacity;
+        transition-duration: 100ms;
+
+        &:hover {
+            filter: contrast(1.15);
         }
 
-        &.btn-primary,
-        &.btn-secondary {
-            &::before,
-            &::after {
-                filter: invert(1);
+        &:focus {
+            outline: none;
+        }
+
+        &.btn-unstyled.btn-icon-only {
+            opacity: 0.8;
+
+            &:hover {
+                opacity: 1;
             }
 
-            &.btn-outline:not(:hover) {
-                &::before,
-                &::after {
-                    filter: initial;
+            &:active {
+                filter: brightness(0.9) contrast(1.15);
+            }
+        }
+
+        &:not(.btn-unstyled) {
+            &:hover {
+                box-shadow: 0.03em 0.03em 0.2em color.shade(fg, 0%, 0.4);
+            }
+
+            &:active {
+                box-shadow: 0 0 0.3em color.shade(fg, 0%, 0.4) inset;
+            }
+        }
+
+        > svg[data-icon] {
+            height: 1.4em;
+            margin: -0.2em 0.2em;
+        }
+
+        &.btn-icon-only > svg[data-icon] {
+            margin: -0.2em 0;
+        }
+
+        &.btn-icon-right {
+            > svg[data-icon] {
+                margin-right: -1em;
+                margin-left: 1em;
+            }
+
+            &.btn-sm {
+                > svg[data-icon] {
+                    margin-right: 0;
                 }
             }
         }
 
-        &::before,
-        &::after {
-            width: 1.8em;
-            margin: -0.5em 0.5em -0.5em;
-            line-height: 0;
-            animation: rotation 3s infinite steps(30 * 3);
-        }
-        &.btn-sm,
-        &.btn-xs {
+        &.sauce-loading {
+            svg[data-icon] {
+                display: none;
+            }
+
+            &.btn-primary,
+            &.btn-secondary {
+                &::before,
+                &::after {
+                    filter: invert(1);
+                }
+
+                &.btn-outline:not(:hover) {
+                    &::before,
+                    &::after {
+                        filter: initial;
+                    }
+                }
+            }
+
             &::before,
             &::after {
-                width: 1.4em;
+                width: 1.8em;
+                margin: -0.5em 0.5em -0.5em;
+                line-height: 0;
+                animation: rotation 3s infinite steps(30 * 3);
             }
-        }
+            &.btn-sm,
+            &.btn-xs {
+                &::before,
+                &::after {
+                    width: 1.4em;
+                }
+            }
 
-        &:not(.btn-icon-right)::before {
-            content: url(../../images/fa/spinner-third-duotone.svg);
-            margin-left: 0;
-        }
-        &.btn-icon-right::after {
-            content: url(../../images/fa/spinner-third-duotone.svg);
-            margin-right: 0;
-        }
-    }
-}
-
-.btn {
-    transition-property: filter, background-color, color, box-shadow, opacity;
-    transition-duration: 100ms;
-
-    &:hover {
-        filter: contrast(1.15);
-    }
-
-    &:focus {
-        outline: none;
-    }
-
-    &.btn-unstyled.btn-icon-only {
-        opacity: 0.8;
-
-        &:hover {
-            opacity: 1;
-        }
-
-        &:active {
-            filter: brightness(0.9) contrast(1.15);
-        }
-    }
-
-    &:not(.btn-unstyled) {
-        &:hover {
-            box-shadow: 0.03em 0.03em 0.2em color.shade(fg, 0%, 0.4);
-        }
-
-        &:active {
-            box-shadow: 0 0 0.3em color.shade(fg, 0%, 0.4) inset;
-        }
-    }
-
-    > svg[data-icon] {
-        height: 1.4em;
-        margin: -0.2em 0.2em;
-    }
-
-    &.btn-icon-only > svg[data-icon] {
-        margin: -0.2em 0;
-    }
-
-    &.btn-icon-right {
-        > svg[data-icon] {
-            margin-right: -1em;
-            margin-left: 1em;
-        }
-
-        &.btn-sm {
-            > svg[data-icon] {
+            &:not(.btn-icon-right)::before {
+                content: url(../../images/fa/spinner-third-duotone.svg);
+                margin-left: 0;
+            }
+            &.btn-icon-right::after {
+                content: url(../../images/fa/spinner-third-duotone.svg);
                 margin-right: 0;
             }
         }
     }
-}
 
-.sauce-swapped-background {
-    .btn:not(.btn-unstyled) {
-        background-color: color.shade(bg, 10%) !important;
-        border-color: color.shade(bg, 20%, 0.5);
-        color: color.shade(fg, 10%) !important;
+    .sauce-swapped-background {
+        .btn:not(.btn-unstyled) {
+            background-color: color.shade(bg, 10%) !important;
+            border-color: color.shade(bg, 20%, 0.5);
+            color: color.shade(fg, 10%) !important;
 
 
-        &.btn-secondary {
-            background-color: color.shade(fg, 25%) !important;
-            border-color: color.shade(fg, 20%, 0.5);
-            color: color.shade(bg, 10%) !important;
+            &.btn-secondary {
+                background-color: color.shade(fg, 25%) !important;
+                border-color: color.shade(fg, 20%, 0.5);
+                color: color.shade(bg, 10%) !important;
+
+                &:hover,
+                &:focus {
+                    border-color: color.shade(fg, 20%, 0.5);
+                }
+            }
 
             &:hover,
             &:focus {
-                border-color: color.shade(fg, 20%, 0.5);
+                border-color: color.shade(bg, 20%, 0.5);
             }
-        }
-
-        &:hover,
-        &:focus {
-            border-color: color.shade(bg, 20%, 0.5);
         }
     }
 }
