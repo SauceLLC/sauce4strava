@@ -11,8 +11,10 @@
         <div class="btn load-more recent">Show recent activities</div>
     <% } else { %>
         <% if (hasNewer) { %>
-            <div class="btn btn-sm btn-secondary load-more newer">Load newer</div>
+            <div class="btn btn-sm btn-secondary load-more newer"
+                 title="Show next activity">{-await fa('ellipsis-h-light')-}</div>
         <% } %>
+
         <% for (const a of activities) { %>
             <div class="activity" data-id="{{a.id}}">
                 <header class="title">
@@ -69,6 +71,8 @@
                 <% } %>
             </div>
         <% } %>
-        <div class="btn btn-sm btn-secondary load-more older">Load older</div>
+
+        <div class="btn btn-sm btn-secondary load-more older"
+             title="Show previous activity">{-await fa('ellipsis-h-light')-}</div>
     <% } %>
 </section>
