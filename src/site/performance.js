@@ -1614,7 +1614,7 @@ sauce.ns('performance', async ns => {
         }
 
         async onControlPanelClick(ev) {
-            await sauce.sync.activitySyncDialog(this.athlete, getSyncController(this.athlete.id));
+            await sauce.sync.activitySyncDialog(this.athlete.id, getSyncController(this.athlete.id));
         }
 
         async onRouterNav(athleteId) {

@@ -82,22 +82,25 @@ sauce.ns('sync', ns => {
             }
         }
         $btn.on('click', async () => {
+            if (!athlete) {
+                athlete = await sauce.hist.addAthlete({id, name, ...extra});
+            }
             if (!controllers.has(id)) {
                 controllers.set(id, new sauce.hist.SyncController(id));
                 setupSyncController($btn, controllers.get(id));
             }
-            if (!athlete) {
-                athlete = await sauce.hist.addAthlete({id, name, ...extra});
-            }
-            await activitySyncDialog(athlete, controllers.get(id));
+            await activitySyncDialog(id, controllers.get(id));
         });
         return $btn;
     }
 
 
-    async function activitySyncDialog(athlete, syncController) {
+    async function activitySyncDialog(athleteId, syncController) {
+        let athlete = await sauce.hist.getAthlete(athleteId);
         const hist = await sauce.getModule('/src/site/history-views.mjs');
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
+        const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
+            'sync_control_panel');
         const initiallyEnabled = !!athlete.sync;
         const $modal = sauce.modal({
             title: `Activity Sync Control Panel - ${athlete.name}`,
@@ -176,9 +179,20 @@ sauce.ns('sync', ns => {
                 }
             }]
         });
-        const ftpHistView = new hist.FTPHistoryView({athlete, el: $modal.find('.entry.history.ftp')});
-        const weightHistView = new hist.WeightHistoryView({athlete, el: $modal.find('.entry.history.weight')});
-        const rendering = [ftpHistView.render(), weightHistView.render()];
+        const ftpHistView = new hist.FTPHistoryView({
+            athlete,
+            el: $modal.find('.entry.history.ftp')
+        });
+        const weightHistView = new hist.WeightHistoryView({
+            athlete,
+            el: $modal.find('.entry.history.weight')
+        });
+
+        async function updateHRZones() {
+            $modal.find('.hr-zones').html(await hrZonesTpl({athlete}));
+        }
+
+        const rendering = [ftpHistView.render(), weightHistView.render(), updateHRZones()];
 
         async function updateSyncCounts(counts) {
             counts = counts || await sauce.hist.activityCounts(athlete.id);
@@ -229,7 +243,8 @@ sauce.ns('sync', ns => {
                 clearInterval(rateLimiterInterval);
                 $modal.removeClass('sync-active');
                 $modal.find('.entry.status value').text('Idle');
-                await Promise.all([updateSyncCounts(), updateSyncTimes()]);
+                athlete = await sauce.hist.getAthlete(athleteId);
+                await Promise.all([updateSyncCounts(), updateSyncTimes(), updateHRZones()]);
             }
         }
 
@@ -296,7 +311,9 @@ sauce.ns('sync', ns => {
             $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
             $modal.find('.entry.synced .text').empty();
             await sauce.hist.updateAthlete(athlete.id, {hrZonesTS: null});
-            await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', 'hr-zones');
+            athlete.hrZonesTS = null;
+            await updateHRZones();
+            await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', 'athlete-settings');
         });
         $modal.on('click', '.sync-start.btn', async ev => {
             ev.preventDefault();
