@@ -1514,6 +1514,8 @@ sauce.ns('hist', async ns => {
             });
             this._setupEventRelay('status', ev => this.state.status = ev.data);
             this._setupEventRelay('error', ev => this.state.error = ev.data.error);
+            this._setupEventRelay('enable');
+            this._setupEventRelay('disable');
             this._setupEventRelay('progress');
             this._setupEventRelay('ratelimiter');
         }
