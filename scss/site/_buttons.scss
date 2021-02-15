@@ -7,7 +7,7 @@
         transition-duration: 100ms;
 
         &:hover {
-            filter: contrast(1.15);
+            filter: brightness(1.10);
         }
 
         &:focus {
@@ -22,17 +22,20 @@
             }
 
             &:active {
-                filter: brightness(0.9) contrast(1.15);
+                filter: brightness(0.9);
             }
         }
 
         &:not(.btn-unstyled) {
+            background-color: color.get(bg);
+            border: 1px solid color.shade(fg, 30%, 0.3);
+
             &:hover {
-                box-shadow: 0.03em 0.03em 0.2em color.shade(fg, 0%, 0.4);
+                box-shadow: 0.04em 0.04em 0.1em color.shade(fg, 0%, 0.4);
             }
 
             &:active {
-                box-shadow: 0 0 0.3em color.shade(fg, 0%, 0.4) inset;
+                box-shadow: 0 0 0.2em color.shade(fg, 0%, 0.4) inset;
             }
         }
 
