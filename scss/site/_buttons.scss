@@ -52,7 +52,7 @@ button,
 
 .btn {
     transition-property: filter, background-color, color, box-shadow, opacity;
-    transition-duration: 200ms;
+    transition-duration: 100ms;
 
     &:hover {
         filter: contrast(1.15);
@@ -103,6 +103,31 @@ button,
             > svg[data-icon] {
                 margin-right: 0;
             }
+        }
+    }
+}
+
+.sauce-swapped-background {
+    .btn:not(.btn-unstyled) {
+        background-color: color.shade(bg, 10%) !important;
+        border-color: color.shade(bg, 20%, 0.5);
+        color: color.shade(fg, 10%) !important;
+
+
+        &.btn-secondary {
+            background-color: color.shade(fg, 25%) !important;
+            border-color: color.shade(fg, 20%, 0.5);
+            color: color.shade(bg, 10%) !important;
+
+            &:hover,
+            &:focus {
+                border-color: color.shade(fg, 20%, 0.5);
+            }
+        }
+
+        &:hover,
+        &:focus {
+            border-color: color.shade(bg, 20%, 0.5);
         }
     }
 }

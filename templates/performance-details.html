@@ -5,7 +5,12 @@
 <section class="content sauce-swapped-background">
     <% if (!activities) { %>
         <i>Click on a graph item to see activity details...<!--XXX localize--></i>
+        <br/>
+        <center><b>- or -</b></center>
+        <br/>
+        <div class="btn">Show recent activities</div>
     <% } else { %>
+        <div class="btn btn-sm btn-secondary load-more">Load newer</div>
         <% for (const a of activities) { %>
             <div class="activity" data-id="{{a.id}}">
                 <header class="title">
@@ -62,5 +67,6 @@
                 <% } %>
             </div>
         <% } %>
+        <div class="btn btn-sm btn-secondary load-more">Load older</div>
     <% } %>
 </section>

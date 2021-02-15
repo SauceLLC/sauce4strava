@@ -21,7 +21,8 @@
     }
 
     button,
-    .button {
+    .button,
+    .btn {
         &.sauce-loading:not(.btn-primary) {
             &::before {
                 filter: invert(1);

@@ -641,11 +641,21 @@ table.sauce-perf {
             flex-direction: column;
             padding: 1em;
 
+            .btn.load-more {
+                &:first-child {
+                    margin-bottom: 0.5em;
+                }
+                &:last-child {
+                    margin-top: 0.5em;
+                }
+            }
+
             .activity {
                 background-color: color.shade(fg, 18%);
                 border-radius: 0.28em;
-                margin-bottom: 1em;
-                padding: 1em;
+                margin-top: 0.5em;
+                margin-bottom: 0.5em;
+                padding: 0.65em 0.85em;
 
                 header {
                     padding-bottom: 0.5em;
@@ -656,6 +666,7 @@ table.sauce-perf {
                         float: right;
                         color: color.get(bg);
                         font-size: 0.7em;
+                        min-width: initial;
                     }
                 }
             }
