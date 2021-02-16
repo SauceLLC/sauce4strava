@@ -594,12 +594,13 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
             setDefault(config, 'options.scales.xAxes[0].time.tooltipFormat', 'll'); // XXX use func
             setDefault(config, 'options.scales.xAxes[0].distribution', 'series');
-            setDefault(config, 'options.scales.xAxes[0].gridLines.display', false);
-            setDefault(config, 'options.scales.xAxes[0].afterBuildTicks', (element, ticks) => {
+            setDefault(config, 'options.scales.xAxes[0].gridLines.display', true);
+            setDefault(config, 'options.scales.xAxes[0].gridLines.drawOnChartArea', false);
+            setDefault(config, 'options.scales.xAxes[0].afterBuildTicks', (axis, ticks) => {
                 if (!ticks) {
                     return;
                 }
-                const days = (element.max - element.min) / DAY;
+                const days = (axis.max - axis.min) / DAY;
                 const dates = ticks.map(x => new Date(x.value));
                 const years = new Set(dates.map(x => x.getFullYear()));
                 if (days < 32) {
@@ -628,6 +629,9 @@ sauce.ns('performance', async ns => {
                     });
                 }
             });
+            setDefault(config, 'options.scales.xAxes[0].ticks.padding', 10);
+            setDefault(config, 'options.scales.xAxes[0].ticks.minRotation', 10);
+            setDefault(config, 'options.scales.xAxes[0].ticks.maxRotation', 40);
             setDefault(config, 'options.scales.xAxes[0].ticks.maxTicksLimit', 16);
             setDefault(config, 'options.scales.xAxes[0].ticks.callback', (_, index, ticks) => {
                 const days = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
@@ -636,7 +640,7 @@ sauce.ns('performance', async ns => {
                 if (days < 32) {
                     return sauce.locale.human.date(d, {style: 'shortDay'});
                 } else {
-                    return sauce.locale.human.date(d, {style: 'monthDay'});
+                    return sauce.locale.human.date(d, {style: 'shortDay'});
                 }
             });
             setDefault(config, 'options.scales.xAxes[0].ticks.major.enabled', true);
@@ -666,6 +670,10 @@ sauce.ns('performance', async ns => {
 
             setDefault(config, 'options.tooltips.position', 'sides');
             setDefault(config, 'options.tooltips.mode', 'index');
+            setDefault(config, 'options.tooltips.callbacks.title', (item, data) => {
+                const d = new Date(data.datasets[0].data[item[0].index].x);
+                return sauce.locale.human.date(d, {style: 'weekdayYear'});
+            });
             setDefault(config, 'options.tooltips.callbacks.label', (item, data) => {
                 const ds = data.datasets[item.datasetIndex];
                 const label = ds.label || '';
