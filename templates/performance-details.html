@@ -20,7 +20,7 @@
                 <header class="title">
                     <div class="btn btn-icon-only btn-unstyled edit-activity"
                          title="Edit activity">{-await fa('edit-duotone')-}</div> <!-- XXX localize -->
-                    <small>{{humanDate(a.ts, {includeDayOfWeek: true})}}</small>
+                    <small>{{humanDateTime(a.ts, {style: 'weekday'})}}</small>
                     <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
                 </header>
                 <% if (sauce.model.getActivityTSS(a) != null || a.tssOverride != null) { %>

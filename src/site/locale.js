@@ -259,37 +259,53 @@ sauce.ns('locale', ns => {
 
 
     const _intlDateFormats = {
-        'long': new Intl.DateTimeFormat([], {dateStyle: 'long'}),
-        'medium': new Intl.DateTimeFormat([], {dateStyle: 'medium'}),
-        'short': new Intl.DateTimeFormat([], {dateStyle: 'short'}),
+        'long': new Intl.DateTimeFormat([], {year: 'numeric', month: 'long', day: 'numeric'}),
+        'default': new Intl.DateTimeFormat([], {year: 'numeric', month: 'short', day: 'numeric'}),
+        'short': new Intl.DateTimeFormat([], {year: 'numeric', month: 'numeric', day: 'numeric'}),
+        'monthYear': new Intl.DateTimeFormat([], {year: 'numeric', month: 'short'}),
+        'month': new Intl.DateTimeFormat([], {month: 'short'}),
+        'day': new Intl.DateTimeFormat([], {month: 'short', day: 'numeric'}),
+        'recentDay': new Intl.DateTimeFormat([], {weekday: 'short', month: 'short', day: 'numeric'}),
     };
     function humanDate(date, options={}) {
         if (!(date instanceof Date)) {
             date = new Date(date);
         }
-        const style = options.style || 'medium';
+        const style = options.style || 'default';
         return _intlDateFormats[style].format(date);
     }
 
 
     const _intlTimeFormats = {
-        'long': new Intl.DateTimeFormat([], {timeStyle: 'long'}),
-        'medium': new Intl.DateTimeFormat([], {timeStyle: 'medium'}),
-        'short': new Intl.DateTimeFormat([], {timeStyle: 'short'}),
+        'default': new Intl.DateTimeFormat([], {hour: 'numeric', minute: 'numeric', second: 'numeric'}),
     };
     function humanTime(date, options={}) {
         if (!(date instanceof Date)) {
             date = new Date(date);
         }
-        const style = options.style || 'medium';
+        const style = options.style || 'default';
         return _intlTimeFormats[style].format(date);
     }
 
 
     const _intlDateTimeFormats = {
-        'long': new Intl.DateTimeFormat([], {dateStyle: 'long', timeStyle: 'long'}),
-        'medium': new Intl.DateTimeFormat([], {dateStyle: 'medium', timeStyle: 'medium'}),
-        'short': new Intl.DateTimeFormat([], {dateStyle: 'short', timeStyle: 'short'}),
+        'long': new Intl.DateTimeFormat([], {
+            year: 'numeric', month: 'long', day: 'numeric',
+            hour: 'numeric', minute: 'numeric'
+        }),
+        'default': new Intl.DateTimeFormat([], {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: 'numeric', minute: 'numeric'
+        }),
+        'short': new Intl.DateTimeFormat([], {
+            year: 'numeric', month: 'numeric', day: 'numeric',
+            hour: 'numeric', minute: 'numeric'
+        }),
+        'weekday': new Intl.DateTimeFormat([], {
+            weekday: 'short',
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: 'numeric', minute: 'numeric'
+        }),
     };
     function humanDateTime(date, options={}) {
         if (!(date instanceof Date)) {
@@ -299,9 +315,9 @@ sauce.ns('locale', ns => {
         if (now.getDay() === date.getDay() &&
             now.getMonth() === date.getMonth() &&
             now.getFullYear() === date.getFullYear()) {
-            return humanTime(date, options);
+            return humanTime(date, {...options, style: 'default'});
         }
-        const style = options.style || 'medium';
+        const style = options.style || 'default';
         return _intlDateTimeFormats[style].format(date);
     }
 

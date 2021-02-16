@@ -614,6 +614,7 @@ table.sauce-perf {
 
         .activity-name {
             font-size: 0.7em;
+            margin: 0.3em 0;
             display: block;
 
             &::first-line {
@@ -692,7 +693,7 @@ table.sauce-perf {
         }
     }
 }
- 
+
 
 @media only screen and (min-width: #{$nav-width + $main-width + $aside-width + $scrollbar-safety}) {
     #sauce-performance {
