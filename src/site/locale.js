@@ -262,10 +262,11 @@ sauce.ns('locale', ns => {
         'long': new Intl.DateTimeFormat([], {year: 'numeric', month: 'long', day: 'numeric'}),
         'default': new Intl.DateTimeFormat([], {year: 'numeric', month: 'short', day: 'numeric'}),
         'short': new Intl.DateTimeFormat([], {year: 'numeric', month: 'numeric', day: 'numeric'}),
+        'shortDay': new Intl.DateTimeFormat([], {month: 'numeric', day: 'numeric'}),
         'monthYear': new Intl.DateTimeFormat([], {year: 'numeric', month: 'short'}),
         'month': new Intl.DateTimeFormat([], {month: 'short'}),
-        'day': new Intl.DateTimeFormat([], {month: 'short', day: 'numeric'}),
-        'recentDay': new Intl.DateTimeFormat([], {weekday: 'short', month: 'short', day: 'numeric'}),
+        'monthDay': new Intl.DateTimeFormat([], {month: 'short', day: 'numeric'}),
+        'weekday': new Intl.DateTimeFormat([], {weekday: 'short', month: 'short', day: 'numeric'}),
     };
     function humanDate(date, options={}) {
         if (!(date instanceof Date)) {

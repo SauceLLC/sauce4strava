@@ -595,21 +595,69 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.xAxes[0].time.tooltipFormat', 'll'); // XXX use func
             setDefault(config, 'options.scales.xAxes[0].distribution', 'series');
             setDefault(config, 'options.scales.xAxes[0].gridLines.display', false);
+            setDefault(config, 'options.scales.xAxes[0].afterBuildTicks', (element, ticks) => {
+                if (!ticks) {
+                    return;
+                }
+                const days = (element.max - element.min) / DAY;
+                const dates = ticks.map(x => new Date(x.value));
+                const years = new Set(dates.map(x => x.getFullYear()));
+                if (days < 32) {
+                    let markedYear;
+                    return dates.map((d, i) => {
+                        const value = ticks[i].value;
+                        if (years.size > 1 && !markedYear && d.getMonth() === 0) {
+                            markedYear = true;
+                            return {value, major: true, showYear: true};
+                        } else if (d.getDay() === 1) {
+                            return {value, major: true};
+                        } else {
+                            return {value, major: false};
+                        }
+                    });
+                } else {
+                    return dates.map((d, i) => {
+                        const value = ticks[i].value;
+                        const year = d.getFullYear();
+                        if (years.has(year)) {
+                            years.delete(year);
+                            return {value, major: true, showYear: true};
+                        } else {
+                            return {value, major: ticks[i].major};
+                        }
+                    });
+                }
+            });
             setDefault(config, 'options.scales.xAxes[0].ticks.maxTicksLimit', 16);
-            setDefault(config, 'options.scales.xAxes[0].ticks.callback', (label, index, ticks) => {
+            setDefault(config, 'options.scales.xAxes[0].ticks.callback', (_, index, ticks) => {
+                const days = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
                 const data = ticks[index];
                 const d = new Date(data.value);
-                //const span = ticks[ticks.length - 1].value - ticks[0].value;
-                //const format = span >= 200 * DAY ? 'MMM' : 'MMM Do';
-                return sauce.locale.human.date(d);
-                //return moment(d).format(format); // XXX need to figure out when to actually show year
-                /*
-                if (!d.getMonth()) {
-                    return moment(d).format(format) + '\n' + d.getFullYear();
+                if (days < 32) {
+                    return sauce.locale.human.date(d, {style: 'shortDay'});
                 } else {
-                    return moment(d).format(format);
+                    return sauce.locale.human.date(d, {style: 'monthDay'});
                 }
-                */
+            });
+            setDefault(config, 'options.scales.xAxes[0].ticks.major.enabled', true);
+            setDefault(config, 'options.scales.xAxes[0].ticks.major.fontStyle', 'bold');
+            setDefault(config, 'options.scales.xAxes[0].ticks.major.callback', (_, index, ticks) => {
+                const days = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
+                const data = ticks[index];
+                const d = new Date(data.value);
+                if (days < 32) {
+                    if (data.showYear) {
+                        return sauce.locale.human.date(d, {style: 'monthYear'});
+                    } else {
+                        return sauce.locale.human.date(d, {style: 'weekday'});
+                    }
+                } else {
+                    if (d.getMonth() === 0 || days > 800) {
+                        return sauce.locale.human.date(d, {style: 'monthYear'});
+                    } else {
+                        return sauce.locale.human.date(d, {style: 'month'});
+                    }
+                }
             });
 
             setDefault(config, 'options.scales.yAxes[0].type', 'linear');
