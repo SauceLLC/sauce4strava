@@ -688,10 +688,9 @@ sauce.ns('performance', async ns => {
                 ctx.dataset.tooltipFormat(value.y));
             setDefault(config, 'options.plugins.datalabels.backgroundColor',
                 ctx => ctx.dataset.backgroundColor);
-            setDefault(config, 'options.plugins.datalabels.borderRadius', 4);
+            setDefault(config, 'options.plugins.datalabels.borderRadius', 2);
             setDefault(config, 'options.plugins.datalabels.color', 'white');
-            setDefault(config, 'options.plugins.datalabels.padding', 5);
-            setDefault(config, 'options.plugins.datalabels.align', 'end');
+            setDefault(config, 'options.plugins.datalabels.padding', 4);
             setDefault(config, 'options.plugins.datalabels.anchor', 'center');
             super(ctx, config);
             this.view = view;
@@ -700,7 +699,7 @@ sauce.ns('performance', async ns => {
         onTooltipSummary(items) {
             const idx = items[0].index;
             const slot = this.options.useMetricData ? this.view.metricData[idx] : this.view.daily[idx];
-            if (!slot.activities.length) {
+            if (!slot.activities || !slot.activities.length) {
                 return '';
             }
             if (slot.activities.length === 1) {
@@ -1448,6 +1447,9 @@ sauce.ns('performance', async ns => {
                 borderColor: '#2c69b0f0',
                 fill: false,
                 pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 3 : 0,
+                datalabels: {
+                    align: 'left'
+                },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 data: this.daily.map((a, i) => ({
                     x: a.date,
@@ -1484,7 +1486,7 @@ sauce.ns('performance', async ns => {
                 underBackgroundMin: -50,
                 pointRadius: ctx => ctx.dataIndex === minTSBIndex ? 3 : 0,
                 datalabels: {
-                    align: 'start'
+                    align: 'right'
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 data: this.daily.map((a, i) => ({
