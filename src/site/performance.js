@@ -578,6 +578,7 @@ sauce.ns('performance', async ns => {
     class ActivityTimeRangeChart extends Chart {
         constructor(canvasSelector, view, config) {
             const ctx = document.querySelector(canvasSelector).getContext('2d');
+            let _this;
             config = config || {};
             setDefault(config, 'type', 'line');
             setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
@@ -588,86 +589,29 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.tooltipLineColor', '#07c');
             setDefault(config, 'options.animation.duration', 200);
             setDefault(config, 'options.legend.position', 'bottom');
-
             setDefault(config, 'options.scales.xAxes[0].id', 'days');
             setDefault(config, 'options.scales.xAxes[0].offset', true);
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
-            setDefault(config, 'options.scales.xAxes[0].time.tooltipFormat', 'll'); // XXX use func
             setDefault(config, 'options.scales.xAxes[0].distribution', 'series');
             setDefault(config, 'options.scales.xAxes[0].gridLines.display', true);
             setDefault(config, 'options.scales.xAxes[0].gridLines.drawOnChartArea', false);
-            setDefault(config, 'options.scales.xAxes[0].afterBuildTicks', (axis, ticks) => {
-                if (!ticks) {
-                    return;
-                }
-                const days = (axis.max - axis.min) / DAY;
-                const dates = ticks.map(x => new Date(x.value));
-                const years = new Set(dates.map(x => x.getFullYear()));
-                if (days < 32) {
-                    let markedYear;
-                    return dates.map((d, i) => {
-                        const value = ticks[i].value;
-                        if (years.size > 1 && !markedYear && d.getMonth() === 0) {
-                            markedYear = true;
-                            return {value, major: true, showYear: true};
-                        } else if (d.getDay() === 1) {
-                            return {value, major: true};
-                        } else {
-                            return {value, major: false};
-                        }
-                    });
-                } else {
-                    return dates.map((d, i) => {
-                        const value = ticks[i].value;
-                        const year = d.getFullYear();
-                        if (years.has(year)) {
-                            years.delete(year);
-                            return {value, major: true, showYear: true};
-                        } else {
-                            return {value, major: ticks[i].major};
-                        }
-                    });
-                }
-            });
-            setDefault(config, 'options.scales.xAxes[0].ticks.padding', 10);
-            setDefault(config, 'options.scales.xAxes[0].ticks.minRotation', 10);
-            setDefault(config, 'options.scales.xAxes[0].ticks.maxRotation', 40);
-            setDefault(config, 'options.scales.xAxes[0].ticks.maxTicksLimit', 16);
-            setDefault(config, 'options.scales.xAxes[0].ticks.callback', (_, index, ticks) => {
-                const days = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
-                const data = ticks[index];
-                const d = new Date(data.value);
-                if (days < 32) {
-                    return sauce.locale.human.date(d, {style: 'shortDay'});
-                } else {
-                    return sauce.locale.human.date(d, {style: 'shortDay'});
-                }
-            });
+            setDefault(config, 'options.scales.xAxes[0].afterUpdate', scale =>
+                _this && _this.afterUpdate(scale));
+            setDefault(config, 'options.scales.xAxes[0].afterBuildTicks', (axis, ticks) =>
+                _this && _this.afterBuildTicks(axis, ticks));
+            setDefault(config, 'options.scales.xAxes[0].ticks.sampleSize', 50);
+            setDefault(config, 'options.scales.xAxes[0].ticks.padding', 4);
+            setDefault(config, 'options.scales.xAxes[0].ticks.minRotation', 30);
+            setDefault(config, 'options.scales.xAxes[0].ticks.maxRotation', 50);
+            setDefault(config, 'options.scales.xAxes[0].ticks.autoSkipPadding', 20);
+            setDefault(config, 'options.scales.xAxes[0].ticks.callback', (_, index, ticks) =>
+                _this && _this.formatTickLabel(index, ticks));
             setDefault(config, 'options.scales.xAxes[0].ticks.major.enabled', true);
             setDefault(config, 'options.scales.xAxes[0].ticks.major.fontStyle', 'bold');
-            setDefault(config, 'options.scales.xAxes[0].ticks.major.callback', (_, index, ticks) => {
-                const days = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
-                const data = ticks[index];
-                const d = new Date(data.value);
-                if (days < 32) {
-                    if (data.showYear) {
-                        return sauce.locale.human.date(d, {style: 'monthYear'});
-                    } else {
-                        return sauce.locale.human.date(d, {style: 'weekday'});
-                    }
-                } else {
-                    if (d.getMonth() === 0 || days > 800) {
-                        return sauce.locale.human.date(d, {style: 'monthYear'});
-                    } else {
-                        return sauce.locale.human.date(d, {style: 'month'});
-                    }
-                }
-            });
-
+            setDefault(config, 'options.scales.xAxes[0].ticks.minor.fontSize', 11);
             setDefault(config, 'options.scales.yAxes[0].type', 'linear');
             setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
-
             setDefault(config, 'options.tooltips.position', 'sides');
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.callbacks.title', (item, data) => {
@@ -693,6 +637,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.plugins.datalabels.padding', 4);
             setDefault(config, 'options.plugins.datalabels.anchor', 'center');
             super(ctx, config);
+            _this = this;
             this.view = view;
         }
 
@@ -708,6 +653,72 @@ sauce.ns('performance', async ns => {
                 return `\n${slot.activities.length} activities - click for details`; // XXX Localize
             }
         }
+
+        formatTickLabel(index, ticks) {
+            const days = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
+            const data = ticks[index];
+            const d = new Date(data.value);
+            if (days < 370) {
+                if (data.showYear) {
+                    return [sauce.locale.human.date(d, {style: 'month'}) + ' ', d.getFullYear()];
+                } else if (data.showMonth) {
+                    return sauce.locale.human.date(d, {style: 'monthDay'});
+                } else {
+                    return sauce.locale.human.date(d, {style: 'shortDay'});
+                }
+            } else {
+                if (data.showYear) {
+                    return [sauce.locale.human.date(d, {style: 'month'}) + ' ', d.getFullYear()];
+                } else {
+                    return sauce.locale.human.date(d, {style: 'month'});
+                }
+            }
+        }
+
+        afterBuildTicks(axis, ticks) {
+            // This is used for doing fit calculations.  We don't actually use the label
+            // value as it will get filtered down after layout determines which ticks will
+            // fit and what step size to use.  However it's important to use the same basic
+            // formatting so the size constraints are correct.
+            if (!ticks) {
+                return;
+            }
+            this.updateTicksConfig(ticks);
+            for (const x of ticks) {
+                x.major = true;  // Use bold font for all sizing calcs, then correct with afterUpdate.
+            }
+            return ticks;
+        }
+
+        updateTicksConfig(ticks) {
+            let lastMonth;
+            let lastYear;
+            const spans = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
+            for (let i = 0; i < ticks.length; i++) {
+                const tick = ticks[i];
+                const d = new Date(tick.value);
+                const m = d.getMonth();
+                const y = d.getFullYear();
+                const showMonth = lastMonth != null && lastMonth != m;
+                const showYear = lastYear != null && lastYear != y;
+                lastMonth = m;
+                lastYear = y;
+                Object.assign(ticks[i], {
+                    showMonth,
+                    showYear,
+                    major: spans < 370 ? showMonth || showYear : showYear,
+                });
+                tick.label = this.formatTickLabel(i, ticks);
+            }
+            return ticks;
+        }
+
+        afterUpdate(scale) {
+            // This runs after all the scale/ticks work is done.  We need to finally
+            // patch up the final set of ticks with our desired label and major/minor
+            // state.  Major == bold.
+            this.updateTicksConfig(scale._ticksToDraw);
+        }
     }
 
 
@@ -717,7 +728,7 @@ sauce.ns('performance', async ns => {
                 'click a.collapser': 'onCollapserClick',
                 'click a.expander': 'onExpanderClick',
                 'click section.overview a.missing-tss': 'onMissingTSSClick',
-                'click section.results a[data-id]': 'onResultClick',
+                'click section.highlights a[data-id]': 'onHighlightClick',
                 'dblclick section > header': 'onDblClickHeader',
                 'change select[name="type"]': 'onTypeChange',
             };
@@ -880,7 +891,7 @@ sauce.ns('performance', async ns => {
             await this.setCollapsed(ev.currentTarget.closest('section'), false);
         }
 
-        async onResultClick(ev) {
+        async onHighlightClick(ev) {
             const activity = await sauce.hist.getActivity(Number(ev.currentTarget.dataset.id));
             this.pageView.trigger('select-activities', [activity]);
         }
