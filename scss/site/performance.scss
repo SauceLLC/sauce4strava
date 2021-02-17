@@ -11,34 +11,36 @@ $main-width: 600px;
 $aside-width: 280px;
 $scrollbar-safety: 25px;
 
-@include buttons.uniform;
 
 @media only screen and (min-width: 991px) {
     html.sauce-performance {
-        #global-header {
-            nav.nav-bar::before {
-                background-image: url(../../images/logo_vert_48x128.png);
-                background-repeat: no-repeat;
-                background-position: center;
-                background-size: contain;
-                transform: rotate(-22deg);
-                width: 25px;
-                content: '';
-                height: 65%;
-                display: block;
-                position: absolute;
-                top: 13%;
-                left: -17px;
-                filter: drop-shadow(2px 1px 3px #0003);
-                opacity: 0.82;
-                transition: opacity 200ms;
-            }
-            nav.nav-bar:hover::before {
-                opacity: 1;
-            }
+        header#global-header {
+            nav.nav-bar {
+                margin: 0 2.5vw 0 calc(2.5vw + 2em);
 
-            nav.nav-bar .branding {
                 &::before {
+                    background-image: url(../../images/logo_vert_48x128.png);
+                    background-repeat: no-repeat;
+                    background-position: center;
+                    background-size: contain;
+                    transform: rotate(-22deg);
+                    width: 25px;
+                    content: '';
+                    height: 65%;
+                    display: block;
+                    position: absolute;
+                    top: 13%;
+                    left: -25px;
+                    filter: drop-shadow(2px 1px 3px #0003);
+                    opacity: 0.82;
+                    transition: opacity 200ms;
+                }
+
+                &:hover::before {
+                    opacity: 1;
+                }
+
+                .branding::before {
                     content: 'SAUCE FOR...';
                     position: absolute;
                     top: 5px;
@@ -121,6 +123,8 @@ table.sauce-perf {
     line-height: initial;
     display: flex;
     flex-wrap: wrap;
+
+    @include buttons.uniform;
 
     select {
         appearance: none;
