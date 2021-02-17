@@ -3,8 +3,8 @@
 
 @mixin uniform {
     .btn {
-        transition-property: filter, background-color, color, box-shadow, opacity;
-        transition-duration: 100ms;
+        transition-property: filter, background-color, color, box-shadow, opacity, border-color;
+        transition-duration: 150ms;
 
         &:hover {
             filter: brightness(1.10);
@@ -15,10 +15,13 @@
         }
 
         &.btn-unstyled.btn-icon-only {
-            opacity: 0.8;
+            opacity: 0.75;
+            min-width: initial;
+            padding: 0.25em;
 
             &:hover {
                 opacity: 1;
+                filter: drop-shadow(1px 1px 2px #0003);
             }
 
             &:active {
@@ -26,16 +29,24 @@
             }
         }
 
-        &:not(.btn-unstyled) {
+
+        &:not(.btn-unstyled):not(.btn-primary):not(.btn-secondary) {
             background-color: color.get(bg);
-            border: 1px solid color.shade(fg, 30%, 0.3);
+            border: 1px solid color.shade(fg, 20%, 0.2);
 
             &:hover {
-                box-shadow: 0.04em 0.04em 0.1em color.shade(fg, 0%, 0.4);
+                border-color: transparent;
+            }
+        }
+
+        &:not(.btn-unstyled) {
+            &:hover {
+                box-shadow: 1px 1px 3px color.shade(fg, 0%, 0.5);
+                border-color: transparent;
             }
 
             &:active {
-                box-shadow: 0 0 0.2em color.shade(fg, 0%, 0.4) inset;
+                box-shadow: 0 0 4px color.shade(fg, 0%, 0.4) inset;
             }
         }
 

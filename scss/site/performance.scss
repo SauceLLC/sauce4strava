@@ -60,7 +60,7 @@ table.sauce-perf {
     width: 100%; // For firefox
 
     td, th {
-        padding: 0.4em 0.6em 0.4em 0.2em;
+        padding: 0.6em 0.6em 0.6em 0.2em;
         white-space: nowrap;
 
         &:first-child {
@@ -98,14 +98,6 @@ table.sauce-perf {
         }
     }
 }
-@media only screen and (max-width: 768px) {
-    table.sauce-perf {
-        td, th {
-            white-space: initial;
-        }
-    }
-}
-
 
 .sauce-edit-activities-dialog.ui-dialog {
     .ui-dialog-content {
@@ -134,18 +126,22 @@ table.sauce-perf {
         appearance: none;
         border-radius: 0.25em;
         padding: 0.3em 1.8em 0.3em 0.5em;
-        margin: 0.2em 0;
         background-image: url(../../images/fa/chevron-down-duotone.svg);
         background-position: right 0.6em center;
         background-repeat: no-repeat;
         background-size: auto 50%;
-        background-color: color.shade(bg, 5%);
-        border: 1px solid color.shade(fg, 20%, 0.2);
+        background-color: color.get(bg); // Match _button
+        border: 1px solid color.shade(fg, 20%, 0.2); // "
         outline: none;
+        transition-property: box-shadow, border-color, background-color;
+        transition-duration: 150ms;
+        cursor: pointer;
 
         &:hover {
-            border-color: color.shade(fg, 20%, 0.3);
-            background-color: color.shade(bg, 8%);
+            //border-color: color.shade(fg, 20%, 0.3);
+            //background-color: color.shade(bg, 8%);
+            box-shadow: 1px 1px 3px color.shade(fg, 0%, 0.5);
+            border-color: transparent;
         }
     }
 
@@ -298,9 +294,12 @@ table.sauce-perf {
             select {
                 flex: 1 1;
                 min-width: 0;
+                margin-top: 0.3em;
+                margin-right: 0.5em;
             }
 
             .sauce-sync-button {
+                margin-top: 0.3em;
                 flex: 0 0 auto;
                 @include sync.button;
             }
@@ -375,9 +374,15 @@ table.sauce-perf {
                     }
                 }
 
-                &.results i.icon {
-                    .fa-primary {
-                        color: #ffc100;
+                &.highlights {
+                    i.icon {
+                        .fa-primary {
+                            color: #ffc100;
+                        }
+                    }
+
+                    select {
+                        margin: 0.3em;
                     }
                 }
 
@@ -525,14 +530,17 @@ table.sauce-perf {
             padding: 1em;
 
             .window-controls,
-            .period {
+            .period-selector {
                 flex: 1 0 15%; // same basis keeps start-end in center.
+
+                select {
+                    margin-top: 0.3em;
+                }
             }
 
             .start-end {
                 display: flex;
                 align-items: center;
-                margin-bottom: 0.2em; // match select.
                 margin-left: 1em;
                 margin-right: 1em;
                 white-space: nowrap;
@@ -690,6 +698,34 @@ table.sauce-perf {
             .activity {
                 background-color: color.shade(fg, 2%);
             }
+        }
+    }
+}
+
+
+@media only screen and (max-width: 768px) {
+    table.sauce-perf {
+        td, th {
+            white-space: initial;
+        }
+    }
+
+    #sauce-performance > main > header.filters {
+        padding: 0 0 1em 0;
+        flex-wrap: wrap;
+
+        .period-selector {
+            flex: 1;
+        }
+
+        .start-end {
+            margin: 1em 0 0 0;
+            flex: 1;
+            justify-content: space-between;
+        }
+
+        .window-controls {
+            display: none;
         }
     }
 }
