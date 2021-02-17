@@ -33,18 +33,14 @@
     li.sauce-options-menu-item {
         a {
             color: color.shade(accent, 60%) !important;
-            background-image: linear-gradient(color.shade(accent, 10%),
-                                              color.shade(accent, 10%) 20%,
-                                              color.shade(accent, 0%));
+            background-color: color.shade(accent, 5%);
 
             &:hover {
-                background-image: linear-gradient(color.shade(accent, 5%),
-                                                  color.shade(accent, 5%) 20%,
-                                                  color.shade(accent, -5%));
+                background-color: color.shade(accent, 0%);
             }
 
             img {
-                height: 14px;
+                height: 12px;
                 transform: rotate(-50deg);
                 margin-left: 0.6em;
             }
