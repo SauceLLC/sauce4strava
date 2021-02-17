@@ -547,10 +547,15 @@ table.sauce-perf {
                 align-items: center;
                 margin-left: 1em;
                 margin-right: 1em;
+                white-space: nowrap;
 
                 .btn.prev,
                 .btn.next {
                     padding: 0.4em 1em; // Insane fix for chrome border rendering bug
+
+                    &.invisible {
+                        visibility: hidden;
+                    }
                 }
 
                 .btn.prev {
@@ -726,7 +731,7 @@ table.sauce-perf {
         flex-wrap: wrap;
 
         .period-selector {
-            flex: 1;
+            flex: 1 0 100%;
         }
 
         .start-end {

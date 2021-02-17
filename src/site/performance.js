@@ -1444,7 +1444,7 @@ sauce.ns('performance', async ns => {
             const $end = this.$('header span.period.end');
             $start.text(sauce.locale.human.date(start));
             const isEnd = end >= this.periodEndMax;
-            this.$('.btn.period.next').toggleClass('hidden', isEnd);
+            this.$('.btn.period.next').toggleClass('invisible', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
                 sauce.locale.human.date(end));
