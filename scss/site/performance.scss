@@ -548,6 +548,11 @@ table.sauce-perf {
                 margin-left: 1em;
                 margin-right: 1em;
 
+                .btn.prev,
+                .btn.next {
+                    padding: 0.4em 1em; // Insane fix for chrome border rendering bug
+                }
+
                 .btn.prev {
                     margin-right: 1em;
                 }
