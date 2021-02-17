@@ -27,14 +27,14 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             // can do the right thing with it.  It needs to exist early so initial
             // routes can set classes on this element.
             const pageNav = document.querySelector('#pagenav');
+            const overview = pageNav && pageNav.querySelector('[data-menu="overview"]');
             // Some indoor workouts for non-premium members don't have pageNav (ie. peleton)
-            if (pageNav) {
+            if (overview) {
                 const li = document.createElement('li');
                 li.style.display = 'none';
                 li.classList.add('sauce-stub');
                 li.innerHTML = `<a data-menu="analysis"></a>`;
-                const overview = pageNav.querySelector('[data-menu="overview"]').closest('li');
-                pageNav.insertBefore(li, overview.nextSibling);
+                pageNav.insertBefore(li, overview.closest('li').nextSibling);
             }
         }
         const activity = view.activity();
