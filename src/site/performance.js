@@ -717,7 +717,9 @@ sauce.ns('performance', async ns => {
             // This runs after all the scale/ticks work is done.  We need to finally
             // patch up the final set of ticks with our desired label and major/minor
             // state.  Major == bold.
-            this.updateTicksConfig(scale._ticksToDraw);
+            if (scale._ticksToDraw.length) {
+                this.updateTicksConfig(scale._ticksToDraw);
+            }
         }
     }
 

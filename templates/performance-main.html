@@ -13,11 +13,11 @@
 
     <div class="start-end">
         <div class="btn btn-sm prev period">{-await fa('angle-double-left-solid')-}</div>
-        <b>
+        <div class="dates">
             <span class="start period"></span>
             <div style="pointer-events: none; opacity: 0.5; font-size: 0.8em;" class="btn btn-unstyled btn-icon-only btn-sm">{-await fa('arrow-alt-right-duotone')-}</div>
             <span class="end period"></span>
-        </b>
+        </div>
         <div class="btn btn-sm next period">{-await fa('angle-double-right-solid')-}</div>
     </div>
 
@@ -28,6 +28,11 @@
 </header>
 
 <section class="sauce-panels">
+    <div class="sauce-panel">
+        <header class="title">Peak Performances</header> <!-- XXX localize -->
+        <div class="sauce-panel-content peaks-view loading-mask loading"></div>
+    </div>
+
     <div class="sauce-panel training">
         <header class="title">
             Training Load - Fitness, Fatigue and Form <!-- XXX localize -->
@@ -58,10 +63,5 @@
         <div class="sauce-panel-content chart">
             <canvas id="elevation"/>
         </div>
-    </div>
-
-    <div class="sauce-panel">
-        <header class="title">Peak Performances</header> <!-- XXX localize -->
-        <div class="sauce-panel-content peaks-view loading-mask loading"></div>
     </div>
 </section>

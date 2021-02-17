@@ -547,7 +547,6 @@ table.sauce-perf {
                 align-items: center;
                 margin-left: 1em;
                 margin-right: 1em;
-                white-space: nowrap;
 
                 .btn.prev {
                     margin-right: 1em;
@@ -557,9 +556,12 @@ table.sauce-perf {
                     margin-left: 1em;
                 }
 
-                span.period {
-                    margin: 0 0.3em;
-                    text-transform: capitalize;
+                .dates {
+                    span.period {
+                        font-weight: bold;
+                        margin: 0 0.3em;
+                        text-transform: capitalize;
+                    }
                 }
             }
 
