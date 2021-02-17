@@ -1440,8 +1440,8 @@ sauce.ns('performance', async ns => {
                 daily: this.daily,
                 metricData: this.metricData,
             });
-            const $start = this.$('header span.period.start');
-            const $end = this.$('header span.period.end');
+            const $start = this.$('header .period.start');
+            const $end = this.$('header .period.end');
             $start.text(sauce.locale.human.date(start));
             const isEnd = end >= this.periodEndMax;
             this.$('.btn.period.next').toggleClass('invisible', isEnd);
