@@ -2877,6 +2877,9 @@ sauce.ns('analysis', ns => {
         if (athleteData) {
             ns.sauceAthlete = new SauceAthlete(athleteData);
             ns.sauceActivity = await sauce.hist.getActivity(activity.id);
+            if (!ns.sauceActivity && ns.sauceAthlete.sync) {
+                setTimeout(() => sauce.hist.syncAthlete(ns.sauceAthlete.id).catch(sauce.report.error), 2000);
+            }
         }
         await Promise.all([
             sauce.locale.init(),
