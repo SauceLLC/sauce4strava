@@ -166,6 +166,7 @@ sauce.ns('performance', async ns => {
         const tss = sauce.model.getActivityTSS(activity);
         const $modal = await sauce.modal({
             title: 'Edit Activity', // XXX localize
+            width: '28em',
             icon: await sauce.images.asText('fa/edit-duotone.svg'),
             body: `
                 <b>${activity.name}</b><hr/>
@@ -209,6 +210,20 @@ sauce.ns('performance', async ns => {
                     ev.currentTarget.classList.add('sauce-loading');
                     try {
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'streams');
+                        await pageView.render();
+                    } finally {
+                        ev.currentTarget.classList.remove('sauce-loading');
+                        ev.currentTarget.disabled = false;
+                    }
+                }
+            }, {
+                text: 'Delete', // XXX localize
+                class: 'btn btn-secondary',
+                click: async ev => {
+                    ev.currentTarget.disabled = true;
+                    ev.currentTarget.classList.add('sauce-loading');
+                    try {
+                        await sauce.hist.deleteActivity(activity.id);
                         await pageView.render();
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');

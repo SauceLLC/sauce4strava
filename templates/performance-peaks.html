@@ -70,7 +70,7 @@
         </thead>
         <tbody>
             <% let i = 1; %>
-            <% for (const x of peaks) { %>
+            <% for (const x of peaks.filter(x => x.activity)) { %>
                 <tr data-id="{{x.activity.id}}">
                     <td>{{humanNumber(i++)}}</td>
                     <td>{{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr></td>
