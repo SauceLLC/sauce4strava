@@ -92,7 +92,7 @@ sauce.ns('sync', ns => {
             'sync_control_panel');
         const initiallyEnabled = !!athlete.sync;
         const $modal = sauce.modal({
-            title: `Activity Sync Control Panel - ${athlete.name}`,
+            title: `Activity Sync - ${athlete.name}`,
             icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
             dialogClass: 'sauce-sync-athlete-dialog',
             body: await tpl({
