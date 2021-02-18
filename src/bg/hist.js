@@ -651,6 +651,14 @@ sauce.ns('hist', async ns => {
     sauce.proxy.export(updateActivities, {namespace});
 
 
+    async function deleteActivity(id) {
+        await actsStore.delete(id);
+        await streamsStore.delete(id, {index: 'activity'});
+        await peaksStore.delete(id, {index: 'activity'});
+    }
+    sauce.proxy.export(deleteActivity, {namespace});
+
+
     async function enableAthlete(id) {
         return await ns.syncManager.enableAthlete(id);
     }
@@ -757,7 +765,7 @@ sauce.ns('hist', async ns => {
         }
         return {
             missingStreamsFor,
-            haveStreamsFor: Array.from(haveStreamsFor),
+            deteachedStreamsFor: Array.from(haveStreamsFor),
             inFalseErrorState
         };
     }
@@ -1736,5 +1744,6 @@ sauce.ns('hist', async ns => {
         disableAthlete,
         updateAthlete,
         updateActivity,
+        deleteActivity,
     };
 }, {hasAsyncExports: true});

@@ -54,33 +54,7 @@ sauce.ns('hist.db', ns => {
                     next();
                 }
             },
-            // Versions 6 -> 16 were deprecated in dev.
-            {
-                version: 17,
-                migrate: (idb, t, next) => {
-                    const store = t.objectStore("activities");
-                    // XXX dev clients only, remove later.
-                    if ((new Set(store.indexNames)).has('sync_lookup')) {
-                        store.deleteIndex('sync_lookup');
-                        const curReq = store.openCursor();
-                        curReq.onsuccess = ev => {
-                            const c = ev.target.result;
-                            if (!c) {
-                                next();
-                                return;
-                            }
-                            if (c.value._syncLookup) {
-                                delete c.value._syncLookup;
-                                c.update(c.value);
-                            }
-                            c.continue();
-                        };
-                    } else {
-                        next();
-                    }
-                }
-            },
-            // Version 18 -> 25 were deprecated in dev.
+            // Versions 6 -> 25 were deprecated in dev.
             {
                 version: 26,
                 migrate: (idb, t, next) => {
@@ -93,6 +67,13 @@ sauce.ns('hist.db', ns => {
                     store.createIndex('type-period-value', ['type', 'period', 'value']);
                     store.createIndex('athlete-activitytype-type-period-value', ['athlete', 'activityType', 'type', 'period', 'value']);
                     store.createIndex('activitytype-type-period-value', ['activityType', 'type', 'period', 'value']);
+                    next();
+                }
+            }, {
+                version: 27,
+                migrate: (idb, t, next) => {
+                    const store = t.objectStore("peaks");
+                    store.createIndex('athlete', 'athlete');
                     next();
                 }
             }];
@@ -184,6 +165,14 @@ sauce.ns('hist.db', ns => {
                 return x => x.value.ts >= start;
             } else if (end) {
                 return x => x.value.ts <= start;
+            }
+        }
+
+        async *byAthlete(athlete, options={}) {
+            const q = IDBKeyRange.only(athlete);
+            const iter = options.keys ? this.keys : this.values;
+            for await (const x of iter.call(this, q, {index: 'athlete', ...options})) {
+                yield x;
             }
         }
 
