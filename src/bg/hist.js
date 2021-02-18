@@ -563,8 +563,8 @@ sauce.ns('hist', async ns => {
 
 
     async function addAthlete({id, ...data}) {
-        if (!id || !data.gender || !data.name) {
-            throw new TypeError('id, gender and name values are required');
+        if (!id || !data.name) {
+            throw new TypeError('id and name values are required');
         }
         const athlete = await athletesStore.get(id, {model: true});
         if (!data.ftpHistory && (!athlete || !athlete.get('ftpHistory'))) {
