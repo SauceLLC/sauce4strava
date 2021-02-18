@@ -351,39 +351,6 @@ sauce.ns('performance', async ns => {
     }
 
 
-    async function getSeedTrainingLoad(activity) {
-        let oldestActivityID = activity.id;
-        let atl = 0;
-        let ctl = 0;
-        while (true) {
-            const seed = (await sauce.hist.getActivitySiblings(oldestActivityID,
-                {direction: 'prev', limit: 1}))[0];
-            if (!seed) {
-                break;
-            }
-            if (!seed.training) {
-                // Keep scanning backwards until we find an activity with legit training data.
-                // This could be a workout without streams, or otherwise has errors.
-                oldestActivityID = seed.id;
-                continue;
-            }
-            atl = seed.training.atl || 0;
-            ctl = seed.training.ctl || 0;
-            // Drain inactive days between the seed and the activity...
-            const seedDay = sauce.date.toLocaleDayDate(seed.ts);
-            const firstDay = sauce.date.toLocaleDayDate(activity.ts);
-            const zeros = [...sauce.date.dayRange(seedDay, firstDay)].map(() => 0);
-            zeros.pop();  // Exclude seed day.
-            if (zeros.length) {
-                atl = sauce.perf.calcATL(zeros, atl);
-                ctl = sauce.perf.calcCTL(zeros, ctl);
-            }
-            break;
-        }
-        return {atl, ctl};
-    }
-
-
     class ChartVisibilityPlugin {
         constructor(config, view) {
             const _this = this;
@@ -774,8 +741,11 @@ sauce.ns('performance', async ns => {
             await super.init();
         }
 
-        async renderAttrs() {
-            const peaks = [];
+        async findPeaks() {
+            const [start, end] = [this.periodStart, this.periodEnd];
+            if (start == null || end == null) {
+                return [];
+            }
             const direction = getPeaksSortDirection(this.type);
             let periods;
             let keyFormatter;
@@ -787,19 +757,18 @@ sauce.ns('performance', async ns => {
                 periods = [5, 60, 300, 1200, 3600];
                 keyFormatter = sauce.locale.human.duration;
             }
-            const start = this.periodStart;
-            const end = this.periodEnd;
-            const peaksData = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type,
-                periods, {direction, limit: 1, start, end});
             const valueFormatter = getPeaksValueFormatter(this.type);
-            for (const x of peaksData) {
-                peaks.push({
-                    key: keyFormatter(x.period),
-                    prettyValue: valueFormatter(x.value),
-                    unit: getPeaksUnit(this.type),
-                    activity: x.activity,
-                });
-            }
+            const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, periods,
+                {direction, limit: 1, start, end});
+            return peaks.map(x => ({
+                key: keyFormatter(x.period),
+                prettyValue: valueFormatter(x.value),
+                unit: getPeaksUnit(this.type),
+                activity: x.activity,
+            }));
+        }
+
+        async renderAttrs() {
             return {
                 athlete: this.athlete,
                 collapsed: this.collapsed,
@@ -812,7 +781,7 @@ sauce.ns('performance', async ns => {
                 weeklyTime: sauce.data.avg(this.weekly.map(x => x.duration)),
                 totalTime: sauce.data.sum(this.daily.map(x => x.duration)),
                 missingTSS: this.missingTSS,
-                peaks,
+                peaks: await this.findPeaks(),
             };
         }
 
@@ -1186,7 +1155,7 @@ sauce.ns('performance', async ns => {
             this.periodStart = null;
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
-            this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
+            this.listenTo(pageView, 'before-update-period', this.onBeforeUpdatePeriod);
             this.listenTo(pageView, 'change-athlete', this.setAthlete);
             const savedPrefs = await sauce.storage.getPref('peaksView') || {};
             this.prefs = {
@@ -1262,7 +1231,7 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onUpdatePeriod({start, end}) {
+        async onBeforeUpdatePeriod({start, end}) {
             this.periodStart = start;
             this.periodEnd = end;
             await this.render();
@@ -1480,11 +1449,13 @@ sauce.ns('performance', async ns => {
         async update() {
             const start = this.periodStart;
             const end = this.periodEnd;
-            const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id, {start, end});
+            this.pageView.trigger('before-update-period', {start, end});
+            const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
+                {start, end, includeTrainingLoadSeed: true});
             let atl = 0;
             let ctl = 0;
             if (activities.length) {
-                ({atl, ctl} = await getSeedTrainingLoad(activities[0]));
+                ({atl, ctl} = activities[0].trainingLoadSeed);
             }
             this.daily = activitiesByDay(activities, start, end, atl, ctl);
             this.metric = this.period > 240 ? 'months' : this.period > 60 ? 'weeks' : 'days';
@@ -1625,7 +1596,6 @@ sauce.ns('performance', async ns => {
                 data: gains,
             }];
             this.charts.elevation.update();
-
         }
 
         async onExpandClick(ev) {

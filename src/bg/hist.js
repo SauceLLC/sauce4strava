@@ -609,7 +609,38 @@ sauce.ns('hist', async ns => {
 
 
     async function getActivitiesForAthlete(athleteId, options={}) {
-        if (options.limit) {
+        if (options.includeTrainingLoadSeed) {
+            const activities = [];
+            const start = options.start;
+            const startDay = sauce.date.toLocaleDayDate(start);
+            let atl = 0;
+            let ctl = 0;
+            for await (const a of actsStore.byAthlete(athleteId,
+                {...options, direction: 'prev', start: undefined})) {
+                if (a.ts > start) {
+                    activities.push(a);
+                } else if (a.ts < startDay && a.training) {
+                    const seedDay = sauce.date.toLocaleDayDate(a.ts);
+                    const zeros = [...sauce.date.dayRange(seedDay, startDay)].map(() => 0);
+                    zeros.pop();  // Exclude seed day.
+                    atl = a.training.atl || 0;
+                    ctl = a.training.ctl || 0;
+                    if (zeros.length) {
+                        atl = sauce.perf.calcATL(zeros, atl);
+                        ctl = sauce.perf.calcCTL(zeros, ctl);
+                    }
+                    break;
+                }
+            }
+            if (activities.length) {
+                activities[activities.length - 1].trainingLoadSeed = {
+                    atl,
+                    ctl,
+                };
+                activities.reverse();
+            }
+            return activities;
+        } else if (options.limit) {
             const activities = [];
             for await (const a of actsStore.byAthlete(athleteId, options)) {
                 activities.push(a);

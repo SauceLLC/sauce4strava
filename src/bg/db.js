@@ -76,6 +76,16 @@ sauce.ns('hist.db', ns => {
                     store.createIndex('athlete', 'athlete');
                     next();
                 }
+            }, {
+                version: 28,
+                migrate: (idb, t, next) => {
+                    const store = t.objectStore("peaks");
+                    store.deleteIndex('athlete-activitytype-type-period-value');
+                    store.deleteIndex('activitytype-type-period-value');
+                    store.createIndex('athlete-type-period-ts', ['athlete', 'type', 'period', 'ts']);
+                    store.createIndex('type-period-ts', ['type', 'period', 'ts']);
+                    next();
+                }
             }];
         }
     }
@@ -176,7 +186,7 @@ sauce.ns('hist.db', ns => {
             }
         }
 
-        async getForAthlete(athleteId, type, period, options={}) {
+        async getForAthleteOrig(athleteId, type, period, options={}) {
             const peaks = [];
             const filter = this.makeTimeFilter(options);
             period = period && Math.round(period);
@@ -190,7 +200,25 @@ sauce.ns('hist.db', ns => {
             return peaks;
         }
 
-        async getFor(type, period, options={}) {
+        async getForAthlete(athleteId, type, period, options={}) {
+            period = period && Math.round(period);
+            const q = IDBKeyRange.bound(
+                [athleteId, type, period, options.start || -Infinity],
+                [athleteId, type, period, options.end || Infinity]);
+            const peaks = await this.getAll(q, {
+                index: 'athlete-type-period-ts',
+                ...options,
+                limit: undefined
+            });
+            if (options.direction === 'prev') {
+                peaks.sort((a, b) => b.value - a.value);
+            } else {
+                peaks.sort((a, b) => a.value - b.value);
+            }
+            return options.limit ? peaks.slice(0, options.limit) : peaks;
+        }
+
+        async getForOrig(type, period, options={}) {
             const peaks = [];
             const filter = this.makeTimeFilter(options);
             period = period && Math.round(period);
@@ -202,17 +230,26 @@ sauce.ns('hist.db', ns => {
             return peaks;
         }
 
-        async deleteForActivity(activityId) {
-            return await this.delete(activityId, {index: 'activity'});
+        async getFor(type, period, options={}) {
+            period = period && Math.round(period);
+            const q = IDBKeyRange.bound(
+                [type, period, options.start || -Infinity],
+                [type, period, options.end || Infinity]);
+            const peaks = await this.getAll(q, {
+                index: 'type-period-ts',
+                ...options,
+                limit: undefined
+            });
+            if (options.direction === 'prev') {
+                peaks.sort((a, b) => b.value - a.value);
+            } else {
+                peaks.sort((a, b) => a.value - b.value);
+            }
+            return options.limit ? peaks.slice(0, options.limit) : peaks;
         }
 
-        // XXX
-        async list(...args) {
-            const data = [];
-            for await (const x of this.values(...args)) {
-                data.push(x);
-            }
-            return data;
+        async deleteForActivity(activityId) {
+            return await this.delete(activityId, {index: 'activity'});
         }
     }
 
