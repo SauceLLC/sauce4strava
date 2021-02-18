@@ -531,7 +531,7 @@ sauce.ns('hist', async ns => {
 
     async function getPeaksForAthlete(athleteId, type, periods, options={}) {
         periods = Array.isArray(periods) ? periods : [periods];
-        return _aggregatePeaks(periods.map(x =>
+        return await _aggregatePeaks(periods.map(x =>
             peaksStore.getForAthlete(athleteId, type, x, options)), options);
     }
     sauce.proxy.export(getPeaksForAthlete, {namespace});
@@ -539,7 +539,7 @@ sauce.ns('hist', async ns => {
 
     async function getPeaksFor(type, periods, options={}) {
         periods = Array.isArray(periods) ? periods : [periods];
-        return _aggregatePeaks(periods.map(x =>
+        return await _aggregatePeaks(periods.map(x =>
             peaksStore.getFor(type, x, options)), options);
     }
     sauce.proxy.export(getPeaksFor, {namespace});
