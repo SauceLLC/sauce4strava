@@ -72,7 +72,9 @@
             </div>
         <% } %>
 
-        <div class="btn btn-sm btn-secondary load-more older"
-             title="Show previous activity">{-await fa('ellipsis-h-light')-}</div>
+        <% if (hasOlder) { %>
+            <div class="btn btn-sm btn-secondary load-more older"
+                 title="Show previous activity">{-await fa('ellipsis-h-light')-}</div>
+        <% } %>
     <% } %>
 </section>

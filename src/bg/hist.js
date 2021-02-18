@@ -501,7 +501,7 @@ sauce.ns('hist', async ns => {
         const sentinel = await athlete.get('activitySentinel');
         if (!sentinel) {
             // We never finished a prior sync so find where we left off..
-            const last = await actsStore.oldestForAthlete(athlete.pk);
+            const last = await actsStore.getOldestForAthlete(athlete.pk);
             await batchImport(new Date(last.ts));
         }
     }
@@ -620,6 +620,18 @@ sauce.ns('hist', async ns => {
         }
     }
     sauce.proxy.export(getActivitiesForAthlete, {namespace});
+
+
+    async function getLatestActivityForAthlete(athleteId, options) {
+        return await actsStore.getLatestForAthlete(athleteId, options);
+    }
+    sauce.proxy.export(getLatestActivityForAthlete, {namespace});
+
+
+    async function getOldestActivityForAthlete(athleteId, options) {
+        return await actsStore.getOldestForAthlete(athleteId, options);
+    }
+    sauce.proxy.export(getOldestActivityForAthlete, {namespace});
 
 
     async function getActivitySiblings(activityId, options={}) {

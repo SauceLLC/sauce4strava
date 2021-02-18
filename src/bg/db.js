@@ -292,16 +292,14 @@ sauce.ns('hist.db', ns => {
             await this.saveModels(activities);
         }
 
-        async oldestForAthlete(athlete) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const x of this.values(q, {index: 'athlete-ts'})) {
+        async getOldestForAthlete(athlete, options={}) {
+            for await (const x of this.byAthlete(athlete, options)) {
                 return x;
             }
         }
 
-        async latestForAthlete(athlete) {
-            const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
-            for await (const x of this.values(q, {index: 'athlete-ts', direction: 'prev'})) {
+        async getLatestForAthlete(athlete, options={}) {
+            for await (const x of this.byAthlete(athlete, {direction: 'prev', ...options})) {
                 return x;
             }
         }

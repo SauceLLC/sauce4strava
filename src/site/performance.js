@@ -954,12 +954,84 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.listenTo(pageView, 'change-athlete', async () => {
-                this.activities = null;
-                await this.render();
-            });
+            this.onSyncActive = this._onSyncActive.bind(this);
+            this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'select-activities', this.setActivities);
+            await this.setAthlete(pageView.athlete);
             await super.init();
+        }
+
+        setElement(el, ...args) {
+            const r = super.setElement(el, ...args);
+            sauce.storage.getPref('perfDetailsAsideVisible').then(vis =>
+                this.setExpanded(vis, {noSave: true}));
+            return r;
+        }
+
+        async refreshLatestAndOldest() {
+            const id = this.pageView.athlete && this.pageView.athlete.id;
+            if (!id) {
+                return;
+            }
+            const [wasLatest, wasOldest] = [this.latests, this.oldest];
+            [this.latest, this.oldest] = await Promise.all([
+                sauce.hist.getLatestActivityForAthlete(id).then(a => a && a.ts),
+                sauce.hist.getOldestActivityForAthlete(id).then(a => a && a.ts),
+            ]);
+            return wasLatest !== this.latest || wasOldest !== this.oldest;
+        }
+
+        async renderAttrs() {
+            let hasNewer;
+            let hasOlder;
+            if (this.activities && this.activities.length && this.latest) {
+                const ourLatest = this.activities[0].ts;
+                const ourOldest = this.activities[this.activities.length - 1].ts;
+                hasNewer = ourLatest < this.latest;
+                hasOlder = ourOldest > this.oldest;
+            }
+            return {
+                activities: this.activities,
+                hasNewer,
+                hasOlder,
+            };
+        }
+
+        async onChangeAthlete(athlete) {
+            await this.setAthlete(athlete);
+            await this.render();
+        }
+
+        async setAthlete(athlete) {
+            const id = athlete && athlete.id;
+            if (this.syncController) {
+                this.syncController.removeEventListener('active', this.onSyncActive);
+            }
+            if (id) {
+                this.syncController = getSyncController(id);
+                this.syncController.addEventListener('active', this.onSyncActive);
+            } else {
+                this.syncController = null;
+            }
+            this.activities = null;
+            await this.refreshLatestAndOldest();
+        }
+
+        async _onSyncActive(ev) {
+            const active = ev.data;
+            if (active === false) {
+                if (await this.refreshLatestAndOldest()) {
+                    await this.render();
+                }
+            }
+        }
+
+        async setExpanded(en, options={}) {
+            const visible = en !== false;
+            this.$el.toggleClass('expanded', visible);
+            if (!options.noSave) {
+                await sauce.storage.setPref('perfDetailsAsideVisible', visible);
+            }
         }
 
         async setActivities(activities, options={}) {
@@ -975,28 +1047,6 @@ sauce.ns('performance', async ns => {
                     this.$el.one('transitionend', () =>
                         this.el.scrollIntoView({behavior: 'smooth'}));
                 }
-            }
-        }
-
-        setElement(el, ...args) {
-            const r = super.setElement(el, ...args);
-            sauce.storage.getPref('perfDetailsAsideVisible').then(vis =>
-                this.setExpanded(vis, {noSave: true}));
-            return r;
-        }
-
-        async renderAttrs() {
-            return {
-                activities: this.activities,
-                hasNewer: this.pageView.mainView.periodEnd < this.pageView.mainView.periodEndMax,
-            };
-        }
-
-        async setExpanded(en, options={}) {
-            const visible = en !== false;
-            this.$el.toggleClass('expanded', visible);
-            if (!options.noSave) {
-                await sauce.storage.setPref('perfDetailsAsideVisible', visible);
             }
         }
 
