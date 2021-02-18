@@ -55,7 +55,7 @@
         ]
     }, {
         name: 'Profile',
-        pathMatch: /^\/(athletes|pros)\/.*/,
+        pathMatch: /^\/(athletes|pros)\/[0-9]+\/?$/,
         stylesheets: ['site/profile.css'],
         scripts: [
             'site/proxy.js',
