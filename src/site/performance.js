@@ -1441,6 +1441,7 @@ sauce.ns('performance', async ns => {
                             gridLines: {display: false},
                             scaleLabel: {labelString: 'Duration'}, // XXX localize
                             ticks: {
+                                min: 0,
                                 suggestedMax: 5 * 3600,
                                 stepSize: 3600,
                                 maxTicksLimit: 7,
