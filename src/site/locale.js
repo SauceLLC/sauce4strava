@@ -310,14 +310,17 @@ sauce.ns('locale', ns => {
         }),
     };
     function humanDateTime(date, options={}) {
+        assertInit();
         if (!(date instanceof Date)) {
             date = new Date(date);
         }
         const now = new Date();
-        if (now.getDay() === date.getDay() &&
+        if (now.getDate() === date.getDate() &&
             now.getMonth() === date.getMonth() &&
             now.getFullYear() === date.getFullYear()) {
-            return humanTime(date, {...options, style: 'default'});
+            const today = hdUnits.today;
+            const Today = today.substr(0, 1).toLocaleUpperCase() + today.substr(1);
+            return [Today, humanTime(date, {...options, style: 'default'})].join(', ');
         }
         const style = options.style || 'default';
         return _intlDateTimeFormats[style].format(date);
