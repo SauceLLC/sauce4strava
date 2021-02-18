@@ -167,9 +167,9 @@ table.sauce-perf {
             opacity: 0;
         }
         &::before {
-            width: 4em;
-            top: calc(50% - 2em);
-            left: calc(50% - 2em);
+            width: 3em;
+            top: calc(50% - 1.5em);
+            left: calc(50% - 1.5em);
             line-height: 0;
             content: url(../../images/fa/spinner-third-duotone.svg);
         }
@@ -192,7 +192,7 @@ table.sauce-perf {
                 pointer-events: initial;
             }
             &::before {
-                animation: rotation 3s infinite steps(30 * 3);
+                animation: rotation 3s infinite steps(24 * 3);
                 z-index: 3;
             }
         }
@@ -624,8 +624,8 @@ table.sauce-perf {
                 flex-direction: column;
 
                 &.chart {
-                    min-height: 18em;
-                    height: 30vh;
+                    min-height: 14em;
+                    height: 33vh;
                     max-height: 24em;
                 }
             }
