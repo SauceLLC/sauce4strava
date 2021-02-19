@@ -327,9 +327,9 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanDistance(meters, precision) {
+    function humanDistance(meters, precision=1) {
         assertInit();
-        return ns.distanceFormatter.format(meters, precision || 2);
+        return ns.distanceFormatter.format(meters, precision);
     }
 
 

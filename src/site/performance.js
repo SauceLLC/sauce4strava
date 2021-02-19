@@ -251,14 +251,16 @@ sauce.ns('performance', async ns => {
             let tss = 0;
             let duration = 0;
             let altGain = 0;
+            let distance = 0;
             const ts = date.getTime();
             const daily = [];
             while (i < acts.length && sauce.date.toLocaleDayDate(acts[i].ts).getTime() === ts) {
                 const a = acts[i++];
                 daily.push(a);
                 tss += sauce.model.getActivityTSS(a) || 0;
-                duration += a.stats && sauce.model.getActivityActiveTime(a) || 0;
+                duration += a.stats && a.stats.activeTime || 0;
                 altGain += a.stats && a.stats.altitudeGain || 0;
+                distance += a.stats && a.stats.distance || 0;
             }
             atl = sauce.perf.calcATL([tss], atl);
             ctl = sauce.perf.calcCTL([tss], ctl);
@@ -270,6 +272,7 @@ sauce.ns('performance', async ns => {
                 atl,
                 ctl,
                 altGain,
+                distance,
             });
         }
         if (i !== acts.length) {
@@ -299,6 +302,7 @@ sauce.ns('performance', async ns => {
                     tssSum: slot.tss,
                     duration: slot.duration,
                     altGain: slot.altGain,
+                    distance: slot.distance,
                     days: 1,
                     activities: [...slot.activities],
                 };
@@ -307,6 +311,7 @@ sauce.ns('performance', async ns => {
                 entry.tssSum += slot.tss;
                 entry.duration += slot.duration;
                 entry.altGain += slot.altGain;
+                entry.distance += slot.distance;
                 entry.days++;
                 entry.activities.push(...slot.activities);
             }
@@ -603,7 +608,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.tooltips.callbacks.label', (item, data) => {
                 const ds = data.datasets[item.datasetIndex];
                 const label = ds.label || '';
-                const val = ds.tooltipFormat ? ds.tooltipFormat(item.value, ds, this) : item.value;
+                const val = ds.tooltipFormat ? ds.tooltipFormat(Number(item.value), ds, this) : item.value;
                 return `${label}: ${val}`;
             });
             setDefault(config, 'options.tooltips.callbacks.footer',
@@ -779,7 +784,9 @@ sauce.ns('performance', async ns => {
                 maxCTL: sauce.data.max(this.daily.map(x => x.ctl)),
                 minTSB: sauce.data.min(this.daily.map(x => x.ctl - x.atl)),
                 weeklyTime: sauce.data.avg(this.weekly.map(x => x.duration)),
+                weeklyDistance: sauce.data.avg(this.weekly.map(x => x.distance)),
                 totalTime: sauce.data.sum(this.daily.map(x => x.duration)),
+                totalDistance: sauce.data.sum(this.daily.map(x => x.distance)),
                 missingTSS: this.missingTSS,
                 peaks: await this.findPeaks(),
             };
@@ -963,6 +970,7 @@ sauce.ns('performance', async ns => {
                 activities: this.activities,
                 hasNewer,
                 hasOlder,
+                debug: !!location.search.match(/debug/),
             };
         }
 
@@ -1414,7 +1422,7 @@ sauce.ns('performance', async ns => {
                                 suggestedMax: 5 * 3600,
                                 stepSize: 3600,
                                 maxTicksLimit: 7,
-                                callback: v => sauce.locale.human.duration(v, {maxPeriod: 3600})
+                                callback: v => sauce.locale.human.duration(v, {maxPeriod: 3600}),
                             }
                         }]
                     },
@@ -1434,6 +1442,16 @@ sauce.ns('performance', async ns => {
                                 maxTicksLimit: 8,
                                 stepSize,
                                 callback: v => sauce.locale.human.elevation(v, {suffix: true}),
+                            },
+                        }, {
+                            id: 'distance',
+                            position: 'right',
+                            gridLines: {display: false},
+                            scaleLabel: {labelString: 'Distance'}, // XXX localize
+                            ticks: {
+                                min: 0,
+                                maxTicksLimit: 4,
+                                callback: v => sauce.locale.distanceFormatter.formatShort(v) ,
                             },
                         }]
                     },
@@ -1594,6 +1612,20 @@ sauce.ns('performance', async ns => {
                 borderWidth: lineWidth,
                 tooltipFormat: x => sauce.locale.human.elevation(x, {suffix: true}),
                 data: gains,
+            }, {
+                id: 'distance',
+                label: 'Distance', // XXX Localize
+                type: 'bar',
+                backgroundColor: '#244d',
+                borderColor: '#022f',
+                borderWidth: 1,
+                yAxisID: 'distance',
+                barPercentage: 0.92,
+                tooltipFormat: x => sauce.locale.distanceFormatter.formatShort(x),
+                data: this.metricData.map((a, i) => ({
+                    x: a.date,
+                    y: a.distance,
+                })),
             }];
             this.charts.elevation.update();
         }

@@ -52,10 +52,19 @@
                     </row>
                 <% } %>
                 <% if (a.stats) { %>
-                    <row>
-                        <key>Active:</key>
-                        <value>{{humanTimer(sauce.model.getActivityActiveTime(a))}}</value>
-                    </row>
+                    <% if (a.stats.activeTime) { %>
+                        <row>
+                            <key>Active Time:</key>
+                            <value>{{humanTimer(a.stats.activeTime)}}</value>
+                        </row>
+                    <% } %>
+                    <% if (a.stats.distance) { %>
+                        <row>
+                            <key>Distance:</key>
+                            <value>{{humanDistance(a.stats.distance)}}<abbr
+                                class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
+                        </row>
+                    <% } %>
                     <% if (a.stats.power) { %>
                         <row>
                             <key>Power:</key>
@@ -68,11 +77,20 @@
                             <value>{{humanNumber(a.stats.np)}}<abbr class="unit short">w</abbr></value>
                         </row>
                     <% } %>
+                    <% if (a.stats.altitudeGain) { %>
+                        <row>
+                            <key>Elevation Gain:</key>
+                            <value>{{humanElevation(a.stats.altitudeGain)}}<abbr
+                                class="unit short">{{sauce.locale.elevationFormatter.shortUnitKey()}}</abbr></value>
+                        </row>
+                    <% } %>
                 <% } %>
-                <row>
-                    <key>DEBUG:</key>
-                    <value><pre>{{JSON.stringify(a, null, 2)}}</pre></value>
-                </row>
+                <% if (obj.debug) { %>
+                    <row>
+                        <key>DEBUG:</key>
+                        <value><pre>{{JSON.stringify(a, null, 2)}}</pre></value>
+                    </row>
+                <% } %>
             </div>
         <% } %>
 

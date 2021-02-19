@@ -16,20 +16,30 @@
         <% } %>
 
         <row>
-            <key>Active time:</key><!--XXX localize-->
+            <key>Total:</key><!--XXX localize-->
             <value>{{humanDuration(totalTime, {maxPeriod: 3600, precision: 3600})}}</value>
         </row>
         <row>
-            <key>Active days:</key><!--XXX localize-->
-            <value>{{humanNumber(activeDays)}}</value>
+            <key></key><!--XXX localize-->
+            <value>{{humanDistance(totalDistance, 0)}}<abbr
+                class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
         </row>
         <row>
             <key>Avg week:</key><!--XXX localize-->
             <value>{{humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1})}}</value>
         </row>
         <row>
+            <key></key>
+            <value>{{humanDistance(weeklyDistance)}}<abbr
+                class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
+        </row>
+        <row>
             <key>Avg TSS:</key><!--XXX localize-->
             <value>{{humanNumber(tssAvg)}}</value>
+        </row>
+        <row>
+            <key>Active days:</key><!--XXX localize-->
+            <value>{{humanNumber(activeDays)}}</value>
         </row>
         <row>
             <key>Peak fitness:</key><!--XXX localize-->

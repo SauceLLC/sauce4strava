@@ -319,7 +319,7 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
 
 export async function activityStatsProcessor({manifest, activities, athlete}) {
     const actStreams = await getActivitiesStreams(activities,
-        ['time', 'heartrate', 'active', 'watts', 'watts_calc', 'altitude']);
+        ['time', 'heartrate', 'active', 'watts', 'watts_calc', 'altitude', 'distance']);
     const hrZones = athlete.get('hrZones');
     const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
     const maxHR = hrZones && sauce.perf.estimateMaxHR(hrZones);
