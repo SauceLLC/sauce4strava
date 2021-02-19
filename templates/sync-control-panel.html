@@ -40,19 +40,19 @@
     <div class="entry status">
         <key>{{{status}}}:</key>
         <value></value>
-        <div class="btn btn-unstyled btn-icon-only sync-stop"
+        <div class="btn btn-sm sync-stop"
              title="{{{sync_stop_tooltip}}}">{-await fa('stop-circle-regular')-}</div>
-        <div class="btn btn-unstyled btn-icon-only sync-start"
+        <div class="btn btn-sm sync-start"
              title="{{{sync_start_tooltip}}}">{-await fa('play-circle-regular')-}</div>
-        <div class="btn btn-unstyled btn-icon-only sync-recompute"
+        <div class="btn btn-sm sync-recompute"
              title="{{{sync_recompute_tooltip}}}">{-await fa('redo-solid')-}</div>
     </div>
 
     <div class="entry synced">
         <key>{{{synced}}}:</key>
         <value>
-            <span class="text"></span>
             <progress></progress>
+            <div class="text"></div>
         </value>
     </div>
 

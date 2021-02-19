@@ -142,7 +142,7 @@
 
             &.has-error {
                 .status {
-                    color: darkred;
+                    //color: darkred;  // XXX not wired to show error yet.
                 }
             }
 
@@ -178,6 +178,16 @@
             &:not(.sync-disabled) {
                 .perf-promo {
                     display: none;
+                }
+            }
+
+            .entry {
+                .btn {
+                    margin-left: 0.5em;
+                }
+
+                &.status value {
+                    margin-right: 1em;
                 }
             }
         }
@@ -353,7 +363,6 @@
                 &.synced value {
                     display: inline-flex;
                     flex-direction: column;
-                    align-items: center;
                 }
 
                 &.history-view {
