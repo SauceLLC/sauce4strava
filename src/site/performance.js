@@ -1404,6 +1404,7 @@ sauce.ns('performance', async ns => {
                 }
             });
 
+            const distStepSize = sauce.locale.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
             this.charts.activities = new ActivityTimeRangeChart('#activities', this, {
                 options: {
                     useMetricData: true,
@@ -1424,6 +1425,17 @@ sauce.ns('performance', async ns => {
                                 maxTicksLimit: 7,
                                 callback: v => sauce.locale.human.duration(v, {maxPeriod: 3600}),
                             }
+                        }, {
+                            id: 'distance',
+                            position: 'right',
+                            gridLines: {display: false},
+                            scaleLabel: {labelString: 'Distance'}, // XXX localize
+                            ticks: {
+                                min: 0,
+                                stepSize: distStepSize,
+                                maxTicksLimit: 7,
+                                callback: v => sauce.locale.distanceFormatter.formatShort(v),
+                            },
                         }]
                     },
                 }
@@ -1442,16 +1454,6 @@ sauce.ns('performance', async ns => {
                                 maxTicksLimit: 8,
                                 stepSize,
                                 callback: v => sauce.locale.human.elevation(v, {suffix: true}),
-                            },
-                        }, {
-                            id: 'distance',
-                            position: 'right',
-                            gridLines: {display: false},
-                            scaleLabel: {labelString: 'Distance'}, // XXX localize
-                            ticks: {
-                                min: 0,
-                                maxTicksLimit: 4,
-                                callback: v => sauce.locale.distanceFormatter.formatShort(v) ,
                             },
                         }]
                     },
@@ -1574,7 +1576,7 @@ sauce.ns('performance', async ns => {
                 yAxisID: 'tss',
                 borderWidth: 1,
                 barPercentage: 0.92,
-                tooltipFormat: x => Math.round(x).toLocaleString(),
+                tooltipFormat: x => Math.round(x).toLocaleString() + '/d',
                 data: this.metricData.map((a, i) => ({
                     x: a.date,
                     y: a.tss,
@@ -1592,6 +1594,20 @@ sauce.ns('performance', async ns => {
                 data: this.metricData.map((a, i) => ({
                     x: a.date,
                     y: a.duration,
+                })),
+            }, {
+                id: 'distance',
+                label: 'Distance', // XXX Localize
+                type: 'bar',
+                backgroundColor: '#244d',
+                borderColor: '#022f',
+                borderWidth: 1,
+                yAxisID: 'distance',
+                barPercentage: 0.92,
+                tooltipFormat: x => sauce.locale.distanceFormatter.formatShort(x),
+                data: this.metricData.map((a, i) => ({
+                    x: a.date,
+                    y: a.distance,
                 })),
             }];
             this.charts.activities.update();
@@ -1612,20 +1628,6 @@ sauce.ns('performance', async ns => {
                 borderWidth: lineWidth,
                 tooltipFormat: x => sauce.locale.human.elevation(x, {suffix: true}),
                 data: gains,
-            }, {
-                id: 'distance',
-                label: 'Distance', // XXX Localize
-                type: 'bar',
-                backgroundColor: '#244d',
-                borderColor: '#022f',
-                borderWidth: 1,
-                yAxisID: 'distance',
-                barPercentage: 0.92,
-                tooltipFormat: x => sauce.locale.distanceFormatter.formatShort(x),
-                data: this.metricData.map((a, i) => ({
-                    x: a.date,
-                    y: a.distance,
-                })),
             }];
             this.charts.elevation.update();
         }

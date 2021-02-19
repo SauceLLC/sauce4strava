@@ -187,6 +187,7 @@ sauce.ns('locale', ns => {
             if (precision > period) {
                 break;
             }
+            // XXX Make this work for 0 and smaller when the filtered range results in 0.X values
             if (elapsed >= period) {
                 if (elapsed >= 2 * period) {
                     key += 's';
