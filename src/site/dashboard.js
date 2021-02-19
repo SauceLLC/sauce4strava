@@ -14,6 +14,15 @@ sauce.ns('dashboard', function(ns) {
 
 
     let scheduledAthleteDefined;
+    const virtCheckedData = 'data-sauce-checked-hide-virtual';
+    const virtTagQuery = ['.activity-map-tag', '.enhanced-tag'].map(x =>
+        `.card:not([${virtCheckedData}]) ${x}`).join();
+    const virtualTags = new Set([
+        'zwift',
+        'trainerroad',
+        'peloton',
+        'virtual',
+    ]);
     function hideVirtual(feedEl) {
         if (!self.currentAthlete) {
             // Too early in page load to filter out virtual activities.
@@ -25,13 +34,22 @@ sauce.ns('dashboard', function(ns) {
             return false;
         }
         let count = 0;
-        for (const card of feedEl.querySelectorAll('.card:not(.hidden-by-sauce)')) {
-            const ourId = self.currentAthlete.id;
-            if (card.querySelector(`[class^="icon-virtual"], [class*=" icon-virtual"]`) &&
-                !card.querySelector(`.entry-owner[href="/athletes/${ourId}"]`)) {
-                console.info("Hiding Virtual Activity:", card.id || 'group activity');
-                card.classList.add('hidden-by-sauce');
-                count++;
+        const seen = new Set();
+        const ourId = self.currentAthlete.id;
+        for (const tag of feedEl.querySelectorAll(virtTagQuery)) {
+            if (virtualTags.has(tag.textContent.trim().toLowerCase())) {
+                const card = tag.closest('.card');
+                if (seen.has(card.id)) {
+                    continue;
+                }
+                seen.add(card.id);
+                card.setAttribute(virtCheckedData, 1);
+                if (!card.querySelector(`.entry-owner[href="/athletes/${ourId}"]`)) {
+                    console.debug("Hiding Virtual Activity:", card.id || 'group activity',
+                        tag.textContent.trim());
+                    card.classList.add('hidden-by-sauce');
+                    count++;
+                }
             }
         }
         feedEvent('hide', 'virtual-activity', count);

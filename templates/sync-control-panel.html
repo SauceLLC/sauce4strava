@@ -16,11 +16,15 @@
             <div class="nav-left hidden">{-await fa('angle-left-duotone')-}</div>
             <div class="nav-right">{-await fa('angle-right-duotone')-}</div>
 
-            <img class="selected" src="{{sauce.extUrl}}images/performance_cap1.png"/>
-            <img src="{{sauce.extUrl}}images/performance_cap1.png"/>
+            <img class="selected" src="https://saucellc.io/images/perf-promo/1.png" loading="lazy"/>
+            <img src="https://saucellc.io/images/perf-promo/2.png" loading="lazy"/>
+            <img src="https://saucellc.io/images/perf-promo/3.png" loading="lazy"/>
+            <img src="https://saucellc.io/images/perf-promo/4.png" loading="lazy"/>
 
             <div class="nav-placement">
                 <div class="bubble selected"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
                 <div class="bubble"></div>
             </div>
         </div>
@@ -36,19 +40,19 @@
     <div class="entry status">
         <key>{{{status}}}:</key>
         <value></value>
-        <div class="btn btn-unstyled btn-icon-only sync-stop"
+        <div class="btn btn-sm sync-stop"
              title="{{{sync_stop_tooltip}}}">{-await fa('stop-circle-regular')-}</div>
-        <div class="btn btn-unstyled btn-icon-only sync-start"
+        <div class="btn btn-sm sync-start"
              title="{{{sync_start_tooltip}}}">{-await fa('play-circle-regular')-}</div>
-        <div class="btn btn-unstyled btn-icon-only sync-recompute"
+        <div class="btn btn-sm sync-recompute"
              title="{{{sync_recompute_tooltip}}}">{-await fa('redo-solid')-}</div>
     </div>
 
     <div class="entry synced">
         <key>{{{synced}}}:</key>
         <value>
-            <span class="text"></span>
             <progress></progress>
+            <div class="text"></div>
         </value>
     </div>
 

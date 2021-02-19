@@ -275,6 +275,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         return new Promise(resolve => {
             function catchDefine(obj, props) {
                 const prop = props[0];
+                let inCallback = false;
                 function onSet(value) {
                     if (props.length > 1) {
                         if (Object.isExtensible(value)) {
@@ -295,8 +296,13 @@ self.sauceBaseInit = function sauceBaseInit() {
                                 }
                             }
                         }
-                        if (callback) {
-                            callback(value);
+                        if (callback && !inCallback) {
+                            inCallback = true;
+                            try {
+                                callback(value);
+                            } finally {
+                                inCallback = false;
+                            }
                         }
                         resolve(value);
                     }
