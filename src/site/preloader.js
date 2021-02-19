@@ -9,6 +9,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     const cacheRefreshThreshold = 120 * 1000;
     const maybeRequestIdleCallback = self.requestIdleCallback || (fn => fn());  // Safari
 
+
     sauce.propDefined('pageView', view => {
         const addCustomRoutes = view.addCustomRoutes;
         view.addCustomRoutes = menuRouter => {
@@ -71,6 +72,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
     }, {once: true});
 
+
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisElevation', Klass => {
         // Monkey patch analysis views so we can react to selection changes.
         const saveFn = Klass.prototype.displayDetails;
@@ -85,6 +87,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             return saveFn.apply(this, arguments);
         };
     }, {once: true});
+
 
     sauce.propDefined('Strava.Charts.Activities.LabelBox', Klass => {
         // This is called when zoom selections change or are unset in the profile graph.
@@ -101,6 +104,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         };
     }, {once: true});
 
+
     sauce.propDefined('Strava.Labs.Activities.BasicAnalysisView', Klass => {
         // Monkey patch the analysis view so we always have our hook for extra stats.
         const saveFn = Klass.prototype.renderTemplate;
@@ -114,6 +118,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             return $el;
         };
     }, {once: true});
+
 
     /* Patch dragging bug when scrolled in this old jquery ui code.
      * NOTE: We must use Promise.then instead of a callback because the
@@ -217,6 +222,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         });
     });
 
+
     // Allow html titles and icons for dialogs.
     sauce.propDefined('jQuery.ui.dialog', {once: true}).then(dialog => {
         jQuery.widget('ui.dialog', dialog, {
@@ -235,6 +241,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         });
     });
 
+
     // Allow html titles and icons for dialogs.
     sauce.propDefined('Strava.Labs.Activities.SegmentEffortsTableView', View => {
         self.Strava.Labs.Activities.SegmentEffortsTableView = function(_, options) {
@@ -247,6 +254,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         };
         self.Strava.Labs.Activities.SegmentEffortsTableView.prototype = View.prototype;
     }, {once: true});
+
 
     sauce.propDefined('Strava.Labs.Activities.SegmentsView', View => {
         const initSave = View.prototype.initialize;
@@ -292,6 +300,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         };
     }, {once: true});
 
+
     // Provide race-free detection of pending requests.
     sauce.propDefined('Strava.Labs.Activities.StreamsRequest', Model => {
         const requireSave = Model.prototype.require;
@@ -328,6 +337,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         };
     }, {once: true});
 
+
     sauce.propDefined('Strava.ExternalPhotos.Views.PhotoLightboxView', Klass => {
         // Must wait for prototype to be fully assigned by the current execution context.
         setTimeout(() => {
@@ -348,6 +358,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             };
         }, 0);
     }, {once: true});
+
 
     sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', async Klass => {
         const renderSave = Klass.prototype.render;
