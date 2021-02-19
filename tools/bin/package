@@ -33,10 +33,8 @@ cp -a scss/site/fonts $TMPDIR/css/site/
 $(dirname $0)/mergejson "./manifest_base.json" "./manifest_${KIND}.json" > $TMPDIR/manifest.json
 
 if [[ $KIND = gecko* ]] ; then
-    rm "$TMPDIR/src/bg/main_declaritive.js"
     EXT=xpi
 else
-    rm "$TMPDIR/src/bg/main_legacy.js"
     EXT=zip
 fi
 
