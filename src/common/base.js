@@ -61,6 +61,11 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    if (!Object.fromEntries) {
+        Object.fromEntries = entries => entries.reduce((agg, [k, v]) => (agg[k] = v, agg), {});
+    }
+
+
     sauce.theme = function(name) {
         const doc = document.documentElement;
         const classes = Array.from(doc.classList);

@@ -5,9 +5,6 @@
         "declarativeContent"
     ],
     "background": {
-        "scripts": [
-            "src/bg/main_declaritive.js"
-        ],
         "persistent": false
     }
 }

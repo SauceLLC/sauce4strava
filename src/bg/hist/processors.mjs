@@ -94,7 +94,7 @@ let _workerPool;
 function getWorkerPool() {
     if (!_workerPool) {
         const extUrl = browser.runtime.getURL('');
-        _workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist-worker.js');
+        _workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist/worker.js');
     }
     return _workerPool;
 }

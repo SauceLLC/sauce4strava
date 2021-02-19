@@ -9,10 +9,5 @@
         "tabs",
         "https://saucellc.io/*",
         "https://www.strava.com/*"
-    ],
-    "background": {
-        "scripts": [
-            "src/bg/main_legacy.js"
-        ]
-    }
+    ]
 }

@@ -2,7 +2,7 @@
 
 importScripts('/src/common/base.js');
 self.sauceBaseInit();
-importScripts('/src/bg/db.js');
+importScripts('/src/bg/hist/db.js');
 importScripts('/src/common/lib.js');
 
 

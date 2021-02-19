@@ -24,23 +24,7 @@
     },
 
     "background": {
-        "scripts": [
-            "src/ext/webext.js",
-            "src/common/base.js",
-            "src/common/base_init.js",
-            "src/common/ga.js",
-            "src/common/proxy.js",
-            "src/bg/proxy.js",
-            "src/common/lib.js",
-            "src/common/storage.js",
-            "src/bg/ga.js",
-            "src/bg/db.js",
-            "src/bg/migrate.js",
-            "src/bg/menu.js",
-            "src/bg/hist.js",
-            "src/bg/trailforks.js",
-            "src/bg/main_common.js"
-        ]
+        "page": "pages/bg.html"
     },
 
     "page_action": {
