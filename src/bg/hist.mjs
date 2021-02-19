@@ -69,7 +69,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
-    version: 1,
+    version: 2,
     depends: ['extra-streams', 'athlete-settings'],
     data: {processor: processors.activityStatsProcessor}
 });
@@ -1138,6 +1138,7 @@ class SyncJob extends EventTarget {
                 this._procQueue.putNoWait(activity);
             } else if (data === null) {
                 activity.setSyncError(manifest, new Error('no-streams'));
+                this._procQueue.putNoWait(activity);
             } else if (error) {
                 // Often this is an activity converted to private.
                 activity.setSyncError(manifest, error);

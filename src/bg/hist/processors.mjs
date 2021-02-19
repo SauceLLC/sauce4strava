@@ -323,16 +323,29 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
     const hrZones = athlete.get('hrZones');
     const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
     const maxHR = hrZones && sauce.perf.estimateMaxHR(hrZones);
+    const rawAttrMap = {
+        activeTime: 'moving_time_raw',
+        distance: 'distance_raw',
+        altitudeGain: 'elevation_gain_raw',
+    };
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
+        const stats = {};
+        activity.set({stats});
+        for (const [statKey, rawKey] of Object.entries(rawAttrMap)) {
+            const rawVal = activity.get(rawKey);
+            if (rawVal != null) {
+                stats[statKey] = rawVal;
+            }
+        }
         if (!streams.time || !streams.active) {
             continue;
         }
+        stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
+        if (streams.distance && stats.distance == null && streams.distance.length > 1) {
+            stats.distance = streams.distance[streams.distance.length - 1] - streams.distance[0];
+        }
         const ftp = athlete.getFTPAt(activity.get('ts'));
-        const stats = {
-            activeTime: sauce.data.activeTime(streams.time, streams.active)
-        };
-        activity.set({stats});
         if (streams.heartrate && hrZones) {
             try {
                 const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
@@ -343,7 +356,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 continue;
             }
         }
-        if (streams.altitude) {
+        if (streams.altitude && stats.altitudeGain == null) {
             stats.altitudeGain = sauce.geo.altitudeChanges(streams.altitude).gain;
         }
         if (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run')) {
@@ -366,7 +379,6 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 continue;
             }
         }
-        activity.set({stats});
     }
 }
 
