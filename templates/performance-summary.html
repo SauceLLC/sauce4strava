@@ -8,47 +8,77 @@
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
 
+
+        <% if (totalTime && weeklyTime) { %>
+            <row class="full">
+                <header>Time:</header>
+                <h4>{-humanDuration(totalTime, {maxPeriod: 3600, precision: 3600, html: true})-}</h4>
+                <h4>
+                    {-humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})-}
+                    <abbr class="unit">/ week</abbr>
+                </h4>
+            </row>
+        <% } %>
+        <% if (totalDistance && weeklyDistance) { %>
+            <row class="full">
+                <header>Distance:</header>
+                <h4>{-humanDistance(totalDistance, 0, {html: true})-}</h4>
+                <h4>
+                    {-humanDistance(weeklyDistance, undefined, {html: true})-}
+                    <abbr class="unit"> / week</abbr>
+                </h4>
+            </row>
+        <% } %>
+        <% if (totalAltGain && weeklyAltGain) { %>
+            <row class="full">
+                <header>Elevation:</header>
+                <h4>{-humanElevation(totalAltGain, {html: true})-}</h4>
+                <h4>
+                    {-humanElevation(weeklyAltGain, {html: true})-}
+                    <abbr class="unit"> / week</abbr>
+                </h4>
+            </row>
+        <% } %>
+    </section>
+
+    <section class="training {{collapsed.training === true ? 'collapsed' : ''}}"
+             data-id="training">
+        <header>
+            <i class="icon">{-await fa('transporter-1-duotone')-}</i>
+            <div class="title">Training<!--XXX Localize--></div>
+            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
+            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+        </header>
+
+        <% if (tssAvg) { %>
+            <row>
+                <key>Avg TSS:</key><!--XXX localize-->
+                <value>{{humanNumber(tssAvg)}}</value>
+            </row>
+        <% } %>
+        <row>
+            <key>Active days:</key><!--XXX localize-->
+            <value>{{humanNumber(activeDays)}}</value>
+        </row>
+        <% if (maxCTL >= 0) { %>
+            <row>
+                <key>Peak fitness:</key><!--XXX localize-->
+                <value>{{humanNumber(maxCTL)}} <abbr class="unit">CTL</abbr></value>
+            </row>
+        <% } %>
+        <% if (minTSB < Infinity) { %>
+            <row>
+                <key>Least form:</key><!--XXX localize-->
+                <value>{{humanNumber(minTSB)}} <abbr class="unit">TSB</abbr></value>
+            </row>
+        <% } %>
+
         <% if (missingTSS.length) { %>
             <row class="warning">
                 <key>{-await fa('exclamation-triangle-duotone')-}Missing TSS:</key><!--XXX localize-->
                 <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} activities</a></value><!--XXX localize-->
             </row>
         <% } %>
-
-        <row>
-            <key>Total:</key><!--XXX localize-->
-            <value>{{humanDuration(totalTime, {maxPeriod: 3600, precision: 3600})}}</value>
-        </row>
-        <row>
-            <key></key><!--XXX localize-->
-            <value>{{humanDistance(totalDistance, 0)}}<abbr
-                class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
-        </row>
-        <row>
-            <key>Avg week:</key><!--XXX localize-->
-            <value>{{humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1})}}</value>
-        </row>
-        <row>
-            <key></key>
-            <value>{{humanDistance(weeklyDistance)}}<abbr
-                class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
-        </row>
-        <row>
-            <key>Avg TSS:</key><!--XXX localize-->
-            <value>{{humanNumber(tssAvg)}}</value>
-        </row>
-        <row>
-            <key>Active days:</key><!--XXX localize-->
-            <value>{{humanNumber(activeDays)}}</value>
-        </row>
-        <row>
-            <key>Peak fitness:</key><!--XXX localize-->
-            <value>{{humanNumber(maxCTL)}}<abbr class="unit">CTL</abbr></value>
-        </row>
-        <row>
-            <key>Least form:</key><!--XXX localize-->
-            <value>{{humanNumber(minTSB)}}<abbr class="unit">TSB</abbr></value>
-        </row>
     </section>
 
     <section class="highlights {{collapsed.highlights === true ? 'collapsed' : ''}}"

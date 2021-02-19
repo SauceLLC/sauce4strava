@@ -192,7 +192,7 @@ sauce.ns('locale', ns => {
                 if (elapsed >= 2 * period) {
                     key += 's';
                 }
-                const suffix = hdUnits[key];
+                const suffix = options.html ? `<abbr class="unit">${hdUnits[key]}</abbr>` : hdUnits[key];
                 let val;
                 if (options.digits && units[units.length - 1][1] === period) {
                     val = humanNumber(elapsed / period, options.digits);
@@ -328,9 +328,21 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanDistance(meters, precision=1) {
+    function humanDistance(meters, precision=1, options={}) {
         assertInit();
-        return ns.distanceFormatter.format(meters, precision);
+        if (options.html) {
+            const save = ns.distanceFormatter.precision;
+            ns.distanceFormatter.precision = precision;
+            try {
+                return ns.distanceFormatter.abbreviated(meters, precision);
+            } finally {
+                ns.distanceFormatter.precision = save;
+            }
+        } else if (options.suffix) {
+            return ns.distanceFormatter.formatShort(meters, precision);
+        } else {
+            return ns.distanceFormatter.format(meters, precision);
+        }
     }
 
 
@@ -383,7 +395,9 @@ sauce.ns('locale', ns => {
 
     function humanElevation(meters, options={}) {
         assertInit();
-        if (options.suffix) {
+        if (options.html) {
+            return ns.elevationFormatter.abbreviated(meters);
+        } else if (options.suffix) {
             if (options.longSuffix) {
                 return ns.elevationFormatter.formatLong(meters);
             } else {
