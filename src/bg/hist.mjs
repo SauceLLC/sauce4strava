@@ -997,6 +997,12 @@ export async function activityCounts(athleteId, activities) {
 sauce.proxy.export(activityCounts, {namespace});
 
 
+export async function activityTypeCounts(athleteId) {
+    return await actsStore.countTypesForAthlete(athleteId);
+}
+sauce.proxy.export(activityTypeCounts, {namespace});
+
+
 class SyncJob extends EventTarget {
     constructor(athlete, isSelf) {
         super();
