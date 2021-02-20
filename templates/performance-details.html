@@ -8,11 +8,11 @@
         <br/>
         <center><b>- or -</b></center>
         <br/>
-        <div class="btn load-more recent">Show recent activities</div>
+        <div class="btn btn-sm load-more recent">Show some  activities</div>
     <% } else { %>
         <% if (hasNewer) { %>
             <div class="btn btn-sm btn-secondary load-more newer"
-                 title="Show next activity">{-await fa('ellipsis-h-light')-}</div>
+                 title="Show newer activity">{-await fa('ellipsis-h-light')-}</div>
         <% } %>
 
         <% for (const a of activities) { %>
@@ -96,7 +96,7 @@
 
         <% if (hasOlder) { %>
             <div class="btn btn-sm btn-secondary load-more older"
-                 title="Show previous activity">{-await fa('ellipsis-h-light')-}</div>
+                 title="Show older activity">{-await fa('ellipsis-h-light')-}</div>
         <% } %>
     <% } %>
 </section>

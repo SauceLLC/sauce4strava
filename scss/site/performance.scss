@@ -253,7 +253,7 @@ table.sauce-perf {
 
     .sauce-swapped-background {
         row:nth-child(even) {
-            background-color: color.shade(fg, 8%, 0.5);
+            background-color: color.shade(fg, 12%, 0.5);
         }
 
         a.view-control {
@@ -309,22 +309,58 @@ table.sauce-perf {
             row {
                 &.full {
                     flex-direction: column;
-                    align-items: initial;
+                    align-items: flex-start;
                     position: relative;
 
                     .backdrop-icon {
+                        $icon-size: 4.25em;
                         position: absolute;
-                        right: 1.2em;
-                        top: 2.3em;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        right: 0.8em;
+                        top: calc(50% - #{$icon-size / 2});
                         pointer-events: none;
-                        width: 4em;
-                        opacity: 0.4;
+                        width: $icon-size;
+                        height: $icon-size;
+                        opacity: 0.2;
+
+                        svg[data-icon] {
+                            &[data-icon="clock"] {
+                                .fa-primary {
+                                    color: #b75600;
+                                }
+                                .fa-secondary {
+                                    color: white;
+                                }
+                            }
+
+                            &[data-icon="road"] {
+                                .fa-primary {
+                                    color: #00542a;
+                                }
+                                .fa-secondary {
+                                    color: white;
+                                }
+                            }
+
+                            &[data-icon="mountains"] {
+                                .fa-primary {
+                                    color: #420000;
+                                }
+                                .fa-secondary {
+                                    color: #d75353;
+                                    opacity: 0.8;
+                                }
+                            }
+                        }
                     }
 
                     > header {
                         text-transform: uppercase;
                         font-weight: bold;
-                        opacity: 0.7;
+                        opacity: 0.6;
                         margin: 0.3em 0 0.2em;
                         font-size: 0.76em;
                     }
@@ -374,7 +410,7 @@ table.sauce-perf {
                 display: flex;
                 flex-direction: column;
                 padding: 0.5em;
-                background: color.shade(bg, 4%);
+                background: color.shade(bg, 3%);
                 border-radius: 0.28em;
                 margin-top: 0.5em;
                 margin-bottom: 0.5em;
@@ -448,7 +484,8 @@ table.sauce-perf {
 
                 &.overview i.icon {
                     .fa-secondary {
-                        color: #006dff;
+                        color: #0058ce;
+                        opacity: 0.7;
                     }
 
                     .fa-primary {
