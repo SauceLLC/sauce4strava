@@ -12,6 +12,7 @@
         <% if (totalTime && weeklyTime) { %>
             <row class="full">
                 <header>Time:</header>
+                <div class="backdrop-icon">{-await fa('clock-duotone')-}</div>
                 <h2>{-humanDuration(totalTime, {maxPeriod: 3600, precision: 3600, html: true})-}</h2>
                 <h3>
                     {-humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})-}
@@ -22,6 +23,7 @@
         <% if (totalDistance && weeklyDistance) { %>
             <row class="full">
                 <header>Distance:</header>
+                <div class="backdrop-icon">{-await fa('road-duotone')-}</div>
                 <h2>{-humanDistance(totalDistance, 0, {html: true})-}</h2>
                 <h3>
                     {-humanDistance(weeklyDistance, undefined, {html: true})-}
@@ -32,6 +34,7 @@
         <% if (totalAltGain && weeklyAltGain) { %>
             <row class="full">
                 <header>Elevation:</header>
+                <div class="backdrop-icon">{-await fa('mountains-duotone')-}</div>
                 <h2>{-humanElevation(totalAltGain, {html: true})-}</h2>
                 <h3>
                     {-humanElevation(weeklyAltGain, {html: true})-}

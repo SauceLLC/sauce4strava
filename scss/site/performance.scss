@@ -310,6 +310,16 @@ table.sauce-perf {
                 &.full {
                     flex-direction: column;
                     align-items: initial;
+                    position: relative;
+
+                    .backdrop-icon {
+                        position: absolute;
+                        right: 1.2em;
+                        top: 2.3em;
+                        pointer-events: none;
+                        width: 4em;
+                        opacity: 0.4;
+                    }
 
                     > header {
                         text-transform: uppercase;
