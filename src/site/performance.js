@@ -576,6 +576,8 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.tooltipLineColor', '#07c');
             setDefault(config, 'options.animation.duration', 200);
             setDefault(config, 'options.legend.position', 'bottom');
+            setDefault(config, 'options.legend.labels.padding', 20);
+            setDefault(config, 'options.legend.labels.usePointStyle', true);
             setDefault(config, 'options.scales.xAxes[0].id', 'days');
             setDefault(config, 'options.scales.xAxes[0].offset', true);
             setDefault(config, 'options.scales.xAxes[0].type', 'time');
@@ -595,7 +597,8 @@ sauce.ns('performance', async ns => {
                 _this && _this.formatTickLabel(index, ticks));
             setDefault(config, 'options.scales.xAxes[0].ticks.major.enabled', true);
             setDefault(config, 'options.scales.xAxes[0].ticks.major.fontStyle', 'bold');
-            setDefault(config, 'options.scales.xAxes[0].ticks.minor.fontSize', 11);
+            setDefault(config, 'options.scales.xAxes[0].ticks.major.fontSize', 11);
+            setDefault(config, 'options.scales.xAxes[0].ticks.minor.fontSize', 10);
             setDefault(config, 'options.scales.yAxes[0].type', 'linear');
             setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
@@ -716,7 +719,7 @@ sauce.ns('performance', async ns => {
             return {
                 'click a.collapser': 'onCollapserClick',
                 'click a.expander': 'onExpanderClick',
-                'click section.overview a.missing-tss': 'onMissingTSSClick',
+                'click section.training a.missing-tss': 'onMissingTSSClick',
                 'click section.highlights a[data-id]': 'onHighlightClick',
                 'dblclick section > header': 'onDblClickHeader',
                 'change select[name="type"]': 'onTypeChange',
@@ -947,6 +950,7 @@ sauce.ns('performance', async ns => {
         }
 
         async refreshLatestAndOldest() {
+            // XXX I want to use this same info from mainview, so lets move it to pageView for everyone to use..
             const id = this.pageView.athlete && this.pageView.athlete.id;
             if (!id) {
                 return;
@@ -1462,6 +1466,9 @@ sauce.ns('performance', async ns => {
                     tooltips: {
                         intersect: false,
                     },
+                    legend: {
+                        display: false,
+                    },
                 }
             });
 
@@ -1504,6 +1511,7 @@ sauce.ns('performance', async ns => {
             $start.text(sauce.locale.human.date(start));
             const isEnd = end >= this.periodEndMax;
             this.$('.btn.period.next').toggleClass('invisible', isEnd);
+            this.$('.btn.period.latest').toggleClass('invisible', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
                 sauce.locale.human.date(end));
@@ -1697,10 +1705,20 @@ sauce.ns('performance', async ns => {
         }
 
         async onPeriodShift(ev) {
-            const next = ev.currentTarget.classList.contains('next');
-            this.periodEnd = Math.min(this.periodEnd + this.period * DAY * (next ? 1 : -1),
-                this.periodEndMax);
-            this.periodStart = this.periodEnd - (this.period * DAY);
+            const classes = ev.currentTarget.classList;
+            if (classes.contains('latest')) {
+                this.periodEnd = this.periodEndMax;
+                this.periodStart = this.periodEnd - (this.period * DAY);
+            } else if (classes.contains('oldest')) {
+                // XXX refactor details view latest code into pageview..  this is silly to reach into details view..
+                this.periodStart = sauce.date.toLocaleDayDate(this.pageView.detailsView.oldest).getTime();
+                this.periodEnd = this.periodStart + (this.period * DAY);
+            } else {
+                const next = classes.contains('next');
+                this.periodEnd = Math.min(this.periodEnd + this.period * DAY * (next ? 1 : -1),
+                    this.periodEndMax);
+                this.periodStart = this.periodEnd - (this.period * DAY);
+            }
             this.updateNav();
             await this.update();
         }

@@ -12,31 +12,31 @@
         <% if (totalTime && weeklyTime) { %>
             <row class="full">
                 <header>Time:</header>
-                <h4>{-humanDuration(totalTime, {maxPeriod: 3600, precision: 3600, html: true})-}</h4>
-                <h4>
+                <h2>{-humanDuration(totalTime, {maxPeriod: 3600, precision: 3600, html: true})-}</h2>
+                <h3>
                     {-humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})-}
                     <abbr class="unit">/ week</abbr>
-                </h4>
+                </h3>
             </row>
         <% } %>
         <% if (totalDistance && weeklyDistance) { %>
             <row class="full">
                 <header>Distance:</header>
-                <h4>{-humanDistance(totalDistance, 0, {html: true})-}</h4>
-                <h4>
+                <h2>{-humanDistance(totalDistance, 0, {html: true})-}</h2>
+                <h3>
                     {-humanDistance(weeklyDistance, undefined, {html: true})-}
                     <abbr class="unit"> / week</abbr>
-                </h4>
+                </h3>
             </row>
         <% } %>
         <% if (totalAltGain && weeklyAltGain) { %>
             <row class="full">
                 <header>Elevation:</header>
-                <h4>{-humanElevation(totalAltGain, {html: true})-}</h4>
-                <h4>
+                <h2>{-humanElevation(totalAltGain, {html: true})-}</h2>
+                <h3>
                     {-humanElevation(weeklyAltGain, {html: true})-}
                     <abbr class="unit"> / week</abbr>
-                </h4>
+                </h3>
             </row>
         <% } %>
     </section>
@@ -49,6 +49,13 @@
             <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
+
+        <% if (missingTSS.length) { %>
+            <row class="warning">
+                <key>{-await fa('exclamation-triangle-duotone')-}Missing TSS:</key><!--XXX localize-->
+                <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} activities</a></value><!--XXX localize-->
+            </row>
+        <% } %>
 
         <% if (tssAvg) { %>
             <row>
@@ -70,13 +77,6 @@
             <row>
                 <key>Least form:</key><!--XXX localize-->
                 <value>{{humanNumber(minTSB)}} <abbr class="unit">TSB</abbr></value>
-            </row>
-        <% } %>
-
-        <% if (missingTSS.length) { %>
-            <row class="warning">
-                <key>{-await fa('exclamation-triangle-duotone')-}Missing TSS:</key><!--XXX localize-->
-                <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} activities</a></value><!--XXX localize-->
             </row>
         <% } %>
     </section>

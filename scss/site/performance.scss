@@ -126,6 +126,25 @@ table.sauce-perf {
 
     @include buttons.uniform;
 
+    h1 {
+        font-size: 2em;
+    }
+    h2 {
+        font-size: 1.5em;
+    }
+    h3 {
+        font-size: 1.17em;
+    }
+    h4 {
+        font-size: 1em;
+    }
+    h5 {
+        font-size: 0.83em;
+    }
+    h1, h2, h3, h4, h5 {
+        line-height: normal;
+    }
+
     select {
         -webkit-appearance: none;
         appearance: none;
@@ -233,7 +252,6 @@ table.sauce-perf {
     }
 
     .sauce-swapped-background {
-
         row:nth-child(even) {
             background-color: color.shade(fg, 8%, 0.5);
         }
@@ -246,12 +264,11 @@ table.sauce-perf {
     row {
         padding: 0.4em 0.5em;;
         display: flex;
-        flex-wrap: wrap;
         margin: 0.15em 0;
         align-items: center;
 
         &.warning {
-            color: color.shade(accent, 10%);
+            color: color.shade(accent, -10%);
         }
 
         &:nth-child(even) {
@@ -259,17 +276,8 @@ table.sauce-perf {
             border-radius: 0.3em;
         }
 
-        &.rows {
-            flex-direction: column;
-            align-items: flex-start;
-
-            value {
-                font-size: 0.9em;
-            }
-        }
-
         key {
-            flex: 1 0 50%;
+            flex: 0 1 55%;
             padding-right: 0.4em;
             font-weight: bold;
             font-size: 0.9em;
@@ -278,15 +286,6 @@ table.sauce-perf {
                 width: 0.9em;
                 margin-right: 0.2em;
             }
-        }
-
-        value {
-            flex: 1 1 50%;
-        }
-
-        footer {
-            border: none;
-            flex: 1 1 100%;
         }
     }
 
@@ -315,15 +314,15 @@ table.sauce-perf {
                     > header {
                         text-transform: uppercase;
                         font-weight: bold;
-                        opacity: 0.86;
-                        margin: 0.3em 0;
+                        opacity: 0.7;
+                        margin: 0.3em 0 0.2em;
                         font-size: 0.76em;
                     }
                 }
 
                 h1, h2, h3, h4, h5 {
-                    margin: 0 0.6rem;
-                    padding: 0.3rem 0;
+                    margin: 0;
+                    padding: 0.4rem 0;
                     font-weight: 400;
 
                     &:not(:last-child) {
@@ -331,8 +330,8 @@ table.sauce-perf {
                     }
 
                     abbr.unit {
-                        font-size: 0.8em;
-                        font-weight: 100;
+                        font-size: 0.72em;
+                        font-weight: 300;
                         margin-left: 0;
                     }
                 }
@@ -807,6 +806,11 @@ table.sauce-perf {
             margin: 1em 0 0 0;
             flex: 1;
             justify-content: space-between;
+
+            .btn.period.oldest,
+            .btn.period.latest {
+                display: none;
+            }
         }
 
         .window-controls {
