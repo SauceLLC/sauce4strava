@@ -711,6 +711,17 @@ sauce.ns('performance', async ns => {
                 this.updateTicksConfig(scale._ticksToDraw);
             }
         }
+
+        getElementsAtEventForMode(ev, mode, options) {
+            const box = ev.chart.chartArea;
+            if (ev.x < box.left ||
+                ev.x > box.right ||
+                ev.y < box.top ||
+                ev.y > box.bottom) {
+                return [];
+            }
+            return super.getElementsAtEventForMode(ev, mode, options);
+        }
     }
 
 
