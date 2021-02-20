@@ -350,6 +350,22 @@ sauce.ns('hist.db', ns => {
             const q = IDBKeyRange.bound([athlete, -Infinity], [athlete, Infinity]);
             return await this.count(q, {index: 'athlete-ts'});
         }
+
+        async countTypesForAthlete(athlete) {
+            if (!this.db.started) {
+                await this.db.start();
+            }
+            const basetypes = ['ride', 'run', 'swim', 'workout'];
+            const counts = {};
+            const work = [];
+            const idbStore = this._getIDBStore('readonly');
+            for (const t of basetypes) {
+                const q = IDBKeyRange.bound([athlete, t, -Infinity], [athlete, t, Infinity]);
+                work.push(this.count(q, {index: 'athlete-basetype-ts', idbStore}).then(c => counts[t] = c));
+            }
+            await Promise.all(work);
+            return counts;
+        }
     }
 
 

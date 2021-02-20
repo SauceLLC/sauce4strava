@@ -426,9 +426,15 @@ self.sauceBaseInit = function sauceBaseInit() {
             return offt;
         }
 
-        _getIDBStore(mode) {
+        _getIDBStore(mode, options={}) {
             if (!this.db.started) {
                 throw new TypeError('Misuse of _getIDBStore: db is not started');
+            }
+            if (options.idbStore) {
+                if (options.idbStore.name !== this.name || options.idbStore.transaction.mode !== mode) {
+                    throw new TypeError("Invalid options.idbStore");
+                }
+                return options.idbStore;
             }
             return this.db.getStore(this.name, mode);
         }
@@ -437,7 +443,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const idbStore = this._getIDBStore('readonly');
+            const idbStore = this._getIDBStore('readonly', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             return [await this._request(ifc[getter](query, ...getterExtraArgs)), idbStore];
         }
@@ -486,7 +492,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const idbStore = this._getIDBStore('readonly');
+            const idbStore = this._getIDBStore('readonly', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = [];
             // Performance tuned to avoid Promise.all
@@ -522,7 +528,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const idbStore = this._getIDBStore('readwrite');
+            const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = await this._request(ifc.get(query));
             const updated = Object.assign({}, data, updates);
@@ -537,7 +543,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const idbStore = this._getIDBStore('readwrite');
+            const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             return await Promise.all(Array.from(updatesMap.entries()).map(async ([key, updates]) => {
                 const data = await this._request(ifc.get(key));
@@ -551,7 +557,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const idbStore = this._getIDBStore('readwrite');
+            const idbStore = this._getIDBStore('readwrite', options);
             let key;
             if (options.index) {
                 const index = idbStore.index(options.index);
@@ -564,7 +570,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const idbStore = this._getIDBStore('readwrite');
+            const idbStore = this._getIDBStore('readwrite', options);
             const index = options.index && idbStore.index(options.index);
             await Promise.all(datas.map(async data => {
                 let key;
@@ -579,7 +585,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const idbStore = this._getIDBStore('readwrite');
+            const idbStore = this._getIDBStore('readwrite', options);
             const requests = [];
             if (options.index) {
                 const index = idbStore.index(options.index);
@@ -597,7 +603,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const idbStore = this._getIDBStore('readwrite');
+            const idbStore = this._getIDBStore('readwrite', options);
             let keys;
             if (options.index) {
                 const index = idbStore.index(options.index);
@@ -641,7 +647,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this.db.started) {
                 throw new TypeError("DB not started");
             }
-            const idbStore = this._getIDBStore(options.mode);
+            const idbStore = this._getIDBStore(options.mode, options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const curFunc = options.keys ? ifc.openKeyCursor : ifc.openCursor;
             return curFunc.call(ifc, query, options.direction);
