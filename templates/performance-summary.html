@@ -11,7 +11,7 @@
         <% if (totalTime && weeklyTime) { %>
             <row class="full">
                 <header>Time:</header>
-                <div class="backdrop-icon">{-await fa('clock-duotone')-}</div>
+                <div class="backdrop-icon">{-await fa('watch-duotone')-}</div>
                 <h2>{-humanDuration(totalTime, {maxPeriod: 3600, precision: 3600, html: true})-}</h2>
                 <h3>
                     {-humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})-}
@@ -46,12 +46,29 @@
 
         <% if (mostFreqType) { %>
             <row class="full">
-                <header>Types:</header>
-                <div class="cols">
-                    <h2>{{humanNumber(mostFreqType.pct * 100)}}<abbr class="unit">%
-                            {{mostFreqType.type}}s</abbr></h2>
-                    <div class="counts-piechart"></div>
-                </div>
+                <header>Activities:</header>
+                <% if (Math.round(mostFreqType.pct * 100) < 100) { %>
+                    <div class="cols">
+                        <h2>{{humanNumber(mostFreqType.pct * 100)}}<abbr class="unit">%
+                                {{mostFreqType.type}}s</abbr></h2>
+                        <div class="counts-piechart"></div>
+                    </div>
+                <% } else { %>
+                    <div class="backdrop-icon">
+                        <% if (mostFreqType.type === 'ride') { %>
+                            {-await fa('biking-duotone')-}
+                        <% } else if (mostFreqType.type === 'run') { %>
+                            {-await fa('running-duotone')-}
+                        <% } else if (mostFreqType.type === 'swim') { %>
+                            {-await fa('swimmer-duotone')-}
+                        <% } else if (mostFreqType.type === 'ski') { %>
+                            {-await fa('skiing-nordic-duotone')-}
+                        <% } else if (mostFreqType.type === 'workout') { %>
+                            {-await fa('fire-alt-duotone')-}
+                        <% } %>
+                    </div>
+                    <h2>100<abbr class="unit">% {{mostFreqType.type}}s</abbr></h2>
+                <% } %>
             </row>
         <% } %>
     </section>

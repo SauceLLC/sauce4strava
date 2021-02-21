@@ -331,12 +331,9 @@ table.sauce-perf {
                         opacity: 0.2;
 
                         svg[data-icon] {
-                            &[data-icon="clock"] {
-                                .fa-primary {
-                                    color: #b75600;
-                                }
+                            &[data-icon="watch"] {
                                 .fa-secondary {
-                                    color: white;
+                                    color: #ff8b00;
                                 }
                             }
 
@@ -383,6 +380,7 @@ table.sauce-perf {
                     .counts-piechart {
                         width: 4em;
                         height: 4em;
+                        margin-top: -0.7rem; // center in entire box.
                         margin-right: 0.6rem; // visually aligned with backdrops icons.
                         opacity: 0.6;
                         transition: opacity 150ms;
