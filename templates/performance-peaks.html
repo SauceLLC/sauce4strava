@@ -71,7 +71,7 @@
         <tbody>
             <% let i = 1; %>
             <% for (const x of peaks.filter(x => x.activity)) { %>
-                <tr data-id="{{x.activity.id}}">
+                <tr data-id="{{x.activity.id}}" title="Click to view details">
                     <td>{{humanNumber(i++)}}</td>
                     <td>{{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr></td>
                     <% if (prefs.includeAllAthletes) { %>
