@@ -260,5 +260,15 @@
     "live_segment_beg3": {"message": "Thank you so much for understanding and contributing to making Sauce even better!"},
     "menu_add_review": {"message": "Add Review"},
     "menu_supporters": {"message": "Supporters"},
-    "performance": {"message": "Performance"}
+    "performance": {"message": "Performance"},
+    "performance_rides": {"message": "Rides"},
+    "performance_runs": {"message": "Runs"},
+    "performance_swims": {"message": "Swims"},
+    "performance_skis": {"message": "Skis"},
+    "performance_workouts": {"message": "Workouts"},
+    "performance_ride": {"message": "Ride"},
+    "performance_run": {"message": "Run"},
+    "performance_swim": {"message": "Swim"},
+    "performance_ski": {"message": "Ski"},
+    "performance_workout": {"message": "Workout"}
 }
