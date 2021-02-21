@@ -22,7 +22,6 @@ sauce.ns('performance', async ns => {
 
 
     function roundTimeToDay(time) {
-        //return sauce.date.toLocaleDayDate(time).getTime();
         const d = new Date(time);
         const timeOffset =
             d.getHours() * 86400000 +
@@ -35,9 +34,6 @@ sauce.ns('performance', async ns => {
         d.setMilliseconds(0);
         if (timeOffset >= 86400000 * 12) {
             d.setDate(d.getDate() + 1);
-            console.warn("up a day", new Date(time), d);
-        } else {
-            console.warn("same day", new Date(time), d);
         }
         return d.getTime();
     }
