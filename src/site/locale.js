@@ -183,13 +183,14 @@ sauce.ns('locale', ns => {
         const stack = [];
         const precision = options.precision || 1;
         elapsed = Math.round(elapsed / precision) * precision;
+        let i = 0;
         for (let [key, period] of units) {
+            i++;
             if (precision > period) {
                 break;
             }
-            // XXX Make this work for 0 and smaller when the filtered range results in 0.X values
-            if (elapsed >= period) {
-                if (elapsed >= 2 * period) {
+            if (elapsed >= period || (!stack.length && i === units.length)) {
+                if (elapsed >= 2 * period || elapsed < period) {
                     key += 's';
                 }
                 const suffix = options.html ? `<abbr class="unit">${hdUnits[key]}</abbr>` : hdUnits[key];
