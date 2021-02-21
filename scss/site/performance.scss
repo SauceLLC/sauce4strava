@@ -636,9 +636,10 @@ table.sauce-perf {
             margin-bottom: 1em;
             justify-content: space-between;
             padding: 1em;
+            position: relative;
 
-            .window-controls,
-            .period-selector {
+            .period-selector,
+            .right-padding {
                 flex: 1 0 15%; // same basis keeps start-end in center.
 
                 select {
@@ -686,17 +687,9 @@ table.sauce-perf {
             }
 
             .window-controls {
-                display: flex;
-                align-self: flex-start;
-                align-items: center;
-                justify-content: flex-end;
-                margin-bottom: 0.2em; // match select.
-                margin-left: 1em;
-
-                .btn {
-                    margin-top: -1em;
-                    margin-right: -1em;
-                }
+                position: absolute;
+                top: 0;
+                right: 0;
             }
         }
 
