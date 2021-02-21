@@ -12,6 +12,10 @@ $aside-width: 280px;
 $scrollbar-safety: 25px;
 
 
+.jqstooltip {
+    width: auto !important;  // XXX Not sure why, but I need this to prevent clipping.
+}
+
 @media only screen and (min-width: 991px) {
     html.sauce-performance {
         header#global-header {
@@ -363,6 +367,29 @@ table.sauce-perf {
                         opacity: 0.6;
                         margin: 0.3em 0 0.2em;
                         font-size: 0.76em;
+                    }
+
+                    .cols {
+                        display: flex;
+                        width: 100%;
+                        justify-content: space-between;
+                        align-items: center;
+
+                        h1, h2, h3, h4, h5 {
+                            border: none;
+                        }
+                    }
+
+                    .counts-piechart {
+                        width: 4em;
+                        height: 4em;
+                        margin-right: 0.6rem; // visually aligned with backdrops icons.
+                        opacity: 0.6;
+                        transition: opacity 150ms;
+
+                        &:hover {
+                            opacity: 1;
+                        }
                     }
                 }
 

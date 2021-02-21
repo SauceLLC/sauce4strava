@@ -4,10 +4,49 @@ sauce.ns('performance', async ns => {
     'use strict';
 
     const DAY = 86400 * 1000;
-    const TZ = (new Date()).getTimezoneOffset() * 60000;
 
     const urn = 'sauce/performance';
     const chartTopPad = 30;  // Helps prevent tooltip clipping.
+
+
+    function addTZ(time) {
+        const offt = (new Date(time)).getTimezoneOffset() * 60000;
+        return time + offt;
+    }
+
+
+    function subtractTZ(time) {
+        const offt = (new Date(time)).getTimezoneOffset() * 60000;
+        return time - offt;
+    }
+
+
+    function roundTimeToDay(time) {
+        //return sauce.date.toLocaleDayDate(time).getTime();
+        const d = new Date(time);
+        const timeOffset =
+            d.getHours() * 86400000 +
+            d.getMinutes() * 60000 +
+            d.getSeconds() * 1000 +
+            d.getMilliseconds();
+        d.setHours(0);
+        d.setMinutes(0);
+        d.setSeconds(0);
+        d.setMilliseconds(0);
+        if (timeOffset >= 86400000 * 12) {
+            d.setDate(d.getDate() + 1);
+            console.warn("up a day", new Date(time), d);
+        } else {
+            console.warn("same day", new Date(time), d);
+        }
+        return d.getTime();
+    }
+
+
+    function startOfDay(time) {
+        return sauce.date.toLocaleDayDate(time).getTime();
+    }
+
 
     await sauce.propDefined('Backbone.Router', {once: true});
     const AppRouter = Backbone.Router.extend({
@@ -27,8 +66,8 @@ sauce.ns('performance', async ns => {
             this.filters = {
                 athleteId: athleteId && Number(athleteId),
                 period: period && Number(period),
-                periodStart: startDay && startDay * DAY + TZ,
-                periodEnd: endDay && endDay * DAY + TZ,
+                periodStart: startDay && addTZ(startDay * DAY),
+                periodEnd: endDay && addTZ(endDay * DAY),
             };
         },
 
@@ -49,8 +88,8 @@ sauce.ns('performance', async ns => {
             const f = this.filters;
             if (f.periodEnd != null && f.periodStart != null && f.period != null &&
                 f.athleteId != null) {
-                const startDay = (f.periodStart - TZ) / DAY;
-                const endDay = (f.periodEnd - TZ) / DAY;
+                const startDay = subtractTZ(f.periodStart) / DAY;
+                const endDay = subtractTZ(f.periodEnd) / DAY;
                 this.navigate(`${urn}/${f.athleteId}/${f.period}/${startDay}/${endDay}`, options);
             } else if (f.period != null && f.athleteId != null) {
                 this.navigate(`${urn}/${f.athleteId}/${f.period}`, options);
@@ -72,6 +111,13 @@ sauce.ns('performance', async ns => {
     const view = await sauce.getModule('/src/site/view.mjs');
 
     const currentUser = await sauce.storage.get('currentUser');
+
+
+    class PerfView extends view.SauceView {
+        get tplNamespace() {
+            return 'performance';
+        }
+    }
 
 
     const _syncControllers = new Map();
@@ -254,7 +300,7 @@ sauce.ns('performance', async ns => {
             let distance = 0;
             const ts = date.getTime();
             const daily = [];
-            while (i < acts.length && sauce.date.toLocaleDayDate(acts[i].ts).getTime() === ts) {
+            while (i < acts.length && startOfDay(acts[i].ts) === ts) {
                 const a = acts[i++];
                 daily.push(a);
                 tss += sauce.model.getActivityTSS(a) || 0;
@@ -725,7 +771,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class SummaryView extends view.SauceView {
+    class SummaryView extends PerfView {
         get events() {
             return {
                 'click a.collapser': 'onCollapserClick',
@@ -757,6 +803,12 @@ sauce.ns('performance', async ns => {
             this.collapsed = (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {};
             this.type = (await sauce.storage.getPref('perfSummarySectionType')) || 'power';
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
+            this._locales = await sauce.locale.getMessagesObject([
+                'rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'
+            ], 'performance');
+            if (pageView.athlete) {
+                await this.setAthlete(pageView.athlete);
+            }
             await super.init();
         }
 
@@ -793,8 +845,9 @@ sauce.ns('performance', async ns => {
                 collapsed: this.collapsed,
                 type: this.type,
                 sync: this.sync,
-                activeDays: this.weekly.filter(x => x.activities.length).length,
-                tssAvg: this.daily.length ? sauce.data.sum(this.daily.map(x => x.tss)) / this.daily.length : 0,
+                activeDays: this.daily.filter(x => x.activities.length).length,
+                tssAvg: this.daily.length ? sauce.data.sum(this.daily.map(x =>
+                    x.tss)) / this.daily.length : 0,
                 maxCTL: sauce.data.max(this.daily.map(x => x.ctl)),
                 minTSB: sauce.data.min(this.daily.map(x => x.ctl - x.atl)),
                 totalTime: sauce.data.sum(this.weekly.map(x => x.duration)),
@@ -805,14 +858,30 @@ sauce.ns('performance', async ns => {
                 weeklyAltGain: sauce.data.avg(this.weekly.map(x => x.altGain)),
                 missingTSS: this.missingTSS,
                 peaks: await this.findPeaks(),
+                mostFreqType: this.mostFreqType,
             };
         }
 
         async render() {
-            if (this.pageView.athlete !== this.athlete) {
-                await this.setAthlete(this.pageView.athlete);
-            }
             await super.render();
+            this.$('.counts-piechart').sparkline(this.counts.map(x => x.count), {
+                type: 'pie',
+                width: '100%',
+                height: '100%',
+                highlightLighten: 1,
+                sliceColors: this.counts.map(x => ({
+                    ride: '#f09675',
+                    run: '#f0d175',
+                    swim: '#c0d7f1',
+                    ski: '#267e88',
+                    workout: '#999',
+                }[x.type])),
+                tooltipFormatter: (_, __, data) => {
+                    const items = this.counts.map(x =>
+                        `<li>${x.count} ${this._locales[x.type + (x.count !== 1 ? 's' : '')]}</li>`);
+                    return `<ul>${items.join('')}</ul>`;
+                }
+            });
         }
 
         async setAthlete(athlete) {
@@ -889,6 +958,16 @@ sauce.ns('performance', async ns => {
             this.missingTSS = activities.filter(x => sauce.model.getActivityTSS(x) == null);
             this.periodStart = start;
             this.periodEnd = end;
+            const counts = activities.reduce((agg, x) =>
+                (agg[x.basetype] = (agg[x.basetype] || 0) + 1, agg), {});
+            this.counts = Object.entries(counts).map(([type, count]) =>
+                ({type, count})).filter(x => x.count);
+            this.counts.sort((a, b) => b.count - a.count);
+            this.mostFreqType = this.counts[0];
+            if (this.mostFreqType) {
+                this.mostFreqType.pct = this.mostFreqType.count /
+                    sauce.data.sum(this.counts.map(x => x.count));
+            }
             await this.render();
         }
 
@@ -929,7 +1008,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class DetailsView extends view.SauceView {
+    class DetailsView extends PerfView {
         get events() {
             return {
                 'click header a.collapser': 'onCollapserClick',
@@ -1088,7 +1167,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class BulkActivityEditDialog extends view.SauceView {
+    class BulkActivityEditDialog extends PerfView {
         get events() {
             return {
                 'click .edit-activity': 'onEditActivityClick',
@@ -1155,7 +1234,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class PeaksView extends view.SauceView {
+    class PeaksView extends PerfView {
         get events() {
             return {
                 'change .peak-controls select[name="type"]': 'onTypeChange',
@@ -1335,7 +1414,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class MainView extends view.SauceView {
+    class MainView extends PerfView {
         get events() {
             return {
                 'change header.filters select[name="period"]': 'onPeriodChange',
@@ -1352,8 +1431,7 @@ sauce.ns('performance', async ns => {
         }
 
         get periodEndMax() {
-            const d = sauce.date.toLocaleDayDate(new Date());
-            return d.getTime() + (86400 * 1000);
+            return roundTimeToDay(Date.now() + DAY);
         }
 
         async init({pageView}) {
@@ -1491,7 +1569,7 @@ sauce.ns('performance', async ns => {
             const end = this.periodEnd;
             this.pageView.trigger('before-update-period', {start, end});
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
-                {start, end, includeTrainingLoadSeed: true});
+                {start, end, includeTrainingLoadSeed: true, excludeUpper: false});
             let atl = 0;
             let ctl = 0;
             if (activities.length) {
@@ -1525,7 +1603,7 @@ sauce.ns('performance', async ns => {
             this.$('.btn.period.latest').toggleClass('invisible', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
-                sauce.locale.human.date(end));
+                sauce.locale.human.date(roundTimeToDay(end - DAY)));
             const lineWidth = this.period > 365 ? 0.5 : this.period > 90 ? 1 : 1.5;
             const maxCTLIndex = sauce.data.max(this.daily.map(x => x.ctl), {index: true});
             const minTSBIndex = sauce.data.min(this.daily.map(x => x.ctl - x.atl), {index: true});
@@ -1709,7 +1787,7 @@ sauce.ns('performance', async ns => {
 
         async onPeriodChange(ev) {
             this.period = Number(ev.currentTarget.value);
-            this.periodStart = this.periodEnd - (DAY * this.period);
+            this.periodStart = roundTimeToDay(this.periodEnd - (DAY * this.period));
             this.updateNav();
             await this.update();
             await sauce.storage.setPref('perfMainViewDefaultPeriod', this.period);
@@ -1719,16 +1797,18 @@ sauce.ns('performance', async ns => {
             const classes = ev.currentTarget.classList;
             if (classes.contains('latest')) {
                 this.periodEnd = this.periodEndMax;
-                this.periodStart = this.periodEnd - (this.period * DAY);
+                this.periodStart = roundTimeToDay(this.periodEnd - (this.period * DAY));
             } else if (classes.contains('oldest')) {
-                // XXX refactor details view latest code into pageview..  this is silly to reach into details view..
-                this.periodStart = sauce.date.toLocaleDayDate(this.pageView.detailsView.oldest).getTime();
-                this.periodEnd = this.periodStart + (this.period * DAY);
+                // XXX refactor details view latest code into pageview..
+                // this is silly to reach into details view..
+                this.periodStart = startOfDay(this.pageView.detailsView.oldest);
+                this.periodEnd = roundTimeToDay(this.periodStart + (this.period * DAY));
             } else {
                 const next = classes.contains('next');
-                this.periodEnd = Math.min(this.periodEnd + this.period * DAY * (next ? 1 : -1),
-                    this.periodEndMax);
-                this.periodStart = this.periodEnd - (this.period * DAY);
+                this.periodEnd = roundTimeToDay(Math.min(
+                    this.periodEnd + this.period * DAY * (next ? 1 : -1),
+                    this.periodEndMax));
+                this.periodStart = roundTimeToDay(this.periodEnd - (this.period * DAY));
             }
             this.updateNav();
             await this.update();
@@ -1755,7 +1835,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    class PageView extends view.SauceView {
+    class PageView extends PerfView {
         get events() {
             return {
                 'change nav select[name=athlete]': 'onAthleteChange',
@@ -1792,10 +1872,11 @@ sauce.ns('performance', async ns => {
             this.mainView.setElement(this.$('main'));
             this.detailsView.setElement(this.$('aside.details'));
             await Promise.all([
-                this.summaryView.render(),
-                this.mainView.render(),
+                this.summaryView.initializing,
                 this.detailsView.render(),
             ]);
+            // MainView triggers update-period events which others depend on.
+            await this.mainView.render();
         }
 
         setAthlete(athleteId) {

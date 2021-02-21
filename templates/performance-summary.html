@@ -8,7 +8,6 @@
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
 
-
         <% if (totalTime && weeklyTime) { %>
             <row class="full">
                 <header>Time:</header>
@@ -20,6 +19,7 @@
                 </h3>
             </row>
         <% } %>
+
         <% if (totalDistance && weeklyDistance) { %>
             <row class="full">
                 <header>Distance:</header>
@@ -31,6 +31,7 @@
                 </h3>
             </row>
         <% } %>
+
         <% if (totalAltGain && weeklyAltGain) { %>
             <row class="full">
                 <header>Elevation:</header>
@@ -40,6 +41,17 @@
                     {-humanElevation(weeklyAltGain, {html: true})-}
                     <abbr class="unit"> / week</abbr>
                 </h3>
+            </row>
+        <% } %>
+
+        <% if (mostFreqType) { %>
+            <row class="full">
+                <header>Types:</header>
+                <div class="cols">
+                    <h2>{{humanNumber(mostFreqType.pct * 100)}}<abbr class="unit">%
+                            {{mostFreqType.type}}s</abbr></h2>
+                    <div class="counts-piechart"></div>
+                </div>
             </row>
         <% } %>
     </section>

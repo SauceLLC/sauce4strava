@@ -48,6 +48,7 @@
             'site/chart.js',
             'site/chartjs/plugin-datalabels.js',
             'site/chartjs/chart-matrix.js',
+            'site/sparkline.js',
             'site/performance.js',
         ],
         callbacks: [

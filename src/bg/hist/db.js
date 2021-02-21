@@ -355,19 +355,17 @@ sauce.ns('hist.db', ns => {
             if (!this.db.started) {
                 await this.db.start();
             }
-            const basetypes = ['ride', 'run', 'swim', 'workout'];
-            const counts = {};
             const work = [];
             const idbStore = this._getIDBStore('readonly');
             const start = options.start || -Infinity;
             const end = options.end || Infinity;
-            for (const t of basetypes) {
-                const q = IDBKeyRange.bound([athlete, t, start], [athlete, t, end]);
-                work.push(this.count(q, {index: 'athlete-basetype-ts', idbStore}).then(c =>
-                    counts[t + 's'] = c));
+            const basetypes = ['ride', 'run', 'swim', 'workout'];
+            for (const type of basetypes) {
+                const q = IDBKeyRange.bound([athlete, type, start], [athlete, type, end]);
+                work.push(this.count(q, {index: 'athlete-basetype-ts', idbStore}).then(count =>
+                    ({type, count})));
             }
-            await Promise.all(work);
-            return counts;
+            return await Promise.all(work);
         }
     }
 
