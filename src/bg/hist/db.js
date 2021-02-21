@@ -351,7 +351,7 @@ sauce.ns('hist.db', ns => {
             return await this.count(q, {index: 'athlete-ts'});
         }
 
-        async countTypesForAthlete(athlete) {
+        async countTypesForAthlete(athlete, options={}) {
             if (!this.db.started) {
                 await this.db.start();
             }
@@ -359,9 +359,12 @@ sauce.ns('hist.db', ns => {
             const counts = {};
             const work = [];
             const idbStore = this._getIDBStore('readonly');
+            const start = options.start || -Infinity;
+            const end = options.end || Infinity;
             for (const t of basetypes) {
-                const q = IDBKeyRange.bound([athlete, t, -Infinity], [athlete, t, Infinity]);
-                work.push(this.count(q, {index: 'athlete-basetype-ts', idbStore}).then(c => counts[t] = c));
+                const q = IDBKeyRange.bound([athlete, t, start], [athlete, t, end]);
+                work.push(this.count(q, {index: 'athlete-basetype-ts', idbStore}).then(c =>
+                    counts[t + 's'] = c));
             }
             await Promise.all(work);
             return counts;

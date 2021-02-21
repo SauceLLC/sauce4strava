@@ -997,8 +997,8 @@ export async function activityCounts(athleteId, activities) {
 sauce.proxy.export(activityCounts, {namespace});
 
 
-export async function activityTypeCounts(athleteId) {
-    return await actsStore.countTypesForAthlete(athleteId);
+export async function activityTypeCounts(athleteId, options) {
+    return await actsStore.countTypesForAthlete(athleteId, options);
 }
 sauce.proxy.export(activityTypeCounts, {namespace});
 
