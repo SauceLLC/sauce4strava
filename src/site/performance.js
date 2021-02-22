@@ -836,6 +836,10 @@ sauce.ns('performance', async ns => {
         }
 
         async renderAttrs() {
+            const weeks = this.daily.length / 7;
+            const totalTime = sauce.data.sum(this.weekly.map(x => x.duration));
+            const totalDistance = sauce.data.sum(this.weekly.map(x => x.distance));
+            const totalAltGain = sauce.data.sum(this.weekly.map(x => x.altGain));
             return {
                 athlete: this.athlete,
                 collapsed: this.collapsed,
@@ -846,12 +850,12 @@ sauce.ns('performance', async ns => {
                     x.tss)) / this.daily.length : 0,
                 maxCTL: sauce.data.max(this.daily.map(x => x.ctl)),
                 minTSB: sauce.data.min(this.daily.map(x => x.ctl - x.atl)),
-                totalTime: sauce.data.sum(this.weekly.map(x => x.duration)),
-                weeklyTime: sauce.data.avg(this.weekly.map(x => x.duration)),
-                totalDistance: sauce.data.sum(this.weekly.map(x => x.distance)),
-                weeklyDistance: sauce.data.avg(this.weekly.map(x => x.distance)),
-                totalAltGain: sauce.data.sum(this.weekly.map(x => x.altGain)),
-                weeklyAltGain: sauce.data.avg(this.weekly.map(x => x.altGain)),
+                totalTime,
+                weeklyTime: totalTime / weeks,
+                totalDistance,
+                weeklyDistance: totalDistance / weeks,
+                totalAltGain,
+                weeklyAltGain: totalAltGain / weeks,
                 missingTSS: this.missingTSS,
                 peaks: await this.findPeaks(),
                 mostFreqType: this.mostFreqType,
