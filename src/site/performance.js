@@ -4,47 +4,24 @@ sauce.ns('performance', async ns => {
     'use strict';
 
     const DAY = 86400 * 1000;
-
     const urn = 'sauce/performance';
+    const title = 'Sauce Performance';
     const chartTopPad = 30;  // Helps prevent tooltip clipping.
 
 
-    function addTZ(time) {
-        const offt = (new Date(time)).getTimezoneOffset() * 60000;
-        return time + offt;
-    }
+    await sauce.proxy.connected;
+    // XXX find something just after all the locale stuff.
+    await sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter', {once: true});
+    await sauce.locale.init();
+    await sauce.propDefined('Backbone', {once: true});
 
 
-    function subtractTZ(time) {
-        const offt = (new Date(time)).getTimezoneOffset() * 60000;
-        return time - offt;
-    }
+    const L = sauce.locale;
+    const H = L.human;
+    const view = await sauce.getModule('/src/site/view.mjs');
+    const currentUser = await sauce.storage.get('currentUser');
 
 
-    function roundTimeToDay(time) {
-        const d = new Date(time);
-        const timeOffset =
-            d.getHours() * 86400000 +
-            d.getMinutes() * 60000 +
-            d.getSeconds() * 1000 +
-            d.getMilliseconds();
-        d.setHours(0);
-        d.setMinutes(0);
-        d.setSeconds(0);
-        d.setMilliseconds(0);
-        if (timeOffset >= 86400000 * 12) {
-            d.setDate(d.getDate() + 1);
-        }
-        return d.getTime();
-    }
-
-
-    function startOfDay(time) {
-        return sauce.date.toLocaleDayDate(time).getTime();
-    }
-
-
-    await sauce.propDefined('Backbone.Router', {once: true});
     const AppRouter = Backbone.Router.extend({
         constructor: function() {
             this.filters = {};
@@ -96,17 +73,58 @@ sauce.ns('performance', async ns => {
             }
         }
     });
-    ns.router = new AppRouter();
-    Backbone.history.start({pushState: true});
 
-    await sauce.proxy.connected;
-    // XXX find something just after all the locale stuff.
-    await sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter', {once: true});
-    await sauce.locale.init();
-    await sauce.propDefined('Backbone.View', {once: true});
-    const view = await sauce.getModule('/src/site/view.mjs');
 
-    const currentUser = await sauce.storage.get('currentUser');
+    function periodEndMax() {
+        return roundTimeToDay(Date.now() + DAY);
+    }
+
+
+    function setPageTitle(athlete, periodEnd) {
+        if (athlete) {
+            const end = periodEnd && periodEnd < periodEndMax() ?
+                H.date(roundTimeToDay(periodEnd - DAY)) :
+                'Today'; // XXX locale
+            document.title = `${athlete.name} - ${end} | ${title}`;
+        } else {
+            document.title = title;
+        }
+    }
+
+
+    function addTZ(time) {
+        const offt = (new Date(time)).getTimezoneOffset() * 60000;
+        return time + offt;
+    }
+
+
+    function subtractTZ(time) {
+        const offt = (new Date(time)).getTimezoneOffset() * 60000;
+        return time - offt;
+    }
+
+
+    function roundTimeToDay(time) {
+        const d = new Date(time);
+        const timeOffset =
+            d.getHours() * 86400000 +
+            d.getMinutes() * 60000 +
+            d.getSeconds() * 1000 +
+            d.getMilliseconds();
+        d.setHours(0);
+        d.setMinutes(0);
+        d.setSeconds(0);
+        d.setMilliseconds(0);
+        if (timeOffset >= 86400000 * 12) {
+            d.setDate(d.getDate() + 1);
+        }
+        return d.getTime();
+    }
+
+
+    function startOfDay(time) {
+        return sauce.date.toLocaleDayDate(time).getTime();
+    }
 
 
     class PerfView extends view.SauceView {
@@ -168,7 +186,7 @@ sauce.ns('performance', async ns => {
 
 
     function getPeaksUnit(type) {
-        const paceUnit = sauce.locale.paceFormatter.shortUnitKey();
+        const paceUnit = L.paceFormatter.shortUnitKey();
         return {
             power_wkg: 'w/kg',
             power: 'w',
@@ -183,13 +201,13 @@ sauce.ns('performance', async ns => {
 
     function getPeaksValueFormatter(type) {
         return {
-            power: sauce.locale.human.number,
-            power_wkg: x => sauce.locale.human.number(x, 1),
-            np: sauce.locale.human.number,
-            xp: sauce.locale.human.number,
-            hr: sauce.locale.human.number,
-            pace: sauce.locale.human.pace,
-            gap: sauce.locale.human.pace,
+            power: H.number,
+            power_wkg: x => H.number(x, 1),
+            np: H.number,
+            xp: H.number,
+            hr: H.number,
+            pace: H.pace,
+            gap: H.pace,
         }[type];
     }
 
@@ -648,7 +666,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.callbacks.title', (item, data) => {
                 const d = new Date(data.datasets[0].data[item[0].index].x);
-                return sauce.locale.human.date(d, {style: 'weekdayYear'});
+                return H.date(d, {style: 'weekdayYear'});
             });
             setDefault(config, 'options.tooltips.callbacks.label', (item, data) => {
                 const ds = data.datasets[item.datasetIndex];
@@ -692,17 +710,17 @@ sauce.ns('performance', async ns => {
             const d = new Date(data.value);
             if (days < 370) {
                 if (data.showYear) {
-                    return [sauce.locale.human.date(d, {style: 'month'}) + ' ', d.getFullYear()];
+                    return [H.date(d, {style: 'month'}) + ' ', d.getFullYear()];
                 } else if (data.showMonth) {
-                    return sauce.locale.human.date(d, {style: 'monthDay'});
+                    return H.date(d, {style: 'monthDay'});
                 } else {
-                    return sauce.locale.human.date(d, {style: 'shortDay'});
+                    return H.date(d, {style: 'shortDay'});
                 }
             } else {
                 if (data.showYear) {
-                    return [sauce.locale.human.date(d, {style: 'month'}) + ' ', d.getFullYear()];
+                    return [H.date(d, {style: 'month'}) + ' ', d.getFullYear()];
                 } else {
-                    return sauce.locale.human.date(d, {style: 'month'});
+                    return H.date(d, {style: 'month'});
                 }
             }
         }
@@ -799,7 +817,7 @@ sauce.ns('performance', async ns => {
             this.collapsed = (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {};
             this.type = (await sauce.storage.getPref('perfSummarySectionType')) || 'power';
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
-            this._locales = await sauce.locale.getMessagesObject([
+            this._locales = await L.getMessagesObject([
                 'rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'
             ], 'performance');
             if (pageView.athlete) {
@@ -819,10 +837,10 @@ sauce.ns('performance', async ns => {
             const mile = 1609.344;
             if (['gap', 'pace'].includes(this.type)) {
                 periods = [400, 1000, mile, 10000, mile * 13.1, mile * 26.2];
-                keyFormatter = sauce.locale.human.raceDistance;
+                keyFormatter = H.raceDistance;
             } else {
                 periods = [5, 60, 300, 1200, 3600];
-                keyFormatter = sauce.locale.human.duration;
+                keyFormatter = H.duration;
             }
             const valueFormatter = getPeaksValueFormatter(this.type);
             const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, periods,
@@ -886,7 +904,6 @@ sauce.ns('performance', async ns => {
 
         async setAthlete(athlete) {
             this.athlete = athlete;
-            this.setPageTitle();
             const id = athlete && athlete.id;
             if (this.syncController) {
                 this.syncController.removeEventListener('active', this.onSyncActive);
@@ -907,13 +924,6 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        setPageTitle() {
-            if (this.athlete) {
-                document.title = `${this.athlete.name} ${this.period} days, ${sauce.locale.human.date(this.periodEnd)} | Sauce Performance`;
-            } else {
-                document.title = `Sauce Performance`;
-            }
-        }
 
         async onRouterNav(_, period) {
             period = period && Number(period);
@@ -977,7 +987,6 @@ sauce.ns('performance', async ns => {
                 this.mostFreqType.pct = this.mostFreqType.count /
                     sauce.data.sum(this.counts.map(x => x.count));
             }
-            this.setPageTitle();
             await this.render();
         }
 
@@ -1440,15 +1449,11 @@ sauce.ns('performance', async ns => {
             return 'performance-main.html';
         }
 
-        get periodEndMax() {
-            return roundTimeToDay(Date.now() + DAY);
-        }
-
         async init({pageView}) {
             this.peaksView = new PeaksView({pageView});
             this.pageView = pageView;
             this.period = await getCurrentPeriod();
-            this.periodEnd = ns.router.filters.periodEnd || this.periodEndMax;
+            this.periodEnd = ns.router.filters.periodEnd || periodEndMax();
             this.periodStart = ns.router.filters.periodStart || this.periodEnd - (this.period * DAY);
             this.charts = {};
             this.athlete = pageView.athlete;
@@ -1509,7 +1514,7 @@ sauce.ns('performance', async ns => {
                 }
             });
 
-            const distStepSize = sauce.locale.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
+            const distStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
             this.charts.activities = new ActivityTimeRangeChart('#activities', this, {
                 options: {
                     useMetricData: true,
@@ -1528,7 +1533,7 @@ sauce.ns('performance', async ns => {
                                 suggestedMax: 5 * 3600,
                                 stepSize: 3600,
                                 maxTicksLimit: 7,
-                                callback: v => sauce.locale.human.duration(v, {maxPeriod: 3600}),
+                                callback: v => H.duration(v, {maxPeriod: 3600}),
                             }
                         }, {
                             id: 'distance',
@@ -1539,7 +1544,7 @@ sauce.ns('performance', async ns => {
                                 min: 0,
                                 stepSize: distStepSize,
                                 maxTicksLimit: 7,
-                                callback: v => sauce.locale.human.distance(v, 0, {suffix: true}),
+                                callback: v => H.distance(v, 0, {suffix: true}),
                             },
                         }]
                     },
@@ -1547,7 +1552,7 @@ sauce.ns('performance', async ns => {
             });
 
             const thousandFeet = 1609.344 / 5280 * 100;
-            const stepSize = sauce.locale.elevationFormatter.unitSystem === 'imperial' ? thousandFeet : 1000;
+            const stepSize = L.elevationFormatter.unitSystem === 'imperial' ? thousandFeet : 1000;
             this.charts.elevation = new ActivityTimeRangeChart('#elevation', this, {
                 options: {
                     scales: {
@@ -1558,7 +1563,7 @@ sauce.ns('performance', async ns => {
                                 min: 0,
                                 maxTicksLimit: 8,
                                 stepSize,
-                                callback: v => sauce.locale.human.elevation(v, {suffix: true}),
+                                callback: v => H.elevation(v, {suffix: true}),
                             },
                         }]
                     },
@@ -1577,6 +1582,7 @@ sauce.ns('performance', async ns => {
         async update() {
             const start = this.periodStart;
             const end = this.periodEnd;
+            setPageTitle(this.athlete, end);
             this.pageView.trigger('before-update-period', {start, end});
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
                 {start, end, includeTrainingLoadSeed: true, excludeUpper: false});
@@ -1607,13 +1613,13 @@ sauce.ns('performance', async ns => {
             });
             const $start = this.$('header .period.start');
             const $end = this.$('header .period.end');
-            $start.text(sauce.locale.human.date(start));
-            const isEnd = end >= this.periodEndMax;
+            $start.text(H.date(start));
+            const isEnd = end >= periodEndMax();
             this.$('.btn.period.next').toggleClass('invisible', isEnd);
             this.$('.btn.period.latest').toggleClass('invisible', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
-                sauce.locale.human.date(roundTimeToDay(end - DAY)));
+                H.date(roundTimeToDay(end - DAY)));
             const lineWidth = this.period > 365 ? 0.5 : this.period > 90 ? 1 : 1.5;
             const maxCTLIndex = sauce.data.max(this.daily.map(x => x.ctl), {index: true});
             const minTSBIndex = sauce.data.min(this.daily.map(x => x.ctl - x.atl), {index: true});
@@ -1699,7 +1705,7 @@ sauce.ns('performance', async ns => {
                 borderWidth: 1,
                 yAxisID: 'duration',
                 barPercentage: 0.92,
-                tooltipFormat: x => sauce.locale.human.duration(x, {maxPeriod: 3600}),
+                tooltipFormat: x => H.duration(x, {maxPeriod: 3600}),
                 data: this.metricData.map((a, i) => ({
                     x: a.date,
                     y: a.duration,
@@ -1713,7 +1719,7 @@ sauce.ns('performance', async ns => {
                 borderWidth: 1,
                 yAxisID: 'distance',
                 barPercentage: 0.92,
-                tooltipFormat: x => sauce.locale.distanceFormatter.formatShort(x),
+                tooltipFormat: x => L.distanceFormatter.formatShort(x),
                 data: this.metricData.map((a, i) => ({
                     x: a.date,
                     y: a.distance,
@@ -1735,7 +1741,7 @@ sauce.ns('performance', async ns => {
                 pointRadius: 0,
                 yAxisID: 'elevation',
                 borderWidth: lineWidth,
-                tooltipFormat: x => sauce.locale.human.elevation(x, {suffix: true}),
+                tooltipFormat: x => H.elevation(x, {suffix: true}),
                 data: gains,
             }];
             this.charts.elevation.update();
@@ -1783,7 +1789,7 @@ sauce.ns('performance', async ns => {
                 needRender = true;
             }
             if (end !== this.periodEnd) {
-                this.periodEnd = end || this.periodEndMax;
+                this.periodEnd = end || periodEndMax();
                 needRender = true;
             }
             if (start !== this.periodStart) {
@@ -1806,7 +1812,7 @@ sauce.ns('performance', async ns => {
         async onPeriodShift(ev) {
             const classes = ev.currentTarget.classList;
             if (classes.contains('latest')) {
-                this.periodEnd = this.periodEndMax;
+                this.periodEnd = periodEndMax();
                 this.periodStart = roundTimeToDay(this.periodEnd - (this.period * DAY));
             } else if (classes.contains('oldest')) {
                 // XXX refactor details view latest code into pageview..
@@ -1817,7 +1823,7 @@ sauce.ns('performance', async ns => {
                 const next = classes.contains('next');
                 this.periodEnd = roundTimeToDay(Math.min(
                     this.periodEnd + this.period * DAY * (next ? 1 : -1),
-                    this.periodEndMax));
+                    periodEndMax()));
                 this.periodStart = roundTimeToDay(this.periodEnd - (this.period * DAY));
             }
             this.updateNav();
@@ -1831,7 +1837,8 @@ sauce.ns('performance', async ns => {
         }
 
         updateNav() {
-            if (this.periodEnd === this.periodEndMax) {
+            setPageTitle(this.athlete, this.periodEnd);
+            if (this.periodEnd === periodEndMax()) {
                 ns.router.setPeriod(this.athlete.id, this.period);
             } else {
                 ns.router.setPeriod(this.athlete.id, this.period, this.periodStart, this.periodEnd);
@@ -1840,6 +1847,7 @@ sauce.ns('performance', async ns => {
 
         async setAthlete(athlete) {
             this.athlete = athlete;
+            setPageTitle(athlete, this.periodEnd);
             await this.update();
         }
     }
@@ -1951,11 +1959,18 @@ sauce.ns('performance', async ns => {
         $page.empty();
         $page.removeClass();  // removes all
         $page.attr('id', 'sauce-performance');
-        const athletes = new Map(); // new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
+        let athletes;
+        if (location.search.match(/onboarding/)) {
+            athletes = new Map();
+        } else {
+            athletes = new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
+        }
         const pageView = new PageView({athletes, el: $page});
         await pageView.render();
     }
 
+    ns.router = new AppRouter();
+    Backbone.history.start({pushState: true});
     document.title = 'Sauce Performance';
     if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
         addEventListener('DOMContentLoaded', () => load().catch(sauce.report.error));
