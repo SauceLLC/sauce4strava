@@ -886,6 +886,7 @@ sauce.ns('performance', async ns => {
 
         async setAthlete(athlete) {
             this.athlete = athlete;
+            this.setPageTitle();
             const id = athlete && athlete.id;
             if (this.syncController) {
                 this.syncController.removeEventListener('active', this.onSyncActive);
@@ -903,6 +904,14 @@ sauce.ns('performance', async ns => {
                 this.sync.counts = await sauce.hist.activityCounts(id);
             } else {
                 this.syncController = null;
+            }
+        }
+
+        setPageTitle() {
+            if (this.athlete) {
+                document.title = `${this.athlete.name} ${this.period} days, ${sauce.locale.human.date(this.periodEnd)} | Sauce Performance`;
+            } else {
+                document.title = `Sauce Performance`;
             }
         }
 
@@ -968,6 +977,7 @@ sauce.ns('performance', async ns => {
                 this.mostFreqType.pct = this.mostFreqType.count /
                     sauce.data.sum(this.counts.map(x => x.count));
             }
+            this.setPageTitle();
             await this.render();
         }
 
@@ -1840,6 +1850,7 @@ sauce.ns('performance', async ns => {
             return {
                 'change nav select[name=athlete]': 'onAthleteChange',
                 'click .btn.sync-panel': 'onControlPanelClick',
+                'click .onboarding .btn.enable': 'onOnboardingEnableClick',
             };
         }
 
@@ -1867,7 +1878,9 @@ sauce.ns('performance', async ns => {
 
         async render() {
             await super.render();
-            this.$('nav .athlete select').after(await this.getSyncButton(this.athlete.id));
+            if (this.athlete) {
+                this.$('nav .athlete select').after(await this.getSyncButton(this.athlete.id));
+            }
             this.summaryView.setElement(this.$('nav .summary'));
             this.mainView.setElement(this.$('main'));
             this.detailsView.setElement(this.$('aside.details'));
@@ -1926,6 +1939,10 @@ sauce.ns('performance', async ns => {
                 await this.render();
             }
         }
+
+        onOnboardingEnableClick(ev) {
+            throw new Error("MAKE ME!");
+        }
     }
 
 
@@ -1934,11 +1951,12 @@ sauce.ns('performance', async ns => {
         $page.empty();
         $page.removeClass();  // removes all
         $page.attr('id', 'sauce-performance');
-        const athletes = new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
+        const athletes = new Map(); // new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
         const pageView = new PageView({athletes, el: $page});
         await pageView.render();
     }
 
+    document.title = 'Sauce Performance';
     if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
         addEventListener('DOMContentLoaded', () => load().catch(sauce.report.error));
     } else {

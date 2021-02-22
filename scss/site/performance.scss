@@ -4,6 +4,8 @@
 @use 'buttons';
 @use 'sync';
 
+@import url('https://fonts.googleapis.com/css?family=Permanent+Marker&display=swap');
+
 
 // Use px for media query compat..
 $nav-width: 260px;
@@ -123,6 +125,7 @@ table.sauce-perf {
     }
 }
 
+
 #sauce-performance {
     line-height: initial;
     display: flex;
@@ -223,8 +226,6 @@ table.sauce-perf {
     }
 
     .title {
-        font-weight: bold;
-
         small {
             font-size: 0.8em;
         }
@@ -252,6 +253,56 @@ table.sauce-perf {
             svg[data-icon] .fa-secondary {
                 opacity: 0.6;
             }
+        }
+    }
+
+    .onboarding {
+        flex: 1 1 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 4em;
+        max-width: 100%;
+
+        img {
+            width: 5em;
+        }
+
+        .visuals-left {
+            flex: 0.5 0.5 min(33vw, 20em);
+            background: color.shade(bg, 10%);
+        }
+
+        .copy-right {
+            flex: 1 1 min(66vw, 40em);
+            background: color.shade(bg, 12%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+            padding: 4em;
+            max-width: 100%;
+        }
+
+        .saucey {
+            font-family: "Permanent Marker", sans-serif;
+        }
+
+        h1, h2, h3, h4, h5 {
+            font-family: "Permanent Marker", sans-serif;
+        }
+
+        .welcome,
+        .how-it-works {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 40em;
+            text-align: center;
+        }
+
+        .how-it-works {
         }
     }
 
