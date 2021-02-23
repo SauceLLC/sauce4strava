@@ -154,12 +154,24 @@ sauce.ns('locale', ns => {
     }
 
 
-    function getPaceFormatter(type) {
-        return {
-            swim: ns.swimPaceFormatter,
-            speed: ns.speedFormatter,
-            pace: ns.paceFormatter
-        }[type || 'pace'];
+    function getPaceFormatter(options) {
+        let f;
+        if (options.type) {
+            f = {
+                swim: ns.swimPaceFormatter,
+                speed: ns.speedFormatter,
+                pace: ns.paceFormatter
+            }[options.type];
+        } else if (options.activityType) {
+            f = {
+                swim: ns.swimPaceFormatter,
+                ride: ns.speedFormatter,
+                workout: ns.speedFormatter,
+                ski: ns.speedFormatter,
+                run: ns.paceFormatter,
+            }[options.activityType];
+        }
+        return f || ns.paceFormatter;
     }
 
 
@@ -350,9 +362,10 @@ sauce.ns('locale', ns => {
     function humanPace(raw, options={}) {
         assertInit();
         const mps = options.velocity ? raw : 1 / raw;
-        const formatter = getPaceFormatter(options.type);
+        const formatter = getPaceFormatter(options);
         const value = formatter.key === 'distance_per_time' ? mps * 3600 : mps;
         const minPace = 0.1;  // About 4.5 hours / mile
+        const precision = options.precision;
         if (options.suffix) {
             if (options.html) {
                 if (value < minPace) {
@@ -363,13 +376,13 @@ sauce.ns('locale', ns => {
                 if (value < minPace) {
                     return '-';
                 }
-                return formatter.formatShort(value);
+                return formatter.formatShort(value, precision);
             }
         } else {
             if (value < minPace) {
                 return '-';
             }
-            return formatter.format(value);
+            return formatter.format(value, precision);
         }
     }
 
@@ -436,7 +449,7 @@ sauce.ns('locale', ns => {
 
     function velocityUnconvert(localeV, options={}) {
         assertInit();
-        const f = getPaceFormatter(options.type);
+        const f = getPaceFormatter(type);
         return (f.unitSystem === 'metric' ? localeV * 1000 : localeV * metersPerMile) / 3600;
     }
 

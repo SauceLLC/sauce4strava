@@ -3,6 +3,10 @@
         <tr>
             <th>Name</th>
             <th>Date</th>
+            <th>Type</th>
+            <th>Distance</th>
+            <th>Elevation</th>
+            <th>Pace</th>
             <th>TSS Override</th>
             <th>Exclude Peaks</th>
         </tr>
@@ -13,10 +17,20 @@
                 <td class="activity-name">
                     <div class="name-container">
                         <a href="https://www.strava.com/activities/{{a.id}}"
-                           title="{{a.name}}">{{a.name}}</a>
+                           title="{{a.name}}{{a.description ? "\n\n" + a .description : ''}}">{{a.name}}</a>
                     </div>
                 </td>
                 <td class="date">{{humanDate(a.ts)}}</td>
+                <td class="type">{{a.type || a.basetype}}</td>
+                <% if (a.stats) { %>
+                    <td class="distance">{{humanDistance(a.stats.distance, 0, {suffix: true})}}</td>
+                    <td class="elevation">+{{humanElevation(a.stats.altitudeGain, {suffix: true})}}</td>
+                    <td class="pace">{{humanPace(1 / (a.stats.distance / a.stats.activeTime), {precision: 0, activityType: a.basetype, suffix: true})}}</td>
+                <% } else { %>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                <% } %>
                 <td class="tss_override">
                     <input type="number" name="tss_override" value="{{a.tssOverride}}"
                            placeholder="{{sauce.model.getActivityTSS(a)}}"/>

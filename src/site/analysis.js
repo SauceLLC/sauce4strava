@@ -2893,7 +2893,7 @@ sauce.ns('analysis', ns => {
                 L.cadenceFormatter;
         ns.speedUnit = activity.get('speedUnit') || (activity.isRide() ? 'mph' : 'mpm');
         ns.paceType = {mp100m: 'swim', mph: 'speed', mpm: 'pace'}[ns.speedUnit];
-        ns.paceFormatter = L.getPaceFormatter(ns.paceType);
+        ns.paceFormatter = L.getPaceFormatter({type: ns.paceType});
         ns.paceMode = ns.speedUnit === 'mph' ? 'speed' : 'pace';
         ns.peakIcons = {
             peak_power: 'fa/bolt-duotone.svg',

@@ -1216,7 +1216,7 @@ sauce.ns('performance', async ns => {
                 title: 'Edit Activities',
                 el: this.$el,
                 flex: true,
-                width: '40em',
+                width: '60em',
                 icon: this.icon,
                 dialogClass: 'sauce-edit-activities-dialog',
                 extraButtons: [{
@@ -1964,6 +1964,9 @@ sauce.ns('performance', async ns => {
             athletes = new Map();
         } else {
             athletes = new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
+        }
+        if (!athletes.size) {
+            $page.addClass('onboarding');
         }
         const pageView = new PageView({athletes, el: $page});
         await pageView.render();
