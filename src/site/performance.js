@@ -1965,9 +1965,6 @@ sauce.ns('performance', async ns => {
         } else {
             athletes = new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
         }
-        if (!athletes.size) {
-            document.body.classList.add('sauce-onboarding');
-        }
         const pageView = new PageView({athletes, el: $page});
         await pageView.render();
     }

@@ -18,18 +18,18 @@ $scrollbar-safety: 25px;
     width: auto !important;  // XXX Not sure why, but I need this to prevent clipping.
 }
 
-body.sauce-onboarding {
-    &::before,
-    &::after {
-        content: '';
-        z-index: -1;
-        background-image: url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
-        background-repeat: no-repeat;
-        background-size: cover;
+
+html.sauce-performance {
+    &, body {
         width: 100%;
         height: 100%;
     }
+
+    body {
+        overflow: auto;
+    }
 }
+
 
 @media only screen and (min-width: 991px) {
     html.sauce-performance {
@@ -143,6 +143,7 @@ table.sauce-perf {
     line-height: initial;
     display: flex;
     flex-wrap: wrap;
+    position: relative;
 
     @include buttons.uniform;
 
@@ -271,23 +272,23 @@ table.sauce-perf {
 
     .bg-scroll {
         position: absolute;
+        width: 100%;
+        height: 100%;
         z-index: -1;
 
         > * {
             position: sticky;
             width: 100%;
-            height: auto;
+            top: 0;
         }
     }
 
     .onboarding-stack {
-        //background-image: url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
         max-width: 100%;
         flex: 1 1 100%;
         display: flex;
         flex-direction: column;
-        position: relative;
-        overflow: hidden;
+        flex-wrap: wrap;
 
         img {
             width: 20em;
