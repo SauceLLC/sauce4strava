@@ -18,6 +18,19 @@ $scrollbar-safety: 25px;
     width: auto !important;  // XXX Not sure why, but I need this to prevent clipping.
 }
 
+body.sauce-onboarding {
+    &::before,
+    &::after {
+        content: '';
+        z-index: -1;
+        background-image: url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
+        background-repeat: no-repeat;
+        background-size: cover;
+        width: 100%;
+        height: 100%;
+    }
+}
+
 @media only screen and (min-width: 991px) {
     html.sauce-performance {
         header#global-header {
@@ -256,32 +269,58 @@ table.sauce-perf {
         }
     }
 
-    .onboarding {
+    .bg-scroll {
+        position: absolute;
+        z-index: -1;
+
+        > * {
+            position: sticky;
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    .onboarding-stack {
+        //background-image: url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
+        max-width: 100%;
         flex: 1 1 100%;
         display: flex;
-        align-items: center;
-        justify-content: space-around;
-        padding: 4em;
-        max-width: 100%;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
 
         img {
-            width: 5em;
+            width: 20em;
         }
 
-        .visuals-left {
-            flex: 0.5 0.5 min(33vw, 20em);
-            background: color.shade(bg, 10%);
-        }
-
-        .copy-right {
-            flex: 1 1 min(66vw, 40em);
-            background: color.shade(bg, 12%);
+        section {
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: space-around;
             padding: 4em;
-            max-width: 100%;
+            flex-direction: column;
+
+            &.cols {
+                flex-direction: row;
+
+                .visuals-left {
+                    flex: 0.5 0.5 min(33vw, 20em);
+                    background: color.shade(bg, 10%, 0.5);
+                    backdrop-filter: blur(3px);
+                }
+
+                .copy-right {
+                    flex: 1 1 min(66vw, 40em);
+                    background: color.shade(bg, 12%, 0.5);
+                    backdrop-filter: blur(3px);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: space-around;
+                    padding: 4em;
+                    max-width: 100%;
+                }
+            }
         }
 
         .saucey {
