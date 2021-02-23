@@ -289,6 +289,8 @@ table.sauce-perf {
         display: flex;
         flex-direction: column;
         flex-wrap: wrap;
+        background-image: radial-gradient(ellipse at top, #ffffff00, #0008 80%),
+                          radial-gradient(ellipse at bottom, #0000, #0008 80%);
 
         img {
             width: 20em;
@@ -298,22 +300,30 @@ table.sauce-perf {
             display: flex;
             align-items: center;
             justify-content: space-around;
-            padding: 4em;
+            margin: 4em;
             flex-direction: column;
+            backdrop-filter: blur(5px);
+            border-radius: 0.5em;
+            overflow: hidden;
 
             &.cols {
                 flex-direction: row;
+                align-items: normal;
+                justify-content: center;
 
                 .visuals-left {
                     flex: 0.5 0.5 min(33vw, 20em);
-                    background: color.shade(bg, 10%, 0.5);
-                    backdrop-filter: blur(3px);
+                    background: color.shade(bg, 10%, 0.8);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
                 }
 
                 .copy-right {
                     flex: 1 1 min(66vw, 40em);
-                    background: color.shade(bg, 12%, 0.5);
-                    backdrop-filter: blur(3px);
+                    background: color.shade(fg, 12%, 0.5);
+                    color: color.get(bg);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
