@@ -1,10 +1,9 @@
 <% if (!athletes.length) { %>
-
     <div class="onboarding-stack">
         <div class="section-wrap">
             <section class="cols">
                 <div class="visuals-left">
-                    <img src="https://saucellc.io/images/perf-promo/1.png"/>
+                    <img src="https://saucellc.io/images/perf-promo/2.png"/>
                     <div class="btn btn-xl btn-primary enable">Enable Sync and Get Started!</div>
                 </div>
 
@@ -20,21 +19,55 @@
         <div class="section-wrap">
             <section class="cols">
                 <div class="visuals-left">
-                    <img src="https://saucellc.io/images/perf-promo/1.png"/>
+                    <img src="https://saucellc.io/images/perf-promo/3.png"/>
                     <div class="btn btn-xl btn-primary enable">Enable Sync and Get Started!</div>
                 </div>
 
                 <div class="copy-right">
                     <div class="how-it-works">
                         <h2>How it works...</h2>
-                        {-await fa('test')-}
                         <p>Sauce Performance is built on top of a highly advanced system for synchronizing your entire workout history from Strava servers to your browser.  It uses cutting-edge browser technology to store, index and analyze the entire history of activities.  Once an athletes' activity history is synchronized, a world of new activity analysis possibilities are available.</p>
                     </div>
                 </div>
             </section>
         </div>
-    </div>
 
+        <div class="section-wrap">
+            <section class="cols">
+                <div class="visuals-left">
+                    <img src="https://saucellc.io/images/perf-promo/4.png"/>
+                    <div class="btn btn-xl btn-primary enable">Enable Sync and Get Started!</div>
+                </div>
+
+                <div class="copy-right">
+                    <div class="faq">
+                        <h2>FAQ</h2>
+                        <dl>
+                            <dt>Q. What does it cost?</dt>
+                            <dd>A. $2/month via patreon</dd>
+
+                            <dt>Q. How do you get this data?</dt>
+                            <dd>A. Sauce uses same servers and webpages that the normal Strava website uses.  Much reverse engineering was done to avoid the need any special API access or 3rd party servers.</dd>
+
+                            <dt>Q. Why does the sync process take so long the first time?</dt>
+                            <dd>A. Strava has time based usage limits that must be honored.  If too many activities are downloaded at once your account will be temporarily rate limited.  Sauce is programmed to stay safely within these limits as long as you only sync one device at a time.</dd>
+
+                            <dt>Q. Why does Sauce need to "Synchronize" my data for the Performance features?</dt>
+                            <dd>A. Sauce provides as much functionality as it can based on the data Strava makes available.  But to provided advanced training and historical data access it is nessisary to have direct access to all the data for an athlete together.  Functions like training load and ranked peak power charts rely on having access to an athletes entire history to function properly.  Sauce Performance makes use your browsers own storage facility to do this.
+
+                            <dt>Q. Where is all this data being stored?</dt>
+                            <dd>A. Right on your computer in your web browsers storage system called "IndexedDB."  This is a tried and true database that lives in your browser and for most platforms is capabile of storing and querying gigabytes of data effeciently.  It's a perfect fit for Sauce's privacy model - your data is never sent to a 3rd party server.  It stays with you on your devices.</dd>
+
+                            <dt>Q. How do I protect my data or share it with another device?</dt>
+                            <dd>A. Backup, Backup, Backup!  Since no extra servers are used, it's rather important that you backup your data from time to time.  Look for the "Export Data," button in the sync control panel to create backup files that you can place somewhere safe.  I recommend you make a backup once a month or so.</dd>
+
+                        </dl>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </div>
 <% } else { %>
     <nav>
         <b>Athlete:<!--XXX Localize--></b>
