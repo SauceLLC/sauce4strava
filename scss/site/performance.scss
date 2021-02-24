@@ -284,9 +284,9 @@ table.sauce-perf {
         }
     }
 
-    &.animate-hue .onboarding-stack .section-wrap {
+    &.animate-hue .onboarding-stack {
         --colorwheel-hue: 0;
-        animation: colorwheel-hue 10s infinite linear;
+        animation: colorwheel-hue 20s infinite steps(200);
     }
 
     .onboarding-stack {
@@ -306,6 +306,7 @@ table.sauce-perf {
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 4rem;
 
             &:nth-child(1) {
                 background-image:
@@ -319,7 +320,7 @@ table.sauce-perf {
                     radial-gradient(ellipse at bottom, #0000, #0008 80%),
                     url('https://saucellc.io/images/perf-onboarding/breakaway.jpg');
             }
-            &:nth-child(n + 1) {
+            &:nth-child(n + 3) {
                 background-image:
                     radial-gradient(ellipse at top, #ffffff00, hsla(var(--colorwheel-hue), 40%, 19%, 0.5) 80%),
                     radial-gradient(ellipse at bottom, #0000, #0008 80%);
@@ -328,7 +329,9 @@ table.sauce-perf {
         }
 
         img {
-            width: 20em;
+            max-width: min(30rem, 28vw);
+            margin: 1rem;
+            border-radius: 0.25rem;
         }
 
         section {
@@ -337,7 +340,7 @@ table.sauce-perf {
             justify-content: space-around;
             flex-direction: column;
             backdrop-filter: blur(5px);
-            border-radius: 0.5em;
+            border-radius: 0.33rem;
             overflow: hidden;
 
             &.cols {
@@ -346,25 +349,25 @@ table.sauce-perf {
                 justify-content: center;
                 flex-wrap: wrap;
 
-                .visuals-left {
-                    flex: 1 1 20em;
+                .col-left {
+                    flex: 1 1 20rem;
                     background: color.shade(bg, 10%, 0.8);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    padding: 4em;
+                    padding: 4rem;
                 }
 
-                .copy-right {
-                    flex: 1 1 40em;
+                .col-right {
+                    flex: 1 1 40rem;
                     background: color.shade(fg, 12%, 0.5);
                     color: color.get(bg);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: space-around;
-                    padding: 4em;
+                    padding: 4rem;
                     max-width: 100%;
                 }
             }
@@ -376,17 +379,61 @@ table.sauce-perf {
 
         h1, h2, h3, h4, h5 {
             font-family: "Permanent Marker", sans-serif;
+            filter: drop-shadow(1.5px 1.5px 5px #000d);
+            margin-bottom: 1em;
         }
 
-        .welcome,
-        .how-it-works,
-        .faq {
+        .copy {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            max-width: 40em;
+            max-width: 40rem;
             text-align: center;
+            font-size: 1.2em;
+            line-height: 1.5;
+
+            ul, ol {
+                list-style: initial;
+                padding: 0 2em;
+
+                li {
+                    text-align: initial;
+                }
+            }
+
+            &.faq {
+                text-align: initial;
+                font-size: 1em;
+
+                dt::before,
+                dd::before {
+                    position: absolute;
+                    left: 0;
+                }
+
+                dt::before {
+                    content: 'Q.';
+                }
+
+                dd::before {
+                    content: 'A.';
+                }
+
+                dt,
+                dd {
+                    padding-left: 1.5em;
+                    position: relative;
+                }
+
+                dd {
+                    margin-bottom: 1em;
+                }
+            }
+
+            a {
+                color: color.get(accent);
+            }
         }
     }
 
@@ -994,27 +1041,56 @@ table.sauce-perf {
         }
     }
 
-    #sauce-performance > main > header.filters {
-        padding: 0 0 1em 0;
-        flex-wrap: wrap;
+    #sauce-performance {
+        > main > header.filters {
+            padding: 0 0 1em 0;
+            flex-wrap: wrap;
 
-        .period-selector {
-            flex: 1 0 100%;
-        }
+            .period-selector {
+                flex: 1 0 100%;
+            }
 
-        .start-end {
-            margin: 1em 0 0 0;
-            flex: 1;
-            justify-content: space-between;
+            .start-end {
+                margin: 1em 0 0 0;
+                flex: 1;
+                justify-content: space-between;
 
-            .btn.period.oldest,
-            .btn.period.latest {
+                .btn.period.oldest,
+                .btn.period.latest {
+                    display: none;
+                }
+            }
+
+            .window-controls {
                 display: none;
             }
         }
 
-        .window-controls {
-            display: none;
+        .onboarding-stack {
+            animation: none !important;
+
+            .section-wrap {
+                position: static;
+                min-height: initial;
+                padding: 0;
+
+                section {
+                    border-radius: 0;
+
+                    .col-left,
+                    .col-right {
+                        padding: 1rem;
+                    }
+
+                    .col-right {
+                        order: -1;
+                    }
+
+                    img {
+                        max-width: 95%;
+                    }
+                }
+            }
         }
     }
 }

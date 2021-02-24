@@ -449,7 +449,7 @@ sauce.ns('locale', ns => {
 
     function velocityUnconvert(localeV, options={}) {
         assertInit();
-        const f = getPaceFormatter(type);
+        const f = getPaceFormatter(options);
         return (f.unitSystem === 'metric' ? localeV * 1000 : localeV * metersPerMile) / 3600;
     }
 

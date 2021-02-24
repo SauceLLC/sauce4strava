@@ -1858,7 +1858,7 @@ sauce.ns('performance', async ns => {
             return {
                 'change nav select[name=athlete]': 'onAthleteChange',
                 'click .btn.sync-panel': 'onControlPanelClick',
-                'click .onboarding .btn.enable': 'onOnboardingEnableClick',
+                'click .sauce-onboarding .btn.enable': 'onOnboardingEnableClick',
             };
         }
 
@@ -1972,7 +1972,7 @@ sauce.ns('performance', async ns => {
                 CSS.registerProperty({
                     name: '--colorwheel-hue',
                     syntax: '<number>',
-                    inherits: false,
+                    inherits: true,
                     initialValue: 0
                 });
             }
