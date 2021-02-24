@@ -281,8 +281,8 @@ table.sauce-perf {
         display: flex;
         flex-direction: column;
         flex-wrap: wrap;
-        //background-image: radial-gradient(ellipse at top, #ffffff00, #0008 80%),
-        //                  radial-gradient(ellipse at bottom, #0000, #0008 80%);
+        background-image: radial-gradient(ellipse at top, #ffffff00, #0008 80%),
+                          radial-gradient(ellipse at bottom, #0000, #0008 80%);
 
         .section-wrap {
             position: sticky;
