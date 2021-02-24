@@ -1967,6 +1967,15 @@ sauce.ns('performance', async ns => {
         }
         if (!athletes.size) {
             $page.addClass('onboarding');
+            if (self.CSS && self.CSS.registerProperty) {
+                $page.addClass('animate-hue');
+                CSS.registerProperty({
+                    name: '--colorwheel-hue',
+                    syntax: '<number>',
+                    inherits: false,
+                    initialValue: 0
+                });
+            }
         }
         const pageView = new PageView({athletes, el: $page});
         await pageView.render();

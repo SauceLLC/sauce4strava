@@ -275,14 +275,26 @@ table.sauce-perf {
         }
     }
 
+    @keyframes colorwheel-hue {
+        from {
+            --colorwheel-hue: 0;
+        }
+        to {
+            --colorwheel-hue: 360;
+        }
+    }
+
+    &.animate-hue .onboarding-stack .section-wrap {
+        --colorwheel-hue: 0;
+        animation: colorwheel-hue 10s infinite linear;
+    }
+
     .onboarding-stack {
         max-width: 100%;
         flex: 1 1 100%;
         display: flex;
         flex-direction: column;
         flex-wrap: wrap;
-        background-image: radial-gradient(ellipse at top, #ffffff00, #0008 80%),
-                          radial-gradient(ellipse at bottom, #0000, #0008 80%);
 
         .section-wrap {
             position: sticky;
@@ -296,10 +308,16 @@ table.sauce-perf {
             justify-content: center;
 
             &:nth-child(1) {
-                background-image: url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
+                background-image:
+                    radial-gradient(ellipse at top, #ffffff00, hsla(var(--colorwheel-hue), 40%, 19%, 0.5) 80%),
+                    radial-gradient(ellipse at bottom, #0000, #0008 80%),
+                    url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
             }
             &:nth-child(2) {
-                background-image: url('https://saucellc.io/images/perf-onboarding/breakaway.jpg');
+                background-image:
+                    radial-gradient(ellipse at top, #ffffff00, hsla(var(--colorwheel-hue), 40%, 19%, 0.5) 80%),
+                    radial-gradient(ellipse at bottom, #0000, #0008 80%),
+                    url('https://saucellc.io/images/perf-onboarding/breakaway.jpg');
             }
         }
 
@@ -311,7 +329,6 @@ table.sauce-perf {
             display: flex;
             align-items: center;
             justify-content: space-around;
-            margin: 4em;
             flex-direction: column;
             backdrop-filter: blur(5px);
             border-radius: 0.5em;
@@ -321,18 +338,20 @@ table.sauce-perf {
                 flex-direction: row;
                 align-items: normal;
                 justify-content: center;
+                flex-wrap: wrap;
 
                 .visuals-left {
-                    flex: 0.5 0.5 min(33vw, 20em);
+                    flex: 1 1 20em;
                     background: color.shade(bg, 10%, 0.8);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
+                    padding: 4em;
                 }
 
                 .copy-right {
-                    flex: 1 1 min(66vw, 40em);
+                    flex: 1 1 40em;
                     background: color.shade(fg, 12%, 0.5);
                     color: color.get(bg);
                     display: flex;
