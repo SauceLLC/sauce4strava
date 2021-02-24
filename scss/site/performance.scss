@@ -319,6 +319,12 @@ table.sauce-perf {
                     radial-gradient(ellipse at bottom, #0000, #0008 80%),
                     url('https://saucellc.io/images/perf-onboarding/breakaway.jpg');
             }
+            &:nth-child(n + 1) {
+                background-image:
+                    radial-gradient(ellipse at top, #ffffff00, hsla(var(--colorwheel-hue), 40%, 19%, 0.5) 80%),
+                    radial-gradient(ellipse at bottom, #0000, #0008 80%);
+                background-color: #676767;
+            }
         }
 
         img {
@@ -373,16 +379,14 @@ table.sauce-perf {
         }
 
         .welcome,
-        .how-it-works {
+        .how-it-works,
+        .faq {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             max-width: 40em;
             text-align: center;
-        }
-
-        .how-it-works {
         }
     }
 
