@@ -1858,7 +1858,7 @@ sauce.ns('performance', async ns => {
             return {
                 'change nav select[name=athlete]': 'onAthleteChange',
                 'click .btn.sync-panel': 'onControlPanelClick',
-                'click .sauce-onboarding .btn.enable': 'onOnboardingEnableClick',
+                'click .onboarding-stack .btn.enable': 'onOnboardingEnableClick',
             };
         }
 
