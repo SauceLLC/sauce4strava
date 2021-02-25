@@ -1,4 +1,4 @@
-/* global sauce, jQuery, Chart, Backbone */
+/* global sauce, jQuery, Chart, Backbone, currentAthlete */
 
 sauce.ns('performance', async ns => {
     'use strict';
@@ -1868,7 +1868,7 @@ sauce.ns('performance', async ns => {
 
         async init({athletes}) {
             this.athletes = athletes;
-            this.setAthlete(ns.router.filters.athleteId);
+            this.setAthleteId(ns.router.filters.athleteId);
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
@@ -1900,7 +1900,7 @@ sauce.ns('performance', async ns => {
             await this.mainView.render();
         }
 
-        setAthlete(athleteId) {
+        setAthleteId(athleteId) {
             let success = true;
             if (athleteId && this.athletes.has(athleteId)) {
                 this.athlete = this.athletes.get(athleteId);
@@ -1930,7 +1930,7 @@ sauce.ns('performance', async ns => {
 
         onAthleteChange(ev) {
             const id = Number(ev.currentTarget.value);
-            if (this.setAthlete(id)) {
+            if (this.setAthleteId(id)) {
                 ns.router.setAthlete(id);
             }
             this.trigger('change-athlete', this.athlete);
@@ -1943,13 +1943,20 @@ sauce.ns('performance', async ns => {
         async onRouterNav(athleteId) {
             athleteId = athleteId && Number(athleteId);
             if (athleteId !== this.athlete.id) {
-                this.setAthlete(athleteId);
+                this.setAthleteId(athleteId);
                 await this.render();
             }
         }
 
-        onOnboardingEnableClick(ev) {
-            throw new Error("MAKE ME!");
+        async onOnboardingEnableClick(ev) {
+            ev.currentTarget.classList.add('sauce-loading');
+            const athlete = await sauce.hist.addAthlete({
+                id: currentAthlete.id,
+                gender: currentAthlete.get('gender') === 'F' ? 'female' : 'male',
+                name: currentAthlete.get('display_name'),
+            });
+            await sauce.hist.enableAthlete(athlete.id);
+            location.reload();
         }
     }
 
@@ -1970,7 +1977,7 @@ sauce.ns('performance', async ns => {
             if (self.CSS && self.CSS.registerProperty) {
                 $page.addClass('animate-hue');
                 CSS.registerProperty({
-                    name: '--colorwheel-hue',
+                    name: '--colorwheel-conic-turn',
                     syntax: '<number>',
                     inherits: true,
                     initialValue: 0

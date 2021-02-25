@@ -275,18 +275,17 @@ table.sauce-perf {
         }
     }
 
-    @keyframes colorwheel-hue {
+    @keyframes colorwheel {
         from {
-            --colorwheel-hue: 0;
+            --colorwheel-conic-turn: 0;
         }
         to {
-            --colorwheel-hue: 360;
+            --colorwheel-conic-turn: 1;
         }
     }
 
     &.animate-hue .onboarding-stack {
-        --colorwheel-hue: 0;
-        animation: colorwheel-hue 20s infinite steps(200);
+        animation: colorwheel 30s infinite steps(300);
     }
 
     .onboarding-stack {
@@ -295,6 +294,7 @@ table.sauce-perf {
         display: flex;
         flex-direction: column;
         flex-wrap: wrap;
+        --colorwheel-conic-turn: 0;
 
         .section-wrap {
             position: sticky;
@@ -307,29 +307,27 @@ table.sauce-perf {
             align-items: center;
             justify-content: center;
             padding: 4rem;
+            background-blend-mode: overlay;
+
+            $gradient:
+                conic-gradient(from calc(var(--colorwheel-conic-turn) * 1turn) at -10%,
+                    #ff000066, #ffa50066, #ffff0066, #00ff0066, #0000ff66, #ff00ff66, #ff000066),
+                radial-gradient(#000b, transparent);
 
             &:nth-child(1) {
-                background-image:
-                    radial-gradient(ellipse at top, #ffffff00, hsla(var(--colorwheel-hue), 40%, 19%, 0.5) 80%),
-                    radial-gradient(ellipse at bottom, #0000, #0008 80%),
-                    url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
+                background-image: $gradient, url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
             }
             &:nth-child(2) {
-                background-image:
-                    radial-gradient(ellipse at top, #ffffff00, hsla(var(--colorwheel-hue), 40%, 19%, 0.5) 80%),
-                    radial-gradient(ellipse at bottom, #0000, #0008 80%),
-                    url('https://saucellc.io/images/perf-onboarding/breakaway.jpg');
+                background-image: $gradient, url('https://saucellc.io/images/perf-onboarding/breakaway.jpg');
             }
             &:nth-child(n + 3) {
-                background-image:
-                    radial-gradient(ellipse at top, #ffffff00, hsla(var(--colorwheel-hue), 40%, 19%, 0.5) 80%),
-                    radial-gradient(ellipse at bottom, #0000, #0008 80%);
+                background-image: $gradient;
                 background-color: #676767;
             }
         }
 
         img {
-            max-width: min(30rem, 28vw);
+            width: 100%;
             margin: 1rem;
             border-radius: 0.25rem;
         }
@@ -350,17 +348,21 @@ table.sauce-perf {
                 flex-wrap: wrap;
 
                 .col-left {
-                    flex: 1 1 20rem;
+                    flex: 1 1 24rem;
                     background: color.shade(bg, 10%, 0.8);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     padding: 4rem;
+
+                    > * {
+                        max-width: 36rem;
+                    }
                 }
 
                 .col-right {
-                    flex: 1 1 40rem;
+                    flex: 2 1 34rem;
                     background: color.shade(fg, 12%, 0.5);
                     color: color.get(bg);
                     display: flex;
@@ -368,7 +370,10 @@ table.sauce-perf {
                     align-items: center;
                     justify-content: space-around;
                     padding: 4rem;
-                    max-width: 100%;
+
+                    > * {
+                        max-width: 60rem;
+                    }
                 }
             }
         }
@@ -388,7 +393,6 @@ table.sauce-perf {
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            max-width: 40rem;
             text-align: center;
             font-size: 1.2em;
             line-height: 1.5;
@@ -1084,10 +1088,6 @@ table.sauce-perf {
 
                     .col-right {
                         order: -1;
-                    }
-
-                    img {
-                        max-width: 95%;
                     }
                 }
             }
