@@ -308,6 +308,7 @@ table.sauce-perf {
             justify-content: center;
             padding: 4rem;
             background-blend-mode: overlay;
+            background-position: 0 0, 0 0, center center;
 
             $gradient:
                 conic-gradient(from calc(var(--colorwheel-conic-turn) * 1turn) at -10%,
