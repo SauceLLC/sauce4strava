@@ -21,9 +21,14 @@
                     </a>
                 </li>
             <% } %>
+            <li class="sauce-peaks-settings">
+                <a>
+                    <div class="sauce-svg-icon">{-await fa('cog-duotone')-}</div>
+                    {{{settings}}}
+                </a>
+            </li>
         </ul>
     </div>
-
     <table>
         <% for (const row of rows) { %>
             <tr data-source="{{source}}"
@@ -42,5 +47,4 @@
             </tr>
         <% } %>
     </table>
-
 </li>

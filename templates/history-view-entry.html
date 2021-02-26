@@ -1,18 +1,16 @@
-<div class="history-entry">
+<div class="mutable-data-entry">
     <key>
-        <input <% if (obj.valueMin != null) { %>min="{{valueMin}}"<% } %>
-               <% if (obj.valueMax != null) { %>max="{{valueMax}}"<% } %>
-               <% if (obj.valueStep != null) { %>step="{{valueStep}}"<% } %>
-               type="number" required
-               value="{{!isNaN(value) && value != null ? valueConvert(value): ''}}"/>
-        <% if (obj.valueUnit) { %>
-            <abbr class="unit">{{valueUnit}}</abbr>
+        <input <% if (parent.valueMin != null) { %>min="{{parent.valueMin}}"<% } %>
+               <% if (parent.valueMax != null) { %>max="{{parent.valueMax}}"<% } %>
+               <% if (parent.valueStep != null) { %>step="{{parent.valueStep}}"<% } %>
+               type="number" required value="{{value}}"/>
+        <% if (parent.valueUnit) { %>
+            <abbr class="unit">{{parent.valueUnit}}</abbr>
         <% } %>
     </key>
     <value>
-        <input type="date" min="1969-01-01" required
-               value="{{!isNaN(ts) && ts != null ? (new Date(ts)).toISOString().split('T')[0] : ''}}"/>
+        <input type="date" min="1969-01-01" required value="{{ts}}"/>
     </value>
-    <div class="btn btn-unstyled btn-icon-only history-entry-delete"
+    <div class="btn btn-unstyled btn-icon-only mutable-data-entry-delete"
          title="{{{delete_entry_tooltip}}}">{-await fa('times-circle-duotone')-}</div>
 </div>

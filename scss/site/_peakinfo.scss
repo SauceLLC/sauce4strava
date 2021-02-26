@@ -37,6 +37,17 @@
 
         .options li > a {
             font-size: 0.86em;
+            line-height: normal;
+        }
+
+        .options li.sauce-peaks-settings > a {
+            background-color: color.shade(fg, 20%);
+            color: color.shade(bg, 10%);
+
+            &:hover {
+                background-color: color.shade(fg, 0%);
+                color: color.shade(bg, 0%);
+            }
         }
 
         .sauce-svg-icon {

@@ -1,6 +1,6 @@
 @use 'color';
 @use 'animations';
-@use 'history_view';
+@use 'data_views';
 @use 'buttons';
 
 
@@ -365,7 +365,7 @@
                     flex-direction: column;
                 }
 
-                &.history-view {
+                &.mutable-data-view {
                     font-size: 0.96em;
                     margin: 1em 0.5em;
                     border: solid 1px color.shade(bg, 15%);
@@ -377,7 +377,7 @@
                         margin-bottom: 0;
                     }
 
-                    .history-entries {
+                    .mutable-data-entries {
                         margin-bottom: 0;
                     }
                 }

@@ -1,7 +1,7 @@
 @use 'color';
 @use 'buttons';
 
-.history-view {
+.mutable-data-view {
     @include buttons.uniform;
 
     input {
@@ -22,15 +22,11 @@
         text-align: right;
     }
 
-    input[type="date"] {
-        width: auto;
-    }
-
-    .history-header {
+    .mutable-data-header {
         padding: 0.6em 1em 0.2em 1em;
     }
 
-    .history-footer {
+    .mutable-data-footer {
         padding: 0 1em;
 
         .btn {
@@ -39,13 +35,13 @@
         }
     }
 
-    .history-entries {
+    .mutable-data-entries {
         padding: 0.4em 0;
         margin-bottom: 0.2em;
         max-height: 10em;
         overflow: auto;
 
-        .history-entry {
+        .mutable-data-entry {
             padding: 0.1em 1.2em;
             display: flex;
             align-items: center;
@@ -78,13 +74,13 @@
     }
 
     &:not(.dirty) {
-        .history-save.btn {
+        .mutable-data-save.btn {
             display: none;
         }
     }
 
-    .btn.history-entry-add,
-    .btn.history-entry-delete {
+    .btn.mutable-data-entry-add,
+    .btn.mutable-data-entry-delete {
         svg {
             .fa-secondary {
                 color: color.shade(bg, 25%);
@@ -93,11 +89,11 @@
         }
     }
 
-    .btn.history-entry-add {
+    .btn.mutable-data-entry-add {
         color: green !important;
     }
 
-    .btn.history-entry-delete {
+    .btn.mutable-data-entry-delete {
         color: red !important;
         flex: 1 0;
         display: flex;

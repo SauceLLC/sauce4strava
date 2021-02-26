@@ -379,13 +379,13 @@ sauce.ns('analysis', ns => {
         const $stats = jQuery(await template(attrs));
         if (ns.sauceAthlete) {
             $stats.on('click', '.sauce-editable-field', async ev => {
-                const m = await sauce.getModule('/src/site/history-views.mjs');
+                const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views.mjs');
                 const isFTP = ev.currentTarget.classList.contains('ftp');
                 let view;
                 if (isFTP) {
-                    view = new m.FTPHistoryView({athlete: ns.sauceAthlete});
+                    view = new FTPHistoryView({athlete: ns.sauceAthlete});
                 } else {
-                    view = new m.WeightHistoryView({athlete: ns.sauceAthlete});
+                    view = new WeightHistoryView({athlete: ns.sauceAthlete});
                 }
                 await view.render();
                 const $modal = sauce.modal({
@@ -447,6 +447,9 @@ sauce.ns('analysis', ns => {
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
                 await this.setSelectedSource(ev.currentTarget.dataset.source);
                 await this.render();
+            });
+            this.$el.on('click', '.drop-down-menu .options li.sauce-peaks-settings', async ev => {
+                throw new Error("unimplemented");
             });
         }
 

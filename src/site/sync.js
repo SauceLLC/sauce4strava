@@ -86,7 +86,7 @@ sauce.ns('sync', ns => {
 
     async function activitySyncDialog(athleteId, syncController) {
         let athlete = await sauce.hist.getAthlete(athleteId);
-        const hist = await sauce.getModule('/src/site/history-views.mjs');
+        const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views.mjs');
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
         const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
             'sync_control_panel');
@@ -168,11 +168,11 @@ sauce.ns('sync', ns => {
                 }
             }]
         });
-        const ftpHistView = new hist.FTPHistoryView({
+        const ftpHistView = new FTPHistoryView({
             athlete,
             el: $modal.find('.entry.history.ftp')
         });
-        const weightHistView = new hist.WeightHistoryView({
+        const weightHistView = new WeightHistoryView({
             athlete,
             el: $modal.find('.entry.history.weight')
         });

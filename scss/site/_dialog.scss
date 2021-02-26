@@ -3,7 +3,7 @@
 @use 'perf_predictor';
 @use 'live_segment';
 @use 'trailforks';
-@use 'history_view';
+@use 'data_views';
 @use 'sync';
 @use 'buttons';
 
@@ -364,17 +364,17 @@ html .ui-dialog {
 
         form.sauce-key-value {
             .entry {
-                &.history-view {
+                &.mutable-data-view {
                     margin: 1em 0 !important;
                     border: none !important;
                     border-radius: 0 !important;
                     background: unset !important;
 
-                    .history-entries {
+                    .mutable-data-entries {
                         max-height: initial !important;
                         padding: 1em 0 !important;
 
-                        .history-entry {
+                        .mutable-data-entry {
                             padding: 0.4em 0 !important;
                         }
                     }
