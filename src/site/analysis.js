@@ -449,7 +449,17 @@ sauce.ns('analysis', ns => {
                 await this.render();
             });
             this.$el.on('click', '.drop-down-menu .options li.sauce-peaks-settings', async ev => {
-                throw new Error("unimplemented");
+                const {PeaksTimesView, PeaksDistancesView} = await sauce.getModule('/src/site/data-views.mjs');
+                const times = new PeaksTimesView({times: ns.allPeriodRanges.map(x => x.value)});
+                const dists = new PeaksDistancesView({distances: ns.allDistRanges.map(x => x.value)});
+                const $modal = await sauce.modal({
+                    title: "XXX",
+                    body: `<div class="times"></div><div class="dists"></div>`
+                });
+                await times.render();
+                await dists.render();
+                $modal.find('.times').append(times.$el);
+                $modal.find('.dists').append(dists.$el);
             });
         }
 

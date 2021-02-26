@@ -17,6 +17,10 @@ export class MutableDataView extends SauceView {
         return 'mutable-data-view.html';
     }
 
+    get tplNamespace() {
+        return 'mutable_data';
+    }
+
     get entryTpl() {
         throw new TypeError("subclass impl required");
     }
@@ -180,5 +184,77 @@ export class WeightHistoryView extends HistoryView {
             valueUnconvert: x => sauce.locale.weightUnconvert(x),
             valueUnit: sauce.locale.weightFormatter.shortUnitKey(),
         });
+    }
+}
+
+
+class PeaksPeriodsView extends MutableDataView {
+    get tplNamespace() {
+        return 'peaks_periods_view';
+    }
+
+    async init(options) {
+        this.$el.addClass('peaks-periods-view');
+        await super.init(options);
+    }
+}
+
+
+export class PeaksTimesView extends MutableDataView {
+    get entryTpl() {
+        return 'peaks-times-view-entry.html';
+    }
+
+    async init(options) {
+        this.times = options.times;
+        await super.init(options);
+    }
+
+    entryData() {
+        return this.times.map(value => ({value}));
+    }
+
+    parseEntry(entry) {
+        const rawValue = entry.querySelector('input[type="number"]').value;
+        let value = rawValue ? Number(rawValue) : NaN;
+        if (!isNaN(value)) {
+            return value;
+        }
+    }
+
+    async onSave(data) {
+        throw new TypeError("unimplemented");
+        //const ordered = await sauce.hist.setAthleteHistoryValues(this.athlete.id, this.ident, data);
+        //this.athlete[this.athleteKey] = ordered;
+    }
+}
+
+
+export class PeaksDistancesView extends MutableDataView {
+    get entryTpl() {
+        return 'peaks-distances-view-entry.html';
+    }
+
+    async init(options) {
+        this.distances = options.distances;
+        await super.init(options);
+    }
+
+    entryData() {
+        return this.distances.map(value => ({value}));
+    }
+
+    parseEntry(entry) {
+        const rawValue = entry.querySelector('input[type="number"]').value;
+        let value = rawValue ? Number(rawValue) : NaN;
+        if (!isNaN(value)) {
+            return value;
+        }
+    }
+
+    async onSave(data) {
+        throw new TypeError("unimplemented");
+        //const ordered = await sauce.hist.setAthleteHistoryValues(this.athlete.id, this.ident, data);
+        //this.athlete[this.athleteKey] = ordered;
     }
 }

@@ -1,0 +1,8 @@
+<div class="mutable-data-entry">
+    <value>
+        <input min="5" step="1" type="number" required value="{{obj.value ? value : ''}}"/>
+        <abbr class="unit">s</abbr>
+    </value>
+    <div class="btn btn-unstyled btn-icon-only mutable-data-entry-delete"
+         title="{{{/mutable_data_delete_entry_tooltip}}}">{-await fa('times-circle-duotone')-}</div>
+</div>

@@ -1,12 +1,16 @@
 <div class="mutable-data-header">
-    <div class="help" data-for="general-{{cid}}">
-        <a class="sauce-dismiss">{-await fa('times-circle-duotone')-}</a>
-        {{{[localeHelpKey]}}}
-    </div>
-    <a class="help-info" data-help="general-{{cid}}" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
-    <b>{{{[localeTitleKey]}}}:</b>
+    <% if (obj.localeHelpKey) { %>
+        <div class="help" data-for="general-{{cid}}">
+            <a class="sauce-dismiss">{-await fa('times-circle-duotone')-}</a>
+            {{{[localeHelpKey]}}}
+        </div>
+        <a class="help-info" data-help="general-{{cid}}" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
+    <% } %>
+    <% if (obj.localeTitleKey) { %>
+        <b>{{{[localeTitleKey]}}}:</b>
+    <% } %>
     <div class="btn btn-unstyled btn-icon-only mutable-data-entry-add"
-         title="{{{add_entry_tooltip}}}">{-await fa('plus-square-duotone')-}</div>
+         title="{{{/mutable_data_add_entry_tooltip}}}">{-await fa('plus-square-duotone')-}</div>
 </div>
 
 <div class="mutable-data-entries">
@@ -17,5 +21,5 @@
 
 <div class="mutable-data-footer">
     <div class="btn btn-primary btn-block btn-icon-right btn-sm mutable-data-save"
-         title="{{{save_mutable_data_tooltip}}}">{{{save_changes}}} {-await fa('save-duotone')-}</div>
+        >{{{/mutable_data_save_changes}}} {-await fa('save-duotone')-}</div>
 </div>
