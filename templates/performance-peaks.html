@@ -80,7 +80,7 @@
                     <td class="activity-name">
                         <div class="name-container">
                             <a href="https://www.strava.com/activities/{{x.activity.id}}/analysis/{{x.start}}/{{x.end}}"
-                               title="{{x.activity.name}}">{{x.activity.name}}</a>
+                               title="{{x.activity.name}}{{x.activity.description ? '\n\n' + x.activity.description : ''}}">{{x.activity.name}}</a>
                         </div>
                     </td>
                     <td>{{x.activityType}}</td>

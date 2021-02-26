@@ -76,7 +76,7 @@ sauce.ns('performance', async ns => {
 
 
     function periodEndMax() {
-        return roundTimeToDay(Date.now() + DAY);
+        return startOfDay(Date.now() + DAY);
     }
 
 
