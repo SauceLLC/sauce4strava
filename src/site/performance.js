@@ -212,15 +212,6 @@ sauce.ns('performance', async ns => {
     }
 
 
-    function getPeaksSortDirection(type) {
-        if (['pace', 'gap'].includes(type)) {
-            return 'next';
-        } else {
-            return 'prev';
-        }
-    }
-
-
     async function editActivityDialogXXX(activity, pageView) {
         // XXX replace this trash with a view and module
         const tss = sauce.model.getActivityTSS(activity);
@@ -831,7 +822,6 @@ sauce.ns('performance', async ns => {
             if (start == null || end == null) {
                 return [];
             }
-            const direction = getPeaksSortDirection(this.type);
             let periods;
             let keyFormatter;
             const mile = 1609.344;
@@ -844,7 +834,7 @@ sauce.ns('performance', async ns => {
             }
             const valueFormatter = getPeaksValueFormatter(this.type);
             const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, periods,
-                {direction, limit: 1, start, end});
+                {limit: 1, start, end});
             return peaks.map(x => ({
                 key: keyFormatter(x.period),
                 prettyValue: valueFormatter(x.value),
@@ -1339,7 +1329,6 @@ sauce.ns('performance', async ns => {
             const options = {
                 limit: this.prefs.limit,
                 expandActivities: true,
-                direction: getPeaksSortDirection(this.prefs.type),
             };
             if (!this.prefs.includeAllDates) {
                 options.start = this.periodStart;

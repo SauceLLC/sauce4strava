@@ -525,7 +525,9 @@ async function expandPeakActivities(peaks) {
 async function _aggregatePeaks(work, options={}) {
     const peaks = [];
     for (const x of await Promise.all(work)) {
+        let rank = 1;
         for (const xx of x) {
+            xx.rank = rank++;
             peaks.push(xx);
         }
     }

@@ -686,12 +686,31 @@ sauce.ns('analysis', ns => {
                             attrs.isWattEstimate = isWattEstimate;
                         }
                         const prefix = attrs.isWattEstimate ? '~' : '';
+                        const ranges = periodRanges.filter(x => !attrs.isWattEstimate || x.value >= minWattEstTime);
+                        console.warn(0);
+                        const peaksPromise = source === 'peak_power' && ns.sauceAthlete && ns.sauceAthlete.sync && 
+                            sauce.hist.getPeaksForAthlete(ns.athlete.id, 'power', ranges.map(x => x.value), {limit: 3});
+                        console.warn(1);
                         for (const range of periodRanges.filter(x => !attrs.isWattEstimate || x.value >= minWattEstTime)) {
                             const roll = sauce.power.peakPower(range.value, timeStream, dataStream);
                             if (roll) {
                                 const value = prefix + H.number(roll.avg());
                                 rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
                             }
+                        }
+                        console.warn(2);
+                        if (peaksPromise) {
+                            peaksPromise.then(peaks => {
+                                console.warn(rows);
+                                const ourId = pageView.activity().id; 
+                                for (const p of peaks) {
+                                    if (p.activity === ourId) {
+                                        const $row = panel.$el.find(`[data-range-value="${p.period}"]`);
+                                        $row.find('td:last-child').append(` <b>${p.rank}</b>`);
+                                    }
+                                    console.warn(panel, p);
+                                }
+                            });
                         }
                     } else if (source === 'peak_pace' || source === 'peak_gap') {
                         attrs.isDistanceRange = true;
