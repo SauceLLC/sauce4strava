@@ -47,7 +47,7 @@
             align-items: center;
 
             &:hover {
-                background-color: color.shade(bg, 2%);
+                background-color: color.shade(bg, 20%, 0.4);
                 border-radius: 0.28em;
             }
 

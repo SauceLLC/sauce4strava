@@ -15,6 +15,7 @@ sauce.ns('analysis', ns => {
     const tplUrl = sauce.extUrl + 'templates';
     const L = sauce.locale;
     const H = sauce.locale.human;
+    const LM = m => L.getMessage(`analysis_${m}`);
 
     const minVAMTime = 60;
     const minHRTime = 60;
@@ -31,15 +32,12 @@ sauce.ns('analysis', ns => {
         {value: 120},
         {value: 300},
         {value: 600},
-        {value: 900},
         {value: 1200},
         {value: 1800},
         {value: 3600},
         {value: 10800},
     ];
     const defaultPeakDistances = [
-        {value: 100},
-        {value: 200},
         {value: 400},
         {value: 1000},
         {value: Math.round(metersPerMile)},
@@ -51,7 +49,6 @@ sauce.ns('analysis', ns => {
         {value: 50000},
         {value: 100000},
         {value: Math.round(metersPerMile * 100)},
-        {value: 200000},
     ];
     const prefetchStreams = [
         'time', 'heartrate', 'altitude', 'distance', 'moving',
@@ -453,13 +450,18 @@ sauce.ns('analysis', ns => {
                 const times = new PeaksTimesView({times: ns.allPeriodRanges.map(x => x.value)});
                 const dists = new PeaksDistancesView({distances: ns.allDistRanges.map(x => x.value)});
                 const $modal = await sauce.modal({
-                    title: "XXX",
+                    title: await LM('peaks_settings_dialog_title'),
+                    flex: true,
+                    autoOpen: false,
+                    width: '45em',
+                    dialogClass: 'sauce-peaks-settings-dialog',
                     body: `<div class="times"></div><div class="dists"></div>`
                 });
                 await times.render();
                 await dists.render();
                 $modal.find('.times').append(times.$el);
                 $modal.find('.dists').append(dists.$el);
+                $modal.dialog('open');
             });
         }
 
@@ -1064,7 +1066,7 @@ sauce.ns('analysis', ns => {
             gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
             gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
         }
-        const heading = await L.getMessage(`analysis_${source}`);
+        const heading = await LM(source);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
         const cadence = cadenceStream && sauce.data.avg(cadenceStream); // XXX ignore zeros and only active time
@@ -1115,7 +1117,7 @@ sauce.ns('analysis', ns => {
             const specs = [];
             for (const x of _activeGraphs) {
                 if (x === 'power') {
-                    const label = await L.getMessage('analysis_power');
+                    const label = await LM('power');
                     specs.push({
                         data: correctedPower.values(),
                         formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">w</abbr>`,
@@ -1125,7 +1127,7 @@ sauce.ns('analysis', ns => {
                 } else if (x === 'sp') {
                     const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
                         {stream: 'watts_sealevel'});
-                    const label = await L.getMessage('analysis_sea_power');
+                    const label = await LM('sea_power');
                     specs.push({
                         data: correctedSP.values(),
                         formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">w (SP)</abbr>`,
@@ -1140,7 +1142,7 @@ sauce.ns('analysis', ns => {
                         other: [0.5, 10, 15, 30],
                     }[ns.activityType];
                     const labelKey = ns.paceMode === 'speed' ? 'speed' : 'pace';
-                    const label = await L.getMessage(`analysis_${labelKey}`);
+                    const label = await LM(labelKey);
                     specs.push({
                         data: velocityStream,
                         formatter: x => `${label}: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
@@ -1150,7 +1152,7 @@ sauce.ns('analysis', ns => {
                 } else if (x === 'cadence') {
                     const unit = ns.cadenceFormatter.shortUnitKey();
                     const format = x => ns.cadenceFormatter.format(x);
-                    const label = await L.getMessage('analysis_cadence');
+                    const label = await LM('cadence');
                     const thresholds = {
                         ride: [40, 80, 120, 150],
                         run: [50, 80, 90, 100],
@@ -1169,7 +1171,7 @@ sauce.ns('analysis', ns => {
                         const elapsed = timeStream[i] - timeStream[i - 1];
                         gradeVelocity.push(dist / elapsed);
                     }
-                    const label = await L.getMessage('analysis_gap');
+                    const label = await LM('gap');
                     specs.push({
                         data: gradeVelocity,
                         formatter: x => `${label}: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
@@ -1182,7 +1184,7 @@ sauce.ns('analysis', ns => {
                     });
                 } else if (x === 'hr') {
                     const unit = L.hrFormatter.shortUnitKey();
-                    const label = await L.getMessage('analysis_heartrate');
+                    const label = await LM('heartrate');
                     specs.push({
                         data: hrStream,
                         formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">${unit}</abbr>`,
@@ -1198,7 +1200,7 @@ sauce.ns('analysis', ns => {
                     });
                 } else if (x === 'elevation') {
                     const unit = L.elevationFormatter.shortUnitKey();
-                    const label = await L.getMessage('analysis_elevation');
+                    const label = await LM('elevation');
                     specs.push({
                         data: altStream,
                         formatter: x => `${label}: ${H.elevation(x)}<abbr class="unit short">${unit}</abbr>`,
@@ -1312,7 +1314,7 @@ sauce.ns('analysis', ns => {
         const id = pageView.activity().id;
         const a = pageNav.querySelector('[data-menu="analysis"]');
         a.setAttribute('href', `/activities/${id}/analysis`);
-        a.textContent = await L.getMessage('analysis_title');
+        a.textContent = await LM('title');
         a.parentNode.classList.remove('sauce-stub');
         a.parentNode.style.display = null;
         const premiumGroup = pageNav.querySelector('#premium-views');
@@ -1340,7 +1342,7 @@ sauce.ns('analysis', ns => {
 
 
     async function attachActionMenuItems() {
-        const exportLocale = await L.getMessage('analysis_export');
+        const exportLocale = await LM('export');
         const $menu = jQuery('nav.sidenav .actions-menu .drop-down-menu ul.options');
         if (!$menu.length) {
             console.warn('Side nav menu not found: Probably a flagged activity');

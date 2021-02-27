@@ -28,7 +28,13 @@ export class MutableDataView extends SauceView {
     async init(options) {
         this.$el.addClass('mutable-data-view');
         this._entryTpl = await sauce.template.getTemplate(this.entryTpl, this.tplNamespace);
-        this.attrs = options;
+        this.attrs = {
+            localeHelpKey: null,
+            localeTitleKey: null,
+            localeSaveKey: 'save',
+            localeSaveTooltipKey: null,
+            ...options,
+        };
         this.edited = false;
         await super.init();
     }
@@ -65,10 +71,6 @@ export class MutableDataView extends SauceView {
         throw new TypeError("subclass impl required");
     }
 
-    async onSave(data) {
-        return;
-    }
-
     async _onSave(ev) {
         const data = [];
         for (const entry of this.$('.mutable-data-entry')) {
@@ -90,8 +92,15 @@ export class MutableDataView extends SauceView {
         }
     }
 
+    async onSave(data) {
+    }
+
     _onInput(ev) {
         this.$el.addClass('dirty');
+        this.onInput(ev);
+    }
+
+    onInput(ev) {
     }
 }
 
@@ -99,10 +108,6 @@ export class MutableDataView extends SauceView {
 class HistoryView extends MutableDataView {
     get entryTpl() {
         return 'history-view-entry.html';
-    }
-
-    get tplNamespace() {
-        return 'history_view';
     }
 
     async init(options) {
@@ -189,10 +194,6 @@ export class WeightHistoryView extends HistoryView {
 
 
 class PeaksPeriodsView extends MutableDataView {
-    get tplNamespace() {
-        return 'peaks_periods_view';
-    }
-
     async init(options) {
         this.$el.addClass('peaks-periods-view');
         await super.init(options);
@@ -207,7 +208,11 @@ export class PeaksTimesView extends MutableDataView {
 
     async init(options) {
         this.times = options.times;
-        await super.init(options);
+        await super.init({
+            localeTitleKey: 'peaks_times_title',
+            localeHelpKey: 'peaks_times_help',
+            ...options,
+        });
     }
 
     entryData() {
@@ -227,6 +232,12 @@ export class PeaksTimesView extends MutableDataView {
         //const ordered = await sauce.hist.setAthleteHistoryValues(this.athlete.id, this.ident, data);
         //this.athlete[this.athleteKey] = ordered;
     }
+
+    onInput(ev) {
+        const seconds = Number(ev.currentTarget.value);
+        const el = ev.currentTarget.closest('.mutable-data-entry').querySelector('value');
+        el.textContent = sauce.locale.human.duration(seconds);
+    }
 }
 
 
@@ -237,7 +248,11 @@ export class PeaksDistancesView extends MutableDataView {
 
     async init(options) {
         this.distances = options.distances;
-        await super.init(options);
+        await super.init({
+            localeTitleKey: 'peaks_dists_title',
+            localeHelpKey: 'peaks_dists_help',
+            ...options,
+        });
     }
 
     entryData() {
@@ -256,5 +271,11 @@ export class PeaksDistancesView extends MutableDataView {
         throw new TypeError("unimplemented");
         //const ordered = await sauce.hist.setAthleteHistoryValues(this.athlete.id, this.ident, data);
         //this.athlete[this.athleteKey] = ordered;
+    }
+
+    onInput(ev) {
+        const meters = Number(ev.currentTarget.value);
+        const el = ev.currentTarget.closest('.mutable-data-entry').querySelector('value');
+        el.textContent = sauce.locale.human.raceDistance(meters);
     }
 }

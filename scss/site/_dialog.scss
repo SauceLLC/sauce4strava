@@ -3,6 +3,7 @@
 @use 'perf_predictor';
 @use 'live_segment';
 @use 'trailforks';
+@use 'peaks_settings';
 @use 'data_views';
 @use 'sync';
 @use 'buttons';
@@ -280,6 +281,7 @@ html .ui-dialog {
     @include live_segment.dialog;
     @include trailforks.dialog;
     @include sync.dialog;
+    @include peaks_settings.dialog;
 
     .ui-dialog-titlebar {
         min-height: 0;

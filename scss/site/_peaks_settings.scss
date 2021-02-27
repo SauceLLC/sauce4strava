@@ -1,0 +1,31 @@
+@use 'color';
+
+@mixin dialog {
+    &.sauce-peaks-settings-dialog {
+        .ui-dialog-content {
+            flex-direction: row;
+            flex-wrap: wrap;
+            
+            .times, .dists {
+                flex: 1 1 50%;
+                min-width: 240px;
+                min-height: 100%;
+
+                .mutable-data-view {
+                    margin: 0.3em;
+                    padding: 0.3em;
+                    background-color: color.shade(bg, 1%);
+                    border-radius: 0.28em;
+                }
+
+                .mutable-data-entries {
+                    max-height: initial;
+
+                    input {
+                        width: 10ch;
+                    }
+                }
+            }
+        }
+    }
+}
