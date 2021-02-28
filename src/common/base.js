@@ -61,6 +61,12 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    sauce.formatInputDate = function(ts) {
+        // Return a input[type="date"] compliant value from a ms timestamp.
+        return ts ? (new Date(ts)).toISOString().split('T')[0] : '';
+    };
+
+
     if (!Object.fromEntries) {
         Object.fromEntries = entries => entries.reduce((agg, [k, v]) => (agg[k] = v, agg), {});
     }

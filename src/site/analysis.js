@@ -445,24 +445,8 @@ sauce.ns('analysis', ns => {
                 await this.setSelectedSource(ev.currentTarget.dataset.source);
                 await this.render();
             });
-            this.$el.on('click', '.drop-down-menu .options li.sauce-peaks-settings', async ev => {
-                const {PeaksTimesView, PeaksDistancesView} = await sauce.getModule('/src/site/data-views.mjs');
-                const times = new PeaksTimesView({times: ns.allPeriodRanges.map(x => x.value)});
-                const dists = new PeaksDistancesView({distances: ns.allDistRanges.map(x => x.value)});
-                const $modal = await sauce.modal({
-                    title: await LM('peaks_settings_dialog_title'),
-                    flex: true,
-                    autoOpen: false,
-                    width: '45em',
-                    dialogClass: 'sauce-peaks-settings-dialog',
-                    body: `<div class="times"></div><div class="dists"></div>`
-                });
-                await times.render();
-                await dists.render();
-                $modal.find('.times').append(times.$el);
-                $modal.find('.dists').append(dists.$el);
-                $modal.dialog('open');
-            });
+            this.$el.on('click', '.drop-down-menu .options li.sauce-peaks-settings',
+                showPeaksSettingsDialog);
         }
 
         async render() {
@@ -1302,6 +1286,56 @@ sauce.ns('analysis', ns => {
         await renderGraphs();
         $dialog.dialog('open');
         return $dialog;
+    }
+
+
+    async function showPeaksSettingsDialog() {
+        const {PeaksTimesView, PeaksDistancesView} = await sauce.getModule('/src/site/data-views.mjs');
+        const times = new PeaksTimesView({values: ns.allPeriodRanges.map(x => x.value)});
+        const dists = new PeaksDistancesView({values: ns.allDistRanges.map(x => x.value)});
+        let reload;
+        times.on('save', () => void (reload = true));
+        dists.on('save', () => void (reload = true));
+        const template = await getTemplate('peaks-settings.html');
+        const seasonStart = new Date(sauce.options.season_start);
+        const $modal = await sauce.modal({
+            title: await LM('peaks_settings_dialog_title'),
+            flex: true,
+            autoOpen: false,
+            width: '45em',
+            dialogClass: 'sauce-peaks-settings-dialog',
+            body: await template({
+                season_start_month: seasonStart.getMonth() + 1,
+                season_start_day: seasonStart.getDate() + 1,
+                ...sauce.options
+            }),
+        });
+        await times.render();
+        await dists.render();
+        $modal.find('.times').prepend(times.$el);
+        $modal.find('.dists').prepend(dists.$el);
+        $modal.on('click', '.btn.reset', async ev => {
+            if (ev.currentTarget.dataset.id === 'times') {
+                times.values = defaultPeakPeriods.map(x => x.value);
+                await sauce.storage.update('analysis_peak_ranges', {periods: null});
+                await times.render();
+            } else {
+                dists.values = defaultPeakDistances.map(x => x.value);
+                await sauce.storage.update('analysis_peak_ranges', {distances: null});
+                await dists.render();
+            }
+            reload = true;
+        });
+        $modal.on('dialogclose', ev => {
+            if (reload) {
+                sauce.modal({
+                    title: 'Reloading...',
+                    body: '<b>Reloading page to reflect changes.</b>'
+                });
+                location.reload();
+            }
+        });
+        $modal.dialog('open');
     }
 
 

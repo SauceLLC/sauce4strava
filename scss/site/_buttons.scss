@@ -41,12 +41,13 @@
 
         &:not(.btn-unstyled) {
             &:hover {
-                box-shadow: 1px 1px 3px color.shade(fg, 0%, 0.5);
+                box-shadow: 1px 1px 1px #0005;
                 border-color: transparent;
             }
 
             &:active {
-                box-shadow: 0 0 4px color.shade(fg, 0%, 0.4) inset;
+                box-shadow: 0 0 4px 3px #0004 inset;
+                border-color: #0003 !important;
             }
         }
 
