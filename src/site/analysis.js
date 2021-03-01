@@ -452,7 +452,8 @@ sauce.ns('analysis', ns => {
         async render() {
             const source = await this.getSelectedSource();
             const template = await getTemplate('peak-efforts.html');
-            this.$el.html(await template(Object.assign({
+            const attrs = this.renderAttrs(source);
+            this.$el.html(await template({
                 menuInfo: await Promise.all(this.menu.map(async x => ({
                     source: x,
                     icon: await sauce.images.asText(ns.peakIcons[x]),
@@ -461,7 +462,9 @@ sauce.ns('analysis', ns => {
                 source,
                 sourceTooltip: source + '_tooltip',
                 sourceIcon: await sauce.images.asText(ns.peakIcons[source]),
-            }, this.renderAttrs.call(this, source))));
+                ...attrs,
+            }));
+            addPeaksRanks(source, attrs.rows, this.$el);  // bg okay;
             navHeightAdjustments();
         }
 
@@ -499,7 +502,8 @@ sauce.ns('analysis', ns => {
             endTime: roll.lastTime({noPad: true}),
             wallStartTime: roll.firstTime(),
             wallEndTime: roll.lastTime(),
-            style
+            style,
+            roll,
         };
     }
 
@@ -583,6 +587,35 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function addPeaksRanks(source, rows, $el) {
+        if (!ns.sauceAthlete || !ns.sauceAthlete.sync || !rows.length) {
+            return;
+        }
+        const sourceTypes = {
+            peak_power: 'power',
+            peak_power_wkg: 'power_wkg',
+            peak_hr: 'hr',
+            peak_pace: 'pace',
+            peak_gap: 'gap',
+            peak_np: 'np',
+            peak_xp: 'xp',
+        };
+        const type = sourceTypes[source];
+        if (!type || (type.startsWith('power') && !hasAccurateWatts())) {
+            return;
+        }
+        const peaks = await sauce.hist.getPeaksForAthlete(ns.athlete.id, type,
+            rows.map(x => x.rangeValue), {limit: 3});
+        const ourId = pageView.activity().id;
+        for (const p of peaks) {
+            if (p.activity === ourId) {
+                const $valCell = $el.find(`[data-range-value="${p.period}"] td:last-child`);
+                $valCell.append(` <b>${p.rank}</b>`);
+            }
+        }
+    }
+
+
     async function startActivity() {
         const realWattsStream = await fetchStream('watts');
         const isWattEstimate = !realWattsStream;
@@ -635,6 +668,9 @@ sauce.ns('analysis', ns => {
             const menu = [/*locale keys*/];
             if (wattsStream) {
                 menu.push('peak_power');
+                if (ns.weight) {
+                    menu.push('peak_power_wkg');
+                }
                 if (supportsNP()) {
                     menu.push('peak_np');
                 }
@@ -675,7 +711,7 @@ sauce.ns('analysis', ns => {
                     const activity = pageView.activity();
                     const periodRanges = filterPeriodRanges(activeTime, activity);
                     const distRanges = filterDistRanges(distance, activity);
-                    if (source === 'peak_power' || source === 'peak_sp') {
+                    if (['peak_power', 'peak_sp', 'peak_power_wkg'].includes(source)) {
                         let dataStream;
                         if (source === 'peak_sp') {
                             dataStream = _getStream('watts_sealevel');
@@ -686,30 +722,17 @@ sauce.ns('analysis', ns => {
                         }
                         const prefix = attrs.isWattEstimate ? '~' : '';
                         const ranges = periodRanges.filter(x => !attrs.isWattEstimate || x.value >= minWattEstTime);
-                        console.warn(0);
-                        const peaksPromise = source === 'peak_power' && ns.sauceAthlete && ns.sauceAthlete.sync && 
-                            sauce.hist.getPeaksForAthlete(ns.athlete.id, 'power', ranges.map(x => x.value), {limit: 3});
-                        console.warn(1);
-                        for (const range of periodRanges.filter(x => !attrs.isWattEstimate || x.value >= minWattEstTime)) {
+                        for (const range of ranges) {
                             const roll = sauce.power.peakPower(range.value, timeStream, dataStream);
                             if (roll) {
-                                const value = prefix + H.number(roll.avg());
-                                rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
-                            }
-                        }
-                        console.warn(2);
-                        if (peaksPromise) {
-                            peaksPromise.then(peaks => {
-                                console.warn(rows);
-                                const ourId = pageView.activity().id; 
-                                for (const p of peaks) {
-                                    if (p.activity === ourId) {
-                                        const $row = panel.$el.find(`[data-range-value="${p.period}"]`);
-                                        $row.find('td:last-child').append(` <b>${p.rank}</b>`);
-                                    }
-                                    console.warn(panel, p);
+                                if (source === 'peak_power_wkg') {
+                                    const value = prefix + (roll.avg() / ns.weight).toFixed(1);
+                                    rows.push(_rangeRollToRow({range, roll, value, unit: 'w/kg'}));
+                                } else {
+                                    const value = prefix + H.number(roll.avg());
+                                    rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
                                 }
-                            });
+                            }
                         }
                     } else if (source === 'peak_pace' || source === 'peak_gap') {
                         attrs.isDistanceRange = true;
@@ -774,7 +797,7 @@ sauce.ns('analysis', ns => {
                             }
                         }
                     }
-                    return Object.assign(attrs, {rows});
+                    return {rows, ...attrs};
                 }
             });
             attachInfo(panel.$el);
@@ -1102,9 +1125,12 @@ sauce.ns('analysis', ns => {
             for (const x of _activeGraphs) {
                 if (x === 'power') {
                     const label = await LM('power');
+                    const formatter = source === 'peak_power_wkg' ?
+                        x => `${label}: ${(x / ns.weight).toFixed(1)}<abbr class="unit short">w/kg</abbr>` :
+                        x => `${label}: ${H.number(x)}<abbr class="unit short">w</abbr>`;
                     specs.push({
                         data: correctedPower.values(),
-                        formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">w</abbr>`,
+                        formatter,
                         colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
                             {hStart: 360, hEnd: 280, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
                     });
@@ -1267,6 +1293,7 @@ sauce.ns('analysis', ns => {
             _activeGraphs.clear();
             _activeGraphs.add({
                 peak_power: 'power',
+                peak_power_wkg: 'power',
                 peak_np: 'power',
                 peak_xp: 'power',
                 peak_sp: 'sp',
@@ -2989,6 +3016,7 @@ sauce.ns('analysis', ns => {
         ns.paceMode = ns.speedUnit === 'mph' ? 'speed' : 'pace';
         ns.peakIcons = {
             peak_power: 'fa/bolt-duotone.svg',
+            peak_power_wkg: 'fa/bolt-duotone.svg',
             peak_np: 'fa/atom-alt-duotone.svg',
             peak_xp: 'fa/atom-duotone.svg',
             peak_sp: 'fa/ship-duotone.svg',
