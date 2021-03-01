@@ -604,8 +604,9 @@ sauce.ns('analysis', ns => {
         if (!type || (type.startsWith('power') && !hasAccurateWatts())) {
             return;
         }
+        const filter = await sauce.storage.get('analysis_peaks_rank_filter');
         const peaks = await sauce.hist.getPeaksForAthlete(ns.athlete.id, type,
-            rows.map(x => x.rangeValue), {limit: 3});
+            rows.map(x => x.rangeValue), {limit: 3, filter, filterTS: getActivityTS()});
         const ourId = pageView.activity().id;
         for (const p of peaks) {
             if (p.activity === ourId) {
@@ -1331,9 +1332,9 @@ sauce.ns('analysis', ns => {
             width: '45em',
             dialogClass: 'sauce-peaks-settings-dialog',
             body: await template({
-                period: await sauce.storage.get('analysis_peaks_podium_period'),
-                season_start_month: await sauce.storage.get('season_start_month'),
-                season_start_day: await sauce.storage.get('season_start_day'),
+                rankFilter: await sauce.storage.get('analysis_peaks_rank_filter'),
+                seasonStartMonth: await sauce.storage.get('season_start_month'),
+                seasonStartDay: await sauce.storage.get('season_start_day'),
                 isPeriodsDefault: ns.allPeriodRanges === defaultPeakPeriods,
                 isDistsDefault: ns.allDistRanges === defaultPeakDistances,
             }),
@@ -1357,23 +1358,22 @@ sauce.ns('analysis', ns => {
             ev.currentTarget.classList.add('hidden');
             reload = true;
         });
-        $modal.on('input', '.settings select[name="period"]', async ev => {
+        $modal.on('input', '.settings select[name="rank_filter"]', async ev => {
             const val = ev.currentTarget.value;
-            const seasonal = val === 'cur_season' || val === 'all_seasons';
-            $modal.find('.settings label.season').toggleClass('hidden', !seasonal);
+            $modal.find('.settings label.season').toggleClass('hidden', val !== 'season');
         });
         $modal.on('input', '.settings', async ev => {
             $modal.find('.settings .save.btn').removeClass('hidden');
         });
         $modal.on('click', '.settings .save.btn', async ev => {
-            const period = $modal.find('.settings select[name="period"]').val();
+            await sauce.storage.set('analysis_peaks_rank_filter',
+                $modal.find('.settings select[name="rank_filter"]').val());
             const month = $modal.find('.settings input[name="season_start_month"]').val();
             const day = $modal.find('.settings input[name="season_start_day"]').val();
             if (month && day) {
                 await sauce.storage.set('season_start_month', month);
                 await sauce.storage.set('season_start_day', day);
             }
-            await sauce.storage.set('analysis_peaks_podium_period', period);
             ev.currentTarget.classList.add('hidden');
             reload = true;
         });

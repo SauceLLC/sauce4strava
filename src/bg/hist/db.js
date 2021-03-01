@@ -275,15 +275,6 @@ sauce.ns('hist.db', ns => {
             }
         }
 
-        async getForAthlete(athlete, options={}) {
-            console.warn("DEPRECATED");
-            const activities = [];
-            for await (const x of this.byAthlete(athlete, options)) {
-                activities.push(x);
-            }
-            return activities;
-        }
-
         async getAllKeysForAthlete(athlete, options={}) {
             return await this.getAllKeys(...this._queryForAthlete(athlete, options));
         }

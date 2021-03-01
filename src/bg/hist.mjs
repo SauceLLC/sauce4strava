@@ -538,8 +538,42 @@ async function _aggregatePeaks(work, options={}) {
 }
 
 
+async function _makePeaksFilterOptions(options={}) {
+    const filter = options.filter;
+    if (!filter || filter === 'all') {
+        return options;
+    }
+    const ts = options.filterTS || Date.now();
+    const d = sauce.date.toLocaleDayDate(ts + 86400 * 1000);
+    let start;
+    let end;
+    if (filter === 'year') {
+        start = d.setMonth(0, 1);
+        end = d.setMonth(12, 1);
+    } else if (filter === 'season') {
+        const startMonth = Number(await sauce.storage.get('season_start_month')) || 1;
+        const startDay = Number(await sauce.storage.get('season_start_day')) || 1;
+        const seasonDate = d.setMonth(startMonth - 1, startDay);
+        if (seasonDate >= ts) {
+            end = seasonDate;
+            start = d.setMonth(startMonth - 13, startDay);
+        } else {
+            start = seasonDate;
+            end = d.setMonth(startMonth + 11, startDay);
+        }
+    } else if (!isNaN(Number(filter))) {
+        end = d.getTime();
+        start = d.setDate(-Number(filter) + d.getDate());
+    } else {
+        throw new TypeError('Invalid Filter');
+    }
+    return {start, end, excludeUpper: true, ...options};
+}
+
+
 export async function getPeaksForAthlete(athleteId, type, periods, options={}) {
     periods = Array.isArray(periods) ? periods : [periods];
+    options = await _makePeaksFilterOptions(options);
     return await _aggregatePeaks(periods.map(x =>
         peaksStore.getForAthlete(athleteId, type, x, options)), options);
 }
@@ -548,6 +582,7 @@ sauce.proxy.export(getPeaksForAthlete, {namespace});
 
 export async function getPeaksFor(type, periods, options={}) {
     periods = Array.isArray(periods) ? periods : [periods];
+    options = await _makePeaksFilterOptions(options);
     return await _aggregatePeaks(periods.map(x =>
         peaksStore.getFor(type, x, options)), options);
 }

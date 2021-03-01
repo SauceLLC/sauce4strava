@@ -105,20 +105,7 @@ sauce.ns('performance', async ns => {
 
 
     function roundTimeToDay(time) {
-        const d = new Date(time);
-        const timeOffset =
-            d.getHours() * 86400000 +
-            d.getMinutes() * 60000 +
-            d.getSeconds() * 1000 +
-            d.getMilliseconds();
-        d.setHours(0);
-        d.setMinutes(0);
-        d.setSeconds(0);
-        d.setMilliseconds(0);
-        if (timeOffset >= 86400000 * 12) {
-            d.setDate(d.getDate() + 1);
-        }
-        return d.getTime();
+        return sauce.date.roundToLocaleDayDate(time).getTime();
     }
 
 
