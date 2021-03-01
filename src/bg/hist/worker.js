@@ -87,9 +87,9 @@ async function findPeaks(athlete, activities) {
                 // repeative iterations on the same dataset.  it's about 50% faster.
                 for (const period of periods) {
                     if (watts && isRide || period >= 300) {
-                        const inlineCalcs = period >= 300;
+                        const weightedCalcs = period >= 300;
                         const rp = sauce.power.correctedRollingPower(streams.time, period, {
-                            inlineNP: inlineCalcs, inlineXP: inlineCalcs});
+                            inlineNP: weightedCalcs, inlineXP: weightedCalcs});
                         if (rp) {
                             const leaderRolls = {};
                             const leaderValues = {};
@@ -101,17 +101,17 @@ async function findPeaks(athlete, activities) {
                                         leaderRolls.power = rp.clone();
                                         leaderValues.power = power;
                                     }
-                                    if (inlineCalcs) {
-                                        const np = rp.np();
-                                        if (!leaderValues.np || np >= leaderValues.np) {
-                                            leaderRolls.np = rp.clone();
-                                            leaderValues.np = np;
-                                        }
-                                        const xp = rp.xp();
-                                        if (!leaderValues.xp || xp >= leaderValues.xp) {
-                                            leaderRolls.xp = rp.clone();
-                                            leaderValues.xp = xp;
-                                        }
+                                }
+                                if (weightedCalcs && rp.full({active: true})) {
+                                    const np = rp.np();
+                                    if (!leaderValues.np || np >= leaderValues.np) {
+                                        leaderRolls.np = rp.clone();
+                                        leaderValues.np = np;
+                                    }
+                                    const xp = rp.xp();
+                                    if (!leaderValues.xp || xp >= leaderValues.xp) {
+                                        leaderRolls.xp = rp.clone();
+                                        leaderValues.xp = xp;
                                     }
                                 }
                             }

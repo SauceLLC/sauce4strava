@@ -822,7 +822,11 @@ sauce.ns('power', function() {
         }
 
         full(options={}) {
-            return this._active ? this.active(options) >= this.period : super.full(options);
+            if (this._active || options.active) {
+                return this.active(options) >= this.period;
+            } else {
+                return super.full(options);
+            }
         }
 
         np(options={}) {

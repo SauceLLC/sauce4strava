@@ -396,7 +396,6 @@ export async function peaksProcessor({manifest, activities, athlete}) {
         const chunk = activities.slice(i, i + step);
         work.push(wp.exec('findPeaks', athlete.data, chunk.map(x => x.data)));
     }
-    console.info("Find peaks workers:", work.length, 'workers', step, 'acts / worker');
     for (const errors of await Promise.all(work)) {
         for (const x of errors) {
             const activity = activityMap.get(x.activity);
@@ -404,8 +403,6 @@ export async function peaksProcessor({manifest, activities, athlete}) {
         }
     }
     await Promise.all(work);
-    console.info("find peaks done", Date.now() - s, 'ms', activities.length,
-        'acts', Math.round((Date.now() - s) / activities.length), 'ms/act');
 }
 
 
