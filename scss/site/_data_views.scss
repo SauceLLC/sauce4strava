@@ -79,6 +79,13 @@
         }
     }
 
+    &.dirty.invalid {
+        .mutable-data-save.btn {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    }
+
     .btn.mutable-data-entry-add,
     .btn.mutable-data-entry-delete {
         svg {

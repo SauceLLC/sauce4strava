@@ -98,6 +98,7 @@ export class MutableDataView extends SauceView {
 
     _onInput(ev) {
         this.$el.addClass('dirty');
+        this.$el.toggleClass('invalid', !!this.$('input:invalid').length);
         this.onInput(ev);
     }
 
@@ -229,6 +230,7 @@ export class PeaksTimesView extends PeaksPeriodsView {
     }
 
     async onSave(data) {
+        data.sort((a, b) => a - b);
         this.values = data;
         // NOTE: It is just a coincidence that this data looks like entryData(),
         // don't use that function as these are separate formats and could change.
@@ -259,6 +261,7 @@ export class PeaksDistancesView extends PeaksPeriodsView {
     }
 
     async onSave(data) {
+        data.sort((a, b) => a - b);
         this.values = data;
         // NOTE: It is just a coincidence that this data looks like entryData(),
         // don't use that function as these are separate formats and could change.

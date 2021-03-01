@@ -1348,6 +1348,7 @@ sauce.ns('analysis', ns => {
             }
             await sauce.storage.set('analysis_peaks_podium_period', period);
             ev.currentTarget.classList.add('hidden');
+            reload = true;
         });
         $modal.on('dialogclose', ev => {
             if (reload) {
