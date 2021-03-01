@@ -1719,6 +1719,7 @@ sauce.ns('performance', async ns => {
                 borderWidth: lineWidth,
                 tooltipFormat: x => H.elevation(x, {suffix: true}),
                 data: gains,
+                lineTension: 0.1,
             }];
             this.charts.elevation.update();
         }
