@@ -384,7 +384,6 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
 
 
 export async function peaksProcessor({manifest, activities, athlete}) {
-    const s = Date.now();
     const wp = getWorkerPool();
     const activityMap = new Map(activities.map(x => [x.pk, x]));
     const work = [];

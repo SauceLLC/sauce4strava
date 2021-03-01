@@ -202,6 +202,18 @@ sauce.ns('hist.db', ns => {
             }
         }
 
+        safeSort(peaks, type) {
+            // Handle non-numeric types that have on occasion crept in.  Yes, we should fix all these
+            // cases upstream before they get into the database, but the chance of it happening is
+            // non-zero with the way I hack on this, so be careful about sorting properly here in
+            // the event of value===undefined.
+            if (this.getDirectionForType(type) === 'prev') {
+                peaks.sort((a, b) => (b.value || 0) - (a.value || 0));
+            } else {
+                peaks.sort((a, b) => (a.value || 0) - (b.value || 0));
+            }
+        }
+
         async getForAthlete(athleteId, type, period, options={}) {
             period = period && Math.round(period);
             const q = IDBKeyRange.bound(
@@ -212,11 +224,7 @@ sauce.ns('hist.db', ns => {
                 ...options,
                 limit: undefined
             });
-            if (this.getDirectionForType(type) === 'prev') {
-                peaks.sort((a, b) => b.value - a.value);
-            } else {
-                peaks.sort((a, b) => a.value - b.value);
-            }
+            this.safeSort(peaks, type);
             return options.limit ? peaks.slice(0, options.limit) : peaks;
         }
 
@@ -230,11 +238,7 @@ sauce.ns('hist.db', ns => {
                 ...options,
                 limit: undefined
             });
-            if (this.getDirectionForType(type) === 'prev') {
-                peaks.sort((a, b) => b.value - a.value);
-            } else {
-                peaks.sort((a, b) => a.value - b.value);
-            }
+            this.safeSort(peaks, type);
             return options.limit ? peaks.slice(0, options.limit) : peaks;
         }
 

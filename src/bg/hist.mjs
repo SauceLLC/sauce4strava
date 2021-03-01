@@ -77,7 +77,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 6,
+    version: 7, // Fix np and xp calcs (must be active:true)
     depends: ['extra-streams'],
     data: {processor: processors.peaksProcessor}
 });
