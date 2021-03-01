@@ -44,9 +44,14 @@
                         width: 10ch;
                     }
                 }
+            }
 
-                .btn.reset {
-                    margin-top: 0.4em;
+            .btn.reset,
+            .btn.save {
+                margin-top: 0.4em;
+
+                &.hidden {
+                    display: none !important;
                 }
             }
         }

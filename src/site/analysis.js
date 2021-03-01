@@ -1297,7 +1297,6 @@ sauce.ns('analysis', ns => {
         times.on('save', () => void (reload = true));
         dists.on('save', () => void (reload = true));
         const template = await getTemplate('peaks-settings.html');
-        const seasonStart = new Date(sauce.options.season_start);
         const $modal = await sauce.modal({
             title: await LM('peaks_settings_dialog_title'),
             flex: true,
@@ -1305,9 +1304,11 @@ sauce.ns('analysis', ns => {
             width: '45em',
             dialogClass: 'sauce-peaks-settings-dialog',
             body: await template({
-                season_start_month: seasonStart.getMonth() + 1,
-                season_start_day: seasonStart.getDate() + 1,
-                ...sauce.options
+                period: await sauce.storage.get('analysis_peaks_podium_period'),
+                season_start_month: await sauce.storage.get('season_start_month'),
+                season_start_day: await sauce.storage.get('season_start_day'),
+                isPeriodsDefault: ns.allPeriodRanges === defaultPeakPeriods,
+                isDistsDefault: ns.allDistRanges === defaultPeakDistances,
             }),
         });
         await times.render();
@@ -1317,14 +1318,36 @@ sauce.ns('analysis', ns => {
         $modal.on('click', '.btn.reset', async ev => {
             if (ev.currentTarget.dataset.id === 'times') {
                 times.values = defaultPeakPeriods.map(x => x.value);
+                times.$el.removeClass('dirty');
                 await sauce.storage.update('analysis_peak_ranges', {periods: null});
                 await times.render();
             } else {
                 dists.values = defaultPeakDistances.map(x => x.value);
+                dists.$el.removeClass('dirty');
                 await sauce.storage.update('analysis_peak_ranges', {distances: null});
                 await dists.render();
             }
+            ev.currentTarget.classList.add('hidden');
             reload = true;
+        });
+        $modal.on('input', '.settings select[name="period"]', async ev => {
+            const val = ev.currentTarget.value;
+            const seasonal = val === 'cur_season' || val === 'all_seasons';
+            $modal.find('.settings label.season').toggleClass('hidden', !seasonal);
+        });
+        $modal.on('input', '.settings', async ev => {
+            $modal.find('.settings .save.btn').removeClass('hidden');
+        });
+        $modal.on('click', '.settings .save.btn', async ev => {
+            const period = $modal.find('.settings select[name="period"]').val();
+            const month = $modal.find('.settings input[name="season_start_month"]').val();
+            const day = $modal.find('.settings input[name="season_start_day"]').val();
+            if (month && day) {
+                await sauce.storage.set('season_start_month', month);
+                await sauce.storage.set('season_start_day', day);
+            }
+            await sauce.storage.set('analysis_peaks_podium_period', period);
+            ev.currentTarget.classList.add('hidden');
         });
         $modal.on('dialogclose', ev => {
             if (reload) {

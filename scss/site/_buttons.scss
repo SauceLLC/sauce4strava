@@ -40,6 +40,10 @@
         }
 
         &:not(.btn-unstyled) {
+            &.btn-block {
+                display: flex;
+            }
+
             &:hover {
                 box-shadow: 1px 1px 1px #0005;
                 border-color: transparent;

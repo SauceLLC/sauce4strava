@@ -133,7 +133,6 @@
     "analysis_peaks_day": {"message": "day"},
     "analysis_peaks_ranges": {"message": "Peak Efforts Ranges"},
     "analysis_peaks_reset_to_defaults": {"message": "Reset to defaults"},
-    "season_start": {"message": "Season Start"},
     "time_sec": {"message": "sec"},
     "time_secs": {"message": "secs"},
     "time_min": {"message": "min"},
@@ -283,5 +282,7 @@
     "performance_run": {"message": "Run"},
     "performance_swim": {"message": "Swim"},
     "performance_ski": {"message": "Ski"},
-    "performance_workout": {"message": "Workout"}
+    "performance_workout": {"message": "Workout"},
+    "season_start": {"message": "Season Start"},
+    "save": {"message": "Save"}
 }

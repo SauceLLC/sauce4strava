@@ -75,7 +75,7 @@
 
     &:not(.dirty) {
         .mutable-data-save.btn {
-            display: none;
+            display: none !important;
         }
     }
 
