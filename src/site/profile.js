@@ -9,11 +9,17 @@ sauce.ns('profile', ns => {
 
 
     async function load() {
-        const $holder = jQuery('.profile-heading .athlete-name');
-        const name = $holder.text().trim();
+        const $name = jQuery('.profile-heading .athlete-name');
+        const name = $name.text().trim();
         const $btn = await sauce.sync.createSyncButton(athleteId, {name});
-        $btn.addClass('btn-sm');
-        $holder.append($btn);
+        const $buttonBox = $name.siblings('.follow-action');
+        if ($buttonBox.length) {
+            // Peer
+            $buttonBox.prepend($btn);
+        } else {
+            // Self
+            $name.parent().append($btn);
+        }
     }
 
 

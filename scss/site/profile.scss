@@ -5,8 +5,12 @@
 
 
 .sauce-sync-button {
-    margin-left: 1em;
-    vertical-align: text-top;
+    padding: 0 0.8em;
+    border: 1px solid color.shade(fg, 30%, 0.2);
 
     @include sync.button;
+}
+
+:not(.follow-action) > .sauce-sync-button {
+    margin-top: 1em;
 }
