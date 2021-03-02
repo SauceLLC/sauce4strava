@@ -245,6 +245,10 @@ sauce.ns('hist.db', ns => {
         async deleteForActivity(activityId) {
             return await this.delete(activityId, {index: 'activity'});
         }
+
+        async deleteForAthlete(athleteId) {
+            return await this.delete(athleteId, {index: 'athlete'});
+        }
     }
 
 
