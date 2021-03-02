@@ -324,7 +324,7 @@ sauce.ns('hist.db', ns => {
             }
         }
 
-        async getLatestForAthlete(athlete, options={}) {
+        async getNewestForAthlete(athlete, options={}) {
             for await (const x of this.byAthlete(athlete, {direction: 'prev', ...options})) {
                 return x;
             }

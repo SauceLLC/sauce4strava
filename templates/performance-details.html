@@ -15,83 +15,126 @@
                  title="Show newer activity">{-await fa('ellipsis-h-light')-}</div>
         <% } %>
 
-        <% for (const a of activities) { %>
-            <div class="activity" data-id="{{a.id}}">
-                <header class="title">
-                    <div class="btn btn-icon-only btn-unstyled edit-activity"
-                         title="Edit activity">{-await fa('edit-duotone')-}</div> <!-- XXX localize -->
-                    <small>{{humanDateTime(a.ts, {style: 'weekday'})}}</small>
-                    <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
-                </header>
-                <% if (sauce.model.getActivityTSS(a) != null || a.tssOverride != null) { %>
-                    <% if (a.tssOverride != null) { %>
-                        <row>
-                            <key>TSS Override:</key>
-                            <value>{{humanNumber(a.tssOverride)}}</value>
-                        </row>
-                    <% } %>
-                    <% if (a.stats && a.stats.tss != null) { %>
+        <% for (const day of daily.reverse()) { %>
+            <% const multiple = day.activities.length > 1;  if (multiple) { %>
+                <div class="entry day">
+                    <header class="title">
+                        <small>{{humanDate(day.date, {style: 'weekday'})}} - {{day.activities.length}} Activities</small>
+                    </header>
+                    <% if (day.tss) { %>
                         <row>
                             <key>TSS:</key>
-                            <value>{{humanNumber(sauce.model.getActivityTSS(a))}}</value>
+                            <value>{{humanNumber(day.tss)}}</value>
                         </row>
                     <% } %>
-                    <% if (a.stats && a.stats.tTss != null) { %>
+                    <% if (day.duration) { %>
                         <row>
-                            <key>tTSS:</key>
-                            <value>{{humanNumber(a.stats.tTss)}}</value>
+                            <key>Time:</key>
+                            <value>{{humanTimer(day.duration)}}</value>
                         </row>
                     <% } %>
-                <% } else { %>
-                    <row>
-                        <key>TSS:</key>
-                        <value class="sauce-negative">
-                            <a class="edit-activity sauce-negative"
-                               title="Click to edit">Unavailable</a><!-- XXX localize -->
-                        </value>
-                    </row>
-                <% } %>
-                <% if (a.stats) { %>
-                    <% if (a.stats.activeTime) { %>
-                        <row>
-                            <key>Active Time:</key>
-                            <value>{{humanTimer(a.stats.activeTime)}}</value>
-                        </row>
-                    <% } %>
-                    <% if (a.stats.distance) { %>
-                        <row>
-                            <key>Distance:</key>
-                            <value>{{humanDistance(a.stats.distance)}}<abbr
-                                class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
-                        </row>
-                    <% } %>
-                    <% if (a.stats.power) { %>
-                        <row>
-                            <key>Power:</key>
-                            <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
-                        </row>
-                    <% } %>
-                    <% if (a.stats.np) { %>
-                        <row>
-                            <key>NP:</key>
-                            <value>{{humanNumber(a.stats.np)}}<abbr class="unit short">w</abbr></value>
-                        </row>
-                    <% } %>
-                    <% if (a.stats.altitudeGain) { %>
+                    <% if (day.altGain) { %>
                         <row>
                             <key>Elevation Gain:</key>
-                            <value>{{humanElevation(a.stats.altitudeGain)}}<abbr
+                            <value>{{humanElevation(day.altGain)}}<abbr
                                 class="unit short">{{sauce.locale.elevationFormatter.shortUnitKey()}}</abbr></value>
                         </row>
                     <% } %>
-                <% } %>
-                <% if (obj.debug) { %>
-                    <row>
-                        <key>DEBUG:</key>
-                        <value><pre>{{JSON.stringify(a, null, 2)}}</pre></value>
-                    </row>
-                <% } %>
-            </div>
+                    <% if (day.distance) { %>
+                        <row>
+                            <key>Distance:</key>
+                            <value>
+                                {{humanDistance(day.distance)}}<abbr
+                                    class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr>
+                            </value>
+                        </row>
+                    <% } %>
+            <% } %>
+            <% for (const a of day.activities.reverse()) { %>
+                <div class="activity {{!multiple ? 'entry' : ''}}" data-id="{{a.id}}">
+                    <header class="title">
+                        <div class="btn btn-icon-only btn-unstyled edit-activity"
+                             title="Edit activity">{-await fa('edit-duotone')-}</div> <!-- XXX localize -->
+                        <% if (multiple) { %>
+                            <small>{{humanTime(a.ts)}}</small>
+                        <% } else { %>
+                            <small>{{humanDateTime(a.ts, {style: 'weekday'})}}</small>
+                        <% } %>
+                        <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
+                    </header>
+                    <% if (sauce.model.getActivityTSS(a) != null || a.tssOverride != null) { %>
+                        <% if (a.tssOverride != null) { %>
+                            <row>
+                                <key>TSS Override:</key>
+                                <value>{{humanNumber(a.tssOverride)}}</value>
+                            </row>
+                        <% } %>
+                        <% if (a.stats && a.stats.tss != null) { %>
+                            <row>
+                                <key>TSS:</key>
+                                <value>{{humanNumber(sauce.model.getActivityTSS(a))}}</value>
+                            </row>
+                        <% } %>
+                        <% if (a.stats && a.stats.tTss != null) { %>
+                            <row>
+                                <key>tTSS:</key>
+                                <value>{{humanNumber(a.stats.tTss)}}</value>
+                            </row>
+                        <% } %>
+                    <% } else { %>
+                        <row>
+                            <key>TSS:</key>
+                            <value class="sauce-negative">
+                                <a class="edit-activity sauce-negative"
+                                   title="Click to edit">Unavailable</a><!-- XXX localize -->
+                            </value>
+                        </row>
+                    <% } %>
+                    <% if (a.stats) { %>
+                        <% if (a.stats.activeTime) { %>
+                            <row>
+                                <key>Time:</key>
+                                <value>{{humanTimer(a.stats.activeTime)}}</value>
+                            </row>
+                        <% } %>
+                        <% if (a.stats.distance) { %>
+                            <row>
+                                <key>Distance:</key>
+                                <value>{{humanDistance(a.stats.distance)}}<abbr
+                                    class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
+                            </row>
+                        <% } %>
+                        <% if (a.stats.power) { %>
+                            <row>
+                                <key>Power:</key>
+                                <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
+                            </row>
+                        <% } %>
+                        <% if (a.stats.np) { %>
+                            <row>
+                                <key>NP:</key>
+                                <value>{{humanNumber(a.stats.np)}}<abbr class="unit short">w</abbr></value>
+                            </row>
+                        <% } %>
+                        <% if (a.stats.altitudeGain) { %>
+                            <row>
+                                <key>Elevation Gain:</key>
+                                <value>{{humanElevation(a.stats.altitudeGain)}}<abbr
+                                    class="unit short">{{sauce.locale.elevationFormatter.shortUnitKey()}}</abbr></value>
+                            </row>
+                        <% } %>
+                    <% } %>
+                    <% if (obj.debug) { %>
+                        <row>
+                            <key>DEBUG:</key>
+                            <value><pre>{{JSON.stringify(a, null, 2)}}</pre></value>
+                        </row>
+                    <% } %>
+                </div>
+            <% } %>
+            <% if (multiple) { %>
+                </div><!-- /day -->
+            <% } %>
         <% } %>
 
         <% if (hasOlder) { %>

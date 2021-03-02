@@ -280,6 +280,8 @@ sauce.ns('performance', async ns => {
             return [];
         }
         const slots = [];
+        start = start || acts[0].ts;
+        end = end || acts[acts.length - 1].ts;
         const startDay = sauce.date.toLocaleDayDate(start);
         let i = 0;
         for (const date of sauce.date.dayRange(startDay, new Date(end))) {
@@ -1037,31 +1039,32 @@ sauce.ns('performance', async ns => {
             return r;
         }
 
-        async refreshLatestAndOldest() {
+        async refreshNewestAndOldest() {
             // XXX I want to use this same info from mainview, so lets move it to pageView for everyone to use..
             const id = this.pageView.athlete && this.pageView.athlete.id;
             if (!id) {
                 return;
             }
-            const [wasLatest, wasOldest] = [this.latests, this.oldest];
-            [this.latest, this.oldest] = await Promise.all([
-                sauce.hist.getLatestActivityForAthlete(id).then(a => a && a.ts),
+            const [wasNewest, wasOldest] = [this.newest, this.oldest];
+            [this.newest, this.oldest] = await Promise.all([
+                sauce.hist.getNewestActivityForAthlete(id).then(a => a && a.ts),
                 sauce.hist.getOldestActivityForAthlete(id).then(a => a && a.ts),
             ]);
-            return wasLatest !== this.latest || wasOldest !== this.oldest;
+            return wasNewest !== this.newest || wasOldest !== this.oldest;
         }
 
         async renderAttrs() {
             let hasNewer;
             let hasOlder;
-            if (this.activities && this.activities.length && this.latest) {
-                const ourLatest = this.activities[0].ts;
-                const ourOldest = this.activities[this.activities.length - 1].ts;
-                hasNewer = ourLatest < this.latest;
+            if (this.activities && this.activities.length && this.newest) {
+                const ourOldest = this.activities[0].ts;
+                const ourNewest = this.activities[this.activities.length - 1].ts;
+                hasNewer = ourNewest < this.newest;
                 hasOlder = ourOldest > this.oldest;
             }
             return {
                 activities: this.activities,
+                daily: this.daily,
                 hasNewer,
                 hasOlder,
                 debug: !!location.search.match(/debug/),
@@ -1085,13 +1088,13 @@ sauce.ns('performance', async ns => {
                 this.syncController = null;
             }
             this.activities = null;
-            await this.refreshLatestAndOldest();
+            await this.refreshNewestAndOldest();
         }
 
         async _onSyncActive(ev) {
             const active = ev.data;
             if (active === false) {
-                if (await this.refreshLatestAndOldest()) {
+                if (await this.refreshNewestAndOldest()) {
                     await this.render();
                 }
             }
@@ -1107,7 +1110,8 @@ sauce.ns('performance', async ns => {
 
         async setActivities(activities, options={}) {
             this.activities = Array.from(activities);
-            this.activities.sort((a, b) => b.ts - a.ts);
+            this.activities.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+            this.daily = activitiesByDay(this.activities);
             await this.render();
             if (!options.noHighlight) {
                 const expanded = this.$el.hasClass('expanded');
@@ -1594,7 +1598,7 @@ sauce.ns('performance', async ns => {
             $start.text(H.date(start));
             const isEnd = end >= periodEndMax();
             this.$('.btn.period.next').toggleClass('invisible', isEnd);
-            this.$('.btn.period.latest').toggleClass('invisible', isEnd);
+            this.$('.btn.period.newest').toggleClass('invisible', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
                 H.date(roundTimeToDay(end - DAY)));
@@ -1790,11 +1794,11 @@ sauce.ns('performance', async ns => {
 
         async onPeriodShift(ev) {
             const classes = ev.currentTarget.classList;
-            if (classes.contains('latest')) {
+            if (classes.contains('newest')) {
                 this.periodEnd = periodEndMax();
                 this.periodStart = roundTimeToDay(this.periodEnd - (this.period * DAY));
             } else if (classes.contains('oldest')) {
-                // XXX refactor details view latest code into pageview..
+                // XXX refactor details view newest code into pageview..
                 // this is silly to reach into details view..
                 this.periodStart = startOfDay(this.pageView.detailsView.oldest);
                 this.periodEnd = roundTimeToDay(this.periodStart + (this.period * DAY));

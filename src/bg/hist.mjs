@@ -503,7 +503,7 @@ async function updatePeerActivities(athlete, options={}) {
         }
     }
 
-    // Fetch latest activities (or all of them if this is the first time).
+    // Fetch newest activities (or all of them if this is the first time).
     await batchImport(new Date());
     const sentinel = await athlete.get('activitySentinel');
     if (!sentinel) {
@@ -697,10 +697,10 @@ async function getActivitiesForAthlete(athleteId, options={}) {
 sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
-async function getLatestActivityForAthlete(athleteId, options) {
-    return await actsStore.getLatestForAthlete(athleteId, options);
+async function getNewestActivityForAthlete(athleteId, options) {
+    return await actsStore.getNewestForAthlete(athleteId, options);
 }
-sauce.proxy.export(getLatestActivityForAthlete, {namespace});
+sauce.proxy.export(getNewestActivityForAthlete, {namespace});
 
 
 async function getOldestActivityForAthlete(athleteId, options) {
