@@ -102,6 +102,12 @@
         td {
             padding: 0.68em 0.44em;
             text-align: center;
+
+            .sauce-peak-rank {
+                width: 20px;
+                height: 20px;
+                margin: -0.3em -0.8em -0.3em 0.2em;
+            }
         }
 
         td:last-child {

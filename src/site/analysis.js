@@ -492,7 +492,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function _rangeRollToRow({range, roll, value, unit, style}) {
+    function _rangeRollToRow({range, roll, native, value, unit, style}) {
         return {
             rangeValue: range.value,
             rangeLabel: range.label,
@@ -504,6 +504,7 @@ sauce.ns('analysis', ns => {
             wallEndTime: roll.lastTime(),
             style,
             roll,
+            native,
         };
     }
 
@@ -608,11 +609,34 @@ sauce.ns('analysis', ns => {
         const peaks = await sauce.hist.getPeaksForAthlete(ns.athlete.id, type,
             rows.map(x => x.rangeValue), {limit: 3, filter, filterTS: getActivityTS()});
         const ourId = pageView.activity().id;
+        const iconMap = {
+            all:  ['icon-at-kom-1', 'icon-at-kom-2', 'icon-at-kom-3'],
+            year: ['icon-yr-pr-1', 'icon-yr-pr-2', 'icon-yr-pr-3'],
+            season: ['icon-yr-pr-1', 'icon-yr-pr-2', 'icon-yr-pr-3'],
+            DEFAULT: ['icon-at-pr-1', 'icon-at-pr-2', 'icon-at-pr-3'],
+        };
+        const icons = iconMap[filter] || iconMap.DEFAULT;
+        const ranked = [];
         for (const p of peaks) {
             if (p.activity === ourId) {
-                const $valCell = $el.find(`[data-range-value="${p.period}"] td:last-child`);
-                $valCell.append(` <b>${p.rank}</b>`);
+                ranked.push({range: p.period, rank: p.rank});
             }
+        }
+        if (!ranked.length) {
+            // Scan based on value as a last resort in case we haven't synced this activity yet.
+            for (const row of rows) {
+                const range = Math.round(row.rangeValue);
+                for (const p of peaks) {
+                    if (p.period === range && p.value <= row.native) {
+                        ranked.push({range, rank: p.rank});
+                        break;
+                    }
+                }
+            }
+        }
+        for (const x of ranked) {
+            const $valCell = $el.find(`[data-range-value="${x.range}"] td:last-child`);
+            $valCell.append(`<div class="sauce-peak-rank app-icon ${icons[x.rank - 1]}"></div>`);
         }
     }
 
@@ -727,11 +751,13 @@ sauce.ns('analysis', ns => {
                             const roll = sauce.power.peakPower(range.value, timeStream, dataStream);
                             if (roll) {
                                 if (source === 'peak_power_wkg') {
-                                    const value = prefix + (roll.avg() / ns.weight).toFixed(1);
-                                    rows.push(_rangeRollToRow({range, roll, value, unit: 'w/kg'}));
+                                    const native = roll.avg() / ns.weight;
+                                    const value = prefix + native.toFixed(1);
+                                    rows.push(_rangeRollToRow({range, roll, native, value, unit: 'w/kg'}));
                                 } else {
-                                    const value = prefix + H.number(roll.avg());
-                                    rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
+                                    const native = roll.avg();
+                                    const value = prefix + H.number(native);
+                                    rows.push(_rangeRollToRow({range, roll, native, value, unit: 'w'}));
                                 }
                             }
                         }
@@ -745,8 +771,9 @@ sauce.ns('analysis', ns => {
                         for (const range of distRanges) {
                             const roll = sauce.pace.bestPace(range.value, timeStream, dataStream);
                             if (roll) {
-                                const value = humanPace(roll.avg());
-                                rows.push(_rangeRollToRow({range, roll, value, unit}));
+                                const native = roll.avg();
+                                const value = humanPace(native);
+                                rows.push(_rangeRollToRow({range, roll, native, value, unit}));
                             }
                         }
                     } else if (source === 'peak_np' || source === 'peak_xp') {
@@ -759,10 +786,10 @@ sauce.ns('analysis', ns => {
                             // Use external NP/XP method for consistency.  There are tiny differences because
                             // the peak functions use a continuous rolling avg vs the external method that
                             // only examines the trimmed date set.
-                            const power = roll && roll[calcs.rollMethod].call(roll, {external: true});
-                            if (power) {
-                                const value = H.number(power);
-                                rows.push(_rangeRollToRow({range, roll, value, unit: 'w'}));
+                            const native = roll && roll[calcs.rollMethod].call(roll, {external: true});
+                            if (native) {
+                                const value = H.number(native);
+                                rows.push(_rangeRollToRow({range, roll, native, value, unit: 'w'}));
                             }
                         }
                     } else if (source === 'peak_hr') {
@@ -771,8 +798,9 @@ sauce.ns('analysis', ns => {
                             const roll = sauce.data.peakAverage(range.value, timeStream, hrStream,
                                 {active: true});
                             if (roll) {
-                                const value = H.number(roll.avg({active: true}));
-                                rows.push(_rangeRollToRow({range, roll, value, unit}));
+                                const native = roll.avg({active: true});
+                                const value = H.number(native);
+                                rows.push(_rangeRollToRow({range, roll, native, value, unit}));
                             }
                         }
                     } else if (source === 'peak_cadence') {
@@ -781,8 +809,9 @@ sauce.ns('analysis', ns => {
                             const roll = sauce.data.peakAverage(range.value, timeStream, cadenceStream,
                                 {active: true, ignoreZeros: true});
                             if (roll) {
-                                const value = ns.cadenceFormatter.format(roll.avg({active: true}));
-                                rows.push(_rangeRollToRow({range, roll, value, unit}));
+                                const native = roll.avg({active: true});
+                                const value = ns.cadenceFormatter.format(native);
+                                rows.push(_rangeRollToRow({range, roll, native, value, unit}));
                             }
                         }
                     } else if (source === 'peak_vam') {
@@ -793,8 +822,9 @@ sauce.ns('analysis', ns => {
                                 const start = getStreamTimeIndex(roll.firstTime());
                                 const end = getStreamTimeIndex(roll.lastTime());
                                 const gain = sauce.geo.altitudeChanges(altStream.slice(start, end + 1)).gain;
-                                const value = H.number((gain / roll.elapsed()) * 3600);
-                                rows.push(_rangeRollToRow({range, roll, value, unit: 'Vm/h'}));
+                                const native = (gain / roll.elapsed()) * 3600;
+                                const value = H.number(native);
+                                rows.push(_rangeRollToRow({range, roll, native, value, unit: 'Vm/h'}));
                             }
                         }
                     }
