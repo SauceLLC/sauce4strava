@@ -859,24 +859,26 @@ sauce.ns('performance', async ns => {
 
         async render() {
             await super.render();
-            this.$('.counts-piechart').sparkline(this.counts.map(x => x.count), {
-                type: 'pie',
-                width: '100%',
-                height: '100%',
-                highlightLighten: 1,
-                sliceColors: this.counts.map(x => ({
-                    ride: '#f09675',
-                    run: '#f0d175',
-                    swim: '#c0d7f1',
-                    ski: '#267e88',
-                    workout: '#999',
-                }[x.type])),
-                tooltipFormatter: (_, __, data) => {
-                    const items = this.counts.map(x =>
-                        `<li>${x.count} ${this._locales[x.type + (x.count !== 1 ? 's' : '')]}</li>`);
-                    return `<ul>${items.join('')}</ul>`;
-                }
-            });
+            if (this.counts) {
+                this.$('.counts-piechart').sparkline(this.counts.map(x => x.count), {
+                    type: 'pie',
+                    width: '100%',
+                    height: '100%',
+                    highlightLighten: 1,
+                    sliceColors: this.counts.map(x => ({
+                        ride: '#f09675',
+                        run: '#f0d175',
+                        swim: '#c0d7f1',
+                        ski: '#267e88',
+                        workout: '#999',
+                    }[x.type])),
+                    tooltipFormatter: (_, __, data) => {
+                        const items = this.counts.map(x =>
+                            `<li>${x.count} ${this._locales[x.type + (x.count !== 1 ? 's' : '')]}</li>`);
+                        return `<ul>${items.join('')}</ul>`;
+                    }
+                });
+            }
         }
 
         async setAthlete(athlete) {
