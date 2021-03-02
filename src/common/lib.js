@@ -864,6 +864,7 @@ sauce.ns('power', function() {
             instance.breakGap = this.breakGap;
             instance._joules = this._joules;
             instance._gapPadCount = this._gapPadCount;
+            instance._active = this._active;
             if (this._inlineNP) {
                 this._copyInlineState('_inlineNP', instance);
             }
