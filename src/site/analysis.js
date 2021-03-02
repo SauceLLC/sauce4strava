@@ -635,8 +635,7 @@ sauce.ns('analysis', ns => {
             }
         }
         for (const x of ranked) {
-            const $valCell = $el.find(`[data-range-value="${x.range}"] td:last-child`);
-            $valCell.append(`<div class="sauce-peak-rank app-icon ${icons[x.rank - 1]}"></div>`);
+            $el.find(`[data-range-value="${x.range}"] .app-icon`).addClass(icons[x.rank - 1]);
         }
     }
 
