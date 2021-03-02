@@ -269,9 +269,9 @@ sauce.ns('data', function() {
 
 
     class Break extends Zero {
-        constructor(time) {
+        constructor(pad) {
             super(0);
-            this.time = time;
+            this.pad = pad;
         }
     }
 
@@ -749,8 +749,8 @@ sauce.ns('power', function() {
                 const saved = {};
                 if (value instanceof sauce.data.Zero) {
                     if (value instanceof sauce.data.Break) {
-                        state.breakPadding += value.length;
-                        saved.breakPadding = value.length;
+                        state.breakPadding += value.pad;
+                        saved.breakPadding = value.pad;
                     }
                 } else {
                     const epsilon = 0.1;
@@ -962,12 +962,12 @@ sauce.ns('power', function() {
             const watts = stream[i];
             // Drain the rolling buffer but don't increment the counter for gaps...
             if (watts instanceof sauce.data.Break) {
-                for (let j = 0; j < Math.min(rollingSize, watts.length); j++) {
+                for (let j = 0; j < Math.min(rollingSize, watts.pad); j++) {
                     const rollIndex = (index + j) % rollingSize;
                     sum -= rolling[rollIndex] || 0;
                     rolling[rollIndex] = 0;
                 }
-                breakPadding += watts.length;
+                breakPadding += watts.pad;
                 continue;
             } else if (watts instanceof sauce.data.Zero) {
                 sum -= rolling[index] || 0;
@@ -1011,7 +1011,7 @@ sauce.ns('power', function() {
             const watts = stream[i];
             if (watts instanceof sauce.data.Zero) {
                 if (watts instanceof sauce.data.Break) {
-                    breakPadding += watts.length;
+                    breakPadding += watts.pad;
                 }
                 continue; // Skip Zero pads so after the inner while loop can attenuate on its terms.
             }
