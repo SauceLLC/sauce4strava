@@ -78,7 +78,7 @@
 
     table {
         margin: 0;
-        font-size: 0.92em;
+        font-size: 0.90em;
 
         tr:nth-child(odd) {
             background: rgba(128, 128, 128, 0.04);
@@ -100,13 +100,31 @@
         }
 
         td {
-            padding: 0.6em 0.3em;
+            padding: 0.8em 0.3em 0.7em;
             text-align: right;
+            line-height: normal;
 
             .sauce-peak-rank {
-                width: 20px;
-                height: 20px;
-                margin: -0.3em 0 -0.4em 0.3em;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 0;
+                flex-direction: column;
+                vertical-align: middle;
+                width: 17px;
+                height: 17px;
+                margin: -0.3em 0 -0.3em 0.3em;
+                position: relative;
+
+                &[data-rank="1"] {
+                    color: orange;
+                }
+                &[data-rank="2"] {
+                    color: silver;
+                }
+                &[data-rank="3"] {
+                    color: brown;
+                }
             }
         }
 
@@ -144,7 +162,11 @@
         .graph-holder {
             position: relative;
             padding-top: 0.3em;
-            background-image: linear-gradient(to bottom, color.shade(bg, 2%), color.shade(bg, 10%) 1em, color.shade(bg, 0%));
+            background-image: linear-gradient(
+                to bottom,
+                color.shade(bg, 2%),
+                color.shade(bg, 10%) 1em,
+                color.shade(bg, 0%));
 
             .graph-label {
                 position: absolute;
@@ -174,7 +196,11 @@
         width: 0.65em;
         opacity: 0.6;
         transition: opacity 200ms;
-        background-image: linear-gradient(to right, color.shade(bg, 20%), color.shade(bg, 10%) 18%, color.shade(bg, 22%));
+        background-image: linear-gradient(
+            to right,
+            color.shade(bg, 20%),
+            color.shade(bg, 10%) 18%,
+            color.shade(bg, 22%));
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -222,7 +248,11 @@
         width: 318px;
         max-height: 575px;  // Taller than left-main with all fields (NOTE: must adjust if fields change)
         overflow-y: auto;
-        background-image: linear-gradient(to bottom, color.shade(bg, 10%), color.shade(bg, 18%) 2em, color.shade(bg, 0%));
+        background-image: linear-gradient(
+            to bottom,
+            color.shade(bg, 10%),
+            color.shade(bg, 18%) 2em,
+            color.shade(bg, 0%));
 
         section.segments {
             display: flex;

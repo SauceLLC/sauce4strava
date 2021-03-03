@@ -608,18 +608,17 @@ sauce.ns('analysis', ns => {
         const filter = await sauce.storage.get('analysis_peaks_rank_filter');
         const peaks = await sauce.hist.getPeaksForAthlete(ns.athlete.id, type,
             rows.map(x => x.rangeValue), {limit: 3, filter, filterTS: getActivityTS()});
+        // XXX get rid of filter settings. :(  what a waste of my time!!!!! AGGH
         const ourId = pageView.activity().id;
         const iconMap = {
-            all:  ['icon-at-kom-1', 'icon-at-kom-2', 'icon-at-kom-3'],
-            year: ['icon-yr-pr-1', 'icon-yr-pr-2', 'icon-yr-pr-3'],
-            season: ['icon-yr-pr-1', 'icon-yr-pr-2', 'icon-yr-pr-3'],
-            DEFAULT: ['icon-at-pr-1', 'icon-at-pr-2', 'icon-at-pr-3'],
+            all:  'trophy-duotone',
+            year: 'trophy-alt-duotone',
+            recent: 'award-duotone',
         };
-        const icons = iconMap[filter] || iconMap.DEFAULT;
         const ranked = [];
         for (const p of peaks) {
             if (p.activity === ourId) {
-                ranked.push({range: p.period, rank: p.rank});
+                ranked.push({range: p.period, rank: p.rank, filter});
             }
         }
         if (!ranked.length) {
@@ -635,7 +634,10 @@ sauce.ns('analysis', ns => {
             }
         }
         for (const x of ranked) {
-            $el.find(`[data-range-value="${x.range}"] .app-icon`).addClass(icons[x.rank - 1]);
+            const $rank = $el.find(`[data-range-value="${x.range}"] .sauce-peak-rank`);
+            $rank[0].dataset.rank = x.rank;
+            const icon = iconMap[x.filter] || iconMap.recent;
+            $rank.html(await sauce.images.asText(`fa/${icon}.svg`));
         }
     }
 
