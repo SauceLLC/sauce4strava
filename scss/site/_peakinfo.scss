@@ -111,19 +111,34 @@
                 line-height: 0;
                 flex-direction: column;
                 vertical-align: middle;
-                width: 17px;
-                height: 17px;
-                margin: -0.3em 0 -0.3em 0.3em;
+                width: 16px;
+                height: 16px;
+                margin: -0.3em 0 -0.2em 0.3em;
                 position: relative;
 
-                &[data-rank="1"] {
-                    color: orange;
+                &.all,
+                &.year {
+                    &[data-rank="1"] {
+                        color: darkred;
+                    }
+                    &[data-rank="2"] {
+                        color: orange;
+                    }
+                    &[data-rank="2"] {
+                        color: pink;
+                    }
                 }
-                &[data-rank="2"] {
-                    color: silver;
-                }
-                &[data-rank="3"] {
-                    color: brown;
+                &.recent {
+                    &[data-rank="1"] {
+                        color: gold;
+                    }
+                    &[data-rank="2"] {
+                        color: silver;
+                    }
+                    &[data-rank="3"] {
+                        $bronze: #cd7f32;
+                        color: $bronze;
+                    }
                 }
             }
         }

@@ -605,39 +605,57 @@ sauce.ns('analysis', ns => {
         if (!type || (type.startsWith('power') && !hasAccurateWatts())) {
             return;
         }
-        const filter = await sauce.storage.get('analysis_peaks_rank_filter');
-        const peaks = await sauce.hist.getPeaksForAthlete(ns.athlete.id, type,
-            rows.map(x => x.rangeValue), {limit: 3, filter, filterTS: getActivityTS()});
-        // XXX get rid of filter settings. :(  what a waste of my time!!!!! AGGH
+        const periods = rows.map(x => x.rangeValue);
+        const options = {limit: 3, filterTS: getActivityTS()};
+        const [all, year, recent] = await Promise.all([
+            sauce.hist.getPeaksForAthlete(ns.athlete.id, type, periods, options),
+            sauce.hist.getPeaksForAthlete(ns.athlete.id, type, periods, {filter: 'year', ...options}),
+            sauce.hist.getPeaksForAthlete(ns.athlete.id, type, periods, {filter: 90, ...options}),
+        ]);
+        const categories = [{
+            icon: 'pepper-solid',
+            peaks: all,
+            class: 'all',
+        }, {
+            icon: 'pepper-light',
+            peaks: year,
+            class: 'year',
+        }, {
+            icon:  'trophy-duotone',
+            peaks: recent,
+            class: 'recent',
+        }];
         const ourId = pageView.activity().id;
-        const iconMap = {
-            all:  'trophy-duotone',
-            year: 'trophy-alt-duotone',
-            recent: 'award-duotone',
-        };
-        const ranked = [];
-        for (const p of peaks) {
-            if (p.activity === ourId) {
-                ranked.push({range: p.period, rank: p.rank, filter});
+        const ranked = new Map();
+        for (const x of categories) {
+            for (const p of x.peaks) {
+                if (!ranked.has(p.period) && p.activity === ourId) {
+                    ranked.set(p.period, {rank: p.rank, icon: x.icon, class: x.class});
+                }
             }
         }
-        if (!ranked.length) {
+        if (!ranked.size || true) {
             // Scan based on value as a last resort in case we haven't synced this activity yet.
             for (const row of rows) {
                 const range = Math.round(row.rangeValue);
-                for (const p of peaks) {
-                    if (p.period === range && p.value <= row.native) {
-                        ranked.push({range, rank: p.rank});
+                for (const x of categories) {
+                    for (const p of x.peaks) {
+                        if (p.period === range && p.value <= row.native) {
+                            ranked.set(range, {rank: p.rank, icon: x.icon, class: x.class});
+                            break;
+                        }
+                    }
+                    if (ranked.has(range)) {
                         break;
                     }
                 }
             }
         }
-        for (const x of ranked) {
-            const $rank = $el.find(`[data-range-value="${x.range}"] .sauce-peak-rank`);
+        for (const [range, x] of ranked.entries()) {
+            const $rank = $el.find(`[data-range-value="${range}"] .sauce-peak-rank`);
+            $rank.addClass(x.class);
             $rank[0].dataset.rank = x.rank;
-            const icon = iconMap[x.filter] || iconMap.recent;
-            $rank.html(await sauce.images.asText(`fa/${icon}.svg`));
+            $rank.html(await sauce.images.asText(`fa/${x.icon}.svg`));
         }
     }
 
