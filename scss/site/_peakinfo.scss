@@ -137,7 +137,7 @@
 
                 .place,
                 .category {
-                    color: color.get(fg);
+                    color: color.shade(fg, 10%);
                     font-weight: bold;
                     position: absolute;
                     opacity: 0;
@@ -148,16 +148,16 @@
 
                 .place {
                     font-variant: tabular-nums;
-                    font-size: 5.5px;
-                    top: 0px;
+                    font-size: 6px;
+                    top: -1px;
 
                     &::first-letter {
-                        font-size: 7px;
+                        font-size: 8px;
                     }
                 }
 
                 .category {
-                    font-size: 10px;
+                    font-size: 9px;
                     bottom: -1px;
                     font-variant: all-small-caps;
                 }
