@@ -212,6 +212,7 @@ sauce.ns('hist.db', ns => {
             } else {
                 peaks.sort((a, b) => (a.value || 0) - (b.value || 0));
             }
+            peaks.forEach((x, i) => x.rank = i + 1);
         }
 
         async getForAthlete(athleteId, type, period, options={}) {

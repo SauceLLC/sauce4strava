@@ -55,7 +55,15 @@ sauce.ns('analysis', ns => {
         'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
         'grade_adjusted_distance'
     ];
-
+    const sourcePeakTypes = {
+        peak_power: 'power',
+        peak_power_wkg: 'power_wkg',
+        peak_hr: 'hr',
+        peak_pace: 'pace',
+        peak_gap: 'gap',
+        peak_np: 'np',
+        peak_xp: 'xp',
+    };
 
     let _fullActivity;
     async function fetchFullActivity() {
@@ -429,6 +437,7 @@ sauce.ns('analysis', ns => {
                         wallStartTime: Number(row.dataset.wallStartTime),
                         wallEndTime: Number(row.dataset.wallEndTime),
                         label: row.dataset.rangeLabel,
+                        range: row.dataset.rangeValue,
                         icon: row.dataset.rangeIcon,
                         source: this._selectedSource,
                         originEl: row,
@@ -592,17 +601,9 @@ sauce.ns('analysis', ns => {
         if (!ns.sauceAthlete || !ns.sauceAthlete.sync || !rows.length) {
             return;
         }
-        const sourceTypes = {
-            peak_power: 'power',
-            peak_power_wkg: 'power_wkg',
-            peak_hr: 'hr',
-            peak_pace: 'pace',
-            peak_gap: 'gap',
-            peak_np: 'np',
-            peak_xp: 'xp',
-        };
-        const type = sourceTypes[source];
-        if (!type || (type.startsWith('power') && !hasAccurateWatts())) {
+        const type = sourcePeakTypes[source];
+        if (!type || (type.startsWith('power') && !hasAccurateWatts()) ||
+            (['pace', 'gap'].includes(type) && !pageView.isRun())) {
             return;
         }
         const periods = rows.map(x => x.rangeValue);
@@ -634,15 +635,16 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
-        const xx = new Map(ranked);
-        ranked.clear();
-        if (!ranked.size || true) {
+        if (!ranked.size) {
             // Scan based on value as a last resort in case we haven't synced this activity yet.
+            const betterOrEqual = ['pace', 'gap'].includes(type) ?
+                (a, b) => (a || 0) <= (b || 0) :
+                (a, b) => (a || 0) >= (b || 0);
             for (const row of rows) {
                 const range = Math.round(row.rangeValue);
                 for (const x of categories) {
                     for (const p of x.peaks) {
-                        if (p.period === range && p.value <= row.native) {
+                        if (p.period === range && betterOrEqual(row.native, p.value)) {
                             ranked.set(range, {rank: p.rank, icon: x.icon, class: x.class});
                             break;
                         }
@@ -652,9 +654,6 @@ sauce.ns('analysis', ns => {
                     }
                 }
             }
-        }
-        if (ranked.size !== xx.size) {
-            throw new Error("assertion failed, rank techs differ");
         }
         for (const [range, x] of ranked.entries()) {
             const $rank = $el.find(`[data-range-value="${range}"] .sauce-peak-rank`);
@@ -1111,8 +1110,8 @@ sauce.ns('analysis', ns => {
 
     const _activeGraphs = new Set();
     let _lastInfoDialogSource;
-    async function showInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, source,
-        originEl, isDistanceRange}) {
+    async function showInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, range,
+        source, originEl, isDistanceRange}) {
         const elapsedTime = wallEndTime - wallStartTime;
         const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
@@ -1141,6 +1140,8 @@ sauce.ns('analysis', ns => {
             const activeTime = getActiveTime(startIdx, endIdx);
             stride = distance / activeTime / (cadence * 2 / 60);
         }
+        const supportsRanks = sourcePeakTypes[source] &&
+            (!['peak_pace', 'peak_gap'].includes(source) || pageView.isRun());
         const body = await template({
             startsAt: H.timer(wallStartTime),
             elapsed: H.timer(elapsedTime),
@@ -1171,6 +1172,7 @@ sauce.ns('analysis', ns => {
             tempUnit: L.tempFormatter.shortUnitKey(),
             paceUnit: ns.paceFormatter.shortUnitKey(),
             source,
+            supportsRanks,
             isDistanceRange,
             overlappingSegments: getOverlappingSegments(startIdx, endIdx)
         });
@@ -1325,12 +1327,62 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
+        let ranksLoaded;
+        async function loadRanks(filter) {
+            ranksLoaded = true;
+            const id = pageView.activity().id;
+            const type = sourcePeakTypes[source];
+            const [getPeaks, actArg] = ns.sauceActivity ?
+                [sauce.hist.getPeaksRelatedToActivity, ns.sauceActivity] :
+                [sauce.hist.getPeaksRelatedToActivityId, id];
+            const peaks = await getPeaks(actArg, type, [range],
+                {filter, limit: 15, expandActivities: true});
+            const paceUnit = L.paceFormatter.shortUnitKey();
+            const locale = {
+                power_wkg: {unit: 'w/kg', fmt: x => x.toFixed(1)},
+                power: {unit: 'w', fmt: H.number},
+                np: {unit: 'w', fmt: H.number},
+                xp: {unit: 'w', fmt: H.number},
+                hr: {unit: L.hrFormatter.shortUnitKey(), fmt: H.number},
+                pace: {unit: paceUnit, fmt: H.pace},
+                gap: {unit: paceUnit, fmt: H.pace},
+            }[type];
+            let split;
+            $dialog.find('section.ranks table tbody').html(peaks.map((x, i) => {
+                let markSplit;
+                if (!split && i !== x.rank - 1) {
+                    markSplit = (split = true);
+                }
+                return `
+                    <tr class="${markSplit ? 'split' : ''} ${x.activity.id === id ? 'self' : ''}">
+                        <td class="rank">${x.rank}</td>
+                        <td>${locale.fmt(x.value)}<abbr class="short unit">${locale.unit}</abbr></td>
+                        <td class="activity-name">
+                            <a href="/activities/${x.activity.id}/analysis/${x.start}/${x.end}">${x.activity.name}</a>
+                        </td>
+                        <td class="date">${H.date(x.activity.ts)}</td>
+                    </tr>
+                `;
+            }).join(''));
+        }
         if (await sauce.storage.getPref('expandInfoDialog')) {
             $dialog.addClass('expanded');
+            if (supportsRanks) {
+                loadRanks('all');  // bg okay
+            }
         }
         $dialog.on('click', '.expander', async () => {
             const expanded = $dialog[0].classList.toggle('expanded');
             await sauce.storage.setPref('expandInfoDialog', expanded);
+            if (expanded && supportsRanks && !ranksLoaded) {
+                await loadRanks('all');
+            }
+        });
+        $dialog.on('click', 'section.ranks .btn-group.rank-filter .btn', async ev => {
+            const $btn = jQuery(ev.currentTarget);
+            $btn.siblings().removeClass('btn-secondary');
+            $btn.addClass('btn-secondary');
+            await loadRanks($btn.data('filter'));
         });
         $dialog.on('click', '.selectable', async ev => {
             const graph = ev.currentTarget.dataset.graph;

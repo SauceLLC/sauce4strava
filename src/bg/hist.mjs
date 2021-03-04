@@ -519,18 +519,12 @@ async function expandPeakActivities(peaks) {
     for (let i = 0; i < activities.length; i++) {
         peaks[i].activity = activities[i];
     }
+    return peaks;
 }
 
 
 async function _aggregatePeaks(work, options={}) {
-    const peaks = [];
-    for (const x of await Promise.all(work)) {
-        let rank = 1;
-        for (const xx of x) {
-            xx.rank = rank++;
-            peaks.push(xx);
-        }
-    }
+    const peaks = [].concat(...await Promise.all(work));
     if (options.expandActivities) {
         await expandPeakActivities(peaks);
     }
@@ -587,6 +581,42 @@ export async function getPeaksFor(type, periods, options={}) {
         peaksStore.getFor(type, x, options)), options);
 }
 sauce.proxy.export(getPeaksFor, {namespace});
+
+
+export async function getPeaksRelatedToActivityId(activityId, ...args) {
+    const activity = await actsStore.get(activityId);
+    return getPeaksRelatedToActivity(activity, ...args);
+}
+sauce.proxy.export(getPeaksRelatedToActivityId, {namespace});
+
+
+export async function getPeaksRelatedToActivity(activity, type, periods, options={}) {
+    periods = Array.isArray(periods) ? periods : [periods];
+    options = await _makePeaksFilterOptions({filterTS: activity.ts, ...options});
+    const results = [];
+    for (const period of periods) {
+        const peaks = await peaksStore.getForAthlete(activity.athlete, type, period,
+            {...options, limit: undefined, expandActivities: false});
+        if (options.limit) {
+            const index = peaks.findIndex(x => x.activity === activity.id);
+            if (index < options.limit - 1) {
+                peaks.length = Math.min(options.limit, peaks.length);
+            } else {
+                const mid = options.limit / 2;
+                peaks.splice(mid, Math.round(index - (mid * 1.5)));
+                peaks.length = options.limit;
+            }
+        }
+        results.push(peaks);
+    }
+    const aggregated = [].concat(...results);
+    if (options.expandActivities) {
+        return await expandPeakActivities(aggregated);
+    } else {
+        return aggregated;
+    }
+}
+sauce.proxy.export(getPeaksRelatedToActivity, {namespace});
 
 
 async function getSelfFTPHistory() {

@@ -227,36 +227,27 @@
 </div>
 
 <div class="right-aside">
-    <section class="segments">
-        <heading><div class="title">{{{segments}}}</div></heading>
-        <table class="unstyled">
-            <thead>
-                <tr>
-                    <th>{{{name}}}</td>
-                    <th>{{{time}}}</td>
-                    <th title="{{{overlap_tooltip}}}">{{{overlap}}}</td>
-                    <th></td>
-                </tr>
-            </thead>
-            <% for (const x of overlappingSegments) { %>
-                <tr>
-                    <td class="segment-name" title="{{x.segment.get('display_name')}}">
-                        <a data-id="{{x.segment.id}}">{{x.segment.get('display_name')}}</a>
-                    </td>
-                    <td class="segment-time">{-x.segment.get('elapsed_time')-}</td>
-                    <td class="segment-overlap" title="{{{overlap_tooltip}}}">
-                        {{humanNumber(x.correlation * 100)}}<abbr class="unit short">%</abbr>
-                    </td>
-                    <td class="segment-achievement">
-                        <% if (x.segment.get('has_achievement')) { %>
-                            <div class="app-icon {{x.segment.get('achievement_sprite_name')}}"
-                                 title="{{x.segment.get('achievement_description')}}"></div>
-                        <% } %>
-                    </td>
-                </tr>
-            <% } %>
-        </table>
-    </section>
+    <% if (supportsRanks) { %>
+        <section class="ranks">
+            <heading><div class="title">{{{best_performances}}}</div></heading>
+            <div class="btn-group btn-group-sm btn-group-justified rank-filter">
+                <div class="btn btn-secondary" data-filter="all">{{{best_all}}}</div>
+                <div class="btn" data-filter="year">{{{best_year}}}</div>
+                <div class="btn" data-filter="90">{{{best_90d}}}</div>
+            </div>
+            <table class="unstyled">
+                <thead>
+                    <tr>
+                        <th>{{{rank}}}</th>
+                        <th>{{{value}}}</th>
+                        <th>{{{activity}}}</th>
+                        <th>{{{date}}}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    <% } %>
 
     <% if (obj.overlappingSegments && overlappingSegments.length) { %>
         <section class="segments">
@@ -264,10 +255,10 @@
             <table class="unstyled">
                 <thead>
                     <tr>
-                        <th>{{{name}}}</td>
-                        <th>{{{time}}}</td>
-                        <th title="{{{overlap_tooltip}}}">{{{overlap}}}</td>
-                        <th></td>
+                        <th>{{{name}}}</th>
+                        <th>{{{time}}}</th>
+                        <th title="{{{overlap_tooltip}}}">{{{overlap}}}</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <% for (const x of overlappingSegments) { %>

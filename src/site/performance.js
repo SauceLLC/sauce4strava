@@ -179,7 +179,7 @@ sauce.ns('performance', async ns => {
             power: 'w',
             np: 'w',
             xp: 'w',
-            hr: 'bpm', // XXX
+            hr: L.hrFormatter.shortUnitKey(),
             pace: paceUnit,
             gap: paceUnit,
         }[type];
@@ -189,7 +189,7 @@ sauce.ns('performance', async ns => {
     function getPeaksValueFormatter(type) {
         return {
             power: H.number,
-            power_wkg: x => H.number(x, 1),
+            power_wkg: x => x.toFixed(1),
             np: H.number,
             xp: H.number,
             hr: H.number,
