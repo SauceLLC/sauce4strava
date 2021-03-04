@@ -658,7 +658,6 @@ sauce.ns('analysis', ns => {
         }
         for (const [range, x] of ranked.entries()) {
             const $rank = $el.find(`[data-range-value="${range}"] .sauce-peak-rank`);
-            $rank.data('rank', x.class);
             $rank.addClass(x.class);
             $rank[0].dataset.rank = x.rank;
             $rank.append(await sauce.images.asText(`fa/${x.icon}.svg`));
