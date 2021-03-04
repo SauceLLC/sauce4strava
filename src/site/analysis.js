@@ -634,6 +634,8 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
+        const xx = new Map(ranked);
+        ranked.clear();
         if (!ranked.size || true) {
             // Scan based on value as a last resort in case we haven't synced this activity yet.
             for (const row of rows) {
@@ -651,11 +653,17 @@ sauce.ns('analysis', ns => {
                 }
             }
         }
+        if (ranked.size !== xx.size) {
+            throw new Error("assertion failed, rank techs differ");
+        }
         for (const [range, x] of ranked.entries()) {
             const $rank = $el.find(`[data-range-value="${range}"] .sauce-peak-rank`);
+            $rank.data('rank', x.class);
             $rank.addClass(x.class);
             $rank[0].dataset.rank = x.rank;
-            $rank.html(await sauce.images.asText(`fa/${x.icon}.svg`));
+            $rank.append(await sauce.images.asText(`fa/${x.icon}.svg`));
+            $rank.find('.place').text(await LM(`rank_place_${x.rank}`));
+            $rank.find('.category').text(await LM(`rank_cat_${x.class}`));
         }
     }
 

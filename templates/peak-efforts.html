@@ -43,7 +43,13 @@
                 <% } %>
                 style="{{row.style}}">
                 <td>{-row.rangeLabel-}</td>
-                <td>{{row.value}}<% if (row.unit) { %><abbr class="unit short">{{row.unit}}</abbr><% } %><div class="sauce-peak-rank"></div></td>
+                <td>
+                    {{row.value}}<% if (row.unit) { %><abbr class="unit short">{{row.unit}}</abbr><% } %>
+                    <div class="sauce-peak-rank">
+                        <div class="place"></div>
+                        <div class="category"></div>
+                    </div>
+                </td>
             </tr>
         <% } %>
     </table>

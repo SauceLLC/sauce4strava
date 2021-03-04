@@ -226,7 +226,7 @@
     <% } %>
 </div>
 
-<% if (obj.overlappingSegments && overlappingSegments.length) { %>
+<% if ((obj.overlappingSegments && overlappingSegments.length) || (obj.ranks && obj.ranks.length)) { %>
     <div class="right-aside">
         <section class="segments">
             <heading><div class="title">{{{segments}}}</div></heading>
