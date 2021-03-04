@@ -149,10 +149,10 @@
                 .place {
                     font-variant: tabular-nums;
                     font-size: 6px;
-                    top: -1px;
+                    top: -0.5px;
 
                     &::first-letter {
-                        font-size: 8px;
+                        font-size: 7.5px;
                     }
                 }
 
