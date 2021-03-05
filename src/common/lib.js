@@ -1937,3 +1937,44 @@ sauce.ns('model', function() {
         getActivityTSS,
     };
 });
+
+
+sauce.ns('peaks', function() {
+    'use strict';
+
+    const metersPerMile = 1609.344;
+
+    const defaultPeriods = [
+        {value: 5},
+        {value: 15},
+        {value: 30},
+        {value: 60},
+        {value: 120},
+        {value: 300},
+        {value: 600},
+        {value: 1200},
+        {value: 1800},
+        {value: 3600},
+        {value: 10800},
+    ];
+
+    const defaultDistances = [
+        {value: 400},
+        {value: 1000},
+        {value: Math.round(metersPerMile)},
+        {value: 3000},
+        {value: 5000},
+        {value: 10000},
+        {value: Math.round(metersPerMile * 13.1), types: ['run']},
+        {value: Math.round(metersPerMile * 26.2), types: ['run']},
+        {value: 50000},
+        {value: 100000},
+        {value: Math.round(metersPerMile * 100)},
+    ];
+
+
+    return {
+        defaultPeriods,
+        defaultDistances,
+    };
+});

@@ -22,34 +22,7 @@ sauce.ns('analysis', ns => {
     const minPowerPotentialTime = 300;
     const minWattEstTime = 300;
     const minSeaPowerElevation = 328;  // About 1000ft or 1% power
-
     const metersPerMile = 1609.344;
-    const defaultPeakPeriods = [
-        {value: 5},
-        {value: 15},
-        {value: 30},
-        {value: 60},
-        {value: 120},
-        {value: 300},
-        {value: 600},
-        {value: 1200},
-        {value: 1800},
-        {value: 3600},
-        {value: 10800},
-    ];
-    const defaultPeakDistances = [
-        {value: 400},
-        {value: 1000},
-        {value: Math.round(metersPerMile)},
-        {value: 3000},
-        {value: 5000},
-        {value: 10000},
-        {value: Math.round(metersPerMile * 13.1), filter: a => a.isRun()},
-        {value: Math.round(metersPerMile * 26.2), filter: a => a.isRun()},
-        {value: 50000},
-        {value: 100000},
-        {value: Math.round(metersPerMile * 100)},
-    ];
     const prefetchStreams = [
         'time', 'heartrate', 'altitude', 'distance', 'moving',
         'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
@@ -518,13 +491,18 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function filterPeriodRanges(duration, ...filterArgs) {
-        return ns.allPeriodRanges.filter(x => x.value <= duration && (!x.filter || x.filter.apply(x, filterArgs)));
+    function filterPeriodRanges(duration, activity) {
+        return ns.allPeriodRanges.filter(x =>
+            x.value <= duration &&
+            (!x.types || x.filter.apply(x, filterArgs)));
     }
 
 
-    function filterDistRanges(distance, ...filterArgs) {
-        return ns.allDistRanges.filter(x => x.value <= distance && (!x.filter || x.filter.apply(x, filterArgs)));
+    function filterDistRanges(distance, activity) {
+        return ns.allDistRanges.filter(x =>
+            x.value <= distance &&
+            (!x.types || x.types.includes(x, activity.get('type').toLowerCase()))
+        );
     }
 
 
@@ -1443,8 +1421,8 @@ sauce.ns('analysis', ns => {
                 rankFilter: await sauce.storage.get('analysis_peaks_rank_filter'),
                 seasonStartMonth: await sauce.storage.get('season_start_month'),
                 seasonStartDay: await sauce.storage.get('season_start_day'),
-                isPeriodsDefault: ns.allPeriodRanges === defaultPeakPeriods,
-                isDistsDefault: ns.allDistRanges === defaultPeakDistances,
+                isPeriodsDefault: ns.allPeriodRanges === sauce.peaks.defaultPeriods,
+                isDistsDefault: ns.allDistRanges === sauce.peaks.defaultDistances,
             }),
         });
         await times.render();
@@ -1453,12 +1431,12 @@ sauce.ns('analysis', ns => {
         $modal.find('.dists').prepend(dists.$el);
         $modal.on('click', '.btn.reset', async ev => {
             if (ev.currentTarget.dataset.id === 'times') {
-                times.values = defaultPeakPeriods.map(x => x.value);
+                times.values = sauce.peaks.defaultPeriods.map(x => x.value);
                 times.$el.removeClass('dirty');
                 await sauce.storage.update('analysis_peak_ranges', {periods: null});
                 await times.render();
             } else {
-                dists.values = defaultPeakDistances.map(x => x.value);
+                dists.values = sauce.peaks.defaultDistances.map(x => x.value);
                 dists.$el.removeClass('dirty');
                 await sauce.storage.update('analysis_peak_ranges', {distances: null});
                 await dists.render();
@@ -3145,11 +3123,11 @@ sauce.ns('analysis', ns => {
         attachComments().catch(sauce.report.error);
         attachSegmentToolHandlers();
         const savedRanges = await sauce.storage.get('analysis_peak_ranges');
-        ns.allPeriodRanges = (savedRanges && savedRanges.periods) || defaultPeakPeriods;
+        ns.allPeriodRanges = (savedRanges && savedRanges.periods) || sauce.peaks.defaultPeriods;
         for (const range of ns.allPeriodRanges) {
             range.label = H.duration(range.value);
         }
-        ns.allDistRanges = (savedRanges && savedRanges.distances) || defaultPeakDistances;
+        ns.allDistRanges = (savedRanges && savedRanges.distances) || sauce.peaks.defaultDistances;
         for (const range of ns.allDistRanges) {
             range.label = H.raceDistance(range.value);
         }

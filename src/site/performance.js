@@ -233,7 +233,8 @@ sauce.ns('performance', async ns => {
                         Object.assign(activity, updates);
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'training-load',
                             {disableSync: true});
-                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks', {wait: true});
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks',
+                            {wait: true});
                         await pageView.render();
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');
