@@ -1329,7 +1329,9 @@ sauce.ns('analysis', ns => {
                         <td class="rank">${x.rank}</td>
                         <td>${locale.fmt(x.value)}<abbr class="short unit">${locale.unit}</abbr></td>
                         <td class="activity-name">
-                            <a href="/activities/${x.activity.id}/analysis/${x.start}/${x.end}">${x.activity.name}</a>
+                            <a href="/activities/${x.activity.id}/analysis/${x.start}/${x.end}"
+                               title="${x.activity.name}${x.activity.description ? '\n\n' + x.activity.description : ''}"
+                               >${x.activity.name}</a>
                         </td>
                         <td class="date">${H.date(x.activity.ts)}</td>
                     </tr>

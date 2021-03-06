@@ -1977,7 +1977,7 @@ sauce.ns('peaks', function() {
     async function getRanges(type) {
         if (!_cached[type]) {
             const custom = await sauce.storage.get('analysis_peak_ranges');
-            _cached[type] = custom[type] || defaults[type];
+            _cached[type] = custom && custom[type] || defaults[type];
         }
         return _cached[type];
     }
