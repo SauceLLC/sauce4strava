@@ -10,27 +10,15 @@
     </select>
     <% if (['pace', 'gap'].includes(prefs.type)) { %>
         <select name="distance">
-            <option value="400" {{prefs.distance === 400 ? 'selected' : ''}}>{{humanRaceDistance(400)}}</option>
-            <option value="1000" {{prefs.distance === 1000 ? 'selected' : ''}}>{{humanRaceDistance(1000)}}</option>
-            <option value="{{mile}}" {{prefs.distance === mile ? 'selected' : ''}}>{{humanRaceDistance(mile)}}</option>
-            <option value="5000" {{prefs.distance === 5000 ? 'selected' : ''}}>{{humanRaceDistance(5000)}}</option>
-            <option value="10000" {{prefs.distance === 10000 ? 'selected' : ''}}>{{humanRaceDistance(10000)}}</option>
-            <option value="{{mile * 13.1}}" {{prefs.distance === mile * 13.1 ? 'selected' : ''}}>{{humanRaceDistance(mile * 13.1)}}</option>
-            <option value="{{mile * 26.2}}" {{prefs.distance === mile * 26.2 ? 'selected' : ''}}>{{humanRaceDistance(mile * 26.2)}}</option>
-            <option value="50000" {{prefs.distance === 50000 ? 'selected' : ''}}>{{humanRaceDistance(50000)}}</option>
+            <% for (const x of distances) { %>
+                <option value="{{x.value}}" {{prefs.distance === x.value ? 'selected' : ''}}>{{humanRaceDistance(x.value)}}</option>
+            <% } %>
         </select>
     <% } else { %>
         <select name="time">
-            <option value="5" {{prefs.time === 5 ? 'selected' : ''}}>{{humanDuration(5)}}</option>
-            <option value="15" {{prefs.time === 15 ? 'selected' : ''}}>{{humanDuration(15)}}</option>
-            <option value="30" {{prefs.time === 30 ? 'selected' : ''}}>{{humanDuration(30)}}</option>
-            <option value="60" {{prefs.time === 60 ? 'selected' : ''}}>{{humanDuration(60)}}</option>
-            <option value="120" {{prefs.time === 120 ? 'selected' : ''}}>{{humanDuration(120)}}</option>
-            <option value="300" {{prefs.time === 300 ? 'selected' : ''}}>{{humanDuration(300)}}</option>
-            <option value="600" {{prefs.time === 600 ? 'selected' : ''}}>{{humanDuration(600)}}</option>
-            <option value="1200" {{prefs.time === 1200 ? 'selected' : ''}}>{{humanDuration(1200)}}</option>
-            <option value="1800" {{prefs.time === 1800 ? 'selected' : ''}}>{{humanDuration(1800)}}</option>
-            <option value="3600" {{prefs.time === 3600 ? 'selected' : ''}}>{{humanDuration(3600)}}</option>
+            <% for (const x of periods) { %>
+                <option value="{{x.value}}" {{prefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
+            <% } %>
         </select>
     <% } %>
 

@@ -318,8 +318,8 @@
 
     .right-aside {
         flex: 1 0 auto;
-        width: 318px;
-        max-height: 575px;  // Taller than left-main with all fields (NOTE: must adjust if fields change)
+        width: 340px;
+        max-height: 640px;  // Taller than left-main with all fields (NOTE: must adjust if fields change)
         overflow-y: auto;
         background-image: linear-gradient(
             to bottom,
@@ -335,6 +335,10 @@
             border-radius: 0.28em;
             margin: 0.7em;
             margin-bottom: 1em;
+
+            &.hidden {
+                display: none;
+            }
 
             &.ranks table {
                 tr {

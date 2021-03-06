@@ -1,9 +1,10 @@
 <section class="ranges">
     <b>{{{peaks_ranges}}}:</b>
+    <p>{{{peaks_ranges_intro}}}</p>
     <div class="cols">
-        <div class="times">
+        <div class="periods">
             <div class="btn btn-sm btn-secondary reset {{isPeriodsDefault ? 'hidden' : ''}}"
-                 data-id="times">{{{peaks_reset_to_defaults}}}</div>
+                 data-id="periods">{{{peaks_reset_to_defaults}}}</div>
         </div>
         <div class="dists">
             <div class="btn btn-sm btn-secondary reset {{isDistsDefault ? 'hidden' : ''}}"
@@ -11,35 +12,3 @@
         </div>
     </div>
 </section>
-
-<section class="settings">
-    <b>{{{peaks_podium_settings}}}:</b>
-    <div class="help" data-for="podium">
-        <a class="sauce-dismiss">{-await fa('times-circle-duotone')-}</a>
-        {{{peaks_show_podium_help}}}
-    </div>
-    <a class="help-info" data-help="podium"
-       title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
-    <label>
-        {{{peaks_show_podium_for}}}:
-        <select name="rank_filter">
-            <option {{rankFilter === 'all' ? 'selected' : ''}} value="all">All dates</option>
-            <option {{rankFilter === 'year' ? 'selected' : ''}} value="year">Same year</option>
-            <option {{rankFilter === 'season' ? 'selected' : ''}} value="season">Same season</option>
-            <option {{rankFilter === '365' ? 'selected' : ''}} value="365">Prior 12 months</option>
-            <option {{rankFilter === '182' ? 'selected' : ''}} value="182">Prior 6 months</option>
-            <option {{rankFilter === '90' ? 'selected' : ''}} value="90">Prior 90 days</option>
-            <option {{rankFilter === '30' ? 'selected' : ''}} value="30">Prior 30 days</option>
-        </select>
-    </label>
-    <% const hiddenSeasonClass = rankFilter !== 'season' ? 'hidden' : ''; %>
-    <label class="season {{hiddenSeasonClass}}">
-        {{{/season_start}}}:
-        <input type="number" min="1" max="12" step="1" name="season_start_month"
-               placeholder="{{{peaks_month}}}" value="{{seasonStartMonth || ''}}"/> -
-        <input type="number" min="1" max="31" step="1" name="season_start_day"
-               placeholder="{{{peaks_day}}}" value="{{seasonStartDay || ''}}"/>
-    </label>
-    <div class="btn btn-sm btn-primary btn-block hidden save">{{{/save}}}</div>
-</section>
-

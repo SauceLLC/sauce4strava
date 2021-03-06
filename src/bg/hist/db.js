@@ -216,7 +216,9 @@ sauce.ns('hist.db', ns => {
         }
 
         async getForAthlete(athleteId, type, period, options={}) {
-            period = period && Math.round(period);
+            if (typeof period !== 'number') {
+                throw new TypeError("Period must be a number");
+            }
             const q = IDBKeyRange.bound(
                 [athleteId, type, period, options.start || -Infinity],
                 [athleteId, type, period, options.end || Infinity]);
@@ -230,7 +232,9 @@ sauce.ns('hist.db', ns => {
         }
 
         async getFor(type, period, options={}) {
-            period = period && Math.round(period);
+            if (typeof period !== 'number') {
+                throw new TypeError("Period must be a number");
+            }
             const q = IDBKeyRange.bound(
                 [type, period, options.start || -Infinity],
                 [type, period, options.end || Infinity]);

@@ -77,7 +77,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 7, // Fix np and xp calcs (must be active:true)
+    version: 8, // Use sauce.peaks for ranges.
     depends: ['extra-streams'],
     data: {processor: processors.peaksProcessor}
 });
@@ -585,7 +585,7 @@ sauce.proxy.export(getPeaksFor, {namespace});
 
 export async function getPeaksRelatedToActivityId(activityId, ...args) {
     const activity = await actsStore.get(activityId);
-    return getPeaksRelatedToActivity(activity, ...args);
+    return activity ? await getPeaksRelatedToActivity(activity, ...args) : null;
 }
 sauce.proxy.export(getPeaksRelatedToActivityId, {namespace});
 

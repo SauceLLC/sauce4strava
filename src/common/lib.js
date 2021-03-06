@@ -1943,38 +1943,77 @@ sauce.ns('peaks', function() {
     'use strict';
 
     const metersPerMile = 1609.344;
+    const defaults = {
+        periods: [
+            {value: 5},
+            {value: 15},
+            {value: 30},
+            {value: 60},
+            {value: 120},
+            {value: 300},
+            {value: 600},
+            {value: 1200},
+            {value: 1800},
+            {value: 3600},
+            {value: 10800},
+        ],
+        distances: [
+            {value: 400},
+            {value: 1000},
+            {value: Math.round(metersPerMile)},
+            {value: 3000},
+            {value: 5000},
+            {value: 10000},
+            {value: Math.round(metersPerMile * 13.1), types: ['run', 'walk', 'hike']},
+            {value: Math.round(metersPerMile * 26.2), types: ['run', 'walk', 'hike']},
+            {value: 50000},
+            {value: 100000},
+            {value: Math.round(metersPerMile * 100)},
+        ]
+    };
 
-    const defaultPeriods = [
-        {value: 5},
-        {value: 15},
-        {value: 30},
-        {value: 60},
-        {value: 120},
-        {value: 300},
-        {value: 600},
-        {value: 1200},
-        {value: 1800},
-        {value: 3600},
-        {value: 10800},
-    ];
 
-    const defaultDistances = [
-        {value: 400},
-        {value: 1000},
-        {value: Math.round(metersPerMile)},
-        {value: 3000},
-        {value: 5000},
-        {value: 10000},
-        {value: Math.round(metersPerMile * 13.1), types: ['run']},
-        {value: Math.round(metersPerMile * 26.2), types: ['run']},
-        {value: 50000},
-        {value: 100000},
-        {value: Math.round(metersPerMile * 100)},
-    ];
+    let _cached = {};
+    async function getRanges(type) {
+        if (!_cached[type]) {
+            const custom = await sauce.storage.get('analysis_peak_ranges');
+            _cached[type] = custom[type] || defaults[type];
+        }
+        return _cached[type];
+    }
+
+
+    async function setRanges(type, data) {
+        await sauce.storage.update('analysis_peak_ranges', {[type]: data});
+        _cached[type] = data;
+    }
+
+
+    async function resetRanges(type) {
+        await sauce.storage.update('analysis_peak_ranges', {[type]: null});
+        _cached[type] = defaults[type];
+    }
+
+    
+    async function getForActivityType(type, activityType) {
+        const data = await getRanges(type);
+        const t = activityType.toLowerCase();
+        return data.filter(x => !x.types || x.types.includes(t));
+    }
+
+
+    async function isCustom(type) {
+        return await getRanges(type) === defaults[type];
+    }
+    
 
 
     return {
-        defaultPeriods,
-        defaultDistances,
+        defaults,
+        getForActivityType,
+        getRanges,
+        setRanges,
+        resetRanges,
+        isCustom,
     };
 });

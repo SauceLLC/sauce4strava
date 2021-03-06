@@ -391,9 +391,11 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const maxWorkers = Math.ceil(len / 30);
     const concurrency = Math.min(maxWorkers, navigator.hardwareConcurrency || 6);
     const step = Math.ceil(len / concurrency);
+    const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
+    const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
     for (let i = 0; i < len; i += step) {
         const chunk = activities.slice(i, i + step);
-        work.push(wp.exec('findPeaks', athlete.data, chunk.map(x => x.data)));
+        work.push(wp.exec('findPeaks', athlete.data, chunk.map(x => x.data), periods, distances));
     }
     for (const errors of await Promise.all(work)) {
         for (const x of errors) {

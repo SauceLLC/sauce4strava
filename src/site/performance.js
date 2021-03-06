@@ -1277,7 +1277,7 @@ sauce.ns('performance', async ns => {
             await super.init();
         }
 
-        renderAttrs() {
+        async renderAttrs() {
             return {
                 prefs: this.prefs,
                 peaks: this.peaks,
@@ -1285,6 +1285,8 @@ sauce.ns('performance', async ns => {
                 unit: getPeaksUnit(this.prefs.type),
                 valueFormatter: getPeaksValueFormatter(this.prefs.type),
                 athleteName: this.athleteName.bind(this),
+                periods: await sauce.peaks.getRanges('periods'),
+                distances: await sauce.peaks.getRanges('distances'),
             };
         }
 

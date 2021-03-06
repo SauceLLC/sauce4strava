@@ -199,14 +199,16 @@
                     </row>
                 <% } %>
 
-                <row>
-                    <key>{{{grade}}}</key>
-                    <value title="{{{grade_tooltip}}}">
-                        {{humanNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
-                    </value>
-                </row>
+                <% if (Math.abs(elevation.grade) > 1) { %>
+                    <row>
+                        <key>{{{grade}}}</key>
+                        <value title="{{{grade_tooltip}}}">
+                            {{humanNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
+                        </value>
+                    </row>
+                <% } %>
 
-                <% if (elevation.vam && elevation.vam > 0) { %>
+                <% if (elevation.vam && elevation.vam > 100) { %>
                     <row class="selectable" data-graph="vam" title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                         <div class="graph-select"></div>
                         <key>VAM</key>
@@ -226,64 +228,68 @@
     <% } %>
 </div>
 
-<div class="right-aside">
-    <% if (supportsRanks) { %>
-        <section class="ranks">
-            <heading><div class="title">{{{best_performances}}}</div></heading>
-            <div class="btn-group btn-group-sm btn-group-justified rank-filter">
-                <div class="btn btn-secondary" data-filter="all">{{{best_all}}}</div>
-                <div class="btn" data-filter="year">{{{best_year}}}</div>
-                <div class="btn" data-filter="90">{{{best_90d}}}</div>
-            </div>
-            <table class="unstyled">
-                <thead>
-                    <tr>
-                        <th>{{{rank}}}</th>
-                        <th>{{{value}}}</th>
-                        <th>{{{activity}}}</th>
-                        <th>{{{date}}}</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
-    <% } %>
+<% if (supportsRanks || hasSegments) { %>
+    <div class="right-aside">
+        <% if (supportsRanks) { %>
+            <section class="ranks hidden">
+                <heading><div class="title">{{{best_performances}}}</div></heading>
+                <div class="btn-group btn-group-sm btn-group-justified rank-filter">
+                    <div class="btn btn-secondary" data-filter="all">{{{best_all}}}</div>
+                    <div class="btn" data-filter="year">{{{best_year}}}</div>
+                    <div class="btn" data-filter="90">{{{best_90d}}}</div>
+                </div>
+                <table class="unstyled">
+                    <thead>
+                        <tr>
+                            <th>{{{rank}}}</th>
+                            <th>{{{value}}}</th>
+                            <th>{{{activity}}}</th>
+                            <th>{{{date}}}</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </section>
+        <% } %>
 
-    <% if (obj.overlappingSegments && overlappingSegments.length) { %>
-        <section class="segments">
-            <heading><div class="title">{{{segments}}}</div></heading>
-            <table class="unstyled">
-                <thead>
-                    <tr>
-                        <th>{{{name}}}</th>
-                        <th>{{{time}}}</th>
-                        <th title="{{{overlap_tooltip}}}">{{{overlap}}}</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <% for (const x of overlappingSegments) { %>
-                    <tr>
-                        <td class="segment-name" title="{{x.segment.get('display_name')}}">
-                            <a data-id="{{x.segment.id}}">{{x.segment.get('display_name')}}</a>
-                        </td>
-                        <td class="segment-time">{-x.segment.get('elapsed_time')-}</td>
-                        <td class="segment-overlap" title="{{{overlap_tooltip}}}">
-                            {{humanNumber(x.correlation * 100)}}<abbr class="unit short">%</abbr>
-                        </td>
-                        <td class="segment-achievement">
-                            <% if (x.segment.get('has_achievement')) { %>
-                                <div class="app-icon {{x.segment.get('achievement_sprite_name')}}"
-                                     title="{{x.segment.get('achievement_description')}}"></div>
-                            <% } %>
-                        </td>
-                    </tr>
-                <% } %>
-            </table>
-        </section>
-    <% } %>
-</div>
+        <% if (hasSegments) { %>
+            <section class="segments">
+                <heading><div class="title">{{{segments}}}</div></heading>
+                <table class="unstyled">
+                    <thead>
+                        <tr>
+                            <th>{{{name}}}</th>
+                            <th>{{{time}}}</th>
+                            <th title="{{{overlap_tooltip}}}">{{{overlap}}}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <% for (const x of overlappingSegments) { %>
+                        <tr>
+                            <td class="segment-name" title="{{x.segment.get('display_name')}}">
+                                <a data-id="{{x.segment.id}}">{{x.segment.get('display_name')}}</a>
+                            </td>
+                            <td class="segment-time">{-x.segment.get('elapsed_time')-}</td>
+                            <td class="segment-overlap" title="{{{overlap_tooltip}}}">
+                                {{humanNumber(x.correlation * 100)}}<abbr class="unit short">%</abbr>
+                            </td>
+                            <td class="segment-achievement">
+                                <% if (x.segment.get('has_achievement')) { %>
+                                    <div class="app-icon {{x.segment.get('achievement_sprite_name')}}"
+                                         title="{{x.segment.get('achievement_description')}}"></div>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% } %>
+                </table>
+            </section>
+        <% } %>
 
-<div class="expander">
-    <div class="icon expand" title="{{{expand_tooltip}}}">{-await fa('angle-double-right-solid')-}</div>
-    <div class="icon compress" title="{{{compress_tooltip}}}">{-await fa('angle-double-left-solid')-}</div>
-</div>
+        <section class="empty-message hidden"><i>{{{empty_info_aside}}}</i></section>
+    </div>
+
+    <div class="expander">
+        <div class="icon expand" title="{{{expand_tooltip}}}">{-await fa('angle-double-right-solid')-}</div>
+        <div class="icon compress" title="{{{compress_tooltip}}}">{-await fa('angle-double-left-solid')-}</div>
+    </div>
+<% } %>

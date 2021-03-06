@@ -195,47 +195,45 @@ export class WeightHistoryView extends HistoryView {
 }
 
 
-class PeaksPeriodsView extends MutableDataView {
+class PeaksRangesView extends MutableDataView {
     async init(options) {
         this.$el.addClass('peaks-periods-view');
+        this.ranges = options.ranges;
         await super.init(options);
     }
 
     entryData() {
-        return this.values.map(value => ({value}));
+        return this.ranges;
     }
 
     parseEntry(entry) {
         const rawValue = entry.querySelector('input[type="number"]').value;
         let value = rawValue ? Number(rawValue) : NaN;
         if (!isNaN(value)) {
-            return value;
+            return {value};
         }
+    }
+
+    async onSave(data) {
+        data.sort((a, b) => (a.value || 0) - (b.value || 0));
+        this.ranges = data;
+        await sauce.peaks.setRanges(this.type, data);
     }
 }
 
 
-export class PeaksTimesView extends PeaksPeriodsView {
+export class PeaksPeriodsView extends PeaksRangesView {
     get entryTpl() {
-        return 'peaks-times-view-entry.html';
+        return 'peaks-periods-view-entry.html';
     }
 
     async init(options) {
-        this.values = options.values;
+        this.type = 'periods';
         await super.init({
-            localeTitleKey: 'peaks_times_title',
-            localeHelpKey: 'peaks_times_help',
+            localeTitleKey: 'peaks_periods_title',
+            localeHelpKey: 'peaks_periods_help',
             ...options,
         });
-    }
-
-    async onSave(data) {
-        data.sort((a, b) => a - b);
-        this.values = data;
-        // NOTE: It is just a coincidence that this data looks like entryData(),
-        // don't use that function as these are separate formats and could change.
-        await sauce.storage.update('analysis_peak_ranges',
-            {periods: data.map(value => ({value}))});
     }
 
     onInput(ev) {
@@ -246,27 +244,18 @@ export class PeaksTimesView extends PeaksPeriodsView {
 }
 
 
-export class PeaksDistancesView extends PeaksPeriodsView {
+export class PeaksDistancesView extends PeaksRangesView {
     get entryTpl() {
         return 'peaks-distances-view-entry.html';
     }
 
     async init(options) {
-        this.values = options.values;
+        this.type = 'distances';
         await super.init({
             localeTitleKey: 'peaks_dists_title',
             localeHelpKey: 'peaks_dists_help',
             ...options,
         });
-    }
-
-    async onSave(data) {
-        data.sort((a, b) => a - b);
-        this.values = data;
-        // NOTE: It is just a coincidence that this data looks like entryData(),
-        // don't use that function as these are separate formats and could change.
-        await sauce.storage.update('analysis_peak_ranges',
-            {distances: data.map(value => ({value}))});
     }
 
     onInput(ev) {

@@ -29,16 +29,12 @@ async function getActivitiesStreams(activities, streams) {
 }
 
 
-async function findPeaks(athlete, activities) {
-    const metersPerMile = 1609.344;
+async function findPeaks(athlete, activities, periods, distances) {
     const actStreams = await getActivitiesStreams(activities, {
         run: ['time', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
         ride: ['time', 'watts', 'distance', 'heartrate'],
         other: ['time', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
-    const periods = [5, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600];
-    const distances = [400, 1000, Math.round(metersPerMile), 5000, 10000,
-        Math.round(metersPerMile * 13.1), Math.round(metersPerMile * 26.2), 50000];
     const peaks = [];
     const errors = [];
     for (const activity of activities) {

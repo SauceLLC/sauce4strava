@@ -22,7 +22,6 @@ sauce.ns('analysis', ns => {
     const minPowerPotentialTime = 300;
     const minWattEstTime = 300;
     const minSeaPowerElevation = 328;  // About 1000ft or 1% power
-    const metersPerMile = 1609.344;
     const prefetchStreams = [
         'time', 'heartrate', 'altitude', 'distance', 'moving',
         'velocity_smooth', 'cadence', 'latlng', 'watts', 'watts_calc',
@@ -410,7 +409,7 @@ sauce.ns('analysis', ns => {
                         wallStartTime: Number(row.dataset.wallStartTime),
                         wallEndTime: Number(row.dataset.wallEndTime),
                         label: row.dataset.rangeLabel,
-                        range: row.dataset.rangeValue,
+                        range: Number(row.dataset.rangeValue),
                         icon: row.dataset.rangeIcon,
                         source: this._selectedSource,
                         originEl: row,
@@ -488,21 +487,6 @@ sauce.ns('analysis', ns => {
             roll,
             native,
         };
-    }
-
-
-    function filterPeriodRanges(duration, activity) {
-        return ns.allPeriodRanges.filter(x =>
-            x.value <= duration &&
-            (!x.types || x.filter.apply(x, filterArgs)));
-    }
-
-
-    function filterDistRanges(distance, activity) {
-        return ns.allDistRanges.filter(x =>
-            x.value <= distance &&
-            (!x.types || x.types.includes(x, activity.get('type').toLowerCase()))
-        );
     }
 
 
@@ -619,7 +603,7 @@ sauce.ns('analysis', ns => {
                 (a, b) => (a || 0) <= (b || 0) :
                 (a, b) => (a || 0) >= (b || 0);
             for (const row of rows) {
-                const range = Math.round(row.rangeValue);
+                const range = row.rangeValue;
                 for (const x of categories) {
                     for (const p of x.peaks) {
                         if (p.period === range && betterOrEqual(row.native, p.value)) {
@@ -736,9 +720,8 @@ sauce.ns('analysis', ns => {
                 renderAttrs: source => {
                     const rows = [];
                     const attrs = {};
-                    const activity = pageView.activity();
-                    const periodRanges = filterPeriodRanges(activeTime, activity);
-                    const distRanges = filterDistRanges(distance, activity);
+                    const periodRanges = ns.allPeriodRanges.filter(x => x.value <= activeTime);
+                    const distRanges = ns.allDistRanges.filter(x => x.value <= distance);
                     if (['peak_power', 'peak_sp', 'peak_power_wkg'].includes(source)) {
                         let dataStream;
                         if (source === 'peak_sp') {
@@ -1118,8 +1101,10 @@ sauce.ns('analysis', ns => {
             const activeTime = getActiveTime(startIdx, endIdx);
             stride = distance / activeTime / (cadence * 2 / 60);
         }
-        const supportsRanks = sourcePeakTypes[source] &&
+        const supportsRanks = ns.sauceAthlete && ns.sauceAthlete.sync && sourcePeakTypes[source] &&
             (!['peak_pace', 'peak_gap'].includes(source) || pageView.isRun());
+        const overlappingSegments = getOverlappingSegments(startIdx, endIdx);
+        const hasSegments = overlappingSegments && overlappingSegments.length;
         const body = await template({
             startsAt: H.timer(wallStartTime),
             elapsed: H.timer(elapsedTime),
@@ -1152,7 +1137,8 @@ sauce.ns('analysis', ns => {
             source,
             supportsRanks,
             isDistanceRange,
-            overlappingSegments: getOverlappingSegments(startIdx, endIdx)
+            overlappingSegments,
+            hasSegments,
         });
         const $dialog = await createInfoDialog({heading, textLabel, source, body, originEl,
             start: startTime, end: endTime});
@@ -1314,7 +1300,13 @@ sauce.ns('analysis', ns => {
                 [sauce.hist.getPeaksRelatedToActivity, ns.sauceActivity] :
                 [sauce.hist.getPeaksRelatedToActivityId, id];
             const peaks = await getPeaks(actArg, type, [range],
-                {filter, limit: 15, expandActivities: true});
+                {filter, limit: 10, expandActivities: true});
+            if (!peaks || !peaks.length) {
+                if (!hasSegments) {
+                    $dialog.find('.empty-message').removeClass('hidden');
+                }
+                return false;
+            }
             const paceUnit = L.paceFormatter.shortUnitKey();
             const locale = {
                 power_wkg: {unit: 'w/kg', fmt: x => x.toFixed(1)},
@@ -1326,7 +1318,8 @@ sauce.ns('analysis', ns => {
                 gap: {unit: paceUnit, fmt: H.pace},
             }[type];
             let split;
-            $dialog.find('section.ranks table tbody').html(peaks.map((x, i) => {
+            const $section = $dialog.find('section.ranks');
+            $section.find('table tbody').html(peaks.map((x, i) => {
                 let markSplit;
                 if (!split && i !== x.rank - 1) {
                     markSplit = (split = true);
@@ -1342,11 +1335,12 @@ sauce.ns('analysis', ns => {
                     </tr>
                 `;
             }).join(''));
+            $section.removeClass('hidden');
         }
         if (await sauce.storage.getPref('expandInfoDialog')) {
             $dialog.addClass('expanded');
             if (supportsRanks) {
-                loadRanks('all');  // bg okay
+                loadRanks('all');
             }
         }
         $dialog.on('click', '.expander', async () => {
@@ -1404,11 +1398,11 @@ sauce.ns('analysis', ns => {
 
 
     async function showPeaksSettingsDialog() {
-        const {PeaksTimesView, PeaksDistancesView} = await sauce.getModule('/src/site/data-views.mjs');
-        const times = new PeaksTimesView({values: ns.allPeriodRanges.map(x => x.value)});
-        const dists = new PeaksDistancesView({values: ns.allDistRanges.map(x => x.value)});
+        const {PeaksPeriodsView, PeaksDistancesView} = await sauce.getModule('/src/site/data-views.mjs');
+        const periods = new PeaksPeriodsView({ranges: await sauce.peaks.getRanges('periods')});
+        const dists = new PeaksDistancesView({ranges: await sauce.peaks.getRanges('distances')});
         let reload;
-        times.on('save', () => void (reload = true));
+        periods.on('save', () => void (reload = true));
         dists.on('save', () => void (reload = true));
         const template = await getTemplate('peaks-settings.html');
         const $modal = await sauce.modal({
@@ -1418,47 +1412,25 @@ sauce.ns('analysis', ns => {
             width: '45em',
             dialogClass: 'sauce-peaks-settings-dialog',
             body: await template({
-                rankFilter: await sauce.storage.get('analysis_peaks_rank_filter'),
-                seasonStartMonth: await sauce.storage.get('season_start_month'),
-                seasonStartDay: await sauce.storage.get('season_start_day'),
-                isPeriodsDefault: ns.allPeriodRanges === sauce.peaks.defaultPeriods,
-                isDistsDefault: ns.allDistRanges === sauce.peaks.defaultDistances,
+                isPeriodsDefault: await sauce.peaks.isCustom('periods'),
+                isDistsDefault: await sauce.peaks.isCustom('distances'),
             }),
         });
-        await times.render();
+        await periods.render();
         await dists.render();
-        $modal.find('.times').prepend(times.$el);
+        $modal.find('.periods').prepend(periods.$el);
         $modal.find('.dists').prepend(dists.$el);
         $modal.on('click', '.btn.reset', async ev => {
-            if (ev.currentTarget.dataset.id === 'times') {
-                times.values = sauce.peaks.defaultPeriods.map(x => x.value);
-                times.$el.removeClass('dirty');
-                await sauce.storage.update('analysis_peak_ranges', {periods: null});
-                await times.render();
+            if (ev.currentTarget.dataset.id === 'periods') {
+                periods.ranges = sauce.peaks.defaults.periods;
+                periods.$el.removeClass('dirty');
+                await sauce.peaks.resetRanges('periods');
+                await periods.render();
             } else {
-                dists.values = sauce.peaks.defaultDistances.map(x => x.value);
+                dists.ranges = sauce.peaks.defaults.distances;
                 dists.$el.removeClass('dirty');
-                await sauce.storage.update('analysis_peak_ranges', {distances: null});
+                await sauce.peaks.resetRanges('distances');
                 await dists.render();
-            }
-            ev.currentTarget.classList.add('hidden');
-            reload = true;
-        });
-        $modal.on('input', '.settings select[name="rank_filter"]', async ev => {
-            const val = ev.currentTarget.value;
-            $modal.find('.settings label.season').toggleClass('hidden', val !== 'season');
-        });
-        $modal.on('input', '.settings', async ev => {
-            $modal.find('.settings .save.btn').removeClass('hidden');
-        });
-        $modal.on('click', '.settings .save.btn', async ev => {
-            await sauce.storage.set('analysis_peaks_rank_filter',
-                $modal.find('.settings select[name="rank_filter"]').val());
-            const month = $modal.find('.settings input[name="season_start_month"]').val();
-            const day = $modal.find('.settings input[name="season_start_day"]').val();
-            if (month && day) {
-                await sauce.storage.set('season_start_month', month);
-                await sauce.storage.set('season_start_day', day);
             }
             ev.currentTarget.classList.add('hidden');
             reload = true;
@@ -3122,12 +3094,11 @@ sauce.ns('analysis', ns => {
         attachActionMenuItems().catch(sauce.report.error);
         attachComments().catch(sauce.report.error);
         attachSegmentToolHandlers();
-        const savedRanges = await sauce.storage.get('analysis_peak_ranges');
-        ns.allPeriodRanges = (savedRanges && savedRanges.periods) || sauce.peaks.defaultPeriods;
+        ns.allPeriodRanges = await sauce.peaks.getForActivityType('periods', ns.activityType);
+        ns.allDistRanges = await sauce.peaks.getForActivityType('distances', ns.activityType);
         for (const range of ns.allPeriodRanges) {
             range.label = H.duration(range.value);
         }
-        ns.allDistRanges = (savedRanges && savedRanges.distances) || sauce.peaks.defaultDistances;
         for (const range of ns.allDistRanges) {
             range.label = H.raceDistance(range.value);
         }
