@@ -1545,10 +1545,10 @@ sauce.ns('analysis', ns => {
                 width: 600
             });
             const times = [];
-            for (let i = 5; i < 3600; i += Math.log(i + 1)) {
+            for (let i = 5; i < 10000; i += Math.log(i + 1)) {
                 times.push(i);
             }
-            times.push(3600);
+            //times.push(3600);
             const requirements = {
                 male: times.map(x => sauce.power.rankRequirements(x, 'male')),
                 female: times.map(x => sauce.power.rankRequirements(x, 'female'))
@@ -2342,7 +2342,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function powerData(kj, active, elapsed, altStream, extra) {
+    function powerData(kj, active, elapsed, altStream, extra={}) {
         const activeAvg = active ? kj * 1000 / active : null;
         const elapsedAvg = elapsed ? kj * 1000 / elapsed : null;
         let activeSP;
@@ -2354,6 +2354,7 @@ sauce.ns('analysis', ns => {
                 elapsedSP = elapsedAvg && sauce.power.seaLevelPower(elapsedAvg, avgEl);
             }
         }
+        const rankPower = extra.np || elapsedAvg;
         return Object.assign({
             activeAvg,
             elapsedAvg,
@@ -2363,8 +2364,8 @@ sauce.ns('analysis', ns => {
             elapsedSPAdjust: elapsedSP && elapsedSP / elapsedAvg,
             activeWKg: (ns.weight && activeAvg != null) && activeAvg / ns.weight,
             elapsedWKg: (ns.weight && elapsedAvg != null) && elapsedAvg / ns.weight,
-            rank: (ns.weight && elapsedAvg != null) &&
-                sauce.power.rank(elapsed, elapsedAvg / ns.weight, ns.gender),
+            rank: (ns.weight && rankPower) &&
+                sauce.power.rank(elapsed, rankPower / ns.weight, ns.gender),
         }, extra);
     }
 
@@ -2420,9 +2421,10 @@ sauce.ns('analysis', ns => {
         if (correctedPower) {
             const kj = correctedPower.kj();
             let tss, tTss, intensity;
-            tplData.power = powerData(kj, activeTime, elapsedTime, altStream);
+            const np = supportsNP() ? correctedPower.np() : null;
+            tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np});
             if (hasAccurateWatts()) {
-                tplData.power.np = supportsNP() ? correctedPower.np() : null;
+                tplData.power.np = np;
                 tplData.power.xp = supportsXP() ? correctedPower.xp() : null;
                 if (ns.ftp) {
                     const power = tplData.power.np || tplData.power.activeAvg;
