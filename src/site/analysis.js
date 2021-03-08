@@ -2224,7 +2224,7 @@ sauce.ns('analysis', ns => {
             info.weight = override;
             info.weightOrigin = 'sauce';
         } else {
-            const stravaWeight = pageView.activityAthleteWeight();
+            const stravaWeight = pageView.activityAthleteWeight && pageView.activityAthleteWeight();
             if (stravaWeight) {
                 info.weight = stravaWeight;
                 info.weightOrigin = 'strava';
