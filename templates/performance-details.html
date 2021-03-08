@@ -33,13 +33,6 @@
                             <value>{{humanTimer(day.duration)}}</value>
                         </row>
                     <% } %>
-                    <% if (day.altGain) { %>
-                        <row>
-                            <key>Elevation Gain:</key>
-                            <value>{{humanElevation(day.altGain)}}<abbr
-                                class="unit short">{{sauce.locale.elevationFormatter.shortUnitKey()}}</abbr></value>
-                        </row>
-                    <% } %>
                     <% if (day.distance) { %>
                         <row>
                             <key>Distance:</key>
@@ -47,6 +40,19 @@
                                 {{humanDistance(day.distance)}}<abbr
                                     class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr>
                             </value>
+                        </row>
+                    <% } %>
+                    <% if (day.kj) { %>
+                        <row>
+                            <key>Energy:</key><!-- XXX localize -->
+                            <value>{{humanNumber(day.kj)}}<abbr class="unit short">Kj</abbr></value>
+                        </row>
+                    <% } %>
+                    <% if (day.altGain) { %>
+                        <row>
+                            <key>Elevation Gain:</key>
+                            <value>{{humanElevation(day.altGain)}}<abbr
+                                class="unit short">{{sauce.locale.elevationFormatter.shortUnitKey()}}</abbr></value>
                         </row>
                     <% } %>
             <% } %>
@@ -62,6 +68,9 @@
                         <% } %>
                         <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
                     </header>
+                    <% if (a.description) { %>
+                        <p class="activity-desc">{{a.description}}</p>
+                    <% } %>
                     <% if (sauce.model.getActivityTSS(a) != null || a.tssOverride != null) { %>
                         <% if (a.tssOverride != null) { %>
                             <row>
@@ -104,16 +113,10 @@
                                     class="unit short">{{sauce.locale.distanceFormatter.shortUnitKey()}}</abbr></value>
                             </row>
                         <% } %>
-                        <% if (a.stats.power) { %>
+                        <% if (a.stats.kj) { %>
                             <row>
-                                <key>Power:</key>
-                                <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
-                            </row>
-                        <% } %>
-                        <% if (a.stats.np) { %>
-                            <row>
-                                <key>NP:</key>
-                                <value>{{humanNumber(a.stats.np)}}<abbr class="unit short">w</abbr></value>
+                                <key>Energy:</key><!-- XXX localize -->
+                                <value>{{humanNumber(a.stats.kj)}}<abbr class="unit short">Kj</abbr></value>
                             </row>
                         <% } %>
                         <% if (a.stats.altitudeGain) { %>

@@ -293,6 +293,7 @@ sauce.ns('performance', async ns => {
             let duration = 0;
             let altGain = 0;
             let distance = 0;
+            let kj = 0;
             const ts = date.getTime();
             const daily = [];
             while (i < acts.length && startOfDay(acts[i].ts) === ts) {
@@ -302,6 +303,7 @@ sauce.ns('performance', async ns => {
                 duration += a.stats && a.stats.activeTime || 0;
                 altGain += a.stats && a.stats.altitudeGain || 0;
                 distance += a.stats && a.stats.distance || 0;
+                kj += a.stats && a.stats.kj || 0;
             }
             atl = sauce.perf.calcATL([tss], atl);
             ctl = sauce.perf.calcCTL([tss], ctl);
@@ -314,6 +316,7 @@ sauce.ns('performance', async ns => {
                 ctl,
                 altGain,
                 distance,
+                kj,
             });
         }
         if (i !== acts.length) {
@@ -344,6 +347,7 @@ sauce.ns('performance', async ns => {
                     duration: slot.duration,
                     altGain: slot.altGain,
                     distance: slot.distance,
+                    kj: slot.kj,
                     days: 1,
                     activities: [...slot.activities],
                 };
@@ -353,6 +357,7 @@ sauce.ns('performance', async ns => {
                 entry.duration += slot.duration;
                 entry.altGain += slot.altGain;
                 entry.distance += slot.distance;
+                entry.kj += slot.kj;
                 entry.days++;
                 entry.activities.push(...slot.activities);
             }
@@ -1146,8 +1151,9 @@ sauce.ns('performance', async ns => {
             if (!this.activities.length) {
                 return;
             }
-            const oldest = this.activities[this.activities.length - 1];
-            const more = await sauce.hist.getActivitySiblings(oldest.id, {direction: 'prev', limit: 1});
+            const oldest = this.activities[0];
+            const more = await sauce.hist.getActivitySiblings(oldest.id,
+                {direction: 'prev', limit: 1});
             await this.setActivities(this.activities.concat(more), {noHighlight: true});
         }
 
@@ -1155,8 +1161,9 @@ sauce.ns('performance', async ns => {
             if (!this.activities.length) {
                 return;
             }
-            const newest = this.activities[0];
-            const more = await sauce.hist.getActivitySiblings(newest.id, {direction: 'next', limit: 1});
+            const newest = this.activities[this.activities.length - 1];
+            const more = await sauce.hist.getActivitySiblings(newest.id,
+                {direction: 'next', limit: 1});
             await this.setActivities(this.activities.concat(more), {noHighlight: true});
         }
 

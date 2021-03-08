@@ -246,7 +246,7 @@ table.sauce-perf {
 
     .title {
         small {
-            font-size: 0.8em;
+            font-size: 0.86em;
         }
     }
 
@@ -964,6 +964,15 @@ table.sauce-perf {
             &::first-line {
                 font-size: 1.4em;
             }
+        }
+
+        .activity-desc {
+            white-space: pre-line;
+            font-size: 0.8em;
+            margin: 0;
+            padding: 0;
+            margin-bottom: 0.6em;
+            opacity: 0.9;
         }
 
         > header {
