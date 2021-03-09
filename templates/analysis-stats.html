@@ -228,11 +228,11 @@
     <div class="sauce-data-tuple sauce-rank-badge">
         <line class="heading">
             <key>{{{rank}}}</key>
-            <value>{{humanNumber(power.rank.level * 100, 1)}}%</value>
+            <value>{{humanNumber(power.rank.level * 100)}}%</value>
         </line>
         <% if (power.rank.badge) { %>
             <img src="{{power.rank.badge}}" class="sauce-rank"
-                 title="{{{ranking_tooltip}}}: {{humanNumber(power.rank.level * 100, 1)}}%"/>
+                 title="{{{ranking_tooltip}}}: {{humanNumber(power.rank.level * 100)}}%"/>
         <% } %>
     </div>
 <% } %>

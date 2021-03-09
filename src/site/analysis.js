@@ -1545,10 +1545,9 @@ sauce.ns('analysis', ns => {
                 width: 600
             });
             const times = [];
-            for (let i = 5; i < 10000; i += Math.log(i + 1)) {
+            for (let i = 5; i < 3 * 3600; i += Math.log(i + 1)) {
                 times.push(i);
             }
-            //times.push(3600);
             const requirements = {
                 male: times.map(x => sauce.power.rankRequirements(x, 'male')),
                 female: times.map(x => sauce.power.rankRequirements(x, 'female'))

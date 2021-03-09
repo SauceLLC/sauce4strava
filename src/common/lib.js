@@ -619,14 +619,12 @@ sauce.ns('power', function() {
     function _rankScaler(duration, c) {
         const t = (c.slopePeriod / duration) * c.slopeAdjust;
         const slope = Math.log10(t + c.slopeOffset);
-        let wKg = Math.pow(slope, c.slopeFactor);
-        if (duration > 3600) {
-            // This is an unscientific extrapolation of power loss associated with endurance
-            // efforts (> 1hr).  TODO: Find some real studies.  Currently I'm basing this on
-            // Mvdp's stunning Strade Bianchi: https://www.strava.com/activities/4901472414
-            wKg *= 1 / ((Math.log(duration / 3600) * 0.1) + 1);
-        }
-        return wKg + c.baseOffset;
+        const wKgDifference = Math.pow(slope, c.slopeFactor);
+        // This is an unscientific extrapolation of power loss associated with endurance
+        // efforts over 1 hour.  TODO: Find some real studies.  Currently I'm basing this on
+        // Mvdp's stunning Strade Bianchi: https://www.strava.com/activities/4901472414
+        const enduroFactor = duration > 3600 ? 1 / ((Math.log(duration / 3600) * 0.1) + 1) : 1;
+        return (wKgDifference + c.baseOffset) * enduroFactor;
     }
 
 
