@@ -10,6 +10,11 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     const maybeRequestIdleCallback = self.requestIdleCallback || (fn => fn());  // Safari
 
     sauce.propDefined('pageView', view => {
+        const assembleSave = view.assemble;
+        view.assemble = function(_, weight) {
+            sauce.stravaAthleteWeight = weight;
+            return assembleSave.apply(this, arguments);
+        };
         const addCustomRoutes = view.addCustomRoutes;
         view.addCustomRoutes = menuRouter => {
             addCustomRoutes.call(view, menuRouter);
