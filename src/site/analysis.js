@@ -1256,6 +1256,11 @@ sauce.ns('analysis', ns => {
                 let composite = false;
                 for (const spec of specs) {
                     let data = spec.data;
+                    if (!data) {
+                        const id = Array.from(_activeGraphs)[specs.indexOf(spec)];
+                        sauce.report.error(new Error(`Invalid info graph data for: ${id} (${textLabel})`));
+                        continue;
+                    }
                     if (data.length > 120) {
                         data = sauce.data.resample(data, 120);
                     }
