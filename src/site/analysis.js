@@ -1749,7 +1749,6 @@ sauce.ns('analysis', ns => {
             leaderName: athlete.get('display_name'),
             isSelf: athlete.id === pageView.currentAthlete().id,
             leaderTime: H.timer(streamDelta(timeStream)),
-            selfImageUrl: sauce.extUrl + 'images/jen_and_i_europe.jpg',
             hasPatronRequirement,
             useTrial,
         });
