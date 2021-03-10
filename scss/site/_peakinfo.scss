@@ -80,43 +80,72 @@
         margin: 0;
         font-size: 0.90em;
 
-        tr:nth-child(odd) {
-            background: rgba(128, 128, 128, 0.04);
-        }
-
-        tr.selected {
-            background: color.shade(bg, 75%);
-            $color: color.shade(fg, 90%);
-            color: $color;
-
-            td:last-child {
-                color: $color;
+        tr {
+            &:nth-child(odd) {
+                background: rgba(128, 128, 128, 0.04);
             }
-        }
 
-        tr:hover:not(.selected) {
-            background: color.shade(bg, 10%);
-            cursor: pointer;
+            &.selected {
+                background: color.shade(bg, 75%);
+                $color: color.shade(fg, 90%);
+                color: $color;
 
-            .sauce-peak-rank {
-                svg[data-icon] {
-                    width: 70%;
-                    height: 70%;
+                td:last-child {
+                    color: $color;
+                }
+            }
+
+            &:hover:not(.selected) {
+                background: color.shade(bg, 10%);
+                cursor: pointer;
+
+                .sauce-peak-rank {
+                    svg[data-icon] {
+                        width: 70%;
+                        height: 70%;
+                    }
+
+                    .place,
+                    .category {
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                }
+            }
+
+            &[data-source="peak_vam"],
+            &[data-source="peak_hr"],
+            &[data-source="peak_cadence"],
+            &[data-source="peak_np"],
+            &[data-source="peak_xp"] {
+                td:last-child {
+                    padding-right: 1em;
                 }
 
-                .place,
-                .category {
-                    opacity: 1;
-                    visibility: visible;
+                .sauce-peak-rank {
+                    display: none;
                 }
             }
         }
 
         td {
             padding: 0.8em 0.3em 0.7em;
-            text-align: right;
+            text-align: center;
             line-height: normal;
             white-space: nowrap;
+            width: 50%;
+
+            &:first-child {
+                padding-left: 1em;
+            }
+
+            &:last-child {
+                color: color.get(accent4);
+
+                abbr.unit {
+                    font-size: 0.8em;
+                }
+            }
 
             .sauce-peak-rank {
                 display: inline-flex;
@@ -127,7 +156,7 @@
                 vertical-align: middle;
                 width: 18px;
                 height: 18px;
-                margin: -0.3em 0.3em -0.2em 0.2em;
+                margin: -0.3em 0.3em -0.1em 0.2em;
                 position: relative;
                 $animation-time: 200ms;
 
@@ -196,14 +225,6 @@
                     }
                 }
             }
-        }
-
-        td:first-child {
-            padding-left: 1em;
-        }
-
-        td:last-child {
-            color: color.get(accent4);
         }
     }
 }
