@@ -560,12 +560,9 @@ sauce.ns('analysis', ns => {
 
 
     async function addPeaksRanks(source, rows, $el) {
-        if (!ns.sauceAthlete || !ns.sauceAthlete.sync || !rows.length) {
-            return;
-        }
         const type = sourcePeakTypes[source];
-        if (!type || (type.startsWith('power') && !hasAccurateWatts()) ||
-            (['pace', 'gap'].includes(type) && !pageView.isRun())) {
+        if (!ns.sauceAthlete || !ns.sauceAthlete.sync || !rows.length ||
+            !supportsPeaksRanks(type)) {
             return;
         }
         const periods = rows.map(x => x.rangeValue);
@@ -1306,7 +1303,7 @@ sauce.ns('analysis', ns => {
                 [sauce.hist.getPeaksRelatedToActivityId, id];
             const peaks = await getPeaks(actArg, type, [range],
                 {filter, limit: 10, expandActivities: true});
-            if (!peaks || !peaks.length) {
+            if (!peaks || !peaks.length || !supportsPeaksRanks(type)) {
                 if (!hasSegments) {
                     $dialog.find('.empty-message').removeClass('hidden');
                 }
@@ -2376,7 +2373,8 @@ sauce.ns('analysis', ns => {
 
     function hasAccurateWatts() {
         // Only trust real watts and watts_calc for runs.  Rides esp are very inaccurate.
-        return !!_getStream('watts') || (ns.activityType === 'run' && !!_getStream('watts_calc'));
+        return !!(_getStream('watts') ||
+            (ns.activityType === 'run' && _getStream('watts_calc')));
     }
 
 
@@ -2395,6 +2393,13 @@ sauce.ns('analysis', ns => {
             !isVirtual() &&
             !!_getStream('altitude') &&
             !!(_getStream('watts') || _getStream('watts_calc'));
+    }
+
+
+    function supportsPeaksRanks(type) {
+        return !!(type &&
+            (type.startsWith('power') && hasAccurateWatts()) ||
+            (['pace', 'gap'].includes(type) && pageView.isRun()));
     }
 
 
