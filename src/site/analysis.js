@@ -2996,6 +2996,15 @@ sauce.ns('analysis', ns => {
             await sauce.storage.setPref('expandAnalysisStats', expanded);
             sauce.report.event('AnalysisStats', expanded ? 'expand' : 'collapse');
         });
+        sauce.bubble({
+            title: "fooasdf",
+            body: "asdfasdf asdf asdf asdf ",
+            position: {
+                my: 'left center',
+                at: 'right center',
+                of: $el,
+            },
+        });
     }
 
 
