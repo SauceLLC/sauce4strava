@@ -36,7 +36,7 @@
             background-color: color.shade(accent, 5%);
 
             &:hover {
-                background-color: color.shade(accent, 0%);
+                background-color: color.shade(accent, -5%);
             }
 
             img {
