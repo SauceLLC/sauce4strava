@@ -332,9 +332,13 @@ sauce.ns('locale', ns => {
         if (now.getDate() === date.getDate() &&
             now.getMonth() === date.getMonth() &&
             now.getFullYear() === date.getFullYear()) {
+            const time = humanTime(date, {...options, style: 'default'});
+            if (options.concise) {
+                return time;
+            }
             const today = hdUnits.today;
             const Today = today.substr(0, 1).toLocaleUpperCase() + today.substr(1);
-            return [Today, humanTime(date, {...options, style: 'default'})].join(', ');
+            return [Today, time].join(', ');
         }
         const style = options.style || 'default';
         return _intlDateTimeFormats[style].format(date);

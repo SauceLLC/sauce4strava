@@ -205,9 +205,14 @@ sauce.ns('sync', ns => {
         }
 
         async function updateSyncTimes() {
-            const [lastSync, nextSync] = await Promise.all([syncController.lastSync(), syncController.nextSync()]);
-            $modal.find('.entry.last-sync value').text(lastSync ? (sauce.locale.human.datetime(lastSync)) : '');
-            $modal.find('.entry.next-sync value').text(nextSync ? (sauce.locale.human.datetime(nextSync)) : '');
+            const [lastSync, nextSync] = await Promise.all([
+                syncController.lastSync(),
+                syncController.nextSync()
+            ]);
+            $modal.find('.entry.last-sync value').text(lastSync ?
+                sauce.locale.human.datetime(lastSync) : '');
+            $modal.find('.entry.next-sync value').text(nextSync ?
+                sauce.locale.human.datetime(nextSync) : '');
         }
 
         let rateLimiterInterval;
@@ -224,7 +229,7 @@ sauce.ns('sync', ns => {
                 rateLimiterInterval = setInterval(async () => {
                     const resumes = await syncController.rateLimiterResumes();
                     if (resumes && resumes - Date.now() > 10000) {
-                        const resumesLocale = sauce.locale.human.datetime(resumes);
+                        const resumesLocale = sauce.locale.human.datetime(resumes, {concise: true});
                         $modal.find('.entry.status value').text(`Suspended until: ${resumesLocale}`);
                     }
                 }, 2000);
