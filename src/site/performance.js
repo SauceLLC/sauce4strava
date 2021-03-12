@@ -672,6 +672,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.plugins.datalabels.color', 'white');
             setDefault(config, 'options.plugins.datalabels.padding', 4);
             setDefault(config, 'options.plugins.datalabels.anchor', 'center');
+            setDefault(config, 'options.plugins.zoom.enabled', true);
             super(ctx, config);
             _this = this;
             this.view = view;
