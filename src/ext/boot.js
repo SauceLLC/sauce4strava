@@ -47,6 +47,7 @@
             'site/sync.js',
             'site/chart.js',
             'site/chartjs/plugin-datalabels.js',
+            'site/chartjs/plugin-crosshair.js',
             'site/chartjs/chart-matrix.js',
             'site/sparkline.js',
             'site/performance.js',

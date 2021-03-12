@@ -672,6 +672,14 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.plugins.datalabels.color', 'white');
             setDefault(config, 'options.plugins.datalabels.padding', 4);
             setDefault(config, 'options.plugins.datalabels.anchor', 'center');
+            setDefault(config, 'options.plugins.crosshair.zoom.enabled', true);
+            setDefault(config, 'options.plugins.crosshair.callbacks.beforeZoom', (start, end) => {
+                console.warn(start, end);
+                return true;
+            });
+            setDefault(config, 'options.plugins.crosshair.callbacks.afterZoom', (start, end) => {
+                console.warn('after', start, end);
+            });
             super(ctx, config);
             _this = this;
             this.view = view;
