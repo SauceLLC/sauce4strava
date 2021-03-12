@@ -202,7 +202,7 @@ sauce.ns('hist.db', ns => {
             }
         }
 
-        safeSort(peaks, type) {
+        orderedAndTrimmed(peaks, type, limit) {
             // Handle non-numeric types that have on occasion crept in.  Yes, we should fix all these
             // cases upstream before they get into the database, but the chance of it happening is
             // non-zero with the way I hack on this, so be careful about sorting properly here in
@@ -212,7 +212,11 @@ sauce.ns('hist.db', ns => {
             } else {
                 peaks.sort((a, b) => (a.value || 0) - (b.value || 0));
             }
+            if (limit) {
+                peaks.length = Math.min(peaks.length, limit);
+            }
             peaks.forEach((x, i) => x.rank = i + 1);
+            return peaks;
         }
 
         async getForAthlete(athleteId, type, period, options={}) {
@@ -227,8 +231,7 @@ sauce.ns('hist.db', ns => {
                 ...options,
                 limit: undefined
             });
-            this.safeSort(peaks, type);
-            return options.limit ? peaks.slice(0, options.limit) : peaks;
+            return this.orderedAndTrimmed(peaks, type, options.limit);
         }
 
         async getFor(type, period, options={}) {
@@ -243,8 +246,7 @@ sauce.ns('hist.db', ns => {
                 ...options,
                 limit: undefined
             });
-            this.safeSort(peaks, type);
-            return options.limit ? peaks.slice(0, options.limit) : peaks;
+            return this.orderedAndTrimmed(peaks, type, options.limit);
         }
 
         async deleteForActivity(activityId) {
