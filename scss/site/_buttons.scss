@@ -123,6 +123,12 @@
         }
     }
 
+    .btn-group {
+        &.btn-group-justified {
+            border-collapse: initial;  // Fixes border-radius
+        }
+    }
+
     .sauce-swapped-background {
         .btn:not(.btn-unstyled) {
             background-color: color.shade(bg, 10%) !important;
