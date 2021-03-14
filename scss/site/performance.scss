@@ -923,6 +923,21 @@ table.sauce-perf {
                         opacity: 0.7;
                     }
                 }
+
+                .chart-tooltip {
+                    padding: 1em;
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 0.9em;
+                    min-height: 3em;
+
+                    > * {
+                        flex: 1 0 0;
+                    }
+                }
+
+                .chart-reset-zoom {
+                }
             }
 
             .sauce-panel-content {

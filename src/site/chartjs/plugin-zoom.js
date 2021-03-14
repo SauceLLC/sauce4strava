@@ -19,8 +19,6 @@ function zoomPlugin(Chart) {
         enabled: false,
         zoomboxBackgroundColor: 'rgba(66,133,244,0.2)',
         zoomboxBorderColor: '#48F',
-        zoomButtonText: 'Reset Zoom',
-        zoomButtonClass: 'reset-zoom',
 		callbacks: {
 			beforeZoom: (start, end) => true,
 			afterZoom: (start, end) => null
@@ -51,8 +49,10 @@ function zoomPlugin(Chart) {
 				dragEndX: null,
 				suppressTooltips: false,
 				reset: () => this.resetZoom(chart, false, false),
+                resetButton: chart.canvas.closest('.sauce-panel').querySelector('.chart-reset-zoom'),
 			};
 			chart.panZoom = this.panZoom.bind(this, chart);
+            chart._zoomState.resetButton.addEventListener('click', () => this.resetZoom(chart));
 		},
 
 		panZoom: function(chart, increment) {
@@ -148,6 +148,7 @@ function zoomPlugin(Chart) {
 
 		resetZoom: function(chart) {
             const state = chart._zoomState;
+            state.resetButton.classList.add('hidden');
 			var stop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 			var update = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 			if (update) {
@@ -159,7 +160,6 @@ function zoomPlugin(Chart) {
 				if (chart.options.scales.xAxes[0].time) {
 					range = 'time';
 				}
-				// reset original xRange
 				if (state.originalXRange.min) {
 					chart.options.scales.xAxes[0][range].min = state.originalXRange.min;
 					state.originalXRange.min = null;
@@ -173,8 +173,8 @@ function zoomPlugin(Chart) {
 					delete chart.options.scales.xAxes[0][range].max;
 				}
 			}
-			if (state.button && state.button.parentNode) {
-				state.button.parentNode.removeChild(state.button);
+			if (state.button) {
+				state.button.classList.add('hidden');
 				state.button = false;
 			}
 			if (update) {
@@ -212,18 +212,7 @@ function zoomPlugin(Chart) {
 					state.originalXRange.max = chart.options.scales.xAxes[0].ticks.max;
 				}
 			}
-			if (!state.button) {
-				// add restore zoom button
-				const button = document.createElement('button');
-				const buttonText = this.getOption(chart, 'zoomButtonText');
-				const buttonClass = this.getOption(chart, 'zoomButtonClass');
-				const buttonLabel = document.createTextNode(buttonText);
-				button.appendChild(buttonLabel);
-				button.className = buttonClass;
-				button.addEventListener('click', () => this.resetZoom(chart));
-				chart.canvas.parentNode.appendChild(button);
-				state.button = button;
-			}
+            state.resetButton.classList.remove('hidden');
 			// set axis scale
 			if (chart.options.scales.xAxes[0].time) {
 				chart.options.scales.xAxes[0].time.min = start;

@@ -6,7 +6,7 @@ sauce.ns('performance', async ns => {
     const DAY = 86400 * 1000;
     const urn = 'sauce/performance';
     const title = 'Sauce Performance';
-    const chartTopPad = 30;  // Helps prevent tooltip clipping.
+    const chartTopPad = 0;
 
 
     await sauce.proxy.connected;
@@ -524,7 +524,8 @@ sauce.ns('performance', async ns => {
                         continue;
                     }
                     const scale = chart.scales[ds.yAxisID];
-                    if (scale.height <= 0) {
+                    const height = scale.maxHeight; // This is the canvas pixel value.
+                    if (height <= 0) {
                         return;  // Ignore renders to nonvisible layouts (prob a transition)
                     }
                     if (!ds._overUnderRef) {
@@ -551,8 +552,8 @@ sauce.ns('performance', async ns => {
                     }
                     const ref = ds._overUnderRef;
                     const model = meta.dataset._model;
-                    const zeroPct = this.safePct(scale.getPixelForValue(0) / scale.height);
-                    const gFill = chart.ctx.createLinearGradient(0, 0, 0, scale.height);
+                    const zeroPct = this.safePct(scale.getPixelForValue(0) / height);
+                    const gFill = chart.ctx.createLinearGradient(0, 0, 0, height);
                     const max = ds.overBackgroundMax != null ? ds.overBackgroundMax : scale.max;
                     const min = ds.underBackgroundMin != null ? ds.underBackgroundMin : scale.min;
                     const midPointMarginPct = 0.001;
@@ -560,7 +561,7 @@ sauce.ns('performance', async ns => {
                         if (scale.max > 0) {
                             const overMaxColor = this._getFillGradientColor(ref.over, scale.max / max);
                             const overMinColor = this._getFillGradientColor(ref.over, scale.min / max);
-                            const topPct = this.safePct(scale.getPixelForValue(max) / scale.height);
+                            const topPct = this.safePct(scale.getPixelForValue(max) / height);
                             gFill.addColorStop(topPct, `rgba(${overMaxColor.join()}`);
                             gFill.addColorStop(this.safePct(zeroPct - midPointMarginPct),
                                 `rgba(${overMinColor.join()}`);
@@ -569,7 +570,7 @@ sauce.ns('performance', async ns => {
                         if (scale.min < 0) {
                             const underMinColor = this._getFillGradientColor(ref.under, scale.max / min);
                             const underMaxColor = this._getFillGradientColor(ref.under, scale.min / min);
-                            const bottomPct = this.safePct(scale.getPixelForValue(min) / scale.height);
+                            const bottomPct = this.safePct(scale.getPixelForValue(min) / height);
                             gFill.addColorStop(zeroPct, `rgba(${underMinColor.slice(0, 3).join()}, 0`);
                             gFill.addColorStop(this.safePct(zeroPct + midPointMarginPct),
                                 `rgba(${underMinColor.join()}`);
@@ -610,7 +611,8 @@ sauce.ns('performance', async ns => {
 
     class ActivityTimeRangeChart extends Chart {
         constructor(canvasSelector, view, config) {
-            const ctx = document.querySelector(canvasSelector).getContext('2d');
+            const canvas = document.querySelector(canvasSelector);
+            const ctx = canvas.getContext('2d');
             let _this;
             config = config || {};
             setDefault(config, 'type', 'line');
@@ -650,6 +652,20 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
             setDefault(config, 'options.tooltips.position', 'sides');
             setDefault(config, 'options.tooltips.mode', 'index');
+            setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
+            setDefault(config, 'options.tooltips.custom', tooltip => {
+                const tt = canvas.closest('.sauce-panel').querySelector('.chart-tooltip');
+                if (!tooltip.title) {
+                    tt.innerHTML = '';
+                    return;
+                }
+                const body = tooltip.body ? tooltip.body.map(x => x.lines.join(' ')).join(' ') : '';
+                tt.innerHTML = `
+                    <div class="tt-title">${tooltip.title}</div>
+                    <div class="tt-body">${body}</div>
+                    <div class="tt-footer">${tooltip.footer ? tooltip.footer.join('') : ''}</div>
+                `;
+            });
             setDefault(config, 'options.tooltips.callbacks.title', (item, data) => {
                 const d = new Date(data.datasets[0].data[item[0].index].x);
                 return H.date(d, {style: 'weekdayYear'});
@@ -685,9 +701,9 @@ sauce.ns('performance', async ns => {
                 return '';
             }
             if (slot.activities.length === 1) {
-                return `\n1 activity - click for details`; // XXX Localize
+                return `\n1 activity`; // XXX Localize
             } else {
-                return `\n${slot.activities.length} activities - click for details`; // XXX Localize
+                return `\n${slot.activities.length} activities`; // XXX Localize
             }
         }
 
