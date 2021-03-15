@@ -925,18 +925,57 @@ table.sauce-perf {
                 }
 
                 .chart-tooltip {
-                    padding: 1em;
                     display: flex;
                     justify-content: space-between;
                     font-size: 0.9em;
-                    min-height: 3em;
+                    margin: 1em;
+                    margin-left: 4em;
 
-                    > * {
-                        flex: 1 0 0;
+                    .axes {
+                        display: flex;
+                        flex-direction: column;
+                        min-height: 2.5em;
+
+                        &.tt-labels {
+                            flex-direction: row;
+                        }
+                    }
+
+                    .tt-date {
+                        font-weight: bold;
+                        font-size: 0.9em;
+                    }
+
+                    .data-label {
+                        margin-left: 0.5em;
+
+                        &::before {
+                            content: '';
+                            display: inline-block;
+                            width: 0.7em;
+                            height: 0.7em;
+                            border-radius: 100%;
+                            background-color: var(--bg-color);
+                            border: 2px solid var(--border-color);
+                            margin-right: 0.1em;
+                        }
+
+                        key, value {
+                            display: inline-block;
+                        }
+
+                        key {
+                        }
+
+                        value {
+                            min-width: 5ch;
+                            font-variant: tabular-nums;
+                        }
                     }
                 }
 
                 .chart-reset-zoom {
+                    margin-left: 2em;
                 }
             }
 

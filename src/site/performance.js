@@ -653,18 +653,56 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.tooltips.position', 'sides');
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
-            setDefault(config, 'options.tooltips.custom', tooltip => {
-                const tt = canvas.closest('.sauce-panel').querySelector('.chart-tooltip');
-                if (!tooltip.title) {
-                    tt.innerHTML = '';
+            let _nextTooltipAnimFrame;
+            let _nextTooltip;
+            setDefault(config, 'options.tooltips.custom', t => {
+                _nextTooltip = t;
+                if (_nextTooltipAnimFrame) {
                     return;
                 }
-                const body = tooltip.body ? tooltip.body.map(x => x.lines.join(' ')).join(' ') : '';
-                tt.innerHTML = `
-                    <div class="tt-title">${tooltip.title}</div>
-                    <div class="tt-body">${body}</div>
-                    <div class="tt-footer">${tooltip.footer ? tooltip.footer.join('') : ''}</div>
-                `;
+                _nextTooltipAnimFrame = requestAnimationFrame(() => {
+                    _nextTooltipAnimFrame = null;
+                    const tooltip = _nextTooltip;
+                    const tt = canvas.closest('.sauce-panel').querySelector('.chart-tooltip');
+                    if (!tooltip.title) {
+                        //tt.innerHTML = '';
+                        return;
+                    }
+                    const labels = [];
+                    for (const point of tooltip.dataPoints) {
+                        const ds = _this.chart.data.datasets[point.datasetIndex];
+                        if (!ds.label) {
+                            continue;
+                        }
+                        const value = ds.tooltipFormat ?
+                            ds.tooltipFormat(Number(point.value), ds, _this) : point.value;
+                        labels.push(`
+                            <div class="data-label"
+                                 style="--border-color: ${ds.borderColor};
+                                        --bg-color: ${ds.backgroundColor};">
+                                <key>${ds.label}:</key>
+                                <value>${value}</value>
+                            </div>
+                        `);
+                    }
+                    const idx = tooltip.dataPoints[0].index;
+                    const slot = _this.options.useMetricData ? _this.view.metricData[idx] : _this.view.daily[idx];
+                    let acts = '<i>Rest</i>'; // XXX localize
+                    if (slot.activities && slot.activities.length) {
+                        if (slot.activities.length === 1) {
+                            acts = `1 activity`; // XXX Localize
+                        } else {
+                            acts = `${slot.activities.length} activities`; // XXX Localize
+                        }
+                    }
+                    tt.innerHTML = `
+                        <div class="tt-time axes">
+                            <div class="tt-date">${tooltip.title}</div>
+                            <div class="tt-acts">${acts}</div>
+                        </div>
+                        <div class="tt-labels axes">${labels.join('')}</div>
+                    `;
+                });
             });
             setDefault(config, 'options.tooltips.callbacks.title', (item, data) => {
                 const d = new Date(data.datasets[0].data[item[0].index].x);
@@ -676,8 +714,6 @@ sauce.ns('performance', async ns => {
                 const val = ds.tooltipFormat ? ds.tooltipFormat(Number(item.value), ds, this) : item.value;
                 return `${label}: ${val}`;
             });
-            setDefault(config, 'options.tooltips.callbacks.footer',
-                items => this.onTooltipSummary(items));
             setDefault(config, 'options.plugins.datalabels.display', ctx =>
                 ctx.dataset.data[ctx.dataIndex].showDataLabel === true);
             setDefault(config, 'options.plugins.datalabels.formatter', (value, ctx) =>
@@ -692,19 +728,6 @@ sauce.ns('performance', async ns => {
             super(ctx, config);
             _this = this;
             this.view = view;
-        }
-
-        onTooltipSummary(items) {
-            const idx = items[0].index;
-            const slot = this.options.useMetricData ? this.view.metricData[idx] : this.view.daily[idx];
-            if (!slot.activities || !slot.activities.length) {
-                return '';
-            }
-            if (slot.activities.length === 1) {
-                return `\n1 activity`; // XXX Localize
-            } else {
-                return `\n${slot.activities.length} activities`; // XXX Localize
-            }
         }
 
         formatTickLabel(index, ticks) {
