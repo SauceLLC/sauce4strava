@@ -668,7 +668,7 @@ sauce.ns('performance', async ns => {
                     const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length &&
                         tooltip.dataPoints[0].index;
                     if (dataIndex != null) {
-                        _this.onTooltipUpdate(tooltip, dataIndex);
+                        _this.onTooltipUpdate(dataIndex);
                     }
                 });
             });
@@ -704,7 +704,7 @@ sauce.ns('performance', async ns => {
 
         update(...args) {
             super.update(...args);
-            this.onTooltipUpdate({title: 'foobar'}, 0);
+            this.onTooltipUpdate(-1);
         }
 
         onDataLabelClick(ev) {
@@ -721,20 +721,24 @@ sauce.ns('performance', async ns => {
             this.chart.update();
         }
 
-        onTooltipUpdate(tooltip, index) {
-            console.warn(index);
+        onTooltipUpdate(index) {
             if (!this.chart.data.datasets || !this.chart.data.datasets.length) {
                 return;  // Chartjs resize cause spurious calls to update before init complets.
             }
-            const tt = this.tooltipEl;
-            tt.style.setProperty('--caret-left', `${tooltip.caretX}px`);
+            index = index >= 0 ? index : this.chart.data.datasets[0].data.length + index;
             const labels = [];
+            const elements = [];
             for (const ds of this.chart.data.datasets) {
                 if (!ds.label) {
                     continue;
                 }
                 const raw = ds.data[index].y;
                 const value = ds.tooltipFormat ?  ds.tooltipFormat(raw, ds, this) : raw;
+                if (!ds.hidden) {
+                    for (const x of Object.values(ds._meta)) {
+                        elements.push(x.data[index]);
+                    }
+                }
                 labels.push(`
                     <div class="data-label ${ds.hidden ? "ds-hidden" : ''}" data-ds="${ds.id}"
                          style="--border-color: ${ds.borderColor};
@@ -753,13 +757,17 @@ sauce.ns('performance', async ns => {
                     acts = `${slot.activities.length} activities`; // XXX Localize
                 }
             }
-            tt.innerHTML = `
+            const d = new Date(this.chart.data.datasets[0].data[index].x);
+            const title = H.date(d, {style: 'weekdayYear'});
+            const caretX = sauce.data.avg(elements.map(x => x.getCenterPoint().x));
+            this.tooltipEl.style.setProperty('--caret-left', `${caretX}px`);
+            jQuery(this.tooltipEl).html(`
                 <div class="tt-time axes">
-                    <div class="tt-date">${tooltip.title}</div>
+                    <div class="tt-date">${title}</div>
                     <div class="tt-acts">${acts}</div>
                 </div>
                 <div class="tt-labels axes">${labels.join('')}</div>
-            `;
+            `);
         }
 
         formatTickLabel(index, ticks) {
