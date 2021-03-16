@@ -6,7 +6,7 @@ sauce.ns('performance', async ns => {
     const DAY = 86400 * 1000;
     const urn = 'sauce/performance';
     const title = 'Sauce Performance';
-    const chartTopPad = 0;
+    const chartTopPad = 15;
 
 
     await sauce.proxy.connected;
@@ -596,7 +596,7 @@ sauce.ns('performance', async ns => {
             const activePoint = active[0];
             const ctx = this.chart.ctx;
             const x = activePoint.tooltipPosition().x;
-            const top = this.chart.chartArea.top;
+            const top = this.chart.chartArea.top - chartTopPad;
             const bottom = this.chart.chartArea.bottom;
             ctx.save();
             ctx.beginPath();
@@ -749,13 +749,17 @@ sauce.ns('performance', async ns => {
                 `);
             }
             const slot = this.options.useMetricData ? this.view.metricData[index] : this.view.daily[index];
-            let acts = '<i>Rest</i>'; // XXX localize
+            let acts;
             if (slot.activities && slot.activities.length) {
                 if (slot.activities.length === 1) {
                     acts = `1 activity`; // XXX Localize
                 } else {
                     acts = `${slot.activities.length} activities`; // XXX Localize
                 }
+                this.chart.canvas.style.cursor = 'pointer'; // XXX
+            } else {
+                acts = '<i>Rest</i>'; // XXX localize
+                this.chart.canvas.style.cursor = 'initial'; // XXX
             }
             const d = new Date(this.chart.data.datasets[0].data[index].x);
             const title = H.date(d, {style: 'weekdayYear'});

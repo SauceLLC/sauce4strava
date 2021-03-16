@@ -934,7 +934,7 @@ table.sauce-perf {
                     --caret-left: center;
 
                     // Tuned carefully for caret alignment...
-                    $border-color: color.shade(fg, 0%, 0.3);
+                    $border-color: color.shade(accent4, 0%, 0.8);
                     $border-width: 2px;
                     margin: 0 0 1em 0 !important;
                     padding: 1em 1em 0.5em 2em !important;
