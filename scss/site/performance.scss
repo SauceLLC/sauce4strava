@@ -909,6 +909,8 @@ table.sauce-perf {
             padding: 1em;
 
             .sauce-panel {
+                position: relative;
+
                 > header {
                     font-size: 0.92em;
                     font-weight: bold;
@@ -926,34 +928,75 @@ table.sauce-perf {
 
                 .chart-tooltip {
                     display: flex;
-                    justify-content: space-between;
-                    font-size: 0.9em;
-                    margin: 1em;
-                    margin-left: 4em;
+                    flex-direction: column;
+                    font-size: 0.96em;
+                    position: relative;
+                    --caret-left: center;
+
+                    // Tuned carefully for caret alignment...
+                    $border-color: color.shade(fg, 0%, 0.3);
+                    $border-width: 2px;
+                    margin: 0 0 1em 0 !important;
+                    padding: 1em 1em 0.5em 2em !important;
+                    border-image-source: radial-gradient(circle at var(--caret-left),
+                        $border-color, transparent);
+                    border-image-slice: 1;
+                    border-bottom: $border-width solid;
+
+                    // Caret...
+                    &::after {
+                        $size: 1em;
+                        content: '';
+                        position: absolute;
+                        width: 0;
+                        height: 0;
+                        border-left: ($size / 2) solid transparent;
+                        border-right: ($size / 2) solid transparent;
+                        border-top: ($size / 2) solid $border-color;
+                        display: block;
+                        bottom: calc(-#{$size} / 2 - #{$border-width});
+                        left: calc(var(--caret-left) - (#{$size} / 2));
+                    }
 
                     .axes {
                         display: flex;
-                        flex-direction: column;
-                        min-height: 2.5em;
+                        justify-content: space-evenly;
+                        margin: 0.5em 1em;
 
                         &.tt-labels {
-                            flex-direction: row;
                         }
                     }
 
-                    .tt-date {
+                    .tt-time {
                         font-weight: bold;
-                        font-size: 0.9em;
+                        font-size: 0.92em;
+                        opacity: 0.8;
                     }
 
                     .data-label {
                         margin-left: 0.5em;
+                        cursor: pointer;
+                        opacity: 0.82;
+                        transition: opacity 200ms;
+
+                        &.ds-hidden {
+                            text-decoration: line-through;
+                            opacity: 0.5;
+                        }
+
+                        &:hover {
+                            opacity: 1;
+
+                            &:not(.ds-hidden) {
+                                text-decoration: underline;
+                            }
+                        }
 
                         &::before {
                             content: '';
                             display: inline-block;
-                            width: 0.7em;
-                            height: 0.7em;
+                            width: 0.8em;
+                            height: 0.8em;
                             border-radius: 100%;
                             background-color: var(--bg-color);
                             border: 2px solid var(--border-color);
@@ -962,6 +1005,7 @@ table.sauce-perf {
 
                         key, value {
                             display: inline-block;
+                            text-decoration: inherit;
                         }
 
                         key {
@@ -988,7 +1032,7 @@ table.sauce-perf {
 
                 &.chart {
                     min-height: 14em;
-                    height: 33vh;
+                    height: 25vh;
                     max-height: 24em;
                 }
             }

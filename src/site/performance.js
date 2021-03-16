@@ -467,6 +467,7 @@ sauce.ns('performance', async ns => {
     };
 
 
+    /*
     Chart.Tooltip.positioners.sides = function (elements, pos) {
         const box = this._chart.chartArea;
         const intersect = this._chart.options.tooltips.intersect;
@@ -478,7 +479,7 @@ sauce.ns('performance', async ns => {
             x: pos.x,
             y: yPos
         };
-    };
+    };*/
 
 
     const chartOverUnderFillPlugin = {
@@ -623,6 +624,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.tooltipLine', true);
             setDefault(config, 'options.tooltipLineColor', '#07c');
             setDefault(config, 'options.animation.duration', 200);
+            setDefault(config, 'options.legend.display', false);
             setDefault(config, 'options.legend.position', 'bottom');
             setDefault(config, 'options.legend.labels.padding', 20);
             setDefault(config, 'options.legend.labels.usePointStyle', true);
@@ -650,7 +652,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.yAxes[0].type', 'linear');
             setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
-            setDefault(config, 'options.tooltips.position', 'sides');
+            //setDefault(config, 'options.tooltips.position', 'sides');
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
             let _nextTooltipAnimFrame;
@@ -663,45 +665,11 @@ sauce.ns('performance', async ns => {
                 _nextTooltipAnimFrame = requestAnimationFrame(() => {
                     _nextTooltipAnimFrame = null;
                     const tooltip = _nextTooltip;
-                    const tt = canvas.closest('.sauce-panel').querySelector('.chart-tooltip');
-                    if (!tooltip.title) {
-                        //tt.innerHTML = '';
-                        return;
+                    const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length &&
+                        tooltip.dataPoints[0].index;
+                    if (dataIndex != null) {
+                        _this.onTooltipUpdate(tooltip, dataIndex);
                     }
-                    const labels = [];
-                    for (const point of tooltip.dataPoints) {
-                        const ds = _this.chart.data.datasets[point.datasetIndex];
-                        if (!ds.label) {
-                            continue;
-                        }
-                        const value = ds.tooltipFormat ?
-                            ds.tooltipFormat(Number(point.value), ds, _this) : point.value;
-                        labels.push(`
-                            <div class="data-label"
-                                 style="--border-color: ${ds.borderColor};
-                                        --bg-color: ${ds.backgroundColor};">
-                                <key>${ds.label}:</key>
-                                <value>${value}</value>
-                            </div>
-                        `);
-                    }
-                    const idx = tooltip.dataPoints[0].index;
-                    const slot = _this.options.useMetricData ? _this.view.metricData[idx] : _this.view.daily[idx];
-                    let acts = '<i>Rest</i>'; // XXX localize
-                    if (slot.activities && slot.activities.length) {
-                        if (slot.activities.length === 1) {
-                            acts = `1 activity`; // XXX Localize
-                        } else {
-                            acts = `${slot.activities.length} activities`; // XXX Localize
-                        }
-                    }
-                    tt.innerHTML = `
-                        <div class="tt-time axes">
-                            <div class="tt-date">${tooltip.title}</div>
-                            <div class="tt-acts">${acts}</div>
-                        </div>
-                        <div class="tt-labels axes">${labels.join('')}</div>
-                    `;
                 });
             });
             setDefault(config, 'options.tooltips.callbacks.title', (item, data) => {
@@ -728,6 +696,70 @@ sauce.ns('performance', async ns => {
             super(ctx, config);
             _this = this;
             this.view = view;
+            const panel = canvas.closest('.sauce-panel');
+            this.tooltipEl = panel.querySelector('.chart-tooltip');
+            jQuery(panel).on('click', '.chart-tooltip .data-label', this.onDataLabelClick.bind(this));
+            this.tooltipEl = panel.querySelector('.chart-tooltip');
+        }
+
+        update(...args) {
+            super.update(...args);
+            this.onTooltipUpdate({title: 'foobar'}, 0);
+        }
+
+        onDataLabelClick(ev) {
+            const id = ev.currentTarget.dataset.ds;
+            if (!id) {
+                console.warn("No ID for dataset");
+                return;
+            }
+            const index = this.chart.data.datasets.findIndex(x => x.id === id);
+            jQuery(this.chart.canvas).trigger('dataVisibilityChange', {
+                id,
+                visible: !this.chart.isDatasetVisible(index)
+            });
+            this.chart.update();
+        }
+
+        onTooltipUpdate(tooltip, index) {
+            console.warn(index);
+            if (!this.chart.data.datasets || !this.chart.data.datasets.length) {
+                return;  // Chartjs resize cause spurious calls to update before init complets.
+            }
+            const tt = this.tooltipEl;
+            tt.style.setProperty('--caret-left', `${tooltip.caretX}px`);
+            const labels = [];
+            for (const ds of this.chart.data.datasets) {
+                if (!ds.label) {
+                    continue;
+                }
+                const raw = ds.data[index].y;
+                const value = ds.tooltipFormat ?  ds.tooltipFormat(raw, ds, this) : raw;
+                labels.push(`
+                    <div class="data-label ${ds.hidden ? "ds-hidden" : ''}" data-ds="${ds.id}"
+                         style="--border-color: ${ds.borderColor};
+                                --bg-color: ${ds.backgroundColor};">
+                        <key>${ds.label}:</key>
+                        <value>${value}</value>
+                    </div>
+                `);
+            }
+            const slot = this.options.useMetricData ? this.view.metricData[index] : this.view.daily[index];
+            let acts = '<i>Rest</i>'; // XXX localize
+            if (slot.activities && slot.activities.length) {
+                if (slot.activities.length === 1) {
+                    acts = `1 activity`; // XXX Localize
+                } else {
+                    acts = `${slot.activities.length} activities`; // XXX Localize
+                }
+            }
+            tt.innerHTML = `
+                <div class="tt-time axes">
+                    <div class="tt-date">${tooltip.title}</div>
+                    <div class="tt-acts">${acts}</div>
+                </div>
+                <div class="tt-labels axes">${labels.join('')}</div>
+            `;
         }
 
         formatTickLabel(index, ticks) {
