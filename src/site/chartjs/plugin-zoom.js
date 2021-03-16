@@ -53,6 +53,35 @@
             };
             chart.panZoom = this.panZoom.bind(this, chart);
             chart._zoomState.resetButton.addEventListener('click', () => this.resetZoom(chart));
+            chart.canvas.addEventListener('pointerdown', ev => {
+                console.warn("down", ev);
+                chart._zoomState.dragCallbacks = {
+                    move: this.onPointerMove.bind(this, chart),
+                    up: this.onPointerUp.bind(this, chart),
+                    out: this.onPointerOut.bind(this, chart),
+                };
+                chart.canvas.addEventListener('pointermove', chart._zoomState.dragCallbacks.move);
+                chart.canvas.addEventListener('pointerup', chart._zoomState.dragCallbacks.up);
+                chart.canvas.addEventListener('pointerout', chart._zoomState.dragCallbacks.out);
+            });
+        },
+
+        onPointerMove: function(chart, ev) {
+            console.warn("MOVE");
+        },
+
+        onPointerUp: function(chart, ev) {
+            console.warn("UP");
+            chart.canvas.removeEventListener('pointerup', chart._zoomState.dragCallbacks.up);
+            chart.canvas.removeEventListener('pointerout', chart._zoomState.dragCallbacks.out);
+            chart.canvas.removeEventListener('pointermove', chart._zoomState.dragCallbacks.move);
+        },
+
+        onPointerOut: function(chart, ev) {
+            console.warn("OUT");
+            chart.canvas.removeEventListener('pointerup', chart._zoomState.dragCallbacks.up);
+            chart.canvas.removeEventListener('pointerout', chart._zoomState.dragCallbacks.out);
+            chart.canvas.removeEventListener('pointermove', chart._zoomState.dragCallbacks.move);
         },
 
         panZoom: function(chart, increment) {
