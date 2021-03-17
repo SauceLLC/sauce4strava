@@ -2996,7 +2996,7 @@ sauce.ns('analysis', ns => {
             await sauce.storage.setPref('expandAnalysisStats', expanded);
             sauce.report.event('AnalysisStats', expanded ? 'expand' : 'collapse');
         });
-        sauce.bubble({
+        /*sauce.bubble({
             title: "fooasdf",
             body: "asdfasdf asdf asdf asdf ",
             position: {
@@ -3004,7 +3004,7 @@ sauce.ns('analysis', ns => {
                 at: 'right center',
                 of: $el,
             },
-        });
+        }); */ //XXX
     }
 
 
