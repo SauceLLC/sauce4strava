@@ -2,6 +2,6 @@
 TOOLS=$(dirname $0)
 (
     trap 'kill 0' SIGINT
-        (while true ; do FILE=$($TOOLS/watch src '*.js') ; clear ; $TOOLS/../../node_modules/.bin/eslint "$FILE" && echo CLEAN; done) &
+        (while true ; do FILE=$($TOOLS/watch src '*.js') ; clear ; $TOOLS/../../node_modules/.bin/eslint --no-ignore "$FILE" && echo CLEAN; done) &
         (while true ; do FILE=$($TOOLS/watch src '*.mjs') ; clear ; $TOOLS/../../node_modules/.bin/eslint --config $TOOLS/../../.eslintrc.modules.json "$FILE" && echo CLEAN; done)
 )

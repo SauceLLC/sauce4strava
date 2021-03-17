@@ -515,7 +515,6 @@ sauce.ns('performance', async ns => {
         },
 
         beforeRender: function (chart, options) {
-            //var model = chart.data.datasets[3]._meta[Object.keys(dataset._meta)[0]].dataset._model;
             for (const ds of chart.data.datasets) {
                 if (!ds.overUnder) {
                     continue;
@@ -683,7 +682,7 @@ sauce.ns('performance', async ns => {
                 return `${label}: ${val}`;
             });
             setDefault(config, 'options.plugins.datalabels.display', ctx =>
-                ctx.dataset.data[ctx.dataIndex].showDataLabel === true);
+                !!(ctx.dataset.data[ctx.dataIndex] && ctx.dataset.data[ctx.dataIndex].showDataLabel === true));
             setDefault(config, 'options.plugins.datalabels.formatter', (value, ctx) =>
                 ctx.dataset.tooltipFormat(value.y));
             setDefault(config, 'options.plugins.datalabels.backgroundColor',
@@ -693,6 +692,18 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.plugins.datalabels.padding', 4);
             setDefault(config, 'options.plugins.datalabels.anchor', 'center');
             setDefault(config, 'options.plugins.zoom.enabled', true);
+            setDefault(config, 'options.plugins.zoom.callbacks.beforeZoom', (start, end) => {
+                const bucket = this.options.useMetricData ? this.view.metricData : this.view.daily;
+                // Pad out the zoom to be inclusive of nearest metric unit.
+                let first = bucket.findIndex(x => x.date >= start);
+                let last = bucket.findIndex(x => x.date > end);
+                if (first === -1) {
+                    return;
+                }
+                first = first > 0 ? first - 1 : first;
+                last = last > 0 ? last : bucket.length - 1;
+                return [bucket[first].date, bucket[last].date];
+            });
             super(ctx, config);
             _this = this;
             this.view = view;
@@ -748,30 +759,35 @@ sauce.ns('performance', async ns => {
                     </div>
                 `);
             }
-            const slot = this.options.useMetricData ? this.view.metricData[index] : this.view.daily[index];
-            let acts;
-            if (slot.activities && slot.activities.length) {
-                if (slot.activities.length === 1) {
-                    acts = `1 activity`; // XXX Localize
-                } else {
-                    acts = `${slot.activities.length} activities`; // XXX Localize
-                }
-                this.chart.canvas.style.cursor = 'pointer'; // XXX
+            const acts = this.getActivitiesAtDatasetIndex(index);
+            let actsDesc;
+            if (acts.length === 1) {
+                actsDesc = acts[0].name;
+            } else if (acts.length > 1) {
+                actsDesc = `<i>${acts.length} activities</i>`; // XXX Localize
             } else {
-                acts = '<i>Rest</i>'; // XXX localize
-                this.chart.canvas.style.cursor = 'initial'; // XXX
+                actsDesc = '-';
             }
             const d = new Date(this.chart.data.datasets[0].data[index].x);
             const title = H.date(d, {style: 'weekdayYear'});
             const caretX = sauce.data.avg(elements.map(x => x.getCenterPoint().x));
-            this.tooltipEl.style.setProperty('--caret-left', `${caretX}px`);
+            this.tooltipEl.classList.toggle('inactive', caretX == null);
+            this.tooltipEl.style.setProperty('--caret-left', `${caretX || 0}px`);
             jQuery(this.tooltipEl).html(`
+                <div class="tt-labels axes">${labels.join('')}</div>
                 <div class="tt-time axes">
                     <div class="tt-date">${title}</div>
-                    <div class="tt-acts">${acts}</div>
+                    <div class="tt-acts">${actsDesc}</div>
                 </div>
-                <div class="tt-labels axes">${labels.join('')}</div>
             `);
+        }
+
+        getActivitiesAtDatasetIndex(index) {
+            // Due to zooming the dataset can be a subset of our daily/metric data.
+            const bucket = this.options.useMetricData ? this.view.metricData : this.view.daily;
+            const date = this.chart.data.datasets[0].data[index].x;
+            const slot = bucket.find(x => x.date === date);
+            return slot && slot.activities ? slot.activities : [];
         }
 
         formatTickLabel(index, ticks) {
@@ -1575,7 +1591,7 @@ sauce.ns('performance', async ns => {
                         yAxes: [{
                             id: 'tss',
                             scaleLabel: {labelString: 'TSS'},
-                            ticks: {min: 0, maxTicksLimit: 8},
+                            ticks: {min: 0, maxTicksLimit: 6},
                         }, {
                             id: 'tsb',
                             scaleLabel: {labelString: 'TSB'},
@@ -1598,7 +1614,7 @@ sauce.ns('performance', async ns => {
                         yAxes: [{
                             id: 'tss',
                             scaleLabel: {labelString: 'TSS'}, // XXX localize
-                            ticks: {min: 0, maxTicksLimit: 4},
+                            ticks: {min: 0, maxTicksLimit: 6},
                         }, {
                             id: 'duration',
                             position: 'right',
@@ -1764,6 +1780,8 @@ sauce.ns('performance', async ns => {
                 type: 'bar',
                 backgroundColor: '#1d86cdd0',
                 borderColor: '#0d76bdf0',
+                hoverBackgroundColor: '#0d76bd',
+                hoverBorderColor: '#0d76bd',
                 yAxisID: 'tss',
                 borderWidth: 1,
                 barPercentage: 0.92,
@@ -1778,6 +1796,8 @@ sauce.ns('performance', async ns => {
                 type: 'bar',
                 backgroundColor: '#fc7d0bd0',
                 borderColor: '#dc5d00f0',
+                hoverBackgroundColor: '#ec6d00',
+                hoverBorderColor: '#dc5d00',
                 borderWidth: 1,
                 yAxisID: 'duration',
                 barPercentage: 0.92,
@@ -1792,6 +1812,8 @@ sauce.ns('performance', async ns => {
                 type: 'bar',
                 backgroundColor: '#244d',
                 borderColor: '#022f',
+                hoverBackgroundColor: '#133',
+                hoverBorderColor: '#022',
                 borderWidth: 1,
                 yAxisID: 'distance',
                 barPercentage: 0.92,
@@ -1848,10 +1870,9 @@ sauce.ns('performance', async ns => {
                 elements = chart.getElementsAtEvent(ev);
             }
             if (elements.length) {
-                const idx = elements[0]._index;
-                const slot = chart.options.useMetricData ? this.metricData[idx] : this.daily[idx];
-                if (slot && slot.activities && slot.activities.length) {
-                    this.pageView.trigger('select-activities', slot.activities);
+                const acts = chart.getActivitiesAtDatasetIndex(elements[0]._index);
+                if (acts.length) {
+                    this.pageView.trigger('select-activities', acts);
                 }
             }
         }

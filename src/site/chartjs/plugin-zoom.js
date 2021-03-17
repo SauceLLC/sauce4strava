@@ -17,8 +17,8 @@
         zoomboxBackgroundColor: 'rgba(66,133,244,0.2)',
         zoomboxBorderColor: '#48F',
         callbacks: {
-            beforeZoom: (start, end) => true,
-            afterZoom: (start, end) => null
+            // beforeZoom: (start, end) => [true, end],
+            // afterZoom: (start, end) => null
         }
     };
 
@@ -39,69 +39,84 @@
             if (chart.options.plugins.zoom === undefined) {
                 chart.options.plugins.zoom = defaultOptions;
             }
+            if (!this.getOption(chart, 'enabled')) {
+                return;
+            }
             chart._zoomState = {
-                enabled: false,
-                x: null,
                 originalData: [],
                 originalXRange: {},
-                dragStarted: false,
+                dragActive: false,
                 dragStartX: null,
-                dragEndX: null,
-                suppressTooltips: false,
-                reset: () => this.resetZoom(chart, false, false),
+                dragCurX: null,
                 resetButton: chart.canvas.closest('.sauce-panel').querySelector('.chart-reset-zoom'),
             };
-            chart.panZoom = this.panZoom.bind(this, chart);
             chart._zoomState.resetButton.addEventListener('click', () => this.resetZoom(chart));
             chart.canvas.addEventListener('pointerdown', ev => {
-                console.warn("down", ev);
-                chart._zoomState.dragCallbacks = {
-                    move: this.onPointerMove.bind(this, chart),
-                    up: this.onPointerUp.bind(this, chart),
-                    out: this.onPointerOut.bind(this, chart),
+                this.removePointerCallbacks(chart);
+                if (ev.buttons !== /*primary*/ 1) {
+                    return;
+                }
+                const xScale = this.getXScale(chart);
+                if (ev.offsetX < xScale.getPixelForValue(xScale.min) ||
+                    ev.offsetX > xScale.getPixelForValue(xScale.max)) {
+                    return; // Out of bounds
+                }
+                ev.preventDefault();
+                const state = chart._zoomState;
+                state.dragCallbacks = {
+                    move: this.onPointerMove.bind(this, chart, state),
+                    done: this.onPointerDone.bind(this, chart, state),
                 };
-                chart.canvas.addEventListener('pointermove', chart._zoomState.dragCallbacks.move);
-                chart.canvas.addEventListener('pointerup', chart._zoomState.dragCallbacks.up);
-                chart.canvas.addEventListener('pointerout', chart._zoomState.dragCallbacks.out);
+                chart.canvas.addEventListener('pointermove', state.dragCallbacks.move);
+                document.addEventListener('pointerup', state.dragCallbacks.done);
+                document.addEventListener('pointercancel', state.dragCallbacks.done);
+                state.dragCurX = (state.dragStartX = ev.offsetX);
             });
         },
 
-        onPointerMove: function(chart, ev) {
-            console.warn("MOVE");
-        },
-
-        onPointerUp: function(chart, ev) {
-            console.warn("UP");
-            chart.canvas.removeEventListener('pointerup', chart._zoomState.dragCallbacks.up);
-            chart.canvas.removeEventListener('pointerout', chart._zoomState.dragCallbacks.out);
-            chart.canvas.removeEventListener('pointermove', chart._zoomState.dragCallbacks.move);
-        },
-
-        onPointerOut: function(chart, ev) {
-            console.warn("OUT");
-            chart.canvas.removeEventListener('pointerup', chart._zoomState.dragCallbacks.up);
-            chart.canvas.removeEventListener('pointerout', chart._zoomState.dragCallbacks.out);
-            chart.canvas.removeEventListener('pointermove', chart._zoomState.dragCallbacks.move);
-        },
-
-        panZoom: function(chart, increment) {
-            const state = chart._zoomState;
-            if (!state.originalData.length) {
+        onPointerMove: function(chart, state, ev) {
+            if (!ev.buttons) {
+                // It's possible for the window to lose focus and the pointercancel and pointerup events
+                // are never sent. In this case we're listening for a move still but the primary button
+                // is not pressed, so treat this like a cancel.
+                state.dragActive = false;
+                this.onPointerDone(chart, state, ev);
                 return;
             }
-            const diff = state.end - state.start;
-            if (increment < 0) { // left
-                state.start = Math.max(state.start + increment, state.min);
-                state.end = state.start === state.min ? state.min + diff : state.end + increment;
-            } else { // right
-                state.end = Math.min(state.end + increment, state.max);
-                state.start = state.end === state.max ? state.max - diff : state.start + increment;
+            state.dragCurX = ev.offsetX;
+            const delta = Math.abs(state.dragStartX - state.dragCurX);
+            state.dragActive = delta > 2;
+            chart.draw();
+        },
+
+        removePointerCallbacks: function(chart) {
+            const state = chart._zoomState;
+            if (state.dragCallbacks) {
+                document.removeEventListener('pointerup', state.dragCallbacks.done);
+                document.removeEventListener('pointercancel', state.dragCallbacks.done);
+                chart.canvas.removeEventListener('pointermove', state.dragCallbacks.move);
+                state.dragCallbacks = null;
             }
-            this.doZoom(chart, state.start, state.end);
+        },
+
+        onPointerDone: function(chart, state, ev) {
+            this.removePointerCallbacks(chart);
+            if (state.dragActive) {
+                const xScale = this.getXScale(chart);
+                const start = xScale.getValueForPixel(state.dragStartX);
+                const end = xScale.getValueForPixel(state.dragCurX);
+                this.doZoom(chart, start, end);
+            }
+            state.dragActive = false;
+            state.dragCurX = null;
+            state.dragStartX = null;
+            chart.update();
+            chart.draw();
         },
 
         getOption: function(chart, name) {
-            return helpers.getValueOrDefault(chart.options.plugins.zoom ? chart.options.plugins.zoom[name] : undefined, defaultOptions[name]);
+            return helpers.getValueOrDefault(chart.options.plugins.zoom ?
+                chart.options.plugins.zoom[name] : undefined, defaultOptions[name]);
         },
 
         getXScale: function(chart) {
@@ -112,102 +127,41 @@
             return chart.scales[chart.getDatasetMeta(0).yAxisID];
         },
 
-        afterEvent: function(chart, e) {
-            const state = chart._zoomState;
-            if (chart.config.options.scales.xAxes.length == 0) {
-                return;
-            }
-            const xScaleType = chart.config.options.scales.xAxes[0].type;
-            if (xScaleType !== 'linear' &&
-                xScaleType !== 'time' &&
-                xScaleType !== 'category' &&
-                xScaleType !== 'logarithmic') {
-                return;
-            }
-            const xScale = this.getXScale(chart);
-            if (!xScale) {
-                return;
-            }
-            // fix for Safari
-            let buttons = (e.native.buttons === undefined ? e.native.which : e.native.buttons);
-            if (e.native.type === 'mouseup') {
-                buttons = 0;
-            }
-            state.suppressTooltips = e.stop;
-            state.enabled = (e.type !== 'mouseout' && (e.x > xScale.getPixelForValue(xScale.min) && e.x < xScale.getPixelForValue(xScale.max)));
-            if (!state.enabled) {
-                if (e.x > xScale.getPixelForValue(xScale.max)) {
-                    chart.update();
-                }
-                return true;
-            }
-            // handle drag to zoom
-            if (buttons === 1 && !state.dragStarted && this.getOption(chart, 'enabled')) {
-                state.dragStartX = e.x;
-                state.dragStarted = true;
-            }
-            // handle drag to zoom
-            if (state.dragStarted && buttons === 0) {
-                state.dragStarted = false;
-                var start = xScale.getValueForPixel(state.dragStartX);
-                var end = xScale.getValueForPixel(state.x);
-                if (Math.abs(state.dragStartX - state.x) > 1) {
-                    this.doZoom(chart, start, end);
-                }
-                chart.update();
-            }
-            state.x = e.x;
-            chart.draw();
-        },
-
         afterDraw: function(chart) {
-            const state = chart._zoomState;
-            if (!state.enabled) {
+            if (!this.getOption(chart, 'enabled')) {
                 return;
             }
-            if (state.dragStarted) {
+            const state = chart._zoomState;
+            if (state.dragActive) {
                 this.drawZoombox(chart);
             }
             return true;
         },
 
-        beforeTooltipDraw: function(chart) {
-            // suppress tooltips on dragging
-            const state = chart._zoomState;
-            return !state.dragStarted && !state.suppressTooltips;
-        },
-
         resetZoom: function(chart) {
             const state = chart._zoomState;
             state.resetButton.classList.add('hidden');
-            var update = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-            if (update) {
-                for (var datasetIndex = 0; datasetIndex < chart.data.datasets.length; datasetIndex++) {
-                    var dataset = chart.data.datasets[datasetIndex];
-                    dataset.data = state.originalData.shift(0);
-                }
-                if (state.originalXRange.min) {
-                    chart.options.scales.xAxes[0].ticks.min = state.originalXRange.min;
-                    state.originalXRange.min = null;
-                } else {
-                    delete chart.options.scales.xAxes[0].ticks.min;
-                }
-                if (state.originalXRange.max) {
-                    chart.options.scales.xAxes[0].ticks.max = state.originalXRange.max;
-                    state.originalXRange.max = null;
-                } else {
-                    delete chart.options.scales.xAxes[0].ticks.max;
-                }
+            for (const x of chart.data.datasets) {
+                x.data = state.originalData.shift(0);
             }
-            if (state.button) {
-                state.button.classList.add('hidden');
-                state.button = false;
+            if (state.originalXRange.min) {
+                chart.options.scales.xAxes[0].ticks.min = state.originalXRange.min;
+                state.originalXRange.min = null;
+            } else {
+                delete chart.options.scales.xAxes[0].ticks.min;
             }
-            if (update) {
-                var anim = chart.options.animation;
-                chart.options.animation = false;
+            if (state.originalXRange.max) {
+                chart.options.scales.xAxes[0].ticks.max = state.originalXRange.max;
+                state.originalXRange.max = null;
+            } else {
+                delete chart.options.scales.xAxes[0].ticks.max;
+            }
+            const save = chart.options.animation;
+            chart.options.animation = false;
+            try {
                 chart.update();
-                chart.options.animation = anim;
+            } finally {
+                chart.options.animation = save;
             }
         },
 
@@ -217,10 +171,14 @@
             if (start > end) {
                 [start, end] = [end, start];
             }
-            const beforeZoomCallback = helpers.getValueOrDefault(chart.options.plugins.zoom.callbacks ?
-                chart.options.plugins.zoom.callbacks.beforeZoom : undefined, defaultOptions.callbacks.beforeZoom);
-            if (beforeZoomCallback(start, end) === false) {
-                return false;
+            const callbacks = this.getOption(chart, 'callbacks');
+            if (callbacks.beforeZoom) {
+                const ret = callbacks.beforeZoom(start, end);
+                if (ret === false) {
+                    return false;
+                } else if (ret) {
+                    [start, end] = ret;
+                }
             }
             if (chart.options.scales.xAxes[0].ticks.min && state.originalData.length === undefined) {
                 state.originalXRange.min = chart.options.scales.xAxes[0].ticks.min;
@@ -232,56 +190,46 @@
             chart.options.scales.xAxes[0].ticks.min = start;
             chart.options.scales.xAxes[0].ticks.max = end;
             const storeOriginals = state.originalData.length === 0;
-            for (let i = 0; i < chart.data.datasets.length; i++) {
-                const newData = [];
-                let index = 0;
-                let started;
-                let stop;
+            const xScale = this.getXScale(chart);
+            for (const ds of chart.data.datasets) {
+                const data = ds.data;
                 if (storeOriginals) {
-                    state.originalData[i] = chart.data.datasets[i].data;
+                    state.originalData.push(data);
                 }
-                const sourceDataset = state.originalData[i];
-                for (let j = 0; j < sourceDataset.length; j++) {
-                    const oldData = sourceDataset[j];
-                    const oldDataX = this.getXScale(chart).getRightValue(oldData);
-                    // append one value outside of bounds
-                    if (oldDataX >= start && !started && index > 0) {
-                        newData.push(sourceDataset[index - 1]);
-                        started = true;
-                    }
-                    if (oldDataX >= start && oldDataX <= end) {
-                        newData.push(oldData);
-                    }
-                    if (oldDataX > end && !stop && index < sourceDataset.length) {
-                        newData.push(oldData);
-                        stop = true;
-                    }
-                    index += 1;
+                const startIdx = data.findIndex(x => xScale.getRightValue(x) >= start);
+                let endIdx = data.findIndex(x => xScale.getRightValue(x) > end);
+                if (endIdx === -1) {
+                    endIdx = data.length;
                 }
-                chart.data.datasets[i].data = newData;
+                ds.data = data.slice(startIdx, endIdx);
             }
             state.start = start;
             state.end = end;
             if (storeOriginals) {
-                const xAxes = this.getXScale(chart);
-                state.min = xAxes.min;
-                state.max = xAxes.max;
+                state.min = xScale.min;
+                state.max = xScale.max;
             }
             chart.update();
-            const callbacks = this.getOption(chart, 'callbacks');
-            callbacks.afterZoom(start, end);
+            if (callbacks.afterZoom) {
+                callbacks.afterZoom(start, end);
+            }
         },
 
         drawZoombox: function(chart) {
             const state = chart._zoomState;
+            const xScale = this.getXScale(chart);
             const yScale = this.getYScale(chart);
             const borderColor = this.getOption(chart, 'zoomboxBorderColor');
             const fillColor = this.getOption(chart, 'zoomboxBackgroundColor');
             chart.ctx.beginPath();
+            let [start, end] = state.dragStartX < state.dragCurX ?
+                [state.dragStartX, state.dragCurX] : [state.dragCurX, state.dragStartX];
+            start = Math.max(start, xScale.getPixelForValue(xScale.min));
+            end = Math.min(end, xScale.getPixelForValue(xScale.max));
             chart.ctx.rect(
-                state.dragStartX,
+                start,
                 yScale.getPixelForValue(yScale.max),
-                state.x - state.dragStartX,
+                end - start,
                 yScale.getPixelForValue(yScale.min) - yScale.getPixelForValue(yScale.max));
             chart.ctx.lineWidth = 1;
             chart.ctx.strokeStyle = borderColor;

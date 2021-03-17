@@ -453,7 +453,7 @@ table.sauce-perf {
     }
 
     row {
-        padding: 0.4em 0.5em;;
+        padding: 0.3em 0.5em;;
         display: flex;
         margin: 0.15em 0;
         align-items: center;
@@ -933,11 +933,19 @@ table.sauce-perf {
                     position: relative;
                     --caret-left: center;
 
+                    &.inactive {
+                        opacity: 0.5;
+
+                        &::after {
+                            content: none;
+                        }
+                    }
+
                     // Tuned carefully for caret alignment...
                     $border-color: color.shade(accent4, 0%, 0.8);
                     $border-width: 2px;
-                    margin: 0 0 1em 0 !important;
-                    padding: 1em 1em 0.5em 2em !important;
+                    margin: 0 0 1.5em 0 !important;
+                    padding: 1em 1em 0 2em !important;
                     border-image-source: radial-gradient(circle at var(--caret-left),
                         $border-color, transparent);
                     border-image-slice: 1;
@@ -960,23 +968,33 @@ table.sauce-perf {
 
                     .axes {
                         display: flex;
-                        justify-content: space-evenly;
                         margin: 0.5em 1em;
 
                         &.tt-labels {
+                            justify-content: space-evenly;
                         }
-                    }
 
-                    .tt-time {
-                        font-weight: bold;
-                        font-size: 0.92em;
-                        opacity: 0.8;
+                        &.tt-time {
+                            font-size: 0.92em;
+                            opacity: 0.85;
+                            justify-content: space-between;
+
+                            > * {
+                                white-space: nowrap;
+                            }
+
+                            .tt-acts {
+                                padding-left: 1em;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                            }
+                        }
                     }
 
                     .data-label {
                         margin-left: 0.5em;
                         cursor: pointer;
-                        opacity: 0.82;
+                        opacity: 0.88;
                         transition: opacity 200ms;
 
                         &.ds-hidden {
@@ -1032,8 +1050,8 @@ table.sauce-perf {
                 flex-direction: column;
 
                 &.chart {
-                    min-height: 14em;
-                    height: 25vh;
+                    min-height: 12em;
+                    height: 22vh;
                     max-height: 24em;
                 }
             }
