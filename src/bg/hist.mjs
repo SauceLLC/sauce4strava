@@ -1265,7 +1265,11 @@ class SyncJob extends EventTarget {
                 } else {
                     waiters.push(procQueue);
                 }
-                await Promise.any([...waiters.map(x => x.wait()), ...offloaded]);
+                try {
+                    await Promise.race([...waiters.map(x => x.wait()), ...offloaded]);
+                } catch(e) {
+                    sauce.report.error(e);
+                }
                 if (this._cancelEvent.isSet()) {
                     return;
                 }
