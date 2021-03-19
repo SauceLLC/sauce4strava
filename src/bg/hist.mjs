@@ -121,8 +121,13 @@ async function retryFetch(urn, options={}) {
         }
         if (resp.status >= 500 && resp.status < 600 && r <= maxRetries) {
             console.info(`Server error for: ${resp.url} - Retry: ${r}/${maxRetries}`);
-            await sleep(1000 * r);
-            continue;
+            // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
+            // perform a cool down before relinquishing control. Ie. do one last sleep.
+            // See: http://dev.chromium.org/throttling
+            await sleep(1000 * 2 ** r);
+            if (r < maxRetries) {
+                continue;
+            }
         }
         if (resp.status === 429) {
             throw ThrottledFetchError.fromResp(resp);
@@ -283,8 +288,17 @@ async function updatePeerActivities(athlete, options={}) {
         q.set('chart_type', 'hours');
         q.set('year_offset', '0');
         q.set('interval', '' + year +  month.toString().padStart(2, '0'));
-        const resp = await retryFetch(`/athletes/${athlete.pk}/interval?${q}`);
-        const data = await resp.text();
+        let data;
+        try {
+            const resp = await retryFetch(`/athletes/${athlete.pk}/interval?${q}`);
+            data = await resp.text();
+        } catch(e) {
+            // In some cases Strava just returns 500 for a month.  I suspect it's when the only
+            // activity data in a month is private, but it's an upstream problem and we need to
+            // treat it like an empty response.
+            sauce.report.error(new Error(`Upstream activity fetch error: ${athlete.pk} [${q}]`));
+            return [];
+        }
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
         const activityIconMap = {
@@ -331,9 +345,14 @@ async function updatePeerActivities(athlete, options={}) {
         const scriptData = {};
         function addEntry(id, ts, basetype) {
             if (!id) {
-                sauce.report.error(new Error('Invalid activity id for: ' + athlete.pk));
+                sauce.report.error(new Error('Invalid activity id for athlete: ' + athlete.pk));
                 debugger;
                 return;
+            }
+            if (!basetype) {
+                sauce.report.error(new Error('Unknown activity type for: ' + id));
+                basetype = 'workout';
+                debugger;
             }
             batch.push({
                 id,
@@ -350,9 +369,6 @@ async function updatePeerActivities(athlete, options={}) {
                     return activityIconMap[m[1]];
                 }
             }
-            sauce.report.error(new Error('Unhandled activity type for: ' + athlete.pk));
-            debugger;
-            return 'workout'; // XXX later this is probably fine to assume.
         }
         for (const m of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
             const scriptish = m[1];
