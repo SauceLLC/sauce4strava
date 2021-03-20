@@ -9,16 +9,18 @@ sauce.ns('profile', ns => {
 
 
     async function load() {
-        const $name = jQuery('.profile-heading .athlete-name');
-        const name = $name.text().trim();
-        const $btn = await sauce.sync.createSyncButton(athleteId, {name});
-        const $buttonBox = $name.siblings('.follow-action');
-        if ($buttonBox.length) {
-            // Peer
-            $buttonBox.prepend($btn);
-        } else {
-            // Self
-            $name.parent().append($btn);
+        if (sauce.patronLevel && sauce.patronLevel >= 10) {
+            const $name = jQuery('.profile-heading .athlete-name');
+            const name = $name.text().trim();
+            const $btn = await sauce.sync.createSyncButton(athleteId, {name});
+            const $buttonBox = $name.siblings('.follow-action');
+            if ($buttonBox.length) {
+                // Peer
+                $buttonBox.prepend($btn);
+            } else {
+                // Self
+                $name.parent().append($btn);
+            }
         }
     }
 

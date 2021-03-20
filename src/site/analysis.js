@@ -3071,12 +3071,14 @@ sauce.ns('analysis', ns => {
         ns.athlete = pageView.activityAthlete();
         ns.gender = ns.athlete.get('gender') === 'F' ? 'female' : 'male';
         await sauce.proxy.connected;
-        const athleteData = await sauce.hist.getAthlete(ns.athlete.id);
-        if (athleteData) {
-            ns.sauceAthlete = new SauceAthlete(athleteData);
-            ns.sauceActivity = await sauce.hist.getActivity(activity.id);
-            if (!ns.sauceActivity && ns.sauceAthlete.sync) {
-                setTimeout(() => sauce.hist.syncAthlete(ns.sauceAthlete.id).catch(sauce.report.error), 200);
+        if (sauce.patronLevel >= 10) {
+            const athleteData = await sauce.hist.getAthlete(ns.athlete.id);
+            if (athleteData) {
+                ns.sauceAthlete = new SauceAthlete(athleteData);
+                ns.sauceActivity = await sauce.hist.getActivity(activity.id);
+                if (!ns.sauceActivity && ns.sauceAthlete.sync) {
+                    setTimeout(() => sauce.hist.syncAthlete(ns.sauceAthlete.id).catch(sauce.report.error), 200);
+                }
             }
         }
         await Promise.all([
@@ -3302,7 +3304,9 @@ sauce.ns('analysis', ns => {
             startPageMonitors();
             attachRankBadgeDialog();
             await prepare();
-            attachSyncToggle();
+            if (sauce.patronLevel >= 10) {
+                attachSyncToggle();
+            }
             // Make sure this is last thing before start..
             if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
                 const {start, end} = sauce.analysisStatsIntent;
