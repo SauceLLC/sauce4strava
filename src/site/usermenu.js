@@ -6,7 +6,9 @@
     async function load() {
         try {
             _loadOptions();
-            _loadPerf();
+            if (sauce.patronLevel && sauce.patronLevel >= 10) {
+                _loadPerf();
+            }
         } catch(e) {
             await sauce.report.error(e);
             throw e;
