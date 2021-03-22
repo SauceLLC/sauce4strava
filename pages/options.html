@@ -37,13 +37,17 @@
                 justify-content: center;
             }
 
-            footer .links > * {
+            footer .links > a {
                 padding: 0 0.5em;
             }
 
             html:not(.moz-extension) .moz-only,
             html:not(.chrome-extension) .chrome-only,
             html:not(.safari-web-extension) .safari-only,
+            html:not(.edge) .edge-only,
+            html.moz-extension .not-moz,
+            html.chrome-extension .not-chrome,
+            html.safari-web-extension .not-safari,
             html.edge .not-edge {
                 display: none;
             }
@@ -94,7 +98,7 @@
             <a class="dismiss popup-only"></a>
         </header>
         <main>
-            <p class="supporter">Sauce is made possible by folks like <a target="_BLANK" href="https://saucellc.io/supporters.html"></a>!</p>
+            <p class="supporter">Sauce is made possible by folks like <a target="_blank" href="https://saucellc.io/supporters.html"></a>!</p>
             <p class="whenEnabled"><i>Sauce is enabled.  May the sauce be with you.</i></p>
             <p class="whenDisabled"><i>Sauce is disabled.</i></p>
             <table id="details"><tbody></tbody></table>
@@ -188,23 +192,29 @@
             <div class="buttons">
                 <a class="popup-only" href="adv_options.html?popup"><button>Advanced Options</button></a>
                 <a class="not-popup-only" href="adv_options.html"><button>Advanced Options</button></a>
-                <a target="_BLANK" href="https://www.patreon.com/bePatron?u=32064618"
+                <a target="_blank" href="https://www.patreon.com/bePatron?u=32064618"
                    title="Your support lets me continue to work on and improve Sauce! Thank you!"><button class="patreon"><img src="/images/become_a_patron_button@2x.png"/></button></a>
                 <button class="enabler whenDisabled green">Enable Sauce</button>
                 <button class="enabler whenEnabled red">Disable Sauce</button>
             </div>
             <div class="links">
-                <a target="_BLANK" href="https://saucellc.io">Home Page</a>
+                <a target="_blank" href="https://saucellc.io">Home Page</a>
+                <span class="not-edge not-safari">|</span>
+                <a target="_blank" class="chrome-only not-edge"
+                   href="https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha">Web Store</a>
+                <a target="_blank" class="moz-only"
+                   href="https://addons.mozilla.org/addon/sauce4strava">Add-on Store</a>
                 |
-                <a target="_BLANK" class="chrome-only not-edge"
-                   href="https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha">Chrome Web Store Page</a>
-                <a target="_BLANK" class="moz-only"
-                   href="https://addons.mozilla.org/addon/sauce4strava">Firefox Add-On Page</a>
+                <a target="_blank" href="https://saucellc.io/release_notes">Release Notes</a>
                 |
                 <a class="moz-only" href="privacy.html">Privacy Policy</a><!--Gecko can't do BLANK for ext based pages-->
-                <a target="_BLANK" class="chrome-only" href="privacy.html">Privacy Policy</a>
-                <a target="_BLANK" class="safari-only" href="privacy.html">Privacy Policy</a>
+                <a target="_blank" class="not-moz" href="privacy.html">Privacy Policy</a>
+
             </div>
         </footer>
+        <center>
+            <small>
+            </small>
+        </center>
     </body>
 </html>
