@@ -303,6 +303,7 @@ async function updatePeerActivities(athlete, options={}) {
         const batch = [];
         const activityIconMap = {
             'icon-run': 'run',
+            'icon-virtualrun': 'run',
             'icon-hike': 'run',
             'icon-walk': 'run',
             'icon-ride': 'ride',
@@ -412,19 +413,6 @@ async function updatePeerActivities(athlete, options={}) {
                 } else {
                     continue;
                 }
-            }
-            let basetype;
-            for (const x of iconRegexps) {
-                const m = entry.match(x);
-                if (m) {
-                    basetype = activityIconMap[m[1]];
-                    break;
-                }
-            }
-            if (!basetype) {
-                sauce.report.error(new Error('Unhandled activity type for: ' + athlete.pk));
-                debugger;
-                basetype = 'workout'; // XXX later this is probably fine to assume.
             }
             let ts;
             const dateM = entry.match(/<time [^>]*?datetime=\\'(.*?)\\'/);
