@@ -176,12 +176,16 @@ sauce.proxy.export(incrementStreamsUsage, {namespace});
 
 
 function getBaseType(activity) {
-    if (activity.type.match(/Ride/)) {
+    if (activity.type.match(/EBike/)) {
+        return 'workout';
+    } else if (activity.type.match(/Ride|Handcycle|Velomobile/)) {
         return 'ride';
     } else if (activity.type.match(/Run|Hike|Walk/)) {
         return 'run';
     } else if (activity.type.match(/Swim/)) {
         return 'swim';
+    } else if (activity.type.match(/Ski|Snowboard/)) {
+        return 'ski';
     } else {
         return 'workout';
     }
@@ -314,7 +318,7 @@ async function updatePeerActivities(athlete, options={}) {
             'icon-backcountryski': 'ski',
             'icon-snowboard': 'ski',
             'icon-rollerski': 'ski',
-            'icon-ebikeride': 'ebike',
+            'icon-ebikeride': 'workout',
             'icon-workout': 'workout',
             'icon-standuppaddling': 'workout',
             'icon-yoga': 'workout',
