@@ -3302,6 +3302,7 @@ sauce.ns('analysis', ns => {
             });
             document.body.dataset.route = pageRouter.context.startMenu();
             startPageMonitors();
+            document.documentElement.addEventListener('sauceResetPageMonitor', resetPageMonitors);
             attachRankBadgeDialog();
             await prepare();
             if (sauce.patronLevel >= 10) {

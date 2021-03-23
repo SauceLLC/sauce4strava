@@ -404,6 +404,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             if (sauce.options) {
                 addButtons.call(this).catch(sauce.report.error);
             }
+            document.documentElement.dispatchEvent(new Event('sauceResetPageMonitor'));
             return ret;
         };
     }, {once: true});
