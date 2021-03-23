@@ -1,4 +1,4 @@
-/* global Strava, sauce, jQuery, pageView */
+/* global Strava, sauce, jQuery, pageView, BigInt */
 
 sauce.ns('analysis', ns => {
     'use strict';
@@ -3277,7 +3277,29 @@ sauce.ns('analysis', ns => {
         const resp = await fetch('https://saucellc.io/release_notes.json');
         let releases = await resp.json();
         releases.reverse();
-        releases = releases.slice(0, 3);
+        const bigIntVersion = v => {
+            const ints = v.split('.').map(BigInt);
+            if (ints.length > 4) {
+                throw new TypeError("Invalid version format: " + v);
+            }
+            let n = BigInt(0);
+            const bits = 10;  // 1024 max revisions for each.
+            for (let i = 0; i < ints.length; i++) {
+                const x = ints[i];
+                if (x > 1 << bits) {
+                    throw new TypeError("Invalid version element: " + x);
+                }
+                n |= ints[i] << BigInt((3 - i) * bits);
+            }
+            return n;
+        };
+        const prevBigVer = bigIntVersion(recentUpdate.previousVersion);
+        releases = releases.filter(x => bigIntVersion(x.version) > prevBigVer);
+        if (!releases.length) {
+            // No releases to show.
+            await sauce.storage.remove('recentUpdate');
+            return;
+        }
         const template = await getTemplate('release-notes.html');
         const entryTpl = await getTemplate('release-notes-entry.html');
         const $dialog = sauce.dialog({
