@@ -97,11 +97,11 @@
     li.sauce-options-menu-item {
         a {
             color: color.shade(accent, 60%) !important;
-            background-color: color.shade(accent, 5%);
+            background-color: color.shade(accent, 5%) !important;
             position: relative;
 
             &:hover {
-                background-color: color.shade(accent, -5%);
+                background-color: color.shade(accent, -5%) !important;
             }
 
             img {
