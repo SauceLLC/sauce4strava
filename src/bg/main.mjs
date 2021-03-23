@@ -1,4 +1,4 @@
-/* global ga, browser, sauce */
+/* global browser, sauce */
 
 import * as hist from '/src/bg/hist.mjs';
 
@@ -10,11 +10,6 @@ browser.alarms.onAlarm.addListener(() => void 0);
 
 self.disabled = Boolean(Number(localStorage.getItem('disabled')));
 self.currentUser = Number(localStorage.getItem('currentUser')) || undefined;
-
-
-function reportLifecycleEvent(action, label) {
-    ga('send', 'event', 'ExtensionLifecycle', action, label);
-}
 
 
 function setCurrentUser(id) {
@@ -51,7 +46,12 @@ if (browser.runtime.getURL('').startsWith('safari-web-extension:')) {
 }
 
 browser.runtime.onInstalled.addListener(async details => {
-    reportLifecycleEvent('installed', details.reason);
+    if (['install', 'update'].includes(details.reason) && !details.temporary) {
+        const version = browser.runtime.getManifest().version;
+        sauce.report.event('ExtensionLifecycle', details.reason,
+            details.previousVersion ? `${details.previousVersion} -> ${version}` : version,
+            {nonInteraction: true, page: location.pathname});
+    }
     await sauce.migrate.runMigrations();
 });
 
