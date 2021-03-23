@@ -50,7 +50,10 @@ browser.runtime.onInstalled.addListener(async details => {
         const version = browser.runtime.getManifest().version;
         sauce.report.event('ExtensionLifecycle', details.reason,
             details.previousVersion ? `${details.previousVersion} -> ${version}` : version,
-            {nonInteraction: true, page: location.pathname});
+            {nonInteraction: true, page: location.pathname});  // bg okay
+        if (details.previousVersion && version !== details.previousVersion) {
+            await sauce.storage.set('recentUpdate', {previousVersion: details.previousVersion, version});
+        }
     }
     await sauce.migrate.runMigrations();
 });

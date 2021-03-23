@@ -1,0 +1,7 @@
+<% for (const x of releases) { %>
+    <header>
+        <div class="version">v{{x.version}}</div>
+        <div class="date">{{humanDate(x.ts)}}</div>
+    </header>
+    {-await entryTpl({notes: x.notes, entryTpl})-}
+<% } %>

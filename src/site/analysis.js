@@ -3268,6 +3268,37 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function checkIfUpdated() {
+        await sauce.proxy.connected;
+        const recentUpdate = await sauce.storage.get('recentUpdate');
+        if (!recentUpdate) {
+            return;
+        }
+        const resp = await fetch('https://saucellc.io/release_notes.json');
+        let releases = await resp.json();
+        releases.reverse();
+        releases = releases.slice(0, 3);
+        const template = await getTemplate('release-notes.html');
+        const entryTpl = await getTemplate('release-notes-entry.html');
+        const $dialog = sauce.dialog({
+            title: 'Good news - Sauce was just upgraded!', // XXX localize
+            width: 500,
+            autoDestroy: true,
+            dialogClass: 'sauce-updated',
+            body: `
+                Sauce for Strava™ was recently updated and you are now running version
+                <b>${sauce.version}</b>.  Thanks for being awesome!
+                <br/></br/>
+                What's New...<br/><br/>
+                ${await template({releases, entryTpl})}
+            `,  // XXX localize
+        });
+        $dialog.on('dialogclose', async () => {
+            await sauce.storage.remove('recentUpdate');
+        });
+    }
+
+
     async function load() {
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
@@ -3343,6 +3374,7 @@ sauce.ns('analysis', ns => {
         attachAnalysisStats,
         ThrottledNetworkError,
         checkForSafariUpdates,
+        checkIfUpdated,
     };
 });
 
@@ -3357,5 +3389,6 @@ sauce.ns('analysis', ns => {
         await sauce.report.error(e);
         throw e;
     }
+    sauce.analysis.checkIfUpdated();
     setTimeout(sauce.analysis.checkForSafariUpdates, 5000);
 })();

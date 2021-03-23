@@ -1,0 +1,13 @@
+<ul class="notes">
+    <% for (const x of notes) { %>
+        <% if (typeof x === 'string') { %>
+            <li>{-x-}</li>
+        <% } else { %>
+            <li>{-x.html-}
+                <% if (x.children && x.children.length) { %>
+                    {-await entryTpl({notes: x.children, entryTpl})-}
+                <% } %>
+            </li>
+        <% } %>
+    <% } %>
+</ul>
