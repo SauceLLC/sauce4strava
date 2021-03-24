@@ -41,7 +41,7 @@ sauce.ns('analysis', ns => {
     async function fetchFullActivity() {
         // The initial activity object is not fully loaded for owned' activities.  This routine
         // will return a full activity object if the activity is from the page owner. Note that
-        // there are small diffrences, so only use this if needed.
+        // there are small differences, so only use this if needed.
         if (_fullActivity !== undefined) {
             return _fullActivity;
         }
@@ -354,15 +354,15 @@ sauce.ns('analysis', ns => {
     async function renderTertiaryStats(attrs) {
         const template = await getTemplate('tertiary-stats.html');
         const $stats = jQuery(await template(attrs));
-        if (ns.sauceAthlete) {
+        if (ns.syncAthlete) {
             $stats.on('click', '.sauce-editable-field', async ev => {
                 const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views.mjs');
                 const isFTP = ev.currentTarget.classList.contains('ftp');
                 let view;
                 if (isFTP) {
-                    view = new FTPHistoryView({athlete: ns.sauceAthlete});
+                    view = new FTPHistoryView({athlete: ns.syncAthlete});
                 } else {
-                    view = new WeightHistoryView({athlete: ns.sauceAthlete});
+                    view = new WeightHistoryView({athlete: ns.syncAthlete});
                 }
                 await view.render();
                 const $modal = sauce.modal({
@@ -561,7 +561,7 @@ sauce.ns('analysis', ns => {
 
     async function addPeaksRanks(source, rows, $el) {
         const type = sourcePeakTypes[source];
-        if (!ns.sauceAthlete || !ns.sauceAthlete.sync || !rows.length ||
+        if (!ns.syncAthlete || !ns.syncAthlete.sync || !rows.length ||
             !supportsPeaksRanks(type)) {
             return;
         }
@@ -1098,7 +1098,7 @@ sauce.ns('analysis', ns => {
             const activeTime = getActiveTime(startIdx, endIdx);
             stride = distance / activeTime / (cadence * 2 / 60);
         }
-        const supportsRanks = ns.sauceAthlete && ns.sauceAthlete.sync && sourcePeakTypes[source] &&
+        const supportsRanks = ns.syncAthlete && sourcePeakTypes[source] &&
             (!['peak_pace', 'peak_gap'].includes(source) || pageView.isRun());
         const overlappingSegments = getOverlappingSegments(startIdx, endIdx);
         const hasSegments = overlappingSegments && overlappingSegments.length;
@@ -1298,8 +1298,8 @@ sauce.ns('analysis', ns => {
             ranksLoaded = true;
             const id = pageView.activity().id;
             const type = sourcePeakTypes[source];
-            const [getPeaks, actArg] = ns.sauceActivity ?
-                [sauce.hist.getPeaksRelatedToActivity, ns.sauceActivity] :
+            const [getPeaks, actArg] = ns.syncActivity ?
+                [sauce.hist.getPeaksRelatedToActivity, ns.syncActivity] :
                 [sauce.hist.getPeaksRelatedToActivityId, id];
             const peaks = await getPeaks(actArg, type, [range],
                 {filter, limit: 10, expandActivities: true});
@@ -1439,8 +1439,11 @@ sauce.ns('analysis', ns => {
             ev.currentTarget.classList.add('hidden');
             reload = true;
         });
-        $modal.on('dialogclose', ev => {
+        $modal.on('dialogclose', async ev => {
             if (reload) {
+                if (ns.syncAthlete) {
+                    await sauce.hist.invalidateAthleteSyncState(ns.syncAthlete.id, 'local', 'peaks');
+                }
                 sauce.modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect changes.</b>'
@@ -2176,15 +2179,15 @@ sauce.ns('analysis', ns => {
 
 
     function getActivityTS() {
-        return (ns.sauceActivity && ns.sauceActivity.ts) ||
+        return (ns.syncActivity && ns.syncActivity.ts) ||
             pageView.activity().get('startDateLocal') * 1000;
     }
 
 
     async function getFTPInfo(athleteId) {
-        if (ns.sauceAthlete) {
-            // XXX this is a weak intergration for now.  Will need complete overhaul...
-            const dbFTP = ns.sauceAthlete.getFTPAt(getActivityTS());
+        if (ns.syncAthlete) {
+            // XXX this is a weak integration for now.  Will need complete overhaul...
+            const dbFTP = ns.syncAthlete.getFTPAt(getActivityTS());
             if (dbFTP) {
                 return {
                     ftp: dbFTP,
@@ -2241,9 +2244,9 @@ sauce.ns('analysis', ns => {
 
 
     async function getWeightInfo(athleteId) {
-        if (ns.sauceAthlete) {
-            // XXX this is a weak intergration for now.  Will need complete overhaul...
-            const dbWeight = ns.sauceAthlete.getWeightAt(getActivityTS());
+        if (ns.syncAthlete) {
+            // XXX this is a weak integration for now.  Will need complete overhaul...
+            const dbWeight = ns.syncAthlete.getWeightAt(getActivityTS());
             if (dbWeight) {
                 return {
                     weight: dbWeight,
@@ -2996,15 +2999,6 @@ sauce.ns('analysis', ns => {
             await sauce.storage.setPref('expandAnalysisStats', expanded);
             sauce.report.event('AnalysisStats', expanded ? 'expand' : 'collapse');
         });
-        /*sauce.bubble({
-            title: "fooasdf",
-            body: "asdfasdf asdf asdf asdf ",
-            position: {
-                my: 'left center',
-                at: 'right center',
-                of: $el,
-            },
-        }); */ //XXX
     }
 
 
@@ -3051,7 +3045,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    class SauceAthlete {
+    class SyncAthlete {
         constructor(data) {
             Object.assign(this, data);
         }
@@ -3066,21 +3060,61 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function initSyncActivity(activity, athleteId) {
+        if (!(sauce.patronLevel >= 10)) {
+            return;
+        }
+        await sauce.proxy.connected;
+        const athleteData = await sauce.hist.getAthlete(athleteId);
+        if (!athleteData || !athleteData.sync) {
+            return;
+        }
+        ns.syncAthlete = new SyncAthlete(athleteData);
+        ns.syncActivity = await sauce.hist.getActivity(activity.id);
+        if (!ns.syncActivity) {
+            setTimeout(() => sauce.hist.syncAthlete(ns.syncAthlete.id).catch(sauce.report.error), 100);
+        } else {
+            // Check for updates out of band to disaffect page load.
+            setTimeout(async () => {
+                const fullAct = await fetchFullActivity();
+                if (!fullAct) {
+                    return;
+                }
+                const updates = {};
+                for (const x of ['type', 'name', 'description']) {
+                    if (fullAct.get(x) !== ns.syncActivity[x]) {
+                        updates[x] = fullAct.get(x);
+                    }
+                }
+                if (updates.type) {
+                    const basetype = sauce.model.getActivityBaseType(updates.type);
+                    if (basetype && basetype !== ns.syncActivity.basetype) {
+                        // XXX Remove this later, I just need to verify that I'm not causing spurious updates.
+                        await sauce.report.event('SyncActivity', 'type-change',
+                            `${ns.syncActivity.basetype} -> ${basetype}`);
+                        updates.basetype = basetype;
+                    }
+                }
+                if (Object.keys(updates).length) {
+                    await sauce.hist.updateActivity(activity.id, updates);
+                    Object.assign(ns.syncActivity, updates);
+                    if (updates.basetype) {
+                        await sauce.hist.deletePeaksForActivity(activity.id);
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local');
+                    }
+                    await sauce.report.event('SyncActivity', 'update', Object.keys(updates).join());
+                }
+            }, 2000);
+        }
+    }
+
+
     async function prepare() {
         const activity = pageView.activity();
         ns.athlete = pageView.activityAthlete();
         ns.gender = ns.athlete.get('gender') === 'F' ? 'female' : 'male';
         await sauce.proxy.connected;
-        if (sauce.patronLevel >= 10) {
-            const athleteData = await sauce.hist.getAthlete(ns.athlete.id);
-            if (athleteData) {
-                ns.sauceAthlete = new SauceAthlete(athleteData);
-                ns.sauceActivity = await sauce.hist.getActivity(activity.id);
-                if (!ns.sauceActivity && ns.sauceAthlete.sync) {
-                    setTimeout(() => sauce.hist.syncAthlete(ns.sauceAthlete.id).catch(sauce.report.error), 200);
-                }
-            }
-        }
+        await initSyncActivity(activity, ns.athlete.id);
         await Promise.all([
             sauce.locale.init(),
             getWeightInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
@@ -3397,6 +3431,7 @@ sauce.ns('analysis', ns => {
         ThrottledNetworkError,
         checkForSafariUpdates,
         checkIfUpdated,
+        fetchFullActivity,
     };
 });
 

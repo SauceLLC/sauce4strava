@@ -175,23 +175,6 @@ async function incrementStreamsUsage() {
 sauce.proxy.export(incrementStreamsUsage, {namespace});
 
 
-function getBaseType(activity) {
-    if (activity.type.match(/EBike/)) {
-        return 'workout';
-    } else if (activity.type.match(/Ride|Handcycle|Velomobile/)) {
-        return 'ride';
-    } else if (activity.type.match(/Run|Hike|Walk/)) {
-        return 'run';
-    } else if (activity.type.match(/Swim/)) {
-        return 'swim';
-    } else if (activity.type.match(/Ski|Snowboard/)) {
-        return 'ski';
-    } else {
-        return 'workout';
-    }
-}
-
-
 async function updateSelfActivities(athlete, options={}) {
     const forceUpdate = options.forceUpdate;
     const filteredKeys = [
@@ -237,7 +220,7 @@ async function updateSelfActivities(athlete, options={}) {
                         athlete: athlete.pk,
                         ts: (new Date(x.start_time)).getTime()
                     }, x);
-                    record.basetype = getBaseType(record);
+                    record.basetype = sauce.model.getActivityBaseType(record.type);
                     for (const x of filteredKeys) {
                         delete record[x];
                     }
@@ -625,6 +608,12 @@ export async function getPeaksRelatedToActivity(activity, type, periods, options
     }
 }
 sauce.proxy.export(getPeaksRelatedToActivity, {namespace});
+
+
+export async function deletePeaksForActivity(activityId) {
+    await peaksStore.deleteForActivity(activityId);
+}
+sauce.proxy.export(deletePeaksForActivity, {namespace});
 
 
 async function getSelfFTPHistory() {

@@ -1936,9 +1936,27 @@ sauce.ns('model', function() {
     }
 
 
+    function getActivityBaseType(detailedType) {
+        if (detailedType.match(/EBike/)) {
+            return 'workout';
+        } else if (detailedType.match(/Ride|Handcycle|Velomobile/)) {
+            return 'ride';
+        } else if (detailedType.match(/Run|Hike|Walk/)) {
+            return 'run';
+        } else if (detailedType.match(/Swim/)) {
+            return 'swim';
+        } else if (detailedType.match(/Ski|Snowboard/)) {
+            return 'ski';
+        } else {
+            return 'workout';
+        }
+    }
+
+
     return {
         getAthleteHistoryValueAt,
         getActivityTSS,
+        getActivityBaseType,
     };
 });
 
@@ -1977,25 +1995,19 @@ sauce.ns('peaks', function() {
     };
 
 
-    let _cached = {};
     async function getRanges(type) {
-        if (!_cached[type]) {
-            const custom = await sauce.storage.get('analysis_peak_ranges');
-            _cached[type] = custom && custom[type] || defaults[type];
-        }
-        return _cached[type];
+        const custom = await sauce.storage.get('analysis_peak_ranges');
+        return custom && custom[type] || defaults[type];
     }
 
 
     async function setRanges(type, data) {
         await sauce.storage.update('analysis_peak_ranges', {[type]: data});
-        _cached[type] = data;
     }
 
 
     async function resetRanges(type) {
         await sauce.storage.update('analysis_peak_ranges', {[type]: null});
-        _cached[type] = defaults[type];
     }
 
     
