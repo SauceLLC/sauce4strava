@@ -965,6 +965,15 @@ export async function invalidateAthleteSyncState(athleteId, processor, name, opt
 sauce.proxy.export(invalidateAthleteSyncState, {namespace});
 
 
+export async function invalidateSyncState(...args) {
+    for (const athlete of await athletesStore.getEnabled()) {
+        await invalidateAthleteSyncState(athlete.id, ...args);
+    }
+}
+sauce.proxy.export(invalidateSyncState, {namespace});
+
+
+
 export async function invalidateActivitySyncState(activityId, processor, name, options={}) {
     if (!activityId || !processor) {
         throw new TypeError("'activityId' and 'processor' are required args");

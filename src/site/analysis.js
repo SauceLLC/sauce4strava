@@ -1442,7 +1442,7 @@ sauce.ns('analysis', ns => {
         $modal.on('dialogclose', async ev => {
             if (reload) {
                 if (ns.syncAthlete) {
-                    await sauce.hist.invalidateAthleteSyncState(ns.syncAthlete.id, 'local', 'peaks');
+                    sauce.hist.invalidateSyncState('local', 'peaks');  // bg required
                 }
                 sauce.modal({
                     title: 'Reloading...',
