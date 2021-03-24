@@ -1,5 +1,4 @@
 {
-    "version_name": "7.99.5 [dev]",
     "minimum_chrome_version": "71",
     "permissions": [
         "declarativeContent"
