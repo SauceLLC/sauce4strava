@@ -84,13 +84,14 @@ browser.runtime.onMessage.addListener(msg => {
 });
 
 
-if (browser.declarativeContent) {
+const dc = browser.declaritiveContent;
+if (dc) {
     // Chromium...
     browser.runtime.onInstalled.addListener(async details => {
-        browser.declarativeContent.onPageChanged.removeRules(undefined, () => {
-            browser.declarativeContent.onPageChanged.addRules([{
-                actions: [new browser.declarativeContent.ShowPageAction()],
-                conditions: [new browser.declarativeContent.PageStateMatcher({
+        dc.onPageChanged.removeRules(undefined, () => {
+            dc.onPageChanged.addRules([{
+                actions: [new dc.ShowPageAction()],
+                conditions: [new dc.PageStateMatcher({
                     pageUrl: {
                         hostSuffix: 'www.strava.com',
                         schemes: ['https']
