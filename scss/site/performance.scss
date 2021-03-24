@@ -949,6 +949,7 @@ table.sauce-perf {
                     border-image-source: radial-gradient(circle at var(--caret-left),
                         $border-color, transparent);
                     border-image-slice: 1;
+                    border-image-width: 0 0 $border-width 0;
                     border-bottom: $border-width solid;
 
                     // Caret...
