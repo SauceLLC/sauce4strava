@@ -1672,7 +1672,9 @@ sauce.ns('analysis', ns => {
             entity: 'Activity',
             entityId: actId,
             buttonClasses: 'btn btn-default btn-sm',
-            suggestionLimit: 5
+            suggestionLimit: 5,
+            placeHolder: await LM('comment_placeholder'),
+            buttonText: await LM('comment'),
         };
         const $comments = jQuery(await commentsTpl({mentionProps}));
         async function render() {
