@@ -84,7 +84,7 @@ browser.runtime.onMessage.addListener(msg => {
 });
 
 
-const dc = browser.declaritiveContent;
+const dc = browser.declarativeContent;
 if (dc) {
     // Chromium...
     browser.runtime.onInstalled.addListener(async details => {
@@ -116,5 +116,5 @@ if (dc) {
 }
 
 if (!self.disabled && self.currentUser) {
-    hist.startSyncManager();
+    hist.startSyncManager(self.currentUser);
 }

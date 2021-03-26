@@ -1827,37 +1827,71 @@ class DataExchange extends sauce.proxy.Eventing {
 sauce.proxy.export(DataExchange, {namespace});
 
 
-export function startSyncManager() {
-    if (!self.disabled && self.currentUser) {
-        syncManager = new SyncManager(self.currentUser);
+async function setStoragePersistent() {
+    // This only works on chromium and firefox..
+    let isPersistent;
+    if (navigator.permissions && navigator.permissions.query) {
+        const r = await navigator.permissions.query({name: 'persistent-storage'});
+        if (r && r.state === 'granted') {
+            console.info('Persistent storage enabled');
+            isPersistent = true;
+        }
+    }
+    if (!isPersistent && navigator.storage && navigator.storage.persist) {
+        const isPersisted = await navigator.storage.persisted();
+        console.info(`Persisted storage granted: ${isPersisted}`);
     }
 }
 
 
-addEventListener('currentUserUpdate', async ev => {
-    if (syncManager && syncManager.currentUser !== ev.id) {
-        console.info("Stopping Sync Manager due to user change...");
-        syncManager.stop();
-        await syncManager.join();
-        console.debug("Sync Manager stopped.");
+let _setStoragePersistent;
+export function startSyncManager(id) {
+    if (!self.disabled && id) {
+        console.info("Starting Sync Manager...");
+        if (!_setStoragePersistent) {
+            _setStoragePersistent = true;
+            setTimeout(setStoragePersistent, 0);  // Run out of ctx to avoid startup races.
+        }
+        syncManager = new SyncManager(id);
     }
-    syncManager = ev.id ? new SyncManager(ev.id) : null;
+}
+
+
+export async function stopSyncManager() {
+    if (!syncManager) {
+        return;
+    }
+    console.info("Stopping Sync Manager...");
+    const mgr = syncManager;
+    syncManager = null;
+    mgr.stop();
+    await mgr.join();
+    console.debug("Sync Manager stopped.");
+}
+
+
+addEventListener('currentUserUpdate', async ev => {
+    if (syncManager) {
+        if (syncManager.currentUser === ev.id) {
+            console.warn('Spurious currentUserUpdate call', ev.id);
+            return;
+        }
+        console.info("Current user changed:", syncManager.currentUser, '->', ev.id);
+        await stopSyncManager();
+    }
+    if (ev.id) {
+        startSyncManager(ev.id);
+    }
 });
 
 addEventListener('enabled', ev => {
     if (!syncManager && self.currentUser) {
-        console.info("Starting Sync Manager...");
-        syncManager = new SyncManager(self.currentUser);
+        startSyncManager(self.currentUser);
     }
 });
 
 addEventListener('disabled', async ev => {
     if (syncManager) {
-        console.info("Stopping Sync Manager...");
-        const mgr = syncManager;
-        syncManager = null;
-        mgr.stop();
-        await mgr.join();
-        console.debug("Sync Manager stopped.");
+        await stopSyncManager();
     }
 });
