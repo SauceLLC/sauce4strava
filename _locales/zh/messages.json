@@ -165,6 +165,9 @@
     "analysis_peak_power_tooltip": {
         "message": "最大持续功率范围"
     },
+    "analysis_peak_power_wkg_tooltip": {
+        "message": "最大持续瓦特/千克体重"
+    },
     "analysis_peak_sp_tooltip": {
         "message": "最大海平面调整功率范围"
     },
@@ -283,6 +286,10 @@
         "message": "最佳功率",
         "description": "IMMUTABLE"
     },
+    "analysis_peak_power_wkg": {
+        "message": "最佳W/kg",
+        "description": "IMMUTABLE"
+    },
     "analysis_peak_sp": {
         "message": "最佳SP",
         "description": "IMMUTABLE"
@@ -292,7 +299,8 @@
         "description": "IMMUTABLE"
     },
     "analysis_peak_xp": {
-        "message": "峰值xPower"
+        "message": "最佳xPower",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
         "message": "最大心率",
@@ -328,6 +336,21 @@
     },
     "analysis_segments": {
         "message": "区隔"
+    },
+    "analysis_empty_info_aside": {
+        "message": "没有细分受众群或该范围的其他数据。"
+    },
+    "analysis_best_performances": {
+        "message": "最佳表演"
+    },
+    "analysis_best_all": {
+        "message": "全部"
+    },
+    "analysis_best_year": {
+        "message": "年"
+    },
+    "analysis_best_90d": {
+        "message": "90天"
     },
     "analysis_name": {
         "message": "名称"
@@ -389,6 +412,54 @@
     "analysis_create": {
         "message": "创造"
     },
+    "analysis_settings": {
+        "message": "设定值"
+    },
+    "analysis_rank_place_1": {
+        "message": "1号"
+    },
+    "analysis_rank_place_2": {
+        "message": "第二名"
+    },
+    "analysis_rank_place_3": {
+        "message": "第三名"
+    },
+    "analysis_rank_cat_all": {
+        "message": "全部"
+    },
+    "analysis_rank_cat_year": {
+        "message": "年"
+    },
+    "analysis_rank_cat_recent": {
+        "message": "90天"
+    },
+    "analysis_value": {
+        "message": "价值"
+    },
+    "analysis_activity": {
+        "message": "活动"
+    },
+    "analysis_date": {
+        "message": "日期"
+    },
+    "analysis_peaks_settings_dialog_title": {
+        "message": "高峰努力设置"
+    },
+    "analysis_peaks_month": {
+        "message": "月"
+    },
+    "analysis_peaks_day": {
+        "message": "天"
+    },
+    "analysis_peaks_ranges": {
+        "message": "高峰努力范围"
+    },
+    "analysis_peaks_ranges_intro": {
+        "message": "您可以自定义用于“<i>峰值努力”</i>的时间和距离。根据数据类型，将使用时间或距离值。"
+    },
+    "analysis_peaks_reset_to_defaults": {
+        "message": "重置为默认值"
+    },
     "time_sec": {
         "message": "秒"
     },
@@ -428,8 +499,14 @@
     "time_ago": {
         "message": "前"
     },
+    "time_in": {
+        "message": "在"
+    },
     "time_now": {
         "message": "现在"
+    },
+    "time_today": {
+        "message": "今天"
     },
     "dialog_help_info_tooltip": {
         "message": "点击了解更多信息"
@@ -611,6 +688,81 @@
     "perf_predictor_power_details_rr_tooltip": {
         "message": "克服滚动阻力的动力和工作要求"
     },
+    "sync_control_panel_intro": {
+        "message": "活动同步会导入所有活动历史记录，以改进培训图表和绩效分析。"
+    },
+    "sync_control_panel_intro_help": {
+        "message": "通过同步活动，Sauce可以提供没有历史数据就不可能提供的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面（例如Analysis），以及有关以前性能的见解。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>同步通过将原始活动数据导入到Web浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库来进行</a>。此数据经过分析，索引和存储，以便以后进行快速查找。一如既往，Sauce不使用远程服务器，因此建议使用“导出数据”按钮保存备份。"
+    },
+    "sync_control_panel_enabled": {
+        "message": "已启用"
+    },
+    "sync_control_panel_status": {
+        "message": "状态"
+    },
+    "sync_control_panel_last_error": {
+        "message": "最后错误"
+    },
+    "sync_control_panel_synced": {
+        "message": "已同步"
+    },
+    "sync_control_panel_last_sync": {
+        "message": "上次同步"
+    },
+    "sync_control_panel_next_sync": {
+        "message": "下次同步"
+    },
+    "sync_control_panel_title": {
+        "message": "调味活动同步"
+    },
+    "sync_control_panel_resumes": {
+        "message": "履历表"
+    },
+    "sync_control_panel_activities": {
+        "message": "活动"
+    },
+    "sync_control_panel_sync_stop_tooltip": {
+        "message": "停止当前的同步过程"
+    },
+    "sync_control_panel_sync_start_tooltip": {
+        "message": "立即开始同步过程"
+    },
+    "sync_control_panel_sync_recompute_tooltip": {
+        "message": "重新计算同步本地数据，即TSS，NP等。"
+    },
+    "mutable_data_add_entry_tooltip": {
+        "message": "添加一个新条目"
+    },
+    "mutable_data_delete_entry_tooltip": {
+        "message": "删除此项"
+    },
+    "mutable_data_save": {
+        "message": "保存更改"
+    },
+    "mutable_data_ftp_title": {
+        "message": "FTP历史"
+    },
+    "mutable_data_weight_title": {
+        "message": "体重记录"
+    },
+    "mutable_data_peaks_periods_title": {
+        "message": "基于时间的范围"
+    },
+    "mutable_data_peaks_dists_title": {
+        "message": "基于距离的范围"
+    },
+    "mutable_data_ftp_help": {
+        "message": "Sauce支持为历史记录中的任何点设置FTP值。根据活动发生的日期，相应的值将用于任何基于FTP的计算，例如TSS。"
+    },
+    "mutable_data_weight_help": {
+        "message": "Sauce支持为历史记录中的任何点设置权重值。根据活动发生的日期，相应的值将用于任何基于权重的计算。"
+    },
+    "mutable_data_peaks_periods_help": {
+        "message": "时间段用于力量，心律和节奏等努力。"
+    },
+    "mutable_data_peaks_dists_help": {
+        "message": "距离用于诸如步伐和坡度调整的步伐之类的努力。"
+    },
     "subscription": {
         "message": "订阅"
     },
@@ -705,7 +857,7 @@
         "message": "嗨，我叫贾斯汀，我是《酱》的作者，"
     },
     "live_segment_beg2": {
-        "message": "我正在努力使Sauce尽可能达到最佳Strava升级，但是如果没有支持，我将无法花费时间和精力来实现这一目标。请考虑成为一个支持此功能的主顾，以便您获得完整的Sauce体验。"
+        "message": "我正在努力使Sauce尽可能达到最佳Strava升级，但是如果没有您的支持，我将不花时间和精力来实现这一目标。请考虑成为一个顾客以启用此功能并获得完整的Sauce体验。"
     },
     "live_segment_beg3": {
         "message": "非常感谢您的理解并为使Sauce变得更好做出了贡献！"
@@ -715,5 +867,44 @@
     },
     "menu_supporters": {
         "message": "支持者"
+    },
+    "performance": {
+        "message": "表现"
+    },
+    "performance_rides": {
+        "message": "游乐设施"
+    },
+    "performance_runs": {
+        "message": "运行"
+    },
+    "performance_swims": {
+        "message": "游泳"
+    },
+    "performance_skis": {
+        "message": "滑雪板"
+    },
+    "performance_workouts": {
+        "message": "锻炼"
+    },
+    "performance_ride": {
+        "message": "骑"
+    },
+    "performance_run": {
+        "message": "跑"
+    },
+    "performance_swim": {
+        "message": "游泳"
+    },
+    "performance_ski": {
+        "message": "滑雪"
+    },
+    "performance_workout": {
+        "message": "锻炼"
+    },
+    "season_start": {
+        "message": "季节开始"
+    },
+    "save": {
+        "message": "救"
     }
 }

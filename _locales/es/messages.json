@@ -162,6 +162,9 @@
     "analysis_peak_power_tooltip": {
         "message": "Rangos máximos de potencia sostenida"
     },
+    "analysis_peak_power_wkg_tooltip": {
+        "message": "Vatios máximos sostenidos / kg de peso corporal"
+    },
     "analysis_peak_sp_tooltip": {
         "message": "Rango de potencia máxima ajustada al nivel del mar"
     },
@@ -278,6 +281,10 @@
         "message": "Potencia Pico",
         "description": "IMMUTABLE"
     },
+    "analysis_peak_power_wkg": {
+        "message": "W/kg Pico",
+        "description": "IMMUTABLE"
+    },
     "analysis_peak_sp": {
         "message": "SP Pico",
         "description": "IMMUTABLE"
@@ -325,6 +332,21 @@
     },
     "analysis_segments": {
         "message": "Segmentos"
+    },
+    "analysis_empty_info_aside": {
+        "message": "No hay segmentos u otros datos para este rango."
+    },
+    "analysis_best_performances": {
+        "message": "Mejores Actuaciones"
+    },
+    "analysis_best_all": {
+        "message": "Todos"
+    },
+    "analysis_best_year": {
+        "message": "Año"
+    },
+    "analysis_best_90d": {
+        "message": "90 dias"
     },
     "analysis_name": {
         "message": "Nombre"
@@ -386,6 +408,54 @@
     "analysis_create": {
         "message": "Crear"
     },
+    "analysis_settings": {
+        "message": "Ajustes"
+    },
+    "analysis_rank_place_1": {
+        "message": "1er"
+    },
+    "analysis_rank_place_2": {
+        "message": "2do"
+    },
+    "analysis_rank_place_3": {
+        "message": "Tercero"
+    },
+    "analysis_rank_cat_all": {
+        "message": "Todos"
+    },
+    "analysis_rank_cat_year": {
+        "message": "Año"
+    },
+    "analysis_rank_cat_recent": {
+        "message": "90 días"
+    },
+    "analysis_value": {
+        "message": "Valor"
+    },
+    "analysis_activity": {
+        "message": "Actividad"
+    },
+    "analysis_date": {
+        "message": "Fecha"
+    },
+    "analysis_peaks_settings_dialog_title": {
+        "message": "Configuración de esfuerzos máximos"
+    },
+    "analysis_peaks_month": {
+        "message": "mes"
+    },
+    "analysis_peaks_day": {
+        "message": "día"
+    },
+    "analysis_peaks_ranges": {
+        "message": "Rangos de esfuerzos máximos"
+    },
+    "analysis_peaks_ranges_intro": {
+        "message": "Puede personalizar los tiempos y distancias utilizados para los cálculos de <i>esfuerzos máximos.</i> Dependiendo del tipo de datos, se utilizarán valores de tiempo o distancias."
+    },
+    "analysis_peaks_reset_to_defaults": {
+        "message": "Restablecer los valores predeterminados"
+    },
     "time_sec": {
         "message": "sec",
         "description": "IMMUTABLE"
@@ -428,8 +498,14 @@
     "time_ago": {
         "message": "hace"
     },
+    "time_in": {
+        "message": "en"
+    },
     "time_now": {
         "message": "ahora"
+    },
+    "time_today": {
+        "message": "hoy dia"
     },
     "dialog_help_info_tooltip": {
         "message": "Haga clic para obtener más información"
@@ -612,6 +688,81 @@
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Requisitos de potencia y trabajo para superar la resistencia a la rodadura."
     },
+    "sync_control_panel_intro": {
+        "message": "La sincronización de actividades importa todo el historial de actividades para permitir mejores gráficos de entrenamiento y análisis de rendimiento."
+    },
+    "sync_control_panel_intro_help": {
+        "message": "La sincronización de actividades permite a Sauce proporcionar funciones de análisis que no son posibles sin datos históricos. Esto incluye una nueva <a href=\"/sauce/performance\">página de rendimiento</a> , además de ampliar las páginas existentes, como Análisis, con información sobre los rendimientos anteriores. ¡Es una gran característica para entrenadores y atletas avanzados!<br/><br/> La sincronización funciona mediante la importación de datos de actividad sin procesar a la <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">base de datos local</a> de su navegador web. Estos datos se analizan, indexan y almacenan para búsquedas rápidas más adelante. Como siempre, Sauce no utiliza servidores remotos, por lo que se recomienda guardar las copias de seguridad con el botón \"Exportar datos\"."
+    },
+    "sync_control_panel_enabled": {
+        "message": "Activado"
+    },
+    "sync_control_panel_status": {
+        "message": "Estado"
+    },
+    "sync_control_panel_last_error": {
+        "message": "Último error"
+    },
+    "sync_control_panel_synced": {
+        "message": "Sincronizado"
+    },
+    "sync_control_panel_last_sync": {
+        "message": "Última sincronización"
+    },
+    "sync_control_panel_next_sync": {
+        "message": "Siguiente sincronización"
+    },
+    "sync_control_panel_title": {
+        "message": "Sincronización de actividad de salsa"
+    },
+    "sync_control_panel_resumes": {
+        "message": "Reanuda"
+    },
+    "sync_control_panel_activities": {
+        "message": "ocupaciones"
+    },
+    "sync_control_panel_sync_stop_tooltip": {
+        "message": "Detener el proceso de sincronización actual"
+    },
+    "sync_control_panel_sync_start_tooltip": {
+        "message": "Inicie el proceso de sincronización de inmediato"
+    },
+    "sync_control_panel_sync_recompute_tooltip": {
+        "message": "Vuelva a calcular los datos locales de sincronización, es decir, TSS, NP, etc."
+    },
+    "mutable_data_add_entry_tooltip": {
+        "message": "Agregar una nueva entrada"
+    },
+    "mutable_data_delete_entry_tooltip": {
+        "message": "Eliminar esta entrada"
+    },
+    "mutable_data_save": {
+        "message": "Guardar cambios"
+    },
+    "mutable_data_ftp_title": {
+        "message": "Historial de FTP"
+    },
+    "mutable_data_weight_title": {
+        "message": "Historial de peso"
+    },
+    "mutable_data_peaks_periods_title": {
+        "message": "Rangos basados en el tiempo"
+    },
+    "mutable_data_peaks_dists_title": {
+        "message": "Rangos basados en distancia"
+    },
+    "mutable_data_ftp_help": {
+        "message": "Sauce admite la configuración de valores de FTP para cualquier punto de su historial. Dependiendo de la fecha en que se llevó a cabo una actividad, el valor correspondiente se utilizará para cualquier cálculo basado en FTP, como TSS."
+    },
+    "mutable_data_weight_help": {
+        "message": "Sauce admite la configuración de valores de peso para cualquier punto de su historial. Dependiendo de la fecha en que se llevó a cabo una actividad, el valor correspondiente se utilizará para cualquier cálculo basado en el peso."
+    },
+    "mutable_data_peaks_periods_help": {
+        "message": "Los períodos de tiempo se utilizan para esfuerzos como la potencia, la frecuencia cardíaca y la cadencia."
+    },
+    "mutable_data_peaks_dists_help": {
+        "message": "Las distancias se utilizan para esfuerzos como el ritmo y el ritmo ajustado por pendiente."
+    },
     "subscription": {
         "message": "Suscripción"
     },
@@ -706,7 +857,7 @@
         "message": "Hola, mi nombre es Justin y soy el autor de Sauce."
     },
     "live_segment_beg2": {
-        "message": "Estoy trabajando duro para hacer que Sauce sea la mejor actualización posible de Strava, pero sin apoyo no podré dedicar el tiempo y la energía para hacer esto posible. Considere convertirse en un usuario para habilitar esta función, y más, para que pueda obtener la experiencia completa de Sauce."
+        "message": "Estoy trabajando duro para hacer de Sauce la mejor actualización de Strava posible, pero sin su apoyo no puedo dedicar el tiempo y la energía para hacerlo posible. Considere convertirse en socio para habilitar esta función y obtener la experiencia completa de Sauce."
     },
     "live_segment_beg3": {
         "message": "¡Muchas gracias por entender y contribuir a hacer que Sauce sea aún mejor!"
@@ -716,5 +867,44 @@
     },
     "menu_supporters": {
         "message": "Partidarios"
+    },
+    "performance": {
+        "message": "Rendimiento"
+    },
+    "performance_rides": {
+        "message": "Paseos"
+    },
+    "performance_runs": {
+        "message": "Carreras"
+    },
+    "performance_swims": {
+        "message": "Nadar"
+    },
+    "performance_skis": {
+        "message": "Esquís"
+    },
+    "performance_workouts": {
+        "message": "Entrenamientos"
+    },
+    "performance_ride": {
+        "message": "Cabalgata"
+    },
+    "performance_run": {
+        "message": "Correr"
+    },
+    "performance_swim": {
+        "message": "Nadar"
+    },
+    "performance_ski": {
+        "message": "Esquí"
+    },
+    "performance_workout": {
+        "message": "Ejercicio"
+    },
+    "season_start": {
+        "message": "Inicio de temporada"
+    },
+    "save": {
+        "message": "Salvar"
     }
 }
