@@ -43,37 +43,39 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 pageNav.insertBefore(li, overview.closest('li').nextSibling);
             }
         }
-        const activity = view.activity();
-        let _supportsGap;
-        function supportsGap(v) {
-            // Ignore explicit false value and instead infer gap support from activity type.
-            if (v) {
-                _supportsGap = true;
-            } else if (!_supportsGap) {
-                return !!(
-                    activity.isRun() &&
-                    !activity.isTrainer() &&
-                    activity.get('distance') &&
-                    activity.get('elev_gain')
-                );
-            }
-            return _supportsGap;
-        }
-        supportsGap(view.supportsGap());
-        view.supportsGap = supportsGap;
-        if (activity) {
-            supportsGap(activity.supportsGap());
-            activity.supportsGap = supportsGap;
-        } else {
-            let _activity;
-            view.activity = function(a) {
-                if (a) {
-                    _activity = a;
-                    supportsGap(a.supportsGap());
-                    a.supportsGap = supportsGap;
+        if (view.activity) {
+            const activity = view.activity();
+            let _supportsGap;
+            const supportsGap = (v) => {
+                // Ignore explicit false value and instead infer gap support from activity type.
+                if (v) {
+                    _supportsGap = true;
+                } else if (!_supportsGap) {
+                    return !!(
+                        activity.isRun() &&
+                        !activity.isTrainer() &&
+                        activity.get('distance') &&
+                        activity.get('elev_gain')
+                    );
                 }
-                return _activity;
+                return _supportsGap;
             };
+            supportsGap(view.supportsGap());
+            view.supportsGap = supportsGap;
+            if (activity) {
+                supportsGap(activity.supportsGap());
+                activity.supportsGap = supportsGap;
+            } else {
+                let _activity;
+                view.activity = function(a) {
+                    if (a) {
+                        _activity = a;
+                        supportsGap(a.supportsGap());
+                        a.supportsGap = supportsGap;
+                    }
+                    return _activity;
+                };
+            }
         }
     }, {once: true});
 
