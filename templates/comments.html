@@ -1,21 +1,9 @@
-<% for (const comment of comments) { %>
-    <div class="sauce-comment-holder">
-        <a class="sauce-athlete" href="{{comment.athlete.url}}" target="_BLANK"
-           alt="{{comment.athlete.name}}" title="{{comment.athlete.name}}"
-            ><img src="{{comment.athlete.avatar_url}}"/></a>
-        <div class="sauce-comment">
-            <div class="sauce-header" title="{{comment.athlete.name}}">
-                {{comment.athlete.firstname}} • {{humanRelTime(comment.date, {precision: 60})}}
-            </div>
-            <p>
-                <% for (const token of comment.tokens) { %>
-                    <% if (token.type === "mention_token") { %>
-                        <a href="{{token.path}}">{{token.text}}</a>
-                    <% } else { %>
-                        {{token.text}}
-                    <% } %>
-                <% } %>
-            </p>
-        </div>
-    </div>
-<% } %>
+<div class="comments sauce-inline-comments">
+    <div class="sauce-comments-feed"></div>
+    <div class="sauce-label">{{{comment_label}}}</div>
+    <form>
+        <div class="sauce-new-comment mentionable-comment-field media-content"
+             data-react-class="MentionableComment"
+             data-react-props='{{JSON.stringify(mentionProps)}}'></div>
+    </form>
+</div>

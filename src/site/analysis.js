@@ -1664,25 +1664,20 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function submitComment(comment) {
-        pageView.commentsController().comment('Activity', pageView.activity().id, comment);
-        sauce.report.event('Comment', 'submit');
-    }
-
-
     async function attachComments() {
+        const actId = pageView.activity().id;
         const commentsTpl = await getTemplate('comments.html');
-        const submitCommentTpl = await getTemplate('submit-comment.html');
-        const $section = jQuery(`
-            <div>
-                <div class="sauce-inline-comments"></div>
-                <div class="sauce-new-comment"></div>
-            </div>
-        `);
-        jQuery('.activity-summary').append($section);
+        const feedTpl = await getTemplate('comments-feed.html');
+        const mentionProps = {
+            entity: 'Activity',
+            entityId: actId,
+            buttonClasses: 'btn btn-default btn-sm',
+            suggestionLimit: 5
+        };
+        const $comments = jQuery(await commentsTpl({mentionProps}));
         async function render() {
             const comments = [];
-            const commentsHash = `Activity-${pageView.activity().id}`;
+            const commentsHash = `Activity-${actId}`;
             for (const x of pageView.commentsController().getFromHash(commentsHash)) {
                 comments.push({
                     tokens: x.comment,
@@ -1690,28 +1685,16 @@ sauce.ns('analysis', ns => {
                     date: new Date(jQuery(x.timestamp).attr('datetime'))
                 });
             }
-            $section.find('.sauce-inline-comments').html((await commentsTpl({comments})).trim());
-            $section.find('.sauce-new-comment').html(await submitCommentTpl());
+            $comments.find('.sauce-comments-feed').html((await feedTpl({comments})).trim());
         }
-        $section.on('input', '.sauce-new-comment input', ev => {
-            const $input = jQuery(ev.currentTarget);
-            if ($input.val()) {
-                $input.next('button').removeAttr('disabled');
-            } else {
-                $input.next('button').attr('disabled', 'disabled');
-            }
+        pageView.commentsController().on('commentCompleted', async () => {
+            await render();
+            sauce.report.event('Comment', 'submit');
         });
-        $section.on('keypress', '.sauce-new-comment input', ev => {
-            const $input = jQuery(ev.currentTarget);
-            if (ev.which == 13 /*Enter*/ && $input.val()) {
-                submitComment($input.val());
-            }
-        });
-        $section.on('click', '.sauce-new-comment button', ev => {
-            const $input = jQuery(ev.currentTarget).prev('input');
-            submitComment($input.val());
-        });
-        pageView.commentsController().on('commentCompleted', render);
+        jQuery('.activity-summary').append($comments);
+        // Inject the react based mentionable-comment component...
+        document.dispatchEvent(new CustomEvent("JSCreatedReactNode",
+            {detail: {node: $comments.find('.sauce-new-comment')}}));
         await render();
     }
 

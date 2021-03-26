@@ -1,78 +1,71 @@
 @use 'color';
 
 .sauce-inline-comments {
-    max-height: 300px;
-    overflow: auto;
+    .sauce-comments-feed {
+        max-height: 300px;
+        overflow: auto;
 
-    &:not(:empty) {
-        margin-top: 1em;
-        padding-top: 0.5em;
-        border-top: 1px solid color.shade(bg, 15%);
-    }
-}
-
-.sauce-comment-holder {
-    padding: 0.4em 0.6em;
-    margin-bottom: 0.2em;
-    display: flex;
-    border-radius: 0.28em;  // for hover
-
-    &:last-child {
-        margin-bottom: 0;
-    }
-
-    &:hover {
-        background-color: #00000009;
-    }
-
-    a.sauce-athlete {
-        display: block;
-        margin-top: 0.2em;
-        margin-right: 0.5em;
-
-        img {
-            border-radius: 50%;
-            width: 3em;
-            height: 3em;
+        &:not(:empty) {
+            margin-top: 1em;
+            padding-top: 0.5em;
+            border-top: 1px solid color.shade(bg, 15%);
         }
-    }
 
-    .sauce-comment {
-        flex: 1 100%;
+        .sauce-comment-holder {
+            padding: 0.4em 0.6em;
+            margin-bottom: 0.2em;
+            display: flex;
+            border-radius: 0.28em;  // for hover
 
-        p {
-            font-size: .85em;
-            margin: 0;
+            &:last-child {
+                margin-bottom: 0;
+            }
+
+            &:hover {
+                background-color: #00000009;
+            }
+
+            a.sauce-athlete {
+                display: block;
+                margin-top: 0.2em;
+                margin-right: 0.5em;
+
+                img {
+                    border-radius: 50%;
+                    width: 3em;
+                    height: 3em;
+                }
+            }
+
+            .sauce-comment {
+                flex: 1 100%;
+
+                p {
+                    font-size: .85em;
+                    margin: 0;
+                }
+            }
+
+            .sauce-header {
+                font-size: 0.75em;
+                color: #666;
+            }
         }
-    }
-
-    .sauce-header {
-        font-size: 0.75em;
-        color: #666;
-    }
-}
-
-.sauce-new-comment {
-    margin-top: 0.5em;
-    border-top: 1px solid rgba(255, 123, 123, 0.46);
-    padding: 0.5em 0.5em 0;
-    font-size: 0.85em;
-
-    input {
-        height: auto !important;
-        font-size: 1em !important;
-        padding: 0.4em;
-        border-radius: 0.28em;
-        width: 300px;
-        max-width: calc(100% - 10em);  // leave room for comment button
     }
 
     .sauce-label {
         font-size: 0.85em;
+        margin-top: 0.5em;
+        border-top: 1px solid rgba(255, 123, 123, 0.46);
+        padding: 0.5em 0.5em 0;
     }
 
-    button {
-        font-size: 1em;
-        min-height: initial;
+    form {
+        border: none;
+        padding: 0;
+
+        textarea {
+            border-radius: 0.28em;
+        }
     }
 }
