@@ -1837,9 +1837,16 @@ async function setStoragePersistent() {
             isPersistent = true;
         }
     }
-    if (!isPersistent && navigator.storage && navigator.storage.persist) {
-        const isPersisted = await navigator.storage.persisted();
-        console.info(`Persisted storage granted: ${isPersisted}`);
+    if (!isPersistent && navigator.storage && navigator.storage.persisted) {
+        let isPersisted = await navigator.storage.persisted();
+        if (!isPersisted) {
+            isPersisted = await navigator.storage.persist();
+        }
+        if (!isPersisted) {
+            console.warn(`Persisted storage not granted`);
+        } else {
+            console.info(`Persisted storage enabled`);
+        }
     }
 }
 
