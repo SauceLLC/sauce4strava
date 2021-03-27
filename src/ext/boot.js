@@ -309,7 +309,7 @@
         document.documentElement.classList.add('sauce-enabled');
         self.currentUser = config.currentUser;
         let patronLevel;
-        if (!config.patronLevelExpiration || config.patronLevelExpiration < Date.now()) {
+        if (self.currentUser && !config.patronLevelExpiration || config.patronLevelExpiration < Date.now()) {
             try {
                 patronLevel = await refreshPatronLevel(self.currentUser);
             } catch(e) {
