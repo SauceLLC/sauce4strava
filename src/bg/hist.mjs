@@ -1829,15 +1829,7 @@ sauce.proxy.export(DataExchange, {namespace});
 
 async function setStoragePersistent() {
     // This only works on chromium and firefox..
-    let isPersistent;
-    if (navigator.permissions && navigator.permissions.query) {
-        const r = await navigator.permissions.query({name: 'persistent-storage'});
-        if (r && r.state === 'granted') {
-            console.info('Persistent storage enabled');
-            isPersistent = true;
-        }
-    }
-    if (!isPersistent && navigator.storage && navigator.storage.persisted) {
+    if (navigator.storage && navigator.storage.persisted) {
         let isPersisted = await navigator.storage.persisted();
         if (!isPersisted) {
             isPersisted = await navigator.storage.persist();
