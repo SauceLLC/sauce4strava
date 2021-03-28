@@ -871,16 +871,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             const entries = await this.store.getMany(keys.map(k => [this.bucket, k]),
                 {index: 'bucket-key'});
             const now = Date.now();
-            return entries.filter(x => x && x.expiration > now);
-        }
-
-        async getObject(keys) {
-            const entries = await this.getEntries(keys);
-            const obj = {};
-            for (const x of entries) {
-                obj[x.key] = x.value;
-            }
-            return obj;
+            return entries.map(x => (x && x.expiration > now) ? x : undefined);
         }
 
         async set(key, value, options={}) {
