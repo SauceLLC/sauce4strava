@@ -488,7 +488,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             const data = await fetchLikeXHR(options.url, query);
             const cacheObj = {};
             for (const key of streams) {
-                // Convert undefined to null so indicate cache has been set.
+                // Convert undefined to null to indicate cache has been set.
                 cacheObj[this._cacheKey(key)] = data[key] === undefined ? null : data[key];
             }
             await _streamsCache.setObject(cacheObj);
