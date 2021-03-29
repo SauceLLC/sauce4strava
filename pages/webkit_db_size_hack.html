@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+        <title>Safari Database Size Hack</title>
+        <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet"/>
+        <link rel="stylesheet" href="/css/ext/options.css"/>
+        <script defer src="/src/ext/webext.js"></script>
+        <script defer src="/src/common/base.js"></script>
+        <script defer src="/src/common/base_init.js"></script>
+        <script defer src="/src/common/ga.js"></script>
+        <script defer src="/src/common/storage.js"></script>
+        <script defer src="/src/ext/webkit_db_size_hack.js"></script>
+        <style>
+            footer .links {
+                margin-top: 1em;
+                display: flex;
+                justify-content: center;
+            }
+
+            footer .links > a {
+                padding: 0 0.5em;
+            }
+        </style>
+    </head>
+
+    <body>
+        <header>
+            <img src="/images/logo_vert_120x320.png"/>
+            <h2 class="title">Sauce for Strava<sup>TM</sup></h2>
+            <h3 class="sub-title">Safari Database Size Hack</h3>
+            <a class="dismiss popup-only"></a>
+        </header>
+
+        <main>
+            <p>This page is only needed for Safari (or other WebKit based browsers) that intend to use the Sauce Performance feature set.  It's a bit technical, but Safari places extremely small limits on the database sizes allowed for any site or extension.  Because Sauce uses the browsers database for storing a large amount of activity data to do advanced analysis, it will require hundreds of megabytes of data for each athlete with many years of recorded data.</p>
+            <p>I've discovered that there is a trick to increasing the allowable size used by slowly filling up the database which triggers safari to ask YOU if the site is allowed to use more space.  By running this procedure until the allowable space is sufficient for any future needs and then deleting all the dummy space used you can future proof the space needs.</p>
+            <p>You may be asking yourself, why doesn't Sauce trigger this same process whenever it runs out of space?  The answer is simply that Safari doesn't support this for extensions and the data is filled up in the background, so you'll most likely not even be around when it does reach this point.  So here we are with this "hack" to try and work around the strange and non-standard method Safari uses for web databases.  Hopefully they come to their senses and do things like Chrome and Firefox in the future so this page can be destroyed!</p>
+        </main>
+
+        <footer>
+            <div class="buttons">
+                <a class="popup-only" href="options.html?popup"><button>Back</button></a>
+                <a class="not-popup-only" href="options.html"><button>Back</button></a>
+            </div>
+            <div id="status"></div>
+        </footer>
+
+        <center>
+            <small>
+            </small>
+        </center>
+    </body>
+</html>

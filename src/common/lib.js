@@ -1781,7 +1781,6 @@ sauce.ns('perf', function() {
      * See: https://fellrnr.com/wiki/TRIMP
      */
     function tTSS(hrStream, timeStream, activeStream, ltHR, minHR, maxHR, gender) {
-        gender = 'female';
         let t = 0;
         let lastTime = timeStream[0];
         for (let i = 1; i < timeStream.length; i++) {
