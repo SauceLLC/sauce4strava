@@ -868,10 +868,16 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getEntries(keys) {
+            // getMany on an index returns an unknown number of entries so disambiguate
+            // the results so they are aligned and padded with keys.
             const entries = await this.store.getMany(keys.map(k => [this.bucket, k]),
                 {index: 'bucket-key'});
             const now = Date.now();
-            return entries.map(x => (x && x.expiration > now) ? x : undefined);
+            const valids = new Map();
+            for (const x of entries.filter(x => x && x.expiration > now)) {
+                valids.set(x.key, x);
+            }
+            return keys.map(k => valids.get(k));
         }
 
         async set(key, value, options={}) {
