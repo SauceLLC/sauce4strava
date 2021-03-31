@@ -212,31 +212,24 @@ export async function AthleteSettingsProcessor({manifest, activities, athlete}) 
     let invalidate;
     const hrTS = athlete.get('hrZonesTS');
     if (hrTS == null || Date.now() - hrTS > 86400 * 1000) {
-        // The HR zones API is based on activities, so we just look for an activity in this
-        // batch with HR and ask for updated zones.  The trick is that if the zones are
-        // updated we need to trigger an invalidation of all activities. E.g. we force a
-        // resync.
-        const actStreams = await getActivitiesStreams(activities, ['heartrate']);
-        let remainingAttempts = 10;
+        // The HR zones API is based on activities, so technically it is historical but
+        // this leads to a lot of complications so we simply look for the latest values.
+        // If the zones are updated we need to trigger an invalidation of all activities.
         const origZones = athlete.get('hrZones');
         const origHash = origZones ? JSON.stringify(origZones) : null;
-        for (const activity of activities) {
-            const streams = actStreams.get(activity.pk);
-            if (streams.heartrate) {
-                const zones = await sauce.perf.fetchHRZones(activity.pk);
-                if (!zones) {
-                    if (--remainingAttempts) {
-                        sauce.report.error(new Error("Unable to to learn HR zones"));
-                        break;
-                    }
-                    continue;
-                }
-                invalidate = !origHash || JSON.stringify(zones) !== origHash;
-                athlete.set('hrZones', zones);
-                athlete.set('hrZonesTS', Date.now());
-                await athlete.save();
-                break;
+        let recentActivity = await actsStore.getNewestForAthlete(athlete.pk);
+        let remainingAttempts = 10;
+        while (recentActivity && remainingAttempts--) {
+            const zones = await sauce.perf.fetchHRZones(recentActivity.id);
+            if (!zones) {
+                recentActivity = await actsStore.getPrevSibling(recentActivity.id);
+                continue;
             }
+            invalidate = !origHash || JSON.stringify(zones) !== origHash;
+            athlete.set('hrZones', zones);
+            athlete.set('hrZonesTS', Date.now());
+            await athlete.save();
+            break;
         }
     }
     const gender = athlete.get('gender');

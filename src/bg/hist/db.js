@@ -314,6 +314,18 @@ sauce.ns('hist.db', ns => {
             yield *this.byAthlete(act.athlete, Object.assign({start, end}, options));
         }
 
+        async getNextSibling(id, options={}) {
+            for await (const x of this.siblings(id, options)) {
+                return x;
+            }
+        }
+
+        async getPrevSibling(id, options={}) {
+            for await (const x of this.siblings(id, {direction: 'prev', ...options})) {
+                return x;
+            }
+        }
+
         async invalidateForAthleteWithSync(athlete, processor, name) {
             const activities = await this.getAllForAthlete(athlete, {models: true});
             const manifests = this.Model.getSyncManifests(processor, name);
