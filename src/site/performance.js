@@ -737,10 +737,13 @@ sauce.ns('performance', async ns => {
                 return;  // Chartjs resize cause spurious calls to update before init complets.
             }
             index = index >= 0 ? index : this.chart.data.datasets[0].data.length + index;
+            if (index < 0) {
+                return;
+            }
             const labels = [];
             const elements = [];
             for (const ds of this.chart.data.datasets) {
-                if (!ds.label) {
+                if (!ds.label || !ds.data.length) {
                     continue;
                 }
                 const raw = ds.data[index].y;
@@ -1546,13 +1549,17 @@ sauce.ns('performance', async ns => {
             this.pageView = pageView;
             this.period = await getCurrentPeriod();
             this.periodEnd = ns.router.filters.periodEnd || periodEndMax();
-            this.periodStart = ns.router.filters.periodStart || this.periodEnd - (this.period * DAY);
+            this.periodStart = ns.router.filters.periodStart || this.getPeriodStart();
             this.charts = {};
             this.athlete = pageView.athlete;
             this.listenTo(pageView, 'change-athlete', this.setAthlete);
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             this.dataVisibility = await sauce.storage.getPref('perfChartDataVisibility') || {};
             await super.init();
+        }
+
+        getPeriodStart() {
+            return roundTimeToDay(this.periodEnd - (this.period * DAY));
         }
 
         setElement(el, ...args) {
@@ -1684,7 +1691,7 @@ sauce.ns('performance', async ns => {
                 ({atl, ctl} = activities[0].trainingLoadSeed);
             }
             this.daily = activitiesByDay(activities, start, end, atl, ctl);
-            this.metric = this.period > 240 ? 'months' : this.period > 60 ? 'weeks' : 'days';
+            this.metric = this.period > 240 ? 'months' : this.period > 7 ? 'weeks' : 'days';
             if (this.metric === 'weeks') {
                 this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
                 this.$('.metric-display').text('Weekly'); // XXX localize
@@ -1706,6 +1713,11 @@ sauce.ns('performance', async ns => {
             const $start = this.$('header .period.start');
             const $end = this.$('header .period.end');
             $start.text(H.date(start));
+            // XXX refactor details view newest code into pageview..
+            // this is silly to reach into details view..
+            const isStart = start <= this.pageView.detailsView.oldest;
+            this.$('.btn.period.prev').toggleClass('invisible', isStart);
+            this.$('.btn.period.oldest').toggleClass('invisible', isStart);
             const isEnd = end >= periodEndMax();
             this.$('.btn.period.next').toggleClass('invisible', isEnd);
             this.$('.btn.period.newest').toggleClass('invisible', isEnd);
@@ -1877,10 +1889,10 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onRouterNav(_, period, startDay, endDay) {
+        async onRouterNav(_, period) {
             period = period && Number(period);
-            const start = startDay && Number(startDay) * DAY;
-            const end = endDay && Number(endDay) * DAY;
+            const start = ns.router.filters.periodStart;
+            const end = ns.router.filters.periodEnd;
             let needRender;
             if (period !== this.period) {
                 this.period = period || await getCurrentPeriod();
@@ -1891,7 +1903,7 @@ sauce.ns('performance', async ns => {
                 needRender = true;
             }
             if (start !== this.periodStart) {
-                this.periodStart = start || this.periodEnd - (DAY * this.period);
+                this.periodStart = start || this.getPeriodStart();
                 needRender = true;
             }
             if (needRender) {
@@ -1901,7 +1913,7 @@ sauce.ns('performance', async ns => {
 
         async onPeriodChange(ev) {
             this.period = Number(ev.currentTarget.value);
-            this.periodStart = roundTimeToDay(this.periodEnd - (DAY * this.period));
+            this.periodStart = this.getPeriodStart();
             this.updateNav();
             await this.update();
             await sauce.storage.setPref('perfMainViewDefaultPeriod', this.period);
@@ -1911,7 +1923,7 @@ sauce.ns('performance', async ns => {
             const classes = ev.currentTarget.classList;
             if (classes.contains('newest')) {
                 this.periodEnd = periodEndMax();
-                this.periodStart = roundTimeToDay(this.periodEnd - (this.period * DAY));
+                this.periodStart = this.getPeriodStart();
             } else if (classes.contains('oldest')) {
                 // XXX refactor details view newest code into pageview..
                 // this is silly to reach into details view..
@@ -1922,7 +1934,7 @@ sauce.ns('performance', async ns => {
                 this.periodEnd = roundTimeToDay(Math.min(
                     this.periodEnd + this.period * DAY * (next ? 1 : -1),
                     periodEndMax()));
-                this.periodStart = roundTimeToDay(this.periodEnd - (this.period * DAY));
+                this.periodStart = this.getPeriodStart();
             }
             this.updateNav();
             await this.update();
