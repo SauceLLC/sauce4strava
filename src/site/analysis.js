@@ -1507,6 +1507,8 @@ sauce.ns('analysis', ns => {
                 <ul>
                     <li><a title="TCX files are best for activities with power data (watts)."
                            class="tcx">${exportLocale} TCX</a></li>
+                    <li><a title="FIT files are compact binary files for advanced use-cases."
+                           class="fit">${exportLocale} FIT</a></li>
                 </ul>
             </li>
         `));
@@ -1524,6 +1526,11 @@ sauce.ns('analysis', ns => {
             const laps = await getLaps();
             exportActivity('tcx', {laps}).catch(sauce.report.error);
             sauce.report.event('ActionsMenu', 'export', 'tcx');
+        });
+        $menu.find('a.fit').on('click', async () => {
+            const laps = await getLaps();
+            exportActivity('fit', {laps}).catch(sauce.report.error);
+            sauce.report.event('ActionsMenu', 'export', 'fit');
         });
         if (!$menu.find('a[href$="/export_gpx"]').length) {
             $menu.find('.sauce-group ul').append(jQuery(`
@@ -1634,7 +1641,7 @@ sauce.ns('analysis', ns => {
 
     async function exportActivity(type, {start, end, laps}) {
         const streamTypes = ['time', 'watts', 'heartrate', 'altitude',
-                             'cadence', 'temp', 'latlng', 'distance'];
+                             'cadence', 'temp', 'latlng', 'distance', 'velocity_smooth'];
         const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
             (acc[streamTypes[i]] = x && x.slice(start, end), acc), {});
         if (!streams.watts) {
@@ -1656,8 +1663,12 @@ sauce.ns('analysis', ns => {
         const descEl = document.querySelector('#heading .activity-description .content');
         const desc = descEl && descEl.textContent;
         const exportModule = await sauce.getModule('/src/site/export.mjs');
-        const Serializer = type === 'tcx' ? exportModule.TCXSerializer : exportModule.GPXSerializer;
-        const serializer = new Serializer(name, desc, pageView.activity().get('type'), startDate, laps);
+        const Serializer = {
+            tcx: exportModule.TCXSerializer,
+            gpx : exportModule.GPXSerializer,
+            fit : exportModule.FITSerializer,
+        }[type];
+        const serializer = new Serializer(name, desc, ns.activityType, startDate, laps);
         serializer.start();
         serializer.loadStreams(streams);
         sauce.downloadBlob(serializer.toFile());

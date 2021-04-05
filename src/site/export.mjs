@@ -1,6 +1,9 @@
 /* global sauce */
 
-class DOMSerializer {
+import FitParser from './jsfit/fit-parser.mjs';
+
+
+class Serializer {
     constructor(name, desc, type, start, laps) {
         this.activity = {
             name,
@@ -9,7 +12,6 @@ class DOMSerializer {
             start,
             laps
         };
-        this.doc = new Document();
     }
 
     start() {
@@ -18,6 +20,26 @@ class DOMSerializer {
 
     loadStreams(streams) {
         throw new Error("pure virtual");
+    }
+
+    getFilename() {
+        let name = this.activity.name;
+        name = name.replace(/\s/g, '_');
+        name = name.replace(/\.+$/g, '');
+        name = name.replace(/\./g, '_');
+        return `${name}.${this.fileExt}`;
+    }
+
+    toFile() {
+        // virtual
+    }
+}
+
+
+class DOMSerializer extends Serializer {
+    constructor(...args) {
+        super(...args);
+        this.doc = new Document();
     }
 
     addNodeTo(parent, name, textValue) {
@@ -30,11 +52,8 @@ class DOMSerializer {
 
     toFile() {
         const heading = `<?xml version="1.0" encoding="${this.doc.inputEncoding}"?>\n`;
-        return new File(
-            [heading + (new XMLSerializer()).serializeToString(this.doc)],
-            `${this.activity.name}.${this.fileExt}`.replace(/\s/g, '_'),
-            {type: 'text/xml'}
-        );
+        return new File([heading + (new XMLSerializer()).serializeToString(this.doc)],
+            this.getFilename(), {type: 'text/xml'});
     }
 }
 
@@ -64,8 +83,8 @@ export class GPXSerializer extends DOMSerializer {
         // I can't find any docs on this enum.
         // I got these values by examining garmin output (strava uses numbers! lol).
         const trackTypeEnum = {
-            Ride: 'cycling',
-            Run: 'running'
+            ride: 'cycling',
+            run: 'running'
         };
         this.addNodeTo(trk, 'type', trackTypeEnum[this.activity.type]);
         this.trkseg = this.addNodeTo(trk, 'trkseg');
@@ -86,12 +105,9 @@ export class GPXSerializer extends DOMSerializer {
                 this.addNodeTo(point, 'ele', streams.altitude[i]);
             }
             const ext = this.addNodeTo(point, 'extensions');
-            if (streams.watts) {
+            if (streams.watts && streams.watts[i] != null) {
                 // NOTE: This is non standard and only works with GoldenCheetah.
-                const watts = streams.watts[i];
-                if (watts !== null) {
-                    this.addNodeTo(ext, 'power', watts);
-                }
+                this.addNodeTo(ext, 'power', Math.round(streams.watts[i]));
             }
             if (streams.temp || streams.heartrate || streams.cadence) {
                 const tpx = this.addNodeTo(ext, 'tpx1:TrackPointExtension');
@@ -139,8 +155,8 @@ export class TCXSerializer extends DOMSerializer {
         const activities = this.addNodeTo(this.rootNode, 'Activities');
         this.activityNode = this.addNodeTo(activities, 'Activity');
         const sportEnum = {
-            Ride: 'Biking',
-            Run: 'Running'
+            ride: 'Biking',
+            run: 'Running'
         };
         this.activityNode.setAttribute('Sport', sportEnum[this.activity.type] || 'Other');
         const startISOString = this.activity.start.toISOString();
@@ -206,11 +222,149 @@ export class TCXSerializer extends DOMSerializer {
                     const ext = this.addNodeTo(point, 'Extensions');
                     const tpx = this.addNodeTo(ext, 'ns3:TPX');
                     const watts = streams.watts[i];
-                    if (watts !== null) {
-                        this.addNodeTo(tpx, 'ns3:Watts', watts);
+                    if (watts != null) {
+                        this.addNodeTo(tpx, 'ns3:Watts', Math.round(watts));
                     }
                 }
             }
         }
+    }
+}
+
+
+export class FITSerializer extends Serializer {
+
+    start() {
+        this.fileExt = 'fit';
+        this.fitParser = new FitParser();
+        const now = Date.now();
+        this.fitParser.addMessage('file_id', {
+            type: 'activity',
+            manufacturer: 0,
+            product: 0,
+            time_created: now,
+            serial_number: 0,
+            number: null,
+            product_name: 'Sauce',
+        });
+        const [vmajor, vminor, bmajor] = sauce.version.split('.');
+        this.fitParser.addMessage('file_creator', {
+            software_version: Number([vmajor.slice(0, 2),
+                vminor.slice(0, 2).padStart(2, '0'),
+                bmajor.slice(0, 2).padStart(2, '0')].join('')),
+            hardware_version: null,
+        });
+    }
+
+    loadStreams(streams) {
+        const startDate = this.activity.start;
+        const startTime = startDate.getTime();
+        const sport = {
+            ride: 'cycling',
+            run: 'running',
+            swim: 'swimming',
+        }[this.activity.type] || 'generic';
+        this.fitParser.addMessage('event', {
+            event: 'timer',
+            event_type: 'start',
+            event_group: 0,
+            timestamp: startDate,
+            data: 'manual',
+        });
+        const hasLaps = !!(this.activity.laps && this.activity.laps.length);
+        const laps = hasLaps ? this.activity.laps : [[0, streams.time.length - 1]];
+        for (const [start, end] of laps) {
+            for (let i = start; i <= end; i++) {
+                const record = {
+                    timestamp: new Date(startTime + (streams.time[i] * 1000)),
+                };
+                if (streams.latlng) {
+                    [record.position_lat, record.position_long] = streams.latlng[i];
+                }
+                if (streams.altitude) {
+                    record.enhanced_altitude = (record.altitude = streams.altitude[i]);
+                }
+                if (streams.distance) {
+                    record.distance = streams.distance[i];
+                    if (streams.velocity_smooth) {
+                        record.enhanced_speed = (record.speed = streams.velocity_smooth[i]);
+                    }
+                }
+                if (streams.heartrate) {
+                    record.heart_rate = streams.heartrate[i];
+                }
+                if (streams.cadence) {
+                    record.cadence = streams.cadence[i];
+                }
+                if (streams.temp) {
+                    record.temperature = streams.temp[i];
+                }
+                if (streams.watts && streams.watts[i] != null) {
+                    record.power = Math.round(streams.watts[i]);
+                }
+                this.fitParser.addMessage('record', record);
+            }
+            const lastLap = end === streams.time.length - 1;
+            const lap = {
+                lap_trigger: lastLap ? 'session_end' : 'manual',
+                event: 'lap',
+                event_type: 'stop',
+                sport,
+                timestamp: new Date(startTime + (streams.time[end] * 1000)),
+                start_time: new Date(startTime + (streams.time[start] * 1000)),
+                total_cycles: end - start,
+                total_elapsed_time: streams.time[end] - streams.time[start],
+                total_timer_time: streams.time[end] - streams.time[start],
+            };
+            if (streams.latlng) {
+                lap.start_position_lat = streams.latlng[start][0];
+                lap.start_position_long = streams.latlng[start][1];
+                lap.end_position_lat = streams.latlng[end][0];
+                lap.end_position_long = streams.latlng[end][1];
+            }
+            if (streams.distance) {
+                lap.total_distance = streams.distance[end] - streams.distance[start];
+            }
+            this.fitParser.addMessage('lap', lap);
+        }
+        const elapsed = streams.time[streams.time.length - 1] - streams.time[0];
+        const endDate = new Date(startTime + elapsed * 1000);
+        const distance = streams.distance ?
+            streams.distance[streams.distance.length - 1] - streams.distance[0] :
+            null;
+        this.fitParser.addMessage('event', {
+            timestamp: endDate,
+            event: 'session',
+            event_type: 'stop_disable_all',
+            data: 1,
+            event_group: 1,
+        });
+        this.fitParser.addMessage('session', {
+            timestamp: endDate,
+            event: 'lap',
+            event_type: 'stop',
+            start_time: startDate,
+            sport,
+            sub_sport: 'generic',
+            total_elapsed_time: elapsed,
+            total_timer_time: elapsed,
+            total_distance: distance,
+            total_cycles: streams.time.length,
+            first_lap_index: 0,
+            num_laps: laps.length,
+            trigger: 'activity_end',
+        });
+        this.fitParser.addMessage('activity', {
+            timestamp: endDate,
+            total_timer_time: elapsed,
+            num_sessions: 1,
+            type: 'manual',
+            event: 'activity',
+            event_type: 'stop',
+        });
+    }
+
+    toFile() {
+        return new File([this.fitParser.encode()], this.getFilename(), {type: 'application/binary'});
     }
 }
