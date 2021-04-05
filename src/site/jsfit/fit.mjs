@@ -508,7 +508,7 @@ export const messages = {
       0: { field: 'event', type: 'event', scale: null, offset: ''},
       1: { field: 'event_type', type: 'event_type', scale: null, offset: ''},
       2: { field: 'data16', type: 'uint16', scale: null, offset: ''},
-      3: { field: 'data', type: 'uint32', scale: null, offset: ''},
+      3: { field: 'data', type: 'event_data', scale: null, offset: ''},
       4: { field: 'event_group', type: 'uint8', scale: null, offset: ''},
       7: { field: 'score', type: 'uint16', scale: null, offset: ''},
       8: { field: 'opponent_score', type: 'uint16', scale: null, offset: ''},
@@ -1955,6 +1955,24 @@ export const types = {
       295: 'virtugo',
       296: 'velosense',
       5759: 'actigraphcorp',
+    },
+    event_data: {
+      type: 'uint32',
+      decode: (value, raw, fields) => {
+        if (fields.event === 'timer') {
+            return types.timer_trigger[value];
+        } else {
+            return value;
+        }
+      },
+      encode: (value, raw, fields) => {
+        if (fields.event === 'timer') {
+            const v = typesIndex.timer_trigger.values[value];
+            return v != null ? v : value;
+        } else {
+            return value;
+        }
+      }
     },
     product: {
       type: 'uint16',
@@ -4469,7 +4487,7 @@ for (const [type, obj] of Object.entries(types)) {
 }
 
 export function getBaseType(baseType) {
-    const t = baseTypes[baseType & 0x1f];
+    const t = baseTypes[Number(baseType) & 0x1f];
     if (!t) {
         throw new TypeError(`Invalid base type: ${baseType}`);
     }
