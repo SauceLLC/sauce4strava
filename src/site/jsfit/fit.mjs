@@ -5,6 +5,20 @@
 
 const _dtOfft = 7304 * 86400 * 1000;  // 7304 days between 1970 and 1990
 
+if (self.BigUint64Array === undefined) {
+    // Probably Safari
+    self.BigUint64Array = function() {
+        throw new TypeError('Unsupported Platform');
+    };
+}
+
+if (self.BigInt64Array === undefined) {
+    // Probably Safari
+    self.BigInt64Array = function() {
+        throw new TypeError('Unsupported Platform');
+    };
+}
+
 function dateTimeDecode(x) {
     if (x < 0x10000000) {
         return x;  // Just return seconds-since-power-on value as a number
