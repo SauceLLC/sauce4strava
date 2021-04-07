@@ -22,6 +22,15 @@
             footer .links > a {
                 padding: 0 0.5em;
             }
+
+            section {
+                max-width: 30rem;
+            }
+
+            form.alloc-settings {
+                display: flex;
+                flex-direction: column;
+            }
         </style>
     </head>
 
@@ -34,9 +43,28 @@
         </header>
 
         <main>
-            <p>This page is only needed for Safari (or other WebKit based browsers) that intend to use the Sauce Performance feature set.  It's a bit technical, but Safari places extremely small limits on the database sizes allowed for any site or extension.  Because Sauce uses the browsers database for storing a large amount of activity data to do advanced analysis, it will require hundreds of megabytes of data for each athlete with many years of recorded data.</p>
-            <p>I've discovered that there is a trick to increasing the allowable size used by slowly filling up the database which triggers safari to ask YOU if the site is allowed to use more space.  By running this procedure until the allowable space is sufficient for any future needs and then deleting all the dummy space used you can future proof the space needs.</p>
-            <p>You may be asking yourself, why doesn't Sauce trigger this same process whenever it runs out of space?  The answer is simply that Safari doesn't support this for extensions and the data is filled up in the background, so you'll most likely not even be around when it does reach this point.  So here we are with this "hack" to try and work around the strange and non-standard method Safari uses for web databases.  Hopefully they come to their senses and do things like Chrome and Firefox in the future so this page can be destroyed!</p>
+            <section>
+                <p>This tool is <b>ONLY</b> needed for Safari users that intend to use the
+                <a href="https://www.strava.com/sauce/performance" target="_blank" class="saucey">Sauce Performance</a>
+                feature set.   Safari initially uses a very small quota for site (and extension) storage, which is insufficient for most Sauce users.  The only way to increase this storage quota is to actually use more space!  Furthermore, because Sauce runs as an extension in the background it doesn't work with this design choice.  Hence the reason of this hack!   This process works as follows...</p>
+                <ol>
+                    <li>A temporary storage database (IndexedDB) is created.</li>
+                    <li>We start filling up the database with dummy data.</li>
+                    <li>Eventually Safari will interrupt the process with a dialog asking you for permission to use more space.  This process may repeat several times until you reach the storage goals.</li>
+                    <li>After the desired size is reached the temporary database is deleted.</li>
+                    <li>Your disk space is restored but the storage quota remains increased so that Sauce may run happily in the future.</li>
+                </ol>
+                <p>The amount of space needed will vary from user to user but the controls below will help guide you.  Remember, this tool will <b>only temporarily use disk space</b> and Sauce will only be using the storage it needs.</p>
+            </section>
+            <section>
+                <form class="alloc-settings">
+                    <label>Expected synced athletes: <input type="number" min="1" max="100" value="1"/></label>
+                    <div class="est-space">Estimated usage: <span class="usage"></span></div>
+                    <label>Progress: <progress value="0"></progress></label>
+                    <button name="start">Start allocating space</button>
+                    <b><i>Remember to click "Allow" each time you're prompted.</i></b>
+                </form>
+            </section>
         </main>
 
         <footer>
@@ -46,10 +74,5 @@
             </div>
             <div id="status"></div>
         </footer>
-
-        <center>
-            <small>
-            </small>
-        </center>
     </body>
 </html>
