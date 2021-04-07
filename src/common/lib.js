@@ -1670,6 +1670,12 @@ sauce.ns('geo', function(ns) {
     function createVAMStream(timeStream, altStream) {
         const vams = [0];
         for (let i = 1; i < timeStream.length; i++) {
+            if (timeStream[i] === timeStream[i - 1]) {
+                // Sadly this is possible and we just punt..
+                // See https://www.strava.com/activities/5070815568 index 5218
+                vams.push(0);
+                continue;
+            }
             const gain = Math.max(0, altStream[i] - altStream[i - 1]);
             vams.push((gain / (timeStream[i] - timeStream[i - 1])) * 3600);
         }
