@@ -2967,7 +2967,7 @@ sauce.ns('analysis', ns => {
             ns.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
             sauce.proxy.connected
                 .then(() => sauce.storage.getPref('expandAnalysisStats'))
-                .then(expanded => ns.$analysisStats.toggleClass('expanded', expanded));
+                .then(expanded => ns.$analysisStats.toggleClass('expanded', !!expanded));
         }
         $el.find('#stacked-chart').before(ns.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.report.error));
@@ -2977,17 +2977,12 @@ sauce.ns('analysis', ns => {
             const end = ns.$analysisStats.data('end');
             showPerfPredictor(start, end).catch(sauce.report.error);
         });
-        $el.on('click', 'a.sauce-export-tcx', () => {
+        $el.on('click', 'a.sauce-export', ev => {
             const start = ns.$analysisStats.data('start');
             const end = ns.$analysisStats.data('end');
-            exportActivity('tcx', {start, end}).catch(sauce.report.error);
-            sauce.report.event('AnalysisStats', 'export', 'tcx');
-        });
-        $el.on('click', 'a.sauce-export-gpx', () => {
-            const start = ns.$analysisStats.data('start');
-            const end = ns.$analysisStats.data('end');
-            exportActivity('gpx', {start, end}).catch(sauce.report.error);
-            sauce.report.event('AnalysisStats', 'export', 'gpx');
+            const format = ev.currentTarget.dataset.format;
+            exportActivity(format, {start, end}).catch(sauce.report.error);
+            sauce.report.event('AnalysisStats', 'export', format);
         });
         $el.on('click', '.expander', async ev => {
             const el = ev.currentTarget.closest('.sauce-analysis-stats');
