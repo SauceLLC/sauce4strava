@@ -27,9 +27,45 @@
                 max-width: 30rem;
             }
 
+            section p {
+            }
+
+            section ol {
+                margin: 0;
+                padding: 0.4em 0.4em 0.4em 2em;
+            }
+
+            section ol li::marker {
+                font-weight: bold;
+            }
+
+            section ol li {
+                padding: 0.2em;
+            }
+
             form.alloc-settings {
                 display: flex;
                 flex-direction: column;
+                align-items: flex-start;
+                padding: 1em;
+            }
+
+            form.alloc-settings > * {
+                margin: 0.2em 0;
+            }
+
+            form.alloc-settings label > * {
+                margin-left: 0.4em;
+            }
+
+            form.alloc-settings input[type="button"] {
+                align-self: center;
+                margin-top: 1em;
+                padding: 0.4em 2em;
+            }
+
+            html:not(.active) .active-only {
+                display: none;
             }
         </style>
     </head>
@@ -44,9 +80,17 @@
 
         <main>
             <section>
-                <p>This tool is <b>ONLY</b> needed for Safari users that intend to use the
-                <a href="https://www.strava.com/sauce/performance" target="_blank" class="saucey">Sauce Performance</a>
-                feature set.   Safari initially uses a very small quota for site (and extension) storage, which is insufficient for most Sauce users.  The only way to increase this storage quota is to actually use more space!  Furthermore, because Sauce runs as an extension in the background it doesn't work with this design choice.  Hence the reason of this hack!   This process works as follows...</p>
+                <p>
+                    <b>NOTE:</b> This tool is <b>ONLY</b> needed for Safari users that intend to use the
+                    <a href="https://www.strava.com/sauce/performance" target="_blank" class="saucey">Sauce Performance</a>
+                    feature set.</p>
+                <p>
+                    <b>Why does this exist?</b><br/><br/>
+                    Safari defaults to a very small site storage quota that is usually insufficient for Sauce Performance users.  Unfortunatly, the only way to increase this storage quota is to actually use up more space!  Furthermore, because Sauce runs as an extension in the background it doesn't work with this design choice.  Hence the reason of this hack!
+                </p>
+                <p>
+                    <b>How does it work?</b>
+                </p>
                 <ol>
                     <li>A temporary storage database (IndexedDB) is created.</li>
                     <li>We start filling up the database with dummy data.</li>
@@ -54,25 +98,25 @@
                     <li>After the desired size is reached the temporary database is deleted.</li>
                     <li>Your disk space is restored but the storage quota remains increased so that Sauce may run happily in the future.</li>
                 </ol>
-                <p>The amount of space needed will vary from user to user but the controls below will help guide you.  Remember, this tool will <b>only temporarily use disk space</b> and Sauce will only be using the storage it needs.</p>
+                <p>
+                    <i>Remember, this tool will only <b>temporarily</b> use disk space and Sauce will only be using the storage it needs.</i>
+                </p>
             </section>
             <section>
+                <p>
+                    <b>Enough jibber-jabber - Let's do this...</b>
+                </p>
                 <form class="alloc-settings">
-                    <label>Expected synced athletes: <input type="number" min="1" max="100" value="1"/></label>
-                    <div class="est-space">Estimated usage: <span class="usage"></span></div>
-                    <label>Progress: <progress value="0"></progress></label>
-                    <button name="start">Start allocating space</button>
-                    <b><i>Remember to click "Allow" each time you're prompted.</i></b>
+                    <label>
+                        Number of synchronized athletes:
+                        <input name="athlete-count" type="number" min="1" max="100" value="1"/>
+                    </label>
+                    <label class="est-space">Estimated usage: <span class="usage"></span>MB</label>
+                    <label class="active-only">Progress: <progress></progress></label>
+                    <div class="active-only"><b><i>Remember to click "Allow" each time you're prompted.</i></b></div>
+                    <input type="button" name="start" value="Start allocating space"/>
                 </form>
             </section>
         </main>
-
-        <footer>
-            <div class="buttons">
-                <a class="popup-only" href="options.html?popup"><button>Back</button></a>
-                <a class="not-popup-only" href="options.html"><button>Back</button></a>
-            </div>
-            <div id="status"></div>
-        </footer>
     </body>
 </html>
