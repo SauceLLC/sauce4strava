@@ -282,13 +282,13 @@ export class FITSerializer extends Serializer {
                     [record.position_lat, record.position_long] = streams.latlng[i];
                 }
                 if (streams.altitude) {
-                    record.enhanced_altitude = (record.altitude = streams.altitude[i]);
+                    record.altitude = streams.altitude[i];
                 }
                 if (streams.distance) {
                     record.distance = streams.distance[i];
-                    if (streams.velocity_smooth) {
-                        record.enhanced_speed = (record.speed = streams.velocity_smooth[i]);
-                    }
+                }
+                if (streams.velocity_smooth) {
+                    record.speed = streams.velocity_smooth[i];
                 }
                 if (streams.heartrate) {
                     record.heart_rate = streams.heartrate[i];
