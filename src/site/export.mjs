@@ -19,6 +19,11 @@ class Serializer {
     }
 
     loadStreams(streams) {
+        const adjStartDate = new Date(this.activity.start.getTime() + (streams.time[0] * 1000));
+        this.processStreams(streams, adjStartDate);
+    }
+
+    processStreams(streams, adjStartDate) {
         throw new Error("pure virtual");
     }
 
@@ -73,8 +78,11 @@ export class GPXSerializer extends DOMSerializer {
             'http://www.garmin.com/xmlschemas/GpxExtensions/v3 https://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
             'http://www.garmin.com/xmlschemas/TrackPointExtension/v1 https://www8.garmin.com/xmlschemas/TrackPointExtensionv1.xsd',
         ].join(' '));
+    }
+
+    processStreams(streams, adjStartDate) {
         const metadata = this.addNodeTo(this.rootNode, 'metadata');
-        this.addNodeTo(metadata, 'time', this.activity.start.toISOString());
+        this.addNodeTo(metadata, 'time', adjStartDate.toISOString());
         const trk = this.addNodeTo(this.rootNode, 'trk');
         this.addNodeTo(trk, 'name', this.activity.name);
         if (this.activity.desc) {
@@ -87,13 +95,10 @@ export class GPXSerializer extends DOMSerializer {
             run: 'running'
         };
         this.addNodeTo(trk, 'type', trackTypeEnum[this.activity.type]);
-        this.trkseg = this.addNodeTo(trk, 'trkseg');
-    }
-
-    loadStreams(streams) {
+        const trkseg = this.addNodeTo(trk, 'trkseg');
         const startTime = this.activity.start.getTime();
         for (let i = 0; i < streams.time.length; i++) {
-            const point = this.addNodeTo(this.trkseg, 'trkpt');
+            const point = this.addNodeTo(trkseg, 'trkpt');
             if (streams.latlng) {
                 const [lat, lon] = streams.latlng[i];
                 point.setAttribute('lat', lat);
@@ -146,12 +151,12 @@ export class TCXSerializer extends DOMSerializer {
         this.addNodeTo(author, 'LangID', 'en');
         this.addNodeTo(author, 'PartNumber', '867-5309');
         const build = this.addNodeTo(author, 'Build');
-        const sauceVersion = this.addNodeTo(build, 'Version');
+        this.sauceVersion = this.addNodeTo(build, 'Version');
         const [vmajor, vminor, bmajor] = sauce.version.split('.');
-        this.addNodeTo(sauceVersion, 'VersionMajor', vmajor);
-        this.addNodeTo(sauceVersion, 'VersionMinor', vminor);
-        this.addNodeTo(sauceVersion, 'BuildMajor', bmajor);
-        this.addNodeTo(sauceVersion, 'BuildMinor', 0);
+        this.addNodeTo(this.sauceVersion, 'VersionMajor', vmajor);
+        this.addNodeTo(this.sauceVersion, 'VersionMinor', vminor);
+        this.addNodeTo(this.sauceVersion, 'BuildMajor', bmajor);
+        this.addNodeTo(this.sauceVersion, 'BuildMinor', 0);
         const activities = this.addNodeTo(this.rootNode, 'Activities');
         this.activityNode = this.addNodeTo(activities, 'Activity');
         const sportEnum = {
@@ -159,8 +164,10 @@ export class TCXSerializer extends DOMSerializer {
             run: 'Running'
         };
         this.activityNode.setAttribute('Sport', sportEnum[this.activity.type] || 'Other');
-        const startISOString = this.activity.start.toISOString();
-        this.addNodeTo(this.activityNode, 'Id', startISOString);  // Garmin does, so we will too.
+    }
+
+    processStreams(streams, adjStartDate) {
+        this.addNodeTo(this.activityNode, 'Id', adjStartDate.toISOString());  // Garmin does, so we will too.
         const notes = this.activity.desc ?
             `${this.activity.name}\n\n${this.activity.desc}` :
             this.activity.name;
@@ -170,10 +177,7 @@ export class TCXSerializer extends DOMSerializer {
         this.addNodeTo(creator, 'Name', sauce.name);
         this.addNodeTo(creator, 'UnitId', 0);
         this.addNodeTo(creator, 'ProductId', 0);
-        creator.appendChild(sauceVersion.cloneNode(/*deep*/ true));
-    }
-
-    loadStreams(streams) {
+        creator.appendChild(this.sauceVersion.cloneNode(/*deep*/ true));
         const startTime = this.activity.start.getTime();
         const hasLaps = !!(this.activity.laps && this.activity.laps.length);
         const laps = hasLaps ? this.activity.laps : [[0, streams.time.length - 1]];
@@ -237,28 +241,24 @@ export class FITSerializer extends Serializer {
     start() {
         this.fileExt = 'fit';
         this.fitParser = new FitParser();
-        const now = Date.now();
         this.fitParser.addMessage('file_id', {
             type: 'activity',
             manufacturer: 0,
             product: 0,
-            time_created: now,
+            time_created: new Date(),
             serial_number: 0,
             number: null,
             product_name: 'Sauce',
         });
-        const [vmajor, vminor, bmajor] = sauce.version.split('.');
+        const [vmajor, vminor] = sauce.version.split('.');
         this.fitParser.addMessage('file_creator', {
             software_version: Number([vmajor.slice(0, 2),
-                vminor.slice(0, 2).padStart(2, '0'),
-                bmajor.slice(0, 2).padStart(2, '0')].join('')),
+                vminor.slice(0, 2).padStart(2, '0')].join('')),
             hardware_version: null,
         });
     }
 
-    loadStreams(streams) {
-        const startDate = this.activity.start;
-        const startTime = startDate.getTime();
+    processStreams(streams, adjStartDate) {
         const sport = {
             ride: 'cycling',
             run: 'running',
@@ -268,11 +268,13 @@ export class FITSerializer extends Serializer {
             event: 'timer',
             event_type: 'start',
             event_group: 0,
-            timestamp: startDate,
+            timestamp: adjStartDate,
             data: 'manual',
         });
+        const startTime = this.activity.start.getTime();
         const hasLaps = !!(this.activity.laps && this.activity.laps.length);
         const laps = hasLaps ? this.activity.laps : [[0, streams.time.length - 1]];
+        let lapNumber = 0;
         for (const [start, end] of laps) {
             for (let i = start; i <= end; i++) {
                 const record = {
@@ -304,15 +306,14 @@ export class FITSerializer extends Serializer {
                 }
                 this.fitParser.addMessage('record', record);
             }
-            const lastLap = end === streams.time.length - 1;
             const lap = {
-                lap_trigger: lastLap ? 'session_end' : 'manual',
+                message_index: lapNumber++,
+                lap_trigger: lapNumber === laps.length ? 'session_end' : 'manual',
                 event: 'lap',
                 event_type: 'stop',
                 sport,
                 timestamp: new Date(startTime + (streams.time[end] * 1000)),
                 start_time: new Date(startTime + (streams.time[start] * 1000)),
-                total_cycles: end - start,
                 total_elapsed_time: streams.time[end] - streams.time[start],
                 total_timer_time: streams.time[end] - streams.time[start],
             };
@@ -327,29 +328,29 @@ export class FITSerializer extends Serializer {
             }
             this.fitParser.addMessage('lap', lap);
         }
-        const elapsed = streams.time[streams.time.length - 1] - streams.time[0];
-        const endDate = new Date(startTime + elapsed * 1000);
+        const endTime = streams.time[streams.time.length - 1];
+        const elapsed = endTime - streams.time[0];
+        const endDate = new Date(startTime + ((endTime + 1) * 1000));
         const distance = streams.distance ?
             streams.distance[streams.distance.length - 1] - streams.distance[0] :
             null;
         this.fitParser.addMessage('event', {
+            event: 'timer',
+            event_type: 'stop_all',
+            event_group: 0,
             timestamp: endDate,
-            event: 'session',
-            event_type: 'stop_disable_all',
-            data: 1,
-            event_group: 1,
+            data: 'manual',
         });
         this.fitParser.addMessage('session', {
             timestamp: endDate,
-            event: 'lap',
+            event: 'session',
             event_type: 'stop',
-            start_time: startDate,
+            start_time: adjStartDate,
             sport,
             sub_sport: 'generic',
             total_elapsed_time: elapsed,
             total_timer_time: elapsed,
             total_distance: distance,
-            total_cycles: streams.time.length,
             first_lap_index: 0,
             num_laps: laps.length,
             trigger: 'activity_end',
