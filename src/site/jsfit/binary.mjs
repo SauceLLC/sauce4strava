@@ -70,11 +70,19 @@ function encodeTypedData(data, fDef, fields) {
             } else if (customType.encode) {
                 return customType.encode(x, data, fields);
             } else if (customType.mask) {
-                let value = x.value;
-                for (const flag of x.flags) {
-                    value |= customType.values[flag] || 0;
+                if (typeof x === 'number') {
+                    return x;
+                } else if (x && x.value) {
+                    let value = x.value;
+                    if (x.flags) {
+                        for (const flag of x.flags) {
+                            value |= customType.values[flag] || 0;
+                        }
+                    }
+                    return value;
+                } else {
+                    throw new TypeError('Improperly configured mask value');
                 }
-                return value;
             } else {
                 if (Object.prototype.hasOwnProperty.call(customType.values, x)) {
                     return customType.values[x];
