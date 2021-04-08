@@ -873,10 +873,12 @@ export const messages = {
     },
 };
 export const messagesIndex = {};
-for (const [id, obj] of Object.entries(messages)) {
+for (const [k, obj] of Object.entries(messages)) {
+    const id = Number(k);
     messagesIndex[obj.name] = {id, fields: {}};
-    for (const [defNum, fObj] of Object.entries(obj)) {
-        if (isNaN(Number(defNum))) {
+    for (const [k, fObj] of Object.entries(obj)) {
+        const defNum = Number(k);
+        if (isNaN(defNum)) {
             continue;
         }
         messagesIndex[obj.name].fields[fObj.field] = Object.assign({defNum}, fObj);
