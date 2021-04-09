@@ -26,30 +26,40 @@
         }
     }
 
+    const dummyDB = new DummyDatabase('SauceWebkitQuotaHack');
+    const resetting = dummyDB.delete();  // Always start fresh and cleanup any unfinished runs for safety.
+
     class DummyStore extends sauce.db.DBStore {
         constructor() {
-            super(new DummyDatabase('SauceWebkitQuotaHack'), 'dummy');
+            super(dummyDB, 'dummy');
         }
     }
 
 
     async function startAlloc(size) {
         size *= 1024 * 1024;
+        await resetting;
         const store = new DummyStore();
-        addEventListener('unload', () => {
-            console.warn("UNLOAD A BITCH");
-            indexedDB.deleteDatabase(store.db.name);
+        addEventListener('unload', async () => {
+            await dummyDB.delete();
         });
+        const progress = document.querySelector('form progress');
+        progress.max = size;
+        progress.value = 0;
         try {
             const buf = new ArrayBuffer(Math.min(128 * 1024 * 1024, size));
-            for (let s = 0; s < size; s += buf.byteLength) {
+            for (let s = 0; s <= size; s += buf.byteLength) {
                 console.warn("writing: ", buf.byteLength, s);
                 await store.put({buf});
+                progress.value = s;
             }
+            progress.value = size;
         } finally {
-            console.warn("DONE");
-            indexedDB.deleteDatabase(store.db.name);
+            console.info("Cleanup DB...");
+            dummyDB.delete(); // at least on chrome (I know this is for safari) it never returns. :(
+            console.info("DONE");
         }
+        document.querySelector('main').textContent = 'All done!  You can now close this page and have fun with Sauce!';
     }
 
 

@@ -414,6 +414,14 @@ self.sauceBaseInit = function sauceBaseInit() {
             const t = this._idb.transaction([name], mode, {durability});
             return t.objectStore(name);
         }
+
+        delete() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.deleteDatabase(this.name);
+                req.addEventListener('error', ev => reject(req.error));
+                req.addEventListener('success', ev => resolve(req.result));
+            });
+        }
     }
 
 
