@@ -75,10 +75,10 @@
 
     "web_accessible_resources": [
         "build.json",
-        "src/common/*",
-        "src/site/*",
-        "css/site/*",
+        "src/*",
+        "css/*",
         "templates/*",
-        "images/*"
+        "images/*",
+        "pages/*"
     ]
 }
