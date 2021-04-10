@@ -416,6 +416,12 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         delete() {
+            if (this._idb) {
+                const idb = this._idb;
+                this._idb = null;
+                this.started = false;
+                idb.close();
+            }
             return new Promise((resolve, reject) => {
                 const req = indexedDB.deleteDatabase(this.name);
                 req.addEventListener('error', ev => reject(req.error));
