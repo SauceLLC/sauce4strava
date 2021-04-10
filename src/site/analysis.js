@@ -1199,7 +1199,7 @@ sauce.ns('analysis', ns => {
                     for (let i = 1; i < gradeDistStream.length; i++) {
                         const dist = gradeDistStream[i] - gradeDistStream[i - 1];
                         const elapsed = timeStream[i] - timeStream[i - 1];
-                        gradeVelocity.push(dist / elapsed);
+                        gradeVelocity.push(elapsed ? dist / elapsed : 0);
                     }
                     const label = await LM('gap');
                     specs.push({
