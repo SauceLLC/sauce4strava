@@ -116,6 +116,7 @@ sauce.ns('locale', ns => {
                        'years', 'weeks', 'days', 'hours', 'mins', 'secs',
                        'ago', 'in', 'now', 'today'];
         hdUnits = await getMessagesObject(units, 'time');
+        await sauce.propDefined('Strava.I18n.ElevationFormatter', {once: true});
         ns.elevationFormatter = new Strava.I18n.ElevationFormatter();
         ns.hrFormatter = new Strava.I18n.HeartRateFormatter();
         ns.tempFormatter = new Strava.I18n.TemperatureFormatter();
