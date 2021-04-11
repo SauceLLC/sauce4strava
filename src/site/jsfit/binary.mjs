@@ -72,7 +72,7 @@ function encodeTypedData(data, fDef, fields) {
             } else if (customType.mask) {
                 if (typeof x === 'number') {
                     return x;
-                } else if (x && x.value) {
+                } else if (x && x.value != null) {
                     let value = x.value;
                     if (x.flags) {
                         for (const flag of x.flags) {
