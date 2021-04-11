@@ -56,7 +56,6 @@ packages:
 	$(TOOLPATH)/package chromium
 
 alpha-packages:
-	$(TOOLPATH)/package gecko_alpha
 	$(TOOLPATH)/package chromium_alpha
 
 ########################################################
