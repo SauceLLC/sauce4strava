@@ -315,6 +315,7 @@ async function updatePeerActivities(athlete, options={}) {
             'icon-rockclimbing': 'workout',
             'icon-iceskate': 'workout',
             'icon-watersport': 'workout',
+            'icon-crossfit': 'workout',
         };
         const attrSep = String.raw`(?: |\\"|\\')`;
         function tagWithAttrValue(tag, attrVal, matchVal) {
