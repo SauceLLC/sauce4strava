@@ -340,7 +340,6 @@ sauce.ns('trailforks', ns => {
             'wet_weather',
             'leaderboard_disable',
             'license_required',
-            'snow_grooming',
             'dirty',
             'disable_sensitive_check',
         ];
@@ -398,6 +397,7 @@ sauce.ns('trailforks', ns => {
             'votes',
             'watchmen',
             'max_vehicle_width',
+            'snow_grooming',
         ];
         const dateFields = [
             'changed',
