@@ -78,7 +78,6 @@ function setCurrentUser(id) {
     };
 
     self.clearTimeout = function suspendSafeClearTimeout(id) {
-        console.warn("clear timeout", id);
         const entry = _timeoutsH[id];
         if (entry) {
             entry.cleared = true;
