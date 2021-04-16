@@ -10,6 +10,11 @@ const streamsStore = new sauce.hist.db.StreamsStore();
 const peaksStore = new sauce.hist.db.PeaksStore();
 
 
+async function sleep(ms) {
+    await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 async function getActivitiesStreams(activities, streams) {
     const streamKeys = [];
     const actStreams = new Map();
@@ -37,6 +42,7 @@ async function findPeaks(athlete, activities, periods, distances) {
     });
     const peaks = [];
     const errors = [];
+    await sleep(1);
     for (const activity of activities) {
         if (activity.peaksExclude) {
             const count = await peaksStore.deleteForActivity(activity.id);

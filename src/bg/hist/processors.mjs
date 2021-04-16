@@ -34,7 +34,7 @@ async function getActivitiesStreams(activities, streams) {
 class WorkerPoolExecutor {
     constructor(url, options={}) {
         this.url = url;
-        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency || 4);
+        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency || 8);
         this._idle = new Set();
         this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
@@ -382,7 +382,7 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const work = [];
     const len = activities.length;
     const maxWorkers = Math.ceil(len / 30);
-    const concurrency = Math.min(maxWorkers, navigator.hardwareConcurrency || 6);
+    const concurrency = Math.min(maxWorkers, navigator.hardwareConcurrency || 8);
     const step = Math.ceil(len / concurrency);
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
