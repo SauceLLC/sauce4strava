@@ -241,6 +241,7 @@ sauce.ns('performance', async ns => {
                         ev.currentTarget.disabled = false;
                     }
                     $modal.dialog('destroy');
+                    sauce.report.event('EditActivity', 'save', Object.keys(updates).join());
                 }
             }, {
                 text: 'Reimport', // XXX localize
@@ -254,6 +255,7 @@ sauce.ns('performance', async ns => {
                         ev.currentTarget.classList.remove('sauce-loading');
                         ev.currentTarget.disabled = false;
                     }
+                    sauce.report.event('EditActivity', 'reimport');
                 }
             }, {
                 text: 'Delete', // XXX localize
@@ -268,6 +270,7 @@ sauce.ns('performance', async ns => {
                         ev.currentTarget.classList.remove('sauce-loading');
                         ev.currentTarget.disabled = false;
                     }
+                    sauce.report.event('EditActivity', 'delete');
                 }
             }]
         });
@@ -1101,6 +1104,7 @@ sauce.ns('performance', async ns => {
             });
             await bulkEditDialog.render();
             bulkEditDialog.show();
+            sauce.report.event('PerfBulkActivityDialog', 'show');
         }
 
         async onDblClickHeader(ev) {
@@ -1341,6 +1345,7 @@ sauce.ns('performance', async ns => {
                             ev.currentTarget.disabled = false;
                         }
                         this.$el.dialog('destroy');
+                        sauce.report.event('PerfBulkActivityDialog', 'save');
                     }
                 }]
             });
@@ -1422,6 +1427,8 @@ sauce.ns('performance', async ns => {
         async savePrefs(updates) {
             Object.assign(this.prefs, updates);
             await sauce.storage.setPref('peaksView', this.prefs);
+            sauce.report.event('PerfPeaksView', 'save-pref',
+                Object.entries(updates).map(([k, v]) => `${k}=${v}`));
         }
 
         getWindow() {
@@ -1457,32 +1464,38 @@ sauce.ns('performance', async ns => {
         }
 
         async onTypeChange(ev) {
-            await this.savePrefs({type: ev.currentTarget.value});
+            const type = ev.currentTarget.value;
+            await this.savePrefs({type});
             await this.render();
         }
 
         async onTimeChange(ev) {
-            await this.savePrefs({time: Number(ev.currentTarget.value)});
+            const time = Number(ev.currentTarget.value);
+            await this.savePrefs({time});
             await this.render();
         }
 
         async onDistanceChange(ev) {
-            await this.savePrefs({distance: Number(ev.currentTarget.value)});
+            const distance = Number(ev.currentTarget.value);
+            await this.savePrefs({distance});
             await this.render();
         }
 
         async onLimitChange(ev) {
-            await this.savePrefs({limit: Number(ev.currentTarget.value)});
+            const limit = Number(ev.currentTarget.value);
+            await this.savePrefs({limit});
             await this.render();
         }
 
         async onIncludeAllAthletesInput(ev) {
-            await this.savePrefs({includeAllAthletes: ev.currentTarget.checked});
+            const includeAllAthletes = ev.currentTarget.checked;
+            await this.savePrefs({includeAllAthletes});
             await this.render();
         }
 
         async onIncludeAllDatesInput(ev) {
-            await this.savePrefs({includeAllDates: ev.currentTarget.checked});
+            const includeAllDates = ev.currentTarget.checked;
+            await this.savePrefs({includeAllDates});
             await this.render();
         }
 
@@ -1519,6 +1532,7 @@ sauce.ns('performance', async ns => {
             addEventListener('pointermove', onDrag);
             addEventListener('pointerup', onDragDone);
             addEventListener('pointercancel', onDragDone);
+            sauce.report.event('PerfPeaksView', 'resize');
         }
 
         async setAthlete(athlete) {

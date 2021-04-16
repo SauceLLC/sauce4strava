@@ -1402,6 +1402,7 @@ sauce.ns('analysis', ns => {
 
 
     async function showPeaksSettingsDialog() {
+        sauce.report.event('PeaksSettings', 'show', 'dialog');
         const {PeaksPeriodsView, PeaksDistancesView} = await sauce.getModule('/src/site/data-views.mjs');
         const periods = new PeaksPeriodsView({ranges: await sauce.peaks.getRanges('periods')});
         const dists = new PeaksDistancesView({ranges: await sauce.peaks.getRanges('distances')});
@@ -1444,6 +1445,7 @@ sauce.ns('analysis', ns => {
                 if (ns.syncAthlete) {
                     sauce.hist.invalidateSyncState('local', 'peaks');  // bg required
                 }
+                sauce.report.event('PeaksSettings', 'save', 'changes');
                 sauce.modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect changes.</b>'

@@ -79,6 +79,7 @@ sauce.ns('sync', ns => {
                 setupSyncController($btn, controllers.get(id));
             }
             await activitySyncDialog(id, controllers.get(id));
+            sauce.report.event('AthleteSync', 'ui-button', 'show-dialog');
         });
         return $btn;
     }
@@ -107,6 +108,7 @@ sauce.ns('sync', ns => {
             extraButtons: [{
                 text: 'Import Data',
                 click: ev => {
+                    sauce.report.event('AthleteSync', 'ui-button', 'import');
                     const btn = ev.currentTarget;
                     const input = document.createElement('input');
                     input.type = 'file';
@@ -143,6 +145,7 @@ sauce.ns('sync', ns => {
             }, {
                 text: 'Export Data',
                 click: async ev => {
+                    sauce.report.event('AthleteSync', 'ui-button', 'export');
                     let bigBundle;
                     let page = 1;
                     const rid = Math.floor(Math.random() * 1000000);
@@ -274,6 +277,7 @@ sauce.ns('sync', ns => {
                 await sauce.hist.disableAthlete(athlete.id);
             }
             $modal.toggleClass('sync-disabled', !enabled);
+            sauce.report.event('AthleteSync', 'ui-button', enabled ? 'enable' : 'disable');
         });
         $modal.on('click', '.perf-promo .btn.enable', async ev => {
             $modal.find('input[name="enable"]').click();
@@ -311,12 +315,14 @@ sauce.ns('sync', ns => {
         $modal.on('click', '.sync-stop.btn', ev => {
             $modal.removeClass('sync-active');
             syncController.cancel();
+            sauce.report.event('AthleteSync', 'ui-button', 'stop');
         });
         $modal.on('click', '.sync-recompute.btn', async ev => {
             $modal.addClass('sync-active');
             $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
             $modal.find('.entry.synced .text').empty();
             await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local');
+            sauce.report.event('AthleteSync', 'ui-button', 'recompute');
         });
         $modal.on('click', '.sync-hr-zones.btn', async ev => {
             $modal.addClass('sync-active');
@@ -326,10 +332,12 @@ sauce.ns('sync', ns => {
             athlete.hrZonesTS = null;
             await updateHRZones();
             await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', 'athlete-settings');
+            sauce.report.event('AthleteSync', 'ui-button', 'hr-zones');
         });
         $modal.on('click', '.sync-start.btn', async ev => {
             $modal.addClass('sync-active');
             await sauce.hist.syncAthlete(athlete.id);
+            sauce.report.event('AthleteSync', 'ui-button', 'start');
         });
         $modal.on('dialogclose', () => {
             for (const [event, cb] of Object.entries(listeners)) {
