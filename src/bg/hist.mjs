@@ -109,18 +109,57 @@ async function sleep(ms) {
 }
 
 
+class Timeout extends Error {}
+
+
+async function networkOnline(timeout) {
+    if (navigator.onLine === undefined || navigator.onLine) {
+        return;
+    }
+    console.debug("Network offline");
+    await new Promise((resolve, reject) => {
+        let timeoutID;
+        const cb = () => {
+            if (navigator.onLine) {
+                console.debug("Network online");
+                if (timeout) {
+                    clearTimeout(timeoutID);
+                }
+                removeEventListener('online', cb);
+                resolve();
+            }
+        };
+        addEventListener('online', cb);
+        if (timeout) {
+            timeoutID = setTimeout(() => {
+                console.warn("Timeout waiting for online network");
+                removeEventListener('online', cb);
+                reject(new Timeout('network offline'));
+            }, timeout);
+        }
+    });
+}
+
+
 async function retryFetch(urn, options={}) {
     const maxRetries = 5;
     const headers = options.headers || {};
     headers["x-requested-with"] = "XMLHttpRequest";  // Required for most Strava endpoints
     const url = `https://www.strava.com${urn}`;
     for (let r = 1;; r++) {
-        const resp = await fetch(url, Object.assign({headers}, options));
-        if (resp.ok) {
+        let resp;
+        let fetchError;
+        await networkOnline(30000);
+        try {
+            resp = await fetch(url, Object.assign({headers}, options));
+        } catch(e) {
+            fetchError = e;
+        }
+        if (resp && resp.ok) {
             return resp;
         }
-        if (resp.status >= 500 && resp.status < 600 && r <= maxRetries) {
-            console.info(`Server error for: ${resp.url} - Retry: ${r}/${maxRetries}`);
+        if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxRetries) {
+            console.info(`Server error for: ${urn} - Retry: ${r}/${maxRetries}`);
             // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
             // perform a cool down before relinquishing control. Ie. do one last sleep.
             // See: http://dev.chromium.org/throttling
@@ -129,10 +168,13 @@ async function retryFetch(urn, options={}) {
                 continue;
             }
         }
-        if (resp.status === 429) {
+        if (fetchError) {
+            throw fetchError;
+        } else if (resp.status === 429) {
             throw ThrottledFetchError.fromResp(resp);
+        } else {
+            throw FetchError.fromResp(resp);
         }
-        throw FetchError.fromResp(resp);
     }
 }
 
@@ -1116,6 +1158,11 @@ class SyncJob extends EventTarget {
     }
 
     async _run(options={}) {
+        this.setStatus('checking-network');
+        await Promise.race([networkOnline(), this._cancelEvent.wait()]);
+        if (this._cancelEvent.isSet()) {
+            return;
+        }
         if (!options.noActivityScan) {
             this.setStatus('activity-scan');
             const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
@@ -1488,19 +1535,17 @@ class SyncManager extends EventTarget {
                 console.debug('No athletes enabled for sync.');
                 await this._refreshEvent.wait();
             } else {
-                let oldest = -1;
-                const now = Date.now();
+                let deadline = Infinity;
                 for (const athlete of enabledAthletes) {
                     if (this.isActiveSync(athlete)) {
                         continue;
                     }
-                    const age = now - athlete.get('lastSync');
-                    oldest = Math.max(age, oldest);
+                    deadline = Math.min(deadline, this.nextSyncDeadline(athlete));
                 }
-                if (oldest === -1) {
+                if (deadline === Infinity) {
+                    // All activities are active.
                     await this._refreshEvent.wait();
                 } else {
-                    const deadline = this.refreshInterval - oldest;
                     const next = Math.round(deadline / 1000).toLocaleString();
                     console.debug(`Next Sync Manager refresh in ${next} seconds`);
                     await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
@@ -1519,7 +1564,7 @@ class SyncManager extends EventTarget {
                 this._refreshRequests.has(a.pk) ||
                 a.get('lastSyncVersionHash') !== syncHash ||
                 forceActivityUpdate ||
-                (!this._isDeferred(a) && Date.now() - a.get('lastSync') > this.refreshInterval);
+                this.nextSyncDeadline(a) <= 0;
             if (shouldRun) {
                 const options = Object.assign({
                     forceActivityUpdate,
@@ -1535,15 +1580,19 @@ class SyncManager extends EventTarget {
         return this.activeJobs.has(athlete.pk);
     }
 
-    _isDeferred(athlete) {
+    nextSyncDeadline(athlete) {
+        const now = Date.now();
         const lastError = athlete.get('lastSyncError');
-        return !!lastError && Date.now() - lastError < this.refreshErrorBackoff;
+        const deferred = lastError ? this.refreshErrorBackoff - (now - lastError) : 0;
+        const next = this.refreshInterval - (now - athlete.get('lastSync'));
+        return Math.max(0, next, deferred);
     }
 
     async runSyncJob(athlete, options) {
         const start = Date.now();
         console.info('Starting sync job for: ' + athlete);
         const athleteId = athlete.pk;
+        sauce.report.event('SyncJob', 'start');
         const isSelf = this.currentUser === athleteId;
         const syncJob = new SyncJob(athlete, isSelf);
         syncJob.addEventListener('status', ev => this.emitForAthlete(athlete, 'status', ev.data));
@@ -1570,7 +1619,9 @@ class SyncManager extends EventTarget {
             this.activeJobs.delete(athleteId);
             this._refreshEvent.set();
             this.emitForAthlete(athlete, 'active', false);
-            console.info(`Sync completed in ${Math.round((Date.now() - start) / 1000)} seconds for: ` + athlete);
+            const duration = Math.round((Date.now() - start) / 1000);
+            sauce.report.event('SyncJob', 'completed', `${Math.round(duration / 60)}-mins`);
+            console.info(`Sync completed in ${duration} seconds for: ` + athlete);
         }
     }
 
@@ -1730,7 +1781,8 @@ class SyncController extends sauce.proxy.Eventing {
     }
 
     async nextSync() {
-        return syncManager.refreshInterval + await this.lastSync();
+        const a = await athletesStore.get(this.athleteId, {model: true});
+        return Date.now() + syncManager.nextSyncDeadline(a);
     }
 
     getState() {
