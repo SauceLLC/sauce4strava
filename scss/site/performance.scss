@@ -850,7 +850,7 @@ table.sauce-perf {
             padding: 1em;
             position: relative;
 
-            .period-selector,
+            .range-selector,
             .right-padding {
                 flex: 1 0 15%; // same basis keeps start-end in center.
 
@@ -865,7 +865,7 @@ table.sauce-perf {
                 margin-left: 1em;
                 margin-right: 1em;
 
-                .btn.period {
+                .btn.range {
                     &.invisible {
                         visibility: hidden;
                     }
@@ -885,7 +885,7 @@ table.sauce-perf {
                     justify-content: space-around;
                     min-width: 16em;
 
-                    .period {
+                    .range {
                         font-weight: bold;
                         margin: 0 0.3em;
                         text-transform: capitalize;
@@ -1192,7 +1192,7 @@ table.sauce-perf {
             padding: 0 0 1em 0;
             flex-wrap: wrap;
 
-            .period-selector {
+            .range-selector {
                 flex: 1 0 100%;
             }
 
@@ -1201,8 +1201,8 @@ table.sauce-perf {
                 flex: 1;
                 justify-content: space-between;
 
-                .btn.period.oldest,
-                .btn.period.newest {
+                .btn.range.oldest,
+                .btn.range.newest {
                     display: none;
                 }
             }

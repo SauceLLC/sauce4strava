@@ -1884,7 +1884,11 @@ sauce.ns('date', function() {
 
 
     function roundToLocaleDayDate(dateArg) {
-        const d = new Date(dateArg);
+        return roundToLocaleDayDateInplace(new Date(dateArg));
+    }
+
+
+    function roundToLocaleDayDateInplace(d) {
         const timeOffset =
             d.getHours() * 86400000 +
             d.getMinutes() * 60000 +
@@ -1905,6 +1909,7 @@ sauce.ns('date', function() {
         dayRange,
         toLocaleDayDate,
         roundToLocaleDayDate,
+        roundToLocaleDayDateInplace,
     };
 });
 

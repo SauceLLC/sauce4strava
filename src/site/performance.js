@@ -22,6 +22,104 @@ sauce.ns('performance', async ns => {
     const currentUser = await sauce.storage.get('currentUser');
 
 
+    class CalendarRange {
+        static isValidMetric(metric) {
+            return ['weeks', 'months', 'years'].includes(metric);
+        }
+
+        static async loadDefaults() {
+            const saved = await sauce.storage.getPref('perfDefaultRange');
+            if (saved && saved.period && saved.metric) {
+                this._defaultPeriod = saved.period;
+                this._defaultMetric = saved.metric;
+            } else {
+                this._defaultPeriod = 4;
+                this._defaultMetric = 'weeks';
+            }
+        }
+
+        async saveDefaults() {
+            await sauce.storage.setPref('perfDefaultRange', {
+                period: this.period,
+                metric: this.metric
+            });
+        }
+
+        constructor(endDateSeed, period, metric) {
+            if (endDateSeed != null && !(endDateSeed instanceof Date)) {
+                throw new TypeError('Date object required');
+            }
+            this._endDateSeed = endDateSeed || sauce.date.toLocaleDayDate(Date.now() + DAY);
+            if (period && metric) {
+                this.period = period;
+                this.metric = metric;
+            } else {
+                this.period = this.constructor._defaultPeriod;
+                this.metric = this.constructor._defaultMetric;
+            }
+            if (!this.constructor.isValidMetric(this.metric)) {
+                throw new TypeError('metric is invalid');
+            }
+            this._calcStartEnd();
+        }
+
+        setRange(period, metric) {
+            if (typeof period !== 'number') {
+                throw new TypeError("Invalid period");
+            }
+            if (!this.constructor.isValidMetric(metric)) {
+                throw new TypeError("Invalid metric");
+            }
+            this.period = period;
+            this.metric = metric;
+            this._calcStartEnd();
+        }
+
+        setEndDate(date) {
+            this._endDateSeed = date;
+            this._calcStartEnd();
+        }
+
+        getDays() {
+            return Math.round((this.end.getTime() - this.start.getTime()) / 86400 / 1000);
+        }
+
+        _calcStartEnd() {
+            const end = this._endDateSeed;
+            let start;
+            if (this.metric === 'weeks') {
+                const day = end.getDay();
+                const MON = 1;
+                if (day !== MON) {
+                    const nextMonday = (7 - day + MON) % 7;
+                    end.setDate(end.getDate() + nextMonday);
+                }
+                sauce.date.roundToLocaleDayDateInplace(end);
+                start = new Date(end);
+                start.setDate(start.getDate() - (this.period * 7));
+            } else if (this.metric === 'months') {
+                while (end.getDate() !== 1) {
+                    end.setDate(end.getDate() + 1);
+                }
+                sauce.date.roundToLocaleDayDateInplace(end);
+                start = new Date(end);
+                start.setMonth(start.getMonth() - this.period);
+            } else if (this.metric === 'years') {
+                end.setFullYear(end.getFullYear() + 1);
+                end.setMonth(0);
+                end.setDate(1);
+                sauce.date.roundToLocaleDayDateInplace(end);
+                start = new Date(end);
+                start.setFullYear(start.getFullYear() - this.period);
+            }
+            sauce.date.roundToLocaleDayDateInplace(start);
+            this.start = start;
+            this.end = end;
+        }
+    }
+    await CalendarRange.loadDefaults();
+
+
     const AppRouter = Backbone.Router.extend({
         constructor: function() {
             this.filters = {};
@@ -29,43 +127,42 @@ sauce.ns('performance', async ns => {
         },
 
         routes: {
-            [`${urn}/:athleteId/:period/:startDay/:endDay`]: 'onNav',
-            [`${urn}/:athleteId/:period`]: 'onNav',
+            [`${urn}/:athleteId/:period/:metric/:endDay`]: 'onNav',
+            [`${urn}/:athleteId/:period/:metric`]: 'onNav',
             [`${urn}/:athleteId`]: 'onNav',
             [urn]: 'onNav',
         },
 
-        onNav: function(athleteId, period, startDay, endDay) {
+        onNav: function(athleteId, period, metric, endDay) {
+            const validMetric = CalendarRange.isValidMetric(metric);
             this.filters = {
                 athleteId: athleteId && Number(athleteId),
-                period: period && Number(period),
-                periodStart: startDay && addTZ(startDay * DAY),
-                periodEnd: endDay && addTZ(endDay * DAY),
+                period: validMetric && Number(period) ? Number(period) : null,
+                metric: validMetric ? metric : null,
+                suggestedEnd: validMetric && endDay ? addTZ(Number(endDay) * DAY) : null,
             };
         },
 
-        setAthlete: function(athleteId, options) {
+        setFilters: function(athleteId, range, options) {
             this.filters.athleteId = athleteId;
+            if (range) {
+                this.filters.period = range.period;
+                this.filters.metric = range.metric;
+                this.filters.suggestedEnd = range.end < Date.now() ? range.end : null;
+            }
             this.filterNavigate(options);
-        },
-
-        setPeriod: function(athleteId, period, start, end) {
-            this.filters.athleteId = athleteId;
-            this.filters.period = period;
-            this.filters.periodStart = start;
-            this.filters.periodEnd = end;
-            this.filterNavigate();
         },
 
         filterNavigate: function(options={}) {
             const f = this.filters;
-            if (f.periodEnd != null && f.periodStart != null && f.period != null &&
+            if (f.suggestedEnd != null &&
+                f.period != null &&
+                f.metric != null &&
                 f.athleteId != null) {
-                const startDay = subtractTZ(f.periodStart) / DAY;
-                const endDay = subtractTZ(f.periodEnd) / DAY;
-                this.navigate(`${urn}/${f.athleteId}/${f.period}/${startDay}/${endDay}`, options);
-            } else if (f.period != null && f.athleteId != null) {
-                this.navigate(`${urn}/${f.athleteId}/${f.period}`, options);
+                const endDay = subtractTZ(f.suggestedEnd) / DAY;
+                this.navigate(`${urn}/${f.athleteId}/${f.period}/${f.metric}/${endDay}`, options);
+            } else if (f.period != null && f.metric != null && f.athleteId != null) {
+                this.navigate(`${urn}/${f.athleteId}/${f.period}/${f.metric}`, options);
             } else if (f.athleteId != null) {
                 this.navigate(`${urn}/${f.athleteId}`, options);
             } else {
@@ -76,11 +173,13 @@ sauce.ns('performance', async ns => {
 
 
     function periodEndMax() {
+        console.warn("I DUNNO BOUT YU");
         return startOfDay(Date.now() + DAY);
     }
 
 
     function setPageTitle(athlete, periodEnd) {
+        console.warn("DONT LIKE THIS SIG, use a range object?");
         if (athlete) {
             const end = periodEnd && periodEnd < periodEndMax() ?
                 H.date(roundTimeToDay(periodEnd - DAY)) :
@@ -127,13 +226,6 @@ sauce.ns('performance', async ns => {
             _syncControllers.set(athleteId, new sauce.hist.SyncController(athleteId));
         }
         return _syncControllers.get(athleteId);
-    }
-
-
-    async function getCurrentPeriod() {
-        return ns.router.filters.period ||
-            await sauce.storage.getPref('perfMainViewDefaultPeriod') ||
-            182;
     }
 
 
@@ -373,15 +465,15 @@ sauce.ns('performance', async ns => {
 
 
     function aggregateActivitiesByWeek(daily, options={}) {
-        let week = null;
+        let idx = null;
         return aggregateActivitiesByFn(daily, (x, i) => {
             if (options.isoWeekStart) {
-                if (week === null) {
-                    week = 0;
+                if (idx === null) {
+                    idx = 0;
                 } else if (x.date.getDay() === /*monday*/ 1) {
-                    week++;
+                    idx++;
                 }
-                return week;
+                return idx;
             } else {
                 return Math.floor(i / 7);
             }
@@ -390,17 +482,33 @@ sauce.ns('performance', async ns => {
 
 
     function aggregateActivitiesByMonth(daily, options={}) {
-        let month = null;
+        let idx = null;
         let curMonth;
         return aggregateActivitiesByFn(daily, x => {
             const m = x.date.getMonth();
-            if (month === null) {
-                month = 0;
+            if (idx === null) {
+                idx = 0;
             } else if (m !== curMonth) {
-                month++;
+                idx++;
             }
             curMonth = m;
-            return month;
+            return idx;
+        });
+    }
+
+
+    function aggregateActivitiesByYear(daily, options={}) {
+        let idx = null;
+        let curYear;
+        return aggregateActivitiesByFn(daily, x => {
+            const y = x.date.getFullYear();
+            if (idx === null) {
+                idx = 0;
+            } else if (y !== curYear) {
+                idx++;
+            }
+            curYear = y;
+            return idx;
         });
     }
 
@@ -654,7 +762,6 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.yAxes[0].type', 'linear');
             setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
-            //setDefault(config, 'options.tooltips.position', 'sides');
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
             let _nextTooltipAnimFrame;
@@ -673,16 +780,6 @@ sauce.ns('performance', async ns => {
                         _this.onTooltipUpdate(dataIndex);
                     }
                 });
-            });
-            setDefault(config, 'options.tooltips.callbacks.title', (item, data) => {
-                const d = new Date(data.datasets[0].data[item[0].index].x);
-                return H.date(d, {style: 'weekdayYear'});
-            });
-            setDefault(config, 'options.tooltips.callbacks.label', (item, data) => {
-                const ds = data.datasets[item.datasetIndex];
-                const label = ds.label || '';
-                const val = ds.tooltipFormat ? ds.tooltipFormat(Number(item.value), ds, this) : item.value;
-                return `${label}: ${val}`;
             });
             setDefault(config, 'options.plugins.datalabels.display', ctx =>
                 !!(ctx.dataset.data[ctx.dataIndex] && ctx.dataset.data[ctx.dataIndex].showDataLabel === true));
@@ -750,7 +847,7 @@ sauce.ns('performance', async ns => {
                     continue;
                 }
                 const raw = ds.data[index].y;
-                const value = ds.tooltipFormat ?  ds.tooltipFormat(raw, ds, this) : raw;
+                const value = ds.tooltipFormat ?  ds.tooltipFormat(raw, index, ds) : raw;
                 if (!ds.hidden) {
                     for (const x of Object.values(ds._meta)) {
                         elements.push(x.data[index]);
@@ -790,7 +887,7 @@ sauce.ns('performance', async ns => {
 
         getActivitiesAtDatasetIndex(index) {
             // Due to zooming the dataset can be a subset of our daily/metric data.
-            const bucket = this.options.useMetricData ? this.view.metricData : this.view.daily;
+            const bucket = this.options.useMetricData ? this.view.pageView.metricData : this.view.pageView.daily;
             const date = this.chart.data.datasets[0].data[index].x;
             const slot = bucket.find(x => x.date === date);
             return slot && slot.activities ? slot.activities : [];
@@ -895,20 +992,18 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.period = await getCurrentPeriod();
             this.sync = {};
             this.daily = [];
-            this.weekly = [];
             this.missingTSS = [];
             this.onSyncActive = this._onSyncActive.bind(this);
             this.onSyncStatus = this._onSyncStatus.bind(this);
             this.onSyncError = this._onSyncError.bind(this);
             this.onSyncProgress = this._onSyncProgress.bind(this);
             this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
-            this.listenTo(pageView, 'update-period', this.onUpdatePeriod);
+            this.listenTo(pageView, 'update-range', this.onUpdateRange);
             this.collapsed = (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {};
             this.type = (await sauce.storage.getPref('perfSummarySectionType')) || 'power';
-            ns.router.on('route:onNav', this.onRouterNav.bind(this));
+            ns.router.on('route:onNav', this.onRouterNav.bind(this)); // XXX
             this._locales = await L.getMessagesObject([
                 'rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'
             ], 'performance');
@@ -919,7 +1014,7 @@ sauce.ns('performance', async ns => {
         }
 
         async findPeaks() {
-            const [start, end] = [this.periodStart, this.periodEnd];
+            const [start, end] = [this.start, this.end];
             if (start == null || end == null) {
                 return [];
             }
@@ -946,9 +1041,9 @@ sauce.ns('performance', async ns => {
 
         async renderAttrs() {
             const weeks = this.daily.length / 7;
-            const totalTime = sauce.data.sum(this.weekly.map(x => x.duration));
-            const totalDistance = sauce.data.sum(this.weekly.map(x => x.distance));
-            const totalAltGain = sauce.data.sum(this.weekly.map(x => x.altGain));
+            const totalTime = sauce.data.sum(this.daily.map(x => x.duration));
+            const totalDistance = sauce.data.sum(this.daily.map(x => x.distance));
+            const totalAltGain = sauce.data.sum(this.daily.map(x => x.altGain));
             return {
                 athlete: this.athlete,
                 collapsed: this.collapsed,
@@ -1020,6 +1115,8 @@ sauce.ns('performance', async ns => {
 
 
         async onRouterNav(_, period) {
+            throw new Error('XXX');
+            throw 'XXX';  // don't think we need, the onUpdatePeriod should be fired in all cases.
             period = period && Number(period);
             if (period !== this.period) {
                 this.period = period;
@@ -1060,17 +1157,12 @@ sauce.ns('performance', async ns => {
             await this.render();
         }
 
-        async onUpdatePeriod({activities, daily, start, end, metricData, metric}) {
+        async onUpdateRange({activities, daily, range}) {
             this.daily = daily;
             this.activities = activities;
-            if (metric === 'week') {
-                this.weekly = metricData;
-            } else {
-                this.weekly = aggregateActivitiesByWeek(daily, {isoWeekStart: true});
-            }
             this.missingTSS = activities.filter(x => sauce.model.getActivityTSS(x) == null);
-            this.periodStart = start;
-            this.periodEnd = end;
+            this.start = range.start;
+            this.end = range.end;
             const counts = activities.reduce((agg, x) =>
                 (agg[x.basetype] = (agg[x.basetype] || 0) + 1, agg), {});
             this.counts = Object.entries(counts).map(([type, count]) =>
@@ -1139,9 +1231,9 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.onSyncActive = this._onSyncActive.bind(this);
             this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'select-activities', this.setActivities);
+            this.listenTo(pageView, 'updated-activities', this.onUpdatedActivities);
             await this.setAthlete(pageView.athlete);
             await super.init();
         }
@@ -1153,28 +1245,14 @@ sauce.ns('performance', async ns => {
             return r;
         }
 
-        async refreshNewestAndOldest() {
-            // XXX I want to use this same info from mainview, so lets move it to pageView for everyone to use..
-            const id = this.pageView.athlete && this.pageView.athlete.id;
-            if (!id) {
-                return;
-            }
-            const [wasNewest, wasOldest] = [this.newest, this.oldest];
-            [this.newest, this.oldest] = await Promise.all([
-                sauce.hist.getNewestActivityForAthlete(id).then(a => a && a.ts),
-                sauce.hist.getOldestActivityForAthlete(id).then(a => a && a.ts),
-            ]);
-            return wasNewest !== this.newest || wasOldest !== this.oldest;
-        }
-
         async renderAttrs() {
             let hasNewer;
             let hasOlder;
-            if (this.activities && this.activities.length && this.newest) {
+            if (this.activities && this.activities.length && this.pageView.newest) {
                 const ourOldest = this.activities[0].ts;
                 const ourNewest = this.activities[this.activities.length - 1].ts;
-                hasNewer = ourNewest < this.newest;
-                hasOlder = ourOldest > this.oldest;
+                hasNewer = ourNewest < this.pageView.newest;
+                hasOlder = ourOldest > this.pageView.oldest;
             }
             return {
                 activities: this.activities,
@@ -1191,27 +1269,12 @@ sauce.ns('performance', async ns => {
         }
 
         async setAthlete(athlete) {
-            const id = athlete && athlete.id;
-            if (this.syncController) {
-                this.syncController.removeEventListener('active', this.onSyncActive);
-            }
-            if (id) {
-                this.syncController = getSyncController(id);
-                this.syncController.addEventListener('active', this.onSyncActive);
-            } else {
-                this.syncController = null;
-            }
             this.activities = null;
-            await this.refreshNewestAndOldest();
         }
 
-        async _onSyncActive(ev) {
-            const active = ev.data;
-            if (active === false) {
-                if (await this.refreshNewestAndOldest()) {
-                    await this.render();
-                }
-            }
+        async onUpdatedActivities() {
+            console.warn("Validate this all good XXX");
+            await this.render();
         }
 
         async setExpanded(en, options={}) {
@@ -1276,8 +1339,8 @@ sauce.ns('performance', async ns => {
         }
 
         async onLoadRecentClick(ev) {
-            const start = this.pageView.mainView.periodStart;
-            const end = this.pageView.mainView.periodEnd;
+            const start = this.pageView.range.start; // Need number conv? XXX
+            const end = this.pageView.range.end; // Need number conv? XXX
             const activities = await sauce.hist.getActivitiesForAthlete(this.pageView.athlete.id,
                 {start, end, limit: 10, direction: 'prev'});
             await this.setActivities(activities, {noHighlight: true});
@@ -1378,7 +1441,7 @@ sauce.ns('performance', async ns => {
             this.periodStart = null;
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
-            this.listenTo(pageView, 'before-update-period', this.onBeforeUpdatePeriod);
+            this.listenTo(pageView, 'before-update-range', this.onBeforeUpdateRange);
             this.listenTo(pageView, 'change-athlete', this.setAthlete);
             const savedPrefs = await sauce.storage.getPref('peaksView') || {};
             this.prefs = {
@@ -1457,7 +1520,7 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onBeforeUpdatePeriod({start, end}) {
+        async onBeforeUpdateRange({start, end}) {
             this.periodStart = start;
             this.periodEnd = end;
             await this.render();
@@ -1546,8 +1609,8 @@ sauce.ns('performance', async ns => {
     class MainView extends PerfView {
         get events() {
             return {
-                'change header.filters select[name="period"]': 'onPeriodChange',
-                'click header.filters .btn.period': 'onPeriodShift',
+                'change header.filters select[name="range"]': 'onRangeChange',
+                'click header.filters .btn.range': 'onRangeShift',
                 'click header.filters .btn.expand': 'onExpandClick',
                 'click header.filters .btn.compress': 'onCompressClick',
                 'click canvas': 'onChartClick',
@@ -1562,19 +1625,12 @@ sauce.ns('performance', async ns => {
         async init({pageView}) {
             this.peaksView = new PeaksView({pageView});
             this.pageView = pageView;
-            this.period = await getCurrentPeriod();
-            this.periodEnd = ns.router.filters.periodEnd || periodEndMax();
-            this.periodStart = ns.router.filters.periodStart || this.getPeriodStart();
             this.charts = {};
             this.athlete = pageView.athlete;
-            this.listenTo(pageView, 'change-athlete', this.setAthlete);
-            ns.router.on('route:onNav', this.onRouterNav.bind(this));
+            //this.listenTo(pageView, 'change-athlete', this.setAthlete); // don't need, use update-range event
             this.dataVisibility = await sauce.storage.getPref('perfChartDataVisibility') || {};
+            this.listenTo(pageView, 'update-range', this.onUpdateRange);
             await super.init();
-        }
-
-        getPeriodStart() {
-            return roundTimeToDay(this.periodEnd - (this.period * DAY));
         }
 
         setElement(el, ...args) {
@@ -1596,7 +1652,7 @@ sauce.ns('performance', async ns => {
         }
 
         renderAttrs() {
-            return {period: this.period};
+            return {range: [this.pageView.range.period, this.pageView.range.metric].join()};
         }
 
         async render() {
@@ -1689,59 +1745,30 @@ sauce.ns('performance', async ns => {
                     },
                 }
             });
-
-            await this.update();
+            //await this.update();
         }
 
         async update() {
-            const start = this.periodStart;
-            const end = this.periodEnd;
-            setPageTitle(this.athlete, end);
-            this.pageView.trigger('before-update-period', {start, end});
-            const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
-                {start, end, includeTrainingLoadSeed: true, excludeUpper: false});
-            let atl = 0;
-            let ctl = 0;
-            if (activities.length) {
-                ({atl, ctl} = activities[0].trainingLoadSeed);
-            }
-            this.daily = activitiesByDay(activities, start, end, atl, ctl);
-            this.metric = this.period > 240 ? 'months' : this.period > 7 ? 'weeks' : 'days';
-            if (this.metric === 'weeks') {
-                this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
-                this.$('.metric-display').text('Weekly'); // XXX localize
-            } else if (this.metric === 'months') {
-                this.metricData = aggregateActivitiesByMonth(this.daily);
-                this.$('.metric-display').text('Monthly'); // XXX localize
-            } else {
-                this.$('.metric-display').text('Daily'); // XXX localize
-                this.metricData = this.daily;
-            }
-            this.pageView.trigger('update-period', {
-                start,
-                end,
-                metric: this.metric,
-                activities,
-                daily: this.daily,
-                metricData: this.metricData,
-            });
-            const $start = this.$('header .period.start');
-            const $end = this.$('header .period.end');
+            const $start = this.$('header .range.start');
+            const $end = this.$('header .range.end');
+            const start = this.pageView.range.start;
+            const end = this.pageView.range.end;
+            const daily = this.pageView.daily;
+            const metricData = this.pageView.metricData;
             $start.text(H.date(start));
-            // XXX refactor details view newest code into pageview..
-            // this is silly to reach into details view..
-            const isStart = start <= this.pageView.detailsView.oldest;
-            this.$('.btn.period.prev').toggleClass('invisible', isStart);
-            this.$('.btn.period.oldest').toggleClass('invisible', isStart);
-            const isEnd = end >= periodEndMax();
-            this.$('.btn.period.next').toggleClass('invisible', isEnd);
-            this.$('.btn.period.newest').toggleClass('invisible', isEnd);
+            const isStart = start <= this.pageView.oldest;
+            this.$('.btn.range.prev').toggleClass('invisible', isStart);
+            this.$('.btn.range.oldest').toggleClass('invisible', isStart);
+            const isEnd = end >= Date.now();
+            this.$('.btn.range.next').toggleClass('invisible', isEnd);
+            this.$('.btn.range.newest').toggleClass('invisible', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
                 H.date(roundTimeToDay(end - DAY)));
-            const lineWidth = this.period > 365 ? 0.5 : this.period > 90 ? 1 : 1.5;
-            const maxCTLIndex = sauce.data.max(this.daily.map(x => x.ctl), {index: true});
-            const minTSBIndex = sauce.data.min(this.daily.map(x => x.ctl - x.atl), {index: true});
+            const days = this.pageView.range.getDays();
+            const lineWidth = days > 365 ? 0.5 : days > 90 ? 1 : 1.5;
+            const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
+            const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
             this.charts.training.data.datasets = [{
                 id: 'ctl',
                 label: 'CTL (Fitness)', // XXX Localize
@@ -1755,7 +1782,7 @@ sauce.ns('performance', async ns => {
                     align: 'left'
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                data: this.daily.map((a, i) => ({
+                data: daily.map((a, i) => ({
                     x: a.date,
                     y: a.ctl,
                     showDataLabel: i === maxCTLIndex,
@@ -1770,7 +1797,7 @@ sauce.ns('performance', async ns => {
                 fill: false,
                 pointRadius: 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                data: this.daily.map(a => ({
+                data: daily.map(a => ({
                     x: a.date,
                     y: a.atl,
                 }))
@@ -1793,7 +1820,7 @@ sauce.ns('performance', async ns => {
                     align: 'right'
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                data: this.daily.map((a, i) => ({
+                data: daily.map((a, i) => ({
                     x: a.date,
                     y: a.ctl - a.atl,
                     showDataLabel: i === minTSBIndex,
@@ -1812,10 +1839,14 @@ sauce.ns('performance', async ns => {
                 yAxisID: 'tss',
                 borderWidth: 1,
                 barPercentage: 0.92,
-                tooltipFormat: x => Math.round(x).toLocaleString() + '/d',
-                data: this.metricData.map((a, i) => ({
+                tooltipFormat: (x, i) => {
+                    const tss = Math.round(x);
+                    const tssDay = Math.round(x / metricData[i].days);
+                    return `${tss.toLocaleString()} <span style="font-size: 0.88em">(${tssDay}/d)</span>`;
+                },
+                data: metricData.map((a, i) => ({
                     x: a.date,
-                    y: a.tss,
+                    y: a.tssSum,
                 })),
             }, {
                 id: 'duration',
@@ -1829,7 +1860,7 @@ sauce.ns('performance', async ns => {
                 yAxisID: 'duration',
                 barPercentage: 0.92,
                 tooltipFormat: x => H.duration(x, {maxPeriod: 3600}),
-                data: this.metricData.map((a, i) => ({
+                data: metricData.map((a, i) => ({
                     x: a.date,
                     y: a.duration,
                 })),
@@ -1845,7 +1876,7 @@ sauce.ns('performance', async ns => {
                 yAxisID: 'distance',
                 barPercentage: 0.92,
                 tooltipFormat: x => L.distanceFormatter.formatShort(x),
-                data: this.metricData.map((a, i) => ({
+                data: metricData.map((a, i) => ({
                     x: a.date,
                     y: a.distance,
                 })),
@@ -1853,7 +1884,7 @@ sauce.ns('performance', async ns => {
             this.charts.activities.update();
 
             let gain = 0;
-            const gains = this.daily.map(x => {
+            const gains = daily.map(x => {
                 gain += x.altGain;
                 return {x: x.date, y: gain};
             });
@@ -1904,55 +1935,20 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onRouterNav(_, period) {
-            period = period && Number(period);
-            const start = ns.router.filters.periodStart;
-            const end = ns.router.filters.periodEnd;
-            let needRender;
-            if (period !== this.period) {
-                this.period = period || await getCurrentPeriod();
-                needRender = true;
-            }
-            if (end !== this.periodEnd) {
-                this.periodEnd = end || periodEndMax();
-                needRender = true;
-            }
-            if (start !== this.periodStart) {
-                this.periodStart = start || this.getPeriodStart();
-                needRender = true;
-            }
-            if (needRender) {
-                await this.update();
-            }
+        async onRangeChange(ev) {
+            const [rawPeriod, metric] = ev.currentTarget.value.split(',');
+            this.pageView.setRange(Number(rawPeriod), metric);
         }
 
-        async onPeriodChange(ev) {
-            this.period = Number(ev.currentTarget.value);
-            this.periodStart = this.getPeriodStart();
-            this.updateNav();
-            await this.update();
-            await sauce.storage.setPref('perfMainViewDefaultPeriod', this.period);
-        }
-
-        async onPeriodShift(ev) {
+        async onRangeShift(ev) {
             const classes = ev.currentTarget.classList;
             if (classes.contains('newest')) {
-                this.periodEnd = periodEndMax();
-                this.periodStart = this.getPeriodStart();
+                this.pageView.shiftRange(Infinity);
             } else if (classes.contains('oldest')) {
-                // XXX refactor details view newest code into pageview..
-                // this is silly to reach into details view..
-                this.periodStart = startOfDay(this.pageView.detailsView.oldest);
-                this.periodEnd = roundTimeToDay(this.periodStart + (this.period * DAY));
+                this.pageView.shiftRange(-Infinity);
             } else {
-                const next = classes.contains('next');
-                this.periodEnd = roundTimeToDay(Math.min(
-                    this.periodEnd + this.period * DAY * (next ? 1 : -1),
-                    periodEndMax()));
-                this.periodStart = this.getPeriodStart();
+                this.pageView.shiftRange(classes.contains('next') ? 1 : -1);
             }
-            this.updateNav();
-            await this.update();
         }
 
         async onDataVisibilityChange(ev, data) {
@@ -1961,20 +1957,15 @@ sauce.ns('performance', async ns => {
             await sauce.storage.setPref('perfChartDataVisibility', this.dataVisibility);
         }
 
-        updateNav() {
-            setPageTitle(this.athlete, this.periodEnd);
-            if (this.periodEnd === periodEndMax()) {
-                ns.router.setPeriod(this.athlete.id, this.period);
-            } else {
-                ns.router.setPeriod(this.athlete.id, this.period, this.periodStart, this.periodEnd);
-            }
+        async onUpdateRange() {
+            await this.update();
         }
 
-        async setAthlete(athlete) {
+        /*async setAthlete(athlete) {
             this.athlete = athlete;
             setPageTitle(athlete, this.periodEnd);
             await this.update();
-        }
+        }*/
     }
 
 
@@ -1993,13 +1984,29 @@ sauce.ns('performance', async ns => {
 
         async init({athletes}) {
             this.athletes = athletes;
-            this.setAthleteId(ns.router.filters.athleteId);
+            const f = ns.router.filters;
+            await this.setAthleteId(f.athleteId);
+            this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
             this.syncButtons = new Map();
+            this.onSyncActive = this._onSyncActive.bind(this);
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
+        }
+
+        getPeriodStart() {
+            throw new Error("use range now XXX");
+            return roundTimeToDay(this.periodEnd - (this.period * DAY));
+        }
+
+        async getCurrentPeriod() {
+            if (ns.router.filters.metricCount && ns.router.filters.metricUnits) {
+                return [ns.router.filters.period, ns.router.filters.metricUnits];
+            } else {
+                return (await sauce.storage.getPref('perfDefaultPeriod')) || [4, 'weeks'];
+            }
         }
 
         renderAttrs() {
@@ -2020,19 +2027,19 @@ sauce.ns('performance', async ns => {
             await Promise.all([
                 this.summaryView.initializing,
                 this.detailsView.render(),
+                this.mainView.render(),
             ]);
-            // MainView triggers update-period events which others depend on.
-            await this.mainView.render();
+            await this.updateRange();  // This will trigger most visual updates.
         }
 
-        setAthleteId(athleteId) {
+        async setAthleteId(athleteId) {
             let success = true;
             if (athleteId && this.athletes.has(athleteId)) {
                 this.athlete = this.athletes.get(athleteId);
             } else {
                 if (athleteId || Object.is(athleteId, NaN)) {
                     console.warn("Invalid athlete:", athleteId);
-                    ns.router.setAthlete(undefined, {replace: true});
+                    ns.router.setFilters(null, null, {replace: true});
                     success = false;
                 }
                 this.athlete = this.athletes.get(currentUser) || this.athletes.values().next().value;
@@ -2041,8 +2048,41 @@ sauce.ns('performance', async ns => {
             if ($oldBtn.length) {
                 this.getSyncButton(this.athlete.id).then($btn => $oldBtn.before($btn).detach());
             }
+            if (this.syncController) {
+                this.syncController.removeEventListener('active', this.onSyncActive);
+            }
+            if (this.athlete) {
+                this.syncController = getSyncController(this.athlete.id);
+                this.syncController.addEventListener('active', this.onSyncActive);
+            } else {
+                this.syncController = null;
+            }
+            await this.refreshNewestAndOldest();
             return success;
         }
+
+        async _onSyncActive(ev) {
+            const active = ev.data;
+            if (active === false) {
+                if (await this.refreshNewestAndOldest()) {
+                    this.trigger('updated-activities');
+                }
+            }
+        }
+
+        async refreshNewestAndOldest() {
+            const id = this.athlete && this.athlete.id;
+            if (!id) {
+                return;
+            }
+            const [wasNewest, wasOldest] = [this.newest, this.oldest];
+            [this.newest, this.oldest] = await Promise.all([
+                sauce.hist.getNewestActivityForAthlete(id).then(a => a && a.ts),
+                sauce.hist.getOldestActivityForAthlete(id).then(a => a && a.ts),
+            ]);
+            return wasNewest !== this.newest || wasOldest !== this.oldest;
+        }
+
 
         async getSyncButton(id) {
             if (!this.syncButtons.has(id)) {
@@ -2053,10 +2093,10 @@ sauce.ns('performance', async ns => {
             return this.syncButtons.get(id);
         }
 
-        onAthleteChange(ev) {
+        async onAthleteChange(ev) {
             const id = Number(ev.currentTarget.value);
-            if (this.setAthleteId(id)) {
-                ns.router.setAthlete(id);
+            if (await this.setAthleteId(id)) {
+                ns.router.setFilters(id);
             }
             this.trigger('change-athlete', this.athlete);
         }
@@ -2065,12 +2105,76 @@ sauce.ns('performance', async ns => {
             await sauce.sync.activitySyncDialog(this.athlete.id, getSyncController(this.athlete.id));
         }
 
-        async onRouterNav(athleteId) {
-            athleteId = athleteId && Number(athleteId);
-            if (athleteId !== this.athlete.id) {
-                this.setAthleteId(athleteId);
+        async onRouterNav() {
+            // This func gets valid arguments but they are raw.  Use the filters object instead.
+            const f = ns.router.filters;
+            this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
+            if (f.athleteId !== this.athlete.id) {
+                await this.setAthleteId(f.athleteId);
                 await this.render();
+            } else {
+                await this.updateRange();
             }
+        }
+
+        async setRange(period, metric) {
+            this.range.setRange(period, metric);
+            await this.updateRange();
+            await this.range.saveDefaults();
+        }
+
+        async shiftRange(offset) {
+            if (offset === Infinity) {
+                this.range.setEndDate(Date.now());
+            } else if (offset === -Infinity) {
+                throw 'XXX';
+                this.range.setEndDate(Date.now());
+                this.periodStart = startOfDay(this.detailsView.oldest);
+                this.periodEnd = roundTimeToDay(this.periodStart + (this.period * DAY));
+            } else {
+                throw 'XXX';
+                this.periodEnd = roundTimeToDay(Math.min(
+                    this.periodEnd + this.period * DAY * (offset),
+                    periodEndMax()));
+                this.periodStart = this.getPeriodStart();
+            }
+            await this.updateRange();
+        }
+
+        async updateRange() {
+            const start = +this.range.start;
+            const end = +this.range.end;
+            setPageTitle(this.athlete, end);
+            ns.router.setFilters(this.athlete.id, this.range);
+            this.trigger('before-update-range', {start, end});
+            const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
+                {start, end, includeTrainingLoadSeed: true, excludeUpper: false});  // No I think we do WANT to exclude Upper.. hmmmm.
+            let atl = 0;
+            let ctl = 0;
+            if (activities.length) {
+                ({atl, ctl} = activities[0].trainingLoadSeed);
+            }
+            this.daily = activitiesByDay(activities, start, end, atl, ctl);
+            //this.metric = this.period > 240 ? 'months' : this.period > 7 ? 'weeks' : 'days'; // XXX provided via dat
+            if (this.range.metric === 'weeks') {
+                this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
+                this.$('.metric-display').text('Weekly'); // XXX localize
+            } else if (this.range.metric === 'months') {
+                this.metricData = aggregateActivitiesByMonth(this.daily);
+                this.$('.metric-display').text('Monthly'); // XXX localize
+            } else if (this.range.metric === 'years') {
+                this.metricData = aggregateActivitiesByYear(this.daily);
+                this.$('.metric-display').text('Yearly'); // XXX localize
+            } else {
+                this.$('.metric-display').text('Daily'); // XXX localize
+                this.metricData = this.daily;
+            }
+            this.trigger('update-range', {
+                range: this.range,
+                activities,
+                daily: this.daily,
+                metricData: this.metricData,
+            });
         }
 
         async onOnboardingEnableClick(ev) {
