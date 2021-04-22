@@ -49,7 +49,6 @@ sauce.ns('performance', async ns => {
             if (endDateSeed != null && !(endDateSeed instanceof Date)) {
                 throw new TypeError('Date object required');
             }
-            this._endDateSeed = endDateSeed || sauce.date.toLocaleDayDate(Date.now() + DAY);
             if (period && metric) {
                 this.period = period;
                 this.metric = metric;
@@ -60,7 +59,7 @@ sauce.ns('performance', async ns => {
             if (!this.constructor.isValidMetric(this.metric)) {
                 throw new TypeError('metric is invalid');
             }
-            this._calcStartEnd();
+            this.setEndSeed(endDateSeed || tomorrow());
         }
 
         setRange(period, metric) {
@@ -72,20 +71,27 @@ sauce.ns('performance', async ns => {
             }
             this.period = period;
             this.metric = metric;
-            this._calcStartEnd();
+            this.setEndSeed(this.end);
         }
 
-        setEndDate(date) {
-            this._endDateSeed = date;
-            this._calcStartEnd();
+        shift(amount) {
+            const endSeed = new Date(this.end);
+            if (this.metric === 'weeks') {
+                endSeed.setDate(endSeed.getDate() + (amount * this.period * 7));
+            } else if (this.metric === 'months') {
+                endSeed.setMonth(endSeed.getMonth() + (amount * this.period));
+            } else if (this.metric === 'years') {
+                endSeed.setFullYear(endSeed.getFullYear() + (amount * this.period));
+            }
+            this.setEndSeed(endSeed);
         }
 
         getDays() {
             return Math.round((this.end.getTime() - this.start.getTime()) / 86400 / 1000);
         }
 
-        _calcStartEnd() {
-            const end = this._endDateSeed;
+        setEndSeed(endSeed) {
+            const end = sauce.date.roundToLocaleDayDate(endSeed);
             let start;
             if (this.metric === 'weeks') {
                 const day = end.getDay();
@@ -139,22 +145,25 @@ sauce.ns('performance', async ns => {
                 athleteId: athleteId && Number(athleteId),
                 period: validMetric && Number(period) ? Number(period) : null,
                 metric: validMetric ? metric : null,
-                suggestedEnd: validMetric && endDay ? addTZ(Number(endDay) * DAY) : null,
+                suggestedEnd: validMetric && endDay ? new Date(addTZ(Number(endDay) * DAY)) : null,
             };
         },
 
-        setFilters: function(athleteId, range, options) {
-            this.filters.athleteId = athleteId;
+        setFilters: function(athlete, range, options) {
+            const f = this.filters;
+            f.athleteId = athlete ? athlete.id : null;
             if (range) {
                 this.filters.period = range.period;
                 this.filters.metric = range.metric;
                 this.filters.suggestedEnd = range.end < Date.now() ? range.end : null;
             }
-            this.filterNavigate(options);
-        },
-
-        filterNavigate: function(options={}) {
-            const f = this.filters;
+            if (athlete) {
+                const start = H.date(range.start);
+                const end = H.date(sauce.date.roundToLocaleDayDate(range.end - DAY));
+                document.title = `${athlete.name} - ${start} -> ${end} | ${title}`;
+            } else {
+                document.title = title;
+            }
             if (f.suggestedEnd != null &&
                 f.period != null &&
                 f.metric != null &&
@@ -172,22 +181,10 @@ sauce.ns('performance', async ns => {
     });
 
 
-    function periodEndMax() {
-        console.warn("I DUNNO BOUT YU");
-        return startOfDay(Date.now() + DAY);
-    }
-
-
-    function setPageTitle(athlete, periodEnd) {
-        console.warn("DONT LIKE THIS SIG, use a range object?");
-        if (athlete) {
-            const end = periodEnd && periodEnd < periodEndMax() ?
-                H.date(roundTimeToDay(periodEnd - DAY)) :
-                'Today'; // XXX locale
-            document.title = `${athlete.name} - ${end} | ${title}`;
-        } else {
-            document.title = title;
-        }
+    function tomorrow() {
+        const d = sauce.date.toLocaleDayDate(new Date());
+        d.setDate(d.getDate() + 1);
+        return d;
     }
 
 
@@ -200,16 +197,6 @@ sauce.ns('performance', async ns => {
     function subtractTZ(time) {
         const offt = (new Date(time)).getTimezoneOffset() * 60000;
         return time - offt;
-    }
-
-
-    function roundTimeToDay(time) {
-        return sauce.date.roundToLocaleDayDate(time).getTime();
-    }
-
-
-    function startOfDay(time) {
-        return sauce.date.toLocaleDayDate(time).getTime();
     }
 
 
@@ -391,7 +378,7 @@ sauce.ns('performance', async ns => {
             let kj = 0;
             const ts = date.getTime();
             const daily = [];
-            while (i < acts.length && startOfDay(acts[i].ts) === ts) {
+            while (i < acts.length && +sauce.date.toLocaleDayDate(acts[i].ts) === ts) {
                 const a = acts[i++];
                 daily.push(a);
                 tss += sauce.model.getActivityTSS(a) || 0;
@@ -793,7 +780,8 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.plugins.datalabels.anchor', 'center');
             setDefault(config, 'options.plugins.zoom.enabled', true);
             setDefault(config, 'options.plugins.zoom.callbacks.beforeZoom', (start, end) => {
-                const bucket = this.options.useMetricData ? this.view.metricData : this.view.daily;
+                const pv = this.view.pageView;
+                const bucket = this.options.useMetricData ? pv.metricData : pv.daily;
                 // Pad out the zoom to be inclusive of nearest metric unit.
                 let first = bucket.findIndex(x => x.date >= start);
                 let last = bucket.findIndex(x => x.date > end);
@@ -999,17 +987,15 @@ sauce.ns('performance', async ns => {
             this.onSyncStatus = this._onSyncStatus.bind(this);
             this.onSyncError = this._onSyncError.bind(this);
             this.onSyncProgress = this._onSyncProgress.bind(this);
-            this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
-            this.listenTo(pageView, 'update-range', this.onUpdateRange);
             this.collapsed = (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {};
             this.type = (await sauce.storage.getPref('perfSummarySectionType')) || 'power';
-            ns.router.on('route:onNav', this.onRouterNav.bind(this)); // XXX
             this._locales = await L.getMessagesObject([
                 'rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'
             ], 'performance');
             if (pageView.athlete) {
                 await this.setAthlete(pageView.athlete);
             }
+            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
             await super.init();
         }
 
@@ -1113,21 +1099,6 @@ sauce.ns('performance', async ns => {
             }
         }
 
-
-        async onRouterNav(_, period) {
-            throw new Error('XXX');
-            throw 'XXX';  // don't think we need, the onUpdatePeriod should be fired in all cases.
-            period = period && Number(period);
-            if (period !== this.period) {
-                this.period = period;
-                await this.render();
-            }
-        }
-
-        async onChangeAthlete(athlete) {
-            await this.setAthlete(athlete);
-        }
-
         async onTypeChange(ev) {
             this.type = ev.currentTarget.value;
             await sauce.storage.setPref(`perfSummarySectionType`, this.type);
@@ -1157,12 +1128,13 @@ sauce.ns('performance', async ns => {
             await this.render();
         }
 
-        async onUpdateRange({activities, daily, range}) {
+        async onUpdateActivities({athlete, activities, daily, range}) {
+            await this.setAthlete(athlete);
             this.daily = daily;
             this.activities = activities;
             this.missingTSS = activities.filter(x => sauce.model.getActivityTSS(x) == null);
-            this.start = range.start;
-            this.end = range.end;
+            this.start = +range.start;
+            this.end = +range.end;
             const counts = activities.reduce((agg, x) =>
                 (agg[x.basetype] = (agg[x.basetype] || 0) + 1, agg), {});
             this.counts = Object.entries(counts).map(([type, count]) =>
@@ -1233,7 +1205,7 @@ sauce.ns('performance', async ns => {
             this.pageView = pageView;
             this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'select-activities', this.setActivities);
-            this.listenTo(pageView, 'updated-activities', this.onUpdatedActivities);
+            this.listenTo(pageView, 'new-activities', this.onNewActivities);
             await this.setAthlete(pageView.athlete);
             await super.init();
         }
@@ -1272,8 +1244,7 @@ sauce.ns('performance', async ns => {
             this.activities = null;
         }
 
-        async onUpdatedActivities() {
-            console.warn("Validate this all good XXX");
+        async onNewActivities() {
             await this.render();
         }
 
@@ -1339,8 +1310,8 @@ sauce.ns('performance', async ns => {
         }
 
         async onLoadRecentClick(ev) {
-            const start = this.pageView.range.start; // Need number conv? XXX
-            const end = this.pageView.range.end; // Need number conv? XXX
+            const start = +this.pageView.range.start;
+            const end = +this.pageView.range.end;
             const activities = await sauce.hist.getActivitiesForAthlete(this.pageView.athlete.id,
                 {start, end, limit: 10, direction: 'prev'});
             await this.setActivities(activities, {noHighlight: true});
@@ -1437,12 +1408,11 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.periodEnd = null;
-            this.periodStart = null;
+            this.rangeEnd = null;
+            this.rangeStart = null;
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
-            this.listenTo(pageView, 'before-update-range', this.onBeforeUpdateRange);
-            this.listenTo(pageView, 'change-athlete', this.setAthlete);
+            this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
             const savedPrefs = await sauce.storage.getPref('peaksView') || {};
             this.prefs = {
                 type: 'power',
@@ -1508,8 +1478,8 @@ sauce.ns('performance', async ns => {
                 expandActivities: true,
             };
             if (!this.prefs.includeAllDates) {
-                options.start = this.periodStart;
-                options.end = this.periodEnd;
+                options.start = this.rangeStart;
+                options.end = this.rangeEnd;
             }
             if (!this.prefs.includeAllAthletes) {
                 this.peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.prefs.type,
@@ -1520,9 +1490,10 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onBeforeUpdateRange({start, end}) {
-            this.periodStart = start;
-            this.periodEnd = end;
+        async onBeforeUpdateActivities({athlete, start, end}) {
+            this.rangeStart = +start;
+            this.rangeEnd = +end;
+            await this.setAthlete(athlete);
             await this.render();
         }
 
@@ -1626,10 +1597,8 @@ sauce.ns('performance', async ns => {
             this.peaksView = new PeaksView({pageView});
             this.pageView = pageView;
             this.charts = {};
-            this.athlete = pageView.athlete;
-            //this.listenTo(pageView, 'change-athlete', this.setAthlete); // don't need, use update-range event
             this.dataVisibility = await sauce.storage.getPref('perfChartDataVisibility') || {};
-            this.listenTo(pageView, 'update-range', this.onUpdateRange);
+            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
             await super.init();
         }
 
@@ -1657,9 +1626,6 @@ sauce.ns('performance', async ns => {
 
         async render() {
             await super.render();
-            if (!this.athlete) {
-                return;
-            }
             // NOTE We don't call peaksView.render() because update() will trigger it.
             this.peaksView.setElement(this.$('.peaks-view'));
             this.charts.training = new ActivityTimeRangeChart('#training', this, {
@@ -1689,15 +1655,20 @@ sauce.ns('performance', async ns => {
                 options: {
                     useMetricData: true,
                     scales: {
+                        xAxes: [{
+                            stacked: true,
+                        }],
                         yAxes: [{
                             id: 'tss',
                             scaleLabel: {labelString: 'TSS'}, // XXX localize
                             ticks: {min: 0, maxTicksLimit: 6},
+                            stacked: true,
                         }, {
                             id: 'duration',
                             position: 'right',
                             gridLines: {display: false},
                             scaleLabel: {labelString: 'Duration'}, // XXX localize
+                            stacked: true,
                             ticks: {
                                 min: 0,
                                 suggestedMax: 5 * 3600,
@@ -1710,6 +1681,7 @@ sauce.ns('performance', async ns => {
                             position: 'right',
                             gridLines: {display: false},
                             scaleLabel: {labelString: 'Distance'}, // XXX localize
+                            stacked: true,
                             ticks: {
                                 min: 0,
                                 stepSize: distStepSize,
@@ -1745,7 +1717,6 @@ sauce.ns('performance', async ns => {
                     },
                 }
             });
-            //await this.update();
         }
 
         async update() {
@@ -1764,7 +1735,7 @@ sauce.ns('performance', async ns => {
             this.$('.btn.range.newest').toggleClass('invisible', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
-                H.date(roundTimeToDay(end - DAY)));
+                H.date(sauce.date.roundToLocaleDayDate(end - DAY)));
             const days = this.pageView.range.getDays();
             const lineWidth = days > 365 ? 0.5 : days > 90 ? 1 : 1.5;
             const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
@@ -1837,6 +1808,7 @@ sauce.ns('performance', async ns => {
                 hoverBackgroundColor: '#0d76bd',
                 hoverBorderColor: '#0d76bd',
                 yAxisID: 'tss',
+                stack: 'tss',
                 borderWidth: 1,
                 barPercentage: 0.92,
                 tooltipFormat: (x, i) => {
@@ -1858,6 +1830,27 @@ sauce.ns('performance', async ns => {
                 hoverBorderColor: '#dc5d00',
                 borderWidth: 1,
                 yAxisID: 'duration',
+                stack: 'duration',
+                barPercentage: 0.92,
+                tooltipFormat: x => H.duration(x, {maxPeriod: 3600}),
+                data: metricData.map((a, i) => ({
+                    x: a.date,
+                    y: a.duration,
+                })),
+            }, {
+                id: 'duration-predicted',
+                label: 'Predicted Time', // XXX Localize
+                type: 'bar',
+                backgroundColor: '#fc7d0b80',
+                borderColor: '#dc5d00a0',
+                hoverBackgroundColor: '#ec6dc0',
+                hoverBorderColor: '#dc5dc0',
+                pointStyle: 'dash', // XXX
+                borderStyle: 'dash',
+                lineStyle: 'dash',
+                borderWidth: 1,
+                yAxisID: 'duration',
+                stack: 'duration',
                 barPercentage: 0.92,
                 tooltipFormat: x => H.duration(x, {maxPeriod: 3600}),
                 data: metricData.map((a, i) => ({
@@ -1874,6 +1867,7 @@ sauce.ns('performance', async ns => {
                 hoverBorderColor: '#022',
                 borderWidth: 1,
                 yAxisID: 'distance',
+                stack: 'distance',
                 barPercentage: 0.92,
                 tooltipFormat: x => L.distanceFormatter.formatShort(x),
                 data: metricData.map((a, i) => ({
@@ -1957,15 +1951,9 @@ sauce.ns('performance', async ns => {
             await sauce.storage.setPref('perfChartDataVisibility', this.dataVisibility);
         }
 
-        async onUpdateRange() {
+        async onUpdateActivities() {
             await this.update();
         }
-
-        /*async setAthlete(athlete) {
-            this.athlete = athlete;
-            setPageTitle(athlete, this.periodEnd);
-            await this.update();
-        }*/
     }
 
 
@@ -1983,6 +1971,7 @@ sauce.ns('performance', async ns => {
         }
 
         async init({athletes}) {
+            this.onSyncActive = this._onSyncActive.bind(this);
             this.athletes = athletes;
             const f = ns.router.filters;
             await this.setAthleteId(f.athleteId);
@@ -1991,22 +1980,8 @@ sauce.ns('performance', async ns => {
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
             this.syncButtons = new Map();
-            this.onSyncActive = this._onSyncActive.bind(this);
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
-        }
-
-        getPeriodStart() {
-            throw new Error("use range now XXX");
-            return roundTimeToDay(this.periodEnd - (this.period * DAY));
-        }
-
-        async getCurrentPeriod() {
-            if (ns.router.filters.metricCount && ns.router.filters.metricUnits) {
-                return [ns.router.filters.period, ns.router.filters.metricUnits];
-            } else {
-                return (await sauce.storage.getPref('perfDefaultPeriod')) || [4, 'weeks'];
-            }
         }
 
         renderAttrs() {
@@ -2025,22 +2000,19 @@ sauce.ns('performance', async ns => {
             this.mainView.setElement(this.$('main'));
             this.detailsView.setElement(this.$('aside.details'));
             await Promise.all([
-                this.summaryView.initializing,
+                this.summaryView.initializing, // XXX I forget why we don't use render here, it would just be nice if they were the same..
                 this.detailsView.render(),
                 this.mainView.render(),
             ]);
-            await this.updateRange();  // This will trigger most visual updates.
+            await this.updateActivities();
         }
 
         async setAthleteId(athleteId) {
-            let success = true;
             if (athleteId && this.athletes.has(athleteId)) {
                 this.athlete = this.athletes.get(athleteId);
             } else {
                 if (athleteId || Object.is(athleteId, NaN)) {
                     console.warn("Invalid athlete:", athleteId);
-                    ns.router.setFilters(null, null, {replace: true});
-                    success = false;
                 }
                 this.athlete = this.athletes.get(currentUser) || this.athletes.values().next().value;
             }
@@ -2057,15 +2029,19 @@ sauce.ns('performance', async ns => {
             } else {
                 this.syncController = null;
             }
+            if (this.athlete && this.range) {
+                ns.router.setFilters(this.athlete, this.range);
+            } else {
+                ns.router.setFilters(null, null, {replace: true});
+            }
             await this.refreshNewestAndOldest();
-            return success;
         }
 
         async _onSyncActive(ev) {
             const active = ev.data;
             if (active === false) {
                 if (await this.refreshNewestAndOldest()) {
-                    this.trigger('updated-activities');
+                    this.trigger('new-activities');
                 }
             }
         }
@@ -2083,7 +2059,6 @@ sauce.ns('performance', async ns => {
             return wasNewest !== this.newest || wasOldest !== this.oldest;
         }
 
-
         async getSyncButton(id) {
             if (!this.syncButtons.has(id)) {
                 const $btn = await sauce.sync.createSyncButton(id, null, {noStatus: true});
@@ -2095,10 +2070,9 @@ sauce.ns('performance', async ns => {
 
         async onAthleteChange(ev) {
             const id = Number(ev.currentTarget.value);
-            if (await this.setAthleteId(id)) {
-                ns.router.setFilters(id);
-            }
+            await this.setAthleteId(id);
             this.trigger('change-athlete', this.athlete);
+            await this.updateActivities();
         }
 
         async onControlPanelClick(ev) {
@@ -2111,51 +2085,52 @@ sauce.ns('performance', async ns => {
             this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
             if (f.athleteId !== this.athlete.id) {
                 await this.setAthleteId(f.athleteId);
-                await this.render();
-            } else {
-                await this.updateRange();
+                // Revisit this and validate we really want to be in this business.
+                //  Might want to move athlete selection to summary view, or go to old way of
+                //  re-rendering the entire pageview, which still seems overkill to me. I just
+                //  hate doing DOM shit here.
+                this.$(`select[name="athlete"] option[value="${f.athleteId}"]`)[0].selected = true;
+                this.trigger('change-athlete', this.athlete);
             }
+            console.info("update acts because of nav");
+            await this.updateActivities();
         }
 
         async setRange(period, metric) {
             this.range.setRange(period, metric);
-            await this.updateRange();
+            await this.updateActivities();
             await this.range.saveDefaults();
         }
 
         async shiftRange(offset) {
             if (offset === Infinity) {
-                this.range.setEndDate(Date.now());
+                this.range.setEndSeed(tomorrow());
             } else if (offset === -Infinity) {
-                throw 'XXX';
-                this.range.setEndDate(Date.now());
-                this.periodStart = startOfDay(this.detailsView.oldest);
-                this.periodEnd = roundTimeToDay(this.periodStart + (this.period * DAY));
+                this.range.setEndSeed(new Date(this.oldest));
+                this.range.shift(1);
             } else {
-                throw 'XXX';
-                this.periodEnd = roundTimeToDay(Math.min(
-                    this.periodEnd + this.period * DAY * (offset),
-                    periodEndMax()));
-                this.periodStart = this.getPeriodStart();
+                this.range.shift(offset);
             }
-            await this.updateRange();
+            await this.updateActivities();
         }
 
-        async updateRange() {
-            const start = +this.range.start;
-            const end = +this.range.end;
-            setPageTitle(this.athlete, end);
-            ns.router.setFilters(this.athlete.id, this.range);
-            this.trigger('before-update-range', {start, end});
+        async updateActivities() {
+            const start = this.range.start;
+            let end = this.range.end;
+            if (end > Date.now()) {
+                end = tomorrow();
+            }
+            console.warn(new Date(start), new Date(end));
+            ns.router.setFilters(this.athlete, this.range);
+            this.trigger('before-update-activities', {athlete: this.athlete, start, end});
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
-                {start, end, includeTrainingLoadSeed: true, excludeUpper: false});  // No I think we do WANT to exclude Upper.. hmmmm.
+                {start: +start, end: +end, includeTrainingLoadSeed: true, excludeUpper: true});
             let atl = 0;
             let ctl = 0;
             if (activities.length) {
                 ({atl, ctl} = activities[0].trainingLoadSeed);
             }
             this.daily = activitiesByDay(activities, start, end, atl, ctl);
-            //this.metric = this.period > 240 ? 'months' : this.period > 7 ? 'weeks' : 'days'; // XXX provided via dat
             if (this.range.metric === 'weeks') {
                 this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
                 this.$('.metric-display').text('Weekly'); // XXX localize
@@ -2169,7 +2144,8 @@ sauce.ns('performance', async ns => {
                 this.$('.metric-display').text('Daily'); // XXX localize
                 this.metricData = this.daily;
             }
-            this.trigger('update-range', {
+            this.trigger('update-activities', {
+                athlete: this.athlete,
                 range: this.range,
                 activities,
                 daily: this.daily,
