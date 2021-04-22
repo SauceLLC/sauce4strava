@@ -35,7 +35,7 @@
             border: 1px solid color.shade(fg, 20%, 0.2);
 
             &:hover {
-                border-color: transparent;
+                border-color: color.get(fg, 0.5);
             }
         }
 
