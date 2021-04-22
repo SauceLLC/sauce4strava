@@ -62,7 +62,7 @@ sauce.ns('performance', async ns => {
             this.setEndSeed(endDateSeed || tomorrow());
         }
 
-        setRange(period, metric) {
+        setRange(period, metric, endSeed) {
             if (typeof period !== 'number') {
                 throw new TypeError("Invalid period");
             }
@@ -71,7 +71,7 @@ sauce.ns('performance', async ns => {
             }
             this.period = period;
             this.metric = metric;
-            this.setEndSeed(this.end);
+            this.setEndSeed(endSeed || this.end);
         }
 
         shift(amount) {
@@ -181,10 +181,15 @@ sauce.ns('performance', async ns => {
     });
 
 
-    function tomorrow() {
-        const d = sauce.date.toLocaleDayDate(new Date());
+    function dayAfter(dt) {
+        const d = sauce.date.toLocaleDayDate(dt);
         d.setDate(d.getDate() + 1);
         return d;
+    }
+
+
+    function tomorrow() {
+        return dayAfter(new Date());
     }
 
 
@@ -364,7 +369,8 @@ sauce.ns('performance', async ns => {
         }
         const slots = [];
         start = start || acts[0].ts;
-        end = end || acts[acts.length - 1].ts;
+        // Acts starting at exactly midnight will be excluded by dayRange() without this..
+        end = end || dayAfter(acts[acts.length - 1].ts);
         const startDay = sauce.date.toLocaleDayDate(start);
         let i = 0;
         for (const date of sauce.date.dayRange(startDay, new Date(end))) {
@@ -1727,7 +1733,15 @@ sauce.ns('performance', async ns => {
             const end = range.end;
             const daily = this.pageView.daily;
             const metricData = this.pageView.metricData;
-            this.$(`select[name="range"] option[value="${range.period},${range.metric}"]`)[0].selected = true;
+            let $option = this.$(`select[name="range"] option[value="${range.period},${range.metric}"]`);
+            if (!$option.length) {
+                // Just manually add an entry.  The user may be playing with the URL and that's fine.
+                $option = jQuery(`<option value="${range.period},${range.metric}"]>` +
+                    `${range.period} ${range.metric}</option>`);
+                this.$(`select[name="range"]`).append($option);
+                await this.pageView.range.saveDefaults();
+            }
+            $option[0].selected = true;
             $start.text(H.date(start));
             const isStart = start <= this.pageView.oldest;
             this.$('.btn.range.prev').toggleClass('disabled', isStart);
@@ -2091,7 +2105,10 @@ sauce.ns('performance', async ns => {
         }
 
         async setRange(period, metric) {
-            this.range.setRange(period, metric);
+            // This keeps the range from floating past the present when we go
+            // from a big range to a smaller one.
+            const endSeed = this.range.end > Date.now() ? tomorrow() : undefined;
+            this.range.setRange(period, metric, endSeed);
             ns.router.setFilters(this.athlete, this.range);
             await this.updateActivities();
             await this.range.saveDefaults();
@@ -2101,6 +2118,7 @@ sauce.ns('performance', async ns => {
             if (offset === Infinity) {
                 this.range.setEndSeed(tomorrow());
             } else if (offset === -Infinity) {
+                throw new Error('XXX this is invalid because of the different ways metrics work we could be on the month of the last day');
                 this.range.setEndSeed(new Date(this.oldest));
                 this.range.shift(1);
             } else {
