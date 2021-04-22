@@ -157,13 +157,6 @@ sauce.ns('performance', async ns => {
                 this.filters.metric = range.metric;
                 this.filters.suggestedEnd = range.end < Date.now() ? range.end : null;
             }
-            if (athlete) {
-                const start = H.date(range.start);
-                const end = H.date(sauce.date.roundToLocaleDayDate(range.end - DAY));
-                document.title = `${athlete.name} - ${start} -> ${end} | ${title}`;
-            } else {
-                document.title = title;
-            }
             if (f.suggestedEnd != null &&
                 f.period != null &&
                 f.metric != null &&
@@ -176,6 +169,13 @@ sauce.ns('performance', async ns => {
                 this.navigate(`${urn}/${f.athleteId}`, options);
             } else {
                 this.navigate(`${urn}`, options);
+            }
+            if (athlete) {
+                const start = H.date(range.start);
+                const end = H.date(sauce.date.roundToLocaleDayDate(range.end - DAY));
+                document.title = `${athlete.name} | ${start} -> ${end} | ${title}`;
+            } else {
+                document.title = title;
             }
         }
     });
@@ -1722,21 +1722,23 @@ sauce.ns('performance', async ns => {
         async update() {
             const $start = this.$('header .range.start');
             const $end = this.$('header .range.end');
-            const start = this.pageView.range.start;
-            const end = this.pageView.range.end;
+            const range = this.pageView.range;
+            const start = range.start;
+            const end = range.end;
             const daily = this.pageView.daily;
             const metricData = this.pageView.metricData;
+            this.$(`select[name="range"] option[value="${range.period},${range.metric}"]`)[0].selected = true;
             $start.text(H.date(start));
             const isStart = start <= this.pageView.oldest;
-            this.$('.btn.range.prev').toggleClass('invisible', isStart);
-            this.$('.btn.range.oldest').toggleClass('invisible', isStart);
+            this.$('.btn.range.prev').toggleClass('disabled', isStart);
+            this.$('.btn.range.oldest').toggleClass('disabled', isStart);
             const isEnd = end >= Date.now();
-            this.$('.btn.range.next').toggleClass('invisible', isEnd);
-            this.$('.btn.range.newest').toggleClass('invisible', isEnd);
+            this.$('.btn.range.next').toggleClass('disabled', isEnd);
+            this.$('.btn.range.newest').toggleClass('disabled', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
                 H.date(sauce.date.roundToLocaleDayDate(end - DAY)));
-            const days = this.pageView.range.getDays();
+            const days = range.getDays();
             const lineWidth = days > 365 ? 0.5 : days > 90 ? 1 : 1.5;
             const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
             const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
@@ -1974,12 +1976,13 @@ sauce.ns('performance', async ns => {
             this.onSyncActive = this._onSyncActive.bind(this);
             this.athletes = athletes;
             const f = ns.router.filters;
-            await this.setAthleteId(f.athleteId);
             this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
+            await this.setAthleteId(f.athleteId, {router: {replace: true}});
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
             this.syncButtons = new Map();
+            ns.router.setFilters(this.athlete, this.range, {replace: true});
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
         }
@@ -2007,7 +2010,7 @@ sauce.ns('performance', async ns => {
             await this.updateActivities();
         }
 
-        async setAthleteId(athleteId) {
+        async setAthleteId(athleteId, options={}) {
             if (athleteId && this.athletes.has(athleteId)) {
                 this.athlete = this.athletes.get(athleteId);
             } else {
@@ -2028,11 +2031,6 @@ sauce.ns('performance', async ns => {
                 this.syncController.addEventListener('active', this.onSyncActive);
             } else {
                 this.syncController = null;
-            }
-            if (this.athlete && this.range) {
-                ns.router.setFilters(this.athlete, this.range);
-            } else {
-                ns.router.setFilters(null, null, {replace: true});
             }
             await this.refreshNewestAndOldest();
         }
@@ -2072,6 +2070,7 @@ sauce.ns('performance', async ns => {
             const id = Number(ev.currentTarget.value);
             await this.setAthleteId(id);
             this.trigger('change-athlete', this.athlete);
+            ns.router.setFilters(this.athlete, this.range);
             await this.updateActivities();
         }
 
@@ -2088,12 +2087,12 @@ sauce.ns('performance', async ns => {
                 this.$(`select[name="athlete"] option[value="${f.athleteId}"]`)[0].selected = true;
                 this.trigger('change-athlete', this.athlete);
             }
-            console.info("update acts because of nav");
             await this.updateActivities();
         }
 
         async setRange(period, metric) {
             this.range.setRange(period, metric);
+            ns.router.setFilters(this.athlete, this.range);
             await this.updateActivities();
             await this.range.saveDefaults();
         }
@@ -2107,6 +2106,7 @@ sauce.ns('performance', async ns => {
             } else {
                 this.range.shift(offset);
             }
+            ns.router.setFilters(this.athlete, this.range);
             await this.updateActivities();
         }
 
@@ -2117,7 +2117,6 @@ sauce.ns('performance', async ns => {
                 end = tomorrow();
             }
             console.warn(new Date(start), new Date(end));
-            ns.router.setFilters(this.athlete, this.range);
             this.trigger('before-update-activities', {athlete: this.athlete, start, end});
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
                 {start: +start, end: +end, includeTrainingLoadSeed: true, excludeUpper: true});
