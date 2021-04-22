@@ -2085,10 +2085,6 @@ sauce.ns('performance', async ns => {
             this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
             if (f.athleteId !== this.athlete.id) {
                 await this.setAthleteId(f.athleteId);
-                // Revisit this and validate we really want to be in this business.
-                //  Might want to move athlete selection to summary view, or go to old way of
-                //  re-rendering the entire pageview, which still seems overkill to me. I just
-                //  hate doing DOM shit here.
                 this.$(`select[name="athlete"] option[value="${f.athleteId}"]`)[0].selected = true;
                 this.trigger('change-athlete', this.athlete);
             }
