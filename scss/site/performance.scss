@@ -865,17 +865,23 @@ table.sauce-perf {
                 margin-left: 1em;
                 margin-right: 1em;
 
+                .btn-group {
+                    flex: 0 0 auto;
+                }
+
                 .btn.range {
-                    &.invisible {
-                        visibility: hidden;
+                    &.disabled {
+                        pointer-events: none;
+                        opacity: 0.3;
+                        filter: contrast(0.8);
                     }
                 }
 
-                .btn.prev {
+                .btn-group.prev {
                     margin-right: 0.5em;
                 }
 
-                .btn.next {
+                .btn-group.next {
                     margin-left: 0.5em;
                 }
 

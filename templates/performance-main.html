@@ -12,15 +12,19 @@
     </div>
 
     <div class="start-end">
-        <div class="btn btn-sm oldest range">{-await fa('angle-double-left-regular')-}</div>
-        <div class="btn btn-sm prev range">{-await fa('angle-left-regular')-}</div>
+        <div class="btn-group btn-group-sm prev">
+            <div class="btn oldest range">{-await fa('angle-double-left-regular')-}</div>
+            <div class="btn prev range">{-await fa('angle-left-regular')-}</div>
+        </div>
         <div class="dates">
             <div class="start range">⋯</div>
             <div style="pointer-events: none; opacity: 0.5; font-size: 0.8em;" class="btn btn-unstyled btn-icon-only btn-sm">{-await fa('arrow-alt-right-duotone')-}</div>
             <div class="end range">⋯</div>
         </div>
-        <div class="btn btn-sm next range">{-await fa('angle-right-regular')-}</div>
-        <div class="btn btn-sm newest range">{-await fa('angle-double-right-regular')-}</div>
+        <div class="btn-group btn-group-sm next">
+            <div class="btn next range">{-await fa('angle-right-regular')-}</div>
+            <div class="btn newest range">{-await fa('angle-double-right-regular')-}</div>
+        </div>
     </div>
 
     <div class="right-padding"></div>
