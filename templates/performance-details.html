@@ -19,7 +19,8 @@
             <% const multiple = day.activities.length > 1;  if (multiple) { %>
                 <div class="entry day">
                     <header class="title">
-                        <small>{{humanDate(day.date, {style: 'weekday'})}} - {{day.activities.length}} Activities</small>
+                        <small>{{humanDate(day.date, {style: 'weekday'})}}</small><br/>
+                        {{day.activities.length}} Activities
                     </header>
                     <% if (day.tss) { %>
                         <row>
