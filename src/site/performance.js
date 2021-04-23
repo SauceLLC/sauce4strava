@@ -596,21 +596,6 @@ sauce.ns('performance', async ns => {
     };
 
 
-    /*
-    Chart.Tooltip.positioners.sides = function (elements, pos) {
-        const box = this._chart.chartArea;
-        const intersect = this._chart.options.tooltips.intersect;
-        const xAlign = pos.x - box.left > (box.right - box.left) / 2 ? 'right' : 'left';
-        this._options.xAlign = xAlign;
-        this._options.yAlign = intersect === false ? 'center' : undefined;
-        const yPos = intersect === false ? ((box.bottom - box.top) / 3) + chartTopPad : pos.y;
-        return {
-            x: pos.x,
-            y: yPos
-        };
-    };*/
-
-
     const chartOverUnderFillPlugin = {
         _fillGradientSize: 100,
 
@@ -713,9 +698,9 @@ sauce.ns('performance', async ns => {
     };
 
 
-    const drawSave = Chart.controllers.line.prototype.draw;
+    const lineDrawSave = Chart.controllers.line.prototype.draw;
     Chart.controllers.line.prototype.draw = function(ease) {
-        drawSave.apply(this, arguments);
+        lineDrawSave.apply(this, arguments);
         if (!this.chart.options.tooltipLine) {
             return;
         }
@@ -1758,6 +1743,15 @@ sauce.ns('performance', async ns => {
             const end = range.end;
             const daily = this.pageView.daily;
             const metricData = this.pageView.metricData;
+            const predData = {};
+            if (tomorrow() < range.end) {
+                const days = (range.end - tomorrow()) / DAY;
+                const lastSlot = metricData[metricData.length - 1];
+                predData.duration = {
+                    x: lastSlot.date,
+                    y: lastSlot.duration + (days * (lastSlot.duration / lastSlot.days)),
+                };
+            }
             let $option = this.$(`select[name="range"] option[value="${range.period},${range.metric}"]`);
             if (!$option.length) {
                 // Just manually add an entry.  The user may be playing with the URL and that's fine.
@@ -1840,6 +1834,8 @@ sauce.ns('performance', async ns => {
             }];
             this.charts.training.update();
 
+            const barPercentage = 0.92;
+            const borderWidth = 1;
             this.charts.activities.data.datasets = [{
                 id: 'tss',
                 label: 'TSS',
@@ -1850,8 +1846,8 @@ sauce.ns('performance', async ns => {
                 hoverBorderColor: '#0d76bd',
                 yAxisID: 'tss',
                 stack: 'tss',
-                borderWidth: 1,
-                barPercentage: 0.92,
+                borderWidth,
+                barPercentage,
                 tooltipFormat: (x, i) => {
                     const tss = Math.round(x);
                     const tssDay = Math.round(x / metricData[i].days);
@@ -1869,10 +1865,10 @@ sauce.ns('performance', async ns => {
                 borderColor: '#dc5d00f0',
                 hoverBackgroundColor: '#ec6d00',
                 hoverBorderColor: '#dc5d00',
-                borderWidth: 1,
+                borderWidth,
                 yAxisID: 'duration',
                 stack: 'duration',
-                barPercentage: 0.92,
+                barPercentage,
                 tooltipFormat: x => H.duration(x, {maxPeriod: 3600}),
                 data: metricData.map((a, i) => ({
                     x: a.date,
@@ -1882,22 +1878,16 @@ sauce.ns('performance', async ns => {
                 id: 'duration-predicted',
                 label: 'Predicted Time', // XXX Localize
                 type: 'bar',
-                backgroundColor: '#fc7d0b80',
-                borderColor: '#dc5d00a0',
-                hoverBackgroundColor: '#ec6dc0',
-                hoverBorderColor: '#dc5dc0',
-                pointStyle: 'dash', // XXX
-                borderStyle: 'dash',
-                lineStyle: 'dash',
-                borderWidth: 1,
+                backgroundColor: '#fc7d0b30',
+                borderColor: '#dc5d0050',
+                hoverBackgroundColor: '#ec6d0060',
+                hoverBorderColor: '#dc5d0060',
+                borderWidth,
                 yAxisID: 'duration',
                 stack: 'duration',
-                barPercentage: 0.92,
+                barPercentage,
                 tooltipFormat: x => H.duration(x, {maxPeriod: 3600}),
-                data: metricData.map((a, i) => ({
-                    x: a.date,
-                    y: a.duration,
-                })),
+                data: [predData.duration],
             }, {
                 id: 'distance',
                 label: 'Distance', // XXX Localize
@@ -1906,10 +1896,10 @@ sauce.ns('performance', async ns => {
                 borderColor: '#022f',
                 hoverBackgroundColor: '#133',
                 hoverBorderColor: '#022',
-                borderWidth: 1,
+                borderWidth,
                 yAxisID: 'distance',
                 stack: 'distance',
-                barPercentage: 0.92,
+                barPercentage,
                 tooltipFormat: x => L.distanceFormatter.formatShort(x),
                 data: metricData.map((a, i) => ({
                     x: a.date,
@@ -2015,7 +2005,6 @@ sauce.ns('performance', async ns => {
             this.onSyncActive = this._onSyncActive.bind(this);
             this.athletes = athletes;
             const f = ns.router.filters;
-            console.warn(f.suggestedEnd);
             this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
             await this.setAthleteId(f.athleteId, {router: {replace: true}});
             this.summaryView = new SummaryView({pageView: this});
@@ -2158,7 +2147,6 @@ sauce.ns('performance', async ns => {
             if (end > Date.now()) {
                 end = tomorrow();
             }
-            console.warn(new Date(start), new Date(end));
             this.trigger('before-update-activities', {athlete: this.athlete, start, end});
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
                 {start: +start, end: +end, includeTrainingLoadSeed: true, excludeUpper: true});
