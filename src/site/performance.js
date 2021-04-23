@@ -575,6 +575,14 @@ sauce.ns('performance', async ns => {
                     continue;
                 }
                 ds.hidden = this.view.dataVisibility[`${chartId}-${ds.id}`] === false;
+                if (ds.yAxisID) {
+                    for (const y of chart.options.scales.yAxes) {
+                        if (y.id === ds.yAxisID) {
+                            y.display = !ds.hidden;
+                            break;
+                        }
+                    }
+                }
             }
         }
     }
@@ -786,8 +794,10 @@ sauce.ns('performance', async ns => {
             });
             setDefault(config, 'options.plugins.datalabels.display', ctx =>
                 !!(ctx.dataset.data[ctx.dataIndex] && ctx.dataset.data[ctx.dataIndex].showDataLabel === true));
-            setDefault(config, 'options.plugins.datalabels.formatter', (value, ctx) =>
-                ctx.dataset.tooltipFormat(value.y));
+            setDefault(config, 'options.plugins.datalabels.formatter', (value, ctx) => {
+                const r = ctx.dataset.tooltipFormat(value.y);
+                return Array.isArray(r) ? r[0] : r;
+            });
             setDefault(config, 'options.plugins.datalabels.backgroundColor',
                 ctx => ctx.dataset.backgroundColor);
             setDefault(config, 'options.plugins.datalabels.borderRadius', 2);
@@ -847,11 +857,12 @@ sauce.ns('performance', async ns => {
             const labels = [];
             const elements = [];
             for (const ds of this.chart.data.datasets) {
-                if (!ds.label || !ds.data.length) {
+                if (!ds.label || !ds.data.length || !ds.data[index]) {
                     continue;
                 }
                 const raw = ds.data[index].y;
-                const value = ds.tooltipFormat ?  ds.tooltipFormat(raw, index, ds) : raw;
+                const value = ds.tooltipFormat ? ds.tooltipFormat(raw, index, ds) : raw;
+                const values = Array.isArray(value) ? value : [value];
                 if (!ds.hidden) {
                     for (const x of Object.values(ds._meta)) {
                         elements.push(x.data[index]);
@@ -861,8 +872,8 @@ sauce.ns('performance', async ns => {
                     <div class="data-label ${ds.hidden ? "ds-hidden" : ''}" data-ds="${ds.id}"
                          style="--border-color: ${ds.borderColor};
                                 --bg-color: ${ds.backgroundColor};">
-                        <key>${ds.label}:</key>
-                        <value>${value}</value>
+                        <key>${ds.label}${ds.hidden ? '' : ':'}</key>
+                        ${ds.hidden ? '' : values.map(x => `<value>${x}</value>`).join('')}
                     </div>
                 `);
             }
@@ -1743,15 +1754,6 @@ sauce.ns('performance', async ns => {
             const end = range.end;
             const daily = this.pageView.daily;
             const metricData = this.pageView.metricData;
-            const predData = {};
-            if (tomorrow() < range.end) {
-                const days = (range.end - tomorrow()) / DAY;
-                const lastSlot = metricData[metricData.length - 1];
-                predData.duration = {
-                    x: lastSlot.date,
-                    y: lastSlot.duration + (days * (lastSlot.duration / lastSlot.days)),
-                };
-            }
             let $option = this.$(`select[name="range"] option[value="${range.period},${range.metric}"]`);
             if (!$option.length) {
                 // Just manually add an entry.  The user may be playing with the URL and that's fine.
@@ -1834,6 +1836,28 @@ sauce.ns('performance', async ns => {
             }];
             this.charts.training.update();
 
+            let predictions;
+            if (tomorrow() < range.end) {
+                const now = Date.now();
+                const lastSlot = metricData[metricData.length - 1];
+                const elapsed = (now - lastSlot.date) / DAY;
+                const remaining = (range.end - now) / DAY;
+                predictions = {
+                    days: elapsed + remaining,
+                    tss: metricData.map((data, i) => ({
+                        x: data.date,
+                        y: i === metricData.length - 1 ? (lastSlot.tssSum / elapsed) * remaining : null,
+                    })),
+                    duration: metricData.map((data, i) => ({
+                        x: data.date,
+                        y: i === metricData.length - 1 ? (lastSlot.duration / elapsed) * remaining : null,
+                    })),
+                    distance: metricData.map((data, i) => ({
+                        x: data.date,
+                        y: i === metricData.length - 1 ? (lastSlot.distance / elapsed) * remaining : null,
+                    })),
+                };
+            }
             const barPercentage = 0.92;
             const borderWidth = 1;
             this.charts.activities.data.datasets = [{
@@ -1849,9 +1873,16 @@ sauce.ns('performance', async ns => {
                 borderWidth,
                 barPercentage,
                 tooltipFormat: (x, i) => {
-                    const tss = Math.round(x);
-                    const tssDay = Math.round(x / metricData[i].days);
-                    return `${tss.toLocaleString()} <span style="font-size: 0.88em">(${tssDay}/d)</span>`;
+                    const tss = Math.round(x).toLocaleString();
+                    const tssDay = Math.round(x / metricData[i].days).toLocaleString();
+                    const tips = [`${tss} <small>(${tssDay}/d)</small>`];
+                    if (predictions && i === metricData.length - 1) {
+                        const ptssRaw = predictions.tss[i].y + x;
+                        const ptss = Math.round(ptssRaw).toLocaleString();
+                        const ptssDay = Math.round(ptssRaw / predictions.days).toLocaleString();
+                        tips.push(`Predicted: <b>~${ptss} <small>(${ptssDay}/d)</small></b>`); // XXX Localize
+                    }
+                    return tips;
                 },
                 data: metricData.map((a, i) => ({
                     x: a.date,
@@ -1869,25 +1900,19 @@ sauce.ns('performance', async ns => {
                 yAxisID: 'duration',
                 stack: 'duration',
                 barPercentage,
-                tooltipFormat: x => H.duration(x, {maxPeriod: 3600}),
+                tooltipFormat: (x, i) => {
+                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
+                    if (predictions && i === metricData.length - 1) {
+                        const pdur = H.duration(predictions.duration[i].y + x,
+                            {maxPeriod: 3600, minPeriod: 3600, digits: 1});
+                        tips.push(`Predicted: <b>~${pdur}`); // XXX Localize
+                    }
+                    return tips;
+                },
                 data: metricData.map((a, i) => ({
                     x: a.date,
                     y: a.duration,
                 })),
-            }, {
-                id: 'duration-predicted',
-                label: 'Predicted Time', // XXX Localize
-                type: 'bar',
-                backgroundColor: '#fc7d0b30',
-                borderColor: '#dc5d0050',
-                hoverBackgroundColor: '#ec6d0060',
-                hoverBorderColor: '#dc5d0060',
-                borderWidth,
-                yAxisID: 'duration',
-                stack: 'duration',
-                barPercentage,
-                tooltipFormat: x => H.duration(x, {maxPeriod: 3600}),
-                data: [predData.duration],
             }, {
                 id: 'distance',
                 label: 'Distance', // XXX Localize
@@ -1900,12 +1925,58 @@ sauce.ns('performance', async ns => {
                 yAxisID: 'distance',
                 stack: 'distance',
                 barPercentage,
-                tooltipFormat: x => L.distanceFormatter.formatShort(x),
+                tooltipFormat: (x, i) => {
+                    const tips = [L.distanceFormatter.formatShort(x)];
+                    if (predictions && i === metricData.length - 1) {
+                        const pdist = L.distanceFormatter.formatShort(predictions.distance[i].y + x, 0);
+                        tips.push(`Predicted: <b>~${pdist}`); // XXX Localize
+                    }
+                    return tips;
+                },
                 data: metricData.map((a, i) => ({
                     x: a.date,
                     y: a.distance,
                 })),
             }];
+            if (predictions) {
+                this.charts.activities.data.datasets.push({
+                    id: 'tss',
+                    type: 'bar',
+                    backgroundColor: '#1d86cd30',
+                    borderColor: '#0d76bd50',
+                    hoverBackgroundColor: '#0d76bd60',
+                    hoverBorderColor: '#0d76bd60',
+                    borderWidth,
+                    yAxisID: 'tss',
+                    stack: 'tss',
+                    barPercentage,
+                    data: predictions.tss
+                }, {
+                    id: 'duration',
+                    type: 'bar',
+                    backgroundColor: '#fc7d0b30',
+                    borderColor: '#dc5d0050',
+                    hoverBackgroundColor: '#ec6d0060',
+                    hoverBorderColor: '#dc5d0060',
+                    borderWidth,
+                    yAxisID: 'duration',
+                    stack: 'duration',
+                    barPercentage,
+                    data: predictions.duration,
+                }, {
+                    id: 'distance',
+                    type: 'bar',
+                    backgroundColor: '#2443',
+                    borderColor: '#0225',
+                    hoverBackgroundColor: '#1336',
+                    hoverBorderColor: '#0226',
+                    borderWidth,
+                    yAxisID: 'distance',
+                    stack: 'distance',
+                    barPercentage,
+                    data: predictions.distance,
+                });
+            }
             this.charts.activities.update();
 
             let gain = 0;
