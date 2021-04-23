@@ -82,6 +82,8 @@ sauce.ns('performance', async ns => {
                 endSeed.setMonth(endSeed.getMonth() + (amount * this.period));
             } else if (this.metric === 'years') {
                 endSeed.setFullYear(endSeed.getFullYear() + (amount * this.period));
+            } else {
+                throw new TypeError('Invalid metric');
             }
             this.setEndSeed(endSeed);
         }
@@ -91,34 +93,57 @@ sauce.ns('performance', async ns => {
         }
 
         setEndSeed(endSeed) {
-            const end = sauce.date.roundToLocaleDayDate(endSeed);
+            const end = sauce.date.toLocaleDayDate(endSeed);
+            if (+end !== +endSeed) {
+                throw new Error("endSeed is not start of a day");
+            }
             let start;
             if (this.metric === 'weeks') {
-                const day = end.getDay();
                 const MON = 1;
-                if (day !== MON) {
-                    const nextMonday = (7 - day + MON) % 7;
-                    end.setDate(end.getDate() + nextMonday);
-                }
-                sauce.date.roundToLocaleDayDateInplace(end);
+                const nextMonday = (7 - end.getDay() + MON) % 7;
+                end.setDate(end.getDate() + nextMonday);
                 start = new Date(end);
                 start.setDate(start.getDate() - (this.period * 7));
             } else if (this.metric === 'months') {
                 while (end.getDate() !== 1) {
                     end.setDate(end.getDate() + 1);
                 }
-                sauce.date.roundToLocaleDayDateInplace(end);
                 start = new Date(end);
                 start.setMonth(start.getMonth() - this.period);
             } else if (this.metric === 'years') {
-                end.setFullYear(end.getFullYear() + 1);
+                // Handle end being Jan 1 00:00:00.000, since end is exclusive.
+                const inclusiveDate = new Date(end);
+                inclusiveDate.setMilliseconds(inclusiveDate.getMilliseconds() - 1);
+                const year = inclusiveDate.getFullYear();
+                end.setFullYear(year + 1);
                 end.setMonth(0);
                 end.setDate(1);
-                sauce.date.roundToLocaleDayDateInplace(end);
                 start = new Date(end);
                 start.setFullYear(start.getFullYear() - this.period);
             }
-            sauce.date.roundToLocaleDayDateInplace(start);
+            this.start = start;
+            this.end = end;
+        }
+
+        setStartSeed(startSeed) {
+            const start = sauce.date.toLocaleDayDate(startSeed);
+            let end;
+            if (this.metric === 'weeks') {
+                const MON = 1;
+                const prevMonday = (start.getDay() - MON + 7) % 7;
+                start.setDate(start.getDate() - prevMonday);
+                end = new Date(start);
+                end.setDate(end.getDate() + (this.period * 7));
+            } else if (this.metric === 'months') {
+                start.setDate(1);
+                end = new Date(start);
+                end.setMonth(end.getMonth() + this.period);
+            } else if (this.metric === 'years') {
+                start.setMonth(0);
+                start.setDate(1);
+                end = new Date(start);
+                end.setFullYear(start.getFullYear() + this.period);
+            }
             this.start = start;
             this.end = end;
         }
@@ -1990,6 +2015,7 @@ sauce.ns('performance', async ns => {
             this.onSyncActive = this._onSyncActive.bind(this);
             this.athletes = athletes;
             const f = ns.router.filters;
+            console.warn(f.suggestedEnd);
             this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
             await this.setAthleteId(f.athleteId, {router: {replace: true}});
             this.summaryView = new SummaryView({pageView: this});
@@ -2118,9 +2144,7 @@ sauce.ns('performance', async ns => {
             if (offset === Infinity) {
                 this.range.setEndSeed(tomorrow());
             } else if (offset === -Infinity) {
-                throw new Error('XXX this is invalid because of the different ways metrics work we could be on the month of the last day');
-                this.range.setEndSeed(new Date(this.oldest));
-                this.range.shift(1);
+                this.range.setStartSeed(this.oldest);
             } else {
                 this.range.shift(offset);
             }
