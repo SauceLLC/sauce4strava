@@ -987,6 +987,8 @@ table.sauce-perf {
                             opacity: 0.85;
                             justify-content: space-between;
                             line-height: 1.5;  // Fix macos emoji height jumping
+                            margin-left: 10%;
+                            margin-right: 10%;
 
                             > * {
                                 white-space: nowrap;
@@ -1203,7 +1205,37 @@ table.sauce-perf {
 }
 
 
+@media only screen and (min-width: #{$nav-width + $main-width + $aside-width + $scrollbar-safety}) {
+    #sauce-performance {
+        > nav {
+            position: sticky;
+            top: 0;
+            max-height: 100vh;
+        }
+
+        > aside.details {
+            position: sticky;
+            top: 0;
+            max-height: 100vh;
+            transition: flex 200ms;
+
+            > header {
+                position: sticky;
+                top: 0;
+                z-index: 2;  // fix float element passthrough.
+            }
+        }
+    }
+}
+
+
 @media only screen and (max-width: 768px) {
+
+    body {
+        // The responsive body fontsize is constrained by the analysis page; not us.
+        font-size: 1.12em !important;
+    }
+
     table.sauce-perf {
         td, th {
             white-space: initial;
@@ -1211,27 +1243,44 @@ table.sauce-perf {
     }
 
     #sauce-performance {
-        > main > header.filters {
-            padding: 0 0 1em 0;
-            flex-wrap: wrap;
+        > main {
+            padding: 1em 0;
 
-            .range-selector {
-                flex: 1 0 100%;
-            }
+            section.sauce-panels {
+                padding: 1em 0;
 
-            .start-end {
-                margin: 1em 0 0 0;
-                flex: 1;
-                justify-content: space-between;
-
-                .btn.range.oldest,
-                .btn.range.newest {
-                    display: none;
+                .sauce-panel .chart-tooltip {
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
                 }
             }
 
-            .window-controls {
-                display: none;
+            .peaks-view {
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            > header.filters {
+                flex-wrap: wrap;
+
+                .range-selector {
+                    flex: 1 0 100%;
+                }
+
+                .start-end {
+                    margin: 1em 0 0 0;
+                    flex: 1;
+                    justify-content: space-between;
+
+                    .btn.range.oldest,
+                    .btn.range.newest {
+                        display: none;
+                    }
+                }
+
+                .window-controls {
+                    display: none;
+                }
             }
         }
 
@@ -1256,43 +1305,6 @@ table.sauce-perf {
                     }
                 }
             }
-        }
-    }
-}
-
-
-@media only screen and (min-width: #{$nav-width + $main-width + $aside-width + $scrollbar-safety}) {
-    #sauce-performance {
-        > nav {
-            position: sticky;
-            top: 0;
-            max-height: 100vh;
-        }
-
-        > aside.details {
-            position: sticky;
-            top: 0;
-            max-height: 100vh;
-            transition: flex 200ms;
-
-            > header {
-                position: sticky;
-                top: 0;
-                z-index: 2;  // fix float element passthrough.
-            }
-        }
-    }
-}
-
-@media only screen and (max-width: 768px) {
-    #sauce-performance > main {
-        section.sauce-panels {
-            padding: 1em 0;
-        }
-
-        .peaks-view {
-            margin-left: 0;
-            margin-right: 0;
         }
     }
 }

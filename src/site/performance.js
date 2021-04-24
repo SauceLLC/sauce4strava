@@ -94,9 +94,6 @@ sauce.ns('performance', async ns => {
 
         setEndSeed(endSeed) {
             const end = sauce.date.toLocaleDayDate(endSeed);
-            if (+end !== +endSeed) {
-                throw new Error("endSeed is not start of a day");
-            }
             let start;
             if (this.metric === 'weeks') {
                 const MON = 1;
@@ -123,6 +120,7 @@ sauce.ns('performance', async ns => {
             }
             this.start = start;
             this.end = end;
+            console.warn(this.start, this.end);
         }
 
         setStartSeed(startSeed) {
@@ -146,6 +144,7 @@ sauce.ns('performance', async ns => {
             }
             this.start = start;
             this.end = end;
+            console.warn(this.start, this.end);
         }
     }
     await CalendarRange.loadDefaults();
@@ -166,11 +165,15 @@ sauce.ns('performance', async ns => {
 
         onNav: function(athleteId, period, metric, endDay) {
             const validMetric = CalendarRange.isValidMetric(metric);
+            let suggestedEnd = validMetric && endDay ? new Date(addTZ(Number(endDay) * DAY)) : null;
+            if (suggestedEnd && suggestedEnd >= Date.now()) {
+                suggestedEnd = null;
+            }
             this.filters = {
                 athleteId: athleteId && Number(athleteId),
                 period: validMetric && Number(period) ? Number(period) : null,
                 metric: validMetric ? metric : null,
-                suggestedEnd: validMetric && endDay ? new Date(addTZ(Number(endDay) * DAY)) : null,
+                suggestedEnd,
             };
         },
 
@@ -1905,7 +1908,7 @@ sauce.ns('performance', async ns => {
                     if (predictions && i === metricData.length - 1) {
                         const pdur = H.duration(predictions.duration[i].y + x,
                             {maxPeriod: 3600, minPeriod: 3600, digits: 1});
-                        tips.push(`Predicted: <b>~${pdur}`); // XXX Localize
+                        tips.push(`Predicted: <b>~${pdur}</b>`); // XXX Localize
                     }
                     return tips;
                 },
@@ -1929,7 +1932,7 @@ sauce.ns('performance', async ns => {
                     const tips = [L.distanceFormatter.formatShort(x)];
                     if (predictions && i === metricData.length - 1) {
                         const pdist = L.distanceFormatter.formatShort(predictions.distance[i].y + x, 0);
-                        tips.push(`Predicted: <b>~${pdist}`); // XXX Localize
+                        tips.push(`Predicted: <b>~${pdist}</b>`); // XXX Localize
                     }
                     return tips;
                 },
