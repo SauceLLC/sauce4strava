@@ -1687,7 +1687,7 @@ sauce.ns('performance', async ns => {
                         }],
                         yAxes: [{
                             id: 'tss',
-                            scaleLabel: {labelString: 'TSS'}, // XXX localize
+                            scaleLabel: {labelString: 'TSS'},
                             ticks: {min: 0, maxTicksLimit: 6},
                             stacked: true,
                         }, {
