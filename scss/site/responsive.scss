@@ -532,6 +532,19 @@ html.sauce-responsive,
                 padding-bottom: 1.4em;
             }
 
+            // Just always show the description.  The expander is just interference.
+            .activity-description-container {
+                .activity-description {
+                    height: initial !important;
+                    max-height: 18em;
+                    overflow: auto;
+                }
+
+                .toggle-more {
+                    display: none !important;
+                }
+            }
+
             .others-section-v2 {
                 padding: 0;
 
