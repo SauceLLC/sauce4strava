@@ -392,7 +392,7 @@ sauce.ns('performance', async ns => {
 
     function activitiesByDay(acts, start, end, atl=0, ctl=0) {
         // NOTE: Activities should be in chronological order
-        if (!acts.length) {
+        if (!acts.length && !(start && end)) {
             return [];
         }
         const slots = [];
@@ -402,9 +402,6 @@ sauce.ns('performance', async ns => {
         const startDay = sauce.date.toLocaleDayDate(start);
         let i = 0;
         for (const date of sauce.date.dayRange(startDay, new Date(end))) {
-            if (!acts.length) {
-                break;
-            }
             let tss = 0;
             let duration = 0;
             let altGain = 0;
@@ -1840,24 +1837,26 @@ sauce.ns('performance', async ns => {
             this.charts.training.update();
 
             let predictions;
-            if (tomorrow() < range.end) {
-                const now = Date.now();
-                const lastSlot = metricData[metricData.length - 1];
-                const elapsed = (now - lastSlot.date) / DAY;
-                const remaining = (range.end - now) / DAY;
+            if (tomorrow() <= range.end) {
+                const remaining = (range.end - Date.now()) / DAY;
+                const days = Math.round((range.end - metricData[metricData.length - 1].date) / DAY);
+                const weighting = Math.min(days, daily.length);
+                const avgTSS = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.tss));
+                const avgDuration = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.duration));
+                const avgDistance = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.distance));
                 predictions = {
-                    days: elapsed + remaining,
+                    days,
                     tss: metricData.map((data, i) => ({
                         x: data.date,
-                        y: i === metricData.length - 1 ? (lastSlot.tssSum / elapsed) * remaining : null,
+                        y: i === metricData.length - 1 ? avgTSS * remaining : null,
                     })),
                     duration: metricData.map((data, i) => ({
                         x: data.date,
-                        y: i === metricData.length - 1 ? (lastSlot.duration / elapsed) * remaining : null,
+                        y: i === metricData.length - 1 ? avgDuration * remaining : null,
                     })),
                     distance: metricData.map((data, i) => ({
                         x: data.date,
-                        y: i === metricData.length - 1 ? (lastSlot.distance / elapsed) * remaining : null,
+                        y: i === metricData.length - 1 ? avgDistance * remaining : null,
                     })),
                 };
             }

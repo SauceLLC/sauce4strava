@@ -979,7 +979,7 @@ table.sauce-perf {
 
                         &.tt-labels {
                             justify-content: space-evenly;
-                            min-height: 2em; // Less jumping for 2 line entries
+                            min-height: 2.5em; // Less jumping for 2 line entries
                         }
 
                         &.tt-time {

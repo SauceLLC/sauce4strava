@@ -1826,20 +1826,26 @@ sauce.ns('perf', function() {
     // See:
     //  https://www.trainerroad.com/forum/t/tss-spreadsheets-with-atl-ctl-form/7613/10
     //  http://www.timetriallingforum.co.uk/index.php?/topic/74961-calculating-ctl-and-atl/#comment-1045764
-    const chronicTrainingLoadConstant = 1 - Math.exp(-1 / 42);
-    const acuteTrainingLoadConstant = 1 - Math.exp(-1 / 7);
-    function _makeTrainingLoadCalc(c) {
-        return function(tssPerDayStream, tl=0) {
-            // incominig stream should be indexed by day and zero padded.
-            for (const tss of tssPerDayStream) {
-                tl = (tl * (1 - c)) + (tss * c);
+    const chronicTrainingLoadConstant = 42;
+    const acuteTrainingLoadConstant = 7;
+
+    function _makeExpWeightedCalc(size) {
+        const c = 1 - Math.exp(-1 / size);
+        return function(data, seed=0) {
+            let v = seed;
+            for (const x of data) {
+                v = (v * (1 - c)) + (x * c);
             }
-            return tl;
+            return v;
         };
     }
 
-    const calcCTL = _makeTrainingLoadCalc(chronicTrainingLoadConstant);
-    const calcATL = _makeTrainingLoadCalc(acuteTrainingLoadConstant);
+    const calcCTL = _makeExpWeightedCalc(chronicTrainingLoadConstant);
+    const calcATL = _makeExpWeightedCalc(acuteTrainingLoadConstant);
+
+    function expWeightedAvg(size, data, seed) {
+        return _makeExpWeightedCalc(size)(data, seed);
+    }
 
 
     return {
@@ -1853,6 +1859,7 @@ sauce.ns('perf', function() {
         estimateMaxHR,
         calcCTL,
         calcATL,
+        expWeightedAvg,
     };
 });
 
