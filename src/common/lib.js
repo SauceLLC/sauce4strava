@@ -642,32 +642,38 @@ sauce.ns('power', function() {
     }
 
 
-    function rankWeightedPower(power, np, duration) {
-        if (!np || np < power) {
-            return power;
-        }
-        const ratio = rankWeightedRatio(duration);
-        return (ratio * np) + ((1 - ratio) * power);
-    }
-
-
     function rank(duration, power, np, weight, gender) {
         const high = _rankScaler(duration, rankConstants[gender].high);
         const low = _rankScaler(duration, rankConstants[gender].low);
-        const weightedPower = rankWeightedPower(power, np, duration);
+        const weightedRatio = (!np || np < power) ? 0 : rankWeightedRatio(duration);
+        const weightedPower = (weightedRatio * (np || 0)) + ((1 - weightedRatio) * power);
         const wKg = weightedPower / weight;
         const level = (wKg - low) / (high - low);
-        const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ? '-darkbg.png' : '.png';
+        const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ?
+            '-darkbg.png' : '.png';
+        let lastRankLevel = 1;
         for (const x of rankLevels) {
             if (level >= x.levelRequirement) {
+                const catLevel = (level - x.levelRequirement) / (lastRankLevel - x.levelRequirement);
+                const tooltip = [
+                    `World Ranking: ${Math.round(level * 100).toLocaleString()}%\n`,
+                    `${x.label} Ranking: ${Math.round(catLevel * 100).toLocaleString()}%\n`,
+                    weightedRatio ? 'Weighted ' : '',
+                    `Power: ${wKg.toFixed(1)}w/kg | ${Math.round(weightedPower).toLocaleString()}w\n`,
+                    `\nClick for more information`,
+                ].join('');
                 return {
                     level,
+                    catLevel,
                     badge: x.cat && `${badgeURN}/${x.cat}${suffix}`,
                     weightedPower,
+                    weightedRatio,
                     wKg,
+                    tooltip,
                     ...x
                 };
             }
+            lastRankLevel = x.levelRequirement;
         }
     }
 
@@ -1258,6 +1264,7 @@ sauce.ns('power', function() {
         calcTSS,
         rank,
         rankRequirements,
+        rankWeightedRatio,
         seaLevelPower,
         cyclingPowerEstimate,
         cyclingPowerVelocitySearch,

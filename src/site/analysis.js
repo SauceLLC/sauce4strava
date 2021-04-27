@@ -1556,13 +1556,12 @@ sauce.ns('analysis', ns => {
                 title: 'Power Profile Badges Explained',
                 body: await powerProfileTpl(),
                 closeOnMobileBack: ns.isMobile,
-                width: 600
+                width: 700
             });
             const times = [];
             for (let i = 5; i < 3 * 3600; i *= 1.005) {
                 times.push(i);
             }
-            console.warn(times.length);
             const requirements = {
                 male: times.map(x => sauce.power.rankRequirements(x, 'male')),
                 female: times.map(x => sauce.power.rankRequirements(x, 'female'))
@@ -1570,16 +1569,11 @@ sauce.ns('analysis', ns => {
             const $levelSelect = $dialog.find('select#sauce-rank-level');
             const $genderSelect = $dialog.find('select#sauce-rank-gender');
             const $graph = $dialog.find('.rank-graph');
+            const wattsTooltip = wkg =>
+                ns.weight ? ` | ${H.number(wkg * ns.weight)}<abbr class="unit short">W</abbr>` : '';
             function drawGraph() {
                 const gender = $genderSelect.val();
                 const level = Number($levelSelect.val());
-                let tooltipFormatterAbs;
-                if (ns.weight) {
-                    tooltipFormatterAbs = wKg => ` /
-                        ${H.number(wKg * ns.weight)}<abbr class="unit short">W</abbr>`;
-                } else {
-                    tooltipFormatterAbs = wKg => ``;
-                }
                 const minPct = level / 8;
                 const maxPct = (level + 1) / 8;
                 const maxData = requirements[gender].map(x => x.high);
@@ -1593,7 +1587,15 @@ sauce.ns('analysis', ns => {
                     height: 150,
                     chartRangeMin,
                     chartRangeMax,
-                    tooltipFormatter: (_, __, data) => `Duration: ${H.timer(times[data.x])}`
+                    tooltipFormatter: (_, __, data) => {
+                        const t = times[data.x];
+                        const r = [`Duration: ${H.timer(t)}`];
+                        const npRatio = sauce.power.rankWeightedRatio(t);
+                        if (npRatio) {
+                            r.push(`NP® weight: ${H.number(npRatio * 100)}%`);
+                        }
+                        return r.join('<br/>');
+                    },
                 });
                 $graph.sparkline(requirements[gender].map(({high, low}) => (maxPct * (high - low)) + low), {
                     composite: true,
@@ -1605,8 +1607,8 @@ sauce.ns('analysis', ns => {
                     chartRangeMin,
                     chartRangeMax,
                     tooltipFormatter: (_, __, data) => `
-                        Top of rank: ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr>
-                        ${tooltipFormatterAbs(data.y)}`
+                        Top level: ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr>
+                        ${wattsTooltip(data.y)}`
                 });
                 $graph.sparkline(requirements[gender].map(({high, low}) => (minPct * (high - low)) + low), {
                     composite: true,
@@ -1617,8 +1619,8 @@ sauce.ns('analysis', ns => {
                     chartRangeMin,
                     chartRangeMax,
                     tooltipFormatter: (_, __, data) => `
-                        Bottom of rank: ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr>
-                        ${tooltipFormatterAbs(data.y)}`
+                        Bottom level: ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr>
+                        ${wattsTooltip(data.y)}`
                 });
 
             }
@@ -1901,12 +1903,11 @@ sauce.ns('analysis', ns => {
             throw new Error('Badge Fail: row query selector failed');
         }
         targetTD.classList.add('sauce-mark');
-        const levelPct = Math.round(rank.level * 100);
         jQuery(targetTD).html(`
             <div class="sauce-rank-holder">
                 <div>${targetTD.innerHTML}</div>
                 <img src="${rank.badge}" data-cat="${rank.cat}" class="sauce-rank"
-                     title="World Ranking: ${levelPct}%\nWeighted Power: ${H.number(rank.weightedPower)}w"/>
+                     title="${rank.tooltip}"/>
             </div>
         `);
     }

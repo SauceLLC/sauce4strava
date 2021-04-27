@@ -7,9 +7,7 @@
         <% if (obj.power && power.elapsedWKg && power.rank && power.rank.badge && !power.estimate) { %>
             <heading><div class="title">{{{timing}}} / {{{rank}}}</div></heading>
 
-            <column class="highlight"
-                    title="{{{ranking_tooltip}}}: {{humanNumber(power.rank.level * 100)}}%
-Weighted power: {{humanNumber(power.rank.weightedPower)}}w"/>
+            <column class="highlight" title="{{power.rank.tooltip}}"/>
                 <img src="{{power.rank.badge}}" class="sauce-rank"
                      data-cat="{{power.rank.cat}}"/>
             </column>

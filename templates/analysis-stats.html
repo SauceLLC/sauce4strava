@@ -236,8 +236,7 @@
         </line>
         <% if (power.rank.badge) { %>
             <img src="{{power.rank.badge}}" class="sauce-rank" data-cat="{{power.rank.cat}}"
-                 title="{{{ranking_tooltip}}}: {{humanNumber(power.rank.level * 100)}}%
-Weighted power: {{humanNumber(power.rank.weightedPower)}}w"/>
+                 title="{{power.rank.tooltip}}"/>
         <% } %>
     </div>
 <% } %>
