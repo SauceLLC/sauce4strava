@@ -124,7 +124,7 @@
     "analysis_power_profile_about1": {"message": "The concept of power profiling was created by Dr. Andy Coggan.  It is a basic outline of the power requirements to be at a specific level of racing competitiveness."},
     "analysis_power_profile_about2": {"message": "These rankings are meant to give you a rough idea of how your best power output would compare to the maximum capability of other racers.   They are most representative when you are working very hard."},
     "analysis_power_profile_select": {"message": "Select a profile to view required power outputs"},
-    "analysis_power_profile_footer_leadin": {"message": "The Sauce algorithm is a modified from Andy's original spreadsheet so that it can estimate rankings for any time period.  For an in depth understanding of these profiles read"},
+    "analysis_power_profile_footer_leadin": {"message": "NOTE: The Sauce algorithm is an enhanced interpretation of Andy's original concept.  For efforts beyond 1 hour, Sauce uses Normalized Power® as the data source and applies a logarithmic endurance factor.  For more information on the original profiles see"},
     "analysis_comment_label": {"message": "Say something"},
     "analysis_comment_placeholder": {"message": "Your comment here"},
     "analysis_comment": {"message": "Comment"},

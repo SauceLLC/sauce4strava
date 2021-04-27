@@ -1559,9 +1559,10 @@ sauce.ns('analysis', ns => {
                 width: 600
             });
             const times = [];
-            for (let i = 5; i < 3 * 3600; i += Math.log(i + 1)) {
+            for (let i = 5; i < 3 * 3600; i *= 1.005) {
                 times.push(i);
             }
+            console.warn(times.length);
             const requirements = {
                 male: times.map(x => sauce.power.rankRequirements(x, 'male')),
                 female: times.map(x => sauce.power.rankRequirements(x, 'female'))
@@ -1572,25 +1573,63 @@ sauce.ns('analysis', ns => {
             function drawGraph() {
                 const gender = $genderSelect.val();
                 const level = Number($levelSelect.val());
-                const pct = level / 8;
                 let tooltipFormatterAbs;
                 if (ns.weight) {
-                    tooltipFormatterAbs = wKg => `
-                        ${H.number(wKg * ns.weight)}<abbr class="unit short">W</abbr>
-                        (with current athlete's weight)<br/>`;
+                    tooltipFormatterAbs = wKg => ` /
+                        ${H.number(wKg * ns.weight)}<abbr class="unit short">W</abbr>`;
                 } else {
                     tooltipFormatterAbs = wKg => ``;
                 }
-                $graph.sparkline(requirements[gender].map(({high, low}) => (pct * (high - low)) + low), {
+                const minPct = level / 8;
+                const maxPct = (level + 1) / 8;
+                const maxData = requirements[gender].map(x => x.high);
+                const chartRangeMax = sauce.data.max(maxData);
+                const width = '100%';
+                const height = 150;
+                const chartRangeMin = 1.5;
+                $graph.sparkline(requirements[gender].map(x => x.high), {
                     type: 'line',
                     width: '100%',
-                    height: 100,
-                    chartRangeMin: 0,
-                    tooltipFormatter: (_, __, data) => `
-                        ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr><br/>
-                        ${tooltipFormatterAbs(data.y)}
-                        Duration: ${H.timer(times[data.x])}`
+                    height: 150,
+                    chartRangeMin,
+                    chartRangeMax,
+                    tooltipFormatter: (_, __, data) => `Duration: ${H.timer(times[data.x])}`
                 });
+                $graph.sparkline(requirements[gender].map(({high, low}) => (maxPct * (high - low)) + low), {
+                    composite: true,
+                    type: 'line',
+                    width,
+                    height,
+                    lineColor: 'black',
+                    fillColor: '#0007',
+                    chartRangeMin,
+                    chartRangeMax,
+                    tooltipFormatter: (_, __, data) => `
+                        Top of rank: ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr>
+                        ${tooltipFormatterAbs(data.y)}`
+                });
+                $graph.sparkline(requirements[gender].map(({high, low}) => (minPct * (high - low)) + low), {
+                    composite: true,
+                    type: 'line',
+                    width,
+                    height,
+                    lineColor: 'black',
+                    chartRangeMin,
+                    chartRangeMax,
+                    tooltipFormatter: (_, __, data) => `
+                        Bottom of rank: ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr>
+                        ${tooltipFormatterAbs(data.y)}`
+                });
+
+            }
+            const cat = ev.currentTarget.dataset.cat;
+            const levelOption = $levelSelect.find(`option[data-cat="${cat}"]`)[0];
+            if (levelOption) {
+                levelOption.selected = true;
+            }
+            const genderOption = $genderSelect.find(`option[value="${ns.gender}"]`)[0];
+            if (genderOption) {
+                genderOption.selected = true;
             }
             $levelSelect.on('change', drawGraph);
             $genderSelect.on('change', drawGraph);
@@ -1839,8 +1878,8 @@ sauce.ns('analysis', ns => {
             console.warn('Segment data not found for:', row.dataset.segmentEffortId);
             return;
         }
-        const wKg = segment.get('avg_watts_raw') / ns.weight;
-        const rank = sauce.power.rank(segment.get('elapsed_time_raw'), wKg, ns.gender);
+        const rank = sauce.power.rank(segment.get('elapsed_time_raw'),
+            segment.get('avg_watts_raw'), null, ns.weight, ns.gender);
         if (!rank || !rank.badge) {
             return;  // Too slow/weak
         }
@@ -1866,8 +1905,8 @@ sauce.ns('analysis', ns => {
         jQuery(targetTD).html(`
             <div class="sauce-rank-holder">
                 <div>${targetTD.innerHTML}</div>
-                <img src="${rank.badge}" class="sauce-rank"
-                     title="World Ranking: ${levelPct}%\nWatts/kg: ${H.number(wKg, 1)}"/>
+                <img src="${rank.badge}" data-cat="${rank.cat}" class="sauce-rank"
+                     title="World Ranking: ${levelPct}%\nWeighted Power: ${H.number(rank.weightedPower)}w"/>
             </div>
         `);
     }
@@ -2355,7 +2394,6 @@ sauce.ns('analysis', ns => {
                 elapsedSP = elapsedAvg && sauce.power.seaLevelPower(elapsedAvg, avgEl);
             }
         }
-        const rankPower = extra.np || elapsedAvg;
         return Object.assign({
             activeAvg,
             elapsedAvg,
@@ -2365,8 +2403,8 @@ sauce.ns('analysis', ns => {
             elapsedSPAdjust: elapsedSP && elapsedSP / elapsedAvg,
             activeWKg: (ns.weight && activeAvg != null) && activeAvg / ns.weight,
             elapsedWKg: (ns.weight && elapsedAvg != null) && elapsedAvg / ns.weight,
-            rank: (ns.weight && rankPower) &&
-                sauce.power.rank(elapsed, rankPower / ns.weight, ns.gender),
+            rank: (ns.weight && elapsedAvg) &&
+                sauce.power.rank(elapsed, elapsedAvg, extra.np, ns.weight, ns.gender),
         }, extra);
     }
 

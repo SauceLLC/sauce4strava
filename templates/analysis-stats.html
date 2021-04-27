@@ -235,8 +235,9 @@
             <value>{{humanNumber(power.rank.level * 100)}}%</value>
         </line>
         <% if (power.rank.badge) { %>
-            <img src="{{power.rank.badge}}" class="sauce-rank"
-                 title="{{{ranking_tooltip}}}: {{humanNumber(power.rank.level * 100)}}%"/>
+            <img src="{{power.rank.badge}}" class="sauce-rank" data-cat="{{power.rank.cat}}"
+                 title="{{{ranking_tooltip}}}: {{humanNumber(power.rank.level * 100)}}%
+Weighted power: {{humanNumber(power.rank.weightedPower)}}w"/>
         <% } %>
     </div>
 <% } %>

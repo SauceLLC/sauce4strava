@@ -635,16 +635,36 @@ sauce.ns('power', function() {
     }
 
 
-    function rank(duration, wKg, gender) {
+    function rankWeightedRatio(duration) {
+        const intro = 1200;
+        const outro = 3600;
+        return Math.min(1, Math.max(0, (duration - intro) / (outro - intro)));
+    }
+
+
+    function rankWeightedPower(power, np, duration) {
+        if (!np || np < power) {
+            return power;
+        }
+        const ratio = rankWeightedRatio(duration);
+        return (ratio * np) + ((1 - ratio) * power);
+    }
+
+
+    function rank(duration, power, np, weight, gender) {
         const high = _rankScaler(duration, rankConstants[gender].high);
         const low = _rankScaler(duration, rankConstants[gender].low);
+        const weightedPower = rankWeightedPower(power, np, duration);
+        const wKg = weightedPower / weight;
         const level = (wKg - low) / (high - low);
         const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ? '-darkbg.png' : '.png';
         for (const x of rankLevels) {
-            if (level > x.levelRequirement) {
+            if (level >= x.levelRequirement) {
                 return {
                     level,
                     badge: x.cat && `${badgeURN}/${x.cat}${suffix}`,
+                    weightedPower,
+                    wKg,
                     ...x
                 };
             }
