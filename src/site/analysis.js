@@ -2418,12 +2418,12 @@ sauce.ns('analysis', ns => {
 
 
     function supportsNP() {
-        return hasAccurateWatts() && !sauce.options['analysis-disable-np'];
+        return hasAccurateWatts() && ns.activityType === 'ride' && !sauce.options['analysis-disable-np'];
     }
 
 
     function supportsXP() {
-        return hasAccurateWatts() && !sauce.options['analysis-disable-xp'];
+        return hasAccurateWatts() && ns.activityType === 'ride' && !sauce.options['analysis-disable-xp'];
     }
 
 

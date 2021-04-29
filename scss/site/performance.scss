@@ -741,7 +741,6 @@ table.sauce-perf {
                                   #{color.shade(bg, 2%)});
         }
 
-
         .peak-controls {
             padding: 1em;
             background-color: color.shade(bg, 5%);
@@ -777,6 +776,10 @@ table.sauce-perf {
                         .edit-activity.btn svg[data-icon] {
                             opacity: 0.8;
                         }
+
+                        img.sauce-rank {
+                            opacity: 1;
+                        }
                     }
 
                     .edit-activity.btn {
@@ -787,6 +790,12 @@ table.sauce-perf {
                             margin-bottom: 0;
                             opacity: 0;
                         }
+                    }
+
+                    img.sauce-rank {
+                        max-height: 1.6em;
+                        margin: -0.6em 0 -0.5em 0.3em;
+                        opacity: 0.8;
                     }
                 }
             }

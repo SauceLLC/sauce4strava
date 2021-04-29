@@ -77,7 +77,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 8, // Use sauce.peaks for ranges.
+    version: 9, // Add badges support
     depends: ['extra-streams'],
     data: {processor: processors.peaksProcessor}
 });

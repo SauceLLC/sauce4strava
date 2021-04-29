@@ -120,7 +120,6 @@ sauce.ns('performance', async ns => {
             }
             this.start = start;
             this.end = end;
-            console.warn(this.start, this.end);
         }
 
         setStartSeed(startSeed) {
@@ -1514,6 +1513,11 @@ sauce.ns('performance', async ns => {
             } else {
                 this.peaks = await sauce.hist.getPeaksFor(this.prefs.type,
                     this.getWindow(), options);
+            }
+            for (const x of this.peaks) {
+                if (x.rankLevel) {
+                    x.rankBadge = sauce.power.rankBadge(x.rankLevel);
+                }
             }
         }
 

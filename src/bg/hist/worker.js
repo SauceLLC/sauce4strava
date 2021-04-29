@@ -42,7 +42,7 @@ async function findPeaks(athlete, activities, periods, distances) {
     });
     const peaks = [];
     const errors = [];
-    await sleep(1);
+    await sleep(1);  // Workaround for Safari IDB transaction performance bug.
     for (const activity of activities) {
         if (activity.peaksExclude) {
             const count = await peaksStore.deleteForActivity(activity.id);
@@ -51,11 +51,10 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
             continue;
         }
-        let weight;
         const streams = actStreams.get(activity.id);
         const isRun = activity.basetype === 'run';
         const isRide = activity.basetype === 'ride';
-        const addPeak = (type, period, value, roll) => value && peaks.push({
+        const addPeak = (type, period, value, roll, extra) => value && peaks.push({
             type,
             period,
             value,
@@ -65,8 +64,20 @@ async function findPeaks(athlete, activities, periods, distances) {
             athlete: athlete.id,
             activity: activity.id,
             activityType: activity.basetype,
-            ts: activity.ts
+            ts: activity.ts,
+            ...extra,
         });
+        let weight;
+        const getRankLevel = (period, p, wp) => {
+            if (!weight || !isRide) {
+                return;
+            }
+            const gender = athlete.gender || 'male';
+            const rank = sauce.power.rankLevel(period, p, wp, weight, gender);
+            if (rank.level > 0) {
+                return rank;
+            }
+        };
         if (streams.heartrate) {
             try {
                 for (const period of periods) {
@@ -86,11 +97,11 @@ async function findPeaks(athlete, activities, periods, distances) {
             try {
                 const watts = streams.watts || streams.watts_calc;
                 // Instead of using peakPower, peakNP, we do our own reduction to save
-                // repeative iterations on the same dataset.  it's about 50% faster.
+                // repeative iterations on the same dataset; it's about 50% faster.
                 for (const period of periods) {
                     if (watts && isRide || period >= 300) {
                         const rp = sauce.power.correctedRollingPower(streams.time, period);
-                        const wrp = period >= 300 && sauce.power.correctedRollingPower(
+                        const wrp = period >= 300 && isRide && sauce.power.correctedRollingPower(
                             streams.time, period, {active: true, inlineNP: true, inlineXP: true});
                         if (rp || wrp) {
                             const leaderRolls = {};
@@ -122,21 +133,26 @@ async function findPeaks(athlete, activities, periods, distances) {
                                     }
                                 }
                             }
+                            if (weight === undefined) {
+                                weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
+                            }
                             if (leaderRolls.power) {
                                 const watts = leaderRolls.power.avg();
-                                addPeak('power', period, watts, leaderRolls.power);
-                                if (weight === undefined) {
-                                    weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
-                                }
+                                const rankLevel = getRankLevel(period, watts, leaderRolls.power.np({external: true}));
+                                addPeak('power', period, watts, leaderRolls.power, {rankLevel});
                                 if (weight) {
-                                    addPeak('power_wkg', period, watts / weight, leaderRolls.power);
+                                    addPeak('power_wkg', period, watts / weight, leaderRolls.power, {rankLevel});
                                 }
                             }
                             if (leaderRolls.np) {
-                                addPeak('np', period, leaderRolls.np.np({external: true}), leaderRolls.np);
+                                const np = leaderRolls.np.np({external: true});
+                                const rankLevel = getRankLevel(period, leaderRolls.np.avg(), np);
+                                addPeak('np', period, np, leaderRolls.np, {rankLevel});
                             }
                             if (leaderRolls.xp) {
-                                addPeak('xp', period, leaderRolls.xp.xp({external: true}), leaderRolls.xp);
+                                const xp = leaderRolls.xp.xp({external: true});
+                                const rankLevel = getRankLevel(period, leaderRolls.xp.avg(), xp);
+                                addPeak('xp', period, xp, leaderRolls.xp, {rankLevel});
                             }
                         }
                     }

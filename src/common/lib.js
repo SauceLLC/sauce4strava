@@ -617,6 +617,7 @@ sauce.ns('power', function() {
 
 
     function _rankScaler(duration, c) {
+        // XXX Might want to cache this since we use it in the perf calcs now.. Benchmark...
         const t = (c.slopePeriod / duration) * c.slopeAdjust;
         const slope = Math.log10(t + c.slopeOffset);
         const wKgDifference = Math.pow(slope, c.slopeFactor);
@@ -642,13 +643,22 @@ sauce.ns('power', function() {
     }
 
 
-    function rank(duration, power, np, weight, gender) {
+    function rankLevel(duration, p, wp, weight, gender) {
         const high = _rankScaler(duration, rankConstants[gender].high);
         const low = _rankScaler(duration, rankConstants[gender].low);
-        const weightedRatio = (!np || np < power) ? 0 : rankWeightedRatio(duration);
-        const weightedPower = (weightedRatio * (np || 0)) + ((1 - weightedRatio) * power);
+        const weightedRatio = (!wp || wp < p) ? 0 : rankWeightedRatio(duration);
+        const weightedPower = (weightedRatio * (wp || 0)) + ((1 - weightedRatio) * p);
         const wKg = weightedPower / weight;
-        const level = (wKg - low) / (high - low);
+        return {
+            level: (wKg - low) / (high - low),
+            weightedRatio,
+            weightedPower,
+            wKg,
+        };
+    }
+
+
+    function rankBadge({level, weightedRatio, weightedPower, wKg}) {
         const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ?
             '-darkbg.png' : '.png';
         let lastRankLevel = 1;
@@ -660,7 +670,6 @@ sauce.ns('power', function() {
                     `${x.label} Ranking: ${Math.round(catLevel * 100).toLocaleString()}%\n`,
                     weightedRatio ? 'Weighted ' : '',
                     `Power: ${wKg.toFixed(1)}w/kg | ${Math.round(weightedPower).toLocaleString()}w\n`,
-                    `\nClick for more information`,
                 ].join('');
                 return {
                     level,
@@ -675,6 +684,11 @@ sauce.ns('power', function() {
             }
             lastRankLevel = x.levelRequirement;
         }
+    }
+
+
+    function rank(duration, p, wp, weight, gender) {
+        return rankBadge(rankLevel(duration, p, wp, weight, gender));
     }
 
 
@@ -1263,6 +1277,8 @@ sauce.ns('power', function() {
         calcXP,
         calcTSS,
         rank,
+        rankLevel,
+        rankBadge,
         rankRequirements,
         rankWeightedRatio,
         seaLevelPower,

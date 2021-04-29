@@ -61,7 +61,13 @@
             <% for (const x of peaks.filter(x => x.activity)) { %>
                 <tr data-id="{{x.activity.id}}" title="Click to view details">
                     <td>{{humanNumber(i++)}}</td>
-                    <td>{{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr></td>
+                    <td>
+                        {{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>
+                        <% if (x.rankBadge && x.rankBadge.cat) { %>
+                            <img src="{{x.rankBadge.badge}}" class="sauce-rank"
+                                 data-cat="{{x.rankBadge.cat}}" title="{{x.rankBadge.tooltip}}"/>
+                        <% } %>
+                    </td>
                     <% if (prefs.includeAllAthletes) { %>
                         <td>{{await athleteName(x.activity.athlete)}}</td>
                     <% } %>
