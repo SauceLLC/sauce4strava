@@ -3300,7 +3300,7 @@ sauce.ns('analysis', ns => {
                 return;
             }
             const lastNotice = await sauce.storage.get('safariUpdateNotice');
-            if (lastNotice && lastNotice < Date.now() + 86400 * 1000) {
+            if (lastNotice && Date.now() - lastNotice < 86400 * 1000) {
                 // Only bug once a day if they don't hit skip version.
                 return;
             }
