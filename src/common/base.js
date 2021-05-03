@@ -984,22 +984,25 @@ self.sauceBaseInit = function sauceBaseInit() {
                     desc.push(` Audit frame: ${x}`);
                 }
             } else {
-                desc.push(e.stack);
+                if (!e.stack.includes(e.message)) {
+                    // Only chromium includes the error message in the stack.
+                    desc.push(e.toString());
+                }
+                // Reduce cardinality from randomly generated urls (safari & firefox)
+                const genericUrl = sauce.extUrl.split('://', 1)[0] + '://<sauce>/';
+                desc.push(e.stack.replaceAll(sauce.extUrl, genericUrl));
             }
         } catch(intError) {
             desc.push(`Internal error during report error: ${intError.stack} ::: ${e}`);
         }
-        for (const x of getStackFrames().slice(1)) {
-            desc.push(` Stack frame: ${x}`);
-        }
-        const exDescription = desc.join('\n');
+        const exDescription = desc.join('\n').replaceAll('\n', ' -- ');
         console.error('Reporting:', e);
         await ga('send', 'exception', {
             exDescription,
             exFatal: true,
             page
         });
-        await reportEvent('Error', 'exception', desc, {nonInteraction: true, page});
+        await reportEvent('Error', 'exception', exDescription, {nonInteraction: true, page});
     }
 
 
