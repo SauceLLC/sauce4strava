@@ -115,9 +115,6 @@
     "analysis_wkg_tooltip": {
         "message": "Watt pro Kilogramm Körpergewicht"
     },
-    "analysis_ranking_tooltip": {
-        "message": "Weltrangliste"
-    },
     "analysis_max_power_tooltip": {
         "message": "Maximale Kraft",
         "description": "IMMUTABLE"
@@ -393,7 +390,7 @@
         "message": "Wählen Sie ein Profil aus, um die erforderlichen Leistungsabgaben anzuzeigen"
     },
     "analysis_power_profile_footer_leadin": {
-        "message": "Der Sauce-Algorithmus ist eine Modifikation von Andys ursprünglicher Tabelle, sodass er die Rangfolge für jeden Zeitraum schätzen kann. Für ein detailliertes Verständnis dieser Profile lesen Sie"
+        "message": "HINWEIS: Der Sauce-Algorithmus ist eine erweiterte Interpretation von Andys ursprünglichem Konzept. Für Anstrengungen zwischen 20 und 60 Minuten wird nach und nach Normalized Power® anstelle der tatsächlichen Leistung verwendet. Nach 1 Stunde wird nur NP® verwendet und ein logarithmischer Ausdauerfaktor wird angewendet, um die Ermüdung des Modells zu verbessern.<br/><br/> Weitere Informationen zu den Originalprofilen finden Sie unter"
     },
     "analysis_comment_label": {
         "message": "Sag etwas"

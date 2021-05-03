@@ -116,9 +116,6 @@
     "analysis_wkg_tooltip": {
         "message": "每公斤体重的瓦数"
     },
-    "analysis_ranking_tooltip": {
-        "message": "世界排名"
-    },
     "analysis_max_power_tooltip": {
         "message": "最大功率"
     },
@@ -392,7 +389,7 @@
         "message": "选择一个配置文件以查看所需的功率输出"
     },
     "analysis_power_profile_footer_leadin": {
-        "message": "Sauce算法是对Andy原始电子表格的修改，因此它可以估算任何时间段的排名。要深入了解这些配置文件，请阅读"
+        "message": "注意：Sauce算法是对Andy原始概念的增强解释。对于20到60分钟之间的工作，逐渐使用NormalizedPower®（标准功率）代替实际功率。 1小时后，仅使用NP®，并应用对数耐力因子以更好地模拟疲劳。<br/><br/>有关原始配置文件的其他信息，请阅读"
     },
     "analysis_comment_label": {
         "message": "说些什么"

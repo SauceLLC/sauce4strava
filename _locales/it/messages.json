@@ -118,9 +118,6 @@
     "analysis_wkg_tooltip": {
         "message": "Watt per chilogrammo di peso corporeo"
     },
-    "analysis_ranking_tooltip": {
-        "message": "Classifica mondiale"
-    },
     "analysis_max_power_tooltip": {
         "message": "Massima potenza",
         "description": "IMMUTABLE"
@@ -395,7 +392,7 @@
         "message": "Selezionare un profilo per visualizzare le uscite di potenza richieste"
     },
     "analysis_power_profile_footer_leadin": {
-        "message": "L'algoritmo Sauce è stato modificato dal foglio di calcolo originale di Andy in modo da poter stimare le classifiche per qualsiasi periodo di tempo. Per una comprensione approfondita di questi profili leggi"
+        "message": "NOTA: l'algoritmo Sauce è un'interpretazione migliorata del concetto originale di Andy. Per sforzi compresi tra 20 e 60 minuti, Normalized Power® viene gradualmente utilizzato al posto della potenza effettiva. Dopo 1 ora, viene utilizzato solo NP® e viene applicato un fattore di resistenza logaritmico per una migliore fatica del modello.<br/><br/> Per ulteriori informazioni sui profili originali leggere"
     },
     "analysis_comment_label": {
         "message": "Di 'qualcosa"

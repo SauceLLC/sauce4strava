@@ -114,9 +114,6 @@
     "analysis_wkg_tooltip": {
         "message": "Vatios por kilogramo de peso corporal"
     },
-    "analysis_ranking_tooltip": {
-        "message": "Ranking mundial"
-    },
     "analysis_max_power_tooltip": {
         "message": "máximo poder"
     },
@@ -388,7 +385,7 @@
         "message": "Seleccione un perfil para ver las salidas de potencia requeridas"
     },
     "analysis_power_profile_footer_leadin": {
-        "message": "El algoritmo Sauce es una modificación de la hoja de cálculo original de Andy para que pueda estimar clasificaciones para cualquier período de tiempo. Para una comprensión profunda de estos perfiles, lea"
+        "message": "NOTA: El algoritmo Sauce es una interpretación mejorada del concepto original de Andy. Para esfuerzos entre 20 y 60 minutos, Normalized Power® se usa gradualmente en lugar de la potencia real. Después de 1 hora, solo se usa NP® y se aplica un factor de resistencia logarítmico para mejorar la fatiga del modelo.<br/><br/> Para obtener información adicional sobre los perfiles originales, lea"
     },
     "analysis_comment_label": {
         "message": "Di algo"
