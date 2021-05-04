@@ -989,8 +989,9 @@ self.sauceBaseInit = function sauceBaseInit() {
                     desc.push(e.toString());
                 }
                 // Reduce cardinality from randomly generated urls (safari & firefox)
-                const genericUrl = sauce.extUrl.split('://', 1)[0] + '://<sauce>/';
-                desc.push(e.stack.replaceAll(sauce.extUrl, genericUrl));
+                const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
+                const genericUrl = extUrl.split('://', 1)[0] + '://<sauce>/';
+                desc.push(e.stack.replaceAll(extUrl, genericUrl));
             }
         } catch(intError) {
             desc.push(`Internal error during report error: ${intError.stack} ::: ${e}`);
