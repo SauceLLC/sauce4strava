@@ -1612,7 +1612,7 @@ class SyncManager extends EventTarget {
         try {
             await syncJob.wait();
         } catch(e) {
-            sauce.report.error(e);
+            sauce.report.error(e);  // bg okay
             athlete.set('lastSyncError', Date.now());
             this.emitForAthlete(athlete, 'error', {error: e.message});
         } finally {
