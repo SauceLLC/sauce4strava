@@ -3096,7 +3096,6 @@ sauce.ns('analysis', ns => {
         if (!(sauce.patronLevel >= 10)) {
             return;
         }
-        await sauce.proxy.connected;
         const athleteData = await sauce.hist.getAthlete(athleteId);
         if (!athleteData || !athleteData.sync) {
             return;
