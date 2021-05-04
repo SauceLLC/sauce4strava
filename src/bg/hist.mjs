@@ -1238,6 +1238,7 @@ class SyncJob extends EventTarget {
         for (const x of manifest.data) {
             q.append('stream_types[]', x);
         }
+        let count = 0;
         for (const activity of activities) {
             let error;
             let data;
@@ -1264,14 +1265,20 @@ class SyncJob extends EventTarget {
                 })));
                 activity.setSyncSuccess(manifest);
                 this._procQueue.putNoWait(activity);
+                count++;
             } else if (data === null) {
                 activity.setSyncError(manifest, new Error('no-streams'));
                 this._procQueue.putNoWait(activity);
+                count++;
             } else if (error) {
                 // Often this is an activity converted to private.
                 activity.setSyncError(manifest, error);
             }
             await activity.save();
+        }
+        if (count) {
+            sauce.report.event('SyncJob', 'imported', 'streams',
+                {nonInteraction: true, eventValue: count});  // bg okay
         }
         console.info("Completed streams fetch for: " + this.athlete);
     }
@@ -1593,7 +1600,7 @@ class SyncManager extends EventTarget {
         const start = Date.now();
         console.info('Starting sync job for: ' + athlete);
         const athleteId = athlete.pk;
-        sauce.report.event('SyncJob', 'start');
+        sauce.report.event('SyncJob', 'start', undefined, {nonInteraction: true});  // bg okay
         const isSelf = this.currentUser === athleteId;
         const syncJob = new SyncJob(athlete, isSelf);
         syncJob.addEventListener('status', ev => this.emitForAthlete(athlete, 'status', ev.data));
@@ -1621,7 +1628,10 @@ class SyncManager extends EventTarget {
             this._refreshEvent.set();
             this.emitForAthlete(athlete, 'active', false);
             const duration = Math.round((Date.now() - start) / 1000);
-            sauce.report.event('SyncJob', 'completed', `${Math.round(duration / 60)}-mins`);
+            const bucket = duration < 5 * 60 ?
+                `${Math.round(duration / 60)}-mins` :
+                `${(duration / 3600).toFixed(1)}-hours`;
+            sauce.report.event('SyncJob', 'completed', bucket, {nonInteraction: true});  // bg okay
             console.info(`Sync completed in ${duration} seconds for: ` + athlete);
         }
     }
