@@ -1149,6 +1149,46 @@ sauce.ns('power', function() {
     }
 
 
+    function cyclingDraftDragReduction(riders, position) {
+        /* Based on the wonderful work of:
+         *    van Druenen, T., Blocken, B.
+         *    Aerodynamic analysis of uphill drafting in cycling.
+         *    Sports Eng 24, 10 (2021).
+         *    https://doi.org/10.1007/s12283-021-00345-2
+         *
+         * The values from this paper have been curve fitted to an exponential func
+         * so we can infer average CdA adaption with dynamic pack positions.
+         */
+        if (riders == null || position == null) {
+            throw new TypeError("riders and position are required arguments");
+        }
+        if (riders < 2) {
+            return 1;
+        }
+        if (position > riders) {
+            throw new TypeError("position must be <= riders");
+        }
+        if (position < 1) {
+            throw new TypeError("position must be >= 1");
+        }
+        const coefficients = {
+            2: {y0: 6.228152, v0: 14.30192, k: 2.501857},
+            3: {y0: 3.862857, v0: 6.374476, k: 1.860752},
+            4: {y0: 3.167014, v0: 4.37368, k: 1.581374},
+            5: {y0: 2.83803, v0: 3.561276, k: 1.452583},
+            6: {y0: 2.598001, v0: 2.963105, k: 1.329827},
+            7: {y0: 2.556656, v0: 2.86052, k: 1.305172},
+            8: {y0: 2.506765, v0: 2.735303, k: 1.272144},
+        };
+        if (riders > 8) {
+            position = Math.max(1, 8 / riders * position);
+            riders = 8;
+        }
+        const c = coefficients[riders];
+        return c.y0 - ((c.v0 / c.k) * (1 - Math.exp(-c.k * position)));
+    }
+
+
     function cyclingPowerVelocitySearch(power, slope, weight, Crr, CdA, el, wind, loss) {
         // Do not adjust without running test suite and tuning for 50% tollerance above failure
         const epsilon = 0.000001;
@@ -1284,6 +1324,7 @@ sauce.ns('power', function() {
         seaLevelPower,
         cyclingPowerEstimate,
         cyclingPowerVelocitySearch,
+        cyclingDraftDragReduction,
         RollingPower,
     };
 });

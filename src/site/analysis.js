@@ -2887,8 +2887,12 @@ sauce.ns('analysis', ns => {
             const distance = L.distanceUnconvert(fget('distance'));
             const el = L.elevationUnconvert(fget('elevation'));
             const wind = L.velocityUnconvert(fget('wind'), {type: ns.paceType});
+            const riders = fget('riders');
+            const position = (fget('position') * (riders - 1)) + 1;
+            const draftReduction = sauce.power.cyclingDraftDragReduction(riders, position);
+            console.warn(riders, position, draftReduction, fget('position'));
             const powerEsts = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
-                cda, el, wind, 0.035).filter(x => x.velocity > 0);
+                cda * draftReduction, el, wind, 0.035).filter(x => x.velocity > 0);
             $pred.toggleClass('valid', powerEsts.length > 0);
             if (!powerEsts.length) {
                 return;
