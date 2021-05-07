@@ -38,7 +38,7 @@ function search(power, c) {
     assertDefined(c.el, 'case.el');
     assertDefined(c.wind, 'case.wind');
     assertDefined(c.loss, 'case.loss');
-    return sauce.power.cyclingPowerVelocitySearch(power, c.slope, c.weight, c.crr, c.cda, c.el, c.wind, c.loss);
+    return sauce.power.cyclingPowerVelocitySearch({power, ...c});
 }
 
 
@@ -160,13 +160,13 @@ addTests([
         assertNear(estimates[0].watts, -200000, null, {epsilon: 0.0001})
     },
     function test_velocity_search_odd_mismatch() {
-        const estimates = sauce.power.cyclingPowerVelocitySearch(43, 0.012, 86.2, 0.0065, 0.32, 866, 0, 0.035);
+        const estimates = sauce.power.cyclingPowerVelocitySearch({power: 43, slope: 0.012, weight: 86.2, crr: 0.0065, cda: 0.32, el: 866, wind: 0, loss: 0.035});
         for (const x of estimates) {
             assertNear(x.watts, 43);
         }
     },
     function test_velocity_search_escape() {
-        const estimates = sauce.power.cyclingPowerVelocitySearch(259, 0.087, 85.592982, 0.005, 0.4, 1045.464, 0, 0.035);
+        const estimates = sauce.power.cyclingPowerVelocitySearch({power: 259, slope: 0.087, weight: 85.592982, crr: 0.005, cda: 0.4, el: 1045.464, wind: 0, loss: 0.035});
         assertEqual(estimates.length, 3);
         estimates.sort((a, b) => b.velocity - a.velocity);
         assertNear(estimates[0].velocity, 3.1600175977839435);

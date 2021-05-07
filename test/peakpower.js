@@ -109,6 +109,6 @@ addTests([
     function test_correctedpower_pad_lots_avoid_stack_overflow() {
         sauce.power.correctedPower(timeStream(1, 1000000, 100000),
                                    valueStream(1, 1000000 / 100000),
-                                   /*idealgap*/ 2, /*maxgap*/ 1);
+                                   {idealgap: 2, maxGap: 1});
     },
 ]);
