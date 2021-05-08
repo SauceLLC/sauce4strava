@@ -1107,16 +1107,16 @@ sauce.ns('power', function() {
     }
 
 
-    function rollingResistanceForce(slope, weight, Crr) {
+    function rollingResistanceForce(slope, weight, crr) {
         const g = 9.80655;
-        return g * Math.cos(Math.atan(slope)) * weight * Crr;
+        return g * Math.cos(Math.atan(slope)) * weight * crr;
     }
 
 
-    function aeroDragForce(CdA, p, v, w) {
+    function aeroDragForce(cda, p, v, w) {
         const netVelocity = v + w;
         const invert = netVelocity < 0 ? -1 : 1;
-        return (0.5 * CdA * p * (netVelocity * netVelocity)) * invert;
+        return (0.5 * cda * p * (netVelocity * netVelocity)) * invert;
     }
 
 
@@ -1130,11 +1130,11 @@ sauce.ns('power', function() {
     }
 
 
-    function cyclingPowerEstimate(velocity, slope, weight, Crr, CdA, el, wind, loss) {
+    function cyclingPowerEstimate({velocity, slope, weight, crr, cda, el=0, wind=0, loss=0.035}) {
         const invert = velocity < 0 ? -1 : 1;
         const Fg = gravityForce(slope, weight);
-        const Fr = rollingResistanceForce(slope, weight, Crr) * invert;
-        const Fa = aeroDragForce(CdA, airDensity(el), velocity, wind);
+        const Fr = rollingResistanceForce(slope, weight, crr) * invert;
+        const Fa = aeroDragForce(cda, airDensity(el), velocity, wind);
         const vFactor = velocity / (1 - loss);  // velocity with mech loss integrated
         return {
             gForce: Fg,
@@ -1189,7 +1189,52 @@ sauce.ns('power', function() {
     }
 
 
-    function cyclingPowerVelocitySearch(power, slope, weight, Crr, CdA, el, wind, loss) {
+    function cyclingPowerVelocitySearchMultiPosition(riders, positions, args) {
+        const reductions = positions.map(x => cyclingDraftDragReduction(riders, x.position));
+        const avgCda = sauce.data.sum(reductions.map((x, i) => x * positions[i].pct)) * args.cda;
+        const seedEst = cyclingPowerFastestVelocitySearch({...args, cda: avgCda});
+        let velocity = seedEst.velocity;
+        let estimates;
+        const searchRange = 100;  // ~220mph from initial estimate
+        let high = velocity + searchRange;
+        let low =  velocity - searchRange;
+        const epsilon = 0.000001;
+        const estAvg = field => sauce.data.sum(positions.map((x, i) => x.pct * estimates[i][field]));
+        for (let i = 0; i < 10000; i++) {
+            estimates = reductions.map(x => cyclingPowerEstimate({
+                ...args,
+                cda: x * args.cda,
+                velocity,
+            }));
+            const avgPower = estAvg('watts');
+            if (Math.abs(avgPower - args.power) < epsilon) {
+                if (i) {
+                    console.log("Attempts", i, seedEst.velocity - velocity);
+                }
+                break;
+            } else if (avgPower < args.power) {
+                low = velocity;
+            } else {
+                high = velocity;
+            }
+            velocity = low + ((high - low) / 2);
+        }
+        return {
+            gForce: estAvg('gForce'),
+            rForce: estAvg('rForce'),
+            aForce: estAvg('aForce'),
+            force: estAvg('force'),
+            gWatts: estAvg('gWatts'),
+            rWatts: estAvg('rWatts'),
+            aWatts: estAvg('aWatts'),
+            watts: estAvg('watts'),
+            estimates,
+            velocity,
+        };
+    }
+
+
+    function cyclingPowerVelocitySearch({power, ...args}) {
         // Do not adjust without running test suite and tuning for 50% tollerance above failure
         const epsilon = 0.000001;
         const sampleSize = 300;
@@ -1215,7 +1260,7 @@ sauce.ns('power', function() {
                 const results = [];
                 const step = Math.max((end - start) / sampleSize, epsilon / sampleSize);
                 for (const v of sauce.data.range(start, end + step, step)) {
-                    const est = cyclingPowerEstimate(v, slope, weight, Crr, CdA, el, wind, loss);
+                    const est = cyclingPowerEstimate({velocity: v, ...args});
                     results.push([v, est]);
                 }
                 results.sort(byPowerClosenessOrVelocity);
@@ -1234,10 +1279,10 @@ sauce.ns('power', function() {
                     // inclusive of all optimal solutions.
                     if (step > epsilon) {
                         for (const [iv, dir] of [[start, -1], [end, 1]]) {
-                            let bestEst = cyclingPowerEstimate(iv, slope, weight, Crr, CdA, el, wind, loss);
+                            let bestEst = cyclingPowerEstimate({velocity: iv, ...args});
                             const smallStep = Math.max(step / 100, epsilon) * dir;
                             for (let v = iv + smallStep;; v += smallStep) {
-                                const est = cyclingPowerEstimate(v, slope, weight, Crr, CdA, el, wind, loss);
+                                const est = cyclingPowerEstimate({velocity: v, ...args});
                                 results.push([v, est]);  // Always include the test case.
                                 if (Math.abs(est.watts - power) < Math.abs(bestEst.watts - power)) {
                                     bestEst = est;
@@ -1290,7 +1335,7 @@ sauce.ns('power', function() {
                         search(refineRange(lower, upper));
                     }
                 } else {
-                    const est = cyclingPowerEstimate(rangeVs[0], slope, weight, Crr, CdA, el, wind, loss);
+                    const est = cyclingPowerEstimate({velocity: rangeVs[0], ...args});
                     // If the difference is less than epsilon (1 millionth) or we are within epsilon %.
                     // The former is for very small values and the latter is for massive values. Both
                     // are needed!
@@ -1306,6 +1351,14 @@ sauce.ns('power', function() {
         search(refineRange(-c, c));
         return matches;
     }
+
+
+    function cyclingPowerFastestVelocitySearch(options) {
+        const velocities = cyclingPowerVelocitySearch(options).filter(x => x.velocity > 0);
+        velocities.sort((a, b) => b.velocity - a.velocity);
+        return velocities[0];
+    }
+
 
     return {
         peakPower,
@@ -1324,6 +1377,8 @@ sauce.ns('power', function() {
         seaLevelPower,
         cyclingPowerEstimate,
         cyclingPowerVelocitySearch,
+        cyclingPowerFastestVelocitySearch,
+        cyclingPowerVelocitySearchMultiPosition,
         cyclingDraftDragReduction,
         RollingPower,
     };

@@ -222,6 +222,17 @@
     "perf_predictor_power_details_gravity_tooltip": {"message": "Power and work requirements to overcome gravity"},
     "perf_predictor_power_details_aero_tooltip": {"message": "Power and work requirements to overcome aerodynamic drag"},
     "perf_predictor_power_details_rr_tooltip": {"message": "Power and work requirements to overcome rolling resistance"},
+    "perf_predictor_drafting": {"message": "Drafting"},
+    "perf_predictor_drafting_tooltip": {"message": "Select this option to model drafting effects"},
+    "perf_predictor_riders": {"message": "Riders"},
+    "perf_predictor_riders_tooltip": {"message": "Number of riders in this group"},
+    "perf_predictor_position": {"message": "Position"},
+    "perf_predictor_position_tooltip": {"message": "Your position in this group"},
+    "perf_predictor_rotating_paceline": {"message": "Rotating / Paceline"},
+    "perf_predictor_rotating_tooltip": {"message": "Select this option to model a group of riders changing positions during the effort"},
+    "perf_predictor_time_at_front": {"message": "Time on front"},
+    "perf_predictor_work_tooltip": {"message": "Select the percentage of time in the first position of this group"},
+    "perf_predictor_drafting_help": {"message": "Drafting or riding in a group of riders provides significant aerodynamic benefits.  Performance Predictor can model these effects by applying research from <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen and Bert Blocken</a>.<br/><br/>Note that this algorithm works well for smaller sized groups in single file formations.  Large pelotons of riders are subject to more complicated aerodynamic forces which are not properly addressed here."},
 
     "sync_control_panel_intro": {"message": "Activity sync imports all activity history to allow for improved training charts and performance analysis."},
     "sync_control_panel_intro_help": {

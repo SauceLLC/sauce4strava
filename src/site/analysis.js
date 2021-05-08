@@ -2869,68 +2869,112 @@ sauce.ns('analysis', ns => {
             closeOnMobileBack: ns.isMobile,
         });
         function fget(name) {
-            return Number($dialog.find(`[name="${name}"]`).val());
+            const $el = $dialog.find(`[name="${name}"]`);
+            if ($el.attr('type') === 'checkbox') {
+                return $el.is(':checked');
+            } else {
+                return Number($el.val());
+            }
         }
         const locale = await L.getMessagesObject([
             'faster', 'slower', 'power_details_rr', 'power_details_gravity', 'power_details_aero'
         ], 'perf_predictor');
         let lazySaveTimeout;
         const $pred = $dialog.find('.predicted');
+        const $cdaPositions = $dialog.find('span.cda-position');
+        const $draftRiders = $dialog.find('span.draft-riders');
+        const $draftPosition = $dialog.find('span.draft-position');
+        const $draftWork = $dialog.find('span.draft-work');
+        const $draftOptions = $dialog.find('.drafting-options');
         function recalc(noPulse) {
             const crr = fget('crr');
             const cda = fget('cda');
+            for (const x of $cdaPositions) {
+                if (cda >= Number(x.dataset.min) && cda < Number(x.dataset.max)) {
+                    if (!x.classList.contains('visible')) {
+                        $cdaPositions.removeClass('visible');
+                        x.classList.add('visible');
+                    }
+                    break;
+                }
+            }
             const power = fget('power');
             const bodyWeight = L.weightUnconvert(fget('body-weight'));
             const gearWeight = L.weightUnconvert(fget('gear-weight'));
-            const sysWeight = bodyWeight + gearWeight;
+            const weight = bodyWeight + gearWeight;
             const slope = fget('slope') / 100;
             const distance = L.distanceUnconvert(fget('distance'));
             const el = L.elevationUnconvert(fget('elevation'));
             const wind = L.velocityUnconvert(fget('wind'), {type: ns.paceType});
-            const riders = fget('riders');
-            const position = (fget('position') * (riders - 1)) + 1;
-            const draftReduction = sauce.power.cyclingDraftDragReduction(riders, position);
-            console.warn(riders, position, draftReduction, fget('position'));
-            const powerEsts = sauce.power.cyclingPowerVelocitySearch(power, slope, sysWeight, crr,
-                cda * draftReduction, el, wind, 0.035).filter(x => x.velocity > 0);
-            $pred.toggleClass('valid', powerEsts.length > 0);
-            if (!powerEsts.length) {
+            let draftReduction = 1;
+            let est;
+            const drafting = fget('drafting');
+            if (drafting) {
+                const riders = fget('riders');
+                $draftRiders.text(riders < 8 ? riders.toLocaleString() : '8+');
+                const rotating = fget('rotating');
+                if (!rotating) {
+                    const position = fget('position');
+                    $draftPosition.text(position.toLocaleString());
+                    draftReduction = sauce.power.cyclingDraftDragReduction(riders, position);
+                    est = sauce.power.cyclingPowerFastestVelocitySearch({power, slope, weight, crr,
+                        cda: cda * draftReduction, el, wind});
+                } else {
+                    const work = fget('work');
+                    $draftWork.text(Math.round(work * 100).toLocaleString());
+                    const positions = [];
+                    for (let i = work ? 0 : 1; i < riders; i++) {
+                        positions.push({
+                            position: i + 1,
+                            pct: i === 0 ? work : (1 / (riders - 1)) * (1 - work),
+                        });
+                    }
+                    est = sauce.power.cyclingPowerVelocitySearchMultiPosition(riders, positions,
+                        {power, slope, weight, crr, cda, el, wind});
+                }
+                $dialog.find('.static-draft-options').toggleClass('hidden', rotating);
+                $dialog.find('.rotating-draft-options').toggleClass('hidden', !rotating);
+            } else {
+                est = sauce.power.cyclingPowerFastestVelocitySearch({power, slope, weight, crr,
+                    cda, el, wind});
+            }
+            $draftOptions.toggleClass('hidden', !drafting);
+            $pred.toggleClass('valid', !!est);
+            if (!est) {
                 return;
             }
-            powerEsts.sort((a, b) => b.velocity - a.velocity);
-            const powerEst = powerEsts[0];  // Take the fastest solution.
-            const time = distance / powerEst.velocity;
+            const time = Math.round(distance / est.velocity);
             const $timeAhead = $pred.find('.time + .ahead-behind');
-            if (powerEst.velocity && time < origTime) {
+            if (est.velocity && time < origTime) {
                 const pct = (origTime / time - 1) * 100;
                 $timeAhead.text(`${H.number(pct, 1)}% ${locale.faster}`);
                 $timeAhead.addClass('sauce-positive').removeClass('sauce-negative');
-            } else if (powerEst.velocity && time > origTime) {
+            } else if (est.velocity && time > origTime) {
                 const pct = (time / origTime - 1) * 100;
                 $timeAhead.text(`${H.number(pct, 1)}% ${locale.slower}`);
                 $timeAhead.addClass('sauce-negative').removeClass('sauce-positive');
             } else {
                 $timeAhead.empty();
             }
-            $pred.find('.speed').text(humanPace(powerEst.velocity, {velocity: true}));
+            $pred.find('.speed').text(humanPace(est.velocity, {velocity: true}));
             $pred.find('.time').text(H.timer(time));
             $pred.find('.distance').text(H.distance(distance));
             $pred.find('.wkg').text(H.number(power / bodyWeight, 1));
-            const watts = [powerEst.gWatts, powerEst.aWatts, powerEst.rWatts];
+            const watts = [est.gWatts, est.aWatts, est.rWatts];
             const wattRange = sauce.data.sum(watts.map(Math.abs));
             const pcts = {
-                gravity: powerEst.gWatts / wattRange * 100,
-                aero: powerEst.aWatts / wattRange * 100,
-                rr: powerEst.rWatts / wattRange * 100
+                gravity: est.gWatts / wattRange * 100,
+                aero: est.aWatts / wattRange * 100,
+                rr: est.rWatts / wattRange * 100
             };
             const $gravity = $pred.find('.power-details .gravity');
-            $gravity.find('.power').text(H.number(powerEst.gWatts));
+            $gravity.find('.power').text(H.number(est.gWatts));
             $gravity.find('.pct').text(H.number(pcts.gravity));
             const $aero = $pred.find('.power-details .aero');
-            $aero.find('.power').text(H.number(powerEst.aWatts));
+            $aero.find('.power').text(H.number(est.aWatts));
             $aero.find('.pct').text(H.number(pcts.aero));
             const $rr = $pred.find('.power-details .rr');
-            $rr.find('.power').text(H.number(powerEst.rWatts));
+            $rr.find('.power').text(H.number(est.rWatts));
             $rr.find('.pct').text(H.number(pcts.rr));
             $pred.find('.power-details .sparkline').sparkline(
                 watts,
@@ -2941,14 +2985,10 @@ sauce.ns('analysis', ns => {
                     barWidth: 38,
                     disableHiddenCheck: true,
                     chartRangeMin: sauce.data.min(watts.concat([0])),
-                    colorMap: {
-                        [powerEst.gWatts]: powerColors.gravity,
-                        [powerEst.aWatts]: powerColors.aero,
-                        [powerEst.rWatts]: powerColors.rr
-                    },
+                    colorMap: [powerColors.gravity, powerColors.aero, powerColors.rr],
                     tooltipFormatter: (_, __, data) => {
                         const key = ['gravity', 'aero', 'rr'][data[0].offset];
-                        const force = powerEst[['g', 'a', 'r'][data[0].offset] + 'Force'];
+                        const force = est[['g', 'a', 'r'][data[0].offset] + 'Force'];
                         return `
                             <b>${locale[`power_details_${key}`]}: ${H.number(pcts[key])}%</b>
                             <ul>
@@ -2992,13 +3032,17 @@ sauce.ns('analysis', ns => {
             setTimeout(recalc, 0);  // Only required to save bike defaults.
         });
         $dialog.on('input', '[name="aero"]', ev => {
-            const cda = $dialog.find('[name="aero"]').val();
-            $dialog.find('[name="cda"]').val(cda);
+            ev.currentTarget.nextElementSibling.value = ev.currentTarget.value;
             setTimeout(recalc, 0);
         });
         $dialog.on('input', '[name="cda"]', ev => {
-            const cda = $dialog.find('[name="cda"]').val();
-            $dialog.find('[name="aero"]').val(cda);
+            ev.currentTarget.previousElementSibling.value = ev.currentTarget.value;
+            setTimeout(recalc, 0);
+        });
+        $dialog.on('input', '[name="riders"]', ev => {
+            const riders = Number(ev.currentTarget.value);
+            $dialog.find('input[name="work"]').val(1 / riders);
+            $dialog.find('input[name="position"]').attr('max', riders);
             setTimeout(recalc, 0);
         });
         $dialog.on('input', 'input', () => setTimeout(recalc, 0));

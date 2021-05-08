@@ -31,7 +31,7 @@
                               {{bike === "mtb" ? "checked" : ""}}/> {{{crr_bike_mtb}}}</label>
             </div>
             <div class="entry" title="{{{crr_terrain_tooltip}}}">
-                <key>{{{crr_terrain}}}:</key>
+                <key>Crr / {{{crr_terrain}}}:</key>
                 <select name="terrain">
                     <option value="asphalt" {{terrain === "asphalt" ? "selected" : ""}}>{{{crr_terrain_asphalt}}}</option>
                     <option value="gravel" {{terrain === "gravel" ? "selected" : ""}}>{{{crr_terrain_gravel}}}</option>
@@ -40,10 +40,8 @@
                     <option value="sand" {{terrain === "sand" ? "selected" : ""}}>{{{crr_terrain_sand}}}</option>
                     <option style="display: none" value="custom" {{terrain === "custom" ? "selected" : ""}}>{{{crr_terrain_custom}}}</option>
                 </select>
-            </div>
-            <div class="entry" title="{{{crr_tooltip}}}">
-                <key>Crr:</key>
-                <input name="crr" type="number" value="{{crr}}" min="0" step="0.0005"/>
+                <input name="crr" type="number" value="{{crr}}" min="0" step="0.0005"
+                       title="{{{crr_tooltip}}}" style="width: calc(6ch + 1em);"/>
             </div>
         </div>
     </div>
@@ -65,35 +63,57 @@
         <a class="help-info" data-help="cda" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
         <b>{{{cda_heading}}}:</b>
         <div class="indent">
-            <div class="entry" title="{{{cda_position_tooltip}}}">
-                <key>{{{cda_position}}}:</key>
-                <input name="aero" type="range" min="0.15" max="0.7" step="0.01" value="{{cda}}"/>
-            </div>
-
             <div class="entry" title="{{{cda_tooltip}}}">
                 <key>CdA:</key>
-                <input name="cda" type="number" min="0.15" max="0.7" step="0.01" value="{{cda}}"/>
+                <input name="aero" type="range" min="0.15" max="0.7" step="0.01" value="{{cda}}"/>
+                <input name="cda" type="number" min="0.15" max="0.7" step="0.01" value="{{cda}}"
+                       title="{{{cda_tooltip}}}" style="width: calc(4ch + 1em);"/>
                 <abbr class="unit">m²</abbr>
+            </div>
+
+            <div class="entry flex" title="{{{cda_position_tooltip}}}">
+                <key>{{{cda_position}}}:</key>
+                <span class="cda-position" data-min="-Infinity" data-max="0.23">{{{cda_help_table_elite_tt}}}</span>
+                <span class="cda-position" data-min="0.23" data-max="0.30">{{{cda_help_table_good_tt}}}</span>
+                <span class="cda-position" data-min="0.30" data-max="0.35">{{{cda_help_table_road}}}</span>
+                <span class="cda-position" data-min="0.35" data-max="0.50">{{{cda_help_table_climbing}}}</span>
+                <span class="cda-position" data-min="0.50" data-max="Infinity">{{{cda_help_table_upright}}}</span>
             </div>
         </div>
     </div>
 
-    <div class="entry">
+    <div class="entry collapsable" title="{{{drafting_tooltip}}}">
         <div class="help" data-for="draft">
             <a class="sauce-dismiss">{-await fa('times-circle-duotone')-}</a>
-            DRAFT HELP XXX
+            {{{drafting_help}}}
         </div>
         <a class="help-info" data-help="draft" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
-        <b>XXX Drafting:</b>
-        <div class="indent">
-            <div class="entry" title="XXX Riders tooltip">
-                <key>XXX Riders:</key>
-                <input name="riders" type="range" min="1" max="8" step="1" value="1"/>
+        <label><b>{{{drafting}}}:</b> <input name="drafting" type="checkbox" style="margin-left: 0.22em;"/></label>
+        <div class="indent drafting-options hidden">
+            <div class="entry"title="{{{riders_tooltip}}}">
+                <key>{{{riders}}}:</key>
+                <input name="riders" type="range" min="1" max="8" step="1" value="2"/>
+                <span class="annotation draft-riders"></span>
             </div>
 
-            <div class="entry" title="XXX position tooltip">
-                <key>XXX Avg Position:</key>
-                <input name="position" type="range" min="0" max="1" step="0.01" value="0"/>
+            <div class="entry" title="{{{rotating_tooltip}}}">
+                <key>{{{rotating_paceline}}}:</key>
+                <input name="rotating" type="checkbox"/>
+            </div>
+
+            <div class="rotating-draft-options hidden">
+                <div class="entry" title="{{{work_tooltip}}}">
+                    <key>{{{time_at_front}}}:</key>
+                    <input name="work" type="range" min="0" max="1" step="0.01" value="0.5"/>
+                    <span class="annotation draft-work"></span>%
+                </div>
+            </div>
+            <div class="static-draft-options">
+                <div class="entry" title="{{{position_tooltip}}}">
+                    <key>{{{position}}}:</key>
+                    <input name="position" type="range" min="1" max="2" step="1" value="2"/>
+                    <span class="annotation draft-position">2</span>
+                </div>
             </div>
         </div>
     </div>

@@ -26,6 +26,27 @@
             max-width: 100%;
         }
 
+        input[type="checkbox"] {
+            top: initial;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .collapsable {
+            min-height: 2em;
+            padding-top: 0.4em !important;
+        }
+
+        .entry.flex {
+            display: flex;
+
+            key {
+                flex: 0 0 auto;
+            }
+        }
+
         .indent {
             display: flex;
             flex-direction: column;
@@ -137,6 +158,23 @@
         input[type="number"] {
             width: calc(7ch + 1em);
             text-align: right;
+        }
+
+        input[type="range"] + input[type="number"] {
+            margin-left: 0.5em;
+        }
+
+        .cda-position {
+            font-size: 0.86em;
+            font-style: italic;
+
+            &:not(.visible) {
+                display: none;
+            }
+        }
+
+        input + .annotation {
+            margin-left: 0.5em;
         }
     }
 
