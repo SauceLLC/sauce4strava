@@ -696,6 +696,39 @@
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Leistungs- und Arbeitsanforderungen zur Überwindung des Rollwiderstands"
     },
+    "perf_predictor_drafting": {
+        "message": "Abfassung"
+    },
+    "perf_predictor_drafting_tooltip": {
+        "message": "Wählen Sie diese Option aus, um Zeichnungseffekte zu modellieren"
+    },
+    "perf_predictor_riders": {
+        "message": "Fahrer"
+    },
+    "perf_predictor_riders_tooltip": {
+        "message": "Anzahl der Fahrer in dieser Gruppe"
+    },
+    "perf_predictor_position": {
+        "message": "Position"
+    },
+    "perf_predictor_position_tooltip": {
+        "message": "Ihre Position in dieser Gruppe"
+    },
+    "perf_predictor_rotating_paceline": {
+        "message": "Drehen / Paceline"
+    },
+    "perf_predictor_rotating_tooltip": {
+        "message": "Wählen Sie diese Option, um eine Gruppe von Fahrern zu modellieren, die während der Anstrengung ihre Position wechseln"
+    },
+    "perf_predictor_time_at_front": {
+        "message": "Zeit vorne"
+    },
+    "perf_predictor_work_tooltip": {
+        "message": "Wählen Sie den Prozentsatz der Zeit an der ersten Position dieser Gruppe"
+    },
+    "perf_predictor_drafting_help": {
+        "message": "Das Zeichnen oder Fahren in einer Gruppe von Fahrern bietet erhebliche aerodynamische Vorteile. Performance Predictor kann diese Effekte modellieren, indem Untersuchungen von <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen und Bert Blocken angewendet werden</a> .<br/><br/> Beachten Sie, dass dieser Algorithmus für kleinere Gruppen in einzelnen Dateiformationen gut funktioniert. Große Pelotons von Fahrern sind komplizierteren aerodynamischen Kräften ausgesetzt, die hier nicht richtig angesprochen werden."
+    },
     "sync_control_panel_intro": {
         "message": "Die Aktivitätssynchronisierung importiert den gesamten Aktivitätsverlauf, um verbesserte Trainingsdiagramme und Leistungsanalysen zu ermöglichen."
     },

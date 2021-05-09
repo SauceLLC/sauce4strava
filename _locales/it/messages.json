@@ -693,6 +693,39 @@
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Requisiti di potenza e di lavoro per superare la resistenza al rotolamento"
     },
+    "perf_predictor_drafting": {
+        "message": "Redazione"
+    },
+    "perf_predictor_drafting_tooltip": {
+        "message": "Selezionare questa opzione per modellare gli effetti di disegno"
+    },
+    "perf_predictor_riders": {
+        "message": "Cavalieri"
+    },
+    "perf_predictor_riders_tooltip": {
+        "message": "Numero di corridori in questo gruppo"
+    },
+    "perf_predictor_position": {
+        "message": "Posizione"
+    },
+    "perf_predictor_position_tooltip": {
+        "message": "La tua posizione in questo gruppo"
+    },
+    "perf_predictor_rotating_paceline": {
+        "message": "Rotazione / Paceline"
+    },
+    "perf_predictor_rotating_tooltip": {
+        "message": "Seleziona questa opzione per modellare un gruppo di ciclisti che cambiano posizione durante lo sforzo"
+    },
+    "perf_predictor_time_at_front": {
+        "message": "Tempo davanti"
+    },
+    "perf_predictor_work_tooltip": {
+        "message": "Seleziona la percentuale di tempo nella prima posizione di questo gruppo"
+    },
+    "perf_predictor_drafting_help": {
+        "message": "Disegnare o guidare in un gruppo di motociclisti offre significativi vantaggi aerodinamici. Performance Predictor può modellare questi effetti applicando la ricerca di <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen e Bert Blocken</a> .<br/><br/> Notare che questo algoritmo funziona bene per gruppi di piccole dimensioni in formazioni di file singoli. Grandi gruppi di motociclisti sono soggetti a forze aerodinamiche più complicate che non sono adeguatamente affrontate qui."
+    },
     "sync_control_panel_intro": {
         "message": "La sincronizzazione delle attività importa tutta la cronologia delle attività per consentire migliori grafici di allenamento e analisi delle prestazioni."
     },

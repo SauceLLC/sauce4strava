@@ -685,6 +685,39 @@
     "perf_predictor_power_details_rr_tooltip": {
         "message": "克服滚动阻力的动力和工作要求"
     },
+    "perf_predictor_drafting": {
+        "message": "起草"
+    },
+    "perf_predictor_drafting_tooltip": {
+        "message": "选择此选项以模拟制图效果"
+    },
+    "perf_predictor_riders": {
+        "message": "车手"
+    },
+    "perf_predictor_riders_tooltip": {
+        "message": "该组中的骑手人数"
+    },
+    "perf_predictor_position": {
+        "message": "位置"
+    },
+    "perf_predictor_position_tooltip": {
+        "message": "您在这个小组中的位置"
+    },
+    "perf_predictor_rotating_paceline": {
+        "message": "旋转/ Paceline"
+    },
+    "perf_predictor_rotating_tooltip": {
+        "message": "选择此选项可以模拟一组在努力过程中改变位置的骑手"
+    },
+    "perf_predictor_time_at_front": {
+        "message": "前面的时间"
+    },
+    "perf_predictor_work_tooltip": {
+        "message": "选择在该组第一位置的时间百分比"
+    },
+    "perf_predictor_drafting_help": {
+        "message": "在一组骑手中进行打草或骑行会带来明显的空气动力学优势。<a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">通过使用Thijs van Druenen和Bert Blocken的</a>研究，Performance Predictor可以对这些影响进行建模。<br/><br/>请注意，此算法适用于单个文件格式中的较小大小的组。较大的骑乘人员会受到更复杂的空气动力的影响，此处无法正确解决。"
+    },
     "sync_control_panel_intro": {
         "message": "活动同步会导入所有活动历史记录，以改进培训图表和绩效分析。"
     },

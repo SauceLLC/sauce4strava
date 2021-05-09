@@ -693,6 +693,39 @@
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Exigences de puissance et de travail pour surmonter la résistance au roulement"
     },
+    "perf_predictor_drafting": {
+        "message": "Rédaction"
+    },
+    "perf_predictor_drafting_tooltip": {
+        "message": "Sélectionnez cette option pour modéliser les effets de dessin"
+    },
+    "perf_predictor_riders": {
+        "message": "Coureurs"
+    },
+    "perf_predictor_riders_tooltip": {
+        "message": "Nombre de coureurs dans ce groupe"
+    },
+    "perf_predictor_position": {
+        "message": "Positionner"
+    },
+    "perf_predictor_position_tooltip": {
+        "message": "Votre position dans ce groupe"
+    },
+    "perf_predictor_rotating_paceline": {
+        "message": "Rotation / Paceline"
+    },
+    "perf_predictor_rotating_tooltip": {
+        "message": "Sélectionnez cette option pour modéliser un groupe de coureurs changeant de position pendant l'effort"
+    },
+    "perf_predictor_time_at_front": {
+        "message": "Temps devant"
+    },
+    "perf_predictor_work_tooltip": {
+        "message": "Sélectionnez le pourcentage de temps en première position de ce groupe"
+    },
+    "perf_predictor_drafting_help": {
+        "message": "Le dessin ou la conduite dans un groupe de cyclistes offre des avantages aérodynamiques significatifs. Performance Predictor peut modéliser ces effets en appliquant les recherches de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen et Bert Blocken</a> .<br/><br/> Notez que cet algorithme fonctionne bien pour les groupes de plus petite taille dans des formations de fichier unique. Les grands pelotons de coureurs sont soumis à des forces aérodynamiques plus complexes qui ne sont pas correctement traitées ici."
+    },
     "sync_control_panel_intro": {
         "message": "La synchronisation des activités importe tout l'historique des activités pour permettre d'améliorer les graphiques d'entraînement et l'analyse des performances."
     },

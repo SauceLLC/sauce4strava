@@ -685,6 +685,39 @@
     "perf_predictor_power_details_rr_tooltip": {
         "message": "Requisitos de potencia y trabajo para superar la resistencia a la rodadura."
     },
+    "perf_predictor_drafting": {
+        "message": "Redacción"
+    },
+    "perf_predictor_drafting_tooltip": {
+        "message": "Seleccione esta opción para modelar efectos de dibujo"
+    },
+    "perf_predictor_riders": {
+        "message": "Jinetes"
+    },
+    "perf_predictor_riders_tooltip": {
+        "message": "Número de ciclistas en este grupo"
+    },
+    "perf_predictor_position": {
+        "message": "Posición"
+    },
+    "perf_predictor_position_tooltip": {
+        "message": "Tu posición en este grupo"
+    },
+    "perf_predictor_rotating_paceline": {
+        "message": "Rotatorio / Paceline"
+    },
+    "perf_predictor_rotating_tooltip": {
+        "message": "Selecciona esta opción para modelar un grupo de ciclistas que cambian de posición durante el esfuerzo."
+    },
+    "perf_predictor_time_at_front": {
+        "message": "Tiempo al frente"
+    },
+    "perf_predictor_work_tooltip": {
+        "message": "Seleccione el porcentaje de tiempo en la primera posición de este grupo"
+    },
+    "perf_predictor_drafting_help": {
+        "message": "Dibujar o montar en un grupo de ciclistas proporciona importantes beneficios aerodinámicos. Performance Predictor puede modelar estos efectos aplicando la investigación de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen y Bert Blocken</a> .<br/><br/> Tenga en cuenta que este algoritmo funciona bien para grupos de menor tamaño en formaciones de un solo archivo. Los grandes pelotones de los ciclistas están sujetos a fuerzas aerodinámicas más complicadas que no se tratan adecuadamente aquí."
+    },
     "sync_control_panel_intro": {
         "message": "La sincronización de actividades importa todo el historial de actividades para permitir mejores gráficos de entrenamiento y análisis de rendimiento."
     },
