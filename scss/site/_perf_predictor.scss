@@ -19,6 +19,27 @@
             flex-wrap: wrap;
             flex-direction: row;
             padding: 0;
+
+             &:not(.drafting) {
+                .drafting-options,
+                .drafting-output {
+                    display: none !important;
+                }
+            }
+
+             &.drafting {
+                &.draft-rotating {
+                    .static-draft-options {
+                        display: none !important;
+                    }
+                }
+
+                &:not(.draft-rotating) {
+                    .rotating-draft-options {
+                        display: none !important;
+                    }
+                }
+            }
         }
 
         form.input {
@@ -28,10 +49,6 @@
 
         input[type="checkbox"] {
             top: initial;
-        }
-
-        .hidden {
-            display: none !important;
         }
 
         .collapsable {
@@ -152,6 +169,42 @@
                 align-self: center;
                 width: 4.25em;
                 height: 4.25em;
+            }
+
+            .drafting-output {
+                --draft-pct: 1;
+                --draft-power-range: calc(var(--draft-power-max) - var(--draft-power-min));
+
+                .draft-rider-icon {
+                    flex: 1 1 0;
+                    font-size: calc(4 / var(--draft-riders) * 1.1em);
+                    margin: 0.8rem 0.5em 0;
+                    --draft-power-pct: (var(--draft-power) - var(--draft-power-min)) / var(--draft-power-range);
+                    color: hsl(calc((1 - var(--draft-power-pct)) * 80deg + 10deg), 90%, 50%);
+
+                    &:not(.you) {
+                        filter: saturate(0);
+                    }
+
+                    svg[data-icon] {
+                        transform: scaleX(-1);
+                        line-height: 0;
+
+                        .fa-secondary {
+                            opacity: 1;
+                        }
+                    }
+
+                    label {
+                        margin-top: 0;
+                        text-align: center;
+                        color: inherit;
+                    }
+
+                    &.hidden {
+                        display: none;
+                    }
+                }
             }
         }
 

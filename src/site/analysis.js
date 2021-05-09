@@ -2885,7 +2885,7 @@ sauce.ns('analysis', ns => {
         const $draftRiders = $dialog.find('span.draft-riders');
         const $draftPosition = $dialog.find('span.draft-position');
         const $draftWork = $dialog.find('span.draft-work');
-        const $draftOptions = $dialog.find('.drafting-options');
+        const $draftRiderIcons = $dialog.find('.draft-rider-icon');
         function recalc(noPulse) {
             const crr = fget('crr');
             const cda = fget('cda');
@@ -2913,32 +2913,64 @@ sauce.ns('analysis', ns => {
                 const riders = fget('riders');
                 $draftRiders.text(riders < 8 ? riders.toLocaleString() : '8+');
                 const rotating = fget('rotating');
+                const positions = [];
                 if (!rotating) {
                     const position = fget('position');
+                    $dialog[0].style.setProperty('--draft-position', position);
                     $draftPosition.text(position.toLocaleString());
                     draftReduction = sauce.power.cyclingDraftDragReduction(riders, position);
                     est = sauce.power.cyclingPowerFastestVelocitySearch({power, slope, weight, crr,
                         cda: cda * draftReduction, el, wind});
+                    positions.push({position, pct: 1});
                 } else {
                     const work = fget('work');
                     $draftWork.text(Math.round(work * 100).toLocaleString());
-                    const positions = [];
                     for (let i = work ? 0 : 1; i < riders; i++) {
-                        positions.push({
-                            position: i + 1,
-                            pct: i === 0 ? work : (1 / (riders - 1)) * (1 - work),
-                        });
+                        const pct = i === 0 ? work : (1 / (riders - 1)) * (1 - work);
+                        positions.push({position: i + 1, pct});
                     }
                     est = sauce.power.cyclingPowerVelocitySearchMultiPosition(riders, positions,
                         {power, slope, weight, crr, cda, el, wind});
                 }
-                $dialog.find('.static-draft-options').toggleClass('hidden', rotating);
-                $dialog.find('.rotating-draft-options').toggleClass('hidden', !rotating);
+                let minP = Infinity;
+                let maxP = -Infinity;
+                for (let i = 0; i < $draftRiderIcons.length; i++) {
+                    const icon = $draftRiderIcons[i];
+                    icon.classList.toggle('hidden', i >= riders);
+                    icon.classList.remove('you');
+                    icon.removeAttribute('title');
+                    if (i < riders) {
+                        const dr = sauce.power.cyclingDraftDragReduction(riders, i + 1);
+                        const posEst = sauce.power.cyclingPowerEstimate({velocity: est.velocity,
+                            slope, weight, crr, cda: cda * dr, el, wind});
+                        minP = Math.min(posEst.watts, minP);
+                        maxP = Math.max(posEst.watts, maxP);
+                        icon.querySelector('label').textContent = `
+                            ${Math.round(posEst.watts).toLocaleString()}w
+                        `;
+                        icon.style.setProperty('--draft-power', posEst.watts);
+                    }
+                }
+                $dialog[0].style.setProperty('--draft-power-min', minP);
+                $dialog[0].style.setProperty('--draft-power-max', maxP);
+                for (let i = 0; i < positions.length; i++) {
+                    const p = positions[i];
+                    const icon = $draftRiderIcons[p.position - 1];
+                    icon.classList.add('you');
+                    if (est.estimates) {
+                        icon.setAttribute('title', [
+                            `${JSON.stringify(est.estimates[i])}`,
+                            `${p.position}`
+                        ].join('\n'));
+                    }
+                }
+                $dialog[0].style.setProperty('--draft-riders', riders);
+                $dialog.toggleClass('draft-rotating', rotating);
             } else {
                 est = sauce.power.cyclingPowerFastestVelocitySearch({power, slope, weight, crr,
                     cda, el, wind});
             }
-            $draftOptions.toggleClass('hidden', !drafting);
+            $dialog.toggleClass('drafting', drafting);
             $pred.toggleClass('valid', !!est);
             if (!est) {
                 return;

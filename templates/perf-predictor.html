@@ -89,10 +89,10 @@
         </div>
         <a class="help-info" data-help="draft" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
         <label><b>{{{drafting}}}:</b> <input name="drafting" type="checkbox" style="margin-left: 0.22em;"/></label>
-        <div class="indent drafting-options hidden">
+        <div class="indent drafting-options">
             <div class="entry"title="{{{riders_tooltip}}}">
                 <key>{{{riders}}}:</key>
-                <input name="riders" type="range" min="1" max="8" step="1" value="2"/>
+                <input name="riders" type="range" min="2" max="8" step="1" value="2"/>
                 <span class="annotation draft-riders"></span>
             </div>
 
@@ -101,7 +101,7 @@
                 <input name="rotating" type="checkbox"/>
             </div>
 
-            <div class="rotating-draft-options hidden">
+            <div class="rotating-draft-options">
                 <div class="entry" title="{{{work_tooltip}}}">
                     <key>{{{time_at_front}}}:</key>
                     <input name="work" type="range" min="0" max="1" step="0.01" value="0.5"/>
@@ -226,6 +226,20 @@
                     </div>
                 </div>
                 <div class="right-col sparkline"></div>
+            </div>
+        </div>
+
+        <div class="entry drafting-output">
+            <b>{{{drafting}}}:</b>
+            <div class="indent columns">
+                <div class="draft-rider-icon">{-await fa('biking-duotone')-}<label/></div>
+                <div class="draft-rider-icon">{-await fa('biking-duotone')-}<label/></div>
+                <div class="draft-rider-icon">{-await fa('biking-duotone')-}<label/></div>
+                <div class="draft-rider-icon">{-await fa('biking-duotone')-}<label/></div>
+                <div class="draft-rider-icon">{-await fa('biking-duotone')-}<label/></div>
+                <div class="draft-rider-icon">{-await fa('biking-duotone')-}<label/></div>
+                <div class="draft-rider-icon">{-await fa('biking-duotone')-}<label/></div>
+                <div class="draft-rider-icon">{-await fa('biking-duotone')-}<label/></div>
             </div>
         </div>
     </section>

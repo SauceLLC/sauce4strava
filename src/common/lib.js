@@ -1193,31 +1193,18 @@ sauce.ns('power', function() {
         const reductions = positions.map(x => cyclingDraftDragReduction(riders, x.position));
         const avgCda = sauce.data.sum(reductions.map((x, i) => x * positions[i].pct)) * args.cda;
         const seedEst = cyclingPowerFastestVelocitySearch({...args, cda: avgCda});
-        let velocity = seedEst.velocity;
-        let estimates;
-        const searchRange = 100;  // ~220mph from initial estimate
-        let high = velocity + searchRange;
-        let low =  velocity - searchRange;
-        const epsilon = 0.000001;
+        if (!seedEst) {
+            return;
+        }
+        const velocity = seedEst.velocity;
+        const estimates = reductions.map(x => cyclingPowerEstimate({
+            ...args,
+            cda: x * args.cda,
+            velocity,
+        }));
         const estAvg = field => sauce.data.sum(positions.map((x, i) => x.pct * estimates[i][field]));
-        for (let i = 0; i < 10000; i++) {
-            estimates = reductions.map(x => cyclingPowerEstimate({
-                ...args,
-                cda: x * args.cda,
-                velocity,
-            }));
-            const avgPower = estAvg('watts');
-            if (Math.abs(avgPower - args.power) < epsilon) {
-                if (i) {
-                    console.log("Attempts", i, seedEst.velocity - velocity);
-                }
-                break;
-            } else if (avgPower < args.power) {
-                low = velocity;
-            } else {
-                high = velocity;
-            }
-            velocity = low + ((high - low) / 2);
+        if (Math.abs(estAvg('watts') - args.power) > 0.01) {
+            sauce.report.error(new Error('velocity from perf search seed is invalid'));
         }
         return {
             gForce: estAvg('gForce'),
