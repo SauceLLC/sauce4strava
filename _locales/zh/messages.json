@@ -700,6 +700,18 @@
     "perf_predictor_position": {
         "message": "位置"
     },
+    "perf_predictor_power_variance": {
+        "message": "功率方差"
+    },
+    "perf_predictor_power_variance_tooltip": {
+        "message": "最困难的位置和最容易的位置之间的力量差异。通常这是第一个和最后一个位置的力量。"
+    },
+    "perf_predictor_group_power": {
+        "message": "集团实力"
+    },
+    "perf_predictor_group_power_tooltip": {
+        "message": "该组中所有职位的平均功率"
+    },
     "perf_predictor_position_tooltip": {
         "message": "您在这个小组中的位置"
     },

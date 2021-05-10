@@ -711,6 +711,18 @@
     "perf_predictor_position": {
         "message": "Position"
     },
+    "perf_predictor_power_variance": {
+        "message": "Leistungsabweichung"
+    },
+    "perf_predictor_power_variance_tooltip": {
+        "message": "Der Leistungsunterschied zwischen der schwierigsten und der einfachsten Position. Normalerweise ist dies die Leistung für die 1. und letzte Position."
+    },
+    "perf_predictor_group_power": {
+        "message": "Gruppenmacht"
+    },
+    "perf_predictor_group_power_tooltip": {
+        "message": "Die durchschnittliche Leistung für alle Positionen in dieser Gruppe"
+    },
     "perf_predictor_position_tooltip": {
         "message": "Ihre Position in dieser Gruppe"
     },

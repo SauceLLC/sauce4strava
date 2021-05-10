@@ -708,6 +708,18 @@
     "perf_predictor_position": {
         "message": "Positionner"
     },
+    "perf_predictor_power_variance": {
+        "message": "Variance de puissance"
+    },
+    "perf_predictor_power_variance_tooltip": {
+        "message": "La différence de puissance entre la position la plus difficile et la position la plus facile. Habituellement, il s'agit de la puissance pour la 1ère et la dernière position."
+    },
+    "perf_predictor_group_power": {
+        "message": "Puissance de groupe"
+    },
+    "perf_predictor_group_power_tooltip": {
+        "message": "La puissance moyenne pour tous les postes de ce groupe"
+    },
     "perf_predictor_position_tooltip": {
         "message": "Votre position dans ce groupe"
     },
