@@ -57,9 +57,10 @@ sauce.ns('locale', ns => {
             return entry.value;
         } else {
             await sauce.proxy.connected;
-            const value = await sauce.locale._getMessage(...args);
+            let value = await sauce.locale._getMessage(...args);
             if (!value) {
-                warnOnce(`Locale message not found: ${entry.hashKey}`);
+                warnOnce(`Locale message not found: ${args[0]}`);
+                value = `L!:${args[0]}`;
             }
             msgCache.set(entry.hashKey, value);
             return value;
