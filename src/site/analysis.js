@@ -2955,7 +2955,7 @@ sauce.ns('analysis', ns => {
                             `${Math.round(posEst.watts).toLocaleString()}w`;
                         icon.style.setProperty('--draft-power', posEst.watts);
                         icon.setAttribute('title', [
-                            `${locale.position}: ${i}`,
+                            `${locale.position}: ${i + 1}`,
                             `${locale.time}: ${H.timer(time * pct)} (${Math.round(pct * 100)}%)`,
                             `${locale.power}: ${Math.round(posEst.watts)}w`,
                         ].join('\n'));
