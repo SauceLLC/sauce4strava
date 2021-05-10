@@ -172,19 +172,24 @@
             }
 
             .drafting-output {
-                --draft-pct: 1;
                 --draft-power-range: calc(var(--draft-power-max) - var(--draft-power-min));
+                --draft-hue-range: calc(min(1, var(--draft-variance)) * 90deg);
+                --draft-hue-offset: calc(min(100deg, 10deg + (1 - min(1, var(--draft-variance))) * 45deg));
 
                 .draft-rider-icon {
                     flex: 1 1 0;
                     font-size: calc(4 / var(--draft-riders) * 1.1em);
                     margin: 0.8rem 0.5em 0;
-                    --draft-power-pct: (var(--draft-power) - var(--draft-power-min)) / var(--draft-power-range);
-                    color: hsl(calc((1 - var(--draft-power-pct)) * 80deg + 10deg), 90%, 50%);
-
-                    &:not(.you) {
-                        filter: saturate(0);
-                    }
+                    --draft-power-pct: (var(--draft-power) - var(--draft-power-min)) /
+                        var(--draft-power-range);
+                    color: hsl(
+                        calc(
+                            ((1 - var(--draft-power-pct)) *
+                             var(--draft-hue-range)) +
+                            var(--draft-hue-offset)),
+                        90%,
+                        50%);
+                    filter: SaTuRaTe(var(--draft-pct)); // funky case to workaround sass bug.
 
                     svg[data-icon] {
                         transform: scaleX(-1);
