@@ -153,8 +153,11 @@ sauce.ns('proxy', ns => {
         return await new Promise((resolve, _reject) => {
             const pid = proxyId++;
             function reject(e) {
-                e.stack += stack.split('<SETINEL>', 2).slice(-1)[0].replace(/^\n*/, '\n');
-                _reject(e);
+                try {
+                    e.stack += stack.split('<SETINEL>', 2).slice(-1)[0].replace(/^\n*/, '\n');
+                } finally {
+                    _reject(e);
+                }
             }
             inflight.set(pid, {resolve, reject});
             requestPort.postMessage({
