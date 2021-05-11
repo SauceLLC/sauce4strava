@@ -149,8 +149,13 @@ sauce.ns('proxy', ns => {
             // Unlikely but possible if extCall is called manually.
             await ns.connected;
         }
-        return await new Promise((resolve, reject) => {
+        const stack = new Error('<SETINEL>').stack;
+        return await new Promise((resolve, _reject) => {
             const pid = proxyId++;
+            function reject(e) {
+                e.stack += stack.split('<SETINEL>', 2).slice(-1)[0];
+                _reject(e);
+            }
             inflight.set(pid, {resolve, reject});
             requestPort.postMessage({
                 pid,
