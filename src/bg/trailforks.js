@@ -330,7 +330,6 @@ sauce.ns('trailforks', ns => {
             'closed',
             'dogs_allowed',
             'download_disable',
-            'entrance_gate',
             'family_friendly',
             'hide_association',
             'published',
@@ -339,7 +338,6 @@ sauce.ns('trailforks', ns => {
             'verified',
             'wet_weather',
             'leaderboard_disable',
-            'license_required',
             'dirty',
             'disable_sensitive_check',
         ];
@@ -361,6 +359,7 @@ sauce.ns('trailforks', ns => {
             'direction_backward',
             'direction_forward',
             'ebike',
+            'entrance_gate',
             'faved',  // XXX possibly bool?
             'featured_photo',
             'featured_video',
@@ -371,6 +370,7 @@ sauce.ns('trailforks', ns => {
             'global_rank_score',
             'id',
             'latitude',
+            'license_required',
             'longitude',
             'legacy_id',
             'physical_rating',
