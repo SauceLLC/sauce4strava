@@ -431,8 +431,9 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sauce.sauce4strava.Extension;
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava.Extension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -453,8 +454,9 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sauce.sauce4strava.Extension;
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava.Extension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -479,8 +481,9 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MARKETING_VERSION = 7.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sauce.sauce4strava;
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -504,8 +507,9 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MARKETING_VERSION = 7.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sauce.sauce4strava;
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

@@ -10,7 +10,7 @@ import SafariServices.SFSafariApplication
 import SafariServices.SFSafariExtensionManager
 
 let appName = "Sauce for Strava™"
-let extensionBundleIdentifier = "com.sauce.Sauce-for-Strava-.Extension"
+let extensionBundleIdentifier = "io.saucellc.sauce4strava.Extension"
 
 class ViewController: NSViewController {
 
