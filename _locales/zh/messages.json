@@ -1,367 +1,283 @@
 {
     "app_desc": {
-        "message": "循环和运行分析的附加功能。该扩展程序升级了Strava™网站。",
-        "description": ""
+        "message": "循环和运行分析的附加功能。该扩展程序升级了Strava™网站。"
     },
     "analysis_options": {
-        "message": "选件",
-        "description": ""
+        "message": "选件"
     },
     "analysis_tools": {
-        "message": "工具类",
-        "description": ""
+        "message": "工具类"
     },
     "analysis_time": {
-        "message": "时间",
-        "description": ""
+        "message": "时间"
     },
     "analysis_timing": {
-        "message": "定时",
-        "description": ""
+        "message": "定时"
     },
     "analysis_gap": {
         "message": "GAP",
         "description": "IMMUTABLE"
     },
     "analysis_climbed": {
-        "message": "爬上",
-        "description": ""
+        "message": "爬上"
     },
     "analysis_descended": {
-        "message": "下降",
-        "description": ""
+        "message": "下降"
     },
     "analysis_avg": {
-        "message": "平均",
-        "description": ""
+        "message": "平均"
     },
     "analysis_min": {
-        "message": "敏",
-        "description": ""
+        "message": "敏"
     },
     "analysis_max": {
-        "message": "最高",
-        "description": ""
+        "message": "最高"
     },
     "analysis_lowest": {
-        "message": "最低",
-        "description": ""
+        "message": "最低"
     },
     "analysis_highest": {
-        "message": "最高",
-        "description": ""
+        "message": "最高"
     },
     "analysis_elapsed": {
-        "message": "过去",
-        "description": ""
+        "message": "过去"
     },
     "analysis_elapsed_time_tooltip": {
-        "message": "经过的时间：包括停止的时间",
-        "description": ""
+        "message": "经过的时间：包括停止的时间"
     },
     "analysis_elapsed_power_tooltip": {
-        "message": "平均耗电量：停靠点为零填充",
-        "description": ""
+        "message": "平均耗电量：停靠点为零填充"
     },
     "analysis_elapsed_pace_tooltip": {
         "message": "平均经过速度：时间范围内包括停止",
         "description": "IMMUTABLE"
     },
     "analysis_active_time_tooltip": {
-        "message": "仅活动时间",
-        "description": ""
+        "message": "仅活动时间"
     },
     "analysis_active_power_tooltip": {
-        "message": "平均有功功率",
-        "description": ""
+        "message": "平均有功功率"
     },
     "analysis_active_pace_tooltip": {
         "message": "平均活动速度",
         "description": "IMMUTABLE"
     },
     "analysis_active_speed_tooltip": {
-        "message": "平均活动速度",
-        "description": ""
+        "message": "平均活动速度"
     },
     "analysis_gap_tooltip": {
-        "message": "坡度调整步幅：平坦地形的估计步速",
-        "description": ""
+        "message": "坡度调整步幅：平坦地形的估计步速"
     },
     "analysis_stride_tooltip": {
-        "message": "每步/行程的平均距离",
-        "description": ""
+        "message": "每步/行程的平均距离"
     },
     "analysis_np_tooltip": {
-        "message": "归一化功率®：潜在平均功率的估计",
-        "description": ""
+        "message": "归一化功率®：潜在平均功率的估计"
     },
     "analysis_xp_tooltip": {
-        "message": "xPower：一种改进的潜在功率估算，受NormalizedPower®（由Philip Friere Skiba博士创建）启发",
-        "description": ""
+        "message": "xPower：一种改进的潜在功率估算，受NormalizedPower®（由Philip Friere Skiba博士创建）启发"
     },
     "analysis_sp_tooltip": {
-        "message": "海力：海平面上的潜在功率估计",
-        "description": ""
+        "message": "海力：海平面上的潜在功率估计"
     },
     "analysis_sp_adjust_tooltip": {
-        "message": "由于海拔高度对V02Max的影响而进行的补偿",
-        "description": ""
+        "message": "由于海拔高度对V02Max的影响而进行的补偿"
     },
     "analysis_energy_tooltip": {
-        "message": "能量消耗以千焦耳为单位",
-        "description": ""
+        "message": "能量消耗以千焦耳为单位"
     },
     "analysis_energy_rate_tooltip": {
-        "message": "每小时千焦",
-        "description": ""
+        "message": "每小时千焦"
     },
     "analysis_elevation_gain_tooltip": {
-        "message": "获得的海拔：攀爬",
-        "description": ""
+        "message": "获得的海拔：攀爬"
     },
     "analysis_elevation_loss_tooltip": {
-        "message": "海拔高度下降：下降",
-        "description": ""
+        "message": "海拔高度下降：下降"
     },
     "analysis_elevation_avg_tooltip": {
-        "message": "平均海拔",
-        "description": ""
+        "message": "平均海拔"
     },
     "analysis_grade_tooltip": {
-        "message": "坡度",
-        "description": ""
+        "message": "坡度"
     },
     "analysis_vam_tooltip": {
-        "message": "每小时攀登米",
-        "description": ""
+        "message": "每小时攀登米"
     },
     "analysis_tss_tooltip": {
-        "message": "训练压力评分®：基于功率的压力负荷指示器",
-        "description": ""
+        "message": "训练压力评分®：基于功率的压力负荷指示器"
     },
     "analysis_trimp_tss_tooltip": {
-        "message": "基于TRIMP（过渡冲动）的Training StressScore®：基于心率储备的压力负荷指标",
-        "description": ""
+        "message": "基于TRIMP（过渡冲动）的Training StressScore®：基于心率储备的压力负荷指标"
     },
     "analysis_start_of_effort_tooltip": {
-        "message": "开始工作的时间偏移",
-        "description": ""
+        "message": "开始工作的时间偏移"
     },
     "analysis_wkg_tooltip": {
-        "message": "每公斤体重的瓦数",
-        "description": ""
+        "message": "每公斤体重的瓦数"
     },
     "analysis_max_power_tooltip": {
-        "message": "最大功率",
-        "description": ""
+        "message": "最大功率"
     },
     "analysis_low_hr_tooltip": {
-        "message": "最低心率",
-        "description": ""
+        "message": "最低心率"
     },
     "analysis_high_hr_tooltip": {
-        "message": "最高心率",
-        "description": ""
+        "message": "最高心率"
     },
     "analysis_low_speed_tooltip": {
-        "message": "最低速度",
-        "description": ""
+        "message": "最低速度"
     },
     "analysis_high_speed_tooltip": {
-        "message": "最高速度",
-        "description": ""
+        "message": "最高速度"
     },
     "analysis_low_pace_tooltip": {
-        "message": "最低步伐",
-        "description": ""
+        "message": "最低步伐"
     },
     "analysis_high_pace_tooltip": {
-        "message": "最高速度",
-        "description": ""
+        "message": "最高速度"
     },
     "analysis_expand_tooltip": {
-        "message": "点击展开",
-        "description": ""
+        "message": "点击展开"
     },
     "analysis_compress_tooltip": {
-        "message": "点击折叠",
-        "description": ""
+        "message": "点击折叠"
     },
     "analysis_ftp_link_tooltip": {
-        "message": "点击设置值",
-        "description": ""
+        "message": "点击设置值"
     },
     "analysis_weight_link_tooltip": {
-        "message": "点击设置值",
-        "description": ""
+        "message": "点击设置值"
     },
     "analysis_ftp_input_tooltip": {
-        "message": "输入该运动员的估计FTP（功能阈值功率），然后按Enter。 FTP是持续1小时的最大平均功率。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。",
-        "description": ""
+        "message": "输入该运动员的估计FTP（功能阈值功率），然后按Enter。 FTP是持续1小时的最大平均功率。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。"
     },
     "analysis_weight_input_tooltip": {
-        "message": "输入该运动员的估计体重，然后按Enter。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。",
-        "description": ""
+        "message": "输入该运动员的估计体重，然后按Enter。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。"
     },
     "analysis_intensity_tooltip": {
         "message": "强度因子",
         "description": "IMMUTABLE"
     },
     "analysis_peak_power_tooltip": {
-        "message": "最大持续功率范围",
-        "description": ""
+        "message": "最大持续功率范围"
     },
     "analysis_peak_power_wkg_tooltip": {
-        "message": "最大持续瓦特/千克体重",
-        "description": ""
+        "message": "最大持续瓦特/千克体重"
     },
     "analysis_peak_sp_tooltip": {
-        "message": "最大海平面调整功率范围",
-        "description": ""
+        "message": "最大海平面调整功率范围"
     },
     "analysis_peak_np_tooltip": {
-        "message": "最大归一化功率范围",
-        "description": ""
+        "message": "最大归一化功率范围"
     },
     "analysis_peak_xp_tooltip": {
-        "message": "最大xPower范围",
-        "description": ""
+        "message": "最大xPower范围"
     },
     "analysis_peak_hr_tooltip": {
-        "message": "最大持续心率范围",
-        "description": ""
+        "message": "最大持续心率范围"
     },
     "analysis_peak_cadence_tooltip": {
-        "message": "最大持续节奏范围",
-        "description": ""
+        "message": "最大持续节奏范围"
     },
     "analysis_peak_vam_tooltip": {
-        "message": "最大持续爬升速度范围",
-        "description": ""
+        "message": "最大持续爬升速度范围"
     },
     "analysis_peak_pace_tooltip": {
         "message": "最大持续速度范围",
         "description": "IMMUTABLE"
     },
     "analysis_peak_gap_tooltip": {
-        "message": "最大持续成绩调整步幅范围",
-        "description": ""
+        "message": "最大持续成绩调整步幅范围"
     },
     "analysis_watt_estimate_tooltip": {
-        "message": "这些值是根据瓦特数估算得出的。为了获得准确的值，需要一个有功功率测量设备。",
-        "description": ""
+        "message": "这些值是根据瓦特数估算得出的。为了获得准确的值，需要一个有功功率测量设备。"
     },
     "analysis_stops": {
-        "message": "停止",
-        "description": ""
+        "message": "停止"
     },
     "analysis_idle": {
-        "message": "闲",
-        "description": ""
+        "message": "闲"
     },
     "analysis_active": {
-        "message": "活性",
-        "description": ""
+        "message": "活性"
     },
     "analysis_stats": {
-        "message": "统计资料",
-        "description": ""
+        "message": "统计资料"
     },
     "analysis_power_avg": {
-        "message": "功率平均值",
-        "description": ""
+        "message": "功率平均值"
     },
     "analysis_energy": {
-        "message": "能源",
-        "description": ""
+        "message": "能源"
     },
     "analysis_expended": {
-        "message": "已支出",
-        "description": ""
+        "message": "已支出"
     },
     "analysis_rate": {
-        "message": "率",
-        "description": ""
+        "message": "率"
     },
     "analysis_elevation": {
-        "message": "海拔",
-        "description": ""
+        "message": "海拔"
     },
     "analysis_environment": {
-        "message": "环境",
-        "description": ""
+        "message": "环境"
     },
     "analysis_grade": {
-        "message": "年级",
-        "description": ""
+        "message": "年级"
     },
     "analysis_estimated": {
-        "message": "估计的",
-        "description": ""
+        "message": "估计的"
     },
     "analysis_data": {
-        "message": "数据",
-        "description": ""
+        "message": "数据"
     },
     "analysis_rank": {
-        "message": "秩",
-        "description": ""
+        "message": "秩"
     },
     "analysis_raw": {
-        "message": "生的",
-        "description": ""
+        "message": "生的"
     },
     "analysis_graphs": {
-        "message": "图表",
-        "description": ""
+        "message": "图表"
     },
     "analysis_perf_predictor_tooltip": {
-        "message": "预测自行车运动的表现。",
-        "description": ""
+        "message": "预测自行车运动的表现。"
     },
     "analysis_pace": {
         "message": "配速",
         "description": "IMMUTABLE"
     },
     "analysis_speed": {
-        "message": "速度",
-        "description": ""
+        "message": "速度"
     },
     "analysis_distance": {
-        "message": "距离",
-        "description": ""
+        "message": "距离"
     },
     "analysis_samples": {
-        "message": "样品",
-        "description": ""
+        "message": "样品"
     },
     "analysis_beta": {
-        "message": "测试版",
-        "description": ""
+        "message": "测试版"
     },
     "analysis_start_of_effort": {
-        "message": "开始努力",
-        "description": ""
+        "message": "开始努力"
     },
     "analysis_elapsed_time": {
-        "message": "经过时间",
-        "description": ""
+        "message": "经过时间"
     },
     "analysis_heartrate": {
-        "message": "心率",
-        "description": ""
+        "message": "心率"
     },
     "analysis_temp": {
-        "message": "温度",
-        "description": ""
+        "message": "温度"
     },
     "analysis_cadence": {
         "message": "踏频",
         "description": "IMMUTABLE"
     },
     "analysis_stride": {
-        "message": "大步走",
-        "description": ""
+        "message": "大步走"
     },
     "analysis_peak_power": {
         "message": "最佳功率",
@@ -404,843 +320,633 @@
         "description": "IMMUTABLE"
     },
     "analysis_watts": {
-        "message": "瓦数",
-        "description": ""
+        "message": "瓦数"
     },
     "analysis_power": {
-        "message": "功率",
-        "description": ""
+        "message": "功率"
     },
     "analysis_sea_power": {
-        "message": "海上力量",
-        "description": ""
+        "message": "海上力量"
     },
     "analysis_weight": {
-        "message": "重量",
-        "description": ""
+        "message": "重量"
     },
     "analysis_segments": {
-        "message": "区隔",
-        "description": ""
+        "message": "区隔"
     },
     "analysis_empty_info_aside": {
-        "message": "没有细分受众群或该范围的其他数据。",
-        "description": ""
+        "message": "没有细分受众群或该范围的其他数据。"
     },
     "analysis_best_performances": {
-        "message": "最佳表演",
-        "description": ""
+        "message": "最佳表演"
     },
     "analysis_best_all": {
-        "message": "全部",
-        "description": ""
+        "message": "全部"
     },
     "analysis_best_year": {
-        "message": "年",
-        "description": ""
+        "message": "年"
     },
     "analysis_best_90d": {
-        "message": "90天",
-        "description": ""
+        "message": "90天"
     },
     "analysis_name": {
-        "message": "名称",
-        "description": ""
+        "message": "名称"
     },
     "analysis_overlap": {
-        "message": "交叠",
-        "description": ""
+        "message": "交叠"
     },
     "analysis_overlap_tooltip": {
-        "message": "段上的重叠量。 100％表示遍历整个段。",
-        "description": ""
+        "message": "段上的重叠量。 100％表示遍历整个段。"
     },
     "analysis_change": {
-        "message": "更改",
-        "description": ""
+        "message": "更改"
     },
     "analysis_gain": {
-        "message": "获得",
-        "description": ""
+        "message": "获得"
     },
     "analysis_loss": {
-        "message": "失利",
-        "description": ""
+        "message": "失利"
     },
     "analysis_view": {
-        "message": "视图",
-        "description": ""
+        "message": "视图"
     },
     "analysis_export": {
-        "message": "出口",
-        "description": ""
+        "message": "出口"
     },
     "analysis_male": {
-        "message": "男",
-        "description": ""
+        "message": "男"
     },
     "analysis_female": {
-        "message": "女",
-        "description": ""
+        "message": "女"
     },
     "analysis_power_profile_about1": {
-        "message": "功率分析的概念是由Andy Coggan博士创建的。这是在特定水平的赛车竞争力上对动力要求的基本概述。",
-        "description": ""
+        "message": "功率分析的概念是由Andy Coggan博士创建的。这是在特定水平的赛车竞争力上对动力要求的基本概述。"
     },
     "analysis_power_profile_about2": {
-        "message": "这些排名旨在让您大致了解最佳功率输出与其他赛车的最大功率相比。当您努力工作时，它们最具代表性。",
-        "description": ""
+        "message": "这些排名旨在让您大致了解最佳功率输出与其他赛车的最大功率相比。当您努力工作时，它们最具代表性。"
     },
     "analysis_power_profile_select": {
-        "message": "选择一个配置文件以查看所需的功率输出",
-        "description": ""
+        "message": "选择一个配置文件以查看所需的功率输出"
     },
     "analysis_power_profile_footer_leadin": {
-        "message": "注意：Sauce算法是对Andy原始概念的增强解释。对于20到60分钟之间的工作，逐渐使用NormalizedPower®（标准功率）代替实际功率。 1小时后，仅使用NP®，并应用对数耐力因子以更好地模拟疲劳。<br/><br/>有关原始配置文件的其他信息，请阅读",
-        "description": ""
+        "message": "注意：Sauce算法是对Andy原始概念的增强解释。对于20到60分钟之间的工作，逐渐使用NormalizedPower®（标准功率）代替实际功率。 1小时后，仅使用NP®，并应用对数耐力因子以更好地模拟疲劳。<br/><br/>有关原始配置文件的其他信息，请阅读"
     },
     "analysis_comment_label": {
-        "message": "说些什么",
-        "description": ""
+        "message": "说些什么"
     },
     "analysis_comment_placeholder": {
-        "message": "您的评论在这里",
-        "description": ""
+        "message": "您的评论在这里"
     },
     "analysis_comment": {
-        "message": "评论",
-        "description": ""
+        "message": "评论"
     },
     "analysis_title": {
-        "message": "分析",
-        "description": ""
+        "message": "分析"
     },
     "analysis_create_live_segment_tooltip": {
-        "message": "通过这项工作，可以创建一个实时细分文件。与大多数现代Garmin设备兼容。",
-        "description": ""
+        "message": "通过这项工作，可以创建一个实时细分文件。与大多数现代Garmin设备兼容。"
     },
     "analysis_create": {
-        "message": "创造",
-        "description": ""
+        "message": "创造"
     },
     "analysis_settings": {
-        "message": "设定值",
-        "description": ""
+        "message": "设定值"
     },
     "analysis_rank_place_1": {
-        "message": "1号",
-        "description": ""
+        "message": "1号"
     },
     "analysis_rank_place_2": {
-        "message": "第二名",
-        "description": ""
+        "message": "第二名"
     },
     "analysis_rank_place_3": {
-        "message": "第三名",
-        "description": ""
+        "message": "第三名"
     },
     "analysis_rank_cat_all": {
-        "message": "全部",
-        "description": ""
+        "message": "全部"
     },
     "analysis_rank_cat_year": {
-        "message": "年",
-        "description": ""
+        "message": "年"
     },
     "analysis_rank_cat_recent": {
-        "message": "90天",
-        "description": ""
+        "message": "90天"
     },
     "analysis_value": {
-        "message": "价值",
-        "description": ""
+        "message": "价值"
     },
     "analysis_activity": {
-        "message": "活动",
-        "description": ""
+        "message": "活动"
     },
     "analysis_date": {
-        "message": "日期",
-        "description": ""
+        "message": "日期"
     },
     "analysis_peaks_settings_dialog_title": {
-        "message": "高峰努力设置",
-        "description": ""
+        "message": "高峰努力设置"
     },
     "analysis_peaks_month": {
-        "message": "月",
-        "description": ""
+        "message": "月"
     },
     "analysis_peaks_day": {
-        "message": "天",
-        "description": ""
+        "message": "天"
     },
     "analysis_peaks_ranges": {
-        "message": "高峰努力范围",
-        "description": ""
+        "message": "高峰努力范围"
     },
     "analysis_peaks_ranges_intro": {
-        "message": "您可以自定义用于“<i>峰值努力”</i>的时间和距离。根据数据类型，将使用时间或距离值。",
-        "description": ""
+        "message": "您可以自定义用于“<i>峰值努力”</i>的时间和距离。根据数据类型，将使用时间或距离值。"
     },
     "analysis_peaks_reset_to_defaults": {
-        "message": "重置为默认值",
-        "description": ""
+        "message": "重置为默认值"
     },
     "time_sec": {
-        "message": "秒",
-        "description": ""
+        "message": "秒"
     },
     "time_secs": {
-        "message": "秒",
-        "description": ""
+        "message": "秒"
     },
     "time_min": {
-        "message": "分",
-        "description": ""
+        "message": "分"
     },
     "time_mins": {
-        "message": "分钟",
-        "description": ""
+        "message": "分钟"
     },
     "time_hour": {
-        "message": "小时",
-        "description": ""
+        "message": "小时"
     },
     "time_hours": {
-        "message": "小时",
-        "description": ""
+        "message": "小时"
     },
     "time_day": {
-        "message": "天",
-        "description": ""
+        "message": "天"
     },
     "time_days": {
-        "message": "天",
-        "description": ""
+        "message": "天"
     },
     "time_week": {
-        "message": "周",
-        "description": ""
+        "message": "周"
     },
     "time_weeks": {
-        "message": "周",
-        "description": ""
+        "message": "周"
     },
     "time_year": {
-        "message": "年",
-        "description": ""
+        "message": "年"
     },
     "time_years": {
-        "message": "年份",
-        "description": ""
+        "message": "年份"
     },
     "time_ago": {
-        "message": "前",
-        "description": ""
+        "message": "前"
     },
     "time_in": {
-        "message": "在",
-        "description": ""
+        "message": "在"
     },
     "time_now": {
-        "message": "现在",
-        "description": ""
+        "message": "现在"
     },
     "time_today": {
-        "message": "今天",
-        "description": ""
+        "message": "今天"
     },
     "dialog_help_info_tooltip": {
-        "message": "点击了解更多信息",
-        "description": ""
+        "message": "点击了解更多信息"
     },
     "perf_predictor_intro_help1": {
-        "message": "如果您首先调整输入参数以匹配原始性能的时间，则性能预测器最有效。例如，如果您正在骑山地自行车，请选择“ MTB”自行车选项。如果在尝试过程中盛行逆风，请更改风速值以指示净风影响等。",
-        "description": ""
+        "message": "如果您首先调整输入参数以匹配原始性能的时间，则性能预测器最有效。例如，如果您正在骑山地自行车，请选择“ MTB”自行车选项。如果在尝试过程中盛行逆风，请更改风速值以指示净风影响等。"
     },
     "perf_predictor_intro_help2": {
-        "message": "正确调整值后，预测性能应在很小的百分比内与原始性能相似。",
-        "description": ""
+        "message": "正确调整值后，预测性能应在很小的百分比内与原始性能相似。"
     },
     "perf_predictor_intro_help3": {
-        "message": "现在，您可以更改不同的参数，例如功率，重量和空气动力学，以估计这些更改可能会对性能产生影响。",
-        "description": ""
+        "message": "现在，您可以更改不同的参数，例如功率，重量和空气动力学，以估计这些更改可能会对性能产生影响。"
     },
     "perf_predictor_intro": {
-        "message": "Performance Predictor是一个循环功率计算器，可让您检查更改的性能因素的影响。",
-        "description": ""
+        "message": "Performance Predictor是一个循环功率计算器，可让您检查更改的性能因素的影响。"
     },
     "perf_predictor_intro_note": {
-        "message": "更改这些参数以查看对性能的估计影响。",
-        "description": ""
+        "message": "更改这些参数以查看对性能的估计影响。"
     },
     "perf_predictor_crr_help1": {
-        "message": "确保此设置尽可能匹配您的自行车和地形。您可以通过更改“ Crr”值直接微调滚动阻力。",
-        "description": ""
+        "message": "确保此设置尽可能匹配您的自行车和地形。您可以通过更改“ Crr”值直接微调滚动阻力。"
     },
     "perf_predictor_crr_help2": {
-        "message": "对于具有良好路面的速度更快的轮胎，请使用较低的“ Crr”值（较小的阻力），对于在粗糙表面（如山地自行车）上使用的重载轮胎，请使用较高的值（较大的阻力）。",
-        "description": ""
+        "message": "对于具有良好路面的速度更快的轮胎，请使用较低的“ Crr”值（较小的阻力），对于在粗糙表面（如山地自行车）上使用的重载轮胎，请使用较高的值（较大的阻力）。"
     },
     "perf_predictor_crr_heading": {
-        "message": "滚动阻力",
-        "description": ""
+        "message": "滚动阻力"
     },
     "perf_predictor_crr_bike": {
-        "message": "自行车",
-        "description": ""
+        "message": "自行车"
     },
     "perf_predictor_crr_bike_tooltip": {
-        "message": "用于估算滚动阻力的自行车类型（例如Crr）",
-        "description": ""
+        "message": "用于估算滚动阻力的自行车类型（例如Crr）"
     },
     "perf_predictor_crr_bike_road": {
-        "message": "路",
-        "description": ""
+        "message": "路"
     },
     "perf_predictor_crr_bike_mtb": {
-        "message": "山地车",
-        "description": ""
+        "message": "山地车"
     },
     "perf_predictor_crr_terrain": {
-        "message": "地形",
-        "description": ""
+        "message": "地形"
     },
     "perf_predictor_crr_terrain_tooltip": {
-        "message": "滚动阻力估算的地形类型（例如Crr）",
-        "description": ""
+        "message": "滚动阻力估算的地形类型（例如Crr）"
     },
     "perf_predictor_crr_terrain_asphalt": {
-        "message": "沥青",
-        "description": ""
+        "message": "沥青"
     },
     "perf_predictor_crr_terrain_gravel": {
-        "message": "砾石",
-        "description": ""
+        "message": "砾石"
     },
     "perf_predictor_crr_terrain_grass": {
-        "message": "草",
-        "description": ""
+        "message": "草"
     },
     "perf_predictor_crr_terrain_offroad": {
-        "message": "越野",
-        "description": ""
+        "message": "越野"
     },
     "perf_predictor_crr_terrain_sand": {
-        "message": "砂",
-        "description": ""
+        "message": "砂"
     },
     "perf_predictor_crr_terrain_custom": {
-        "message": "自订",
-        "description": ""
+        "message": "自订"
     },
     "perf_predictor_crr_tooltip": {
-        "message": "滚动阻力系数",
-        "description": ""
+        "message": "滚动阻力系数"
     },
     "perf_predictor_cda_help1": {
-        "message": "“ CdA”代表骑手和装备的空气动力学阻力。从技术上讲，它是阻力系数乘以正面表面积。通过骑低速运动服，使用速滑服和使用诸如计时自行车和碟形轮之类的专用设备来降低价值。",
-        "description": ""
+        "message": "“ CdA”代表骑手和装备的空气动力学阻力。从技术上讲，它是阻力系数乘以正面表面积。通过骑低速运动服，使用速滑服和使用诸如计时自行车和碟形轮之类的专用设备来降低价值。"
     },
     "perf_predictor_cda_help_table_heading": {
-        "message": "一些示例值",
-        "description": ""
+        "message": "一些示例值"
     },
     "perf_predictor_cda_help_table_elite_tt": {
-        "message": "精英级计时设备和航空定位",
-        "description": ""
+        "message": "精英级计时设备和航空定位"
     },
     "perf_predictor_cda_help_table_good_tt": {
-        "message": "好的计时设备和航空定位/铁人三项",
-        "description": ""
+        "message": "好的计时设备和航空定位/铁人三项"
     },
     "perf_predictor_cda_help_table_road": {
-        "message": "公路自行车赛车位置/酒吧掉到引擎盖",
-        "description": ""
+        "message": "公路自行车赛车位置/酒吧掉到引擎盖"
     },
     "perf_predictor_cda_help_table_climbing": {
-        "message": "公路自行车攀爬位置/ XC山地自行车",
-        "description": ""
+        "message": "公路自行车攀爬位置/ XC山地自行车"
     },
     "perf_predictor_cda_help_table_upright": {
-        "message": "穿着休闲服装的直立姿势",
-        "description": ""
+        "message": "穿着休闲服装的直立姿势"
     },
     "perf_predictor_cda_heading": {
-        "message": "空气阻力",
-        "description": ""
+        "message": "空气阻力"
     },
     "perf_predictor_cda_position": {
-        "message": "航空位置",
-        "description": ""
+        "message": "航空位置"
     },
     "perf_predictor_cda_position_tooltip": {
-        "message": "估算CdA时自行车的空气动力学位置",
-        "description": ""
+        "message": "估算CdA时自行车的空气动力学位置"
     },
     "perf_predictor_cda_tooltip": {
-        "message": "空气阻力系数乘以正面表面积",
-        "description": ""
+        "message": "空气阻力系数乘以正面表面积"
     },
     "perf_predictor_power": {
-        "message": "功率",
-        "description": ""
+        "message": "功率"
     },
     "perf_predictor_power_tooltip": {
-        "message": "平均瓦数",
-        "description": ""
+        "message": "平均瓦数"
     },
     "perf_predictor_body_weight": {
-        "message": "体重",
-        "description": ""
+        "message": "体重"
     },
     "perf_predictor_body_weight_tooltip": {
-        "message": "只是体重，没有齿轮",
-        "description": ""
+        "message": "只是体重，没有齿轮"
     },
     "perf_predictor_gear_weight": {
-        "message": "自行车/齿轮重量",
-        "description": ""
+        "message": "自行车/齿轮重量"
     },
     "perf_predictor_gear_weight_tooltip": {
-        "message": "所有装备和自行车的重量，包括水和衣服",
-        "description": ""
+        "message": "所有装备和自行车的重量，包括水和衣服"
     },
     "perf_predictor_slope": {
-        "message": "坡",
-        "description": ""
+        "message": "坡"
     },
     "perf_predictor_slope_tooltip": {
-        "message": "坡度或坡度",
-        "description": ""
+        "message": "坡度或坡度"
     },
     "perf_predictor_distance": {
-        "message": "距离",
-        "description": ""
+        "message": "距离"
     },
     "perf_predictor_distance_tooltip": {
-        "message": "航向距离",
-        "description": ""
+        "message": "航向距离"
     },
     "perf_predictor_elevation": {
-        "message": "高程（平均）",
-        "description": ""
+        "message": "高程（平均）"
     },
     "perf_predictor_elevation_tooltip": {
-        "message": "路线的平均海拔",
-        "description": ""
+        "message": "路线的平均海拔"
     },
     "perf_predictor_wind": {
-        "message": "风",
-        "description": ""
+        "message": "风"
     },
     "perf_predictor_wind_tooltip": {
-        "message": "相对于骑手的净风速或尾风的负值",
-        "description": ""
+        "message": "相对于骑手的净风速或尾风的负值"
     },
     "perf_predictor_speed": {
-        "message": "速度",
-        "description": ""
+        "message": "速度"
     },
     "perf_predictor_time": {
-        "message": "时间",
-        "description": ""
+        "message": "时间"
     },
     "perf_predictor_original_performance": {
-        "message": "原始表现",
-        "description": ""
+        "message": "原始表现"
     },
     "perf_predictor_predicted_performance": {
-        "message": "预期表现",
-        "description": ""
+        "message": "预期表现"
     },
     "perf_predictor_faster": {
-        "message": "快点",
-        "description": ""
+        "message": "快点"
     },
     "perf_predictor_slower": {
-        "message": "慢点",
-        "description": ""
+        "message": "慢点"
     },
     "perf_predictor_power_details_heading": {
-        "message": "电源细节",
-        "description": ""
+        "message": "电源细节"
     },
     "perf_predictor_power_details_gravity": {
-        "message": "重力",
-        "description": ""
+        "message": "重力"
     },
     "perf_predictor_power_details_aero": {
-        "message": "航空",
-        "description": ""
+        "message": "航空"
     },
     "perf_predictor_power_details_rr": {
-        "message": "滚动",
-        "description": ""
+        "message": "滚动"
     },
     "perf_predictor_power_details_gravity_tooltip": {
-        "message": "克服重力的动力和工作要求",
-        "description": ""
+        "message": "克服重力的动力和工作要求"
     },
     "perf_predictor_power_details_aero_tooltip": {
-        "message": "克服空气阻力的动力和工作要求",
-        "description": ""
+        "message": "克服空气阻力的动力和工作要求"
     },
     "perf_predictor_power_details_rr_tooltip": {
-        "message": "克服滚动阻力的动力和工作要求",
-        "description": ""
+        "message": "克服滚动阻力的动力和工作要求"
     },
     "perf_predictor_drafting": {
-        "message": "起草",
-        "description": ""
+        "message": "起草"
     },
     "perf_predictor_drafting_tooltip": {
-        "message": "选择此选项以模拟制图效果",
-        "description": ""
+        "message": "选择此选项以模拟制图效果"
     },
     "perf_predictor_riders": {
-        "message": "车手",
-        "description": ""
+        "message": "车手"
     },
     "perf_predictor_riders_tooltip": {
-        "message": "该组中的骑手人数",
-        "description": ""
+        "message": "该组中的骑手人数"
     },
     "perf_predictor_position": {
-        "message": "位置",
-        "description": ""
+        "message": "位置"
     },
     "perf_predictor_power_variance": {
-        "message": "功率方差",
-        "description": ""
+        "message": "功率方差"
     },
     "perf_predictor_power_variance_tooltip": {
-        "message": "最困难的位置和最容易的位置之间的力量差异。通常这是第一个和最后一个位置的力量。",
-        "description": ""
+        "message": "最困难的位置和最容易的位置之间的力量差异。通常这是第一个和最后一个位置的力量。"
     },
     "perf_predictor_group_power": {
-        "message": "集团实力",
-        "description": ""
+        "message": "集团实力"
     },
     "perf_predictor_group_power_tooltip": {
-        "message": "该组中所有职位的平均功率",
-        "description": ""
+        "message": "该组中所有职位的平均功率"
     },
     "perf_predictor_position_tooltip": {
-        "message": "您在这个小组中的位置",
-        "description": ""
+        "message": "您在这个小组中的位置"
     },
     "perf_predictor_rotating_paceline": {
-        "message": "旋转/ Paceline",
-        "description": ""
+        "message": "旋转/ Paceline"
     },
     "perf_predictor_rotating_tooltip": {
-        "message": "选择此选项可以模拟一组在努力过程中改变位置的骑手",
-        "description": ""
+        "message": "选择此选项可以模拟一组在努力过程中改变位置的骑手"
     },
     "perf_predictor_time_at_front": {
-        "message": "前面的时间",
-        "description": ""
+        "message": "前面的时间"
     },
     "perf_predictor_work_tooltip": {
-        "message": "选择在该组第一位置的时间百分比",
-        "description": ""
+        "message": "选择在该组第一位置的时间百分比"
     },
     "perf_predictor_drafting_help": {
-        "message": "在一组骑手中进行打草或骑行会带来明显的空气动力学优势。<a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">通过使用Thijs van Druenen和Bert Blocken的</a>研究，Performance Predictor可以对这些影响进行建模。<br/><br/>请注意，此算法适用于单个文件格式中的较小大小的组。较大的骑乘人员会受到更复杂的空气动力的影响，此处无法正确解决。",
-        "description": ""
+        "message": "在一组骑手中进行打草或骑行会带来明显的空气动力学优势。<a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">通过使用Thijs van Druenen和Bert Blocken的</a>研究，Performance Predictor可以对这些影响进行建模。<br/><br/>请注意，此算法适用于单个文件格式中的较小大小的组。较大的骑乘人员会受到更复杂的空气动力的影响，此处无法正确解决。"
     },
     "sync_control_panel_intro": {
-        "message": "活动同步会导入所有活动历史记录，以改进培训图表和绩效分析。",
-        "description": ""
+        "message": "活动同步会导入所有活动历史记录，以改进培训图表和绩效分析。"
     },
     "sync_control_panel_intro_help": {
-        "message": "通过同步活动，Sauce可以提供没有历史数据就不可能提供的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面（例如Analysis），以及有关以前性能的见解。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>同步通过将原始活动数据导入到Web浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库来进行</a>。此数据经过分析，索引和存储，以便以后进行快速查找。一如既往，Sauce不使用远程服务器，因此建议使用“导出数据”按钮保存备份。",
-        "description": ""
+        "message": "通过同步活动，Sauce可以提供没有历史数据就不可能提供的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面（例如Analysis），以及有关以前性能的见解。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>同步通过将原始活动数据导入到Web浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库来进行</a>。此数据经过分析，索引和存储，以便以后进行快速查找。一如既往，Sauce不使用远程服务器，因此建议使用“导出数据”按钮保存备份。"
     },
     "sync_control_panel_enabled": {
-        "message": "已启用",
-        "description": ""
+        "message": "已启用"
     },
     "sync_control_panel_status": {
-        "message": "状态",
-        "description": ""
+        "message": "状态"
     },
     "sync_control_panel_last_error": {
-        "message": "最后错误",
-        "description": ""
+        "message": "最后错误"
     },
     "sync_control_panel_synced": {
-        "message": "已同步",
-        "description": ""
+        "message": "已同步"
     },
     "sync_control_panel_last_sync": {
-        "message": "上次同步",
-        "description": ""
+        "message": "上次同步"
     },
     "sync_control_panel_next_sync": {
-        "message": "下次同步",
-        "description": ""
+        "message": "下次同步"
     },
     "sync_control_panel_title": {
-        "message": "调味活动同步",
-        "description": ""
+        "message": "调味活动同步"
     },
     "sync_control_panel_resumes": {
-        "message": "履历表",
-        "description": ""
+        "message": "履历表"
     },
     "sync_control_panel_activities": {
-        "message": "活动",
-        "description": ""
+        "message": "活动"
     },
     "sync_control_panel_sync_stop_tooltip": {
-        "message": "停止当前的同步过程",
-        "description": ""
+        "message": "停止当前的同步过程"
     },
     "sync_control_panel_sync_start_tooltip": {
-        "message": "立即开始同步过程",
-        "description": ""
+        "message": "立即开始同步过程"
     },
     "sync_control_panel_sync_recompute_tooltip": {
-        "message": "重新计算同步本地数据，即TSS，NP等。",
-        "description": ""
+        "message": "重新计算同步本地数据，即TSS，NP等。"
     },
     "mutable_data_add_entry_tooltip": {
-        "message": "添加一个新条目",
-        "description": ""
+        "message": "添加一个新条目"
     },
     "mutable_data_delete_entry_tooltip": {
-        "message": "删除此项",
-        "description": ""
+        "message": "删除此项"
     },
     "mutable_data_save": {
-        "message": "保存更改",
-        "description": ""
+        "message": "保存更改"
     },
     "mutable_data_ftp_title": {
-        "message": "FTP历史",
-        "description": ""
+        "message": "FTP历史"
     },
     "mutable_data_weight_title": {
-        "message": "体重记录",
-        "description": ""
+        "message": "体重记录"
     },
     "mutable_data_peaks_periods_title": {
-        "message": "基于时间的范围",
-        "description": ""
+        "message": "基于时间的范围"
     },
     "mutable_data_peaks_dists_title": {
-        "message": "基于距离的范围",
-        "description": ""
+        "message": "基于距离的范围"
     },
     "mutable_data_ftp_help": {
-        "message": "Sauce支持为历史记录中的任何点设置FTP值。根据活动发生的日期，相应的值将用于任何基于FTP的计算，例如TSS。",
-        "description": ""
+        "message": "Sauce支持为历史记录中的任何点设置FTP值。根据活动发生的日期，相应的值将用于任何基于FTP的计算，例如TSS。"
     },
     "mutable_data_weight_help": {
-        "message": "Sauce支持为历史记录中的任何点设置权重值。根据活动发生的日期，相应的值将用于任何基于权重的计算。",
-        "description": ""
+        "message": "Sauce支持为历史记录中的任何点设置权重值。根据活动发生的日期，相应的值将用于任何基于权重的计算。"
     },
     "mutable_data_peaks_periods_help": {
-        "message": "时间段用于力量，心律和节奏等努力。",
-        "description": ""
+        "message": "时间段用于力量，心律和节奏等努力。"
     },
     "mutable_data_peaks_dists_help": {
-        "message": "距离用于诸如步伐和坡度调整的步伐之类的努力。",
-        "description": ""
+        "message": "距离用于诸如步伐和坡度调整的步伐之类的努力。"
     },
     "subscription": {
-        "message": "订阅",
-        "description": ""
+        "message": "订阅"
     },
     "live_segment_create": {
-        "message": "创造",
-        "description": ""
+        "message": "创造"
     },
     "live_segment_creator": {
-        "message": "创作者",
-        "description": ""
+        "message": "创作者"
     },
     "live_segment_success_create_title": {
-        "message": "成功创建",
-        "description": ""
+        "message": "成功创建"
     },
     "live_segment_success_create_body1": {
-        "message": "您的实时细分文件现在应该下载到计算机上了。",
-        "description": ""
+        "message": "您的实时细分文件现在应该下载到计算机上了。"
     },
     "live_segment_success_create_body2": {
-        "message": "通过USB将设备安装到计算机上，然后将此文件复制到“ Garmin / NewFiles”文件夹中。",
-        "description": ""
+        "message": "通过USB将设备安装到计算机上，然后将此文件复制到“ Garmin / NewFiles”文件夹中。"
     },
     "live_segment_success_create_body3": {
-        "message": "断开设备连接之前，请确保安全弹出设备。",
-        "description": ""
+        "message": "断开设备连接之前，请确保安全弹出设备。"
     },
     "live_segment_use_trial": {
-        "message": "使用试用",
-        "description": ""
+        "message": "使用试用"
     },
     "live_segment_remaining": {
-        "message": "剩余的",
-        "description": ""
+        "message": "剩余的"
     },
     "live_segment_become_patron": {
-        "message": "成为赞助人",
-        "description": ""
+        "message": "成为赞助人"
     },
     "live_segment_intro_help1": {
-        "message": "Sauce Live Segment创建者可以从任何Strava活动中生成细分文件。创建的文件符合FIT段文件打开标准。该文件与受支持的Garmin设备兼容，并且可能与可以支持段文件的侧面加载的其他设备兼容。",
-        "description": ""
+        "message": "Sauce Live Segment创建者可以从任何Strava活动中生成细分文件。创建的文件符合FIT段文件打开标准。该文件与受支持的Garmin设备兼容，并且可能与可以支持段文件的侧面加载的其他设备兼容。"
     },
     "live_segment_intro_help_side_loading_more_info": {
-        "message": "有关Garmin侧面装载的更多信息，请参见此处。",
-        "description": ""
+        "message": "有关Garmin侧面装载的更多信息，请参见此处。"
     },
     "live_segment_intro_help_note": {
-        "message": "注意：Wahoo设备不支持侧面加载段文件。",
-        "description": ""
+        "message": "注意：Wahoo设备不支持侧面加载段文件。"
     },
     "live_segment_intro1": {
-        "message": "创建一个实时细分文件以用于",
-        "description": ""
+        "message": "创建一个实时细分文件以用于"
     },
     "live_segment_intro_supported_devices": {
-        "message": "支持的Garmin设备",
-        "description": ""
+        "message": "支持的Garmin设备"
     },
     "live_segment_intro_note": {
-        "message": "这将生成一个FIT段文件，当您通过USB将其连接到计算机时，该文件可以放在Garmin的“ Garmin / NewFiles”文件夹中。",
-        "description": ""
+        "message": "这将生成一个FIT段文件，当您通过USB将其连接到计算机时，该文件可以放在Garmin的“ Garmin / NewFiles”文件夹中。"
     },
     "live_segment_segment_name_help": {
-        "message": "细分名称是您接近起始位置时此细分在您的设备上显示的方式。",
-        "description": ""
+        "message": "细分名称是您接近起始位置时此细分在您的设备上显示的方式。"
     },
     "live_segment_segment_name": {
-        "message": "段名",
-        "description": ""
+        "message": "段名"
     },
     "live_segment_leader_name": {
-        "message": "领导者姓名",
-        "description": ""
+        "message": "领导者姓名"
     },
     "live_segment_leader_type": {
-        "message": "领导者类型",
-        "description": ""
+        "message": "领导者类型"
     },
     "live_segment_rival": {
-        "message": "对手",
-        "description": ""
+        "message": "对手"
     },
     "live_segment_Goal": {
-        "message": "目标",
-        "description": ""
+        "message": "目标"
     },
     "live_segment_pr": {
-        "message": "公关",
-        "description": ""
+        "message": "公关"
     },
     "live_segment_challenger": {
-        "message": "挑战者",
-        "description": ""
+        "message": "挑战者"
     },
     "live_segment_kom": {
-        "message": "KOM",
-        "description": ""
+        "message": "KOM"
     },
     "live_segment_qom": {
-        "message": "生活质量",
-        "description": ""
+        "message": "生活质量"
     },
     "live_segment_club_leader": {
-        "message": "俱乐部负责人",
-        "description": ""
+        "message": "俱乐部负责人"
     },
     "live_segment_speed_adjust": {
-        "message": "调速",
-        "description": ""
+        "message": "调速"
     },
     "live_segment_speed_adjust_tooltip": {
-        "message": "将整体速度调整一些百分比",
-        "description": ""
+        "message": "将整体速度调整一些百分比"
     },
     "live_segment_time": {
-        "message": "时间",
-        "description": ""
+        "message": "时间"
     },
     "live_segment_beg1": {
-        "message": "嗨，我叫贾斯汀，我是《酱》的作者，",
-        "description": ""
+        "message": "嗨，我叫贾斯汀，我是《酱》的作者，"
     },
     "live_segment_beg2": {
-        "message": "我正在努力使Sauce尽可能达到最佳Strava升级，但是如果没有您的支持，我将不花时间和精力来实现这一目标。请考虑成为一个顾客以启用此功能并获得完整的Sauce体验。",
-        "description": ""
+        "message": "我正在努力使Sauce尽可能达到最佳Strava升级，但是如果没有您的支持，我将不花时间和精力来实现这一目标。请考虑成为一个顾客以启用此功能并获得完整的Sauce体验。"
     },
     "live_segment_beg3": {
-        "message": "非常感谢您的理解并为使Sauce变得更好做出了贡献！",
-        "description": ""
+        "message": "非常感谢您的理解并为使Sauce变得更好做出了贡献！"
     },
     "menu_add_review": {
-        "message": "添加评论",
-        "description": ""
+        "message": "添加评论"
     },
     "menu_supporters": {
-        "message": "支持者",
-        "description": ""
+        "message": "支持者"
     },
     "performance": {
-        "message": "表现",
-        "description": ""
+        "message": "表现"
     },
     "performance_rides": {
-        "message": "游乐设施",
-        "description": ""
+        "message": "游乐设施"
     },
     "performance_runs": {
-        "message": "运行",
-        "description": ""
+        "message": "运行"
     },
     "performance_swims": {
-        "message": "游泳",
-        "description": ""
+        "message": "游泳"
     },
     "performance_skis": {
-        "message": "滑雪板",
-        "description": ""
+        "message": "滑雪板"
     },
     "performance_workouts": {
-        "message": "锻炼",
-        "description": ""
+        "message": "锻炼"
     },
     "performance_ride": {
-        "message": "骑",
-        "description": ""
+        "message": "骑"
     },
     "performance_run": {
-        "message": "跑",
-        "description": ""
+        "message": "跑"
     },
     "performance_swim": {
-        "message": "游泳",
-        "description": ""
+        "message": "游泳"
     },
     "performance_ski": {
-        "message": "滑雪",
-        "description": ""
+        "message": "滑雪"
     },
     "performance_workout": {
-        "message": "锻炼",
-        "description": ""
+        "message": "锻炼"
     },
     "season_start": {
-        "message": "季节开始",
-        "description": ""
+        "message": "季节开始"
     },
     "save": {
-        "message": "救",
-        "description": ""
+        "message": "救"
     }
 }
