@@ -1,278 +1,367 @@
 {
     "app_desc": {
-        "message": "Funcionalidad adicional para su análisis de ciclismo y carrera. Esta extensión actualiza el sitio web de Strava ™."
+        "message": "Funcionalidad adicional para su análisis de ciclismo y carrera. Esta extensión actualiza el sitio web de Strava ™.",
+        "description": ""
     },
     "analysis_options": {
-        "message": "Opciones"
+        "message": "Opciones",
+        "description": ""
     },
     "analysis_tools": {
-        "message": "Herramientas"
+        "message": "Herramientas",
+        "description": ""
     },
     "analysis_time": {
-        "message": "Hora"
+        "message": "Hora",
+        "description": ""
     },
     "analysis_timing": {
-        "message": "Sincronización"
+        "message": "Sincronización",
+        "description": ""
     },
     "analysis_gap": {
         "message": "RAP",
         "description": "IMMUTABLE"
     },
     "analysis_climbed": {
-        "message": "Trepado"
+        "message": "Trepado",
+        "description": ""
     },
     "analysis_descended": {
-        "message": "Descendió"
+        "message": "Descendió",
+        "description": ""
     },
     "analysis_avg": {
-        "message": "Promedio"
+        "message": "Promedio",
+        "description": ""
     },
     "analysis_min": {
-        "message": "Min"
+        "message": "Min",
+        "description": ""
     },
     "analysis_max": {
-        "message": "Max"
+        "message": "Max",
+        "description": ""
     },
     "analysis_lowest": {
-        "message": "Más bajo"
+        "message": "Más bajo",
+        "description": ""
     },
     "analysis_highest": {
-        "message": "Más alto"
+        "message": "Más alto",
+        "description": ""
     },
     "analysis_elapsed": {
-        "message": "Transcurrido"
+        "message": "Transcurrido",
+        "description": ""
     },
     "analysis_elapsed_time_tooltip": {
-        "message": "Tiempo transcurrido: tiempo que incluye paradas"
+        "message": "Tiempo transcurrido: tiempo que incluye paradas",
+        "description": ""
     },
     "analysis_elapsed_power_tooltip": {
-        "message": "Potencia media transcurrida: las paradas son de relleno cero"
+        "message": "Potencia media transcurrida: las paradas son de relleno cero",
+        "description": ""
     },
     "analysis_elapsed_pace_tooltip": {
-        "message": "Ritmo promedio transcurrido: las paradas se incluyen en el intervalo de tiempo"
+        "message": "Ritmo promedio transcurrido: las paradas se incluyen en el intervalo de tiempo",
+        "description": ""
     },
     "analysis_active_time_tooltip": {
-        "message": "Solo tiempo activo"
+        "message": "Solo tiempo activo",
+        "description": ""
     },
     "analysis_active_power_tooltip": {
-        "message": "Potencia activa media"
+        "message": "Potencia activa media",
+        "description": ""
     },
     "analysis_active_pace_tooltip": {
-        "message": "Ritmo activo medio"
+        "message": "Ritmo activo medio",
+        "description": ""
     },
     "analysis_active_speed_tooltip": {
-        "message": "Velocidad activa media"
+        "message": "Velocidad activa media",
+        "description": ""
     },
     "analysis_gap_tooltip": {
-        "message": "Ritmo ajustado de pendiente: ritmo estimado para terreno plano"
+        "message": "Ritmo ajustado de pendiente: ritmo estimado para terreno plano",
+        "description": ""
     },
     "analysis_stride_tooltip": {
-        "message": "Distancia media por paso / carrera"
+        "message": "Distancia media por paso / carrera",
+        "description": ""
     },
     "analysis_np_tooltip": {
-        "message": "Normalized Power®: una estimación de la potencia media potencial"
+        "message": "Normalized Power®: una estimación de la potencia media potencial",
+        "description": ""
     },
     "analysis_xp_tooltip": {
-        "message": "xPower: una estimación de potencia potencial mejorada inspirada en Normalized Power® (creado por el Dr. Philip Friere Skiba)"
+        "message": "xPower: una estimación de potencia potencial mejorada inspirada en Normalized Power® (creado por el Dr. Philip Friere Skiba)",
+        "description": ""
     },
     "analysis_sp_tooltip": {
-        "message": "Sea Power: una estimación de la potencia potencial a nivel del mar"
+        "message": "Sea Power: una estimación de la potencia potencial a nivel del mar",
+        "description": ""
     },
     "analysis_sp_adjust_tooltip": {
-        "message": "Compensación debido al efecto de altitud en V02Max"
+        "message": "Compensación debido al efecto de altitud en V02Max",
+        "description": ""
     },
     "analysis_energy_tooltip": {
-        "message": "Energía gastada en kilojulios"
+        "message": "Energía gastada en kilojulios",
+        "description": ""
     },
     "analysis_energy_rate_tooltip": {
-        "message": "Kilojulios por hora"
+        "message": "Kilojulios por hora",
+        "description": ""
     },
     "analysis_elevation_gain_tooltip": {
-        "message": "Elevación ganada: escalada"
+        "message": "Elevación ganada: escalada",
+        "description": ""
     },
     "analysis_elevation_loss_tooltip": {
-        "message": "Elevación perdida: descendente"
+        "message": "Elevación perdida: descendente",
+        "description": ""
     },
     "analysis_elevation_avg_tooltip": {
-        "message": "Elevación promedio"
+        "message": "Elevación promedio",
+        "description": ""
     },
     "analysis_grade_tooltip": {
-        "message": "Grado de colina"
+        "message": "Grado de colina",
+        "description": ""
     },
     "analysis_vam_tooltip": {
-        "message": "Metros de escalada por hora"
+        "message": "Metros de escalada por hora",
+        "description": ""
     },
     "analysis_tss_tooltip": {
-        "message": "Training Stress Score®: un indicador de carga de estrés basado en la potencia"
+        "message": "Training Stress Score®: un indicador de carga de estrés basado en la potencia",
+        "description": ""
     },
     "analysis_trimp_tss_tooltip": {
-        "message": "Training Stress Score® basado en TRIMP (TRaining IMPulse): un indicador de carga de estrés basado en la reserva de frecuencia cardíaca"
+        "message": "Training Stress Score® basado en TRIMP (TRaining IMPulse): un indicador de carga de estrés basado en la reserva de frecuencia cardíaca",
+        "description": ""
     },
     "analysis_start_of_effort_tooltip": {
-        "message": "Tiempo compensado al inicio de este esfuerzo"
+        "message": "Tiempo compensado al inicio de este esfuerzo",
+        "description": ""
     },
     "analysis_wkg_tooltip": {
-        "message": "Vatios por kilogramo de peso corporal"
+        "message": "Vatios por kilogramo de peso corporal",
+        "description": ""
     },
     "analysis_max_power_tooltip": {
-        "message": "máximo poder"
+        "message": "máximo poder",
+        "description": ""
     },
     "analysis_low_hr_tooltip": {
-        "message": "Frecuencia cardíaca más baja"
+        "message": "Frecuencia cardíaca más baja",
+        "description": ""
     },
     "analysis_high_hr_tooltip": {
-        "message": "Frecuencia cardíaca más alta"
+        "message": "Frecuencia cardíaca más alta",
+        "description": ""
     },
     "analysis_low_speed_tooltip": {
-        "message": "Velocidad más baja"
+        "message": "Velocidad más baja",
+        "description": ""
     },
     "analysis_high_speed_tooltip": {
-        "message": "Mayor velocidad"
+        "message": "Mayor velocidad",
+        "description": ""
     },
     "analysis_low_pace_tooltip": {
-        "message": "Ritmo más bajo"
+        "message": "Ritmo más bajo",
+        "description": ""
     },
     "analysis_high_pace_tooltip": {
-        "message": "Ritmo más alto"
+        "message": "Ritmo más alto",
+        "description": ""
     },
     "analysis_expand_tooltip": {
-        "message": "Haga clic para ampliar"
+        "message": "Haga clic para ampliar",
+        "description": ""
     },
     "analysis_compress_tooltip": {
-        "message": "Haga clic para colapsar"
+        "message": "Haga clic para colapsar",
+        "description": ""
     },
     "analysis_ftp_link_tooltip": {
-        "message": "Haga clic para establecer el valor"
+        "message": "Haga clic para establecer el valor",
+        "description": ""
     },
     "analysis_weight_link_tooltip": {
-        "message": "Haga clic para establecer el valor"
+        "message": "Haga clic para establecer el valor",
+        "description": ""
     },
     "analysis_ftp_input_tooltip": {
-        "message": "Ingrese el FTP estimado (Potencia de umbral funcional) para este atleta y presione Entrar. FTP es el promedio de vatios máximo sostenido durante 1 hora. Si el atleta ya tiene un valor establecido en su perfil, esto anulará esa configuración. Para restablecer el valor, ingrese un valor en blanco."
+        "message": "Ingrese el FTP estimado (Potencia de umbral funcional) para este atleta y presione Entrar. FTP es el promedio de vatios máximo sostenido durante 1 hora. Si el atleta ya tiene un valor establecido en su perfil, esto anulará esa configuración. Para restablecer el valor, ingrese un valor en blanco.",
+        "description": ""
     },
     "analysis_weight_input_tooltip": {
-        "message": "Ingrese el peso estimado para este atleta y presione Entrar. Si el atleta ya tiene un valor establecido en su perfil, esto anulará esa configuración. Para restablecer el valor, ingrese un valor en blanco."
+        "message": "Ingrese el peso estimado para este atleta y presione Entrar. Si el atleta ya tiene un valor establecido en su perfil, esto anulará esa configuración. Para restablecer el valor, ingrese un valor en blanco.",
+        "description": ""
     },
     "analysis_intensity_tooltip": {
-        "message": "Intensity Factor®"
+        "message": "Intensity Factor®",
+        "description": ""
     },
     "analysis_peak_power_tooltip": {
-        "message": "Rangos máximos de potencia sostenida"
+        "message": "Rangos máximos de potencia sostenida",
+        "description": ""
     },
     "analysis_peak_power_wkg_tooltip": {
-        "message": "Vatios máximos sostenidos / kg de peso corporal"
+        "message": "Vatios máximos sostenidos / kg de peso corporal",
+        "description": ""
     },
     "analysis_peak_sp_tooltip": {
-        "message": "Rango de potencia máxima ajustada al nivel del mar"
+        "message": "Rango de potencia máxima ajustada al nivel del mar",
+        "description": ""
     },
     "analysis_peak_np_tooltip": {
-        "message": "Gamas de potencia normalizada máxima"
+        "message": "Gamas de potencia normalizada máxima",
+        "description": ""
     },
     "analysis_peak_xp_tooltip": {
-        "message": "Rangos máximos de xPower"
+        "message": "Rangos máximos de xPower",
+        "description": ""
     },
     "analysis_peak_hr_tooltip": {
-        "message": "Rangos máximos sostenidos de frecuencia cardíaca"
+        "message": "Rangos máximos sostenidos de frecuencia cardíaca",
+        "description": ""
     },
     "analysis_peak_cadence_tooltip": {
-        "message": "Rangos máximos de cadencia sostenida"
+        "message": "Rangos máximos de cadencia sostenida",
+        "description": ""
     },
     "analysis_peak_vam_tooltip": {
-        "message": "Rangos máximos sostenidos de velocidad de escalada"
+        "message": "Rangos máximos sostenidos de velocidad de escalada",
+        "description": ""
     },
     "analysis_peak_pace_tooltip": {
-        "message": "Rangos máximos de ritmo sostenido"
+        "message": "Rangos máximos de ritmo sostenido",
+        "description": ""
     },
     "analysis_peak_gap_tooltip": {
-        "message": "Rango de ritmo ajustado máximo sostenido"
+        "message": "Rango de ritmo ajustado máximo sostenido",
+        "description": ""
     },
     "analysis_watt_estimate_tooltip": {
-        "message": "Estos valores se calculan a partir de estimaciones de potencia. Para valores precisos se requiere un dispositivo de medición de potencia real."
+        "message": "Estos valores se calculan a partir de estimaciones de potencia. Para valores precisos se requiere un dispositivo de medición de potencia real.",
+        "description": ""
     },
     "analysis_stops": {
-        "message": "Paradas"
+        "message": "Paradas",
+        "description": ""
     },
     "analysis_idle": {
-        "message": "Ocioso"
+        "message": "Ocioso",
+        "description": ""
     },
     "analysis_active": {
-        "message": "Activo"
+        "message": "Activo",
+        "description": ""
     },
     "analysis_stats": {
-        "message": "Estadísticas"
+        "message": "Estadísticas",
+        "description": ""
     },
     "analysis_power_avg": {
-        "message": "Promedio de potencia"
+        "message": "Promedio de potencia",
+        "description": ""
     },
     "analysis_energy": {
-        "message": "Energía"
+        "message": "Energía",
+        "description": ""
     },
     "analysis_expended": {
-        "message": "Gastado"
+        "message": "Gastado",
+        "description": ""
     },
     "analysis_rate": {
-        "message": "Velocidad"
+        "message": "Velocidad",
+        "description": ""
     },
     "analysis_elevation": {
-        "message": "Elevación"
+        "message": "Elevación",
+        "description": ""
     },
     "analysis_environment": {
-        "message": "Ambiente"
+        "message": "Ambiente",
+        "description": ""
     },
     "analysis_grade": {
-        "message": "Grado"
+        "message": "Grado",
+        "description": ""
     },
     "analysis_estimated": {
-        "message": "estimado"
+        "message": "estimado",
+        "description": ""
     },
     "analysis_data": {
-        "message": "Datos"
+        "message": "Datos",
+        "description": ""
     },
     "analysis_rank": {
-        "message": "Rango"
+        "message": "Rango",
+        "description": ""
     },
     "analysis_raw": {
-        "message": "crudo"
+        "message": "crudo",
+        "description": ""
     },
     "analysis_graphs": {
-        "message": "gráficos"
+        "message": "gráficos",
+        "description": ""
     },
     "analysis_perf_predictor_tooltip": {
-        "message": "Predecir el rendimiento de los esfuerzos de ciclismo."
+        "message": "Predecir el rendimiento de los esfuerzos de ciclismo.",
+        "description": ""
     },
     "analysis_pace": {
         "message": "Ritmo",
         "description": "IMMUTABLE"
     },
     "analysis_speed": {
-        "message": "Velocidad"
+        "message": "Velocidad",
+        "description": ""
     },
     "analysis_distance": {
-        "message": "Distancia"
+        "message": "Distancia",
+        "description": ""
     },
     "analysis_samples": {
-        "message": "Muestras"
+        "message": "Muestras",
+        "description": ""
     },
     "analysis_beta": {
-        "message": "BETA"
+        "message": "BETA",
+        "description": ""
     },
     "analysis_start_of_effort": {
-        "message": "Comienzo de esfuerzo"
+        "message": "Comienzo de esfuerzo",
+        "description": ""
     },
     "analysis_elapsed_time": {
-        "message": "Tiempo transcurrido"
+        "message": "Tiempo transcurrido",
+        "description": ""
     },
     "analysis_heartrate": {
-        "message": "Ritmo cardiaco"
+        "message": "Ritmo cardiaco",
+        "description": ""
     },
     "analysis_temp": {
-        "message": "Temperatura"
+        "message": "Temperatura",
+        "description": ""
     },
     "analysis_cadence": {
-        "message": "Cadencia"
+        "message": "Cadencia",
+        "description": ""
     },
     "analysis_stride": {
-        "message": "Paso"
+        "message": "Paso",
+        "description": ""
     },
     "analysis_peak_power": {
         "message": "Potencia Pico",
@@ -315,143 +404,188 @@
         "description": "IMMUTABLE"
     },
     "analysis_watts": {
-        "message": "Vatios"
+        "message": "Vatios",
+        "description": ""
     },
     "analysis_power": {
-        "message": "Poder"
+        "message": "Poder",
+        "description": ""
     },
     "analysis_sea_power": {
         "message": "Sea Power",
         "description": "IMMUTABLE"
     },
     "analysis_weight": {
-        "message": "Peso"
+        "message": "Peso",
+        "description": ""
     },
     "analysis_segments": {
-        "message": "Segmentos"
+        "message": "Segmentos",
+        "description": ""
     },
     "analysis_empty_info_aside": {
-        "message": "No hay segmentos u otros datos para este rango."
+        "message": "No hay segmentos u otros datos para este rango.",
+        "description": ""
     },
     "analysis_best_performances": {
-        "message": "Mejores Actuaciones"
+        "message": "Mejores Actuaciones",
+        "description": ""
     },
     "analysis_best_all": {
-        "message": "Todos"
+        "message": "Todos",
+        "description": ""
     },
     "analysis_best_year": {
-        "message": "Año"
+        "message": "Año",
+        "description": ""
     },
     "analysis_best_90d": {
-        "message": "90 dias"
+        "message": "90 dias",
+        "description": ""
     },
     "analysis_name": {
-        "message": "Nombre"
+        "message": "Nombre",
+        "description": ""
     },
     "analysis_overlap": {
-        "message": "Superposición"
+        "message": "Superposición",
+        "description": ""
     },
     "analysis_overlap_tooltip": {
-        "message": "La cantidad de superposición en un segmento. 100% significa que se atravesó todo el segmento."
+        "message": "La cantidad de superposición en un segmento. 100% significa que se atravesó todo el segmento.",
+        "description": ""
     },
     "analysis_change": {
-        "message": "Cambio"
+        "message": "Cambio",
+        "description": ""
     },
     "analysis_gain": {
-        "message": "Ganancia"
+        "message": "Ganancia",
+        "description": ""
     },
     "analysis_loss": {
-        "message": "Pérdida"
+        "message": "Pérdida",
+        "description": ""
     },
     "analysis_view": {
-        "message": "Ver"
+        "message": "Ver",
+        "description": ""
     },
     "analysis_export": {
-        "message": "Exportar"
+        "message": "Exportar",
+        "description": ""
     },
     "analysis_male": {
-        "message": "Masculino"
+        "message": "Masculino",
+        "description": ""
     },
     "analysis_female": {
-        "message": "Hembra"
+        "message": "Hembra",
+        "description": ""
     },
     "analysis_power_profile_about1": {
-        "message": "El concepto de perfil de poder fue creado por el Dr. Andy Coggan. Es un resumen básico de los requisitos de potencia para estar en un nivel específico de competitividad en las carreras."
+        "message": "El concepto de perfil de poder fue creado por el Dr. Andy Coggan. Es un resumen básico de los requisitos de potencia para estar en un nivel específico de competitividad en las carreras.",
+        "description": ""
     },
     "analysis_power_profile_about2": {
-        "message": "Estas clasificaciones están destinadas a darle una idea aproximada de cómo su mejor rendimiento de potencia se compararía con la capacidad máxima de otros corredores. Son más representativos cuando trabajas muy duro."
+        "message": "Estas clasificaciones están destinadas a darle una idea aproximada de cómo su mejor rendimiento de potencia se compararía con la capacidad máxima de otros corredores. Son más representativos cuando trabajas muy duro.",
+        "description": ""
     },
     "analysis_power_profile_select": {
-        "message": "Seleccione un perfil para ver las salidas de potencia requeridas"
+        "message": "Seleccione un perfil para ver las salidas de potencia requeridas",
+        "description": ""
     },
     "analysis_power_profile_footer_leadin": {
-        "message": "NOTA: El algoritmo Sauce es una interpretación mejorada del concepto original de Andy. Para esfuerzos entre 20 y 60 minutos, Normalized Power® se usa gradualmente en lugar de la potencia real. Después de 1 hora, solo se usa NP® y se aplica un factor de resistencia logarítmico para mejorar la fatiga del modelo.<br/><br/> Para obtener información adicional sobre los perfiles originales, lea"
+        "message": "NOTA: El algoritmo Sauce es una interpretación mejorada del concepto original de Andy. Para esfuerzos entre 20 y 60 minutos, Normalized Power® se usa gradualmente en lugar de la potencia real. Después de 1 hora, solo se usa NP® y se aplica un factor de resistencia logarítmico para mejorar la fatiga del modelo.<br/><br/> Para obtener información adicional sobre los perfiles originales, lea",
+        "description": ""
     },
     "analysis_comment_label": {
-        "message": "Di algo"
+        "message": "Di algo",
+        "description": ""
     },
     "analysis_comment_placeholder": {
-        "message": "Tu comentario aqui"
+        "message": "Tu comentario aqui",
+        "description": ""
     },
     "analysis_comment": {
-        "message": "Comentario"
+        "message": "Comentario",
+        "description": ""
     },
     "analysis_title": {
-        "message": "Análisis"
+        "message": "Análisis",
+        "description": ""
     },
     "analysis_create_live_segment_tooltip": {
-        "message": "Cree un archivo de segmento en vivo a partir de este esfuerzo. Compatible con la mayoría de los dispositivos modernos de Garmin."
+        "message": "Cree un archivo de segmento en vivo a partir de este esfuerzo. Compatible con la mayoría de los dispositivos modernos de Garmin.",
+        "description": ""
     },
     "analysis_create": {
-        "message": "Crear"
+        "message": "Crear",
+        "description": ""
     },
     "analysis_settings": {
-        "message": "Ajustes"
+        "message": "Ajustes",
+        "description": ""
     },
     "analysis_rank_place_1": {
-        "message": "1er"
+        "message": "1er",
+        "description": ""
     },
     "analysis_rank_place_2": {
-        "message": "2do"
+        "message": "2do",
+        "description": ""
     },
     "analysis_rank_place_3": {
-        "message": "Tercero"
+        "message": "Tercero",
+        "description": ""
     },
     "analysis_rank_cat_all": {
-        "message": "Todos"
+        "message": "Todos",
+        "description": ""
     },
     "analysis_rank_cat_year": {
-        "message": "Año"
+        "message": "Año",
+        "description": ""
     },
     "analysis_rank_cat_recent": {
-        "message": "90 días"
+        "message": "90 días",
+        "description": ""
     },
     "analysis_value": {
-        "message": "Valor"
+        "message": "Valor",
+        "description": ""
     },
     "analysis_activity": {
-        "message": "Actividad"
+        "message": "Actividad",
+        "description": ""
     },
     "analysis_date": {
-        "message": "Fecha"
+        "message": "Fecha",
+        "description": ""
     },
     "analysis_peaks_settings_dialog_title": {
-        "message": "Configuración de esfuerzos máximos"
+        "message": "Configuración de esfuerzos máximos",
+        "description": ""
     },
     "analysis_peaks_month": {
-        "message": "mes"
+        "message": "mes",
+        "description": ""
     },
     "analysis_peaks_day": {
-        "message": "día"
+        "message": "día",
+        "description": ""
     },
     "analysis_peaks_ranges": {
-        "message": "Rangos de esfuerzos máximos"
+        "message": "Rangos de esfuerzos máximos",
+        "description": ""
     },
     "analysis_peaks_ranges_intro": {
-        "message": "Puede personalizar los tiempos y distancias utilizados para los cálculos de <i>esfuerzos máximos.</i> Dependiendo del tipo de datos, se utilizarán valores de tiempo o distancias."
+        "message": "Puede personalizar los tiempos y distancias utilizados para los cálculos de <i>esfuerzos máximos.</i> Dependiendo del tipo de datos, se utilizarán valores de tiempo o distancias.",
+        "description": ""
     },
     "analysis_peaks_reset_to_defaults": {
-        "message": "Restablecer los valores predeterminados"
+        "message": "Restablecer los valores predeterminados",
+        "description": ""
     },
     "time_sec": {
         "message": "sec",
@@ -462,491 +596,651 @@
         "description": "IMMUTABLE"
     },
     "time_min": {
-        "message": "min"
+        "message": "min",
+        "description": ""
     },
     "time_mins": {
         "message": "mins",
         "description": "IMMUTABLE"
     },
     "time_hour": {
-        "message": "hora"
+        "message": "hora",
+        "description": ""
     },
     "time_hours": {
-        "message": "horas"
+        "message": "horas",
+        "description": ""
     },
     "time_day": {
-        "message": "día"
+        "message": "día",
+        "description": ""
     },
     "time_days": {
-        "message": "dias"
+        "message": "dias",
+        "description": ""
     },
     "time_week": {
-        "message": "semana"
+        "message": "semana",
+        "description": ""
     },
     "time_weeks": {
-        "message": "semanas"
+        "message": "semanas",
+        "description": ""
     },
     "time_year": {
-        "message": "año"
+        "message": "año",
+        "description": ""
     },
     "time_years": {
-        "message": "años"
+        "message": "años",
+        "description": ""
     },
     "time_ago": {
-        "message": "hace"
+        "message": "hace",
+        "description": ""
     },
     "time_in": {
-        "message": "en"
+        "message": "en",
+        "description": ""
     },
     "time_now": {
-        "message": "ahora"
+        "message": "ahora",
+        "description": ""
     },
     "time_today": {
-        "message": "hoy dia"
+        "message": "hoy dia",
+        "description": ""
     },
     "dialog_help_info_tooltip": {
-        "message": "Haga clic para obtener más información"
+        "message": "Haga clic para obtener más información",
+        "description": ""
     },
     "perf_predictor_intro_help1": {
-        "message": "El predictor de rendimiento funciona mejor si primero ajusta los parámetros de entrada para que coincidan con el tiempo del rendimiento original. Por ejemplo, si estaba en una bicicleta de montaña, seleccione la opción de bicicleta \"MTB\". Si hubo un viento de cabeza predominante durante el esfuerzo, cambie el valor de la velocidad del viento para indicar el impacto neto del viento y así sucesivamente."
+        "message": "El predictor de rendimiento funciona mejor si primero ajusta los parámetros de entrada para que coincidan con el tiempo del rendimiento original. Por ejemplo, si estaba en una bicicleta de montaña, seleccione la opción de bicicleta \"MTB\". Si hubo un viento de cabeza predominante durante el esfuerzo, cambie el valor de la velocidad del viento para indicar el impacto neto del viento y así sucesivamente.",
+        "description": ""
     },
     "perf_predictor_intro_help2": {
-        "message": "Una vez que los valores se ajustan correctamente, el rendimiento previsto debería parecerse al rendimiento original dentro de un pequeño porcentaje."
+        "message": "Una vez que los valores se ajustan correctamente, el rendimiento previsto debería parecerse al rendimiento original dentro de un pequeño porcentaje.",
+        "description": ""
     },
     "perf_predictor_intro_help3": {
-        "message": "Ahora puede modificar diferentes parámetros como la potencia, el peso y la aerodinámica para estimar qué impacto en el rendimiento podrían tener esos cambios."
+        "message": "Ahora puede modificar diferentes parámetros como la potencia, el peso y la aerodinámica para estimar qué impacto en el rendimiento podrían tener esos cambios.",
+        "description": ""
     },
     "perf_predictor_intro": {
-        "message": "Performance Predictor es una calculadora de potencia cíclica que le permite examinar el impacto de los factores de rendimiento alterados."
+        "message": "Performance Predictor es una calculadora de potencia cíclica que le permite examinar el impacto de los factores de rendimiento alterados.",
+        "description": ""
     },
     "perf_predictor_intro_note": {
-        "message": "Cambie estos parámetros para ver el efecto estimado sobre el rendimiento."
+        "message": "Cambie estos parámetros para ver el efecto estimado sobre el rendimiento.",
+        "description": ""
     },
     "perf_predictor_crr_help1": {
-        "message": "Asegúrese de que esta configuración coincida con su bicicleta y el terreno lo más cerca posible. Puede ajustar la resistencia a la rodadura directamente alterando el valor \"Crr\"."
+        "message": "Asegúrese de que esta configuración coincida con su bicicleta y el terreno lo más cerca posible. Puede ajustar la resistencia a la rodadura directamente alterando el valor \"Crr\".",
+        "description": ""
     },
     "perf_predictor_crr_help2": {
-        "message": "Use valores \"Crr\" más bajos (menos resistencia) para neumáticos más rápidos con buenas superficies de carretera y valores más altos (más resistencia) para neumáticos más pesados en superficies rugosas, por ejemplo, bicicleta de montaña."
+        "message": "Use valores \"Crr\" más bajos (menos resistencia) para neumáticos más rápidos con buenas superficies de carretera y valores más altos (más resistencia) para neumáticos más pesados en superficies rugosas, por ejemplo, bicicleta de montaña.",
+        "description": ""
     },
     "perf_predictor_crr_heading": {
-        "message": "Resistencia a la rodadura"
+        "message": "Resistencia a la rodadura",
+        "description": ""
     },
     "perf_predictor_crr_bike": {
-        "message": "Bicicleta"
+        "message": "Bicicleta",
+        "description": ""
     },
     "perf_predictor_crr_bike_tooltip": {
-        "message": "Tipo de bicicleta para estimar la resistencia a la rodadura (p. Ej., Crr)"
+        "message": "Tipo de bicicleta para estimar la resistencia a la rodadura (p. Ej., Crr)",
+        "description": ""
     },
     "perf_predictor_crr_bike_road": {
-        "message": "La carretera"
+        "message": "La carretera",
+        "description": ""
     },
     "perf_predictor_crr_bike_mtb": {
-        "message": "MTB"
+        "message": "MTB",
+        "description": ""
     },
     "perf_predictor_crr_terrain": {
-        "message": "Terreno"
+        "message": "Terreno",
+        "description": ""
     },
     "perf_predictor_crr_terrain_tooltip": {
-        "message": "Tipo de terreno para estimar la resistencia a la rodadura (p. Ej., Crr)"
+        "message": "Tipo de terreno para estimar la resistencia a la rodadura (p. Ej., Crr)",
+        "description": ""
     },
     "perf_predictor_crr_terrain_asphalt": {
-        "message": "Asfalto"
+        "message": "Asfalto",
+        "description": ""
     },
     "perf_predictor_crr_terrain_gravel": {
-        "message": "Grava"
+        "message": "Grava",
+        "description": ""
     },
     "perf_predictor_crr_terrain_grass": {
-        "message": "Césped"
+        "message": "Césped",
+        "description": ""
     },
     "perf_predictor_crr_terrain_offroad": {
-        "message": "Fuera del camino"
+        "message": "Fuera del camino",
+        "description": ""
     },
     "perf_predictor_crr_terrain_sand": {
-        "message": "Arena"
+        "message": "Arena",
+        "description": ""
     },
     "perf_predictor_crr_terrain_custom": {
-        "message": "Personalizado"
+        "message": "Personalizado",
+        "description": ""
     },
     "perf_predictor_crr_tooltip": {
-        "message": "Coeficiente de resistencia a la rodadura."
+        "message": "Coeficiente de resistencia a la rodadura.",
+        "description": ""
     },
     "perf_predictor_cda_help1": {
-        "message": "\"CdA\" representa la resistencia aerodinámica de un piloto y equipo. Es técnicamente el coeficiente de arrastre multiplicado por el área de la superficie frontal. Los valores más bajos se logran al andar más bajo, usar trajes de velocidad y equipos especiales como bicicletas de contrarreloj y ruedas de disco."
+        "message": "\"CdA\" representa la resistencia aerodinámica de un piloto y equipo. Es técnicamente el coeficiente de arrastre multiplicado por el área de la superficie frontal. Los valores más bajos se logran al andar más bajo, usar trajes de velocidad y equipos especiales como bicicletas de contrarreloj y ruedas de disco.",
+        "description": ""
     },
     "perf_predictor_cda_help_table_heading": {
-        "message": "Algunos valores de ejemplo"
+        "message": "Algunos valores de ejemplo",
+        "description": ""
     },
     "perf_predictor_cda_help_table_elite_tt": {
-        "message": "Equipo de contrarreloj de nivel Elite y posicionamiento aerodinámico"
+        "message": "Equipo de contrarreloj de nivel Elite y posicionamiento aerodinámico",
+        "description": ""
     },
     "perf_predictor_cda_help_table_good_tt": {
-        "message": "Buen equipo de contrarreloj y posicionamiento aerodinámico / Triatlón"
+        "message": "Buen equipo de contrarreloj y posicionamiento aerodinámico / Triatlón",
+        "description": ""
     },
     "perf_predictor_cda_help_table_road": {
-        "message": "Posiciones de carreras en bicicleta de carretera / Barras caídas a las campanas"
+        "message": "Posiciones de carreras en bicicleta de carretera / Barras caídas a las campanas",
+        "description": ""
     },
     "perf_predictor_cda_help_table_climbing": {
-        "message": "Posiciones de escalada en bicicleta de carretera / bicicleta de montaña XC"
+        "message": "Posiciones de escalada en bicicleta de carretera / bicicleta de montaña XC",
+        "description": ""
     },
     "perf_predictor_cda_help_table_upright": {
-        "message": "Posición vertical con ropa casual"
+        "message": "Posición vertical con ropa casual",
+        "description": ""
     },
     "perf_predictor_cda_heading": {
-        "message": "Resistencia aerodinámica"
+        "message": "Resistencia aerodinámica",
+        "description": ""
     },
     "perf_predictor_cda_position": {
-        "message": "Posición Aero"
+        "message": "Posición Aero",
+        "description": ""
     },
     "perf_predictor_cda_position_tooltip": {
-        "message": "Posición aerodinámica en bicicleta para estimar CdA"
+        "message": "Posición aerodinámica en bicicleta para estimar CdA",
+        "description": ""
     },
     "perf_predictor_cda_tooltip": {
-        "message": "Coeficiente de resistencia aerodinámica multiplicado por el área de superficie frontal"
+        "message": "Coeficiente de resistencia aerodinámica multiplicado por el área de superficie frontal",
+        "description": ""
     },
     "perf_predictor_power": {
-        "message": "Poder"
+        "message": "Poder",
+        "description": ""
     },
     "perf_predictor_power_tooltip": {
-        "message": "Vatios promedio de esfuerzo"
+        "message": "Vatios promedio de esfuerzo",
+        "description": ""
     },
     "perf_predictor_body_weight": {
-        "message": "Peso corporal"
+        "message": "Peso corporal",
+        "description": ""
     },
     "perf_predictor_body_weight_tooltip": {
-        "message": "Solo peso corporal sin equipo"
+        "message": "Solo peso corporal sin equipo",
+        "description": ""
     },
     "perf_predictor_gear_weight": {
-        "message": "Peso de bicicleta / equipo"
+        "message": "Peso de bicicleta / equipo",
+        "description": ""
     },
     "perf_predictor_gear_weight_tooltip": {
-        "message": "Peso de todo el equipo y bicicleta, incluyendo agua y ropa."
+        "message": "Peso de todo el equipo y bicicleta, incluyendo agua y ropa.",
+        "description": ""
     },
     "perf_predictor_slope": {
-        "message": "Pendiente"
+        "message": "Pendiente",
+        "description": ""
     },
     "perf_predictor_slope_tooltip": {
-        "message": "Gradiente de colina o descenso"
+        "message": "Gradiente de colina o descenso",
+        "description": ""
     },
     "perf_predictor_distance": {
-        "message": "Distancia"
+        "message": "Distancia",
+        "description": ""
     },
     "perf_predictor_distance_tooltip": {
-        "message": "Distancia del curso"
+        "message": "Distancia del curso",
+        "description": ""
     },
     "perf_predictor_elevation": {
-        "message": "Elevación (promedio)"
+        "message": "Elevación (promedio)",
+        "description": ""
     },
     "perf_predictor_elevation_tooltip": {
-        "message": "La elevación media del curso."
+        "message": "La elevación media del curso.",
+        "description": ""
     },
     "perf_predictor_wind": {
-        "message": "Viento"
+        "message": "Viento",
+        "description": ""
     },
     "perf_predictor_wind_tooltip": {
-        "message": "La velocidad neta del viento contra el jinete o valores negativos para vientos de cola"
+        "message": "La velocidad neta del viento contra el jinete o valores negativos para vientos de cola",
+        "description": ""
     },
     "perf_predictor_speed": {
-        "message": "Velocidad"
+        "message": "Velocidad",
+        "description": ""
     },
     "perf_predictor_time": {
-        "message": "Hora"
+        "message": "Hora",
+        "description": ""
     },
     "perf_predictor_original_performance": {
-        "message": "Rendimiento original"
+        "message": "Rendimiento original",
+        "description": ""
     },
     "perf_predictor_predicted_performance": {
-        "message": "Rendimiento previsto"
+        "message": "Rendimiento previsto",
+        "description": ""
     },
     "perf_predictor_faster": {
         "message": "más rápido",
         "description": "IMMUTABLE"
     },
     "perf_predictor_slower": {
-        "message": "más lento"
+        "message": "más lento",
+        "description": ""
     },
     "perf_predictor_power_details_heading": {
-        "message": "Detalles de potencia"
+        "message": "Detalles de potencia",
+        "description": ""
     },
     "perf_predictor_power_details_gravity": {
-        "message": "Gravedad"
+        "message": "Gravedad",
+        "description": ""
     },
     "perf_predictor_power_details_aero": {
-        "message": "Aero"
+        "message": "Aero",
+        "description": ""
     },
     "perf_predictor_power_details_rr": {
-        "message": "Laminación"
+        "message": "Laminación",
+        "description": ""
     },
     "perf_predictor_power_details_gravity_tooltip": {
-        "message": "Requisitos de potencia y trabajo para superar la gravedad."
+        "message": "Requisitos de potencia y trabajo para superar la gravedad.",
+        "description": ""
     },
     "perf_predictor_power_details_aero_tooltip": {
-        "message": "Requisitos de potencia y trabajo para superar la resistencia aerodinámica."
+        "message": "Requisitos de potencia y trabajo para superar la resistencia aerodinámica.",
+        "description": ""
     },
     "perf_predictor_power_details_rr_tooltip": {
-        "message": "Requisitos de potencia y trabajo para superar la resistencia a la rodadura."
+        "message": "Requisitos de potencia y trabajo para superar la resistencia a la rodadura.",
+        "description": ""
     },
     "perf_predictor_drafting": {
-        "message": "Redacción"
+        "message": "Redacción",
+        "description": ""
     },
     "perf_predictor_drafting_tooltip": {
-        "message": "Seleccione esta opción para modelar efectos de dibujo"
+        "message": "Seleccione esta opción para modelar efectos de dibujo",
+        "description": ""
     },
     "perf_predictor_riders": {
-        "message": "Jinetes"
+        "message": "Jinetes",
+        "description": ""
     },
     "perf_predictor_riders_tooltip": {
-        "message": "Número de ciclistas en este grupo"
+        "message": "Número de ciclistas en este grupo",
+        "description": ""
     },
     "perf_predictor_position": {
-        "message": "Posición"
+        "message": "Posición",
+        "description": ""
     },
     "perf_predictor_power_variance": {
-        "message": "Varianza de potencia"
+        "message": "Varianza de potencia",
+        "description": ""
     },
     "perf_predictor_power_variance_tooltip": {
-        "message": "La diferencia de poder entre la posición más difícil y la posición más fácil. Por lo general, esta es la potencia para la primera y última posición."
+        "message": "La diferencia de poder entre la posición más difícil y la posición más fácil. Por lo general, esta es la potencia para la primera y última posición.",
+        "description": ""
     },
     "perf_predictor_group_power": {
-        "message": "Poder del grupo"
+        "message": "Poder del grupo",
+        "description": ""
     },
     "perf_predictor_group_power_tooltip": {
-        "message": "La potencia media para todas las posiciones de este grupo."
+        "message": "La potencia media para todas las posiciones de este grupo.",
+        "description": ""
     },
     "perf_predictor_position_tooltip": {
-        "message": "Tu posición en este grupo"
+        "message": "Tu posición en este grupo",
+        "description": ""
     },
     "perf_predictor_rotating_paceline": {
-        "message": "Rotatorio / Paceline"
+        "message": "Rotatorio / Paceline",
+        "description": ""
     },
     "perf_predictor_rotating_tooltip": {
-        "message": "Selecciona esta opción para modelar un grupo de ciclistas que cambian de posición durante el esfuerzo."
+        "message": "Selecciona esta opción para modelar un grupo de ciclistas que cambian de posición durante el esfuerzo.",
+        "description": ""
     },
     "perf_predictor_time_at_front": {
-        "message": "Tiempo al frente"
+        "message": "Tiempo al frente",
+        "description": ""
     },
     "perf_predictor_work_tooltip": {
-        "message": "Seleccione el porcentaje de tiempo en la primera posición de este grupo"
+        "message": "Seleccione el porcentaje de tiempo en la primera posición de este grupo",
+        "description": ""
     },
     "perf_predictor_drafting_help": {
-        "message": "Dibujar o montar en un grupo de ciclistas proporciona importantes beneficios aerodinámicos. Performance Predictor puede modelar estos efectos aplicando la investigación de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen y Bert Blocken</a> .<br/><br/> Tenga en cuenta que este algoritmo funciona bien para grupos de menor tamaño en formaciones de un solo archivo. Los grandes pelotones de los ciclistas están sujetos a fuerzas aerodinámicas más complicadas que no se tratan adecuadamente aquí."
+        "message": "Dibujar o montar en un grupo de ciclistas proporciona importantes beneficios aerodinámicos. Performance Predictor puede modelar estos efectos aplicando la investigación de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen y Bert Blocken</a> .<br/><br/> Tenga en cuenta que este algoritmo funciona bien para grupos de menor tamaño en formaciones de un solo archivo. Los grandes pelotones de los ciclistas están sujetos a fuerzas aerodinámicas más complicadas que no se tratan adecuadamente aquí.",
+        "description": ""
     },
     "sync_control_panel_intro": {
-        "message": "La sincronización de actividades importa todo el historial de actividades para permitir mejores gráficos de entrenamiento y análisis de rendimiento."
+        "message": "La sincronización de actividades importa todo el historial de actividades para permitir mejores gráficos de entrenamiento y análisis de rendimiento.",
+        "description": ""
     },
     "sync_control_panel_intro_help": {
-        "message": "La sincronización de actividades permite a Sauce proporcionar funciones de análisis que no son posibles sin datos históricos. Esto incluye una nueva <a href=\"/sauce/performance\">página de rendimiento</a> , además de ampliar las páginas existentes, como Análisis, con información sobre los rendimientos anteriores. ¡Es una gran característica para entrenadores y atletas avanzados!<br/><br/> La sincronización funciona mediante la importación de datos de actividad sin procesar a la <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">base de datos local</a> de su navegador web. Estos datos se analizan, indexan y almacenan para búsquedas rápidas más adelante. Como siempre, Sauce no utiliza servidores remotos, por lo que se recomienda guardar las copias de seguridad con el botón \"Exportar datos\"."
+        "message": "La sincronización de actividades permite a Sauce proporcionar funciones de análisis que no son posibles sin datos históricos. Esto incluye una nueva <a href=\"/sauce/performance\">página de rendimiento</a> , además de ampliar las páginas existentes, como Análisis, con información sobre los rendimientos anteriores. ¡Es una gran característica para entrenadores y atletas avanzados!<br/><br/> La sincronización funciona mediante la importación de datos de actividad sin procesar a la <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">base de datos local</a> de su navegador web. Estos datos se analizan, indexan y almacenan para búsquedas rápidas más adelante. Como siempre, Sauce no utiliza servidores remotos, por lo que se recomienda guardar las copias de seguridad con el botón \"Exportar datos\".",
+        "description": ""
     },
     "sync_control_panel_enabled": {
-        "message": "Activado"
+        "message": "Activado",
+        "description": ""
     },
     "sync_control_panel_status": {
-        "message": "Estado"
+        "message": "Estado",
+        "description": ""
     },
     "sync_control_panel_last_error": {
-        "message": "Último error"
+        "message": "Último error",
+        "description": ""
     },
     "sync_control_panel_synced": {
-        "message": "Sincronizado"
+        "message": "Sincronizado",
+        "description": ""
     },
     "sync_control_panel_last_sync": {
-        "message": "Última sincronización"
+        "message": "Última sincronización",
+        "description": ""
     },
     "sync_control_panel_next_sync": {
-        "message": "Siguiente sincronización"
+        "message": "Siguiente sincronización",
+        "description": ""
     },
     "sync_control_panel_title": {
-        "message": "Sincronización de actividad de salsa"
+        "message": "Sincronización de actividad de salsa",
+        "description": ""
     },
     "sync_control_panel_resumes": {
-        "message": "Reanuda"
+        "message": "Reanuda",
+        "description": ""
     },
     "sync_control_panel_activities": {
-        "message": "ocupaciones"
+        "message": "ocupaciones",
+        "description": ""
     },
     "sync_control_panel_sync_stop_tooltip": {
-        "message": "Detener el proceso de sincronización actual"
+        "message": "Detener el proceso de sincronización actual",
+        "description": ""
     },
     "sync_control_panel_sync_start_tooltip": {
-        "message": "Inicie el proceso de sincronización de inmediato"
+        "message": "Inicie el proceso de sincronización de inmediato",
+        "description": ""
     },
     "sync_control_panel_sync_recompute_tooltip": {
-        "message": "Vuelva a calcular los datos locales de sincronización, es decir, TSS, NP, etc."
+        "message": "Vuelva a calcular los datos locales de sincronización, es decir, TSS, NP, etc.",
+        "description": ""
     },
     "mutable_data_add_entry_tooltip": {
-        "message": "Agregar una nueva entrada"
+        "message": "Agregar una nueva entrada",
+        "description": ""
     },
     "mutable_data_delete_entry_tooltip": {
-        "message": "Eliminar esta entrada"
+        "message": "Eliminar esta entrada",
+        "description": ""
     },
     "mutable_data_save": {
-        "message": "Guardar cambios"
+        "message": "Guardar cambios",
+        "description": ""
     },
     "mutable_data_ftp_title": {
-        "message": "Historial de FTP"
+        "message": "Historial de FTP",
+        "description": ""
     },
     "mutable_data_weight_title": {
-        "message": "Historial de peso"
+        "message": "Historial de peso",
+        "description": ""
     },
     "mutable_data_peaks_periods_title": {
-        "message": "Rangos basados en el tiempo"
+        "message": "Rangos basados en el tiempo",
+        "description": ""
     },
     "mutable_data_peaks_dists_title": {
-        "message": "Rangos basados en distancia"
+        "message": "Rangos basados en distancia",
+        "description": ""
     },
     "mutable_data_ftp_help": {
-        "message": "Sauce admite la configuración de valores de FTP para cualquier punto de su historial. Dependiendo de la fecha en que se llevó a cabo una actividad, el valor correspondiente se utilizará para cualquier cálculo basado en FTP, como TSS."
+        "message": "Sauce admite la configuración de valores de FTP para cualquier punto de su historial. Dependiendo de la fecha en que se llevó a cabo una actividad, el valor correspondiente se utilizará para cualquier cálculo basado en FTP, como TSS.",
+        "description": ""
     },
     "mutable_data_weight_help": {
-        "message": "Sauce admite la configuración de valores de peso para cualquier punto de su historial. Dependiendo de la fecha en que se llevó a cabo una actividad, el valor correspondiente se utilizará para cualquier cálculo basado en el peso."
+        "message": "Sauce admite la configuración de valores de peso para cualquier punto de su historial. Dependiendo de la fecha en que se llevó a cabo una actividad, el valor correspondiente se utilizará para cualquier cálculo basado en el peso.",
+        "description": ""
     },
     "mutable_data_peaks_periods_help": {
-        "message": "Los períodos de tiempo se utilizan para esfuerzos como la potencia, la frecuencia cardíaca y la cadencia."
+        "message": "Los períodos de tiempo se utilizan para esfuerzos como la potencia, la frecuencia cardíaca y la cadencia.",
+        "description": ""
     },
     "mutable_data_peaks_dists_help": {
-        "message": "Las distancias se utilizan para esfuerzos como el ritmo y el ritmo ajustado por pendiente."
+        "message": "Las distancias se utilizan para esfuerzos como el ritmo y el ritmo ajustado por pendiente.",
+        "description": ""
     },
     "subscription": {
-        "message": "Suscripción"
+        "message": "Suscripción",
+        "description": ""
     },
     "live_segment_create": {
-        "message": "Crear"
+        "message": "Crear",
+        "description": ""
     },
     "live_segment_creator": {
-        "message": "Creador"
+        "message": "Creador",
+        "description": ""
     },
     "live_segment_success_create_title": {
-        "message": "Creado con éxito"
+        "message": "Creado con éxito",
+        "description": ""
     },
     "live_segment_success_create_body1": {
-        "message": "Su archivo de segmento en vivo ahora debe descargarse a su computadora."
+        "message": "Su archivo de segmento en vivo ahora debe descargarse a su computadora.",
+        "description": ""
     },
     "live_segment_success_create_body2": {
-        "message": "Monte su dispositivo en su computadora a través de USB y copie este archivo a la carpeta \"Garmin / NewFiles\"."
+        "message": "Monte su dispositivo en su computadora a través de USB y copie este archivo a la carpeta \"Garmin / NewFiles\".",
+        "description": ""
     },
     "live_segment_success_create_body3": {
-        "message": "Asegúrese de expulsar el dispositivo de manera segura antes de desconectarlo."
+        "message": "Asegúrese de expulsar el dispositivo de manera segura antes de desconectarlo.",
+        "description": ""
     },
     "live_segment_use_trial": {
-        "message": "Usar prueba"
+        "message": "Usar prueba",
+        "description": ""
     },
     "live_segment_remaining": {
-        "message": "restante"
+        "message": "restante",
+        "description": ""
     },
     "live_segment_become_patron": {
-        "message": "Convertirse en un mecenas"
+        "message": "Convertirse en un mecenas",
+        "description": ""
     },
     "live_segment_intro_help1": {
-        "message": "El creador de Sauce Live Segment genera un archivo de segmento a partir de cualquier actividad de Strava. El archivo creado se ajusta al estándar abierto de archivo de segmento FIT. Este archivo es compatible con dispositivos Garmin compatibles y puede ser compatible con otros dispositivos que pueden admitir la carga lateral de archivos de segmento."
+        "message": "El creador de Sauce Live Segment genera un archivo de segmento a partir de cualquier actividad de Strava. El archivo creado se ajusta al estándar abierto de archivo de segmento FIT. Este archivo es compatible con dispositivos Garmin compatibles y puede ser compatible con otros dispositivos que pueden admitir la carga lateral de archivos de segmento.",
+        "description": ""
     },
     "live_segment_intro_help_side_loading_more_info": {
-        "message": "Puede encontrar más información sobre la carga lateral de Garmin aquí."
+        "message": "Puede encontrar más información sobre la carga lateral de Garmin aquí.",
+        "description": ""
     },
     "live_segment_intro_help_note": {
-        "message": "NOTA: Los dispositivos Wahoo NO admiten archivos de segmento de carga lateral."
+        "message": "NOTA: Los dispositivos Wahoo NO admiten archivos de segmento de carga lateral.",
+        "description": ""
     },
     "live_segment_intro1": {
-        "message": "Cree un archivo de segmento en vivo para usar con"
+        "message": "Cree un archivo de segmento en vivo para usar con",
+        "description": ""
     },
     "live_segment_intro_supported_devices": {
-        "message": "dispositivos Garmin compatibles"
+        "message": "dispositivos Garmin compatibles",
+        "description": ""
     },
     "live_segment_intro_note": {
-        "message": "Esto generará un archivo de segmento FIT que se puede colocar en la carpeta \"Garmin / NewFiles\" de su Garmin cuando lo conecta a una computadora a través de USB."
+        "message": "Esto generará un archivo de segmento FIT que se puede colocar en la carpeta \"Garmin / NewFiles\" de su Garmin cuando lo conecta a una computadora a través de USB.",
+        "description": ""
     },
     "live_segment_segment_name_help": {
-        "message": "El nombre del segmento es cómo aparece este segmento en su dispositivo cuando se acerca a la ubicación inicial."
+        "message": "El nombre del segmento es cómo aparece este segmento en su dispositivo cuando se acerca a la ubicación inicial.",
+        "description": ""
     },
     "live_segment_segment_name": {
-        "message": "Nombre del segmento"
+        "message": "Nombre del segmento",
+        "description": ""
     },
     "live_segment_leader_name": {
-        "message": "Nombre del líder"
+        "message": "Nombre del líder",
+        "description": ""
     },
     "live_segment_leader_type": {
-        "message": "Tipo de líder"
+        "message": "Tipo de líder",
+        "description": ""
     },
     "live_segment_rival": {
-        "message": "Rival"
+        "message": "Rival",
+        "description": ""
     },
     "live_segment_Goal": {
-        "message": "Objetivo"
+        "message": "Objetivo",
+        "description": ""
     },
     "live_segment_pr": {
-        "message": "PR"
+        "message": "PR",
+        "description": ""
     },
     "live_segment_challenger": {
-        "message": "Desafiador"
+        "message": "Desafiador",
+        "description": ""
     },
     "live_segment_kom": {
-        "message": "KOM"
+        "message": "KOM",
+        "description": ""
     },
     "live_segment_qom": {
-        "message": "QOM"
+        "message": "QOM",
+        "description": ""
     },
     "live_segment_club_leader": {
-        "message": "Líder del club"
+        "message": "Líder del club",
+        "description": ""
     },
     "live_segment_speed_adjust": {
-        "message": "Ajuste de velocidad"
+        "message": "Ajuste de velocidad",
+        "description": ""
     },
     "live_segment_speed_adjust_tooltip": {
-        "message": "Ajuste la velocidad general en algún porcentaje"
+        "message": "Ajuste la velocidad general en algún porcentaje",
+        "description": ""
     },
     "live_segment_time": {
-        "message": "Hora"
+        "message": "Hora",
+        "description": ""
     },
     "live_segment_beg1": {
-        "message": "Hola, mi nombre es Justin y soy el autor de Sauce."
+        "message": "Hola, mi nombre es Justin y soy el autor de Sauce.",
+        "description": ""
     },
     "live_segment_beg2": {
-        "message": "Estoy trabajando duro para hacer de Sauce la mejor actualización de Strava posible, pero sin su apoyo no puedo dedicar el tiempo y la energía para hacerlo posible. Considere convertirse en socio para habilitar esta función y obtener la experiencia completa de Sauce."
+        "message": "Estoy trabajando duro para hacer de Sauce la mejor actualización de Strava posible, pero sin su apoyo no puedo dedicar el tiempo y la energía para hacerlo posible. Considere convertirse en socio para habilitar esta función y obtener la experiencia completa de Sauce.",
+        "description": ""
     },
     "live_segment_beg3": {
-        "message": "¡Muchas gracias por entender y contribuir a hacer que Sauce sea aún mejor!"
+        "message": "¡Muchas gracias por entender y contribuir a hacer que Sauce sea aún mejor!",
+        "description": ""
     },
     "menu_add_review": {
-        "message": "Agregar una opinión"
+        "message": "Agregar una opinión",
+        "description": ""
     },
     "menu_supporters": {
-        "message": "Partidarios"
+        "message": "Partidarios",
+        "description": ""
     },
     "performance": {
-        "message": "Rendimiento"
+        "message": "Rendimiento",
+        "description": ""
     },
     "performance_rides": {
-        "message": "Paseos"
+        "message": "Paseos",
+        "description": ""
     },
     "performance_runs": {
-        "message": "Carreras"
+        "message": "Carreras",
+        "description": ""
     },
     "performance_swims": {
-        "message": "Nadar"
+        "message": "Nadar",
+        "description": ""
     },
     "performance_skis": {
-        "message": "Esquís"
+        "message": "Esquís",
+        "description": ""
     },
     "performance_workouts": {
-        "message": "Entrenamientos"
+        "message": "Entrenamientos",
+        "description": ""
     },
     "performance_ride": {
-        "message": "Cabalgata"
+        "message": "Cabalgata",
+        "description": ""
     },
     "performance_run": {
-        "message": "Correr"
+        "message": "Correr",
+        "description": ""
     },
     "performance_swim": {
-        "message": "Nadar"
+        "message": "Nadar",
+        "description": ""
     },
     "performance_ski": {
-        "message": "Esquí"
+        "message": "Esquí",
+        "description": ""
     },
     "performance_workout": {
-        "message": "Ejercicio"
+        "message": "Ejercicio",
+        "description": ""
     },
     "season_start": {
-        "message": "Inicio de temporada"
+        "message": "Inicio de temporada",
+        "description": ""
     },
     "save": {
-        "message": "Salvar"
+        "message": "Salvar",
+        "description": ""
     }
 }
