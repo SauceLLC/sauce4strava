@@ -1,6 +1,7 @@
 {
     "app_desc": {
-        "message": "Funcionalidad adicional para su análisis de ciclismo y carrera. Esta extensión actualiza el sitio web de Strava ™."
+        "message": "Funcionalidad adicional para su análisis de ciclismo y carrera en Strava™.",
+        "description": "IMMUTABLE"
     },
     "analysis_options": {
         "message": "Opciones"
