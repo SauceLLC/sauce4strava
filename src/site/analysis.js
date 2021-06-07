@@ -3568,5 +3568,6 @@ sauce.ns('analysis', ns => {
         throw e;
     }
     sauce.analysis.checkIfUpdated();
-    setTimeout(sauce.analysis.checkForSafariUpdates, 5000);
+    // XXX Disabled for testing apple store updates.
+    //setTimeout(sauce.analysis.checkForSafariUpdates, 5000);
 })();
