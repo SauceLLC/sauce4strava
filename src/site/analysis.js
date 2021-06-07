@@ -36,6 +36,8 @@ sauce.ns('analysis', ns => {
         peak_np: 'np',
         peak_xp: 'xp',
     };
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
 
     let _fullActivity;
     async function fetchFullActivity() {
@@ -1782,6 +1784,9 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         let timeMultiplier = 1;
         const hasPatronRequirement = sauce.patronLevel >= 10;
+        if (!hasPatronRequirement && isSafari) {
+            return;  // Apple Mac App Store requirement.
+        }
         const trialCount = (!hasPatronRequirement &&
             await sauce.storage.get('live_segment_trial_count', {sync: true})) || 0;
         const maxTrials = 3;
