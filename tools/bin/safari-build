@@ -22,4 +22,4 @@ with open('manifest.json') as f:
 build = sh('tools/bin/safari-inc-build', version, output=True).strip()
 sh('make', 'manifest')
 sh('make')
-sh('xcodebuild', '-scheme', 'Release', cwd=proj_dir)
+sh('xcodebuild', cwd=proj_dir)
