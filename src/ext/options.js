@@ -60,6 +60,9 @@
             input.checked = !!options[input.name];
             if (input.dataset.restriction) {
                 input.disabled = patronLevel < Number(input.dataset.restriction);
+                if (input.disabled && isSafari) {
+                    input.style.display = 'none';
+                }
             }
             input.addEventListener('change', async ev => {
                 options[input.name] = input.checked;
@@ -77,6 +80,9 @@
             input.checked = options[input.name] === input.value;
             if (input.dataset.restriction) {
                 input.disabled = patronLevel < Number(input.dataset.restriction);
+                if (input.disabled && isSafari) {
+                    input.style.display = 'none';
+                }
             }
             input.addEventListener('change', async ev => {
                 options[input.name] = input.value;
@@ -91,11 +97,17 @@
         for (const select of selects) {
             if (select.dataset.restriction) {
                 select.disabled = patronLevel < Number(select.dataset.restriction);
+                if (select.disabled && isSafari) {
+                    select.style.display = 'none';
+                }
             }
             for (const o of select.options) {
                 o.selected = options[select.name] === o.value;
                 if (o.dataset.restriction) {
                     o.disabled = patronLevel < Number(o.dataset.restriction);
+                    if (o.disabled && isSafari) {
+                        o.style.display = 'none';
+                    }
                 }
             }
             select.addEventListener('change', async ev => {

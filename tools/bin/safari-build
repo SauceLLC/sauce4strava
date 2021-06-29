@@ -14,7 +14,6 @@ def sh(*cmds, output=None, **kwargs):
         return subprocess.check_call(cmds, env=env, **kwargs)
 
 proj_dir = 'safari-app/Sauce for Strava™/'
-build_dir = proj_dir + 'DerivedData/Sauce for Strava™/Build/Products/Release/'
 
 with open('manifest.json') as f:
     d = json.load(f)
@@ -23,4 +22,4 @@ with open('manifest.json') as f:
 build = sh('tools/bin/safari-inc-build', version, output=True).strip()
 sh('make', 'manifest')
 sh('make')
-sh('xcodebuild', '-scheme', 'Release', cwd=proj_dir)
+sh('xcodebuild', cwd=proj_dir)
