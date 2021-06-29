@@ -1683,7 +1683,7 @@ sauce.ns('analysis', ns => {
 
 
     async function exportActivity(type, {start, end, laps}) {
-        const streamTypes = ['time', 'watts', 'heartrate', 'altitude',
+        const streamTypes = ['time', 'watts', 'heartrate', 'altitude', 'active',
                              'cadence', 'temp', 'latlng', 'distance', 'velocity_smooth'];
         const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
             (acc[streamTypes[i]] = x && x.slice(start, end), acc), {});

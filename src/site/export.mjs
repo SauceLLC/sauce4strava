@@ -306,6 +306,10 @@ export class FITSerializer extends Serializer {
                 }
                 this.fitParser.addMessage('record', record);
             }
+            const elapsed = streams.time[end] - streams.time[start];
+            const active = streams.active ?
+                sauce.data.activeTime(streams.time.slice(start, end + 1), streams.active.slice(start, end + 1)) :
+                elapsed;
             const lap = {
                 message_index: lapNumber++,
                 lap_trigger: lapNumber === laps.length ? 'session_end' : 'manual',
@@ -314,8 +318,8 @@ export class FITSerializer extends Serializer {
                 sport,
                 timestamp: new Date(startTime + (streams.time[end] * 1000)),
                 start_time: new Date(startTime + (streams.time[start] * 1000)),
-                total_elapsed_time: streams.time[end] - streams.time[start],
-                total_timer_time: streams.time[end] - streams.time[start],
+                total_elapsed_time: elapsed,
+                total_timer_time: active,
             };
             if (streams.latlng) {
                 lap.start_position_lat = streams.latlng[start][0];
@@ -330,6 +334,7 @@ export class FITSerializer extends Serializer {
         }
         const endTime = streams.time[streams.time.length - 1];
         const elapsed = endTime - streams.time[0];
+        const active = streams.active ? sauce.data.activeTime(streams.time, streams.active) : elapsed;
         const endDate = new Date(startTime + ((endTime + 1) * 1000));
         const distance = streams.distance ?
             streams.distance[streams.distance.length - 1] - streams.distance[0] :
@@ -349,7 +354,7 @@ export class FITSerializer extends Serializer {
             sport,
             sub_sport: 'generic',
             total_elapsed_time: elapsed,
-            total_timer_time: elapsed,
+            total_timer_time: active,
             total_distance: distance,
             first_lap_index: 0,
             num_laps: laps.length,
@@ -357,7 +362,7 @@ export class FITSerializer extends Serializer {
         });
         this.fitParser.addMessage('activity', {
             timestamp: endDate,
-            total_timer_time: elapsed,
+            total_timer_time: active,
             num_sessions: 1,
             type: 'manual',
             event: 'activity',
