@@ -136,6 +136,12 @@
 
 
     async function main() {
+        const type = browser.runtime.getURL('').split(':')[0];
+        const doc = document.documentElement;
+        doc.classList.add(type);
+        if (navigator.userAgent.match(/ Edg\//)) {
+            doc.classList.add('edge');
+        }
         document.querySelector('a.dismiss').addEventListener('click', () => {
             browser.tabs.update({active: true});  // required to allow self.close()
             self.close();

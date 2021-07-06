@@ -47,6 +47,19 @@ html:not(.popup) {
     }
 }
 
+html {
+    &:not(.moz-extension) .moz-only,
+    &:not(.chrome-extension) .chrome-only,
+    &:not(.safari-web-extension) .safari-only,
+    &:not(.edge) .edge-only,
+    &.moz-extension .not-moz,
+    &.chrome-extension .not-chrome,
+    &.safari-web-extension .not-safari,
+    &.edge .not-edge {
+        display: none;
+    }
+}
+
 @media only screen and (min-width: 768px) {
     html:not(.popup) {
         display: flex;
