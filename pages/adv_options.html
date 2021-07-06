@@ -75,6 +75,17 @@
                 min-width: 11ch;
                 display: inline-block;
             }
+
+            html:not(.moz-extension) .moz-only,
+            html:not(.chrome-extension) .chrome-only,
+            html:not(.safari-web-extension) .safari-only,
+            html:not(.edge) .edge-only,
+            html.moz-extension .not-moz,
+            html.chrome-extension .not-chrome,
+            html.safari-web-extension .not-safari,
+            html.edge .not-edge {
+                display: none;
+            }
         </style>
     </head>
     <body>
@@ -82,7 +93,7 @@
             <img src="/images/logo_vert_120x320.png"/>
             <h2 class="title">Sauce for Strava<sup>TM</sup></h2>
             <h3 class="sub-title">Advanced Options</h3>
-            <a class="dismiss popup-only"></a>
+            <a class="dismiss popup-only not-safari"></a>
         </header>
         <main>
             <section>
