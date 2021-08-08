@@ -4,6 +4,7 @@ import * as jobs from '/src/common/jscoop/jobs.js';
 import * as queues from '/src/common/jscoop/queues.js';
 import * as locks from '/src/common/jscoop/locks.js';
 import * as processors from '/src/bg/hist/processors.mjs';
+
 const {
     ActivitiesStore,
     StreamsStore,
@@ -293,6 +294,17 @@ async function updateSelfActivities(athlete, options={}) {
 }
 
 
+const _reported = new Set();
+async function reportErrorOnce(e) {
+    const key = e.message + e.stack;
+    if (_reported.has(key)) {
+        return;
+    }
+    _reported.add(key);
+    return await sauce.report.error(e);
+}
+
+
 async function updatePeerActivities(athlete, options={}) {
     const forceUpdate = options.forceUpdate;
     const knownIds = new Set(forceUpdate ? [] : await actsStore.getAllKeysForAthlete(athlete.pk));
@@ -325,64 +337,20 @@ async function updatePeerActivities(athlete, options={}) {
             // In some cases Strava just returns 500 for a month.  I suspect it's when the only
             // activity data in a month is private, but it's an upstream problem and we need to
             // treat it like an empty response.
-            sauce.report.error(new Error(`Upstream activity fetch error: ${athlete.pk} [${q}]`));
+            reportErrorOnce(new Error(`Upstream activity fetch error: ${athlete.pk} [${q}]`));
             return [];
         }
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
-        const activityIconMap = {
-            'icon-run': 'run',
-            'icon-virtualrun': 'run',
-            'icon-hike': 'run',
-            'icon-walk': 'run',
-            'icon-ride': 'ride',
-            'icon-virtualride': 'ride',
-            'icon-swim': 'swim',
-            'icon-alpineski': 'ski',
-            'icon-nordicski': 'ski',
-            'icon-backcountryski': 'ski',
-            'icon-snowboard': 'ski',
-            'icon-rollerski': 'ski',
-            'icon-ebikeride': 'workout',
-            'icon-workout': 'workout',
-            'icon-standuppaddling': 'workout',
-            'icon-yoga': 'workout',
-            'icon-snowshoe': 'workout',
-            'icon-kayaking': 'workout',
-            'icon-golf': 'workout',
-            'icon-weighttraining': 'workout',
-            'icon-rowing': 'workout',
-            'icon-canoeing': 'workout',
-            'icon-elliptical': 'workout',
-            'icon-rockclimbing': 'workout',
-            'icon-iceskate': 'workout',
-            'icon-watersport': 'workout',
-            'icon-crossfit': 'workout',
-            'icon-wheelchair': 'workout',
-        };
-        const attrSep = String.raw`(?: |\\"|\\')`;
-        function tagWithAttrValue(tag, attrVal, matchVal) {
-            return `<${tag} [^>]*?${attrSep}${matchVal ? '(' : ''}${attrVal}${matchVal ? ')' : ''}${attrSep}`;
-        }
-        const iconRegexps = [];
-        for (const key of Object.keys(activityIconMap)) {
-            iconRegexps.push(new RegExp(tagWithAttrValue('span', key, true)));
-        }
-        const feedEntryExp = tagWithAttrValue('div', 'feed-entry');
-        const subEntryExp = tagWithAttrValue('li', 'feed-entry');
-        const feedEntryRegexp = new RegExp(`(${feedEntryExp}.*?)(?=${feedEntryExp}|$)`, 'g');
-        const subEntryRegexp = new RegExp(`(${subEntryExp}.*?)(?=${subEntryExp}|$)`, 'g');
-        const activityRegexp = new RegExp(`^[^>]*?${attrSep}activity${attrSep}`);
-        const groupActivityRegexp = new RegExp(`^[^>]*?${attrSep}group-activity${attrSep}`);
-        const scriptData = {};
-        function addEntry(id, ts, basetype) {
+        function addEntry(id, ts, type, name) {
             if (!id) {
-                sauce.report.error(new Error('Invalid activity id for athlete: ' + athlete.pk));
+                reportErrorOnce(new Error('Invalid activity id for athlete: ' + athlete.pk));
                 debugger;
                 return;
             }
+            let basetype = type && sauce.model.getActivityBaseType(type);
             if (!basetype) {
-                sauce.report.error(new Error('Unknown activity type for: ' + id));
+                reportErrorOnce(new Error('Unknown activity type for: ' + id));
                 basetype = 'workout';
                 debugger;
             }
@@ -391,98 +359,43 @@ async function updatePeerActivities(athlete, options={}) {
                 ts,
                 basetype,
                 athlete: athlete.pk,
-                name: scriptData[id] && scriptData[id].name,
+                name
             });
+            console.warn("Adding entry:", id, new Date(ts), basetype, name);
         }
-        function getBaseType(entry) {
-            for (const x of iconRegexps) {
-                const m = entry.match(x);
-                if (m) {
-                    return activityIconMap[m[1]];
-                }
+        const frag = document.createElement('div');
+        function parseCard(cardHTML) {
+            // This is just terrible, but we can't use eval..  Strava does some very particular
+            // escaping that mostly has no effect but does break JSON.parse.  Sadly we MUST run
+            // JSON.parse to disambiguate the JSON payload and to unescape unicode sequences.
+            const isActivity = !!cardHTML.match(/data-react-class=\\"Activity\\"/);
+            const isGroupActivity = !!cardHTML.match(/data-react-class=\\"GroupActivity\\"/);
+            if (!isActivity && !isGroupActivity) {
+                return;
             }
-        }
-        for (const m of raw.matchAll(/<script>(.+?)<\\\/script>/g)) {
-            const scriptish = m[1];
-            const idMatch = scriptish.match(/entity_id = \\"(.+?)\\";/);
-            if (!idMatch) {
-                continue;
-            }
-            const id = Number(idMatch[1]);
-            if (!id) {
-                sauce.report.error(new Error('Unable to find activity id from script tag for: ' + athlete.pk));
-                debugger;
-                continue;
-            }
-            let escapedName = scriptish.match(/ title: \\"(.*?)\\",\\n/)[1];
-            if (escapedName == null) {
-                sauce.report.error(new Error('Unable to get name from script tag for act: ' + id));
-                debugger;
-                continue;
-            }
-            // This is just terrible, but we can't use eval..  Strava does some very particular escaping
-            // that mostly has no effect but does break JSON.parse.  Sadly we MUST run JSON.parse to do
-            // unicode sequence unescape, ie. "\u1234"
-            escapedName = escapedName.replace(/\\'/g, "'");
-            escapedName = escapedName.replace(/\\\\"/g, '"');
-            escapedName = escapedName.replace(/\\\\(u[0-9]{4})/g, "\\$1");
-            escapedName = escapedName.replace(/\\\$/g, "$");
-            let name;
-            try {
-                name = JSON.parse('"' + escapedName + '"');
-            } catch(e) {
-                sauce.report.error(new Error('Unable to use JSON.parse on name for: ' + id));
-                name = escapedName;
-            }
-            scriptData[id] = {name};
-        }
-        for (const [, entry] of raw.matchAll(feedEntryRegexp)) {
-            let isGroup;
-            if (!entry.match(activityRegexp)) {
-                if (entry.match(groupActivityRegexp)) {
-                    isGroup = true;
-                } else {
-                    continue;
-                }
-            }
-            let ts;
-            const dateM = entry.match(/<time [^>]*?datetime=\\'(.*?)\\'/);
-            if (dateM) {
-                const isoDate = dateM[1].replace(/ UTC$/, 'Z').replace(/ /, 'T');
-                ts = (new Date(isoDate)).getTime();
-            }
-            if (!ts) {
-                sauce.report.error(new Error('Unable to get timestamp for: ' + athlete.pk));
-                debugger;
-                continue;
-            }
-            if (isGroup) {
-                for (const [, subEntry] of entry.matchAll(subEntryRegexp)) {
-                    const athleteM = subEntry.match(/<a [^>]*?entry-athlete[^>]*? href=\\'\/(?:athletes|pros)\/([0-9]+)\\'/);
-                    if (!athleteM) {
-                        sauce.report.error(new Error('Unable to get athlete ID from feed for: ' + athlete.pk));
-                        debugger;
-                        continue;
-                    }
-                    if (Number(athleteM[1]) !== athlete.pk) {
-                        continue;
-                    }
-                    const idMatch = subEntry.match(/id=\\'Activity-([0-9]+)\\'/);
-                    if (!idMatch) {
-                        sauce.report.error(new Error('Group parser failed to find activity for: ' + athlete.pk));
-                        debugger;
-                        continue;
-                    }
-                    addEntry(Number(idMatch[1]), ts, getBaseType(subEntry));
+            const props = cardHTML.match(/data-react-props=\\"(.+?)\\"/)[1];
+            frag['inner' + 'HTML'] = props; // Unescapes html entities (ie. &quot;)
+            let escaped = frag.innerHTML;
+            //escaped = escaped.replace(/\\'/g, "'");
+            escaped = escaped.replace(/\\\\"/g, '\\"');
+            escaped = escaped.replace(/\\\\(u[0-9a-f]{4})/g, "\\$1");
+            escaped = escaped.replace(/\\\$/g, "$");
+            const data = JSON.parse(escaped);
+            if (isGroupActivity) {
+                for (const x of data.rowData.activities.filter(x => x.athlete_id === athlete.pk)) {
+                    addEntry(x.activity_id, (new Date(x.start_date)).getTime(), x.type, x.name);
                 }
             } else {
-                const idMatch = entry.match(/id=\\'Activity-([0-9]+)\\'/);
-                if (!idMatch) {
-                    sauce.report.error(new Error('Unable to get activity ID for: ' + athlete.pk));
-                    debugger;
-                    continue;
-                }
-                addEntry(Number(idMatch[1]), ts, getBaseType(entry));
+                const a = data.activity;
+                addEntry(Number(a.id), data.cursorData.updated_at * 1000, a.type, a.activityName);
+            }
+        }
+        for (const m of raw.matchAll(/<div class=\\'react-card-container\\'>(.+?)<\\\/div>/g)) {
+            try {
+                parseCard(m[1]);
+            } catch(e) {
+                reportErrorOnce(e);
+                continue;
             }
         }
         return batch;
