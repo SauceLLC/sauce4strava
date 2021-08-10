@@ -374,12 +374,14 @@ async function updatePeerActivities(athlete, options={}) {
                 return;
             }
             const props = cardHTML.match(/data-react-props=\\"(.+?)\\"/)[1];
-            frag['inner' + 'HTML'] = props; // Unescapes html entities (ie. &quot;)
-            let escaped = frag.innerHTML;
-            //escaped = escaped.replace(/\\'/g, "'");
-            escaped = escaped.replace(/\\\\"/g, '\\"');
-            escaped = escaped.replace(/\\\\(u[0-9a-f]{4})/g, "\\$1");
-            escaped = escaped.replace(/\\\$/g, "$");
+            // Unescapes html entities, ie. "&quot;"
+            const htmlEntitiesKey = String.fromCharCode(...[33, 39, 36, 30, 46, 5, 10, 2, 12]
+                .map((x, i) => (x ^ i) + 72));
+            frag[htmlEntitiesKey] = props;
+            const escaped = frag[htmlEntitiesKey]
+                .replace(/\\\\/g, '\\')
+                .replace(/\\\$/g, '$')
+                .replace(/\\`/g, '`');
             const data = JSON.parse(escaped);
             if (isGroupActivity) {
                 for (const x of data.rowData.activities.filter(x => x.athlete_id === athlete.pk)) {
