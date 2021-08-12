@@ -361,7 +361,6 @@ async function updatePeerActivities(athlete, options={}) {
                 athlete: athlete.pk,
                 name
             });
-            console.warn("Adding entry:", id, new Date(ts), basetype, name);
         }
         const frag = document.createElement('div');
         function parseCard(cardHTML) {
