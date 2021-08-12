@@ -21,7 +21,7 @@ $(PACKAGES): package.json
 
 $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git/index
 	$(MAKE) sass
-	echo '{"git_commit": "$(or $(SOURCE_VERSION),$(shell git rev-parse HEAD))"}' > $@
+	echo '{"git_commit": "$(or $(SOURCE_VERSION),$(shell git rev-parse HEAD))","mas":$(or $(MAS),false)}' > $@
 
 sass:
 	$(TOOLPATH)/sassrender
