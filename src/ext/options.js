@@ -3,6 +3,7 @@
 (function() {
     'use strict';
 
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const isPopup = (new URLSearchParams(window.location.search)).get('popup') !== null;
     if (isPopup) {
         document.documentElement.classList.add('popup');
@@ -157,16 +158,16 @@
         const details = [
             ['Version', `${manifest.version_name || manifest.version} (${commit})`],
         ];
-        if (config.safariLatestVersion) {
-            if (build.git_commit !== config.safariLatestVersion.commit &&
-                config.lastSafariVersion === manifest.version) {
-                const link = document.createElement('a');
-                link.setAttribute('href', config.safariLatestVersion.url);
-                link.setAttribute('target', '_blank');
-                link.textContent = `Download Version: ${config.safariLatestVersion.version}`;
-                link.style.fontWeight = 'bold';
-                details.push(['Update Available', link]);
-            }
+        if (!build.mas &&
+            config.safariLatestVersion &&
+            build.git_commit !== config.safariLatestVersion.commit &&
+            config.lastSafariVersion === manifest.version) {
+            const link = document.createElement('a');
+            link.setAttribute('href', config.safariLatestVersion.url);
+            link.setAttribute('target', '_blank');
+            link.textContent = `Download Version: ${config.safariLatestVersion.version}`;
+            link.style.fontWeight = 'bold';
+            details.push(['Update Available', link]);
         }
         if (config.patronLevel) {
             // There is going to be small window where names are not available
