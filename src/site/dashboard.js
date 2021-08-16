@@ -13,40 +13,51 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    let scheduledAthleteDefined;
-    const virtCheckedData = 'data-sauce-checked-hide-virtual';
-    const virtTagQuery = ['.activity-map-tag', '.enhanced-tag'].map(x =>
-        `.card:not([${virtCheckedData}]) ${x}`).join();
+    const _cardPropCache = new Map();
+    function getCardProps(cardEl) {
+        if (!_cardPropCache.has(cardEl)) {
+            try {
+                _cardPropCache.set(cardEl, JSON.parse(
+                    cardEl.querySelector(':scope > [data-react-props]').dataset.reactProps));
+            } catch(e) {
+                sauce.report.error(e);
+                _cardPropCache.set(cardEl, {});
+            }
+        }
+        return _cardPropCache.get(cardEl, {});
+    }
+
+
+    function hideContainers(feedEl, klass) {
+        let count = 0;
+        const qs = `.react-card-container:not(.hidden-by-sauce) > [data-react-class="${klass}"]`;
+        for (const x of feedEl.querySelectorAll(qs)) {
+            x.parentElement.classList.add('hidden-by-sauce');
+            count++;
+        }
+        return count;
+    }
+
+
+    const virtCheckedClass = 'sauce-checked-virtual';
+    const virtTagQuery = ['activity-map-tag', 'enhanced-tag'].map(x =>
+        `.react-card-container:not(.${virtCheckedClass}) [class*="--${x}--"]`).join();
     const virtualTags = new Set([
         'zwift',
         'trainerroad',
         'peloton',
         'virtual',
+        'whoop',
     ]);
     function hideVirtual(feedEl) {
-        if (!self.currentAthlete) {
-            // Too early in page load to filter out virtual activities.
-            if (!scheduledAthleteDefined) {
-                console.info("Defering hide of virtual activities until currentAthlete info available.");
-                sauce.propDefined('currentAthlete', {once: true}).then(() => filterFeed(feedEl));
-                scheduledAthleteDefined = true;
-            }
-            return false;
-        }
         let count = 0;
-        const seen = new Set();
-        const ourId = self.currentAthlete.id;
         for (const tag of feedEl.querySelectorAll(virtTagQuery)) {
+            const card = tag.closest('.react-card-container');
+            card.classList.add(virtCheckedClass);
             if (virtualTags.has(tag.textContent.trim().toLowerCase())) {
-                const card = tag.closest('.card');
-                if (seen.has(card.id)) {
-                    continue;
-                }
-                seen.add(card.id);
-                card.setAttribute(virtCheckedData, 1);
-                if (!card.querySelector(`.entry-owner[href="/athletes/${ourId}"]`)) {
-                    console.debug("Hiding Virtual Activity:", card.id || 'group activity',
-                        tag.textContent.trim());
+                const props = getCardProps(card);
+                if (props && props.activity && props.activity.athlete.athleteId !== props.viewingAthlete.id) {
+                    console.debug("Hiding Virtual Activity", tag.textContent.trim());
                     card.classList.add('hidden-by-sauce');
                     count++;
                 }
@@ -57,59 +68,35 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    function hideChallenges(feedEl) {
+    function hideCommutes(feedEl) {
         let count = 0;
-        for (const card of feedEl.querySelectorAll('.card.challenge:not(.hidden-by-sauce)')) {
-            console.info("Hiding challenge card:", card.id);
-            card.classList.add('hidden-by-sauce');
-            count++;
+        const qs = `.react-card-container:not(.hidden-by-sauce):not(.sauce-checked-commute) > [data-react-class="Activity"]`;
+        for (const x of feedEl.querySelectorAll(qs)) {
+            const card = x.parentElement;
+            card.classList.add('sauce-checked-commute');
+            const props = getCardProps(card);
+            if (props && props.activity && props.activity.isCommute &&
+                props.activity.athlete.athleteId !== props.viewingAthlete.id) {
+                console.debug("Hiding Commute");
+                card.classList.add('hidden-by-sauce');
+                count++;
+            }
         }
-        feedEvent('hide', 'challenge-card', count);
+        feedEvent('hide', 'commute-activity', count);
+        return !!count;
+    }
+
+
+    function hideChallenges(feedEl) {
+        const count = hideContainers(feedEl, 'ChallengeJoin');
+        feedEvent('hide', 'challenge-card', count);  // bg okay
         return !!count;
     }
 
 
     function hidePromotions(feedEl) {
-        let count = 0;
-        for (const card of feedEl.querySelectorAll('.card.promo:not(.hidden-by-sauce)')) {
-            console.info("Hiding promo card:", card.id);
-            card.classList.add('hidden-by-sauce');
-            count++;
-        }
-        feedEvent('hide', 'promo-card', count);
-        return !!count;
-    }
-
-    function getCardTimestamp(card) {
-        const mode = sauce.options['activity-chronological-mode'];
-        if (mode === 'started') {
-            const timeEl = card.querySelector('time[datetime]');
-            return timeEl && (new Date(timeEl.dateTime)).getTime() / 1000;
-        } else if (!mode || mode === 'updated') {
-            return card.dataset.updatedAt && Number(card.dataset.updatedAt);
-        } else {
-            throw new TypeError("Invalid sort mode");
-        }
-    }
-
-
-    let _lastTimestamp;
-    const _orderOfft = Math.round(Date.now() / 1000);
-    function orderChronological(feedEl) {
-        let count = 0;
-        for (const card of feedEl.querySelectorAll('.card:not(.ordered-by-sauce)')) {
-            const ts = getCardTimestamp(card);
-            if (!ts && _lastTimestamp) {
-                _lastTimestamp += 1;
-            } else {
-                _lastTimestamp = ts;
-            }
-            card.classList.add('ordered-by-sauce');
-            card.style.order = -Math.round(ts - _orderOfft);
-            count++;
-        }
-        console.info(`Ordered ${count} cards chronologically`);
-        feedEvent('sort-feed', 'chronologically');
+        const count = hideContainers(feedEl, 'SimplePromo') + hideContainers(feedEl, 'FancyPromo');
+        feedEvent('hide', 'promo-card', count);  // bg okay
         return !!count;
     }
 
@@ -122,11 +109,11 @@ sauce.ns('dashboard', function(ns) {
         if (sauce.options['activity-hide-virtual']) {
             resetFeedLoader |= hideVirtual(feedEl);
         }
+        if (sauce.options['activity-hide-commutes']) {
+            resetFeedLoader |= hideCommutes(feedEl);
+        }
         if (sauce.options['activity-hide-challenges']) {
             resetFeedLoader |= hideChallenges(feedEl);
-        }
-        if (sauce.options['activity-chronological']) {
-            resetFeedLoader |= orderChronological(feedEl);
         }
         if (resetFeedLoader) {
             // To prevent breaking infinite scroll we need to reset the feed loader state.

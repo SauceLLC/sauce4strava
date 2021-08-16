@@ -566,6 +566,17 @@
         background-color: color.lighten(bg, 5%);
     }
 
+    [class*="ModalWithTabs--content--"] {
+        color: black; // XXX no theme for now.
+
+        [class*="ModalWithTabs--tab-list--"] {
+            [class*="ModalWithTabs--tab--"] {
+                background-color: transparent;
+                color: unset;
+            }
+        }
+    }
+
     .activity-stats {
         .section {
             border-color: $soft-border-color;
@@ -1019,6 +1030,74 @@
     }
 
     .feed {
+        /* NEW... */
+        .web-feed-4-component {
+            .web-feed-4-entry {
+                background-color: color.shade(bg, 10%);
+                color: color.shade(fg, 10%);
+
+                [class*="EntryHeader--icon-container--"] {
+                    background-color: color.shade(bg, 5%);
+                    border-color: color.shade(bg, 5%);
+                }
+
+                [class*="ActivityEntryBody--trophy-count-btn--"],
+                [class*="KudosAndComments--count-wrapper--"],
+                [class*="CommentsThread--comments--"] {
+                    button {
+                        background-color: transparent;
+                        color: color.shade(fg, 10%);
+                    }
+                }
+
+                button[class*="CommentsThread--more-comments-button--"] {
+                    color: color.shade(fg, 10%) !important;
+                }
+
+                [class*="PhotosAndMapImage--entry-image-wrapper--"] {
+                    background-color: color.shade(bg, 11%);
+                }
+
+                [class*="KudosAndComments--kudos-and-comments--"] {
+                    ol[class*="AvatarGroup--list--"] li > div {
+                        background-color: color.shade(bg, 5%);
+                        border-color: color.shade(bg, 5%);
+
+                        > div {
+                            background-color: color.shade(bg, 5%);
+                        }
+                    }
+
+                    [class*="KudosAndComments--media-actions--"] button {
+                        background-color: color.shade(bg, 15%);
+                        border-color: $hard-border-color;
+                        color: color.shade(fg, 10%);
+                        opacity: 0.8;
+
+                        &:hover {
+                            opacity: 1;
+                        }
+                    }
+                }
+
+                li strong {
+                    color: color.shade(fg, 0%);
+                }
+
+                [class*="ActivityEntryBody--achievements-summary--"],
+                [class*="ActivityEntryBody--stat-subtext--"] {
+                    color: color.shade(fg, 10%);
+                }
+
+                [class*="MaharajAchievementCelebration--achievement-celebration--"] {
+                    background-color: color.shade(bg, 20%);
+                    color: color.shade(fg, 10%);
+                }
+            }
+        }
+        /* /NEW... */
+
+        /* OLD... */
         .group-activity {
             .list-entries .avatar,
             .group-activity-icon {
@@ -1097,6 +1176,7 @@
                 color: color.shade(fg, 4%);
             }
         }
+        /* /OLD... */
     }
 
     .stat-subtext,

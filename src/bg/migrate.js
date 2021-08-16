@@ -73,13 +73,6 @@ sauce.ns('migrate', ns => {
             }
         }
     }, {
-        version: 5,
-        name: 'set_default_dashboard_chrono_mode',
-        migrate: async config => {
-            config.options['activity-chronological-mode'] = 'updated';
-            await sauce.storage.set({options: config.options});
-        }
-    }, {
         version: 6,
         name: 'theme_option',
         migrate: async config => {
