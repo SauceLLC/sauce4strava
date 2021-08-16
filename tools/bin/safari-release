@@ -14,7 +14,7 @@ def sh(*cmds, output=None, **kwargs):
         return subprocess.check_call(cmds, env=env, **kwargs)
 
 proj_dir = 'safari-app/Sauce for Strava™/'
-build_dir = proj_dir + 'DerivedData/Sauce for Strava™/Build/Products/Release/'
+build_dir = proj_dir + 'build/release/'
 website_dir = '../SauceLLC.github.io/'
 website_builds = website_dir + 'builds/safari/'
 
