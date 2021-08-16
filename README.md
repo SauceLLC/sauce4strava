@@ -47,9 +47,9 @@ Feature Highlights
  * Inline comments system for activity page
  * Performance Predictor
  * Dashboard features:
-   * Chronological ordering *OPTION*
    * Hide virtual activities (except your own) *OPTION*
    * Hide promotions and challenges *OPTION*
+   * Hide commutes *OPTION*
  * Responsive layout (mobile support for Firefox) *OPTION*
  * Detailed Running segments *OPTION*
 
