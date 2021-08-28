@@ -124,10 +124,10 @@ sauce.ns('data', function() {
     function createActiveStream(streams, options={}) {
         // Some broken time streams have enormous gaps.
         const maxImmobileGap = options.maxImmobileGap != null ? options.maxImmobileGap : 300;
-        const isTrainer = options.isTrainer;
+        const useCadence = options.isTrainer || options.isSwim;
         const timeStream = streams.time;
         const movingStream = streams.moving;
-        const cadenceStream = isTrainer && streams.cadence;
+        const cadenceStream = useCadence && streams.cadence;
         const wattsStream = streams.watts;
         const distStream = streams.distance;
         const activeStream = [];

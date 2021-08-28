@@ -1079,7 +1079,11 @@ sauce.ns('analysis', ns => {
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
         const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
-        const velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
+        let velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
+        if (!velocityStream) {
+            const paceStream = await fetchStreamTimeRange('pace', startTime, endTime);
+            velocityStream = paceStream.map(x => 1 / x);
+        }
         const tempStream = await fetchStreamTimeRange('temp', startTime, endTime);
         const distance = streamDelta(distStream);
         const startIdx = getStreamTimeIndex(wallStartTime);
@@ -3302,6 +3306,7 @@ sauce.ns('analysis', ns => {
                 Math.round(sauce.power.seaLevelPower(x, altStream[i]))));
         }
         const isTrainer = pageView.activity().isTrainer();
+        const isSwim = ns.activityType === 'swim';
         const cadenceStream = await fetchStream('cadence');
         const distStream = await fetchStream('distance');
         streamData.add('active', sauce.data.createActiveStream({
@@ -3310,7 +3315,7 @@ sauce.ns('analysis', ns => {
             cadence: cadenceStream,
             watts: wattsStream,
             distance: distStream,
-        }, {isTrainer}));
+        }, {isTrainer, isSwim}));
         _resolvePrepared();
     }
 
@@ -3517,9 +3522,13 @@ sauce.ns('analysis', ns => {
                 attachSyncToggle();
             }
             // Make sure this is last thing before start..
-            if (sauce.analysisStatsIntent && !_schedUpdateAnalysisPending) {
-                const {start, end} = sauce.analysisStatsIntent;
-                schedUpdateAnalysisStats(start, end);
+            if (!_schedUpdateAnalysisPending) {
+                if (sauce.analysisStatsIntent) {
+                    const {start, end} = sauce.analysisStatsIntent;
+                    schedUpdateAnalysisStats(start, end);
+                } else if (ns.activityType === 'swim') {
+                    schedUpdateAnalysisStats();
+                }
             }
             try {
                 await startActivity();
