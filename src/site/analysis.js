@@ -2898,7 +2898,7 @@ sauce.ns('analysis', ns => {
         const $draftRiderIcons = $dialog.find('.draft-rider-icon');
         const $draftGroupPower = $dialog.find('.drafting-output .group-power');
         const $draftPowerVariance = $dialog.find('.drafting-output .power-variance');
-        function recalc(noPulse) {
+        function recalc(initial) {
             const crr = fget('crr');
             const cda = fget('cda');
             for (const x of $cdaPositions) {
@@ -3044,9 +3044,7 @@ sauce.ns('analysis', ns => {
                         `;
                     }
                 });
-            if (!noPulse) {
-                $pred.addClass('pulse').one('animationend',
-                    ev => ev.currentTarget.classList.remove('pulse'));
+            if (!initial) {
                 clearTimeout(lazySaveTimeout);
                 lazySaveTimeout = setTimeout(async () => {
                     await updateAthleteBike({
@@ -3092,7 +3090,7 @@ sauce.ns('analysis', ns => {
             setTimeout(recalc, 0);
         });
         $dialog.on('input', 'input', () => setTimeout(recalc, 0));
-        recalc(/*noPulse*/ true);
+        recalc(/*initial*/ true);
         sauce.report.event('PerfPredictor', 'show');
     }
 
