@@ -39,9 +39,6 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    const virtCheckedClass = 'sauce-checked-virtual';
-    const virtTagQuery = ['activity-map-tag', 'enhanced-tag'].map(x =>
-        `.react-card-container:not(.${virtCheckedClass}) [class*="--${x}--"]`).join();
     const virtualTags = new Set([
         'zwift',
         'trainerroad',
@@ -50,16 +47,28 @@ sauce.ns('dashboard', function(ns) {
         'whoop',
     ]);
     function hideVirtual(feedEl) {
+        // XXX: This does not support group activities yet.
         let count = 0;
-        for (const tag of feedEl.querySelectorAll(virtTagQuery)) {
-            const card = tag.closest('.react-card-container');
-            card.classList.add(virtCheckedClass);
-            if (virtualTags.has(tag.textContent.trim().toLowerCase())) {
-                const props = getCardProps(card);
-                if (props && props.activity && props.activity.athlete.athleteId !== props.viewingAthlete.id) {
-                    console.debug("Hiding Virtual Activity", tag.textContent.trim());
+        const qs = `.react-card-container:not(.hidden-by-sauce):not(.sauce-checked-virtual) > [data-react-class="Activity"]`;
+        for (const x of feedEl.querySelectorAll(qs)) {
+            const card = x.parentElement;
+            card.classList.add('sauce-checked-virtual');
+            const props = getCardProps(card);
+            if (props && props.activity && props.activity.athlete.athleteId !== props.viewingAthlete.id) {
+                if (props.activity.isVirtual) {
+                    console.debug("Hiding Virtual");
                     card.classList.add('hidden-by-sauce');
                     count++;
+                } else if (props.activity.mapAndPhotos && props.activity.mapAndPhotos.photoList) {
+                    // Catch the ones that don't claim to be virtual (but are).
+                    for (const x of props.activity.mapAndPhotos.photoList) {
+                        if (x.enhanced_photo && virtualTags.has(x.enhanced_photo.name.toLowerCase())) {
+                            console.debug("Hiding Virtual");
+                            card.classList.add('hidden-by-sauce');
+                            count++;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -102,6 +111,15 @@ sauce.ns('dashboard', function(ns) {
 
 
     function filterFeed(feedEl) {
+        try {
+            _filterFeed(feedEl);
+        } catch(e) {
+            sauce.report.error(e);
+        }
+    }
+
+
+    function _filterFeed(feedEl) {
         let resetFeedLoader = false;
         if (sauce.options['activity-hide-promotions']) {
             resetFeedLoader |= hidePromotions(feedEl);
