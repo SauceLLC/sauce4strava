@@ -196,32 +196,16 @@
                 }
 
                 &.all,
+                &.recent,
                 &.year {
                     &[data-rank="1"] {
-                        color: #ff4d00;
+                        color: #bf0000
                     }
                     &[data-rank="2"] {
-                        color: green;
+                        color: #ead11cf0;
                     }
                     &[data-rank="3"] {
-                        color: pink;
-                    }
-                }
-                &.recent {
-                    svg[data-icon] .fa-secondary {
-                        color: #000;
-                        opacity: 0.8;
-                    }
-
-                    &[data-rank="1"] {
-                        color: gold;
-                    }
-                    &[data-rank="2"] {
-                        color: silver;
-                    }
-                    &[data-rank="3"] {
-                        $bronze: #cd7f32;
-                        color: $bronze;
+                        color: #589c54b0;
                     }
                 }
             }

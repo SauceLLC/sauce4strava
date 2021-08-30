@@ -583,7 +583,7 @@ sauce.ns('analysis', ns => {
             peaks: year,
             class: 'year',
         }, {
-            icon:  'trophy-duotone',
+            icon:  'star-shooting-regular',
             peaks: recent,
             class: 'recent',
         }];
