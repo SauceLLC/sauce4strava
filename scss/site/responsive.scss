@@ -60,6 +60,11 @@ html.sauce-responsive,
                 width: initial;
                 padding: 0 0.5em;
 
+                button#open-global-search-button {
+                    left: initial;
+                    position: initial;
+                }
+
                 .icon-search {
                     margin-top: 0.3em;
                 }
