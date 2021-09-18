@@ -1347,6 +1347,48 @@ sauce.ns('power', function() {
     }
 
 
+    /*
+     * The fast impl of the Skiba W` integral algo.
+     * See: http://markliversedge.blogspot.nl/2014/10/wbal-optimisation-by-mathematician.html
+     */
+    function calcWPrimeBalIntegralStatic(wattsStream, timeStream, cp, wPrime) {
+        let sum = 0;
+        const wPrimeBal = [];
+        const belowCPAvg = sauce.data.avg(wattsStream.filter(x => x != null && x < cp)) || 0;
+        const deltaCP = cp - belowCPAvg;
+        const tau = 546 * Math.E ** (-0.01 * deltaCP) + 316;
+        let prevTime = timeStream[0] - 1; // Somewhat arbitrary.  Alt would be to discard idx 0.
+        for (let i = 0; i < timeStream.length; i++) {
+            const p = wattsStream[i];
+            const t = timeStream[i];
+            const sr = 1 / (t - prevTime);  // XXX suspect name, is this actually elapsed time?
+            if (sr !== 1) {
+                console.warn(t, sr);
+            }
+            prevTime = t;
+            const aboveCP = p > cp ? p - cp : 0;
+            const wPrimeExpended = aboveCP * sr;
+            sum += wPrimeExpended * Math.E ** (t * sr / tau);
+            wPrimeBal.push(wPrime - sum * Math.E ** (-t * sr / tau));
+        }
+        return wPrimeBal;
+    }
+
+    /*
+     * The differential algo for W'bal stream.  Aka Froncioni Skiba and Clarke.
+     * See: http://markliversedge.blogspot.nl/2014/10/wbal-optimisation-by-mathematician.html
+     */
+    function calcWPrimeBalDifferential(wattsStream, timeStream, cp, wPrime) {
+        const wPrimeBal = [];
+        let prev = wPrime;
+        for (const p of wattsStream) {
+            const wBal = p < cp ? prev + (cp - p) * (wPrime - prev) / wPrime : prev + (cp - p);
+            wPrimeBal.push(wBal);
+            prev = wBal;
+        }
+        return wPrimeBal;
+    }
+
     return {
         peakPower,
         peakNP,
@@ -1356,6 +1398,8 @@ sauce.ns('power', function() {
         calcNP,
         calcXP,
         calcTSS,
+        calcWPrimeBalIntegralStatic,
+        calcWPrimeBalDifferential,
         rank,
         rankLevel,
         rankBadge,
