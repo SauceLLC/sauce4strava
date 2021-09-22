@@ -399,6 +399,16 @@ sauce.ns('data', function() {
             return this._values.slice(this._offt, this._length);
         }
 
+        times() {
+            return this._times.slice(this._offt, this._length);
+        }
+
+        *entries() {
+            for (let i = this._offt; i < this._length; i++) {
+                yield [this._times[i], this._values[i]];
+            }
+        }
+
         shift() {
             this.shiftValue(this._values[this._offt++]);
         }
@@ -1348,6 +1358,13 @@ sauce.ns('power', function() {
 
 
     /*
+     * The wPrime math is based on exactly 1 second power data.
+     */
+    function _wPrimeCorrectedPower(wattsStream, timeStream) {
+        return correctedPower(timeStream, wattsStream, {idealGap: 1});
+    }
+
+    /*
      * The fast impl of the Skiba W` integral algo.
      * See: http://markliversedge.blogspot.nl/2014/10/wbal-optimisation-by-mathematician.html
      */
@@ -1370,6 +1387,9 @@ sauce.ns('power', function() {
             const wPrimeExpended = aboveCP * sr;
             sum += wPrimeExpended * Math.E ** (t * sr / tau);
             wPrimeBal.push(wPrime - sum * Math.E ** (-t * sr / tau));
+            if (wPrimeBal[wPrimeBal.length - 1] < 0) {
+                debugger;
+            }
         }
         return wPrimeBal;
     }
@@ -1379,12 +1399,35 @@ sauce.ns('power', function() {
      * See: http://markliversedge.blogspot.nl/2014/10/wbal-optimisation-by-mathematician.html
      */
     function calcWPrimeBalDifferential(wattsStream, timeStream, cp, wPrime) {
+        const powerRoll = _wPrimeCorrectedPower(wattsStream, timeStream);
         const wPrimeBal = [];
-        let prev = wPrime;
-        for (const p of wattsStream) {
-            const wBal = p < cp ? prev + (cp - p) * (wPrime - prev) / wPrime : prev + (cp - p);
-            wPrimeBal.push(wBal);
-            prev = wBal;
+        const epsilon = 0.000001;
+        let wBal = wPrime;
+        for (const [t, p] of powerRoll.entries()) {
+            if (p instanceof sauce.data.Break) {
+                // Refill wBal while we have a break.
+                for (let j = 0; j < p.pad; j++) {
+                    wBal += cp * (wPrime - wBal) / wPrime;
+                    if (wBal >= wPrime - epsilon) {
+                        debugger;
+                        break;
+                    }
+                }
+            } else {
+                const pNum = p || 0;  // convert null and undefined to 0.
+                wBal += pNum < cp ? (cp - pNum) * (wPrime - wBal) / wPrime : cp - pNum;
+            }
+            if (wBal > wPrime) {
+                debugger;
+            }
+            if (wBal < 0) {
+                console.warn("negative wbal", wBal, t);
+            }
+            if (!(p instanceof sauce.data.Pad)) {
+                // Our output stream should align with the input stream, not the corrected
+                // one used for calculations, so skip pad based values.
+                wPrimeBal.push(wBal);
+            }
         }
         return wPrimeBal;
     }
@@ -2197,7 +2240,7 @@ sauce.ns('peaks', function() {
         await sauce.storage.update('analysis_peak_ranges', {[type]: null});
     }
 
-    
+
     async function getForActivityType(type, activityType) {
         const data = await getRanges(type);
         const t = activityType.toLowerCase();
@@ -2208,7 +2251,7 @@ sauce.ns('peaks', function() {
     async function isCustom(type) {
         return await getRanges(type) === defaults[type];
     }
-    
+
 
 
     return {
