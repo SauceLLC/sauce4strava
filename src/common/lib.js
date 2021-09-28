@@ -399,6 +399,16 @@ sauce.ns('data', function() {
             return this._values.slice(this._offt, this._length);
         }
 
+        times() {
+            return this._times.slice(this._offt, this._length);
+        }
+
+        *entries() {
+            for (let i = this._offt; i < this._length; i++) {
+                yield [this._times[i], this._values[i]];
+            }
+        }
+
         shift() {
             this.shiftValue(this._values[this._offt++]);
         }
@@ -1347,6 +1357,81 @@ sauce.ns('power', function() {
     }
 
 
+    /*
+     * The wPrime math is based on exactly 1 second power data.
+     */
+    function _wPrimeCorrectedPower(wattsStream, timeStream) {
+        return correctedPower(timeStream, wattsStream, {idealGap: 1});
+    }
+
+    /*
+     * The fast impl of the Skiba W` integral algo.
+     * See: http://markliversedge.blogspot.nl/2014/10/wbal-optimisation-by-mathematician.html
+     */
+    function calcWPrimeBalIntegralStatic(wattsStream, timeStream, cp, wPrime) {
+        let sum = 0;
+        const wPrimeBal = [];
+        const belowCPAvg = sauce.data.avg(wattsStream.filter(x => x != null && x < cp)) || 0;
+        const deltaCP = cp - belowCPAvg;
+        const tau = 546 * Math.E ** (-0.01 * deltaCP) + 316;
+        let prevTime = timeStream[0] - 1; // Somewhat arbitrary.  Alt would be to discard idx 0.
+        for (let i = 0; i < timeStream.length; i++) {
+            const p = wattsStream[i];
+            const t = timeStream[i];
+            const sr = 1 / (t - prevTime);  // XXX suspect name, is this actually elapsed time?
+            if (sr !== 1) {
+                console.warn(t, sr);
+            }
+            prevTime = t;
+            const aboveCP = p > cp ? p - cp : 0;
+            const wPrimeExpended = aboveCP * sr;
+            sum += wPrimeExpended * Math.E ** (t * sr / tau);
+            wPrimeBal.push(wPrime - sum * Math.E ** (-t * sr / tau));
+            if (wPrimeBal[wPrimeBal.length - 1] < 0) {
+                debugger;
+            }
+        }
+        return wPrimeBal;
+    }
+
+    /*
+     * The differential algo for W'bal stream.  Aka Froncioni Skiba and Clarke.
+     * See: http://markliversedge.blogspot.nl/2014/10/wbal-optimisation-by-mathematician.html
+     */
+    function calcWPrimeBalDifferential(wattsStream, timeStream, cp, wPrime) {
+        const powerRoll = _wPrimeCorrectedPower(wattsStream, timeStream);
+        const wPrimeBal = [];
+        const epsilon = 0.000001;
+        let wBal = wPrime;
+        for (const [t, p] of powerRoll.entries()) {
+            if (p instanceof sauce.data.Break) {
+                // Refill wBal while we have a break.
+                for (let j = 0; j < p.pad; j++) {
+                    wBal += cp * (wPrime - wBal) / wPrime;
+                    if (wBal >= wPrime - epsilon) {
+                        debugger;
+                        break;
+                    }
+                }
+            } else {
+                const pNum = p || 0;  // convert null and undefined to 0.
+                wBal += pNum < cp ? (cp - pNum) * (wPrime - wBal) / wPrime : cp - pNum;
+            }
+            if (wBal > wPrime) {
+                debugger;
+            }
+            if (wBal < 0) {
+                console.warn("negative wbal", wBal, t);
+            }
+            if (!(p instanceof sauce.data.Pad)) {
+                // Our output stream should align with the input stream, not the corrected
+                // one used for calculations, so skip pad based values.
+                wPrimeBal.push(wBal);
+            }
+        }
+        return wPrimeBal;
+    }
+
     return {
         peakPower,
         peakNP,
@@ -1356,6 +1441,8 @@ sauce.ns('power', function() {
         calcNP,
         calcXP,
         calcTSS,
+        calcWPrimeBalIntegralStatic,
+        calcWPrimeBalDifferential,
         rank,
         rankLevel,
         rankBadge,
@@ -2153,7 +2240,7 @@ sauce.ns('peaks', function() {
         await sauce.storage.update('analysis_peak_ranges', {[type]: null});
     }
 
-    
+
     async function getForActivityType(type, activityType) {
         const data = await getRanges(type);
         const t = activityType.toLowerCase();
@@ -2164,7 +2251,7 @@ sauce.ns('peaks', function() {
     async function isCustom(type) {
         return await getRanges(type) === defaults[type];
     }
-    
+
 
 
     return {
