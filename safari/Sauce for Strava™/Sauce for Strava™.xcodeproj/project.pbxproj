@@ -1,0 +1,991 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 55;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BC920328270272C9001F0213 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC920327270272C9001F0213 /* AppDelegate.swift */; };
+		BC92032A270272C9001F0213 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC920329270272C9001F0213 /* SceneDelegate.swift */; };
+		BC92032D270272C9001F0213 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC92032B270272C9001F0213 /* LaunchScreen.storyboard */; };
+		BC920330270272C9001F0213 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC92032E270272C9001F0213 /* Main.storyboard */; };
+		BC920339270272C9001F0213 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC920338270272C9001F0213 /* AppDelegate.swift */; };
+		BC92033C270272C9001F0213 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC92033A270272C9001F0213 /* Main.storyboard */; };
+		BC920344270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BC920343270272C9001F0213 /* Sauce for Strava™ Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC92034E270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BC92034D270272C9001F0213 /* Sauce for Strava™ Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC920354270272C9001F0213 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BC920317270272C8001F0213 /* Main.html */; };
+		BC920355270272C9001F0213 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BC920317270272C8001F0213 /* Main.html */; };
+		BC920356270272C9001F0213 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BC920319270272C8001F0213 /* Icon.png */; };
+		BC920357270272C9001F0213 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BC920319270272C8001F0213 /* Icon.png */; };
+		BC920358270272C9001F0213 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = BC92031A270272C8001F0213 /* Style.css */; };
+		BC920359270272C9001F0213 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = BC92031A270272C8001F0213 /* Style.css */; };
+		BC92035A270272C9001F0213 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = BC92031B270272C8001F0213 /* Script.js */; };
+		BC92035B270272C9001F0213 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = BC92031B270272C8001F0213 /* Script.js */; };
+		BC92035C270272C9001F0213 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC92031C270272C8001F0213 /* ViewController.swift */; };
+		BC92035D270272C9001F0213 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC92031C270272C8001F0213 /* ViewController.swift */; };
+		BC92035E270272C9001F0213 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BC92031D270272C9001F0213 /* Assets.xcassets */; };
+		BC92035F270272C9001F0213 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BC92031D270272C9001F0213 /* Assets.xcassets */; };
+		BC920360270272C9001F0213 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC92031F270272C9001F0213 /* SafariWebExtensionHandler.swift */; };
+		BC920361270272C9001F0213 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC92031F270272C9001F0213 /* SafariWebExtensionHandler.swift */; };
+		BC92038F270272C9001F0213 /* css in Resources */ = {isa = PBXBuildFile; fileRef = BC920376270272C9001F0213 /* css */; };
+		BC920390270272C9001F0213 /* images in Resources */ = {isa = PBXBuildFile; fileRef = BC920377270272C9001F0213 /* images */; };
+		BC92039D270272C9001F0213 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BC920384270272C9001F0213 /* manifest.json */; };
+		BC92039E270272C9001F0213 /* templates in Resources */ = {isa = PBXBuildFile; fileRef = BC920385270272C9001F0213 /* templates */; };
+		BC92039F270272C9001F0213 /* _locales in Resources */ = {isa = PBXBuildFile; fileRef = BC920386270272C9001F0213 /* _locales */; };
+		BC9203A2270272C9001F0213 /* pages in Resources */ = {isa = PBXBuildFile; fileRef = BC920389270272C9001F0213 /* pages */; };
+		BC9203A3270272C9001F0213 /* build.json in Resources */ = {isa = PBXBuildFile; fileRef = BC92038A270272C9001F0213 /* build.json */; };
+		BC9203A4270272C9001F0213 /* src in Resources */ = {isa = PBXBuildFile; fileRef = BC92038B270272C9001F0213 /* src */; };
+		BC9203A8270272C9001F0213 /* css in Resources */ = {isa = PBXBuildFile; fileRef = BC920376270272C9001F0213 /* css */; };
+		BC9203A9270272C9001F0213 /* images in Resources */ = {isa = PBXBuildFile; fileRef = BC920377270272C9001F0213 /* images */; };
+		BC9203B6270272C9001F0213 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BC920384270272C9001F0213 /* manifest.json */; };
+		BC9203B7270272C9001F0213 /* templates in Resources */ = {isa = PBXBuildFile; fileRef = BC920385270272C9001F0213 /* templates */; };
+		BC9203B8270272C9001F0213 /* _locales in Resources */ = {isa = PBXBuildFile; fileRef = BC920386270272C9001F0213 /* _locales */; };
+		BC9203BB270272C9001F0213 /* pages in Resources */ = {isa = PBXBuildFile; fileRef = BC920389270272C9001F0213 /* pages */; };
+		BC9203BC270272C9001F0213 /* build.json in Resources */ = {isa = PBXBuildFile; fileRef = BC92038A270272C9001F0213 /* build.json */; };
+		BC9203BD270272C9001F0213 /* src in Resources */ = {isa = PBXBuildFile; fileRef = BC92038B270272C9001F0213 /* src */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BC920345270272C9001F0213 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC920311270272C8001F0213 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BC920342270272C9001F0213;
+			remoteInfo = "Sauce for Strava™ Extension (iOS)";
+		};
+		BC92034F270272C9001F0213 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC920311270272C8001F0213 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BC92034C270272C9001F0213;
+			remoteInfo = "Sauce for Strava™ Extension (macOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BC920367270272C9001F0213 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BC920344270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC92036E270272C9001F0213 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BC92034E270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		BC920318270272C8001F0213 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = ../Base.lproj/Main.html; sourceTree = "<group>"; };
+		BC920319270272C8001F0213 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		BC92031A270272C8001F0213 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		BC92031B270272C8001F0213 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		BC92031C270272C8001F0213 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		BC92031D270272C9001F0213 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BC92031F270272C9001F0213 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		BC920324270272C9001F0213 /* Sauce for Strava™.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sauce for Strava™.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC920327270272C9001F0213 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BC920329270272C9001F0213 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		BC92032C270272C9001F0213 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		BC92032F270272C9001F0213 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BC920331270272C9001F0213 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC920336270272C9001F0213 /* Sauce for Strava™.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Sauce for Strava™.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC920338270272C9001F0213 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BC92033B270272C9001F0213 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BC92033D270272C9001F0213 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC92033E270272C9001F0213 /* sauce4strava.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = sauce4strava.entitlements; sourceTree = "<group>"; };
+		BC920343270272C9001F0213 /* Sauce for Strava™ Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Sauce for Strava™ Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC920348270272C9001F0213 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC92034D270272C9001F0213 /* Sauce for Strava™ Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Sauce for Strava™ Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC920352270272C9001F0213 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC920353270272C9001F0213 /* sauce4strava.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = sauce4strava.entitlements; sourceTree = "<group>"; };
+		BC920376270272C9001F0213 /* css */ = {isa = PBXFileReference; lastKnownFileType = folder; name = css; path = ../../../css; sourceTree = "<group>"; };
+		BC920377270272C9001F0213 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../../../images; sourceTree = "<group>"; };
+		BC920384270272C9001F0213 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../../manifest.json; sourceTree = "<group>"; };
+		BC920385270272C9001F0213 /* templates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = templates; path = ../../../templates; sourceTree = "<group>"; };
+		BC920386270272C9001F0213 /* _locales */ = {isa = PBXFileReference; lastKnownFileType = folder; name = _locales; path = ../../../_locales; sourceTree = "<group>"; };
+		BC920389270272C9001F0213 /* pages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pages; path = ../../../pages; sourceTree = "<group>"; };
+		BC92038A270272C9001F0213 /* build.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = build.json; path = ../../../build.json; sourceTree = "<group>"; };
+		BC92038B270272C9001F0213 /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../../src; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BC920321270272C9001F0213 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC920333270272C9001F0213 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC920340270272C9001F0213 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC92034A270272C9001F0213 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BC920310270272C8001F0213 = {
+			isa = PBXGroup;
+			children = (
+				BC920315270272C8001F0213 /* Shared (App) */,
+				BC92031E270272C9001F0213 /* Shared (Extension) */,
+				BC920326270272C9001F0213 /* iOS (App) */,
+				BC920337270272C9001F0213 /* macOS (App) */,
+				BC920347270272C9001F0213 /* iOS (Extension) */,
+				BC920351270272C9001F0213 /* macOS (Extension) */,
+				BC920325270272C9001F0213 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BC920315270272C8001F0213 /* Shared (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BC92031C270272C8001F0213 /* ViewController.swift */,
+				BC92031D270272C9001F0213 /* Assets.xcassets */,
+				BC920316270272C8001F0213 /* Resources */,
+			);
+			path = "Shared (App)";
+			sourceTree = "<group>";
+		};
+		BC920316270272C8001F0213 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BC920317270272C8001F0213 /* Main.html */,
+				BC920319270272C8001F0213 /* Icon.png */,
+				BC92031A270272C8001F0213 /* Style.css */,
+				BC92031B270272C8001F0213 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		BC92031E270272C9001F0213 /* Shared (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BC920372270272C9001F0213 /* Resources */,
+				BC92031F270272C9001F0213 /* SafariWebExtensionHandler.swift */,
+			);
+			path = "Shared (Extension)";
+			sourceTree = "<group>";
+		};
+		BC920325270272C9001F0213 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BC920324270272C9001F0213 /* Sauce for Strava™.app */,
+				BC920336270272C9001F0213 /* Sauce for Strava™.app */,
+				BC920343270272C9001F0213 /* Sauce for Strava™ Extension.appex */,
+				BC92034D270272C9001F0213 /* Sauce for Strava™ Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BC920326270272C9001F0213 /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BC920327270272C9001F0213 /* AppDelegate.swift */,
+				BC920329270272C9001F0213 /* SceneDelegate.swift */,
+				BC92032B270272C9001F0213 /* LaunchScreen.storyboard */,
+				BC92032E270272C9001F0213 /* Main.storyboard */,
+				BC920331270272C9001F0213 /* Info.plist */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		BC920337270272C9001F0213 /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BC920338270272C9001F0213 /* AppDelegate.swift */,
+				BC92033A270272C9001F0213 /* Main.storyboard */,
+				BC92033D270272C9001F0213 /* Info.plist */,
+				BC92033E270272C9001F0213 /* sauce4strava.entitlements */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		BC920347270272C9001F0213 /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BC920348270272C9001F0213 /* Info.plist */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		BC920351270272C9001F0213 /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BC920352270272C9001F0213 /* Info.plist */,
+				BC920353270272C9001F0213 /* sauce4strava.entitlements */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		BC920372270272C9001F0213 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BC920376270272C9001F0213 /* css */,
+				BC920377270272C9001F0213 /* images */,
+				BC920384270272C9001F0213 /* manifest.json */,
+				BC920385270272C9001F0213 /* templates */,
+				BC920386270272C9001F0213 /* _locales */,
+				BC920389270272C9001F0213 /* pages */,
+				BC92038A270272C9001F0213 /* build.json */,
+				BC92038B270272C9001F0213 /* src */,
+			);
+			name = Resources;
+			path = "Shared (Extension)";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BC920323270272C9001F0213 /* Sauce for Strava™ (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC920368270272C9001F0213 /* Build configuration list for PBXNativeTarget "Sauce for Strava™ (iOS)" */;
+			buildPhases = (
+				BC920320270272C9001F0213 /* Sources */,
+				BC920321270272C9001F0213 /* Frameworks */,
+				BC920322270272C9001F0213 /* Resources */,
+				BC920367270272C9001F0213 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BC920346270272C9001F0213 /* PBXTargetDependency */,
+			);
+			name = "Sauce for Strava™ (iOS)";
+			productName = "Sauce for Strava™ (iOS)";
+			productReference = BC920324270272C9001F0213 /* Sauce for Strava™.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BC920335270272C9001F0213 /* Sauce for Strava™ (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC92036F270272C9001F0213 /* Build configuration list for PBXNativeTarget "Sauce for Strava™ (macOS)" */;
+			buildPhases = (
+				BC920332270272C9001F0213 /* Sources */,
+				BC920333270272C9001F0213 /* Frameworks */,
+				BC920334270272C9001F0213 /* Resources */,
+				BC92036E270272C9001F0213 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BC920350270272C9001F0213 /* PBXTargetDependency */,
+			);
+			name = "Sauce for Strava™ (macOS)";
+			productName = "Sauce for Strava™ (macOS)";
+			productReference = BC920336270272C9001F0213 /* Sauce for Strava™.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BC920342270272C9001F0213 /* Sauce for Strava™ Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC920364270272C9001F0213 /* Build configuration list for PBXNativeTarget "Sauce for Strava™ Extension (iOS)" */;
+			buildPhases = (
+				BC92033F270272C9001F0213 /* Sources */,
+				BC920340270272C9001F0213 /* Frameworks */,
+				BC920341270272C9001F0213 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Sauce for Strava™ Extension (iOS)";
+			productName = "Sauce for Strava™ Extension (iOS)";
+			productReference = BC920343270272C9001F0213 /* Sauce for Strava™ Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		BC92034C270272C9001F0213 /* Sauce for Strava™ Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC92036B270272C9001F0213 /* Build configuration list for PBXNativeTarget "Sauce for Strava™ Extension (macOS)" */;
+			buildPhases = (
+				BC920349270272C9001F0213 /* Sources */,
+				BC92034A270272C9001F0213 /* Frameworks */,
+				BC92034B270272C9001F0213 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Sauce for Strava™ Extension (macOS)";
+			productName = "Sauce for Strava™ Extension (macOS)";
+			productReference = BC92034D270272C9001F0213 /* Sauce for Strava™ Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BC920311270272C8001F0213 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1300;
+				LastUpgradeCheck = 1300;
+				TargetAttributes = {
+					BC920323270272C9001F0213 = {
+						CreatedOnToolsVersion = 13.0;
+					};
+					BC920335270272C9001F0213 = {
+						CreatedOnToolsVersion = 13.0;
+					};
+					BC920342270272C9001F0213 = {
+						CreatedOnToolsVersion = 13.0;
+					};
+					BC92034C270272C9001F0213 = {
+						CreatedOnToolsVersion = 13.0;
+					};
+				};
+			};
+			buildConfigurationList = BC920314270272C8001F0213 /* Build configuration list for PBXProject "Sauce for Strava™" */;
+			compatibilityVersion = "Xcode 13.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BC920310270272C8001F0213;
+			productRefGroup = BC920325270272C9001F0213 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BC920323270272C9001F0213 /* Sauce for Strava™ (iOS) */,
+				BC920335270272C9001F0213 /* Sauce for Strava™ (macOS) */,
+				BC920342270272C9001F0213 /* Sauce for Strava™ Extension (iOS) */,
+				BC92034C270272C9001F0213 /* Sauce for Strava™ Extension (macOS) */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BC920322270272C9001F0213 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC920356270272C9001F0213 /* Icon.png in Resources */,
+				BC92032D270272C9001F0213 /* LaunchScreen.storyboard in Resources */,
+				BC920354270272C9001F0213 /* Main.html in Resources */,
+				BC92035A270272C9001F0213 /* Script.js in Resources */,
+				BC92035E270272C9001F0213 /* Assets.xcassets in Resources */,
+				BC920330270272C9001F0213 /* Main.storyboard in Resources */,
+				BC920358270272C9001F0213 /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC920334270272C9001F0213 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC920357270272C9001F0213 /* Icon.png in Resources */,
+				BC920359270272C9001F0213 /* Style.css in Resources */,
+				BC92033C270272C9001F0213 /* Main.storyboard in Resources */,
+				BC92035B270272C9001F0213 /* Script.js in Resources */,
+				BC92035F270272C9001F0213 /* Assets.xcassets in Resources */,
+				BC920355270272C9001F0213 /* Main.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC920341270272C9001F0213 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC9203A9270272C9001F0213 /* images in Resources */,
+				BC9203BD270272C9001F0213 /* src in Resources */,
+				BC9203B8270272C9001F0213 /* _locales in Resources */,
+				BC9203A8270272C9001F0213 /* css in Resources */,
+				BC9203B7270272C9001F0213 /* templates in Resources */,
+				BC9203BB270272C9001F0213 /* pages in Resources */,
+				BC9203BC270272C9001F0213 /* build.json in Resources */,
+				BC9203B6270272C9001F0213 /* manifest.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC92034B270272C9001F0213 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC920390270272C9001F0213 /* images in Resources */,
+				BC9203A4270272C9001F0213 /* src in Resources */,
+				BC92039F270272C9001F0213 /* _locales in Resources */,
+				BC92038F270272C9001F0213 /* css in Resources */,
+				BC92039E270272C9001F0213 /* templates in Resources */,
+				BC9203A2270272C9001F0213 /* pages in Resources */,
+				BC9203A3270272C9001F0213 /* build.json in Resources */,
+				BC92039D270272C9001F0213 /* manifest.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BC920320270272C9001F0213 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC92035C270272C9001F0213 /* ViewController.swift in Sources */,
+				BC920328270272C9001F0213 /* AppDelegate.swift in Sources */,
+				BC92032A270272C9001F0213 /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC920332270272C9001F0213 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC92035D270272C9001F0213 /* ViewController.swift in Sources */,
+				BC920339270272C9001F0213 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC92033F270272C9001F0213 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC920360270272C9001F0213 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC920349270272C9001F0213 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC920361270272C9001F0213 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BC920346270272C9001F0213 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BC920342270272C9001F0213 /* Sauce for Strava™ Extension (iOS) */;
+			targetProxy = BC920345270272C9001F0213 /* PBXContainerItemProxy */;
+		};
+		BC920350270272C9001F0213 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BC92034C270272C9001F0213 /* Sauce for Strava™ Extension (macOS) */;
+			targetProxy = BC92034F270272C9001F0213 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		BC920317270272C8001F0213 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC920318270272C8001F0213 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		BC92032B270272C9001F0213 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC92032C270272C9001F0213 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		BC92032E270272C9001F0213 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC92032F270272C9001F0213 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		BC92033A270272C9001F0213 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC92033B270272C9001F0213 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		BC920362270272C9001F0213 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		BC920363270272C9001F0213 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		BC920365270272C9001F0213 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™ Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 7.2.6;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava.Extension;
+				PRODUCT_NAME = "Sauce for Strava™ Extension";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BC920366270272C9001F0213 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™ Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 7.2.6;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava.Extension;
+				PRODUCT_NAME = "Sauce for Strava™ Extension";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BC920369270272C9001F0213 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 7.2.6;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava;
+				PRODUCT_NAME = "Sauce for Strava™";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BC92036A270272C9001F0213 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 7.2.6;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava;
+				PRODUCT_NAME = "Sauce for Strava™";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BC92036C270272C9001F0213 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/Sauce for Strava™.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™ Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 7.2.6;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava.Extension;
+				PRODUCT_NAME = "Sauce for Strava™ Extension";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BC92036D270272C9001F0213 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/Sauce for Strava™.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™ Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 7.2.6;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava.Extension;
+				PRODUCT_NAME = "Sauce for Strava™ Extension";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BC920370270272C9001F0213 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/Sauce for Strava™.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 7.2.6;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava;
+				PRODUCT_NAME = "Sauce for Strava™";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BC920371270272C9001F0213 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/Sauce for Strava™.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7P47F44SKP;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Sauce for Strava™";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 7.2.6;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.saucellc.sauce4strava;
+				PRODUCT_NAME = "Sauce for Strava™";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BC920314270272C8001F0213 /* Build configuration list for PBXProject "Sauce for Strava™" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC920362270272C9001F0213 /* Debug */,
+				BC920363270272C9001F0213 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC920364270272C9001F0213 /* Build configuration list for PBXNativeTarget "Sauce for Strava™ Extension (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC920365270272C9001F0213 /* Debug */,
+				BC920366270272C9001F0213 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC920368270272C9001F0213 /* Build configuration list for PBXNativeTarget "Sauce for Strava™ (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC920369270272C9001F0213 /* Debug */,
+				BC92036A270272C9001F0213 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC92036B270272C9001F0213 /* Build configuration list for PBXNativeTarget "Sauce for Strava™ Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC92036C270272C9001F0213 /* Debug */,
+				BC92036D270272C9001F0213 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC92036F270272C9001F0213 /* Build configuration list for PBXNativeTarget "Sauce for Strava™ (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC920370270272C9001F0213 /* Debug */,
+				BC920371270272C9001F0213 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BC920311270272C8001F0213 /* Project object */;
+}
