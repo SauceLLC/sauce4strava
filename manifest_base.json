@@ -25,7 +25,8 @@
     },
 
     "background": {
-        "page": "pages/bg.html"
+        "page": "pages/bg.html",
+        "persistent": false
     },
 
     "page_action": {

@@ -4,8 +4,5 @@
     "version": "7.99.20",
     "permissions": [
         "declarativeContent"
-    ],
-    "background": {
-        "persistent": false
-    }
+    ]
 }
