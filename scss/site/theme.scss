@@ -1031,8 +1031,8 @@
 
     .feed {
         /* NEW... */
-        .web-feed-4-component {
-            .web-feed-4-entry {
+        .react-feed-component {
+            .react-feed-entry {
                 background-color: color.shade(bg, 10%);
                 color: color.shade(fg, 10%);
 
@@ -1082,6 +1082,14 @@
 
                 li strong {
                     color: color.shade(fg, 0%);
+                }
+
+                ul[class*="Stats--list-stats--"] {
+                    color: color.shade(fg, 8%);
+
+                    [class*="Stat--stat-label--"] {
+                        color: color.shade(fg, 12%);
+                    }
                 }
 
                 [class*="ActivityEntryBody--achievements-summary--"],

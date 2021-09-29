@@ -49,8 +49,8 @@
 
     .feed {
         /* NEW... */
-        .web-feed-4-component {
-            .web-feed-4-entry {
+        .react-feed-component {
+            .react-feed-entry {
                 img[class*="PhotosAndMapImage--activity-map--"] {
                     filter: $map-filter;
                 }
