@@ -13,7 +13,7 @@ def sh(*cmds, output=None, **kwargs):
     else:
         return subprocess.check_call(cmds, env=env, **kwargs)
 
-proj_dir = 'safari-app/Sauce for Strava™/'
+proj_dir = 'safari/Sauce for Strava™/'
 
 with open('manifest.json') as f:
     d = json.load(f)
