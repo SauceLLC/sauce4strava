@@ -87,7 +87,7 @@ function setCurrentUser(id) {
 })();
 
 if (browser.runtime.getURL('').startsWith('safari-web-extension:')) {
-    // Workaround for visibiltyState = 'prerender' causing GC to pause until unload
+    // Workaround for visibiltyState = 'prerender' causing GA to pause until unload
     Object.defineProperty(document, 'visibilityState', {value: 'hidden'});
     document.dispatchEvent(new Event('visibilitychange'));
 }
@@ -102,7 +102,6 @@ browser.runtime.onInstalled.addListener(async details => {
             await sauce.storage.set('recentUpdate', {previousVersion: details.previousVersion, version});
         }
     }
-    await sauce.migrate.runMigrations();
 });
 
 browser.runtime.onMessage.addListener(msg => {
@@ -162,6 +161,13 @@ if (dc) {
     });
 }
 
-if (!self.disabled && self.currentUser) {
-    hist.startSyncManager(self.currentUser);
-}
+(async function main() {
+    if (!self.disabled) {
+        // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
+        // to try migrations every startup.
+        await sauce.migrate.runMigrations();
+        if (self.currentUser) {
+            hist.startSyncManager(self.currentUser);
+        }
+    }
+})();

@@ -80,25 +80,34 @@ sauce.ns('migrate', ns => {
             delete config.options['dark-mode'];
             await sauce.storage.set({options: config.options});
         }
+    }, {
+        version: 7,
+        name: 'mobile_responsive',
+        migrate: async config => {
+            if (navigator.userAgent.match(/ Mobile[\/ ]/)) {
+                const options = config.options;
+                if (options['responsive'] == null) {
+                    options['responsive'] = true;
+                }
+                if (options['analysis-menu-nav-history'] == null) {
+                    options['analysis-menu-nav-history'] = true;
+                }
+                await sauce.storage.set({options});
+            }
+        }
     }];
 
 
+    let activeMigration;
     ns.runMigrations = async function() {
-        // Perform storage migration/setup here and return config object.
-        const local = await browser.storage.local.get('migrationVersion');
-        if (!local || local.migrationVersion == null) {
-            // Possibly this is an upgrade from sync -> local, but might also
-            // just be a new install.
-            try {
-                const o = await browser.storage.sync.get(null);
-                if (o && Object.keys(o).length) {
-                    console.info("Migrating from sync-storage to local-storage");
-                    await browser.storage.local.set(o);
-                }
-            } catch(e) {
-                // Sync storage not supported.
-            }
+        if (!activeMigration) {
+            activeMigration = _runMigrations();
         }
+        return await activeMigration;
+    };
+
+
+    async function _runMigrations() {
         const initialVersion = await sauce.storage.get('migrationVersion');
         for (const x of migrations) {
             if (initialVersion && initialVersion >= x.version) {
@@ -108,11 +117,10 @@ sauce.ns('migrate', ns => {
             try {
                 await x.migrate(await sauce.storage.get(null));
             } catch(e) {
-                // XXX While this system is new prevent death by exception.
-                console.error("Migration Error:", e);
+                sauce.report.error(e);
                 break;
             }
             await sauce.storage.set('migrationVersion', x.version);
         }
-    };
+    }
 });
