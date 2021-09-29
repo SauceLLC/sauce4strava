@@ -1,7 +1,7 @@
 {
     "name": "Sauce for Strava™ [ALPHA]",
     "minimum_chrome_version": "71",
-    "version": "7.99.20",
+    "version": "7.99.21",
     "permissions": [
         "declarativeContent"
     ]
