@@ -1,4 +1,4 @@
-/* global sauce, browser */
+/* global sauce */
 
 sauce.ns('migrate', ns => {
     'use strict';
@@ -84,7 +84,7 @@ sauce.ns('migrate', ns => {
         version: 7,
         name: 'mobile_responsive',
         migrate: async config => {
-            if (navigator.userAgent.match(/ Mobile[\/ ]/)) {
+            if (navigator.userAgent.match(/ Mobile[/ ]/)) {
                 const options = config.options;
                 if (options['responsive'] == null) {
                     options['responsive'] = true;

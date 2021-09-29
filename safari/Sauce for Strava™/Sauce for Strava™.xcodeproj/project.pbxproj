@@ -794,7 +794,7 @@
 		BC92036C270272C9001F0213 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/Sauce for Strava™.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -828,7 +828,7 @@
 		BC92036D270272C9001F0213 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/Sauce for Strava™.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

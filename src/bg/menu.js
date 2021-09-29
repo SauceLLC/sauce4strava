@@ -11,23 +11,22 @@
         agent = agent || scheme === 'moz-extension' && 'firefox';
         agent = agent || scheme === 'safari-web-extension' && 'safari';
         const pageActions = {
-            review: {
-                title: browser.i18n.getMessage('menu_add_review'),
-                onClick: () => {
-                    if (agent !== 'firefox' && agent !== 'edge') {
-                        browser.tabs.create({url: 'https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha/reviews'});
-                    } else if (agent === 'firefox') {
-                        browser.tabs.create({url: 'https://addons.mozilla.org/en-US/firefox/addon/sauce4strava/'});
-                    } else if (agent === 'safari') {
-                        browser.tabs.create({url: 'https://apps.apple.com/us/app/sauce-for-strava/id1570922521?action=write-review'});
-                    }
-                }
-            },
             supporters: {
                 title: browser.i18n.getMessage('menu_supporters'),
                 onClick: () => void browser.tabs.create({url: 'https://saucellc.io/supporters.html'})
             }
         };
+        const reviewUrl = {
+            chrome: 'https://chrome.google.com/webstore/detail/eigiefcapdcdmncdghkeahgfmnobigha/reviews',
+            firefox: 'https://addons.mozilla.org/en-US/firefox/addon/sauce4strava/',
+            safari: 'https://apps.apple.com/us/app/sauce-for-strava/id1570922521?action=write-review',
+        }[agent];
+        if (reviewUrl) {
+            pageActions.review = {
+                title: browser.i18n.getMessage('menu_add_review'),
+                onClick: () => void browser.tabs.create({url: reviewUrl})
+            };
+        }
         await browser.contextMenus.removeAll();
         for (const [id, obj] of Object.entries(pageActions)) {
             browser.contextMenus.create({id, title: obj.title, contexts: ['page_action']});
