@@ -113,10 +113,29 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
 
     sauce.propDefined('Strava.Labs.Activities.BasicAnalysisView', Klass => {
+        // Must wait for prototype to be fully assigned by the current execution context.
+        setTimeout(() => {
+            const saveCreateStackedChartFn = Klass.prototype.createStackedChart;
+            Klass.prototype.createStackedChart = function() {
+                // XXX for prototyping
+                const chart = saveCreateStackedChartFn.apply(this, arguments);
+                window.stackedChart = chart;
+                return chart;
+            };
+
+            const saveHandleStreamsReadyFn = Klass.prototype.handleStreamsReady;
+            Klass.prototype.handleStreamsReady = function() {
+                this.chartContext.analysis().stackedStreamTypes.push('distance', 'watts_calc', 'vam', 'grade_adjusted_pace');
+                this.chartContext.sportObject().streamTypes.vam = {formatter: Strava.I18n.ScalarFormatter};
+                this.chartContext.sportObject().streamTypes.grade_adjusted_pace = {formatter: Strava.I18n.PaceFormatter};
+                return saveHandleStreamsReadyFn.apply(this, arguments);
+            };
+        }, 0);
+
         // Monkey patch the analysis view so we always have our hook for extra stats.
-        const saveFn = Klass.prototype.renderTemplate;
+        const saveRenderFn = Klass.prototype.renderTemplate;
         Klass.prototype.renderTemplate = function() {
-            const $el = saveFn.apply(this, arguments);
+            const $el = saveRenderFn.apply(this, arguments);
             if (sauce.analysis) {
                 sauce.analysis.attachAnalysisStats($el);
             } else {
