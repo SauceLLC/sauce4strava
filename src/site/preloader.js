@@ -112,23 +112,47 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     }, {once: true});
 
 
-    sauce.propDefined('Strava.Labs.Activities.BasicAnalysisView', Klass => {
+    sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
         // Must wait for prototype to be fully assigned by the current execution context.
         setTimeout(() => {
-            const saveCreateStackedChartFn = Klass.prototype.createStackedChart;
-            Klass.prototype.createStackedChart = function() {
-                // XXX for prototyping
-                const chart = saveCreateStackedChartFn.apply(this, arguments);
-                window.stackedChart = chart;
-                return chart;
-            };
-
             const saveHandleStreamsReadyFn = Klass.prototype.handleStreamsReady;
-            Klass.prototype.handleStreamsReady = function() {
-                this.chartContext.analysis().stackedStreamTypes.push('distance', 'watts_calc', 'vam', 'grade_adjusted_pace');
-                this.chartContext.sportObject().streamTypes.vam = {formatter: Strava.I18n.ScalarFormatter};
-                this.chartContext.sportObject().streamTypes.grade_adjusted_pace = {formatter: Strava.I18n.PaceFormatter};
-                return saveHandleStreamsReadyFn.apply(this, arguments);
+            Klass.prototype.handleStreamsReady = async function() {
+                await sauce.analysis.prepared;
+                const extraStreams = [{
+                    stream: 'watts_sealevel',
+                    formatter: Strava.I18n.PowerFormatter,
+                    label: 'Sea Power',
+                }, {
+                    stream: 'watts_calc',
+                    formatter: Strava.I18n.PowerFormatter,
+                }, {
+                    stream: 'w_prime_balance',
+                    formatter: Strava.I18n.WorkFormatter,
+                    label: 'W\'bal',
+                }];
+                if (this.context.activity().supportsGap()) {
+                    extraStreams.push({
+                        stream: 'grade_adjusted_pace',
+                        formatter: Strava.I18n.ChartLabelPaceFormatter
+                    });
+                }
+                for (const {stream, formatter, label} of extraStreams) {
+                    if (this.streamTypes.includes(stream)) {
+                        continue;
+                    }
+                    const data = this.context.streamsContext.streams.getStream(stream);
+                    if (!data) {
+                        continue;
+                    }
+                    if (label) {
+                        Strava.I18n.Locales.DICTIONARY.strava.charts.activities
+                            .chart_context[stream] = label;
+                    }
+                    this.context.streamsContext.data.add(stream, data);
+                    this.streamTypes.push(stream);
+                    this.context.sportObject().streamTypes[stream] = {formatter};
+                }
+                saveHandleStreamsReadyFn.apply(this, arguments);
             };
         }, 0);
 

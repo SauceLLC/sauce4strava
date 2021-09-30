@@ -1409,7 +1409,7 @@ sauce.ns('power', function() {
                 for (let j = 0; j < p.pad; j++) {
                     wBal += cp * (wPrime - wBal) / wPrime;
                     if (wBal >= wPrime - epsilon) {
-                        debugger;
+                        debugger; // XXX just validate once
                         break;
                     }
                 }
@@ -1418,10 +1418,7 @@ sauce.ns('power', function() {
                 wBal += pNum < cp ? (cp - pNum) * (wPrime - wBal) / wPrime : cp - pNum;
             }
             if (wBal > wPrime) {
-                debugger;
-            }
-            if (wBal < 0) {
-                console.warn("negative wbal", wBal, t);
+                debugger;  // XXX shouldn't be possible.
             }
             if (!(p instanceof sauce.data.Pad)) {
                 // Our output stream should align with the input stream, not the corrected

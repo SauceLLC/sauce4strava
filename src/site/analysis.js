@@ -3242,6 +3242,7 @@ sauce.ns('analysis', ns => {
             sauce.locale.init(),
             getWeightInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
             getFTPInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
+            sauce.storage.getAthleteProp(ns.athlete.id, 'wPrime').then(x => ns.wPrime = x || 20000),
         ]);
         ns.cadenceFormatter = activity.isRun() ?
             L.cadenceFormatterRun :
@@ -3302,6 +3303,10 @@ sauce.ns('analysis', ns => {
             const altStream = await fetchStream('altitude');
             streamData.add('watts_sealevel', wattsStream.map((x, i) =>
                 Math.round(sauce.power.seaLevelPower(x, altStream[i]))));
+        }
+        if (hasAccurateWatts() && ns.ftp && ns.wPrime) {
+            streamData.add('w_prime_balance',
+                sauce.power.calcWPrimeBalDifferential(wattsStream, timeStream, ns.ftp, ns.wPrime));
         }
         const isTrainer = pageView.activity().isTrainer();
         const isSwim = ns.activityType === 'swim';
