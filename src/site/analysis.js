@@ -3364,13 +3364,28 @@ sauce.ns('analysis', ns => {
                     el.removeAttribute('width');
                     el.removeAttribute('height');
                     const mo = new MutationObserver(mutations => {
+                        const vb = el.getAttribute('viewBox').split(/\s/);
+                        let changed;
                         for (const m of mutations) {
                             if (m.attributeName === 'width') {
+                                const width = el.getAttribute('width');
+                                if (width) {
+                                    vb[2] = width;
+                                    changed = true;
+                                }
                                 el.removeAttribute('width');
                             }
                             if (m.attributeName === 'height') {
+                                const height = el.getAttribute('height');
+                                if (height) {
+                                    vb[3] = height;
+                                    changed = true;
+                                }
                                 el.removeAttribute('height');
                             }
+                        }
+                        if (changed) {
+                            el.setAttribute('viewBox', vb.join(' '));
                         }
                     });
                     mo.observe(el, {attributes: true});
