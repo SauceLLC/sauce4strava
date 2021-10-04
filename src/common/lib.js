@@ -1403,7 +1403,7 @@ sauce.ns('power', function() {
         const wPrimeBal = [];
         const epsilon = 0.000001;
         let wBal = wPrime;
-        for (const [t, p] of powerRoll.entries()) {
+        for (const p of powerRoll.values()) {
             if (p instanceof sauce.data.Break) {
                 // Refill wBal while we have a break.
                 for (let j = 0; j < p.pad; j++) {
@@ -1423,7 +1423,7 @@ sauce.ns('power', function() {
             if (!(p instanceof sauce.data.Pad)) {
                 // Our output stream should align with the input stream, not the corrected
                 // one used for calculations, so skip pad based values.
-                wPrimeBal.push(wBal);
+                wPrimeBal.push(Math.round(wBal));
             }
         }
         return wPrimeBal;
