@@ -115,43 +115,44 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
         // Must wait for prototype to be fully assigned by the current execution context.
         setTimeout(() => {
+            const saveRenderFn = Klass.prototype.render;
+            Klass.prototype.render = function() {
+                window.foo = this;
+                return saveRenderFn.apply(this, arguments);
+            };
             const saveHandleStreamsReadyFn = Klass.prototype.handleStreamsReady;
             Klass.prototype.handleStreamsReady = async function() {
                 await sauce.analysis.prepared;
                 const extraStreams = [{
-                    stream: 'watts_sealevel',
-                    formatter: Strava.I18n.PowerFormatter,
-                    label: 'Sea Power',
-                }, {
                     stream: 'watts_calc',
                     formatter: Strava.I18n.PowerFormatter,
+                    filter: () => !this.context.streamsContext.data.has('watts'),
                 }, {
                     stream: 'w_prime_balance',
                     formatter: Strava.I18n.WorkFormatter,
                     label: 'W\'bal',
+                }, {
+                    stream: 'grade_adjusted_pace',
+                    formatter: Strava.I18n.ChartLabelPaceFormatter,
+                    filter: () => this.context.activity().supportsGap(),
                 }];
-                if (this.context.activity().supportsGap()) {
-                    extraStreams.push({
-                        stream: 'grade_adjusted_pace',
-                        formatter: Strava.I18n.ChartLabelPaceFormatter
-                    });
-                }
-                for (const {stream, formatter, label} of extraStreams) {
-                    if (this.streamTypes.includes(stream)) {
-                        continue;
-                    }
+                for (const {stream, formatter, label, filter} of extraStreams) {
                     const data = this.context.streamsContext.streams.getStream(stream);
-                    if (!data) {
+                    if (this.streamTypes.includes(stream) || !data || (filter && !filter())) {
                         continue;
                     }
                     if (label) {
                         Strava.I18n.Locales.DICTIONARY.strava.charts.activities
                             .chart_context[stream] = label;
                     }
-                    this.context.streamsContext.data.add(stream, data);
+                    if (!this.context.streamsContext.data.has(stream)) {
+                        this.context.streamsContext.data.add(stream, data);
+                    }
                     this.streamTypes.push(stream);
                     this.context.sportObject().streamTypes[stream] = {formatter};
                 }
+                // Fix chart sizing bug that sets builder height too late.
+                this.builder.height(this.stackHeight() * this.streamTypes.length);
                 saveHandleStreamsReadyFn.apply(this, arguments);
             };
         }, 0);
