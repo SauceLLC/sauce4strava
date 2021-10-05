@@ -117,9 +117,20 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         setTimeout(() => {
             const saveRenderFn = Klass.prototype.render;
             Klass.prototype.render = function() {
-                window.foo = this;
+                window.foo = this; // XXX
+                const saveBuildLine = this.builder.buildLine;
+                this.builder.buildLine = function(data, xScale, yScale, id, interpolator, extraFn) {
+                    if (id === 'w_prime_balance') {
+                        extraFn = function(line) {
+                            const [low, high] = yScale.domain();
+                            yScale.domain([0, high * 1.02]);
+                        };
+                    }
+                    return saveBuildLine.call(this, data, xScale, yScale, id, interpolator, extraFn);
+                };
                 return saveRenderFn.apply(this, arguments);
             };
+
             const saveHandleStreamsReadyFn = Klass.prototype.handleStreamsReady;
             Klass.prototype.handleStreamsReady = async function() {
                 await sauce.analysis.prepared;
@@ -158,9 +169,9 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }, 0);
 
         // Monkey patch the analysis view so we always have our hook for extra stats.
-        const saveRenderFn = Klass.prototype.renderTemplate;
+        const saveRenderTemplateFn = Klass.prototype.renderTemplate;
         Klass.prototype.renderTemplate = function() {
-            const $el = saveRenderFn.apply(this, arguments);
+            const $el = saveRenderTemplateFn.apply(this, arguments);
             if (sauce.analysis) {
                 sauce.analysis.attachAnalysisStats($el);
             } else {
