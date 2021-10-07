@@ -3569,6 +3569,47 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function handleGraphOptionsClick(btn) {
+        const smoothing = sauce.options['analysis-graph-smoothing'] || 0;
+        const $el = sauce.dialog({
+            width: 300,
+            autoDestroy: true,
+            title: `Analysis Graph Options`,
+            body: `
+                <label>Smoothing: <input type="range" name="smoothing" value="${smoothing}"
+                                         min="0" max="60" step="1"/>
+                    <span>${smoothing ? H.timer(smoothing) : '--'}</span></label>
+                <label>Show W'bal: <input type="checkbox" name="wbal"
+                                          ${sauce.options['analysis-graph-wbal'] ? 'checked' : ''}/>
+                </label>
+                <label>Show GAP: <input type="checkbox" name="gap"
+                                        ${sauce.options['analysis-graph-gap'] ? 'checked' : ''}/>
+                </label>
+            `,
+            icon: await sauce.images.asText('fa/cog-duotone.svg'),
+            position: {
+                my: 'right top',
+                at: 'right+43 top-2',
+                of: btn[0]
+            },
+            dialogClass: 'sauce-analysis-graph-options',
+            resizable: false,
+        });
+        $el.on('input', 'input[name="smoothing"]', async ev => {
+            const el = ev.currentTarget;
+            const val = Number(el.value);
+            el.nextElementSibling.textContent = val ? H.timer(val) : '--';
+            sauce.options['analysis-graph-smoothing'] = Number(el.value);
+            await sauce.storage.update(`options`, sauce.options);
+        });
+        $el.on('input', 'input[type="checkbox"]', async ev => {
+            const id = ev.currentTarget.name;
+            sauce.options[`analysis-graph-${id}`] = ev.currentTarget.checked;
+            await sauce.storage.update(`options`, sauce.options);
+        });
+    }
+
+
     return {
         load,
         fetchStream,
@@ -3580,6 +3621,7 @@ sauce.ns('analysis', ns => {
         checkForSafariUpdates,
         checkIfUpdated,
         fetchFullActivity,
+        handleGraphOptionsClick,
     };
 });
 

@@ -1,4 +1,4 @@
-/* global sauce, jQuery, Strava, pageView, Backbone */
+/* global sauce, jQuery, Strava, pageView, Backbone, d3 */
 
 // NOTE: Must be assigned to self and have matching name for FF
 self.saucePreloaderInit = function saucePreloaderInit() {
@@ -118,34 +118,57 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             const saveRenderFn = Klass.prototype.render;
             Klass.prototype.render = function() {
                 window.foo = this; // XXX
-                const saveBuildLine = this.builder.buildLine;
-                this.builder.buildLine = function(data, xScale, yScale, id, interpolator, extraFn) {
-                    if (id === 'w_prime_balance') {
-                        extraFn = function(line) {
-                            const [low, high] = yScale.domain();
-                            yScale.domain([0, high * 1.02]);
-                        };
-                    }
-                    return saveBuildLine.call(this, data, xScale, yScale, id, interpolator, extraFn);
-                };
                 return saveRenderFn.apply(this, arguments);
             };
 
-            const saveHandleStreamsReadyFn = Klass.prototype.handleStreamsReady;
+            const saveBuildAxisFn = Klass.prototype.buildAxis;
+            Klass.prototype.buildAxis = function() {
+                saveBuildAxisFn.apply(this, arguments);
+                const el = this.xAxisContainer;
+                const opts = el.append('g');
+                opts.attr({"class": 'chart-options', transform: 'translate(922, 3)'});
+                const btn = opts.append('g').attr('class', 'button');
+                btn.append('title').text('Options'); // XXX localize
+                btn.append('rect').attr({height: 24, width: 35});
+                btn.append('image').attr({
+                    height: 18, width: 35,
+                    x: 0, y: 3,
+                    href: `${sauce.extUrl}images/fa/cog-duotone.svg`
+                });
+                btn.on('click', sauce.analysis.handleGraphOptionsClick.bind(this, btn));
+            };
+
             Klass.prototype.handleStreamsReady = async function() {
                 await sauce.analysis.prepared;
+                const streamTweaks = {
+                    w_prime_balance: {
+                        suggestedMin: sauce.analysis.wPrime * 0.50,
+                        buildRow: (...args) => this.builder.buildAreaLine(...args.slice(0, -1),
+                            line => {
+                                line.groupId('w_prime_balance');
+                                const [t, b] = line.yScale().range();
+                                const gradPct = value => (line.yScale()(value) - b) / (t - b);
+                                const lg = this.builder.root.append('defs').append('linearGradient');
+                                lg.attr({id: 'w-prime-bal-lg', x1: 0, x2: 0, y1: 0, y2: 1});
+                                lg.append('stop').attr('offset', gradPct(sauce.analysis.wPrime));
+                                lg.append('stop').attr('offset', gradPct(0));
+                                lg.append('stop').attr('offset', gradPct(0));
+                                lg.append('stop').attr('offset', gradPct(-sauce.analysis.wPrime * 0.25));
+                            })
+                    }
+                };
                 const extraStreams = [{
                     stream: 'watts_calc',
                     formatter: Strava.I18n.PowerFormatter,
                     filter: () => !this.context.streamsContext.data.has('watts'),
                 }, {
-                    stream: 'w_prime_balance',
-                    formatter: Strava.I18n.WorkFormatter,
-                    label: 'W\'bal',
-                }, {
                     stream: 'grade_adjusted_pace',
                     formatter: Strava.I18n.ChartLabelPaceFormatter,
                     filter: () => this.context.activity().supportsGap(),
+                }, {
+                    stream: 'w_prime_balance',
+                    formatter: Strava.I18n.WorkFormatter,
+                    label: 'W\'bal',
                 }];
                 for (const {stream, formatter, label, filter} of extraStreams) {
                     const data = this.context.streamsContext.streams.getStream(stream);
@@ -162,9 +185,66 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     this.streamTypes.push(stream);
                     this.context.sportObject().streamTypes[stream] = {formatter};
                 }
-                // Fix chart sizing bug that sets builder height too late.
-                this.builder.height(this.stackHeight() * this.streamTypes.length);
-                saveHandleStreamsReadyFn.apply(this, arguments);
+                // Unminified and fixed original code...
+                const rows = [];
+                const streams = this.streamTypes.filter(x => !(
+                    this.context.getStream(x) == null ||
+                    (x === 'watts_calc' && (this.context.getStream("watts") != null || this.context.trainer())) ||
+                    (this.showStats && x === 'pace' && !this.showStats.pace)));
+                this.setDomainScale();
+                this.builder.height(this.stackHeight() * streams.length);  // Must come before calls to buildLine
+                const height = this.stackHeight();
+                console.warn("XXX");
+                for (const [i, x] of streams.entries()) {
+                    const tweaks = streamTweaks[x] || {};
+                    const stream = this.context.getStream(x);
+                    const topY = i * height;
+                    let [min, max] = d3.extent(stream);
+                    if (tweaks.suggestedMin != null) {
+                        min = Math.min(tweaks.suggestedMin, min);
+                    }
+                    if (tweaks.suggestedMax != null) {
+                        max = Math.max(tweaks.suggestedMax, max);
+                    }
+                    const pad = (max - min) * 0.01; // There is some bleed in the rendering that cuts off values.
+                    const yScale = d3.scale.linear();
+                    yScale.domain([min - pad, max + pad]).range([topY + height, topY]).nice();
+                    this.yScales()[x] = yScale;
+                    if (tweaks.buildRow) {
+                        tweaks.buildRow.call(this.builder, this.context.data(this.xAxisType(), x),
+                            this.xScale, yScale, x, '');
+                    } else {
+                        this.builder.buildLine(this.context.data(this.xAxisType(), x), this.xScale, yScale, x, '');
+                    }
+                    // Fix clip path which was only bounding to the entire graph area.
+                    // For line charts this works but for area charts it causes fill bleed.
+                    const graph = this.builder.graphs()[x];
+                    this.builder.root.select(`rect#${graph.clipPathId()}`)
+                        .attr('height', height)
+                        .attr('y', topY);
+                    const fmtr = this.context.formatter(x);
+                    rows.push({
+                        streamType: x,
+                        topY,
+                        avgY: this.yScales()[x](d3.mean(stream)),
+                        bottomY: topY + height,
+                        label: this.context.getStreamLabel(x),
+                        unit: this.context.getUnit(x),
+                        min: fmtr.format(min),
+                        max: fmtr.format(max),
+                        avg: '--'
+                    });
+                }
+                this.buildOrUpdateAvgLines(rows);
+                this.buildBottomLines(rows);
+                this.buildLabelBoxes(rows);
+                this.buildListenerBoxes(rows);
+                this.buildBrush();
+                this.builder.updateRoot();
+                this.builder.buildCrossBar();
+                this.buildAxis();
+                this.setEventDispatcher();
+                return this.deferred.resolve();
             };
         }, 0);
 

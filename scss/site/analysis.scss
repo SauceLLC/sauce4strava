@@ -183,6 +183,32 @@ abbr.unit {
     .avg-line.w_prime_balance {
         stroke: #039529;
     }
+
+    g#w_prime_balance {
+        path#line {
+            stroke: #039529;
+            stroke-width: 1px;
+        }
+        path#area {
+            fill: url(#w-prime-bal-lg);
+            opacity: 0.8;
+        }
+    }
+
+    linearGradient#w-prime-bal-lg {
+        stop:nth-child(1) {
+            stop-color: #03952990;
+        }
+        stop:nth-child(2) {
+            stop-color: #ea30;
+        }
+        stop:nth-child(3) {
+            stop-color: #e113;
+        }
+        stop:nth-child(4) {
+            stop-color: #f62a;
+        }
+    }
 }
 
 table.segments,
