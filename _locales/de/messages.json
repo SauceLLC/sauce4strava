@@ -959,5 +959,23 @@
     },
     "save": {
         "message": "speichern"
+    },
+    "graph_options_wbal_help": {
+        "message": "<a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">W'balance ist eine von Dr. Philip Skiba</a> erstellte Darstellung der Arbeit, die oberhalb des Schwellenwerts geleistet wurde. Sie können es sich als Ihre anaerobe Batterie vorstellen. Jedes Mal, wenn Sie sich über Ihr FTP/CP bemühen, wird Ihr Akku entladen und es dauert seine Zeit, ihn wieder aufzufüllen. Wenn Ihr W'bal 0 erreicht, werden Sie es fast unmöglich finden, über einen längeren Zeitraum Anstrengungen über Ihrem FTP/CP zu produzieren.<br/><br/> Weitere Informationen und eine großartige Erklärung finden Sie in <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">diesem ausgezeichneten Artikel von Dr. Skiba selbst</a> ."
+    },
+    "graph_options_wprime_help": {
+        "message": "W' ist die Größe der anaeroben Arbeitskapazität eines Athleten. Mit anderen Worten, es ist die Größe der Batterie des Athleten bei der Berechnung von W'balance. Dieser Wert variiert von Athlet zu Athlet und kann mit Hilfe eines Trainers feinjustiert werden."
+    },
+    "graph_options_show": {
+        "message": "Zeigen"
+    },
+    "graph_options_athlete": {
+        "message": "Athlet"
+    },
+    "graph_options_smoothing": {
+        "message": "Glätten"
+    },
+    "graph_options_reload_needed": {
+        "message": "Neuladen der Seite erforderlich"
     }
 }

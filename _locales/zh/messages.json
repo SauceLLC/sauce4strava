@@ -1041,5 +1041,23 @@
     },
     "save": {
         "message": "救"
+    },
+    "graph_options_wbal_help": {
+        "message": "<a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">W'balance 是 Philip Skiba 博士</a>创建的高于阈值的工作的代表。你可以把它想象成你的厌氧电池。每次您在 FTP/CP 上努力时，您的电池都会耗尽，需要时间来补充它。如果您的 W'bal 达到 0，那么您将发现几乎不可能在任何时间段内产生高于 FTP/CP 的努力。<br/><br/>有关更多信息和很好的解释，请参阅<a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">Skiba 博士本人撰写的这篇优秀文章</a>。"
+    },
+    "graph_options_wprime_help": {
+        "message": "W'是运动员无氧工作能力的大小。换句话说，它是计算 W'balance 时运动员电池的大小。这个值因运动员而异，可以在教练的帮助下进行微调。"
+    },
+    "graph_options_show": {
+        "message": "展示"
+    },
+    "graph_options_athlete": {
+        "message": "运动员"
+    },
+    "graph_options_smoothing": {
+        "message": "平滑"
+    },
+    "graph_options_reload_needed": {
+        "message": "需要重新加载页面"
     }
 }

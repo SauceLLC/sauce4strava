@@ -956,5 +956,23 @@
     },
     "save": {
         "message": "Salva"
+    },
+    "graph_options_wbal_help": {
+        "message": "W'balance è una rappresentazione del lavoro svolto sopra la soglia creata dal <a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">Dr. Philip Skiba</a> . Puoi pensarla come la tua batteria anaerobica. Ogni volta che fai sforzi sul tuo FTP/CP, la batteria si scarica e ci vuole tempo per ricaricarla. Se il tuo W'bal raggiunge lo 0, troverai quasi impossibile produrre sforzi al di sopra del tuo FTP/CP per qualsiasi periodo di tempo.<br/><br/> Per ulteriori informazioni e un'ottima spiegazione, vedere <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">questo eccellente articolo dello stesso Dr. Skiba</a> ."
+    },
+    "graph_options_wprime_help": {
+        "message": "W' è la dimensione della capacità di lavoro anaerobico di un atleta. In altre parole è la dimensione della batteria dell'atleta durante il calcolo del W'balance. Questo valore varia da atleta ad atleta e può essere messo a punto con l'assistenza di un allenatore."
+    },
+    "graph_options_show": {
+        "message": "Spettacolo"
+    },
+    "graph_options_athlete": {
+        "message": "Atleta"
+    },
+    "graph_options_smoothing": {
+        "message": "levigante"
+    },
+    "graph_options_reload_needed": {
+        "message": "È necessario ricaricare la pagina"
     }
 }
