@@ -114,13 +114,31 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
         // Must wait for prototype to be fully assigned by the current execution context.
-        setTimeout(() => {
-            const saveRenderFn = Klass.prototype.render;
-            Klass.prototype.render = function() {
-                window.foo = this; // XXX
-                return saveRenderFn.apply(this, arguments);
-            };
+        const streamTweaks = {
+            w_prime_balance: {
+                suggestedMin: () => sauce.analysis.wPrime * 0.50,
+                buildRow: (builder, ...args) => builder.buildAreaLine(...args.slice(0, -1),
+                    line => {
+                        line.groupId('w_prime_balance');
+                        const [t, b] = line.yScale().range();
+                        const gradPct = value => (line.yScale()(value) - b) / (t - b);
+                        const lg = builder.root.append('defs').append('linearGradient');
+                        lg.attr({id: 'w-prime-bal-lg', x1: 0, x2: 0, y1: 0, y2: 1});
+                        lg.append('stop').attr('offset', gradPct(sauce.analysis.wPrime));
+                        lg.append('stop').attr('offset', gradPct(0));
+                        lg.append('stop').attr('offset', gradPct(0));
+                        lg.append('stop').attr('offset', gradPct(-sauce.analysis.wPrime * 0.25));
+                    })
+            }
+        };
 
+        class KJFormatter extends Strava.I18n.WorkFormatter {
+            format(val, prec=1) {
+                return super.format(val / 1000, prec);
+            }
+        }
+
+        setTimeout(() => {
             const saveBuildAxisFn = Klass.prototype.buildAxis;
             Klass.prototype.buildAxis = function() {
                 saveBuildAxisFn.apply(this, arguments);
@@ -138,25 +156,40 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 btn.on('click', sauce.analysis.handleGraphOptionsClick.bind(this, btn, this));
             };
 
+            Klass.prototype.smoothStreamsData = function() {
+                const smoothing = sauce.options['analysis-graph-smoothing'];
+                const origData = this.origData = this.origData || {};
+                for (const x of this.streamTypes) {
+                    if (!origData[x]) {
+                        origData[x] = this.context.getStream(x);
+                    }
+                    const data = origData[x];
+                    if (!data) {
+                        continue;
+                    }
+                    if (smoothing) {
+                        this.context.streamsContext.data.add(x, sauce.data.smooth(smoothing, data));
+                    } else {
+                        this.context.streamsContext.data.add(x, data);
+                    }
+                }
+            };
+
+            Klass.prototype.streamExtent = function(id) {
+                const tweaks = streamTweaks[id] || {};
+                const stream = this.context.getStream(id);
+                let [min, max] = d3.extent(stream);
+                if (tweaks.suggestedMin != null) {
+                    min = Math.min(tweaks.suggestedMin(), min);
+                }
+                if (tweaks.suggestedMax != null) {
+                    max = Math.max(tweaks.suggestedMax(), max);
+                }
+                return [min, max];
+            };
+
             Klass.prototype.handleStreamsReady = async function() {
                 await sauce.analysis.prepared;
-                const streamTweaks = {
-                    w_prime_balance: {
-                        suggestedMin: sauce.analysis.wPrime * 0.50,
-                        buildRow: (...args) => this.builder.buildAreaLine(...args.slice(0, -1),
-                            line => {
-                                line.groupId('w_prime_balance');
-                                const [t, b] = line.yScale().range();
-                                const gradPct = value => (line.yScale()(value) - b) / (t - b);
-                                const lg = this.builder.root.append('defs').append('linearGradient');
-                                lg.attr({id: 'w-prime-bal-lg', x1: 0, x2: 0, y1: 0, y2: 1});
-                                lg.append('stop').attr('offset', gradPct(sauce.analysis.wPrime));
-                                lg.append('stop').attr('offset', gradPct(0));
-                                lg.append('stop').attr('offset', gradPct(0));
-                                lg.append('stop').attr('offset', gradPct(-sauce.analysis.wPrime * 0.25));
-                            })
-                    }
-                };
                 const extraStreams = [{
                     stream: 'watts_calc',
                     formatter: Strava.I18n.PowerFormatter,
@@ -164,15 +197,23 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 }, {
                     stream: 'grade_adjusted_pace',
                     formatter: Strava.I18n.ChartLabelPaceFormatter,
-                    filter: () => this.context.activity().supportsGap(),
+                    filter: () => sauce.options['analysis-graph-gap'] && this.context.activity().supportsGap(),
                 }, {
                     stream: 'w_prime_balance',
-                    formatter: Strava.I18n.WorkFormatter,
+                    formatter: KJFormatter,
                     label: 'W\'bal',
+                    filter: () => sauce.options['analysis-graph-wbal'],
                 }];
                 for (const {stream, formatter, label, filter} of extraStreams) {
+                    if (filter && !filter()) {
+                        const idx = this.streamTypes.indexOf(stream);
+                        if (idx !== -1) {
+                            this.streamTypes.splice(idx, 1);
+                        }
+                        continue;
+                    }
                     const data = this.context.streamsContext.streams.getStream(stream);
-                    if (this.streamTypes.includes(stream) || !data || (filter && !filter())) {
+                    if (this.streamTypes.includes(stream) || !data) {
                         continue;
                     }
                     if (label) {
@@ -192,26 +233,19 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     (x === 'watts_calc' && (this.context.getStream("watts") != null || this.context.trainer())) ||
                     (this.showStats && x === 'pace' && !this.showStats.pace)));
                 this.setDomainScale();
+                this.smoothStreamsData();
                 this.builder.height(this.stackHeight() * streams.length);  // Must come before calls to buildLine
                 const height = this.stackHeight();
-                console.warn("XXX");
                 for (const [i, x] of streams.entries()) {
                     const tweaks = streamTweaks[x] || {};
-                    const stream = this.context.getStream(x);
                     const topY = i * height;
-                    let [min, max] = d3.extent(stream);
-                    if (tweaks.suggestedMin != null) {
-                        min = Math.min(tweaks.suggestedMin, min);
-                    }
-                    if (tweaks.suggestedMax != null) {
-                        max = Math.max(tweaks.suggestedMax, max);
-                    }
-                    const pad = (max - min) * 0.01; // There is some bleed in the rendering that cuts off values.
                     const yScale = d3.scale.linear();
+                    const [min, max] = this.streamExtent(x);
+                    const pad = (max - min) * 0.01; // There is some bleed in the rendering that cuts off values.
                     yScale.domain([min - pad, max + pad]).range([topY + height, topY]).nice();
                     this.yScales()[x] = yScale;
                     if (tweaks.buildRow) {
-                        tweaks.buildRow.call(this.builder, this.context.data(this.xAxisType(), x),
+                        tweaks.buildRow(this.builder, this.context.data(this.xAxisType(), x),
                             this.xScale, yScale, x, '');
                     } else {
                         this.builder.buildLine(this.context.data(this.xAxisType(), x), this.xScale, yScale, x, '');
@@ -219,14 +253,12 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     // Fix clip path which was only bounding to the entire graph area.
                     // For line charts this works but for area charts it causes fill bleed.
                     const graph = this.builder.graphs()[x];
-                    this.builder.root.select(`rect#${graph.clipPathId()}`)
-                        .attr('height', height)
-                        .attr('y', topY);
+                    this.builder.root.select(`rect#${graph.clipPathId()}`).attr({height, y: topY});
                     const fmtr = this.context.formatter(x);
                     rows.push({
                         streamType: x,
                         topY,
-                        avgY: this.yScales()[x](d3.mean(stream)),
+                        avgY: this.yScales()[x](d3.mean(this.context.getStream(x))),
                         bottomY: topY + height,
                         label: this.context.getStreamLabel(x),
                         unit: this.context.getUnit(x),

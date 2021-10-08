@@ -392,3 +392,21 @@ table.hidden-segments {
 .sauce-over-modal {
     z-index: 200;
 }
+
+.sauce-dialog.sauce-analysis-graph-options {
+    form {
+        padding: 1em 0;
+    }
+
+    .ui-dialog-content:not(.reload-needed) .only-reload-needed {
+        display: none;
+    }
+
+    .only-reload-needed {
+        font-weight: bold;
+        font-size: 0.8em;
+        padding-top: 0.8em;
+        text-align: center;
+        color: color.get(accent);
+    }
+}

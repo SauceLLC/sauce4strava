@@ -3571,54 +3571,64 @@ sauce.ns('analysis', ns => {
 
     async function handleGraphOptionsClick(btn, view) {
         const smoothing = sauce.options['analysis-graph-smoothing'] || 0;
-        const $el = sauce.dialog({
-            width: 300,
+        const template = await getTemplate('graph-options.html', 'graph_options');
+        const $dialog = sauce.dialog({
+            width: '25em',
             autoDestroy: true,
+            flex: true,
             title: `Analysis Graph Options`,
-            body: `
-                <label>Smoothing: <input type="range" name="smoothing" value="${smoothing}"
-                                         min="0" max="300" step="1"/>
-                    <span>${smoothing ? H.timer(smoothing) : '--'}</span></label>
-                <label>Show W'bal: <input type="checkbox" name="wbal"
-                                          ${sauce.options['analysis-graph-wbal'] ? 'checked' : ''}/>
-                </label>
-                <label>Show GAP: <input type="checkbox" name="gap"
-                                        ${sauce.options['analysis-graph-gap'] ? 'checked' : ''}/>
-                </label>
-            `,
+            body: await template({
+                smoothing,
+                options: sauce.options,
+                wprime: ns.wPrime,
+            }),
             icon: await sauce.images.asText('fa/cog-duotone.svg'),
             position: {
                 my: 'right top',
                 at: 'right-2 top+2',
                 of: btn[0][0].closest('svg')
             },
-            dialogClass: 'sauce-analysis-graph-options',
+            dialogClass: 'sauce-analysis-graph-options no-pad',
             resizable: false,
         });
         let nextSmoothing;
-        $el.on('input', 'input[name="smoothing"]', async ev => {
+        $dialog.on('input', 'input[name="smoothing"]', async ev => {
             const el = ev.currentTarget;
             const smoothing = Number(el.value);
             el.nextElementSibling.textContent = smoothing ? H.timer(smoothing) : '--';
             sauce.options['analysis-graph-smoothing'] = Number(el.value);
             cancelAnimationFrame(nextSmoothing);  // debounce spurious updates.
             nextSmoothing = requestAnimationFrame(() => {
+                view.smoothStreamsData();
                 view.builder.iterateGraphs((id, graph) => {
-                    const xyData = view.context.data(view.xAxisType(), id);
-                    if (smoothing) {
-                        const yDataSmooth = sauce.data.smooth(smoothing, xyData.map(entry => entry.y));
-                        graph.data(xyData.map(({x}, i) => ({x, y: yDataSmooth[i]}))).update(/*animate*/true);
-                    } else {
-                        graph.data(xyData).update(/*animate*/true);
-                    }
+                    graph.yScale().domain(view.streamExtent(id)).nice();
+                    graph.data(view.context.data(view.xAxisType(), id)).update(/*animate*/ true);
                 });
             });
             await sauce.storage.update(`options`, sauce.options);
         });
-        $el.on('input', 'input[type="checkbox"]', async ev => {
+        $dialog.on('input', 'input[type="checkbox"]', async ev => {
             const id = ev.currentTarget.name;
             sauce.options[`analysis-graph-${id}`] = ev.currentTarget.checked;
+            const $el = jQuery('#stacked-chart');
+            resetPageMonitors();  // make svg resizing faster for responsive mode.
+            $el.find('.base-chart').empty();
+            view.render($el);
+            view.handleStreamsReady();
             await sauce.storage.update(`options`, sauce.options);
+        });
+        let reloadNeeded;
+        $dialog.on('input', 'input[name="wprime"]', async ev => {
+            const wPrime = Number(ev.currentTarget.value * 1000);
+            ns.wPrime = wPrime;
+            $dialog.addClass('reload-needed');
+            reloadNeeded = true;
+            await sauce.storage.setAthleteProp(ns.athlete.id, 'wPrime', wPrime);
+        });
+        $dialog.on('dialogclose', () => {
+            if (reloadNeeded) {
+                location.reload();
+            }
         });
     }
 
