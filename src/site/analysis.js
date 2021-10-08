@@ -3569,7 +3569,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function handleGraphOptionsClick(btn) {
+    async function handleGraphOptionsClick(btn, view) {
         const smoothing = sauce.options['analysis-graph-smoothing'] || 0;
         const $el = sauce.dialog({
             width: 300,
@@ -3577,7 +3577,7 @@ sauce.ns('analysis', ns => {
             title: `Analysis Graph Options`,
             body: `
                 <label>Smoothing: <input type="range" name="smoothing" value="${smoothing}"
-                                         min="0" max="60" step="1"/>
+                                         min="0" max="300" step="1"/>
                     <span>${smoothing ? H.timer(smoothing) : '--'}</span></label>
                 <label>Show W'bal: <input type="checkbox" name="wbal"
                                           ${sauce.options['analysis-graph-wbal'] ? 'checked' : ''}/>
@@ -3589,17 +3589,30 @@ sauce.ns('analysis', ns => {
             icon: await sauce.images.asText('fa/cog-duotone.svg'),
             position: {
                 my: 'right top',
-                at: 'right+43 top-2',
-                of: btn[0]
+                at: 'right-2 top+2',
+                of: btn[0][0].closest('svg')
             },
             dialogClass: 'sauce-analysis-graph-options',
             resizable: false,
         });
+        let nextSmoothing;
         $el.on('input', 'input[name="smoothing"]', async ev => {
             const el = ev.currentTarget;
-            const val = Number(el.value);
-            el.nextElementSibling.textContent = val ? H.timer(val) : '--';
+            const smoothing = Number(el.value);
+            el.nextElementSibling.textContent = smoothing ? H.timer(smoothing) : '--';
             sauce.options['analysis-graph-smoothing'] = Number(el.value);
+            cancelAnimationFrame(nextSmoothing);  // debounce spurious updates.
+            nextSmoothing = requestAnimationFrame(() => {
+                view.builder.iterateGraphs((id, graph) => {
+                    const xyData = view.context.data(view.xAxisType(), id);
+                    if (smoothing) {
+                        const yDataSmooth = sauce.data.smooth(smoothing, xyData.map(entry => entry.y));
+                        graph.data(xyData.map(({x}, i) => ({x, y: yDataSmooth[i]}))).update(/*animate*/true);
+                    } else {
+                        graph.data(xyData).update(/*animate*/true);
+                    }
+                });
+            });
             await sauce.storage.update(`options`, sauce.options);
         });
         $el.on('input', 'input[type="checkbox"]', async ev => {

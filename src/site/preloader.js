@@ -135,7 +135,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     x: 0, y: 3,
                     href: `${sauce.extUrl}images/fa/cog-duotone.svg`
                 });
-                btn.on('click', sauce.analysis.handleGraphOptionsClick.bind(this, btn));
+                btn.on('click', sauce.analysis.handleGraphOptionsClick.bind(this, btn, this));
             };
 
             Klass.prototype.handleStreamsReady = async function() {
