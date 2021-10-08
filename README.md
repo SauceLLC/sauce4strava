@@ -70,6 +70,10 @@ Feature Highlights
 
 Release Notes
 --------
+#### v7.3.0:
+ * W'balance and GAP graphs for the analysis page
+ * Analysis graph smoothing
+
 #### v7.0.0:
  * xPower support
  * Safari support
