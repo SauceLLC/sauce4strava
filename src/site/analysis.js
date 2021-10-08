@@ -3403,49 +3403,6 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function checkForSafariUpdates() {
-        await sauce.proxy.connected;
-        const latest = await sauce.storage.get('safariLatestVersion');
-        if (latest) {
-            const ignoring = await sauce.storage.get('safariIgnoreVersion');
-            if (ignoring && ignoring === latest.commit) {
-                return;
-            }
-            const lastNotice = await sauce.storage.get('safariUpdateNotice');
-            if (lastNotice && Date.now() - lastNotice < 86400 * 1000) {
-                // Only bug once a day if they don't hit skip version.
-                return;
-            }
-            const build = await (await fetch(sauce.extUrl + 'build.json')).json();
-            if (build.git_commit !== latest.commit) {
-                const $dialog = sauce.dialog({
-                    title: 'Sauce Update Available',
-                    width: 500,
-                    autoDestroy: true,
-                    body: `
-                        A new version of of Sauce for Strava™ is available to download.<br/>
-                        You are currently using v${sauce.version} and <u>v${latest.version}</u> is available.
-                        <br/><br/>
-                        <center>
-                            <a class="btn download-update" href="${latest.url}" target="_blank">Download Update</a>
-                        </center>
-                    `,
-                    extraButtons: {
-                        "Skip this version": async () => {
-                            $dialog.dialog('close');
-                            await sauce.storage.set('safariIgnoreVersion', latest.commit);
-                        }
-                    }
-                });
-                $dialog.find('.download-update').on('click', () => $dialog.dialog('close'));
-                $dialog.on('dialogclose', async () => {
-                    await sauce.storage.set('safariUpdateNotice', Date.now());
-                });
-            }
-        }
-    }
-
-
     async function checkIfUpdated() {
         await sauce.proxy.connected;
         const recentUpdate = await sauce.storage.get('recentUpdate');
@@ -3641,7 +3598,6 @@ sauce.ns('analysis', ns => {
         schedUpdateAnalysisStats,
         attachAnalysisStats,
         ThrottledNetworkError,
-        checkForSafariUpdates,
         checkIfUpdated,
         fetchFullActivity,
         handleGraphOptionsClick,
@@ -3660,6 +3616,4 @@ sauce.ns('analysis', ns => {
         throw e;
     }
     sauce.analysis.checkIfUpdated();
-    // XXX Disabled for testing apple store updates.
-    //setTimeout(sauce.analysis.checkForSafariUpdates, 5000);
 })();

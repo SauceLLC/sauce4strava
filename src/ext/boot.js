@@ -209,30 +209,6 @@
     }
 
 
-    function isSafari() {
-        return browser.runtime.getURL('').startsWith('safari-web-extension:');
-    }
-
-
-    async function getBuildInfo() {
-        const extUrl = browser.runtime.getURL('');
-        const resp = await fetch(extUrl + 'build.json');
-        return await resp.json();
-    }
-
-
-    async function checkForSafariUpdates() {
-        const buildInfo = await getBuildInfo();
-        const resp = await fetch('https://saucellc.io/builds/safari/LATEST.json');
-        const latestVersion = await resp.json();
-        if (latestVersion.commit !== buildInfo.git_commit) {
-            // We'll do the UI work elsewhere, we've simply found a new update, so place the info
-            // in general storage with other places like the analysis code can use it.
-            await sauce.storage.set('safariLatestVersion', latestVersion);
-        }
-    }
-
-
     async function sha256(input) {
         const encoder = new TextEncoder();
         const data = encoder.encode(input);
@@ -354,15 +330,6 @@
             }
         }
         setEnabled();
-        if (isSafari()) {
-            const lastCheck = config.lastSafariUpdateCheck || 0;
-            const lastVersion = config.lastSafariVersion || ext.version;
-            if (lastCheck < Date.now() - 86400 * 1000 || lastVersion !== ext.version) {
-                await sauce.storage.set('lastSafariUpdateCheck', Date.now());
-                await sauce.storage.set('lastSafariVersion', ext.version);
-                await checkForSafariUpdates();
-            }
-        }
     }
 
     document.documentElement.addEventListener('sauceCurrentUserUpdate', async ev => {
