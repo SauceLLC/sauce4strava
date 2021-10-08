@@ -52,6 +52,8 @@ Feature Highlights
    * Hide commutes *OPTION*
  * Responsive layout (mobile support for Firefox) *OPTION*
  * Detailed Running segments *OPTION*
+ * W'balance graphing
+ * Analysis graph smoothing
 
 
 [![intro](https://img.youtube.com/vi/6nR12miKQ98/0.jpg)](https://www.youtube.com/watch?v=6nR12miKQ98)
