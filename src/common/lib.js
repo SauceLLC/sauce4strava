@@ -1429,6 +1429,27 @@ sauce.ns('power', function() {
         return wPrimeBal;
     }
 
+
+    function calcPwHrDecouplingFromRoll(powerRoll, hrStream) {
+        const times = powerRoll.times();
+        const midPowerTime = Math.floor(times.length / 2);
+        const firstHalf = powerRoll.slice(times[0], midPowerTime);
+        const secondHalf = powerRoll.slice(midPowerTime, times[times.length - 1]);
+        const np1 = firstHalf.np();
+        const np2 = secondHalf.np();
+        const midHRIndex = Math.floor(hrStream.length / 2);
+        const hr1 = sauce.data.avg(hrStream.slice(0, midHRIndex));
+        const hr2 = sauce.data.avg(hrStream.slice(midHRIndex));
+        return ((np1 / hr1) - (np2 / hr2)) / (np1 / hr1) * 100;
+    }
+
+
+    function calcPwHrDecoupling(wattsStream, timeStream, hrStream) {
+        const powerRoll = correctedPower(timeStream, wattsStream);
+        return calcPwHrDecouplingFromRoll(powerRoll, hrStream);
+    }
+    
+
     return {
         peakPower,
         peakNP,
@@ -1440,6 +1461,8 @@ sauce.ns('power', function() {
         calcTSS,
         calcWPrimeBalIntegralStatic,
         calcWPrimeBalDifferential,
+        calcPwHrDecouplingFromRoll,
+        calcPwHrDecoupling,
         rank,
         rankLevel,
         rankBadge,
