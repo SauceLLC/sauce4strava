@@ -106,11 +106,6 @@
             <value>{{humanNumber(energy.kj)}}<abbr class="unit">kJ</abbr></value>
         </line>
 
-        <line title="{{{energy_rate_tooltip}}}">
-            <key>{{{rate}}}</key>
-            <value>{{humanNumber(energy.kjHour)}}<abbr class="unit">kJ/h</abbr></value>
-        </line>
-
         <% if (energy.tss) { %>
             <line title="{{{tss_tooltip}}}">
                 <key>TSS®</key>
@@ -123,6 +118,18 @@
             </line>
         <% } %>
 
+        <% if (energy.pwhr) { %>
+            <line title="{{{pwhr_tooltip}}}">
+                <key>Pw:Hr</key>
+                <value class="{{energy.pwhr < 0 ? 'sauce-positive' : 'sauce-negative'}}"
+                    >{{humanNumber(energy.pwhr * 100, 1)}}<abbr class="unit">%</abbr></value>
+            </line>
+        <% } %>
+
+        <line title="{{{energy_rate_tooltip}}}">
+            <key>{{{rate}}}</key>
+            <value>{{humanNumber(energy.kjHour)}}<abbr class="unit">kJ/h</abbr></value>
+        </line>
 
         <% if (energy.intensity) { %>
             <line title="{{{intensity_tooltip}}}">
@@ -130,7 +137,6 @@
                 <value>{{humanNumber(energy.intensity * 100)}}<abbr class="unit">%</abbr></value>
             </line>
         <% } %>
-
     </div>
 <% } %>
 

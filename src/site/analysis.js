@@ -1096,7 +1096,7 @@ sauce.ns('analysis', ns => {
         const heading = await LM(source);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
-        const cadence = cadenceStream && sauce.data.avg(cadenceStream); // XXX ignore zeros and only active time
+        const cadence = cadenceStream && sauce.data.avg(cadenceStream.filter(x => x));
         let stride;
         if (cadence &&
             (ns.cadenceFormatter.key === 'step_cadence' ||
@@ -2383,6 +2383,7 @@ sauce.ns('analysis', ns => {
     function hrInfo(hrStream) {
         if (hrStream) {
             const fmt = L.hrFormatter;
+            hrStream = hrStream.filter(x => x);
             return {
                 min: fmt.format(sauce.data.min(hrStream)),
                 avg: fmt.format(sauce.data.avg(hrStream)),
@@ -2477,9 +2478,10 @@ sauce.ns('analysis', ns => {
         };
         if (correctedPower) {
             const kj = correctedPower.kj();
-            let tss, tTss, intensity;
+            let tss, tTss, intensity, pwhr;
             const np = supportsNP() ? correctedPower.np() : null;
             tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np});
+            const hrStream = await fetchStream('heartrate', start, end);
             if (hasAccurateWatts()) {
                 tplData.power.np = np;
                 tplData.power.xp = supportsXP() ? correctedPower.xp() : null;
@@ -2488,9 +2490,11 @@ sauce.ns('analysis', ns => {
                     tss = sauce.power.calcTSS(power, activeTime, ns.ftp);
                     intensity = power / ns.ftp;
                 }
+                if (hrStream) {
+                    pwhr = sauce.power.calcPwHrDecouplingFromRoll(correctedPower, hrStream);
+                }
             } else {
                 const zones = await getHRZones();
-                const hrStream = await fetchStream('heartrate', start, end);
                 if (zones && hrStream) {
                     const ltHR = (zones.z4 + zones.z3) / 2;
                     const activeStream = await fetchStream('active', start, end);
@@ -2504,7 +2508,8 @@ sauce.ns('analysis', ns => {
                 kjHour: (kj / activeTime) * 3600,
                 tss,
                 tTss,
-                intensity
+                intensity,
+                pwhr
             };
         }
         if (distance) {

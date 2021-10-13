@@ -1431,16 +1431,23 @@ sauce.ns('power', function() {
 
 
     function calcPwHrDecouplingFromRoll(powerRoll, hrStream) {
+        hrStream = hrStream.filter(x => x);  // exclude any null/invalid readings
         const times = powerRoll.times();
-        const midPowerTime = Math.floor(times.length / 2);
+        const midPowerTime = times[Math.floor(times.length / 2)];
         const firstHalf = powerRoll.slice(times[0], midPowerTime);
         const secondHalf = powerRoll.slice(midPowerTime, times[times.length - 1]);
-        const np1 = firstHalf.np();
-        const np2 = secondHalf.np();
         const midHRIndex = Math.floor(hrStream.length / 2);
-        const hr1 = sauce.data.avg(hrStream.slice(0, midHRIndex));
-        const hr2 = sauce.data.avg(hrStream.slice(midHRIndex));
-        return ((np1 / hr1) - (np2 / hr2)) / (np1 / hr1) * 100;
+        const [np1, np2] = [firstHalf.np(), secondHalf.np()];
+        if (!np1 || !np2) {
+            return;
+        }
+        const firstHalfRatio = np1 / sauce.data.avg(hrStream.slice(0, midHRIndex));
+        const secondHalfRatio = np2 / sauce.data.avg(hrStream.slice(midHRIndex));
+        const r = (firstHalfRatio - secondHalfRatio) / firstHalfRatio;
+        if (isNaN(r)) {
+            debugger;
+        }
+        return r;
     }
 
 
