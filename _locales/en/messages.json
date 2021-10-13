@@ -146,6 +146,7 @@
     "analysis_peaks_ranges": {"message": "Peak Efforts Ranges"},
     "analysis_peaks_ranges_intro": {"message": "You may customize the times and distances used for <i>Peak Efforts</i> calculations.  Depending on the data type, time or distances values will be used."},
     "analysis_peaks_reset_to_defaults": {"message": "Reset to defaults"},
+    "analysis_pwhr_tooltip": {"message": "Pw:Hr is a measurement of aerobic decoupling.  It compares the power to heart rate ratio in the first half of an activity to the second half.  A positive value indicates the heart rate at a given power drifted higher as the activity progressed.  Often this happens on long endurance rides and represents fatigue."},
     "time_sec": {"message": "sec"},
     "time_secs": {"message": "secs"},
     "time_min": {"message": "min"},
