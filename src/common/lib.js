@@ -1448,7 +1448,7 @@ sauce.ns('power', function() {
         const powerRoll = correctedPower(timeStream, wattsStream);
         return calcPwHrDecouplingFromRoll(powerRoll, hrStream);
     }
-    
+
 
     return {
         peakPower,

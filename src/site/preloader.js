@@ -98,7 +98,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     sauce.propDefined('Strava.Charts.Activities.LabelBox', Klass => {
         // This is called when zoom selections change or are unset in the profile graph.
-        const saveFn = Klass.prototype.handleStreamHover;
+        const saveHandleStreamHoverFn = Klass.prototype.handleStreamHover;
         Klass.prototype.handleStreamHover = function(_, start, end) {
             start = start === undefined ? start : Number(start);
             end = end === undefined ? end : Number(end);
@@ -107,7 +107,14 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             } else {
                 sauce.analysisStatsIntent = {start, end};
             }
-            return saveFn.apply(this, arguments);
+            return saveHandleStreamHoverFn.apply(this, arguments);
+        };
+
+        const saveBuildFn = Klass.prototype.build;
+        Klass.prototype.build = function() {
+            // Leave a ref to ourselves on the container so it can be used for smoothing code.
+            this.container._labelBox = this;
+            return saveBuildFn.apply(this, arguments);
         };
     }, {once: true});
 
@@ -156,23 +163,22 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 btn.on('click', sauce.analysis.handleGraphOptionsClick.bind(this, btn, this));
             };
 
-            Klass.prototype.smoothStreamsData = function() {
+            Klass.prototype.smoothStreamData = function(id) {
                 const smoothing = sauce.options['analysis-graph-smoothing'];
                 const origData = this.origData = this.origData || {};
-                for (const x of this.streamTypes) {
-                    if (!origData[x]) {
-                        origData[x] = this.context.getStream(x);
-                    }
-                    const data = origData[x];
-                    if (!data) {
-                        continue;
-                    }
-                    if (smoothing) {
-                        this.context.streamsContext.data.add(x, sauce.data.smooth(smoothing, data));
-                    } else {
-                        this.context.streamsContext.data.add(x, data);
-                    }
+                if (!origData[id]) {
+                    origData[id] = this.context.getStream(id);
                 }
+                const data = origData[id];
+                if (!data) {
+                    return;
+                }
+                if (smoothing) {
+                    this.context.streamsContext.data.add(id, sauce.data.smooth(smoothing, data));
+                } else {
+                    this.context.streamsContext.data.add(id, data);
+                }
+                return data;
             };
 
             Klass.prototype.streamExtent = function(id) {
@@ -233,10 +239,10 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     (x === 'watts_calc' && (this.context.getStream("watts") != null || this.context.trainer())) ||
                     (this.showStats && x === 'pace' && !this.showStats.pace)));
                 this.setDomainScale();
-                this.smoothStreamsData();
                 this.builder.height(this.stackHeight() * streams.length);  // Must come before calls to buildLine
                 const height = this.stackHeight();
                 for (const [i, x] of streams.entries()) {
+                    const stream = this.smoothStreamData(x);
                     const tweaks = streamTweaks[x] || {};
                     const topY = i * height;
                     const yScale = d3.scale.linear();
@@ -244,11 +250,11 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     const pad = (max - min) * 0.01; // There is some bleed in the rendering that cuts off values.
                     yScale.domain([min - pad, max + pad]).range([topY + height, topY]).nice();
                     this.yScales()[x] = yScale;
+                    const coordData = this.context.data(this.xAxisType(), x);
                     if (tweaks.buildRow) {
-                        tweaks.buildRow(this.builder, this.context.data(this.xAxisType(), x),
-                            this.xScale, yScale, x, '');
+                        tweaks.buildRow(this.builder, coordData, this.xScale, yScale, x, '');
                     } else {
-                        this.builder.buildLine(this.context.data(this.xAxisType(), x), this.xScale, yScale, x, '');
+                        this.builder.buildLine(coordData, this.xScale, yScale, x, '');
                     }
                     // Fix clip path which was only bounding to the entire graph area.
                     // For line charts this works but for area charts it causes fill bleed.
@@ -258,7 +264,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     rows.push({
                         streamType: x,
                         topY,
-                        avgY: this.yScales()[x](d3.mean(this.context.getStream(x))),
+                        avgY: this.yScales()[x](d3.mean(stream)),
                         bottomY: topY + height,
                         label: this.context.getStreamLabel(x),
                         unit: this.context.getUnit(x),

@@ -3556,11 +3556,36 @@ sauce.ns('analysis', ns => {
             sauce.options['analysis-graph-smoothing'] = Number(el.value);
             cancelAnimationFrame(nextSmoothing);  // debounce spurious updates.
             nextSmoothing = requestAnimationFrame(() => {
-                view.smoothStreamsData();
+                const start = view.zoomStart != null ? view.zoomStart : undefined;
+                const end = view.zoomEnd != null ? view.zoomEnd : undefined;
+                const updates = [];
                 view.builder.iterateGraphs((id, graph) => {
-                    graph.yScale().domain(view.streamExtent(id)).nice();
+                    view.smoothStreamData(id);
+                    const [min, max] = view.streamExtent(id);
+                    graph.yScale().domain([min, max]).nice();
                     graph.data(view.context.data(view.xAxisType(), id)).update(/*animate*/ true);
+                    const fmtr = this.context.formatter(id);
+                    updates.push({
+                        streamType: id,
+                        avgY: graph.yScale()(view.context.streamsContext.data.getIntervalAverage(
+                            id, start, end)),
+                        min: fmtr.format(min),
+                        max: fmtr.format(max),
+                    });
                 });
+                // An equiv of buildOrUpdateAvgLines but with animation.
+                const lines = view.builder.mainGroup.selectAll('line.avg-line');
+                lines.data(updates).transition().duration(500).attr({
+                    y1: x => x.avgY,
+                    y2: x => x.avgY,
+                });
+                const labelBox = view.labelGroup._labelBox;
+                // Updates Max/Avg text...
+                labelBox.handleStreamHover(null, start, end);
+                labelBox.groups.selectAll("text.static-label-box.top").text(data =>
+                    updates.find(x => x.streamType === data.streamType).max);
+                labelBox.groups.selectAll("text.static-label-box.bottom").text(data =>
+                    updates.find(x => x.streamType === data.streamType).min);
             });
             await sauce.storage.update(`options`, sauce.options);
         });
