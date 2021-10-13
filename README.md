@@ -31,7 +31,7 @@ Feature Highlights
    * Cadence
    * Sea Power (potential power at sea level)
  * Themes (including dark mode)
- * Export any activity to a TCX or GPX file
+ * Export any activity to a TCX, GPX or FIT file
  * Create Live Segments for any effort (including downhills)
  * Running Power estimation
  * Analysis page stats are extended to include:
@@ -43,6 +43,7 @@ Feature Highlights
    * Elevation gain/loss
    * Raw data and graph views
    * Sea Power
+   * Pw:Hr / Aerobic Decoupling
  * Weight and FTP overrides for all athletes
  * Inline comments system for activity page
  * Performance Predictor
@@ -50,7 +51,7 @@ Feature Highlights
    * Hide virtual activities (except your own) *OPTION*
    * Hide promotions and challenges *OPTION*
    * Hide commutes *OPTION*
- * Responsive layout (mobile support for Firefox) *OPTION*
+ * Responsive layout (mobile support) *OPTION*
  * Detailed Running segments *OPTION*
  * W'balance graphing
  * Analysis graph smoothing
@@ -70,6 +71,9 @@ Feature Highlights
 
 Release Notes
 --------
+#### v7.3.1:
+ * Pw:Hr / Aerobic Decoupling support
+
 #### v7.3.0:
  * W'balance and GAP graphs for the analysis page
  * Analysis graph smoothing
