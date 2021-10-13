@@ -463,6 +463,9 @@
     "analysis_peaks_reset_to_defaults": {
         "message": "Ripristina le impostazioni predefinite"
     },
+    "analysis_pwhr_tooltip": {
+        "message": "Pw:Hr è una misura del disaccoppiamento aerobico. Confronta il rapporto potenza/frequenza cardiaca nella prima metà di un'attività con la seconda metà. Un valore positivo indica che la frequenza cardiaca a una data potenza è aumentata con il progredire dell'attività. Spesso questo accade nelle corse di lunga durata e rappresenta la fatica."
+    },
     "time_sec": {
         "message": "secondo"
     },

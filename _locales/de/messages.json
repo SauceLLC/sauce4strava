@@ -458,6 +458,9 @@
     "analysis_peaks_reset_to_defaults": {
         "message": "Auf Standardeinstellung zurücksetzen"
     },
+    "analysis_pwhr_tooltip": {
+        "message": "Pw:Hr ist ein Maß für die aerobe Entkopplung. Es vergleicht das Verhältnis von Leistung zu Herzfrequenz in der ersten Hälfte einer Aktivität mit der zweiten Hälfte. Ein positiver Wert zeigt an, dass die Herzfrequenz bei einer gegebenen Leistung mit fortschreitender Aktivität höher gedriftet ist. Dies geschieht oft bei langen Ausdauerfahrten und stellt Ermüdung dar."
+    },
     "time_sec": {
         "message": "sek"
     },

@@ -462,6 +462,9 @@
     "analysis_peaks_reset_to_defaults": {
         "message": "Réinitialiser les paramètres par défaut"
     },
+    "analysis_pwhr_tooltip": {
+        "message": "Pw:Hr est une mesure du découplage aérobie. Il compare le rapport puissance/fréquence cardiaque dans la première moitié d'une activité à la seconde moitié. Une valeur positive indique que la fréquence cardiaque à une puissance donnée a augmenté au fur et à mesure que l'activité progressait. Cela se produit souvent lors de longues randonnées d'endurance et représente la fatigue."
+    },
     "time_sec": {
         "message": "sec",
         "description": "IMMUTABLE"

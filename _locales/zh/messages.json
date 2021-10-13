@@ -492,6 +492,9 @@
     "analysis_peaks_reset_to_defaults": {
         "message": "重置为默认值"
     },
+    "analysis_pwhr_tooltip": {
+        "message": "Pw:Hr 是有氧解耦的度量。它比较了活动前半部分与后半部分的功率与心率之比。正值表示给定功率下的心率随着活动的进行而漂移得更高。这通常发生在长时间的耐力骑行中，代表疲劳。"
+    },
     "time_sec": {
         "message": "秒"
     },

@@ -454,6 +454,9 @@
     "analysis_peaks_reset_to_defaults": {
         "message": "Restablecer los valores predeterminados"
     },
+    "analysis_pwhr_tooltip": {
+        "message": "Pw: Hr es una medida de desacoplamiento aeróbico. Compara la relación potencia / frecuencia cardíaca en la primera mitad de una actividad con la segunda mitad. Un valor positivo indica que la frecuencia cardíaca a una potencia determinada aumentó a medida que avanzaba la actividad. A menudo, esto ocurre en recorridos largos de resistencia y representa fatiga."
+    },
     "time_sec": {
         "message": "sec",
         "description": "IMMUTABLE"
