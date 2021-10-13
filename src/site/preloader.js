@@ -120,7 +120,6 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
 
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
-        // Must wait for prototype to be fully assigned by the current execution context.
         const streamTweaks = {
             w_prime_balance: {
                 suggestedMin: () => sauce.analysis.wPrime * 0.50,
@@ -145,147 +144,159 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             }
         }
 
-        setTimeout(() => {
-            const saveBuildAxisFn = Klass.prototype.buildAxis;
-            Klass.prototype.buildAxis = function() {
-                saveBuildAxisFn.apply(this, arguments);
-                const el = this.xAxisContainer;
-                const opts = el.append('g');
-                opts.attr({"class": 'chart-options', transform: 'translate(922, 3)'});
-                const btn = opts.append('g').attr('class', 'button');
-                btn.append('title').text('Options'); // XXX localize
-                btn.append('rect').attr({height: 24, width: 35});
-                btn.append('image').attr({
-                    height: 18, width: 35,
-                    x: 0, y: 3,
-                    href: `${sauce.extUrl}images/fa/cog-duotone.svg`
-                });
-                btn.on('click', sauce.analysis.handleGraphOptionsClick.bind(this, btn, this));
-            };
+        const saveBuildAxisFn = Klass.prototype.buildAxis;
+        Klass.prototype.buildAxis = function() {
+            saveBuildAxisFn.apply(this, arguments);
+            const el = this.xAxisContainer;
+            const opts = el.append('g');
+            opts.attr({"class": 'chart-options', transform: 'translate(922, 3)'});
+            const btn = opts.append('g').attr('class', 'button');
+            btn.append('title').text('Options'); // XXX localize
+            btn.append('rect').attr({height: 24, width: 35});
+            btn.append('image').attr({
+                height: 18, width: 35,
+                x: 0, y: 3,
+                href: `${sauce.extUrl}images/fa/cog-duotone.svg`
+            });
+            btn.on('click', sauce.analysis.handleGraphOptionsClick.bind(this, btn, this));
+        };
 
-            Klass.prototype.smoothStreamData = function(id) {
-                const smoothing = sauce.options['analysis-graph-smoothing'];
-                const origData = this.origData = this.origData || {};
-                if (!origData[id]) {
-                    origData[id] = this.context.getStream(id);
-                }
-                const data = origData[id];
-                if (!data) {
-                    return;
-                }
-                if (smoothing) {
-                    this.context.streamsContext.data.add(id, sauce.data.smooth(smoothing, data));
-                } else {
-                    this.context.streamsContext.data.add(id, data);
-                }
-                return data;
-            };
+        Klass.prototype.smoothStreamData = function(id) {
+            const smoothing = sauce.options['analysis-graph-smoothing'];
+            const origData = this.origData = this.origData || {};
+            if (!origData[id]) {
+                origData[id] = this.context.getStream(id);
+            }
+            const data = origData[id];
+            if (!data) {
+                return;
+            }
+            if (smoothing) {
+                this.context.streamsContext.data.add(id, sauce.data.smooth(smoothing, data));
+            } else {
+                this.context.streamsContext.data.add(id, data);
+            }
+            return data;
+        };
 
-            Klass.prototype.streamExtent = function(id) {
-                const tweaks = streamTweaks[id] || {};
-                const stream = this.context.getStream(id);
-                let [min, max] = d3.extent(stream);
-                if (tweaks.suggestedMin != null) {
-                    min = Math.min(tweaks.suggestedMin(), min);
-                }
-                if (tweaks.suggestedMax != null) {
-                    max = Math.max(tweaks.suggestedMax(), max);
-                }
-                return [min, max];
-            };
+        Klass.prototype.streamExtent = function(id) {
+            const tweaks = streamTweaks[id] || {};
+            const stream = this.context.getStream(id);
+            let [min, max] = d3.extent(stream);
+            if (tweaks.suggestedMin != null) {
+                min = Math.min(tweaks.suggestedMin(), min);
+            }
+            if (tweaks.suggestedMax != null) {
+                max = Math.max(tweaks.suggestedMax(), max);
+            }
+            return [min, max];
+        };
 
-            Klass.prototype.handleStreamsReady = async function() {
+        Klass.prototype.handleStreamsReady = async function() {
+            // In rare cases like install or new enabled ext the analysis page
+            // is not loaded before the rest of the site.  Not waiting will
+            // exclude some of our functions but won't break the site..
+            if (sauce.analysis) {
                 await sauce.analysis.prepared;
-                const extraStreams = [{
-                    stream: 'watts_calc',
-                    formatter: Strava.I18n.PowerFormatter,
-                    filter: () => !this.context.streamsContext.data.has('watts'),
-                }, {
-                    stream: 'grade_adjusted_pace',
-                    formatter: Strava.I18n.ChartLabelPaceFormatter,
-                    filter: () => sauce.options['analysis-graph-gap'] && this.context.activity().supportsGap(),
-                }, {
-                    stream: 'w_prime_balance',
-                    formatter: KJFormatter,
-                    label: 'W\'bal',
-                    filter: () => sauce.options['analysis-graph-wbal'],
-                }];
-                for (const {stream, formatter, label, filter} of extraStreams) {
-                    if (filter && !filter()) {
+            }
+            const extraStreams = [{
+                stream: 'watts_calc',
+                formatter: Strava.I18n.PowerFormatter,
+                filter: () => !this.context.streamsContext.data.has('watts'),
+            }, {
+                stream: 'grade_adjusted_pace',
+                formatter: Strava.I18n.ChartLabelPaceFormatter,
+                filter: () => sauce.options['analysis-graph-gap'] && this.context.activity().supportsGap(),
+            }, {
+                stream: 'w_prime_balance',
+                formatter: KJFormatter,
+                label: 'W\'bal',
+                filter: () => sauce.options['analysis-graph-wbal'],
+            }];
+            for (const {stream, formatter, label, filter} of extraStreams) {
+                if (filter) {
+                    let include;
+                    try {
+                        include = filter();
+                    } catch(e) {/*no-pragma*/}
+                    if (!include) {
                         const idx = this.streamTypes.indexOf(stream);
                         if (idx !== -1) {
                             this.streamTypes.splice(idx, 1);
                         }
                         continue;
                     }
-                    const data = this.context.streamsContext.streams.getStream(stream);
-                    if (this.streamTypes.includes(stream) || !data) {
-                        continue;
-                    }
-                    if (label) {
-                        Strava.I18n.Locales.DICTIONARY.strava.charts.activities
-                            .chart_context[stream] = label;
-                    }
-                    if (!this.context.streamsContext.data.has(stream)) {
-                        this.context.streamsContext.data.add(stream, data);
-                    }
-                    this.streamTypes.push(stream);
-                    this.context.sportObject().streamTypes[stream] = {formatter};
                 }
-                // Unminified and fixed original code...
-                const rows = [];
-                const streams = this.streamTypes.filter(x => !(
-                    this.context.getStream(x) == null ||
-                    (x === 'watts_calc' && (this.context.getStream("watts") != null || this.context.trainer())) ||
-                    (this.showStats && x === 'pace' && !this.showStats.pace)));
-                this.setDomainScale();
-                this.builder.height(this.stackHeight() * streams.length);  // Must come before calls to buildLine
-                const height = this.stackHeight();
-                for (const [i, x] of streams.entries()) {
-                    const stream = this.smoothStreamData(x);
-                    const tweaks = streamTweaks[x] || {};
-                    const topY = i * height;
-                    const yScale = d3.scale.linear();
-                    const [min, max] = this.streamExtent(x);
-                    const pad = (max - min) * 0.01; // There is some bleed in the rendering that cuts off values.
-                    yScale.domain([min - pad, max + pad]).range([topY + height, topY]).nice();
-                    this.yScales()[x] = yScale;
-                    const coordData = this.context.data(this.xAxisType(), x);
-                    if (tweaks.buildRow) {
-                        tweaks.buildRow(this.builder, coordData, this.xScale, yScale, x, '');
-                    } else {
-                        this.builder.buildLine(coordData, this.xScale, yScale, x, '');
-                    }
-                    // Fix clip path which was only bounding to the entire graph area.
-                    // For line charts this works but for area charts it causes fill bleed.
-                    const graph = this.builder.graphs()[x];
-                    this.builder.root.select(`rect#${graph.clipPathId()}`).attr({height, y: topY});
-                    const fmtr = this.context.formatter(x);
-                    rows.push({
-                        streamType: x,
-                        topY,
-                        avgY: this.yScales()[x](d3.mean(stream)),
-                        bottomY: topY + height,
-                        label: this.context.getStreamLabel(x),
-                        unit: this.context.getUnit(x),
-                        min: fmtr.format(min),
-                        max: fmtr.format(max),
-                        avg: '--'
-                    });
+                const data = this.context.streamsContext.streams.getStream(stream);
+                if (this.streamTypes.includes(stream) || !data) {
+                    continue;
                 }
-                this.buildOrUpdateAvgLines(rows);
-                this.buildBottomLines(rows);
-                this.buildLabelBoxes(rows);
-                this.buildListenerBoxes(rows);
-                this.buildBrush();
-                this.builder.updateRoot();
-                this.builder.buildCrossBar();
-                this.buildAxis();
-                this.setEventDispatcher();
-                return this.deferred.resolve();
-            };
-        }, 0);
+                if (label) {
+                    Strava.I18n.Locales.DICTIONARY.strava.charts.activities
+                        .chart_context[stream] = label;
+                }
+                if (!this.context.streamsContext.data.has(stream)) {
+                    this.context.streamsContext.data.add(stream, data);
+                }
+                this.streamTypes.push(stream);
+                this.context.sportObject().streamTypes[stream] = {formatter};
+            }
+            // Unminified and fixed original code...
+            const rows = [];
+            const streams = this.streamTypes.filter(x => !(
+                this.context.getStream(x) == null ||
+                (x === 'watts_calc' && (this.context.getStream("watts") != null || this.context.trainer())) ||
+                (this.showStats && x === 'pace' && !this.showStats.pace)));
+            this.setDomainScale();
+            this.builder.height(this.stackHeight() * streams.length);  // Must come before calls to buildLine
+            const height = this.stackHeight();
+            for (const [i, x] of streams.entries()) {
+                const stream = this.smoothStreamData(x);
+                const tweaks = streamTweaks[x] || {};
+                const topY = i * height;
+                const yScale = d3.scale.linear();
+                const [min, max] = this.streamExtent(x);
+                const pad = (max - min) * 0.01; // There is some bleed in the rendering that cuts off values.
+                yScale.domain([min - pad, max + pad]).range([topY + height, topY]).nice();
+                this.yScales()[x] = yScale;
+                const coordData = this.context.data(this.xAxisType(), x);
+                if (tweaks.buildRow) {
+                    tweaks.buildRow(this.builder, coordData, this.xScale, yScale, x, '');
+                } else {
+                    this.builder.buildLine(coordData, this.xScale, yScale, x, '');
+                }
+                // Fix clip path which was only bounding to the entire graph area.
+                // For line charts this works but for area charts it causes fill bleed.
+                const graph = this.builder.graphs()[x];
+                this.builder.root.select(`rect#${graph.clipPathId()}`).attr({height, y: topY});
+                const fmtr = this.context.formatter(x);
+                rows.push({
+                    streamType: x,
+                    topY,
+                    avgY: this.yScales()[x](d3.mean(stream)),
+                    bottomY: topY + height,
+                    label: this.context.getStreamLabel(x),
+                    unit: this.context.getUnit(x),
+                    min: fmtr.format(min),
+                    max: fmtr.format(max),
+                    avg: '--'
+                });
+            }
+            this.buildOrUpdateAvgLines(rows);
+            this.buildBottomLines(rows);
+            this.buildLabelBoxes(rows);
+            this.buildListenerBoxes(rows);
+            this.buildBrush();
+            this.builder.updateRoot();
+            this.builder.buildCrossBar();
+            this.buildAxis();
+            this.setEventDispatcher();
+            return this.deferred.resolve();
+        };
+    }, {once: true});
 
+
+    sauce.propDefined('Strava.Labs.Activities.BasicAnalysisView', Klass => {
         // Monkey patch the analysis view so we always have our hook for extra stats.
         const saveRenderTemplateFn = Klass.prototype.renderTemplate;
         Klass.prototype.renderTemplate = function() {
