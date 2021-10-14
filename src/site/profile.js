@@ -3,13 +3,12 @@
 sauce.ns('profile', ns => {
     'use strict';
 
-
     const idMatch = location.pathname.match(/\/(?:athletes|pros)\/([0-9]+)/);
     const athleteId = idMatch ? Number(idMatch[1]) : null;
 
 
     async function load() {
-        if (sauce.patronLevel && sauce.patronLevel >= 10) {
+        if (sauce.patronLevel && sauce.patronLevel >= 10 && currentAthlete.isLoggedIn()) {
             const $name = jQuery('.profile-heading .athlete-name');
             const name = $name.text().trim();
             const $btn = await sauce.sync.createSyncButton(athleteId, {name});

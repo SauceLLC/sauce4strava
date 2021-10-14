@@ -12,6 +12,18 @@ sauce.ns('storage', ns => {
     }
 
 
+    async function storeSetOrRemove(store, data) {
+        // Handle {foo: undefined} which by default will act like a noop to `set()`.
+        const removes = Object.entries(data).filter(([_, v]) => v === undefined);
+        if (removes.length) {
+            // XXX research the damage caused by the prior impl
+            console.warn('Removing data that previously was unaltered:', removes);
+            await store.remove(removes.map(x => x[0]));
+        }
+        return await store.set(data);
+    }
+
+
     ns.set = async function set(key, value, options={}) {
         let data;
         if (typeof key === 'object' && value === undefined) {
@@ -20,7 +32,7 @@ sauce.ns('storage', ns => {
             data = {[key]: value};
         }
         const store = options.sync ? browser.storage.sync : browser.storage.local;
-        return await store.set(data);
+        return await storeSetOrRemove(store, data);
     };
     maybeExport(ns.set);
 
@@ -110,6 +122,9 @@ sauce.ns('storage', ns => {
 
     let _activeUpdate;
     ns.update = async function update(keyPath, updates, options={}) {
+        if (typeof updates !== 'object') {
+            throw new TypeError('updates arg must be an object');
+        }
         const store = options.sync ? browser.storage.sync : browser.storage.local;
         const priorUpdate = _activeUpdate;
         const ourUpdate = (async () => {
@@ -128,7 +143,7 @@ sauce.ns('storage', ns => {
                 ref = ref[key];
             }
             Object.assign(ref, updates);
-            await store.set({[rootKey]: rootRef});
+            await storeSetOrRemove(store, {[rootKey]: rootRef});
             return ref;
         })();
         _activeUpdate = ourUpdate;
