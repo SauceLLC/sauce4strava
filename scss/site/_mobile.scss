@@ -94,6 +94,10 @@
 
 @mixin analysis {
 
+    &, body {
+        height: 100vh;
+    }
+
     .inset {
         padding: 0.8rem !important;
     }
@@ -337,6 +341,7 @@
                 ul#pagenav,
                 .actions-menu .drop-down-menu > ul.options {
                     > li > a,
+                    > li > div > a,
                     > li.group > .title,
                     > li.sauce-group > .sauce-header,
                     > li.sauce-group > ul > li > a {
@@ -434,7 +439,8 @@
                                 max-height: 200vh;  // must exceed max content height
                             }
 
-                            li > a {
+                            li > a,
+                            li > div > a {
                                 font-size: 1em;
                                 color: #eee;
                                 transition: initial;
