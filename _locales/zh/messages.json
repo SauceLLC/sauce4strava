@@ -1043,13 +1043,16 @@
         "message": "季节开始"
     },
     "save": {
-        "message": "救"
+        "message": "保存",
+        "description": "IMMUTABLE"
     },
     "graph_options_wbal_help": {
-        "message": "<a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">W'balance 是 Philip Skiba 博士</a>创建的高于阈值的工作的代表。你可以把它想象成你的厌氧电池。每次您在 FTP/CP 上努力时，您的电池都会耗尽，需要时间来补充它。如果您的 W'bal 达到 0，那么您将发现几乎不可能在任何时间段内产生高于 FTP/CP 的努力。<br/><br/>有关更多信息和很好的解释，请参阅<a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">Skiba 博士本人撰写的这篇优秀文章</a>。"
+        "message": "<a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">W'balance 是 Philip Skiba 博士</a>创建的描述高于阈值强度的输出表现。你可以把它想象成是你的无氧电池储备。每次你在高于 FTP/CP 的强度之上输出时，你的电池就会损耗并且需要时间来补充。如果你的 W'bal 减小到 0，那么你会发现几乎就无法在高于 FTP/CP 的强度上进行持续的输出了。<br/><br/>更多相关的信息和充分的解释，请参阅<a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\"> Skiba 博士本人撰写的这篇优秀文章</a>。",
+        "description": "IMMUTABLE"
     },
     "graph_options_wprime_help": {
-        "message": "W'是运动员无氧工作能力的大小。换句话说，它是计算 W'balance 时运动员电池的大小。这个值因运动员而异，可以在教练的帮助下进行微调。"
+        "message": "W'是运动员输出无氧能力的大小。换句话说，它是计算 W'balance 时运动员的电池储备。这个值每个运动员各不相同，可以在教练的帮助下进行微调。",
+        "description": "IMMUTABLE"
     },
     "graph_options_show": {
         "message": "展示"
