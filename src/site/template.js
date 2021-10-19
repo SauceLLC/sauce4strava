@@ -110,16 +110,11 @@ sauce.ns('template', ns => {
             code.push(`__p.push('${text.slice(index, offset).replace(escapeRegExp, escapeChar)}');\n`);
             index = offset + match.length;
             if (localeLookup) {
-                let prefix;
-                let lookup;
-                if (localeLookup.startsWith('/')) {
-                    lookup = localeLookup.substr(1);
-                    prefix = '';
-                } else {
-                    lookup = localeLookup;
-                    prefix = settings.localePrefix || '';
-                }
-                code.push(`__p.push(await sauce.locale.getMessage('${prefix}' + ${lookup}));\n`);
+                code.push('{\n');
+                code.push(`    const key = ${localeLookup}.startsWith('/') ? `);
+                code.push(`        ${localeLookup}.substr(1) : '${settings.localePrefix}' + ${localeLookup};\n`);
+                code.push('    __p.push(await sauce.locale.getMessage(key));\n');
+                code.push('}\n');
             } else if (locale) {
                 const key = locale.startsWith('/') ? locale.substr(1) : settings.localePrefix + locale;
                 code.push(`__p.push(await sauce.locale.getMessage('${key}'));\n`);
