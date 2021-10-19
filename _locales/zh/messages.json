@@ -810,7 +810,7 @@
         "message": "活动同步会导入所有活动历史记录，以改进培训图表和绩效分析。"
     },
     "sync_control_panel_intro_help": {
-        "message": "通过同步活动，Sauce可以提供没有历史数据就不可能提供的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面（例如Analysis），以及有关以前性能的见解。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>同步通过将原始活动数据导入到Web浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库来进行</a>。此数据经过分析，索引和存储，以便以后进行快速查找。一如既往，Sauce不使用远程服务器，因此建议使用“导出数据”按钮保存备份。"
+        "message": "同步活动允许 Sauce 提供没有历史数据就无法实现的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面（如分析），其中包含有关以前性能的见解。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>同步的工作原理是将原始活动数据导入 Web 浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库</a>。这些数据经过分析、索引和存储，以便稍后进行快速查找。一如既往，Sauce 不使用远程服务器，因此建议使用“导出数据”按钮保存备份。"
     },
     "sync_control_panel_enabled": {
         "message": "已启用"
