@@ -57,4 +57,15 @@
         </strong>
         <div class="label">{{{weight}}}</div>
     </li>
+
+    <% if (obj.workRewards) { %>
+        <div class="divider"></div>
+
+        <% for (const x of obj.workRewards) { %>
+            <li title="{{x.tooltip || ''}}">
+                <strong>{{humanNumber(x.count, x.precision)}} {{x.icon}}</strong>
+                <div class="label">{{x.label}}</div>
+            </li>
+        <% } %>
+    <% } %>
 </ul>
