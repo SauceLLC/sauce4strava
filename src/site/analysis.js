@@ -629,6 +629,16 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function randomPick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+
+    function randomPop(arr) {
+        return arr.splice(Math.floor(Math.random() * arr.length), 1)[0];
+    }
+
+
     async function makeMealReward(kj) {
         let calBudget = kj / 1.045;
         let foods = await foodsPromise;
@@ -638,13 +648,15 @@ sauce.ns('analysis', ns => {
             // Do an even distroubtion of the array of food items the user wanted.
         } else {
             // Chefs Choice!!
-            const tod = (new Date()).getHours() >= 14 ? 'evening' : 'morning';
-            //const tod = Math.random() > 0.5 ? 'evening' : 'morning'; // XXX testing
+            //const tod = (new Date()).getHours() >= 14 ? 'evening' : 'morning';
+            const tod = Math.random() > 0.5 ? 'evening' : 'morning'; // XXX testing
             foods = foods.filter(x => x.time_of_day.includes(tod));
             const courses = new Map();
             const used = new Set();
+            const allTags = ['drink', 'appetizer', 'main', 'dessert'];
+            const tags = [randomPop(allTags), randomPop(allTags)];
             while (courses.size === 0 || Array.from(courses.values()).some(x => x)) {
-                for (const tag of ['drink', 'appetizer', 'main', 'dessert']) {
+                for (const tag of tags) {
                     let course;
                     if (!courses.has(tag)) {
                         const available = foods.filter(
@@ -679,13 +691,6 @@ sauce.ns('analysis', ns => {
         }
         return Array.from(meal.values());
     }
-    /*return [{
-        descLocaleKey: `/food_${'steak'}_desc`,
-        count: 2,
-        precision: 0,
-        icon: '🍺',
-        label: 'Beers',
-*/
 
 
     async function startActivity() {

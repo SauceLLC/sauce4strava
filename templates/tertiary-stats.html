@@ -62,7 +62,10 @@
         <div class="divider"></div>
 
         <% for (const x of meal) { %>
-            <li title="{{{[x.descLocaleKey]}}} .... extend with cals * etc" class="sauce-food">
+            <li title="{{{[x.descLocaleKey]}}}
+  Cals per item: {{humanNumber(x.food.cals)}}
+  Total cals: {{humanNumber(x.food.cals * x.count)}}
+  " class="sauce-food">
                 <strong>{{humanNumber(x.count)}} {{x.food.icon}}</strong>
                 <div class="label">{{{[x.labelLocaleKey]}}}</div>
             </li>

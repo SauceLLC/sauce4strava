@@ -3,7 +3,7 @@
     "icon": "🍺",
     "locale": "beer",
     "time_of_day": ["morning", "evening"],
-    "tags": ["drink", "main"]
+    "tags": ["drink"]
 }, {
     "cals": 285,
     "icon": "🍕",
@@ -21,7 +21,7 @@
     "icon": "🍷",
     "locale": "wine",
     "time_of_day": ["evening"],
-    "tags": ["drink", "main"]
+    "tags": ["drink"]
 }, {
     "cals": 3.5,
     "icon": "🥦",
@@ -38,7 +38,7 @@
     "cals": 78,
     "icon": "🍪",
     "locale": "cookie",
-    "time_of_day": ["morning", "evening"],
+    "time_of_day": ["evening"],
     "tags": ["dessert"]
 }, {
     "cals": 37,
@@ -56,7 +56,7 @@
     "cals": 105,
     "icon": "🍌",
     "locale": "banana",
-    "time_of_day": ["morning", "evening"],
+    "time_of_day": ["morning"],
     "tags": ["appetizer"]
 }, {
     "cals": 231, 
@@ -68,7 +68,7 @@
     "cals": 64,
     "icon": "🥞",
     "locale": "pancake",
-    "time_of_day": ["morning", "evening"],
+    "time_of_day": ["morning"],
     "tags": ["main"]
 }, {
     "cals": 43,
@@ -140,7 +140,7 @@
     "cals": 245,
     "icon": "🍹",
     "locale": "pinacolada",
-    "time_of_day": ["morning", "evening"],
+    "time_of_day": ["evening"],
     "tags": ["drink"]
 }, {
     "cals": 195,
