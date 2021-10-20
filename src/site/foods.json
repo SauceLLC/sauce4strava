@@ -1,0 +1,151 @@
+[{
+    "cals": 240,
+    "icon": "🍺",
+    "locale": "beer",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["drink", "main"]
+}, {
+    "cals": 285,
+    "icon": "🍕",
+    "locale": "pizza",
+    "time_of_day": ["evening"],
+    "tags": ["main"]
+}, {
+    "cals": 156,
+    "icon": "🌮",
+    "locale": "taco",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"]
+}, {
+    "cals": 125,
+    "icon": "🍷",
+    "locale": "wine",
+    "time_of_day": ["evening"],
+    "tags": ["drink", "main"]
+}, {
+    "cals": 3.5,
+    "icon": "🥦",
+    "locale": "broccoli",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"]
+}, {
+    "cals": 5,
+    "icon": "🍟",
+    "locale": "fry",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer"]
+}, {
+    "cals": 78,
+    "icon": "🍪",
+    "locale": "cookie",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["dessert"]
+}, {
+    "cals": 37,
+    "icon": "🌶️",
+    "locale": "pepper",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer"]
+}, {
+    "cals": 25,
+    "icon": "🥕",
+    "locale": "carrot",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer"]
+}, {
+    "cals": 105,
+    "icon": "🍌",
+    "locale": "banana",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["appetizer"]
+}, {
+    "cals": 231, 
+    "icon": "🥐",
+    "locale": "croissant",
+    "time_of_day": ["morning"],
+    "tags": ["appetizer"]
+}, {
+    "cals": 64,
+    "icon": "🥞",
+    "locale": "pancake",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["main"]
+}, {
+    "cals": 43,
+    "icon": "🥓",
+    "locale": "bacon",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["main"]
+}, {
+    "cals": 417,
+    "icon": "🍔",
+    "locale": "hamburger",
+    "time_of_day": ["evening"],
+    "tags": ["main"]
+}, {
+    "cals": 131,
+    "icon": "🧁",
+    "locale": "cupcake",
+    "time_of_day": ["morning"],
+    "tags": ["dessert"]
+}, {
+    "cals": 67,
+    "icon": "🥧",
+    "locale": "pie",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["dessert"]
+}, {
+    "cals": 61,
+    "icon": "🍣",
+    "locale": "nigiri",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"]
+}, {
+    "cals": 284,
+    "icon": "🌭",
+    "locale": "hotdog",
+    "time_of_day": ["evening"],
+    "tags": ["main"]
+}, {
+    "cals": 452,
+    "icon": "🥩",
+    "locale": "steak",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["main"]
+}, {
+    "cals": 0.1,
+    "icon": "🍚",
+    "locale": "rice",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"]
+}, {
+    "cals": 161,
+    "icon": "🥔",
+    "locale": "potato",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"]
+}, {
+    "cals": 90,
+    "icon": "🥚",
+    "locale": "egg",
+    "time_of_day": ["morning"],
+    "tags": ["appetizer", "main"]
+}, {
+    "cals": 137,
+    "icon": "🍦",
+    "locale": "icecream",
+    "time_of_day": ["evening"],
+    "tags": ["dessert"]
+}, {
+    "cals": 245,
+    "icon": "🍹",
+    "locale": "pinacolada",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["drink"]
+}, {
+    "cals": 195,
+    "icon": "🍩",
+    "locale": "doughnut",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["dessert"]
+}]

@@ -37,6 +37,8 @@ sauce.ns('analysis', ns => {
         peak_xp: 'xp',
     };
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    // Preload our food data so we're not waiting around later.
+    const foodsPromise = fetch(sauce.extUrl + 'src/site/foods.json').then(r => r.json());
 
 
     let _fullActivity;
@@ -627,6 +629,65 @@ sauce.ns('analysis', ns => {
     }
 
 
+    async function makeMealReward(kj) {
+        let calBudget = kj / 1.045;
+        let foods = await foodsPromise;
+        const meal = new Map();
+        if (sauce.options.foods_filter) {
+            throw new Error("Unimplemented");
+            // Do an even distroubtion of the array of food items the user wanted.
+        } else {
+            // Chefs Choice!!
+            const tod = (new Date()).getHours() >= 14 ? 'evening' : 'morning';
+            //const tod = Math.random() > 0.5 ? 'evening' : 'morning'; // XXX testing
+            foods = foods.filter(x => x.time_of_day.includes(tod));
+            const courses = new Map();
+            const used = new Set();
+            while (courses.size === 0 || Array.from(courses.values()).some(x => x)) {
+                for (const tag of ['drink', 'appetizer', 'main', 'dessert']) {
+                    let course;
+                    if (!courses.has(tag)) {
+                        const available = foods.filter(
+                            x => x.tags.includes(tag) &&
+                            x.cals < calBudget &&
+                            !used.has(x));
+                        course = available[Math.floor(Math.random() * available.length)];
+                        courses.set(tag, course);
+                        if (course) {
+                            used.add(course);
+                            meal.set(course, {
+                                descLocaleKey: `/food_${course.locale}_desc`,
+                                count: 0,
+                                food: course,
+                            });
+                        }
+                    } else {
+                        course = courses.get(tag);
+                    }
+                    if (!course || course.cals > calBudget) {
+                        courses.set(tag, null);
+                        continue;
+                    }
+                    const food = meal.get(course);
+                    food.count += 1;  // TODO: Perhaps could weight this eventually or at least speed it up.
+                    calBudget -= course.cals;
+                }
+            }
+        }
+        for (const x of meal.values()) {
+            x.labelLocaleKey = `/food_${x.food.locale}_${x.count > 1 ? 'n' : '1'}`;
+        }
+        return Array.from(meal.values());
+    }
+    /*return [{
+        descLocaleKey: `/food_${'steak'}_desc`,
+        count: 2,
+        precision: 0,
+        icon: '🍺',
+        label: 'Beers',
+*/
+
+
     async function startActivity() {
         const realWattsStream = await fetchStream('watts');
         const isWattEstimate = !realWattsStream;
@@ -640,16 +701,18 @@ sauce.ns('analysis', ns => {
         const activeStream = await fetchStream('active');
         const distance = streamDelta(distStream);
         const activeTime = getActiveTime();
-        let tss, tTss, np, intensity, power;
+        let tss, tTss, np, intensity, power, meal;
         if (wattsStream && hasAccurateWatts()) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             if (corrected) {
-                power = corrected.kj() * 1000 / activeTime;
+                const kj = corrected.kj();
+                power = kj * 1000 / activeTime;
                 np = supportsNP() ? corrected.np() : null;
                 if (ns.ftp) {
                     tss = sauce.power.calcTSS(np || power, activeTime, ns.ftp);
                     intensity = (np || power) / ns.ftp;
                 }
+                meal = await makeMealReward(kj);
             }
         }
         if (!tss && hrStream) {
@@ -662,157 +725,6 @@ sauce.ns('analysis', ns => {
             }
         }
         assignTrailforksToSegments().catch(sauce.report.error);
-        const foods = [{
-            cals: 240,
-            icon: '🍺',
-            label1: 'Beer',
-            labeln: 'Beers',
-            cats: ['drink', 'main'],
-        }, {
-            cals: 285,
-            icon: '🍕',
-            label1: 'Pizza',
-            labeln: 'Pizza',
-            cats: ['main'],
-        }, {
-            cals: 156,
-            icon: '🌮',
-            label1: 'Taco',
-            labeln: 'Tacos',
-            cats: ['appetizer', 'main'],
-        }, {
-            cals: 125,
-            icon: '🍷',
-            label1: 'Wine',
-            labeln: 'Wines',
-            cats: ['drink', 'main'],
-        }, {
-            cals: 45,
-            icon: '🥦',
-            label1: 'Broccoli',
-            labeln: 'Broccoli',
-            cats: ['appetizer'],
-        }, {
-            cals: 5,
-            icon: '🍟',
-            label1: 'Fry',
-            labeln 'Fries',
-            cats: ['appetizer'],
-        }, {
-            cals: 78,
-            icon: '🍪',
-            label1: 'Cookie',
-            labeln: 'Cookies',
-            cats: ['dessert'],
-        }, {
-            cals: 37,
-            icon: '🌶️',
-            label1: 'Red Pepper',
-            labeln: 'Red Peppers',
-            cats: ['appetizer'],
-        }, {
-            cals: 25,
-            icon: '🥕',
-            label1: 'Carrot',
-            labeln: 'Carrots',
-            cats: ['appetizer'],
-        }, {
-            cals: 105,
-            icon: '🍌',
-            label1: 'Banana',
-            labeln: 'Bananas',
-            cats: ['appetizer'],
-        }, {
-            cals: 231, 
-            icon: '🥐',
-            label1: 'Croissant',
-            labeln: 'Croissants',
-            cats: ['breakfast', 'appetizer'],
-        }, {
-            cals: 64
-            icon: '🥞',
-            label1: 'Pancake',
-            labeln: 'Pancakes',
-            cats: ['breakfast', 'main'],
-        }, {
-            cals: 43,
-            icon: '🥓',
-            label1: 'Bacon',
-            labeln: 'Bacon',
-            cats: ['breakfast', 'main'],
-        }, {
-            cals: 417, // mcdonalds 1/4 pounder
-            icon: '🍔',
-            label1: 'Hamburger',
-            labeln: 'Hamburgers',
-            cats: ['dinner', 'main'],
-        }, {
-            cals: 131,
-            icon: '🧁',
-            label1: 'Cupcake',
-            labeln: 'Cupcakes',
-            cats: ['dessert'],
-        }, {
-            cals: 67,
-            icon: '🥧',
-            label1: 'Pie',
-            labeln: 'Pie',
-            cats: ['dessert'],
-        }, {
-            cals: 61
-            icon: '🍣',
-            label1: 'Nigri',
-            labeln: 'Nigri',
-            cats: ['dinner', 'main'],
-        }, {
-            cals: 284,
-            icon: '🌭',
-            label1: 'Hot Dog',
-            labeln: 'Hot Dogs',
-            cats: ['dinner', 'main'],
-        }, {
-            cals: 679,
-            icon: '🥩',
-            label1: 'Steak',
-            labeln: 'Steaks',
-            cats: ['breakfast', 'dinner', 'main'],
-        }, {
-            cals: 1.935,
-            icon: '🍚',
-            label1: 'Rice Grain',
-            labeln: 'Rice Grains',
-            cats: ['appetizer'],
-        }, {
-            cals: 161,
-            icon: '🥔',
-            label1: 'Potato',
-            labeln: 'Potatoes',
-            cats: ['dinner', 'appetizer'],
-        }, {
-            cals: 90,
-            icon: '🥚',
-            label1: 'Egg',
-            labeln: 'Eggs',
-            cats: ['breakfast', 'appetizer'],
-        }, {
-            cals: 137,
-            icon: '🍦',
-            label1: 'Icecream',
-            labeln: 'Icecream',
-            cats: ['dessert'],
-        }, {
-            cals: 377
-            icon: '🍹',
-            label1: 'Piña Colada',
-            labeln: 'Piña Coladas',
-            cats: ['drink'],
-        }, {
-            cals: 195,
-            icon: '🍩',
-            label1: 'Donut',
-            labeln: 'Donuts',
-            cats: ['dessert'],
-        }];
         renderTertiaryStats({
             weight: H.number(L.weightFormatter.convert(ns.weight), 2),
             weightUnit: L.weightFormatter.shortUnitKey(),
@@ -825,154 +737,7 @@ sauce.ns('analysis', ns => {
             tTss,
             np,
             power,
-            workRewards: [{
-                tooltip: 'XXX',
-                count: 2,
-                precision: 1,
-                icon: '🍺',
-                label: 'Beers',
-            }, {
-                tooltip: 'XXX',
-                count: 3.1113,
-                precision: 1,
-                icon: '🍕',
-                label: 'Slices',
-            }, {
-                tooltip: 'XXX',
-                count: 3.1113,
-                precision: 1,
-                icon: '🌮',
-                label: 'Tacos',
-            }, {
-                tooltip: 'XXX',
-                count: 3.1113,
-                precision: 1,
-                icon: '🍷',
-                label: 'Wine',
-            }, {
-                tooltip: 'XXX',
-                count: 113,
-                precision: 1,
-                icon: '🥦',
-                label: 'Broccoli',
-            }, {
-                tooltip: 'XXX',
-                count: 113,
-                precision: 1,
-                icon: '🍟',
-                label: 'Fries',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🍪',
-                label: 'Cookies',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🌶️',
-                label: 'Peppers',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🥕',
-                label: 'Carrots',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🍌',
-                label: 'Bananas',
-
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🥐',
-                label: 'Croissants',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🥞',
-                label: 'Pancakes',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🥓',
-                label: 'Bacon Strips',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🍔',
-                label: 'Hamburgers',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🧁',
-                label: 'Cupcakes',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🥧',
-                label: 'Pie',
-
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🍣',
-                label: 'Sake Nigri',
-
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🌭',
-                label: 'Hotdogs',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🥩',
-                label: 'Steaks',
-            }, {
-                tooltip: 'XXX',
-                count: 2331,
-                precision: 0,
-                icon: '🍚',
-                label: 'Rice Grains',
-            }, {
-                tooltip: 'XXX',
-                count: 20,
-                precision: 1,
-                icon: '🍣',
-                label: 'Sake Nigri',
-            }, {
-                tooltip: 'XXX',
-                count: 2,
-                precision: 0,
-                icon: '🥔',
-                label: 'Potatoes',
-            }, {
-                tooltip: 'XXX',
-                count: 6,
-                precision: 0,
-                icon: '🥚',
-                label: 'Eggs',
-            }, {
-                tooltip: 'XXX',
-                count: 2,
-                precision: 0,
-                icon: '🍦',
-                label: 'Icecream',
-            }]
+            meal,
         }).catch(sauce.report.error);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
