@@ -457,6 +457,12 @@
     "analysis_pwhr_tooltip": {
         "message": "Pw: Hr es una medida de desacoplamiento aeróbico. Compara la relación potencia / frecuencia cardíaca en la primera mitad de una actividad con la segunda mitad. Un valor positivo indica que la frecuencia cardíaca a una potencia determinada aumentó a medida que avanzaba la actividad. A menudo, esto ocurre en recorridos largos de resistencia y representa fatiga."
     },
+    "analysis_click_for_more_nutritional_info": {
+        "message": "Haga clic para obtener más información nutricional"
+    },
+    "analysis_click_to_change": {
+        "message": "Haga clic para cambiar"
+    },
     "time_sec": {
         "message": "sec",
         "description": "IMMUTABLE"
@@ -970,5 +976,230 @@
     },
     "graph_options_reload_needed": {
         "message": "Se requiere recargar la página"
+    },
+    "food_beer_1": {
+        "message": "Cerveza"
+    },
+    "food_beer_n": {
+        "message": "Cervezas"
+    },
+    "food_beer_desc": {
+        "message": "Cerveza regular (12 oz. Líq.)"
+    },
+    "food_pizza_1": {
+        "message": "Porción de pizza"
+    },
+    "food_pizza_n": {
+        "message": "Rebanadas de pizza"
+    },
+    "food_pizza_desc": {
+        "message": "Rebanada de pizza (14 pulgadas)"
+    },
+    "food_taco_1": {
+        "message": "Taco"
+    },
+    "food_taco_n": {
+        "message": "Tacos"
+    },
+    "food_taco_desc": {
+        "message": "Taco Bell Taco de ternera crujiente"
+    },
+    "food_wine_1": {
+        "message": "Vino"
+    },
+    "food_wine_n": {
+        "message": "Vinos"
+    },
+    "food_wine_desc": {
+        "message": "Vino tinto Pinot Noir (5 onzas líquidas)"
+    },
+    "food_broccoli_1": {
+        "message": "Taza de brócoli"
+    },
+    "food_broccoli_n": {
+        "message": "Tazas de brócoli"
+    },
+    "food_broccoli_desc": {
+        "message": "Brócoli crudo (1 taza, cortado en cubitos)"
+    },
+    "food_fry_1": {
+        "message": "Orden de freír"
+    },
+    "food_fry_n": {
+        "message": "Órdenes de freír"
+    },
+    "food_fry_desc": {
+        "message": "Papas fritas de McDonald's (medianas)"
+    },
+    "food_cookie_1": {
+        "message": "Galleta"
+    },
+    "food_cookie_n": {
+        "message": "Galletas"
+    },
+    "food_cookie_desc": {
+        "message": "Galleta con chispas de chocolate (11g)"
+    },
+    "food_pepper_1": {
+        "message": "Ají picante"
+    },
+    "food_pepper_n": {
+        "message": "Chiles"
+    },
+    "food_pepper_desc": {
+        "message": "Ají rojo picante (45g)"
+    },
+    "food_carrot_1": {
+        "message": "Zanahoria"
+    },
+    "food_carrot_n": {
+        "message": "Zanahorias"
+    },
+    "food_carrot_desc": {
+        "message": "Zanahoria (77 g, 7 pulgadas)"
+    },
+    "food_banana_1": {
+        "message": "Banana"
+    },
+    "food_banana_n": {
+        "message": "Plátanos"
+    },
+    "food_banana_desc": {
+        "message": "Plátano (100 g, 6 pulgadas)"
+    },
+    "food_croissant_1": {
+        "message": "Cuerno"
+    },
+    "food_croissant_n": {
+        "message": "Croissants"
+    },
+    "food_croissant_desc": {
+        "message": "Croissant de mantequilla (57g)"
+    },
+    "food_pancake_1": {
+        "message": "Tortita"
+    },
+    "food_pancake_n": {
+        "message": "Panqueques"
+    },
+    "food_pancake_desc": {
+        "message": "Panqueques de suero de leche sin almíbar (37 g, 4 pulgadas)"
+    },
+    "food_bacon_1": {
+        "message": "Tira de tocino"
+    },
+    "food_bacon_n": {
+        "message": "Tiras de tocino"
+    },
+    "food_bacon_desc": {
+        "message": "Tira de tocino frito (8,5 g)"
+    },
+    "food_hamburger_1": {
+        "message": "Hamburguesa"
+    },
+    "food_hamburger_n": {
+        "message": "Hamburguesas"
+    },
+    "food_hamburger_desc": {
+        "message": "Quarter Pounder de McDonald's con queso"
+    },
+    "food_cupcake_1": {
+        "message": "Magdalena"
+    },
+    "food_cupcake_n": {
+        "message": "Magdalenas"
+    },
+    "food_cupcake_desc": {
+        "message": "Magdalena con Glaseado de Vainilla (57g)"
+    },
+    "food_pie_1": {
+        "message": "Rebanada de pastel"
+    },
+    "food_pie_n": {
+        "message": "Rebanadas de pastel"
+    },
+    "food_pie_desc": {
+        "message": "Rebanada de tarta de manzana (156g)"
+    },
+    "food_nigiri_1": {
+        "message": "Nigiri"
+    },
+    "food_nigiri_n": {
+        "message": "Nigiris"
+    },
+    "food_nigiri_desc": {
+        "message": "Nigiri de atún (2 piezas)"
+    },
+    "food_hotdog_1": {
+        "message": "Pancho"
+    },
+    "food_hotdog_n": {
+        "message": "Perros calientes"
+    },
+    "food_hotdog_desc": {
+        "message": "Hot Dog en un bollo con salsa de tomate"
+    },
+    "food_steak_1": {
+        "message": "Bife"
+    },
+    "food_steak_n": {
+        "message": "Filetes"
+    },
+    "food_steak_desc": {
+        "message": "Ribeye deshuesado a la plancha (210g)"
+    },
+    "food_rice_1": {
+        "message": "Taza de arroz"
+    },
+    "food_rice_n": {
+        "message": "Tazas de arroz"
+    },
+    "food_rice_desc": {
+        "message": "Arroz blanco cocido (1 taza)"
+    },
+    "food_potato_1": {
+        "message": "Patata"
+    },
+    "food_potato_n": {
+        "message": "Patatas"
+    },
+    "food_potato_desc": {
+        "message": "Papa al horno (298 g, 4 pulgadas)"
+    },
+    "food_egg_1": {
+        "message": "Huevo"
+    },
+    "food_egg_n": {
+        "message": "Huevos"
+    },
+    "food_egg_desc": {
+        "message": "Huevo frito (51g)"
+    },
+    "food_icecream_1": {
+        "message": "Copa de helado"
+    },
+    "food_icecream_n": {
+        "message": "Copas de helado"
+    },
+    "food_icecream_desc": {
+        "message": "Helado de vainilla (1 taza)"
+    },
+    "food_pinacolada_1": {
+        "message": "Piña colada"
+    },
+    "food_pinacolada_n": {
+        "message": "Piñas coladas"
+    },
+    "food_pinacolada_desc": {
+        "message": "Piña Colada (4.5 oz líq.)"
+    },
+    "food_donut_1": {
+        "message": "Rosquilla"
+    },
+    "food_donut_n": {
+        "message": "Rosquillas"
+    },
+    "food_donut_desc": {
+        "message": "Donut de chocolate (43 g, 3 pulgadas)"
     }
 }

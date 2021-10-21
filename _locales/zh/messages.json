@@ -495,6 +495,12 @@
     "analysis_pwhr_tooltip": {
         "message": "Pw:Hr 是有氧解耦的度量。它比较了活动前半部分与后半部分的功率与心率之比。正值表示给定功率下的心率随着活动的进行而漂移得更高。这通常发生在长时间的耐力骑行中，代表疲劳。"
     },
+    "analysis_click_for_more_nutritional_info": {
+        "message": "点击了解更多营养信息"
+    },
+    "analysis_click_to_change": {
+        "message": "点击更改"
+    },
     "time_sec": {
         "message": "秒"
     },
@@ -1065,5 +1071,230 @@
     },
     "graph_options_reload_needed": {
         "message": "需要重新加载页面"
+    },
+    "food_beer_1": {
+        "message": "啤酒"
+    },
+    "food_beer_n": {
+        "message": "啤酒"
+    },
+    "food_beer_desc": {
+        "message": "普通啤酒（12 液量盎司）"
+    },
+    "food_pizza_1": {
+        "message": "比萨饼薄片"
+    },
+    "food_pizza_n": {
+        "message": "披萨片"
+    },
+    "food_pizza_desc": {
+        "message": "披萨片（14 英寸）"
+    },
+    "food_taco_1": {
+        "message": "炸玉米饼"
+    },
+    "food_taco_n": {
+        "message": "炸玉米饼"
+    },
+    "food_taco_desc": {
+        "message": "塔可钟脆牛肉塔可"
+    },
+    "food_wine_1": {
+        "message": "葡萄酒"
+    },
+    "food_wine_n": {
+        "message": "葡萄酒"
+    },
+    "food_wine_desc": {
+        "message": "黑比诺红葡萄酒（5 液量盎司）"
+    },
+    "food_broccoli_1": {
+        "message": "一杯西兰花"
+    },
+    "food_broccoli_n": {
+        "message": "几杯西兰花"
+    },
+    "food_broccoli_desc": {
+        "message": "生西兰花（1 杯，切丁）"
+    },
+    "food_fry_1": {
+        "message": "油炸订单"
+    },
+    "food_fry_n": {
+        "message": "油炸订单"
+    },
+    "food_fry_desc": {
+        "message": "麦当劳薯条（中）"
+    },
+    "food_cookie_1": {
+        "message": "曲奇饼"
+    },
+    "food_cookie_n": {
+        "message": "饼干"
+    },
+    "food_cookie_desc": {
+        "message": "巧克力曲奇 (11g)"
+    },
+    "food_pepper_1": {
+        "message": "辣椒"
+    },
+    "food_pepper_n": {
+        "message": "辣椒"
+    },
+    "food_pepper_desc": {
+        "message": "红辣椒 (45g)"
+    },
+    "food_carrot_1": {
+        "message": "萝卜"
+    },
+    "food_carrot_n": {
+        "message": "萝卜"
+    },
+    "food_carrot_desc": {
+        "message": "胡萝卜（77克，7英寸）"
+    },
+    "food_banana_1": {
+        "message": "香蕉"
+    },
+    "food_banana_n": {
+        "message": "香蕉"
+    },
+    "food_banana_desc": {
+        "message": "香蕉（100 克，6 英寸）"
+    },
+    "food_croissant_1": {
+        "message": "羊角面包"
+    },
+    "food_croissant_n": {
+        "message": "牛角包"
+    },
+    "food_croissant_desc": {
+        "message": "黄油羊角面包 (57g)"
+    },
+    "food_pancake_1": {
+        "message": "饼子"
+    },
+    "food_pancake_n": {
+        "message": "薄煎饼"
+    },
+    "food_pancake_desc": {
+        "message": "无糖浆酪乳煎饼（37 克，4 英寸）"
+    },
+    "food_bacon_1": {
+        "message": "培根条"
+    },
+    "food_bacon_n": {
+        "message": "培根条"
+    },
+    "food_bacon_desc": {
+        "message": "炸培根条 (8.5g)"
+    },
+    "food_hamburger_1": {
+        "message": "汉堡包"
+    },
+    "food_hamburger_n": {
+        "message": "汉堡包"
+    },
+    "food_hamburger_desc": {
+        "message": "麦当劳四分之一磅奶酪"
+    },
+    "food_cupcake_1": {
+        "message": "纸杯蛋糕"
+    },
+    "food_cupcake_n": {
+        "message": "纸杯蛋糕"
+    },
+    "food_cupcake_desc": {
+        "message": "香草糖霜蛋糕 (57g)"
+    },
+    "food_pie_1": {
+        "message": "馅饼切片"
+    },
+    "food_pie_n": {
+        "message": "馅饼切片"
+    },
+    "food_pie_desc": {
+        "message": "切片苹果派 (156g)"
+    },
+    "food_nigiri_1": {
+        "message": "握柄"
+    },
+    "food_nigiri_n": {
+        "message": "尼吉里斯"
+    },
+    "food_nigiri_desc": {
+        "message": "金枪鱼握柄（2个）"
+    },
+    "food_hotdog_1": {
+        "message": "热狗"
+    },
+    "food_hotdog_n": {
+        "message": "热狗"
+    },
+    "food_hotdog_desc": {
+        "message": "热狗面包配番茄酱"
+    },
+    "food_steak_1": {
+        "message": "牛扒"
+    },
+    "food_steak_n": {
+        "message": "牛排"
+    },
+    "food_steak_desc": {
+        "message": "烤无骨肋眼肉 (210g)"
+    },
+    "food_rice_1": {
+        "message": "一杯米饭"
+    },
+    "food_rice_n": {
+        "message": "几杯米饭"
+    },
+    "food_rice_desc": {
+        "message": "煮熟的白米饭（1 杯）"
+    },
+    "food_potato_1": {
+        "message": "土豆"
+    },
+    "food_potato_n": {
+        "message": "土豆"
+    },
+    "food_potato_desc": {
+        "message": "烤土豆（298 克，4 英寸）"
+    },
+    "food_egg_1": {
+        "message": "蛋"
+    },
+    "food_egg_n": {
+        "message": "蛋"
+    },
+    "food_egg_desc": {
+        "message": "煎蛋 (51g)"
+    },
+    "food_icecream_1": {
+        "message": "冰淇淋杯"
+    },
+    "food_icecream_n": {
+        "message": "冰淇淋杯"
+    },
+    "food_icecream_desc": {
+        "message": "香草冰淇淋（1 杯）"
+    },
+    "food_pinacolada_1": {
+        "message": "皮纳可乐达"
+    },
+    "food_pinacolada_n": {
+        "message": "皮纳可乐"
+    },
+    "food_pinacolada_desc": {
+        "message": "Piña Colada（4.5 液量盎司）"
+    },
+    "food_donut_1": {
+        "message": "甜甜圈"
+    },
+    "food_donut_n": {
+        "message": "甜甜圈"
+    },
+    "food_donut_desc": {
+        "message": "巧克力甜甜圈（43 克，3 英寸）"
     }
 }
