@@ -357,6 +357,9 @@ sauce.ns('analysis', ns => {
 
     async function renderTertiaryStats(attrs) {
         const template = await getTemplate('tertiary-stats.html');
+        if (attrs.kj) {
+            attrs.foodReward = await getFoodReward(attrs.kj);
+        }
         const $stats = jQuery(await template(attrs));
         if (ns.syncAthlete) {
             $stats.on('click', '.sauce-editable-field', async ev => {
@@ -394,6 +397,18 @@ sauce.ns('analysis', ns => {
             attachEditableWeight($stats);
         }
         jQuery('.activity-stats .inline-stats').last().after($stats);
+        $stats.on('click', 'li.sauce-food[data-url]', ev =>
+            void window.open(ev.currentTarget.dataset.url, '_blank'));
+        $stats.on('click', 'li.sauce-food .sauce-next-food', async ev => {
+            ev.stopPropagation();
+            attrs.foodReward = await rotateFoodReward(attrs.kj);
+            $stats.html(jQuery(await template(attrs)).children());
+            if (!ns.syncAthlete) {
+                // Only editable fields nest event listeners on dom nodes we just replaced..
+                attachEditableFTP($stats);
+                attachEditableWeight($stats);
+            }
+        });
     }
 
 
@@ -629,67 +644,36 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function randomPick(arr) {
-        return arr[Math.floor(Math.random() * arr.length)];
+    async function rotateFoodReward(kj) {
+        const foods = await foodsPromise;
+        const id = await sauce.storage.getPref('rewardFoodId');
+        const prevIdx = foods.findIndex(x => x.id == id) || 0;
+        const nextFood = foods[prevIdx + 1] || foods[0];
+        await sauce.storage.setPref('rewardFoodId', nextFood.id);
+        if (kj) {
+            return _makeFoodReward(nextFood, kj);
+        }
     }
 
 
-    function randomPop(arr) {
-        return arr.splice(Math.floor(Math.random() * arr.length), 1)[0];
+    async function getFoodReward(kj) {
+        const foods = await foodsPromise;
+        const id = await sauce.storage.getPref('rewardFoodId');
+        const food = foods.find(x => x.id == id) || foods[0];
+        return _makeFoodReward(food, kj);
     }
 
 
-    async function makeMealReward(kj) {
-        let calBudget = kj / 1.045;
-        let foods = await foodsPromise;
-        const meal = new Map();
-        if (sauce.options.foods_filter) {
-            throw new Error("Unimplemented");
-            // Do an even distroubtion of the array of food items the user wanted.
-        } else {
-            // Chefs Choice!!
-            //const tod = (new Date()).getHours() >= 14 ? 'evening' : 'morning';
-            const tod = Math.random() > 0.5 ? 'evening' : 'morning'; // XXX testing
-            foods = foods.filter(x => x.time_of_day.includes(tod));
-            const courses = new Map();
-            const used = new Set();
-            const allTags = ['drink', 'appetizer', 'main', 'dessert'];
-            const tags = [randomPop(allTags), randomPop(allTags)];
-            while (courses.size === 0 || Array.from(courses.values()).some(x => x)) {
-                for (const tag of tags) {
-                    let course;
-                    if (!courses.has(tag)) {
-                        const available = foods.filter(
-                            x => x.tags.includes(tag) &&
-                            x.cals < calBudget &&
-                            !used.has(x));
-                        course = available[Math.floor(Math.random() * available.length)];
-                        courses.set(tag, course);
-                        if (course) {
-                            used.add(course);
-                            meal.set(course, {
-                                descLocaleKey: `/food_${course.locale}_desc`,
-                                count: 0,
-                                food: course,
-                            });
-                        }
-                    } else {
-                        course = courses.get(tag);
-                    }
-                    if (!course || course.cals > calBudget) {
-                        courses.set(tag, null);
-                        continue;
-                    }
-                    const food = meal.get(course);
-                    food.count += 1;  // TODO: Perhaps could weight this eventually or at least speed it up.
-                    calBudget -= course.cals;
-                }
-            }
-        }
-        for (const x of meal.values()) {
-            x.labelLocaleKey = `/food_${x.food.locale}_${x.count > 1 ? 'n' : '1'}`;
-        }
-        return Array.from(meal.values());
+    function _makeFoodReward(food, kj) {
+        const kcals = kj / 1.045;
+        const count = kcals / food.kcals;
+        return {
+            count,
+            kcals,
+            labelLocaleKey: `/food_${food.id}_${count === 1 ? '1' : 'n'}`,
+            descLocaleKey: `/food_${food.id}_desc`,
+            ...food,
+        };
     }
 
 
@@ -706,18 +690,17 @@ sauce.ns('analysis', ns => {
         const activeStream = await fetchStream('active');
         const distance = streamDelta(distStream);
         const activeTime = getActiveTime();
-        let tss, tTss, np, intensity, power, meal;
+        let tss, tTss, np, intensity, power, kj;
         if (wattsStream && hasAccurateWatts()) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             if (corrected) {
-                const kj = corrected.kj();
+                kj = corrected.kj();
                 power = kj * 1000 / activeTime;
                 np = supportsNP() ? corrected.np() : null;
                 if (ns.ftp) {
                     tss = sauce.power.calcTSS(np || power, activeTime, ns.ftp);
                     intensity = (np || power) / ns.ftp;
                 }
-                meal = await makeMealReward(kj);
             }
         }
         if (!tss && hrStream) {
@@ -741,8 +724,8 @@ sauce.ns('analysis', ns => {
             tss,
             tTss,
             np,
+            kj,
             power,
-            meal,
         }).catch(sauce.report.error);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];

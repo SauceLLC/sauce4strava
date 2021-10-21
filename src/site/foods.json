@@ -1,151 +1,176 @@
 [{
-    "cals": 240,
+    "kcals": 153,
     "icon": "🍺",
-    "locale": "beer",
+    "id": "beer",
     "time_of_day": ["morning", "evening"],
-    "tags": ["drink"]
+    "tags": ["drink"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-ales-beers-regular-beer-5-alc/pSpIIviuRSiNzcQ-qE0b6g"
 }, {
-    "cals": 285,
-    "icon": "🍕",
-    "locale": "pizza",
-    "time_of_day": ["evening"],
-    "tags": ["main"]
-}, {
-    "cals": 156,
-    "icon": "🌮",
-    "locale": "taco",
-    "time_of_day": ["evening"],
-    "tags": ["appetizer", "main"]
-}, {
-    "cals": 125,
+    "kcals": 123,
     "icon": "🍷",
-    "locale": "wine",
+    "id": "wine",
     "time_of_day": ["evening"],
-    "tags": ["drink"]
+    "tags": ["drink"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-wines-pinot-noir-red-wine-10-alc/G7WQMTUCSDqj2MrWkaaHZQ"
 }, {
-    "cals": 3.5,
-    "icon": "🥦",
-    "locale": "broccoli",
-    "time_of_day": ["evening"],
-    "tags": ["appetizer", "main"]
-}, {
-    "cals": 5,
-    "icon": "🍟",
-    "locale": "fry",
-    "time_of_day": ["evening"],
-    "tags": ["appetizer"]
-}, {
-    "cals": 78,
-    "icon": "🍪",
-    "locale": "cookie",
-    "time_of_day": ["evening"],
-    "tags": ["dessert"]
-}, {
-    "cals": 37,
-    "icon": "🌶️",
-    "locale": "pepper",
-    "time_of_day": ["evening"],
-    "tags": ["appetizer"]
-}, {
-    "cals": 25,
-    "icon": "🥕",
-    "locale": "carrot",
-    "time_of_day": ["evening"],
-    "tags": ["appetizer"]
-}, {
-    "cals": 105,
-    "icon": "🍌",
-    "locale": "banana",
-    "time_of_day": ["morning"],
-    "tags": ["appetizer"]
-}, {
-    "cals": 231, 
-    "icon": "🥐",
-    "locale": "croissant",
-    "time_of_day": ["morning"],
-    "tags": ["appetizer"]
-}, {
-    "cals": 64,
-    "icon": "🥞",
-    "locale": "pancake",
-    "time_of_day": ["morning"],
-    "tags": ["main"]
-}, {
-    "cals": 43,
-    "icon": "🥓",
-    "locale": "bacon",
-    "time_of_day": ["morning", "evening"],
-    "tags": ["main"]
-}, {
-    "cals": 417,
-    "icon": "🍔",
-    "locale": "hamburger",
-    "time_of_day": ["evening"],
-    "tags": ["main"]
-}, {
-    "cals": 131,
-    "icon": "🧁",
-    "locale": "cupcake",
-    "time_of_day": ["morning"],
-    "tags": ["dessert"]
-}, {
-    "cals": 67,
-    "icon": "🥧",
-    "locale": "pie",
-    "time_of_day": ["morning", "evening"],
-    "tags": ["dessert"]
-}, {
-    "cals": 61,
-    "icon": "🍣",
-    "locale": "nigiri",
-    "time_of_day": ["evening"],
-    "tags": ["appetizer", "main"]
-}, {
-    "cals": 284,
-    "icon": "🌭",
-    "locale": "hotdog",
-    "time_of_day": ["evening"],
-    "tags": ["main"]
-}, {
-    "cals": 452,
-    "icon": "🥩",
-    "locale": "steak",
-    "time_of_day": ["morning", "evening"],
-    "tags": ["main"]
-}, {
-    "cals": 0.1,
-    "icon": "🍚",
-    "locale": "rice",
-    "time_of_day": ["evening"],
-    "tags": ["appetizer", "main"]
-}, {
-    "cals": 161,
-    "icon": "🥔",
-    "locale": "potato",
-    "time_of_day": ["evening"],
-    "tags": ["appetizer", "main"]
-}, {
-    "cals": 90,
-    "icon": "🥚",
-    "locale": "egg",
-    "time_of_day": ["morning"],
-    "tags": ["appetizer", "main"]
-}, {
-    "cals": 137,
-    "icon": "🍦",
-    "locale": "icecream",
-    "time_of_day": ["evening"],
-    "tags": ["dessert"]
-}, {
-    "cals": 245,
+    "kcals": 245,
     "icon": "🍹",
-    "locale": "pinacolada",
+    "id": "pinacolada",
     "time_of_day": ["evening"],
-    "tags": ["drink"]
+    "tags": ["drink"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-cocktails-pina-colada-cocktail-without-cherry-or-pineapple-stick/8ymI5wtTRi2G7svkTs84cQ"
 }, {
-    "cals": 195,
-    "icon": "🍩",
-    "locale": "doughnut",
+    "kcals": 272,
+    "icon": "🍕",
+    "id": "pizza",
+    "time_of_day": ["evening"],
+    "tags": ["main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-pizzas-14-pizza-cheese-topping-original-crust/OCrypuBtRY-n8kv7QpHpcw"
+}, {
+    "kcals": 170,
+    "icon": "🌮",
+    "id": "taco",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-tacos-crunchy-taco-with-seasoned-beef/YA5wcaHGSk6K6_wRIfUoQw"
+}, {
+    "kcals": 30,
+    "icon": "🥦",
+    "id": "broccoli",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-fresh-or-dried-vegetables-broccoli-raw/uhZAljTASPuU9YnkyCZdFA"
+}, {
+    "kcals": 320,
+    "icon": "🍟",
+    "id": "fry",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-hot-fries-chips-french-fries-medium/vkBew6QlQzKVqwXSKK3AyQ"
+}, {
+    "kcals": 48,
+    "icon": "🍪",
+    "id": "cookie",
+    "time_of_day": ["evening"],
+    "tags": ["dessert"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-cookies-chocolate-chip-cookie/aBntNie-R3CyA8W4Qirv9g"
+}, {
+    "kcals": 18,
+    "icon": "🌶️",
+    "id": "pepper",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-fresh-or-dried-vegetables-hot-red-chili-peppers-raw/-5I3WvHlR5W6F0sMDzgD_g"
+}, {
+    "kcals": 31,
+    "icon": "🥕",
+    "id": "carrot",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-fresh-or-dried-vegetables-carrots-raw/Nxk1bCHNQwOswcZ5YlPVEg"
+}, {
+    "kcals": 89,
+    "icon": "🍌",
+    "id": "banana",
+    "time_of_day": ["morning"],
+    "tags": ["appetizer"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-fresh-fruits-bananas-raw/wD01T68KTjyMTa2r5dKwYw"
+}, {
+    "kcals": 231, 
+    "icon": "🥐",
+    "id": "croissant",
+    "time_of_day": ["morning"],
+    "tags": ["appetizer"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-pastries-butter-croissant/V5d9UkB9TtO2llw33MKIrg"
+}, {
+    "kcals": 86,
+    "icon": "🥞",
+    "id": "pancake",
+    "time_of_day": ["morning"],
+    "tags": ["main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-pancakes-buttermilk-pancake-prepared-from-recipe/DYlrce0YQ0aOWQcKB0GCaA"
+}, {
+    "kcals": 46,
+    "icon": "🥓",
+    "id": "bacon",
     "time_of_day": ["morning", "evening"],
-    "tags": ["dessert"]
+    "tags": ["main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-pork-bacon-broiled-or-pan-fried/zxhpcaQUQM-zCxyIqBtt-Q"
+}, {
+    "kcals": 520,
+    "icon": "🍔",
+    "id": "hamburger",
+    "time_of_day": ["evening"],
+    "tags": ["main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-sandwiches-burgers-quarter-pounder-burger-with-cheese/Mro3VsgMToG_GFl7QKNhaQ"
+}, {
+    "kcals": 240,
+    "icon": "🧁",
+    "id": "cupcake",
+    "time_of_day": ["morning"],
+    "tags": ["dessert"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-cakes-cupcake-with-icing-golden-vanilla/1gFIJ1hKS9O2sFYyOhH8Tg"
+}, {
+    "kcals": 410,
+    "icon": "🥧",
+    "id": "pie",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["dessert"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-pies-tarts-apple-pie-prepared-from-recipe/-ISpM7EMT9W-PmS75yB9tw"
+}, {
+    "kcals": 106,
+    "icon": "🍣",
+    "id": "nigiri",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-japanese-raw-tuna-sushi-nigiri/dRH0pXbUTO-_tklypq6u1Q"
+}, {
+    "kcals": 315,
+    "icon": "🌭",
+    "id": "hotdog",
+    "time_of_day": ["evening"],
+    "tags": ["main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-hot-dogs-regular-w-ketchup-roll-no-mayo/l9lnkS90QXW3jp_mXzi1og"
+}, {
+    "kcals": 514,
+    "icon": "🥩",
+    "id": "steak",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-beef-beef-ribeye-cap-steak-boneless-lean-only-grilled/r5MxHHjCQdu6crU8x9QJKg"
+}, {
+    "kcals": 205,
+    "icon": "🍚",
+    "id": "rice",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-rice-long-grain-white-rice-cooked-without-salt/YZ5UTDL3Rwi_Ab2Z-dKM7A"
+}, {
+    "kcals": 290,
+    "icon": "🥔",
+    "id": "potato",
+    "time_of_day": ["evening"],
+    "tags": ["appetizer", "main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-fresh-or-dried-vegetables-russet-potatoes-baked-flesh-skin/bJuwqWUgQpmwY7pxH1YRdQ"
+}, {
+    "kcals": 77,
+    "icon": "🥚",
+    "id": "egg",
+    "time_of_day": ["morning"],
+    "tags": ["appetizer", "main"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-eggs-whole-egg-fried-without-added-fat/bh_Ctob2SDyAocRIlWM2Bw"
+}, {
+    "kcals": 273,
+    "icon": "🍦",
+    "id": "icecream",
+    "time_of_day": ["evening"],
+    "tags": ["dessert"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-ice-cream-vanilla-ice-cream/2_QVfiNrTZ2eKWKpkp827A"
+}, {
+    "kcals": 204,
+    "icon": "🍩",
+    "id": "donut",
+    "time_of_day": ["morning", "evening"],
+    "tags": ["dessert"],
+    "url": "https://www.calorieking.com/us/en/foods/f/calories-in-donuts-chocolate-coated-or-frosted-cake-type-donut/L1A-Mtu9T8CjrL7fhg6_0A"
 }]

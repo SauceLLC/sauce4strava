@@ -45,6 +45,43 @@ html.sauce-enabled {
             display: inline-block;
             margin-top: 0.3em;
         }
+
+        li.sauce-food {
+            padding-right: 1.5em; // leave room for next-food btn
+
+            &[data-url] {
+                cursor: pointer;
+            }
+
+            .label {
+                letter-spacing: -0.05em;
+            }
+        }
+
+        .sauce-next-food {
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 200ms;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            height: 100%;
+            top: 0;
+            right: 0;
+            position: absolute;
+            padding: 0 0.4em 1.2em;
+
+            &:hover {
+                opacity: 1 !important;
+            }
+
+            svg[data-icon] {
+                width: 0.7em;
+            }
+        }
+        &:hover .sauce-next-food {
+            opacity: 0.33;
+        }
     }
 
     .inline-stats.sauce-stats {

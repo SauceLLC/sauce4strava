@@ -58,17 +58,23 @@
         <div class="label">{{{weight}}}</div>
     </li>
 
-    <% if (obj.meal && obj.meal.length) { %>
+    <% if (obj.foodReward) { %>
         <div class="divider"></div>
 
-        <% for (const x of meal) { %>
-            <li title="{{{[x.descLocaleKey]}}}
-  Cals per item: {{humanNumber(x.food.cals)}}
-  Total cals: {{humanNumber(x.food.cals * x.count)}}
-  " class="sauce-food">
-                <strong>{{humanNumber(x.count)}} {{x.food.icon}}</strong>
-                <div class="label">{{{[x.labelLocaleKey]}}}</div>
-            </li>
-        <% } %>
+        <li title="{{{[foodReward.descLocaleKey]}}} - {{humanNumber(foodReward.kcals)}} Calories
+  {{{activity}}}: {{humanNumber(kj)}}kJ / {{humanNumber(foodReward.kcals * foodReward.count)}} Calories
+
+{{{click_for_more_nutritional_info}}}" class="sauce-food"
+            <% if (foodReward.url) { %>
+                data-url="{{foodReward.url}}"
+            <% } %>
+            >
+            <strong>
+                {{humanNumber(foodReward.count, foodReward.count < 1 ? 1 : 0)}}
+                <span class="sauce-icon">{{foodReward.icon}}</span>
+            </strong>
+            <div class="label">{{{[foodReward.labelLocaleKey]}}}</div>
+            <div class="sauce-next-food" title="{{{click_to_change}}}">{-await fa('caret-right-regular')-}</div>
+        </li>
     <% } %>
 </ul>
