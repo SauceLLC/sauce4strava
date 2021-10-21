@@ -357,7 +357,7 @@ sauce.ns('analysis', ns => {
 
     async function renderTertiaryStats(attrs) {
         const template = await getTemplate('tertiary-stats.html');
-        if (attrs.kj) {
+        if (attrs.kj && !sauce.options['analysis-disable-food-reward']) {
             attrs.foodReward = await getFoodReward(attrs.kj);
         }
         const $stats = jQuery(await template(attrs));
