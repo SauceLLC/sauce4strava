@@ -8,7 +8,7 @@
     padding-top: 0.6em;
 
     &:not(.active) {
-        .active {
+        .active-only {
             display: none;
         }
     }
