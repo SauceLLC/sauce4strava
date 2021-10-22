@@ -1,0 +1,75 @@
+@use 'defines';
+@use 'color';
+
+
+#sauce-kudo-all {
+    float: right; // XXX ick
+    display: flex;
+    padding-top: 0.6em;
+
+    &:not(.active) {
+        .active {
+            display: none;
+        }
+    }
+
+    &.active {
+        pointer-events: none;
+        opacity: 0.4;
+
+        .inactive-only {
+            display: none;
+        }
+    }
+
+    &:hover {
+        box-shadow: none;
+    }
+
+    button {
+        background-color: color.shade(bg, 10%);
+        color: color.shade(fg, 5%);
+
+        &:hover {
+            background-color: color.shade(accent, 10%);
+            color: color.shade(accent, 80%);
+        }
+    }
+
+    button.sauce-invoke {
+        padding: 0.2em 1em;
+
+        .app-icon {
+            margin-right: 0.6em;
+        }
+    }
+
+    button.dropdown-toggle {
+        padding-left: 0.8em;
+        padding-right: 0.8em;
+
+        svg[data-icon] {
+            width: 0.8em;
+        }
+    }
+
+    .dropdown-menu {
+        label.filter {
+            border: none;
+            margin: 0;
+            padding: 0.7em 0.4em;
+            cursor: pointer;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+
+            &:hover {
+                background-color: color.shade(bg, 10%);
+            }
+
+            input {
+                margin: 0.4em;
+            }
+        }
+    }
+}
