@@ -396,5 +396,8 @@
     "food_pinacolada_desc": {"message": "Piña Colada (4.5 fl. oz)"},
     "food_donut_1": {"message": "Donut"},
     "food_donut_n": {"message": "Donuts"},
-    "food_donut_desc": {"message": "Chocolate Doughnut (43g, 3 inch)"}
+    "food_donut_desc": {"message": "Chocolate Doughnut (43g, 3 inch)"},
+    "dashboard_kudo_all": {"message": "Kudo All"},
+    "dashboard_exclude_virtual": {"message": "Skip Virtual"},
+    "dashboard_exclude_commutes": {"message": "Skip Commutes"}
 }

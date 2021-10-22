@@ -123,6 +123,7 @@
     }, {
         name: 'Dashboard',
         pathMatch: /^\/dashboard(\/.*|\b)/,
+        stylesheets: ['site/dashboard.css'],
         scripts: [
             'site/proxy.js',
             'site/locale.js',
