@@ -204,8 +204,6 @@ sauce.ns('dashboard', function(ns) {
 
             const g = new jobs.RateLimiterGroup();
             g.push(new KudoRateLimiter('min', {period: 60 * 1000, limit: 60, spread: true}));
-            g.push(new KudoRateLimiter('hour', {period: 3600 * 1000, limit: 200}));
-            g.push(new KudoRateLimiter('day', {period: 86400 * 1000, limit: 700}));
             _kudoRateLimiter = g;
         }
         return _kudoRateLimiter;
