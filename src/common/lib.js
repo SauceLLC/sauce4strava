@@ -1409,7 +1409,7 @@ sauce.ns('power', function() {
                 for (let j = 0; j < p.pad; j++) {
                     wBal += cp * (wPrime - wBal) / wPrime;
                     if (wBal >= wPrime - epsilon) {
-                        debugger; // XXX just validate once
+                        wBal = wPrime;
                         break;
                     }
                 }
