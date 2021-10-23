@@ -369,26 +369,25 @@ sauce.ns('locale', ns => {
         assertInit();
         const mps = options.velocity ? raw : 1 / raw;
         const formatter = getPaceFormatter(options);
-        const value = formatter.key === 'distance_per_time' ? mps * 3600 : mps;
         const minPace = 0.1;  // About 4.5 hours / mile
         const precision = options.precision;
         if (options.suffix) {
             if (options.html) {
-                if (value < minPace) {
+                if (mps < minPace) {
                     return '<abbr class="unit short" title="Stopped">-</abbr>';
                 }
-                return formatter.abbreviated(value);
+                return formatter.abbreviated(mps);
             } else {
-                if (value < minPace) {
+                if (mps < minPace) {
                     return '-';
                 }
-                return formatter.formatShort(value, precision);
+                return formatter.formatShort(mps, precision);
             }
         } else {
-            if (value < minPace) {
+            if (mps < minPace) {
                 return '-';
             }
-            return formatter.format(value, precision);
+            return formatter.format(mps, precision);
         }
     }
 
