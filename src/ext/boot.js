@@ -249,18 +249,6 @@
     }
 
 
-    function setEnabled() {
-        return bgCommand('setEnabled');
-    }
-    sauce.proxy.export(setEnabled);
-
-
-    function setDisabled() {
-        return bgCommand('setDisabled');
-    }
-    sauce.proxy.export(setDisabled);
-
-
     function setBackgroundPageCurrentUser(currentUser) {
         return bgCommand('setCurrentUser', {currentUser});
     }
@@ -277,12 +265,6 @@
             'saucePreloaderInit();',
         ].join('\n'));
         const config = await sauce.storage.get(null);
-        if (config.enabled === false) {
-            console.info("Sauce is disabled");
-            document.documentElement.classList.add('sauce-disabled');
-            setDisabled();
-            return;
-        }
         document.documentElement.classList.add('sauce-enabled');
         self.currentUser = config.currentUser;
         let patronLevel;
@@ -330,7 +312,6 @@
                 await loadScripts(m.scripts.map(x => `${extUrl}src/${x}`));
             }
         }
-        setEnabled();
     }
 
     document.documentElement.addEventListener('sauceCurrentUserUpdate', async ev => {

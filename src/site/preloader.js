@@ -193,7 +193,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         };
 
         Klass.prototype.handleStreamsReady = async function() {
-            // In rare cases like install or new enabled ext the analysis page
+            // In rare cases like install the analysis page
             // is not loaded before the rest of the site.  Not waiting will
             // exclude some of our functions but won't break the site..
             if (sauce.analysis) {

@@ -1823,7 +1823,7 @@ async function setStoragePersistent() {
 
 let _setStoragePersistent;
 export function startSyncManager(id) {
-    if (!self.disabled && id) {
+    if (id) {
         console.info("Starting Sync Manager...");
         if (!_setStoragePersistent) {
             _setStoragePersistent = true;
@@ -1858,17 +1858,5 @@ addEventListener('currentUserUpdate', async ev => {
     }
     if (ev.id) {
         startSyncManager(ev.id);
-    }
-});
-
-addEventListener('enabled', ev => {
-    if (!syncManager && self.currentUser) {
-        startSyncManager(self.currentUser);
-    }
-});
-
-addEventListener('disabled', async ev => {
-    if (syncManager) {
-        await stopSyncManager();
     }
 });

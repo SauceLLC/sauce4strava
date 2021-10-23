@@ -8,7 +8,6 @@ sauce.ns('hist', () => Object.fromEntries(Object.entries(hist)));
 // Required to make site start with alarms API
 browser.alarms.onAlarm.addListener(() => void 0);
 
-self.disabled = Boolean(Number(localStorage.getItem('disabled')));
 self.currentUser = Number(localStorage.getItem('currentUser')) || undefined;
 
 
@@ -106,21 +105,7 @@ browser.runtime.onInstalled.addListener(async details => {
 
 browser.runtime.onMessage.addListener(msg => {
     if (msg && msg.source === 'ext/boot') {
-        if (msg.op === 'setEnabled') {
-            if (self.disabled) {
-                console.info("Extension enabled.");
-                self.disabled = false;
-                localStorage.removeItem('disabled');
-                self.dispatchEvent(new Event('enabled'));
-            }
-        } else if (msg.op === 'setDisabled') {
-            if (!self.disabled) {
-                console.info("Extension disabled.");
-                self.disabled = true;
-                localStorage.setItem('disabled', '1');
-                self.dispatchEvent(new Event('disabled'));
-            }
-        } else if (msg.op === 'setCurrentUser') {
+        if (msg.op === 'setCurrentUser') {
             const id = msg.currentUser || undefined;
             if (self.currentUser !== id) {
                 setCurrentUser(id);
@@ -162,12 +147,10 @@ if (dc) {
 }
 
 (async function main() {
-    if (!self.disabled) {
-        // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
-        // to try migrations every startup.
-        await sauce.migrate.runMigrations();
-        if (self.currentUser) {
-            hist.startSyncManager(self.currentUser);
-        }
+    // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
+    // to try migrations every startup.
+    await sauce.migrate.runMigrations();
+    if (self.currentUser) {
+        hist.startSyncManager(self.currentUser);
     }
 })();

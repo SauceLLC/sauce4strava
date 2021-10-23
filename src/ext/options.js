@@ -9,30 +9,6 @@
         document.documentElement.classList.add('popup');
     }
 
-    function manageEnabler(enabled) {
-        function toggle(en) {
-            enabled = en;
-            if (enabled) {
-                document.body.classList.remove('disabled');
-            } else {
-                document.body.classList.add('disabled');
-            }
-        }
-        const enablers = document.querySelectorAll("button.enabler");
-        for (const x of enablers) {
-            x.addEventListener('click', async () => {
-                const enabling = !enabled;
-                await sauce.storage.set('enabled', enabling);
-                toggle(enabling);
-                if (isPopup) {
-                    browser.tabs.reload();
-                }
-                await reportOptionSet('enabled', enabling);
-            });
-        }
-        toggle(enabled);
-    }
-
     function resetSuboptions(input) {
         for (const suboption of input.closest('.option').querySelectorAll('.suboption')) {
             suboption.classList.toggle('disabled', !input.checked);
@@ -187,7 +163,6 @@
             tr.appendChild(tdVal);
             detailsEl.appendChild(tr);
         }
-        manageEnabler(config.enabled !== false);
         manageOptions(config.options, config.patronLevel);
         (await sauce.ga.getOrCreateTracker()).send('pageview');
     }
