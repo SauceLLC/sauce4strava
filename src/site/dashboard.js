@@ -17,8 +17,7 @@ sauce.ns('dashboard', function(ns) {
     function getCardProps(cardEl) {
         if (!_cardPropCache.has(cardEl)) {
             try {
-                _cardPropCache.set(cardEl, JSON.parse(
-                    cardEl.querySelector(':scope > [data-react-props]').dataset.reactProps));
+                _cardPropCache.set(cardEl, JSON.parse(cardEl.dataset.reactProps));
             } catch(e) {
                 sauce.report.error(e);
                 _cardPropCache.set(cardEl, {});
@@ -39,26 +38,67 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    const virtualTags = new Set([
-        'zwift',
-        'trainerroad',
-        'peloton',
-        'virtual',
-        'whoop',
-    ]);
+    function hideActivities(feedEl, label, filterFn) {
+        let count = 0;
+        const qs = `.react-card-container:not(.hidden-by-sauce):not(.sauce-checked-${label})` +
+            ` > [data-react-props]`;
+        for (const x of feedEl.querySelectorAll(qs)) {
+            const container = x.parentElement;
+            container.classList.add(`sauce-checked-${label}`);
+            try {
+                if (filterFn(x)) {
+                    console.debug("Hiding:", label);
+                    container.classList.add('hidden-by-sauce');
+                    count++;
+                }
+            } catch(e) {
+                sauce.report.error(e);
+            }
+        }
+        feedEvent('hide', `${label}-activity`, count);
+        return !!count;
+    }
 
-    function isVirtual(card) {
+
+    function hideVirtual(feedEl) {
+        return hideActivities(feedEl, 'virtual', isPeerVirtual);
+    }
+
+
+    function hideCommutes(feedEl) {
+        return hideActivities(feedEl, 'commute', isPeerCommute);
+    }
+
+
+    function isSelfActivity(props) {
+        // Note we can't share the viewing/cur athlete ID var as the types are different.
+        if (props.entity === 'Activity') {
+            return props.activity.athlete.athleteId === props.viewingAthlete.id + 'XXX';
+        } else if (props.entity === 'GroupActivity') {
+            return props.rowData.activities.some(x => x.athlete_id === x.current_athlete_id);
+        }
+    }
+
+
+    function isPeerVirtual(card) {
         // XXX: This does not support group activities yet.
         const props = getCardProps(card);
-        if (props && props.activity && props.activity.athlete.athleteId !== props.viewingAthlete.id) {
-            if (props.activity.isVirtual) {
-                return true;
-            } else if (props.activity.mapAndPhotos && props.activity.mapAndPhotos.photoList) {
-                // Catch the ones that don't claim to be virtual (but are).
-                for (const x of props.activity.mapAndPhotos.photoList) {
-                    if (x.enhanced_photo && virtualTags.has(x.enhanced_photo.name.toLowerCase())) {
-                        return true;
+        if (!isSelfActivity(props)) {
+            if (props.entity === 'Activity') {
+                if (props.activity.isVirtual) {
+                    return true;
+                } else if (props.activity.mapAndPhotos && props.activity.mapAndPhotos.photoList) {
+                    // Catch the ones that don't claim to be virtual (but are).
+                    const virtualTags = new Set(['zwift', 'trainerroad', 'peloton', 'virtual', 'whoop']);
+                    for (const x of props.activity.mapAndPhotos.photoList) {
+                        if (x.enhanced_photo && virtualTags.has(x.enhanced_photo.name.toLowerCase())) {
+                            return true;
+                        }
                     }
+                }
+            } else if (props.entity === 'GroupActivity') {
+                if (props.rowData.activities.every(x => x.is_virtual)) {
+                    return true;
                 }
             }
         }
@@ -66,44 +106,20 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    function hideVirtual(feedEl) {
-        let count = 0;
-        const qs = `.react-card-container:not(.hidden-by-sauce):not(.sauce-checked-virtual) > [data-react-class="Activity"]`;
-        for (const x of feedEl.querySelectorAll(qs)) {
-            const card = x.parentElement;
-            card.classList.add('sauce-checked-virtual');
-            if (isVirtual(card)) {
-                console.debug("Hiding Virtual");
-                card.classList.add('hidden-by-sauce');
-                count++;
-            }
-        }
-        feedEvent('hide', 'virtual-activity', count);
-        return !!count;
-    }
-
-
-    function isCommute(card) {
+    function isPeerCommute(card) {
         const props = getCardProps(card);
-        return !!(props && props.activity && props.activity.isCommute &&
-            props.activity.athlete.athleteId !== props.viewingAthlete.id);
-    }
-
-
-    function hideCommutes(feedEl) {
-        let count = 0;
-        const qs = `.react-card-container:not(.hidden-by-sauce):not(.sauce-checked-commute) > [data-react-class="Activity"]`;
-        for (const x of feedEl.querySelectorAll(qs)) {
-            const card = x.parentElement;
-            card.classList.add('sauce-checked-commute');
-            if (isCommute(card)) {
-                console.debug("Hiding Commute");
-                card.classList.add('hidden-by-sauce');
-                count++;
+        if (!isSelfActivity(props)) {
+            if (props.entity === 'Activity') {
+                if (props.activity.isCommute) {
+                    return true;
+                }
+            } else if (props.entity === 'GroupActivity') {
+                if (props.rowData.activities.every(x => x.is_commute)) {
+                    return true;
+                }
             }
         }
-        feedEvent('hide', 'commute-activity', count);
-        return !!count;
+        return false;
     }
 
 
@@ -187,9 +203,9 @@ sauce.ns('dashboard', function(ns) {
             }
 
             const g = new jobs.RateLimiterGroup();
-            g.push(new KudoRateLimiter('min', {period: (60 + 5) * 1000, limit: 30, spread: true}));
-            g.push(new KudoRateLimiter('hour', {period: (3600 + 500) * 1000, limit: 200}));
-            g.push(new KudoRateLimiter('day', {period: (86400 + 3600) * 1000, limit: 700}));
+            g.push(new KudoRateLimiter('min', {period: 60 * 1000, limit: 60, spread: true}));
+            g.push(new KudoRateLimiter('hour', {period: 3600 * 1000, limit: 200}));
+            g.push(new KudoRateLimiter('day', {period: 86400 * 1000, limit: 700}));
             _kudoRateLimiter = g;
         }
         return _kudoRateLimiter;
@@ -219,24 +235,56 @@ sauce.ns('dashboard', function(ns) {
         });
         $kudoAll.on('click', 'button.sauce-invoke', async ev => {
             const rl = await getKudoRateLimiter();
-            const unKudoed = document.querySelectorAll(
-                `.react-card-container:not(.hidden-by-sauce) button > svg[data-testid="unfilled_kudos"]`);
-            const todo = Array.from(unKudoed)
-                .map(x => x.closest('[data-react-class="Activity"]').parentElement)
-                .filter(x => x && (
-                    (!filters.has('commutes') || !isCommute(x)) ||
-                    (!filters.has('virtual') || !isVirtual(x))));
-            if (!todo.length) {
+            const cards = document.querySelectorAll(
+                `.react-card-container:not(.hidden-by-sauce) > [data-react-props]`);
+            const kudoButtons = [];
+            const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge']);
+            for (const card of cards) {
+                const props = getCardProps(card);
+                if ((filters.has('commutes') && isPeerCommute(card)) ||
+                    (filters.has('virtual') && isPeerVirtual(card))) {
+                    continue;
+                }
+                if (props.entity === 'Activity') {
+                    if (props.activity.kudosAndComments.canKudo) {
+                        // XXX I don't like using data-testid
+                        kudoButtons.push(card.querySelector('button[data-testid="kudos_button"]'));
+                    }
+                } else if (props.entity === 'GroupActivity') {
+                    for (const [kcId, kcSpec] of Object.entries(props.kudosAndComments)) {
+                        if (kcSpec.canKudo) {
+                            // kudosAndComments is unordered and we need to cross ref the rowData index with the
+                            // DOM rendering of the activities withing the group to select the correct kudo btn.
+                            const index = props.rowData.activities.findIndex(x => ('' + x.activity_id) === kcId);
+                            // XXX I don't like using data-testid
+                            const btn = card.querySelectorAll('button[data-testid="kudos_button"]')[index];
+                            if (btn) {
+                                kudoButtons.push(btn);
+                            }
+                        }
+                    }
+                } else if (props.entity === 'Post') {
+                    if (props.post.can_kudo) {
+                        // XXX I don't like using data-testid
+                        kudoButtons.push(card.querySelector('button[data-testid="kudos_button"]'));
+                    }
+                } else if (!ignore.has(props.entity)) {
+                    console.warn("Unhandled card type:", props.entity);
+                }
+            }
+            const toKudo = Array.from(kudoButtons).filter(x =>
+                x.querySelector(':scope > svg[data-testid="unfilled_kudos"]'));
+            if (!toKudo.length) {
                 return;
             }
             const $status = $kudoAll.find('.status');
-            $status.text(`0 / ${todo.length}`);
+            $status.text(`0 / ${toKudo.length}`);
             $kudoAll.addClass('active');
             try {
-                for (const [i, x] of todo.entries()) {
+                for (const [i, x] of toKudo.entries()) {
                     await rl.wait();
-                    console.log(x.querySelector('button[data-testid="kudos_button"]')); //.click();
-                    $status.text(`${i + 1} / ${todo.length}`);
+                    x.click();
+                    $status.text(`${i + 1} / ${toKudo.length}`);
                 }
             } finally {
                 $kudoAll.removeClass('active');
