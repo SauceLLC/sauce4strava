@@ -35,6 +35,7 @@ Feature Highlights
  * Create Live Segments for any effort (including downhills)
  * Running Power estimation
  * Kudo All Activities
+ * Beers and Donuts earned for an activity (based on kcals burned)
  * Analysis page stats are extended to include:
    * Elapsed power average, normalized power, moving power average and watts/kg.
    * Grade adjusted pace
@@ -72,6 +73,10 @@ Feature Highlights
 
 Release Notes
 --------
+#### v7.3.3:
+ * Kudo All button (dashboard)
+ * Food/Drink reward stat in overview (i.e. Beers and Donuts you burned)
+
 #### v7.3.1:
  * Pw:Hr / Aerobic Decoupling support
 
