@@ -2472,20 +2472,24 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function hasRealWatts() {
+        return !!(_getStream('watts'));
+    }
+
+
     function hasAccurateWatts() {
         // Only trust real watts and watts_calc for runs.  Rides esp are very inaccurate.
-        return !!(_getStream('watts') ||
-            (ns.activityType === 'run' && _getStream('watts_calc')));
+        return !!(hasRealWatts() || (ns.activityType === 'run' && _getStream('watts_calc')));
     }
 
 
     function supportsNP() {
-        return hasAccurateWatts() && ns.activityType === 'ride' && !sauce.options['analysis-disable-np'];
+        return !!(hasRealWatts() && !sauce.options['analysis-disable-np']);
     }
 
 
     function supportsXP() {
-        return hasAccurateWatts() && ns.activityType === 'ride' && !sauce.options['analysis-disable-xp'];
+        return !!(hasRealWatts() && !sauce.options['analysis-disable-xp']);
     }
 
 

@@ -34,6 +34,7 @@ Feature Highlights
  * Export any activity to a TCX, GPX or FIT file
  * Create Live Segments for any effort (including downhills)
  * Running Power estimation
+ * Kudo All Activities
  * Analysis page stats are extended to include:
    * Elapsed power average, normalized power, moving power average and watts/kg.
    * Grade adjusted pace
