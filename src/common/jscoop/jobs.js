@@ -229,6 +229,13 @@ export class RateLimiter {
     }
 
     /**
+     * Wait for init to complete.
+     */
+    async initialized() {
+        await this._init;
+    }
+
+    /**
      * Blocks until it is safe to run again.  Note that this routine is concurrency-safe, so some
      * calls for a given context may block longer than expected because of multiple accesses.
      */
@@ -385,6 +392,13 @@ export class RateLimiterGroup extends Array {
      */
     async add(label, spec) {
         this.push(await RateLimiter.singleton(label, spec));
+    }
+
+    /**
+     * Wait for all limiters to finish init.
+     */
+    async initialized() {
+        await Promise.all(this.map(x => x._init));
     }
 
     /**
