@@ -9,8 +9,8 @@
     }
 
 
-    function sleep(seconds) {
-        return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
 
@@ -203,7 +203,7 @@
                 browser.tabs.reload();
             }
             reportEvent('AdvancedOptions', 'save');  // bg okay
-            await sleep(5);
+            await sleep(5000);
             status.textContent = '';
         });
         (await sauce.ga.getOrCreateTracker()).send('pageview');

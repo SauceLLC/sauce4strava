@@ -8,11 +8,7 @@ importScripts('/src/common/lib.js');
 
 const streamsStore = new sauce.hist.db.StreamsStore();
 const peaksStore = new sauce.hist.db.PeaksStore();
-
-
-async function sleep(ms) {
-    await new Promise(resolve => setTimeout(resolve, ms));
-}
+const sleep = sauce.sleep;
 
 
 async function getActivitiesStreams(activities, streams) {

@@ -6,11 +6,7 @@ import * as locks from '/src/common/jscoop/locks.js';
 
 const actsStore = new sauce.hist.db.ActivitiesStore();
 const streamsStore = new sauce.hist.db.StreamsStore();
-
-
-async function sleep(ms) {
-    await new Promise(resolve => setTimeout(resolve, ms));
-}
+const sleep = sauce.sleep;
 
 
 async function getActivitiesStreams(activities, streams) {

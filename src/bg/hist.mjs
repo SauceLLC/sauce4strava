@@ -18,6 +18,7 @@ const activityListVersion = 2;  // Increment to force full update of activities.
 const namespace = 'hist';
 const DBTrue = 1;
 const DBFalse = 0;
+const sleep = sauce.sleep;
 let syncManager;
 
 
@@ -103,13 +104,6 @@ class FetchError extends Error {
 
 
 class ThrottledFetchError extends FetchError {}
-
-
-async function sleep(ms) {
-    await new Promise(resolve => setTimeout(resolve, ms));
-}
-
-
 class Timeout extends Error {}
 
 
