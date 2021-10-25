@@ -48,9 +48,6 @@ $(MANIFEST): manifest_base.json manifest_$(TARGET).json Makefile
 manifest:
 	$(TOOLPATH)/mergejson manifest_base.json manifest_$(TARGET).json > manifest.json
 
-package:
-	$(TOOLPATH)/package $(TARGET)
-
 packages:
 	$(TOOLPATH)/package gecko
 	$(TOOLPATH)/package chromium
@@ -69,4 +66,4 @@ lint-watch:
 	$(TOOLPATH)/lintwatch
 
 
-.PHONY: lint sass clean realclean package packages manifest build
+.PHONY: lint sass clean realclean packages manifest build
