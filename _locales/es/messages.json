@@ -974,6 +974,9 @@
     "graph_options_smoothing": {
         "message": "Suavizado"
     },
+    "graph_options_smoothing_tooltip": {
+        "message": "Utilice las teclas de flecha del teclado para realizar ajustes precisos"
+    },
     "graph_options_reload_needed": {
         "message": "Se requiere recargar la página"
     },

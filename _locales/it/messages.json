@@ -981,6 +981,9 @@
     "graph_options_smoothing": {
         "message": "levigante"
     },
+    "graph_options_smoothing_tooltip": {
+        "message": "Usa i tasti freccia della tastiera per regolazioni fini"
+    },
     "graph_options_reload_needed": {
         "message": "È necessario ricaricare la pagina"
     },

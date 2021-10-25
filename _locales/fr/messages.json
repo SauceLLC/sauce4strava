@@ -983,6 +983,9 @@
     "graph_options_smoothing": {
         "message": "Lissage"
     },
+    "graph_options_smoothing_tooltip": {
+        "message": "Utilisez les touches fléchées du clavier pour des réglages fins"
+    },
     "graph_options_reload_needed": {
         "message": "Rechargement de page requis"
     },

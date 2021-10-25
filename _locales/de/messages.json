@@ -984,6 +984,9 @@
     "graph_options_smoothing": {
         "message": "Glätten"
     },
+    "graph_options_smoothing_tooltip": {
+        "message": "Verwenden Sie die Pfeiltasten der Tastatur für Feineinstellungen"
+    },
     "graph_options_reload_needed": {
         "message": "Neuladen der Seite erforderlich"
     },

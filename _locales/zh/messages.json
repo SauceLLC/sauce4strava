@@ -1069,6 +1069,9 @@
     "graph_options_smoothing": {
         "message": "平滑"
     },
+    "graph_options_smoothing_tooltip": {
+        "message": "使用键盘方向键进行微调"
+    },
     "graph_options_reload_needed": {
         "message": "需要重新加载页面"
     },
