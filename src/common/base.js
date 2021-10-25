@@ -34,6 +34,17 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    const _maxTimeout = 0x7fffffff;  // `setTimeout` max valid value.
+    sauce.sleep = async function(ms) {
+        while (ms > _maxTimeout) {
+            // Support sleeping longer than the javascript max setTimeout...
+            await new Promise(resolve => setTimeout(resolve, _maxTimeout));
+            ms -= _maxTimeout;
+        }
+        return await new Promise(resolve => setTimeout(resolve, ms));
+    };
+
+
     sauce.stringDigest = function(algo, input) {
         if (typeof input !== 'string') {
             throw new TypeError('Input should string');
