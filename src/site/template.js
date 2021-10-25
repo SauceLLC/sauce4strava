@@ -17,7 +17,8 @@ sauce.ns('template', ns => {
         const cacheKey = '' + filename + localeKey;
         if (!_tplCache.has(cacheKey)) {
             if (!_tplFetching.has(cacheKey)) {
-                const extUrl = self.browser ? self.browser.getURL('') : sauce.extUrl;
+                const extUrl = (self.browser && self.browser.runtime) ?
+                    self.browser.runtime.getURL('') : sauce.extUrl;
                 const tplUrl = extUrl + 'templates';
                 if (sauce.locale) {
                     await sauce.locale.init();

@@ -169,7 +169,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         if (!_modules[urn]) {
             const script = document.createElement('script');
             const doneEvent = 'smid-' + (Date.now() + Math.random());
-            const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
+            const extUrl = (self.browser && self.browser.runtime) ?
+                self.browser.runtime.getURL('') : sauce.extUrl;
             _modules[urn] = await new Promise((resolve, reject) => {
                 script.addEventListener('error', ev => reject(new Error(`Module load error: ${urn}`)));
                 script.type = 'module';
@@ -975,7 +976,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
         const page = location.pathname;
         const version = (sauce && sauce.version) ||
-            (self.browser && self.browser.runtime.getManifest().version);
+            ((self.browser && self.browser.runtime) &&
+             self.browser.runtime.getManifest().version);
         const desc = [`v${version}`];
         try {
             if (e == null || !e.stack) {
