@@ -321,6 +321,7 @@
     "graph_options_show": {"message": "Show"},
     "graph_options_athlete": {"message": "Athlete"},
     "graph_options_smoothing": {"message": "Smoothing"},
+    "graph_options_smoothing_tooltip": {"message": "Use the keyboard arrow keys for fine adjustments"},
     "graph_options_reload_needed": {"message": "Page reload required"},
     "food_beer_1": {"message": "Beer"},
     "food_beer_n": {"message": "Beers"},

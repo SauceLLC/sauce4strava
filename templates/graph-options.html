@@ -1,7 +1,9 @@
 <form class="sauce-key-value">
     <div class="entry">
         <key>{{{smoothing}}}:</key>
-        <input type="range" name="smoothing" value="{{smoothing}}" min="0" max="300" step="1"/> <span>{{sauce.locale.human.timer(smoothing)}}<span>
+        <input title="{{{smoothing_tooltip}}}" type="range"
+               name="smoothing" value="{{smoothing}}" min="0" max="300"
+               step="5"/> <span>{{sauce.locale.human.timer(smoothing)}}<span>
     </div>
 
     <div class="entry">
