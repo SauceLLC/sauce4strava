@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+
+const filename = process.argv[2] || `${__dirname}/../../manifest.json`;
+const manifest = JSON.parse(fs.readFileSync(filename));
+console.log(manifest.version);

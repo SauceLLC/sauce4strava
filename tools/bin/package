@@ -40,10 +40,11 @@ else
 fi
 
 GIT_COMMIT=$(git rev-parse --short HEAD)
+VERSION=$($(dirname $0)/version $TMPDIR/manifest.json)
 BUILDS=$(pwd)/builds
 mkdir -p $BUILDS
 cd $TMPDIR
-OUTFILE="${BUILDS}/sauce-${KIND}-${GIT_COMMIT}.${EXT}"
+OUTFILE="${BUILDS}/sauce-${KIND}-${VERSION}-${GIT_COMMIT}.${EXT}"
 zip -r -FS "$OUTFILE" *
 cd -
 rm -rf $TMPDIR
