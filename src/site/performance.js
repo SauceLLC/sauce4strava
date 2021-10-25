@@ -8,13 +8,9 @@ sauce.ns('performance', async ns => {
     const title = 'Sauce Performance';
     const chartTopPad = 15;
 
-
     await sauce.proxy.connected;
-    // XXX find something just after all the locale stuff.
-    await sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter', {once: true});
     await sauce.locale.init();
     await sauce.propDefined('Backbone', {once: true});
-
 
     const L = sauce.locale;
     const H = L.human;
