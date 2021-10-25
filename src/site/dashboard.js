@@ -73,7 +73,7 @@ sauce.ns('dashboard', function(ns) {
     function isSelfActivity(props) {
         // Note we can't share the viewing/cur athlete ID var as the types are different.
         if (props.entity === 'Activity') {
-            return props.activity.athlete.athleteId === props.viewingAthlete.id + 'XXX';
+            return props.activity.athlete.athleteId === props.viewingAthlete.id;
         } else if (props.entity === 'GroupActivity') {
             return props.rowData.activities.some(x => x.athlete_id === x.current_athlete_id);
         }
@@ -81,7 +81,6 @@ sauce.ns('dashboard', function(ns) {
 
 
     function isPeerVirtual(card) {
-        // XXX: This does not support group activities yet.
         const props = getCardProps(card);
         if (!isSelfActivity(props)) {
             if (props.entity === 'Activity') {
@@ -179,7 +178,10 @@ sauce.ns('dashboard', function(ns) {
 
 
     function monitorFeed(feedEl) {
-        const mo = new MutationObserver(() => filterFeed(feedEl));
+        const mo = new MutationObserver(() => {
+            filterFeed(feedEl);
+            resetKudoButton();
+        });
         mo.observe(feedEl, {childList: true});
         filterFeed(feedEl);
     }
@@ -203,7 +205,8 @@ sauce.ns('dashboard', function(ns) {
             }
 
             const g = new jobs.RateLimiterGroup();
-            g.push(new KudoRateLimiter('min', {period: 60 * 1000, limit: 60, spread: true}));
+            g.push(new KudoRateLimiter('hour', {period: 3600 * 1000, limit: 90}));
+            await g.initialized();
             _kudoRateLimiter = g;
         }
         return _kudoRateLimiter;
@@ -216,9 +219,17 @@ sauce.ns('dashboard', function(ns) {
         // Strava kinda has bootstrap dropdowns, but most of the style is missing or broken.
         // I think it still is worth it to reuse the basics though (for now)  A lot of css
         // is required to fix this up though.
+        const rl = await getKudoRateLimiter();
         const tpl = await sauce.template.getTemplate('kudo-all.html', 'dashboard');
         const filters = new Set((await sauce.storage.getPref('kudoAllFilters') || []));
-        const $kudoAll = jQuery(await tpl({filters}));
+        const suspended = rl.willSuspendFor();
+        const $kudoAll = jQuery(await tpl({
+            filters,
+            rateLimited: !!suspended,
+        }));
+        if (suspended) {
+            rl.wait().then(() => void $kudoAll.removeClass('limit-reached'));
+        }
         jQuery('#dashboard-feed > .feed-header').append($kudoAll);
         $kudoAll.find('dropdown-toggle').dropdown();
         $kudoAll.on('click', 'label.filter', ev => void ev.stopPropagation()); // prevent menu close
@@ -230,13 +241,13 @@ sauce.ns('dashboard', function(ns) {
                 filters.delete(id);
             }
             await sauce.storage.setPref('kudoAllFilters', Array.from(filters));
+            resetKudoButton();
         });
         $kudoAll.on('click', 'button.sauce-invoke', async ev => {
-            const rl = await getKudoRateLimiter();
             const cards = document.querySelectorAll(
                 `.react-card-container:not(.hidden-by-sauce) > [data-react-props]`);
             const kudoButtons = [];
-            const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge']);
+            const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge', 'Club']);
             for (const card of cards) {
                 const props = getCardProps(card);
                 if ((filters.has('commutes') && isPeerCommute(card)) ||
@@ -273,21 +284,46 @@ sauce.ns('dashboard', function(ns) {
             const toKudo = Array.from(kudoButtons).filter(x =>
                 x.querySelector(':scope > svg[data-testid="unfilled_kudos"]'));
             if (!toKudo.length) {
+                $kudoAll.addClass('complete');
                 return;
             }
             const $status = $kudoAll.find('.status');
             $status.text(`0 / ${toKudo.length}`);
             $kudoAll.addClass('active');
+            let count = 0;
             try {
                 for (const [i, x] of toKudo.entries()) {
+                    // Rate limiter wait and anti-bot sleep.
+                    const impendingSuspend = rl.willSuspendFor();
+                    if (impendingSuspend > 10000) {
+                        $kudoAll.removeClass('active').addClass('limit-reached');
+                        if (count) {
+                            feedEvent('kudo', 'all', count);
+                            count = 0;
+                        }
+                    }
                     await rl.wait();
+                    await sauce.sleep(150 + Math.random() ** 10 * 8000);  // low weighted jitter
+                    $kudoAll.removeClass('limit-reached').addClass('active');
                     x.click();
+                    count++;
                     $status.text(`${i + 1} / ${toKudo.length}`);
                 }
             } finally {
-                $kudoAll.removeClass('active');
+                $kudoAll.removeClass('active').addClass('complete');
+                if (count) {
+                    feedEvent('kudo', 'all', count);
+                }
             }
         });
+    }
+
+
+    function resetKudoButton() {
+        const el = document.querySelector('#sauce-kudo-all');
+        if (el) {
+            el.classList.remove('complete');
+        }
     }
 
 

@@ -6,3 +6,15 @@
         transform: rotate(359deg);
     }
 }
+
+@keyframes color-pulse {
+    from {
+        filter: saturate(0.8);
+    }
+    50% {
+        filter: saturate(1.2);
+    }
+    to {
+        filter: saturate(0.8);
+    }
+}

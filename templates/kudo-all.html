@@ -1,8 +1,10 @@
-<div class="btn-group dropdown" id="sauce-kudo-all">
+<div class="btn-group dropdown {{rateLimited ? 'limit-reached' : ''}}" id="sauce-kudo-all">
     <button type="button" class="btn btn-icon sauce-invoke">
         <div class="app-icon icon-kudo kudo"></div>
-        <span class="inactive-only">{{{kudo_all}}}</span>
-        <span class="active-only status"></span>
+        <span class="inactive-only">Kudo {{{all}}}</span>
+        <span class="active-only status">...</span>
+        <span class="limit-reached-only">{{{kudo_limit_reached}}}</span>
+        <span class="complete-only">{{{kudo_complete}}}</span>
     </button>
     <button type="button" class="btn dropdown-toggle dropdown-toggle-split"
             data-toggle="dropdown" aria-haspopup="true"

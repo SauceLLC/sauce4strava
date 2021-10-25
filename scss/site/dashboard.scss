@@ -1,5 +1,6 @@
 @use 'defines';
 @use 'color';
+@use 'animations';
 
 
 #sauce-kudo-all {
@@ -12,13 +13,55 @@
             display: none;
         }
     }
-
     &.active {
         pointer-events: none;
-        opacity: 0.4;
+        animation: color-pulse 2s infinite steps(60 * 2);
+
+        button {
+            background-color: color.shade(accent, 5%);
+            color: color.shade(accent, 80%);
+        }
+
+        button.dropdown-toggle > svg {
+            visibility: hidden;
+        }
 
         .inactive-only {
             display: none;
+        }
+    }
+
+    &:not(.limit-reached) {
+        .limit-reached-only {
+            display: none;
+        }
+    }
+    &.limit-reached {
+        .active-only,
+        .inactive-only,
+        .complete-only {
+            display: none;
+        }
+
+        button.sauce-invoke {
+            pointer-events: none;
+        }
+    }
+
+    &:not(.complete) {
+        .complete-only {
+            display: none;
+        }
+    }
+    &.complete {
+        .active-only,
+        .inactive-only,
+        .limit-reached-only {
+            display: none;
+        }
+
+        button.sauce-invoke {
+            pointer-events: none;
         }
     }
 
@@ -37,7 +80,7 @@
     }
 
     button.sauce-invoke {
-        padding: 0.2em 1em;
+        padding: 0.2em 0.5em 0.2em 1em;
 
         .app-icon {
             margin-right: 0.6em;
