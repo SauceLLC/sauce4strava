@@ -219,6 +219,7 @@ sauce.ns('dashboard', function(ns) {
         // Strava kinda has bootstrap dropdowns, but most of the style is missing or broken.
         // I think it still is worth it to reuse the basics though (for now)  A lot of css
         // is required to fix this up though.
+        await sauce.proxy.connected;
         const rl = await getKudoRateLimiter();
         const tpl = await sauce.template.getTemplate('kudo-all.html', 'dashboard');
         const filters = new Set((await sauce.storage.getPref('kudoAllFilters') || []));
@@ -365,6 +366,7 @@ sauce.ns('dashboard', function(ns) {
         load,
     };
 });
+
 
 (async function() {
     try {
