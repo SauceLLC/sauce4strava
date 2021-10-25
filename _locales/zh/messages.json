@@ -1296,5 +1296,21 @@
     },
     "food_donut_desc": {
         "message": "巧克力甜甜圈（43 克，3 英寸）"
+    },
+    "dashboard_all": {
+        "message": "全部"
+    },
+    "dashboard_exclude_virtual": {
+        "message": "跳过虚拟"
+    },
+    "dashboard_exclude_commutes": {
+        "message": "跳过通勤"
+    },
+    "dashboard_kudo_limit_reached": {
+        "message": "达到每小时限制"
+    },
+    "dashboard_kudo_complete": {
+        "message": "一切 Kudoed",
+        "description": "IMMUTABLE"
     }
 }

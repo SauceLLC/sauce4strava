@@ -1211,5 +1211,21 @@
     },
     "food_donut_desc": {
         "message": "Schokoladen-Donut (43g, 3 Zoll)"
+    },
+    "dashboard_all": {
+        "message": "Alle"
+    },
+    "dashboard_exclude_virtual": {
+        "message": "Virtuell überspringen"
+    },
+    "dashboard_exclude_commutes": {
+        "message": "Pendeln überspringen"
+    },
+    "dashboard_kudo_limit_reached": {
+        "message": "Stundenlimit erreicht"
+    },
+    "dashboard_kudo_complete": {
+        "message": "Alles Kudo",
+        "description": "IMMUTABLE"
     }
 }

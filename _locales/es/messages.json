@@ -1201,5 +1201,20 @@
     },
     "food_donut_desc": {
         "message": "Donut de chocolate (43 g, 3 pulgadas)"
+    },
+    "dashboard_all": {
+        "message": "Todos"
+    },
+    "dashboard_exclude_virtual": {
+        "message": "Saltar virtual"
+    },
+    "dashboard_exclude_commutes": {
+        "message": "Saltar viajes diarios"
+    },
+    "dashboard_kudo_limit_reached": {
+        "message": "Límite horario alcanzado"
+    },
+    "dashboard_kudo_complete": {
+        "message": "Todo Kudoed"
     }
 }

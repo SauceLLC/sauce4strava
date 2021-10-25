@@ -397,7 +397,9 @@
     "food_donut_1": {"message": "Donut"},
     "food_donut_n": {"message": "Donuts"},
     "food_donut_desc": {"message": "Chocolate Doughnut (43g, 3 inch)"},
-    "dashboard_kudo_all": {"message": "Kudo All"},
+    "dashboard_all": {"message": "All"},
     "dashboard_exclude_virtual": {"message": "Skip Virtual"},
-    "dashboard_exclude_commutes": {"message": "Skip Commutes"}
+    "dashboard_exclude_commutes": {"message": "Skip Commutes"},
+    "dashboard_kudo_limit_reached": {"message": "Hourly Limit Reached"},
+    "dashboard_kudo_complete": {"message": "Everything Kudoed"}
 }

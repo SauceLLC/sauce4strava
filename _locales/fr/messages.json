@@ -1210,5 +1210,21 @@
     },
     "food_donut_desc": {
         "message": "Donut au chocolat (43g, 3 pouces)"
+    },
+    "dashboard_all": {
+        "message": "Tout"
+    },
+    "dashboard_exclude_virtual": {
+        "message": "Ignorer le virtuel"
+    },
+    "dashboard_exclude_commutes": {
+        "message": "Ignorer les trajets"
+    },
+    "dashboard_kudo_limit_reached": {
+        "message": "Limite horaire atteinte"
+    },
+    "dashboard_kudo_complete": {
+        "message": "Tout Kudoed",
+        "description": "IMMUTABLE"
     }
 }

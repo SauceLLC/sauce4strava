@@ -1208,5 +1208,20 @@
     },
     "food_donut_desc": {
         "message": "Ciambella al cioccolato (43g, 3 pollici)"
+    },
+    "dashboard_all": {
+        "message": "Tutti"
+    },
+    "dashboard_exclude_virtual": {
+        "message": "Salta virtuale"
+    },
+    "dashboard_exclude_commutes": {
+        "message": "Salta i pendolari"
+    },
+    "dashboard_kudo_limit_reached": {
+        "message": "Limite orario raggiunto"
+    },
+    "dashboard_kudo_complete": {
+        "message": "Tutto Kudoed"
     }
 }
