@@ -980,7 +980,7 @@ self.sauceBaseInit = function sauceBaseInit() {
              self.browser.runtime.getManifest().version);
         const desc = [`v${version}`];
         try {
-            if (e == null || !e.stack) {
+            if (!(e instanceof Error) && (e == null || !e.stack)) {
                 console.error("Non-exception object was thrown:", e);
                 const props = {type: typeof e};
                 try {
@@ -997,14 +997,16 @@ self.sauceBaseInit = function sauceBaseInit() {
                     desc.push(` Audit frame: ${x}`);
                 }
             } else {
-                if (!e.stack.includes(e.message)) {
+                if (!e.stack || !e.stack.includes(e.message)) {
                     // Only chromium includes the error message in the stack.
                     desc.push(e.toString());
                 }
                 // Reduce cardinality from randomly generated urls (safari & firefox)
                 const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
                 const genericUrl = extUrl.split('://', 1)[0] + '://<sauce>/';
-                desc.push(e.stack.replaceAll(extUrl, genericUrl));
+                if (e.stack) {
+                    desc.push(e.stack.replaceAll(extUrl, genericUrl));
+                }
             }
         } catch(intError) {
             desc.push(`Internal error during report error: ${intError.stack} ::: ${e}`);
