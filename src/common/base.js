@@ -997,7 +997,12 @@ self.sauceBaseInit = function sauceBaseInit() {
                     desc.push(` Audit frame: ${x}`);
                 }
             } else {
-                if (!e.stack || !e.stack.includes(e.message)) {
+                if (!e.stack) {
+                    // Some Safari IDB errors have no stack, this provides a little
+                    // more context.
+                    e.stack = (new Error()).stack;
+                }
+                if (!e.stack.includes(e.message)) {
                     // Only chromium includes the error message in the stack.
                     desc.push(e.toString());
                 }
