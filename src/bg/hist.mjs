@@ -1800,16 +1800,15 @@ sauce.proxy.export(DataExchange, {namespace});
 
 
 async function setStoragePersistent() {
-    // This only works on chromium and firefox..
+    // This only works in some cases and may have no effect with unlimitedStorage
+    // but it's evolving on all the browers and it's a good thing to ask for.
     if (navigator.storage && navigator.storage.persisted) {
         let isPersisted = await navigator.storage.persisted();
         if (!isPersisted) {
             isPersisted = await navigator.storage.persist();
         }
         if (!isPersisted) {
-            console.warn(`Persisted storage not granted`);
-        } else {
-            console.info(`Persisted storage enabled`);
+            console.debug(`Persisted storage not granted`);
         }
     }
 }
@@ -1818,7 +1817,6 @@ async function setStoragePersistent() {
 let _setStoragePersistent;
 export function startSyncManager(id) {
     if (id) {
-        console.info("Starting Sync Manager...");
         if (!_setStoragePersistent) {
             _setStoragePersistent = true;
             setTimeout(setStoragePersistent, 0);  // Run out of ctx to avoid startup races.
