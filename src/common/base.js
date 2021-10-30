@@ -297,33 +297,39 @@ self.sauceBaseInit = function sauceBaseInit() {
             options = options || {};
         }
         const ourListeners = [];
-        function addListener(propDesc, fn) {
+        function addListener(propDesc, fn, obj, prop) {
             propDesc.set.listeners.push(fn);
-            ourListeners.push({fn, propDesc});
+            ourListeners.push({fn, propDesc, obj, prop});
         }
-        return new Promise(resolve => {
+        const cleanup = options.once && function() {
+            for (const {fn, propDesc, obj, prop} of ourListeners) {
+                const idx = propDesc.set.listeners.indexOf(fn);
+                propDesc.set.listeners.splice(idx, 1);
+                if (!propDesc.set.listeners.length) {
+                    const desc = {
+                        configurable: true,
+                        enumerable: propDesc.enumerable
+                    };
+                    if (propDesc.set.origSet) {
+                        desc.set = propDesc.set.origSet;
+                        desc.get = propDesc.get;
+                    } else {
+                        desc.value = obj[prop];
+                        desc.writable = true;
+                    }
+                    Object.defineProperty(obj, prop, desc);
+                }
+            }
+        };
+        function monitorPromiseConstructor(resolve) {
             function catchDefine(obj, props) {
                 const prop = props[0];
+                const isLeaf = props.length === 1;
                 let inCallback = false;
                 function onSet(value) {
-                    if (props.length > 1) {
-                        if (Object.isExtensible(value)) {
-                            catchDefine(value, props.slice(1));
-                        }
-                    } else {
-                        if (options.once) {
-                            for (const {fn, propDesc} of ourListeners) {
-                                const idx = propDesc.set.listeners.indexOf(fn);
-                                propDesc.set.listeners.splice(idx, 1);
-                                if (!propDesc.set.listeners.length) {
-                                    Object.defineProperty(obj, prop, {
-                                        value: obj[prop],
-                                        configurable: true,
-                                        writable: true,
-                                        enumerable: propDesc.enumerable
-                                    });
-                                }
-                            }
+                    if (isLeaf) {
+                        if (cleanup) {
+                            cleanup();
                         }
                         if (callback && !inCallback) {
                             inCallback = true;
@@ -334,44 +340,91 @@ self.sauceBaseInit = function sauceBaseInit() {
                             }
                         }
                         resolve(value);
+                    } else {
+                        if (Object.isExtensible(value)) {
+                            catchDefine(value, props.slice(1));
+                        }
                     }
                 }
                 const curValue = obj[prop];
-                if (curValue !== undefined) {  // Not stoked on this test.
+                if (curValue !== undefined) {  // We are really leaning hard on `undefined` :/
                     onSet(curValue);
-                    if (options.once) {
-                        return;  // Just walk the props.
+                    if ((isLeaf && options.once) || options.ignoreDefinedParents) {
+                        return;
                     }
                 }
                 const propDesc = Object.getOwnPropertyDescriptor(obj, prop);
+                if (propDesc) {
+                    if (propDesc.configurable === false) {
+                        throw new TypeError("Unconfigurable property");
+                    } else if (propDesc.set && !propDesc.get) {
+                        throw new TypeError('Write-only property');
+                    } else if ((propDesc.get && !propDesc.set) || propDesc.writable === false) {
+                        // Options `once` or `ignoreDefinedParents` may help resolve this.
+                        throw new TypeError('Read-only property');
+                    }
+                }
                 if (propDesc && propDesc.set && propDesc.set.listeners) {
-                    addListener(propDesc, onSet);
-                } else if (!propDesc || (propDesc.configurable && !propDesc.set)) {
-                    let internalValue = propDesc ? propDesc.value : undefined;
-                    const set = function(value) {
-                        if (Object.is(internalValue, value)) {
-                            return;
-                        }
-                        internalValue = value;
-                        for (const fn of Array.from(set.listeners)) {
-                            fn(value);
-                        }
-                    };
+                    // One of us
+                    addListener(propDesc, onSet, obj, prop);
+                } else {
+                    let get, set;
+                    if (propDesc && propDesc.set) {
+                        // Monkey patch existing getter/setter funcs.
+                        set = function(incomingValue) {
+                            const lastValue = obj[prop];
+                            set.origSet(incomingValue);
+                            const value = obj[prop];
+                            if (Object.is(lastValue, value)) {
+                                return;
+                            }
+                            for (const fn of Array.from(set.listeners)) {
+                                fn(value);
+                            }
+                        };
+                        set.origSet = propDesc.set;
+                        get = propDesc.get;
+                    } else {
+                        let internalValue = obj[prop];
+                        set = function(value) {
+                            if (Object.is(internalValue, value)) {
+                                return;
+                            }
+                            internalValue = value;
+                            for (const fn of Array.from(set.listeners)) {
+                                fn(value);
+                            }
+                        };
+                        get = () => internalValue;
+                    }
                     set.listeners = [];
                     Object.defineProperty(obj, prop, {
-                        enumerable: true,
+                        enumerable: propDesc ? propDesc.enumerable : true,
                         configurable: true,
-                        get: () => internalValue,
+                        get,
                         set
                     });
-                    addListener(Object.getOwnPropertyDescriptor(obj, prop), onSet);
-                } else if (!options.once) {
-                    console.error("Value already exists, consider using `once` option");
-                    throw new TypeError("Unconfigurable");
+                    addListener(Object.getOwnPropertyDescriptor(obj, prop), onSet, obj, prop);
                 }
             }
             catchDefine(options.root || self, propertyAccessor.split('.'));
+        }
+        let earlyRejection;
+        const definedPromise = new Promise(resolve => {
+            // Callback-only users of propDefined may not `await` our function, so we promote
+            // exceptions during monitor setup to throw immediately.  This works for awaiting
+            // users too.  Not sure why the spec for Promise is written this way as it leads
+            // to more frail code.  :(
+            try {
+                monitorPromiseConstructor(resolve);
+            } catch(e) {
+                earlyRejection = e;
+            }
         });
+        if (earlyRejection) {
+            throw earlyRejection;
+        }
+        return definedPromise;
     };
 
 
