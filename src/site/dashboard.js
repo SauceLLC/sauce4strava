@@ -220,7 +220,7 @@ sauce.ns('dashboard', function(ns) {
         // I think it still is worth it to reuse the basics though (for now)  A lot of css
         // is required to fix this up though.
         await sauce.proxy.connected;
-        await sauce.propDefined('jQuery.prototype.dropdown', {once: true});
+        await sauce.propDefined('jQuery.prototype.dropdown', {once: true, ignoreDefinedParents: true});
         const rl = await getKudoRateLimiter();
         const tpl = await sauce.template.getTemplate('kudo-all.html', 'dashboard');
         const filters = new Set((await sauce.storage.getPref('kudoAllFilters') || []));

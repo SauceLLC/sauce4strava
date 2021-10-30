@@ -347,7 +347,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                     }
                 }
                 const curValue = obj[prop];
-                if (curValue !== undefined) {  // We are really leaning hard on `undefined` :/
+                if (curValue !== undefined) {
                     onSet(curValue);
                     if ((isLeaf && options.once) || options.ignoreDefinedParents) {
                         return;
