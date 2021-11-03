@@ -2092,10 +2092,11 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
+            this.syncButtons.clear();  // Must not reuse on re-render() for DOM events.
             const syncBtnPromise = this.athlete ? this.getSyncButton(this.athlete.id) : null;
             const actsPromise = this._getActivities();
             await super.render();
-            if (this.athlete) {
+            if (syncBtnPromise) {
                 this.$('nav .athlete select').after(await syncBtnPromise);
             }
             this.summaryView.setElement(this.$('nav .summary'));
@@ -2120,6 +2121,7 @@ sauce.ns('performance', async ns => {
             }
             const $oldBtn = this.$('nav .athlete .sauce-sync-button');
             if ($oldBtn.length) {
+                // No-op during init(), but needed for updates.
                 this.getSyncButton(this.athlete.id).then($btn => $oldBtn.before($btn).detach());
             }
             if (this.syncController) {
