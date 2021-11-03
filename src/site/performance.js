@@ -1076,6 +1076,7 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
+            console.count('SummaryView render');
             await super.render();
             if (this.counts) {
                 this.$('.counts-piechart').sparkline(this.counts.map(x => x.count), {
@@ -1430,11 +1431,13 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.rangeEnd = null;
-            this.rangeStart = null;
+            this.range = pageView.range;
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
             this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
+            console.log('peaks init', performance.now());
+            this.periods = await sauce.peaks.getRanges('periods');
+            this.distances = await sauce.peaks.getRanges('distances');
             const savedPrefs = await sauce.storage.getPref('peaksView') || {};
             this.prefs = {
                 type: 'power',
@@ -1445,10 +1448,12 @@ sauce.ns('performance', async ns => {
                 includeAllDates: false,
                 ...savedPrefs
             };
+            await this.loadPeaks();
             await super.init();
+            console.log('peaks post init', performance.now());
         }
 
-        async renderAttrs() {
+        renderAttrs() {
             return {
                 prefs: this.prefs,
                 peaks: this.peaks,
@@ -1456,12 +1461,13 @@ sauce.ns('performance', async ns => {
                 unit: getPeaksUnit(this.prefs.type),
                 valueFormatter: getPeaksValueFormatter(this.prefs.type),
                 athleteName: this.athleteName.bind(this),
-                periods: await sauce.peaks.getRanges('periods'),
-                distances: await sauce.peaks.getRanges('distances'),
+                periods: this.periods,
+                distances: this.distances,
             };
         }
 
         async render() {
+            console.warn('PeaksView render');
             this.$el.addClass('loading');
             try {
                 await this.loadPeaks();
@@ -1495,13 +1501,25 @@ sauce.ns('performance', async ns => {
         }
 
         async loadPeaks() {
+            // Some startup optimizations call this early, so we need to dedup.
+            if (this._loadPeaksCached) {
+                this._loadPeaksPrevEnd === this.range.end &&
+                this._loadPeaksPrevAthlete === this.athlete) {
+                console.error('DEDUP');
+                return;
+            } else {
+                console.error('LoaD');
+            }
+            this._loadPeaksPrevStart = this.range.start;
+            this._loadPeaksPrevEnd = this.range.end;
+            this._loadPeaksPrevAthlete = this.athlete;
             const options = {
                 limit: this.prefs.limit,
                 expandActivities: true,
             };
             if (!this.prefs.includeAllDates) {
-                options.start = this.rangeStart;
-                options.end = this.rangeEnd;
+                options.start = +this.range.start;
+                options.end = +this.range.end;
             }
             if (!this.prefs.includeAllAthletes) {
                 this.peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.prefs.type,
@@ -1517,10 +1535,10 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onBeforeUpdateActivities({athlete, start, end}) {
-            this.rangeStart = +start;
-            this.rangeEnd = +end;
-            await this.setAthlete(athlete);
+        async onBeforeUpdateActivities({athlete, range}) {
+            this.range = range;
+            this.athlete = athlete;
+            this.athleteNameCache.set(athlete.id, athlete.name);
             await this.render();
         }
 
@@ -1595,12 +1613,6 @@ sauce.ns('performance', async ns => {
             addEventListener('pointercancel', onDragDone);
             sauce.report.event('PerfPeaksView', 'resize');
         }
-
-        async setAthlete(athlete) {
-            this.athlete = athlete;
-            this.athleteNameCache.set(athlete.id, athlete.name);
-            await this.render();
-        }
     }
 
 
@@ -1652,8 +1664,9 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
+            console.count('MainView render');
             await super.render();
-            // NOTE We don't call peaksView.render() because update() will trigger it.
+            // NOTE We don't call peaksView.render() because it's triggered by events from pageView.
             this.peaksView.setElement(this.$('.peaks-view'));
             this.charts.training = new ActivityTimeRangeChart('#training', this, {
                 plugins: [chartOverUnderFillPlugin],
@@ -2065,7 +2078,6 @@ sauce.ns('performance', async ns => {
         get events() {
             return {
                 'change nav select[name=athlete]': 'onAthleteChange',
-                'click .btn.sync-panel': 'onControlPanelClick',
                 'click .onboarding-stack .btn.enable': 'onOnboardingEnableClick',
             };
         }
@@ -2077,13 +2089,13 @@ sauce.ns('performance', async ns => {
         async init({athletes}) {
             this.onSyncActive = this._onSyncActive.bind(this);
             this.athletes = athletes;
+            this.syncButtons = new Map();
             const f = ns.router.filters;
             this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
             await this.setAthleteId(f.athleteId, {router: {replace: true}});
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
-            this.syncButtons = new Map();
             ns.router.setFilters(this.athlete, this.range, {replace: true});
             ns.router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
@@ -2097,19 +2109,26 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
+            console.count('PageView render');
+            console.log(11, performance.now());
+            const syncBtnPromise = this.athlete ? this.getSyncButton(this.athlete.id) : null;
             await super.render();
+            console.log(22, performance.now());
             if (this.athlete) {
-                this.$('nav .athlete select').after(await this.getSyncButton(this.athlete.id));
+                this.$('nav .athlete select').after(await syncBtnPromise);
             }
+            console.log(33, performance.now());
             this.summaryView.setElement(this.$('nav .summary'));
             this.mainView.setElement(this.$('main'));
             this.detailsView.setElement(this.$('aside.details'));
             await Promise.all([
-                this.summaryView.initializing, // XXX I forget why we don't use render here, it would just be nice if they were the same..
+                this.summaryView.initializing, // render() is triggered later by onUpdateActivities
                 this.detailsView.render(),
                 this.mainView.render(),
             ]);
+            console.log(44, performance.now());
             await this.updateActivities();
+            console.log(55, performance.now());
         }
 
         async setAthleteId(athleteId, options={}) {
@@ -2176,10 +2195,6 @@ sauce.ns('performance', async ns => {
             await this.updateActivities();
         }
 
-        async onControlPanelClick(ev) {
-            await sauce.sync.activitySyncDialog(this.athlete.id, getSyncController(this.athlete.id));
-        }
-
         async onRouterNav() {
             // This func gets valid arguments but they are raw.  Use the filters object instead.
             const f = ns.router.filters;
@@ -2215,12 +2230,12 @@ sauce.ns('performance', async ns => {
         }
 
         async updateActivities() {
+            this.trigger('before-update-activities', {athlete: this.athlete, range: this.range});
             const start = this.range.start;
             let end = this.range.end;
             if (end > Date.now()) {
                 end = tomorrow();
             }
-            this.trigger('before-update-activities', {athlete: this.athlete, start, end});
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
                 {start: +start, end: +end, includeTrainingLoadSeed: true, excludeUpper: true});
             let atl = 0;
