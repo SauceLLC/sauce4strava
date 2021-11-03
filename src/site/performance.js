@@ -139,7 +139,6 @@ sauce.ns('performance', async ns => {
             }
             this.start = start;
             this.end = end;
-            console.warn(this.start, this.end);
         }
     }
     await CalendarRange.loadDefaults();
@@ -1076,7 +1075,6 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
-            console.count('SummaryView render');
             await super.render();
             if (this.counts) {
                 this.$('.counts-piechart').sparkline(this.counts.map(x => x.count), {
@@ -1431,11 +1429,11 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.range = pageView.range;
+            this.rangeStart = pageView.range.start;
+            this.rangeEnd = pageView.range.end;
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
             this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
-            console.log('peaks init', performance.now());
             this.periods = await sauce.peaks.getRanges('periods');
             this.distances = await sauce.peaks.getRanges('distances');
             const savedPrefs = await sauce.storage.getPref('peaksView') || {};
@@ -1448,9 +1446,7 @@ sauce.ns('performance', async ns => {
                 includeAllDates: false,
                 ...savedPrefs
             };
-            await this.loadPeaks();
             await super.init();
-            console.log('peaks post init', performance.now());
         }
 
         renderAttrs() {
@@ -1467,7 +1463,6 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
-            console.warn('PeaksView render');
             this.$el.addClass('loading');
             try {
                 await this.loadPeaks();
@@ -1501,25 +1496,13 @@ sauce.ns('performance', async ns => {
         }
 
         async loadPeaks() {
-            // Some startup optimizations call this early, so we need to dedup.
-            if (this._loadPeaksCached) {
-                this._loadPeaksPrevEnd === this.range.end &&
-                this._loadPeaksPrevAthlete === this.athlete) {
-                console.error('DEDUP');
-                return;
-            } else {
-                console.error('LoaD');
-            }
-            this._loadPeaksPrevStart = this.range.start;
-            this._loadPeaksPrevEnd = this.range.end;
-            this._loadPeaksPrevAthlete = this.athlete;
             const options = {
                 limit: this.prefs.limit,
                 expandActivities: true,
             };
             if (!this.prefs.includeAllDates) {
-                options.start = +this.range.start;
-                options.end = +this.range.end;
+                options.start = +this.rangeStart;
+                options.end = +this.rangeEnd;
             }
             if (!this.prefs.includeAllAthletes) {
                 this.peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.prefs.type,
@@ -1536,7 +1519,8 @@ sauce.ns('performance', async ns => {
         }
 
         async onBeforeUpdateActivities({athlete, range}) {
-            this.range = range;
+            this.rangeStart = range.start;
+            this.rangeEnd = range.end;
             this.athlete = athlete;
             this.athleteNameCache.set(athlete.id, athlete.name);
             await this.render();
@@ -1664,10 +1648,9 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
-            console.count('MainView render');
             await super.render();
-            // NOTE We don't call peaksView.render() because it's triggered by events from pageView.
             this.peaksView.setElement(this.$('.peaks-view'));
+            await this.peaksView.render();
             this.charts.training = new ActivityTimeRangeChart('#training', this, {
                 plugins: [chartOverUnderFillPlugin],
                 options: {
@@ -2109,15 +2092,12 @@ sauce.ns('performance', async ns => {
         }
 
         async render() {
-            console.count('PageView render');
-            console.log(11, performance.now());
             const syncBtnPromise = this.athlete ? this.getSyncButton(this.athlete.id) : null;
+            const actsPromise = this._getActivities();
             await super.render();
-            console.log(22, performance.now());
             if (this.athlete) {
                 this.$('nav .athlete select').after(await syncBtnPromise);
             }
-            console.log(33, performance.now());
             this.summaryView.setElement(this.$('nav .summary'));
             this.mainView.setElement(this.$('main'));
             this.detailsView.setElement(this.$('aside.details'));
@@ -2126,9 +2106,7 @@ sauce.ns('performance', async ns => {
                 this.detailsView.render(),
                 this.mainView.render(),
             ]);
-            console.log(44, performance.now());
-            await this.updateActivities();
-            console.log(55, performance.now());
+            this._updateActivities(await actsPromise);
         }
 
         async setAthleteId(athleteId, options={}) {
@@ -2231,6 +2209,10 @@ sauce.ns('performance', async ns => {
 
         async updateActivities() {
             this.trigger('before-update-activities', {athlete: this.athlete, range: this.range});
+            this._updateActivities(await this._getActivities());
+        }
+
+        async _getActivities() {
             const start = this.range.start;
             let end = this.range.end;
             if (end > Date.now()) {
@@ -2238,6 +2220,10 @@ sauce.ns('performance', async ns => {
             }
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
                 {start: +start, end: +end, includeTrainingLoadSeed: true, excludeUpper: true});
+            return {activities, start, end};
+        }
+
+        _updateActivities({activities, start, end}) {
             let atl = 0;
             let ctl = 0;
             if (activities.length) {
