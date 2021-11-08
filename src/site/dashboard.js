@@ -214,8 +214,6 @@ sauce.ns('dashboard', function(ns) {
 
 
     async function loadAfterDOM() {
-        // XXX Perhaps I should use this load event for all cases but for now I'm not retesting.
-        // ---
         // Strava kinda has bootstrap dropdowns, but most of the style is missing or broken.
         // I think it still is worth it to reuse the basics though (for now)  A lot of css
         // is required to fix this up though.
