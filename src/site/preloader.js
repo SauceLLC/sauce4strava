@@ -107,12 +107,21 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             } else {
                 sauce.analysisStatsIntent = {start, end};
             }
-            return saveHandleStreamHoverFn.apply(this, arguments);
+            try {
+                return saveHandleStreamHoverFn.apply(this, arguments);
+            } finally {
+                const tweaks = this.container._streamTweaks;
+                const labelBox = this;
+                this.groups.selectAll('text.static-label-box.max-js').text(function(x) {
+                    const maxLabel = (tweaks[x.streamType] || {}).maxLabel;
+                    return maxLabel ? maxLabel(x, labelBox, start, end) : this.textContent;
+                });
+            }
         };
 
         const saveBuildFn = Klass.prototype.build;
         Klass.prototype.build = function() {
-            // Leave a ref to ourselves on the container so it can be used for smoothing code.
+            // Leave a ref to ourselves on the container so it can be used by us later.
             this.container._labelBox = this;
             return saveBuildFn.apply(this, arguments);
         };
@@ -120,22 +129,39 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
 
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
+        let minLocale = 'Min';
+        sauce.locale.getMessage('analysis_min').then(x => minLocale = x);
+        const paceMaxLabel = (data, labelBox, start, end) => {
+            const stream = labelBox.builder().context.getStream(data.streamType)
+                .slice(+start, end == null ? undefined : +end);
+            const fmtr = labelBox.builder().context.formatter(data.streamType);
+            return Strava.I18n.Locale.t("strava.charts.activities.label_box.hover_max", {
+                metric: fmtr.format(sauce.data.min(stream))
+            });
+        };
         const streamTweaks = {
             w_prime_balance: {
                 suggestedMin: () => sauce.analysis.wPrime * 0.50,
-                buildRow: (builder, ...args) => builder.buildAreaLine(...args.slice(0, -1),
-                    line => {
-                        line.groupId('w_prime_balance');
-                        const [t, b] = line.yScale().range();
-                        const gradPct = value => (line.yScale()(value) - b) / (t - b);
-                        const lg = builder.root.append('defs').append('linearGradient');
-                        lg.attr({id: 'w-prime-bal-lg', x1: 0, x2: 0, y1: 0, y2: 1});
-                        lg.append('stop').attr('offset', gradPct(sauce.analysis.wPrime));
-                        lg.append('stop').attr('offset', gradPct(0));
-                        lg.append('stop').attr('offset', gradPct(0));
-                        lg.append('stop').attr('offset', gradPct(-sauce.analysis.wPrime * 0.25));
-                    })
-            }
+                buildRow: (builder, ...args) => builder.buildAreaLine(...args.slice(0, -1), line => {
+                    line.groupId('w_prime_balance');
+                    const [t, b] = line.yScale().range();
+                    const gradPct = value => (line.yScale()(value) - b) / (t - b);
+                    const lg = builder.root.append('defs').append('linearGradient');
+                    lg.attr({id: 'w-prime-bal-lg', x1: 0, x2: 0, y1: 0, y2: 1});
+                    lg.append('stop').attr('offset', gradPct(sauce.analysis.wPrime));
+                    lg.append('stop').attr('offset', gradPct(0));
+                    lg.append('stop').attr('offset', gradPct(0));
+                    lg.append('stop').attr('offset', gradPct(-sauce.analysis.wPrime * 0.25));
+                }),
+                maxLabel: (data, labelBox, start, end) => {
+                    const stream = labelBox.builder().context.getStream(data.streamType)
+                        .slice(+start, end == null ? undefined : +end);
+                    const fmtr = labelBox.builder().context.formatter(data.streamType);
+                    return `${minLocale} ${fmtr.format(sauce.data.min(stream))}`;
+                },
+            },
+            pace: {maxLabel: paceMaxLabel},
+            grade_adjusted_pace: {maxLabel: paceMaxLabel},
         };
 
         class KJFormatter extends Strava.I18n.WorkFormatter {
@@ -192,6 +218,12 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             return [min, max];
         };
 
+        const saveBuildLabelBoxesFn = Klass.prototype.buildLabelBoxes;
+        Klass.prototype.buildLabelBoxes = function() {
+            this.labelGroup._streamTweaks = streamTweaks;
+            return saveBuildLabelBoxesFn.apply(this, arguments);
+        };
+
         Klass.prototype.handleStreamsReady = async function() {
             // In rare cases like install the analysis page
             // is not loaded before the rest of the site.  Not waiting will
@@ -206,7 +238,8 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             }, {
                 stream: 'grade_adjusted_pace',
                 formatter: Strava.I18n.ChartLabelPaceFormatter,
-                filter: () => sauce.options['analysis-graph-gap'] && this.context.activity().supportsGap(),
+                filter: () => sauce.options['analysis-graph-gap'] &&
+                    this.context.activity().supportsGap(),
             }, {
                 stream: 'w_prime_balance',
                 formatter: KJFormatter,
