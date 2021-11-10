@@ -7,6 +7,7 @@ sauce.ns('performance', async ns => {
     const urn = 'sauce/performance';
     const title = 'Sauce Performance';
     const chartTopPad = 15;
+    const lastSyncMaxAge = 3600 * 1000;
 
     await sauce.proxy.connected;
     await sauce.locale.init();
@@ -224,6 +225,19 @@ sauce.ns('performance', async ns => {
     function subtractTZ(time) {
         const offt = (new Date(time)).getTimezoneOffset() * 60000;
         return time - offt;
+    }
+
+
+    const _athleteCache = new Map();
+    async function getAthlete(id, maxAge=3600 * 1000) {
+        const cached = _athleteCache.get(id);
+        if (cached && (Date.now() - cached.ts) < maxAge) {
+            return cached.value;
+        } else {
+            const athlete = await sauce.hist.getAthlete(id);
+            _athleteCache.set(id, {ts: Date.now(), value: athlete});
+            return athlete;
+        }
     }
 
 
@@ -1473,11 +1487,8 @@ sauce.ns('performance', async ns => {
         }
 
         async athleteName(id) {
-            if (!this.athleteNameCache.has(id)) {
-                const athlete = await sauce.hist.getAthlete(id);
-                this.athleteNameCache.set(id, athlete.name);
-            }
-            return this.athleteNameCache.get(id);
+            const athlete = await getAthlete(id);
+            return athlete ? athlete.name : `<${id}>`;
         }
 
         async savePrefs(updates) {
@@ -2075,6 +2086,13 @@ sauce.ns('performance', async ns => {
             this.syncButtons = new Map();
             const f = ns.router.filters;
             this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
+            for (const x of athletes.values()) {
+                if (x.lastSync != null && Date.now() - x.lastSync > lastSyncMaxAge) {
+                    // Run current athlete rightaway and everyone else a bit later...
+                    const cooldown = x.id === f.athleteId ? 0 : 15000;
+                    setTimeout(() => sauce.hist.syncAthlete(x.id), cooldown);
+                }
+            }
             await this.setAthleteId(f.athleteId, {router: {replace: true}});
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});

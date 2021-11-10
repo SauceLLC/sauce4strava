@@ -772,7 +772,7 @@ async function syncAthlete(athleteId, options={}) {
             syncManager.addEventListener('error', ev => reject(new Error(ev.data.error)));
         });
     }
-    await syncManager.refreshRequest(athleteId, options);
+    syncManager.refreshRequest(athleteId, options);
     await syncDone;
 }
 sauce.proxy.export(syncAthlete, {namespace});
