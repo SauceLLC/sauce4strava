@@ -1036,6 +1036,7 @@ class SyncJob extends EventTarget {
         this._cancelEvent = new locks.Event();
         this._rateLimiters = getStreamRateLimiterGroup();
         this._procQueue = new queues.Queue();
+        this._running = false;
         this.setStatus('init');
     }
 
@@ -1052,7 +1053,15 @@ class SyncJob extends EventTarget {
     }
 
     run(options) {
-        this._runPromise = this._run(options);
+        const start = Date.now();
+        this.reportEvent('start');
+        this._running = true;
+        this._runPromise = this._run(options).then(() => {
+            const duration = Math.round((Date.now() - start) / 1000);
+            this.reportEvent('completed', duration < 5 * 60 ?
+                `${Math.round(duration / 60)}-mins` :
+                `${(duration / 3600).toFixed(1)}-hours`);
+        }).finally(() => this._running = false);
     }
 
     emit(name, data) {
@@ -1061,9 +1070,20 @@ class SyncJob extends EventTarget {
         this.dispatchEvent(ev);
     }
 
+    reportEvent(action, label, options) {
+        sauce.report.event('SyncJob', action, label, {
+            nonInteraction: true,
+            ...options
+        });  // bg okay
+    }
+
     setStatus(status) {
         this.status = status;
         this.emit('status', status);
+    }
+
+    isRunning() {
+        return !!this._running;
     }
 
     async _run(options={}) {
@@ -1131,10 +1151,14 @@ class SyncJob extends EventTarget {
     }
 
     async _fetchStreamsWorker(...args) {
+        let imported;
         try {
-            return await this.__fetchStreamsWorker(...args);
+            imported = await this.__fetchStreamsWorker(...args);
         } finally {
             this._procQueue.putNoWait(null);
+        }
+        if (imported) {
+            this.reportEvent('imported', 'streams', {eventValue: imported});
         }
     }
 
@@ -1162,7 +1186,7 @@ class SyncJob extends EventTarget {
             }
             if (this._cancelEvent.isSet()) {
                 console.info('Sync streams cancelled');
-                return;
+                return count;
             }
             if (data) {
                 await streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
@@ -1183,10 +1207,6 @@ class SyncJob extends EventTarget {
                 activity.setSyncError(manifest, error);
             }
             await activity.save();
-        }
-        if (count) {
-            sauce.report.event('SyncJob', 'imported', 'streams',
-                {nonInteraction: true, eventValue: count});  // bg okay
         }
         console.info("Completed streams fetch for: " + this.athlete);
     }
@@ -1366,7 +1386,8 @@ class SyncJob extends EventTarget {
             if (impendingSuspend > minRateLimit) {
                 this.emit('ratelimiter', {suspended: false});
             }
-            console.debug(`Fetching streams for: ${activity.pk} ${new Date(activity.get('ts'))}`);
+            const localeDate = (new Date(activity.get('ts'))).toLocaleDateString();
+            console.debug(`Fetching streams for activity: ${activity.pk} [${localeDate}]`);
             try {
                 const resp = await retryFetch(`/activities/${activity.pk}/streams?${q}`);
                 return await resp.json();
@@ -1399,6 +1420,7 @@ class SyncManager extends EventTarget {
         console.info(`Starting Sync Manager for:`, currentUser);
         this.refreshInterval = 6 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
+        this.syncJobTimeout = 90 * 60 * 1000;
         this.currentUser = currentUser;
         this.activeJobs = new Map();
         this._stopping = false;
@@ -1505,10 +1527,8 @@ class SyncManager extends EventTarget {
     }
 
     async runSyncJob(athlete, options) {
-        const start = Date.now();
         console.info('Starting sync job for: ' + athlete);
         const athleteId = athlete.pk;
-        sauce.report.event('SyncJob', 'start', undefined, {nonInteraction: true});  // bg okay
         const isSelf = this.currentUser === athleteId;
         const syncJob = new SyncJob(athlete, isSelf);
         syncJob.addEventListener('status', ev => this.emitForAthlete(athlete, 'status', ev.data));
@@ -1516,16 +1536,31 @@ class SyncManager extends EventTarget {
         syncJob.addEventListener('ratelimiter', ev => this.emitForAthlete(athlete, 'ratelimiter', ev.data));
         this.emitForAthlete(athlete, 'active', true);
         this.activeJobs.set(athleteId, syncJob);
+        const start = Date.now();
         syncJob.run(options);
         try {
-            await syncJob.wait();
+            await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
         } catch(e) {
             sauce.report.error(e);  // bg okay
             athlete.set('lastSyncError', Date.now());
             this.emitForAthlete(athlete, 'error', {error: e.message});
         } finally {
-            athlete.set('lastSyncVersionHash', options.syncHash);
-            athlete.set('lastSync', Date.now());
+            if (syncJob.isRunning()) {
+                // Timeout hit, just cancel and reschedule soon.  This is a paranoia based
+                // protection for future mistakes or edge cases that might lead to a sync
+                // job hanging indefinitely.   NOTE: it will be more common that this is
+                // triggered by initial sync jobs that hit the large rate limiter delays.
+                // There is no issue here since we just reschedule the job in either case.
+                console.info('Sync job timeout for: ' + athlete);
+                syncJob.cancel();
+                await syncJob.wait();
+                this._refreshRequests.set(athleteId, {});
+            } else {
+                const duration = Math.round((Date.now() - start) / 1000).toLocaleString();
+                console.info(`Sync completed in ${duration} seconds for: ` + athlete);
+                athlete.set('lastSyncVersionHash', options.syncHash);
+                athlete.set('lastSync', Date.now());
+            }
             await this._athleteLock.acquire();
             try {
                 await athlete.save();
@@ -1535,12 +1570,6 @@ class SyncManager extends EventTarget {
             this.activeJobs.delete(athleteId);
             this._refreshEvent.set();
             this.emitForAthlete(athlete, 'active', false);
-            const duration = Math.round((Date.now() - start) / 1000);
-            const bucket = duration < 5 * 60 ?
-                `${Math.round(duration / 60)}-mins` :
-                `${(duration / 3600).toFixed(1)}-hours`;
-            sauce.report.event('SyncJob', 'completed', bucket, {nonInteraction: true});  // bg okay
-            console.info(`Sync completed in ${duration} seconds for: ` + athlete);
         }
     }
 
