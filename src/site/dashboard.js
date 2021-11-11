@@ -219,6 +219,7 @@ sauce.ns('dashboard', function(ns) {
         }
     }
 
+
     async function loadKudoAll() {
         // Strava kinda has bootstrap dropdowns, but most of the style is missing or broken.
         // I think it still is worth it to reuse the basics though (for now)  A lot of css
