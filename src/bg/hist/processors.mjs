@@ -118,6 +118,7 @@ export class OffloadProcessor extends futures.Future {
             this.pending.add(a);
             this._incoming.putNoWait(a, a.get('ts'));
         }
+        return this._incoming.size;
     }
 
     getBatch(count) {
@@ -434,7 +435,7 @@ export class TrainingLoadProcessor extends OffloadProcessor {
             }
         }
         if (!unseen) {
-            return batch;
+            return;
         }
         const orderedIds = await actsStore.getAllKeysForAthlete(this.athlete.pk,
             {start: oldest.get('ts')});

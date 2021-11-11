@@ -707,7 +707,7 @@ sauce.ns('performance', async ns => {
                             gFill.addColorStop(bottomPct, `rgba(${underMaxColor.join()}`);
                         }
                         model.backgroundColor = gFill;
-                    } catch(e) { console.error(e); }
+                    } catch(e) { console.error(e); }  // XXX What meow?
                 }
             }
         }
@@ -2081,7 +2081,7 @@ sauce.ns('performance', async ns => {
         }
 
         async init({athletes}) {
-            this.onSyncActive = this._onSyncActive.bind(this);
+            this.onSyncProgress = this._onSyncProgress.bind(this);
             this.athletes = athletes;
             this.syncButtons = new Map();
             const f = ns.router.filters;
@@ -2111,12 +2111,13 @@ sauce.ns('performance', async ns => {
 
         async render() {
             this.syncButtons.clear();  // Must not reuse on re-render() for DOM events.
-            const syncBtnPromise = this.athlete ? this.getSyncButton(this.athlete.id) : null;
-            const actsPromise = this._getActivities();
+            const syncBtnPromise = this.athlete && this.getSyncButton(this.athlete.id);
+            const actsPromise = this.athlete && this._getActivities();
             await super.render();
-            if (syncBtnPromise) {
-                this.$('nav .athlete select').after(await syncBtnPromise);
+            if (!this.athlete) {
+                return;
             }
+            this.$('nav .athlete select').after(await syncBtnPromise);
             this.summaryView.setElement(this.$('nav .summary'));
             this.mainView.setElement(this.$('main'));
             this.detailsView.setElement(this.$('aside.details'));
@@ -2143,20 +2144,30 @@ sauce.ns('performance', async ns => {
                 this.getSyncButton(this.athlete.id).then($btn => $oldBtn.before($btn).detach());
             }
             if (this.syncController) {
-                this.syncController.removeEventListener('active', this.onSyncActive);
+                this.syncController.removeEventListener('progress', this.onSyncProgress);
             }
             if (this.athlete) {
                 this.syncController = getSyncController(this.athlete.id);
-                this.syncController.addEventListener('active', this.onSyncActive);
+                this.syncController.addEventListener('progress', this.onSyncProgress);
             } else {
                 this.syncController = null;
             }
             await this.refreshNewestAndOldest();
         }
 
-        async _onSyncActive(ev) {
-            const active = ev.data;
-            if (active === false) {
+        async _onSyncProgress(ev) {
+            const done = ev.data.done;
+            if (!done.count) {
+                return;
+            }
+            console.warn('done', done.count);
+            // Little bit of a hack here, to reflect training load values properly
+            // we need to treat updated activities from about 42 days before our range
+            // start as an update to our activities, because it's very possible the
+            // ATL/CTL seed values will be forward propagated into our activity range.
+            const rangeStart = +this.range.start - (42 * 86400 * 1000);
+            if (done.oldest <= this.range.end && done.newest >= rangeStart) {
+                await this.updateActivities();
                 if (await this.refreshNewestAndOldest()) {
                     this.trigger('new-activities');
                 }

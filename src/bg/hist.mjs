@@ -1237,6 +1237,7 @@ class SyncJob extends EventTarget {
     async _localProcessWorker() {
         let batchLimit = 20;
         let lastProgressHash;
+        const done = new Set();
         const batch = new Set();
         const offloaded = new Set();
         const offloadedActive = new Map();
@@ -1302,6 +1303,7 @@ class SyncJob extends EventTarget {
                     const m = a.nextAvailManifest('local');
                     if (!m) {
                         batch.delete(a);
+                        done.add(a);
                         continue;
                     }
                     if (!manifestBatches.has(m)) {
@@ -1329,11 +1331,11 @@ class SyncJob extends EventTarget {
                             // set immediately so we don't requeue data to it.
                             procInstance.finally(() => void offloadedActive.delete(processor));
                         }
-                        await procInstance.putIncoming(activities);
+                        const qSize = await procInstance.putIncoming(activities);
                         for (const a of activities) {
                             batch.delete(a);
                         }
-                        console.debug(`${m.name}: enqueued ${activities.length} activities`);
+                        console.debug(`${m.name}: enqueued ${activities.length}/${qSize} activities`);
                     } else {
                         const s = Date.now();
                         try {
@@ -1356,7 +1358,17 @@ class SyncJob extends EventTarget {
                 if (progressHash !== lastProgressHash) {
                     lastProgressHash = progressHash;
                     const ev = new Event('progress');
-                    ev.data = {counts};
+                    const d = Array.from(done);
+                    done.clear();
+                    ev.data = {
+                        counts,
+                        done: {
+                            count: d.length,
+                            oldest: d.length ? sauce.data.min(d.map(x => x.get('ts'))) : null,
+                            newest: d.length ? sauce.data.max(d.map(x => x.get('ts'))) : null,
+                            ids: d.map(x => x.pk),
+                        },
+                    };
                     this.dispatchEvent(ev);
                 }
             }
