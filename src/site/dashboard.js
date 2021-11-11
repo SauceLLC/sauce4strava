@@ -88,7 +88,7 @@ sauce.ns('dashboard', function(ns) {
                     return true;
                 } else if (props.activity.mapAndPhotos && props.activity.mapAndPhotos.photoList) {
                     // Catch the ones that don't claim to be virtual (but are).
-                    const virtualTags = new Set(['zwift', 'trainerroad', 'peloton', 'virtual', 'whoop']);
+                    const virtualTags = new Set(['zwift', 'trainerroad', 'peloton', 'virtual', 'whoop', 'wahoo systm']);
                     for (const x of props.activity.mapAndPhotos.photoList) {
                         if (x.enhanced_photo && virtualTags.has(x.enhanced_photo.name.toLowerCase())) {
                             return true;
