@@ -6,10 +6,14 @@ sauce.ns('sync', ns => {
     const controllers = new Map();
 
 
-    function setupSyncController($btn, controller) {
+    function setupSyncController($btn, id) {
         let statusTimeout;
         let syncError;
         const $status = $btn.find('.sauce-sync-status');
+        if (!controllers.has(id)) {
+            controllers.set(id, new sauce.hist.SyncController(id));
+        }
+        const controller = controllers.get(id);
 
         function setStatus(msg, options={}) {
             clearTimeout(statusTimeout);
@@ -61,22 +65,12 @@ sauce.ns('sync', ns => {
         }
         const tpl = await sauce.template.getTemplate('sync-button.html');
         const $btn = jQuery(await tpl({status: !options.noStatus}));
-        let athlete = await sauce.hist.getAthlete(id);
-        const enabled = !!(athlete && athlete.sync);
-        if (enabled) {
-            $btn.addClass('enabled');
-            if (!controllers.has(id)) {
-                controllers.set(id, new sauce.hist.SyncController(id));
-                setupSyncController($btn, controllers.get(id));
-            }
-        }
+        const athlete = await sauce.hist.getAthlete(id);
+        $btn.toggleClass('enabled', !!(athlete && athlete.sync));
+        setupSyncController($btn, id);
         $btn.on('click', async () => {
-            if (!athlete) {
-                athlete = await sauce.hist.addAthlete({id, ...athleteData});
-            }
-            if (!controllers.has(id)) {
-                controllers.set(id, new sauce.hist.SyncController(id));
-                setupSyncController($btn, controllers.get(id));
+            if (!await sauce.hist.getAthlete(id)) {
+                await sauce.hist.addAthlete({id, ...athleteData});
             }
             await activitySyncDialog(id, controllers.get(id));
             sauce.report.event('AthleteSync', 'ui-button', 'show-dialog');
