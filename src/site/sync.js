@@ -69,7 +69,7 @@ sauce.ns('sync', ns => {
         $btn.toggleClass('enabled', !!(athlete && athlete.sync));
         setupSyncController($btn, id);
         $btn.on('click', async () => {
-            if (!await sauce.hist.getAthlete(id)) {
+            if (!athlete && !(await sauce.hist.getAthlete(id))) {
                 await sauce.hist.addAthlete({id, ...athleteData});
             }
             await activitySyncDialog(id, controllers.get(id));
