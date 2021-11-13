@@ -1355,7 +1355,7 @@ class SyncJob extends EventTarget {
                 }
                 const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
                 const progressHash = JSON.stringify(counts);
-                if (progressHash !== lastProgressHash) {
+                if (progressHash !== lastProgressHash || done.size) {
                     lastProgressHash = progressHash;
                     const ev = new Event('progress');
                     const d = Array.from(done);
