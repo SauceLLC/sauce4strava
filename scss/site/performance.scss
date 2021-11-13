@@ -468,7 +468,7 @@ table.sauce-perf {
         }
 
         key {
-            flex: 0 1 55%;
+            flex: 1 0 55%;
             padding-right: 0.4em;
             font-weight: bold;
             font-size: 0.9em;
@@ -477,6 +477,10 @@ table.sauce-perf {
                 width: 0.9em;
                 margin-right: 0.2em;
             }
+        }
+
+        value {
+            flex: 1 1 45%;
         }
     }
 
@@ -1155,6 +1159,13 @@ table.sauce-perf {
                 }
                 &:last-child {
                     margin-top: 0.5em;
+                }
+            }
+
+            .activity {
+                row .btn {
+                    color: inherit;
+                    float: right;
                 }
             }
 
