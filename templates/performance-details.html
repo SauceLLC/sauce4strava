@@ -3,7 +3,7 @@
     <a class="view-control collapser">{-await fa('window-close-regular')-}</a>
 </header>
 <section class="content sauce-swapped-background">
-    <% if (!activities) { %>
+    <% if (!daily) { %>
         <i>Click on a graph item to see activity details...<!--XXX localize--></i>
         <br/>
         <center><b>- or -</b></center>
@@ -15,7 +15,7 @@
                  title="Show newer activity">{-await fa('ellipsis-h-light')-}</div>
         <% } %>
 
-        <% for (const day of daily.reverse()) { %>
+        <% for (const day of Array.from(daily).reverse()) { %>
             <% const multiple = day.activities.length > 1;  if (multiple) { %>
                 <div class="entry day">
                     <header class="title">

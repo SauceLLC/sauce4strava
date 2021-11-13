@@ -355,7 +355,6 @@ sauce.ns('performance', async ns => {
                             {disableSync: true});
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks',
                             {wait: true});
-                        await pageView.render();
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');
                         ev.currentTarget.disabled = false;
@@ -369,18 +368,21 @@ sauce.ns('performance', async ns => {
                     ev.currentTarget.disabled = true;
                     ev.currentTarget.classList.add('sauce-loading');
                     try {
-                        await sauce.hist.invalidateActivitySyncState(activity.id, 'streams');
-                        await pageView.render();
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'streams', null, {wait: true});
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');
                         ev.currentTarget.disabled = false;
                     }
+                    $modal.dialog('destroy');
                     sauce.report.event('EditActivity', 'reimport');
                 }
             }, {
                 text: 'Delete', // XXX localize
                 class: 'btn btn-secondary',
                 click: async ev => {
+                    // XXX See: https://github.com/SauceLLC/sauce4strava/issues/55
+                    // Also, we'll need to handle updates to affected areas in here if
+                    // a progress event doesn't tell us about deleted activities.
                     ev.currentTarget.disabled = true;
                     ev.currentTarget.classList.add('sauce-loading');
                     try {
@@ -390,6 +392,7 @@ sauce.ns('performance', async ns => {
                         ev.currentTarget.classList.remove('sauce-loading');
                         ev.currentTarget.disabled = false;
                     }
+                    $modal.dialog('destroy');
                     sauce.report.event('EditActivity', 'delete');
                 }
             }]
@@ -1237,11 +1240,12 @@ sauce.ns('performance', async ns => {
         }
 
         async init({pageView}) {
+            this.onSyncProgress = this._onSyncProgress.bind(this);
             this.pageView = pageView;
             this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'select-activities', this.setActivities);
             this.listenTo(pageView, 'new-activities', this.onNewActivities);
-            await this.setAthlete(pageView.athlete);
+            this.setAthlete(pageView.athlete);
             await super.init();
         }
 
@@ -1262,21 +1266,46 @@ sauce.ns('performance', async ns => {
                 hasOlder = ourOldest > this.pageView.oldest;
             }
             return {
-                activities: this.activities,
-                daily: this.daily,
+                daily: this.activities ? activitiesByDay(this.activities) : null,
                 hasNewer,
                 hasOlder,
                 debug: !!location.search.match(/debug/),
             };
         }
 
+        async _onSyncProgress(ev) {
+            const done = ev.data.done;
+            if (!this.activities || !this.activities.length || !done.ids || !done.ids.length) {
+                return;
+            }
+            const ids = new Set(done.ids);
+            const updating = this.activities.filter(x => ids.has(x.id)).map(orig =>
+                sauce.hist.getActivity(orig.id).then(updated => [updated, orig]));
+            for (const [updated, orig] of await Promise.all(updating)) {
+                this.activities[this.activities.indexOf(orig)] = updated;
+            }
+            if (updating.length) {
+                await this.render();
+            }
+        }
+
         async onChangeAthlete(athlete) {
-            await this.setAthlete(athlete);
+            this.setAthlete(athlete);
             await this.render();
         }
 
-        async setAthlete(athlete) {
+        setAthlete(athlete) {
             this.activities = null;
+            const id = athlete && athlete.id;
+            if (this.syncController) {
+                this.syncController.removeEventListener('progress', this.onSyncProgress);
+            }
+            if (id) {
+                this.syncController = getSyncController(id);
+                this.syncController.addEventListener('progress', this.onSyncProgress);
+            } else {
+                this.syncController = null;
+            }
         }
 
         async onNewActivities() {
@@ -1294,7 +1323,6 @@ sauce.ns('performance', async ns => {
         async setActivities(activities, options={}) {
             this.activities = Array.from(activities);
             this.activities.sort((a, b) => (a.ts || 0) - (b.ts || 0));
-            this.daily = activitiesByDay(this.activities);
             await this.render();
             if (!options.noHighlight) {
                 const expanded = this.$el.hasClass('expanded');
@@ -2160,7 +2188,6 @@ sauce.ns('performance', async ns => {
             if (!done.count) {
                 return;
             }
-            console.warn('done', done.count);
             // Little bit of a hack here, to reflect training load values properly
             // we need to treat updated activities from about 42 days before our range
             // start as an update to our activities, because it's very possible the
@@ -2321,6 +2348,7 @@ sauce.ns('performance', async ns => {
         }
         const pageView = new PageView({athletes, el: $page});
         await pageView.render();
+        self.pv = pageView;
     }
 
     ns.router = new AppRouter();
