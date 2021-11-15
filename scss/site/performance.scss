@@ -455,11 +455,32 @@ table.sauce-perf {
     row {
         padding: 0.3em 0.5em;;
         display: flex;
+        flex-wrap: wrap;
         margin: 0.15em 0;
         align-items: center;
 
         &.warning {
             color: color.shade(accent, -10%);
+        }
+
+        &:not(.expanded) {
+            .btn.compress {
+                display: none;
+            }
+
+            .expanded-details {
+                display: none;
+            }
+        }
+        &.expanded {
+            .btn.expand {
+                display: none;
+            }
+        }
+
+        .expanded-details {
+            flex: 1 0 100%;
+            padding: 0.4em;
         }
 
         &:nth-child(even) {
@@ -468,7 +489,7 @@ table.sauce-perf {
         }
 
         key {
-            flex: 1 0 55%;
+            flex: 0 0 55%;
             padding-right: 0.4em;
             font-weight: bold;
             font-size: 0.9em;
@@ -480,7 +501,7 @@ table.sauce-perf {
         }
 
         value {
-            flex: 1 1 45%;
+            flex: 1 1 auto;
         }
     }
 

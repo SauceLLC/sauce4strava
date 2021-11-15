@@ -292,7 +292,7 @@ sauce.ns('performance', async ns => {
     }
 
 
-    function getPeaksUnit(type) {
+    function getPeaksUnit(streamType) {
         const paceUnit = L.paceFormatter.shortUnitKey();
         return {
             power_wkg: 'w/kg',
@@ -302,11 +302,25 @@ sauce.ns('performance', async ns => {
             hr: L.hrFormatter.shortUnitKey(),
             pace: paceUnit,
             gap: paceUnit,
-        }[type];
+        }[streamType];
     }
 
 
-    function getPeaksValueFormatter(type) {
+    function getPeaksRangeTypeForStream(streamType) {
+        return ['gap', 'pace'].includes(streamType) ? 'distances' : 'periods';
+    }
+
+
+    function getPeaksKeyFormatter(streamType) {
+        if (getPeaksRangeTypeForStream(streamType) === 'distances') {
+            return H.raceDistance;
+        } else {
+            return H.duration;
+        }
+    }
+
+
+    function getPeaksValueFormatter(streamType) {
         return {
             power: H.number,
             power_wkg: x => x.toFixed(1),
@@ -315,7 +329,7 @@ sauce.ns('performance', async ns => {
             hr: H.number,
             pace: H.pace,
             gap: H.pace,
-        }[type];
+        }[streamType];
     }
 
 
@@ -1042,19 +1056,11 @@ sauce.ns('performance', async ns => {
             if (start == null || end == null) {
                 return [];
             }
-            let periods;
-            let keyFormatter;
-            const mile = 1609.344;
-            if (['gap', 'pace'].includes(this.type)) {
-                periods = [400, 1000, mile, 10000, mile * 13.1, mile * 26.2];
-                keyFormatter = H.raceDistance;
-            } else {
-                periods = [5, 60, 300, 1200, 3600];
-                keyFormatter = H.duration;
-            }
+            const ranges = await sauce.peaks.getRanges(getPeaksRangeTypeForStream(this.type));
+            const keyFormatter = getPeaksKeyFormatter(this.type);
             const valueFormatter = getPeaksValueFormatter(this.type);
-            const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type, periods,
-                {limit: 1, start, end});
+            const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type,
+                ranges.map(x => x.value), {limit: 1, start, end});
             return peaks.map(x => ({
                 key: keyFormatter(x.period),
                 prettyValue: valueFormatter(x.value),
@@ -1232,6 +1238,8 @@ sauce.ns('performance', async ns => {
                 'click .btn.load-more.older': 'onLoadOlderClick',
                 'click .btn.load-more.newer': 'onLoadNewerClick',
                 'click .btn.load-more.recent': 'onLoadRecentClick',
+                'click row .btn.expand': 'onExpandRowClick',
+                'click row .btn.compress': 'onCompressRowClick',
             };
         }
 
@@ -1378,6 +1386,40 @@ sauce.ns('performance', async ns => {
             const activities = await sauce.hist.getActivitiesForAthlete(this.pageView.athlete.id,
                 {start, end, limit: 10, direction: 'prev'});
             await this.setActivities(activities, {noHighlight: true});
+        }
+
+        async onExpandRowClick(ev) {
+            const row = ev.currentTarget.closest('row');
+            row.classList.add('expanded');
+            if (!row.querySelector('.expanded-details')) {
+                const id = Number(row.closest('.activity').dataset.id);
+                const peaks = await sauce.hist.getPeaksForActivityId(id);
+                const type = row.dataset.type;
+                const periods = new Set((await sauce.peaks.getRanges(getPeaksRangeTypeForStream(type)))
+                    .map(x => x.value));
+                const typedPeaks = peaks.filter(x => x.type === row.dataset.type && periods.has(x.period));
+                if (typedPeaks.length) {
+                    const keyFormatter = getPeaksKeyFormatter(type);
+                    const valueFormatter = getPeaksValueFormatter(type);
+                    const details = document.createElement('div');
+                    details.classList.add('expanded-details');
+                    for (const x of typedPeaks) {
+                        const row = document.createElement('row');
+                        const key = document.createElement('key');
+                        const value = document.createElement('value');
+                        key.textContent = keyFormatter(x.period);
+                        value.textContent = `${valueFormatter(x.value)}${getPeaksUnit(type)}`;
+                        row.appendChild(key);
+                        row.appendChild(value);
+                        details.appendChild(row);
+                    }
+                    row.insertAdjacentElement('beforeend', details);
+                }
+            }
+        }
+
+        async onCompressRowClick(ev) {
+            ev.currentTarget.closest('row').classList.remove('expanded');
         }
     }
 
