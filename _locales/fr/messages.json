@@ -962,6 +962,36 @@
     "performance_workout": {
         "message": "Entraînement"
     },
+    "performance_activity_details": {
+        "message": "Détails de l'activité"
+    },
+    "performance_activity_details_empty": {
+        "message": "Cliquez sur un élément du graphique pour voir les détails de l'activité."
+    },
+    "performance_or": {
+        "message": "ou"
+    },
+    "performance_show_some_activities": {
+        "message": "Montrer quelques activités"
+    },
+    "performance_show_older_activity": {
+        "message": "Afficher l'activité plus ancienne"
+    },
+    "performance_show_newer_activity": {
+        "message": "Afficher l'activité la plus récente"
+    },
+    "performance_override": {
+        "message": "Passer outre"
+    },
+    "performance_elevation_gain": {
+        "message": "Gain d'altitude"
+    },
+    "performance_edit_activity_tooltip": {
+        "message": "Modifier l'activité"
+    },
+    "performance_unavailable": {
+        "message": "Indisponible"
+    },
     "season_start": {
         "message": "Début de la saison"
     },

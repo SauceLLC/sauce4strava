@@ -960,6 +960,36 @@
     "performance_workout": {
         "message": "Allenarsi"
     },
+    "performance_activity_details": {
+        "message": "Dettagli attività"
+    },
+    "performance_activity_details_empty": {
+        "message": "Fare clic su un elemento del grafico per visualizzare i dettagli dell'attività."
+    },
+    "performance_or": {
+        "message": "o"
+    },
+    "performance_show_some_activities": {
+        "message": "Mostra alcune attività"
+    },
+    "performance_show_older_activity": {
+        "message": "Mostra attività precedenti"
+    },
+    "performance_show_newer_activity": {
+        "message": "Mostra attività più recenti"
+    },
+    "performance_override": {
+        "message": "Oltrepassare"
+    },
+    "performance_elevation_gain": {
+        "message": "Dislivello"
+    },
+    "performance_edit_activity_tooltip": {
+        "message": "Modifica attività"
+    },
+    "performance_unavailable": {
+        "message": "Non disponibile"
+    },
     "season_start": {
         "message": "Inizio della stagione"
     },

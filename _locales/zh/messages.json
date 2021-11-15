@@ -1045,6 +1045,36 @@
     "performance_workout": {
         "message": "锻炼"
     },
+    "performance_activity_details": {
+        "message": "活动详情"
+    },
+    "performance_activity_details_empty": {
+        "message": "单击图表项目以查看活动详细信息。"
+    },
+    "performance_or": {
+        "message": "或者"
+    },
+    "performance_show_some_activities": {
+        "message": "显示一些活动"
+    },
+    "performance_show_older_activity": {
+        "message": "显示较早的活动"
+    },
+    "performance_show_newer_activity": {
+        "message": "显示较新的活动"
+    },
+    "performance_override": {
+        "message": "覆盖"
+    },
+    "performance_elevation_gain": {
+        "message": "海拔增益"
+    },
+    "performance_edit_activity_tooltip": {
+        "message": "编辑活动"
+    },
+    "performance_unavailable": {
+        "message": "不可用"
+    },
     "season_start": {
         "message": "季节开始"
     },
