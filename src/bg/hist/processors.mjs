@@ -404,9 +404,9 @@ export class TrainingLoadProcessor extends OffloadProcessor {
     }
 
     async processor() {
-        const minWait = 5 * 1000;
+        const minWait = 2 * 1000;
         const maxWait = 30 * 1000;
-        const maxSize = 500;
+        const maxSize = 200;
         while (true) {
             const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
             if (batch === null) {

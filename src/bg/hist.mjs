@@ -79,7 +79,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 9, // Add badges support
+    version: 10, // Use real watts for runs if available
     depends: ['extra-streams'],
     data: {processor: processors.peaksProcessor}
 });
@@ -560,6 +560,12 @@ export async function getPeaksRelatedToActivity(activity, type, periods, options
     }
 }
 sauce.proxy.export(getPeaksRelatedToActivity, {namespace});
+
+
+export async function getPeaksForActivityId(activityId, options={}) {
+    return await peaksStore.getForActivity(activityId, options);
+}
+sauce.proxy.export(getPeaksForActivityId, {namespace});
 
 
 export async function deletePeaksForActivity(activityId) {
@@ -1296,7 +1302,7 @@ class SyncJob extends EventTarget {
                     batch.add(a);
                 }
             }
-            batchLimit = Math.min(500, Math.ceil(batchLimit * 1.30));
+            batchLimit = Math.min(500, Math.ceil(batchLimit * 1.8));
             while (batch.size && !this._cancelEvent.isSet()) {
                 const manifestBatches = new Map();
                 for (const a of batch) {
@@ -1335,7 +1341,7 @@ class SyncJob extends EventTarget {
                         for (const a of activities) {
                             batch.delete(a);
                         }
-                        console.debug(`${m.name}: enqueued ${activities.length}/${qSize} activities`);
+                        console.debug(`Proc enqueue [${m.name}]: ${activities.length} activities (${qSize} qSize)`);
                     } else {
                         const s = Date.now();
                         try {
@@ -1350,7 +1356,8 @@ class SyncJob extends EventTarget {
                             await this._localSetSyncError(activities, m, e);
                         }
                         const elapsed = Math.round((Date.now() - s)).toLocaleString();
-                        console.debug(`${m.name}: ${elapsed}ms for ${activities.length} activities`);
+                        const rate = Math.round(activities.length / ((Date.now() - s) / 1000)).toLocaleString();
+                        console.debug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} activities (${rate}/s)`);
                     }
                 }
                 const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);

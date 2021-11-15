@@ -32,7 +32,7 @@ async function getActivitiesStreams(activities, streams) {
 
 async function findPeaks(athlete, activities, periods, distances) {
     const actStreams = await getActivitiesStreams(activities, {
-        run: ['time', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
+        run: ['time', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
         ride: ['time', 'watts', 'distance', 'heartrate'],
         other: ['time', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
@@ -89,67 +89,65 @@ async function findPeaks(athlete, activities, periods, distances) {
                 errors.push({activity: activity.id, error: e.message});
             }
         }
-        if (streams.watts || isRun && streams.watts_calc) {
+        if (streams.watts || (isRun && streams.watts_calc)) {
             try {
                 const watts = streams.watts || streams.watts_calc;
-                // Instead of using peakPower, peakNP, we do our own reduction to save
-                // repeative iterations on the same dataset; it's about 50% faster.
-                for (const period of periods) {
-                    if (watts && isRide || period >= 300) {
-                        const rp = sauce.power.correctedRollingPower(streams.time, period);
-                        const wrp = period >= 300 && isRide && sauce.power.correctedRollingPower(
-                            streams.time, period, {active: true, inlineNP: true, inlineXP: true});
-                        if (rp || wrp) {
-                            const leaderRolls = {};
-                            const leaderValues = {};
-                            for (let i = 0; i < streams.time.length; i++) {
-                                const t = streams.time[i];
-                                const w = watts[i];
-                                rp.add(t, w);
-                                if (rp.full()) {
-                                    const power = rp.avg();
-                                    if (power && (!leaderValues.power || power >= leaderValues.power)) {
-                                        leaderRolls.power = rp.clone();
-                                        leaderValues.power = power;
+                for (const period of periods.filter(x => !!streams.watts || x >= 300)) {
+                    // Instead of using peakPower, peakNP, we do our own reduction to save
+                    // repeative iterations on the same dataset; it's about 50% faster.
+                    const rp = sauce.power.correctedRollingPower(streams.time, period);
+                    const wrp = period >= 300 && isRide && sauce.power.correctedRollingPower(
+                        streams.time, period, {active: true, inlineNP: true, inlineXP: true});
+                    if (rp || wrp) {
+                        const leaderRolls = {};
+                        const leaderValues = {};
+                        for (let i = 0; i < streams.time.length; i++) {
+                            const t = streams.time[i];
+                            const w = watts[i];
+                            rp.add(t, w);
+                            if (rp.full()) {
+                                const power = rp.avg();
+                                if (power && (!leaderValues.power || power >= leaderValues.power)) {
+                                    leaderRolls.power = rp.clone();
+                                    leaderValues.power = power;
+                                }
+                            }
+                            if (wrp) {
+                                wrp.add(t, w);
+                                if (wrp.full({active: true})) {
+                                    const np = wrp.np();
+                                    if (np && (!leaderValues.np || np >= leaderValues.np)) {
+                                        leaderRolls.np = wrp.clone();
+                                        leaderValues.np = np;
+                                    }
+                                    const xp = wrp.xp();
+                                    if (xp && (!leaderValues.xp || xp >= leaderValues.xp)) {
+                                        leaderRolls.xp = wrp.clone();
+                                        leaderValues.xp = xp;
                                     }
                                 }
-                                if (wrp) {
-                                    wrp.add(t, w);
-                                    if (wrp.full({active: true})) {
-                                        const np = wrp.np();
-                                        if (np && (!leaderValues.np || np >= leaderValues.np)) {
-                                            leaderRolls.np = wrp.clone();
-                                            leaderValues.np = np;
-                                        }
-                                        const xp = wrp.xp();
-                                        if (xp && (!leaderValues.xp || xp >= leaderValues.xp)) {
-                                            leaderRolls.xp = wrp.clone();
-                                            leaderValues.xp = xp;
-                                        }
-                                    }
-                                }
                             }
-                            if (weight === undefined) {
-                                weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
+                        }
+                        if (weight === undefined) {
+                            weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
+                        }
+                        if (leaderRolls.power) {
+                            const p = leaderRolls.power.avg();
+                            const rankLevel = getRankLevel(period, p, leaderRolls.power.np({external: true}));
+                            addPeak('power', period, p, leaderRolls.power, {rankLevel});
+                            if (weight) {
+                                addPeak('power_wkg', period, p / weight, leaderRolls.power, {rankLevel});
                             }
-                            if (leaderRolls.power) {
-                                const watts = leaderRolls.power.avg();
-                                const rankLevel = getRankLevel(period, watts, leaderRolls.power.np({external: true}));
-                                addPeak('power', period, watts, leaderRolls.power, {rankLevel});
-                                if (weight) {
-                                    addPeak('power_wkg', period, watts / weight, leaderRolls.power, {rankLevel});
-                                }
-                            }
-                            if (leaderRolls.np) {
-                                const np = leaderRolls.np.np({external: true});
-                                const rankLevel = getRankLevel(period, leaderRolls.np.avg(), np);
-                                addPeak('np', period, np, leaderRolls.np, {rankLevel});
-                            }
-                            if (leaderRolls.xp) {
-                                const xp = leaderRolls.xp.xp({external: true});
-                                const rankLevel = getRankLevel(period, leaderRolls.xp.avg(), xp);
-                                addPeak('xp', period, xp, leaderRolls.xp, {rankLevel});
-                            }
+                        }
+                        if (leaderRolls.np) {
+                            const np = leaderRolls.np.np({external: true});
+                            const rankLevel = getRankLevel(period, leaderRolls.np.avg(), np);
+                            addPeak('np', period, np, leaderRolls.np, {rankLevel});
+                        }
+                        if (leaderRolls.xp) {
+                            const xp = leaderRolls.xp.xp({external: true});
+                            const rankLevel = getRankLevel(period, leaderRolls.xp.avg(), xp);
+                            addPeak('xp', period, xp, leaderRolls.xp, {rankLevel});
                         }
                     }
                 }

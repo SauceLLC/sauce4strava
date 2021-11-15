@@ -249,6 +249,10 @@ sauce.ns('hist.db', ns => {
             return this.orderedAndTrimmed(peaks, type, options.limit);
         }
 
+        async getForActivity(activityId, options={}) {
+            return await this.getAll(activityId, {index: 'activity', ...options});
+        }
+
         async deleteForActivity(activityId) {
             return await this.delete(activityId, {index: 'activity'});
         }
