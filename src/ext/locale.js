@@ -14,7 +14,7 @@ sauce.ns('locale', ns => {
 
 
     function _getMessages(batch) {
-        return batch.map(x => _getMessage(x));
+        return batch.map(args => _getMessage(...args));
     }
     sauce.proxy.export(_getMessages, {namespace: 'locale'});
 });

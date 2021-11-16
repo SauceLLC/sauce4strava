@@ -1,5 +1,12 @@
 /* global sauce, Strava */
 
+/* Note that the getMessage* functions are designed to allow the following micro optimization...
+ *   let result = getMessages([...]);
+ *   if (result instanceof Promise) {
+ *       result = await result;
+ *   }
+ */
+
 sauce.ns('locale', ns => {
     'use strict';
 
@@ -26,10 +33,11 @@ sauce.ns('locale', ns => {
     }
 
 
-    function _getCacheEntry(args) {
-        const hashKey = JSON.stringify(args);
+    function _getCacheEntry(key, args) {
+        const hashKey = args.length ? JSON.stringify([key, args]) : key;
         const entry = {
             hashKey,
+            key,
             args
         };
         if (!msgCache.has(hashKey)) {
@@ -42,61 +50,49 @@ sauce.ns('locale', ns => {
     }
 
 
-    function _formatArgs(args) {
-        if (typeof args === 'string') {
-            return [args];
-        } else {
-            return Array.from(args);
-        }
-    }
-
-
-    async function getMessage(...args) {
-        const entry = _getCacheEntry(_formatArgs(args));
-        if (entry.hit) {
-            return entry.value;
-        } else {
-            await sauce.proxy.connected;
-            let value = await sauce.locale._getMessage(...args);
+    async function _fillMessagesCache(missing) {
+        await sauce.proxy.connected;
+        const values = await sauce.locale._getMessages(missing.map(x => [x.key, ...x.args]));
+        for (const [i, x] of missing.entries()) {
+            let value = values[i];
             if (!value) {
-                warnOnce(`Locale message not found: ${args[0]}`);
-                value = `L!:${args[0]}`;
+                warnOnce(`Locale message not found: ${x.key}`);
+                value = `L!:${x.key}`;
             }
-            msgCache.set(entry.hashKey, value);
-            return value;
+            msgCache.set(x.hashKey, value);
         }
     }
 
 
-    async function getMessages(batch) {
+    /* async */ function getMessage(key, ...args) {
+        const entry = _getCacheEntry(key, args);
+        return entry.hit ?
+            entry.value :
+            _fillMessagesCache([entry]).then(() => msgCache.get(entry.hashKey));
+    }
+
+
+    /* async */ function getMessages(keys, ...args) {
         const missing = [];
         const hashKeys = [];
-        for (const args of batch.map(_formatArgs)) {
-            const entry = _getCacheEntry(args);
+        for (const k of keys) {
+            const entry = _getCacheEntry(k, args);
             if (entry.miss) {
                 missing.push(entry);
             }
             hashKeys.push(entry.hashKey);
         }
-        if (missing.length) {
-            await sauce.proxy.connected;
-            const values = await sauce.locale._getMessages(missing.map(x => x.args[0]));
-            for (let i = 0; i < missing.length; i++) {
-                const value = values[i];
-                if (!value) {
-                    warnOnce(`Locale message not found: ${missing[i].hashKey}`);
-                }
-                msgCache.set(missing[i].hashKey, value);
-            }
-        }
-        return hashKeys.map(x => msgCache.get(x));
+        return missing.length ?
+            _fillMessagesCache(missing).then(() => hashKeys.map(x => msgCache.get(x))) :
+            hashKeys.map(x => msgCache.get(x));
     }
 
 
-    async function getMessagesObject(keys, ns) {
+    /* async */ function getMessagesObject(keys, ns) {
         const prefix = ns ? `${ns}_` : '';
-        const msgs = await getMessages(keys.map(x => `${prefix}${x}`));
-        return msgs.reduce((acc, x, i) => (acc[keys[i]] = x, acc), {});
+        const result = getMessages(keys.map(x => `${prefix}${x}`));
+        const reducer = msgs => msgs.reduce((acc, x, i) => (acc[keys[i]] = x, acc), {});
+        return result instanceof Promise ? result.then(reducer) : reducer(result);
     }
 
 

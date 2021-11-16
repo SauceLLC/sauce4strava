@@ -27,7 +27,8 @@ sauce.ns('template', ns => {
                     const resp = await fetch(`${tplUrl}/${filename}`);
                     const tplText = await resp.text();
                     const localePrefix = localeKey && `${localeKey}_`;
-                    _tplCache.set(cacheKey, sauce.template.compile(tplText, {localePrefix}));
+                    const name = filename.split(/\..+$/)[0];
+                    _tplCache.set(cacheKey, await sauce.template.compile(tplText, {localePrefix}, name));
                     _tplFetching.delete(cacheKey);
                 })());
             }
@@ -70,6 +71,7 @@ sauce.ns('template', ns => {
 
     ns.helpers = {
         fa: async function(icon) {
+            console.warn("deprecated: use {{=icon foobar}} instead");
             return await sauce.images.asText(`fa/${icon}.svg`);
         }
     };
@@ -77,48 +79,61 @@ sauce.ns('template', ns => {
         Object.assign(ns.helpers, sauce.locale.templateHelpers);
     }
 
+    ns.staticHelpers = {
+        icon: icon => sauce.images.asText(`fa/${icon}.svg`)
+    };
 
-    ns.compile = (text, settingsOverrides) => {
+
+    ns.compile = async (text, settingsOverrides, name) => {
         const settings = Object.assign({}, {
-            evaluate: /<%([\s\S]+?)%>/g,
-            interpolate: /\{-(.+?)-\}/g,
-            escape: /\{\{(.+?)\}\}/g,
-            locale: /\{\{\{(.+?)\}\}\}/g,
             localeLookup: /\{\{\{\[(.+?)\]\}\}\}/g,
+            locale: /\{\{\{(.+?)\}\}\}/g,
+            staticHelper: /\{\{=([^\s]+?)\s+(.+?)=\}\}/g,
+            escape: /\{\{(.+?)\}\}/g,
+            interpolate: /\{-(.+?)-\}/g,
+            evaluate: /<%([\s\S]+?)%>/g,
             localePrefix: '',
             helpers: ns.helpers,
         }, settingsOverrides);
         const noMatch = /(.)^/;
-
         // Combine delimiters into one regular expression via alternation.
         const matcher = RegExp([
             (settings.localeLookup || noMatch).source,
             (settings.locale || noMatch).source,
+            (settings.staticHelper || noMatch).source,
             (settings.escape || noMatch).source,
             (settings.interpolate || noMatch).source,
-            (settings.evaluate || noMatch).source
+            (settings.evaluate || noMatch).source,
         ].join('|') + '|$', 'g');
-
-        const code = [];
-        code.push(`
-            let __t;
-            const __p = [];
-            const context = Object.assign({}, helpers, obj);
-            with(context) {
-        `);
+        const funcName = 'tplRender' + (name ?
+            name.replace(/-/, '_').replace(/[^a-zA-Z0-9_]/, '')
+                .split('_').map(x => x[0].toUpperCase() + x.substr(1)).join('') :
+            'Anonymous');
+        const code = [`
+            return async function ${funcName}(sauce, helpers, localeMessages, statics, data) {
+                let __t; // tmp
+                const __p = []; // output buffer
+                const context = Object.assign({}, helpers, data);
+                with (context) {
+        `];
         let index = 0;
-        text.replace(matcher, (match, localeLookup, locale, escape, interpolate, evaluate, offset) => {
+        const localeKeys = [];
+        const staticCalls = [];
+        text.replace(matcher, (match, localeLookup, locale, shName, shArg, escape, interpolate, evaluate, offset) => {
             code.push(`__p.push('${text.slice(index, offset).replace(escapeRegExp, escapeChar)}');\n`);
             index = offset + match.length;
             if (localeLookup) {
-                code.push('{\n');
-                code.push(`    const key = ${localeLookup}.startsWith('/') ? `);
-                code.push(`        ${localeLookup}.substr(1) : '${settings.localePrefix}' + ${localeLookup};\n`);
-                code.push('    __p.push(await sauce.locale.getMessage(key));\n');
-                code.push('}\n');
+                code.push(`
+                    __t = ${localeLookup}.startsWith('/') ?
+                        ${localeLookup}.substr(1) :
+                        '${settings.localePrefix}' + ${localeLookup};
+                    __t = sauce.locale.getMessage(__t);
+                    __p.push(__t instanceof Promise ? (await __t) : __t);
+                `);
             } else if (locale) {
                 const key = locale.startsWith('/') ? locale.substr(1) : settings.localePrefix + locale;
-                code.push(`__p.push(await sauce.locale.getMessage('${key}'));\n`);
+                localeKeys.push(key);
+                code.push(`__p.push(localeMessages['${key}']);\n`);
             } else if (escape) {
                 code.push(`
                     __t = (${escape});
@@ -135,28 +150,33 @@ sauce.ns('template', ns => {
                 `);
             } else if (evaluate) {
                 code.push(evaluate);
+            } else if (shName) {
+                const id = staticCalls.length;
+                staticCalls.push([shName, shArg]);
+                code.push(`__p.push(statics[${id}]);\n`);
             }
         });
         code.push(`
-            } /*end-with*/
-            return __p.join('');
+                } /*end-with*/
+                return __p.join('');
+            }; /*end-func*/
         `);
-        let render;
-        const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
         const source = code.join('');
+        let render;
         try {
-            render = new AsyncFunction('obj', 'sauce', 'helpers', source);
+            render = (new Function(source))();
         } catch (e) {
             e.source = source;
             throw e;
         }
-
-        const template = function(data) {
-            return render.call(this, data, sauce, settings.helpers);
-        };
-
-        // Provide the compiled source as a convenience for precompilation.
-        template.source = `async function(obj) {\n${source}\n}`;
-        return template;
+        let localeMessages;
+        if (localeKeys.length) {
+            localeMessages = await sauce.locale.getMessagesObject(localeKeys);
+        }
+        let statics;
+        if (staticCalls.length) {
+            statics = await Promise.all(staticCalls.map(([name, args]) => ns.staticHelpers[name](args)));
+        }
+        return render.bind(this, sauce, settings.helpers, localeMessages, statics);
     };
 });
