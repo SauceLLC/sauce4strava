@@ -663,9 +663,6 @@
     "perf_predictor_slope_tooltip": {
         "message": "Gefälle des Hügels oder Abstiegs"
     },
-    "perf_predictor_distance": {
-        "message": "Entfernung"
-    },
     "perf_predictor_distance_tooltip": {
         "message": "Kursentfernung"
     },

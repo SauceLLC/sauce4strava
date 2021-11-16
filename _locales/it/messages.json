@@ -649,9 +649,6 @@
     "perf_predictor_slope_tooltip": {
         "message": "Gradiente di collina o discesa"
     },
-    "perf_predictor_distance": {
-        "message": "Distanza"
-    },
     "perf_predictor_distance_tooltip": {
         "message": "Distanza del corso"
     },

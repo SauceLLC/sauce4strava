@@ -695,9 +695,6 @@
         "message": "爬坡或下坡的坡度",
         "description": "IMMUTABLE"
     },
-    "perf_predictor_distance": {
-        "message": "距离"
-    },
     "perf_predictor_distance_tooltip": {
         "message": "航向距离"
     },
