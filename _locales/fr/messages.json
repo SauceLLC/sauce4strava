@@ -3,6 +3,9 @@
         "message": "Fonctionnalité supplémentaire pour votre analyse de cyclisme et de course sur Strava™.",
         "description": "IMMUTABLE"
     },
+    "athlete": {
+        "message": "Athlète"
+    },
     "analysis_options": {
         "message": "Les options"
     },
@@ -1006,9 +1009,6 @@
     },
     "graph_options_show": {
         "message": "Spectacle"
-    },
-    "graph_options_athlete": {
-        "message": "Athlète"
     },
     "graph_options_smoothing": {
         "message": "Lissage"

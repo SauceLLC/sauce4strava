@@ -2,6 +2,9 @@
     "app_desc": {
         "message": "Zusätzliche Funktionen für Ihre Rad- und Laufanalyse. Diese Erweiterung aktualisiert die Strava ™ Website."
     },
+    "athlete": {
+        "message": "Athlet"
+    },
     "analysis_options": {
         "message": "Optionen"
     },
@@ -1007,9 +1010,6 @@
     },
     "graph_options_show": {
         "message": "Zeigen"
-    },
-    "graph_options_athlete": {
-        "message": "Athlet"
     },
     "graph_options_smoothing": {
         "message": "Glätten"

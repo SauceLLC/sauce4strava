@@ -3,6 +3,9 @@
         "message": "为你的骑行和跑步分析提供了额外的功能。该扩展程序升级了Strava™网站。",
         "description": "IMMUTABLE"
     },
+    "athlete": {
+        "message": "运动员"
+    },
     "analysis_options": {
         "message": "选项",
         "description": "IMMUTABLE"
@@ -1092,9 +1095,6 @@
     },
     "graph_options_show": {
         "message": "展示"
-    },
-    "graph_options_athlete": {
-        "message": "运动员"
     },
     "graph_options_smoothing": {
         "message": "平滑"

@@ -4,6 +4,8 @@ sauce.ns('sync', ns => {
     'use strict';
 
     const controllers = new Map();
+    const L = sauce.locale;
+    const H = sauce.locale.human;
 
 
     function setupSyncController($btn, id) {
@@ -80,14 +82,21 @@ sauce.ns('sync', ns => {
 
 
     async function activitySyncDialog(athleteId, syncController) {
+        const s = Date.now();
+        const locale = await L.getMessagesObject([
+            'total', 'imported', 'unavailable', 'processed', 'unprocessable', 'activities',
+            'delayed_until', 'title',
+        ], 'sync_control_panel');
         let athlete = await sauce.hist.getAthlete(athleteId);
         const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views.mjs');
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
         const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
             'sync_control_panel');
+        const e = Date.now();
+        console.warn(e - s);
         const initiallyEnabled = !!athlete.sync;
         const $modal = sauce.modal({
-            title: `Activity Sync - ${athlete.name}`,
+            title: `${locale.title} - ${athlete.name}`,
             icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
             dialogClass: 'sauce-sync-athlete-dialog',
             body: await tpl({
@@ -185,19 +194,19 @@ sauce.ns('sync', ns => {
             const total = counts.total - counts.unavailable;
             const synced = counts.processed;
             const title =
-                `Total: ${counts.total}\n` +
-                `Imported: ${counts.imported}\n` +
-                `Unavailable: ${counts.unavailable}\n` +
-                `Remaining: ${counts.total - counts.unavailable - counts.imported}\n` +
-                `Processed: ${counts.processed}\n` +
-                `Unprocessable: ${counts.unprocessable}\n`;
+                `${locale.total}: ${counts.total}\n` +
+                `${locale.imported}: ${counts.imported}\n` +
+                `${locale.unavailable}: ${counts.unavailable}\n` +
+                `${locale.remaining}: ${counts.total - counts.unavailable - counts.imported}\n` +
+                `${locale.processed}: ${counts.processed}\n` +
+                `${locale.unprocessable}: ${counts.unprocessable}\n`;
             const $synced = $modal.find('.entry.synced');
             $synced.attr('title', title);
             $synced.find('progress').attr('value', synced / total);
             if (synced === total) {
-                $synced.find('.text').html(`100% | ${synced.toLocaleString()} activities`);
+                $synced.find('.text').html(`100% | ${synced.toLocaleString()} ${locale.activities}`);
             } else {
-                $synced.find('.text').html(`${synced.toLocaleString()} of ${total.toLocaleString()} activities`);
+                $synced.find('.text').html(`${synced.toLocaleString()} of ${total.toLocaleString()} ${locale.activities}`);
             }
         }
 
@@ -206,10 +215,8 @@ sauce.ns('sync', ns => {
                 syncController.lastSync(),
                 syncController.nextSync()
             ]);
-            $modal.find('.entry.last-sync value').text(lastSync ?
-                sauce.locale.human.datetime(lastSync) : '');
-            $modal.find('.entry.next-sync value').text(nextSync ?
-                sauce.locale.human.datetime(nextSync) : '');
+            $modal.find('.entry.last-sync value').text(lastSync ? H.datetime(lastSync) : '');
+            $modal.find('.entry.next-sync value').text(nextSync ? H.datetime(nextSync) : '');
         }
 
         let rateLimiterInterval;
@@ -226,8 +233,8 @@ sauce.ns('sync', ns => {
                 rateLimiterInterval = setInterval(async () => {
                     const resumes = await syncController.rateLimiterResumes();
                     if (resumes && resumes - Date.now() > 10000) {
-                        const resumesLocale = sauce.locale.human.datetime(resumes, {concise: true});
-                        $modal.find('.entry.status value').text(`Suspended until: ${resumesLocale}`);
+                        const resumesLocale = H.datetime(resumes, {concise: true});
+                        $modal.find('.entry.status value').text(`${locale.delayed_until}: ${resumesLocale}`);
                     }
                 }, 2000);
             } else {

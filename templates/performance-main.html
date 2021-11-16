@@ -1,12 +1,12 @@
 <header class="filters">
     <div class="range-selector">
-        <b class="title">Time Range:</b><br/>
+        <b class="title">{{{time_range}}}:</b><br/>
         <select name="range">
-            <option value="4,weeks" {{range === '4,weeks' ? 'selected' : ''}}>4 weeks</option>
-            <option value="12,weeks" {{range === '12,weeks' ? 'selected' : ''}}>12 weeks</option>
-            <option value="6,months" {{range === '6,months' ? 'selected' : ''}}>6 months</option>
-            <option value="12,months" {{range === '12,months' ? 'selected' : ''}}>12 months</option>
-            <option value="5,years" {{range === '5,years' ? 'selected' : ''}}>5 years</option>
+            <option value="4,weeks" {{range === '4,weeks' ? 'selected' : ''}}>4 {{{/time_weeks}}}</option>
+            <option value="12,weeks" {{range === '12,weeks' ? 'selected' : ''}}>12 {{{/time_weeks}}}</option>
+            <option value="6,months" {{range === '6,months' ? 'selected' : ''}}>6 {{{/time_months}}}</option>
+            <option value="12,months" {{range === '12,months' ? 'selected' : ''}}>12 {{{/time_months}}}</option>
+            <option value="5,years" {{range === '5,years' ? 'selected' : ''}}>5 {{{/time_years}}}</option>
         </select>
     </div>
 
@@ -36,16 +36,16 @@
 
 <section class="sauce-panels">
     <div class="sauce-panel">
-        <header class="title">Peak Performances</header> <!-- XXX localize -->
+        <header class="title">{{{peak_performances_title}}}</header>
         <div class="sauce-panel-content peaks-view loading-mask"></div>
     </div>
 
     <div class="sauce-panel training">
         <header class="title">
-            Training Load - Fitness, Fatigue and Form <!-- XXX localize -->
+            {{{training_load_title}}}
             <a href="https://www.cyclingweekly.com/fitness/training-software-369155"
-               class="more-info" target="_blank">[more info]</a><!--XXX localize-->
-            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">Reset zoom</div>
+               class="more-info" target="_blank">[{{{more_info}}}]</a>
+            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">{{{reset_zoom}}}</div>
         </header>
 
         <div class="chart-tooltip"></div>
@@ -54,8 +54,8 @@
 
     <div class="sauce-panel activities">
         <header class="title">
-            <span>Activities - <span class="metric-display"></span></span> <!-- XXX localize -->
-            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">Reset zoom</div>
+            <span>{{{activities_title}}} - <span class="metric-display"></span></span>
+            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">{{{reset_zoom}}}</div>
         </header>
 
         <div class="chart-tooltip"></div>
@@ -64,8 +64,8 @@
 
     <div class="sauce-panel elevation">
         <header class="title">
-            Elevation Gained <!-- XXX localize -->
-            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">Reset zoom</div>
+            {{{elevation_title}}}
+            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">{{{reset_zoom}}}</div>
         </header>
 
         <div class="chart-tooltip"></div>

@@ -2,15 +2,15 @@
     <section class="overview {{collapsed.overview === true ? 'collapsed' : ''}}"
              data-id="overview">
         <header>
-            <i class="icon">{-await fa('info-circle-duotone')-}</i>
-            <div class="title">Overview<!--XXX Localize--></div>
+            <i class="icon">{{=icon info-circle-duotone=}}</i>
+            <div class="title">{{{overview}}}</div>
             <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
 
         <% if (totalTime && weeklyTime) { %>
             <row class="full">
-                <header>Time:</header>
+                <header>{{{/analysis_time}}}:</header>
                 <div class="backdrop-icon">{-await fa('watch-duotone')-}</div>
                 <h2>{-humanDuration(totalTime, {maxPeriod: 3600, precision: 3600, html: true})-}</h2>
                 <h3>
@@ -77,37 +77,37 @@
              data-id="training">
         <header>
             <i class="icon">{-await fa('transporter-1-duotone')-}</i>
-            <div class="title">Training<!--XXX Localize--></div>
+            <div class="title">{{{training}}}</div>
             <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
 
         <% if (missingTSS.length) { %>
             <row class="warning">
-                <key>{-await fa('exclamation-triangle-duotone')-}Missing TSS:</key><!--XXX localize-->
-                <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} activities</a></value><!--XXX localize-->
+                <key>{-await fa('exclamation-triangle-duotone')-}{{{missing}}} TSS:</key>
+                <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} {{{activities}}}</a></value>
             </row>
         <% } %>
 
         <% if (tssAvg) { %>
             <row>
-                <key>Avg TSS:</key><!--XXX localize-->
+                <key>{{{/analysis_avg}}} TSS:</key>
                 <value>{{humanNumber(tssAvg)}}</value>
             </row>
         <% } %>
         <row>
-            <key>Active days:</key><!--XXX localize-->
+            <key>{{{active_days}}}:</key>
             <value>{{humanNumber(activeDays)}}</value>
         </row>
         <% if (maxCTL >= 0) { %>
             <row>
-                <key>Peak fitness:</key><!--XXX localize-->
+                <key>{{{peak_fitness}}}:</key>
                 <value>{{humanNumber(maxCTL)}} <abbr class="unit">CTL</abbr></value>
             </row>
         <% } %>
         <% if (minTSB < Infinity) { %>
             <row>
-                <key>Least form:</key><!--XXX localize-->
+                <key>{{{least_form}}}:</key>
                 <value>{{humanNumber(minTSB)}} <abbr class="unit">TSB</abbr></value>
             </row>
         <% } %>
@@ -117,20 +117,19 @@
              data-id="highlights">
         <header>
             <i class="icon">{-await fa('medal-duotone')-}</i>
-            <div class="title">Best Performances<!--XXX Localize--></div>
+            <div class="title">{{{/analysis_best_performances}}}</div>
             <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
 
-        <!--XXX Localize-->
         <select name="type">
-            <option value="power" {{type === 'power' ? 'selected' : ''}}>Power</option>
-            <option value="power_wkg" {{type === 'power_wkg' ? 'selected' : ''}}>Power (w/kg)</option>
+            <option value="power" {{type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
+            <option value="power_wkg" {{type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
             <option value="np" {{type === 'np' ? 'selected' : ''}}>NP</option>
             <option value="xp" {{type === 'xp' ? 'selected' : ''}}>xPower</option>
-            <option value="pace" {{type === 'pace' ? 'selected' : ''}}>Pace</option>
-            <option value="gap" {{type === 'gap' ? 'selected' : ''}}>GAP</option>
-            <option value="hr" {{type === 'hr' ? 'selected' : ''}}>Heartrate</option>
+            <option value="pace" {{type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
+            <option value="gap" {{type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
+            <option value="hr" {{type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
         </select>
 
         <% for (const x of peaks) { %>
@@ -147,25 +146,25 @@
              data-id="sync_stats">
         <header>
             <i class="icon">{-await fa('sync-alt-duotone')-}</i>
-            <div class="title">Activity Sync<!--XXX Localize--></div>
+            <div class="title">{{{activity_sync_title}}}</div>
             <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
             <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
         </header>
         <% if (sync.active) { %>
             <row>
-                <key>Status:</key><!--XXX localize-->
+                <key>{{{/sync_control_panel_status}}}:</key>
                 <value>{{sync.status}}</value>
             </row>
         <% } %>
         <% if (sync.error) { %>
             <row>
-                <key>Last Error:</key><!--XXX localize-->
+                <key>{{{/sync_control_panel_last_error}}}:</key>
                 <value>{{sync.error}}</value>
             </row>
         <% } %>
         <% if (sync.counts) { %>
             <row>
-                <key>Activities:</key><!--XXX localize-->
+                <key>{{{activities_title}}}:</key>
                 <value>{{humanNumber(sync.counts.total)}}</value>
             </row>
             <row>

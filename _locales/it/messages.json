@@ -2,6 +2,9 @@
     "app_desc": {
         "message": "Funzionalità aggiuntiva per le tue analisi di ciclismo e corsa. Questa estensione aggiorna il sito Web Strava ™."
     },
+    "athlete": {
+        "message": "Atleta"
+    },
     "analysis_options": {
         "message": "Opzioni"
     },
@@ -1004,9 +1007,6 @@
     },
     "graph_options_show": {
         "message": "Spettacolo"
-    },
-    "graph_options_athlete": {
-        "message": "Atleta"
     },
     "graph_options_smoothing": {
         "message": "levigante"
