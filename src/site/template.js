@@ -73,14 +73,15 @@ sauce.ns('template', ns => {
         fa: async function(icon) {
             console.warn("deprecated: use {{=icon foobar}} instead");
             return await sauce.images.asText(`fa/${icon}.svg`);
-        }
+        },
+        icon: x => sauce.images.asText(`fa/${x}.svg`)
     };
     if (sauce.locale && sauce.locale.templateHelpers) {
         Object.assign(ns.helpers, sauce.locale.templateHelpers);
     }
 
     ns.staticHelpers = {
-        icon: icon => sauce.images.asText(`fa/${icon}.svg`)
+        icon: x => sauce.images.asText(`fa/${x}.svg`)
     };
 
 
@@ -106,14 +107,14 @@ sauce.ns('template', ns => {
             (settings.evaluate || noMatch).source,
         ].join('|') + '|$', 'g');
         const funcName = 'tplRender' + (name ?
-            name.replace(/-/, '_').replace(/[^a-zA-Z0-9_]/, '')
+            name.replace(/-/g, '_').replace(/[^a-zA-Z0-9_]/g, '')
                 .split('_').map(x => x[0].toUpperCase() + x.substr(1)).join('') :
             'Anonymous');
         const code = [`
-            return async function ${funcName}(sauce, helpers, localeMessages, statics, data) {
+            return async function ${funcName}(sauce, helpers, localeMessages, statics, obj) {
                 let __t; // tmp
                 const __p = []; // output buffer
-                const context = Object.assign({}, helpers, data);
+                const context = Object.assign({}, helpers, obj);
                 with (context) {
         `];
         let index = 0;

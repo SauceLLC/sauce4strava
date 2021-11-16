@@ -82,18 +82,15 @@ sauce.ns('sync', ns => {
 
 
     async function activitySyncDialog(athleteId, syncController) {
-        const s = Date.now();
         const locale = await L.getMessagesObject([
             'total', 'imported', 'unavailable', 'processed', 'unprocessable', 'activities',
-            'delayed_until', 'title',
+            'delayed_until', 'title', 'remaining',
         ], 'sync_control_panel');
         let athlete = await sauce.hist.getAthlete(athleteId);
         const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views.mjs');
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
         const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
             'sync_control_panel');
-        const e = Date.now();
-        console.warn(e - s);
         const initiallyEnabled = !!athlete.sync;
         const $modal = sauce.modal({
             title: `${locale.title} - ${athlete.name}`,
