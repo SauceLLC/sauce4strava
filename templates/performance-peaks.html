@@ -1,12 +1,12 @@
 <div class="peak-controls">
     <select name="type">
-        <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>Power</option>
-        <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>Power (w/kg)</option>
+        <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
+        <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
         <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP</option>
         <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
-        <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>Pace</option>
-        <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>GAP</option>
-        <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>Heartrate</option>
+        <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
+        <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
+        <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
     </select>
     <% if (['pace', 'gap'].includes(prefs.type)) { %>
         <select name="distance">
@@ -23,21 +23,21 @@
     <% } %>
 
     <select name="limit">
-        <option value="10" {{prefs.limit === 10 ? 'selected' : ''}}>Top 10</option>
-        <option value="25" {{prefs.limit === 25 ? 'selected' : ''}}>Top 25</option>
-        <option value="100" {{prefs.limit === 100 ? 'selected' : ''}}>Top 100</option>
-        <option value="500" {{prefs.limit === 500 ? 'selected' : ''}}>Top 500</option>
-        <option value="0" {{prefs.limit === 0 ? 'selected' : ''}}>All Results</option>
+        <option value="10" {{prefs.limit === 10 ? 'selected' : ''}}>{{{top}}} 10</option>
+        <option value="25" {{prefs.limit === 25 ? 'selected' : ''}}>{{{top}}} 25</option>
+        <option value="100" {{prefs.limit === 100 ? 'selected' : ''}}>{{{top}}} 100</option>
+        <option value="500" {{prefs.limit === 500 ? 'selected' : ''}}>{{{top}}} 500</option>
+        <option value="0" {{prefs.limit === 0 ? 'selected' : ''}}>{{{all_results}}}</option>
     </select>
 
     <label>
         <input type="checkbox" name="include-all-athletes" {{prefs.includeAllAthletes ? 'checked' : ''}}/>
-        All Athletes
+        {{{all_athletes}}}
     </label>
 
     <label>
         <input type="checkbox" name="include-all-dates" {{prefs.includeAllDates ? 'checked' : ''}}/>
-        All Dates
+        {{{all_dates}}}
     </label>
 </div>
 
@@ -45,21 +45,21 @@
     <table class="sauce-perf">
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>Value</th>
+                <th>{{{/analysis_rank}}}</th>
+                <th>{{{/analysis_value}}}</th>
                 <% if (prefs.includeAllAthletes) { %>
-                    <th>Athlete</th>
+                    <th>{{{/athlete}}}</th>
                 <% } %>
-                <th>Activity</th>
-                <th>Type</th>
-                <th>Date</th>
+                <th>{{{/analysis_activity}}}</th>
+                <th>{{{/type}}}</th>
+                <th>{{{/analysis_date}}}</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
             <% let i = 1; %>
             <% for (const x of peaks.filter(x => x.activity)) { %>
-                <tr data-id="{{x.activity.id}}" title="Click to view details">
+                <tr data-id="{{x.activity.id}}" title="{{{peaks_row_tooltip}}}">
                     <td>{{humanNumber(i++)}}</td>
                     <td>
                         {{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>

@@ -1,14 +1,18 @@
 <% if (!athlete.hrZonesTS || !athlete.hrZones) { %>
-    <i>Heartrate zones have not been established.</i> <!-- XXX localize -->
-    <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{{=icon sync-alt-duotone=}}</div> <!--XXX localize-->
+    <div class="header">
+        <i>{{{no_hr_zones}}}</i>
+        <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{{=icon sync-alt-duotone=}}</div>
+    </div>
 <% } else {%>
-    Heartrate Zones | <small>updated {{humanDate(athlete.hrZonesTS)}}</small> <!--XXX localize-->
-    <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{{=icon sync-alt-duotone=}}</div> <!--XXX localize-->
+    <div class="header">
+        {{{hr_zones}}} <small>| {{{updated}}} {{humanDate(athlete.hrZonesTS)}}</small>
+        <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{{=icon sync-alt-duotone=}}</div>
+    </div>
     <table class="hr-zones">
-        <tr><td>Z1</td><td>Recovery</td><td>0 - {{athlete.hrZones.z1}}</td></tr>
-        <tr><td>Z2</td><td>Endurance</td><td>{{athlete.hrZones.z1}} - {{athlete.hrZones.z2}}</td></tr>
-        <tr><td>Z3</td><td>Tempo</td><td>{{athlete.hrZones.z2}} - {{athlete.hrZones.z3}}</td></tr>
-        <tr class="lt"><td>Z4</td><td>Threshold</td><td>{{athlete.hrZones.z3}} - {{athlete.hrZones.z4}}</td></tr>
-        <tr><td>Z5</td><td>Anaerobic</td><td>{{athlete.hrZones.z4}} - Max</td></tr>
+        <tr><td>Z1</td><td>{{{hr_zone1}}}</td><td>0 - {{athlete.hrZones.z1}}</td></tr>
+        <tr><td>Z2</td><td>{{{hr_zone2}}}</td><td>{{athlete.hrZones.z1}} - {{athlete.hrZones.z2}}</td></tr>
+        <tr><td>Z3</td><td>{{{hr_zone3}}}</td><td>{{athlete.hrZones.z2}} - {{athlete.hrZones.z3}}</td></tr>
+        <tr class="lt"><td>Z4</td><td>{{{hr_zone4}}}</td><td>{{athlete.hrZones.z3}} - {{athlete.hrZones.z4}}</td></tr>
+        <tr><td>Z5</td><td>{{{hr_zone5}}}</td><td>{{athlete.hrZones.z4}} - Max</td></tr>
     </table>
 <% } %>

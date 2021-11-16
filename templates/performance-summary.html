@@ -168,23 +168,23 @@
                 <value>{{humanNumber(sync.counts.total)}}</value>
             </row>
             <row>
-                <key>Imported:</key><!--XXX localize-->
+                <key>{{{/sync_control_panel_imported}}}:</key>
                 <value>{{humanNumber(sync.counts.imported)}}</value>
             </row>
             <row>
-                <key>Remaining:</key><!--XXX localize-->
+                <key>{{{/sync_control_panel_remaining}}}:</key>
                 <value>{{humanNumber(sync.counts.total - sync.counts.unavailable - sync.counts.imported)}}</value>
             </row>
             <row>
-                <key>Unavailable:</key><!--XXX localize-->
+                <key>{{{/sync_control_panel_unavailable}}}:</key>
                 <value>{{humanNumber(sync.counts.unavailable)}}</value>
             </row>
             <row>
-                <key>Processed:</key><!--XXX localize-->
+                <key>{{{/sync_control_panel_processed}}}:</key>
                 <value>{{humanNumber(sync.counts.processed)}}</value>
             </row>
             <row>
-                <key>Unprocessable:</key><!--XXX localize-->
+                <key>{{{/sync_control_panel_unprocessable}}}:</key>
                 <value>{{humanNumber(sync.counts.unprocessable)}}</value>
             </row>
         <% } %>

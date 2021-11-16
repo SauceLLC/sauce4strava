@@ -105,7 +105,6 @@
                                 <value>{{humanTimer(a.stats.activeTime)}}</value>
                             </row>
                         <% } %>
-
                         <% if (a.stats.power) { %>
                             <row data-type="power">
                                 <key>{{{/analysis_power}}}:</key>
@@ -116,7 +115,6 @@
                                      title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                             </row>
                         <% } %>
-
                         <% if (a.basetype === 'run' && a.stats.activeTime && a.stats.distance) { %>
                             <row data-type="pace">
                                 <key>{{{/analysis_pace}}}:</key>
@@ -127,7 +125,6 @@
                                      title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                             </row>
                         <% } %>
-
                         <% if (a.stats.distance) { %>
                             <row>
                                 <key>{{{/analysis_distance}}}:</key>
