@@ -88,10 +88,11 @@ sauce.ns('locale', ns => {
     }
 
 
-    /* async */ function getMessagesObject(keys, ns) {
-        const prefix = ns ? `${ns}_` : '';
-        const result = getMessages(keys.map(x => `${prefix}${x}`));
-        const reducer = msgs => msgs.reduce((acc, x, i) => (acc[keys[i]] = x, acc), {});
+    /* async */ function getMessagesObject(keys, defaultNamespace) {
+        const result = getMessages(keys.map(x =>
+            x[0] === '/' ? x.substr(1) : (defaultNamespace ? `${defaultNamespace}_${x}` : x)));
+        const reducer = msgs => msgs.reduce((acc, x, i) =>
+            (acc[keys[i].replace(/^\//, '')] = x, acc), {});
         return result instanceof Promise ? result.then(reducer) : reducer(result);
     }
 
