@@ -275,6 +275,9 @@
     "sync_control_panel_hr_zone3": {"message": "Tempo"},
     "sync_control_panel_hr_zone4": {"message": "Threshold"},
     "sync_control_panel_hr_zone5": {"message": "Anaerobic"},
+    "sync_control_panel_sync_status": {"message": "Sync Status"},
+    "sync_control_panel_enable_sync_and_get_started": {"message": "Enable sync and get started!"},
+    "sync_control_panel_athlete_settings": {"message": "Athlete Settings"},
 
     "mutable_data_add_entry_tooltip": {"message": "Add a new entry"},
     "mutable_data_delete_entry_tooltip": {"message": "Delete this entry"},
