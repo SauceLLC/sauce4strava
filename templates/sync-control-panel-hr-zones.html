@@ -1,9 +1,9 @@
 <% if (!athlete.hrZonesTS || !athlete.hrZones) { %>
     <i>Heartrate zones have not been established.</i> <!-- XXX localize -->
-    <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{-await fa('sync-alt-duotone')-}</div> <!--XXX localize-->
+    <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{{=icon sync-alt-duotone=}}</div> <!--XXX localize-->
 <% } else {%>
     Heartrate Zones | <small>updated {{humanDate(athlete.hrZonesTS)}}</small> <!--XXX localize-->
-    <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{-await fa('sync-alt-duotone')-}</div> <!--XXX localize-->
+    <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{{=icon sync-alt-duotone=}}</div> <!--XXX localize-->
     <table class="hr-zones">
         <tr><td>Z1</td><td>Recovery</td><td>0 - {{athlete.hrZones.z1}}</td></tr>
         <tr><td>Z2</td><td>Endurance</td><td>{{athlete.hrZones.z1}} - {{athlete.hrZones.z2}}</td></tr>

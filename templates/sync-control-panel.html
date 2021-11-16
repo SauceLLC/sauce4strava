@@ -4,17 +4,17 @@
 
     <div class="padded-info">
         <div class="help" data-for="intro">
-            <a class="sauce-dismiss">{-await fa('times-circle-duotone')-}</a>
+            <a class="sauce-dismiss">{{=icon times-circle-duotone=}}</a>
             {{{intro_help}}}
         </div>
-        <a class="help-info" data-help="intro" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
+        <a class="help-info" data-help="intro" title="{{{/dialog_help_info_tooltip}}}">{{=icon info-circle-duotone=}}</a>
         {{{intro}}}
     </div>
 
     <div class="perf-promo">
         <div class="slides">
-            <div class="nav-left hidden">{-await fa('angle-left-regular')-}</div>
-            <div class="nav-right">{-await fa('angle-right-regular')-}</div>
+            <div class="nav-left hidden">{{=icon angle-left-regular=}}</div>
+            <div class="nav-right">{{=icon angle-right-regular=}}</div>
 
             <img class="selected" src="https://saucellc.io/images/perf-promo/1.png" loading="lazy"/>
             <img src="https://saucellc.io/images/perf-promo/2.png" loading="lazy"/>
@@ -28,7 +28,7 @@
                 <div class="bubble"></div>
             </div>
         </div>
-        <div class="btn btn-unstyled btn-icon-only zoom-out">{-await fa('times-circle-duotone')-}</div>
+        <div class="btn btn-unstyled btn-icon-only zoom-out">{{=icon times-circle-duotone=}}</div>
         <div class="btn btn-block btn-primary enable">Enable Sync and Get Started!</div> <!--XXX localize-->
     </div>
 
@@ -41,11 +41,11 @@
         <key>{{{status}}}:</key>
         <value></value>
         <div class="btn btn-sm sync-stop"
-             title="{{{sync_stop_tooltip}}}">{-await fa('stop-circle-regular')-}</div>
+             title="{{{sync_stop_tooltip}}}">{{=icon stop-circle-regular=}}</div>
         <div class="btn btn-sm sync-start"
-             title="{{{sync_start_tooltip}}}">{-await fa('play-circle-regular')-}</div>
+             title="{{{sync_start_tooltip}}}">{{=icon play-circle-regular=}}</div>
         <div class="btn btn-sm sync-recompute"
-             title="{{{sync_recompute_tooltip}}}">{-await fa('redo-solid')-}</div>
+             title="{{{sync_recompute_tooltip}}}">{{=icon redo-solid=}}</div>
     </div>
 
     <div class="entry synced">

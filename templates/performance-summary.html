@@ -4,14 +4,14 @@
         <header>
             <i class="icon">{{=icon info-circle-duotone=}}</i>
             <div class="title">{{{overview}}}</div>
-            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
-            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+            <a class="view-control collapser">{{=icon minus-square-duotone=}}</a>
+            <a class="view-control expander">{{=icon plus-square-duotone=}}</a>
         </header>
 
         <% if (totalTime && weeklyTime) { %>
             <row class="full">
                 <header>{{{/analysis_time}}}:</header>
-                <div class="backdrop-icon">{-await fa('watch-duotone')-}</div>
+                <div class="backdrop-icon">{{=icon watch-duotone=}}</div>
                 <h2>{-humanDuration(totalTime, {maxPeriod: 3600, precision: 3600, html: true})-}</h2>
                 <h3>
                     {-humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})-}
@@ -23,7 +23,7 @@
         <% if (totalDistance && weeklyDistance) { %>
             <row class="full">
                 <header>Distance:</header>
-                <div class="backdrop-icon">{-await fa('road-duotone')-}</div>
+                <div class="backdrop-icon">{{=icon road-duotone=}}</div>
                 <h2>{-humanDistance(totalDistance, 0, {html: true})-}</h2>
                 <h3>
                     {-humanDistance(weeklyDistance, undefined, {html: true})-}
@@ -35,7 +35,7 @@
         <% if (totalAltGain && weeklyAltGain) { %>
             <row class="full">
                 <header>Elevation:</header>
-                <div class="backdrop-icon">{-await fa('mountains-duotone')-}</div>
+                <div class="backdrop-icon">{{=icon mountains-duotone=}}</div>
                 <h2>{-humanElevation(totalAltGain, {html: true})-}</h2>
                 <h3>
                     {-humanElevation(weeklyAltGain, {html: true})-}
@@ -56,15 +56,15 @@
                 <% } else { %>
                     <div class="backdrop-icon">
                         <% if (mostFreqType.type === 'ride') { %>
-                            {-await fa('biking-duotone')-}
+                            {{=icon biking-duotone=}}
                         <% } else if (mostFreqType.type === 'run') { %>
-                            {-await fa('running-duotone')-}
+                            {{=icon running-duotone=}}
                         <% } else if (mostFreqType.type === 'swim') { %>
-                            {-await fa('swimmer-duotone')-}
+                            {{=icon swimmer-duotone=}}
                         <% } else if (mostFreqType.type === 'ski') { %>
-                            {-await fa('skiing-nordic-duotone')-}
+                            {{=icon skiing-nordic-duotone=}}
                         <% } else if (mostFreqType.type === 'workout') { %>
-                            {-await fa('fire-alt-duotone')-}
+                            {{=icon fire-alt-duotone=}}
                         <% } %>
                     </div>
                     <h2>100<abbr class="unit">% {{mostFreqType.type}}s</abbr></h2>
@@ -76,15 +76,15 @@
     <section class="training {{collapsed.training === true ? 'collapsed' : ''}}"
              data-id="training">
         <header>
-            <i class="icon">{-await fa('transporter-1-duotone')-}</i>
+            <i class="icon">{{=icon transporter-1-duotone=}}</i>
             <div class="title">{{{training}}}</div>
-            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
-            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+            <a class="view-control collapser">{{=icon minus-square-duotone=}}</a>
+            <a class="view-control expander">{{=icon plus-square-duotone=}}</a>
         </header>
 
         <% if (missingTSS.length) { %>
             <row class="warning">
-                <key>{-await fa('exclamation-triangle-duotone')-}{{{missing}}} TSS:</key>
+                <key>{{=icon exclamation-triangle-duotone=}}{{{missing}}} TSS:</key>
                 <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} {{{activities}}}</a></value>
             </row>
         <% } %>
@@ -116,10 +116,10 @@
     <section class="highlights {{collapsed.highlights === true ? 'collapsed' : ''}}"
              data-id="highlights">
         <header>
-            <i class="icon">{-await fa('medal-duotone')-}</i>
+            <i class="icon">{{=icon medal-duotone=}}</i>
             <div class="title">{{{/analysis_best_performances}}}</div>
-            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
-            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+            <a class="view-control collapser">{{=icon minus-square-duotone=}}</a>
+            <a class="view-control expander">{{=icon plus-square-duotone=}}</a>
         </header>
 
         <select name="type">
@@ -145,10 +145,10 @@
     <section class="sync-stats {{collapsed.sync_stats === true  ? 'collapsed' : ''}}"
              data-id="sync_stats">
         <header>
-            <i class="icon">{-await fa('sync-alt-duotone')-}</i>
+            <i class="icon">{{=icon sync-alt-duotone=}}</i>
             <div class="title">{{{activity_sync_title}}}</div>
-            <a class="view-control collapser">{-await fa('minus-square-duotone')-}</a>
-            <a class="view-control expander">{-await fa('plus-square-duotone')-}</a>
+            <a class="view-control collapser">{{=icon minus-square-duotone=}}</a>
+            <a class="view-control expander">{{=icon plus-square-duotone=}}</a>
         </header>
         <% if (sync.active) { %>
             <row>

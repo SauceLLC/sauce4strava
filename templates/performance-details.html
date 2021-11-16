@@ -1,6 +1,6 @@
 <header class="sauce-swapped-background">
     <div class="title">{{{activity_details}}}</div>
-    <a class="view-control collapser">{-await fa('window-close-regular')-}</a>
+    <a class="view-control collapser">{{=icon window-close-regular=}}</a>
 </header>
 <section class="content sauce-swapped-background">
     <% if (!daily) { %>
@@ -12,7 +12,7 @@
     <% } else { %>
         <% if (hasNewer) { %>
             <div class="btn btn-sm btn-secondary load-more newer"
-                 title="{{{show_newer_activity}}}">{-await fa('ellipsis-h-light')-}</div>
+                 title="{{{show_newer_activity}}}">{{=icon ellipsis-h-light=}}</div>
         <% } %>
 
         <% for (const day of Array.from(daily).reverse()) { %>
@@ -61,7 +61,7 @@
                 <div class="activity {{!multiple ? 'entry' : ''}}" data-id="{{a.id}}">
                     <header class="title">
                         <div class="btn btn-icon-only btn-unstyled edit-activity"
-                             title="{{{edit_activity_tooltip}}}">{-await fa('edit-duotone')-}</div>
+                             title="{{{edit_activity_tooltip}}}">{{=icon edit-duotone=}}</div>
                         <% if (multiple) { %>
                             <small>{{humanTime(a.ts)}}</small>
                         <% } else { %>
@@ -111,9 +111,9 @@
                                 <key>{{{/analysis_power}}}:</key>
                                 <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
                                 <div class="btn btn-icon-only btn-unstyled expand"
-                                     title="{{{/analysis_expand_tooltip}}}">{-await fa('plus-square-duotone')-}</div>
+                                     title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                                 <div class="btn btn-icon-only btn-unstyled compress"
-                                     title="{{{/analysis_compress_tooltip}}}">{-await fa('minus-square-duotone')-}</div>
+                                     title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                             </row>
                         <% } %>
 
@@ -122,9 +122,9 @@
                                 <key>{{{/analysis_pace}}}:</key>
                                 <value>{{humanPace(a.stats.activeTime / a.stats.distance, {suffix: true})}}</value>
                                 <div class="btn btn-icon-only btn-unstyled expand"
-                                     title="{{{/analysis_expand_tooltip}}}">{-await fa('plus-square-duotone')-}</div>
+                                     title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                                 <div class="btn btn-icon-only btn-unstyled compress"
-                                     title="{{{/analysis_compress_tooltip}}}">{-await fa('minus-square-duotone')-}</div>
+                                     title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
                             </row>
                         <% } %>
 
@@ -164,7 +164,7 @@
 
         <% if (hasOlder) { %>
             <div class="btn btn-sm btn-secondary load-more older"
-                 title="{{{show_older_activity}}}">{-await fa('ellipsis-h-light')-}</div>
+                 title="{{{show_older_activity}}}">{{=icon ellipsis-h-light=}}</div>
         <% } %>
     <% } %>
 </section>

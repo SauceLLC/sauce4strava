@@ -2,7 +2,7 @@
     <form class="sauce-key-value">
         <div class="padded-info">
             <div class="help" data-for="intro">
-                <a class="sauce-dismiss">{-await fa('times-circle-duotone')-}</a>
+                <a class="sauce-dismiss">{{=icon times-circle-duotone=}}</a>
                 {{{intro_help1}}}<br/>
                 <br/>
                 <a href="https://support.garmin.com/en-US/?faq=rzvP53Si4O3barYoXzw5L7"
@@ -10,7 +10,7 @@
                 </br/>
                 <i>{{{intro_help_note}}}</i>
             </div>
-            <a class="help-info" data-help="intro" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
+            <a class="help-info" data-help="intro" title="{{{/dialog_help_info_tooltip}}}">{{=icon info-circle-duotone=}}</a>
             {{{intro1}}} <a href="https://support.garmin.com/en-US/?faq=PH8600FL9d9MDCiYaJbg0A"
                             target="_blank">{{{intro_supported_devices}}}</a>.<br/>
             <br/>
@@ -18,10 +18,10 @@
         </div>
         <div class="entry">
             <div class="help" data-for="segment-name">
-                <a class="sauce-dismiss">{-await fa('times-circle-duotone')-}</a>
+                <a class="sauce-dismiss">{{=icon times-circle-duotone=}}</a>
                 {{{segment_name_help}}}
             </div>
-            <a class="help-info" data-help="segment-name" title="{{{/dialog_help_info_tooltip}}}">{- await fa('info-circle-duotone') -}</a>
+            <a class="help-info" data-help="segment-name" title="{{{/dialog_help_info_tooltip}}}">{{=icon info-circle-duotone=}}</a>
             <key>{{{segment_name}}}:</key>
             <input name="segment-name" type="text" value="{{segmentName}}" minlength="1" maxlength="40"/>
         </div>

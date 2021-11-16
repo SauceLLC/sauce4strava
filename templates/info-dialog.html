@@ -37,7 +37,7 @@
             </heading>
 
             <column class="highlight" title="{{{elapsed_power_tooltip}}}">
-                <div class="icon-background power">{-await fa('bolt-duotone')-}</div>
+                <div class="icon-background power">{{=icon bolt-duotone=}}</div>
                 <value>
                     {-power.estimate ? '<prefix>~</prefix>' : ''-}{{humanNumber(power.elapsedAvg)}}
                 </value>
@@ -88,7 +88,7 @@
             </heading>
 
             <column class="highlight">
-                <div class="icon-background hr">{-await fa('heartbeat-duotone')-}</div>
+                <div class="icon-background hr">{{=icon heartbeat-duotone=}}</div>
                 <value>{{hr.avg}}</value>
                 <key>{{hrUnit}}</key>
             </column>
@@ -116,7 +116,7 @@
                 <% } %>
             </heading>
             <column class="highlight">
-                <div class="icon-background pace">{-await fa('tachometer-duotone')-}</div>
+                <div class="icon-background pace">{{=icon tachometer-duotone=}}</div>
                 <value>{{pace.avg}}</value>
                 <key>{{paceUnit}}</key>
             </column>
@@ -170,13 +170,13 @@
             </heading>
             <% if (elevation.gain) { %>
                 <column class="highlight" title="{{{elevation_gain_tooltip}}}">
-                    <div class="icon-background env">{-await fa('mountains-duotone')-}</div>
+                    <div class="icon-background env">{{=icon mountains-duotone=}}</div>
                     <value><prefix>+</prefix>{{elevation.gain}}</value>
                     <key>{{elevationUnitLong}}</key>
                 </column>
             <% } else if (elevation.loss) { %>
                 <column class="highlight" title="{{{elevation_loss_tooltip}}}">
-                    <div class="icon-background env">{-await fa('mountains-duotone')-}</div>
+                    <div class="icon-background env">{{=icon mountains-duotone=}}</div>
                     <value><prefix>-</prefix>{{elevation.loss}}</value>
                     <key>{{elevationUnitLong}}</key>
                 </column>
@@ -289,7 +289,7 @@
     </div>
 
     <div class="expander">
-        <div class="icon expand" title="{{{expand_tooltip}}}">{-await fa('angle-double-right-solid')-}</div>
-        <div class="icon compress" title="{{{compress_tooltip}}}">{-await fa('angle-double-left-solid')-}</div>
+        <div class="icon expand" title="{{{expand_tooltip}}}">{{=icon angle-double-right-solid=}}</div>
+        <div class="icon compress" title="{{{compress_tooltip}}}">{{=icon angle-double-left-solid=}}</div>
     </div>
 <% } %>

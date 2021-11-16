@@ -5,7 +5,7 @@
                 Overview
                 <a class="external" title="View on trailforks.com" target="_blank"
                    href="https://www.trailforks.com/trails/{{trail.alias}}/"
-                    >{-await fa('external-link-duotone')-}</a>
+                    >{{=icon external-link-duotone=}}</a>
             </h1>
             <% if (trail.expanded.difficulty) { %>
                 <div class="tf-difficulty tf-{{trail.expanded.difficulty.class}}"
@@ -13,7 +13,7 @@
                     ><% if (trail.expanded.difficulty.image) { %><img
                         src="{{sauce.extUrl}}images/trail_difficulty/{{trail.expanded.difficulty.image}}"
                     /><% } else if (trail.expanded.difficulty.icon) { %><div
-                        class="tf-icon">{-await fa(trail.expanded.difficulty.icon)-}</div
+                        class="tf-icon">{-await icon(trail.expanded.difficulty.icon)-}</div
                     ><% } %></div>
             <% } %>
         </heading>
@@ -26,53 +26,53 @@
             <key>Activity types</key>
             <% if (trail.act_atv) { %>
                 <div class="activity-icon" title="ATV's permitted">
-                    {-await fa('truck-pickup-duotone')-}
+                    {{=icon truck-pickup-duotone=}}
                 </div>
             <% } %>
             <% if (trail.act_ebike) { %>
                 <div class="activity-icon" title="E-bike's permitted">
-                    {-await fa('bicycle-duotone')-}
-                    <div class="sub-icon">{-await fa('bolt-duotone')-}</div>
+                    {{=icon bicycle-duotone=}}
+                    <div class="sub-icon">{{=icon bolt-duotone=}}</div>
                 </div>
             <% } %>
             <% if (trail.act_hike) { %>
                 <div class="activity-icon" title="Hiking permitted">
-                    {-await fa('hiking-duotone')-}
+                    {{=icon hiking-duotone=}}
                 </div>
             <% } %>
             <% if (trail.act_trailrun) { %>
                 <div class="activity-icon" title="Running permitted">
-                    {-await fa('running-duotone')-}
+                    {{=icon running-duotone=}}
                 </div>
             <% } %>
             <% if (trail.act_horse) { %>
                 <div class="activity-icon" title="Horse's permitted">
-                    {-await fa('horse-duotone')-}
+                    {{=icon horse-duotone=}}
                 </div>
             <% } %>
             <% if (trail.act_moto || trail.act_mototrials) { %>
                 <div class="activity-icon" title="Motorcycle's permitted">
-                    {-await fa('motorcycle-duotone')-}
+                    {{=icon motorcycle-duotone=}}
                 </div>
             <% } %>
             <% if (trail.act_mtb) { %>
                 <div class="activity-icon" title="Mountain bike's permitted">
-                    {-await fa('biking-mountain-duotone')-}
+                    {{=icon biking-mountain-duotone=}}
                 </div>
             <% } %>
             <% if (trail.act_skialpine || trail.act_skibc || trail.act_skixc) { %>
                 <div class="activity-icon" title="Skiing permitted">
-                    {-await fa('skiing-nordic-duotone')-}
+                    {{=icon skiing-nordic-duotone=}}
                 </div>
             <% } %>
             <% if (trail.act_snowshoe) { %>
                 <div class="activity-icon" title="Snow shoeing permitted">
-                    {-await fa('snowflake-duotone')-}
+                    {{=icon snowflake-duotone=}}
                 </div>
             <% } %>
             <% if (trail.act_snowmobile) { %>
                 <div class="activity-icon" title="Snow mobile's permitted">
-                    {-await fa('snowmobile-duotone')-}
+                    {{=icon snowmobile-duotone=}}
                 </div>
             <% } %>
         </div>
@@ -82,7 +82,7 @@
                 <key>Condition:</key>
                 <value>
                     <div class="tf-icon">
-                        {-await fa(trail.expanded.condition.icon || 'certificate-duotone')-}
+                        {-await icon(trail.expanded.condition.icon || 'certificate-duotone')-}
                     </div>
                     {{trail.expanded.condition.title}}
                 </value>
@@ -93,7 +93,7 @@
             <div class="item tf-status tf-{{trail.expanded.status.class}}">
                 <key>Status:</key>
                 <value>
-                    <div class="tf-icon">{-await fa('circle-duotone')-}</div>
+                    <div class="tf-icon">{{=icon circle-duotone=}}</div>
                     {{trail.expanded.status.title}}
                 </value>
             </div>
@@ -145,13 +145,13 @@
                     Reports
                     <a class="external" title="View all on trailforks" target="_blank"
                        href="https://www.trailforks.com/trails/{{trail.alias}}/reports/"
-                        >{-await fa('external-link-duotone')-}</a>
+                        >{{=icon external-link-duotone=}}</a>
                 </h1>
             </heading>
             <% for (const x of reports) { %>
                 <div class="report">
                     <span class="age" title="{{x.created.toLocaleString()}}">
-                        <a href="https://www.trailforks.com/profile/{{x.username}}/" target="_blank">{{x.username}}</a> • {-await humanRelTime(x.created)-}
+                        <a href="https://www.trailforks.com/profile/{{x.username}}/" target="_blank">{{x.username}}</a> • {-humanRelTime(x.created)-}
                     </span>
 
                     <div class="item">
@@ -159,14 +159,14 @@
                            <% if (x.expanded.condition) { %>
                                 <span class="tf-condition tf-{{x.expanded.condition.class}}">
                                     <div class="tf-icon">
-                                        {-await fa(x.expanded.condition.icon || 'certificate-duotone')-}
+                                        {-await icon(x.expanded.condition.icon || 'certificate-duotone')-}
                                     </div>
                                     {{x.expanded.condition.title}}</span><% if (x.expanded.status) { %>, <% } %>
                             <% } %>
 
                             <% if (x.expanded.status) { %>
                                 <span class="tf-status tf-{{x.expanded.status.class}}">
-                                    <div class="tf-icon">{-await fa('circle-duotone')-}</div>
+                                    <div class="tf-icon">{{=icon circle-duotone=}}</div>
                                     {{x.expanded.status.title}}
                                 </span>
                             <% } %>
@@ -196,7 +196,7 @@
                         Photos
                         <a class="external" title="View all on trailforks" target="_blank"
                            href="https://www.trailforks.com/trails/{{trail.alias}}/photos/"
-                            >{-await fa('external-link-duotone')-}</a>
+                            >{{=icon external-link-duotone=}}</a>
                     </h1>
                 </heading>
                 <div class="sauce-media">
@@ -218,7 +218,7 @@
                         Videos
                         <a class="external" title="View all on trailforks" target="_blank"
                            href="https://www.trailforks.com/trails/{{trail.alias}}/videos/"
-                            >{-await fa('external-link-duotone')-}</a>
+                            >{{=icon external-link-duotone=}}</a>
                     </h1>
                 </heading>
                 <div class="sauce-media">
