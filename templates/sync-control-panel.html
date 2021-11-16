@@ -16,7 +16,8 @@
             <div class="nav-left hidden">{{=icon angle-left-regular=}}</div>
             <div class="nav-right">{{=icon angle-right-regular=}}</div>
 
-            <img class="selected" src="https://saucellc.io/images/perf-promo/1.png" loading="lazy"/>
+            <img class="selected" src="https://saucellc.io/images/perf-promo/1.png"
+                 loading="{{enabled ? 'lazy' : 'eager'}}"/>
             <img src="https://saucellc.io/images/perf-promo/2.png" loading="lazy"/>
             <img src="https://saucellc.io/images/perf-promo/3.png" loading="lazy"/>
             <img src="https://saucellc.io/images/perf-promo/4.png" loading="lazy"/>
