@@ -5,7 +5,7 @@
     </div>
 <% } else {%>
     <div class="header">
-        {{{hr_zones}}} <small>| {{{updated}}} {{humanDate(athlete.hrZonesTS)}}</small>
+        <div class="title">{{{hr_zones}}} <small>({{{updated}}} {{humanDate(athlete.hrZonesTS)}})</small></div>
         <div class="btn btn-sm btn-icon-only btn-unstyled sync-hr-zones">{{=icon sync-alt-duotone=}}</div>
     </div>
     <table class="hr-zones">
