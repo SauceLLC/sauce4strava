@@ -209,7 +209,6 @@
     "perf_predictor_gear_weight_tooltip": {"message": "Weight of all gear and bike including water and clothes"},
     "perf_predictor_slope": {"message": "Slope"},
     "perf_predictor_slope_tooltip": {"message": "Gradient of hill or descent"},
-    "perf_predictor_distance": {"message": "Distance"},
     "perf_predictor_distance_tooltip": {"message": "Course distance"},
     "perf_predictor_elevation": {"message": "Elevation (avg)"},
     "perf_predictor_elevation_tooltip": {"message": "The average elevation of the course"},

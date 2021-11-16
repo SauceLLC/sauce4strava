@@ -22,7 +22,7 @@
 
         <% if (totalDistance && weeklyDistance) { %>
             <row class="full">
-                <header>Distance:</header>
+                <header>{{{/analysis_distance}}}:</header>
                 <div class="backdrop-icon">{{=icon road-duotone=}}</div>
                 <h2>{-humanDistance(totalDistance, 0, {html: true})-}</h2>
                 <h3>
@@ -34,7 +34,7 @@
 
         <% if (totalAltGain && weeklyAltGain) { %>
             <row class="full">
-                <header>Elevation:</header>
+                <header>{{{/analysis_elevation}}}:</header>
                 <div class="backdrop-icon">{{=icon mountains-duotone=}}</div>
                 <h2>{-humanElevation(totalAltGain, {html: true})-}</h2>
                 <h3>
@@ -46,11 +46,11 @@
 
         <% if (mostFreqType) { %>
             <row class="full">
-                <header>Activities:</header>
+                <header>{{{activities}}}:</header>
                 <% if (Math.round(mostFreqType.pct * 100) < 100) { %>
                     <div class="cols">
                         <h2>{{humanNumber(mostFreqType.pct * 100)}}<abbr class="unit">%
-                                {{mostFreqType.type}}s</abbr></h2>
+                                {{{[mostFreqLocaleKey]}}}</abbr></h2>
                         <div class="counts-piechart"></div>
                     </div>
                 <% } else { %>
@@ -67,7 +67,7 @@
                             {{=icon fire-alt-duotone=}}
                         <% } %>
                     </div>
-                    <h2>100<abbr class="unit">% {{mostFreqType.type}}s</abbr></h2>
+                    <h2>100<abbr class="unit">% {{{[mostFreqLocaleKey]}}}</abbr></h2>
                 <% } %>
             </row>
         <% } %>
