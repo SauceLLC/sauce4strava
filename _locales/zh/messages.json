@@ -6,6 +6,9 @@
     "athlete": {
         "message": "运动员"
     },
+    "type": {
+        "message": "类型"
+    },
     "analysis_options": {
         "message": "选项",
         "description": "IMMUTABLE"
@@ -109,7 +112,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_elevation_loss_tooltip": {
-        "message": "海拔高度下降：下降"
+        "message": "海拔损失：下降"
     },
     "analysis_elevation_avg_tooltip": {
         "message": "平均海拔"
@@ -480,12 +483,6 @@
     "analysis_peaks_settings_dialog_title": {
         "message": "高峰努力设置"
     },
-    "analysis_peaks_month": {
-        "message": "月"
-    },
-    "analysis_peaks_day": {
-        "message": "天"
-    },
     "analysis_peaks_ranges": {
         "message": "高峰努力范围"
     },
@@ -533,6 +530,12 @@
     },
     "time_weeks": {
         "message": "周"
+    },
+    "time_month": {
+        "message": "月"
+    },
+    "time_months": {
+        "message": "月"
     },
     "time_year": {
         "message": "年"
@@ -713,9 +716,6 @@
         "message": "相对于骑手的逆风或负值的顺风风速",
         "description": "IMMUTABLE"
     },
-    "perf_predictor_speed": {
-        "message": "速度"
-    },
     "perf_predictor_time": {
         "message": "时间"
     },
@@ -856,6 +856,60 @@
     },
     "sync_control_panel_sync_recompute_tooltip": {
         "message": "重新计算同步本地数据，即TSS，NP等。"
+    },
+    "sync_control_panel_total": {
+        "message": "总"
+    },
+    "sync_control_panel_imported": {
+        "message": "进口"
+    },
+    "sync_control_panel_unavailable": {
+        "message": "不可用"
+    },
+    "sync_control_panel_remaining": {
+        "message": "其余的"
+    },
+    "sync_control_panel_processed": {
+        "message": "处理"
+    },
+    "sync_control_panel_unprocessable": {
+        "message": "不可加工"
+    },
+    "sync_control_panel_delayed_until": {
+        "message": "延迟到"
+    },
+    "sync_control_panel_no_hr_zones": {
+        "message": "心率区尚未建立。"
+    },
+    "sync_control_panel_hr_zones": {
+        "message": "心率区"
+    },
+    "sync_control_panel_updated": {
+        "message": "更新"
+    },
+    "sync_control_panel_hr_zone1": {
+        "message": "恢复"
+    },
+    "sync_control_panel_hr_zone2": {
+        "message": "耐力"
+    },
+    "sync_control_panel_hr_zone3": {
+        "message": "速度"
+    },
+    "sync_control_panel_hr_zone4": {
+        "message": "临界点"
+    },
+    "sync_control_panel_hr_zone5": {
+        "message": "厌氧"
+    },
+    "sync_control_panel_sync_status": {
+        "message": "同步状态"
+    },
+    "sync_control_panel_enable_sync_and_get_started": {
+        "message": "启用同步并开始使用！"
+    },
+    "sync_control_panel_athlete_settings": {
+        "message": "运动员设置"
     },
     "mutable_data_add_entry_tooltip": {
         "message": "添加一个新条目"
@@ -1077,6 +1131,66 @@
     },
     "performance_unavailable": {
         "message": "不可用"
+    },
+    "performance_peak_performances_title": {
+        "message": "巅峰表现"
+    },
+    "performance_training_load_title": {
+        "message": "训练负荷 - 体能、疲劳和形式"
+    },
+    "performance_activities_title": {
+        "message": "活动"
+    },
+    "performance_elevation_title": {
+        "message": "海拔增益"
+    },
+    "performance_time_range": {
+        "message": "时间范围"
+    },
+    "performance_more_info": {
+        "message": "更多信息"
+    },
+    "performance_reset_zoom": {
+        "message": "重置缩放"
+    },
+    "performance_overview": {
+        "message": "概述"
+    },
+    "performance_training": {
+        "message": "训练"
+    },
+    "performance_missing": {
+        "message": "丢失的"
+    },
+    "performance_activities": {
+        "message": "活动"
+    },
+    "performance_active_days": {
+        "message": "活跃天数"
+    },
+    "performance_peak_fitness": {
+        "message": "巅峰健身"
+    },
+    "performance_least_form": {
+        "message": "最小形式"
+    },
+    "performance_activity_sync_title": {
+        "message": "活动同步"
+    },
+    "performance_peaks_row_tooltip": {
+        "message": "点击查看详情"
+    },
+    "performance_top": {
+        "message": "最佳"
+    },
+    "performance_all_results": {
+        "message": "所有结果"
+    },
+    "performance_all_dates": {
+        "message": "所有日期"
+    },
+    "performance_all_athletes": {
+        "message": "所有运动员"
     },
     "season_start": {
         "message": "季节开始"

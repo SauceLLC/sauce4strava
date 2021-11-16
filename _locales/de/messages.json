@@ -5,6 +5,9 @@
     "athlete": {
         "message": "Athlet"
     },
+    "type": {
+        "message": "Typ"
+    },
     "analysis_options": {
         "message": "Optionen"
     },
@@ -92,10 +95,10 @@
         "message": "Kilojoule pro Stunde"
     },
     "analysis_elevation_gain_tooltip": {
-        "message": "Höhe gewonnen: Klettern"
+        "message": "Höhenmeter: Klettern"
     },
     "analysis_elevation_loss_tooltip": {
-        "message": "Elevation Lost: absteigend"
+        "message": "Höhenverlust: absteigend"
     },
     "analysis_elevation_avg_tooltip": {
         "message": "Durchschnittliche Höhe"
@@ -221,7 +224,8 @@
         "message": "Bewertung"
     },
     "analysis_elevation": {
-        "message": "Elevation"
+        "message": "Höhe",
+        "description": "IMMUTABLE"
     },
     "analysis_environment": {
         "message": "Umgebung"
@@ -251,7 +255,8 @@
         "message": "Tempo"
     },
     "analysis_speed": {
-        "message": "Geschwindigkeit"
+        "message": "Geschw.",
+        "description": "IMMUTABLE"
     },
     "analysis_distance": {
         "message": "Entfernung"
@@ -365,10 +370,12 @@
         "description": "IMMUTABLE"
     },
     "analysis_gain": {
-        "message": "Dazugewinnen"
+        "message": "Gewinnen",
+        "description": "IMMUTABLE"
     },
     "analysis_loss": {
-        "message": "Verlust"
+        "message": "Verlust",
+        "description": "IMMUTABLE"
     },
     "analysis_view": {
         "message": "Aussicht"
@@ -414,7 +421,8 @@
         "message": "Erstellen"
     },
     "analysis_settings": {
-        "message": "die Einstellungen"
+        "message": "Einstellungen",
+        "description": "IMMUTABLE"
     },
     "analysis_rank_place_1": {
         "message": "1"
@@ -446,12 +454,6 @@
     "analysis_peaks_settings_dialog_title": {
         "message": "Einstellungen für Spitzenleistungen"
     },
-    "analysis_peaks_month": {
-        "message": "Monat"
-    },
-    "analysis_peaks_day": {
-        "message": "Tag"
-    },
     "analysis_peaks_ranges": {
         "message": "Peak Efforts Bereiche"
     },
@@ -471,48 +473,59 @@
         "message": "Klicken Sie, um zu ändern"
     },
     "time_sec": {
-        "message": "sek"
+        "message": "Sek.",
+        "description": "IMMUTABLE"
     },
     "time_secs": {
-        "message": "sek"
+        "message": "Sek.",
+        "description": "IMMUTABLE"
     },
     "time_min": {
-        "message": "min",
+        "message": "Min.",
         "description": "IMMUTABLE"
     },
     "time_mins": {
-        "message": "min"
+        "message": "Min.",
+        "description": "IMMUTABLE"
     },
     "time_hour": {
-        "message": "stunde",
+        "message": "Std.",
         "description": "IMMUTABLE"
     },
     "time_hours": {
-        "message": "std",
+        "message": "Std.",
         "description": "IMMUTABLE"
     },
     "time_day": {
-        "message": "tag",
+        "message": "Tag",
         "description": "IMMUTABLE"
     },
     "time_days": {
-        "message": "tage",
+        "message": "Tage",
         "description": "IMMUTABLE"
     },
     "time_week": {
-        "message": "woche",
+        "message": "Woche",
         "description": "IMMUTABLE"
     },
     "time_weeks": {
-        "message": "wochen",
+        "message": "Wochen",
+        "description": "IMMUTABLE"
+    },
+    "time_month": {
+        "message": "Monat",
+        "description": "IMMUTABLE"
+    },
+    "time_months": {
+        "message": "Monate",
         "description": "IMMUTABLE"
     },
     "time_year": {
-        "message": "jahr",
+        "message": "Jahr",
         "description": "IMMUTABLE"
     },
     "time_years": {
-        "message": "jahre",
+        "message": "Jahre",
         "description": "IMMUTABLE"
     },
     "time_ago": {
@@ -668,9 +681,6 @@
     "perf_predictor_wind_tooltip": {
         "message": "Die Nettowindgeschwindigkeit gegen den Fahrer oder negative Werte für Rückenwinde"
     },
-    "perf_predictor_speed": {
-        "message": "Geschwindigkeit"
-    },
     "perf_predictor_time": {
         "message": "Zeit"
     },
@@ -794,6 +804,61 @@
     },
     "sync_control_panel_sync_recompute_tooltip": {
         "message": "Berechnen Sie die lokalen Synchronisierungsdaten neu, z. B. TSS, NP usw."
+    },
+    "sync_control_panel_total": {
+        "message": "Gesamt"
+    },
+    "sync_control_panel_imported": {
+        "message": "Importiert"
+    },
+    "sync_control_panel_unavailable": {
+        "message": "Nicht verfügbar"
+    },
+    "sync_control_panel_remaining": {
+        "message": "Verblieben"
+    },
+    "sync_control_panel_processed": {
+        "message": "Verarbeitet"
+    },
+    "sync_control_panel_unprocessable": {
+        "message": "Nicht verarbeitbar"
+    },
+    "sync_control_panel_delayed_until": {
+        "message": "Verzögert bis"
+    },
+    "sync_control_panel_no_hr_zones": {
+        "message": "Es wurden keine Herzfrequenzzonen festgelegt."
+    },
+    "sync_control_panel_hr_zones": {
+        "message": "Herzfrequenzzonen"
+    },
+    "sync_control_panel_updated": {
+        "message": "Aktualisiert"
+    },
+    "sync_control_panel_hr_zone1": {
+        "message": "Erholung"
+    },
+    "sync_control_panel_hr_zone2": {
+        "message": "Ausdauer"
+    },
+    "sync_control_panel_hr_zone3": {
+        "message": "Tempo"
+    },
+    "sync_control_panel_hr_zone4": {
+        "message": "Schwelle"
+    },
+    "sync_control_panel_hr_zone5": {
+        "message": "Anaerob",
+        "description": "IMMUTABLE"
+    },
+    "sync_control_panel_sync_status": {
+        "message": "Synchronisierungsstatus"
+    },
+    "sync_control_panel_enable_sync_and_get_started": {
+        "message": "Synchronisierung aktivieren und loslegen!"
+    },
+    "sync_control_panel_athlete_settings": {
+        "message": "Athleteneinstellungen"
     },
     "mutable_data_add_entry_tooltip": {
         "message": "Fügen Sie einen neuen Eintrag hinzu"
@@ -988,13 +1053,75 @@
         "message": "Überschreiben"
     },
     "performance_elevation_gain": {
-        "message": "Höhengewinn"
+        "message": "Höhenmeter",
+        "description": "IMMUTABLE"
     },
     "performance_edit_activity_tooltip": {
         "message": "Aktivität bearbeiten"
     },
     "performance_unavailable": {
         "message": "Nicht verfügbar"
+    },
+    "performance_peak_performances_title": {
+        "message": "Spitzenleistungen"
+    },
+    "performance_training_load_title": {
+        "message": "Trainingsbelastung - Fitness, Müdigkeit und Form"
+    },
+    "performance_activities_title": {
+        "message": "Aktivitäten"
+    },
+    "performance_elevation_title": {
+        "message": "Höhenmeter",
+        "description": "IMMUTABLE"
+    },
+    "performance_time_range": {
+        "message": "Zeitspanne"
+    },
+    "performance_more_info": {
+        "message": "Mehr Info"
+    },
+    "performance_reset_zoom": {
+        "message": "Zoom zurücksetzen"
+    },
+    "performance_overview": {
+        "message": "Überblick"
+    },
+    "performance_training": {
+        "message": "Ausbildung"
+    },
+    "performance_missing": {
+        "message": "Fehlen"
+    },
+    "performance_activities": {
+        "message": "Aktivitäten"
+    },
+    "performance_active_days": {
+        "message": "Aktive Tage"
+    },
+    "performance_peak_fitness": {
+        "message": "Höchste Fitness"
+    },
+    "performance_least_form": {
+        "message": "Mindestform"
+    },
+    "performance_activity_sync_title": {
+        "message": "Aktivitätssynchronisierung"
+    },
+    "performance_peaks_row_tooltip": {
+        "message": "Klicken Sie hier, um Details anzuzeigen"
+    },
+    "performance_top": {
+        "message": "Oberteil"
+    },
+    "performance_all_results": {
+        "message": "Alle Ergebnisse"
+    },
+    "performance_all_dates": {
+        "message": "Alle Termine"
+    },
+    "performance_all_athletes": {
+        "message": "Alle Athleten"
     },
     "season_start": {
         "message": "Saisonbeginn"

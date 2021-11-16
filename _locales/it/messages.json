@@ -5,6 +5,9 @@
     "athlete": {
         "message": "Atleta"
     },
+    "type": {
+        "message": "Tipo"
+    },
     "analysis_options": {
         "message": "Opzioni"
     },
@@ -95,10 +98,10 @@
         "message": "Kilojoule all'ora"
     },
     "analysis_elevation_gain_tooltip": {
-        "message": "Altitudine acquisita: arrampicata"
+        "message": "Dislivello: arrampicata"
     },
     "analysis_elevation_loss_tooltip": {
-        "message": "Elevazione persa: decrescente"
+        "message": "Perdita di quota: discendente"
     },
     "analysis_elevation_avg_tooltip": {
         "message": "Elevazione media"
@@ -451,12 +454,6 @@
     "analysis_peaks_settings_dialog_title": {
         "message": "Impostazioni degli sforzi di picco"
     },
-    "analysis_peaks_month": {
-        "message": "mese"
-    },
-    "analysis_peaks_day": {
-        "message": "giorno"
-    },
     "analysis_peaks_ranges": {
         "message": "Intervalli di picco degli sforzi"
     },
@@ -504,6 +501,12 @@
     },
     "time_weeks": {
         "message": "settimane"
+    },
+    "time_month": {
+        "message": "mese"
+    },
+    "time_months": {
+        "message": "mesi"
     },
     "time_year": {
         "message": "anno"
@@ -664,9 +667,6 @@
     "perf_predictor_wind_tooltip": {
         "message": "La velocità del vento netto contro il ciclista o valori negativi per i venti di coda"
     },
-    "perf_predictor_speed": {
-        "message": "Velocità"
-    },
     "perf_predictor_time": {
         "message": "Tempo"
     },
@@ -791,6 +791,60 @@
     },
     "sync_control_panel_sync_recompute_tooltip": {
         "message": "Ricalcola i dati locali di sincronizzazione, ovvero TSS, NP, ecc ..."
+    },
+    "sync_control_panel_total": {
+        "message": "Totale"
+    },
+    "sync_control_panel_imported": {
+        "message": "importato"
+    },
+    "sync_control_panel_unavailable": {
+        "message": "Non disponibile"
+    },
+    "sync_control_panel_remaining": {
+        "message": "Rimanente"
+    },
+    "sync_control_panel_processed": {
+        "message": "Elaborato"
+    },
+    "sync_control_panel_unprocessable": {
+        "message": "non processabile"
+    },
+    "sync_control_panel_delayed_until": {
+        "message": "Ritardato fino a"
+    },
+    "sync_control_panel_no_hr_zones": {
+        "message": "Le zone di frequenza cardiaca non sono state stabilite."
+    },
+    "sync_control_panel_hr_zones": {
+        "message": "Zone di frequenza cardiaca"
+    },
+    "sync_control_panel_updated": {
+        "message": "Aggiornato"
+    },
+    "sync_control_panel_hr_zone1": {
+        "message": "Recupero"
+    },
+    "sync_control_panel_hr_zone2": {
+        "message": "Resistenza"
+    },
+    "sync_control_panel_hr_zone3": {
+        "message": "Tempo"
+    },
+    "sync_control_panel_hr_zone4": {
+        "message": "Soglia"
+    },
+    "sync_control_panel_hr_zone5": {
+        "message": "anaerobico"
+    },
+    "sync_control_panel_sync_status": {
+        "message": "Stato sincronizzazione"
+    },
+    "sync_control_panel_enable_sync_and_get_started": {
+        "message": "Abilita la sincronizzazione e inizia!"
+    },
+    "sync_control_panel_athlete_settings": {
+        "message": "Impostazioni atleta"
     },
     "mutable_data_add_entry_tooltip": {
         "message": "Aggiungi una nuova voce"
@@ -992,6 +1046,66 @@
     },
     "performance_unavailable": {
         "message": "Non disponibile"
+    },
+    "performance_peak_performances_title": {
+        "message": "Prestazioni di punta"
+    },
+    "performance_training_load_title": {
+        "message": "Carico di allenamento - Fitness, fatica e forma"
+    },
+    "performance_activities_title": {
+        "message": "Attività"
+    },
+    "performance_elevation_title": {
+        "message": "Dislivello"
+    },
+    "performance_time_range": {
+        "message": "Intervallo di tempo"
+    },
+    "performance_more_info": {
+        "message": "Ulteriori informazioni"
+    },
+    "performance_reset_zoom": {
+        "message": "Ripristina zoom"
+    },
+    "performance_overview": {
+        "message": "Panoramica"
+    },
+    "performance_training": {
+        "message": "Addestramento"
+    },
+    "performance_missing": {
+        "message": "Mancante"
+    },
+    "performance_activities": {
+        "message": "attività"
+    },
+    "performance_active_days": {
+        "message": "Giorni attivi"
+    },
+    "performance_peak_fitness": {
+        "message": "Massima forma fisica"
+    },
+    "performance_least_form": {
+        "message": "forma minima"
+    },
+    "performance_activity_sync_title": {
+        "message": "Sincronizzazione attività"
+    },
+    "performance_peaks_row_tooltip": {
+        "message": "Clicca per vedere i dettagli"
+    },
+    "performance_top": {
+        "message": "Superiore"
+    },
+    "performance_all_results": {
+        "message": "Tutti i risultati"
+    },
+    "performance_all_dates": {
+        "message": "Tutte le date"
+    },
+    "performance_all_athletes": {
+        "message": "Tutti gli atleti"
     },
     "season_start": {
         "message": "Inizio della stagione"
