@@ -15,7 +15,7 @@
                 <h2>{-humanDuration(totalTime, {maxPeriod: 3600, precision: 3600, html: true})-}</h2>
                 <h3>
                     {-humanDuration(weeklyTime, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})-}
-                    <abbr class="unit">/ week</abbr>
+                    <abbr class="unit">/ {{{/time_week}}}</abbr>
                 </h3>
             </row>
         <% } %>
@@ -27,7 +27,7 @@
                 <h2>{-humanDistance(totalDistance, 0, {html: true})-}</h2>
                 <h3>
                     {-humanDistance(weeklyDistance, undefined, {html: true})-}
-                    <abbr class="unit"> / week</abbr>
+                    <abbr class="unit"> / {{{/time_week}}}</abbr>
                 </h3>
             </row>
         <% } %>
@@ -39,7 +39,7 @@
                 <h2>{-humanElevation(totalAltGain, {html: true})-}</h2>
                 <h3>
                     {-humanElevation(weeklyAltGain, {html: true})-}
-                    <abbr class="unit"> / week</abbr>
+                    <abbr class="unit"> / {{{/time_week}}}</abbr>
                 </h3>
             </row>
         <% } %>
