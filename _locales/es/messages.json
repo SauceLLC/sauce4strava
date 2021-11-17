@@ -9,6 +9,9 @@
     "type": {
         "message": "Escribe"
     },
+    "performance": {
+        "message": "Rendimiento"
+    },
     "analysis_options": {
         "message": "Opciones"
     },
@@ -971,8 +974,8 @@
     "menu_supporters": {
         "message": "Partidarios"
     },
-    "performance": {
-        "message": "Rendimiento"
+    "menu_localization": {
+        "message": "Sugerencia de localización"
     },
     "performance_rides": {
         "message": "Paseos"

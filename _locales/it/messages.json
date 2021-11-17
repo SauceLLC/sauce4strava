@@ -8,6 +8,9 @@
     "type": {
         "message": "Tipo"
     },
+    "performance": {
+        "message": "Prestazione"
+    },
     "analysis_options": {
         "message": "Opzioni"
     },
@@ -978,8 +981,8 @@
     "menu_supporters": {
         "message": "Sostenitori"
     },
-    "performance": {
-        "message": "Prestazione"
+    "menu_localization": {
+        "message": "Suggerimento di localizzazione"
     },
     "performance_rides": {
         "message": "Cavalcate"

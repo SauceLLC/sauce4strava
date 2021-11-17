@@ -9,6 +9,9 @@
     "type": {
         "message": "类型"
     },
+    "performance": {
+        "message": "表现"
+    },
     "analysis_options": {
         "message": "选项",
         "description": "IMMUTABLE"
@@ -1063,8 +1066,8 @@
     "menu_supporters": {
         "message": "支持者"
     },
-    "performance": {
-        "message": "表现"
+    "menu_localization": {
+        "message": "本地化建议"
     },
     "performance_rides": {
         "message": "游乐设施"

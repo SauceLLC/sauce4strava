@@ -9,6 +9,9 @@
     "type": {
         "message": "Taper"
     },
+    "performance": {
+        "message": "Performance"
+    },
     "analysis_options": {
         "message": "Les options"
     },
@@ -980,8 +983,8 @@
     "menu_supporters": {
         "message": "Partisans"
     },
-    "performance": {
-        "message": "Performance"
+    "menu_localization": {
+        "message": "Suggestion de localisation"
     },
     "performance_rides": {
         "message": "Monte"

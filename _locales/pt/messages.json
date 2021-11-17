@@ -8,6 +8,9 @@
     "type": {
         "message": "Modelo"
     },
+    "performance": {
+        "message": "atuação"
+    },
     "analysis_options": {
         "message": "Opções"
     },
@@ -953,8 +956,8 @@
     "menu_supporters": {
         "message": "Apoiadores"
     },
-    "performance": {
-        "message": "atuação"
+    "menu_localization": {
+        "message": "Sugestão de localização"
     },
     "performance_rides": {
         "message": "Passeios"
