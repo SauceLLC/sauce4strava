@@ -1186,6 +1186,27 @@
     "performance_all_athletes": {
         "message": "所有运动员"
     },
+    "performance_predicted": {
+        "message": "预料到的"
+    },
+    "performance_fitness": {
+        "message": "健康"
+    },
+    "performance_fatigue": {
+        "message": "疲劳"
+    },
+    "performance_form": {
+        "message": "形式"
+    },
+    "performance_weekly": {
+        "message": "每周"
+    },
+    "performance_monthly": {
+        "message": "每月"
+    },
+    "performance_yearly": {
+        "message": "每年"
+    },
     "season_start": {
         "message": "季节开始"
     },

@@ -1094,6 +1094,27 @@
     "performance_all_athletes": {
         "message": "Todos los atletas"
     },
+    "performance_predicted": {
+        "message": "Predicho"
+    },
+    "performance_fitness": {
+        "message": "Aptitud física"
+    },
+    "performance_fatigue": {
+        "message": "Fatiga"
+    },
+    "performance_form": {
+        "message": "Formulario"
+    },
+    "performance_weekly": {
+        "message": "Semanalmente"
+    },
+    "performance_monthly": {
+        "message": "Mensual"
+    },
+    "performance_yearly": {
+        "message": "Anual"
+    },
     "season_start": {
         "message": "Inicio de temporada"
     },
