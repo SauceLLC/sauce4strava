@@ -233,9 +233,6 @@
     "analysis_stats": {
         "message": "统计资料"
     },
-    "analysis_power_avg": {
-        "message": "功率平均值"
-    },
     "analysis_energy": {
         "message": "能耗",
         "description": "IMMUTABLE"

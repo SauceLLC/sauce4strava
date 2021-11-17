@@ -213,9 +213,6 @@
     "analysis_stats": {
         "message": "Statistiques"
     },
-    "analysis_power_avg": {
-        "message": "Puissance moyenne"
-    },
     "analysis_energy": {
         "message": "Énergie"
     },

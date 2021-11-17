@@ -212,9 +212,6 @@
     "analysis_stats": {
         "message": "Statistiken"
     },
-    "analysis_power_avg": {
-        "message": "Leistung Durchschn"
-    },
     "analysis_energy": {
         "message": "Energie"
     },

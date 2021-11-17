@@ -69,7 +69,6 @@
     "analysis_idle": {"message": "Idle"},
     "analysis_active": {"message": "Active"},
     "analysis_stats": {"message": "Stats"},
-    "analysis_power_avg": {"message": "Power Avg"},
     "analysis_energy": {"message": "Energy"},
     "analysis_expended": {"message": "Expended"},
     "analysis_rate": {"message": "Rate"},
