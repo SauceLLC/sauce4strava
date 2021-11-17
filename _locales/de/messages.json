@@ -671,7 +671,8 @@
         "message": "Die durchschnittliche Höhe des Kurses"
     },
     "perf_predictor_wind": {
-        "message": "Wind"
+        "message": "Windgeschwindigkeit",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_wind_tooltip": {
         "message": "Die Nettowindgeschwindigkeit gegen den Fahrer oder negative Werte für Rückenwinde"
