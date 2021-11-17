@@ -1704,7 +1704,7 @@ sauce.ns('performance', async ns => {
         get localeKeys() {
             return [
                 'predicted', '/analysis_time', '/analysis_distance', '/analysis_gain', 'fitness',
-                'fatigue', 'form', 'weekly', 'monthly', 'yearly',
+                'fatigue', 'form', 'weekly', 'monthly', 'yearly', 'activities',
             ];
         }
 
