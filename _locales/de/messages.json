@@ -31,7 +31,8 @@
         "message": "Abstieg"
     },
     "analysis_avg": {
-        "message": "Durchschn"
+        "message": "Schnitt",
+        "description": "IMMUTABLE"
     },
     "analysis_min": {
         "message": "Mindest"
