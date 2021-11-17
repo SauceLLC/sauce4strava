@@ -41,7 +41,13 @@ export class SauceView extends Backbone.View {
 
     /* locale message getter */
     LM(key) {
-        return this._localeMessages[key];
+        const m = this._localeMessages[key];
+        if (!m) {
+            console.warn(`Locale key missing: '${key}' - It must be added to localeKeys`);
+            return `!L(${key})`;
+        } else {
+            return m;
+        }
     }
 
     async renderAttrs(options={}) {

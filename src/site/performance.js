@@ -909,7 +909,7 @@ sauce.ns('performance', async ns => {
             if (acts.length === 1) {
                 actsDesc = acts[0].name;
             } else if (acts.length > 1) {
-                actsDesc = `<i>${acts.length} activities</i>`; // XXX Localize
+                actsDesc = `<i>${acts.length} ${this.view.LM('activities')}</i>`;
             } else {
                 actsDesc = '-';
             }
@@ -1032,6 +1032,10 @@ sauce.ns('performance', async ns => {
             return 'performance-summary.html';
         }
 
+        get localeKeys() {
+            return ['rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'];
+        }
+
         async init({pageView}) {
             this.pageView = pageView;
             this.sync = {};
@@ -1043,9 +1047,6 @@ sauce.ns('performance', async ns => {
             this.onSyncProgress = this._onSyncProgress.bind(this);
             this.collapsed = (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {};
             this.type = (await sauce.storage.getPref('perfSummarySectionType')) || 'power';
-            this._locales = await L.getMessagesObject([
-                'rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'
-            ], 'performance');
             if (pageView.athlete) {
                 await this.setAthlete(pageView.athlete);
             }
@@ -1117,7 +1118,7 @@ sauce.ns('performance', async ns => {
                     }[x.type])),
                     tooltipFormatter: (_, __, data) => {
                         const items = this.counts.map(x =>
-                            `<li>${x.count} ${this._locales[x.type + (x.count !== 1 ? 's' : '')]}</li>`);
+                            `<li>${x.count} ${this.LM(x.type + (x.count !== 1 ? 's' : ''))}</li>`);
                         return `<ul>${items.join('')}</ul>`;
                     }
                 });
@@ -1700,6 +1701,13 @@ sauce.ns('performance', async ns => {
             return 'performance-main.html';
         }
 
+        get localeKeys() {
+            return [
+                'predicted', '/analysis_time', '/analysis_distance', '/analysis_gain', 'fitness',
+                'fatigue', 'form', 'weekly', 'monthly', 'yearly',
+            ];
+        }
+
         async init({pageView}) {
             this.peaksView = new PeaksView({pageView});
             this.pageView = pageView;
@@ -1774,7 +1782,6 @@ sauce.ns('performance', async ns => {
                             id: 'duration',
                             position: 'right',
                             gridLines: {display: false},
-                            scaleLabel: {labelString: 'Duration'}, // XXX localize
                             stacked: true,
                             ticks: {
                                 min: 0,
@@ -1787,7 +1794,6 @@ sauce.ns('performance', async ns => {
                             id: 'distance',
                             position: 'right',
                             gridLines: {display: false},
-                            scaleLabel: {labelString: 'Distance'}, // XXX localize
                             stacked: true,
                             ticks: {
                                 min: 0,
@@ -1807,7 +1813,7 @@ sauce.ns('performance', async ns => {
                     scales: {
                         yAxes: [{
                             id: 'elevation',
-                            scaleLabel: {labelString: 'Gain'}, // XXX localize
+                            scaleLabel: {labelString: this.LM('analysis_gain')},
                             ticks: {
                                 min: 0,
                                 maxTicksLimit: 8,
@@ -1859,7 +1865,7 @@ sauce.ns('performance', async ns => {
             const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
             this.charts.training.data.datasets = [{
                 id: 'ctl',
-                label: 'CTL (Fitness)', // XXX Localize
+                label: `CTL (${this.LM('fitness')})`,
                 yAxisID: 'tss',
                 borderWidth: lineWidth,
                 backgroundColor: '#4c89d0e0',
@@ -1877,7 +1883,7 @@ sauce.ns('performance', async ns => {
                 }))
             }, {
                 id: 'atl',
-                label: 'ATL (Fatigue)', // XXX Localize
+                label: `ATL (${this.LM('fatigue')})`,
                 yAxisID: 'tss',
                 borderWidth: lineWidth,
                 backgroundColor: '#ff3730e0',
@@ -1891,7 +1897,7 @@ sauce.ns('performance', async ns => {
                 }))
             }, {
                 id: 'tsb',
-                label: 'TSB (Form)', // XXX Localize
+                label: `TSB (${this.LM('form')})`,
                 yAxisID: 'tsb',
                 borderWidth: lineWidth,
                 backgroundColor: '#bc714cc0',
@@ -1962,7 +1968,7 @@ sauce.ns('performance', async ns => {
                         const ptssRaw = predictions.tss[i].y + x;
                         const ptss = Math.round(ptssRaw).toLocaleString();
                         const ptssDay = Math.round(ptssRaw / predictions.days).toLocaleString();
-                        tips.push(`Predicted: <b>~${ptss} <small>(${ptssDay}/d)</small></b>`); // XXX Localize
+                        tips.push(`${this.LM('predicted')}: <b>~${ptss} <small>(${ptssDay}/d)</small></b>`);
                     }
                     return tips;
                 },
@@ -1972,7 +1978,7 @@ sauce.ns('performance', async ns => {
                 })),
             }, {
                 id: 'duration',
-                label: 'Time', // XXX Localize
+                label: this.LM('analysis_time'),
                 type: 'bar',
                 backgroundColor: '#fc7d0bd0',
                 borderColor: '#dc5d00f0',
@@ -1987,7 +1993,7 @@ sauce.ns('performance', async ns => {
                     if (predictions && i === metricData.length - 1) {
                         const pdur = H.duration(predictions.duration[i].y + x,
                             {maxPeriod: 3600, minPeriod: 3600, digits: 1});
-                        tips.push(`Predicted: <b>~${pdur}</b>`); // XXX Localize
+                        tips.push(`${this.LM('predicted')}: <b>~${pdur}</b>`);
                     }
                     return tips;
                 },
@@ -1997,7 +2003,7 @@ sauce.ns('performance', async ns => {
                 })),
             }, {
                 id: 'distance',
-                label: 'Distance', // XXX Localize
+                label: this.LM('analysis_distance'),
                 type: 'bar',
                 backgroundColor: '#244d',
                 borderColor: '#022f',
@@ -2011,7 +2017,7 @@ sauce.ns('performance', async ns => {
                     const tips = [L.distanceFormatter.formatShort(x)];
                     if (predictions && i === metricData.length - 1) {
                         const pdist = L.distanceFormatter.formatShort(predictions.distance[i].y + x, 0);
-                        tips.push(`Predicted: <b>~${pdist}</b>`); // XXX Localize
+                        tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
                     }
                     return tips;
                 },
@@ -2068,7 +2074,7 @@ sauce.ns('performance', async ns => {
             });
             this.charts.elevation.data.datasets = [{
                 id: 'elevation',
-                label: 'Elevation', // XXX Localize
+                label: this.LM('analysis_gain'),
                 type: 'line',
                 backgroundColor: '#8f8782e0',
                 borderColor: '#6f6762f0',
@@ -2135,7 +2141,13 @@ sauce.ns('performance', async ns => {
             await sauce.storage.setPref('perfChartDataVisibility', this.dataVisibility);
         }
 
-        async onUpdateActivities() {
+        async onUpdateActivities({range}) {
+            const localeMetricMap = {
+                weeks: 'weekly',
+                months: 'monthly',
+                years: 'yearly',
+            };
+            this.$('.metric-display').text(this.LM(localeMetricMap[range.metric]));
             await this.update();
         }
     }
@@ -2335,16 +2347,12 @@ sauce.ns('performance', async ns => {
             this.daily = activitiesByDay(activities, start, end, atl, ctl);
             if (this.range.metric === 'weeks') {
                 this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
-                this.$('.metric-display').text('Weekly'); // XXX localize
             } else if (this.range.metric === 'months') {
                 this.metricData = aggregateActivitiesByMonth(this.daily);
-                this.$('.metric-display').text('Monthly'); // XXX localize
             } else if (this.range.metric === 'years') {
                 this.metricData = aggregateActivitiesByYear(this.daily);
-                this.$('.metric-display').text('Yearly'); // XXX localize
             } else {
-                this.$('.metric-display').text('Daily'); // XXX localize
-                this.metricData = this.daily;
+                throw new TypeError('Unsupported range metric: ' + this.range.metric);
             }
             this.trigger('update-activities', {
                 athlete: this.athlete,
