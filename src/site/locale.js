@@ -51,7 +51,9 @@ sauce.ns('locale', ns => {
 
 
     async function _fillMessagesCache(missing) {
-        await sauce.proxy.connected;
+        if (!sauce.proxy.isConnected) {
+            await sauce.proxy.connected;
+        }
         const values = await sauce.locale._getMessages(missing.map(x => [x.key, ...x.args]));
         for (const [i, x] of missing.entries()) {
             let value = values[i];

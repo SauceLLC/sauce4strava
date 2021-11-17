@@ -9,8 +9,10 @@ sauce.ns('performance', async ns => {
     const chartTopPad = 15;
     const lastSyncMaxAge = 3600 * 1000;
 
-    await sauce.proxy.connected;
     await sauce.locale.init();
+    if (!sauce.proxy.isConnected) {
+        await sauce.proxy.connected;
+    }
     await sauce.propDefined('Backbone', {once: true});
 
     const L = sauce.locale;
@@ -242,7 +244,7 @@ sauce.ns('performance', async ns => {
 
 
     class PerfView extends view.SauceView {
-        get tplNamespace() {
+        get localeNS() {
             return 'performance';
         }
     }

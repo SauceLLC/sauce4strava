@@ -16,6 +16,7 @@ sauce.ns('analysis', ns => {
     const L = sauce.locale;
     const H = sauce.locale.human;
     const LM = m => L.getMessage(`analysis_${m}`);
+    const _localeInit = sauce.locale.init();  // preload micro opt.
 
     const minVAMTime = 60;
     const minHRTime = 60;
@@ -1978,7 +1979,7 @@ sauce.ns('analysis', ns => {
         if (!ns.weight) {
             return;
         }
-        await sauce.locale.init();
+        await _localeInit;
         const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
         rows.push.apply(rows, document.querySelectorAll('table.hidden-segments tr[data-segment-effort-id]'));
         for (const row of rows) {
@@ -3297,10 +3298,9 @@ sauce.ns('analysis', ns => {
         const activity = pageView.activity();
         ns.athlete = pageView.activityAthlete();
         ns.gender = ns.athlete.get('gender') === 'F' ? 'female' : 'male';
-        await sauce.proxy.connected;
+        await Promise.all([sauce.proxy.connected, _localeInit]);
         await initSyncActivity(activity, ns.athlete.id);
         await Promise.all([
-            sauce.locale.init(),
             getWeightInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
             getFTPInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
             sauce.storage.getAthleteProp(ns.athlete.id, 'wPrime').then(x => ns.wPrime = x || 20000),

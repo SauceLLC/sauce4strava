@@ -17,7 +17,7 @@ export class MutableDataView extends SauceView {
         return 'mutable-data-view.html';
     }
 
-    get tplNamespace() {
+    get localeNS() {
         return 'mutable_data';
     }
 
@@ -27,7 +27,7 @@ export class MutableDataView extends SauceView {
 
     async init(options) {
         this.$el.addClass('mutable-data-view');
-        this._entryTpl = await sauce.template.getTemplate(this.entryTpl, this.tplNamespace);
+        this._entryTpl = await sauce.template.getTemplate(this.entryTpl, this.localeNS);
         this.attrs = {
             localeHelpKey: null,
             localeTitleKey: null,

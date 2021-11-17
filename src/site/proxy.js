@@ -6,13 +6,14 @@ sauce.ns('proxy', ns => {
     let proxyId = 0;
     const inflight = new Map();
     let requestPort;
-    let _connected = false;
+
+    ns.isConnected = false;
 
     ns.connected = (async () => {
         let respPort;
         [requestPort, respPort] = await createChannel();
         initResponseBroker(respPort);
-        return (_connected = true);
+        return (ns.isConnected = true);
     })();
 
 
@@ -145,7 +146,7 @@ sauce.ns('proxy', ns => {
 
 
     async function extCall({desc, port}, nativeArgs) {
-        if (!_connected) {
+        if (!ns.isConnected) {
             // Unlikely but possible if extCall is called manually.
             await ns.connected;
         }
