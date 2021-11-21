@@ -514,7 +514,7 @@ export async function getPeaksForAthlete(athleteId, type, periods, options={}) {
     return await _aggregatePeaks(periods.map(x =>
         peaksStore.getForAthlete(athleteId, type, x, options)), options);
 }
-sauce.proxy.export(getPeaksForAthlete, {namespace});
+sauce.proxy.export(lru(getPeaksForAthlete), {namespace});
 
 
 export async function getPeaksFor(type, periods, options={}) {
@@ -637,6 +637,22 @@ async function getEnabledAthletes() {
 sauce.proxy.export(getEnabledAthletes, {namespace});
 
 
+function lru(func, size=50) {
+    const _lc = new sauce.LRUCache(size);
+    const wrap = function() {
+        const sig = JSON.stringify(Array.from(arguments));
+        if (!_lc.has(sig)) {
+            const r = func.apply(this, arguments);
+            return (r instanceof Promise) ? r.then(x => _lc.set(sig, x)) : _lc.set(sig, r), r;
+        } else {
+            return _lc.get(sig);
+        }
+    };
+    Object.defineProperty(wrap, 'name', {value: func.name});
+    return wrap;
+}
+
+
 async function getActivitiesForAthlete(athleteId, options={}) {
     if (options.includeTrainingLoadSeed) {
         const activities = [];
@@ -679,7 +695,7 @@ async function getActivitiesForAthlete(athleteId, options={}) {
         return await actsStore.getAllForAthlete(athleteId, options);
     }
 }
-sauce.proxy.export(getActivitiesForAthlete, {namespace});
+sauce.proxy.export(lru(getActivitiesForAthlete), {namespace});
 
 
 async function getNewestActivityForAthlete(athleteId, options) {
