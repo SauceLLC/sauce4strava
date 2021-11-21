@@ -1101,4 +1101,51 @@ self.sauceBaseInit = function sauceBaseInit() {
         error: reportError,
         auditStackFrame,
     };
+
+
+    sauce.LRUCache = class LRUCache extends Map {
+        constructor(capacity) {
+            super();
+            this._capacity = capacity;
+            this._head = null;
+            this._tail = null;
+        }
+
+        get(key) {
+            const entry = super.get(key);
+            if (entry === undefined) {
+                return;
+            }
+            if (entry.next !== null) {
+                this._moveToHead(entry);
+            }
+            return entry.value;
+        }
+
+        set(key, value) {
+            let entry = super.get(key);
+            if (!entry) {
+                entry = {key, value, next: null};
+                if (!this.size) {
+                    this._head = (this._tail = entry);
+                } else if (this.size === this._capacity) {
+                    this.delete(this._tail.key);
+                    this._tail = this._tail.next;
+                }
+                super.set(key, entry);
+            }
+            this._moveToHead(entry);
+        }
+
+        _moveToHead(entry) {
+            if (this._tail === entry && entry.next !== null) {
+                this._tail = entry.next;
+            }
+            entry.next = null;
+            if (this._head !== entry) {
+                this._head.next = entry;
+                this._head = entry;
+            }
+        }
+    };
 };
