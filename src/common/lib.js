@@ -2152,11 +2152,144 @@ sauce.ns('date', function() {
     }
 
 
+    function dayAfter(dt) {
+        const d = toLocaleDayDate(dt);
+        d.setDate(d.getDate() + 1);
+        return d;
+    }
+
+
+    function tomorrow() {
+        return dayAfter(new Date());
+    }
+
+
+    function addTZ(time) {
+        const offt = (new Date(time)).getTimezoneOffset() * 60000;
+        return time + offt;
+    }
+
+
+    function subtractTZ(time) {
+        const offt = (new Date(time)).getTimezoneOffset() * 60000;
+        return time - offt;
+    }
+
+
+    class CalendarRange {
+        static isValidMetric(metric) {
+            return ['weeks', 'months', 'years'].includes(metric);
+        }
+
+        constructor(endDateSeed, period, metric) {
+            if (endDateSeed != null && !(endDateSeed instanceof Date)) {
+                throw new TypeError('Date object required');
+            }
+            if (!this.constructor.isValidMetric(metric)) {
+                throw new TypeError('metric is invalid');
+            }
+            if (period == null) {
+                throw new TypeError('period is invalid');
+            }
+            this.period = period;
+            this.metric = metric;
+            this.setEndSeed(endDateSeed || tomorrow());
+        }
+
+        setRange(period, metric, endSeed) {
+            if (typeof period !== 'number') {
+                throw new TypeError("Invalid period");
+            }
+            if (!this.constructor.isValidMetric(metric)) {
+                throw new TypeError("Invalid metric");
+            }
+            this.period = period;
+            this.metric = metric;
+            this.setEndSeed(endSeed || this.end);
+        }
+
+        shift(amount) {
+            const endSeed = new Date(this.end);
+            if (this.metric === 'weeks') {
+                endSeed.setDate(endSeed.getDate() + (amount * this.period * 7));
+            } else if (this.metric === 'months') {
+                endSeed.setMonth(endSeed.getMonth() + (amount * this.period));
+            } else if (this.metric === 'years') {
+                endSeed.setFullYear(endSeed.getFullYear() + (amount * this.period));
+            } else {
+                throw new TypeError('Invalid metric');
+            }
+            this.setEndSeed(endSeed);
+        }
+
+        getDays() {
+            return Math.round((this.end.getTime() - this.start.getTime()) / 86400 / 1000);
+        }
+
+        setEndSeed(endSeed) {
+            const end = toLocaleDayDate(endSeed);
+            let start;
+            if (this.metric === 'weeks') {
+                const MON = 1;
+                const nextMonday = (7 - end.getDay() + MON) % 7;
+                end.setDate(end.getDate() + nextMonday);
+                start = new Date(end);
+                start.setDate(start.getDate() - (this.period * 7));
+            } else if (this.metric === 'months') {
+                while (end.getDate() !== 1) {
+                    end.setDate(end.getDate() + 1);
+                }
+                start = new Date(end);
+                start.setMonth(start.getMonth() - this.period);
+            } else if (this.metric === 'years') {
+                // Handle end being Jan 1 00:00:00.000, since end is exclusive.
+                const inclusiveDate = new Date(end);
+                inclusiveDate.setMilliseconds(inclusiveDate.getMilliseconds() - 1);
+                const year = inclusiveDate.getFullYear();
+                end.setFullYear(year + 1);
+                end.setMonth(0);
+                end.setDate(1);
+                start = new Date(end);
+                start.setFullYear(start.getFullYear() - this.period);
+            }
+            this.start = start;
+            this.end = end;
+        }
+
+        setStartSeed(startSeed) {
+            const start = toLocaleDayDate(startSeed);
+            let end;
+            if (this.metric === 'weeks') {
+                const MON = 1;
+                const prevMonday = (start.getDay() - MON + 7) % 7;
+                start.setDate(start.getDate() - prevMonday);
+                end = new Date(start);
+                end.setDate(end.getDate() + (this.period * 7));
+            } else if (this.metric === 'months') {
+                start.setDate(1);
+                end = new Date(start);
+                end.setMonth(end.getMonth() + this.period);
+            } else if (this.metric === 'years') {
+                start.setMonth(0);
+                start.setDate(1);
+                end = new Date(start);
+                end.setFullYear(start.getFullYear() + this.period);
+            }
+            this.start = start;
+            this.end = end;
+        }
+    }
+
     return {
         dayRange,
         toLocaleDayDate,
         roundToLocaleDayDate,
         roundToLocaleDayDateInplace,
+        dayAfter,
+        tomorrow,
+        addTZ,
+        subtractTZ,
+        CalendarRange,
     };
 });
 

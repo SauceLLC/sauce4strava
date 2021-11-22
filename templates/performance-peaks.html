@@ -10,13 +10,13 @@
     </select>
     <% if (['pace', 'gap'].includes(prefs.type)) { %>
         <select name="distance">
-            <% for (const x of distances) { %>
+            <% for (const x of peakRanges.distances) { %>
                 <option value="{{x.value}}" {{prefs.distance === x.value ? 'selected' : ''}}>{{humanRaceDistance(x.value)}}</option>
             <% } %>
         </select>
     <% } else { %>
         <select name="time">
-            <% for (const x of periods) { %>
+            <% for (const x of peakRanges.periods) { %>
                 <option value="{{x.value}}" {{prefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
             <% } %>
         </select>

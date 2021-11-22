@@ -1,153 +1,71 @@
 /* global sauce, jQuery, Chart, Backbone, currentAthlete */
 
+(function() {
+    function earlyLoad() {
+        const page = document.getElementById('error404');
+        for (const x of page.childNodes) {
+            x.remove();
+        }
+        page.removeAttribute('class');
+        page.id = 'sauce-performance';
+    }
+    if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
+        addEventListener('DOMContentLoaded', earlyLoad);
+    } else {
+        earlyLoad();
+    }
+})();
+
+
 sauce.ns('performance', async ns => {
     'use strict';
 
     const DAY = 86400 * 1000;
     const urn = 'sauce/performance';
-    const title = 'Sauce Performance';
     const chartTopPad = 15;
     const lastSyncMaxAge = 3600 * 1000;
-
-    await sauce.locale.init();
-    if (!sauce.proxy.isConnected) {
-        await sauce.proxy.connected;
-    }
-    await sauce.propDefined('Backbone', {once: true});
-
     const L = sauce.locale;
     const H = L.human;
-    const view = await sauce.getModule('/src/site/view.mjs');
-    const currentUser = await sauce.storage.get('currentUser');
+    const D = sauce.date;
+
+    // Carefully optimized for low page load time...
+    let pageTitle;
+    let view;
+    let currentUser;
+    let enAthletes;
+    let router;
+    const peakRanges = {};
+    await Promise.all([
+        L.init(),
+        L.getMessage('performance').then(x => pageTitle = `Sauce ${x}`),
+        sauce.propDefined('Backbone', {once: true}).then(() => 
+            sauce.getModule('/src/site/view.mjs').then(x => void (view = x))),
+        sauce.proxy.connected.then(() => Promise.all([
+            sauce.storage.fastPrefsReady(),
+            sauce.storage.get('currentUser').then(x => void (currentUser = x)),
+            sauce.peaks.getRanges('periods').then(x => void (peakRanges.periods = x)),
+            sauce.peaks.getRanges('distances').then(x => void (peakRanges.distances = x)),
+            sauce.hist.getEnabledAthletes().then(x => void (enAthletes = x)),
+        ])),
+    ]);
 
 
-    class CalendarRange {
-        static isValidMetric(metric) {
-            return ['weeks', 'months', 'years'].includes(metric);
+    class PerfCalendarRange extends sauce.date.CalendarRange {
+        constructor(seed, period, metric) {
+            const defaults = sauce.storage.getPrefFast('perfDefaultRange') || {};
+            period = period || defaults.period || 4;
+            metric = metric || defaults.metric || 'weeks';
+            super(seed, period, metric);
         }
 
-        static async loadDefaults() {
-            const saved = await sauce.storage.getPref('perfDefaultRange');
-            if (saved && saved.period && saved.metric) {
-                this._defaultPeriod = saved.period;
-                this._defaultMetric = saved.metric;
-            } else {
-                this._defaultPeriod = 4;
-                this._defaultMetric = 'weeks';
-            }
-        }
-
-        async saveDefaults() {
-            await sauce.storage.setPref('perfDefaultRange', {
-                period: this.period,
-                metric: this.metric
-            });
-        }
-
-        constructor(endDateSeed, period, metric) {
-            if (endDateSeed != null && !(endDateSeed instanceof Date)) {
-                throw new TypeError('Date object required');
-            }
-            if (period && metric) {
-                this.period = period;
-                this.metric = metric;
-            } else {
-                this.period = this.constructor._defaultPeriod;
-                this.metric = this.constructor._defaultMetric;
-            }
-            if (!this.constructor.isValidMetric(this.metric)) {
-                throw new TypeError('metric is invalid');
-            }
-            this.setEndSeed(endDateSeed || tomorrow());
-        }
-
-        setRange(period, metric, endSeed) {
-            if (typeof period !== 'number') {
-                throw new TypeError("Invalid period");
-            }
-            if (!this.constructor.isValidMetric(metric)) {
-                throw new TypeError("Invalid metric");
-            }
-            this.period = period;
-            this.metric = metric;
-            this.setEndSeed(endSeed || this.end);
-        }
-
-        shift(amount) {
-            const endSeed = new Date(this.end);
-            if (this.metric === 'weeks') {
-                endSeed.setDate(endSeed.getDate() + (amount * this.period * 7));
-            } else if (this.metric === 'months') {
-                endSeed.setMonth(endSeed.getMonth() + (amount * this.period));
-            } else if (this.metric === 'years') {
-                endSeed.setFullYear(endSeed.getFullYear() + (amount * this.period));
-            } else {
-                throw new TypeError('Invalid metric');
-            }
-            this.setEndSeed(endSeed);
-        }
-
-        getDays() {
-            return Math.round((this.end.getTime() - this.start.getTime()) / 86400 / 1000);
-        }
-
-        setEndSeed(endSeed) {
-            const end = sauce.date.toLocaleDayDate(endSeed);
-            let start;
-            if (this.metric === 'weeks') {
-                const MON = 1;
-                const nextMonday = (7 - end.getDay() + MON) % 7;
-                end.setDate(end.getDate() + nextMonday);
-                start = new Date(end);
-                start.setDate(start.getDate() - (this.period * 7));
-            } else if (this.metric === 'months') {
-                while (end.getDate() !== 1) {
-                    end.setDate(end.getDate() + 1);
-                }
-                start = new Date(end);
-                start.setMonth(start.getMonth() - this.period);
-            } else if (this.metric === 'years') {
-                // Handle end being Jan 1 00:00:00.000, since end is exclusive.
-                const inclusiveDate = new Date(end);
-                inclusiveDate.setMilliseconds(inclusiveDate.getMilliseconds() - 1);
-                const year = inclusiveDate.getFullYear();
-                end.setFullYear(year + 1);
-                end.setMonth(0);
-                end.setDate(1);
-                start = new Date(end);
-                start.setFullYear(start.getFullYear() - this.period);
-            }
-            this.start = start;
-            this.end = end;
-        }
-
-        setStartSeed(startSeed) {
-            const start = sauce.date.toLocaleDayDate(startSeed);
-            let end;
-            if (this.metric === 'weeks') {
-                const MON = 1;
-                const prevMonday = (start.getDay() - MON + 7) % 7;
-                start.setDate(start.getDate() - prevMonday);
-                end = new Date(start);
-                end.setDate(end.getDate() + (this.period * 7));
-            } else if (this.metric === 'months') {
-                start.setDate(1);
-                end = new Date(start);
-                end.setMonth(end.getMonth() + this.period);
-            } else if (this.metric === 'years') {
-                start.setMonth(0);
-                start.setDate(1);
-                end = new Date(start);
-                end.setFullYear(start.getFullYear() + this.period);
-            }
-            this.start = start;
-            this.end = end;
+        setRange(period, metric, ...args) {
+            super.setRange(period, metric, ...args);
+            sauce.storage.setPref('perfDefaultRange', {period, metric});  // bg okay
         }
     }
-    await CalendarRange.loadDefaults();
 
 
-    const AppRouter = Backbone.Router.extend({
+    router = new (Backbone.Router.extend({
         constructor: function() {
             this.filters = {};
             Backbone.Router.prototype.constructor.apply(this, arguments);
@@ -161,8 +79,8 @@ sauce.ns('performance', async ns => {
         },
 
         onNav: function(athleteId, period, metric, endDay) {
-            const validMetric = CalendarRange.isValidMetric(metric);
-            let suggestedEnd = validMetric && endDay ? new Date(addTZ(Number(endDay) * DAY)) : null;
+            const validMetric = PerfCalendarRange.isValidMetric(metric);
+            let suggestedEnd = validMetric && endDay ? new Date(D.addTZ(Number(endDay) * DAY)) : null;
             if (suggestedEnd && suggestedEnd >= Date.now()) {
                 suggestedEnd = null;
             }
@@ -186,7 +104,7 @@ sauce.ns('performance', async ns => {
                 f.period != null &&
                 f.metric != null &&
                 f.athleteId != null) {
-                const endDay = subtractTZ(f.suggestedEnd) / DAY;
+                const endDay = D.subtractTZ(f.suggestedEnd) / DAY;
                 this.navigate(`${urn}/${f.athleteId}/${f.period}/${f.metric}/${endDay}`, options);
             } else if (f.period != null && f.metric != null && f.athleteId != null) {
                 this.navigate(`${urn}/${f.athleteId}/${f.period}/${f.metric}`, options);
@@ -197,37 +115,13 @@ sauce.ns('performance', async ns => {
             }
             if (athlete) {
                 const start = H.date(range.start);
-                const end = H.date(sauce.date.roundToLocaleDayDate(range.end - DAY));
-                document.title = `${athlete.name} | ${start} -> ${end} | ${title}`;
+                const end = H.date(D.roundToLocaleDayDate(range.end - DAY));
+                document.title = `${athlete.name} | ${start} -> ${end} | ${pageTitle}`;
             } else {
-                document.title = title;
+                document.title = pageTitle;
             }
         }
-    });
-
-
-    function dayAfter(dt) {
-        const d = sauce.date.toLocaleDayDate(dt);
-        d.setDate(d.getDate() + 1);
-        return d;
-    }
-
-
-    function tomorrow() {
-        return dayAfter(new Date());
-    }
-
-
-    function addTZ(time) {
-        const offt = (new Date(time)).getTimezoneOffset() * 60000;
-        return time + offt;
-    }
-
-
-    function subtractTZ(time) {
-        const offt = (new Date(time)).getTimezoneOffset() * 60000;
-        return time - offt;
-    }
+    }))();
 
 
     const _athleteCache = new Map();
@@ -425,10 +319,10 @@ sauce.ns('performance', async ns => {
         const slots = [];
         start = start || acts[0].ts;
         // Acts starting at exactly midnight will be excluded by dayRange() without this..
-        end = end || dayAfter(acts[acts.length - 1].ts);
-        const startDay = sauce.date.toLocaleDayDate(start);
+        end = end || D.dayAfter(acts[acts.length - 1].ts);
+        const startDay = D.toLocaleDayDate(start);
         let i = 0;
-        for (const date of sauce.date.dayRange(startDay, new Date(end))) {
+        for (const date of D.dayRange(startDay, new Date(end))) {
             let tss = 0;
             let duration = 0;
             let altGain = 0;
@@ -436,7 +330,7 @@ sauce.ns('performance', async ns => {
             let kj = 0;
             const ts = date.getTime();
             const daily = [];
-            while (i < acts.length && +sauce.date.toLocaleDayDate(acts[i].ts) === ts) {
+            while (i < acts.length && +D.toLocaleDayDate(acts[i].ts) === ts) {
                 const a = acts[i++];
                 daily.push(a);
                 tss += sauce.model.getActivityTSS(a) || 0;
@@ -1045,8 +939,8 @@ sauce.ns('performance', async ns => {
             this.onSyncStatus = this._onSyncStatus.bind(this);
             this.onSyncError = this._onSyncError.bind(this);
             this.onSyncProgress = this._onSyncProgress.bind(this);
-            this.collapsed = (await sauce.storage.getPref('perfSummarySectionCollapsed')) || {};
-            this.type = (await sauce.storage.getPref('perfSummarySectionType')) || 'power';
+            this.collapsed = sauce.storage.getPrefFast('perfSummarySectionCollapsed') || {};
+            this.type = sauce.storage.getPrefFast('perfSummarySectionType') || 'power';
             if (pageView.athlete) {
                 await this.setAthlete(pageView.athlete);
             }
@@ -1059,7 +953,7 @@ sauce.ns('performance', async ns => {
             if (start == null || end == null) {
                 return [];
             }
-            const ranges = await sauce.peaks.getRanges(getPeaksRangeTypeForStream(this.type));
+            const ranges = peakRanges[getPeaksRangeTypeForStream(this.type)];
             const keyFormatter = getPeaksKeyFormatter(this.type);
             const valueFormatter = getPeaksValueFormatter(this.type);
             const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type,
@@ -1077,7 +971,7 @@ sauce.ns('performance', async ns => {
             const totalTime = sauce.data.sum(this.daily.map(x => x.duration));
             const totalDistance = sauce.data.sum(this.daily.map(x => x.distance));
             const totalAltGain = sauce.data.sum(this.daily.map(x => x.altGain));
-            return {
+            const r = {
                 athlete: this.athlete,
                 collapsed: this.collapsed,
                 type: this.type,
@@ -1099,6 +993,7 @@ sauce.ns('performance', async ns => {
                 mostFreqLocaleKey: this.mostFreqType ? this.mostFreqType.type + 's' : null,
                 isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
             };
+            return r;
         }
 
         async render() {
@@ -1263,8 +1158,8 @@ sauce.ns('performance', async ns => {
 
         setElement(el, ...args) {
             const r = super.setElement(el, ...args);
-            sauce.storage.getPref('perfDetailsAsideVisible').then(vis =>
-                this.setExpanded(vis, {noSave: true}));
+            const expanded = sauce.storage.getPrefFast('perfDetailsAsideVisible');
+            this.setExpanded(expanded, {noSave: true});
             return r;
         }
 
@@ -1399,8 +1294,7 @@ sauce.ns('performance', async ns => {
                 const id = Number(row.closest('.activity').dataset.id);
                 const peaks = await sauce.hist.getPeaksForActivityId(id);
                 const type = row.dataset.type;
-                const periods = new Set((await sauce.peaks.getRanges(getPeaksRangeTypeForStream(type)))
-                    .map(x => x.value));
+                const periods = new Set(peakRanges[getPeaksRangeTypeForStream(type)].map(x => x.value));
                 const typedPeaks = peaks.filter(x => x.type === row.dataset.type && periods.has(x.period));
                 if (typedPeaks.length) {
                     const keyFormatter = getPeaksKeyFormatter(type);
@@ -1522,9 +1416,6 @@ sauce.ns('performance', async ns => {
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
             this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
-            this.periods = await sauce.peaks.getRanges('periods');
-            this.distances = await sauce.peaks.getRanges('distances');
-            const savedPrefs = await sauce.storage.getPref('peaksView') || {};
             this.prefs = {
                 type: 'power',
                 limit: 10,
@@ -1532,7 +1423,7 @@ sauce.ns('performance', async ns => {
                 distance: 10000,
                 includeAllAthletes: false,
                 includeAllDates: false,
-                ...savedPrefs
+                ...sauce.storage.getPrefFast('peaksView'),
             };
             await super.init();
         }
@@ -1545,8 +1436,7 @@ sauce.ns('performance', async ns => {
                 unit: getPeaksUnit(this.prefs.type),
                 valueFormatter: getPeaksValueFormatter(this.prefs.type),
                 athleteName: this.athleteName.bind(this),
-                periods: this.periods,
-                distances: this.distances,
+                peakRanges,
             };
         }
 
@@ -1712,15 +1602,15 @@ sauce.ns('performance', async ns => {
             this.peaksView = new PeaksView({pageView});
             this.pageView = pageView;
             this.charts = {};
-            this.dataVisibility = await sauce.storage.getPref('perfChartDataVisibility') || {};
+            this.dataVisibility = sauce.storage.getPrefFast('perfChartDataVisibility') || {};
             this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
             await super.init();
         }
 
         setElement(el, ...args) {
             const r = super.setElement(el, ...args);
-            sauce.storage.getPref('perfMainViewExpanded').then(expanded =>
-                this.toggleExpanded(!!expanded, {noSave: true, noAside: true}));
+            const expanded = sauce.storage.getPrefFast('perfMainViewExpanded');
+            this.toggleExpanded(!!expanded, {noSave: true, noAside: true});
             return r;
         }
 
@@ -1846,7 +1736,6 @@ sauce.ns('performance', async ns => {
                 $option = jQuery(`<option value="${range.period},${range.metric}"]>` +
                     `${range.period} ${range.metric}</option>`);
                 this.$(`select[name="range"]`).append($option);
-                await this.pageView.range.saveDefaults();
             }
             $option[0].selected = true;
             $start.text(H.date(start));
@@ -1858,7 +1747,7 @@ sauce.ns('performance', async ns => {
             this.$('.btn.range.newest').toggleClass('disabled', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
-                H.date(sauce.date.roundToLocaleDayDate(end - DAY)));
+                H.date(D.roundToLocaleDayDate(end - DAY)));
             const days = range.getDays();
             const lineWidth = days > 365 ? 0.5 : days > 90 ? 1 : 1.5;
             const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
@@ -1870,12 +1759,16 @@ sauce.ns('performance', async ns => {
                 borderWidth: lineWidth,
                 backgroundColor: '#4c89d0e0',
                 borderColor: '#2c69b0f0',
-                fill: false,
                 pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 3 : 0,
                 datalabels: {
                     align: 'left'
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
+                /*segment: {
+                    borderColor: ctx => Math.random() < 0.5 ? 'red' : 'blue',
+                    borderDash: ctx => Math.random() < 0.5 ? [6, 6] : [],
+                    backgroundColor: ctx => Math.random() < 0.5 ? `#${Math.round(Math.random() * 9)}9c4` : '#0003',
+                },*/
                 data: daily.map((a, i) => ({
                     x: a.date,
                     y: a.ctl,
@@ -1888,7 +1781,6 @@ sauce.ns('performance', async ns => {
                 borderWidth: lineWidth,
                 backgroundColor: '#ff3730e0',
                 borderColor: '#f02720f0',
-                fill: false,
                 pointRadius: 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 data: daily.map(a => ({
@@ -1902,6 +1794,7 @@ sauce.ns('performance', async ns => {
                 borderWidth: lineWidth,
                 backgroundColor: '#bc714cc0',
                 borderColor: '#0008',
+                fill: true,
                 overUnder: true,
                 overBackgroundColorMax: '#7fe78a',
                 overBackgroundColorMin: '#bfe58a22',
@@ -1923,7 +1816,7 @@ sauce.ns('performance', async ns => {
             this.charts.training.update();
 
             let predictions;
-            if (tomorrow() <= range.end) {
+            if (D.tomorrow() <= range.end) {
                 const remaining = (range.end - Date.now()) / DAY;
                 const days = Math.round((range.end - metricData[metricData.length - 1].date) / DAY);
                 const weighting = Math.min(days, daily.length);
@@ -2038,7 +1931,7 @@ sauce.ns('performance', async ns => {
                     yAxisID: 'tss',
                     stack: 'tss',
                     barPercentage,
-                    data: predictions.tss
+                    data: predictions.tss,
                 }, {
                     id: 'duration',
                     type: 'bar',
@@ -2077,13 +1970,14 @@ sauce.ns('performance', async ns => {
                 label: this.LM('analysis_gain'),
                 type: 'line',
                 backgroundColor: '#8f8782e0',
+                fill: true,
                 borderColor: '#6f6762f0',
+                cubicInterpolationMode: 'monotone',
                 pointRadius: 0,
                 yAxisID: 'elevation',
                 borderWidth: lineWidth,
                 tooltipFormat: x => H.elevation(x, {suffix: true}),
                 data: gains,
-                lineTension: 0.1,
             }];
             this.charts.elevation.update();
         }
@@ -2126,12 +2020,17 @@ sauce.ns('performance', async ns => {
 
         async onRangeShift(ev) {
             const classes = ev.currentTarget.classList;
-            if (classes.contains('newest')) {
-                this.pageView.shiftRange(Infinity);
-            } else if (classes.contains('oldest')) {
-                this.pageView.shiftRange(-Infinity);
-            } else {
-                this.pageView.shiftRange(classes.contains('next') ? 1 : -1);
+            ev.currentTarget.classList.add('active');
+            try {
+                if (classes.contains('newest')) {
+                    await this.pageView.shiftRange(Infinity);
+                } else if (classes.contains('oldest')) {
+                    await this.pageView.shiftRange(-Infinity);
+                } else {
+                    await this.pageView.shiftRange(classes.contains('next') ? 1 : -1);
+                }
+            } finally {
+                ev.currentTarget.classList.remove('active');
             }
         }
 
@@ -2169,8 +2068,8 @@ sauce.ns('performance', async ns => {
             this.onSyncProgress = this._onSyncProgress.bind(this);
             this.athletes = athletes;
             this.syncButtons = new Map();
-            const f = ns.router.filters;
-            this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
+            const f = router.filters;
+            this.range = new PerfCalendarRange(f.suggestedEnd, f.period, f.metric);
             for (const x of athletes.values()) {
                 if (x.lastSync != null && Date.now() - x.lastSync > lastSyncMaxAge) {
                     // Run current athlete rightaway and everyone else a bit later...
@@ -2182,8 +2081,8 @@ sauce.ns('performance', async ns => {
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
-            ns.router.setFilters(this.athlete, this.range, {replace: true});
-            ns.router.on('route:onNav', this.onRouterNav.bind(this));
+            router.setFilters(this.athlete, this.range, {replace: true});
+            router.on('route:onNav', this.onRouterNav.bind(this));
             await super.init();
         }
 
@@ -2284,14 +2183,14 @@ sauce.ns('performance', async ns => {
             const id = Number(ev.currentTarget.value);
             await this.setAthleteId(id);
             this.trigger('change-athlete', this.athlete);
-            ns.router.setFilters(this.athlete, this.range);
+            router.setFilters(this.athlete, this.range);
             await this.updateActivities();
         }
 
         async onRouterNav() {
             // This func gets valid arguments but they are raw.  Use the filters object instead.
-            const f = ns.router.filters;
-            this.range = new CalendarRange(f.suggestedEnd, f.period, f.metric);
+            const f = router.filters;
+            this.range = new PerfCalendarRange(f.suggestedEnd, f.period, f.metric);
             if (f.athleteId !== this.athlete.id) {
                 await this.setAthleteId(f.athleteId);
                 this.$(`select[name="athlete"] option[value="${f.athleteId}"]`)[0].selected = true;
@@ -2303,22 +2202,21 @@ sauce.ns('performance', async ns => {
         async setRange(period, metric) {
             // This keeps the range from floating past the present when we go
             // from a big range to a smaller one.
-            const endSeed = this.range.end > Date.now() ? tomorrow() : undefined;
+            const endSeed = this.range.end > Date.now() ? D.tomorrow() : undefined;
             this.range.setRange(period, metric, endSeed);
-            ns.router.setFilters(this.athlete, this.range);
+            router.setFilters(this.athlete, this.range);
             await this.updateActivities();
-            await this.range.saveDefaults();
         }
 
         async shiftRange(offset) {
             if (offset === Infinity) {
-                this.range.setEndSeed(tomorrow());
+                this.range.setEndSeed(D.tomorrow());
             } else if (offset === -Infinity) {
                 this.range.setStartSeed(this.oldest);
             } else {
                 this.range.shift(offset);
             }
-            ns.router.setFilters(this.athlete, this.range);
+            router.setFilters(this.athlete, this.range);
             await this.updateActivities();
         }
 
@@ -2331,7 +2229,7 @@ sauce.ns('performance', async ns => {
             const start = this.range.start;
             let end = this.range.end;
             if (end > Date.now()) {
-                end = tomorrow();
+                end = D.tomorrow();
             }
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
                 {start: +start, end: +end, includeTrainingLoadSeed: true, excludeUpper: true});
@@ -2377,20 +2275,13 @@ sauce.ns('performance', async ns => {
 
 
     async function load() {
-        const $page = jQuery('#error404');  // replace the 404 content
-        $page.empty();
-        $page.removeClass();  // removes all
-        $page.attr('id', 'sauce-performance');
-        let athletes;
-        if (location.search.match(/onboarding/)) {
-            athletes = new Map();
-        } else {
-            athletes = new Map((await sauce.hist.getEnabledAthletes()).map(x => [x.id, x]));
-        }
+        const athletes = new Map(location.search.match(/onboarding/) ?
+            [] : enAthletes.map(x => [x.id, x]));
+        const page = document.getElementById('sauce-performance');
         if (!athletes.size) {
-            $page.addClass('onboarding');
+            page.classList.add('onboarding');
             if (self.CSS && self.CSS.registerProperty) {
-                $page.addClass('animate-hue');
+                page.classList.add('animate-hue');
                 CSS.registerProperty({
                     name: '--colorwheel-conic-turn',
                     syntax: '<number>',
@@ -2399,14 +2290,13 @@ sauce.ns('performance', async ns => {
                 });
             }
         }
-        const pageView = new PageView({athletes, el: $page});
+        const pageView = new PageView({athletes, el: page});
         await pageView.render();
         self.pv = pageView;
     }
 
-    ns.router = new AppRouter();
     Backbone.history.start({pushState: true});
-    document.title = 'Sauce Performance';
+
     if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
         addEventListener('DOMContentLoaded', () => load().catch(sauce.report.error));
     } else {
