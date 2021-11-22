@@ -523,7 +523,7 @@ export async function getPeaksFor(type, periods, options={}) {
     return await _aggregatePeaks(periods.map(x =>
         peaksStore.getFor(type, x, options)), options);
 }
-sauce.proxy.export(getPeaksFor, {namespace});
+sauce.proxy.export(lru(getPeaksFor), {namespace});
 
 
 export async function getPeaksRelatedToActivityId(activityId, ...args) {
