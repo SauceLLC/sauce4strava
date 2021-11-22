@@ -117,7 +117,7 @@ sauce.ns('storage', ns => {
         }
         await ns.update(fqPath, o);
     };
-    maybeExport(ns.setPref);
+    maybeExport(ns.setPref, {name: '_setPref'});
 
 
     let _activeUpdate;
