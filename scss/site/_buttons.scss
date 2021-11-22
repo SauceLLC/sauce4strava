@@ -123,8 +123,7 @@
         }
 
         &.sauce-busy {
-            pointer-events: none;
-            cursor: 'progress';
+            cursor: wait;
         }
     }
 
