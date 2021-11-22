@@ -10,6 +10,7 @@
         scripts: [
             'site/proxy.js',
             'site/locale.js',
+            'site/storage.js',
             'site/template.js',
             'common/lib.js',
             'site/sync.js',
@@ -42,14 +43,14 @@
         scripts: [
             'site/proxy.js',
             'site/locale.js',
+            'site/storage.js',
             'site/template.js',
             'common/lib.js',
             'site/sync.js',
-            'site/chart.js',
+            'site/chartjs/Chart.js',
             'site/chartjs/adapter-date-fns.bundle.js',
             'site/chartjs/plugin-datalabels.js',
             'site/chartjs/plugin-zoom.js',
-            //'site/chartjs/chart-matrix.js',
             'site/sparkline.js',
             'site/performance.js',
         ],
@@ -128,6 +129,7 @@
         scripts: [
             'site/proxy.js',
             'site/locale.js',
+            'site/storage.js',
             'site/template.js',
             'common/lib.js',
             'site/dashboard.js'
