@@ -637,7 +637,8 @@ async function getEnabledAthletes() {
 sauce.proxy.export(getEnabledAthletes, {namespace});
 
 
-function lru(func, size=50) {
+function lru(func, size=100) {
+    console.warn("LRU cache does not support invalidation yet, use with CAUTION:", func.name);
     const _lc = new sauce.LRUCache(size);
     const wrap = function() {
         const sig = JSON.stringify(Array.from(arguments));
@@ -701,13 +702,13 @@ sauce.proxy.export(lru(getActivitiesForAthlete), {namespace});
 async function getNewestActivityForAthlete(athleteId, options) {
     return await actsStore.getNewestForAthlete(athleteId, options);
 }
-sauce.proxy.export(getNewestActivityForAthlete, {namespace});
+sauce.proxy.export(lru(getNewestActivityForAthlete), {namespace});
 
 
 async function getOldestActivityForAthlete(athleteId, options) {
     return await actsStore.getOldestForAthlete(athleteId, options);
 }
-sauce.proxy.export(getOldestActivityForAthlete, {namespace});
+sauce.proxy.export(lru(getOldestActivityForAthlete), {namespace});
 
 
 export async function getActivitySiblings(activityId, options={}) {
