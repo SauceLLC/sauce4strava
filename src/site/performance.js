@@ -1735,6 +1735,14 @@ sauce.ns('performance', async ns => {
             const lineWidth = days > 365 ? 0.5 : days > 90 ? 1 : 1.5;
             const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
             const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
+            let future = [];
+            if (isEnd && metricData.length) {
+                const last = daily[daily.length - 1];
+                const metricDays = metricData[0].days;
+                const extendBy = Math.max(Math.min(metricDays * 2, 62), 7) * 86400 * 1000;
+                future = activitiesByDay([], +end, +end + extendBy, last.atl, last.ctl);
+            }
+            const trainingDaily = daily.concat(future.map(x => (x.future = true, x)));
             this.charts.training.data.datasets = [{
                 id: 'ctl',
                 label: `CTL (${this.LM('fitness')})`,
@@ -1747,16 +1755,15 @@ sauce.ns('performance', async ns => {
                     align: 'left'
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                /*segment: {
-                    borderColor: ctx => Math.random() < 0.5 ? 'red' : 'blue',
-                    borderDash: ctx => Math.random() < 0.5 ? [6, 6] : [],
-                    backgroundColor: ctx => Math.random() < 0.5 ? `#${Math.round(Math.random() * 9)}9c4` : '#0003',
-                },*/
-                data: daily.map((a, i) => ({
+                segment: {
+                    borderColor: x => trainingDaily[x.p0DataIndex].future ? '4c89d0d0' : undefined,
+                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [6, 6] : [],
+                },
+                data: trainingDaily.map((a, i) => ({
                     x: a.date,
                     y: a.ctl,
                     showDataLabel: i === maxCTLIndex,
-                }))
+                })),
             }, {
                 id: 'atl',
                 label: `ATL (${this.LM('fatigue')})`,
@@ -1766,7 +1773,11 @@ sauce.ns('performance', async ns => {
                 borderColor: '#f02720f0',
                 pointRadius: 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                data: daily.map(a => ({
+                segment: {
+                    borderColor: x => trainingDaily[x.p0DataIndex].future ? '#ff4740d0' : undefined,
+                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [6, 6] : [],
+                },
+                data: trainingDaily.map(a => ({
                     x: a.date,
                     y: a.atl,
                 }))
@@ -1790,7 +1801,12 @@ sauce.ns('performance', async ns => {
                     align: 'right'
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
-                data: daily.map((a, i) => ({
+                segment: {
+                    borderColor: x => trainingDaily[x.p0DataIndex].future ? '#000a' : undefined,
+                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [6, 6] : [],
+                    backgroundColor: x => trainingDaily[x.p0DataIndex].future ? '#4441' : undefined,
+                },
+                data: trainingDaily.map((a, i) => ({
                     x: a.date,
                     y: a.ctl - a.atl,
                     showDataLabel: i === minTSBIndex,
