@@ -1,22 +1,5 @@
 /* global sauce, jQuery, Chart, Backbone, currentAthlete */
 
-(function() {
-    function earlyLoad() {
-        const page = document.getElementById('error404');
-        for (const x of page.childNodes) {
-            x.remove();
-        }
-        page.removeAttribute('class');
-        page.id = 'sauce-performance';
-    }
-    if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
-        addEventListener('DOMContentLoaded', earlyLoad);
-    } else {
-        earlyLoad();
-    }
-})();
-
-
 sauce.ns('performance', async ns => {
     'use strict';
 
@@ -2020,7 +2003,7 @@ sauce.ns('performance', async ns => {
 
         async onRangeShift(ev) {
             const classes = ev.currentTarget.classList;
-            ev.currentTarget.classList.add('active');
+            ev.currentTarget.classList.add('sauce-busy');
             try {
                 if (classes.contains('newest')) {
                     await this.pageView.shiftRange(Infinity);
@@ -2030,7 +2013,7 @@ sauce.ns('performance', async ns => {
                     await this.pageView.shiftRange(classes.contains('next') ? 1 : -1);
                 }
             } finally {
-                ev.currentTarget.classList.remove('active');
+                ev.currentTarget.classList.remove('sauce-busy');
             }
         }
 
@@ -2275,13 +2258,16 @@ sauce.ns('performance', async ns => {
 
 
     async function load() {
+        const $page = jQuery(document.getElementById('error404'));
+        $page.empty();
+        $page.removeClass();  // removes all
+        $page[0].id = 'sauce-performance';
         const athletes = new Map(location.search.match(/onboarding/) ?
             [] : enAthletes.map(x => [x.id, x]));
-        const page = document.getElementById('sauce-performance');
         if (!athletes.size) {
-            page.classList.add('onboarding');
+            $page.addClass('onboarding');
             if (self.CSS && self.CSS.registerProperty) {
-                page.classList.add('animate-hue');
+                $page.addClass('animate-hue');
                 CSS.registerProperty({
                     name: '--colorwheel-conic-turn',
                     syntax: '<number>',
@@ -2290,10 +2276,10 @@ sauce.ns('performance', async ns => {
                 });
             }
         }
-        const pageView = new PageView({athletes, el: page});
-        await pageView.render();
-        self.pv = pageView;
+        self.pv = new PageView({athletes, el: $page});
+        await self.pv.render();
     }
+
 
     Backbone.history.start({pushState: true});
 

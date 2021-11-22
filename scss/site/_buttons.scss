@@ -121,6 +121,11 @@
                 margin-right: 0;
             }
         }
+
+        &.sauce-busy {
+            pointer-events: none;
+            cursor: 'progress';
+        }
     }
 
     .btn-group {
