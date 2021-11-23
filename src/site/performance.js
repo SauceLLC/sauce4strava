@@ -1788,7 +1788,7 @@ sauce.ns('performance', async ns => {
                 future = activitiesByDay([], fStart, fEnd, last.atl, last.ctl);
             }
             const trainingDaily = daily.concat(future.map(x => (x.future = true, x)));
-            const ifFuture = (yes, no) => ctx => trainingDaily[ctx.p1DataIndex].future ? yes : no;
+            const ifFuture = (yes, no) => ctx => trainingDaily[ctx.p0DataIndex].future ? yes : no;
             this.charts.training.data.datasets = [{
                 id: 'ctl',
                 label: `CTL (${this.LM('fitness')})`,
