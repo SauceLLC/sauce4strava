@@ -618,7 +618,15 @@ sauce.ns('performance', async ns => {
         if (!this.chart.options.tooltipLine) {
             return;
         }
-        const active = this.chart.tooltip._active;
+        // TODO: support always show option.
+        let active = this.chart.tooltip._active;
+        if (!active && this.chart.options.tooltips.defaultIndex) {
+            const idx = this.chart.options.tooltips.defaultIndex(this.chart);
+            const metaData = this.chart.getDatasetMeta(0).data;
+            if (idx != null && idx >= 0 && metaData && metaData[idx]) {
+                active = [metaData[idx]];
+            }
+        }
         if (active && active.length) {
             const activePoint = active[0];
             const ctx = this.chart.ctx;
@@ -735,7 +743,8 @@ sauce.ns('performance', async ns => {
 
         update(...args) {
             super.update(...args);
-            this.onTooltipUpdate(-1);
+            const idx = this.options.tooltips.defaultIndex ? this.options.tooltips.defaultIndex(this) : -1;
+            this.onTooltipUpdate(idx);
         }
 
         onDataLabelClick(ev) {
@@ -754,7 +763,7 @@ sauce.ns('performance', async ns => {
 
         onTooltipUpdate(index) {
             if (!this.chart.data.datasets || !this.chart.data.datasets.length) {
-                return;  // Chartjs resize cause spurious calls to update before init complets.
+                return;  // Chartjs resize cause spurious calls to update before init completes.
             }
             index = index >= 0 ? index : this.chart.data.datasets[0].data.length + index;
             if (index < 0) {
@@ -1655,6 +1664,20 @@ sauce.ns('performance', async ns => {
                     },
                     tooltips: {
                         intersect: false,
+                        defaultIndex: chart => {
+                            if (chart.data.datasets && chart.data.datasets.length) {
+                                const data = chart.data.datasets[0].data;
+                                if (data && data.length) {
+                                    const today = D.roundToLocaleDayDate(Date.now());
+                                    for (let i = data.length - 1; i; i--) {
+                                        if (data[i].x <= today) {
+                                            return i;
+                                        }
+                                    }
+                                }
+                            }
+                            return -1;
+                        }
                     },
                 }
             });
