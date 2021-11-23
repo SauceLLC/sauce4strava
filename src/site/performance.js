@@ -976,7 +976,7 @@ sauce.ns('performance', async ns => {
                 peaks: await this.findPeaks(),
                 mostFreqType: this.mostFreqType,
                 mostFreqLocaleKey: this.mostFreqType ? this.mostFreqType.type + 's' : null,
-                isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
+                isSafari: sauce.isSafari(),
             };
             return r;
         }

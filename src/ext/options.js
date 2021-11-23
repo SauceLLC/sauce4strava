@@ -3,7 +3,7 @@
 (function() {
     'use strict';
 
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isSafari = sauce.isSafari();
     const isPopup = (new URLSearchParams(window.location.search)).get('popup') !== null;
     if (isPopup) {
         document.documentElement.classList.add('popup');
@@ -124,7 +124,7 @@
         const type = browser.runtime.getURL('').split(':')[0];
         const doc = document.documentElement;
         doc.classList.add(type);
-        if (navigator.userAgent.match(/ Edg\//)) {
+        if (sauce.isEdge()) {
             doc.classList.add('edge');
         }
         const config = await sauce.storage.get();

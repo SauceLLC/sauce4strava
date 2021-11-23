@@ -37,7 +37,6 @@ sauce.ns('analysis', ns => {
         peak_np: 'np',
         peak_xp: 'xp',
     };
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     // Preload our food data so we're not waiting around later.
     const foodsPromise = fetch(sauce.extUrl + 'src/site/foods.json').then(r => r.json());
 
@@ -1841,7 +1840,7 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         let timeMultiplier = 1;
         const hasPatronRequirement = sauce.patronLevel >= 10;
-        if (!hasPatronRequirement && isSafari) {
+        if (!hasPatronRequirement && sauce.isSafari()) {
             return;  // Apple Mac App Store requirement.
         }
         const trialCount = (!hasPatronRequirement &&

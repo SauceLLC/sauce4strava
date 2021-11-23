@@ -139,7 +139,7 @@
         const type = browser.runtime.getURL('').split(':')[0];
         const doc = document.documentElement;
         doc.classList.add(type);
-        if (navigator.userAgent.match(/ Edg\//)) {
+        if (sauce.isEdge()) {
             doc.classList.add('edge');
         }
         document.querySelector('a.dismiss').addEventListener('click', () => {
