@@ -38,29 +38,29 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     sauce.isSafari = function() {
         return (/^((?!chrome|android).)*safari/i).test(navigator.userAgent);
-    }
+    };
 
     sauce.isFirefox = function() {
         return !!navigator.userAgent.match(/ Firefox\//);
-    }
+    };
 
     sauce.isEdge = function() {
         return _modernBrowserBrands ?
             _modernBrowserBrands.has('Microsoft Edge') :
             !!navigator.userAgent.match(/ Edg\//);
-    }
+    };
 
     sauce.isChrome = function() {
         return !sauce.isEdge() && (_modernBrowserBrands ?
             _modernBrowserBrands.has('Chromium') :
             !!navigator.userAgent.match(/ Chrome\//));
-    }
+    };
 
     sauce.isMobile = function() {
         return navigator.userAgentData ?
             navigator.userAgentData.mobile :
             !!navigator.userAgent.match(/ Mobile[/ ]/);
-    }
+    };
 
     sauce.browser = function() {
         let agent = sauce.isEdge() && 'edge';
@@ -68,7 +68,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         agent = agent || sauce.isFirefox() && 'firefox';
         agent = agent || sauce.isSafari() && 'safari';
         return agent;
-    }
+    };
 
 
     const _maxTimeout = 0x7fffffff;  // `setTimeout` max valid value.

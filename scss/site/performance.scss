@@ -984,8 +984,8 @@ table.sauce-perf {
                     // Tuned carefully for caret alignment...
                     $border-color: color.shade(accent4, 0%, 0.8);
                     $border-width: 2px;
-                    margin: 0 0 1.5em 0 !important;
-                    padding: 1em 1em 0 2em !important;
+                    margin: 0 0 1em 0 !important;
+                    padding: 0.4em 1em 0 2em !important;
                     border-image-source: radial-gradient(circle at var(--caret-left),
                         $border-color, transparent);
                     border-image-slice: 1;

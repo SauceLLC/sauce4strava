@@ -819,7 +819,9 @@ sauce.ns('performance', async ns => {
             const data = ticks[index];
             const d = new Date(data.value);
             if (days < 370) {
-                if (data.showYear) {
+                if (data.showToday) {
+                    return this.view.LM('today');
+                } else if (data.showYear) {
                     return [H.date(d, {style: 'month'}) + ' ', d.getFullYear()];
                 } else if (data.showMonth) {
                     return H.date(d, {style: 'monthDay'});
@@ -827,7 +829,9 @@ sauce.ns('performance', async ns => {
                     return H.date(d, {style: 'shortDay'});
                 }
             } else {
-                if (data.showYear) {
+                if (data.showToday) {
+                    return this.view.LM('today');
+                } else if (data.showYear) {
                     return [H.date(d, {style: 'month'}) + ' ', d.getFullYear()];
                 } else {
                     return H.date(d, {style: 'month'});
@@ -835,7 +839,7 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        afterBuildTicks(axis, ticks) {
+        afterBuildTicks(scale, ticks) {
             // This is used for doing fit calculations.  We don't actually use the label
             // value as it will get filtered down after layout determines which ticks will
             // fit and what step size to use.  However it's important to use the same basic
@@ -843,19 +847,34 @@ sauce.ns('performance', async ns => {
             if (!ticks) {
                 return;
             }
-            this.updateTicksConfig(ticks);
+            this.updateTicksConfig(ticks, scale);
             for (const x of ticks) {
                 x.major = true;  // Use bold font for all sizing calcs, then correct with afterUpdate.
             }
             return ticks;
         }
 
-        updateTicksConfig(ticks) {
+        updateTicksConfig(ticks, scale) {
             let lastMonth;
             let lastYear;
             const spans = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
+            const today = D.roundToLocaleDayDate(Date.now()).getTime();
+            let needTodayMark = scale.max > today;
             for (let i = 0; i < ticks.length; i++) {
-                const tick = ticks[i];
+                let tick = ticks[i];
+                if (needTodayMark && (tick.value >= today || i === ticks.length - 1)) {
+                    needTodayMark = false;
+                    if (tick.value !== today) {
+                        // We have to hijack this or the previous tick.  Whichever is closest.
+                        if (i && today - ticks[i - 1].value < tick.value - today) {
+                            tick = ticks[--i];
+                        }
+                        tick.value = today;
+                    }
+                    Object.assign(tick, {showToday: true, major: true});
+                    tick.label = this.formatTickLabel(i, ticks);
+                    continue;
+                }
                 const d = new Date(tick.value);
                 const m = d.getMonth();
                 const y = d.getFullYear();
@@ -863,7 +882,7 @@ sauce.ns('performance', async ns => {
                 const showYear = lastYear != null && lastYear != y;
                 lastMonth = m;
                 lastYear = y;
-                Object.assign(ticks[i], {
+                Object.assign(tick, {
                     showMonth,
                     showYear,
                     major: spans < 370 ? showMonth || showYear : showYear,
@@ -878,7 +897,7 @@ sauce.ns('performance', async ns => {
             // patch up the final set of ticks with our desired label and major/minor
             // state.  Major == bold.
             if (scale._ticksToDraw.length) {
-                this.updateTicksConfig(scale._ticksToDraw);
+                this.updateTicksConfig(scale._ticksToDraw, scale);
             }
         }
 
@@ -1579,7 +1598,7 @@ sauce.ns('performance', async ns => {
         get localeKeys() {
             return [
                 'predicted', '/analysis_time', '/analysis_distance', '/analysis_gain', 'fitness',
-                'fatigue', 'form', 'weekly', 'monthly', 'yearly', 'activities',
+                'fatigue', 'form', 'weekly', 'monthly', 'yearly', 'activities', 'today',
             ];
         }
 
@@ -1740,11 +1759,13 @@ sauce.ns('performance', async ns => {
             let future = [];
             if (isEnd && metricData.length) {
                 const last = daily[daily.length - 1];
-                const metricDays = metricData[0].days;
-                const extendBy = Math.max(Math.min(metricDays * 2, 62), 7) * 86400 * 1000;
-                future = activitiesByDay([], +end, +end + extendBy, last.atl, last.ctl);
+                const fDays = Math.max(Math.min(metricData[0].days, 62), 7);
+                const fStart = +D.dayAfter(last.date);
+                const fEnd = +D.roundToLocaleDayDate(fStart + fDays * DAY);
+                future = activitiesByDay([], fStart, fEnd, last.atl, last.ctl);
             }
             const trainingDaily = daily.concat(future.map(x => (x.future = true, x)));
+            const ifFuture = (yes, no) => ctx => trainingDaily[ctx.p1DataIndex].future ? yes : no;
             this.charts.training.data.datasets = [{
                 id: 'ctl',
                 label: `CTL (${this.LM('fitness')})`,
@@ -1758,8 +1779,8 @@ sauce.ns('performance', async ns => {
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
-                    borderColor: x => trainingDaily[x.p0DataIndex].future ? '4c89d0d0' : undefined,
-                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [0, 3, 3] : [],
+                    borderColor: ifFuture('4c89d0d0'),
+                    borderDash: ifFuture([6, 6], []),
                 },
                 data: trainingDaily.map((a, i) => ({
                     x: a.date,
@@ -1776,8 +1797,8 @@ sauce.ns('performance', async ns => {
                 pointRadius: 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
-                    borderColor: x => trainingDaily[x.p0DataIndex].future ? '#ff4740d0' : undefined,
-                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [0, 3, 3] : [],
+                    borderColor: ifFuture('#ff4740d0'),
+                    borderDash: ifFuture([6, 6]),
                 },
                 data: trainingDaily.map(a => ({
                     x: a.date,
@@ -1804,12 +1825,12 @@ sauce.ns('performance', async ns => {
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
-                    borderColor: x => trainingDaily[x.p0DataIndex].future ? '#000a' : undefined,
-                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [0, 3, 3] : [],
-                    overBackgroundColorMax: x => trainingDaily[x.p0DataIndex].future ? '#afba' : undefined,
-                    overBackgroundColorMin: x => trainingDaily[x.p0DataIndex].future ? '#df82' : undefined,
-                    underBackgroundColorMin: x => trainingDaily[x.p0DataIndex].future ? '#f922' : undefined,
-                    underBackgroundColorMax: x => trainingDaily[x.p0DataIndex].future ? '#d22b' : undefined,
+                    borderColor: ifFuture('#000a'),
+                    borderDash: ifFuture([6, 6]),
+                    overBackgroundColorMax: ifFuture('#afba'),
+                    overBackgroundColorMin: ifFuture('#df82'),
+                    underBackgroundColorMin: ifFuture('#f922'),
+                    underBackgroundColorMax: ifFuture('#d22b'),
                 },
                 data: trainingDaily.map((a, i) => ({
                     x: a.date,

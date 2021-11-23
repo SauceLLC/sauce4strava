@@ -373,6 +373,7 @@
     "performance_weekly": {"message": "Weekly"},
     "performance_monthly": {"message": "Monthly"},
     "performance_yearly": {"message": "Yearly"},
+    "performance_today": {"message": "Today"},
 
     "season_start": {"message": "Season Start"},
     "save": {"message": "Save"},
