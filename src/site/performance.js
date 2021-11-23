@@ -535,78 +535,80 @@ sauce.ns('performance', async ns => {
             return [r, g, b, a];
         },
 
-        safePct: function(pct) {
+        _safePct: function(pct) {
             // Return a value that won't blow up Canvas' addColorStop().
             return Math.min(1, Math.max(0, pct));
         },
 
-        beforeRender: function (chart, options) {
-            for (const ds of chart.data.datasets) {
+        _getGradient: function(chart, ds, segment) {
+            const scale = chart.scales[ds.yAxisID];
+            const height = scale.maxHeight; // This is the canvas pixel value.
+            if (height <= 0) {
+                return;  // Ignore renders to nonvisible layouts (prob a transition)
+            }
+            const getStyle = x => segment.style[x] !== undefined ? segment.style[x] : ds[x];
+            // We have to preserve the alpha components externally.
+            const color = c => Chart.helpers.color(c);
+            const overMax = color(getStyle('overBackgroundColorMax'));
+            const overMin = color(getStyle('overBackgroundColorMin'));
+            const underMin = color(getStyle('underBackgroundColorMin'));
+            const underMax = color(getStyle('underBackgroundColorMax'));
+            const overRef = {
+                gradient: this._buildFillGradient(chart, overMin.rgbString(), overMax.rgbString()),
+                alphaMin: overMin.alpha(),
+                alphaMax: overMax.alpha(),
+            };
+            const underRef = {
+                gradient: this._buildFillGradient(chart, underMin.rgbString(), underMax.rgbString()),
+                alphaMin: underMin.alpha(),
+                alphaMax: underMax.alpha(),
+            };
+            const zeroPct = this._safePct(scale.getPixelForValue(0) / height);
+            const gFill = chart.ctx.createLinearGradient(0, 0, 0, height);
+            const overMaxVal = getStyle('overBackgroundMax');
+            const underMinVal = getStyle('underBackgroundMin');
+            const max = overMaxVal != null ? overMaxVal : scale.max;
+            const min = underMinVal != null ? underMinVal : scale.min;
+            const midPointMarginPct = 0.001;
+            if (scale.max > 0) {
+                const overMaxColor = this._getFillGradientColor(overRef, scale.max / max);
+                const overMinColor = this._getFillGradientColor(overRef, scale.min / max);
+                const topPct = this._safePct(scale.getPixelForValue(max) / height);
+                gFill.addColorStop(topPct, `rgba(${overMaxColor.join()}`);
+                gFill.addColorStop(this._safePct(zeroPct - midPointMarginPct),
+                    `rgba(${overMinColor.join()}`);
+                gFill.addColorStop(zeroPct, `rgba(${overMinColor.slice(0, 3).join()}, 0)`);
+            }
+            if (scale.min < 0) {
+                const underMinColor = this._getFillGradientColor(underRef, scale.max / min);
+                const underMaxColor = this._getFillGradientColor(underRef, scale.min / min);
+                const bottomPct = this._safePct(scale.getPixelForValue(min) / height);
+                gFill.addColorStop(zeroPct, `rgba(${underMinColor.slice(0, 3).join()}, 0`);
+                gFill.addColorStop(this._safePct(zeroPct + midPointMarginPct),
+                    `rgba(${underMinColor.join()}`);
+                gFill.addColorStop(bottomPct, `rgba(${underMaxColor.join()}`);
+            }
+            return gFill;
+        },
+
+        afterDatasetsUpdate: function(chart, options) {
+            const metas = chart._getSortedVisibleDatasetMetas();
+            for (const {dataset: element} of metas) {
+                if (!element || !(element instanceof Chart.elements.Line)) {
+                    continue;
+                }
+                const ds = chart.data.datasets[element._datasetIndex];
                 if (!ds.overUnder) {
                     continue;
                 }
-                for (const meta of Object.values(ds._meta)) {
-                    if (!meta.dataset) {
-                        continue;
-                    }
-                    const scale = chart.scales[ds.yAxisID];
-                    const height = scale.maxHeight; // This is the canvas pixel value.
-                    if (height <= 0) {
-                        return;  // Ignore renders to nonvisible layouts (prob a transition)
-                    }
-                    if (!ds._overUnderRef) {
-                        // We have to preserve the alpha components externally.
-                        const color = c => Chart.helpers.color(c);
-                        const overMax = color(ds.overBackgroundColorMax);
-                        const overMin = color(ds.overBackgroundColorMin);
-                        const underMin = color(ds.underBackgroundColorMin);
-                        const underMax = color(ds.underBackgroundColorMax);
-                        ds._overUnderRef = {
-                            over: {
-                                gradient: this._buildFillGradient(chart,
-                                    overMin.rgbString(), overMax.rgbString()),
-                                alphaMin: overMin.alpha(),
-                                alphaMax: overMax.alpha(),
-                            },
-                            under: {
-                                gradient: this._buildFillGradient(chart,
-                                    underMin.rgbString(), underMax.rgbString()),
-                                alphaMin: underMin.alpha(),
-                                alphaMax: underMax.alpha(),
-                            }
-                        };
-                    }
-                    const ref = ds._overUnderRef;
-                    const model = meta.dataset._model;
-                    const zeroPct = this.safePct(scale.getPixelForValue(0) / height);
-                    const gFill = chart.ctx.createLinearGradient(0, 0, 0, height);
-                    const max = ds.overBackgroundMax != null ? ds.overBackgroundMax : scale.max;
-                    const min = ds.underBackgroundMin != null ? ds.underBackgroundMin : scale.min;
-                    const midPointMarginPct = 0.001;
+                for (const segment of element.getSegments()) {
                     try {
-                        if (scale.max > 0) {
-                            const overMaxColor = this._getFillGradientColor(ref.over, scale.max / max);
-                            const overMinColor = this._getFillGradientColor(ref.over, scale.min / max);
-                            const topPct = this.safePct(scale.getPixelForValue(max) / height);
-                            gFill.addColorStop(topPct, `rgba(${overMaxColor.join()}`);
-                            gFill.addColorStop(this.safePct(zeroPct - midPointMarginPct),
-                                `rgba(${overMinColor.join()}`);
-                            gFill.addColorStop(zeroPct, `rgba(${overMinColor.slice(0, 3).join()}, 0)`);
-                        }
-                        if (scale.min < 0) {
-                            const underMinColor = this._getFillGradientColor(ref.under, scale.max / min);
-                            const underMaxColor = this._getFillGradientColor(ref.under, scale.min / min);
-                            const bottomPct = this.safePct(scale.getPixelForValue(min) / height);
-                            gFill.addColorStop(zeroPct, `rgba(${underMinColor.slice(0, 3).join()}, 0`);
-                            gFill.addColorStop(this.safePct(zeroPct + midPointMarginPct),
-                                `rgba(${underMinColor.join()}`);
-                            gFill.addColorStop(bottomPct, `rgba(${underMaxColor.join()}`);
-                        }
-                        model.backgroundColor = gFill;
-                    } catch(e) { console.error(e); }  // XXX What meow?
+                        segment.style.backgroundColor = this._getGradient(chart, ds, segment);
+                    } catch(e) {/*no-pragma*/}
                 }
             }
-        }
+        },
+
     };
 
 
@@ -1757,7 +1759,7 @@ sauce.ns('performance', async ns => {
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: x => trainingDaily[x.p0DataIndex].future ? '4c89d0d0' : undefined,
-                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [6, 6] : [],
+                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [0, 3, 3] : [],
                 },
                 data: trainingDaily.map((a, i) => ({
                     x: a.date,
@@ -1775,7 +1777,7 @@ sauce.ns('performance', async ns => {
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: x => trainingDaily[x.p0DataIndex].future ? '#ff4740d0' : undefined,
-                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [6, 6] : [],
+                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [0, 3, 3] : [],
                 },
                 data: trainingDaily.map(a => ({
                     x: a.date,
@@ -1793,7 +1795,7 @@ sauce.ns('performance', async ns => {
                 overBackgroundColorMax: '#7fe78a',
                 overBackgroundColorMin: '#bfe58a22',
                 underBackgroundColorMin: '#d9940422',
-                underBackgroundColorMax: '#bc0000ff',
+                underBackgroundColorMax: '#bc0000',
                 overBackgroundMax: 50,
                 underBackgroundMin: -50,
                 pointRadius: ctx => ctx.dataIndex === minTSBIndex ? 3 : 0,
@@ -1803,8 +1805,11 @@ sauce.ns('performance', async ns => {
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: x => trainingDaily[x.p0DataIndex].future ? '#000a' : undefined,
-                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [6, 6] : [],
-                    backgroundColor: x => trainingDaily[x.p0DataIndex].future ? '#4441' : undefined,
+                    borderDash: x => trainingDaily[x.p0DataIndex].future ? [0, 3, 3] : [],
+                    overBackgroundColorMax: x => trainingDaily[x.p0DataIndex].future ? '#afba' : undefined,
+                    overBackgroundColorMin: x => trainingDaily[x.p0DataIndex].future ? '#df82' : undefined,
+                    underBackgroundColorMin: x => trainingDaily[x.p0DataIndex].future ? '#f922' : undefined,
+                    underBackgroundColorMax: x => trainingDaily[x.p0DataIndex].future ? '#d22b' : undefined,
                 },
                 data: trainingDaily.map((a, i) => ({
                     x: a.date,
