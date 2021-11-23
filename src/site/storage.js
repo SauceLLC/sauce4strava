@@ -32,7 +32,7 @@ sauce.ns('storage', ns => {
             let ref = _prefs || {};
             for (const key of path.split('.')) {
                 ref = ref[key];
-                if (ref[key] == null) {
+                if (ref == null) {
                     break;
                 }
             }
