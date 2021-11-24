@@ -2159,6 +2159,11 @@ sauce.ns('date', function() {
     }
 
 
+    function today() {
+        return toLocaleDayDate(new Date());
+    }
+
+
     function tomorrow() {
         return dayAfter(new Date());
     }
@@ -2286,6 +2291,7 @@ sauce.ns('date', function() {
         roundToLocaleDayDate,
         roundToLocaleDayDateInplace,
         dayAfter,
+        today,
         tomorrow,
         addTZ,
         subtractTZ,

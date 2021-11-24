@@ -638,6 +638,7 @@ sauce.proxy.export(getEnabledAthletes, {namespace});
 
 
 function lru(func, size=100) {
+    return func; // XXX Disable for now.
     console.warn("LRU cache does not support invalidation yet, use with CAUTION:", func.name);
     const _lc = new sauce.LRUCache(size);
     const wrap = function() {

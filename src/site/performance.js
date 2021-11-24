@@ -765,7 +765,8 @@ sauce.ns('performance', async ns => {
             if (!this.chart.data.datasets || !this.chart.data.datasets.length) {
                 return;  // Chartjs resize cause spurious calls to update before init completes.
             }
-            index = index >= 0 ? index : this.chart.data.datasets[0].data.length + index;
+            const srcData = this.chart.sourceData ? this.chart.sourceData : this.chart.data.datasets[0].data;
+            index = index >= 0 ? index : srcData.length + index;
             if (index < 0) {
                 return;
             }
@@ -792,14 +793,18 @@ sauce.ns('performance', async ns => {
                     </div>
                 `);
             }
-            const acts = this.getActivitiesAtDatasetIndex(index);
             let actsDesc;
-            if (acts.length === 1) {
-                actsDesc = acts[0].name;
-            } else if (acts.length > 1) {
-                actsDesc = `<i>${acts.length} ${this.view.LM('activities')}</i>`;
+            if (this.chart.options.activityTooltip) {
+                actsDesc = this.chart.options.activityTooltip(index);
             } else {
-                actsDesc = '-';
+                const acts = this.getActivitiesAtDatasetIndex(index);
+                if (acts.length === 1) {
+                    actsDesc = acts[0].name;
+                } else if (acts.length > 1) {
+                    actsDesc = `<i>${acts.length} ${this.view.LM('activities')}</i>`;
+                } else {
+                    actsDesc = '-';
+                }
             }
             const d = new Date(this.chart.data.datasets[0].data[index].x);
             const title = H.date(d, {style: 'weekdayYear'});
@@ -817,7 +822,9 @@ sauce.ns('performance', async ns => {
 
         getActivitiesAtDatasetIndex(index) {
             // Due to zooming the dataset can be a subset of our daily/metric data.
-            const bucket = this.options.useMetricData ? this.view.pageView.metricData : this.view.pageView.daily;
+            const bucket = this.options.useMetricData ?
+                this.view.pageView.metricData :
+                this.view.pageView.daily;
             const date = this.chart.data.datasets[0].data[index].x;
             const slot = bucket.find(x => x.date === date);
             return slot && slot.activities ? slot.activities : [];
@@ -867,18 +874,18 @@ sauce.ns('performance', async ns => {
             let lastMonth;
             let lastYear;
             const spans = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
-            const today = D.roundToLocaleDayDate(Date.now()).getTime();
+            const today = D.today();
             let needTodayMark = scale.max > today;
             for (let i = 0; i < ticks.length; i++) {
                 let tick = ticks[i];
                 if (needTodayMark && (tick.value >= today || i === ticks.length - 1)) {
                     needTodayMark = false;
-                    if (tick.value !== today) {
+                    if (tick.value !== +today) {
                         // We have to hijack this or the previous tick.  Whichever is closest.
-                        if (i && today - ticks[i - 1].value < tick.value - today) {
+                        if (i && +today - ticks[i - 1].value < tick.value - +today) {
                             tick = ticks[--i];
                         }
-                        tick.value = today;
+                        tick.value = +today;
                     }
                     Object.assign(tick, {showToday: true, major: true});
                     tick.label = this.formatTickLabel(i, ticks);
@@ -1608,6 +1615,7 @@ sauce.ns('performance', async ns => {
             return [
                 'predicted', '/analysis_time', '/analysis_distance', '/analysis_gain', 'fitness',
                 'fatigue', 'form', 'weekly', 'monthly', 'yearly', 'activities', 'today',
+                'predicted_tss', 'predicted_tss_tooltip',
             ];
         }
 
@@ -1649,6 +1657,19 @@ sauce.ns('performance', async ns => {
             this.charts.training = new ActivityTimeRangeChart('#training', this, {
                 plugins: [chartOverUnderFillPlugin],
                 options: {
+                    activityTooltip: index => {
+                        const day = this.charts.training._sourceData[index];
+                        let desc;
+                        if (day.future) {
+                            desc = `<i title="${this.LM('predicted_tss_tooltip')}">` +
+                                `${this.LM('predicted_tss')}</i>`;
+                        } else if (day.activities.length > 1) {
+                            desc = `<i>${day.activities.length} ${this.LM('activities')}</i>`;
+                        } else if (day.activities.length === 1) {
+                            desc = day.activities[0].name;
+                        }
+                        return `${desc ? desc + ' ' : ''}(${day.future ? '~' : ''}${H.number(day.tss)} TSS)`;
+                    },
                     scales: {
                         yAxes: [{
                             id: 'tss',
@@ -1668,7 +1689,7 @@ sauce.ns('performance', async ns => {
                             if (chart.data.datasets && chart.data.datasets.length) {
                                 const data = chart.data.datasets[0].data;
                                 if (data && data.length) {
-                                    const today = D.roundToLocaleDayDate(Date.now());
+                                    const today = D.today();
                                     for (let i = data.length - 1; i; i--) {
                                         if (data[i].x <= today) {
                                             return i;
@@ -1776,19 +1797,27 @@ sauce.ns('performance', async ns => {
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
                 H.date(D.roundToLocaleDayDate(end - DAY)));
             const days = range.getDays();
-            const lineWidth = days > 365 ? 0.5 : days > 90 ? 1 : 1.5;
+            const lineWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
             const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
             const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
             let future = [];
-            if (isEnd && metricData.length) {
+            if (isEnd && daily.length) {
                 const last = daily[daily.length - 1];
-                const fDays = Math.max(Math.min(metricData[0].days, 62), 7);
-                const fStart = +D.dayAfter(last.date);
-                const fEnd = +D.roundToLocaleDayDate(fStart + fDays * DAY);
-                future = activitiesByDay([], fStart, fEnd, last.atl, last.ctl);
+                const fDays = Math.floor(Math.min(days * 0.10, 62));
+                const fStart = D.dayAfter(last.date);
+                const fEnd = D.roundToLocaleDayDate(+fStart + fDays * DAY);
+                const predictions = [];
+                const tssSlope = ((last.atl / last.ctl) || 1) - 1;
+                let tssPred = last.ctl;
+                for (const [i, date] of Array.from(D.dayRange(fStart, fEnd)).entries()) {
+                    tssPred *= 1 + (tssSlope * (1 / Math.log2(i + 2)));
+                    predictions.push({ts: +date, tssOverride: tssPred});
+                }
+                future = activitiesByDay(predictions, fStart, fEnd, last.atl, last.ctl);
             }
             const trainingDaily = daily.concat(future.map(x => (x.future = true, x)));
-            const ifFuture = (yes, no) => ctx => trainingDaily[ctx.p0DataIndex].future ? yes : no;
+            const ifFuture = (yes, no) => ctx => trainingDaily[ctx.p1DataIndex].future ? yes : no;
+            this.charts.training._sourceData = trainingDaily;  // For tooltip formatting.
             this.charts.training.data.datasets = [{
                 id: 'ctl',
                 label: `CTL (${this.LM('fitness')})`,
@@ -1803,7 +1832,7 @@ sauce.ns('performance', async ns => {
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: ifFuture('4c89d0d0'),
-                    borderDash: ifFuture([6, 6], []),
+                    borderDash: ifFuture([3, 3], []),
                 },
                 data: trainingDaily.map((a, i) => ({
                     x: a.date,
@@ -1821,11 +1850,12 @@ sauce.ns('performance', async ns => {
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: ifFuture('#ff4740d0'),
-                    borderDash: ifFuture([6, 6]),
+                    borderDash: ifFuture([3, 3]),
                 },
                 data: trainingDaily.map(a => ({
                     x: a.date,
                     y: a.atl,
+                    label: `${Math.round(a.tss)} ` + a.activities.map(x => x.name).join()
                 }))
             }, {
                 id: 'tsb',
@@ -1849,7 +1879,7 @@ sauce.ns('performance', async ns => {
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: ifFuture('#000a'),
-                    borderDash: ifFuture([6, 6]),
+                    borderDash: ifFuture([3, 3]),
                     overBackgroundColorMax: ifFuture('#afba'),
                     overBackgroundColorMin: ifFuture('#df82'),
                     underBackgroundColorMin: ifFuture('#f922'),
