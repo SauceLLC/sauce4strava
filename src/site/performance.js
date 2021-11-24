@@ -1807,10 +1807,12 @@ sauce.ns('performance', async ns => {
                 const fStart = D.dayAfter(last.date);
                 const fEnd = D.roundToLocaleDayDate(+fStart + fDays * DAY);
                 const predictions = [];
-                const tssSlope = ((last.atl / last.ctl) || 1) - 1;
+                const tau = 1;
+                const decay = 2;
+                const tssSlope = (((last.atl / last.ctl) || 1) - 1) / tau;
                 let tssPred = last.ctl;
                 for (const [i, date] of Array.from(D.dayRange(fStart, fEnd)).entries()) {
-                    tssPred *= 1 + (tssSlope * (1 / Math.log2(i + 2)));
+                    tssPred *= 1 + (tssSlope * (1 / (i * decay + 1)));
                     predictions.push({ts: +date, tssOverride: tssPred});
                 }
                 future = activitiesByDay(predictions, fStart, fEnd, last.atl, last.ctl);

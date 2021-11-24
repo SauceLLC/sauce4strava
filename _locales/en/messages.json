@@ -375,7 +375,7 @@
     "performance_yearly": {"message": "Yearly"},
     "performance_today": {"message": "Today"},
     "performance_predicted_tss": {"message": "Predicted from ATL / CTL ratio"},
-    "performance_predicted_tss_tooltip": {"message": "Future TSS predictions are calculated using the most recent ATL and CTL values as a starting slope factor.  A Log2 adjustment is then applied for each successive day to account for the increasing uncertainty as the model is extended into the future."},
+    "performance_predicted_tss_tooltip": {"message": "Future TSS predictions are calculated using the most recent ATL and CTL values as a starting slope factor.  A decay factor is also applied to account for uncertainty and human adaptation limits."},
 
     "season_start": {"message": "Season Start"},
     "save": {"message": "Save"},
