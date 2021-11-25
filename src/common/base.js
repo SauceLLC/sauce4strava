@@ -532,19 +532,37 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
     }
 
+    // XXX
+    let hitTime = 0;
+    let missTime = 0;
+    let hitCount = 0;
+    let missCount = 0;
 
     class DBStore {
         constructor(db, name, options={}) {
             this.db = db;
             this.name = name;
             this.Model = options.Model;
+            this._readsCache = new sauce.LRUCache(options.readsCacheSize || 100);
+            this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 2000);
+            this._started = false;
+        }
+
+        async _start() {
+            if (!this._starting) {
+                this._starting = (async () => {
+                    if (!this.db.started) {
+                        await this.db.start();
+                    }
+                    const idbStore = this._getIDBStore('readonly');
+                    this.keyPath = idbStore.keyPath;
+                    this._started = true;
+                })();
+            }
+            await this._starting;
         }
 
         _request(req, options={}) {
-            if (options.commit) {
-                //console.warn("COMIT!", req);
-                //req.transaction.commit();
-            }
             return new Promise((resolve, reject) => {
                 req.addEventListener('error', ev => reject(req.error));
                 req.addEventListener('success', ev => resolve(req.result));
@@ -572,13 +590,61 @@ self.sauceBaseInit = function sauceBaseInit() {
             return this.db.getStore(this.name, mode);
         }
 
+        _deepCopy(obj) {
+            let copy;
+            if (Array.isArray(obj)) {
+                copy = [];
+                for (const x of obj) {
+                    copy.push(this._deepCopy(x));
+                }
+            } else if (obj !== null && typeof obj === 'object') {
+                copy = {};
+                for (const [k, v] of Object.entries(obj)) {
+                    copy[k] = this._deepCopy(v);
+                }
+            } else if (ArrayBuffer.isView(obj)) {
+                throw new TypeError("TypedArray not implemented");
+            } else if (obj instanceof ArrayBuffer) {
+                throw new TypeError("ArrayBuffer not implemented");
+            } else if (obj != null && !['string', 'number', 'boolean'].includes(typeof obj)) {
+                throw new TypeError("Unexpected primative type");
+            } else {
+                copy = obj;
+            }
+            return copy;
+        }
+
         async _readQuery(getter, query, options={}, ...getterExtraArgs) {
-            if (!this.db.started) {
-                await this.db.start();
+            const s = performance.now(); // XXX
+            const q = query instanceof IDBKeyRange ?
+                SDBKeyRange.prototype.toJSON.call(query) :
+                query;
+            const cacheKey = JSON.stringify([getter, q, options, getterExtraArgs]);
+            if (this._readsCache.has(cacheKey)) {
+                const data = this._deepCopy(this._readsCache.get(cacheKey));
+                const e = performance.now(); //XXX
+                hitCount++;
+                hitTime += e - s;
+                if (hitCount % 100 === 0) {
+                    console.warn("cache hit,miss ms/", hitTime / hitCount, missTime / missCount);
+                }
+                return [data, this.keyPath];
+            }
+            if (!this._started) {
+                await this._start();
             }
             const idbStore = this._getIDBStore('readonly', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
-            return [await this._request(ifc[getter](query, ...getterExtraArgs)), idbStore];
+            const data = await this._request(ifc[getter](query, ...getterExtraArgs));
+            this._readsCache.set(cacheKey, data);
+            const res = [this._deepCopy(data), this.keyPath];
+            const e = performance.now(); //XXX
+            missCount++;
+            missTime += e - s;
+            if (missCount % 100 === 0) {
+                console.warn("cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
+            }
+            return res;
         }
 
         extractKey(data, keyPath) {
@@ -592,8 +658,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async get(query, options={}) {
-            const [data, idbStore] = await this._readQuery('get', query, options);
-            return options.model ? data && new this.Model(data, this, idbStore.keyPath) : data;
+            const [data, keyPath] = await this._readQuery('get', query, options);
+            return options.model ? data && new this.Model(data, this, keyPath) : data;
         }
 
         async getKey(query, options={}) {
@@ -601,8 +667,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getAll(query, options={}) {
-            const [data, idbStore] = await this._readQuery('getAll', query, options, options.count);
-            return options.models ? data.map(x => new this.Model(x, this, idbStore.keyPath)): data;
+            const [data, keyPath] = await this._readQuery('getAll', query, options, options.count);
+            return options.models ? data.map(x => new this.Model(x, this, keyPath)): data;
         }
 
         async getAllKeys(query, options={}) {
@@ -622,8 +688,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getMany(queries, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
             const idbStore = this._getIDBStore('readonly', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
@@ -658,9 +724,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async update(query, updates, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
+            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = await this._request(ifc.get(query));
@@ -673,9 +740,10 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!(updatesMap instanceof Map)) {
                 throw new TypeError('updatesMap must be Map type');
             }
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
+            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             return await Promise.all(Array.from(updatesMap.entries()).map(async ([key, updates]) => {
@@ -687,9 +755,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async put(data, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
+            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             let key;
             if (options.index) {
@@ -700,9 +769,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async putMany(datas, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
+            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             const index = options.index && idbStore.index(options.index);
             await Promise.all(datas.map(async data => {
@@ -715,9 +785,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async delete(query, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
+            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             const requests = [];
             if (options.index) {
@@ -733,9 +804,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async deleteMany(queries, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
+            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             let keys;
             if (options.index) {
@@ -754,19 +826,48 @@ self.sauceBaseInit = function sauceBaseInit() {
 
         async *values(query, options={}) {
             let keyPath;
-            for await (const c of this.cursor(query, options)) {
-                if (options.models) {
-                    if (keyPath === undefined) {
-                        if (c.source instanceof IDBIndex) {
-                            keyPath = c.source.objectStore.keyPath;
-                        } else {
-                            keyPath = c.source.keyPath;
-                        }
-                    }
-                    yield new this.Model(c.value, this, keyPath);
+            const iter = this.cursor(query, options);
+            const useCache = !options.filter || false;
+            let cacheKeyPrefix;
+            if (useCache) {
+                const q = query instanceof IDBKeyRange ?
+                    SDBKeyRange.prototype.toJSON.call(query) :
+                    query;
+                const cacheOptions = {...options, filter: undefined, limit: undefined};
+                cacheKeyPrefix = JSON.stringify([q, cacheOptions]);
+            }
+            let i = 0;
+            let advance = 0;
+            while (true) {
+                let data;
+                const cacheKey = useCache && cacheKeyPrefix + i++;
+                if (useCache && this._cursorCache.has(cacheKey)) {
+                    advance++;
+                    [data, keyPath] = this._cursorCache.get(cacheKey);
                 } else {
-                    yield c.value;
+                    const it = await iter.next(advance + 1);
+                    advance = 0;
+                    if (it.done) {
+                        break;
+                    }
+                    const c = it.value;
+                    data = c.value;
+                    if (options.models && keyPath === undefined) {
+                        keyPath = c.source instanceof IDBIndex ?
+                            c.source.objectStore.keyPath :
+                            c.source.keyPath;
+                    }
+                    if (useCache) {
+                        this._cursorCache.set(cacheKey, [data, keyPath]);
+                    }
                 }
+                const copy = this._deepCopy(data);
+                yield options.models ? new this.Model(copy, this, keyPath) : copy;
+            }
+            if (i > 100000) {
+                // XXX debug catch
+                debugger;
+                throw new Error("foo");
             }
         }
 
@@ -777,8 +878,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         _cursorRequest(query, options) {
-            if (!this.db.started) {
-                throw new TypeError("DB not started");
+            if (!this._started) {
+                throw new TypeError("Store not started");
             }
             const idbStore = this._getIDBStore(options.mode, options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
@@ -787,8 +888,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *cursor(query, options={}) {
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
             const req = this._cursorRequest(query, options);
             let resolve;
@@ -805,21 +906,27 @@ self.sauceBaseInit = function sauceBaseInit() {
                 if (!cursor) {
                     return;
                 }
+                let advance;
                 if (!options.filter || options.filter(cursor)) {
                     count++;
-                    yield cursor;
+                    advance = yield cursor;
                     if (options.limit && count >= options.limit) {
                         return;
                     }
                 }
-                cursor.continue();
+                if (advance > 1) {
+                    debugger;
+                    cursor.advance(advance);
+                } else {
+                    cursor.continue();
+                }
             }
         }
 
         async cursorAll(query, resultFn, options={}) {
             // This is ever so slightly faster than cursor.. Might remove..
-            if (!this.db.started) {
-                await this.db.start();
+            if (!this._started) {
+                await this._start();
             }
             const req = this._cursorRequest(query, options);
             const results = [];
@@ -872,6 +979,11 @@ self.sauceBaseInit = function sauceBaseInit() {
                 }
                 throw e;
             }
+        }
+
+        invalidateCaches() {
+            this._readsCache.clear();
+            this._cursorCache.clear();
         }
     }
 
@@ -926,6 +1038,19 @@ self.sauceBaseInit = function sauceBaseInit() {
         DBStore,
         Model,
     };
+
+
+    /* Support serialization for read caching */
+    class SDBKeyRange extends IDBKeyRange {
+        toJSON() {
+            return {
+                lower: this.lower,
+                upper: this.upper,
+                lowerBound: this.lowerBound,
+                upperBound: this.upperBound,
+            };
+        }
+    }
 
 
     class CacheDatabase extends Database {
@@ -1183,6 +1308,12 @@ self.sauceBaseInit = function sauceBaseInit() {
                 this._head.next = entry;
                 this._head = entry;
             }
+        }
+
+        clear() {
+            this._head = null;
+            this._tail = null;
+            super.clear();
         }
     };
 };
