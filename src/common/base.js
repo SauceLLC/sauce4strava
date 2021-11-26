@@ -626,7 +626,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 hitCount++;
                 hitTime += e - s;
                 if (hitCount % 100 === 0) {
-                    console.warn("cache hit,miss ms/", hitTime / hitCount, missTime / missCount);
+                    console.warn("cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
                 }
                 return [data, this.keyPath];
             }
