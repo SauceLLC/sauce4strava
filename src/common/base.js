@@ -549,8 +549,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             this.Model = options.Model;
             this._started = false;
             if (canCacheIDB) {
-                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 100);
-                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 2000);
+                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 1000);
+                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 10000);
                 cacheInvalidationCh.addEventListener('message',
                     ev => void this.invalidateCaches({noBroadcast: true}));
             }
@@ -633,7 +633,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 if (hitCount % 50 === 0) {
                     console.warn("rq cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
                 }
-                return [data, this.keyPath];
+                return data;
             }
             if (!this._started) {
                 await this._start();
@@ -644,7 +644,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (cacheKey) {
                 this._readsCache.set(cacheKey, data);
             }
-            const res = [this._deepCopy(data), this.keyPath];
+            const res = this._deepCopy(data);
             const e = performance.now(); //XXX
             missCount++;
             missTime += e - s;
@@ -700,6 +700,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         extractKey(data, keyPath) {
             // keyPath can be a single key-ident or an array of key-idents where
             // a key ident can be a dot.notation string or just a solitary string.
+            keyPath = keyPath || this.keyPath;
+            if (!keyPath) {
+                debugger; // XXX
+            }
             if (!Array.isArray(keyPath)) {
                 return this._walkKeyPath(data, keyPath);
             } else {
@@ -708,22 +712,22 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async get(query, options={}) {
-            const [data, keyPath] = await this._readQuery('get', query, options);
-            return options.model ? data && new this.Model(data, this, keyPath) : data;
+            const data = await this._readQuery('get', query, options);
+            return options.model ? data && new this.Model(data, this) : data;
         }
 
         async getKey(query, options={}) {
-            return (await this._readQuery('getKey', query, options))[0];
+            return await this._readQuery('getKey', query, options);
         }
 
         async getAll(query, options={}) {
-            const [data, keyPath] = await this._readQuery('getAll', query, options, options.count);
-            return options.models ? data.map(x => new this.Model(x, this, keyPath)): data;
+            const data = await this._readQuery('getAll', query, options, options.count);
+            return options.models ? data.map(x => new this.Model(x, this)): data;
         }
 
         async getAllKeys(query, options={}) {
             if (!options.indexKey) {
-                return (await this._readQuery('getAllKeys', query, options, options.count))[0];
+                return await this._readQuery('getAllKeys', query, options, options.count);
             } else {
                 const keys = [];
                 for await (const k of this.keys(query, options)) {
@@ -734,7 +738,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async count(query, options={}) {
-            return (await this._readQuery('count', query, options))[0];
+            return await this._readQuery('count', query, options);
         }
 
         async getMany(queries, options={}) {
@@ -744,6 +748,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             const idbStore = this._getIDBStore('readonly', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = [];
+            console.warn("uncached", queries);
             // Performance tuned to avoid Promise.all
             await new Promise((resolve, reject) => {
                 let pending = 0;
@@ -770,7 +775,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                     resolve();
                 }
             });
-            return options.models ? data.map(x => new this.Model(x, this, idbStore.keyPath)): data;
+            return options.models ? data.map(x => new this.Model(x, this)): data;
         }
 
         async update(query, updates, options={}) {
@@ -875,9 +880,8 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *values(query, options={}) {
-            let keyPath;
-            const iter = this.cursor(query, options);
             const cacheKeyPrefix = this._queryCacheKey(query, options, {cursor: true});
+            let iter;
             let i = 0;
             let advance = 0;
             while (true) {
@@ -885,33 +889,25 @@ self.sauceBaseInit = function sauceBaseInit() {
                 if (cacheKeyPrefix && this._cursorCache.has(cacheKeyPrefix + i)) {
                     advance++;
                     //console.info('values cursor hit', cacheKeyPrefix, i); // XXX
-                    [data, keyPath] = this._cursorCache.get(cacheKeyPrefix + i);
+                    data = this._cursorCache.get(cacheKeyPrefix + i);
                 } else {
                     //console.warn('values cursor miss', cacheKeyPrefix, i); // XXX
+                    if (!iter) {
+                        iter = this.cursor(query, options);
+                    }
                     const it = await iter.next(advance + 1);
                     advance = 0;
                     if (it.done) {
                         break;
                     }
-                    const c = it.value;
-                    data = c.value;
-                    if (options.models && keyPath === undefined) {
-                        keyPath = c.source instanceof IDBIndex ?
-                            c.source.objectStore.keyPath :
-                            c.source.keyPath;
-                    }
+                    data = it.value.value;
                     if (cacheKeyPrefix) {
-                        this._cursorCache.set(cacheKeyPrefix + i, [data, keyPath]);
+                        this._cursorCache.set(cacheKeyPrefix + i, data);
                     }
                 }
                 i++;
                 const copy = this._deepCopy(data);
-                yield options.models ? new this.Model(copy, this, keyPath) : copy;
-            }
-            if (i > 100000) {
-                // XXX debug catch
-                debugger;
-                throw new Error("foo");
+                yield options.models ? new this.Model(copy, this) : copy;
             }
         }
 
@@ -1010,11 +1006,10 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     class Model {
-        constructor(data, store, keyPath) {
+        constructor(data, store) {
             this.data = data;
-            this.keyPath = keyPath;
             if (data && store) {
-                this.pk = store.extractKey(data, keyPath);
+                this.pk = store.extractKey(data);
             }
             this._store = store;
             this._updated = new Set();
@@ -1049,7 +1044,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             this._updated.clear();
             await this._store.update(this.pk, updates);
             if (this.pk == null) {
-                this.pk = this._store.extractKey(this.data, this.keyPath);
+                this.pk = this._store.extractKey(this.data);
             }
         }
     }
