@@ -7,6 +7,10 @@ self.sauceBaseInit = function sauceBaseInit() {
     self.sauce = self.sauce || {};
     sauce._pendingAsyncExports = [];
 
+    const canCacheIDB = !!self.BroadcastChannel;
+    const cacheInvalidationCh = canCacheIDB && new BroadcastChannel('sauce_db_cache_invalidation');
+
+
     function buildPath(path) {
         let offt = self;
         for (const x of path) {
@@ -543,9 +547,13 @@ self.sauceBaseInit = function sauceBaseInit() {
             this.db = db;
             this.name = name;
             this.Model = options.Model;
-            this._readsCache = new sauce.LRUCache(options.readsCacheSize || 100);
-            this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 2000);
             this._started = false;
+            if (canCacheIDB) {
+                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 100);
+                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 2000);
+                cacheInvalidationCh.addEventListener('message',
+                    ev => void this.invalidateCaches({noBroadcast: true}));
+            }
         }
 
         async _start() {
@@ -616,17 +624,14 @@ self.sauceBaseInit = function sauceBaseInit() {
 
         async _readQuery(getter, query, options={}, ...getterExtraArgs) {
             const s = performance.now(); // XXX
-            const q = query instanceof IDBKeyRange ?
-                SDBKeyRange.prototype.toJSON.call(query) :
-                query;
-            const cacheKey = JSON.stringify([getter, q, options, getterExtraArgs]);
-            if (this._readsCache.has(cacheKey)) {
+            const cacheKey = this._queryCacheKey(query, {...options, getter, getterExtraArgs});
+            if (cacheKey && this._readsCache.has(cacheKey)) {
                 const data = this._deepCopy(this._readsCache.get(cacheKey));
                 const e = performance.now(); //XXX
                 hitCount++;
                 hitTime += e - s;
-                if (hitCount % 100 === 0) {
-                    console.warn("cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
+                if (hitCount % 50 === 0) {
+                    console.warn("rq cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
                 }
                 return [data, this.keyPath];
             }
@@ -636,15 +641,60 @@ self.sauceBaseInit = function sauceBaseInit() {
             const idbStore = this._getIDBStore('readonly', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = await this._request(ifc[getter](query, ...getterExtraArgs));
-            this._readsCache.set(cacheKey, data);
+            if (cacheKey) {
+                this._readsCache.set(cacheKey, data);
+            }
             const res = [this._deepCopy(data), this.keyPath];
             const e = performance.now(); //XXX
             missCount++;
             missTime += e - s;
-            if (missCount % 100 === 0) {
-                console.warn("cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
+            if (missCount % 50 === 0) {
+                console.warn("rq cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
             }
             return res;
+        }
+
+        _queryCacheKey(q, qOptions, options={}) {
+            if (!canCacheIDB) {
+                return false;
+            }
+            const facts = {
+                ...qOptions,
+                models: undefined,
+                start: undefined,
+                end: undefined,
+                excludeUpper: undefined,
+                excludeLower: undefined,
+            };
+            if (options.cursor) {
+                delete facts.limit;
+                if (facts.direction == null || facts.direction.startsWith('next')) {
+                    facts.lower = q.lower;
+                    facts.lowerBound = q.lowerBound;
+                } else {
+                    facts.upper = q.upper;
+                    facts.upperBound = q.upperBound;
+                }
+            } else {
+                if (options.filter) {
+                    return false;
+                }
+                facts.upper = q.upper;
+                facts.lower = q.lower;
+                facts.upperBound = q.upperBound;
+                facts.lowerBound = q.lowerBound;
+            }
+            return JSON.stringify(facts, (k, v) => {
+                if (v === Infinity) {
+                    return '<Infinity>';
+                } else if (v === -Infinity) {
+                    return '<-Infinity>';
+                } else if (typeof v === 'number' && isNaN(v)) {
+                    return '<NaN>';
+                } else  {
+                    return v;
+                }
+            });
         }
 
         extractKey(data, keyPath) {
@@ -827,24 +877,17 @@ self.sauceBaseInit = function sauceBaseInit() {
         async *values(query, options={}) {
             let keyPath;
             const iter = this.cursor(query, options);
-            const useCache = !options.filter || false;
-            let cacheKeyPrefix;
-            if (useCache) {
-                const q = query instanceof IDBKeyRange ?
-                    SDBKeyRange.prototype.toJSON.call(query) :
-                    query;
-                const cacheOptions = {...options, filter: undefined, limit: undefined};
-                cacheKeyPrefix = JSON.stringify([q, cacheOptions]);
-            }
+            const cacheKeyPrefix = this._queryCacheKey(query, options, {cursor: true});
             let i = 0;
             let advance = 0;
             while (true) {
                 let data;
-                const cacheKey = useCache && cacheKeyPrefix + i++;
-                if (useCache && this._cursorCache.has(cacheKey)) {
+                if (cacheKeyPrefix && this._cursorCache.has(cacheKeyPrefix + i)) {
                     advance++;
-                    [data, keyPath] = this._cursorCache.get(cacheKey);
+                    //console.info('values cursor hit', cacheKeyPrefix, i); // XXX
+                    [data, keyPath] = this._cursorCache.get(cacheKeyPrefix + i);
                 } else {
+                    //console.warn('values cursor miss', cacheKeyPrefix, i); // XXX
                     const it = await iter.next(advance + 1);
                     advance = 0;
                     if (it.done) {
@@ -857,10 +900,11 @@ self.sauceBaseInit = function sauceBaseInit() {
                             c.source.objectStore.keyPath :
                             c.source.keyPath;
                     }
-                    if (useCache) {
-                        this._cursorCache.set(cacheKey, [data, keyPath]);
+                    if (cacheKeyPrefix) {
+                        this._cursorCache.set(cacheKeyPrefix + i, [data, keyPath]);
                     }
                 }
+                i++;
                 const copy = this._deepCopy(data);
                 yield options.models ? new this.Model(copy, this, keyPath) : copy;
             }
@@ -872,6 +916,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *keys(query, options={}) {
+            console.warn("keys used", query, options);
             for await (const c of this.cursor(query, Object.assign({keys: true}, options))) {
                 yield options.indexKey ? c.key : c.primaryKey;
             }
@@ -898,6 +943,9 @@ self.sauceBaseInit = function sauceBaseInit() {
             req.addEventListener('error', ev => reject(req.error));
             req.addEventListener('success', ev => resolve(ev.target.result));
             let count = 0;
+            if (options.filter) {
+                throw new TypeError('deprecated');
+            }
             while (true) {
                 const cursor = await new Promise((_resolve, _reject) => {
                     resolve = _resolve;
@@ -906,49 +954,17 @@ self.sauceBaseInit = function sauceBaseInit() {
                 if (!cursor) {
                     return;
                 }
-                let advance;
-                if (!options.filter || options.filter(cursor)) {
-                    count++;
-                    advance = yield cursor;
-                    if (options.limit && count >= options.limit) {
-                        return;
-                    }
+                count++;
+                const advance = yield cursor;
+                if (options.limit && count >= options.limit) {
+                    return;
                 }
-                if (advance > 1) {
-                    debugger;
+                if (advance && advance > 1) {
                     cursor.advance(advance);
                 } else {
                     cursor.continue();
                 }
             }
-        }
-
-        async cursorAll(query, resultFn, options={}) {
-            // This is ever so slightly faster than cursor.. Might remove..
-            if (!this._started) {
-                await this._start();
-            }
-            const req = this._cursorRequest(query, options);
-            const results = [];
-            await new Promise((resolve, reject) => {
-                let count = 0;
-                req.addEventListener('error', ev => reject(req.error));
-                req.addEventListener('success', ev => {
-                    const cursor = ev.target.result;
-                    if (!cursor) {
-                        resolve();
-                    } else if (!options.filter || options.filter(cursor)) {
-                        count++;
-                        results.push(resultFn(cursor));
-                        if (options.limit && count >= options.limit) {
-                            resolve();
-                        } else {
-                            cursor.continue();
-                        }
-                    }
-                });
-            });
-            return results;
         }
 
         async saveModels(models) {
@@ -981,9 +997,14 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
         }
 
-        invalidateCaches() {
-            this._readsCache.clear();
-            this._cursorCache.clear();
+        invalidateCaches(options={}) {
+            if (!options.noBroadcast) {
+                cacheInvalidationCh.postMessage('invalidate');
+            }
+            if (canCacheIDB) {
+                this._readsCache.clear();
+                this._cursorCache.clear();
+            }
         }
     }
 
