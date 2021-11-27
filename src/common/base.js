@@ -630,9 +630,9 @@ self.sauceBaseInit = function sauceBaseInit() {
                 const e = performance.now(); //XXX
                 hitCount++;
                 hitTime += e - s;
-                if (hitCount % 50 === 0) {
+                /*if (hitCount % 50 === 0) {
                     console.warn("rq cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
-                }
+                }*/
                 return data;
             }
             if (!this._started) {
@@ -648,9 +648,9 @@ self.sauceBaseInit = function sauceBaseInit() {
             const e = performance.now(); //XXX
             missCount++;
             missTime += e - s;
-            if (missCount % 50 === 0) {
+            /*if (missCount % 50 === 0) {
                 console.warn("rq cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
-            }
+            }*/
             return res;
         }
 
@@ -660,7 +660,9 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
             const facts = {
                 ...qOptions,
+                model: undefined,
                 models: undefined,
+                idbStore: undefined,
                 start: undefined,
                 end: undefined,
                 excludeUpper: undefined,
@@ -668,21 +670,29 @@ self.sauceBaseInit = function sauceBaseInit() {
             };
             if (options.cursor) {
                 delete facts.limit;
-                if (facts.direction == null || facts.direction.startsWith('next')) {
-                    facts.lower = q.lower;
-                    facts.lowerBound = q.lowerBound;
+                if (q instanceof IDBKeyRange) {
+                    if (facts.direction == null || facts.direction.startsWith('next')) {
+                        facts.lower = q.lower;
+                        facts.lowerBound = q.lowerBound;
+                    } else {
+                        facts.upper = q.upper;
+                        facts.upperBound = q.upperBound;
+                    }
                 } else {
-                    facts.upper = q.upper;
-                    facts.upperBound = q.upperBound;
+                    facts.q = q;
                 }
             } else {
                 if (options.filter) {
                     return false;
                 }
-                facts.upper = q.upper;
-                facts.lower = q.lower;
-                facts.upperBound = q.upperBound;
-                facts.lowerBound = q.lowerBound;
+                if (q instanceof IDBKeyRange) {
+                    facts.upper = q.upper;
+                    facts.lower = q.lower;
+                    facts.upperBound = q.upperBound;
+                    facts.lowerBound = q.lowerBound;
+                } else {
+                    facts.q = q;
+                }
             }
             return JSON.stringify(facts, (k, v) => {
                 if (v === Infinity) {
@@ -746,36 +756,9 @@ self.sauceBaseInit = function sauceBaseInit() {
                 await this._start();
             }
             const idbStore = this._getIDBStore('readonly', options);
-            const ifc = options.index ? idbStore.index(options.index) : idbStore;
-            const data = [];
-            console.warn("uncached", queries);
-            // Performance tuned to avoid Promise.all
-            await new Promise((resolve, reject) => {
-                let pending = 0;
-                const onSuccess = ev => {
-                    if (options.index) {
-                        for (const x of ev.target.result) {
-                            data.push(x);
-                        }
-                    } else {
-                        data.push(ev.target.result);
-                    }
-                    if (!--pending) {
-                        resolve();
-                    }
-                };
-                const onError = ev => reject(ev.target.error);
-                for (const q of queries) {
-                    pending++;
-                    const req = options.index ? ifc.getAll(q) : ifc.get(q);
-                    req.addEventListener('success', onSuccess);
-                    req.addEventListener('error', onError);
-                }
-                if (!pending) {
-                    resolve();
-                }
-            });
-            return options.models ? data.map(x => new this.Model(x, this)): data;
+            return await Promise.all(queries.map(q =>
+                this._readQuery('get', q, {...options, idbStore}).then(x =>
+                    options.models ? new this.Model(x, this) : x)));
         }
 
         async update(query, updates, options={}) {
