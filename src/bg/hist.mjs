@@ -514,7 +514,7 @@ export async function getPeaksForAthlete(athleteId, type, periods, options={}) {
     return await _aggregatePeaks(periods.map(x =>
         peaksStore.getForAthlete(athleteId, type, x, options)), options);
 }
-sauce.proxy.export(lru(getPeaksForAthlete), {namespace});
+sauce.proxy.export(getPeaksForAthlete, {namespace});
 
 
 export async function getPeaksFor(type, periods, options={}) {
@@ -523,7 +523,7 @@ export async function getPeaksFor(type, periods, options={}) {
     return await _aggregatePeaks(periods.map(x =>
         peaksStore.getFor(type, x, options)), options);
 }
-sauce.proxy.export(lru(getPeaksFor), {namespace});
+sauce.proxy.export(getPeaksFor, {namespace});
 
 
 export async function getPeaksRelatedToActivityId(activityId, ...args) {
@@ -637,24 +637,6 @@ async function getEnabledAthletes() {
 sauce.proxy.export(getEnabledAthletes, {namespace});
 
 
-function lru(func, size=100) {
-    return func; // XXX Disable for now.
-    console.warn("LRU cache does not support invalidation yet, use with CAUTION:", func.name);
-    const _lc = new sauce.LRUCache(size);
-    const wrap = function() {
-        const sig = JSON.stringify(Array.from(arguments));
-        if (!_lc.has(sig)) {
-            const r = func.apply(this, arguments);
-            return (r instanceof Promise) ? r.then(x => _lc.set(sig, x)) : _lc.set(sig, r), r;
-        } else {
-            return _lc.get(sig);
-        }
-    };
-    Object.defineProperty(wrap, 'name', {value: func.name});
-    return wrap;
-}
-
-
 async function getActivitiesForAthlete(athleteId, options={}) {
     if (options.includeTrainingLoadSeed) {
         const activities = [];
@@ -697,19 +679,19 @@ async function getActivitiesForAthlete(athleteId, options={}) {
         return await actsStore.getAllForAthlete(athleteId, options);
     }
 }
-sauce.proxy.export(lru(getActivitiesForAthlete), {namespace});
+sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
 async function getNewestActivityForAthlete(athleteId, options) {
     return await actsStore.getNewestForAthlete(athleteId, options);
 }
-sauce.proxy.export(lru(getNewestActivityForAthlete), {namespace});
+sauce.proxy.export(getNewestActivityForAthlete, {namespace});
 
 
 async function getOldestActivityForAthlete(athleteId, options) {
     return await actsStore.getOldestForAthlete(athleteId, options);
 }
-sauce.proxy.export(lru(getOldestActivityForAthlete), {namespace});
+sauce.proxy.export(getOldestActivityForAthlete, {namespace});
 
 
 export async function getActivitySiblings(activityId, options={}) {

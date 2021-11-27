@@ -536,11 +536,6 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
     }
 
-    // XXX
-    let hitTime = 0;
-    let missTime = 0;
-    let hitCount = 0;
-    let missCount = 0;
 
     class DBStore {
         constructor(db, name, options={}) {
@@ -623,17 +618,9 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async _readQuery(getter, query, options={}, ...getterExtraArgs) {
-            const s = performance.now(); // XXX
             const cacheKey = this._queryCacheKey(query, {...options, getter, getterExtraArgs});
             if (cacheKey && this._readsCache.has(cacheKey)) {
-                const data = this._deepCopy(this._readsCache.get(cacheKey));
-                const e = performance.now(); //XXX
-                hitCount++;
-                hitTime += e - s;
-                /*if (hitCount % 50 === 0) {
-                    console.warn("rq cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
-                }*/
-                return data;
+                return this._deepCopy(this._readsCache.get(cacheKey));
             }
             if (!this._started) {
                 await this._start();
@@ -644,14 +631,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (cacheKey) {
                 this._readsCache.set(cacheKey, data);
             }
-            const res = this._deepCopy(data);
-            const e = performance.now(); //XXX
-            missCount++;
-            missTime += e - s;
-            /*if (missCount % 50 === 0) {
-                console.warn("rq cache hit,miss ms/", hitTime / hitCount, missTime / missCount, hitCount, missCount);
-            }*/
-            return res;
+            return this._deepCopy(data);
         }
 
         _queryCacheKey(q, qOptions, options={}) {
@@ -711,9 +691,6 @@ self.sauceBaseInit = function sauceBaseInit() {
             // keyPath can be a single key-ident or an array of key-idents where
             // a key ident can be a dot.notation string or just a solitary string.
             keyPath = keyPath || this.keyPath;
-            if (!keyPath) {
-                debugger; // XXX
-            }
             if (!Array.isArray(keyPath)) {
                 return this._walkKeyPath(data, keyPath);
             } else {
@@ -765,12 +742,12 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this._started) {
                 await this._start();
             }
-            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = await this._request(ifc.get(query));
             const updated = Object.assign({}, data, updates);
             await this._request(idbStore.put(updated), {commit: true});
+            this.invalidateCaches();
             return updated;
         }
 
@@ -781,22 +758,22 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this._started) {
                 await this._start();
             }
-            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
-            return await Promise.all(Array.from(updatesMap.entries()).map(async ([key, updates]) => {
+            const ret = await Promise.all(Array.from(updatesMap.entries()).map(async ([key, updates]) => {
                 const data = await this._request(ifc.get(key));
                 const updated = Object.assign({}, data, updates);
                 await this._request(idbStore.put(updated));
                 return updated;
             }));
+            this.invalidateCaches();
+            return ret;
         }
 
         async put(data, options={}) {
             if (!this._started) {
                 await this._start();
             }
-            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             let key;
             if (options.index) {
@@ -804,13 +781,13 @@ self.sauceBaseInit = function sauceBaseInit() {
                 key = await this._request(index.getKey(this.extractKey(data, index.keyPath)));
             }
             await this._request(idbStore.put(data, key));
+            this.invalidateCaches();
         }
 
         async putMany(datas, options={}) {
             if (!this._started) {
                 await this._start();
             }
-            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             const index = options.index && idbStore.index(options.index);
             await Promise.all(datas.map(async data => {
@@ -820,13 +797,13 @@ self.sauceBaseInit = function sauceBaseInit() {
                 }
                 await this._request(idbStore.put(data, key));
             }));
+            this.invalidateCaches();
         }
 
         async delete(query, options={}) {
             if (!this._started) {
                 await this._start();
             }
-            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             const requests = [];
             if (options.index) {
@@ -838,6 +815,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 requests.push(idbStore.delete(query));
             }
             await Promise.all(requests.map(x => this._request(x)));
+            this.invalidateCaches();
             return requests.length;
         }
 
@@ -845,7 +823,6 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this._started) {
                 await this._start();
             }
-            this.invalidateCaches();
             const idbStore = this._getIDBStore('readwrite', options);
             let keys;
             if (options.index) {
@@ -860,6 +837,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 keys = queries;
             }
             await Promise.all(keys.map(k => this._request(idbStore.delete(k))));
+            this.invalidateCaches();
         }
 
         async *values(query, options={}) {
@@ -871,10 +849,8 @@ self.sauceBaseInit = function sauceBaseInit() {
                 let data;
                 if (cacheKeyPrefix && this._cursorCache.has(cacheKeyPrefix + i)) {
                     advance++;
-                    //console.info('values cursor hit', cacheKeyPrefix, i); // XXX
                     data = this._cursorCache.get(cacheKeyPrefix + i);
                 } else {
-                    //console.warn('values cursor miss', cacheKeyPrefix, i); // XXX
                     if (!iter) {
                         iter = this.cursor(query, options);
                     }
@@ -895,7 +871,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *keys(query, options={}) {
-            console.warn("keys used", query, options);
+            // XXX No caching implemented yet, but hardly used.
             for await (const c of this.cursor(query, Object.assign({keys: true}, options))) {
                 yield options.indexKey ? c.key : c.primaryKey;
             }
@@ -1037,19 +1013,6 @@ self.sauceBaseInit = function sauceBaseInit() {
         DBStore,
         Model,
     };
-
-
-    /* Support serialization for read caching */
-    class SDBKeyRange extends IDBKeyRange {
-        toJSON() {
-            return {
-                lower: this.lower,
-                upper: this.upper,
-                lowerBound: this.lowerBound,
-                upperBound: this.upperBound,
-            };
-        }
-    }
 
 
     class CacheDatabase extends Database {
