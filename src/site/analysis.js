@@ -690,7 +690,8 @@ sauce.ns('analysis', ns => {
         const activeStream = await fetchStream('active');
         const distance = streamDelta(distStream);
         const activeTime = getActiveTime();
-        let tss, tTss, np, intensity, power, kj;
+        let tss, tTss, np, intensity, power;
+        let kj = pageView.activity().get('kilojoules');
         if (wattsStream && hasAccurateWatts()) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             if (corrected) {
