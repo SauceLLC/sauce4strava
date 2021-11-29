@@ -593,34 +593,11 @@ self.sauceBaseInit = function sauceBaseInit() {
             return this.db.getStore(this.name, mode);
         }
 
-        _deepCopy(obj) {
-            let copy;
-            if (Array.isArray(obj)) {
-                copy = [];
-                for (const x of obj) {
-                    copy.push(this._deepCopy(x));
-                }
-            } else if (obj !== null && typeof obj === 'object') {
-                copy = {};
-                for (const [k, v] of Object.entries(obj)) {
-                    copy[k] = this._deepCopy(v);
-                }
-            } else if (ArrayBuffer.isView(obj)) {
-                throw new TypeError("TypedArray not implemented");
-            } else if (obj instanceof ArrayBuffer) {
-                throw new TypeError("ArrayBuffer not implemented");
-            } else if (obj != null && !['string', 'number', 'boolean'].includes(typeof obj)) {
-                throw new TypeError("Unexpected primative type");
-            } else {
-                copy = obj;
-            }
-            return copy;
-        }
 
         async _readQuery(getter, query, options={}, ...getterExtraArgs) {
-            const cacheKey = this._queryCacheKey(query, {...options, getter, getterExtraArgs});
+            const cacheKey = this._queryCacheKey(query, options, getter);
             if (cacheKey && this._readsCache.has(cacheKey)) {
-                return this._deepCopy(this._readsCache.get(cacheKey));
+                return this._deepClone(this._readsCache.get(cacheKey));
             }
             if (!this._started) {
                 await this._start();
@@ -631,60 +608,35 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (cacheKey) {
                 this._readsCache.set(cacheKey, data);
             }
-            return this._deepCopy(data);
+            return this._deepClone(data);
         }
 
-        _queryCacheKey(q, qOptions, options={}) {
-            if (!canCacheIDB) {
+        _encodeQueryBounds(b) {
+            b = Array.isArray(b) ? b : [b];
+            return b.map(x => x === Infinity ? '__INF__' : x === -Infinity ? '___negINF___' : x);
+        }
+
+        _queryCacheKey(q, options={}, ...extra) {
+            if (!canCacheIDB || options.mode === 'readwrite') {
                 return false;
             }
-            const facts = {
-                ...qOptions,
-                model: undefined,
-                models: undefined,
-                idbStore: undefined,
-                start: undefined,
-                end: undefined,
-                excludeUpper: undefined,
-                excludeLower: undefined,
-            };
-            if (options.cursor) {
-                delete facts.limit;
-                if (q instanceof IDBKeyRange) {
-                    if (facts.direction == null || facts.direction.startsWith('next')) {
-                        facts.lower = q.lower;
-                        facts.lowerBound = q.lowerBound;
-                    } else {
-                        facts.upper = q.upper;
-                        facts.upperBound = q.upperBound;
-                    }
-                } else {
-                    facts.q = q;
-                }
+            const facts = [
+                options.index,
+                options.direction,
+                !!options.keys,
+                options.limit,
+                ...extra
+            ];
+            if (q instanceof IDBKeyRange) {
+                facts.push(
+                    this._encodeQueryBounds(q.lower),
+                    this._encodeQueryBounds(q.upper),
+                    q.lowerOpen,
+                    q.upperOpen);
             } else {
-                if (options.filter) {
-                    return false;
-                }
-                if (q instanceof IDBKeyRange) {
-                    facts.upper = q.upper;
-                    facts.lower = q.lower;
-                    facts.upperBound = q.upperBound;
-                    facts.lowerBound = q.lowerBound;
-                } else {
-                    facts.q = q;
-                }
+                facts.push(q);
             }
-            return JSON.stringify(facts, (k, v) => {
-                if (v === Infinity) {
-                    return '<Infinity>';
-                } else if (v === -Infinity) {
-                    return '<-Infinity>';
-                } else if (typeof v === 'number' && isNaN(v)) {
-                    return '<NaN>';
-                } else  {
-                    return v;
-                }
-            });
+            return facts.join();
         }
 
         extractKey(data, keyPath) {
@@ -708,13 +660,21 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getAll(query, options={}) {
-            const data = await this._readQuery('getAll', query, options, options.count);
+            if (options.limit || options.count) {
+                console.error(query, options);
+                debugger;
+            }
+            const data = await this._readQuery('getAll', query, options, options.limit);
             return options.models ? data.map(x => new this.Model(x, this)): data;
         }
 
         async getAllKeys(query, options={}) {
+            if (options.limit || options.count) {
+                console.error(query, options);
+                debugger;
+            }
             if (!options.indexKey) {
-                return await this._readQuery('getAllKeys', query, options, options.count);
+                return await this._readQuery('getAllKeys', query, options, options.limit);
             } else {
                 const keys = [];
                 for await (const k of this.keys(query, options)) {
@@ -841,32 +801,32 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *values(query, options={}) {
-            const cacheKeyPrefix = this._queryCacheKey(query, options, {cursor: true});
+            const cacheKeyPrefix = this._queryCacheKey(query, {...options, cursor: true});
             let iter;
             let i = 0;
-            let advance = 0;
-            while (true) {
-                let data;
+            const limit = options.limit || Infinity;
+            const skipFilter = count => i - count;
+            while (i < limit) {
+                let data, done;
                 if (cacheKeyPrefix && this._cursorCache.has(cacheKeyPrefix + i)) {
-                    advance++;
-                    data = this._cursorCache.get(cacheKeyPrefix + i);
+                    ({data, done} = this._cursorCache.get(cacheKeyPrefix + i));
                 } else {
                     if (!iter) {
-                        iter = this.cursor(query, options);
+                        iter = this.cursor(query, {...options, skipFilter});
                     }
-                    const it = await iter.next(advance + 1);
-                    advance = 0;
-                    if (it.done) {
-                        break;
-                    }
-                    data = it.value.value;
+                    let cursor;
+                    ({value: cursor, done} = await iter.next());
+                    data = cursor && cursor.value;
                     if (cacheKeyPrefix) {
-                        this._cursorCache.set(cacheKeyPrefix + i, data);
+                        this._cursorCache.set(cacheKeyPrefix + i, {data, done});
                     }
                 }
+                if (done) {
+                    break;
+                }
                 i++;
-                const copy = this._deepCopy(data);
-                yield options.models ? new this.Model(copy, this) : copy;
+                const clone = this._deepClone(data);
+                yield options.models ? new this.Model(clone, this) : clone;
             }
         }
 
@@ -897,28 +857,27 @@ self.sauceBaseInit = function sauceBaseInit() {
             // Callbacks won't invoke until we release control of the event loop, so this is safe..
             req.addEventListener('error', ev => reject(req.error));
             req.addEventListener('success', ev => resolve(ev.target.result));
-            let count = 0;
             if (options.filter) {
                 throw new TypeError('deprecated');
             }
-            while (true) {
-                const cursor = await new Promise((_resolve, _reject) => {
-                    resolve = _resolve;
-                    reject = _reject;
-                });
+            let count = 0;
+            const limit = options.limit || Infinity;
+            while (count < limit) {
+                const cursor = await new Promise((_res, _rej) => void (resolve = _res, reject = _rej));
                 if (!cursor) {
                     return;
                 }
+                if (options.skipFilter) {
+                    const skip = options.skipFilter(count, cursor);
+                    if (skip) {
+                        cursor.advance(skip);
+                        count += skip;
+                        continue;
+                    }
+                }
+                yield cursor;
                 count++;
-                const advance = yield cursor;
-                if (options.limit && count >= options.limit) {
-                    return;
-                }
-                if (advance && advance > 1) {
-                    cursor.advance(advance);
-                } else {
-                    cursor.continue();
-                }
+                cursor.continue();
             }
         }
 
@@ -961,6 +920,34 @@ self.sauceBaseInit = function sauceBaseInit() {
                 this._cursorCache.clear();
             }
         }
+    }
+    if (self.structuredClone) {
+        DBStore.prototype._deepClone = self.structuredClone.bind(self);
+    } else {
+        const _structuredCloneEmulation = (obj) => {
+            let clone;
+            if (Array.isArray(obj)) {
+                clone = [];
+                for (const x of obj) {
+                    clone.push(_structuredCloneEmulation(x));
+                }
+            } else if (obj !== null && typeof obj === 'object') {
+                clone = {};
+                for (const [k, v] of Object.entries(obj)) {
+                    clone[k] = _structuredCloneEmulation(v);
+                }
+            } else if (ArrayBuffer.isView(obj)) {
+                throw new TypeError("TypedArray not implemented");
+            } else if (obj instanceof ArrayBuffer) {
+                throw new TypeError("ArrayBuffer not implemented");
+            } else if (obj != null && !['string', 'number', 'boolean'].includes(typeof obj)) {
+                throw new TypeError("Unexpected primative type");
+            } else {
+                clone = obj;
+            }
+            return clone;
+        };
+        DBStore.prototype._deepClone = _structuredCloneEmulation;
     }
 
 

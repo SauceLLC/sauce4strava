@@ -313,6 +313,10 @@ sauce.ns('performance', async ns => {
             let kj = 0;
             const ts = date.getTime();
             const daily = [];
+            if (i < acts.length - 1 && acts[i].ts < ts) {
+                debugger;
+                throw new Error('Internal Error');
+            }
             while (i < acts.length && +D.toLocaleDayDate(acts[i].ts) === ts) {
                 const a = acts[i++];
                 daily.push(a);
@@ -336,6 +340,7 @@ sauce.ns('performance', async ns => {
                 kj,
             });
         }
+        // XXX remove this I think, it's okay if acts is a superset.
         if (i !== acts.length) {
             throw new Error('Internal Error');
         }
