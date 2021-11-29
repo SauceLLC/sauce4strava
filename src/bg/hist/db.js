@@ -58,9 +58,6 @@ sauce.ns('hist.db', ns => {
             {
                 version: 26,
                 migrate: (idb, t, next) => {
-                    if (idb.objectStoreNames.contains('peaks')) {
-                        idb.deleteObjectStore('peaks'); // XXX dev only
-                    }
                     const store = idb.createObjectStore("peaks", {keyPath: ['activity', 'type', 'period']});
                     store.createIndex('activity', 'activity');
                     store.createIndex('athlete-type-period-value', ['athlete', 'type', 'period', 'value']);
