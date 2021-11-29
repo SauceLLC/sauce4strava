@@ -118,16 +118,20 @@ sauce.ns('sync', ns => {
                     input.addEventListener('change', async ev => {
                         const jobs = await sauce.getModule('/src/common/jscoop/jobs.js');
                         const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
+                        const origText = btn.textContent;
                         btn.classList.add('sauce-loading', 'disabled');
                         try {
                             const dataEx = new sauce.hist.DataExchange();
+                            let fileNum = 0;
                             for (const f of input.files) {
+                                fileNum++;
                                 const ab = await sauce.blobToArrayBuffer(f);
                                 const batch = sauce.decodeBundle(ab);
                                 const stride = 250;  // ~10MB
                                 const producer = (async () => {
                                     for (let i = 0; i < batch.length; i += stride) {
                                         await importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
+                                        btn.textContent = `Importing file ${fileNum}/${input.files.length}: ${i}/${batch.length}`;
                                     }
                                 })();
                                 await producer;
@@ -135,6 +139,7 @@ sauce.ns('sync', ns => {
                             }
                             await dataEx.flush();
                         } finally {
+                            btn.textContent = origText;
                             btn.classList.remove('sauce-loading', 'disabled');
                         }
                     });
@@ -148,25 +153,32 @@ sauce.ns('sync', ns => {
                     sauce.report.event('AthleteSync', 'ui-button', 'export');
                     let bigBundle;
                     let page = 1;
-                    const rid = Math.floor(Math.random() * 1000000);
+                    const mem = navigator.deviceMemory || 4;
+                    const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
                     const dl = () => {
-                        sauce.downloadBlob(new Blob([bigBundle]), `${athlete.name}-${rid}-${page++}.sbin`);
+                        sauce.downloadBlob(new Blob([bigBundle]), `${athlete.name}-${date}-${page++}.sbin`);
                         bigBundle = null;
                     };
-                    ev.currentTarget.classList.add('sauce-loading', 'disabled');
+                    const btn = ev.currentTarget;
+                    const origText = btn.textContent;
+                    btn.classList.add('sauce-loading', 'disabled');
+                    const MB = 1024 * 1024;
+                    const GB = 1024 * MB;
                     try {
                         const dataEx = new sauce.hist.DataExchange(athlete.id);
                         dataEx.addEventListener('data', async ev => {
                             const bundle = sauce.encodeBundle(ev.data);
                             bigBundle = bigBundle ? sauce.concatBundles(bigBundle, bundle) : bundle;
-                            if (bigBundle.byteLength > 256 * 1024 * 1024) {
+                            btn.textContent = `Creating file ${page}: ${H.number(bigBundle.byteLength / MB)}MB`;
+                            if (bigBundle.byteLength > Math.min(mem * 0.5, 2) * GB) {
                                 dl();
                             }
                         });
                         await dataEx.export();
                         dl();
                     } finally {
-                        ev.currentTarget.classList.remove('sauce-loading', 'disabled');
+                        btn.textContent = origText;
+                        btn.classList.remove('sauce-loading', 'disabled');
                     }
                 }
             }]
