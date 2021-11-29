@@ -1118,6 +1118,18 @@
     "performance_yearly": {
         "message": "Anual"
     },
+    "performance_today": {
+        "message": "Hoy dia"
+    },
+    "performance_all": {
+        "message": "Todos"
+    },
+    "performance_predicted_tss": {
+        "message": "Previsto a partir de la relación ATL / CTL"
+    },
+    "performance_predicted_tss_tooltip": {
+        "message": "Las predicciones futuras de TSS se calculan utilizando los valores de ATL y CTL más recientes como factor de pendiente inicial. También se aplica un factor de desintegración para tener en cuenta la incertidumbre y los límites de adaptación humana."
+    },
     "season_start": {
         "message": "Inicio de temporada"
     },

@@ -1143,6 +1143,18 @@
     "performance_yearly": {
         "message": "Jährlich"
     },
+    "performance_today": {
+        "message": "Heute"
+    },
+    "performance_all": {
+        "message": "Alle"
+    },
+    "performance_predicted_tss": {
+        "message": "Vorausgesagt aus dem ATL / CTL-Verhältnis"
+    },
+    "performance_predicted_tss_tooltip": {
+        "message": "Zukünftige TSS-Vorhersagen werden unter Verwendung der neuesten ATL- und CTL-Werte als Startsteigungsfaktor berechnet. Ein Abklingfaktor wird auch angewendet, um Unsicherheit und menschliche Anpassungsgrenzen zu berücksichtigen."
+    },
     "season_start": {
         "message": "Saisonbeginn"
     },

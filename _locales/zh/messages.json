@@ -1210,6 +1210,18 @@
     "performance_yearly": {
         "message": "每年"
     },
+    "performance_today": {
+        "message": "今天"
+    },
+    "performance_all": {
+        "message": "全部"
+    },
+    "performance_predicted_tss": {
+        "message": "从 ATL/CTL 比率预测"
+    },
+    "performance_predicted_tss_tooltip": {
+        "message": "使用最新的 ATL 和 CTL 值作为起始斜率因子计算未来的 TSS 预测。衰减因子也用于说明不确定性和人类适应限制。"
+    },
     "season_start": {
         "message": "季节开始"
     },

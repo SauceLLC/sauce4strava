@@ -1100,6 +1100,18 @@
     "performance_yearly": {
         "message": "Anual"
     },
+    "performance_today": {
+        "message": "Hoje"
+    },
+    "performance_all": {
+        "message": "Tudo"
+    },
+    "performance_predicted_tss": {
+        "message": "Previsto a partir da relação ATL / CTL"
+    },
+    "performance_predicted_tss_tooltip": {
+        "message": "As previsões de TSS futuras são calculadas usando os valores ATL e CTL mais recentes como fator de inclinação inicial. Um fator de decaimento também é aplicado para explicar a incerteza e os limites de adaptação humana."
+    },
     "season_start": {
         "message": "Início da temporada"
     },

@@ -1127,6 +1127,18 @@
     "performance_yearly": {
         "message": "Annuel"
     },
+    "performance_today": {
+        "message": "Aujourd'hui"
+    },
+    "performance_all": {
+        "message": "Tout"
+    },
+    "performance_predicted_tss": {
+        "message": "Prédit à partir du ratio ATL / CTL"
+    },
+    "performance_predicted_tss_tooltip": {
+        "message": "Les prévisions futures du TSS sont calculées en utilisant les valeurs ATL et CTL les plus récentes comme facteur de pente de départ. Un facteur de décroissance est également appliqué pour tenir compte de l'incertitude et des limites d'adaptation humaine."
+    },
     "season_start": {
         "message": "Début de la saison"
     },
