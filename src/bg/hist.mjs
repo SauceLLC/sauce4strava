@@ -1773,7 +1773,7 @@ class DataExchange extends sauce.proxy.Eventing {
         let batch = [];
         const dispatch = () => {
             const ev = new Event('data');
-            ev.data = Array.from(batch);
+            ev.data = batch.map(JSON.stringify);
             batch.length = 0;
             sizeEstimate = 0;
             this.dispatchEvent(ev);
@@ -1821,10 +1821,11 @@ class DataExchange extends sauce.proxy.Eventing {
 
     async import(data) {
         for (const x of data) {
-            if (!this.importing[x.store]) {
-                this.importing[x.store] = [];
+            const {store, data} = JSON.parse(x);
+            if (!this.importing[store]) {
+                this.importing[store] = [];
             }
-            this.importing[x.store].push(x.data);
+            this.importing[store].push(data);
         }
         const size = sauce.data.sum(Object.values(this.importing).map(x => x.length));
         if (size > 1000) {

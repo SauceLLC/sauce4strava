@@ -118,24 +118,29 @@ sauce.ns('sync', ns => {
                     input.addEventListener('change', async ev => {
                         const jobs = await sauce.getModule('/src/common/jscoop/jobs.js');
                         const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
+                        const files = input.files;
+                        const dataEx = new sauce.hist.DataExchange();
                         const origText = btn.textContent;
                         btn.classList.add('sauce-loading', 'disabled');
                         try {
-                            const dataEx = new sauce.hist.DataExchange();
                             let fileNum = 0;
-                            for (const f of input.files) {
+                            for (const f of files) {
                                 fileNum++;
+                                const fileDesc = files.length > 1 ?
+                                    `file ${fileNum} of ${files.length}` : 'file';
+                                btn.textContent = `Reading ${fileDesc}...`;
                                 const ab = await sauce.blobToArrayBuffer(f);
                                 const batch = sauce.decodeBundle(ab);
                                 const stride = 250;  // ~10MB
-                                const producer = (async () => {
-                                    for (let i = 0; i < batch.length; i += stride) {
-                                        await importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
-                                        btn.textContent = `Importing file ${fileNum}/${input.files.length}: ${i}/${batch.length}`;
-                                    }
-                                })();
-                                await producer;
-                                for await (const x of importingQueue) { void x; }
+                                for (let i = 0; i < batch.length; i += stride) {
+                                    importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
+                                }
+                                let i = 1;
+                                for await (const x of importingQueue) {
+                                    void x;
+                                    const progress = Math.min(i++ * stride, batch.length);
+                                    btn.textContent = `Importing ${fileDesc}: ${H.number(progress / batch.length * 100)}%`;
+                                }
                             }
                             await dataEx.flush();
                         } finally {
@@ -170,7 +175,7 @@ sauce.ns('sync', ns => {
                             const bundle = sauce.encodeBundle(ev.data);
                             bigBundle = bigBundle ? sauce.concatBundles(bigBundle, bundle) : bundle;
                             btn.textContent = `Creating file ${page}: ${H.number(bigBundle.byteLength / MB)}MB`;
-                            if (bigBundle.byteLength > Math.min(mem * 0.5, 2) * GB) {
+                            if (bigBundle.byteLength > Math.min(mem * 0.25, 2) * GB) {
                                 dl();
                             }
                         });

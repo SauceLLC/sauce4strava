@@ -147,7 +147,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         let dataSize = 0;
         const bins = [];
         for (const data of datas) {
-            const bin = text.encode(JSON.stringify(data));
+            const bin = text.encode(data);
             dataSize += bin.byteLength;
             bins.push(bin);
         }
@@ -183,7 +183,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         while (idx < input.byteLength) {
             const size = view.getUint32(idx);
             idx += 4;
-            datas.push(JSON.parse(text.decode(input.slice(idx, idx + size))));
+            datas.push(text.decode(input.slice(idx, idx + size)));
             idx += size;
         }
         return datas;
