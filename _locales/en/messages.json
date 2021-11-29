@@ -374,6 +374,7 @@
     "performance_monthly": {"message": "Monthly"},
     "performance_yearly": {"message": "Yearly"},
     "performance_today": {"message": "Today"},
+    "performance_all": {"message": "All"},
     "performance_predicted_tss": {"message": "Predicted from ATL / CTL ratio"},
     "performance_predicted_tss_tooltip": {"message": "Future TSS predictions are calculated using the most recent ATL and CTL values as a starting slope factor.  A decay factor is also applied to account for uncertainty and human adaptation limits."},
 

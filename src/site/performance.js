@@ -32,22 +32,6 @@ sauce.ns('performance', async ns => {
         ])),
     ]);
 
-
-    class PerfCalendarRange extends sauce.date.CalendarRange {
-        constructor(seed, period, metric) {
-            const defaults = sauce.storage.getPrefFast('perfDefaultRange') || {};
-            period = period || defaults.period || 4;
-            metric = metric || defaults.metric || 'weeks';
-            super(seed, period, metric);
-        }
-
-        setRange(period, metric, ...args) {
-            super.setRange(period, metric, ...args);
-            sauce.storage.setPref('perfDefaultRange', {period, metric});  // bg okay
-        }
-    }
-
-
     router = new (Backbone.Router.extend({
         constructor: function() {
             this.filters = {};
@@ -57,12 +41,17 @@ sauce.ns('performance', async ns => {
         routes: {
             [`${urn}/:athleteId/:period/:metric/:endDay`]: 'onNav',
             [`${urn}/:athleteId/:period/:metric`]: 'onNav',
+            [`${urn}/:athleteId/all`]: 'onNavAll',
             [`${urn}/:athleteId`]: 'onNav',
             [urn]: 'onNav',
         },
 
-        onNav: function(athleteId, period, metric, endDay) {
-            const validMetric = PerfCalendarRange.isValidMetric(metric);
+        onNavAll: function(athleteId) {
+            return this.onNav(athleteId, null, null, null, true);
+        },
+
+        onNav: function(athleteId, period, metric, endDay, all) {
+            const validMetric = sauce.date.CalendarRange.isValidMetric(metric);
             let suggestedEnd = validMetric && endDay ? new Date(D.addTZ(Number(endDay) * DAY)) : null;
             if (suggestedEnd && suggestedEnd >= Date.now()) {
                 suggestedEnd = null;
@@ -72,10 +61,11 @@ sauce.ns('performance', async ns => {
                 period: validMetric && Number(period) ? Number(period) : null,
                 metric: validMetric ? metric : null,
                 suggestedEnd,
+                all: validMetric && period ? false : all,
             };
         },
 
-        setFilters: function(athlete, range, options) {
+        setFilters: function(athlete, range, options={}) {
             const f = this.filters;
             f.athleteId = athlete ? athlete.id : null;
             if (range) {
@@ -83,7 +73,9 @@ sauce.ns('performance', async ns => {
                 this.filters.metric = range.metric;
                 this.filters.suggestedEnd = range.end < Date.now() ? range.end : null;
             }
-            if (f.suggestedEnd != null &&
+            if (options.all && f.athleteId != null) {
+                this.navigate(`${urn}/${f.athleteId}/all`, options);
+            } else if (f.suggestedEnd != null &&
                 f.period != null &&
                 f.metric != null &&
                 f.athleteId != null) {
@@ -1783,7 +1775,8 @@ sauce.ns('performance', async ns => {
             const end = range.end;
             const daily = this.pageView.daily;
             const metricData = this.pageView.metricData;
-            let $option = this.$(`select[name="range"] option[value="${range.period},${range.metric}"]`);
+            const selectedRange = this.pageView.allRange ? 'all' : `${range.period},${range.metric}`;
+            let $option = this.$(`select[name="range"] option[value="${selectedRange}"]`);
             if (!$option.length) {
                 // Just manually add an entry.  The user may be playing with the URL and that's fine.
                 $option = jQuery(`<option value="${range.period},${range.metric}"]>` +
@@ -2099,8 +2092,12 @@ sauce.ns('performance', async ns => {
         }
 
         async onRangeChange(ev) {
-            const [rawPeriod, metric] = ev.currentTarget.value.split(',');
-            this.pageView.setRange(Number(rawPeriod), metric);
+            let [rawPeriod, metric] = ev.currentTarget.value.split(',');
+            const all = !metric && rawPeriod === 'all';
+            if (all) {
+                [rawPeriod, metric] = this.pageView.getAllRange();
+            }
+            this.pageView.setRange(Number(rawPeriod), metric, {all});
         }
 
         async onRangeShift(ev) {
@@ -2154,7 +2151,6 @@ sauce.ns('performance', async ns => {
             this.athletes = athletes;
             this.syncButtons = new Map();
             const f = router.filters;
-            this.range = new PerfCalendarRange(f.suggestedEnd, f.period, f.metric);
             for (const x of athletes.values()) {
                 if (x.lastSync != null && Date.now() - x.lastSync > lastSyncMaxAge) {
                     // Run current athlete rightaway and everyone else a bit later...
@@ -2162,13 +2158,29 @@ sauce.ns('performance', async ns => {
                     setTimeout(() => sauce.hist.syncAthlete(x.id), cooldown);
                 }
             }
-            await this.setAthleteId(f.athleteId, {router: {replace: true}});
+            await this.setAthleteId(f.athleteId);
+            this._setRangeFromRouter();
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
-            router.setFilters(this.athlete, this.range, {replace: true});
+            router.setFilters(this.athlete, this.range, {replace: true, all: this.allRange});
             router.on('route:onNav', this.onRouterNav.bind(this));
+            router.on('route:onNavAll', this.onRouterNav.bind(this));
             await super.init();
+        }
+
+        _setRangeFromRouter() {
+            const f = router.filters;
+            const defaults = sauce.storage.getPrefFast('perfDefaultRange') || {};
+            this.allRange = f.all || (f.all === undefined && defaults.all);
+            if (this.allRange) {
+                const [period, metric] = this.getAllRange();
+                this.range = new sauce.date.CalendarRange(null, period, metric);
+            } else {
+                this.range = new sauce.date.CalendarRange(f.suggestedEnd,
+                    f.period || defaults.period || 4,
+                    f.metric || defaults.metric || 'weeks');
+            }
         }
 
         renderAttrs() {
@@ -2181,8 +2193,8 @@ sauce.ns('performance', async ns => {
         async render() {
             this.syncButtons.clear();  // Must not reuse on re-render() for DOM events.
             const syncBtnPromise = this.athlete && this.getSyncButton(this.athlete.id);
-            const actsPromise = this.athlete && this._getActivities();
             await super.render();
+            const actsPromise = this.athlete && this._getActivities();
             if (!this.athlete) {
                 return;
             }
@@ -2198,7 +2210,7 @@ sauce.ns('performance', async ns => {
             this._updateActivities(await actsPromise);
         }
 
-        async setAthleteId(athleteId, options={}) {
+        async setAthleteId(athleteId) {
             if (athleteId && this.athletes.has(athleteId)) {
                 this.athlete = this.athletes.get(athleteId);
             } else {
@@ -2268,28 +2280,54 @@ sauce.ns('performance', async ns => {
             const id = Number(ev.currentTarget.value);
             await this.setAthleteId(id);
             this.trigger('change-athlete', this.athlete);
-            router.setFilters(this.athlete, this.range);
+            if (this.allRange) {
+                const [period, metric] = this.getAllRange();
+                this._setRange(period, metric, {all: true});
+            }
+            router.setFilters(this.athlete, this.range, {all: this.allRange});
             await this.updateActivities();
         }
 
         async onRouterNav() {
             // This func gets valid arguments but they are raw.  Use the filters object instead.
             const f = router.filters;
-            this.range = new PerfCalendarRange(f.suggestedEnd, f.period, f.metric);
             if (f.athleteId !== this.athlete.id) {
                 await this.setAthleteId(f.athleteId);
                 this.$(`select[name="athlete"] option[value="${f.athleteId}"]`)[0].selected = true;
                 this.trigger('change-athlete', this.athlete);
             }
+            this._setRangeFromRouter();
             await this.updateActivities();
         }
 
-        async setRange(period, metric) {
+        getAllRange() {
+            let period, metric;
+            const days = (this.newest - this.oldest) / 1000 / 86400;
+            if (days > 3 * 365) {
+                metric = 'years';
+                period = Math.ceil(days / 365);
+            } else if (days > 200) {
+                metric = 'months';
+                period = Math.ceil(days / 30.416);
+            } else {
+                metric = 'weeks';
+                period = Math.ceil(days / 7);
+            }
+            return [period, metric];
+        }
+
+        _setRange(period, metric, options={}) {
             // This keeps the range from floating past the present when we go
             // from a big range to a smaller one.
+            this.allRange = !!options.all;
             const endSeed = this.range.end > Date.now() ? D.tomorrow() : undefined;
             this.range.setRange(period, metric, endSeed);
-            router.setFilters(this.athlete, this.range);
+            sauce.storage.setPref('perfDefaultRange', {period, metric, all: options.all});  // bg okay
+        }
+
+        async setRange(period, metric, options={}) {
+            this._setRange(period, metric, options);
+            router.setFilters(this.athlete, this.range, options);
             await this.updateActivities();
         }
 
