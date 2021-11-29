@@ -34,7 +34,11 @@
                     <% } else { %>
                         <td>-</td>
                     <% } %>
-                    <td class="pace">{{humanPace(1 / (a.stats.distance / a.stats.activeTime), {precision: 0, activityType: a.basetype, suffix: true})}}</td>
+                    <% if (a.stats.activeTime && a.stats.distance) { %>
+                        <td class="pace">{{humanPace(1 / (a.stats.distance / a.stats.activeTime), {precision: 0, activityType: a.basetype, suffix: true})}}</td>
+                    <% } else { %>
+                        <td>-</td>
+                    <% } %>
                     <% if (a.stats.altitudeGain) { %>
                         <td class="elevation">+{{humanElevation(a.stats.altitudeGain, {suffix: true})}}</td>
                     
