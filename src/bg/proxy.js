@@ -35,8 +35,12 @@ sauce.ns('proxy', ns => {
                 port.onMessage.removeListener(onMessage);
             }
             data.port = port;
-            port.postMessage(await invoke(data, port.sender));
+            const result = await invoke(data, port.sender);
+            if (port) {
+                port.postMessage(result);
+            }
         };
         port.onMessage.addListener(onMessage);
+        port.onDisconnect.addListener(() => void (port = null));
     });
 });
