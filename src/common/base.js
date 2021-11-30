@@ -912,10 +912,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         invalidateCaches(options={}) {
-            if (!options.noBroadcast) {
-                cacheInvalidationCh.postMessage('invalidate');
-            }
             if (canCacheIDB) {
+                if (!options.noBroadcast) {
+                    cacheInvalidationCh.postMessage('invalidate');
+                }
                 this._readsCache.clear();
                 this._cursorCache.clear();
             }
