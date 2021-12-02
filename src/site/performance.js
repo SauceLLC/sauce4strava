@@ -1653,6 +1653,11 @@ sauce.ns('performance', async ns => {
             this.charts.active = new SauceChart('#active', this, {
                 type: 'bar',
                 options: {
+                    tooltips: {
+                        intersect: false,
+                        caretPadding: 16,
+                        position: 'average',
+                    },
                     maintainAspectRatio: false,
                     animation: {
                         duration: 0
@@ -1902,7 +1907,6 @@ sauce.ns('performance', async ns => {
                 borderSkipped: false,
                 barPercentage: 1,
                 categoryPercentage: 1,
-                //barThickness: 20, //px
                 data: []
             }));
             let offt = 0;
