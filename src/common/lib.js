@@ -2122,11 +2122,14 @@ sauce.ns('date', function() {
     function toLocaleDayDate(dateArg) {
         const date = new Date(dateArg);
         // The set___ calls are locale specific, so this gives us local midnight time.
-        date.setHours(0);
-        date.setMinutes(0);
-        date.setSeconds(0);
-        date.setMilliseconds(0);
+        date.setHours(0, 0, 0, 0);
         return date;
+    }
+
+
+    function getISODay(date) {
+        // return 0 = monday -> 6 = sunday
+        return (date.getDay() + 6) % 7;
     }
 
 
@@ -2141,10 +2144,7 @@ sauce.ns('date', function() {
             d.getMinutes() * 60000 +
             d.getSeconds() * 1000 +
             d.getMilliseconds();
-        d.setHours(0);
-        d.setMinutes(0);
-        d.setSeconds(0);
-        d.setMilliseconds(0);
+        d.setHours(0, 0, 0, 0);
         if (timeOffset >= 86400000 * 12) {
             d.setDate(d.getDate() + 1);
         }
@@ -2152,10 +2152,20 @@ sauce.ns('date', function() {
     }
 
 
-    function dayAfter(dt) {
+    function adjacentDay(dt, delta) {
         const d = toLocaleDayDate(dt);
-        d.setDate(d.getDate() + 1);
+        d.setDate(d.getDate() + delta);
         return d;
+    }
+
+
+    function dayAfter(dt) {
+        return adjacentDay(dt, 1);
+    }
+
+
+    function dayBefore(dt) {
+        return adjacentDay(dt, -1);
     }
 
 
@@ -2288,9 +2298,12 @@ sauce.ns('date', function() {
     return {
         dayRange,
         toLocaleDayDate,
+        getISODay,
         roundToLocaleDayDate,
         roundToLocaleDayDateInplace,
+        adjacentDay,
         dayAfter,
+        dayBefore,
         today,
         tomorrow,
         addTZ,
