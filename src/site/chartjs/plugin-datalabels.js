@@ -1057,7 +1057,7 @@ var defaults = {
 	clamp: false,
 	clip: false,
 	color: undefined,
-	display: true,
+	display: false,
 	font: {
 		family: undefined,
 		lineHeight: 1.2,
@@ -1379,6 +1379,7 @@ var plugin = {
 // TODO Remove at version 1, we shouldn't automatically register plugins.
 // https://github.com/chartjs/chartjs-plugin-datalabels/issues/42
 Chart.plugins.register(plugin);
+
 
 return plugin;
 

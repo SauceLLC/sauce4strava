@@ -1103,6 +1103,11 @@ table.sauce-perf {
                 }
             }
 
+            .active-days .sauce-panel-content.chart {
+                min-height: initial;
+                height: 11em;
+            }
+
             .sauce-panel-content {
                 flex: 1 1 auto;
                 position: relative; // required for responsive chart.js
@@ -1114,6 +1119,7 @@ table.sauce-perf {
                     min-height: 12em;
                     height: 22vh;
                     max-height: 24em;
+
                 }
             }
         }

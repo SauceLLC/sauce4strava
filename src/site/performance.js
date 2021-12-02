@@ -51,7 +51,7 @@ sauce.ns('performance', async ns => {
         },
 
         onNav: function(athleteId, period, metric, endDay, all) {
-            const validMetric = sauce.date.CalendarRange.isValidMetric(metric);
+            const validMetric = D.CalendarRange.isValidMetric(metric);
             let suggestedEnd = validMetric && endDay ? new Date(D.addTZ(Number(endDay) * DAY)) : null;
             if (suggestedEnd && suggestedEnd >= Date.now()) {
                 suggestedEnd = null;
@@ -642,10 +642,40 @@ sauce.ns('performance', async ns => {
     };
 
 
-    class ActivityTimeRangeChart extends Chart {
+    class SauceChart extends Chart {
         constructor(canvasSelector, view, config) {
             const canvas = document.querySelector(canvasSelector);
             const ctx = canvas.getContext('2d');
+            super(ctx, config);
+            this.view = view;
+        }
+
+        getActivitiesAtDatasetIndex(index) {
+            // Due to zooming the dataset can be a subset of our daily/metric data.
+            const bucket = this.options.useMetricData ?
+                this.view.pageView.metricData :
+                this.view.pageView.daily;
+            const date = this.chart.data.datasets[0].data[index].x;
+            const slot = bucket.find(x => x.date === date);
+            return slot && slot.activities ? slot.activities : [];
+        }
+
+        getElementsAtEventForMode(ev, mode, options) {
+            const box = ev.chart.chartArea;
+            if (!box ||
+                ev.x < box.left ||
+                ev.x > box.right ||
+                ev.y < box.top ||
+                ev.y > box.bottom) {
+                return [];
+            }
+            return super.getElementsAtEventForMode(ev, mode, options);
+        }
+    }
+
+
+    class ActivityTimeRangeChart extends SauceChart {
+        constructor(canvasSelector, view, config) {
             let _this;
             config = config || {};
             setDefault(config, 'type', 'line');
@@ -703,18 +733,6 @@ sauce.ns('performance', async ns => {
                     }
                 });
             });
-            setDefault(config, 'options.plugins.datalabels.display', ctx =>
-                !!(ctx.dataset.data[ctx.dataIndex] && ctx.dataset.data[ctx.dataIndex].showDataLabel === true));
-            setDefault(config, 'options.plugins.datalabels.formatter', (value, ctx) => {
-                const r = ctx.dataset.tooltipFormat(value.y);
-                return Array.isArray(r) ? r[0] : r;
-            });
-            setDefault(config, 'options.plugins.datalabels.backgroundColor',
-                ctx => ctx.dataset.backgroundColor);
-            setDefault(config, 'options.plugins.datalabels.borderRadius', 2);
-            setDefault(config, 'options.plugins.datalabels.color', 'white');
-            setDefault(config, 'options.plugins.datalabels.padding', 4);
-            setDefault(config, 'options.plugins.datalabels.anchor', 'center');
             setDefault(config, 'options.plugins.zoom.enabled', true);
             setDefault(config, 'options.plugins.zoom.callbacks.beforeZoom', (start, end) => {
                 const pv = this.view.pageView;
@@ -729,9 +747,9 @@ sauce.ns('performance', async ns => {
                 last = last > 0 ? last : bucket.length - 1;
                 return [bucket[first].date, bucket[last].date];
             });
-            super(ctx, config);
+            super(canvasSelector, view, config);
             _this = this;
-            this.view = view;
+            const canvas = document.querySelector(canvasSelector);
             const panel = canvas.closest('.sauce-panel');
             this.tooltipEl = panel.querySelector('.chart-tooltip');
             jQuery(panel).on('click', '.chart-tooltip .data-label', this.onDataLabelClick.bind(this));
@@ -815,16 +833,6 @@ sauce.ns('performance', async ns => {
                     <div class="tt-acts">${actsDesc}</div>
                 </div>
             `);
-        }
-
-        getActivitiesAtDatasetIndex(index) {
-            // Due to zooming the dataset can be a subset of our daily/metric data.
-            const bucket = this.options.useMetricData ?
-                this.view.pageView.metricData :
-                this.view.pageView.daily;
-            const date = this.chart.data.datasets[0].data[index].x;
-            const slot = bucket.find(x => x.date === date);
-            return slot && slot.activities ? slot.activities : [];
         }
 
         formatTickLabel(index, ticks) {
@@ -912,17 +920,6 @@ sauce.ns('performance', async ns => {
             if (scale._ticksToDraw.length) {
                 this.updateTicksConfig(scale._ticksToDraw, scale);
             }
-        }
-
-        getElementsAtEventForMode(ev, mode, options) {
-            const box = ev.chart.chartArea;
-            if (ev.x < box.left ||
-                ev.x > box.right ||
-                ev.y < box.top ||
-                ev.y > box.bottom) {
-                return [];
-            }
-            return super.getElementsAtEventForMode(ev, mode, options);
         }
     }
 
@@ -1651,6 +1648,67 @@ sauce.ns('performance', async ns => {
             await super.render();
             this.peaksView.setElement(this.$('.peaks-view'));
             await this.peaksView.render();
+
+            // XXX MAKE
+            this.charts.active = new SauceChart('#active', this, {
+                type: 'bar',
+                options: {
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 0
+                    },
+                    layout: {
+                        padding: {
+                            top: chartTopPad
+                        }
+                    },
+                    legend: {
+                        display: false,
+                    },
+                    scales: {
+                        yAxes: [{
+                            id: 'days',
+                            type: 'linear',
+                            position: 'right',
+                            stacked: true,
+                            ticks: {
+                                display: false,
+                                min: 0,
+                            },
+                            gridLines: {
+                                display: false,
+                                drawBorder: false,
+                                tickMarkLength: 0
+                            }
+                        }],
+                        xAxes: [{
+                            id: 'weeks',
+                            type: 'time',
+                            distribution: 'series',
+                            position: 'bottom',
+                            stacked: true,
+                            offset: true,
+                            time: {
+                                unit: 'week',
+                                displayFormats: {
+                                    week: 'MMM dd'
+                                }
+                            },
+                            ticks: {
+                                minRotation: 30,
+                                maxRotation: 50,
+                                autoSkip: true,
+                            },
+                            gridLines: {
+                                display: false,
+                                drawBorder: false,
+                                tickMarkLength: 10,
+                            }
+                        }]
+                    }
+                }
+            });
+
             this.charts.training = new ActivityTimeRangeChart('#training', this, {
                 plugins: [chartOverUnderFillPlugin],
                 options: {
@@ -1666,6 +1724,22 @@ sauce.ns('performance', async ns => {
                             desc = day.activities[0].name;
                         }
                         return `${desc ? desc + ' ' : ''}(${day.future ? '~' : ''}${H.number(day.tss)} TSS)`;
+                    },
+                    plugins: {
+                        datalabels: {
+                            display: ctx =>
+                                !!(ctx.dataset.data[ctx.dataIndex] &&
+                                ctx.dataset.data[ctx.dataIndex].showDataLabel === true),
+                            formatter: (value, ctx) => {
+                                const r = ctx.dataset.tooltipFormat(value.y);
+                                return Array.isArray(r) ? r[0] : r;
+                            },
+                            backgroundColor: ctx => ctx.dataset.backgroundColor,
+                            borderRadius: 2,
+                            color: 'white',
+                            padding: 4,
+                            anchor: 'center',
+                        },
                     },
                     scales: {
                         yAxes: [{
@@ -1815,6 +1889,39 @@ sauce.ns('performance', async ns => {
                 }
                 future = activitiesByDay(predictions, fStart, fEnd, last.atl, last.ctl);
             }
+            const padDays = Array.from(sauce.data.range(D.getISODay(start))).map((x, i) => ({
+                date: D.adjacentDay(start, -1 - i),
+                tss: -1
+            })).reverse();
+            // XXX STUFF
+            const weekDatasets = Array.from(sauce.data.range(7)).map(() => ({
+                stack: 'weeks',
+                borderColor: '#0003',
+                backgroundColor: ctx => ctx.dataset.data[ctx.dataIndex].bg,
+                borderWidth: 1,
+                borderSkipped: false,
+                barPercentage: 1,
+                categoryPercentage: 1,
+                //barThickness: 20, //px
+                data: []
+            }));
+            let offt = 0;
+            const maxTSS = sauce.data.max(daily.map(x => x.tss));
+            for (let i = -D.getISODay(start), sz = days + (6 - D.getISODay(D.dayBefore(end))); i < sz; i++, offt++) {
+                const day = daily[i] || {};
+                if (!day.date) {
+                    day.date = D.adjacentDay(start, i);
+                    day.tss = -10;
+                }
+                weekDatasets[offt % 7].data.push({
+                    x: D.adjacentDay(day.date, -(offt % 7)),
+                    y: 10,
+                    bg: `rgba(10, 44, 122, ${(10 + day.tss) / maxTSS})`,
+                });
+            }
+            this.charts.active.data.datasets = weekDatasets;
+            this.charts.active.update();
+
             const trainingDaily = daily.concat(future.map(x => (x.future = true, x)));
             const ifFuture = (yes, no) => ctx => trainingDaily[ctx.p1DataIndex].future ? yes : no;
             this.charts.training._sourceData = trainingDaily;  // For tooltip formatting.
@@ -2175,9 +2282,9 @@ sauce.ns('performance', async ns => {
             this.allRange = f.all || (f.all === undefined && defaults.all);
             if (this.allRange) {
                 const [period, metric] = this.getAllRange();
-                this.range = new sauce.date.CalendarRange(null, period, metric);
+                this.range = new D.CalendarRange(null, period, metric);
             } else {
-                this.range = new sauce.date.CalendarRange(f.suggestedEnd,
+                this.range = new D.CalendarRange(f.suggestedEnd,
                     f.period || defaults.period || 4,
                     f.metric || defaults.metric || 'weeks');
             }
