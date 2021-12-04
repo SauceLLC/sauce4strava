@@ -86,6 +86,30 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    /* Only use for non-async callbacks */
+    sauce.debounced = function(scheduler, callback) {
+        let nextPending;
+        const wrap = function() {
+            const waiting = !!nextPending;
+            nextPending = [this, arguments];
+            if (waiting) {
+                return;
+            }
+            scheduler(() => {
+                try {
+                    callback.apply(...nextPending);
+                } finally {
+                    nextPending = null;
+                }
+            });
+        };
+        if (callback.name) {
+            Object.defineProperty(wrap, 'name', {value: `sauce.debounced[${callback.name}]`});
+        }
+        return wrap;
+    };
+
+
     sauce.stringDigest = function(algo, input) {
         if (typeof input !== 'string') {
             throw new TypeError('Input should string');

@@ -743,7 +743,6 @@ table.sauce-perf {
                         color: #dd0c11;
                     }
                 }
-
             }
         }
     }
@@ -1007,7 +1006,7 @@ table.sauce-perf {
                         left: calc(var(--caret-left) - (#{$size} / 2));
                     }
 
-                    .axes {
+                    .axis {
                         display: flex;
                         margin: 0.5em 1em;
 
@@ -1016,7 +1015,7 @@ table.sauce-perf {
                             min-height: 2.5em; // Less jumping for 2 line entries
                         }
 
-                        &.tt-time {
+                        &.tt-horiz {
                             font-size: 0.92em;
                             opacity: 0.85;
                             justify-content: space-between;
@@ -1028,7 +1027,7 @@ table.sauce-perf {
                                 white-space: nowrap;
                             }
 
-                            .tt-acts {
+                            .tt-desc {
                                 padding-left: 1em;
                                 overflow: hidden;
                                 text-overflow: ellipsis;
@@ -1103,7 +1102,7 @@ table.sauce-perf {
                 }
             }
 
-            .active-days .sauce-panel-content.chart {
+            .active-days-chart-view .sauce-panel-content.chart {
                 min-height: initial;
                 height: 11em;
             }

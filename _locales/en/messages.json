@@ -378,6 +378,7 @@
     "performance_predicted_tss": {"message": "Predicted from ATL / CTL ratio"},
     "performance_predicted_tss_tooltip": {"message": "Future TSS predictions are calculated using the most recent ATL and CTL values as a starting slope factor.  A decay factor is also applied to account for uncertainty and human adaptation limits."},
     "performance_active_days_title": {"message": "Active Days"},
+    "performance_inactive": {"message": "Inactive"},
 
     "season_start": {"message": "Season Start"},
     "save": {"message": "Save"},

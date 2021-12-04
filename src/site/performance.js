@@ -21,7 +21,7 @@ sauce.ns('performance', async ns => {
     await Promise.all([
         L.init(),
         L.getMessage('performance').then(x => pageTitle = `Sauce ${x}`),
-        sauce.propDefined('Backbone', {once: true}).then(() => 
+        sauce.propDefined('Backbone', {once: true}).then(() =>
             sauce.getModule('/src/site/view.mjs').then(x => void (view = x))),
         sauce.proxy.connected.then(() => Promise.all([
             sauce.storage.fastPrefsReady(),
@@ -322,6 +322,7 @@ sauce.ns('performance', async ns => {
             ctl = sauce.perf.calcCTL([tss], ctl);
             slots.push({
                 date,
+                days: 1,
                 activities: daily,
                 tss,
                 duration,
@@ -442,6 +443,7 @@ sauce.ns('performance', async ns => {
         }
 
         onLegendClick(element, ev, item) {
+            // WARNING: this code has been unused for a while.
             this.legendClicking = true;
             try {
                 Chart.defaults.global.legend.onClick.call(element, ev, item);
@@ -449,15 +451,7 @@ sauce.ns('performance', async ns => {
                 this.legendClicking = false;
             }
             const index = item.datasetIndex;
-            const id = element.chart.data.datasets[index].id;
-            if (!id) {
-                console.warn("No ID for dataset");
-                return;
-            }
-            jQuery(element.chart.canvas).trigger('dataVisibilityChange', {
-                id,
-                visible: element.chart.isDatasetVisible(index)
-            });
+            this.view.toggleDataVisibility(element.chart.data.datasets[index].id);
         }
 
         beforeUpdate(chart) {
@@ -465,17 +459,12 @@ sauce.ns('performance', async ns => {
             if (this.legendClicking) {
                 return;
             }
-            const chartId = chart.canvas.id;
-            if (!chartId) {
-                console.error("Missing canvas ID needed for visibility mgmt.");
-                return;
-            }
             for (const ds of chart.data.datasets) {
                 if (!ds.id) {
                     console.warn("Missing ID on dataset: visiblity state unmanaged");
                     continue;
                 }
-                ds.hidden = this.view.dataVisibility[`${chartId}-${ds.id}`] === false;
+                ds.hidden = this.view.dataVisibility[ds.id] === false;
                 if (ds.yAxisID) {
                     for (const y of chart.options.scales.yAxes) {
                         if (y.id === ds.yAxisID) {
@@ -643,39 +632,62 @@ sauce.ns('performance', async ns => {
 
 
     class SauceChart extends Chart {
-        constructor(canvasSelector, view, config) {
-            const canvas = document.querySelector(canvasSelector);
-            const ctx = canvas.getContext('2d');
+        constructor(ctx, view, config) {
             super(ctx, config);
             this.view = view;
         }
 
-        getActivitiesAtDatasetIndex(index) {
-            // Due to zooming the dataset can be a subset of our daily/metric data.
-            const bucket = this.options.useMetricData ?
-                this.view.pageView.metricData :
-                this.view.pageView.daily;
-            const date = this.chart.data.datasets[0].data[index].x;
-            const slot = bucket.find(x => x.date === date);
-            return slot && slot.activities ? slot.activities : [];
+        destroy(...args) {
+            super.destroy(...args);
+            delete this.view;
         }
 
         getElementsAtEventForMode(ev, mode, options) {
-            const box = ev.chart.chartArea;
-            if (!box ||
-                ev.x < box.left ||
-                ev.x > box.right ||
-                ev.y < box.top ||
-                ev.y > box.bottom) {
-                return [];
+            if (ev.chart && ev.chart.chartArea) {
+                const box = ev.chart.chartArea;
+                if (!box ||
+                    ev.x < box.left ||
+                    ev.x > box.right ||
+                    ev.y < box.top ||
+                    ev.y > box.bottom) {
+                    return [];
+                }
             }
             return super.getElementsAtEventForMode(ev, mode, options);
+        }
+
+        getBucketsAtIndexes(...tuples) {
+            const datasets = this.data.datasets;
+            if (!datasets || !datasets.length) {
+                return [];
+            }
+            const buckets = new Set();
+            for (const [dsIndex, index] of tuples) {
+                const ds = datasets[dsIndex];
+                if (ds && ds.data && ds.data[index]) {
+                    if (ds.data[index].b == null) {
+                        throw new Error("Missing bucket entry in dataset");
+                    }
+                    buckets.add(ds.data[index].b);
+                }
+            }
+            return Array.from(buckets);
+        }
+
+        getActivitiesAtIndexes(...tuples) {
+            const acts = new Set();
+            for (const bucket of this.getBucketsAtIndexes(...tuples)) {
+                for (const x of bucket.activities || []) {
+                    acts.add(x);
+                }
+            }
+            return Array.from(acts);
         }
     }
 
 
     class ActivityTimeRangeChart extends SauceChart {
-        constructor(canvasSelector, view, config) {
+        constructor(ctx, view, config) {
             let _this;
             config = config || {};
             setDefault(config, 'type', 'line');
@@ -697,9 +709,9 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.xAxes[0].gridLines.display', true);
             setDefault(config, 'options.scales.xAxes[0].gridLines.drawOnChartArea', false);
             setDefault(config, 'options.scales.xAxes[0].afterUpdate', scale =>
-                _this && _this.afterUpdate(scale));
+                _this && _this.onAfterUpdateScale(scale));
             setDefault(config, 'options.scales.xAxes[0].afterBuildTicks', (axis, ticks) =>
-                _this && _this.afterBuildTicks(axis, ticks));
+                _this && _this.onAfterBuildTicks(axis, ticks));
             setDefault(config, 'options.scales.xAxes[0].ticks.sampleSize', 50);
             setDefault(config, 'options.scales.xAxes[0].ticks.padding', 4);
             setDefault(config, 'options.scales.xAxes[0].ticks.minRotation', 30);
@@ -716,82 +728,57 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
-            let _nextTooltipAnimFrame;
-            let _nextTooltip;
-            setDefault(config, 'options.tooltips.custom', t => {
-                _nextTooltip = t;
-                if (_nextTooltipAnimFrame) {
-                    return;
-                }
-                _nextTooltipAnimFrame = requestAnimationFrame(() => {
-                    _nextTooltipAnimFrame = null;
-                    const tooltip = _nextTooltip;
-                    const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length &&
-                        tooltip.dataPoints[0].index;
-                    if (dataIndex != null) {
-                        _this.onTooltipUpdate(dataIndex);
-                    }
-                });
-            });
+            setDefault(config, 'options.tooltips.activitiesTooltipFormatter', (...args) =>
+                _this.activitiesTooltipFormatter(...args));
+            setDefault(config, 'options.tooltips.custom', sauce.debounced(requestAnimationFrame, tt =>
+                tt.dataPoints && tt.dataPoints.length &&
+                _this.updateTooltips(...tt.dataPoints.map(x => [x.datasetIndex, x.index]))));
             setDefault(config, 'options.plugins.zoom.enabled', true);
-            setDefault(config, 'options.plugins.zoom.callbacks.beforeZoom', (start, end) => {
-                const pv = this.view.pageView;
-                const bucket = this.options.useMetricData ? pv.metricData : pv.daily;
-                // Pad out the zoom to be inclusive of nearest metric unit.
-                let first = bucket.findIndex(x => x.date >= start);
-                let last = bucket.findIndex(x => x.date > end);
-                if (first === -1) {
-                    return;
-                }
-                first = first > 0 ? first - 1 : first;
-                last = last > 0 ? last : bucket.length - 1;
-                return [bucket[first].date, bucket[last].date];
-            });
-            super(canvasSelector, view, config);
+            setDefault(config, 'options.plugins.zoom.callbacks.beforeZoom', (...args) =>
+                _this.onBeforeZoom(...args));
+            super(ctx, view, config);
             _this = this;
-            const canvas = document.querySelector(canvasSelector);
-            const panel = canvas.closest('.sauce-panel');
-            this.tooltipEl = panel.querySelector('.chart-tooltip');
-            jQuery(panel).on('click', '.chart-tooltip .data-label', this.onDataLabelClick.bind(this));
-            this.tooltipEl = panel.querySelector('.chart-tooltip');
+        }
+
+        activitiesTooltipFormatter(acts) {
+            if (acts.length === 1) {
+                return acts[0].name;
+            } else if (acts.length > 1) {
+                return `<i>${acts.length} ${this.view.LM('activities')}</i>`;
+            } else {
+                return '-';
+            }
         }
 
         update(...args) {
             super.update(...args);
             const idx = this.options.tooltips.defaultIndex ? this.options.tooltips.defaultIndex(this) : -1;
-            this.onTooltipUpdate(idx);
+            if (this.data.datasets && this.data.datasets.length) {
+                const tuples = Array.from(sauce.data.range(this.data.datasets.length)).map(i => [i, idx]);
+                this.updateTooltips(...tuples);
+            }
         }
 
-        onDataLabelClick(ev) {
-            const id = ev.currentTarget.dataset.ds;
-            if (!id) {
-                console.warn("No ID for dataset");
-                return;
-            }
-            const index = this.chart.data.datasets.findIndex(x => x.id === id);
-            jQuery(this.chart.canvas).trigger('dataVisibilityChange', {
-                id,
-                visible: !this.chart.isDatasetVisible(index)
-            });
-            this.chart.update();
-        }
-
-        onTooltipUpdate(index) {
-            if (!this.chart.data.datasets || !this.chart.data.datasets.length) {
-                return;  // Chartjs resize cause spurious calls to update before init completes.
-            }
-            const srcData = this.chart.sourceData ? this.chart.sourceData : this.chart.data.datasets[0].data;
-            index = index >= 0 ? index : srcData.length + index;
-            if (index < 0) {
-                return;
-            }
+        updateTooltips(...tuples) {
+            //const srcData = this.view.getChartData()this.chart.sourceData : this.chart.data.datasets[0].data;
             const labels = [];
             const elements = [];
-            for (const ds of this.chart.data.datasets) {
-                if (!ds.label || !ds.data.length || !ds.data[index]) {
+            let oldestDate = Infinity;
+            let mostDays = -Infinity;
+            for (let [dsIdx, index] of tuples) {
+                const ds = this.data.datasets[dsIdx];
+                if (!ds || !ds.data || !ds.label) {
                     continue;
                 }
-                const raw = ds.data[index].y;
+                console.warn(ds.label);
+                index = index >= 0 ? index : ds.data.length + index;
+                if (index < 0 || !ds.data[index]) {
+                    continue;
+                }
+                const data = ds.data[index];
+                oldestDate = data.b.date < oldestDate ? data.b.date : oldestDate;
+                mostDays = data.b.days > mostDays ? data.b.days : mostDays;
+                const raw = data.y;
                 const value = ds.tooltipFormat ? ds.tooltipFormat(raw, index, ds) : raw;
                 const values = Array.isArray(value) ? value : [value];
                 if (!ds.hidden) {
@@ -808,29 +795,31 @@ sauce.ns('performance', async ns => {
                     </div>
                 `);
             }
-            let actsDesc;
-            if (this.chart.options.activityTooltip) {
-                actsDesc = this.chart.options.activityTooltip(index);
+            let desc;
+            if (this.options.bucketsTooltipFormatter) {
+                desc = this.options.bucketsTooltipFormatter(this.getBucketsAtIndexes(...tuples));
+            } else if (this.options.activitiesTooltipFormatter) {
+                desc = this.options.activitiesTooltipFormatter(this.getActivitiesAtIndexes(...tuples));
             } else {
-                const acts = this.getActivitiesAtDatasetIndex(index);
-                if (acts.length === 1) {
-                    actsDesc = acts[0].name;
-                } else if (acts.length > 1) {
-                    actsDesc = `<i>${acts.length} ${this.view.LM('activities')}</i>`;
-                } else {
-                    actsDesc = '-';
-                }
+                desc = '';
             }
-            const d = new Date(this.chart.data.datasets[0].data[index].x);
-            const title = H.date(d, {style: 'weekdayYear'});
+            let title;
+            if (mostDays === 1) {
+                title = H.date(oldestDate, {style: 'weekdayYear'});
+            } else {
+                const from = H.date(oldestDate, {style: 'weekdayYear'});
+                const to = H.date(D.adjacentDay(oldestDate, mostDays - 1), {style: 'weekdayYear'});
+                title = `${from} -> ${to}`;
+            }
             const caretX = sauce.data.avg(elements.map(x => x.getCenterPoint().x));
-            this.tooltipEl.classList.toggle('inactive', caretX == null);
-            this.tooltipEl.style.setProperty('--caret-left', `${caretX || 0}px`);
-            jQuery(this.tooltipEl).html(`
-                <div class="tt-labels axes">${labels.join('')}</div>
-                <div class="tt-time axes">
-                    <div class="tt-date">${title}</div>
-                    <div class="tt-acts">${actsDesc}</div>
+            const $tooltipEl = jQuery(this.canvas).closest('.sauce-panel').find('.chart-tooltip');
+            $tooltipEl[0].classList.toggle('inactive', caretX == null);
+            $tooltipEl[0].style.setProperty('--caret-left', `${caretX || 0}px`);
+            $tooltipEl.html(`
+                <div class="tt-labels axis">${labels.join('')}</div>
+                <div class="tt-horiz axis">
+                    <div class="tt-title">${title}</div>
+                    <div class="tt-desc">${desc}</div>
                 </div>
             `);
         }
@@ -860,7 +849,7 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        afterBuildTicks(scale, ticks) {
+        onAfterBuildTicks(scale, ticks) {
             // This is used for doing fit calculations.  We don't actually use the label
             // value as it will get filtered down after layout determines which ticks will
             // fit and what step size to use.  However it's important to use the same basic
@@ -868,14 +857,14 @@ sauce.ns('performance', async ns => {
             if (!ticks) {
                 return;
             }
-            this.updateTicksConfig(ticks, scale);
+            this._updateTicksConfig(ticks, scale);
             for (const x of ticks) {
                 x.major = true;  // Use bold font for all sizing calcs, then correct with afterUpdate.
             }
             return ticks;
         }
 
-        updateTicksConfig(ticks, scale) {
+        _updateTicksConfig(ticks, scale) {
             let lastMonth;
             let lastYear;
             const spans = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
@@ -913,13 +902,651 @@ sauce.ns('performance', async ns => {
             return ticks;
         }
 
-        afterUpdate(scale) {
+        onAfterUpdateScale(scale) {
             // This runs after all the scale/ticks work is done.  We need to finally
             // patch up the final set of ticks with our desired label and major/minor
             // state.  Major == bold.
             if (scale._ticksToDraw.length) {
-                this.updateTicksConfig(scale._ticksToDraw, scale);
+                this._updateTicksConfig(scale._ticksToDraw, scale);
             }
+        }
+
+        onBeforeZoom(start, end) {
+            debugger; // XXX use new .b value in dataset
+            const pv = this.view.pageView;
+            const bucket = this.options.useMetricData ? pv.metricData : pv.daily;
+            // Pad out the zoom to be inclusive of nearest metric unit.
+            let first = bucket.findIndex(x => x.date >= start);
+            let last = bucket.findIndex(x => x.date > end);
+            if (first === -1) {
+                return;
+            }
+            first = first > 0 ? first - 1 : first;
+            last = last > 0 ? last : bucket.length - 1;
+            return [bucket[first].date, bucket[last].date];
+        }
+    }
+
+
+    class ChartView extends PerfView {
+        get events() {
+            return {
+                ...super.events,
+                'click canvas': 'onChartClick',
+            };
+        }
+
+        async init({pageView, id, ChartClass=SauceChart}) {
+            if (!pageView || !id || !ChartClass) {
+                throw new TypeError('missing args');
+            }
+            this.pageView = pageView;
+            this.id = id;
+            this._ChartClass = ChartClass;
+            await super.init();
+            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
+        }
+
+        setChartConfig(config) {
+            this._chartConfig = config;
+        }
+
+        async render() {
+            if (this.chart) {
+                this.chart.destroy();
+                delete this.chart.view;
+                delete this.chart;
+            }
+            await super.render();
+            if (this._chartConfig) {
+                const ctx = this.$('canvas')[0].getContext('2d');
+                this.chart = new this._ChartClass(ctx, this, this._chartConfig);
+            }
+        }
+
+        async onChartClick(ev) {
+            const box = this.chart.chartArea;
+            if (!box ||
+                ev.offsetX < box.left ||
+                ev.offsetX > box.right ||
+                ev.offsetY < box.top ||
+                ev.offsetY > box.bottom) {
+                return;
+            }
+            const {intersect, axis, mode = 'nearest'} = this.chart.options.tooltips;
+            const elements = this.chart.getElementsAtEventForMode(ev, mode, {intersect, axis});
+            if (elements.length) {
+                const acts = this.chart.getActivitiesAtIndexes(...elements.map(x => [x._datasetIndex, x._index]));
+                if (acts.length) {
+                    this.pageView.trigger('select-activities', acts);
+                }
+            }
+        }
+
+        onUpdateActivities() { }
+    }
+
+
+    class ActiveDaysChartView extends ChartView {
+        get localeKeys() {
+            return ['inactive'];
+        }
+
+        async init(options) {
+            const ttData = (item, obj) => obj.datasets[item.datasetIndex].data[item.index];
+            await super.init({...options, id: 'active-days'});
+            this.setChartConfig({
+                type: 'bar',
+                options: {
+                    tooltips: {
+                        intersect: false,
+                        eventingAxis: 'y',
+                        caretPadding: 16,
+                        position: 'average',
+                        callbacks: {
+                            title: (items, obj) => items.map(x => H.date(ttData(x, obj).date, {style: 'weekdayYear'})),
+                            label: (item, obj, _t) =>
+                                (_t = ttData(item, obj), _t.active ? ` TSS: ${H.number(_t.tss)}` : this.LM('inactive')),
+                            afterBody: ([item], obj, _t) => (_t = ttData(item, obj), _t.active ? '\n' + _t.actNames : ''),
+                        },
+                    },
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 0
+                    },
+                    layout: {
+                        padding: {
+                            top: chartTopPad
+                        }
+                    },
+                    legend: {
+                        display: false,
+                    },
+                    scales: {
+                        yAxes: [{
+                            id: 'days',
+                            type: 'linear',
+                            position: 'right',
+                            stacked: true,
+                            ticks: {
+                                display: false,
+                                min: 0,
+                            },
+                            gridLines: {
+                                display: false,
+                                drawBorder: false,
+                            }
+                        }],
+                        xAxes: [{
+                            id: 'weeks',
+                            type: 'time',
+                            distribution: 'series',
+                            position: 'bottom',
+                            stacked: true,
+                            offset: true,
+                            time: {
+                                unit: 'week',
+                                displayFormats: {
+                                    week: 'MMM dd'
+                                }
+                            },
+                            ticks: {
+                                minRotation: 30,
+                                maxRotation: 50,
+                                autoSkipPadding: 20,
+                                padding: 2
+                            },
+                            gridLines: {
+                                drawBorder: false,
+                                drawOnChartArea: false,  // leaves just tick marks
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+        onUpdateActivities({daily, range}) {
+            const weekDatasets = Array.from(sauce.data.range(7)).map(() => ({
+                stack: 'weeks',
+                borderWidth: 1,
+                borderSkipped: false,
+                barPercentage: 1,
+                categoryPercentage: 0.2,
+                borderColor: '#0003',
+                backgroundColor: ctx => ctx.dataset.data[ctx.dataIndex].bg,
+                data: []
+            }));
+            const maxTSS = sauce.data.max(daily.map(x => x.tss));
+            // When the metric is months or less than weeks we need to pad it out.
+            const firstMonday = -D.getISODay(range.start);
+            const lastSunday = range.getDays() + (6 - D.getISODay(D.dayBefore(range.end)));
+            let offt = 0;
+            for (let i = firstMonday; i < lastSunday; i++, offt++) {
+                const day = daily[i] || {
+                    days: 1,
+                    activities: [],
+                    date: D.adjacentDay(range.start, i),
+                    tss: -10,
+                };
+                weekDatasets[offt % 7].data.push({
+                    b: day,
+                    x: D.adjacentDay(day.date, -(offt % 7)),
+                    y: 10,
+                    bg: `rgba(10, 44, 122, ${(10 + day.tss) / maxTSS})`,
+                    active: day.activities && day.activities.length,
+                    date: day.date,
+                    tss: day.tss,
+                    actNames: day.activities ? day.activities.map(x => x.name).join('\n') : null,
+                });
+            }
+            this.chart.data.datasets = weekDatasets;
+            this.chart.update();
+        }
+    }
+
+
+    class ActivityTimeRangeChartView extends ChartView {
+        get events() {
+            return {
+                ...super.events,
+                'click .chart-tooltip .data-label': 'onDataLabelClick',
+            };
+        }
+
+        async init(options) {
+            await super.init({ChartClass: ActivityTimeRangeChart, ...options});
+            this._dataVisibilityKey = `perfChartDataVisibility-${this.id}`;
+            this.dataVisibility = sauce.storage.getPrefFast(this._dataVisibilityKey) || {};
+        }
+
+        onDataLabelClick(ev) {
+            const dataId = ev.currentTarget.dataset.ds;
+            if (!dataId) {
+                console.warn("No ID for dataset");
+                return;
+            }
+            this.toggleDataVisibility(dataId);
+        }
+
+        toggleDataVisibility(dataId) {
+            const index = this.chart.data.datasets.findIndex(x => x.id === dataId);
+            this.dataVisibility[dataId] = !this.chart.isDatasetVisible(index);
+            sauce.storage.setPref(this._dataVisibilityKey, this.dataVisibility);  // bg okay
+            this.chart.update();
+        }
+    }
+
+
+    class TrainingChartView extends ActivityTimeRangeChartView {
+        get localeKeys() {
+            return [
+                'activities', 'predicted_tss', 'predicted_tss_tooltip', 'fitness',
+                'fatigue', 'form', 'today',
+            ];
+        }
+
+        async init(options) {
+            await super.init({...options, id: 'training'});
+            this.setChartConfig({
+                plugins: [chartOverUnderFillPlugin],
+                options: {
+                    bucketsTooltipFormatter: this.bucketsTooltipFormatter.bind(this),
+                    borderWidth: 20,
+                    plugins: {
+                        datalabels: {
+                            display: ctx =>
+                                !!(ctx.dataset.data[ctx.dataIndex] &&
+                                ctx.dataset.data[ctx.dataIndex].showDataLabel === true),
+                            formatter: (value, ctx) => {
+                                const r = ctx.dataset.tooltipFormat(value.y);
+                                return Array.isArray(r) ? r[0] : r;
+                            },
+                            backgroundColor: ctx => ctx.dataset.backgroundColor,
+                            borderRadius: 2,
+                            color: 'white',
+                            padding: 4,
+                            anchor: 'center',
+                        },
+                    },
+                    scales: {
+                        yAxes: [{
+                            id: 'tss',
+                            scaleLabel: {labelString: 'TSS'},
+                            ticks: {min: 0, maxTicksLimit: 6},
+                        }, {
+                            id: 'tsb',
+                            scaleLabel: {labelString: 'TSB'},
+                            ticks: {maxTicksLimit: 8},
+                            position: 'right',
+                            gridLines: {display: false},
+                        }]
+                    },
+                    tooltips: {
+                        intersect: false,
+                        defaultIndex: chart => {
+                            if (chart.data.datasets && chart.data.datasets.length) {
+                                const data = chart.data.datasets[0].data;
+                                if (data && data.length) {
+                                    const today = D.today();
+                                    for (let i = data.length - 1; i; i--) {
+                                        if (data[i].x <= today) {
+                                            return i;
+                                        }
+                                    }
+                                }
+                            }
+                            return -1;
+                        }
+                    },
+                }
+            });
+        }
+
+        bucketsTooltipFormatter(buckets) {
+            const day = buckets[0];
+            let desc;
+            if (day.future) {
+                desc = `<i title="${this.LM('predicted_tss_tooltip')}">` +
+                    `${this.LM('predicted_tss')}</i>`;
+            } else if (day.activities.length > 1) {
+                desc = `<i>${day.activities.length} ${this.LM('activities')}</i>`;
+            } else if (day.activities.length === 1) {
+                desc = day.activities[0].name;
+            }
+            return `${desc ? desc + ' ' : ''}(${day.future ? '~' : ''}${H.number(day.tss)} TSS)`;
+        }
+
+        onUpdateActivities({range, daily, metricData}) {
+            const days = range.getDays();
+            const lineWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
+            const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
+            const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
+            let future = [];
+            if (range.end >= Date.now() && daily.length) {
+                const last = daily[daily.length - 1];
+                const fDays = Math.floor(Math.min(days * 0.10, 62));
+                const fStart = D.dayAfter(last.date);
+                const fEnd = D.roundToLocaleDayDate(+fStart + fDays * DAY);
+                const predictions = [];
+                const tau = 1;
+                const decay = 2;
+                const tssSlope = (((last.atl / last.ctl) || 1) - 1) / tau;
+                let tssPred = last.ctl;
+                for (const [i, date] of Array.from(D.dayRange(fStart, fEnd)).entries()) {
+                    tssPred *= 1 + (tssSlope * (1 / (i * decay + 1)));
+                    predictions.push({ts: +date, tssOverride: tssPred});
+                }
+                future = activitiesByDay(predictions, fStart, fEnd, last.atl, last.ctl);
+            }
+            const buckets = daily.concat(future.map(x => (x.future = true, x)));
+            const ifFuture = (yes, no) => ctx => buckets[ctx.p1DataIndex].future ? yes : no;
+            this.chart.data.datasets = [{
+                id: 'ctl',
+                label: `CTL (${this.LM('fitness')})`,
+                yAxisID: 'tss',
+                borderWidth: lineWidth,
+                backgroundColor: '#4c89d0e0',
+                borderColor: '#2c69b0f0',
+                pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 3 : 0,
+                datalabels: {
+                    align: 'left' // XXX suspect, scale setting or unused?
+                },
+                tooltipFormat: x => Math.round(x).toLocaleString(),
+                segment: {
+                    borderColor: ifFuture('4c89d0d0'),
+                    borderDash: ifFuture([3, 3], []),
+                },
+                data: buckets.map((b, i) => ({
+                    b,
+                    x: b.date,
+                    y: b.ctl,
+                    showDataLabel: i === maxCTLIndex,
+                })),
+            }, {
+                id: 'atl',
+                label: `ATL (${this.LM('fatigue')})`,
+                yAxisID: 'tss',
+                borderWidth: lineWidth,
+                backgroundColor: '#ff3730e0',
+                borderColor: '#f02720f0',
+                pointRadius: 0,
+                tooltipFormat: x => Math.round(x).toLocaleString(),
+                segment: {
+                    borderColor: ifFuture('#ff4740d0'),
+                    borderDash: ifFuture([3, 3]),
+                },
+                data: buckets.map(b => ({
+                    b,
+                    x: b.date,
+                    y: b.atl,
+                }))
+            }, {
+                id: 'tsb',
+                label: `TSB (${this.LM('form')})`,
+                yAxisID: 'tsb',
+                borderWidth: lineWidth,
+                backgroundColor: '#bc714cc0',
+                borderColor: '#0008',
+                fill: true,
+                overUnder: true,
+                overBackgroundColorMax: '#7fe78a',
+                overBackgroundColorMin: '#bfe58a22',
+                underBackgroundColorMin: '#d9940422',
+                underBackgroundColorMax: '#bc0000',
+                overBackgroundMax: 50,
+                underBackgroundMin: -50,
+                pointRadius: ctx => ctx.dataIndex === minTSBIndex ? 3 : 0,
+                datalabels: {
+                    align: 'right' // XXX suspect used or can be done in scale?
+                },
+                tooltipFormat: x => Math.round(x).toLocaleString(),
+                segment: {
+                    borderColor: ifFuture('#000a'),
+                    borderDash: ifFuture([3, 3]),
+                    overBackgroundColorMax: ifFuture('#afba'),
+                    overBackgroundColorMin: ifFuture('#df82'),
+                    underBackgroundColorMin: ifFuture('#f922'),
+                    underBackgroundColorMax: ifFuture('#d22b'),
+                },
+                data: buckets.map((b, i) => ({
+                    b,
+                    x: b.date,
+                    y: b.ctl - b.atl,
+                    showDataLabel: i === minTSBIndex,
+                }))
+            }];
+            this.chart.update();
+        }
+    }
+
+
+    class ActivityVolumeChartView extends ActivityTimeRangeChartView {
+        get localeKeys() {
+            return ['predicted', '/analysis_time', '/analysis_distance', 'activities'];
+        }
+
+        async init(options) {
+            await super.init({...options, id: 'activity-volume'});
+            const distStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
+            this.setChartConfig({
+                type: 'bar',
+                options: {
+                    borderWidth: 1,
+                    barPercentage: 0.92, // XXX verify works here
+                    scales: {
+                        xAxes: [{
+                            stacked: true,
+                        }],
+                        yAxes: [{
+                            id: 'tss',
+                            scaleLabel: {labelString: 'TSS'},
+                            ticks: {min: 0, maxTicksLimit: 6},
+                            stacked: true,
+                        }, {
+                            id: 'duration',
+                            position: 'right',
+                            gridLines: {display: false},
+                            stacked: true,
+                            ticks: {
+                                min: 0,
+                                suggestedMax: 5 * 3600,
+                                stepSize: 3600,
+                                maxTicksLimit: 7,
+                                callback: v => H.duration(v, {maxPeriod: 3600}),
+                            }
+                        }, {
+                            id: 'distance',
+                            position: 'right',
+                            gridLines: {display: false},
+                            stacked: true,
+                            ticks: {
+                                min: 0,
+                                stepSize: distStepSize,
+                                maxTicksLimit: 7,
+                                callback: v => H.distance(v, 0, {suffix: true}),
+                            },
+                        }]
+                    },
+                }
+            });
+        }
+
+        onUpdateActivities({range, daily, metricData}) {
+            let predictions;
+            if (D.tomorrow() <= range.end) {
+                const remaining = (range.end - Date.now()) / DAY;
+                const days = Math.round((range.end - metricData[metricData.length - 1].date) / DAY);
+                const weighting = Math.min(days, daily.length);
+                const avgTSS = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.tss));
+                const avgDuration = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.duration));
+                const avgDistance = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.distance));
+                predictions = {
+                    days,
+                    tss: metricData.map((b, i) => ({
+                        b,
+                        x: b.date,
+                        y: i === metricData.length - 1 ? avgTSS * remaining : null,
+                    })),
+                    duration: metricData.map((b, i) => ({
+                        b,
+                        x: b.date,
+                        y: i === metricData.length - 1 ? avgDuration * remaining : null,
+                    })),
+                    distance: metricData.map((b, i) => ({
+                        b,
+                        x: b.date,
+                        y: i === metricData.length - 1 ? avgDistance * remaining : null,
+                    })),
+                };
+            }
+            this.chart.data.datasets = [{
+                id: 'tss',
+                label: 'TSS',
+                backgroundColor: '#1d86cdd0',
+                borderColor: '#0d76bdf0',
+                hoverBackgroundColor: '#0d76bd',
+                hoverBorderColor: '#0d76bd',
+                yAxisID: 'tss',
+                stack: 'tss',
+                tooltipFormat: (x, i) => {
+                    const tss = Math.round(x).toLocaleString();
+                    const tssDay = Math.round(x / metricData[i].days).toLocaleString();
+                    const tips = [`${tss} <small>(${tssDay}/d)</small>`];
+                    if (predictions && i === metricData.length - 1) {
+                        const ptssRaw = predictions.tss[i].y + x;
+                        const ptss = Math.round(ptssRaw).toLocaleString();
+                        const ptssDay = Math.round(ptssRaw / predictions.days).toLocaleString();
+                        tips.push(`${this.LM('predicted')}: <b>~${ptss} <small>(${ptssDay}/d)</small></b>`);
+                    }
+                    return tips;
+                },
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.tssSum})),
+            }, {
+                id: 'duration',
+                label: this.LM('analysis_time'),
+                backgroundColor: '#fc7d0bd0',
+                borderColor: '#dc5d00f0',
+                hoverBackgroundColor: '#ec6d00',
+                hoverBorderColor: '#dc5d00',
+                yAxisID: 'duration',
+                stack: 'duration',
+                tooltipFormat: (x, i) => {
+                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
+                    if (predictions && i === metricData.length - 1) {
+                        const pdur = H.duration(predictions.duration[i].y + x,
+                            {maxPeriod: 3600, minPeriod: 3600, digits: 1});
+                        tips.push(`${this.LM('predicted')}: <b>~${pdur}</b>`);
+                    }
+                    return tips;
+                },
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.duration})),
+            }, {
+                id: 'distance',
+                label: this.LM('analysis_distance'),
+                backgroundColor: '#244d',
+                borderColor: '#022f',
+                hoverBackgroundColor: '#133',
+                hoverBorderColor: '#022',
+                yAxisID: 'distance',
+                stack: 'distance',
+                tooltipFormat: (x, i) => {
+                    const tips = [L.distanceFormatter.formatShort(x)];
+                    if (predictions && i === metricData.length - 1) {
+                        const pdist = L.distanceFormatter.formatShort(predictions.distance[i].y + x, 0);
+                        tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
+                    }
+                    return tips;
+                },
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.distance})),
+            }];
+            if (predictions) {
+                this.chart.data.datasets.push({
+                    id: 'tss',
+                    backgroundColor: '#1d86cd30',
+                    borderColor: '#0d76bd50',
+                    hoverBackgroundColor: '#0d76bd60',
+                    hoverBorderColor: '#0d76bd60',
+                    yAxisID: 'tss',
+                    stack: 'tss',
+                    data: predictions.tss,
+                }, {
+                    id: 'duration',
+                    backgroundColor: '#fc7d0b30',
+                    borderColor: '#dc5d0050',
+                    hoverBackgroundColor: '#ec6d0060',
+                    hoverBorderColor: '#dc5d0060',
+                    yAxisID: 'duration',
+                    stack: 'duration',
+                    data: predictions.duration,
+                }, {
+                    id: 'distance',
+                    backgroundColor: '#2443',
+                    borderColor: '#0225',
+                    hoverBackgroundColor: '#1336',
+                    hoverBorderColor: '#0226',
+                    yAxisID: 'distance',
+                    stack: 'distance',
+                    data: predictions.distance,
+                });
+            }
+            this.chart.update();
+        }
+    }
+
+
+    class ElevationChartView extends ActivityTimeRangeChartView {
+        get localeKeys() {
+            return ['/analysis_gain', 'activities'];
+        }
+
+        async init(options) {
+            const thousandFeet = 1609.344 / 5280 * 100;
+            const stepSize = L.elevationFormatter.unitSystem === 'imperial' ? thousandFeet : 1000;
+            await super.init({...options, id: 'elevation'});
+            this.setChartConfig({
+                options: {
+                    scales: {
+                        yAxes: [{
+                            id: 'elevation',
+                            scaleLabel: {labelString: this.LM('analysis_gain')},
+                            ticks: {
+                                min: 0,
+                                maxTicksLimit: 8,
+                                stepSize,
+                                callback: v => H.elevation(v, {suffix: true}),
+                            },
+                        }]
+                    },
+                    tooltips: {
+                        intersect: false,
+                    },
+                }
+            });
+        }
+
+        onUpdateActivities({range, daily}) {
+            let gain = 0;
+            const days = range.getDays();
+            const lineWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
+            this.chart.data.datasets = [{
+                id: 'elevation',
+                label: this.LM('analysis_gain'),
+                type: 'line',
+                backgroundColor: '#8f8782e0',
+                fill: true,
+                borderColor: '#6f6762f0',
+                cubicInterpolationMode: 'monotone',
+                pointRadius: 0,
+                yAxisID: 'elevation',
+                borderWidth: lineWidth,
+                tooltipFormat: x => H.elevation(x, {suffix: true}),
+                data: daily.map(b => {
+                    gain += b.altGain;
+                    return {b, x: b.date, y: gain};
+                }),
+            }];
+            this.chart.update();
         }
     }
 
@@ -927,6 +1554,7 @@ sauce.ns('performance', async ns => {
     class SummaryView extends PerfView {
         get events() {
             return {
+                ...super.events,
                 'click a.collapser': 'onCollapserClick',
                 'click a.expander': 'onExpanderClick',
                 'click section.training a.missing-tss': 'onMissingTSSClick',
@@ -958,8 +1586,8 @@ sauce.ns('performance', async ns => {
             if (pageView.athlete) {
                 await this.setAthlete(pageView.athlete);
             }
-            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
             await super.init();
+            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
         }
 
         async findPeaks() {
@@ -1146,6 +1774,7 @@ sauce.ns('performance', async ns => {
     class DetailsView extends PerfView {
         get events() {
             return {
+                ...super.events,
                 'click header a.collapser': 'onCollapserClick',
                 'click .activity .edit-activity': 'onEditActivityClick',
                 'click .btn.load-more.older': 'onLoadOlderClick',
@@ -1339,6 +1968,7 @@ sauce.ns('performance', async ns => {
     class BulkActivityEditDialog extends PerfView {
         get events() {
             return {
+                ...super.events,
                 'click .edit-activity': 'onEditActivityClick',
             };
         }
@@ -1407,6 +2037,7 @@ sauce.ns('performance', async ns => {
     class PeaksView extends PerfView {
         get events() {
             return {
+                ...super.events,
                 'change .peak-controls select[name="type"]': 'onTypeChange',
                 'change .peak-controls select[name="time"]': 'onTimeChange',
                 'change .peak-controls select[name="distance"]': 'onDistanceChange',
@@ -1592,12 +2223,11 @@ sauce.ns('performance', async ns => {
     class MainView extends PerfView {
         get events() {
             return {
+                ...super.events,
                 'change header.filters select[name="range"]': 'onRangeChange',
                 'click header.filters .btn.range': 'onRangeShift',
                 'click header.filters .btn.expand': 'onExpandClick',
                 'click header.filters .btn.compress': 'onCompressClick',
-                'click canvas': 'onChartClick',
-                'dataVisibilityChange canvas': 'onDataVisibilityChange',
             };
         }
 
@@ -1606,20 +2236,18 @@ sauce.ns('performance', async ns => {
         }
 
         get localeKeys() {
-            return [
-                'predicted', '/analysis_time', '/analysis_distance', '/analysis_gain', 'fitness',
-                'fatigue', 'form', 'weekly', 'monthly', 'yearly', 'activities', 'today',
-                'predicted_tss', 'predicted_tss_tooltip',
-            ];
+            return ['weekly', 'monthly', 'yearly', 'activities', 'today'];
         }
 
         async init({pageView}) {
-            this.peaksView = new PeaksView({pageView});
             this.pageView = pageView;
-            this.charts = {};
-            this.dataVisibility = sauce.storage.getPrefFast('perfChartDataVisibility') || {};
-            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
+            this.activeDaysChartView = new ActiveDaysChartView({pageView});
+            this.peaksView = new PeaksView({pageView});
+            this.trainingChartView = new TrainingChartView({pageView});
+            this.activityVolumeChartView = new ActivityVolumeChartView({pageView});
+            this.elevationChartView = new ElevationChartView({pageView});
             await super.init();
+            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
         }
 
         setElement(el, ...args) {
@@ -1646,529 +2274,16 @@ sauce.ns('performance', async ns => {
 
         async render() {
             await super.render();
+            this.activeDaysChartView.setElement(this.$('.active-days-chart-view'));
             this.peaksView.setElement(this.$('.peaks-view'));
+            this.trainingChartView.setElement(this.$('.training-chart-view'));
+            this.activityVolumeChartView.setElement(this.$('.activity-volume-chart-view'));
+            this.elevationChartView.setElement(this.$('.elevation-chart-view'));
+            await this.activeDaysChartView.render();
             await this.peaksView.render();
-
-            // XXX MAKE
-            this.charts.active = new SauceChart('#active', this, {
-                type: 'bar',
-                options: {
-                    tooltips: {
-                        intersect: false,
-                        caretPadding: 16,
-                        position: 'average',
-                    },
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 0
-                    },
-                    layout: {
-                        padding: {
-                            top: chartTopPad
-                        }
-                    },
-                    legend: {
-                        display: false,
-                    },
-                    scales: {
-                        yAxes: [{
-                            id: 'days',
-                            type: 'linear',
-                            position: 'right',
-                            stacked: true,
-                            ticks: {
-                                display: false,
-                                min: 0,
-                            },
-                            gridLines: {
-                                display: false,
-                                drawBorder: false,
-                                tickMarkLength: 0
-                            }
-                        }],
-                        xAxes: [{
-                            id: 'weeks',
-                            type: 'time',
-                            distribution: 'series',
-                            position: 'bottom',
-                            stacked: true,
-                            offset: true,
-                            time: {
-                                unit: 'week',
-                                displayFormats: {
-                                    week: 'MMM dd'
-                                }
-                            },
-                            ticks: {
-                                minRotation: 30,
-                                maxRotation: 50,
-                                autoSkip: true,
-                            },
-                            gridLines: {
-                                display: false,
-                                drawBorder: false,
-                                tickMarkLength: 10,
-                            }
-                        }]
-                    }
-                }
-            });
-
-            this.charts.training = new ActivityTimeRangeChart('#training', this, {
-                plugins: [chartOverUnderFillPlugin],
-                options: {
-                    activityTooltip: index => {
-                        const day = this.charts.training._sourceData[index];
-                        let desc;
-                        if (day.future) {
-                            desc = `<i title="${this.LM('predicted_tss_tooltip')}">` +
-                                `${this.LM('predicted_tss')}</i>`;
-                        } else if (day.activities.length > 1) {
-                            desc = `<i>${day.activities.length} ${this.LM('activities')}</i>`;
-                        } else if (day.activities.length === 1) {
-                            desc = day.activities[0].name;
-                        }
-                        return `${desc ? desc + ' ' : ''}(${day.future ? '~' : ''}${H.number(day.tss)} TSS)`;
-                    },
-                    plugins: {
-                        datalabels: {
-                            display: ctx =>
-                                !!(ctx.dataset.data[ctx.dataIndex] &&
-                                ctx.dataset.data[ctx.dataIndex].showDataLabel === true),
-                            formatter: (value, ctx) => {
-                                const r = ctx.dataset.tooltipFormat(value.y);
-                                return Array.isArray(r) ? r[0] : r;
-                            },
-                            backgroundColor: ctx => ctx.dataset.backgroundColor,
-                            borderRadius: 2,
-                            color: 'white',
-                            padding: 4,
-                            anchor: 'center',
-                        },
-                    },
-                    scales: {
-                        yAxes: [{
-                            id: 'tss',
-                            scaleLabel: {labelString: 'TSS'},
-                            ticks: {min: 0, maxTicksLimit: 6},
-                        }, {
-                            id: 'tsb',
-                            scaleLabel: {labelString: 'TSB'},
-                            ticks: {maxTicksLimit: 8},
-                            position: 'right',
-                            gridLines: {display: false},
-                        }]
-                    },
-                    tooltips: {
-                        intersect: false,
-                        defaultIndex: chart => {
-                            if (chart.data.datasets && chart.data.datasets.length) {
-                                const data = chart.data.datasets[0].data;
-                                if (data && data.length) {
-                                    const today = D.today();
-                                    for (let i = data.length - 1; i; i--) {
-                                        if (data[i].x <= today) {
-                                            return i;
-                                        }
-                                    }
-                                }
-                            }
-                            return -1;
-                        }
-                    },
-                }
-            });
-
-            const distStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
-            this.charts.activities = new ActivityTimeRangeChart('#activities', this, {
-                options: {
-                    useMetricData: true,
-                    scales: {
-                        xAxes: [{
-                            stacked: true,
-                        }],
-                        yAxes: [{
-                            id: 'tss',
-                            scaleLabel: {labelString: 'TSS'},
-                            ticks: {min: 0, maxTicksLimit: 6},
-                            stacked: true,
-                        }, {
-                            id: 'duration',
-                            position: 'right',
-                            gridLines: {display: false},
-                            stacked: true,
-                            ticks: {
-                                min: 0,
-                                suggestedMax: 5 * 3600,
-                                stepSize: 3600,
-                                maxTicksLimit: 7,
-                                callback: v => H.duration(v, {maxPeriod: 3600}),
-                            }
-                        }, {
-                            id: 'distance',
-                            position: 'right',
-                            gridLines: {display: false},
-                            stacked: true,
-                            ticks: {
-                                min: 0,
-                                stepSize: distStepSize,
-                                maxTicksLimit: 7,
-                                callback: v => H.distance(v, 0, {suffix: true}),
-                            },
-                        }]
-                    },
-                }
-            });
-
-            const thousandFeet = 1609.344 / 5280 * 100;
-            const stepSize = L.elevationFormatter.unitSystem === 'imperial' ? thousandFeet : 1000;
-            this.charts.elevation = new ActivityTimeRangeChart('#elevation', this, {
-                options: {
-                    scales: {
-                        yAxes: [{
-                            id: 'elevation',
-                            scaleLabel: {labelString: this.LM('analysis_gain')},
-                            ticks: {
-                                min: 0,
-                                maxTicksLimit: 8,
-                                stepSize,
-                                callback: v => H.elevation(v, {suffix: true}),
-                            },
-                        }]
-                    },
-                    tooltips: {
-                        intersect: false,
-                    },
-                    legend: {
-                        display: false,
-                    },
-                }
-            });
-        }
-
-        async update() {
-            const $start = this.$('header .range.start');
-            const $end = this.$('header .range.end');
-            const range = this.pageView.range;
-            const start = range.start;
-            const end = range.end;
-            const daily = this.pageView.daily;
-            const metricData = this.pageView.metricData;
-            const selectedRange = this.pageView.allRange ? 'all' : `${range.period},${range.metric}`;
-            let $option = this.$(`select[name="range"] option[value="${selectedRange}"]`);
-            if (!$option.length) {
-                // Just manually add an entry.  The user may be playing with the URL and that's fine.
-                $option = jQuery(`<option value="${range.period},${range.metric}"]>` +
-                    `${range.period} ${range.metric}</option>`);
-                this.$(`select[name="range"]`).append($option);
-            }
-            $option[0].selected = true;
-            $start.text(H.date(start));
-            const isStart = start <= this.pageView.oldest;
-            this.$('.btn.range.prev').toggleClass('disabled', isStart);
-            this.$('.btn.range.oldest').toggleClass('disabled', isStart);
-            const isEnd = end >= Date.now();
-            this.$('.btn.range.next').toggleClass('disabled', isEnd);
-            this.$('.btn.range.newest').toggleClass('disabled', isEnd);
-            $end.text(isEnd ?
-                new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
-                H.date(D.roundToLocaleDayDate(end - DAY)));
-            const days = range.getDays();
-            const lineWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
-            const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
-            const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
-            let future = [];
-            if (isEnd && daily.length) {
-                const last = daily[daily.length - 1];
-                const fDays = Math.floor(Math.min(days * 0.10, 62));
-                const fStart = D.dayAfter(last.date);
-                const fEnd = D.roundToLocaleDayDate(+fStart + fDays * DAY);
-                const predictions = [];
-                const tau = 1;
-                const decay = 2;
-                const tssSlope = (((last.atl / last.ctl) || 1) - 1) / tau;
-                let tssPred = last.ctl;
-                for (const [i, date] of Array.from(D.dayRange(fStart, fEnd)).entries()) {
-                    tssPred *= 1 + (tssSlope * (1 / (i * decay + 1)));
-                    predictions.push({ts: +date, tssOverride: tssPred});
-                }
-                future = activitiesByDay(predictions, fStart, fEnd, last.atl, last.ctl);
-            }
-            const padDays = Array.from(sauce.data.range(D.getISODay(start))).map((x, i) => ({
-                date: D.adjacentDay(start, -1 - i),
-                tss: -1
-            })).reverse();
-            // XXX STUFF
-            const weekDatasets = Array.from(sauce.data.range(7)).map(() => ({
-                stack: 'weeks',
-                borderColor: '#0003',
-                backgroundColor: ctx => ctx.dataset.data[ctx.dataIndex].bg,
-                borderWidth: 1,
-                borderSkipped: false,
-                barPercentage: 1,
-                categoryPercentage: 1,
-                data: []
-            }));
-            let offt = 0;
-            const maxTSS = sauce.data.max(daily.map(x => x.tss));
-            for (let i = -D.getISODay(start), sz = days + (6 - D.getISODay(D.dayBefore(end))); i < sz; i++, offt++) {
-                const day = daily[i] || {};
-                if (!day.date) {
-                    day.date = D.adjacentDay(start, i);
-                    day.tss = -10;
-                }
-                weekDatasets[offt % 7].data.push({
-                    x: D.adjacentDay(day.date, -(offt % 7)),
-                    y: 10,
-                    bg: `rgba(10, 44, 122, ${(10 + day.tss) / maxTSS})`,
-                });
-            }
-            this.charts.active.data.datasets = weekDatasets;
-            this.charts.active.update();
-
-            const trainingDaily = daily.concat(future.map(x => (x.future = true, x)));
-            const ifFuture = (yes, no) => ctx => trainingDaily[ctx.p1DataIndex].future ? yes : no;
-            this.charts.training._sourceData = trainingDaily;  // For tooltip formatting.
-            this.charts.training.data.datasets = [{
-                id: 'ctl',
-                label: `CTL (${this.LM('fitness')})`,
-                yAxisID: 'tss',
-                borderWidth: lineWidth,
-                backgroundColor: '#4c89d0e0',
-                borderColor: '#2c69b0f0',
-                pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 3 : 0,
-                datalabels: {
-                    align: 'left'
-                },
-                tooltipFormat: x => Math.round(x).toLocaleString(),
-                segment: {
-                    borderColor: ifFuture('4c89d0d0'),
-                    borderDash: ifFuture([3, 3], []),
-                },
-                data: trainingDaily.map((a, i) => ({
-                    x: a.date,
-                    y: a.ctl,
-                    showDataLabel: i === maxCTLIndex,
-                })),
-            }, {
-                id: 'atl',
-                label: `ATL (${this.LM('fatigue')})`,
-                yAxisID: 'tss',
-                borderWidth: lineWidth,
-                backgroundColor: '#ff3730e0',
-                borderColor: '#f02720f0',
-                pointRadius: 0,
-                tooltipFormat: x => Math.round(x).toLocaleString(),
-                segment: {
-                    borderColor: ifFuture('#ff4740d0'),
-                    borderDash: ifFuture([3, 3]),
-                },
-                data: trainingDaily.map(a => ({
-                    x: a.date,
-                    y: a.atl,
-                    label: `${Math.round(a.tss)} ` + a.activities.map(x => x.name).join()
-                }))
-            }, {
-                id: 'tsb',
-                label: `TSB (${this.LM('form')})`,
-                yAxisID: 'tsb',
-                borderWidth: lineWidth,
-                backgroundColor: '#bc714cc0',
-                borderColor: '#0008',
-                fill: true,
-                overUnder: true,
-                overBackgroundColorMax: '#7fe78a',
-                overBackgroundColorMin: '#bfe58a22',
-                underBackgroundColorMin: '#d9940422',
-                underBackgroundColorMax: '#bc0000',
-                overBackgroundMax: 50,
-                underBackgroundMin: -50,
-                pointRadius: ctx => ctx.dataIndex === minTSBIndex ? 3 : 0,
-                datalabels: {
-                    align: 'right'
-                },
-                tooltipFormat: x => Math.round(x).toLocaleString(),
-                segment: {
-                    borderColor: ifFuture('#000a'),
-                    borderDash: ifFuture([3, 3]),
-                    overBackgroundColorMax: ifFuture('#afba'),
-                    overBackgroundColorMin: ifFuture('#df82'),
-                    underBackgroundColorMin: ifFuture('#f922'),
-                    underBackgroundColorMax: ifFuture('#d22b'),
-                },
-                data: trainingDaily.map((a, i) => ({
-                    x: a.date,
-                    y: a.ctl - a.atl,
-                    showDataLabel: i === minTSBIndex,
-                }))
-            }];
-            this.charts.training.update();
-
-            let predictions;
-            if (D.tomorrow() <= range.end) {
-                const remaining = (range.end - Date.now()) / DAY;
-                const days = Math.round((range.end - metricData[metricData.length - 1].date) / DAY);
-                const weighting = Math.min(days, daily.length);
-                const avgTSS = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.tss));
-                const avgDuration = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.duration));
-                const avgDistance = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.distance));
-                predictions = {
-                    days,
-                    tss: metricData.map((data, i) => ({
-                        x: data.date,
-                        y: i === metricData.length - 1 ? avgTSS * remaining : null,
-                    })),
-                    duration: metricData.map((data, i) => ({
-                        x: data.date,
-                        y: i === metricData.length - 1 ? avgDuration * remaining : null,
-                    })),
-                    distance: metricData.map((data, i) => ({
-                        x: data.date,
-                        y: i === metricData.length - 1 ? avgDistance * remaining : null,
-                    })),
-                };
-            }
-            const barPercentage = 0.92;
-            const borderWidth = 1;
-            this.charts.activities.data.datasets = [{
-                id: 'tss',
-                label: 'TSS',
-                type: 'bar',
-                backgroundColor: '#1d86cdd0',
-                borderColor: '#0d76bdf0',
-                hoverBackgroundColor: '#0d76bd',
-                hoverBorderColor: '#0d76bd',
-                yAxisID: 'tss',
-                stack: 'tss',
-                borderWidth,
-                barPercentage,
-                tooltipFormat: (x, i) => {
-                    const tss = Math.round(x).toLocaleString();
-                    const tssDay = Math.round(x / metricData[i].days).toLocaleString();
-                    const tips = [`${tss} <small>(${tssDay}/d)</small>`];
-                    if (predictions && i === metricData.length - 1) {
-                        const ptssRaw = predictions.tss[i].y + x;
-                        const ptss = Math.round(ptssRaw).toLocaleString();
-                        const ptssDay = Math.round(ptssRaw / predictions.days).toLocaleString();
-                        tips.push(`${this.LM('predicted')}: <b>~${ptss} <small>(${ptssDay}/d)</small></b>`);
-                    }
-                    return tips;
-                },
-                data: metricData.map((a, i) => ({
-                    x: a.date,
-                    y: a.tssSum,
-                })),
-            }, {
-                id: 'duration',
-                label: this.LM('analysis_time'),
-                type: 'bar',
-                backgroundColor: '#fc7d0bd0',
-                borderColor: '#dc5d00f0',
-                hoverBackgroundColor: '#ec6d00',
-                hoverBorderColor: '#dc5d00',
-                borderWidth,
-                yAxisID: 'duration',
-                stack: 'duration',
-                barPercentage,
-                tooltipFormat: (x, i) => {
-                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
-                    if (predictions && i === metricData.length - 1) {
-                        const pdur = H.duration(predictions.duration[i].y + x,
-                            {maxPeriod: 3600, minPeriod: 3600, digits: 1});
-                        tips.push(`${this.LM('predicted')}: <b>~${pdur}</b>`);
-                    }
-                    return tips;
-                },
-                data: metricData.map((a, i) => ({
-                    x: a.date,
-                    y: a.duration,
-                })),
-            }, {
-                id: 'distance',
-                label: this.LM('analysis_distance'),
-                type: 'bar',
-                backgroundColor: '#244d',
-                borderColor: '#022f',
-                hoverBackgroundColor: '#133',
-                hoverBorderColor: '#022',
-                borderWidth,
-                yAxisID: 'distance',
-                stack: 'distance',
-                barPercentage,
-                tooltipFormat: (x, i) => {
-                    const tips = [L.distanceFormatter.formatShort(x)];
-                    if (predictions && i === metricData.length - 1) {
-                        const pdist = L.distanceFormatter.formatShort(predictions.distance[i].y + x, 0);
-                        tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
-                    }
-                    return tips;
-                },
-                data: metricData.map((a, i) => ({
-                    x: a.date,
-                    y: a.distance,
-                })),
-            }];
-            if (predictions) {
-                this.charts.activities.data.datasets.push({
-                    id: 'tss',
-                    type: 'bar',
-                    backgroundColor: '#1d86cd30',
-                    borderColor: '#0d76bd50',
-                    hoverBackgroundColor: '#0d76bd60',
-                    hoverBorderColor: '#0d76bd60',
-                    borderWidth,
-                    yAxisID: 'tss',
-                    stack: 'tss',
-                    barPercentage,
-                    data: predictions.tss,
-                }, {
-                    id: 'duration',
-                    type: 'bar',
-                    backgroundColor: '#fc7d0b30',
-                    borderColor: '#dc5d0050',
-                    hoverBackgroundColor: '#ec6d0060',
-                    hoverBorderColor: '#dc5d0060',
-                    borderWidth,
-                    yAxisID: 'duration',
-                    stack: 'duration',
-                    barPercentage,
-                    data: predictions.duration,
-                }, {
-                    id: 'distance',
-                    type: 'bar',
-                    backgroundColor: '#2443',
-                    borderColor: '#0225',
-                    hoverBackgroundColor: '#1336',
-                    hoverBorderColor: '#0226',
-                    borderWidth,
-                    yAxisID: 'distance',
-                    stack: 'distance',
-                    barPercentage,
-                    data: predictions.distance,
-                });
-            }
-            this.charts.activities.update();
-
-            let gain = 0;
-            const gains = daily.map(x => {
-                gain += x.altGain;
-                return {x: x.date, y: gain};
-            });
-            this.charts.elevation.data.datasets = [{
-                id: 'elevation',
-                label: this.LM('analysis_gain'),
-                type: 'line',
-                backgroundColor: '#8f8782e0',
-                fill: true,
-                borderColor: '#6f6762f0',
-                cubicInterpolationMode: 'monotone',
-                pointRadius: 0,
-                yAxisID: 'elevation',
-                borderWidth: lineWidth,
-                tooltipFormat: x => H.elevation(x, {suffix: true}),
-                data: gains,
-            }];
-            this.charts.elevation.update();
+            await this.trainingChartView.render();
+            await this.activityVolumeChartView.render();
+            await this.elevationChartView.render();
         }
 
         async onExpandClick(ev) {
@@ -2177,29 +2292,6 @@ sauce.ns('performance', async ns => {
 
         async onCompressClick(ev) {
             await this.toggleExpanded(false);
-        }
-
-        async onChartClick(ev) {
-            const chart = this.charts[ev.currentTarget.id];
-            const box = chart.chartArea;
-            if (ev.offsetX < box.left ||
-                ev.offsetX > box.right ||
-                ev.offsetY < box.top ||
-                ev.offsetY > box.bottom) {
-                return;
-            }
-            let elements;
-            if (chart.options.tooltips.intersect === false) {
-                elements = chart.getElementsAtXAxis(ev);
-            } else {
-                elements = chart.getElementsAtEvent(ev);
-            }
-            if (elements.length) {
-                const acts = chart.getActivitiesAtDatasetIndex(elements[0]._index);
-                if (acts.length) {
-                    this.pageView.trigger('select-activities', acts);
-                }
-            }
         }
 
         async onRangeChange(ev) {
@@ -2227,20 +2319,36 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onDataVisibilityChange(ev, data) {
-            const chartId = ev.currentTarget.id;
-            this.dataVisibility[`${chartId}-${data.id}`] = data.visible;
-            await sauce.storage.setPref('perfChartDataVisibility', this.dataVisibility);
-        }
-
-        async onUpdateActivities({range}) {
+        onUpdateActivities({range}) {
             const localeMetricMap = {
                 weeks: 'weekly',
                 months: 'monthly',
                 years: 'yearly',
             };
             this.$('.metric-display').text(this.LM(localeMetricMap[range.metric]));
-            await this.update();
+            const $start = this.$('header .range.start');
+            const $end = this.$('header .range.end');
+            const start = range.start;
+            const end = range.end;
+            const selectedRange = this.pageView.allRange ? 'all' : `${range.period},${range.metric}`;
+            let $option = this.$(`select[name="range"] option[value="${selectedRange}"]`);
+            if (!$option.length) {
+                // Just manually add an entry.  The user may be playing with the URL and that's fine.
+                $option = jQuery(`<option value="${range.period},${range.metric}"]>` +
+                    `${range.period} ${range.metric}</option>`);
+                this.$(`select[name="range"]`).append($option);
+            }
+            $option[0].selected = true;
+            $start.text(H.date(start));
+            const isStart = start <= this.pageView.oldest;
+            this.$('.btn.range.prev').toggleClass('disabled', isStart);
+            this.$('.btn.range.oldest').toggleClass('disabled', isStart);
+            const isEnd = end >= Date.now();
+            this.$('.btn.range.next').toggleClass('disabled', isEnd);
+            this.$('.btn.range.newest').toggleClass('disabled', isEnd);
+            $end.text(isEnd ?
+                new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
+                H.date(D.roundToLocaleDayDate(end - DAY)));
         }
     }
 
@@ -2248,6 +2356,7 @@ sauce.ns('performance', async ns => {
     class PageView extends PerfView {
         get events() {
             return {
+                ...super.events,
                 'change nav select[name=athlete]': 'onAthleteChange',
                 'click .onboarding-stack .btn.enable': 'onOnboardingEnableClick',
             };
