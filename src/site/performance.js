@@ -322,6 +322,7 @@ sauce.ns('performance', async ns => {
             ctl = sauce.perf.calcCTL([tss], ctl);
             slots.push({
                 date,
+                days: 1,
                 activities: daily,
                 tss,
                 duration,
@@ -641,24 +642,6 @@ sauce.ns('performance', async ns => {
             delete this.view;
         }
 
-        getActivitiesAtDatasetIndexes(...tuples) {
-            // Due to zooming the dataset can be a subset of our daily/metric data.
-            const acts = new Set();
-            for (const [dsIndex, index] of tuples) {
-                const bucket = this.options.useMetricData ?
-                    this.view.pageView.metricData :
-                    this.view.pageView.daily;
-                const date = this.chart.data.datasets[dsIndex].data[index].x;
-                const slot = bucket.find(x => x.date === date);
-                if (slot && slot.activities) {
-                    for (const x of slot.activities) {
-                        acts.add(x);
-                    }
-                }
-            }
-            return Array.from(acts);
-        }
-
         getElementsAtEventForMode(ev, mode, options) {
             if (ev.chart && ev.chart.chartArea) {
                 const box = ev.chart.chartArea;
@@ -672,23 +655,30 @@ sauce.ns('performance', async ns => {
             }
             return super.getElementsAtEventForMode(ev, mode, options);
         }
-    }
 
-
-    class ActiveDaysChart extends SauceChart {
-        getActivitiesAtDatasetIndexes(...tuples) {
-            debugger;
-            const acts = new Set();
+        getBucketsAtIndexes(...tuples) {
+            const datasets = this.data.datasets;
+            if (!datasets || !datasets.length) {
+                return [];
+            }
+            const buckets = new Set();
             for (const [dsIndex, index] of tuples) {
-                const bucket = this.options.useMetricData ?
-                    this.view.pageView.metricData :
-                    this.view.pageView.daily;
-                const date = this.chart.data.datasets[dsIndex].data[index].x;
-                const slot = bucket.find(x => x.date === date);
-                if (slot && slot.activities) {
-                    for (const x of slot.activities) {
-                        acts.add(x);
+                const ds = datasets[dsIndex];
+                if (ds && ds.data && ds.data[index]) {
+                    if (ds.data[index].b == null) {
+                        throw new Error("Missing bucket entry in dataset");
                     }
+                    buckets.add(ds.data[index].b);
+                }
+            }
+            return Array.from(buckets);
+        }
+
+        getActivitiesAtIndexes(...tuples) {
+            const acts = new Set();
+            for (const bucket of this.getBucketsAtIndexes(...tuples)) {
+                for (const x of bucket.activities || []) {
+                    acts.add(x);
                 }
             }
             return Array.from(acts);
@@ -719,9 +709,9 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.xAxes[0].gridLines.display', true);
             setDefault(config, 'options.scales.xAxes[0].gridLines.drawOnChartArea', false);
             setDefault(config, 'options.scales.xAxes[0].afterUpdate', scale =>
-                _this && _this.afterUpdate(scale));
+                _this && _this.onAfterUpdateScale(scale));
             setDefault(config, 'options.scales.xAxes[0].afterBuildTicks', (axis, ticks) =>
-                _this && _this.afterBuildTicks(axis, ticks));
+                _this && _this.onAfterBuildTicks(axis, ticks));
             setDefault(config, 'options.scales.xAxes[0].ticks.sampleSize', 50);
             setDefault(config, 'options.scales.xAxes[0].ticks.padding', 4);
             setDefault(config, 'options.scales.xAxes[0].ticks.minRotation', 30);
@@ -738,65 +728,57 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
-            let _nextTooltipAnimFrame;
-            let _nextTooltip;
-            setDefault(config, 'options.tooltips.custom', t => {
-                _nextTooltip = t;
-                if (_nextTooltipAnimFrame) {
-                    return;
-                }
-                _nextTooltipAnimFrame = requestAnimationFrame(() => {
-                    _nextTooltipAnimFrame = null;
-                    const tooltip = _nextTooltip;
-                    const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length &&
-                        tooltip.dataPoints[0].index;
-                    if (dataIndex != null) {
-                        _this.onTooltipUpdate(dataIndex);
-                    }
-                });
-            });
+            setDefault(config, 'options.tooltips.activitiesTooltipFormatter', (...args) =>
+                _this.activitiesTooltipFormatter(...args));
+            setDefault(config, 'options.tooltips.custom', sauce.debounced(requestAnimationFrame, tt =>
+                tt.dataPoints && tt.dataPoints.length &&
+                _this.updateTooltips(...tt.dataPoints.map(x => [x.datasetIndex, x.index]))));
             setDefault(config, 'options.plugins.zoom.enabled', true);
-            setDefault(config, 'options.plugins.zoom.callbacks.beforeZoom', (start, end) => {
-                const pv = this.view.pageView;
-                const bucket = this.options.useMetricData ? pv.metricData : pv.daily;
-                // Pad out the zoom to be inclusive of nearest metric unit.
-                let first = bucket.findIndex(x => x.date >= start);
-                let last = bucket.findIndex(x => x.date > end);
-                if (first === -1) {
-                    return;
-                }
-                first = first > 0 ? first - 1 : first;
-                last = last > 0 ? last : bucket.length - 1;
-                return [bucket[first].date, bucket[last].date];
-            });
+            setDefault(config, 'options.plugins.zoom.callbacks.beforeZoom', (...args) =>
+                _this.onBeforeZoom(...args));
             super(ctx, view, config);
             _this = this;
+        }
+
+        activitiesTooltipFormatter(acts) {
+            if (acts.length === 1) {
+                return acts[0].name;
+            } else if (acts.length > 1) {
+                return `<i>${acts.length} ${this.view.LM('activities')}</i>`;
+            } else {
+                return '-';
+            }
         }
 
         update(...args) {
             super.update(...args);
             const idx = this.options.tooltips.defaultIndex ? this.options.tooltips.defaultIndex(this) : -1;
-            this.onTooltipUpdate(idx);
+            if (this.data.datasets && this.data.datasets.length) {
+                const tuples = Array.from(sauce.data.range(this.data.datasets.length)).map(i => [i, idx]);
+                this.updateTooltips(...tuples);
+            }
         }
 
-        onTooltipUpdate(index) {
-            if (!this.data.datasets || !this.data.datasets.length) {
-                return;  // Chartjs resize cause spurious calls to update before init completes.
-            }
-            // XXX all fuckered up.  why do we need source data?
+        updateTooltips(...tuples) {
             //const srcData = this.view.getChartData()this.chart.sourceData : this.chart.data.datasets[0].data;
-            const srcData = this.chart.data.datasets[0].data;
-            index = index >= 0 ? index : srcData.length + index;
-            if (index < 0) {
-                return;
-            }
             const labels = [];
             const elements = [];
-            for (const ds of this.chart.data.datasets) {
-                if (!ds.label || !ds.data.length || !ds.data[index]) {
+            let oldestDate = Infinity;
+            let mostDays = -Infinity;
+            for (let [dsIdx, index] of tuples) {
+                const ds = this.data.datasets[dsIdx];
+                if (!ds || !ds.data || !ds.label) {
                     continue;
                 }
-                const raw = ds.data[index].y;
+                console.warn(ds.label);
+                index = index >= 0 ? index : ds.data.length + index;
+                if (index < 0 || !ds.data[index]) {
+                    continue;
+                }
+                const data = ds.data[index];
+                oldestDate = data.b.date < oldestDate ? data.b.date : oldestDate;
+                mostDays = data.b.days > mostDays ? data.b.days : mostDays;
+                const raw = data.y;
                 const value = ds.tooltipFormat ? ds.tooltipFormat(raw, index, ds) : raw;
                 const values = Array.isArray(value) ? value : [value];
                 if (!ds.hidden) {
@@ -813,30 +795,31 @@ sauce.ns('performance', async ns => {
                     </div>
                 `);
             }
-            let actsDesc;
-            if (this.chart.options.activityTooltip) {
-                actsDesc = this.chart.options.activityTooltip(index);
+            let desc;
+            if (this.options.bucketsTooltipFormatter) {
+                desc = this.options.bucketsTooltipFormatter(this.getBucketsAtIndexes(...tuples));
+            } else if (this.options.activitiesTooltipFormatter) {
+                desc = this.options.activitiesTooltipFormatter(this.getActivitiesAtIndexes(...tuples));
             } else {
-                const acts = this.getActivitiesAtDatasetIndexes([0, index]);
-                if (acts.length === 1) {
-                    actsDesc = acts[0].name;
-                } else if (acts.length > 1) {
-                    actsDesc = `<i>${acts.length} ${this.view.LM('activities')}</i>`;
-                } else {
-                    actsDesc = '-';
-                }
+                desc = '';
             }
-            const d = new Date(this.chart.data.datasets[0].data[index].x);
-            const title = H.date(d, {style: 'weekdayYear'});
+            let title;
+            if (mostDays === 1) {
+                title = H.date(oldestDate, {style: 'weekdayYear'});
+            } else {
+                const from = H.date(oldestDate, {style: 'weekdayYear'});
+                const to = H.date(D.adjacentDay(oldestDate, mostDays - 1), {style: 'weekdayYear'});
+                title = `${from} -> ${to}`;
+            }
             const caretX = sauce.data.avg(elements.map(x => x.getCenterPoint().x));
             const $tooltipEl = jQuery(this.canvas).closest('.sauce-panel').find('.chart-tooltip');
             $tooltipEl[0].classList.toggle('inactive', caretX == null);
             $tooltipEl[0].style.setProperty('--caret-left', `${caretX || 0}px`);
             $tooltipEl.html(`
-                <div class="tt-labels axes">${labels.join('')}</div>
-                <div class="tt-time axes">
-                    <div class="tt-date">${title}</div>
-                    <div class="tt-acts">${actsDesc}</div>
+                <div class="tt-labels axis">${labels.join('')}</div>
+                <div class="tt-horiz axis">
+                    <div class="tt-title">${title}</div>
+                    <div class="tt-desc">${desc}</div>
                 </div>
             `);
         }
@@ -866,7 +849,7 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        afterBuildTicks(scale, ticks) {
+        onAfterBuildTicks(scale, ticks) {
             // This is used for doing fit calculations.  We don't actually use the label
             // value as it will get filtered down after layout determines which ticks will
             // fit and what step size to use.  However it's important to use the same basic
@@ -874,14 +857,14 @@ sauce.ns('performance', async ns => {
             if (!ticks) {
                 return;
             }
-            this.updateTicksConfig(ticks, scale);
+            this._updateTicksConfig(ticks, scale);
             for (const x of ticks) {
                 x.major = true;  // Use bold font for all sizing calcs, then correct with afterUpdate.
             }
             return ticks;
         }
 
-        updateTicksConfig(ticks, scale) {
+        _updateTicksConfig(ticks, scale) {
             let lastMonth;
             let lastYear;
             const spans = (ticks[ticks.length - 1].value - ticks[0].value) / DAY;
@@ -919,13 +902,28 @@ sauce.ns('performance', async ns => {
             return ticks;
         }
 
-        afterUpdate(scale) {
+        onAfterUpdateScale(scale) {
             // This runs after all the scale/ticks work is done.  We need to finally
             // patch up the final set of ticks with our desired label and major/minor
             // state.  Major == bold.
             if (scale._ticksToDraw.length) {
-                this.updateTicksConfig(scale._ticksToDraw, scale);
+                this._updateTicksConfig(scale._ticksToDraw, scale);
             }
+        }
+
+        onBeforeZoom(start, end) {
+            debugger; // XXX use new .b value in dataset
+            const pv = this.view.pageView;
+            const bucket = this.options.useMetricData ? pv.metricData : pv.daily;
+            // Pad out the zoom to be inclusive of nearest metric unit.
+            let first = bucket.findIndex(x => x.date >= start);
+            let last = bucket.findIndex(x => x.date > end);
+            if (first === -1) {
+                return;
+            }
+            first = first > 0 ? first - 1 : first;
+            last = last > 0 ? last : bucket.length - 1;
+            return [bucket[first].date, bucket[last].date];
         }
     }
 
@@ -938,7 +936,7 @@ sauce.ns('performance', async ns => {
             };
         }
 
-        async init({pageView, id, ChartClass}) {
+        async init({pageView, id, ChartClass=SauceChart}) {
             if (!pageView || !id || !ChartClass) {
                 throw new TypeError('missing args');
             }
@@ -975,18 +973,10 @@ sauce.ns('performance', async ns => {
                 ev.offsetY > box.bottom) {
                 return;
             }
-            let elements;
-            if (this.chart.options.tooltips.intersect === false) {
-                if (this.chart.options.tooltips.eventingAxis === 'y') {
-                    elements = this.chart.getElementsAtEventForMode(ev, 'x-axis', {intersect: false});
-                } else {
-                    elements = this.chart.getElementsAtXAxis(ev);
-                }
-            } else {
-                elements = this.chart.getElementsAtEvent(ev);
-            }
+            const {intersect, axis, mode = 'nearest'} = this.chart.options.tooltips;
+            const elements = this.chart.getElementsAtEventForMode(ev, mode, {intersect, axis});
             if (elements.length) {
-                const acts = this.chart.getActivitiesAtDatasetIndexes(...elements.map(x => [x._datasetIndex, x._index]));
+                const acts = this.chart.getActivitiesAtIndexes(...elements.map(x => [x._datasetIndex, x._index]));
                 if (acts.length) {
                     this.pageView.trigger('select-activities', acts);
                 }
@@ -1004,7 +994,7 @@ sauce.ns('performance', async ns => {
 
         async init(options) {
             const ttData = (item, obj) => obj.datasets[item.datasetIndex].data[item.index];
-            await super.init({...options, id: 'active-days', ChartClass: ActiveDaysChart});
+            await super.init({...options, id: 'active-days'});
             this.setChartConfig({
                 type: 'bar',
                 options: {
@@ -1079,12 +1069,12 @@ sauce.ns('performance', async ns => {
         onUpdateActivities({daily, range}) {
             const weekDatasets = Array.from(sauce.data.range(7)).map(() => ({
                 stack: 'weeks',
-                borderColor: '#0003',
-                backgroundColor: ctx => ctx.dataset.data[ctx.dataIndex].bg,
                 borderWidth: 1,
                 borderSkipped: false,
                 barPercentage: 1,
-                categoryPercentage: 1,
+                categoryPercentage: 0.2,
+                borderColor: '#0003',
+                backgroundColor: ctx => ctx.dataset.data[ctx.dataIndex].bg,
                 data: []
             }));
             const maxTSS = sauce.data.max(daily.map(x => x.tss));
@@ -1093,12 +1083,14 @@ sauce.ns('performance', async ns => {
             const lastSunday = range.getDays() + (6 - D.getISODay(D.dayBefore(range.end)));
             let offt = 0;
             for (let i = firstMonday; i < lastSunday; i++, offt++) {
-                const day = daily[i] || {};
-                if (!day.date) {
-                    day.date = D.adjacentDay(range.start, i);
-                    day.tss = -10;
-                }
+                const day = daily[i] || {
+                    days: 1,
+                    activities: [],
+                    date: D.adjacentDay(range.start, i),
+                    tss: -10,
+                };
                 weekDatasets[offt % 7].data.push({
+                    b: day,
                     x: D.adjacentDay(day.date, -(offt % 7)),
                     y: 10,
                     bg: `rgba(10, 44, 122, ${(10 + day.tss) / maxTSS})`,
@@ -1159,7 +1151,8 @@ sauce.ns('performance', async ns => {
             this.setChartConfig({
                 plugins: [chartOverUnderFillPlugin],
                 options: {
-                    activityTooltip: this.activityTooltip.bind(this),
+                    bucketsTooltipFormatter: this.bucketsTooltipFormatter.bind(this),
+                    borderWidth: 20,
                     plugins: {
                         datalabels: {
                             display: ctx =>
@@ -1210,8 +1203,8 @@ sauce.ns('performance', async ns => {
             });
         }
 
-        activityTooltip(index) {
-            const day = this._srcData[index];
+        bucketsTooltipFormatter(buckets) {
+            const day = buckets[0];
             let desc;
             if (day.future) {
                 desc = `<i title="${this.LM('predicted_tss_tooltip')}">` +
@@ -1246,8 +1239,8 @@ sauce.ns('performance', async ns => {
                 }
                 future = activitiesByDay(predictions, fStart, fEnd, last.atl, last.ctl);
             }
-            this._srcData = daily.concat(future.map(x => (x.future = true, x)));
-            const ifFuture = (yes, no) => ctx => this._srcData[ctx.p1DataIndex].future ? yes : no;
+            const buckets = daily.concat(future.map(x => (x.future = true, x)));
+            const ifFuture = (yes, no) => ctx => buckets[ctx.p1DataIndex].future ? yes : no;
             this.chart.data.datasets = [{
                 id: 'ctl',
                 label: `CTL (${this.LM('fitness')})`,
@@ -1257,16 +1250,17 @@ sauce.ns('performance', async ns => {
                 borderColor: '#2c69b0f0',
                 pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 3 : 0,
                 datalabels: {
-                    align: 'left'
+                    align: 'left' // XXX suspect, scale setting or unused?
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: ifFuture('4c89d0d0'),
                     borderDash: ifFuture([3, 3], []),
                 },
-                data: this._srcData.map((a, i) => ({
-                    x: a.date,
-                    y: a.ctl,
+                data: buckets.map((b, i) => ({
+                    b,
+                    x: b.date,
+                    y: b.ctl,
                     showDataLabel: i === maxCTLIndex,
                 })),
             }, {
@@ -1282,10 +1276,10 @@ sauce.ns('performance', async ns => {
                     borderColor: ifFuture('#ff4740d0'),
                     borderDash: ifFuture([3, 3]),
                 },
-                data: this._srcData.map(a => ({
-                    x: a.date,
-                    y: a.atl,
-                    label: `${Math.round(a.tss)} ` + a.activities.map(x => x.name).join()
+                data: buckets.map(b => ({
+                    b,
+                    x: b.date,
+                    y: b.atl,
                 }))
             }, {
                 id: 'tsb',
@@ -1304,7 +1298,7 @@ sauce.ns('performance', async ns => {
                 underBackgroundMin: -50,
                 pointRadius: ctx => ctx.dataIndex === minTSBIndex ? 3 : 0,
                 datalabels: {
-                    align: 'right'
+                    align: 'right' // XXX suspect used or can be done in scale?
                 },
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
@@ -1315,9 +1309,10 @@ sauce.ns('performance', async ns => {
                     underBackgroundColorMin: ifFuture('#f922'),
                     underBackgroundColorMax: ifFuture('#d22b'),
                 },
-                data: this._srcData.map((a, i) => ({
-                    x: a.date,
-                    y: a.ctl - a.atl,
+                data: buckets.map((b, i) => ({
+                    b,
+                    x: b.date,
+                    y: b.ctl - b.atl,
                     showDataLabel: i === minTSBIndex,
                 }))
             }];
@@ -1335,8 +1330,10 @@ sauce.ns('performance', async ns => {
             await super.init({...options, id: 'activity-volume'});
             const distStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
             this.setChartConfig({
+                type: 'bar',
                 options: {
-                    useMetricData: true,
+                    borderWidth: 1,
+                    barPercentage: 0.92, // XXX verify works here
                     scales: {
                         xAxes: [{
                             stacked: true,
@@ -1386,34 +1383,32 @@ sauce.ns('performance', async ns => {
                 const avgDistance = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.distance));
                 predictions = {
                     days,
-                    tss: metricData.map((data, i) => ({
-                        x: data.date,
+                    tss: metricData.map((b, i) => ({
+                        b,
+                        x: b.date,
                         y: i === metricData.length - 1 ? avgTSS * remaining : null,
                     })),
-                    duration: metricData.map((data, i) => ({
-                        x: data.date,
+                    duration: metricData.map((b, i) => ({
+                        b,
+                        x: b.date,
                         y: i === metricData.length - 1 ? avgDuration * remaining : null,
                     })),
-                    distance: metricData.map((data, i) => ({
-                        x: data.date,
+                    distance: metricData.map((b, i) => ({
+                        b,
+                        x: b.date,
                         y: i === metricData.length - 1 ? avgDistance * remaining : null,
                     })),
                 };
             }
-            const barPercentage = 0.92;
-            const borderWidth = 1;
             this.chart.data.datasets = [{
                 id: 'tss',
                 label: 'TSS',
-                type: 'bar',
                 backgroundColor: '#1d86cdd0',
                 borderColor: '#0d76bdf0',
                 hoverBackgroundColor: '#0d76bd',
                 hoverBorderColor: '#0d76bd',
                 yAxisID: 'tss',
                 stack: 'tss',
-                borderWidth,
-                barPercentage,
                 tooltipFormat: (x, i) => {
                     const tss = Math.round(x).toLocaleString();
                     const tssDay = Math.round(x / metricData[i].days).toLocaleString();
@@ -1426,22 +1421,16 @@ sauce.ns('performance', async ns => {
                     }
                     return tips;
                 },
-                data: metricData.map((a, i) => ({
-                    x: a.date,
-                    y: a.tssSum,
-                })),
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.tssSum})),
             }, {
                 id: 'duration',
                 label: this.LM('analysis_time'),
-                type: 'bar',
                 backgroundColor: '#fc7d0bd0',
                 borderColor: '#dc5d00f0',
                 hoverBackgroundColor: '#ec6d00',
                 hoverBorderColor: '#dc5d00',
-                borderWidth,
                 yAxisID: 'duration',
                 stack: 'duration',
-                barPercentage,
                 tooltipFormat: (x, i) => {
                     const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
                     if (predictions && i === metricData.length - 1) {
@@ -1451,22 +1440,16 @@ sauce.ns('performance', async ns => {
                     }
                     return tips;
                 },
-                data: metricData.map((a, i) => ({
-                    x: a.date,
-                    y: a.duration,
-                })),
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.duration})),
             }, {
                 id: 'distance',
                 label: this.LM('analysis_distance'),
-                type: 'bar',
                 backgroundColor: '#244d',
                 borderColor: '#022f',
                 hoverBackgroundColor: '#133',
                 hoverBorderColor: '#022',
-                borderWidth,
                 yAxisID: 'distance',
                 stack: 'distance',
-                barPercentage,
                 tooltipFormat: (x, i) => {
                     const tips = [L.distanceFormatter.formatShort(x)];
                     if (predictions && i === metricData.length - 1) {
@@ -1475,47 +1458,35 @@ sauce.ns('performance', async ns => {
                     }
                     return tips;
                 },
-                data: metricData.map((a, i) => ({
-                    x: a.date,
-                    y: a.distance,
-                })),
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.distance})),
             }];
             if (predictions) {
                 this.chart.data.datasets.push({
                     id: 'tss',
-                    type: 'bar',
                     backgroundColor: '#1d86cd30',
                     borderColor: '#0d76bd50',
                     hoverBackgroundColor: '#0d76bd60',
                     hoverBorderColor: '#0d76bd60',
-                    borderWidth,
                     yAxisID: 'tss',
                     stack: 'tss',
-                    barPercentage,
                     data: predictions.tss,
                 }, {
                     id: 'duration',
-                    type: 'bar',
                     backgroundColor: '#fc7d0b30',
                     borderColor: '#dc5d0050',
                     hoverBackgroundColor: '#ec6d0060',
                     hoverBorderColor: '#dc5d0060',
-                    borderWidth,
                     yAxisID: 'duration',
                     stack: 'duration',
-                    barPercentage,
                     data: predictions.duration,
                 }, {
                     id: 'distance',
-                    type: 'bar',
                     backgroundColor: '#2443',
                     borderColor: '#0225',
                     hoverBackgroundColor: '#1336',
                     hoverBorderColor: '#0226',
-                    borderWidth,
                     yAxisID: 'distance',
                     stack: 'distance',
-                    barPercentage,
                     data: predictions.distance,
                 });
             }
@@ -1556,10 +1527,6 @@ sauce.ns('performance', async ns => {
 
         onUpdateActivities({range, daily}) {
             let gain = 0;
-            const gains = daily.map(x => {
-                gain += x.altGain;
-                return {x: x.date, y: gain};
-            });
             const days = range.getDays();
             const lineWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
             this.chart.data.datasets = [{
@@ -1574,7 +1541,10 @@ sauce.ns('performance', async ns => {
                 yAxisID: 'elevation',
                 borderWidth: lineWidth,
                 tooltipFormat: x => H.elevation(x, {suffix: true}),
-                data: gains,
+                data: daily.map(b => {
+                    gain += b.altGain;
+                    return {b, x: b.date, y: gain};
+                }),
             }];
             this.chart.update();
         }
