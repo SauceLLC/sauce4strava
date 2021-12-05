@@ -728,7 +728,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
             setDefault(config, 'options.tooltips.mode', 'index');
             setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
-            setDefault(config, 'options.tooltips.activitiesTooltipFormatter', (...args) =>
+            setDefault(config, 'options.tooltips.activitiesFormatter', (...args) =>
                 _this.activitiesTooltipFormatter(...args));
             setDefault(config, 'options.tooltips.custom', sauce.debounced(requestAnimationFrame, tt =>
                 tt.dataPoints && tt.dataPoints.length &&
@@ -759,56 +759,67 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        updateTooltips(...tuples) {
-            //const srcData = this.view.getChartData()this.chart.sourceData : this.chart.data.datasets[0].data;
+        updateTooltips(...highlightedTuples) {
             const labels = [];
             const elements = [];
-            let oldestDate = Infinity;
+            let startDate = Infinity;
             let mostDays = -Infinity;
-            for (let [dsIdx, index] of tuples) {
+            const adjHiTuples = highlightedTuples.map(([dsIdx, i]) => {
                 const ds = this.data.datasets[dsIdx];
+                i = i >= 0 ? i : ds.data && ds.data.length && ds.data.length + i;
+                return [ds, i];
+            }).filter(([ds, i]) => ds && ds.data && ds.label && typeof i === 'number' && i >= 0);
+            // Interrogate valid highlighted datasets first...
+            for (let [ds, idx] of adjHiTuples) {
+                const data = ds.data[idx];
+                startDate = data.b.date < startDate ? data.b.date : startDate;
+                mostDays = data.b.days > mostDays ? data.b.days : mostDays;
+            }
+            const endDate = D.adjacentDay(startDate, mostDays);
+            // Gather stats from all datasets (vis and hidden) in the range detected from visible...
+            for (const ds of this.data.datasets) {
                 if (!ds || !ds.data || !ds.label) {
                     continue;
                 }
-                console.warn(ds.label);
-                index = index >= 0 ? index : ds.data.length + index;
-                if (index < 0 || !ds.data[index]) {
-                    continue;
-                }
-                const data = ds.data[index];
-                oldestDate = data.b.date < oldestDate ? data.b.date : oldestDate;
-                mostDays = data.b.days > mostDays ? data.b.days : mostDays;
-                const raw = data.y;
-                const value = ds.tooltipFormat ? ds.tooltipFormat(raw, index, ds) : raw;
-                const values = Array.isArray(value) ? value : [value];
-                if (!ds.hidden) {
-                    for (const x of Object.values(ds._meta)) {
-                        elements.push(x.data[index]);
+                const inRangeIndexes = ds.data
+                    .map((x, i) => x.b.date >= startDate && x.b.date < endDate ? i : -1)
+                    .filter(x => x !== -1);
+                for (const i of inRangeIndexes) {
+                    const data = ds.data[i];
+                    const raw = data.y;
+                    const value = ds.tooltipFormat ? ds.tooltipFormat(raw, i, ds) : raw;
+                    const values = Array.isArray(value) ? value : [value];
+                    if (!ds.hidden) {
+                        for (const x of Object.values(ds._meta)) {
+                            elements.push(x.data[i]);
+                        }
                     }
+                    labels.push(`
+                        <div class="data-label ${ds.hidden ? "ds-hidden" : ''}" data-ds="${ds.id}"
+                             style="--border-color: ${ds.borderColor};
+                                    --bg-color: ${ds.backgroundColor};">
+                            <key>${ds.label}${ds.hidden ? '' : ':'}</key>
+                            ${ds.hidden ? '' : values.map(x => `<value>${x}</value>`).join('')}
+                        </div>
+                    `);
                 }
-                labels.push(`
-                    <div class="data-label ${ds.hidden ? "ds-hidden" : ''}" data-ds="${ds.id}"
-                         style="--border-color: ${ds.borderColor};
-                                --bg-color: ${ds.backgroundColor};">
-                        <key>${ds.label}${ds.hidden ? '' : ':'}</key>
-                        ${ds.hidden ? '' : values.map(x => `<value>${x}</value>`).join('')}
-                    </div>
-                `);
             }
+
             let desc;
-            if (this.options.bucketsTooltipFormatter) {
-                desc = this.options.bucketsTooltipFormatter(this.getBucketsAtIndexes(...tuples));
-            } else if (this.options.activitiesTooltipFormatter) {
-                desc = this.options.activitiesTooltipFormatter(this.getActivitiesAtIndexes(...tuples));
+            if (this.options.tooltips.bucketsFormatter) {
+                desc = this.options.tooltips.bucketsFormatter(this.getBucketsAtIndexes(...highlightedTuples));
+            } else if (this.options.tooltips.activitiesFormatter) {
+                desc = this.options.tooltips.activitiesFormatter(this.getActivitiesAtIndexes(...highlightedTuples));
             } else {
                 desc = '';
             }
             let title;
             if (mostDays === 1) {
-                title = H.date(oldestDate, {style: 'weekdayYear'});
+                title = H.date(startDate, {style: 'weekdayYear'});
             } else {
-                const from = H.date(oldestDate, {style: 'weekdayYear'});
-                const to = H.date(D.adjacentDay(oldestDate, mostDays - 1), {style: 'weekdayYear'});
+                const sameYear = startDate.getFullYear() === endDate.getFullYear();
+                const from = H.date(startDate, {style: sameYear ? 'weekday' : 'weekdayYear'});
+                const to = H.date(D.adjacentDay(endDate, mostDays - 1), {style: 'weekdayYear'});
                 title = `${from} -> ${to}`;
             }
             const caretX = sauce.data.avg(elements.map(x => x.getCenterPoint().x));
@@ -912,18 +923,16 @@ sauce.ns('performance', async ns => {
         }
 
         onBeforeZoom(start, end) {
-            debugger; // XXX use new .b value in dataset
-            const pv = this.view.pageView;
-            const bucket = this.options.useMetricData ? pv.metricData : pv.daily;
             // Pad out the zoom to be inclusive of nearest metric unit.
-            let first = bucket.findIndex(x => x.date >= start);
-            let last = bucket.findIndex(x => x.date > end);
+            const data = this.data.datasets[0].data;
+            let first = data.findIndex(x => x.b.date >= start);
+            let last = data.findIndex(x => x.b.date > end);
             if (first === -1) {
                 return;
             }
             first = first > 0 ? first - 1 : first;
-            last = last > 0 ? last : bucket.length - 1;
-            return [bucket[first].date, bucket[last].date];
+            last = last > 0 ? last : data.length - 1;
+            return [data[first].b.date, data[last].b.date];
         }
     }
 
@@ -1072,7 +1081,7 @@ sauce.ns('performance', async ns => {
                 borderWidth: 1,
                 borderSkipped: false,
                 barPercentage: 1,
-                categoryPercentage: 0.2,
+                categoryPercentage: 0.92,
                 borderColor: '#0003',
                 backgroundColor: ctx => ctx.dataset.data[ctx.dataIndex].bg,
                 data: []
@@ -1151,8 +1160,6 @@ sauce.ns('performance', async ns => {
             this.setChartConfig({
                 plugins: [chartOverUnderFillPlugin],
                 options: {
-                    bucketsTooltipFormatter: this.bucketsTooltipFormatter.bind(this),
-                    borderWidth: 20,
                     plugins: {
                         datalabels: {
                             display: ctx =>
@@ -1184,6 +1191,7 @@ sauce.ns('performance', async ns => {
                     },
                     tooltips: {
                         intersect: false,
+                        bucketsFormatter: this.bucketsTooltipFormatter.bind(this),
                         defaultIndex: chart => {
                             if (chart.data.datasets && chart.data.datasets.length) {
                                 const data = chart.data.datasets[0].data;
@@ -1332,8 +1340,6 @@ sauce.ns('performance', async ns => {
             this.setChartConfig({
                 type: 'bar',
                 options: {
-                    borderWidth: 1,
-                    barPercentage: 0.92, // XXX verify works here
                     scales: {
                         xAxes: [{
                             stacked: true,
@@ -1400,6 +1406,9 @@ sauce.ns('performance', async ns => {
                     })),
                 };
             }
+            const commonOptions = {
+                borderWidth: 1
+            };
             this.chart.data.datasets = [{
                 id: 'tss',
                 label: 'TSS',
@@ -1489,6 +1498,9 @@ sauce.ns('performance', async ns => {
                     stack: 'distance',
                     data: predictions.distance,
                 });
+            }
+            for (const [i, x] of this.chart.data.datasets.entries()) {
+                this.chart.data.datasets[i] = Object.assign({}, commonOptions, x);
             }
             this.chart.update();
         }
