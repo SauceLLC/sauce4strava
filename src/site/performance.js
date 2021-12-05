@@ -459,16 +459,22 @@ sauce.ns('performance', async ns => {
             if (this.legendClicking) {
                 return;
             }
+            const displayStates = {};
             for (const ds of chart.data.datasets) {
                 if (!ds.id) {
                     console.warn("Missing ID on dataset: visiblity state unmanaged");
                     continue;
                 }
                 ds.hidden = this.view.dataVisibility[ds.id] === false;
-                if (ds.yAxisID) {
+                displayStates[ds.yAxisID || 0] |= !ds.hidden;
+            }
+            for (const [id, display] of Object.entries(displayStates)) {
+                if (typeof id === 'number') {
+                    chart.options.scales.yAxes[id].display = display;
+                } else {
                     for (const y of chart.options.scales.yAxes) {
-                        if (y.id === ds.yAxisID) {
-                            y.display = !ds.hidden;
+                        if (y.id === id) {
+                            y.display = !!display;
                             break;
                         }
                     }
@@ -694,6 +700,7 @@ sauce.ns('performance', async ns => {
             setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
             setDefault(config, 'plugins[]', betterTooltipPlugin);
             setDefault(config, 'options.maintainAspectRatio', false);
+            setDefault(config, 'options.elements.point.pointStyle', false);
             setDefault(config, 'options.layout.padding.top', chartTopPad);
             setDefault(config, 'options.tooltipLine', true);
             setDefault(config, 'options.tooltipLineColor', '#07c');
@@ -1031,12 +1038,24 @@ sauce.ns('performance', async ns => {
                     legend: {
                         display: false,
                     },
+                    elements: {
+                        rectangle: {
+                            borderWidth: 1,
+                            borderColor: '#0003',
+                            backgroundColor: ctx => ctx.dataset.data[ctx.dataIndex].bg,
+                            borderSkipped: false,
+                        }
+                    },
                     scales: {
                         yAxes: [{
                             id: 'days',
                             type: 'linear',
                             position: 'right',
                             stacked: true,
+                            barPercentage: 1,
+                            barThickness: 'flex',
+                            barStackPadding: 2,
+                            categoryPercentage: 0.92,
                             ticks: {
                                 display: false,
                                 min: 0,
@@ -1051,7 +1070,6 @@ sauce.ns('performance', async ns => {
                             type: 'time',
                             distribution: 'series',
                             position: 'bottom',
-                            stacked: true,
                             offset: true,
                             time: {
                                 unit: 'week',
@@ -1077,13 +1095,7 @@ sauce.ns('performance', async ns => {
 
         onUpdateActivities({daily, range}) {
             const weekDatasets = Array.from(sauce.data.range(7)).map(() => ({
-                stack: 'weeks',
-                borderWidth: 1,
-                borderSkipped: false,
-                barPercentage: 1,
-                categoryPercentage: 0.92,
-                borderColor: '#0003',
-                backgroundColor: ctx => ctx.dataset.data[ctx.dataIndex].bg,
+                stack: 'days',
                 data: []
             }));
             const maxTSS = sauce.data.max(daily.map(x => x.tss));
@@ -1256,10 +1268,8 @@ sauce.ns('performance', async ns => {
                 borderWidth: lineWidth,
                 backgroundColor: '#4c89d0e0',
                 borderColor: '#2c69b0f0',
-                pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 3 : 0,
-                datalabels: {
-                    align: 'left' // XXX suspect, scale setting or unused?
-                },
+                pointStyle: ctx => ctx.dataIndex === maxCTLIndex ? 'circle' : false,
+                pointRadius: ctx => ctx.dataIndex === maxCTLIndex ? 2 : 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: ifFuture('4c89d0d0'),
@@ -1278,7 +1288,6 @@ sauce.ns('performance', async ns => {
                 borderWidth: lineWidth,
                 backgroundColor: '#ff3730e0',
                 borderColor: '#f02720f0',
-                pointRadius: 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: ifFuture('#ff4740d0'),
@@ -1304,10 +1313,8 @@ sauce.ns('performance', async ns => {
                 underBackgroundColorMax: '#bc0000',
                 overBackgroundMax: 50,
                 underBackgroundMin: -50,
-                pointRadius: ctx => ctx.dataIndex === minTSBIndex ? 3 : 0,
-                datalabels: {
-                    align: 'right' // XXX suspect used or can be done in scale?
-                },
+                pointStyle: ctx => ctx.dataIndex === minTSBIndex ? 'circle' : false,
+                pointRadius: ctx => ctx.dataIndex === minTSBIndex ? 2 : 0,
                 tooltipFormat: x => Math.round(x).toLocaleString(),
                 segment: {
                     borderColor: ifFuture('#000a'),
@@ -1348,12 +1355,10 @@ sauce.ns('performance', async ns => {
                             id: 'tss',
                             scaleLabel: {labelString: 'TSS'},
                             ticks: {min: 0, maxTicksLimit: 6},
-                            stacked: true,
                         }, {
                             id: 'duration',
                             position: 'right',
                             gridLines: {display: false},
-                            stacked: true,
                             ticks: {
                                 min: 0,
                                 suggestedMax: 5 * 3600,
@@ -1365,7 +1370,6 @@ sauce.ns('performance', async ns => {
                             id: 'distance',
                             position: 'right',
                             gridLines: {display: false},
-                            stacked: true,
                             ticks: {
                                 min: 0,
                                 stepSize: distStepSize,
@@ -1518,6 +1522,14 @@ sauce.ns('performance', async ns => {
             await super.init({...options, id: 'elevation'});
             this.setChartConfig({
                 options: {
+                    elements: {
+                        line: {
+                            fill: true,
+                            backgroundColor: '#8f8782e0',
+                            borderColor: '#6f6762f0',
+                            cubicInterpolationMode: 'monotone',
+                        }
+                    },
                     scales: {
                         yAxes: [{
                             id: 'elevation',
@@ -1544,14 +1556,8 @@ sauce.ns('performance', async ns => {
             this.chart.data.datasets = [{
                 id: 'elevation',
                 label: this.LM('analysis_gain'),
-                type: 'line',
-                backgroundColor: '#8f8782e0',
-                fill: true,
-                borderColor: '#6f6762f0',
-                cubicInterpolationMode: 'monotone',
-                pointRadius: 0,
-                yAxisID: 'elevation',
                 borderWidth: lineWidth,
+                yAxisID: 'elevation',
                 tooltipFormat: x => H.elevation(x, {suffix: true}),
                 data: daily.map(b => {
                     gain += b.altGain;
