@@ -4113,6 +4113,9 @@
 			var t = this._view;
 			var r = this._chart.ctx;
 			var a = t.pointStyle;
+			if (false === a) {
+				return;
+			}
 			var n = t.rotation;
 			var i = t.radius;
 			var o = t.x;
@@ -4526,8 +4529,9 @@
 					}
 				}
 			}
-			x = i.getPixelForValue(h);
-			y = i.getPixelForValue(h + v);
+			const k = (f && i.options.barStackPadding || 0) / 2;
+			x = i.getPixelForValue(h) - k;
+			y = i.getPixelForValue(h + v) + k;
 			_ = y - x;
 			if (void 0 !== c && Math.abs(_) < c) {
 				_ = c;

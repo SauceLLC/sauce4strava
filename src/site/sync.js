@@ -175,7 +175,7 @@ sauce.ns('sync', ns => {
                             const bundle = sauce.encodeBundle(ev.data);
                             bigBundle = bigBundle ? sauce.concatBundles(bigBundle, bundle) : bundle;
                             btn.textContent = `Creating file ${page}: ${H.number(bigBundle.byteLength / MB)}MB`;
-                            if (bigBundle.byteLength > Math.min(mem * 0.25, 2) * GB) {
+                            if (bigBundle.byteLength > Math.min(mem * 0.25, 1) * GB) {
                                 dl();
                             }
                         });
