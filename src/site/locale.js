@@ -349,6 +349,15 @@ sauce.ns('locale', ns => {
     }
 
 
+    const _utcSundayRef = new Date(1638700000000);
+    function humanDayOfWeek(sunOfft, options={}) {
+        const weekday = options.long ? 'long' : 'short';
+        const d = new Date(_utcSundayRef);
+        d.setDate(d.getDate() + sunOfft);
+        return d.toLocaleString(undefined, {timezone: 'UTC', weekday});
+    }
+
+
     function humanDistance(meters, precision=1, options={}) {
         assertInit();
         if (options.html) {
@@ -484,6 +493,7 @@ sauce.ns('locale', ns => {
             elevation: humanElevation,
             number: humanNumber,
             pace: humanPace,
+            dayOfWeek: humanDayOfWeek,
             distance: humanDistance,
             raceDistance: humanRaceDistance,
             timer: humanTimer,
@@ -499,6 +509,7 @@ sauce.ns('locale', ns => {
             humanElevation,
             humanNumber,
             humanPace,
+            humanDayOfWeek,
             humanDistance,
             humanRaceDistance,
             humanTimer,

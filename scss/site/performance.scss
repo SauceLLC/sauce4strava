@@ -864,11 +864,15 @@ table.sauce-perf {
         flex-direction: column;
 
         &.expanded {
+            --active-days-tuned-height: 14vw; // XXX use offset based var instead
+
             .window-controls .btn.expand {
                 display: none;
             }
         }
         &:not(.expanded) {
+            --active-days-tuned-height: 9vw; // XXX use offset based var instead
+
             .window-controls .btn.compress {
                 display: none;
             }
@@ -1103,8 +1107,8 @@ table.sauce-perf {
             }
 
             .active-days-chart-view .sauce-panel-content.chart {
-                min-height: initial;
-                height: 11em;
+                min-height: 8em;
+                height: calc(var(--active-days-tuned-height) + 1em);
             }
 
             .sauce-panel-content {
