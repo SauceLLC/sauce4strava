@@ -1014,6 +1014,7 @@ sauce.ns('performance', async ns => {
             this.setChartConfig({
                 type: 'bar',
                 options: {
+                    maintainAspectRatio: false,
                     tooltips: {
                         intersect: false,
                         eventingAxis: 'y',
@@ -1026,7 +1027,6 @@ sauce.ns('performance', async ns => {
                             afterBody: ([item], obj, _t) => (_t = ttData(item, obj), _t.active ? '\n' + _t.actNames : ''),
                         },
                     },
-                    maintainAspectRatio: false,
                     animation: {
                         duration: 0
                     },
@@ -1052,18 +1052,17 @@ sauce.ns('performance', async ns => {
                             type: 'linear',
                             position: 'right',
                             stacked: true,
-                            barPercentage: 1,
-                            barThickness: 'flex',
                             barStackPadding: 2,
-                            categoryPercentage: 0.92,
                             ticks: {
-                                display: false,
-                                min: 0,
+                                callback: offt => {
+                                    if (offt >= 7 || offt < 1) {
+                                        return null;
+                                    }
+                                    return H.dayOfWeek(-offt);
+                                },
+                                position: 'right',
                             },
-                            gridLines: {
-                                display: false,
-                                drawBorder: false,
-                            }
+                            gridLines: {display: false},
                         }],
                         xAxes: [{
                             id: 'weeks',
@@ -1071,22 +1070,9 @@ sauce.ns('performance', async ns => {
                             distribution: 'series',
                             position: 'bottom',
                             offset: true,
-                            time: {
-                                unit: 'week',
-                                displayFormats: {
-                                    week: 'MMM dd'
-                                }
-                            },
-                            ticks: {
-                                minRotation: 30,
-                                maxRotation: 50,
-                                autoSkipPadding: 20,
-                                padding: 2
-                            },
-                            gridLines: {
-                                drawBorder: false,
-                                drawOnChartArea: false,  // leaves just tick marks
-                            }
+                            time: {unit: 'week'},
+                            ticks: {display: false},
+                            gridLines: {display: false}
                         }]
                     }
                 }
@@ -1096,6 +1082,8 @@ sauce.ns('performance', async ns => {
         onUpdateActivities({daily, range}) {
             const weekDatasets = Array.from(sauce.data.range(7)).map(() => ({
                 stack: 'days',
+                barPercentage: 1,
+                categoryPad: 2,
                 data: []
             }));
             const maxTSS = sauce.data.max(daily.map(x => x.tss));
@@ -1110,10 +1098,10 @@ sauce.ns('performance', async ns => {
                     date: D.adjacentDay(range.start, i),
                     tss: -10,
                 };
-                weekDatasets[offt % 7].data.push({
+                weekDatasets[6 - (offt % 7)].data.push({
                     b: day,
                     x: D.adjacentDay(day.date, -(offt % 7)),
-                    y: 10,
+                    y: 1,
                     bg: `rgba(10, 44, 122, ${(10 + day.tss) / maxTSS})`,
                     active: day.activities && day.activities.length,
                     date: day.date,
