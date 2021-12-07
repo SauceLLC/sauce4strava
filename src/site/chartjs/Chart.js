@@ -4333,6 +4333,7 @@
 	Qe._set("global", {
 		datasets: {
 			bar: {
+				categoryPad: null,
 				categoryPercentage: .8,
 				barPercentage: .9
 			}
@@ -4355,19 +4356,21 @@
 		var a = r.barThickness;
 		var n = t.stackCount;
 		var i = t.pixels[e];
-		var o = et.isNullOrUndef(a) ? computeMinSampleSize(t.scale, t.pixels) : -1;
-		var s, l;
+		var o = r.categoryPad || 0;
+		var s = null == r.categoryPad ? r.categoryPercentage : 1;
+		var l = et.isNullOrUndef(a) ? computeMinSampleSize(t.scale, t.pixels) : -1;
+		var u, c;
 		if (et.isNullOrUndef(a)) {
-			s = o * r.categoryPercentage;
-			l = r.barPercentage;
+			u = l * s - o;
+			c = r.barPercentage;
 		} else {
-			s = a * n;
-			l = 1;
+			u = a * n;
+			c = 1;
 		}
 		return {
-			chunk: s / n,
-			ratio: l,
-			start: i - s / 2
+			chunk: u / n,
+			ratio: c,
+			start: i - u / 2
 		};
 	}
 	function computeFlexCategoryTraits(e, t, r) {
@@ -4375,25 +4378,26 @@
 		var n = a[e];
 		var i = e > 0 ? a[e - 1] : null;
 		var o = e < a.length - 1 ? a[e + 1] : null;
-		var s = r.categoryPercentage;
-		var l, u;
+		var s = r.categoryPad || 0;
+		var l = null == r.categoryPad ? r.categoryPercentage : 1;
+		var u, c;
 		if (null === i) {
 			i = n - (null === o ? t.end - t.start : o - n);
 		}
 		if (null === o) {
 			o = n + n - i;
 		}
-		l = n - (n - Math.min(i, o)) / 2 * s;
-		u = Math.abs(o - i) / 2 * s;
+		u = n - (n - Math.min(i, o)) / 2 * l + s;
+		c = Math.abs(o - i) / 2 * l - s;
 		return {
-			chunk: u / t.stackCount,
+			chunk: c / t.stackCount,
 			ratio: r.barPercentage,
-			start: l
+			start: u
 		};
 	}
 	var at = Je.extend({
 		dataElementType: Ze.Rectangle,
-		_dataElementOptions: [ "backgroundColor", "borderColor", "borderSkipped", "borderWidth", "barPercentage", "barThickness", "categoryPercentage", "maxBarThickness", "minBarLength" ],
+		_dataElementOptions: [ "backgroundColor", "borderColor", "borderSkipped", "borderWidth", "barPercentage", "barThickness", "categoryPercentage", "categoryPad", "maxBarThickness", "minBarLength" ],
 		initialize: function() {
 			var e = this;
 			var t, r;
@@ -4586,6 +4590,7 @@
 			t.barPercentage = rt(r.barPercentage, t.barPercentage);
 			t.barThickness = rt(r.barThickness, t.barThickness);
 			t.categoryPercentage = rt(r.categoryPercentage, t.categoryPercentage);
+			t.categoryPad = rt(r.categoryPad, t.categoryPad);
 			t.maxBarThickness = rt(r.maxBarThickness, t.maxBarThickness);
 			t.minBarLength = rt(a.minBarLength, t.minBarLength);
 			return t;
