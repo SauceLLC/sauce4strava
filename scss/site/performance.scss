@@ -864,15 +864,11 @@ table.sauce-perf {
         flex-direction: column;
 
         &.expanded {
-            --active-days-tuned-height: 14vw; // XXX use offset based var instead
-
             .window-controls .btn.expand {
                 display: none;
             }
         }
         &:not(.expanded) {
-            --active-days-tuned-height: 9vw; // XXX use offset based var instead
-
             .window-controls .btn.compress {
                 display: none;
             }
@@ -1106,13 +1102,17 @@ table.sauce-perf {
                 }
             }
 
-            .active-days-chart-view .sauce-panel-content.chart {
-                min-height: 8em;
-                height: calc(var(--active-days-tuned-height) + 1em);
+            .active-days-chart-view {
+                .sauce-panel-content.chart {
+                    min-height: initial;
+                    height: auto;
+                    max-width: 65em;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
             }
 
             .sauce-panel-content {
-                flex: 1 1 auto;
                 position: relative; // required for responsive chart.js
                 margin-bottom: 4em;
                 display: flex;
@@ -1122,7 +1122,6 @@ table.sauce-perf {
                     min-height: 12em;
                     height: 22vh;
                     max-height: 24em;
-
                 }
             }
         }
@@ -1302,6 +1301,13 @@ table.sauce-perf {
                 .sauce-panel .chart-tooltip {
                     padding-left: 0 !important;
                     padding-right: 0 !important;
+                }
+            }
+
+            .active-days-chart-view {
+                .sauce-panel-content.chart {
+                    margin-left: 0.2em !important;
+                    margin-right: 0.2em !important;
                 }
             }
 

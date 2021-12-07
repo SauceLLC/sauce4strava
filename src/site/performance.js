@@ -1005,7 +1005,7 @@ sauce.ns('performance', async ns => {
 
     class ActiveDaysChartView extends ChartView {
         get localeKeys() {
-            return ['inactive'];
+            return ['inactive', '/time_weeks'];
         }
 
         async init(options) {
@@ -1014,7 +1014,8 @@ sauce.ns('performance', async ns => {
             this.setChartConfig({
                 type: 'bar',
                 options: {
-                    maintainAspectRatio: false,
+                    aspectRatio: 50 / 8,
+                    maintainAspectRatio: true,
                     tooltips: {
                         intersect: false,
                         eventingAxis: 'y',
@@ -1053,15 +1054,7 @@ sauce.ns('performance', async ns => {
                             position: 'right',
                             stacked: true,
                             barStackPadding: 2,
-                            ticks: {
-                                callback: offt => {
-                                    if (offt >= 7 || offt < 1) {
-                                        return null;
-                                    }
-                                    return H.dayOfWeek(-offt);
-                                },
-                                position: 'right',
-                            },
+                            ticks: {display: false},
                             gridLines: {display: false},
                         }],
                         xAxes: [{
@@ -1183,7 +1176,7 @@ sauce.ns('performance', async ns => {
                             ticks: {min: 0, maxTicksLimit: 6},
                         }, {
                             id: 'tsb',
-                            scaleLabel: {labelString: 'TSB'},
+                            scaleLabel: {labelString: 'TSB', display: true},
                             ticks: {maxTicksLimit: 8},
                             position: 'right',
                             gridLines: {display: false},
@@ -1352,7 +1345,7 @@ sauce.ns('performance', async ns => {
                                 suggestedMax: 5 * 3600,
                                 stepSize: 3600,
                                 maxTicksLimit: 7,
-                                callback: v => H.duration(v, {maxPeriod: 3600}),
+                                callback: v => H.duration(v, {maxPeriod: 3600, minPeriod: 3600}),
                             }
                         }, {
                             id: 'distance',
