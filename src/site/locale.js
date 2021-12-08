@@ -100,22 +100,26 @@ sauce.ns('locale', ns => {
 
 
     let _initing;
-    async function init() {
+    async function init(options) {
         if (initialized) {
             return;
         }
         if (!_initing) {
-            _initing = _init();
+            _initing = _init(options);
         }
         await _initing;
     }
 
 
-    async function _init() {
+    async function _init(options={}) {
         const units = ['year', 'week', 'day', 'hour', 'min', 'sec',
                        'years', 'weeks', 'days', 'hours', 'mins', 'secs',
                        'ago', 'in', 'now', 'today'];
         hdUnits = await getMessagesObject(units, 'time');
+        if (options.skipFormatters) {
+            initialized = true;
+            return;
+        }
         await Promise.all([
             sauce.propDefined('Strava.I18n.ElevationFormatter', {once: true}),
             sauce.propDefined('Strava.I18n.DoubledStepCadenceFormatter', {once: true}),

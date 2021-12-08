@@ -59,7 +59,7 @@
             options.querySelector('li.premium').insertAdjacentElement('beforebegin', item);
         } else {
             // React page with obfuscated HTML.
-            const prev = document.querySelector('header nav ul li > a[href="/athlete/training"]');
+            const prev = document.querySelector('header nav ul li ul li a[href="/athlete/training"]');
             if (prev) {
                 prev.parentElement.insertAdjacentElement('afterend', item);
             }
