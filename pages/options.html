@@ -13,6 +13,13 @@
         <script defer src="/src/common/storage.js"></script>
         <script defer src="/src/ext/options.js"></script>
         <style>
+            html[data-patron-level] .not-patron {
+                display: none;
+            }
+            html:not([data-patron-level]) .patron {
+                display: none;
+            }
+
             table#details {
                 font-size: 0.95em;
                 margin: 0 1em 1em;
@@ -90,7 +97,6 @@
             <p class="supporter">Sauce is made possible by folks like <a target="_blank" href="https://saucellc.io/supporters.html"></a>!</p>
             <p><i>Sauce is running.  May the sauce be with you.</i></p>
             <table id="details"><tbody></tbody></table>
-
             <div class="actions">
                 <h4>General Options:</h4>
 
@@ -189,9 +195,8 @@
             <div class="buttons">
                 <a class="popup-only" href="adv_options.html?popup"><button>Advanced Options</button></a>
                 <a class="not-popup-only" href="adv_options.html"><button>Advanced Options</button></a>
-                <a class="not-safari" target="_blank" href="https://www.patreon.com/bePatron?u=32064618"
+                <a class="not-safari not-patron" target="_blank" href="https://www.patreon.com/bePatron?u=32064618"
                    title="Your support lets me continue to work on and improve Sauce! Thank you!"><button class="patreon"><img src="/images/become_a_patron_button@2x.png"/></button></a>
-                <a class="not-safari" href="https://www.patreon.com/oauth2/authorize?response_type=code&client_id=iTRodvEu38fwIt8CKBQI82vlttzdB5UNdfHn3ayPE6GTV-3w5EGXYB5V3lkjT_cW&redirect_uri=https://www.strava.com/sauce/patreon/authorize" target="_blank"><button>Activate Patreon</button></a>
             </div>
             <div class="links">
                 <a target="_blank" href="https://saucellc.io">Home Page</a>
