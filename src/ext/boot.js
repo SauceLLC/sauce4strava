@@ -58,6 +58,21 @@
             config => void document.documentElement.classList.add('sauce-performance', 'sauce-responsive')
         ]
     }, {
+        name: 'Sauce Patreon Auth',
+        pathMatch: /^\/sauce\/patreon\/authorize\b/,
+        stylesheets: ['site/patreon.css'],
+        scripts: [
+            'site/proxy.js',
+            'site/locale.js',
+            'site/storage.js',
+            'site/template.js',
+            'common/lib.js',
+            'site/patreon.js',
+        ],
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-patreon', 'sauce-responsive')
+        ]
+    }, {
         name: 'Profile',
         pathMatch: /^\/(athletes|pros)\/[0-9]+\/?$/,
         stylesheets: ['site/profile.css'],
