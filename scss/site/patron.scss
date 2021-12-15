@@ -1,12 +1,21 @@
 #sauce-patron-authorize {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 2em;
-
-    > * {
-        min-width: 300px;
+    > main {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
         padding: 2em;
+
+        > * {
+            min-width: 300px;
+            padding: 2em;
+        }
+    }
+
+    .override-disclaimor {
+        color: darkred;
+        padding: 1em;
+        margin: 1em;
+        max-width: 60em;
     }
 
     .showcase {

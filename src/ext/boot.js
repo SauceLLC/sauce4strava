@@ -237,7 +237,7 @@
     }
 
 
-    async function refreshPatronLevelNames() {
+    async function updatePatronLevelNames() {
         const ts = await sauce.storage.get('patronLevelNamesTimestamp');
         if (!ts || ts < Date.now() - (7 * 86400 * 1000)) {
             const resp = await fetch('https://saucellc.io/patron_levels.json');
@@ -249,18 +249,55 @@
     }
 
 
-    async function refreshPatronLevel(athleteId) {
+    async function getPatronLevel(athleteId) {
+        let level = await refreshPatronOverrideLevel(athleteId);
+        let override = !!level;
+        if (!level) {
+            const id = await sauce.storage.get('patreon-member-id');
+            if (id) {
+                const d = await refreshPatronMembershipDetails(id);
+                level = (d && d.level) || 0;
+            }
+        }
+        if (level) {
+            await updatePatronLevelNames();
+        }
+        return [level, override];
+    }
+
+
+    async function _setPatronCache(level, isOverride) {
+        await sauce.storage.set({
+            patronLevel: level,
+            patronOverride: isOverride || false,
+            patronLevelExpiration: Date.now() + (level ? (7 * 86400 * 1000) : (3600 * 1000))
+        });
+        return [level, isOverride];
+    }
+
+
+    async function refreshPatronOverrideLevel(athleteId) {
         const resp = await fetch('https://saucellc.io/patrons.json');
         const fullPatrons = await resp.json();
         const hash = await sha256(athleteId);
-        let patronLevel = 0;
+        let level = 0;
         if (fullPatrons[hash]) {
-            patronLevel = fullPatrons[hash].level || 0;
+            level = fullPatrons[hash].level || 0;
         }
-        const patronLevelExpiration = Date.now() + (patronLevel ? (7 * 86400 * 1000) : (3600 * 1000));
-        await sauce.storage.set({patronLevel, patronLevelExpiration});
-        return patronLevel;
+        await _setPatronCache(level, true);
+        return level;
     }
+
+
+    async function refreshPatronMembershipDetails(id) {
+        if (id) {
+            const r = await fetch(`https://api.saucellc.io/patreon/membership?id=${id}`);
+            const details = r.ok ? await r.json() : null;
+            await _setPatronCache((details && details.level) || 0, false);
+            return details;
+        }
+    }
+    sauce.proxy.export(refreshPatronMembershipDetails);
 
 
     async function bgCommand(op, data) {
@@ -289,19 +326,16 @@
         const config = await sauce.storage.get(null);
         document.documentElement.classList.add('sauce-enabled');
         self.currentUser = config.currentUser;
-        let patronLevel;
-        const patronNamesRefreshPromse = refreshPatronLevelNames();
-        if (self.currentUser && !config.patronLevelExpiration || config.patronLevelExpiration < Date.now()) {
+        if (self.currentUser &&
+            (!config.patronLevelExpiration ||
+             config.patronLevelExpiration < Date.now() ||
+             config.patronOverride == null)) {
             try {
-                await patronNamesRefreshPromse;
-                patronLevel = await refreshPatronLevel(self.currentUser);
+                [config.patronLevel, config.patronOverride] = await getPatronLevel(self.currentUser);
             } catch(e) {
+                await sauce.storage.set('patronLevelExpiration', Date.now() + (3600 * 1000));  // backoff
                 console.error('Failed to refresh patron level:', e);
-                // Fallback to stale value;  Might just be infra issue...
-                patronLevel = config.patronLevel || 0;
             }
-        } else {
-            patronLevel = config.patronLevel || 0;
         }
         const ext = browser.runtime.getManifest();
         const extUrl = browser.runtime.getURL('');
@@ -312,7 +346,8 @@
             sauce.extId = "${browser.runtime.id}";
             sauce.name = "${ext.name}";
             sauce.version = "${ext.version}";
-            sauce.patronLevel = ${patronLevel};
+            sauce.patronLevel = ${config.patronLevel || 0};
+            sauce.patronOverride = ${config.patronOverride || false};
         `);
         for (const m of manifests) {
             if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||

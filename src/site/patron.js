@@ -7,23 +7,8 @@ sauce.ns('patron', async ns => {
 
     await L.init();
     await sauce.propDefined('Backbone', {once: true});
+    await sauce.proxy.connected;
     const view = await sauce.getModule('/src/site/view.mjs');
-
-
-    async function getMembershipDetails() {
-        const data = await sauce.storage.get('patreon-membership');
-        if (!data || !data.memberId) {
-            return null;
-        }
-        const r = await fetch(`https://api.saucellc.io/patreon/membership?id=${data.memberId}`);
-        if (r.status === 404) {
-            return null;
-        }
-        if (!r.ok) {
-            throw new Error(await r.text());
-        }
-        return await r.json();
-    }
 
 
     class PageView extends view.SauceView {
@@ -91,16 +76,17 @@ sauce.ns('patron', async ns => {
                             error: 'Patreon API Misconfiguration',
                         };
                     } else {
-                        const prev = await sauce.storage.get('patreon-membership');
-                        await sauce.storage.set('patreon-membership', m);
-                        linkState = JSON.stringify(prev) !== JSON.stringify(m) ? 'updated' : 'linked';
+                        const prev = await sauce.storage.get('patreon-member-id');
+                        await sauce.storage.set('patreon-member-id', m.memberId);
+                        linkState = prev !== m.memberId ? 'updated' : 'linked';
                     }
                 }
             }
             let membership;
             if (!error && linkState !== 'nonmember') {
                 try {
-                    membership = await getMembershipDetails();
+                    const id = await sauce.storage.get('patreon-member-id');
+                    membership = await sauce.refreshPatronMembershipDetails(id);
                     linkState = (membership && membership.level) ? (linkState || 'linked') : 'nonmember';
                 } catch(e) {
                     sauce.report.error(e);
@@ -113,6 +99,7 @@ sauce.ns('patron', async ns => {
                 error,
                 linkState,
                 membership,
+                overridePresent: sauce.patronOverride,
             };
         }
     }
