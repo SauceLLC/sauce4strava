@@ -137,7 +137,7 @@
         const patronLink = document.createElement('a');
         patronLink.href = "https://www.patreon.com/oauth2/authorize?response_type=code&client_id=" +
             "iTRodvEu38fwIt8CKBQI82vlttzdB5UNdfHn3ayPE6GTV-3w5EGXYB5V3lkjT_cW&redirect_uri=" +
-            "https://www.strava.com/sauce/patreon/authorize";
+            "https://www.strava.com/sauce/patron&scopes=identity.memberships";
         patronLink.target = "_blank";
         if (config.patronLevel) {
             // There is going to be small window where names are not available
@@ -152,12 +152,12 @@
             }
             const span = document.createElement('span');
             span.textContent = (levelName || config.patronLevel) + ' ';
-            patronLink.textContent = '(Relink Account)';
+            patronLink.textContent = '(Relink to Patreon)';
             span.appendChild(patronLink);
             details.push(['Patron Level', span]);
             document.documentElement.dataset.patronLevel = config.patronLevel;
         } else {
-            patronLink.textContent = 'Activate Patron Benefits';
+            patronLink.textContent = 'Link to Patreon';
             details.push(['For new patrons', patronLink]);
         }
         for (const [key, value] of details) {

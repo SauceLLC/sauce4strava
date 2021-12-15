@@ -1,0 +1,88 @@
+#sauce-patron-authorize {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 2em;
+
+    > * {
+        min-width: 300px;
+        padding: 2em;
+    }
+
+    .showcase {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .we-messed-up {
+        font-size: 0.9em;
+        opacity: 0.85;
+        margin: 3em 1em 0;
+        max-width: 40em;
+        line-height: 2;
+    }
+
+    > .success {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        max-width: 60em;
+    }
+
+    .tier-desc {
+        padding: 1em 2em;
+        border-radius: 0.5em;
+        background-color: #ccc2;
+        max-width: 33em;
+        margin-left: 2em;
+
+        ul, li {
+            list-style: revert;
+            margin: 0.2em;
+            padding: 0.3em;
+        }
+    }
+
+    .patron-link {
+        display: flex;
+        margin: 1em 1em 2em;
+
+        a {
+            height: 3em;
+            border-radius: 0.5em;
+            box-shadow: 1px 1px 5px 0 #2223;
+            overflow: hidden;
+            transition: box-shadow 100ms, opacity 100ms;
+            opacity: 0.9;
+
+            &:hover {
+                opacity: 1;
+                box-shadow: 1px 1px 2px 0 #222c;
+            }
+
+            img {
+                height: 100%;
+            }
+        }
+    }
+
+    .loading::after {
+        content: 'Connecting Patron cerebral cortex to the Gibson...';
+        text-decoration: blink;
+        font-size: 2em;
+    }
+
+    > .error {
+        color: darkred;
+
+        pre {
+            background-color: #c9c9c922;
+            padding: 2em;
+            margin: 1.5em 0;
+            border-radius: 0.28em;
+        }
+    }
+}

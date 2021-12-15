@@ -1,0 +1,41 @@
+<% if (error) { %>
+    <div class="error">
+        <h2>Oops! Something went wrong</h2>
+        <pre>{{JSON.stringify(error, null, 4)}}</pre>
+        Please send an email with the message above to
+        <a href="mailto:support@saucellc.io">support@saucellc.io</a>.
+    </div>
+<% } else { %>
+    <% if (linkState === 'nonmember') { %>
+        <div class="success join">
+            <h2>🙁 It looks like you're not a Sauce Patron yet...</h2>
+            <h5>To get the full benefits of Sauce, you need to join one of our Patreon tiers:</h5>
+            <div class="patron-link">
+                <a href="https://www.patreon.com/bePatron?u=32064618"
+                   target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+            </div>
+            <h6>After you have joined just click 
+                <a href="https://www.patreon.com/oauth2/authorize?response_type=code&client_id=iTRodvEu38fwIt8CKBQI82vlttzdB5UNdfHn3ayPE6GTV-3w5EGXYB5V3lkjT_cW&redirect_uri=https://www.strava.com/sauce/patron&scopes=identity.memberships">Relink to Patreon</a> here or in the Sauce Options page.
+            </h6>
+            <div class="we-messed-up">
+                If you are already a Patron of Sauce and we messed up just send
+                an email to <a href="mailto:support@saucellc.io">support@saucellc.io</a> and we'll get you
+                fixed up as fast as possible! 😊
+            </div>
+        </div>
+    <% } else { %>
+        <div class="success">
+            <h1>Awesome Sauce! 🎉</h1>
+            <h3>
+                Your Patreon account is linked as a <b>{{membership.title}}</b>.
+            </h3>
+            <div class="tier-desc">
+                <b>{{membership.title}} Benefits:</b>
+                {-membership.description-}
+            </div>
+        </div>
+    <% } %>
+    <div class="showcase">
+        <img class="big logo XXX" src="{{sauce.extUrl}}images/logo_vert_120x320.png"/>
+    </div>
+<% } %>

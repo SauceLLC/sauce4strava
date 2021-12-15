@@ -58,19 +58,19 @@
             config => void document.documentElement.classList.add('sauce-performance', 'sauce-responsive')
         ]
     }, {
-        name: 'Sauce Patreon Auth',
-        pathMatch: /^\/sauce\/patreon\/authorize\b/,
-        stylesheets: ['site/patreon.css'],
+        name: 'Sauce Patron',
+        pathMatch: /^\/sauce\/patron\b/,
+        stylesheets: ['site/patron.css'],
         scripts: [
             'site/proxy.js',
             'site/locale.js',
             'site/storage.js',
             'site/template.js',
             'common/lib.js',
-            'site/patreon.js',
+            'site/patron.js',
         ],
         callbacks: [
-            config => void document.documentElement.classList.add('sauce-patreon', 'sauce-responsive')
+            config => void document.documentElement.classList.add('sauce-patron', 'sauce-responsive')
         ]
     }, {
         name: 'Profile',
@@ -237,20 +237,24 @@
     }
 
 
+    async function refreshPatronLevelNames() {
+        const ts = await sauce.storage.get('patronLevelNamesTimestamp');
+        if (!ts || ts < Date.now() - (7 * 86400 * 1000)) {
+            const resp = await fetch('https://saucellc.io/patron_levels.json');
+            const patronLevelNames = await resp.json();
+            patronLevelNames.sort((a, b) => b.level - a.level);
+            const patronLevelNamesTimestamp = Date.now();
+            await sauce.storage.set({patronLevelNames, patronLevelNamesTimestamp});
+        }
+    }
+
+
     async function refreshPatronLevel(athleteId) {
         const resp = await fetch('https://saucellc.io/patrons.json');
         const fullPatrons = await resp.json();
         const hash = await sha256(athleteId);
         let patronLevel = 0;
         if (fullPatrons[hash]) {
-            const ts = await sauce.storage.get('patronLevelNamesTimestamp');
-            if (!ts || ts < Date.now() - (7 * 86400 * 1000)) {
-                const resp2 = await fetch('https://saucellc.io/patron_levels.json');
-                const patronLevelNames = await resp2.json();
-                patronLevelNames.sort((a, b) => b.level - a.level);
-                const patronLevelNamesTimestamp = Date.now();
-                await sauce.storage.set({patronLevelNames, patronLevelNamesTimestamp});
-            }
             patronLevel = fullPatrons[hash].level || 0;
         }
         const patronLevelExpiration = Date.now() + (patronLevel ? (7 * 86400 * 1000) : (3600 * 1000));
@@ -286,8 +290,10 @@
         document.documentElement.classList.add('sauce-enabled');
         self.currentUser = config.currentUser;
         let patronLevel;
+        const patronNamesRefreshPromse = refreshPatronLevelNames();
         if (self.currentUser && !config.patronLevelExpiration || config.patronLevelExpiration < Date.now()) {
             try {
+                await patronNamesRefreshPromse;
                 patronLevel = await refreshPatronLevel(self.currentUser);
             } catch(e) {
                 console.error('Failed to refresh patron level:', e);
