@@ -11,11 +11,19 @@ sauce.ns('patron', async ns => {
     const view = await sauce.getModule('/src/site/view.mjs');
 
 
+    class NonMember extends Error {}
+
+
     class PageView extends view.SauceView {
         get events() {
             return {
                 ...super.events,
+                'click a.sauce-options': 'onSauceOptionsClick',
             };
+        }
+
+        onSauceOptionsClick() {
+            sauce.menu.openOptionsPage();
         }
 
         get tpl() {
@@ -40,67 +48,76 @@ sauce.ns('patron', async ns => {
             }
         }
 
+        async _api(res, options) {
+            const r = await fetch('https://api.saucellc.io' + res, options);
+            const body = await r.text();
+            const data = body ? JSON.parse(body) : null;
+            if (r.status === 404) {
+                throw new NonMember();
+            } else if (!r.ok) {
+                throw new Error(JSON.stringify({status: r.status, data}, null, 4));
+            } else {
+                return data;
+            }
+        }
+
         async renderAttrs() {
-            const code = this.oneTimeAuthCode;
-            let linkState;
+            let isMember;
             let error;
             if (this.oneTimeAuthCode) {
-                let r;
                 try {
-                    r = await fetch('https://api.saucellc.io/patreon/auth', {
-                        method: 'POST',
-                        headers: {'Content-type': 'application/json'},
-                        body: JSON.stringify({code}),
-                    });
+                    await this._link();
+                    isMember = true;
                 } catch(e) {
-                    error = {error: 'Network Error'};
-                }
-                if (r.status === 404) {
-                    linkState = 'nonmember';
-                } else if (!r.ok) {
-                    try {
-                        error = await r.json();
-                    } catch(e) {
-                        sauce.report.error(`Invalid patreon error [${e.status}]: ${await r.text()}`);
-                        error = {
-                            status: e.status,
-                            error: 'Patreon API Error',
-                        };
+                    isMember = false;
+                    if (!(e instanceof NonMember)) {
+                        sauce.report.error(e);
+                        error = e.message;
                     }
-                } else {
-                    const m = await r.json();
-                    if (!m) {
-                        sauce.report.error(`Empty patreon membership response`);
-                        error = {
-                            status: r.status,
-                            error: 'Patreon API Misconfiguration',
-                        };
-                    } else {
-                        const prev = await sauce.storage.get('patreon-member-id');
-                        await sauce.storage.set('patreon-member-id', m.memberId);
-                        linkState = prev !== m.memberId ? 'updated' : 'linked';
-                    }
+                    await sauce.storage.set('patreon-member-id', null);
                 }
             }
             let membership;
-            if (!error && linkState !== 'nonmember') {
+            if (!error && isMember !== false) {
                 try {
-                    const id = await sauce.storage.get('patreon-member-id');
-                    membership = await sauce.refreshPatronMembershipDetails(id);
-                    linkState = (membership && membership.level) ? (linkState || 'linked') : 'nonmember';
+                    membership = await this._getMembershipDetails();
                 } catch(e) {
-                    sauce.report.error(e);
-                    error = {
-                        error: 'Patreon Membership Lookup Error',
-                    };
+                    if (!(e instanceof NonMember)) {
+                        sauce.report.error(e);
+                        error = e.message;
+                    }
                 }
             }
             return {
                 error,
-                linkState,
                 membership,
                 overridePresent: sauce.patronOverride,
             };
+        }
+
+        async _link() {
+            const code = this.oneTimeAuthCode;
+            const auth = await this._api('/patreon/auth', {
+                method: 'POST',
+                body: JSON.stringify({code}),
+            });
+            auth.expires_at = Date.now() + (auth.expires_in * 1000);
+            await sauce.storage.set('patreon-auth', auth);
+            const membership = await this._api('/patreon/membership', {
+                headers: {'Authorization': `${auth.token_type} ${auth.access_token}`}
+            });
+            await sauce.storage.set('patreon-member-id', membership.memberId);
+        }
+
+        async _getMembershipDetails() {
+            const auth = await sauce.storage.get('patreon-auth');
+            const id = await sauce.storage.get('patreon-member-id');
+            if (!id || !auth) {
+                throw new NonMember();
+            }
+            return await this._api(`/patreon/membership/details?memberId=${id}`, {
+                headers: {'Authorization': `${auth.token_type} ${auth.access_token}`}
+            });
         }
     }
 

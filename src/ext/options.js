@@ -135,9 +135,7 @@
             ['Version', `${manifest.version_name || manifest.version} (${commit})`],
         ];
         const patronLink = document.createElement('a');
-        patronLink.href = "https://www.patreon.com/oauth2/authorize?response_type=code&client_id=" +
-            "iTRodvEu38fwIt8CKBQI82vlttzdB5UNdfHn3ayPE6GTV-3w5EGXYB5V3lkjT_cW&redirect_uri=" +
-            "https://www.strava.com/sauce/patron&scopes=identity.memberships";
+        patronLink.href = "https://saucellc.io/patreon-oauth";
         patronLink.target = "_blank";
         if (config.patronLevel) {
             // There is going to be small window where names are not available
