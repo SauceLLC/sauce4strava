@@ -74,18 +74,15 @@ sauce.ns('patron', async ns => {
                         sauce.report.error(e);
                         error = e.message;
                     }
-                    await sauce.storage.set('patreon-member-id', null);
                 }
             }
             let membership;
             if (!error && isMember !== false) {
                 try {
-                    membership = await this._getMembershipDetails();
+                    membership = await sauce.refreshPatreonMembership({detailed: true});
                 } catch(e) {
-                    if (!(e instanceof NonMember)) {
-                        sauce.report.error(e);
-                        error = e.message;
-                    }
+                    sauce.report.error(e);
+                    error = e.message;
                 }
             }
             return {
@@ -97,27 +94,13 @@ sauce.ns('patron', async ns => {
 
         async _link() {
             const code = this.oneTimeAuthCode;
+            await sauce.storage.set('patreon-auth', null);
             const auth = await this._api('/patreon/auth', {
                 method: 'POST',
                 body: JSON.stringify({code}),
             });
             auth.expires_at = Date.now() + (auth.expires_in * 1000);
             await sauce.storage.set('patreon-auth', auth);
-            const membership = await this._api('/patreon/membership', {
-                headers: {'Authorization': `${auth.token_type} ${auth.access_token}`}
-            });
-            await sauce.storage.set('patreon-member-id', membership.memberId);
-        }
-
-        async _getMembershipDetails() {
-            const auth = await sauce.storage.get('patreon-auth');
-            const id = await sauce.storage.get('patreon-member-id');
-            if (!id || !auth) {
-                throw new NonMember();
-            }
-            return await this._api(`/patreon/membership/details?memberId=${id}`, {
-                headers: {'Authorization': `${auth.token_type} ${auth.access_token}`}
-            });
         }
     }
 
@@ -126,7 +109,7 @@ sauce.ns('patron', async ns => {
         const $page = jQuery(document.getElementById('error404'));
         $page.empty();
         $page.removeClass();  // removes all
-        $page[0].id = 'sauce-patron-authorize';
+        $page[0].id = 'sauce-patron-view';
         self.pv = new PageView({el: $page});
         await self.pv.render();
     }
