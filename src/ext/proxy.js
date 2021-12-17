@@ -3,6 +3,7 @@
 sauce.ns('proxy', ns => {
     'use strict';
 
+    let proxyId = -2;  // ext context goes negative, site context goes positive.
     const mainBGPort = browser.runtime.connect({name: `sauce-proxy-port`});
     const inflight = new Map();
 
@@ -16,32 +17,59 @@ sauce.ns('proxy', ns => {
     mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: -1});
 
 
+    function buildProxyFunc(name, desc) {
+        const entry = ns.exports.get(desc.call);
+        const fn = function(...nativeArgs) {
+            return entry.exec({
+                pid: proxyId--,
+                desc,
+                args: ns.encodeArgs(nativeArgs),
+            }).then(({pid, result, success}) => {
+                if (success) {
+                    return result;
+                } else {
+                    const {name, stack, message} = result;
+                    const EClass = self[name] || Error;
+                    const e = new EClass(message);
+                    e.stack = stack;
+                    throw e;
+                }
+            });
+        };
+        Object.defineProperty(fn, 'name', {value: name});
+        return fn;
+    }
+
+
     function makeBackgroundExec(desc) {
-        return async function({pid, port, args}) {
+        const fn = function({pid, port, args}) {
             if (port) {
                 // Make a unique port for this invocation that both sides can
                 // continue to use after the call exce.
                 const bgPort = browser.runtime.connect({name: `sauce-proxy-port`});
                 port.addEventListener('message', ev => bgPort.postMessage(ev.data));
                 port.start();
-                const response = await new Promise(resolve => {
+                const response = new Promise(resolve => {
                     const onAck = msg => {
                         // The first message back is the response to the exec call.
                         // After that it's up to the user how they use the port.
                         bgPort.onMessage.removeListener(onAck);
+                        bgPort.onMessage.addListener(port.postMessage.bind(port));
                         resolve(msg);
                     };
                     bgPort.onMessage.addListener(onAck);
                     bgPort.postMessage({desc, args, pid, type: 'sauce-proxy-establish-port'});
                 });
-                bgPort.onMessage.addListener(msg => port.postMessage(msg));
                 return response;
             } else {
                 const response = new Promise(resolve => inflight.set(pid, resolve));
                 mainBGPort.postMessage({desc, args, pid});
-                return await response;
+                return response;
             }
         };
+        const name = desc.call.split('.').slice(-1)[0];
+        Object.defineProperty(fn, 'name', {value: name});
+        return fn;
     }
 
 
@@ -50,9 +78,11 @@ sauce.ns('proxy', ns => {
             return;
         }
         self.removeEventListener('message', onMessageEstablishChannel);
-        for (const desc of (await bgInit).exports) {
+        const bgExports = (await bgInit).exports;
+        for (const desc of bgExports) {
             ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
         }
+        ns.bindExports(bgExports, buildProxyFunc);
         const respChannel = new MessageChannel();
         const respPort = respChannel.port1;
         ev.data.requestPort.addEventListener('message', async ev => {

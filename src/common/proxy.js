@@ -42,6 +42,28 @@ sauce.ns('proxy', ns => {
     };
 
 
+    ns.bindExports = function(exports, buildProxyFunc, buildProxyClass) {
+        for (const desc of exports) {
+            const path = desc.call.split('.');
+            let offt = sauce;
+            for (const x of path.slice(0, -1)) {
+                offt[x] = offt[x] || {};
+                offt = offt[x];
+            }
+            const builder = desc.isClass ? buildProxyClass : buildProxyFunc;
+            if (builder) {
+                const name = path[path.length - 1];
+                offt[name] = builder(name, desc);
+            }
+        }
+    };
+
+
+    ns.encodeArgs = function(args) {
+        return args.map(x => x === undefined ? '___SAUCE_UNDEFINED_ARG___' : x);
+    };
+
+
     function decodeArgs(args) {
         return args.map(x => x === '___SAUCE_UNDEFINED_ARG___' ? undefined : x);
     }
@@ -113,7 +135,7 @@ sauce.ns('proxy', ns => {
 
 
     function wrapExportFn(fn) {
-        return async function({pid, args}) {
+        const wrap = async function({pid, args}) {
             try {
                 const result = await fn.apply(this, decodeArgs(args));
                 return {
@@ -122,10 +144,13 @@ sauce.ns('proxy', ns => {
                     result
                 };
             } catch(e) {
-                console.error('Proxy function error', e);
                 return ns._wrapError(pid, e);
             }
         };
+        if (fn.name) {
+            Object.defineProperty(wrap, 'name', {value: `proxyWrap(${fn.name})`});
+        }
+        return wrap;
     }
 
 

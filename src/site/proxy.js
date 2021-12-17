@@ -17,32 +17,28 @@ sauce.ns('proxy', ns => {
     })();
 
 
-    function bindExports(exports) {
-        for (const desc of exports) {
-            const path = desc.call.split('.');
-            let offt = sauce;
-            for (const x of path.slice(0, -1)) {
-                offt[x] = offt[x] || {};
-                offt = offt[x];
-            }
-            const name = path[path.length - 1];
-            let callable;
-            if (desc.isClass) {
-                callable = buildProxyClass(name, desc);
-            } else {
-                callable = (...args) => extCall({desc}, args);
-            }
-            offt[name] = callable;
-        }
-    }
-
-
-    function encodeArgs(args) {
-        return args.map(x => x === undefined ? '___SAUCE_UNDEFINED_ARG___' : x);
-    }
-
-
     class ProxyClient {
+
+        static makeMethodCall(call) {
+            const fn = function(...nativeArgs) {
+                const pid = proxyId++;
+                const msg = {
+                    pid,
+                    desc: {call},
+                    args: ns.encodeArgs(nativeArgs),
+                    type: 'sauce-proxy-request'
+                };
+                const p = new Promise((resolve, reject) => this._inflight.set(pid, {resolve, reject}));
+                if (this._instantiated) {
+                    return this._instantiated.then(() => this._port.postMessage(msg), p);
+                } else {
+                    this._port.postMessage(msg);
+                    return p;
+                }
+            };
+            Object.defineProperty(fn, 'name', {value: call});
+            return fn;
+        }
 
         constructor(desc, ...args) {
             this._inflight = new Map();
@@ -50,21 +46,21 @@ sauce.ns('proxy', ns => {
             this._port = channel.port1;
             this._port.addEventListener('message', this._onPortMessage.bind(this));
             this._port.start();
-            this._instantiated = extCall({desc, port: channel.port2}, args);
+            this._instantiated = this._proxyConstructor(desc, channel.port2, args);
         }
 
-        async _extMethodCall(call, nativeArgs) {
-            await this._instantiated;
-            return await new Promise((resolve, reject) => {
-                const pid = proxyId++;
-                this._inflight.set(pid, {resolve, reject});
-                this._port.postMessage({
-                    pid,
-                    desc: {call},
-                    args: encodeArgs(nativeArgs),
-                    type: 'sauce-proxy-request'
-                });
-            });
+        _proxyConstructor(desc, port, nativeArgs) {
+            const pid = proxyId++;
+            const p = new Promise((resolve, reject) => inflight.set(pid, {resolve, reject}));
+            requestPort.postMessage({
+                pid,
+                desc,
+                args: ns.encodeArgs(nativeArgs),
+                type: 'sauce-proxy-request',
+                port
+            }, [port]);
+            p.then(() => delete this._instantiated);
+            return p;
         }
 
         _onPortMessage(ev) {
@@ -123,6 +119,33 @@ sauce.ns('proxy', ns => {
     }
 
 
+    function buildProxyFunc(name, desc) {
+        const fn = function(...nativeArgs) {
+            const stack = new Error('<SETINEL>').stack;
+            const pid = proxyId++;
+            const p = new Promise((resolve, _reject) => {
+                function reject(e) {
+                    try {
+                        e.stack += stack.split('<SETINEL>', 2).slice(-1)[0].replace(/^\n*/, '\n');
+                    } finally {
+                        _reject(e);
+                    }
+                }
+                inflight.set(pid, {resolve, reject});
+            });
+            requestPort.postMessage({
+                pid,
+                desc,
+                args: ns.encodeArgs(nativeArgs),
+                type: 'sauce-proxy-request',
+            });
+            return p;
+        };
+        Object.defineProperty(fn, 'name', {value: name});
+        return fn;
+    }
+
+
     function buildProxyClass(name, desc) {
         const SuperClass = desc.eventing ? EventingProxyClient : ProxyClient;
 
@@ -135,40 +158,12 @@ sauce.ns('proxy', ns => {
                 return name;
             }
         }
+        Object.defineProperty(Proxied, 'name', {value: name});
 
         for (const x of desc.methods) {
-            Proxied.prototype[x] = function(...args) {
-                return this._extMethodCall(x, args);
-            };
+            Proxied.prototype[x] = Proxied.makeMethodCall(x);
         }
         return Proxied;
-    }
-
-
-    async function extCall({desc, port}, nativeArgs) {
-        if (!ns.isConnected) {
-            // Unlikely but possible if extCall is called manually.
-            await ns.connected;
-        }
-        const stack = new Error('<SETINEL>').stack;
-        return await new Promise((resolve, _reject) => {
-            const pid = proxyId++;
-            function reject(e) {
-                try {
-                    e.stack += stack.split('<SETINEL>', 2).slice(-1)[0].replace(/^\n*/, '\n');
-                } finally {
-                    _reject(e);
-                }
-            }
-            inflight.set(pid, {resolve, reject});
-            requestPort.postMessage({
-                pid,
-                desc,
-                args: encodeArgs(nativeArgs),
-                type: 'sauce-proxy-request',
-                port
-            }, port && [port]);
-        });
     }
 
 
@@ -186,7 +181,7 @@ sauce.ns('proxy', ns => {
                     reject(new Error('Proxy Protocol Violation [CONTENT] [ACK]!'));
                     return;
                 }
-                bindExports(ev.data.exports);
+                ns.bindExports(ev.data.exports, buildProxyFunc, buildProxyClass);
                 resolve(ev.data.responsePort);
             }
             reqPort.addEventListener('message', onMessageEstablishChannelAck);
