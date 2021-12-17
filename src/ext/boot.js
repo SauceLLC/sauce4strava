@@ -181,7 +181,8 @@
         }
         const lifetime = auth.expires_in * 1000;
         const remaining = auth.expires_at - Date.now();
-        if (remaining > lifetime / 2) {
+        //if (remaining > lifetime / 2) {
+        if (remaining > lifetime - 30000) { // XXX TESTING
             return;
         }
         try {
