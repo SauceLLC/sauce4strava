@@ -79,7 +79,7 @@ sauce.ns('patron', async ns => {
             let membership;
             if (!error && isMember !== false) {
                 try {
-                    membership = await sauce.refreshPatreonMembership({detailed: true});
+                    membership = await sauce.getPatreonMembership({detailed: true});
                 } catch(e) {
                     sauce.report.error(e);
                     error = e.message;
@@ -88,7 +88,7 @@ sauce.ns('patron', async ns => {
             return {
                 error,
                 membership,
-                overridePresent: sauce.patronOverride,
+                isLegacy: sauce.patronLegacy,
             };
         }
 

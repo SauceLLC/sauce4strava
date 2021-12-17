@@ -8,6 +8,7 @@
         pathMatch: /^\/activities\/.*/,
         stylesheets: ['site/analysis.css'],
         scripts: [
+            'common/proxy.js',
             'site/proxy.js',
             'site/locale.js',
             'site/storage.js',
@@ -24,6 +25,7 @@
         name: 'Segment Compare',
         pathMatch: /^\/segments\/[0-9]+\/compare\b/,
         scripts: [
+            'common/proxy.js',
             'site/proxy.js',
             'site/segment-compare.js',
         ],
@@ -41,6 +43,7 @@
         pathMatch: /^\/sauce\/performance\b/,
         stylesheets: ['site/performance.css'],
         scripts: [
+            'common/proxy.js',
             'site/proxy.js',
             'site/locale.js',
             'site/storage.js',
@@ -62,6 +65,7 @@
         pathMatch: /^\/sauce\/patron\b/,
         stylesheets: ['site/patron.css'],
         scripts: [
+            'common/proxy.js',
             'site/proxy.js',
             'site/locale.js',
             'site/storage.js',
@@ -77,6 +81,7 @@
         pathMatch: /^\/(athletes|pros)\/[0-9]+\/?$/,
         stylesheets: ['site/profile.css'],
         scripts: [
+            'common/proxy.js',
             'site/proxy.js',
             'site/locale.js',
             'site/template.js',
@@ -142,6 +147,7 @@
         pathMatch: /^\/dashboard(\/.*|\b)/,
         stylesheets: ['site/dashboard.css'],
         scripts: [
+            'common/proxy.js',
             'site/proxy.js',
             'site/locale.js',
             'site/storage.js',
@@ -152,6 +158,7 @@
     }, {
         pathExclude: /^\/($|subscribe|login|register|legal|challenges)(\/.*|\b|$)/,
         scripts: [
+            'common/proxy.js',
             'site/proxy.js',
             'site/locale.js',
             'site/usermenu.js',
@@ -166,7 +173,41 @@
         ]
     }];
 
-    let patreonTokenRefreshing;
+
+    const refreshingPatreonToken = (async () => {
+        const auth = await sauce.storage.get('patreon-auth');
+        if (!auth) {
+            return;
+        }
+        const lifetime = auth.expires_in * 1000;
+        const remaining = auth.expires_at - Date.now();
+        if (remaining > lifetime / 2) {
+            return;
+        }
+        try {
+            if (remaining <= 0) {
+                throw new Error("Token expired: relink required");
+            }
+            const r = await fetch(`https://api.saucellc.io/patreon/token/refresh`, {
+                method: 'POST',
+                body: JSON.stringify({token: auth.refresh_token}),
+            });
+            if (!r.ok) {
+                if ([401, 403].includes(r.status)) {
+                    await sauce.storage.set('patreon-auth', null);
+                } else {
+                    throw new Error(`[${r.status}] ` + await r.text());
+                }
+            } else {
+                const newAuth = await r.json();
+                newAuth.expires_at = Date.now() + (newAuth.expires_in * 1000);
+                await sauce.storage.set('patreon-auth', newAuth);
+                console.debug("Refreshed Patreon auth token");
+            }
+        } catch(e) {
+            sauce.report.error(e);
+        }
+    })();
 
 
     function addHeadElement(script, top) {
@@ -251,89 +292,89 @@
     }
 
 
-    async function maybeRefreshPatreonToken() {
-        const auth = await sauce.storage.get('patreon-auth');
-        if (!auth || !auth.expires_in || !auth.expires_at) {
-            return;
+    async function updatePatronLevel(config) {
+        if ((config.patronLevelExpiration || 0) > Date.now()) {
+            return [config.patronLevel, config.patronLegacy];
         }
-        const lifetime = auth.expires_in * 1000;
-        const remaining = auth.expires_at - Date.now();
-        if (remaining > lifetime / 2) {
-            return;
+        await refreshingPatreonToken;
+        let legacy = false;
+        let level = 0;
+        const errors = [];
+        try {
+            if (await sauce.storage.get('patreon-auth')) {
+                const d = await getPatreonMembership();
+                level = (d && d.patronLevel) || 0;
+            }
+        } catch(e) {
+            errors.push(e);
         }
         try {
-            if (remaining <= 0) {
-                throw new Error("Token expired: relink required");
+            if (!level && config.currentUser) {
+                level = await getPatronLevelLegacy(config.currentUser);
+                legacy = !!level;
             }
-            const r = await fetch(`https://api.saucellc.io/patreon/token/refresh`, {
-                method: 'POST',
-                body: JSON.stringify({token: auth.refresh_token}),
-            });
-            if (!r.ok) {
-                throw new Error(await r.text());
-            }
-            const newAuth = await r.json();
-            newAuth.expires_at = Date.now() + (newAuth.expires_in * 1000);
-            await sauce.storage.set('patreon-auth', newAuth);
-            console.debug("Refreshed Patreon auth token");
         } catch(e) {
-            console.warn(e.message);
-            await sauce.storage.set('patreon-auth', null);
-        }
-    }
-
-
-    async function getPatronLevel(athleteId) {
-        let level = await refreshPatronOverrideLevel(athleteId);
-        let override = !!level;
-        if (!level) {
-            const d = await refreshPatreonMembership();
-            level = (d && d.patronLevel) || 0;
+            errors.push(e);
         }
         if (level) {
             await updatePatronLevelNames();
         }
-        return [level, override];
+        if (errors.length) {
+            for (const e of errors) {
+                sauce.report.error(e);
+            }
+            await sauce.storage.set('patronLevelExpiration', Date.now() + (3600 * 1000));  // backoff
+        }
+        return [level, legacy];
     }
 
 
-    async function _setPatronCache(level, isOverride) {
+    async function _setPatronCache(level, isLegacy) {
         await sauce.storage.set({
             patronLevel: level,
-            patronOverride: isOverride || false,
+            patronLegacy: isLegacy || false,
             patronLevelExpiration: Date.now() + (level ? (7 * 86400 * 1000) : (3600 * 1000))
         });
-        return [level, isOverride];
+        return [level, isLegacy];
     }
 
 
-    async function refreshPatronOverrideLevel(athleteId) {
+    async function getPatronLevelLegacy(athleteId) {
         const resp = await fetch('https://saucellc.io/patrons.json');
         const fullPatrons = await resp.json();
         const hash = await sha256(athleteId);
-        let level = 0;
+        let level;
         if (fullPatrons[hash]) {
-            level = fullPatrons[hash].level || 0;
+            level = fullPatrons[hash].level;
         }
         await _setPatronCache(level, true);
-        return level;
+        return level || 0;
     }
 
 
-    async function refreshPatreonMembership(options={}) {
-        await patreonTokenRefreshing;
+    async function getPatreonMembership(options={}) {
+        await refreshingPatreonToken;
         const auth = await sauce.storage.get('patreon-auth');
         if (auth) {
             const q = options.detailed ? 'detailed=1' : '';
             const r = await fetch(`https://api.saucellc.io/patreon/membership?${q}`, {
                 headers: {Authorization: `${auth.token_type} ${auth.access_token}`}
             });
-            const data = r.ok ? await r.json() : null;
-            await _setPatronCache((data && data.patronLevel) || 0, false);
-            return data;
+            if (!r.ok) {
+                if ([401, 403].includes(r.status)) {
+                    await sauce.storage.set('patreon-auth', null);
+                }
+                if (r.status !== 404) {
+                    sauce.report.error(new Error('Failed to get patreon membership: ' + r.status));
+                }
+            } else {
+                const data = await r.json();
+                await _setPatronCache((data && data.patronLevel) || 0, false);
+                return data;
+            }
         }
     }
-    sauce.proxy.export(refreshPatreonMembership);
+    sauce.proxy.export(getPatreonMembership);
 
 
     async function bgCommand(op, data) {
@@ -362,18 +403,7 @@
         const config = await sauce.storage.get(null);
         document.documentElement.classList.add('sauce-enabled');
         self.currentUser = config.currentUser;
-        patreonTokenRefreshing = maybeRefreshPatreonToken();
-        if (self.currentUser &&
-            (!config.patronLevelExpiration ||
-             config.patronLevelExpiration < Date.now() ||
-             config.patronOverride == null)) {
-            try {
-                [config.patronLevel, config.patronOverride] = await getPatronLevel(self.currentUser);
-            } catch(e) {
-                await sauce.storage.set('patronLevelExpiration', Date.now() + (3600 * 1000));  // backoff
-                console.error('Failed to refresh patron level:', e);
-            }
-        }
+        const [patronLevel, patronLegacy] = await updatePatronLevel(config);
         const ext = browser.runtime.getManifest();
         const extUrl = browser.runtime.getURL('');
         insertScript(`
@@ -383,8 +413,8 @@
             sauce.extId = "${browser.runtime.id}";
             sauce.name = "${ext.name}";
             sauce.version = "${ext.version}";
-            sauce.patronLevel = ${config.patronLevel || 0};
-            sauce.patronOverride = ${config.patronOverride || false};
+            sauce.patronLevel = ${patronLevel};
+            sauce.patronLegacy = ${patronLegacy};
         `);
         for (const m of manifests) {
             if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||
@@ -417,9 +447,9 @@
         delete ev.currentTarget.dataset.sauceCurrentUser;
         if (id !== self.currentUser) {
             if (!id) {
-                console.info("Detected user logout");
+                console.debug("Detected user logout");
             } else {
-                console.info("Detected new current user:", id);
+                console.debug("Detected new current user:", id);
             }
             self.currentUser = id;
             await sauce.storage.set('currentUser', id);

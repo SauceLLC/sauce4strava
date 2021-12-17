@@ -150,7 +150,9 @@
             }
             const span = document.createElement('span');
             span.textContent = (levelName || config.patronLevel) + ' ';
-            patronLink.textContent = '(Relink to Patreon)';
+            if (!config.patronLegacy) {
+                patronLink.textContent = '(Relink to Patreon)';
+            }
             span.appendChild(patronLink);
             details.push(['Patron Level', span]);
             document.documentElement.dataset.patronLevel = config.patronLevel;
