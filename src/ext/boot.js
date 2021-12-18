@@ -257,7 +257,7 @@
 
 
     async function updatePatronLevel(config) {
-        if ((config.patronLevelExpiration || 0) > Date.now()) {
+        if ((config.patronLevelExpiration || 0) > Date.now() && config.patronLegacy != null) {
             return [config.patronLevel, config.patronLegacy];
         }
         let legacy = false;
