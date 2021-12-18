@@ -331,16 +331,6 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
-    sauce.bubble = function(options={}) {
-        return sauce.dialog({
-            dialogClass: 'sauce-bubble',
-            resizable: false,
-            width: 'auto',
-            ...options
-        });
-    };
-
-
     sauce.modal = function(options={}) {
         return sauce.dialog({
             modal: true,

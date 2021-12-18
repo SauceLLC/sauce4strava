@@ -6,7 +6,12 @@
     </div>
 <% } %>
 <main>
-    <% if (error) { %>
+    <% if (obj.loading) { %>
+        <div class="loading">
+            <div class="btn sauce-loading btn-unstyled disabled"></div>
+            <quip>{{quip}}</quip>
+        </div>
+    <% } else if (obj.error) { %>
         <div class="error">
             <h2>⚠️ Oops! Something went wrong</h2>
             <pre>{{error}}</pre>
@@ -14,7 +19,7 @@
             <a href="mailto:support@saucellc.io">support@saucellc.io</a>.
         </div>
     <% } else { %>
-        <% if (!membership) { %>
+        <% if (!obj.membership) { %>
             <div class="success nonmember">
                 <h2>🙁 It looks like you're not a Sauce Patron yet...</h2>
                 <h5>To get the full benefits of Sauce, you need to join one of our Patreon tiers:</h5>

@@ -1,4 +1,13 @@
+@use 'color';
+@use 'buttons';
+
+
 #sauce-patron-view {
+    @include buttons.uniform;
+
+    display: flex;
+    flex-direction: column;
+
     > main {
         display: flex;
         flex-wrap: wrap;
@@ -12,10 +21,10 @@
     }
 
     .legacy-disclaimor {
+        align-self: center;
         color: darkred;
         padding: 1em;
-        margin: 1em;
-        max-width: 60em;
+        max-width: 48em;
     }
 
     .showcase {
@@ -78,12 +87,22 @@
         }
     }
 
-    &.loading::after {
-        display: block;
+    .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         padding: 3em;
-        content: 'Connecting Patron cerebral cortex to the Sauce Gibson... 🤔';
-        text-decoration: blink;
-        font-size: 2em;
+
+        quip {
+            flex: 1 1 auto;
+            display: block;
+            font-size: 2em;
+        }
+
+        .btn.sauce-loading {
+            flex: 0 0 auto;
+            font-size: 3em;
+        }
     }
 
     main > .error {

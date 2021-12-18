@@ -30,22 +30,25 @@ sauce.ns('patron', async ns => {
             return 'patron.html';
         }
 
-        async init(...args) {
-            await super.init(...args);
-            const q = new URLSearchParams(location.search);
-            if (q.has('code')) {
-                this.oneTimeAuthCode = q.get('code');
-                history.replaceState(null, null, location.pathname);
-            }
-        }
-
-        async render() {
-            this.$el.addClass('loading');
-            try {
-                await super.render();
-            } finally {
-                this.$el.removeClass('loading');
-            }
+        renderAttrs(data) {
+            const quips = [
+                'Connecting cerebral cortex to the Gibson... 🖧',
+                'Finding Nemo...🐟',
+                'Looking for buried treasure...💰',
+                'Looking for car keys...🔑',
+                'Hacking the planet...💻',
+                'Watching C-beams glitter in the dark near the Tannhauser gate...🤖',
+                'Exploring a series of tubes...💾',
+                'Herding llamas...🦙',
+                'Pursuing a long series of diversions in an attempt to avoid responsibility...🔬',
+            ];
+            const quip = quips[Math.floor(Math.random() * quips.length)];
+            return {
+                quip,
+                error: this.error,
+                isLegacy: sauce.patronLegacy,
+                ...data
+            };
         }
 
         async _api(res, options) {
@@ -61,45 +64,40 @@ sauce.ns('patron', async ns => {
             }
         }
 
-        async renderAttrs() {
-            let isMember;
-            let error;
-            if (this.oneTimeAuthCode) {
-                try {
-                    await this._link();
-                    isMember = true;
-                } catch(e) {
-                    isMember = false;
-                    if (!(e instanceof NonMember)) {
-                        sauce.report.error(e);
-                        error = e.message;
-                    }
-                }
-            }
-            let membership;
-            if (!error && isMember !== false) {
-                try {
-                    membership = await sauce.getPatreonMembership({detailed: true});
-                } catch(e) {
-                    sauce.report.error(e);
-                    error = e.message;
-                }
-            }
-            return {
-                error,
-                membership,
-                isLegacy: sauce.patronLegacy,
-            };
+        setError(e) {
+            this.error = e.message;
+            sauce.report.error(e);
         }
 
-        async _link() {
-            const code = this.oneTimeAuthCode;
+        async link(code) {
+            let isMember;
+            try {
+                await this._link(code);
+                isMember = true;
+            } catch(e) {
+                isMember = false;
+                if (!(e instanceof NonMember)) {
+                    this.setError(e);
+                }
+            }
+            return isMember;
+        }
+
+        async _link(code) {
             await sauce.storage.set('patreon-auth', null);
             const auth = await this._api('/patreon/auth', {
                 method: 'POST',
                 body: JSON.stringify({code}),
             });
             await sauce.storage.set('patreon-auth', auth);
+        }
+
+        async getMembership() {
+            try {
+                return await sauce.getPatreonMembership({detailed: true});
+            } catch(e) {
+                this.setError(e);
+            }
         }
     }
 
@@ -109,8 +107,20 @@ sauce.ns('patron', async ns => {
         $page.empty();
         $page.removeClass();  // removes all
         $page[0].id = 'sauce-patron-view';
+        const q = new URLSearchParams(location.search);
+        let oneTimeCode;
+        if (q.has('code')) {
+            oneTimeCode = q.get('code');
+            history.replaceState(null, null, location.pathname);
+        }
         self.pv = new PageView({el: $page});
-        await self.pv.render();
+        await self.pv.render({loading: true});
+        const s = Date.now();
+        const isMember = oneTimeCode && await self.pv.link(oneTimeCode);
+        const membership = isMember !== false && await self.pv.getMembership();
+        const elapsed = Date.now() - s;
+        await sauce.sleep(4000 - elapsed);  // Cheesy I know, but I like the quips, let them be read!
+        await self.pv.render({isMember, membership});
     }
 
 
