@@ -30,7 +30,7 @@ sauce.ns('proxy', ns => {
                 };
                 const p = new Promise((resolve, reject) => this._inflight.set(pid, {resolve, reject}));
                 if (this._instantiated) {
-                    return this._instantiated.then(() => this._port.postMessage(msg), p);
+                    return this._instantiated.then(() => (this._port.postMessage(msg), p));
                 } else {
                     this._port.postMessage(msg);
                     return p;
