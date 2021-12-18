@@ -22,7 +22,7 @@ sauce.ns('performance', async ns => {
         L.init(),
         L.getMessage('performance').then(x => pageTitle = `Sauce ${x}`),
         sauce.propDefined('Backbone', {once: true}).then(() =>
-            sauce.getModule('/src/site/view.mjs').then(x => void (view = x))),
+            sauce.getModule('/site/view').then(x => void (view = x))),
         sauce.proxy.connected.then(() => Promise.all([
             sauce.storage.fastPrefsReady(),
             sauce.storage.get('currentUser').then(x => void (currentUser = x)),

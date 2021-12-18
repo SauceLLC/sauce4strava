@@ -87,7 +87,7 @@ sauce.ns('sync', ns => {
             'delayed_until', 'title', 'remaining',
         ], 'sync_control_panel');
         let athlete = await sauce.hist.getAthlete(athleteId);
-        const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views.mjs');
+        const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/site/data-views');
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
         const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
             'sync_control_panel');
@@ -116,7 +116,7 @@ sauce.ns('sync', ns => {
                     input.multiple = true;
                     input.style.display = 'none';
                     input.addEventListener('change', async ev => {
-                        const jobs = await sauce.getModule('/src/common/jscoop/jobs.js');
+                        const jobs = await sauce.getModule('/common/jscoop/jobs');
                         const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
                         const files = input.files;
                         const dataEx = new sauce.hist.DataExchange();

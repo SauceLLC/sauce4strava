@@ -363,7 +363,7 @@ sauce.ns('analysis', ns => {
         const $stats = jQuery(await template(attrs));
         if (ns.syncAthlete) {
             $stats.on('click', '.sauce-editable-field', async ev => {
-                const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views.mjs');
+                const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/site/data-views');
                 const isFTP = ev.currentTarget.classList.contains('ftp');
                 let view;
                 if (isFTP) {
@@ -1462,7 +1462,7 @@ sauce.ns('analysis', ns => {
 
     async function showPeaksSettingsDialog() {
         sauce.report.event('PeaksSettings', 'show', 'dialog');
-        const {PeaksPeriodsView, PeaksDistancesView} = await sauce.getModule('/src/site/data-views.mjs');
+        const {PeaksPeriodsView, PeaksDistancesView} = await sauce.getModule('/site/data-views');
         const periods = new PeaksPeriodsView({ranges: await sauce.peaks.getRanges('periods')});
         const dists = new PeaksDistancesView({ranges: await sauce.peaks.getRanges('distances')});
         let reload;
@@ -1764,7 +1764,7 @@ sauce.ns('analysis', ns => {
         }
         const descEl = document.querySelector('#heading .activity-description .content');
         const desc = descEl && descEl.textContent;
-        const exportModule = await sauce.getModule('/src/site/export.mjs');
+        const exportModule = await sauce.getModule('/site/export');
         const Serializer = {
             tcx: exportModule.TCXSerializer,
             gpx : exportModule.GPXSerializer,
@@ -2810,7 +2810,7 @@ sauce.ns('analysis', ns => {
 
     async function createLiveSegment({start, end, uuid, segmentName, leaderName, leaderType,
         timeMultiplier}) {
-        const m = await sauce.getModule('/src/site/jsfit/fit-parser.mjs');
+        const m = await sauce.getModule('/site/jsfit/fit-parser');
         const FitParser = m.default;
         const timeStreamOrig = await fetchStream('time', start, end);
         const timeStream = (timeMultiplier && timeMultiplier !== 1) ?

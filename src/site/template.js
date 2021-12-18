@@ -164,8 +164,9 @@ sauce.ns('template', ns => {
         `);
         const source = code.join('');
         let render;
+        const Fn = (function(){}).constructor;
         try {
-            render = (new Function(source))();
+            render = (new Fn(source))();
         } catch (e) {
             e.source = source;
             throw e;
