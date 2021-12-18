@@ -174,43 +174,6 @@
     }];
 
 
-    const refreshingPatreonToken = (async () => {
-        const auth = await sauce.storage.get('patreon-auth');
-        if (!auth) {
-            return;
-        }
-        const lifetime = auth.expires_in * 1000;
-        const remaining = auth.expires_at - Date.now();
-        //if (remaining > lifetime / 2) {
-        if (remaining > lifetime - 30000) { // XXX TESTING
-            return;
-        }
-        try {
-            if (remaining <= 0) {
-                throw new Error("Token expired: relink required");
-            }
-            const r = await fetch(`https://api.saucellc.io/patreon/token/refresh`, {
-                method: 'POST',
-                body: JSON.stringify({token: auth.refresh_token}),
-            });
-            if (!r.ok) {
-                if ([401, 403].includes(r.status)) {
-                    await sauce.storage.set('patreon-auth', null);
-                } else {
-                    throw new Error(`[${r.status}] ` + await r.text());
-                }
-            } else {
-                const newAuth = await r.json();
-                newAuth.expires_at = Date.now() + (newAuth.expires_in * 1000);
-                await sauce.storage.set('patreon-auth', newAuth);
-                console.debug("Refreshed Patreon auth token");
-            }
-        } catch(e) {
-            sauce.report.error(e);
-        }
-    })();
-
-
     function addHeadElement(script, top) {
         const rootElement = document.head || document.documentElement;
         if (top) {
@@ -297,7 +260,6 @@
         if ((config.patronLevelExpiration || 0) > Date.now()) {
             return [config.patronLevel, config.patronLegacy];
         }
-        await refreshingPatreonToken;
         let legacy = false;
         let level = 0;
         const errors = [];
@@ -354,12 +316,11 @@
 
 
     async function getPatreonMembership(options={}) {
-        await refreshingPatreonToken;
         const auth = await sauce.storage.get('patreon-auth');
         if (auth) {
             const q = options.detailed ? 'detailed=1' : '';
             const r = await fetch(`https://api.saucellc.io/patreon/membership?${q}`, {
-                headers: {Authorization: `${auth.token_type} ${auth.access_token}`}
+                headers: {Authorization: `${auth.id} ${auth.secret}`}
             });
             if (!r.ok) {
                 if ([401, 403].includes(r.status)) {

@@ -99,7 +99,6 @@ sauce.ns('patron', async ns => {
                 method: 'POST',
                 body: JSON.stringify({code}),
             });
-            auth.expires_at = Date.now() + (auth.expires_in * 1000);
             await sauce.storage.set('patreon-auth', auth);
         }
     }
