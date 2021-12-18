@@ -1632,7 +1632,6 @@ sauce.ns('performance', async ns => {
                 peaks: await this.findPeaks(),
                 mostFreqType: this.mostFreqType,
                 mostFreqLocaleKey: this.mostFreqType ? this.mostFreqType.type + 's' : null,
-                isSafari: sauce.isSafari(),
             };
             return r;
         }

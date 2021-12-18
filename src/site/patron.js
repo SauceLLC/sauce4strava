@@ -46,7 +46,6 @@ sauce.ns('patron', async ns => {
             return {
                 quip,
                 error: this.error,
-                isLegacy: sauce.patronLegacy,
                 ...data
             };
         }

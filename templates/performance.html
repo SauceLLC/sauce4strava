@@ -1,16 +1,26 @@
+<% if (sauce.isSafari()) { %>
+    <div class="safari-disclaimor">Sorry but Safari is not supported due to a broken IndexedDB implementation. Email <a href="mailto:support@saucellc.io" target="_blank">support@saucellc.io</a> for more information.</div>
+<% } %>
 <% if (!athletes.length) { %>
     <div class="onboarding-stack">
         <div class="section-wrap">
             <section class="cols">
                 <div class="col-left">
                     <img src="https://saucellc.io/images/perf-promo/2.png"/>
-                    <div class="btn btn-xl btn-primary enable">Activate Sauce Performance!</div>
+                    <% if (sauce.patronLevel >= 99) { %>
+                        <div class="btn btn-xl btn-primary enable">Activate Sauce Performance!</div>
+                    <% } else { %>
+                        <div class="patron-link">
+                            <a href="https://www.patreon.com/bePatron?u=32064618"
+                               target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                        </div>
+                    <% } %>
                 </div>
 
                 <div class="col-right">
                     <div class="copy welcome">
                         <h1>Welcome to Sauce Performance!</h1>
-                        <p><b>Take your Strava experience to <i>Cat 1</i> with improved training and performance insights made possible by <span class="saucey">Sauce</span> for Strava!</b></p>
+                        <p><b>Upgrade your Strava experience to <i>Cat 1</i> with improved training and performance insights made possible by <span class="saucey">Sauce</span> for Strava!</b></p>
                         <ol>
                             <li>See and interact with critical training metrics like Training Stress Balance (TSB/Form) and Cumulative Training Load (CTL/Fitness).</li>
                             <li>View your best power outputs (and other stats) from every past activity.  You can also see how your efforts rank against other athletes you synchronize.</li>
@@ -27,7 +37,14 @@
             <section class="cols">
                 <div class="col-left">
                     <img src="https://saucellc.io/images/perf-promo/3.png"/>
-                    <div class="btn btn-xl btn-primary enable">Enable right meow!</div>
+                    <% if (sauce.patronLevel >= 99) { %>
+                        <div class="btn btn-xl btn-primary enable">Enable right meow!</div>
+                    <% } else { %>
+                        <div class="patron-link">
+                            <a href="https://www.patreon.com/bePatron?u=32064618"
+                               target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                        </div>
+                    <% } %>
                 </div>
 
                 <div class="col-right">
@@ -43,15 +60,22 @@
             <section class="cols">
                 <div class="col-left">
                     <img src="https://saucellc.io/images/perf-promo/1.png"/>
-                    <div class="btn btn-xl btn-primary enable">Start synchronization!</div>
+                    <% if (sauce.patronLevel >= 99) { %>
+                        <div class="btn btn-xl btn-primary enable">Start synchronization!</div>
+                    <% } else { %>
+                        <div class="patron-link">
+                            <a href="https://www.patreon.com/bePatron?u=32064618"
+                               target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                        </div>
+                    <% } %>
                 </div>
 
                 <div class="col-right">
                     <div class="copy faq">
                         <h2>FAQ</h2>
                         <dl>
-                            <dt>Does it cost anything?</dt>
-                            <dd>Basic functionality works for free, but you can unlock the full power for $2/month via <a href="https://www.patreon.com/sauce4strava" target="_blank">Patreon</a>.</dd>
+                            <dt>How much does it cost?</dt>
+                            <dd>You need to be a <a href="https://www.patreon.com/bePatron?u=32064618" target="_blank">Sauce Patron</a> with the <u>Bonus Features</u> benefit.  The most cost effective plan is <i>&quot;Sauce Member&quot;</i> at $2/month <small>(USD)</small>.</dd>
 
                             <dt>How does <span class="saucey">Sauce</span> get activity data?</dt>
                             <dd><span class="saucey">Sauce</span> uses the same servers and webpages that the normal Strava website uses.   No special API access or 3rd party servers are used.</dd>
