@@ -154,13 +154,8 @@
             _confirmingErase = true;
             this.innerText = "Double Click to Confirm Erase";
             this.addEventListener('dblclick', async () => {
-                await sauce.storage.remove('athlete_info');
-                await sauce.storage.remove('analysis_peak_ranges');
-                await sauce.storage.set('options', {
-                    "analysis-segment-badges": true,
-                    "analysis-cp-chart": true,
-                    "activity-hide-promotions": true
-                });
+                await sauce.storage.clear();
+                await sauce.migrate.run();
                 if (isPopup) {
                     browser.tabs.reload();
                 }

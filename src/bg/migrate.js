@@ -1,6 +1,8 @@
 /* global sauce */
 
-sauce.ns('migrate', ns => {
+const namespace = 'migrate';
+
+sauce.ns(namespace, ns => {
     'use strict';
 
     const migrations = [{
@@ -98,13 +100,18 @@ sauce.ns('migrate', ns => {
     }];
 
 
-    let activeMigration;
+    let _activeMigration;
     ns.runMigrations = async function() {
-        if (!activeMigration) {
-            activeMigration = _runMigrations();
+        if (!_activeMigration) {
+            _activeMigration = _runMigrations();
         }
-        return await activeMigration;
+        try {
+            return await _activeMigration;
+        } finally {
+            _activeMigration = null;
+        }
     };
+    sauce.proxy.export(ns.runMigrations, {namespace, name: 'run'});
 
 
     async function _runMigrations() {
