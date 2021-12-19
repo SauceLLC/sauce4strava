@@ -2620,8 +2620,8 @@ sauce.ns('performance', async ns => {
         $page.empty();
         $page.removeClass();  // removes all
         $page[0].id = 'sauce-performance';
-        const athletes = new Map(location.search.match(/onboarding/) ?
-            [] : enAthletes.map(x => [x.id, x]));
+        const isAvailable = !location.search.match(/onboarding/) && sauce.patronLevel >= 10;
+        const athletes = new Map(isAvailable ? enAthletes.map(x => [x.id, x]) : []);
         if (!athletes.size) {
             $page.addClass('onboarding');
             if (self.CSS && self.CSS.registerProperty) {

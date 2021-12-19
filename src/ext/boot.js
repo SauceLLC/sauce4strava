@@ -273,14 +273,10 @@
         }
         try {
             if (!level && config.currentUser) {
-                level = await getPatronLevelLegacy(config.currentUser);
-                legacy = !!level;
+                [level, legacy] = await getPatronLevelLegacy(config.currentUser);
             }
         } catch(e) {
             errors.push(e);
-        }
-        if (level) {
-            await updatePatronLevelNames();
         }
         if (errors.length) {
             for (const e of errors) {
@@ -306,12 +302,14 @@
         const resp = await fetch('https://saucellc.io/patrons.json');
         const fullPatrons = await resp.json();
         const hash = await sha256(athleteId);
-        let level;
+        let level = 0;
+        let legacy = false;
         if (fullPatrons[hash]) {
             level = fullPatrons[hash].level;
+            legacy = true;
         }
-        await _setPatronCache(level, true);
-        return level || 0;
+        await _setPatronCache(level, legacy);
+        return [level, legacy];
     }
 
 
@@ -365,6 +363,7 @@
         const config = await sauce.storage.get(null);
         document.documentElement.classList.add('sauce-enabled');
         self.currentUser = config.currentUser;
+        updatePatronLevelNames().catch(sauce.report.error);  // bg okay
         const [patronLevel, patronLegacy] = await updatePatronLevel(config);
         const ext = browser.runtime.getManifest();
         const extUrl = browser.runtime.getURL('');
@@ -375,7 +374,7 @@
             sauce.extId = "${browser.runtime.id}";
             sauce.name = "${ext.name}";
             sauce.version = "${ext.version}";
-            sauce.patronLevel = ${patronLevel};
+            sauce.patronLevel = ${patronLevel || 0};
             sauce.patronLegacy = ${patronLegacy};
         `);
         for (const m of manifests) {

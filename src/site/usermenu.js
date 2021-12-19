@@ -5,14 +5,16 @@
 
     async function load() {
         try {
-            _loadOptions();
-            if (sauce.patronLevel && sauce.patronLevel >= 10) {
-                _loadPerf();
-            }
+            await Promise.all([_loadOptions(), _loadPerf()]);
         } catch(e) {
-            await sauce.report.error(e);
+            sauce.report.error(e);
             throw e;
         }
+    }
+
+
+    function upsellsHidden() {
+        return document.documentElement.classList.contains('sauce-hide-upsells');
     }
 
 
@@ -38,6 +40,13 @@
     }
 
     async function _loadPerf() {
+        if (!sauce.patronLegacy && sauce.isSafari()) {
+            // Only permit legacy safari from seeing this since we already let them.
+            return;
+        }
+        if (sauce.patronLevel < 10 && upsellsHidden()) {
+            return;
+        }
         const anchor = document.createElement('a');
         anchor.textContent = `Sauce ${await sauce.locale.getMessage('performance')}`;
         const image = document.createElement('img');
