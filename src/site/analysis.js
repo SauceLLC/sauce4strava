@@ -1400,10 +1400,10 @@ sauce.ns('analysis', ns => {
             }).join(''));
             $section.removeClass('hidden');
         }
-        if (await sauce.storage.getPref('expandInfoDialog')) {
+        if ((await sauce.storage.getPref('expandInfoDialog')) || ns.isMobile) {
             $dialog.addClass('expanded');
             if (supportsRanks) {
-                loadRanks('all');
+                loadRanks('all');  // bg okay
             }
         }
         $dialog.on('click', '.expander', async () => {
@@ -3526,7 +3526,10 @@ sauce.ns('analysis', ns => {
             pageView.handlePageScroll = function() {};
             // Disable animations for mobile screens (reduces jank and works better for some nav changes)
             const mobileMedia = window.matchMedia('(max-width: 768px)');
-            mobileMedia.addListener(ev => void (jQuery.fx.off = ev.matches));
+            mobileMedia.addListener(ev => {
+                jQuery.fx.off = ev.matches;
+                ns.isMobile = ev.matches;
+            });
             jQuery.fx.off = mobileMedia.matches;
             ns.isMobile = mobileMedia.matches;
         }
