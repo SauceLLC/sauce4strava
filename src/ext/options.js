@@ -156,7 +156,7 @@
             span.appendChild(patronLink);
             details.push(['Patron Level', span]);
             document.documentElement.dataset.patronLevel = config.patronLevel;
-        } else {
+        } else if (!isSafari) {
             patronLink.textContent = 'Link to Patreon';
             details.push(['For new patrons', patronLink]);
         }
