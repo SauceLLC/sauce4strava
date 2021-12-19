@@ -13,7 +13,12 @@ sauce.ns('proxy', ns => {
         resolve(msg);
     });
 
-    const bgInit = new Promise(resolve => inflight.set(-1, resolve));
+    const bgInit = (new Promise(resolve => inflight.set(-1, resolve))).then(x => {
+        for (const desc of x.exports) {
+            ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
+        }
+        ns.bindExports(x.exports, buildProxyFunc);
+    });
     mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: -1});
 
 
@@ -45,7 +50,7 @@ sauce.ns('proxy', ns => {
         const fn = function({pid, port, args}) {
             if (port) {
                 // Make a unique port for this invocation that both sides can
-                // continue to use after the call exce.
+                // continue to use after the call exec.
                 const bgPort = browser.runtime.connect({name: `sauce-proxy-port`});
                 port.addEventListener('message', ev => bgPort.postMessage(ev.data));
                 port.start();
@@ -78,11 +83,6 @@ sauce.ns('proxy', ns => {
             return;
         }
         self.removeEventListener('message', onMessageEstablishChannel);
-        const bgExports = (await bgInit).exports;
-        for (const desc of bgExports) {
-            ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
-        }
-        ns.bindExports(bgExports, buildProxyFunc);
         const respChannel = new MessageChannel();
         const respPort = respChannel.port1;
         ev.data.requestPort.addEventListener('message', async ev => {
@@ -98,6 +98,7 @@ sauce.ns('proxy', ns => {
         });
         ev.data.requestPort.addEventListener('messageerror', ev => console.error("Message Error:", ev));
         ev.data.requestPort.start();
+        await bgInit;
         while (sauce._pendingAsyncExports.length) {
             const pending = Array.from(sauce._pendingAsyncExports);
             sauce._pendingAsyncExports.length = 0;
