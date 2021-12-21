@@ -115,6 +115,15 @@
                     <span class="annotation draft-position">2</span>
                 </div>
             </div>
+            <div class="entry" title="{{{group_weight_tooltip}}}">
+                <key>{{{group_weight}}}:</key>
+                <input name="group-body-weight" type="number" disabled placeholder="{{bodyWeight}}" value="{{bodyWeight}}" min="0" step="any"/>
+                <abbr class="unit">{{weightUnit}}</abbr>
+                <label>
+                    <input name="group-use-athlete-weight" type="checkbox" checked/>
+                    {{{group_use_athlete_weight}}}
+                </label>
+            </div>
         </div>
     </div>
 
@@ -181,7 +190,7 @@
         <% } %>
     </section>
 
-    <section class="predicted">
+    <section class="predicted valid-only">
         <div class="heading">{{{predicted_performance}}}:</div>
 
         <div class="entry">
@@ -201,60 +210,63 @@
                 <span class="wkg"></span><abbr class="unit">w/kg</abbr>
             </div>
         <% } %>
-
-        <div class="entry power-details">
-            <b>{{{power_details_heading}}}:</b>
-            <div class="indent columns">
-                <div class="left-col">
-                    <div class="entry gravity" title="{{{power_details_gravity_tooltip}}}">
-                        <dot style="background-color: {{powerColors.gravity}}"/>
-                        <key>{{{power_details_gravity}}}:</key>
-                        <span class="power"></span><abbr class="unit">w</abbr>
-                        <small><span class="pct"></span><abbr class="unit">%</abbr></small>
-                    </div>
-                    <div class="entry aero" title="{{{power_details_aero_tooltip}}}">
-                        <dot style="background-color: {{powerColors.aero}}"/>
-                        <key>{{{power_details_aero}}}:</key>
-                        <span class="power"></span><abbr class="unit">w</abbr>
-                        <small><span class="pct"></span><abbr class="unit">%</abbr></small>
-                    </div>
-                    <div class="entry rr" title="{{{power_details_rr_tooltip}}}">
-                        <dot style="background-color: {{powerColors.rr}}"/>
-                        <key>{{{power_details_rr}}}:</key>
-                        <span class="power"></span><abbr class="unit">w</abbr>
-                        <small><span class="pct"></span><abbr class="unit">%</abbr></small>
-                    </div>
-                </div>
-                <div class="right-col sparkline"></div>
-            </div>
-        </div>
-
-        <div class="entry drafting-output">
-            <b>{{{drafting}}}:</b>
-            <div class="entry" title="{{{group_power_tooltip}}}">
-                <key>{{{group_power}}}:</key>
-                <span class="group-power"></span><abbr class="unit">w</abbr>
-            </div>
-
-            <div class="entry" title="{{{power_variance_tooltip}}}">
-                <key>{{{power_variance}}}:</key>
-                <span class="power-variance"></span><abbr class="unit">%</abbr>
-            </div>
-
-            <div class="entry indent columns">
-                <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
-                <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
-                <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
-                <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
-                <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
-                <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
-                <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
-                <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
-            </div>
-        </div>
     </section>
+
     <section class="invalid">
         <div class="heading">{{{predicted_performance}}}:</div>
-        <b>No velocity predicted for these parameters</b>
+        <div class="entry">
+            <b>No velocity predicted for these parameters</b>
+        </div>
+    </section>
+
+    <section class="power-details valid-only">
+        <div class="heading">{{{power_details_heading}}}:</div>
+        <div class="entry columns">
+            <div class="left-col">
+                <div class="entry gravity" title="{{{power_details_gravity_tooltip}}}">
+                    <dot style="background-color: {{powerColors.gravity}}"/>
+                    <key>{{{power_details_gravity}}}:</key>
+                    <span class="power"></span><abbr class="unit">w</abbr>
+                    <small><span class="pct"></span><abbr class="unit">%</abbr></small>
+                </div>
+                <div class="entry aero" title="{{{power_details_aero_tooltip}}}">
+                    <dot style="background-color: {{powerColors.aero}}"/>
+                    <key>{{{power_details_aero}}}:</key>
+                    <span class="power"></span><abbr class="unit">w</abbr>
+                    <small><span class="pct"></span><abbr class="unit">%</abbr></small>
+                </div>
+                <div class="entry rr" title="{{{power_details_rr_tooltip}}}">
+                    <dot style="background-color: {{powerColors.rr}}"/>
+                    <key>{{{power_details_rr}}}:</key>
+                    <span class="power"></span><abbr class="unit">w</abbr>
+                    <small><span class="pct"></span><abbr class="unit">%</abbr></small>
+                </div>
+            </div>
+            <div class="right-col sparkline"></div>
+        </div>
+    </section>
+
+    <section class="drafting-output valid-only">
+        <div class="heading">{{{drafting}}}:</div>
+        <div class="entry" title="{{{group_power_tooltip}}}">
+            <key>{{{group_power}}}:</key>
+            <span class="group-power"></span><abbr class="unit">w</abbr>
+        </div>
+
+        <div class="entry" title="{{{power_variance_tooltip}}}">
+            <key>{{{power_variance}}}:</key>
+            <span class="power-variance"></span><abbr class="unit">%</abbr>
+        </div>
+
+        <div class="entry columns rider-icons">
+            <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
+            <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
+            <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
+            <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
+            <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
+            <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
+            <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
+            <div class="draft-rider-icon">{{=icon biking-duotone=}}<label/></div>
+        </div>
     </section>
 </div>

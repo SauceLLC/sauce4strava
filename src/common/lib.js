@@ -1207,8 +1207,9 @@ sauce.ns('power', function() {
             return;
         }
         const velocity = seedEst.velocity;
-        const estimates = reductions.map(x => cyclingPowerEstimate({
+        const estimates = reductions.map((x, i) => cyclingPowerEstimate({
             ...args,
+            weight: positions[i].weight || args.weight,
             cda: x * args.cda,
             velocity,
         }));

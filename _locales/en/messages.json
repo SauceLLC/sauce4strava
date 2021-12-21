@@ -242,6 +242,9 @@
     "perf_predictor_time_at_front": {"message": "Time on front"},
     "perf_predictor_work_tooltip": {"message": "Select the percentage of time in the first position of this group"},
     "perf_predictor_drafting_help": {"message": "Drafting or riding in a group of riders provides significant aerodynamic benefits.  Performance Predictor can model these effects by applying research from <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen and Bert Blocken</a>.<br/><br/>Note that this algorithm works well for smaller sized groups in single file formations.  Large pelotons of riders are subject to more complicated aerodynamic forces which are not properly addressed here."},
+    "perf_predictor_group_weight": {"message": "Their Weight"},
+    "perf_predictor_group_weight_tooltip": {"message": "To model the affects of riding in a group with riders that weigh more or less than the main athlete, you can change the weight of all the other riders.  i.e. The power requirements of others when you are the heavy rider or the light rider."},
+    "perf_predictor_group_use_athlete_weight": {"message": "Use Athlete Weight"},
 
     "sync_control_panel_intro": {"message": "Activity sync imports all activity history to allow for improved training charts and performance analysis."},
     "sync_control_panel_intro_help": {

@@ -871,6 +871,7 @@ sauce.ns('analysis', ns => {
             });
             attachInfo(panel.$el);
             await panel.render();
+            ns.afterSyncActivity.then(() => panel.render());  // Only runs if we needed a sync.
         }
     }
 
@@ -2933,10 +2934,10 @@ sauce.ns('analysis', ns => {
             icon: await sauce.images.asText('fa/analytics-duotone.svg'),
             body,
             flex: true,
-            width: '60em',
+            width: '62em',
             dialogClass: 'sauce-perf-predictor no-pad',
-            resizable: false,
-            draggable: false,
+            resizable: false, // XXX don't like anymore, fix this.
+            draggable: false, // XXX don't like anymore, fix this.
             closeOnMobileBack: ns.isMobile,
         });
         function fget(name) {
@@ -2952,14 +2953,16 @@ sauce.ns('analysis', ns => {
             'position', 'time', 'power',
         ], 'perf_predictor');
         let lazySaveTimeout;
-        const $pred = $dialog.find('.predicted');
+        const $output = $dialog.find('.output');
+        const $pred = $output.find('.predicted');
+        const $powerDetails = $output.find('.power-details');
         const $cdaPositions = $dialog.find('span.cda-position');
         const $draftRiders = $dialog.find('span.draft-riders');
         const $draftPosition = $dialog.find('span.draft-position');
         const $draftWork = $dialog.find('span.draft-work');
         const $draftRiderIcons = $dialog.find('.draft-rider-icon');
-        const $draftGroupPower = $dialog.find('.drafting-output .group-power');
-        const $draftPowerVariance = $dialog.find('.drafting-output .power-variance');
+        const $draftGroupPower = $output.find('.drafting-output .group-power');
+        const $draftPowerVariance = $output.find('.drafting-output .power-variance');
         function recalc(initial) {
             const crr = fget('crr');
             const cda = fget('cda');
@@ -2983,12 +2986,16 @@ sauce.ns('analysis', ns => {
             let est;
             const drafting = fget('drafting');
             if (drafting) {
+                const useSameWeight = fget('group-use-athlete-weight');
+                const groupWeight = useSameWeight ?
+                    weight :
+                    L.weightUnconvert(fget('group-body-weight')) + gearWeight;
                 const riders = fget('riders');
                 $draftRiders.text(riders < 8 ? riders.toLocaleString() : '8+');
                 const rotating = fget('rotating');
                 const positions = new Map();
+                const position = fget('position');
                 if (!rotating) {
-                    const position = fget('position');
                     $draftPosition.text(position.toLocaleString());
                     positions.set(position, 1);
                     const dr = sauce.power.cyclingDraftDragReduction(riders, position);
@@ -3007,47 +3014,77 @@ sauce.ns('analysis', ns => {
                         Array.from(positions).map(x => ({position: x[0], pct: x[1]})),
                         {power, slope, weight, crr, cda, el, wind});
                 }
-                let minP = Infinity;
-                let maxP = -Infinity;
-                let joules = 0;
-                const time = distance / est.velocity;
-                for (let i = 0; i < $draftRiderIcons.length; i++) {
-                    const icon = $draftRiderIcons[i];
-                    icon.classList.toggle('hidden', i >= riders);
-                    if (i < riders) {
-                        const dr = sauce.power.cyclingDraftDragReduction(riders, i + 1);
-                        const pct = positions.get(i + 1) || 0;
-                        const posEst = sauce.power.cyclingPowerEstimate({velocity: est.velocity,
-                            slope, weight, crr, cda: cda * dr, el, wind});
-                        minP = Math.min(posEst.watts, minP);
-                        maxP = Math.max(posEst.watts, maxP);
-                        joules += posEst.watts * time;
-                        icon.querySelector('label').textContent =
-                            `${Math.round(posEst.watts).toLocaleString()}w`;
-                        icon.style.setProperty('--draft-power', posEst.watts);
-                        icon.setAttribute('title', [
-                            `${locale.position}: ${i + 1}`,
-                            `${locale.time}: ${H.timer(time * pct)} (${Math.round(pct * 100)}%)`,
-                            `${locale.power}: ${Math.round(posEst.watts)}w`,
-                        ].join('\n'));
-                        icon.style.setProperty('--draft-pct', Math.min(1, pct * 3));
+                if (est) {
+                    let minP = Infinity;
+                    let maxP = -Infinity;
+                    let joules = 0;
+                    const time = distance / est.velocity;
+                    for (let i = 0; i < $draftRiderIcons.length; i++) {
+                        const icon = $draftRiderIcons[i];
+                        icon.classList.toggle('hidden', i >= riders);
+                        if (i < riders) {
+                            const draftCda = cda * sauce.power.cyclingDraftDragReduction(riders, i + 1);
+                            const pct = positions.get(i + 1) || 0;
+                            if (rotating) {
+                                const youPosEst = sauce.power.cyclingPowerEstimate({velocity: est.velocity,
+                                    slope, weight, crr, cda: draftCda, el, wind});
+                                const themPosEst = sauce.power.cyclingPowerEstimate({velocity: est.velocity,
+                                    slope, weight: groupWeight, crr, cda: draftCda, el, wind});
+                                minP = Math.min(youPosEst.watts, themPosEst.watts, minP);
+                                maxP = Math.max(youPosEst.watts, themPosEst.watts, maxP);
+                                const j = (youPosEst.watts * time * pct) + (themPosEst.watts * time * (1 - pct));
+                                joules += j;
+                                jQuery(icon.querySelector('label')).html(
+                                    `${Math.round(youPosEst.watts).toLocaleString()}w` +
+                                    (useSameWeight ?
+                                        '' :
+                                        `<br/><small>(${Math.round(themPosEst.watts).toLocaleString()}w)</small>`
+                                    )
+                                );
+                                icon.style.setProperty('--draft-power', j / time);
+                                icon.setAttribute('title', [
+                                    `${locale.position}: ${i + 1}`,
+                                    `${locale.time}: ${H.timer(time * pct)} (${Math.round(pct * 100)}%)`,
+                                    `${locale.power} (You): ${Math.round(youPosEst.watts)}w`,
+                                    `${locale.power} (Them): ${Math.round(themPosEst.watts)}w`,
+                                ].join('\n'));
+                                icon.style.setProperty('--draft-pct', Math.min(1, pct));
+                            } else {
+                                const w = (i + 1) === position ? weight : groupWeight;
+                                const posEst = sauce.power.cyclingPowerEstimate({velocity: est.velocity,
+                                    slope, weight: w, crr, cda: draftCda, el, wind});
+                                minP = Math.min(posEst.watts, minP);
+                                maxP = Math.max(posEst.watts, maxP);
+                                joules += posEst.watts * time;
+
+                                icon.querySelector('label').textContent =
+                                    `${Math.round(posEst.watts).toLocaleString()}w`;
+                                icon.style.setProperty('--draft-power', posEst.watts);
+                                icon.setAttribute('title', [
+                                    `${locale.position}: ${i + 1}`,
+                                    `${locale.time}: ${H.timer(time * pct)} (${Math.round(pct * 100)}%)`,
+                                    `${locale.power}: ${Math.round(posEst.watts)}w`,
+                                ].join('\n'));
+                                icon.style.setProperty('--draft-pct', Math.min(1, pct));
+                            }
+                        }
                     }
+                    const groupPower = joules / riders / time;
+                    const variance = (maxP - minP) / groupPower;
+                    $draftGroupPower.text(Math.round(groupPower).toLocaleString());
+                    $draftPowerVariance.text(Math.round(variance * 100).toLocaleString());
+                    $dialog[0].style.setProperty('--draft-variance', variance);
+                    $dialog[0].style.setProperty('--draft-power-min', minP);
+                    $dialog[0].style.setProperty('--draft-power-max', maxP);
+                    $dialog[0].style.setProperty('--draft-riders', riders);
+                    $dialog.toggleClass('draft-rotating', rotating);
                 }
-                const groupPower = joules / riders / time;
-                const variance = (maxP - minP) / groupPower;
-                $draftGroupPower.text(Math.round(groupPower).toLocaleString());
-                $draftPowerVariance.text(Math.round(variance * 100).toLocaleString());
-                $dialog[0].style.setProperty('--draft-variance', variance);
-                $dialog[0].style.setProperty('--draft-power-min', minP);
-                $dialog[0].style.setProperty('--draft-power-max', maxP);
-                $dialog[0].style.setProperty('--draft-riders', riders);
-                $dialog.toggleClass('draft-rotating', rotating);
             } else {
                 est = sauce.power.cyclingPowerFastestVelocitySearch({power, slope, weight, crr,
                     cda, el, wind});
             }
             $dialog.toggleClass('drafting', drafting);
-            $pred.toggleClass('valid', !!est);
+            $output.toggleClass('valid', !!est);
             if (!est) {
                 return;
             }
@@ -3075,16 +3112,16 @@ sauce.ns('analysis', ns => {
                 aero: est.aWatts / wattRange * 100,
                 rr: est.rWatts / wattRange * 100
             };
-            const $gravity = $pred.find('.power-details .gravity');
+            const $gravity = $powerDetails.find('.gravity');
             $gravity.find('.power').text(H.number(est.gWatts));
             $gravity.find('.pct').text(H.number(pcts.gravity));
-            const $aero = $pred.find('.power-details .aero');
+            const $aero = $powerDetails.find('.aero');
             $aero.find('.power').text(H.number(est.aWatts));
             $aero.find('.pct').text(H.number(pcts.aero));
-            const $rr = $pred.find('.power-details .rr');
+            const $rr = $powerDetails.find('.rr');
             $rr.find('.power').text(H.number(est.rWatts));
             $rr.find('.pct').text(H.number(pcts.rr));
-            $pred.find('.power-details .sparkline').sparkline(
+            $powerDetails.find('.sparkline').sparkline(
                 watts,
                 {
                     type: 'bar',
@@ -3150,6 +3187,20 @@ sauce.ns('analysis', ns => {
             $dialog.find('input[name="work"]').val(1 / riders);
             $dialog.find('input[name="position"]').attr('max', riders);
             setTimeout(recalc, 0);
+        });
+        $dialog.on('input', '[name="body-weight"]', ev => {
+            if (fget('group-use-athlete-weight')) {
+                const $el = $dialog.find('input[name="group-body-weight"]');
+                $el.val(ev.currentTarget.value);
+            }
+        });
+        $dialog.on('input', '[name="group-use-athlete-weight"]', ev => {
+            const $el = $dialog.find('input[name="group-body-weight"]');
+            const disabled = ev.currentTarget.checked;
+            $el[0].disabled = disabled;
+            if (disabled) {
+                $el.val(fget('body-weight'));
+            }
         });
         $dialog.on('input', 'input', () => setTimeout(recalc, 0));
         recalc(/*initial*/ true);
@@ -3247,20 +3298,26 @@ sauce.ns('analysis', ns => {
 
 
     async function initSyncActivity(activity, athleteId) {
+        let setSyncDone;
+        const syncEvent = new Promise(resolve => void (setSyncDone = resolve));
         if (!(sauce.patronLevel >= 10)) {
-            return;
+            return {syncEvent};
         }
         const athleteData = await sauce.hist.getAthlete(athleteId);
         if (!athleteData || !athleteData.sync) {
-            return;
+            return {syncEvent};
         }
         ns.syncAthlete = new SyncAthlete(athleteData);
         ns.syncActivity = await sauce.hist.getActivity(activity.id);
         if (!ns.syncActivity) {
-            setTimeout(() => sauce.hist.syncAthlete(ns.syncAthlete.id).catch(sauce.report.error), 100);
+            sauce.sleep(100).then(async () => {
+                await sauce.hist.syncAthlete(ns.syncAthlete.id, {wait: true});
+                ns.syncActivity = await sauce.hist.getActivity(activity.id);
+                setSyncDone();
+            });
         } else {
             // Check for updates out of band to disaffect page load.
-            setTimeout(async () => {
+            sauce.sleep(2000).then(async () => {
                 const fullAct = await fetchFullActivity();
                 if (!fullAct) {
                     return;
@@ -3274,7 +3331,6 @@ sauce.ns('analysis', ns => {
                 if (updates.type) {
                     const basetype = sauce.model.getActivityBaseType(updates.type);
                     if (basetype && basetype !== ns.syncActivity.basetype) {
-                        // XXX Remove this later, I just need to verify that I'm not causing spurious updates.
                         await sauce.report.event('SyncActivity', 'type-change',
                             `${ns.syncActivity.basetype} -> ${basetype}`);
                         updates.basetype = basetype;
@@ -3285,12 +3341,15 @@ sauce.ns('analysis', ns => {
                     Object.assign(ns.syncActivity, updates);
                     if (updates.basetype) {
                         await sauce.hist.deletePeaksForActivity(activity.id);
-                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local');
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null,
+                            {wait: true});
+                        setSyncDone();
                     }
                     await sauce.report.event('SyncActivity', 'update', Object.keys(updates).join());
                 }
-            }, 2000);
+            });
         }
+        return {syncEvent};
     }
 
 
@@ -3299,7 +3358,7 @@ sauce.ns('analysis', ns => {
         ns.athlete = pageView.activityAthlete();
         ns.gender = ns.athlete.get('gender') === 'F' ? 'female' : 'male';
         await Promise.all([sauce.proxy.connected, _localeInit]);
-        await initSyncActivity(activity, ns.athlete.id);
+        ({syncEvent: ns.afterSyncActivity} = await initSyncActivity(activity, ns.athlete.id));
         await Promise.all([
             getWeightInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
             getFTPInfo(ns.athlete.id).then(x => Object.assign(ns, x)),

@@ -49,7 +49,7 @@
         }
 
         form.input {
-            flex: 1 1 60%;
+            flex: 1 1 55%;
             max-width: 100%;
         }
 
@@ -76,6 +76,7 @@
         }
 
         .columns {
+            display: flex;
             flex-direction: row;
             flex-wrap: wrap;
 
@@ -89,7 +90,7 @@
         }
 
         .output {
-            flex: 1 1 40%;
+            flex: 1 1 45%;
             min-width: 300px;
             max-width: 100%;
             max-height: 100%;  // for sticky scroll to work
@@ -102,8 +103,23 @@
                                               #{color.shade(fg, 10%)});
             color: color.shade(bg, 10%);
 
+            &:not(.valid) {
+                .valid-only {
+                    display: none;
+                }
+            }
+            &.valid {
+                .invalid {
+                    display: none;
+                }
+            }
+
             .entry {
-                padding: 0.2em 1.2em 0.4em;
+                padding: 0.5em 0.5em 0.3em;
+
+                .indent {
+                    padding-top: 0.5em;
+                }
             }
 
             .heading {
@@ -111,6 +127,7 @@
                 font-weight: bold;
                 font-variant: petite-caps;
                 color: color.get(bg);
+                margin-bottom: 0.2em;
             }
 
             key {
@@ -119,33 +136,37 @@
             }
 
             section {
-                padding: 1em;
+                padding: 1em 1em 0 1em;
 
-                &.predicted {
-                    &:not(.valid) {
-                        display: none;
+                @media only screen and (max-width: 768px) {
+                    padding-left: 0.4em;
+                    padding-right: 0.4em;
+                }
+
+                &.power-details {
+                    > .entry .entry {
+                        padding-left: 0;
+
+                        &:first-child {
+                            padding-top: 0;
+                        }
                     }
-                    &.valid + section.invalid {
-                        display: none;
+
+                    dot {
+                        display: inline-block;
+                        width: 0.7em;
+                        height: 0.7em;
+                        border-radius: 100%;
+                        margin-right: 0.2em;
                     }
 
-                    .power-details {
-                        dot {
-                            display: inline-block;
-                            width: 0.7em;
-                            height: 0.7em;
-                            border-radius: 100%;
-                            margin-right: 0.2em;
-                        }
+                    .pct:not(:empty)::before {
+                        content: ' | ';
+                        color: color.shade(fg, 8%);
+                    }
 
-                        .pct:not(:empty)::before {
-                            content: ' | ';
-                            color: color.shade(fg, 8%);
-                        }
-
-                        .left-col {
-                            font-size: 0.92em;
-                        }
+                    .left-col {
+                        font-size: 0.92em;
                     }
                 }
 
@@ -163,6 +184,7 @@
                 align-self: center;
                 width: 4.25em;
                 height: 4.25em;
+                padding-left: 1.4em;
             }
 
             .drafting-output {
@@ -173,10 +195,12 @@
                 .entry.rider-icons {
                     padding-left: 0;
                     padding-right: 0;
+                    justify-content: space-evenly;
                 }
 
                 .draft-rider-icon {
                     flex: 1 1 0;
+                    max-width: 7rem;
                     font-size: calc(4 / var(--draft-riders) * 1.1em);
                     margin: 0.3rem 0.3em 0;
                     --draft-power-pct: (var(--draft-power) - var(--draft-power-min)) /
@@ -188,7 +212,7 @@
                             var(--draft-hue-offset)),
                         90%,
                         50%);
-                    filter: SaTuRaTe(var(--draft-pct)); // funky case to workaround sass bug.
+                    filter: SaTuRaTe(calc(3 * var(--draft-pct))); // funky case to workaround sass bug.
 
                     svg[data-icon] {
                         transform: scaleX(-1);
@@ -200,14 +224,14 @@
                     }
 
                     label {
-                        margin-top: 0.2em;
+                        margin-top: 0.4em;
                         text-align: center;
-                        color: inherit;
+                        color: color.shade(bg, 5%);
                         line-height: 1;
-                        font-size: clamp(0.65rem, 1rem, 1.2em);
+                        font-size: clamp(0.65rem, 1em, 1.4rem);
 
                         small {
-                            font-size: 0.88em;
+                            font-size: 0.8em;
                         }
                     }
 
