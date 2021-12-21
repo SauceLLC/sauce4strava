@@ -89,6 +89,7 @@
 
     .btn,
     .button,
+    a.button, // hack to win over a:link style
     button,
     input[type="submit"],
     input[type="button"],
@@ -98,6 +99,12 @@
     .pagination span,
     .pagination em {
         color: color.shade(fg, 8%);
+
+        &.minimal {
+            background-color: color.shade(bg, 3%);
+            border-color: $mid-border-color;
+            color: color.shade(fg, 3%);
+        }
 
         &:not(.btn-unstyled) {
             background-color: color.shade(bg, 8%);
@@ -174,19 +181,19 @@
     }
 
     button[class*="Button--primary-outline--"] {
-        border-color: color.shade(accent, 10%);
-        background-color: transparent;
+        border-color: color.shade(accent, 10%) !important;
+        background-color: transparent !important;
         color: color.shade(accent, 10%);
 
         &:hover {
-            border-color: color.shade(accent, -5%);
-            background-color: color.shade(accent, -5%);
+            border-color: color.shade(accent, -5%) !important;
+            background-color: color.shade(accent, -5%) !important;
             color: color.shade(accent, 90%);
         }
     }
 
     .page {
-        a:not(.btn):not(.btn-primary),
+        a:not(.btn):not(.button),
         .btn.btn-link {
             &:link,
             &:visited {
@@ -273,7 +280,11 @@
         $summit-group-bg-hover: color.shade(accent4, 20%);
 
         .drop-down-menu {
-            &.active .selection {
+            &.minimal .selection {
+                background-color: transparent;
+            }
+
+            &:not(.minimal).active .selection {
                 background-color: $link-bg;
             }
 
@@ -292,7 +303,7 @@
             }
         }
 
-        .drop-down-menu,
+        .drop-down-menu:not(.prio-hack):not(.prio-hack2):not(.prio-hack3),
         .slide-menu {
             .options {
                 a:hover,
@@ -360,19 +371,19 @@
         }
     }
 
-    .pagenav {
+    .pagenav:not(.prio-hack):not(.prio-hack2):not(.prio-hack3) {
         border: none;
-        background-color: color.lighten(bg, 5%); // XXX probably use shade
+        background-color: color.shade(bg, 5%);
 
         li {
             border-color: $hard-border-color;
 
-            > a {
-                color: color.darken(fg, 10%); // XXX probably use shade
+            a {
+                color: color.shade(fg, 10%);
 
                 &:hover,
                 &:active {
-                    background-color: color.lighten(bg, 10%); // XXX probably use shade
+                    background-color: color.shade(bg, 10%);
                 }
 
                 &:focus {
@@ -385,7 +396,7 @@
             }
 
             &.selected a {
-                color: color.lighten(fg, 10%); // XXX probably use shade
+                color: color.shade(fg, 10%);
             }
         }
     }
@@ -777,17 +788,21 @@
     textarea,
     .textarea-clone,
     select {
-        background-color: color.shade(bg, 8%) !important;
-        color: color.shade(fg, 8%) !important;
-        border-color: $hard-border-color !important;
+        &:not(.prio.hack) {
+            background-color: color.shade(bg, 3%);
+            color: color.shade(fg, 8%);
+            border-color: $hard-border-color;
+            border-style: solid;
 
-        &:focus {
-            background-color: color.shade(bg, 2%) !important;
-            color: color.shade(fg, 2%) !important;
-        }
+            &:focus {
+                background-color: color.shade(bg, 0%);
+                color: color.shade(fg, 2%);
+                border-color: $hard-border-color;
+            }
 
-        &::placeholder {
-            color: color.shade(fg, 40%, 80%) !important;
+            &::placeholder {
+                color: color.shade(fg, 40%, 80%);
+            }
         }
     }
 
@@ -1033,7 +1048,7 @@
         /* NEW... */
         .react-feed-component {
             .react-feed-entry {
-                background-color: color.shade(bg, 10%);
+                background-color: color.shade(bg, 8%);
                 color: color.shade(fg, 10%);
 
                 [class*="EntryHeader--icon-container--"] {
@@ -2114,7 +2129,11 @@
     }
 
     .stats-container {
-        background-color: color.shade(bg, 8%);
+        background-color: color.shade(bg, 4%);
+
+        table.table {
+            background-color: transparent;
+        }
     }
 
     [class*="ExpandableOptionList--who-can-see"] {
@@ -2490,6 +2509,18 @@
         }
     }
 
+    [data-reach-tab-list] {
+        background-color: transparent;
+
+        button[data-reach-tab] {
+            background: transparent;
+            border-color: transparent;
+            border-top-color: transparent !important;
+            border-left-color: transparent !important;
+            border-right-color: transparent !important;
+        }
+    }
+
     table.hoverable > tbody {
         > tr:hover,
         > tr.highlighted {
@@ -2625,6 +2656,84 @@
         background-color: color.shade(bg, 5%);
     }
 
+    [class*="Leaderboard--container--"] {
+        [class*="Leaderboard--privacy-section--"] {
+            background-color: color.shade(bg, 5%);
+        }
+    }
+
+    .react-select__control {
+        background-color: color.shade(bg, 5%);
+        border-color: color.shade(bg, 25%);
+
+        &:hover {
+            border-color: color.shade(bg, 35%);
+        }
+
+        .react-select__value-container {
+            .react-select__single-value {
+                color: color.shade(fg, 0%);
+            }
+
+            .react-select__indicator-separator {
+                background-color: color.shade(fg, 40%);
+            }
+
+            .react-select__indicator {
+                color: color.shade(fg, 15%);
+            }
+        }
+    }
+
+    .react-select__menu {
+        background-color: color.shade(bg, 5%);
+        border-color: color.shade(bg, 25%);
+
+        .react-select__option {
+            color: color.shade(fg, 2%);
+
+            &:hover {
+                background-color: color.shade(bg, 15%);
+            }
+        }
+    }
+
+    [class*="CreatePost--input-wrapper--"] {
+        label {
+            color: color.shade(fg, 20%);
+        }
+    }
+
+    table[class*="LeaderboardsTable--table--"] {
+        thead tr {
+            background-color: transparent;
+
+            th {
+                border-color: color.shade(bg, 25%);
+            }
+        }
+
+        tbody tr {
+            border-color: color.shade(bg, 25%) !important;
+            color: color.shade(fg, 2%) !important;
+
+            td {
+                [class*="Leaderboard--name--"] a {
+                    color: color.shade(fg, 2%) !important;
+                }
+            }
+        }
+    }
+
+    [class*="Show--top-row--"] {
+        border-color: color.shade(bg, 25%);
+    }
+
+    [class*="Stat--stat--"] [class*="Stat--stat-label--"],
+    [class*="DataGrid--title--"] {
+        color: color.shade(fg, 2%);
+    }
+
     .challenge {
         .location {
             color: color.shade(fg, 10%);
@@ -2688,6 +2797,45 @@
                 &, * {
                     color: $link-color-hover;
                 }
+            }
+        }
+    }
+
+    table.sortable {
+        thead th {
+            &:not(.nosort):hover {
+                background-color: color.shade(bg, 10%);
+            }
+
+            a, .button {
+                color: color.shade(fg, 10%);
+            }
+        }
+    }
+
+    .leaderboard-page {
+        .leaderboard .unit {
+            color: inherit;
+        }
+
+        .leaders.section {
+            table {
+                border-color:  $hard-border-color;
+
+                tbody td {
+                    background: color.shade(bg, 3%);
+                    border-color:  $mid-border-color;
+                }
+            }
+        }
+
+        .leaderboard table {
+            thead th.active {
+                background: color.shade(bg, 8%);
+            }
+
+            tbody td.highlighted-column {
+                background: color.shade(bg, 4%);
             }
         }
     }

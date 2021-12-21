@@ -14,6 +14,12 @@
         max-width: calc(100vw - 2rem - (100vw - 100%));
         max-height: calc(100vh - 2rem - (100vh - 100%));
 
+        form.sauce-key-value {
+            key {
+                word-break: break-all;
+            }
+        }
+
         .ui-dialog-content {
             display: flex;
             flex-wrap: wrap;
@@ -164,10 +170,15 @@
                 --draft-hue-range: calc(min(1, var(--draft-variance)) * 90deg);
                 --draft-hue-offset: calc(min(100deg, 10deg + (1 - min(1, var(--draft-variance))) * 45deg));
 
+                .entry.rider-icons {
+                    padding-left: 0;
+                    padding-right: 0;
+                }
+
                 .draft-rider-icon {
                     flex: 1 1 0;
                     font-size: calc(4 / var(--draft-riders) * 1.1em);
-                    margin: 0.8rem 0.5em 0;
+                    margin: 0.3rem 0.3em 0;
                     --draft-power-pct: (var(--draft-power) - var(--draft-power-min)) /
                         var(--draft-power-range);
                     color: hsl(
@@ -189,9 +200,15 @@
                     }
 
                     label {
-                        margin-top: 0;
+                        margin-top: 0.2em;
                         text-align: center;
                         color: inherit;
+                        line-height: 1;
+                        font-size: clamp(0.65rem, 1rem, 1.2em);
+
+                        small {
+                            font-size: 0.88em;
+                        }
                     }
 
                     &.hidden {

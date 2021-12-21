@@ -188,21 +188,21 @@ table.sauce-perf {
         -webkit-appearance: none;
         appearance: none;
         border-radius: 0.25em;
-        padding: 0.3em 1.8em 0.3em 0.5em;
+        padding: 0.3em 1.5em 0.3em 0.8em;
         background-image: url(../../images/fa/chevron-down-duotone.svg);
         background-position: right 0.6em center;
         background-repeat: no-repeat;
         background-size: auto 50%;
-        background-color: color.get(bg); // Match _button
+        background-color: color.shade(bg, 8%); // match button XXX
         border: 1px solid color.shade(fg, 20%, 0.2); // "
         outline: none;
-        transition-property: box-shadow, border-color, background-color;
+        transition-property: border-color, filter;
         transition-duration: 150ms;
         cursor: pointer;
 
         &:hover {
-            box-shadow: 1px 1px 3px color.shade(fg, 0%, 0.5);
-            border-color: transparent;
+            border-color: color.shade(bg, 30%); // match button XXX
+            filter: brightness(1.1); // match button XXX
         }
     }
 

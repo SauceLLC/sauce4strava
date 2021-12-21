@@ -29,13 +29,12 @@
             }
         }
 
-
         &:not(.btn-unstyled):not(.btn-primary):not(.btn-secondary) {
-            background-color: color.get(bg);
-            border: 1px solid color.shade(fg, 20%, 0.2);
+            background-color: color.shade(bg, 8%);
+            border: 1px solid color.shade(bg, 20%, 0.5);
 
             &:hover {
-                border-color: color.get(fg, 0.5);
+                border-color: color.shade(bg, 30%, 0.5);
             }
         }
 
@@ -45,12 +44,12 @@
             }
 
             &:hover {
-                box-shadow: 1px 1px 1px #0005;
+                box-shadow: 0.5px 0.5px 1px #0009;
                 border-color: transparent;
             }
 
             &:active {
-                box-shadow: 0 0 4px 3px #0004 inset;
+                box-shadow: 0 0 2px 0 #0008 inset;
                 border-color: #0003 !important;
             }
         }

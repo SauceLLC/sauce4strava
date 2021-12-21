@@ -220,12 +220,16 @@
         }
     }
 
-    [class*=SegmentDetails--elevation-profile--] img {
+    [class*="SegmentDetails--elevation-profile--"] img {
         filter: $map-filter;
     }
 
-    [class*=SegmentDetails--sport-type-icon--] svg,
-    [class*=src--branding--] a img {
+    [class*="SegmentDetails--sport-type-icon--"] svg,
+    [class*="src--branding--"] a img {
+        filter: invert(1);
+    }
+
+    [class*="ActionsDropdown--more-icon--"] {
         filter: invert(1);
     }
 }
