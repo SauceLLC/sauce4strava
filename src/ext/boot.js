@@ -156,7 +156,7 @@
             'site/dashboard.js'
         ]
     }, {
-        pathExclude: /^\/($|subscribe|login|register|legal|challenges)(\/.*|\b|$)/,
+        pathExclude: /^\/($|subscribe|login|register|legal)(\/.*|\b|$)/,
         scripts: [
             'common/proxy.js',
             'site/proxy.js',
