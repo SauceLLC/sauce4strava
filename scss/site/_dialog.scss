@@ -127,7 +127,7 @@ html .ui-dialog {
     }
 
     .padded-info {
-        padding: 1.2em;
+        padding: 1rem;
         margin: 0;
     }
 
@@ -163,7 +163,7 @@ html .ui-dialog {
                                           color.shade(accent3, 10%),
                                           color.get(accent3));
         color: color.shade(accent3, 60%);
-        padding: 1.2em;
+        padding: 1em;
         margin: 0.4em 0 1em;
         border-radius: 0.5em;
         position: relative;
@@ -179,10 +179,10 @@ html .ui-dialog {
 
         a.sauce-dismiss {
             float: right;
-            margin-right: -0.75em;
-            margin-top: -0.75em;
+            margin-right: -0.5em;
+            margin-top: -0.5em;
             cursor: pointer;
-            opacity: 0.8;
+            opacity: 0.9;
             transition: opacity 200ms;
 
             &:hover {
@@ -226,7 +226,7 @@ html .ui-dialog {
         }
 
         .entry {
-            padding: 0.2em 1.2em;
+            padding: 0.2rem 1rem;
         }
 
         > .entry:nth-of-type(odd) {
