@@ -1865,6 +1865,9 @@ async function setStoragePersistent() {
 
 let _setStoragePersistent;
 export function startSyncManager(id) {
+    if (syncManager) {
+        throw new Error("SyncManager already exists");
+    }
     if (id) {
         if (!_setStoragePersistent) {
             _setStoragePersistent = true;
@@ -1885,6 +1888,11 @@ export async function stopSyncManager() {
     mgr.stop();
     await mgr.join();
     console.debug("Sync Manager stopped.");
+}
+
+
+export function hasSyncManager() {
+    return !!syncManager;
 }
 
 

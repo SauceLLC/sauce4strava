@@ -5,9 +5,9 @@ import * as hist from '/src/bg/hist.mjs';
 // For console debugging only.
 sauce.ns('hist', () => Object.fromEntries(Object.entries(hist)));
 
-// Required to make site start with alarms API
-browser.alarms.onAlarm.addListener(() => void 0);
-
+// Sadly 'onInstalled' callbacks are not reliable on Safari so we need
+// to try migrations every startup.
+const migrationsRun = sauce.migrate.runMigrations();
 self.currentUser = Number(localStorage.getItem('currentUser')) || undefined;
 
 
@@ -23,6 +23,14 @@ function setCurrentUser(id) {
     const ev = new Event('currentUserUpdate');
     ev.id = id;
     self.dispatchEvent(ev);
+}
+
+
+async function maybeStartSyncManager() {
+    await migrationsRun;
+    if (self.currentUser && !hist.hasSyncManager()) {
+        hist.startSyncManager(self.currentUser);
+    }
 }
 
 
@@ -91,6 +99,10 @@ if (browser.runtime.getURL('').startsWith('safari-web-extension:')) {
     document.dispatchEvent(new Event('visibilitychange'));
 }
 
+// Required to make site start with alarms API
+browser.alarms.onAlarm.addListener(() =>
+    void maybeStartSyncManager().catch(sauce.report.error)); // pur pot hack. :/
+
 browser.runtime.onInstalled.addListener(async details => {
     if (['install', 'update'].includes(details.reason) && !details.temporary) {
         const version = browser.runtime.getManifest().version;
@@ -114,15 +126,13 @@ browser.runtime.onMessage.addListener(msg => {
     }
 });
 
-
-const dc = browser.declarativeContent;
-if (dc) {
+if (browser.declarativeContent) {
     // Chromium...
     browser.runtime.onInstalled.addListener(async details => {
-        dc.onPageChanged.removeRules(undefined, () => {
-            dc.onPageChanged.addRules([{
-                actions: [new dc.ShowPageAction()],
-                conditions: [new dc.PageStateMatcher({
+        browser.declarativeContent.onPageChanged.removeRules(undefined, () => {
+            browser.declarativeContent.onPageChanged.addRules([{
+                actions: [new browser.declarativeContent.ShowPageAction()],
+                conditions: [new browser.declarativeContent.PageStateMatcher({
                     pageUrl: {
                         hostSuffix: 'www.strava.com',
                         schemes: ['https']
@@ -146,11 +156,4 @@ if (dc) {
     });
 }
 
-(async function main() {
-    // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
-    // to try migrations every startup.
-    await sauce.migrate.runMigrations();
-    if (self.currentUser) {
-        hist.startSyncManager(self.currentUser);
-    }
-})();
+maybeStartSyncManager().catch(sauce.report.error);
