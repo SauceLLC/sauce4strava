@@ -1891,7 +1891,6 @@ export async function stopSyncManager() {
 addEventListener('currentUserUpdate', async ev => {
     if (syncManager) {
         if (syncManager.currentUser === ev.id) {
-            console.warn('Spurious currentUserUpdate call', ev.id);
             return;
         }
         console.info("Current user changed:", syncManager.currentUser, '->', ev.id);
