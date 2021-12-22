@@ -992,10 +992,10 @@ sauce.ns('analysis', ns => {
                 of: options.originEl
             },
             extraButtons: {
-                "Analysis View": () => {
+                [await LM('title')]: () => {
                     $dialog.dialog('close');
                     changeToAnalysisView(options.start, options.end);
-                }
+                },
             }
         });
         $dialog.find('.start_time_link').on('click',() => {

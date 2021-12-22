@@ -276,6 +276,7 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    let _dialogCloseText = 'Close';
     sauce.dialog = function(options={}) {
         const $dialog = options.el || self.jQuery(`<div>${options.body || ''}</div>`);
         const dialogClass = `sauce-dialog ${options.dialogClass || ''}`;
@@ -285,7 +286,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         // Assign default button(s) (will be clobbered if options.buttons is defined)
         const defaultClass = 'btn';
         const buttons = [{
-            text: 'Close', // XXX locale
+            text: _dialogCloseText,
             click: () => $dialog.dialog('close'),
             class: defaultClass,
         }];
@@ -329,6 +330,9 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
         return $dialog;
     };
+    document.addEventListener('sauceLocaleReady', async () => {
+        _dialogCloseText = await sauce.locale.getMessage('close');
+    });
 
 
     sauce.modal = function(options={}) {

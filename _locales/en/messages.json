@@ -4,6 +4,7 @@
     "athlete": {"message": "Athlete"},
     "type": {"message": "Type"},
     "performance": {"message": "Performance"},
+    "close": {"message": "Close"},
 
     "analysis_options": {"message": "Options"},
     "analysis_tools": {"message": "Tools"},

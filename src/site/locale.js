@@ -111,6 +111,12 @@ sauce.ns('locale', ns => {
     }
 
 
+    function triggerReady() {
+        const ev = new Event('sauceLocaleReady');
+        document.dispatchEvent(ev);
+    }
+
+
     async function _init(options={}) {
         const units = ['year', 'week', 'day', 'hour', 'min', 'sec',
                        'years', 'weeks', 'days', 'hours', 'mins', 'secs',
@@ -118,6 +124,7 @@ sauce.ns('locale', ns => {
         hdUnits = await getMessagesObject(units, 'time');
         if (options.skipFormatters) {
             initialized = true;
+            triggerReady();
             return;
         }
         await Promise.all([
@@ -151,6 +158,7 @@ sauce.ns('locale', ns => {
             Strava.I18n.UnitSystemSource.IMPERIAL);
         ns.metricDistanceFormatter = new Strava.I18n.DistanceFormatter(
             Strava.I18n.UnitSystemSource.METRIC);
+        triggerReady();
         initialized = true;
     }
 
