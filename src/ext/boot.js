@@ -4,6 +4,30 @@
     'use strict';
 
     const manifests = [{
+        pathExclude: /^\/($|subscribe|login|register|legal|routes\/new|.+?\/heatmaps\/|.+?\/training\/log|segments\/.+?\/local-legend)(\/.*|\b|$)/,
+        stylesheets: ['site/theme.css'],
+        callbacks: [
+            config => {
+                let theme = config.options.theme;
+                if (theme === 'system') {
+                    theme = (matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : null;
+                }
+                if (theme) {
+                    document.documentElement.classList.add(
+                        'sauce-theme-enabled',
+                        `sauce-theme-${theme}`);
+                }
+            }
+        ]
+    }, {
+        callbacks: [
+            config => {
+                if (config.options['hide-upsells']) {
+                    document.documentElement.classList.add('sauce-hide-upsells');
+                }
+            }
+        ]
+    }, {
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
         stylesheets: ['site/analysis.css'],
@@ -131,22 +155,6 @@
             }
         ]
     }, {
-        pathExclude: /^\/($|subscribe|login|register|legal|routes\/new|.+?\/heatmaps\/|.+?\/training\/log|segments\/.+?\/local-legend)(\/.*|\b|$)/,
-        stylesheets: ['site/theme.css'],
-        callbacks: [
-            config => {
-                let theme = config.options.theme;
-                if (theme === 'system') {
-                    theme = (matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : null;
-                }
-                if (theme) {
-                    document.documentElement.classList.add(
-                        'sauce-theme-enabled',
-                        `sauce-theme-${theme}`);
-                }
-            }
-        ]
-    }, {
         name: 'Dashboard',
         pathMatch: /^\/dashboard(\/.*|\b)/,
         stylesheets: ['site/dashboard.css'],
@@ -167,14 +175,6 @@
             'site/proxy.js',
             'site/locale.js',
             'site/usermenu.js',
-        ]
-    }, {
-        callbacks: [
-            config => {
-                if (config.options['hide-upsells']) {
-                    document.documentElement.classList.add('sauce-hide-upsells');
-                }
-            }
         ]
     }];
 
