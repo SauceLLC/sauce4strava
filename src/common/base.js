@@ -1056,7 +1056,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     async function reportError(e) {
-        if (e && e.disableReport) {
+        if (e && (e.disableReport || e.name === 'QuotaExceededError')) {
             console.warn('Ignoring non-reporting error:', e);
             return;
         }
