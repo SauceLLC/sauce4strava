@@ -1061,9 +1061,9 @@ self.sauceBaseInit = function sauceBaseInit() {
             return;
         }
         const page = location.pathname;
+        const isExt = !!(self.browser && self.browser.runtime);
         const version = (sauce && sauce.version) ||
-            ((self.browser && self.browser.runtime) &&
-             self.browser.runtime.getManifest().version);
+            (isExt && self.browser.runtime.getManifest().version);
         const desc = [`v${version}`];
         try {
             if (!(e instanceof Error) && (e == null || !e.stack)) {
@@ -1093,7 +1093,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                     desc.push(e.toString());
                 }
                 // Reduce cardinality from randomly generated urls (safari & firefox)
-                const extUrl = self.browser ? self.browser.runtime.getURL('') : sauce.extUrl;
+                const extUrl = isExt ? self.browser.runtime.getURL('') : sauce.extUrl;
                 const genericUrl = extUrl.split('://', 1)[0] + '://<sauce>/';
                 if (e.stack) {
                     desc.push(e.stack.replaceAll(extUrl, genericUrl));
