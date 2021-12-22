@@ -318,8 +318,7 @@ table.sauce-perf {
                 height: 2.5em;
                 border-radius: 0.25em;
                 box-shadow: 1px 1px 3px 0 #2223;
-                overflow: hidden;
-                transition: box-shadow 100ms, filter 100ms;
+                transition: box-shadow 100ms;
 
                 &:hover {
                     filter: contrast(1.3);
