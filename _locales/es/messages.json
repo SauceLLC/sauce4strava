@@ -241,6 +241,12 @@
     "analysis_raw": {
         "message": "crudo"
     },
+    "analysis_raw_data": {
+        "message": "Datos brutos"
+    },
+    "analysis_graphed_data": {
+        "message": "Datos graficados"
+    },
     "analysis_graphs": {
         "message": "gráficos"
     },
@@ -462,6 +468,9 @@
     },
     "analysis_click_to_change": {
         "message": "Haga clic para cambiar"
+    },
+    "analysis_download": {
+        "message": "Descargar"
     },
     "time_sec": {
         "message": "sec",
@@ -739,6 +748,15 @@
     },
     "perf_predictor_drafting_help": {
         "message": "Dibujar o montar en un grupo de ciclistas proporciona importantes beneficios aerodinámicos. Performance Predictor puede modelar estos efectos aplicando la investigación de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen y Bert Blocken</a> .<br/><br/> Tenga en cuenta que este algoritmo funciona bien para grupos de menor tamaño en formaciones de un solo archivo. Los grandes pelotones de los ciclistas están sujetos a fuerzas aerodinámicas más complicadas que no se tratan adecuadamente aquí."
+    },
+    "perf_predictor_group_weight": {
+        "message": "Su peso"
+    },
+    "perf_predictor_group_weight_tooltip": {
+        "message": "Para modelar los efectos de montar en un grupo con ciclistas que pesan más o menos que el atleta principal, puede cambiar el peso de todos los demás ciclistas. es decir, los requisitos de potencia de los demás cuando eres el ciclista pesado o el ciclista ligero."
+    },
+    "perf_predictor_group_use_athlete_weight": {
+        "message": "Usar el peso del atleta"
     },
     "sync_control_panel_intro": {
         "message": "La sincronización de actividades importa todo el historial de actividades para permitir mejores gráficos de entrenamiento y análisis de rendimiento."
@@ -1129,6 +1147,12 @@
     },
     "performance_predicted_tss_tooltip": {
         "message": "Las predicciones futuras de TSS se calculan utilizando los valores de ATL y CTL más recientes como factor de pendiente inicial. También se aplica un factor de desintegración para tener en cuenta la incertidumbre y los límites de adaptación humana."
+    },
+    "performance_active_days_title": {
+        "message": "Días activos"
+    },
+    "performance_inactive": {
+        "message": "Inactivo"
     },
     "season_start": {
         "message": "Inicio de temporada"

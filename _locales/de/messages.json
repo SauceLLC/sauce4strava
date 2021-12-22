@@ -246,6 +246,12 @@
     "analysis_raw": {
         "message": "roh"
     },
+    "analysis_raw_data": {
+        "message": "Rohdaten"
+    },
+    "analysis_graphed_data": {
+        "message": "Grafische Daten"
+    },
     "analysis_graphs": {
         "message": "Grafiken"
     },
@@ -472,6 +478,9 @@
     },
     "analysis_click_to_change": {
         "message": "Klicken Sie, um zu ändern"
+    },
+    "analysis_download": {
+        "message": "Herunterladen"
     },
     "time_sec": {
         "message": "Sek.",
@@ -761,6 +770,15 @@
     },
     "perf_predictor_drafting_help": {
         "message": "Das Zeichnen oder Fahren in einer Gruppe von Fahrern bietet erhebliche aerodynamische Vorteile. Performance Predictor kann diese Effekte modellieren, indem Untersuchungen von <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen und Bert Blocken angewendet werden</a> .<br/><br/> Beachten Sie, dass dieser Algorithmus für kleinere Gruppen in einzelnen Dateiformationen gut funktioniert. Große Pelotons von Fahrern sind komplizierteren aerodynamischen Kräften ausgesetzt, die hier nicht richtig angesprochen werden."
+    },
+    "perf_predictor_group_weight": {
+        "message": "Ihr Gewicht"
+    },
+    "perf_predictor_group_weight_tooltip": {
+        "message": "Um die Auswirkungen des Fahrens in einer Gruppe mit Fahrern zu modellieren, die mehr oder weniger wiegen als der Hauptathlet, können Sie das Gewicht aller anderen Fahrer ändern. dh der Leistungsbedarf anderer, wenn Sie der schwere Fahrer oder der leichte Fahrer sind."
+    },
+    "perf_predictor_group_use_athlete_weight": {
+        "message": "Verwenden Sie das Athletengewicht"
     },
     "sync_control_panel_intro": {
         "message": "Die Aktivitätssynchronisierung importiert den gesamten Aktivitätsverlauf, um verbesserte Trainingsdiagramme und Leistungsanalysen zu ermöglichen."
@@ -1154,6 +1172,12 @@
     },
     "performance_predicted_tss_tooltip": {
         "message": "Zukünftige TSS-Vorhersagen werden unter Verwendung der neuesten ATL- und CTL-Werte als Startsteigungsfaktor berechnet. Ein Abklingfaktor wird auch angewendet, um Unsicherheit und menschliche Anpassungsgrenzen zu berücksichtigen."
+    },
+    "performance_active_days_title": {
+        "message": "Aktive Tage"
+    },
+    "performance_inactive": {
+        "message": "Inaktiv"
     },
     "season_start": {
         "message": "Saisonbeginn"

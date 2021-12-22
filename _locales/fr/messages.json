@@ -247,6 +247,12 @@
     "analysis_raw": {
         "message": "brut"
     },
+    "analysis_raw_data": {
+        "message": "Données brutes"
+    },
+    "analysis_graphed_data": {
+        "message": "Données graphiques"
+    },
     "analysis_graphs": {
         "message": "graphiques"
     },
@@ -470,6 +476,9 @@
     },
     "analysis_click_to_change": {
         "message": "Cliquez pour changer"
+    },
+    "analysis_download": {
+        "message": "Télécharger"
     },
     "time_sec": {
         "message": "sec",
@@ -747,6 +756,15 @@
     },
     "perf_predictor_drafting_help": {
         "message": "Le dessin ou la conduite dans un groupe de cyclistes offre des avantages aérodynamiques significatifs. Performance Predictor peut modéliser ces effets en appliquant les recherches de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen et Bert Blocken</a> .<br/><br/> Notez que cet algorithme fonctionne bien pour les groupes de plus petite taille dans des formations de fichier unique. Les grands pelotons de coureurs sont soumis à des forces aérodynamiques plus complexes qui ne sont pas correctement traitées ici."
+    },
+    "perf_predictor_group_weight": {
+        "message": "leur poids"
+    },
+    "perf_predictor_group_weight_tooltip": {
+        "message": "Pour modéliser les effets de rouler en groupe avec des coureurs qui pèsent plus ou moins que l'athlète principal, vous pouvez modifier le poids de tous les autres coureurs. c'est-à-dire les besoins en puissance des autres lorsque vous êtes le cavalier lourd ou le cavalier léger."
+    },
+    "perf_predictor_group_use_athlete_weight": {
+        "message": "Utiliser le poids de l'athlète"
     },
     "sync_control_panel_intro": {
         "message": "La synchronisation des activités importe tout l'historique des activités pour permettre d'améliorer les graphiques d'entraînement et l'analyse des performances."
@@ -1138,6 +1156,12 @@
     },
     "performance_predicted_tss_tooltip": {
         "message": "Les prévisions futures du TSS sont calculées en utilisant les valeurs ATL et CTL les plus récentes comme facteur de pente de départ. Un facteur de décroissance est également appliqué pour tenir compte de l'incertitude et des limites d'adaptation humaine."
+    },
+    "performance_active_days_title": {
+        "message": "Jours actifs"
+    },
+    "performance_inactive": {
+        "message": "Inactif"
     },
     "season_start": {
         "message": "Début de la saison"

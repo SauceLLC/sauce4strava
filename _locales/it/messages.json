@@ -248,6 +248,12 @@
     "analysis_raw": {
         "message": "crudo"
     },
+    "analysis_raw_data": {
+        "message": "Dati grezzi"
+    },
+    "analysis_graphed_data": {
+        "message": "Dati grafici"
+    },
     "analysis_graphs": {
         "message": "grafici"
     },
@@ -471,6 +477,9 @@
     },
     "analysis_click_to_change": {
         "message": "Clicca per cambiare"
+    },
+    "analysis_download": {
+        "message": "Scarica"
     },
     "time_sec": {
         "message": "secondo"
@@ -746,6 +755,15 @@
     },
     "perf_predictor_drafting_help": {
         "message": "Disegnare o guidare in un gruppo di motociclisti offre significativi vantaggi aerodinamici. Performance Predictor può modellare questi effetti applicando la ricerca di <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen e Bert Blocken</a> .<br/><br/> Notare che questo algoritmo funziona bene per gruppi di piccole dimensioni in formazioni di file singoli. Grandi gruppi di motociclisti sono soggetti a forze aerodinamiche più complicate che non sono adeguatamente affrontate qui."
+    },
+    "perf_predictor_group_weight": {
+        "message": "Il loro peso"
+    },
+    "perf_predictor_group_weight_tooltip": {
+        "message": "Per modellare gli effetti della guida in gruppo con corridori che pesano più o meno dell'atleta principale, è possibile modificare il peso di tutti gli altri corridori. cioè i requisiti di potenza degli altri quando sei il pilota pesante o il pilota leggero."
+    },
+    "perf_predictor_group_use_athlete_weight": {
+        "message": "Usa il peso dell'atleta"
     },
     "sync_control_panel_intro": {
         "message": "La sincronizzazione delle attività importa tutta la cronologia delle attività per consentire migliori grafici di allenamento e analisi delle prestazioni."
@@ -1136,6 +1154,12 @@
     },
     "performance_predicted_tss_tooltip": {
         "message": "Le previsioni TSS future vengono calcolate utilizzando i valori ATL e CTL più recenti come fattore di pendenza iniziale. Viene applicato anche un fattore di decadimento per tenere conto dell'incertezza e dei limiti di adattamento umano."
+    },
+    "performance_active_days_title": {
+        "message": "Giorni attivi"
+    },
+    "performance_inactive": {
+        "message": "Non attivo"
     },
     "season_start": {
         "message": "Inizio della stagione"

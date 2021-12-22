@@ -609,12 +609,12 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             const isPatron = sauce.patronLevel && sauce.patronLevel >= 10;
             if (supportsLiveSeg && (isPatron || (sauce.options && !sauce.options['hide-upsells']))) {
                 const tooltip = await sauce.locale.getMessage('analysis_create_live_segment_tooltip');
-                const icon = await sauce.images.asText('fa/trophy-duotone.svg');
+                const icon = await sauce.ui.getImage('fa/trophy-duotone.svg');
                 await addButton.call(this, segId, `Live Segment`, tooltip, `live-segment`, icon);
             }
             if (pageView.activity().isRide()) {
                 const tooltip = await sauce.locale.getMessage('analysis_perf_predictor_tooltip');
-                const icon = await sauce.images.asText('fa/analytics-duotone.svg');
+                const icon = await sauce.ui.getImage('fa/analytics-duotone.svg');
                 await addButton.call(this, segId, 'Perf Predictor', tooltip, 'perf-predictor', icon);
             }
         }

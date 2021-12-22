@@ -72,16 +72,16 @@ sauce.ns('template', ns => {
     ns.helpers = {
         fa: async function(icon) {
             console.warn("deprecated: use {{=icon foobar}} instead");
-            return await sauce.images.asText(`fa/${icon}.svg`);
+            return await sauce.ui.getImage(`fa/${icon}.svg`);
         },
-        icon: x => sauce.images.asText(`fa/${x}.svg`)
+        icon: x => sauce.ui.getImage(`fa/${x}.svg`)
     };
     if (sauce.locale && sauce.locale.templateHelpers) {
         Object.assign(ns.helpers, sauce.locale.templateHelpers);
     }
 
     ns.staticHelpers = {
-        icon: x => sauce.images.asText(`fa/${x}.svg`)
+        icon: x => sauce.ui.getImage(`fa/${x}.svg`)
     };
 
 

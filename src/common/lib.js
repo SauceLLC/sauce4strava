@@ -1543,36 +1543,6 @@ sauce.ns('pace', function() {
 });
 
 
-sauce.ns('images', function(ns) {
-    'use strict';
-
-    const _textCache = new Map();
-    const _textFetching = new Map();
-    async function asText(path) {
-        if (!_textCache.has(path)) {
-            try {
-                if (!_textFetching.has(path)) {
-                    _textFetching.set(path, (async () => {
-                        const resp = await fetch(`${sauce.extUrl}images/${path.replace(/^\/+/, '')}`);
-                        _textCache.set(path, await resp.text());
-                        _textFetching.delete(path);
-                    })());
-                }
-                await _textFetching.get(path);
-            } catch(e) {
-                console.warn("Failed to fetch image:", path, e);
-                _textCache.set(path, '');
-            }
-        }
-        return _textCache.get(path);
-    }
-
-    return {
-        asText
-    };
-});
-
-
 sauce.ns('geo', function(ns) {
     'use strict';
 

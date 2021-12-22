@@ -206,7 +206,7 @@ sauce.ns('analysis', ns => {
             try {
                 cleanValue = options.validator($input.val());
             } catch(invalid) {
-                sauce.modal({
+                sauce.ui.modal({
                     title: invalid.title,
                     body: invalid.message
                 });
@@ -288,7 +288,7 @@ sauce.ns('analysis', ns => {
             onBlur: save,
             onSubmit: async v => {
                 await save(v);
-                sauce.modal({
+                sauce.ui.modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect FTP change.</b>'
                 });
@@ -330,7 +330,7 @@ sauce.ns('analysis', ns => {
             onBlur: save,
             onSubmit: async v => {
                 await save(v);
-                sauce.modal({
+                sauce.ui.modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect weight change.</b>'
                 });
@@ -372,7 +372,7 @@ sauce.ns('analysis', ns => {
                     view = new WeightHistoryView({athlete: ns.syncAthlete});
                 }
                 await view.render();
-                const $modal = sauce.modal({
+                const $modal = sauce.ui.modal({
                     title: `Edit Athlete ${isFTP ? 'FTP': 'Weight'}`, // XXX locale
                     el: view.$el,
                     width: '35em',
@@ -381,7 +381,7 @@ sauce.ns('analysis', ns => {
                     if (!view.edited) {
                         return;
                     }
-                    sauce.modal({
+                    sauce.ui.modal({
                         title: 'Reloading...',
                         body: '<b>Reloading page to reflect change.</b>'
                     });
@@ -456,12 +456,12 @@ sauce.ns('analysis', ns => {
             this.$el.html(await template({
                 menuInfo: await Promise.all(this.menu.map(async x => ({
                     source: x,
-                    icon: await sauce.images.asText(ns.peakIcons[x]),
+                    icon: await sauce.ui.getImage(ns.peakIcons[x]),
                     tooltip: x + '_tooltip'
                 }))),
                 source,
                 sourceTooltip: source + '_tooltip',
-                sourceIcon: await sauce.images.asText(ns.peakIcons[source]),
+                sourceIcon: await sauce.ui.getImage(ns.peakIcons[source]),
                 ...attrs,
             }));
             addPeaksRanks(source, attrs.rows, this.$el);  // bg okay;
@@ -637,7 +637,7 @@ sauce.ns('analysis', ns => {
             const $rank = $el.find(`[data-range-value="${range}"] .sauce-peak-rank`);
             $rank.addClass(x.class);
             $rank[0].dataset.rank = x.rank;
-            $rank.append(await sauce.images.asText(`fa/${x.icon}.svg`));
+            $rank.append(await sauce.ui.getImage(`fa/${x.icon}.svg`));
             $rank.find('.place').text(await LM(`rank_place_${x.rank}`));
             $rank.find('.category').text(await LM(`rank_cat_${x.class}`));
         }
@@ -977,9 +977,9 @@ sauce.ns('analysis', ns => {
                 }
             });
         }
-        const $dialog = sauce.dialog({
+        const $dialog = sauce.ui.dialog({
             title: `${options.heading}: ${options.textLabel}`,
-            icon: await sauce.images.asText(ns.peakIcons[options.source]),
+            icon: await sauce.ui.getImage(ns.peakIcons[options.source]),
             dialogClass: 'sauce-info-dialog',
             body: options.body,
             flex: true,
@@ -991,12 +991,13 @@ sauce.ns('analysis', ns => {
                 at: 'right center',
                 of: options.originEl
             },
-            extraButtons: {
-                [await LM('title')]: () => {
+            extraButtons: [{
+                text: await LM('title'),
+                click: () => {
                     $dialog.dialog('close');
                     changeToAnalysisView(options.start, options.end);
                 },
-            }
+            }]
         });
         $dialog.find('.start_time_link').on('click',() => {
             $dialog.dialog('close');
@@ -1470,7 +1471,7 @@ sauce.ns('analysis', ns => {
         periods.on('save', () => void (reload = true));
         dists.on('save', () => void (reload = true));
         const template = await getTemplate('peaks-settings.html');
-        const $modal = await sauce.modal({
+        const $modal = await sauce.ui.modal({
             title: await LM('peaks_settings_dialog_title'),
             flex: true,
             autoOpen: false,
@@ -1506,7 +1507,7 @@ sauce.ns('analysis', ns => {
                     sauce.hist.invalidateSyncState('local', 'peaks');  // bg required
                 }
                 sauce.report.event('PeaksSettings', 'save', 'changes');
-                sauce.modal({
+                sauce.ui.modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect changes.</b>'
                 });
@@ -1612,7 +1613,7 @@ sauce.ns('analysis', ns => {
         jQuery('body').on('click', 'img.sauce-rank', async ev => {
             closeCurrentInfoDialog();
             const powerProfileTpl = await getTemplate('power-profile-help.html');
-            const $dialog = sauce.modal({
+            const $dialog = sauce.ui.modal({
                 title: 'Power Profile Badges Explained',
                 body: await powerProfileTpl(),
                 closeOnMobileBack: ns.isMobile,
@@ -1774,7 +1775,7 @@ sauce.ns('analysis', ns => {
         const serializer = new Serializer(name, desc, ns.activityType, startDate, laps);
         serializer.start();
         serializer.loadStreams(streams);
-        sauce.downloadBlob(serializer.toFile());
+        sauce.ui.downloadBlob(serializer.toFile());
     }
 
 
@@ -1848,7 +1849,7 @@ sauce.ns('analysis', ns => {
         const trialCount = (!hasPatronRequirement &&
             await sauce.storage.get('live_segment_trial_count', {sync: true})) || 0;
         const maxTrials = 3;
-        const icon = await sauce.images.asText('fa/trophy-duotone.svg');
+        const icon = await sauce.ui.getImage('fa/trophy-duotone.svg');
         const body = await template({
             segmentName: details.get('name'),
             leaderName: athlete.get('display_name'),
@@ -1884,7 +1885,7 @@ sauce.ns('analysis', ns => {
                         sauce.report.event('LiveSegment', 'trial');
                     }
                     $dialog.dialog('destroy');
-                    sauce.modal({
+                    sauce.ui.modal({
                         title: locale.success_create_title,
                         icon,
                         body: `
@@ -1915,7 +1916,7 @@ sauce.ns('analysis', ns => {
             });
         }
         const trialTitle = useTrial ? ` - Trial ${trialCount + 1} / ${maxTrials}` : '';
-        const $dialog = sauce.modal({
+        const $dialog = sauce.ui.modal({
             title: `Live Segment ${locale.creator}${trialTitle}`,
             icon,
             body,
@@ -2000,7 +2001,7 @@ sauce.ns('analysis', ns => {
             th.setAttribute('colspan', '2');
             const suffix = (document.documentElement.classList.contains('sauce-theme-dark')) ?
                 '_darkmode.svg' : '.svg';
-            sauce.images.asText(`trailforks_logo_horiz${suffix}`).then(x => jQuery(th).html(x));
+            sauce.ui.getImage(`trailforks_logo_horiz${suffix}`).then(x => jQuery(th).html(x));
             const nameCol = document.querySelector('table.segments thead th.name-col');
             if (!nameCol) {
                 return;  // Unsupported activity type such as (https://www.strava.com/activities/4381573410)
@@ -2083,7 +2084,7 @@ sauce.ns('analysis', ns => {
 
 
     async function showTrailforksModal(descs) {
-        const extUrlIcon = await sauce.images.asText('fa/external-link-duotone.svg');
+        const extUrlIcon = await sauce.ui.getImage('fa/external-link-duotone.svg');
         function selectedTab() {
             for (const t of tabs) {
                 if (t.selected) {
@@ -2092,7 +2093,7 @@ sauce.ns('analysis', ns => {
             }
             throw new Error("No Selected Tab");
         }
-        const $tfModal = sauce.modal({
+        const $tfModal = sauce.ui.modal({
             title: `Trailforks Overviews`,
             dialogClass: 'trailforks-overviews no-pad',
             icon: `<img src="${sauce.extUrl}images/trailforks-250x250.png"/>`,
@@ -2213,7 +2214,7 @@ sauce.ns('analysis', ns => {
         $el.on('click', 'a.tf-media.video', ev => {
             const id = ev.currentTarget.dataset.id;
             function videoModal({title, body}) {
-                return sauce.modal({
+                return sauce.ui.modal({
                     title,
                     body,
                     dialogClass: 'no-pad',
@@ -2726,19 +2727,20 @@ sauce.ns('analysis', ns => {
         }
         const [initialData, initialWidth] = await renderData();
         let currentData = initialData;
-        const $dialog = sauce.modal({
-            title: 'Raw Data',
+        const $dialog = sauce.ui.modal({
+            title: await LM('raw_data'),
             body: `<pre class="overflow">${initialData}</pre>`,
             flex: true,
             width: `calc(${initialWidth}ch + 4em)`,
             dialogClass: 'sauce-big-data',
-            extraButtons: {
-                "Download CSV": () => {
+            extraButtons: [{
+                text: await LM('download'),
+                click: () => {
                     const range = start && end ? `-${start}-${end}` : '';
                     const name = `${pageView.activity().id}${range}.csv`;
-                    sauce.downloadBlob(new Blob([currentData], {type: 'text/csv'}), name);
+                    sauce.ui.downloadBlob(new Blob([currentData], {type: 'text/csv'}), name);
                 }
-            }
+            }]
         });
         $dialog.prepend($selector);
         $selector.on('update', async () => {
@@ -2755,8 +2757,8 @@ sauce.ns('analysis', ns => {
         const start = ns.$analysisStats.data('start');
         const end = ns.$analysisStats.data('end');
         const $selector = await _dataViewStreamSelector();
-        const $dialog = sauce.modal({
-            title: 'Graph Data',
+        const $dialog = sauce.ui.modal({
+            title: await LM('graphed_data'),
             body: '<div class="graphs padded-info overflow"></div>',
             flex: true,
             width: '80vw',
@@ -2874,7 +2876,7 @@ sauce.ns('analysis', ns => {
         const buf = fitParser.encode();
         const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
         const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
-        sauce.downloadBlob(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
+        sauce.ui.downloadBlob(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
         sauce.report.event('LiveSegment', 'create');
     }
 
@@ -2929,9 +2931,9 @@ sauce.ns('analysis', ns => {
             distanceUnit: L.distanceFormatter.shortUnitKey(),
             powerColors
         });
-        const $dialog = sauce.modal({
+        const $dialog = sauce.ui.modal({
             title: 'Performance Predictor',
-            icon: await sauce.images.asText('fa/analytics-duotone.svg'),
+            icon: await sauce.ui.getImage('fa/analytics-duotone.svg'),
             body,
             flex: true,
             width: '62em',
@@ -3516,7 +3518,7 @@ sauce.ns('analysis', ns => {
 
 
     async function attachMobileMenuExpander() {
-        const svg = await sauce.images.asText('fa/bars-regular.svg');
+        const svg = await sauce.ui.getImage('fa/bars-regular.svg');
         const $navHeader = jQuery('#global-header > nav');
         $navHeader.prepend(jQuery(`<div style="display: none" class="menu-expander">${svg}</div>`));
         $navHeader.find('.menu-expander').on('click', toggleMobileNavMenu);
@@ -3557,7 +3559,7 @@ sauce.ns('analysis', ns => {
         }
         const template = await getTemplate('release-notes.html');
         const entryTpl = await getTemplate('release-notes-entry.html');
-        const $dialog = sauce.dialog({
+        const $dialog = sauce.ui.dialog({
             title: 'Good news - Sauce was just upgraded!', // XXX localize
             width: 500,
             autoDestroy: true,
@@ -3652,7 +3654,7 @@ sauce.ns('analysis', ns => {
     async function handleGraphOptionsClick(btn, view) {
         const smoothing = sauce.options['analysis-graph-smoothing'] || 0;
         const template = await getTemplate('graph-options.html', 'graph_options');
-        const $dialog = sauce.dialog({
+        const $dialog = sauce.ui.dialog({
             width: '25em',
             autoDestroy: true,
             flex: true,
@@ -3662,7 +3664,7 @@ sauce.ns('analysis', ns => {
                 options: sauce.options,
                 wprime: ns.wPrime,
             }),
-            icon: await sauce.images.asText('fa/cog-duotone.svg'),
+            icon: await sauce.ui.getImage('fa/cog-duotone.svg'),
             position: {
                 my: 'right top',
                 at: 'right-2 top+2',

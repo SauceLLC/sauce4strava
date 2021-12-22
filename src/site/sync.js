@@ -92,9 +92,9 @@ sauce.ns('sync', ns => {
         const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
             'sync_control_panel');
         const initiallyEnabled = !!athlete.sync;
-        const $modal = sauce.modal({
+        const $modal = sauce.ui.modal({
             title: `${locale.title} - ${athlete.name}`,
-            icon: await sauce.images.asText('fa/sync-alt-duotone.svg'),
+            icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
             dialogClass: 'sauce-sync-athlete-dialog',
             body: await tpl({
                 athlete,
@@ -161,7 +161,7 @@ sauce.ns('sync', ns => {
                     const mem = navigator.deviceMemory || 4;
                     const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
                     const dl = () => {
-                        sauce.downloadBlob(new Blob([bigBundle]), `${athlete.name}-${date}-${page++}.sbin`);
+                        sauce.ui.downloadBlob(new Blob([bigBundle]), `${athlete.name}-${date}-${page++}.sbin`);
                         bigBundle = null;
                     };
                     const btn = ev.currentTarget;

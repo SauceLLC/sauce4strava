@@ -271,6 +271,12 @@
         "message": "原始数据",
         "description": "IMMUTABLE"
     },
+    "analysis_raw_data": {
+        "message": "原始数据"
+    },
+    "analysis_graphed_data": {
+        "message": "图形数据"
+    },
     "analysis_graphs": {
         "message": "图表"
     },
@@ -500,6 +506,9 @@
     },
     "analysis_click_to_change": {
         "message": "点击更改"
+    },
+    "analysis_download": {
+        "message": "下载"
     },
     "time_sec": {
         "message": "秒"
@@ -811,6 +820,15 @@
     "perf_predictor_drafting_help": {
         "message": "跟风或者集团骑行会提供显著的空气动力优势。<a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">通过使用 Thijs van Druenen 和 Bert Blocken 的</a>研究，Performance Predictor 可以对这些影响进行建模。<br/><br/>请注意，此算法适用于单个文件格式中的较小的集团。大集团车手会受到更复杂的空气动力的影响，此处无法很好的模拟。",
         "description": "IMMUTABLE"
+    },
+    "perf_predictor_group_weight": {
+        "message": "他们的体重"
+    },
+    "perf_predictor_group_weight_tooltip": {
+        "message": "要模拟与体重高于或低于主要运动员的骑手一起骑行的影响，您可以更改所有其他骑手的体重。即当您是重骑手或轻骑手时，其他人的功率要求。"
+    },
+    "perf_predictor_group_use_athlete_weight": {
+        "message": "使用运动员体重"
     },
     "sync_control_panel_intro": {
         "message": "活动同步会导入所有活动历史记录，以改进培训图表和绩效分析。"
@@ -1221,6 +1239,12 @@
     },
     "performance_predicted_tss_tooltip": {
         "message": "使用最新的 ATL 和 CTL 值作为起始斜率因子计算未来的 TSS 预测。衰减因子也用于说明不确定性和人类适应限制。"
+    },
+    "performance_active_days_title": {
+        "message": "活跃天数"
+    },
+    "performance_inactive": {
+        "message": "不活动"
     },
     "season_start": {
         "message": "季节开始"

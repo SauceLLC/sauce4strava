@@ -207,10 +207,10 @@ sauce.ns('performance', async ns => {
     async function editActivityDialogXXX(activity, pageView) {
         // XXX replace this trash with a view and module
         const tss = sauce.model.getActivityTSS(activity);
-        const $modal = await sauce.modal({
+        const $modal = await sauce.ui.modal({
             title: 'Edit Activity', // XXX localize
             width: '28em',
-            icon: await sauce.images.asText('fa/edit-duotone.svg'),
+            icon: await sauce.ui.getImage('fa/edit-duotone.svg'),
             body: `
                 <b>${activity.name}</b><hr/>
                 <label>TSS Override:
@@ -1979,7 +1979,7 @@ sauce.ns('performance', async ns => {
             this.activities = activities;
             this.pageView = pageView;
             this.athletes = new Set(activities.map(x => x.athlete));
-            this.icon = await sauce.images.asText('fa/list-duotone.svg');
+            this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
             await super.init();
         }
 
@@ -1990,7 +1990,7 @@ sauce.ns('performance', async ns => {
         }
 
         show() {
-            sauce.modal({
+            sauce.ui.modal({
                 title: 'Edit Activities',
                 el: this.$el,
                 flex: true,

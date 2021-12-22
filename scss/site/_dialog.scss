@@ -74,10 +74,17 @@ html .ui-dialog {
     .ui-dialog-buttonpane  .ui-dialog-buttonset {
         button,
         .btn {
-             svg[data-icon] {
+            svg[data-icon] {
                 width: 1em;
                 margin-left: 0.44em;
-             }
+            }
+
+            &.btn-icon-only {
+                svg[data-icon] {
+                    width: 1.2em;
+                    margin: 0;
+                }
+            }
         }
     }
 

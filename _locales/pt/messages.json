@@ -239,6 +239,12 @@
     "analysis_raw": {
         "message": "cru"
     },
+    "analysis_raw_data": {
+        "message": "Dados não tratados"
+    },
+    "analysis_graphed_data": {
+        "message": "Dados Gráficos"
+    },
     "analysis_graphs": {
         "message": "gráficos"
     },
@@ -448,6 +454,9 @@
     },
     "analysis_click_to_change": {
         "message": "Clique para mudar"
+    },
+    "analysis_download": {
+        "message": "Download"
     },
     "time_sec": {
         "message": "seg"
@@ -721,6 +730,15 @@
     },
     "perf_predictor_drafting_help": {
         "message": "Treinar ou andar em um grupo de pilotos oferece benefícios aerodinâmicos significativos. O Preditor de desempenho pode modelar esses efeitos aplicando pesquisas de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen e Bert Blocken</a> .<br/><br/> Observe que este algoritmo funciona bem para grupos de tamanhos menores em formações de arquivo único. Grandes pelotões de pilotos estão sujeitos a forças aerodinâmicas mais complicadas que não são abordadas de forma adequada aqui."
+    },
+    "perf_predictor_group_weight": {
+        "message": "O peso deles"
+    },
+    "perf_predictor_group_weight_tooltip": {
+        "message": "Para modelar os efeitos de andar em um grupo com pilotos que pesam mais ou menos que o atleta principal, você pode alterar o peso de todos os outros pilotos. ou seja, os requisitos de energia de outras pessoas quando você é o piloto pesado ou o piloto leve."
+    },
+    "perf_predictor_group_use_athlete_weight": {
+        "message": "Use o peso do atleta"
     },
     "sync_control_panel_intro": {
         "message": "A sincronização de atividades importa todo o histórico de atividades para permitir gráficos de treinamento e análises de desempenho aprimorados."
@@ -1111,6 +1129,12 @@
     },
     "performance_predicted_tss_tooltip": {
         "message": "As previsões de TSS futuras são calculadas usando os valores ATL e CTL mais recentes como fator de inclinação inicial. Um fator de decaimento também é aplicado para explicar a incerteza e os limites de adaptação humana."
+    },
+    "performance_active_days_title": {
+        "message": "Dias ativos"
+    },
+    "performance_inactive": {
+        "message": "Inativo"
     },
     "season_start": {
         "message": "Início da temporada"
