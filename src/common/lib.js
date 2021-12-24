@@ -836,7 +836,7 @@ sauce.ns('power', function() {
         }
 
         shiftValue(value) {
-            if (value instanceof sauce.data.Pad) {
+            if (value instanceof sauce.data.Zero) {
                 this._gapPadCount--;
             }
             const i = this._offt - 1;
