@@ -330,6 +330,12 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
 
     sauce.propDefined('Strava.Labs.Activities.BasicAnalysisView', Klass => {
+        const NewKlass = (Strava.Labs.Activities.BasicAnalysisView = function() {
+            sauce.basicAnalysisView = this;
+            Klass.apply(this, arguments);
+        });
+        NewKlass.prototype = Klass.prototype;
+
         // Monkey patch the analysis view so we always have our hook for extra stats.
         const saveRenderTemplateFn = Klass.prototype.renderTemplate;
         Klass.prototype.renderTemplate = function() {
@@ -338,6 +344,10 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 sauce.analysis.attachAnalysisStats($el);
             } else {
                 sauce.analysisStatsIntent = {start: undefined, end: undefined};
+            }
+            const $chart = $el.find('section.chart');
+            if ($chart.length) {
+                $chart.attr('tabindex', '0');  // make focus-able for keyboard events
             }
             return $el;
         };
@@ -468,15 +478,15 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     // Allow html titles and icons for dialogs.
     sauce.propDefined('Strava.Labs.Activities.SegmentEffortsTableView', View => {
-        self.Strava.Labs.Activities.SegmentEffortsTableView = function(_, options) {
+        const NewView = (Strava.Labs.Activities.SegmentEffortsTableView = function(_, options) {
             const activity = options.context.chartContext.activity().clone();
             if (activity.isRun() && sauce.options && sauce.options['analysis-detailed-run-segments']) {
                 activity.set('type', 'Ride');
                 options.context.chartContext.activity(activity);
             }
-            View.prototype.constructor.apply(this, arguments);
-        };
-        self.Strava.Labs.Activities.SegmentEffortsTableView.prototype = View.prototype;
+            View.apply(this, arguments);
+        });
+        NewView.prototype = View.prototype;
     }, {once: true});
 
 

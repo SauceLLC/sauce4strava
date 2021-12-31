@@ -3630,6 +3630,92 @@ sauce.ns('analysis', ns => {
                     schedUpdateAnalysisStats();
                 }
             }
+            const onChartKeyDown = ev => {
+                const ed = pageView.eventDispatcher();
+                const bView = sauce.basicAnalysisView;
+                const elChart = bView.elevationChart;
+                const xAxisType = bView.chartContext.xAxisType();
+                const resetSel = ev.code === 'Escape';
+                const adj = {
+                    ArrowLeft: -1,
+                    ArrowRight: 1,
+                    ArrowUp: -60,
+                    ArrowDown: 60,
+                }[ev.code];
+                if (!resetSel && !adj) {
+                    return;
+                }
+                ev.preventDefault();
+                if (resetSel) {
+                    if (elChart) {
+                        ed.dispatchZoomUnselect(elChart, xAxisType);
+                        elChart.$$(elChart.detailSelector()).html('');
+                        elChart.trigger("brushChange");
+                    }
+                    // TBD
+                    console.warn("IMPL ME");
+                    return;
+                }
+                if (!adj) {
+                    return;
+                }
+                let [start, end] = ed.selection ? ed.selection :
+                    [Number(bView.stackedChart.zoomStart), Number(bView.stackedChart.zoomEnd)];
+                let detailsIndex = ed.mouseIndexes[xAxisType];
+                const sizeSel = ev.shiftKey;
+                const sizeSelType = ev.ctrlKey ? 'shrink' : 'grow';
+                const moveSel = ev.ctrlKey;
+                const dataLen = pageView.streams().getStream('time').length;
+                const clamp = (min, desired, max) => Math.min(max, Math.max(min, desired));
+                if (moveSel) {
+                    if (start + adj > 0 && end + adj < dataLen) {
+                        start = clamp(0, start + adj, dataLen);
+                        end = clamp(0, end + adj, dataLen);
+                    }
+                } else if (sizeSel) {
+                    if (adj > 0) {
+                        if (sizeSelType === 'grow') {
+                            end = clamp(0, end + adj, dataLen);
+                        } else {
+                            start = clamp(0, end + adj, end);
+                        }
+                    } else {
+                        if (sizeSelType === 'grow') {
+                            start = clamp(0, start + adj, dataLen);
+                        } else {
+                            end = clamp(start, start + adj, dataLen);
+                        }
+                    }
+                } else {
+                    detailsIndex = clamp(start, detailsIndex + adj, end);
+                }
+                if (start === end || end < start || end < 0 || start < 0 || end > dataLen) {
+                    debugger;
+                }
+                requestAnimationFrame(() => {
+                    if (sizeSel || moveSel) {
+                        if (elChart) {
+                            ed.dispatchMouseOver(elChart, xAxisType, start);
+                            ed.dispatchUnconditionalHover(elChart, xAxisType, start, end);
+                            const details = elChart.displayDetails(start, end);
+                            elChart.$$(elChart.detailSelector()).html(details);
+                            elChart.trigger("brushChange");
+                        }
+                        const [p1, p2] = bView.chartContext.convertStreamIndices([start, end]);
+                        //ed.dispatchSelect(null, 'latlng', p1, p2);
+                    } else {
+                        if (elChart) {
+                            ed.dispatchMouseOver(elChart, xAxisType, detailsIndex);
+                        }
+                    }
+                });
+            };
+            jQuery(document.body).on('blur', '#basic-analysis section.chart', ev => {
+                document.removeEventListener('keydown', onChartKeyDown);
+            });
+            jQuery(document.body).on('focus', '#basic-analysis section.chart', ev => {
+                document.addEventListener('keydown', onChartKeyDown);
+            });
             try {
                 await startActivity();
             } catch(e) {
