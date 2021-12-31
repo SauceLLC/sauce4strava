@@ -3648,12 +3648,14 @@ sauce.ns('analysis', ns => {
                     return;
                 }
                 ev.preventDefault();
-                let [start, end] = [Number(stackedChart.zoomStart), Number(stackedChart.zoomEnd)];
+                const lastIndex = pageView.streams().getStream('time').length - 1;
+                let [start, end] = [
+                    Number(stackedChart.zoomStart) || 0,
+                    Number(stackedChart.zoomEnd) || lastIndex];
                 let detailsIndex = ed.mouseIndexes[xAxisType];
                 const sizeSel = ev.shiftKey;
                 const sizeSelType = (ev.ctrlKey || ev.metaKey) ? 'shrink' : 'grow';
                 const moveSel = (ev.ctrlKey || ev.metaKey);
-                const lastIndex = pageView.streams().getStream('time').length - 1;
                 const clamp = (min, desired, max) => Math.min(max, Math.max(min, desired));
                 if (sizeSel) {
                     if (adj > 0) {
@@ -3682,11 +3684,11 @@ sauce.ns('analysis', ns => {
                 } else {
                     detailsIndex = clamp(start, detailsIndex + adj, end);
                 }
-                if (start === end || end < start || end < 0 || start < 0 || end > lastIndex) {
-                    debugger;
-                }
                 if (keyAnimationFrame) {
                     cancelAnimationFrame(keyAnimationFrame);
+                }
+                if (start === end || end < start || end < 0 || start < 0 || end > lastIndex) {
+                    debugger;
                 }
                 keyAnimationFrame = requestAnimationFrame(() => {
                     keyAnimationFrame = null;
