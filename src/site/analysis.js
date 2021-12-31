@@ -3630,91 +3630,90 @@ sauce.ns('analysis', ns => {
                     schedUpdateAnalysisStats();
                 }
             }
+            let keyAnimationFrame;
+            let keyAnimationDone;
             const onChartKeyDown = ev => {
                 const ed = pageView.eventDispatcher();
                 const bView = sauce.basicAnalysisView;
                 const elChart = bView.elevationChart;
+                const stackedChart = bView.stackedChart;
                 const xAxisType = bView.chartContext.xAxisType();
-                const resetSel = ev.code === 'Escape';
                 const adj = {
                     ArrowLeft: -1,
                     ArrowRight: 1,
                     ArrowUp: -60,
                     ArrowDown: 60,
                 }[ev.code];
-                if (!resetSel && !adj) {
-                    return;
-                }
-                ev.preventDefault();
-                if (resetSel) {
-                    if (elChart) {
-                        ed.dispatchZoomUnselect(elChart, xAxisType);
-                        elChart.$$(elChart.detailSelector()).html('');
-                        elChart.trigger("brushChange");
-                    }
-                    // TBD
-                    console.warn("IMPL ME");
-                    return;
-                }
                 if (!adj) {
                     return;
                 }
-                let [start, end] = ed.selection ? ed.selection :
-                    [Number(bView.stackedChart.zoomStart), Number(bView.stackedChart.zoomEnd)];
+                ev.preventDefault();
+                let [start, end] = [Number(stackedChart.zoomStart), Number(stackedChart.zoomEnd)];
                 let detailsIndex = ed.mouseIndexes[xAxisType];
                 const sizeSel = ev.shiftKey;
-                const sizeSelType = ev.ctrlKey ? 'shrink' : 'grow';
-                const moveSel = ev.ctrlKey;
-                const dataLen = pageView.streams().getStream('time').length;
+                const sizeSelType = (ev.ctrlKey || ev.metaKey) ? 'shrink' : 'grow';
+                const moveSel = (ev.ctrlKey || ev.metaKey);
+                const lastIndex = pageView.streams().getStream('time').length - 1;
                 const clamp = (min, desired, max) => Math.min(max, Math.max(min, desired));
-                if (moveSel) {
-                    if (start + adj > 0 && end + adj < dataLen) {
-                        start = clamp(0, start + adj, dataLen);
-                        end = clamp(0, end + adj, dataLen);
-                    }
-                } else if (sizeSel) {
+                if (sizeSel) {
                     if (adj > 0) {
                         if (sizeSelType === 'grow') {
-                            end = clamp(0, end + adj, dataLen);
+                            end = clamp(0, end + adj, lastIndex);
+                            detailsIndex = end;
                         } else {
-                            start = clamp(0, end + adj, end);
+                            start = clamp(0, start + adj, end);
+                            detailsIndex = start;
                         }
                     } else {
                         if (sizeSelType === 'grow') {
-                            start = clamp(0, start + adj, dataLen);
+                            start = clamp(0, start + adj, lastIndex);
+                            detailsIndex = start;
                         } else {
-                            end = clamp(start, start + adj, dataLen);
+                            end = clamp(start, end + adj, lastIndex);
+                            detailsIndex = end;
                         }
+                    }
+                } else if (moveSel) {
+                    if (start + adj > 0 && end + adj < lastIndex) {
+                        start = clamp(0, start + adj, lastIndex);
+                        end = clamp(0, end + adj, lastIndex);
+                        detailsIndex = adj > 0 ? end : start;
                     }
                 } else {
                     detailsIndex = clamp(start, detailsIndex + adj, end);
                 }
-                if (start === end || end < start || end < 0 || start < 0 || end > dataLen) {
+                if (start === end || end < start || end < 0 || start < 0 || end > lastIndex) {
                     debugger;
                 }
-                requestAnimationFrame(() => {
+                if (keyAnimationFrame) {
+                    cancelAnimationFrame(keyAnimationFrame);
+                }
+                keyAnimationFrame = requestAnimationFrame(() => {
+                    keyAnimationFrame = null;
                     if (sizeSel || moveSel) {
+                        ed.dispatchUnconditionalHover(null, xAxisType, start, end);
                         if (elChart) {
-                            ed.dispatchMouseOver(elChart, xAxisType, start);
-                            ed.dispatchUnconditionalHover(elChart, xAxisType, start, end);
+                            elChart.setSelection([start, end]);
                             const details = elChart.displayDetails(start, end);
                             elChart.$$(elChart.detailSelector()).html(details);
                             elChart.trigger("brushChange");
                         }
-                        const [p1, p2] = bView.chartContext.convertStreamIndices([start, end]);
-                        //ed.dispatchSelect(null, 'latlng', p1, p2);
-                    } else {
-                        if (elChart) {
-                            ed.dispatchMouseOver(elChart, xAxisType, detailsIndex);
+                        if (keyAnimationDone) {
+                            clearTimeout(keyAnimationDone);
                         }
+                        keyAnimationDone = setTimeout(() => {
+                            keyAnimationDone = null;
+                            ed.dispatchZoomSelect(null, xAxisType, start, end);
+                        }, 200);
                     }
+                    ed.dispatchMouseOver(null, xAxisType, detailsIndex);
                 });
             };
             jQuery(document.body).on('blur', '#basic-analysis section.chart', ev => {
-                document.removeEventListener('keydown', onChartKeyDown);
+                document.removeEventListener('keydown', onChartKeyDown, {capture: true});
             });
             jQuery(document.body).on('focus', '#basic-analysis section.chart', ev => {
-                document.addEventListener('keydown', onChartKeyDown);
+                document.addEventListener('keydown', onChartKeyDown, {capture: true});
             });
             try {
                 await startActivity();

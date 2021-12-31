@@ -205,6 +205,10 @@ abbr.unit {
         font-size: 11px;
     }
 
+    section.chart[tabindex]:focus {
+        outline: none;
+    }
+
     #effort-detail {
         color: color.shade(fg, 10%) !important;
     }
