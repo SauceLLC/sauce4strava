@@ -481,26 +481,15 @@ async function _makePeaksFilterOptions(options={}) {
         return options;
     }
     const ts = options.filterTS || Date.now();
-    const d = sauce.date.toLocaleDayDate(ts + 86400 * 1000);
+    const d = sauce.date.toLocaleDayDate(ts);
     let start;
     let end;
     if (filter === 'year') {
         start = d.setMonth(0, 1);
         end = d.setMonth(12, 1);
-    } else if (filter === 'season') {
-        const startMonth = Number(await sauce.storage.get('season_start_month')) || 1;
-        const startDay = Number(await sauce.storage.get('season_start_day')) || 1;
-        const seasonDate = d.setMonth(startMonth - 1, startDay);
-        if (seasonDate >= ts) {
-            end = seasonDate;
-            start = d.setMonth(startMonth - 13, startDay);
-        } else {
-            start = seasonDate;
-            end = d.setMonth(startMonth + 11, startDay);
-        }
     } else if (!isNaN(Number(filter))) {
-        end = d.getTime();
-        start = d.setDate(-Number(filter) + d.getDate());
+        end = +sauce.date.dayAfter(d);
+        start = +sauce.date.adjacentDay(d, -Number(filter));
     } else {
         throw new TypeError('Invalid Filter');
     }
