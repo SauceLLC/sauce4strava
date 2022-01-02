@@ -857,6 +857,7 @@ sauce.ns('power', function() {
         }
 
         popValue(value, popIndex) {
+            // XXX this is not accounting for Pad values.
             const gap = popIndex >= 1 ? this._times[popIndex] - this._times[popIndex - 1] : 0;
             this._joules -= value * gap;
             if (this._inlineNP || this._inlineXP) {
