@@ -869,9 +869,23 @@ sauce.ns('power', function() {
         }
 
         active(options={}) {
+            // XXX this is naive and possibly unused other than for xp/np.
+            // Test active2 as replacement candidate..
             const count = this.size() - (options.offt || 0) - this._gapPadCount;
             // Subtract the first record as it doesn't indicate a time quanta, just the start ref.
             return (count - 1) * this.idealGap;
+        }
+
+        active2() {
+            let s = 0;
+            for (let i = this._offt; i < this._length; i++) {
+                if (this._values[i] instanceof sauce.data.Zero) {
+                    continue;
+                }
+                const gap = i ? this._times[i] - this._times[i - 1] : this.idealGap || 1;
+                s += gap;
+            }
+            return s;
         }
 
         full(options={}) {
