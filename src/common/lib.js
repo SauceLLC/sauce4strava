@@ -382,7 +382,11 @@ sauce.ns('data', function() {
         }
 
         _isActiveValue(value) {
-            return !!(value || (!this._ignoreZeros && !(value instanceof Zero)));
+            return !!(
+                value != null &&
+                !isNaN(value) &&
+                (value != 0 || (!this._ignoreZeros && !(value instanceof Zero)))
+            );
         }
 
         add(ts, value) {
