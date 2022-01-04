@@ -113,8 +113,8 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 const tweaks = this.container._streamTweaks;
                 const labelBox = this;
                 this.groups.selectAll('text.static-label-box.max-js').text(function(x) {
-                    const maxLabel = (tweaks[x.streamType] || {}).maxLabel;
-                    return maxLabel ? maxLabel(x, labelBox, start, end) : this.textContent;
+                    const labeler = (tweaks[x.streamType] || {}).maxLabel;
+                    return labeler ? labeler(x, labelBox, start, end) : this.textContent;
                 });
             }
         };

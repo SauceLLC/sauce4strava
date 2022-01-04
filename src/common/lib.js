@@ -361,10 +361,10 @@ sauce.ns('data', function() {
         elapsed(options={}) {
             const len = this._length;
             const offt = (options.offt || 0) + this._offt;
-            if (len - offt <= 1) {
+            if (len - offt === 0) {
                 return 0;
             }
-            return this._times[len - 1] - this._times[offt && offt - 1];
+            return this._times[len - 1] - this._times[offt];
         }
 
         active(options={}) {
@@ -444,7 +444,7 @@ sauce.ns('data', function() {
 
         shiftValue(value, i) {
             if (this._isActiveValue(value)) {
-                const gap = i ? this._times[i] - this._times[i - 1] : 0;
+                const gap = i < this._length ? this._times[i + 1] - this._times[i] : 0;
                 this._activeAcc -= gap;
                 this._valuesAcc -= value * gap;
             }
@@ -528,9 +528,6 @@ sauce.ns('data', function() {
 
         shift() {
             const i = this._offt++;
-            if (this._offt >= this._values.length) {
-                debugger;
-            }
             this.shiftValue(this._values[i], i);
         }
 
