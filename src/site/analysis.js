@@ -695,8 +695,8 @@ sauce.ns('analysis', ns => {
         if (wattsStream && hasAccurateWatts()) {
             const corrected = sauce.power.correctedPower(timeStream, wattsStream);
             if (corrected) {
-                kj = corrected.kj();
-                power = kj * 1000 / activeTime;
+                kj = corrected.joules() / 1000;
+                power = corrected.avg({active: true});
                 np = supportsNP() ? corrected.np() : null;
                 if (ns.ftp) {
                     tss = sauce.power.calcTSS(np || power, activeTime, ns.ftp);
@@ -1127,8 +1127,9 @@ sauce.ns('analysis', ns => {
     let _lastInfoDialogSource;
     async function showInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, range,
         source, originEl, isDistanceRange}) {
-        const elapsedTime = wallEndTime - wallStartTime;
         const correctedPower = await correctedPowerTimeRange(wallStartTime, wallEndTime);
+        const elapsedTime = (correctedPower && correctedPower.elapsed()) || wallEndTime - wallStartTime;
+        console.info('el', elapsedTime, correctedPower && correctedPower.elapsed());
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
         const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
@@ -1166,7 +1167,7 @@ sauce.ns('analysis', ns => {
         const body = await template({
             startsAt: H.timer(wallStartTime),
             elapsed: H.timer(elapsedTime),
-            power: correctedPower && powerData(correctedPower.kj(), null, elapsedTime, altStream, {
+            power: correctedPower && powerData(correctedPower.joules(), null, elapsedTime, altStream, {
                 max: sauce.data.max(correctedPower.values()),
                 np: supportsNP() ? correctedPower.np() : null,
                 xp: supportsXP() ? correctedPower.xp() : null,
@@ -2448,9 +2449,9 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function powerData(kj, active, elapsed, altStream, extra={}) {
-        const activeAvg = active ? kj * 1000 / active : null;
-        const elapsedAvg = elapsed ? kj * 1000 / elapsed : null;
+    function powerData(j, active, elapsed, altStream, extra={}) {
+        const activeAvg = active ? j / active : null;
+        const elapsedAvg = elapsed ? j / elapsed : null;
         let activeSP;
         let elapsedSP;
         if (supportsSP()) {
@@ -2515,9 +2516,11 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
-        const activeTime = getActiveTime(start, end);
         const correctedPower = await correctedPowerTimeRange(getStreamIndexTime(start), getStreamIndexTime(end));
-        const elapsedTime = streamDelta(timeStream);
+        const activeTime = (correctedPower && correctedPower.active()) || getActiveTime(start, end);
+        console.log('active', (correctedPower && correctedPower.active()), activeTime);
+        const elapsedTime = (correctedPower && correctedPower.elapsed()) || streamDelta(timeStream);
+        console.info('elapsed', (correctedPower && correctedPower.elapsed()), streamDelta(timeStream));
         const distance = streamDelta(distStream);
         const pausedTime = elapsedTime - activeTime;
         const tplData = {
@@ -2536,10 +2539,10 @@ sauce.ns('analysis', ns => {
             elevation: elevationData(altStream, elapsedTime, distance)
         };
         if (correctedPower) {
-            const kj = correctedPower.kj();
+            const j = correctedPower.joules();
             let tss, tTss, intensity, pwhr;
             const np = supportsNP() ? correctedPower.np() : null;
-            tplData.power = powerData(kj, activeTime, elapsedTime, altStream, {np});
+            tplData.power = powerData(j, activeTime, elapsedTime, altStream, {np});
             const hrStream = await fetchStream('heartrate', start, end);
             if (hasAccurateWatts()) {
                 tplData.power.np = np;
@@ -2563,8 +2566,8 @@ sauce.ns('analysis', ns => {
                 }
             }
             tplData.energy = {
-                kj,
-                kjHour: (kj / activeTime) * 3600,
+                kj: j / 1000,
+                kjHour: j / 1000 / activeTime * 3600,
                 tss,
                 tTss,
                 intensity,

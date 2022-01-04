@@ -356,8 +356,13 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 if (!corrected) {
                     continue;
                 }
-                stats.kj = corrected.kj();
-                stats.power = stats.kj * 1000 / stats.activeTime;
+                const active = corrected.active();
+                if (Math.abs((active / stats.activeTime) - 1) > 0.01) {
+                    debugger;
+                }
+                stats.activeTime = active;
+                stats.kj = corrected.joules() / 1000;
+                stats.power = corrected.avg({active: true});
                 stats.np = corrected.np();
                 stats.xp = corrected.xp();
                 if (ftp) {
