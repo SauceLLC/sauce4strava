@@ -433,7 +433,7 @@ sauce.ns('data', function() {
             return value;
         }
 
-        processIndex(i) {
+        processAdd(i) {
             const value = this._values[i];
             if (this._isActiveValue(value)) {
                 const gap = i ? this._times[i] - this._times[i - 1] : 0;
@@ -442,7 +442,12 @@ sauce.ns('data', function() {
             }
         }
 
-        shiftValue(value, i) {
+        processShift(i) {
+            // Somewhat counterintuitively we care about the value and index after the one
+            // being shifted off because index 0 is always just a reference point and our
+            // new state will have the `this._offt + 1` as the new ref point whose value
+            // and gap are no longer in consideration.
+            const value = i < this._length ? this._values[i + 1] : null;
             if (this._isActiveValue(value)) {
                 const gap = i < this._length ? this._times[i + 1] - this._times[i] : 0;
                 this._activeAcc -= gap;
@@ -450,7 +455,8 @@ sauce.ns('data', function() {
             }
         }
 
-        popValue(value, i) {
+        processPop(i) {
+            const value = i >= this._offt ? this._values[i] : null;
             if (this._isActiveValue(value)) {
                 const gap = i ? this._times[i] - this._times[i - 1] : 0;
                 this._activeAcc -= gap;
@@ -464,7 +470,7 @@ sauce.ns('data', function() {
                 throw new Error('resize underflow');
             }
             for (let i = this._length; i < length; i++) {
-                this.processIndex(i);
+                this.processAdd(i);
             }
             this._length = length;
             if (this.period) {
@@ -513,11 +519,13 @@ sauce.ns('data', function() {
         }
 
         timeAt(i) {
-            return this._times[i < 0 ? this._length + i : this._offt + i];
+            const idx = i < 0 ? this._length + i : this._offt + i;
+            return idx < this._length && idx >= this._offt ? this._times[idx] : undefined;
         }
 
         valueAt(i) {
-            return this._values[i < 0 ? this._length + i : this._offt + i];
+            const idx = i < 0 ? this._length + i : this._offt + i;
+            return idx < this._length && idx >= this._offt ? this._values[idx] : undefined;
         }
 
         *entries() {
@@ -527,14 +535,11 @@ sauce.ns('data', function() {
         }
 
         shift() {
-            const i = this._offt++;
-            this.shiftValue(this._values[i], i);
+            this.processShift(this._offt++);
         }
 
         pop() {
-            this._length--;
-            const value = this._values[this._length];
-            this.popValue(value, this._length);
+            this.processPop(--this._length);
         }
 
         full(options={}) {
@@ -559,8 +564,46 @@ sauce.ns('data', function() {
     }
 
 
+    let __t = 0;
+    let __c = 0;
     function smooth(period, rawValues) {
-        return rawValues.map((_, i) => avg(rawValues.slice(i, i + period)));
+        const ss = performance.now();
+        const len = rawValues.length;
+        if (period >= len) {
+            throw new Error("smooth period must be less than values length");
+        }
+        let smoothValues = [];
+        if (0) {
+            smoothValues = rawValues.map((_, i) => avg(rawValues.slice(i, i + period)));
+        } else {
+            // leading and trailing values split the period to avoid rough edges.
+            const lead = Math.ceil(period / 2);
+            const trail = Math.floor(period / 2);
+            const buf = rawValues.slice(0, lead);
+            let t = sauce.data.sum(buf);
+            for (let i = lead; i < period; i++) {
+                const x = rawValues[i];
+                buf.push(x);
+                t += x;
+                smoothValues.push(t / i);
+            }
+            for (let i = period; i < len; i++) {
+                const offt = i % period;
+                t -= buf[offt];
+                t += (buf[offt] = rawValues[i]);
+                smoothValues.push(t / period);
+            }
+            for (let i = len; i < len + trail; i++) {
+                t -= buf[i % period];
+                smoothValues.push(t / (period - 1 - (i - len)));
+            }
+        }
+        __t += performance.now() - ss;
+        __c++;
+        if (__c % 100 == 0) {
+            console.warn(__t, __c, (__t / __c).toFixed(4));
+        }
+        return smoothValues;
     }
 
 
@@ -782,7 +825,7 @@ sauce.ns('power', function() {
             }
         }
 
-        processIndex(i) {
+        processAdd(i) {
             const value = this._values[i];
             if (this._inlineNP) {
                 const state = this._inlineNP;
@@ -838,16 +881,16 @@ sauce.ns('power', function() {
                 }
                 state.saved.push(saved);
             }
-            super.processIndex(i);
+            super.processAdd(i);
         }
 
-        shiftValue(value, i) {
-            super.shiftValue(value, i);
+        processShift(i) {
+            super.processShift(i);
             if (this._inlineNP) {
                 const state = this._inlineNP;
                 const saved = state.saved[i];
                 state.total -= saved.value || 0;
-                if (value instanceof sauce.data.Zero) {
+                if (this._values[i] instanceof sauce.data.Zero) {
                     state.gapPadCount--;
                 }
             }
@@ -860,11 +903,11 @@ sauce.ns('power', function() {
             }
         }
 
-        popValue(value, i) {
+        processPop(i) {
             if (this._inlineNP || this._inlineXP) {
                 throw new Error("Unsupported");
             }
-            super.popValue(value, i);
+            super.processPop(i);
         }
 
         np(options={}) {

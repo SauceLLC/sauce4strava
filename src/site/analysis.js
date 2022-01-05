@@ -699,7 +699,7 @@ sauce.ns('analysis', ns => {
                 power = cp.avg({active: true});
                 np = supportsNP() ? cp.np() : null;
                 if (ns.ftp) {
-                    tss = sauce.power.calcTSS(np || power, activeTime, ns.ftp);
+                    tss = sauce.power.calcTSS(np || power, cp.active(), ns.ftp);
                     intensity = (np || power) / ns.ftp;
                 }
             }
@@ -2516,10 +2516,8 @@ sauce.ns('analysis', ns => {
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const cp = await correctedPowerTimeRange(getStreamIndexTime(start), getStreamIndexTime(end));
-        const deltaElapsed = streamDelta(timeStream);
-        const deltaActive = (cp && cp.active({offt: 1})) || getActiveTime(start, end);
-        const activeTime = (cp && cp.active()) || deltaActive;
-        const elapsedTime = (cp && cp.elapsed()) || deltaElapsed;
+        const activeTime = getActiveTime(start, end);
+        const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
         const pausedTime = elapsedTime - activeTime;
         const tplData = {
@@ -2535,7 +2533,7 @@ sauce.ns('analysis', ns => {
             isSpeed: ns.paceMode === 'speed',
             paceUnit: ns.paceFormatter.shortUnitKey(),
             samples: timeStream.length,
-            elevation: elevationData(altStream, deltaElapsed, distance)
+            elevation: elevationData(altStream, elapsedTime, distance)
         };
         if (cp) {
             const j = cp.joules();
@@ -2577,8 +2575,8 @@ sauce.ns('analysis', ns => {
             const gradeDistStream = await fetchGradeDistStream({start, end});
             const gradeDistance = streamDelta(gradeDistStream);
             tplData.pace = {
-                elapsed: humanPace(distance / deltaElapsed, {velocity: true}),
-                active: humanPace(distance / deltaActive, {velocity: true}),
+                elapsed: humanPace(distance / elapsedTime, {velocity: true}),
+                active: humanPace(distance / activeTime, {velocity: true}),
                 gap: gradeDistance && humanPace(gradeDistance / activeTime, {velocity: true}),
             };
         }
