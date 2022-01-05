@@ -130,7 +130,15 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
         let minLocale = 'Min';
-        sauce.locale.getMessage('analysis_min').then(x => minLocale = x);
+        let afterLocaleReady;
+        if (!sauce.locale || !sauce.locale.getMessage) {
+            afterLocaleReady = new Promise(resolve =>
+                document.addEventListener('sauceLocaleReady', resolve, {once: true}));
+        } else {
+            afterLocaleReady = Promise.resolve();
+        }
+        afterLocaleReady.then(async () =>
+            void (minLocale = await sauce.locale.getMessage('analysis_min')));
         const paceMaxLabel = (data, labelBox, start, end) => {
             const stream = labelBox.builder().context.getStream(data.streamType)
                 .slice(+start, end == null ? undefined : +end);
