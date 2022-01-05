@@ -572,36 +572,37 @@ sauce.ns('data', function() {
         if (period >= len) {
             throw new Error("smooth period must be less than values length");
         }
-        let smoothValues = [];
-        if (0) {
-            smoothValues = rawValues.map((_, i) => avg(rawValues.slice(i, i + period)));
-        } else {
-            // leading and trailing values split the period to avoid rough edges.
-            const lead = Math.ceil(period / 2);
-            const trail = Math.floor(period / 2);
-            const buf = rawValues.slice(0, lead);
-            let t = sauce.data.sum(buf);
-            for (let i = lead; i < period; i++) {
-                const x = rawValues[i];
-                buf.push(x);
-                t += x;
-                smoothValues.push(t / i);
-            }
-            for (let i = period; i < len; i++) {
-                const offt = i % period;
-                t -= buf[offt];
-                t += (buf[offt] = rawValues[i]);
-                smoothValues.push(t / period);
-            }
-            for (let i = len; i < len + trail; i++) {
-                t -= buf[i % period];
-                smoothValues.push(t / (period - 1 - (i - len)));
-            }
+        const smoothValues = new Array(len);
+        let sIndex = 0;
+        const lead = Math.ceil(period / 2);
+        const trail = Math.floor(period / 2);
+        const buf = rawValues.slice(0, lead);
+        let t = sauce.data.sum(buf);
+        // Smooth leading edge with filling buf of period -> period / 2;
+        for (let i = lead; i < period; i++) {
+            const x = rawValues[i];
+            buf.push(x);
+            t += x;
+            smoothValues[sIndex++] = t / i;
+        }
+        for (let i = period; i < len; i++) {
+            const offt = i % period;
+            t -= buf[offt];
+            t += (buf[offt] = rawValues[i]);
+            smoothValues[sIndex++] = t / period;
+        }
+        // Smooth trailing edge with draining buf of period -> period / 2;
+        for (let i = len; i < len + (period - trail); i++) {
+            t -= buf[i % period];
+            smoothValues[sIndex++] = t / (period - 1 - (i - len));
         }
         __t += performance.now() - ss;
         __c++;
         if (__c % 100 == 0) {
             console.warn(__t, __c, (__t / __c).toFixed(4));
+        }
+        if (smoothValues.length !== len) {
+            debugger;
         }
         return smoothValues;
     }
