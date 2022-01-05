@@ -137,7 +137,7 @@ sauce.ns('analysis', ns => {
 
 
     async function fetchSmoothStream(name, period, start, end) {
-        period = period || 10;
+        period = period || 15;
         const fqName = `${name}_smooth_${period}`;
         const stream = _getStream(fqName, start, end);
         if (stream) {
@@ -857,10 +857,7 @@ sauce.ns('analysis', ns => {
                         for (const range of periodRanges.filter(x => x.value >= minVAMTime)) {
                             const roll = sauce.data.peakAverage(range.value, timeStream, vamStream);
                             if (roll) {
-                                const start = getStreamTimeIndex(roll.firstTime());
-                                const end = getStreamTimeIndex(roll.lastTime());
-                                const gain = sauce.geo.altitudeChanges(altStream.slice(start, end + 1)).gain;
-                                const native = (gain / roll.elapsed()) * 3600;
+                                const native = roll.avg();
                                 const value = H.number(native);
                                 rows.push(_rangeRollToRow({range, roll, native, value, unit: 'Vm/h'}));
                             }
