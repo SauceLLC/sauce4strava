@@ -368,17 +368,18 @@ sauce.ns('data', function() {
         }
 
         active(options={}) {
-            let adj = 0;
+            let t = this._activeAcc;
+            const predicate = options.predicate || 0;
             if (options.offt) {
                 const lim = Math.min(this._length, this._offt + options.offt);
-                for (let i = this._offt; i < lim; i++) {
-                    if (this._isActiveValue(this._values[i])) {
-                        const gap = i ? this._times[i] - this._times[i - 1] : 0;
-                        adj += gap;
+                for (let i = this._offt; i < lim && t >= predicate; i++) {
+                    if (this._isActiveValue(this._values[i + 1])) {
+                        const gap = this._times[i + 1] - this._times[i];
+                        t -= gap;
                     }
                 }
             }
-            return this._activeAcc - adj;
+            return t;
         }
 
         _isActiveValue(value) {
@@ -545,7 +546,8 @@ sauce.ns('data', function() {
         full(options={}) {
             const offt = options.offt;
             const active = options.active != null ? options.active : this._active;
-            const time = active ? this.active({offt}) : this.elapsed({offt});
+            const fn = active ? this.active : this.elapsed;
+            const time = fn.call(this, {offt, predicate: this.period});
             return time >= this.period;
         }
     }
