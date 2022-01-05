@@ -564,15 +564,12 @@ sauce.ns('data', function() {
     }
 
 
-    let __t = 0;
-    let __c = 0;
     function smooth(period, rawValues) {
-        const ss = performance.now();
         const len = rawValues.length;
         if (period >= len) {
             throw new Error("smooth period must be less than values length");
         }
-        const smoothValues = new Array(len);
+        const sValues = new Array(len);
         let sIndex = 0;
         const lead = Math.ceil(period / 2);
         const trail = Math.floor(period / 2);
@@ -583,28 +580,23 @@ sauce.ns('data', function() {
             const x = rawValues[i];
             buf.push(x);
             t += x;
-            smoothValues[sIndex++] = t / i;
+            sValues[sIndex++] = t / i;
         }
         for (let i = period; i < len; i++) {
             const offt = i % period;
             t -= buf[offt];
             t += (buf[offt] = rawValues[i]);
-            smoothValues[sIndex++] = t / period;
+            sValues[sIndex++] = t / period;
         }
         // Smooth trailing edge with draining buf of period -> period / 2;
         for (let i = len; i < len + (period - trail); i++) {
             t -= buf[i % period];
-            smoothValues[sIndex++] = t / (period - 1 - (i - len));
+            sValues[sIndex++] = t / (period - 1 - (i - len));
         }
-        __t += performance.now() - ss;
-        __c++;
-        if (__c % 100 == 0) {
-            console.warn(__t, __c, (__t / __c).toFixed(4));
-        }
-        if (smoothValues.length !== len) {
+        if (sValues.length !== len) {
             debugger;
         }
-        return smoothValues;
+        return sValues;
     }
 
 
