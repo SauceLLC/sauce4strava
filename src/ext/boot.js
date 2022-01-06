@@ -262,8 +262,9 @@
 
 
     async function updatePatronLevel(config) {
-        if ((config.patronLevelExpiration || 0) > Date.now() && config.patronLegacy != null) {
-            return [config.patronLevel, config.patronLegacy];
+        if ((config.patronLevelExpiration || 0) > Date.now()) {
+            const legacy = config.patronLegacy == null ? !!config.patronLevel : config.patronLegacy;
+            return [config.patronLevel, legacy];
         }
         let legacy = false;
         let level = 0;
@@ -287,7 +288,7 @@
             for (const e of errors) {
                 sauce.report.error(e);
             }
-            await sauce.storage.set('patronLevelExpiration', Date.now() + (3600 * 1000));  // backoff
+            await sauce.storage.set('patronLevelExpiration', Date.now() + (12 * 3600 * 1000));  // backoff
         }
         return [level, legacy];
     }
