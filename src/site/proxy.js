@@ -189,7 +189,8 @@ sauce.ns('proxy', ns => {
             reqPort.start();
             self.postMessage({
                 type: 'sauce-proxy-establish-channel',
-                requestPort: reqChannel.port2
+                extId: sauce.extId,
+                requestPort: reqChannel.port2,
             }, self.origin, [reqChannel.port2]);
         });
         return [reqPort, respPort];

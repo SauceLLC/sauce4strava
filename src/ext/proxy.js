@@ -79,7 +79,8 @@ sauce.ns('proxy', ns => {
 
 
     async function onMessageEstablishChannel(ev) {
-        if (ev.source !== self || !ev.data || ev.data.type !== 'sauce-proxy-establish-channel') {
+        if (ev.source !== self || !ev.data || ev.data.type !== 'sauce-proxy-establish-channel' ||
+            ev.data.extId !== browser.runtime.id) {
             return;
         }
         self.removeEventListener('message', onMessageEstablishChannel);
