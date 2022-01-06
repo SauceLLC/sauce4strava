@@ -360,6 +360,9 @@
     async function load() {
         /* Using the src works but is async, this will block the page from loading while the scripts
          * are evaluated and executed, preventing race conditions in our preloader */
+        if (document.documentElement.classList.contains('sauce-enabled')) {
+            throw new Error("Multiple Sauce extensions active");
+        }
         const ext = browser.runtime.getManifest();
         const extUrl = browser.runtime.getURL('');
         const sauceVars = {
@@ -374,8 +377,8 @@
             `sauceBaseInit();`,
             `saucePreloaderInit(${JSON.stringify(sauceVars)});`,
         ].join('\n'));
-        const config = await sauce.storage.get(null);
         document.documentElement.classList.add('sauce-enabled');
+        const config = await sauce.storage.get(null);
         self.currentUser = config.currentUser;
         updatePatronLevelNames().catch(sauce.report.error);  // bg okay
         [sauceVars.patronLevel, sauceVars.patronLegacy] = await updatePatronLevel(config);
