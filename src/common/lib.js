@@ -1049,25 +1049,30 @@ sauce.ns('power', function() {
         let breakPadding = 0;
         for (let i = 0, sum = 0, len = stream.length; i < len; i++) {
             const index = i % rollingSize;
-            const watts = stream[i];
+            const entry = stream[i];
+            const watts = +entry;  // Unlocks some optimizations.
             // Drain the rolling buffer but don't increment the counter for gaps...
-            if (watts instanceof sauce.data.Break) {
-                for (let j = 0; j < Math.min(rollingSize, watts.pad); j++) {
-                    const rollIndex = (index + j) % rollingSize;
-                    sum -= rolling[rollIndex] || 0;
-                    rolling[rollIndex] = 0;
+            if (!watts) {
+                if (entry instanceof sauce.data.Break) {
+                    for (let j = 0; j < Math.min(rollingSize, entry.pad); j++) {
+                        const rollIndex = (index + j) % rollingSize;
+                        sum -= rolling[rollIndex] || 0;
+                        rolling[rollIndex] = 0;
+                    }
+                    breakPadding += entry.pad;
+                    continue;
+                } else if (entry instanceof sauce.data.Zero) {
+                    sum -= rolling[index] || 0;
+                    rolling[index] = 0;
+                    continue;
                 }
-                breakPadding += watts.pad;
-                continue;
-            } else if (watts instanceof sauce.data.Zero) {
-                sum -= rolling[index] || 0;
-                rolling[index] = 0;
-                continue;
+            } else {
+                sum += watts;
             }
-            sum += watts;
             sum -= rolling[index] || 0;
             rolling[index] = watts;
-            const avg = sum / Math.min(rollingSize, i + 1 + breakPadding);
+            const rollUsedSize = i + 1 + breakPadding;
+            const avg = sum / (rollingSize < rollUsedSize ? rollingSize : rollUsedSize);
             total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
             count++;
         }
@@ -1098,10 +1103,11 @@ sauce.ns('power', function() {
         let count = 0;
         let breakPadding = 0;
         for (let i = 0, len = stream.length; i < len; i++) {
-            const watts = stream[i];
-            if (watts instanceof sauce.data.Zero) {
-                if (watts instanceof sauce.data.Break) {
-                    breakPadding += watts.pad;
+            const entry = stream[i];
+            const watts = +entry;  // Unlocks some optimizations.
+            if (!watts && (entry instanceof sauce.data.Zero)) {
+                if (entry instanceof sauce.data.Break) {
+                    breakPadding += entry.pad;
                 }
                 continue; // Skip Zero pads so after the inner while loop can attenuate on its terms.
             }
