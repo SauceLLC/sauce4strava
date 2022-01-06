@@ -16,8 +16,6 @@ sauce.ns('storage', ns => {
         // Handle {foo: undefined} which by default will act like a noop to `set()`.
         const removes = Object.entries(data).filter(([_, v]) => v === undefined);
         if (removes.length) {
-            // XXX research the damage caused by the prior impl
-            console.warn('Removing data that previously was unaltered:', removes);
             await store.remove(removes.map(x => x[0]));
         }
         return await store.set(data);
