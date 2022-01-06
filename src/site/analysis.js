@@ -2472,7 +2472,7 @@ sauce.ns('analysis', ns => {
             activeWKg: (ns.weight && activeAvg != null) && activeAvg / ns.weight,
             elapsedWKg: (ns.weight && elapsedAvg != null) && elapsedAvg / ns.weight,
             rank: (ns.weight && elapsedAvg) &&
-                sauce.power.rank(powerRoll.elapsed(), elapsedAvg, extra.np, ns.weight, ns.gender),
+                sauce.power.rank(powerRoll.active(), elapsedAvg, extra.np, ns.weight, ns.gender),
         }, extra);
     }
 
