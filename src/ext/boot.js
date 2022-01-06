@@ -252,11 +252,11 @@
     async function updatePatronLevelNames() {
         const ts = await sauce.storage.get('patronLevelNamesTimestamp');
         if (!ts || ts < Date.now() - (7 * 86400 * 1000)) {
+            await sauce.storage.set('patronLevelNamesTimestamp', Date.now());  // backoff regardless
             const resp = await fetch('https://saucellc.io/patron_levels.json');
             const patronLevelNames = await resp.json();
             patronLevelNames.sort((a, b) => b.level - a.level);
-            const patronLevelNamesTimestamp = Date.now();
-            await sauce.storage.set({patronLevelNames, patronLevelNamesTimestamp});
+            await sauce.storage.set({patronLevelNames});
         }
     }
 
@@ -264,7 +264,7 @@
     async function updatePatronLevel(config) {
         if ((config.patronLevelExpiration || 0) > Date.now()) {
             const legacy = config.patronLegacy == null ? !!config.patronLevel : config.patronLegacy;
-            return [config.patronLevel, legacy];
+            return [config.patronLevel || 0, legacy];
         }
         let legacy = false;
         let level = 0;
@@ -360,28 +360,29 @@
     async function load() {
         /* Using the src works but is async, this will block the page from loading while the scripts
          * are evaluated and executed, preventing race conditions in our preloader */
+        const ext = browser.runtime.getManifest();
+        const extUrl = browser.runtime.getURL('');
+        const sauceVars = {
+            extUrl,
+            extId: browser.runtime.id,
+            name: ext.name,
+            version: ext.version,
+        };
         insertScript([
             self.sauceBaseInit.toString(),
             self.saucePreloaderInit.toString(),
-            'sauceBaseInit();',
-            'saucePreloaderInit();',
+            `sauceBaseInit();`,
+            `saucePreloaderInit(${JSON.stringify(sauceVars)});`,
         ].join('\n'));
         const config = await sauce.storage.get(null);
         document.documentElement.classList.add('sauce-enabled');
         self.currentUser = config.currentUser;
         updatePatronLevelNames().catch(sauce.report.error);  // bg okay
-        const [patronLevel, patronLegacy] = await updatePatronLevel(config);
-        const ext = browser.runtime.getManifest();
-        const extUrl = browser.runtime.getURL('');
+        [sauceVars.patronLevel, sauceVars.patronLegacy] = await updatePatronLevel(config);
         insertScript(`
             self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(config.options)};
-            sauce.extUrl = "${extUrl}";
-            sauce.extId = "${browser.runtime.id}";
-            sauce.name = "${ext.name}";
-            sauce.version = "${ext.version}";
-            sauce.patronLevel = ${patronLevel || 0};
-            sauce.patronLegacy = ${patronLegacy};
+            Object.assign(sauce, ${JSON.stringify(sauceVars)});
         `);
         for (const m of manifests) {
             if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||
@@ -405,6 +406,9 @@
                 await loadScripts(m.scripts.map(x => `${extUrl}src/${x}`));
             }
         }
+        document.documentElement.classList.add('sauce-booted');
+        const ev = new Event('sauceBooted');
+        document.dispatchEvent(ev);
     }
 
     document.documentElement.addEventListener('sauceCurrentUserUpdate', async ev => {

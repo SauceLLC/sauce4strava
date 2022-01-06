@@ -65,7 +65,10 @@
         item.appendChild(anchor);
         const options = document.querySelector('#global-header .global-nav [data-log-category="training"] .options');
         if (options) {
-            options.querySelector('li.premium').insertAdjacentElement('beforebegin', item);
+            const refEl = options.querySelector('li.premium');
+            if (refEl) {
+                refEl.insertAdjacentElement('beforebegin', item);
+            }
         } else {
             // React page with obfuscated HTML.
             const prev = document.querySelector('header nav ul li ul li a[href="/athlete/training"]');

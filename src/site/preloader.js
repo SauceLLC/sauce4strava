@@ -1,14 +1,16 @@
 /* global sauce, jQuery, Strava, pageView, Backbone, d3 */
 
 // NOTE: Must be assigned to self and have matching name for FF
-self.saucePreloaderInit = function saucePreloaderInit() {
+self.saucePreloaderInit = function saucePreloaderInit(sauceVars) {
     'use strict';
 
     self.sauce = self.sauce || {};
 
     const cacheRefreshThreshold = 120 * 1000;
     const maybeRequestIdleCallback = self.requestIdleCallback || (fn => fn());  // Safari
-
+    const booted = document.documentElement.classList.contains('sauce-booted') ?
+        Promise.resolve() :
+        new Promise(resolve => document.addEventListener('sauceBooted', resolve, {once: true}));
 
     sauce.propDefined('pageView', view => {
         const assembleSave = view.assemble;
@@ -130,21 +132,13 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
         let minLocale = 'Min';
-        let afterLocaleReady;
-        if (!sauce.locale || !sauce.locale.getMessage) {
-            afterLocaleReady = new Promise(resolve =>
-                document.addEventListener('sauceLocaleReady', resolve, {once: true}));
-        } else {
-            afterLocaleReady = Promise.resolve();
-        }
-        afterLocaleReady.then(async () =>
-            void (minLocale = await sauce.locale.getMessage('analysis_min')));
+        booted.then(async () => void (minLocale = await sauce.locale.getMessage('analysis_min')));
         const paceMaxLabel = (data, labelBox, start, end) => {
             const stream = labelBox.builder().context.getStream(data.streamType)
                 .slice(+start, end == null ? undefined : +end);
             const fmtr = labelBox.builder().context.formatter(data.streamType);
             return Strava.I18n.Locale.t("strava.charts.activities.label_box.hover_max", {
-                metric: fmtr.format(sauce.data.min(stream))
+                metric: fmtr.format(d3.min(stream))
             });
         };
         const streamTweaks = {
@@ -165,7 +159,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     const stream = labelBox.builder().context.getStream(data.streamType)
                         .slice(+start, end == null ? undefined : +end);
                     const fmtr = labelBox.builder().context.formatter(data.streamType);
-                    return `${minLocale} ${fmtr.format(sauce.data.min(stream))}`;
+                    return `${minLocale} ${fmtr.format(d3.min(stream))}`;
                 },
             },
             pace: {maxLabel: paceMaxLabel},
@@ -190,13 +184,12 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             btn.append('image').attr({
                 height: 18, width: 35,
                 x: 0, y: 3,
-                href: `${sauce.extUrl}images/fa/cog-duotone.svg`
+                href: `${sauceVars.extUrl}images/fa/cog-duotone.svg`
             });
-            btn.on('click', sauce.analysis.handleGraphOptionsClick.bind(this, btn, this));
+            btn.on('click', () => sauce.analysis.handleGraphOptionsClick(btn, this));
         };
 
         Klass.prototype.smoothStreamData = function(id) {
-            const smoothing = sauce.options['analysis-graph-smoothing'];
             const origData = this.origData = this.origData || {};
             if (!origData[id]) {
                 origData[id] = this.context.getStream(id);
@@ -205,6 +198,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             if (!data) {
                 return;
             }
+            const smoothing = sauce.options['analysis-graph-smoothing'];
             if (smoothing) {
                 this.context.streamsContext.data.add(id, sauce.data.smooth(smoothing, data));
             } else {
@@ -236,9 +230,8 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             // In rare cases like install the analysis page
             // is not loaded before the rest of the site.  Not waiting will
             // exclude some of our functions but won't break the site..
-            if (sauce.analysis) {
-                await sauce.analysis.prepared;
-            }
+            await booted;
+            await sauce.analysis.prepared;
             const extraStreams = [{
                 stream: 'watts_calc',
                 formatter: Strava.I18n.PowerFormatter,
@@ -526,7 +519,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         View.prototype.render = function() {
             if (this.pageView._detailedSegments) {
                 this.$el.removeClass('pinnable-anchor');  // Will be moved to the elevation-profile
-                if (sauce.options.responsive) {
+                if (sauce.options && sauce.options.responsive) {
                     this.$el.addClass('pinnable-view');  // Must be placed on direct parent of pinnable-anchor
                 }
             }
@@ -589,7 +582,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 this.$('.lightbox-more-controls').prepend(`
                     <button class="btn btn-unstyled sauce-download" title="Open fullsize photo">
                         <div class="app-icon sauce-download-icon icon-xs"
-                             style="background-image: url(${sauce.extUrl}images/fa/external-link-duotone.svg);"></div>
+                             style="background-image: url(${sauceVars.extUrl}images/fa/external-link-duotone.svg);"></div>
                     </button>
                 `);
                 this.$el.on('click', 'button.sauce-download', async ev => {
@@ -638,9 +631,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
         Klass.prototype.render = function() {
             const ret = renderSave.apply(this, arguments);
-            if (sauce.options) {
-                addButtons.call(this).catch(sauce.report.error);
-            }
+            booted.then(() => addButtons.call(this).catch(sauce.report.error));
             document.documentElement.dispatchEvent(new Event('sauceResetPageMonitor'));
             return ret;
         };
@@ -727,7 +718,11 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 cacheObj[this._cacheKey(key)] = data[key] === undefined ? null : data[key];
             }
             await _streamsCache.setObject(cacheObj);
-            setTimeout(() => sauce.proxy.connected.then(() => sauce.hist.incrementStreamsUsage()), 100);
+            setTimeout(async () => {
+                await booted;
+                await sauce.proxy.connected;
+                sauce.hist.incrementStreamsUsage();
+            }, 1000);
             return data;
         }
         async function getStreams(options) {

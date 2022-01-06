@@ -3778,7 +3778,7 @@ sauce.ns('analysis', ns => {
                     const [min, max] = view.streamExtent(id);
                     graph.yScale().domain([min, max]).nice();
                     graph.data(view.context.data(view.xAxisType(), id)).update(/*animate*/ true);
-                    const fmtr = this.context.formatter(id);
+                    const fmtr = view.context.formatter(id);
                     updates.push({
                         streamType: id,
                         avgY: graph.yScale()(view.context.streamsContext.data.getIntervalAverage(
