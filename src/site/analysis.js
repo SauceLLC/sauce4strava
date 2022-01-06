@@ -693,13 +693,13 @@ sauce.ns('analysis', ns => {
         let tss, tTss, np, intensity, power;
         let kj = pageView.activity().get('kilojoules');
         if (wattsStream && hasAccurateWatts()) {
-            const cp = sauce.power.correctedPower(timeStream, wattsStream);
-            if (cp) {
-                kj = cp.joules() / 1000;
-                power = cp.avg({active: true});
-                np = supportsNP() ? cp.np() : null;
+            const powerRoll = sauce.power.correctedPower(timeStream, wattsStream);
+            if (powerRoll) {
+                kj = powerRoll.joules() / 1000;
+                power = powerRoll.avg({active: true});
+                np = supportsNP() ? powerRoll.np() : null;
                 if (ns.ftp) {
-                    tss = sauce.power.calcTSS(np || power, cp.active(), ns.ftp);
+                    tss = sauce.power.calcTSS(np || power, powerRoll.active(), ns.ftp);
                     intensity = (np || power) / ns.ftp;
                 }
             }
@@ -834,9 +834,9 @@ sauce.ns('analysis', ns => {
                         const unit = L.hrFormatter.shortUnitKey();
                         for (const range of periodRanges.filter(x => x.value >= minHRTime)) {
                             const roll = sauce.data.peakAverage(range.value, timeStream, hrStream,
-                                {active: true});
+                                {ignoreZeros: true, active: true});
                             if (roll) {
-                                const native = roll.avg({active: true});
+                                const native = roll.avg();
                                 const value = H.number(native);
                                 rows.push(_rangeRollToRow({range, roll, native, value, unit}));
                             }
@@ -845,9 +845,9 @@ sauce.ns('analysis', ns => {
                         const unit = ns.cadenceFormatter.shortUnitKey();
                         for (const range of periodRanges.filter(x => x.value >= minHRTime)) {
                             const roll = sauce.data.peakAverage(range.value, timeStream, cadenceStream,
-                                {active: true, ignoreZeros: true});
+                                {ignoreZeros: true, active: true});
                             if (roll) {
-                                const native = roll.avg({active: true});
+                                const native = roll.avg();
                                 const value = ns.cadenceFormatter.format(native);
                                 rows.push(_rangeRollToRow({range, roll, native, value, unit}));
                             }
@@ -855,7 +855,8 @@ sauce.ns('analysis', ns => {
                     } else if (source === 'peak_vam') {
                         const vamStream = sauce.geo.createVAMStream(timeStream, altStream);
                         for (const range of periodRanges.filter(x => x.value >= minVAMTime)) {
-                            const roll = sauce.data.peakAverage(range.value, timeStream, vamStream);
+                            const roll = sauce.data.peakAverage(range.value, timeStream, vamStream,
+                                {active: true});
                             if (roll) {
                                 const native = roll.avg();
                                 const value = H.number(native);
@@ -1036,32 +1037,35 @@ sauce.ns('analysis', ns => {
     }
 
 
-    const _correctedPowers = new Map();
-    async function correctedPowerTimeRange(wallStartTime, wallEndTime, options) {
+    const _correctedRolls = new Map();
+    async function correctedRollTimeRange(stream, wallStartTime, wallEndTime, options) {
         // startTime and endTime can be pad based values with corrected power sources.
         // Using wall time values and starting with full streams gives us the correct
         // padding as the source.
-        options = options || {};
-        const stream = options.stream || 'watts';
-        if (!_correctedPowers.has(stream)) {
+        const key = stream;
+        if (!_correctedRolls.has(key)) {
             let fullStream = await fetchStream(stream);
-            // Fallback when stream option is omitted and watts are not available.
-            const isEstimate = !fullStream && !options.stream;
-            if (isEstimate) {
-                fullStream = await fetchStream('watts_calc');
+            if (!fullStream && stream === 'watts') {
+                stream = 'watts_calc';
+                fullStream = await fetchStream(stream);
             }
             if (fullStream) {
-                const cp = sauce.power.correctedPower(await fetchStream('time'), fullStream);
-                if (cp) {
-                    cp.isEstimate = isEstimate;
-                    _correctedPowers.set(stream, cp);
+                let roll;
+                if (stream.startsWith('watts')) {
+                    roll = sauce.power.correctedPower(await fetchStream('time'), fullStream, options);
+                } else {
+                    roll = sauce.data.correctedAverage(await fetchStream('time'), fullStream, options);
+                }
+                if (roll) {
+                    roll.isEstimate = ['watts_calc', 'watts_sealevel'].includes(stream);
+                    _correctedRolls.set(key, roll);
                 }
             }
         }
-        if (_correctedPowers.has(stream)) {
-            const cp = _correctedPowers.get(stream);
-            const range = cp.slice(wallStartTime, wallEndTime);
-            range.isEstimate = cp.isEstimate;
+        if (_correctedRolls.has(key)) {
+            const roll = _correctedRolls.get(key);
+            const range = roll.slice(wallStartTime, wallEndTime);
+            range.isEstimate = roll.isEstimate;
             return range;
         }
     }
@@ -1124,13 +1128,15 @@ sauce.ns('analysis', ns => {
     let _lastInfoDialogSource;
     async function showInfoDialog({startTime, endTime, wallStartTime, wallEndTime, label, range,
         source, originEl, isDistanceRange}) {
-        const cp = await correctedPowerTimeRange(wallStartTime, wallEndTime);
+        const powerRoll = await correctedRollTimeRange('watts', wallStartTime, wallEndTime);
         const elapsedTime = wallEndTime - wallStartTime;
         const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
         const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
-        const hrStream = await fetchStreamTimeRange('heartrate', startTime, endTime);
+        const hrRoll = await correctedRollTimeRange('heartrate', wallStartTime, wallEndTime,
+            {active: true, ignoreZeros: true});
+        const cadenceRoll = await correctedRollTimeRange('cadence', wallStartTime, wallEndTime,
+            {active: true, ignoreZeros: true});
         const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
-        const cadenceStream = await fetchStreamTimeRange('cadence', startTime, endTime);
         let velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
         if (!velocityStream) {
             const paceStream = await fetchStreamTimeRange('pace', startTime, endTime);
@@ -1148,7 +1154,7 @@ sauce.ns('analysis', ns => {
         const heading = await LM(source);
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
-        const cadence = cadenceStream && sauce.data.avg(cadenceStream.filter(x => x));
+        const cadence = cadenceRoll && cadenceRoll.avg();
         let stride;
         if (cadence &&
             (ns.cadenceFormatter.key === 'step_cadence' ||
@@ -1163,11 +1169,11 @@ sauce.ns('analysis', ns => {
         const body = await template({
             startsAt: H.timer(wallStartTime),
             elapsed: H.timer(elapsedTime),
-            power: cp && powerData(cp, altStream, {
-                max: sauce.data.max(cp.values()),
-                np: supportsNP() ? cp.np() : null,
-                xp: supportsXP() ? cp.xp() : null,
-                estimate: cp.isEstimate
+            power: powerRoll && powerData(powerRoll, altStream, {
+                max: sauce.data.max(powerRoll.values()),
+                np: supportsNP() ? powerRoll.np() : null,
+                xp: supportsXP() ? powerRoll.xp() : null,
+                estimate: powerRoll.isEstimate
             }),
             pace: distance && {
                 avg: humanPace(distance / elapsedTime, {velocity: true}),
@@ -1175,9 +1181,9 @@ sauce.ns('analysis', ns => {
                 gap: gap && humanPace(gap, {velocity: true}),
             },
             isSpeed: ns.paceMode === 'speed',
-            hr: hrInfo(hrStream),
+            hr: hrInfo(hrRoll),
             hrUnit: L.hrFormatter.shortUnitKey(),
-            cadence: cadenceStream && ns.cadenceFormatter.format(cadence),
+            cadence: cadenceRoll && ns.cadenceFormatter.format(cadence),
             cadenceUnit: ns.cadenceFormatter.shortUnitKey(),
             distance: distance && H.distance(distance),
             distanceUnit: L.distanceFormatter.shortUnitKey(),
@@ -1207,17 +1213,16 @@ sauce.ns('analysis', ns => {
                         x => `${label}: ${(x / ns.weight).toFixed(1)}<abbr class="unit short">w/kg</abbr>` :
                         x => `${label}: ${H.number(x)}<abbr class="unit short">w</abbr>`;
                     specs.push({
-                        data: cp.values(),
+                        data: powerRoll.values(),
                         formatter,
                         colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
                             {hStart: 360, hEnd: 280, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
                     });
                 } else if (x === 'sp') {
-                    const correctedSP = await correctedPowerTimeRange(wallStartTime, wallEndTime,
-                        {stream: 'watts_sealevel'});
+                    const spRoll = await correctedRollTimeRange('watts_sealevel', wallStartTime, wallEndTime);
                     const label = await LM('sea_power');
                     specs.push({
-                        data: correctedSP.values(),
+                        data: spRoll.values(),
                         formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">w (SP)</abbr>`,
                         colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
                             {hStart: 208, hEnd: 256, sStart: 0, sEnd: 100, lStart: 80, lEnd: 40})
@@ -1248,7 +1253,7 @@ sauce.ns('analysis', ns => {
                         other: [10, 50, 100, 160]
                     }[ns.activityType];
                     specs.push({
-                        data: cadenceStream,
+                        data: cadenceRoll.values(),
                         formatter: x => `${label}: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
                         colorSteps: hslValueGradientSteps(thresholds, {hStart: 60, hEnd: 80, sStart: 95, lStart: 50}),
                     });
@@ -1274,7 +1279,7 @@ sauce.ns('analysis', ns => {
                     const unit = L.hrFormatter.shortUnitKey();
                     const label = await LM('heartrate');
                     specs.push({
-                        data: hrStream,
+                        data: hrRoll.values(),
                         formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">${unit}</abbr>`,
                         colorSteps: hslValueGradientSteps([40, 100, 150, 200],
                             {hStart: 0, sStart: 50, sEnd: 100, lStart: 50})
@@ -2432,22 +2437,22 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function hrInfo(hrStream) {
-        if (hrStream) {
+    function hrInfo(hrRoll) {
+        if (hrRoll) {
             const fmt = L.hrFormatter;
-            hrStream = hrStream.filter(x => x);
+            const hrStream = hrRoll.values();
             return {
                 min: fmt.format(sauce.data.min(hrStream)),
-                avg: fmt.format(sauce.data.avg(hrStream)),
+                avg: fmt.format(hrRoll.avg()),
                 max: fmt.format(sauce.data.max(hrStream)),
             };
         }
     }
 
 
-    function powerData(cp, altStream, extra={}) {
-        const activeAvg = cp.avg({active: true});
-        const elapsedAvg = cp.avg({active: false});
+    function powerData(powerRoll, altStream, extra={}) {
+        const activeAvg = powerRoll.avg({active: true});
+        const elapsedAvg = powerRoll.avg({active: false});
         let activeSP;
         let elapsedSP;
         if (supportsSP()) {
@@ -2467,7 +2472,7 @@ sauce.ns('analysis', ns => {
             activeWKg: (ns.weight && activeAvg != null) && activeAvg / ns.weight,
             elapsedWKg: (ns.weight && elapsedAvg != null) && elapsedAvg / ns.weight,
             rank: (ns.weight && elapsedAvg) &&
-                sauce.power.rank(cp.elapsed(), elapsedAvg, extra.np, ns.weight, ns.gender),
+                sauce.power.rank(powerRoll.elapsed(), elapsedAvg, extra.np, ns.weight, ns.gender),
         }, extra);
     }
 
@@ -2512,7 +2517,7 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
-        const cp = await correctedPowerTimeRange(getStreamIndexTime(start), getStreamIndexTime(end));
+        const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start), getStreamIndexTime(end));
         const activeTime = getActiveTime(start, end);
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
@@ -2532,22 +2537,22 @@ sauce.ns('analysis', ns => {
             samples: timeStream.length,
             elevation: elevationData(altStream, elapsedTime, distance)
         };
-        if (cp) {
-            const j = cp.joules();
+        if (powerRoll) {
+            const j = powerRoll.joules();
             let tss, tTss, intensity, pwhr;
-            const np = supportsNP() ? cp.np() : null;
-            tplData.power = powerData(cp, altStream, {np});
+            const np = supportsNP() ? powerRoll.np() : null;
+            tplData.power = powerData(powerRoll, altStream, {np});
             const hrStream = await fetchStream('heartrate', start, end);
             if (hasAccurateWatts()) {
                 tplData.power.np = np;
-                tplData.power.xp = supportsXP() ? cp.xp() : null;
+                tplData.power.xp = supportsXP() ? powerRoll.xp() : null;
                 if (ns.ftp) {
                     const power = tplData.power.np || tplData.power.activeAvg;
                     tss = sauce.power.calcTSS(power, activeTime, ns.ftp);
                     intensity = power / ns.ftp;
                 }
                 if (hrStream) {
-                    pwhr = sauce.power.calcPwHrDecouplingFromRoll(cp, hrStream);
+                    pwhr = sauce.power.calcPwHrDecouplingFromRoll(powerRoll, hrStream);
                 }
             } else {
                 const zones = await getHRZones();
@@ -2882,13 +2887,13 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
-        const cp = await correctedPowerTimeRange(getStreamIndexTime(start), getStreamIndexTime(end));
+        const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start), getStreamIndexTime(end));
         const origTime = streamDelta(timeStream);
         const origDistance = streamDelta(distStream);
         const origVelocity = origDistance / origTime;
         const el = sauce.data.avg(altStream);
         const template = await getTemplate('perf-predictor.html', 'perf_predictor');
-        const power = cp && cp.avg();
+        const power = powerRoll && powerRoll.avg();
         const slope = streamDelta(altStream) / origDistance;
         const powerColors = {
             gravity: '#36c',
