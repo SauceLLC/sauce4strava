@@ -2583,8 +2583,9 @@ sauce.ns('analysis', ns => {
             };
         }
         const tpl = await getTemplate('analysis-stats.html');
+        const html = await tpl(tplData);
         ns.$analysisStats.data({start, end});
-        ns.$analysisStats.html(await tpl(tplData));
+        ns.$analysisStats.html(html);
     }
 
 
@@ -2623,12 +2624,13 @@ sauce.ns('analysis', ns => {
             try {
                 await _schedUpdateAnalysisPromise;
             } catch(e) {/*no-pragma*/}
+            // Throttle invocations to the device framerate.  Note this does not run
+            // the DOM updates in the animation frame context.
             await new Promise(resolve => requestAnimationFrame(resolve));
             if (id !== _schedUpdateAnalysisId) {
                 return; // debounce
             }
-            _schedUpdateAnalysisPromise = _updateAnalysisStats(start, end);
-            await _schedUpdateAnalysisPromise;
+            await (_schedUpdateAnalysisPromise = _updateAnalysisStats(start, end));
         })().catch(e => {
             const now = Date.now();
             if (!_schedUpdateErrorTS || (now - _schedUpdateErrorTS) > 5000) {
@@ -3215,10 +3217,15 @@ sauce.ns('analysis', ns => {
     function attachAnalysisStats($el) {
         if (!ns.$analysisStats) {
             ns.$analysisStats = jQuery(`<div class="sauce-analysis-stats"></div>`);
-            sauce.proxy.connected
-                .then(() => sauce.storage.getPref('expandAnalysisStats'))
-                .then(expanded => ns.$analysisStats.toggleClass('expanded', !!expanded));
+            ns.$analysisKeyboardHint = jQuery(`<div class="sauce-analysis-keyboard-hint"></div>`);
+            sauce.proxy.connected.then(async () => {
+                const expanded = await sauce.storage.getPref('expandAnalysisStats');
+                ns.$analysisStats.toggleClass('expanded', !!expanded);
+                ns.$analysisKeyboardHint.attr('title', await LM('keyboard_tooltip'));
+                ns.$analysisKeyboardHint.html(await sauce.ui.getImage('fa/keyboard-regular.svg'));
+            });
         }
+        $el.find('#stacked-chart').before(ns.$analysisKeyboardHint);
         $el.find('#stacked-chart').before(ns.$analysisStats);
         $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.report.error));
         $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.report.error));
@@ -3412,14 +3419,10 @@ sauce.ns('analysis', ns => {
         if (ns.activityType === 'run' && ns.weight) {
             const gradeDistStream = await fetchGradeDistStream();
             if (gradeDistStream) {
-                const wattsStream = [0];
-                for (let i = 1; i < gradeDistStream.length; i++) {
-                    const dist = gradeDistStream[i] - gradeDistStream[i - 1];
-                    const time = timeStream[i] - timeStream[i - 1];
-                    const kj = sauce.pace.work(ns.weight, dist);
-                    wattsStream.push(kj * 1000 / time);
-                }
-                streamData.add('watts_calc', wattsStream);
+                const distGaps = gradeDistStream.map((x, i) => i ? x - gradeDistStream[i - 1] : 0);
+                streamData.add('watts_calc', sauce.data.smooth(100, distGaps.map((x, i) => i ?
+                    sauce.pace.work(ns.weight, x) * 1000 / (timeStream[i] - timeStream[i - 1]) :
+                    null)));
             }
         }
         const wattsStream = (await fetchStream('watts')) || (await fetchStream('watts_calc'));
@@ -3640,7 +3643,7 @@ sauce.ns('analysis', ns => {
                 const elChart = bView.elevationChart;
                 const stackedChart = bView.stackedChart;
                 const xAxisType = bView.chartContext.xAxisType();
-                const adj = {
+                let adj = {
                     ArrowLeft: -1,
                     ArrowRight: 1,
                     ArrowUp: -60,
@@ -3678,23 +3681,26 @@ sauce.ns('analysis', ns => {
                         }
                     }
                 } else if (moveSel) {
-                    if (start + adj > 0 && end + adj < lastIndex) {
-                        start = clamp(0, start + adj, lastIndex);
-                        end = clamp(0, end + adj, lastIndex);
-                        detailsIndex = adj > 0 ? end : start;
+                    if (start + adj < 0) {
+                        adj = -start;
+                    } else if (end + adj > lastIndex) {
+                        adj = lastIndex - end;
                     }
+                    start = clamp(0, start + adj, lastIndex);
+                    end = clamp(0, end + adj, lastIndex);
+                    detailsIndex = adj > 0 ? end : start;
                 } else {
                     detailsIndex = clamp(start, detailsIndex + adj, end);
+                }
+                if (start === end || end < start || end < 0 || start < 0 || end > lastIndex) {
+                    return;
                 }
                 if (keyAnimationFrame) {
                     cancelAnimationFrame(keyAnimationFrame);
                 }
-                if (start === end || end < start || end < 0 || start < 0 || end > lastIndex) {
-                    debugger;
-                }
                 keyAnimationFrame = requestAnimationFrame(() => {
                     keyAnimationFrame = null;
-                    if (sizeSel || moveSel) {
+                    if (adj && (sizeSel || moveSel)) {
                         ed.dispatchUnconditionalHover(null, xAxisType, start, end);
                         if (elChart) {
                             elChart.setSelection([start, end]);
@@ -3708,16 +3714,33 @@ sauce.ns('analysis', ns => {
                         keyAnimationDone = setTimeout(() => {
                             keyAnimationDone = null;
                             ed.dispatchZoomSelect(null, xAxisType, start, end);
-                        }, 200);
+                        }, 400);
                     }
                     ed.dispatchMouseOver(null, xAxisType, detailsIndex);
                 });
             };
-            jQuery(document.body).on('blur', '#basic-analysis section.chart', ev => {
-                document.removeEventListener('keydown', onChartKeyDown, {capture: true});
+            const $ba = jQuery('#basic-analysis');
+            $ba.on('mouseenter', 'section.chart', ev => {
+                if (document.activeElement !== ev.currentTarget) {
+                    ev.currentTarget.classList.add('sauce-keyboard-events');
+                    document.removeEventListener('keydown', onChartKeyDown, {capture: true}); // dedup from focus
+                    document.addEventListener('keydown', onChartKeyDown, {capture: true});
+                }
             });
-            jQuery(document.body).on('focus', '#basic-analysis section.chart', ev => {
+            $ba.on('mouseleave', 'section.chart', ev => {
+                if (document.activeElement !== ev.currentTarget) {
+                    document.removeEventListener('keydown', onChartKeyDown, {capture: true});
+                    ev.currentTarget.classList.remove('sauce-keyboard-events');
+                }
+            });
+            $ba.on('blur', 'section.chart', ev => {
+                document.removeEventListener('keydown', onChartKeyDown, {capture: true});
+                ev.currentTarget.classList.remove('sauce-keyboard-events');
+            });
+            $ba.on('focus', 'section.chart', ev => {
+                document.removeEventListener('keydown', onChartKeyDown, {capture: true}); // dedup from mouse
                 document.addEventListener('keydown', onChartKeyDown, {capture: true});
+                ev.currentTarget.classList.add('sauce-keyboard-events');
             });
             try {
                 await startActivity();

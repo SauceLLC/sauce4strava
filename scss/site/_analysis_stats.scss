@@ -184,3 +184,28 @@
         }
     }
 }
+
+.sauce-analysis-keyboard-hint {
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    transition: opacity 200ms, visibility 200ms;
+    visibility: hidden;
+    opacity: 0;
+
+    &:hover {
+        opacity: 1 !important;
+    }
+
+    svg[data-icon] {
+        height: 1em;
+    }
+}
+
+
+section.chart.sauce-keyboard-events {
+    .sauce-analysis-keyboard-hint {
+        opacity: 0.5;
+        visibility: visible;
+    }
+}
