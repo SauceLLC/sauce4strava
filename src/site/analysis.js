@@ -3642,7 +3642,7 @@ sauce.ns('analysis', ns => {
                 const bView = sauce.basicAnalysisView;
                 const elChart = bView.elevationChart;
                 const stackedChart = bView.stackedChart;
-                const xAxisType = bView.chartContext.xAxisType();
+                const xAxisType = stackedChart.xAxisType();
                 let adj = {
                     ArrowLeft: -1,
                     ArrowRight: 1,
@@ -3654,10 +3654,11 @@ sauce.ns('analysis', ns => {
                 }
                 ev.preventDefault();
                 const lastIndex = pageView.streams().getStream('time').length - 1;
+                let detailsIndex = ed.mouseIndexes[xAxisType] || 0;
+                const hasSelection = stackedChart.zoomStart != null;
                 let [start, end] = [
-                    Number(stackedChart.zoomStart) || 0,
-                    Number(stackedChart.zoomEnd) || lastIndex];
-                let detailsIndex = ed.mouseIndexes[xAxisType];
+                    hasSelection ? Number(stackedChart.zoomStart) : detailsIndex,
+                    hasSelection ? Number(stackedChart.zoomEnd) : detailsIndex];
                 const sizeSel = ev.shiftKey;
                 const sizeSelType = (ev.ctrlKey || ev.metaKey) ? 'shrink' : 'grow';
                 const moveSel = (ev.ctrlKey || ev.metaKey);
@@ -3690,9 +3691,13 @@ sauce.ns('analysis', ns => {
                     end = clamp(0, end + adj, lastIndex);
                     detailsIndex = adj > 0 ? end : start;
                 } else {
-                    detailsIndex = clamp(start, detailsIndex + adj, end);
+                    detailsIndex = hasSelection ?
+                        clamp(start, detailsIndex + adj, end) :
+                        clamp(0, detailsIndex + adj, lastIndex);
                 }
-                if (start === end || end < start || end < 0 || start < 0 || end > lastIndex) {
+                if (hasSelection &&
+                    (start === end || end < start || end < 0 ||
+                     start < 0 || end > lastIndex)) {
                     return;
                 }
                 if (keyAnimationFrame) {
@@ -3719,25 +3724,25 @@ sauce.ns('analysis', ns => {
                     ed.dispatchMouseOver(null, xAxisType, detailsIndex);
                 });
             };
-            const $ba = jQuery('#basic-analysis');
-            $ba.on('mouseenter', 'section.chart', ev => {
+            const $view = jQuery('#view');
+            $view.on('mouseenter', '#basic-analysis section.chart', ev => {
                 if (document.activeElement !== ev.currentTarget) {
                     ev.currentTarget.classList.add('sauce-keyboard-events');
                     document.removeEventListener('keydown', onChartKeyDown, {capture: true}); // dedup from focus
                     document.addEventListener('keydown', onChartKeyDown, {capture: true});
                 }
             });
-            $ba.on('mouseleave', 'section.chart', ev => {
+            $view.on('mouseleave', '#basic-analysis section.chart', ev => {
                 if (document.activeElement !== ev.currentTarget) {
                     document.removeEventListener('keydown', onChartKeyDown, {capture: true});
                     ev.currentTarget.classList.remove('sauce-keyboard-events');
                 }
             });
-            $ba.on('blur', 'section.chart', ev => {
+            $view.on('blur', '#basic-analysis section.chart', ev => {
                 document.removeEventListener('keydown', onChartKeyDown, {capture: true});
                 ev.currentTarget.classList.remove('sauce-keyboard-events');
             });
-            $ba.on('focus', 'section.chart', ev => {
+            $view.on('focus', '#basic-analysis section.chart', ev => {
                 document.removeEventListener('keydown', onChartKeyDown, {capture: true}); // dedup from mouse
                 document.addEventListener('keydown', onChartKeyDown, {capture: true});
                 ev.currentTarget.classList.add('sauce-keyboard-events');
@@ -3863,6 +3868,7 @@ sauce.ns('analysis', ns => {
         checkIfUpdated,
         fetchFullActivity,
         handleGraphOptionsClick,
+        getActiveTime,
     };
 });
 
