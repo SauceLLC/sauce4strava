@@ -350,19 +350,12 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 if (!corrected) {
                     continue;
                 }
-                const active = corrected.active();
-                if (Math.abs((active / stats.activeTime) - 1) > 0.10) {
-                    // XXX just want to take a look.  I think this will be acts where a power meter died mid ride.
-                    console.warn("divergent active time differences with power readings",
-                        active - stats.activeTime, Math.round(((active / stats.activeTime)) * 100),
-                        `https://www.strava.com/activities/${activity.pk}/analysis`);
-                }
                 stats.kj = corrected.joules() / 1000;
                 stats.power = corrected.avg({active: true});
                 stats.np = corrected.np();
                 stats.xp = corrected.xp();
                 if (ftp) {
-                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, active, ftp);
+                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, corrected.active(), ftp);
                     stats.intensity = (stats.np || stats.power) / ftp;
                 }
             } catch(e) {

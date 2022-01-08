@@ -115,11 +115,11 @@ async function findPeaks(athlete, activities, periods, distances) {
                             if (wrp && wrp.full()) {
                                 const np = wrp.np();
                                 if (np && (!leaders.np || np >= leaders.np.value)) {
-                                    leaders.np = {roll: wrp.clone(), value: np};
+                                    leaders.np = {roll: wrp.clone({inlineNP: false}), value: np};
                                 }
                                 const xp = wrp.xp();
                                 if (xp && (!leaders.xp || xp >= leaders.xp.value)) {
-                                    leaders.xp = {roll: wrp.clone(), value: xp};
+                                    leaders.xp = {roll: wrp.clone({inlineXP: false}), value: xp};
                                 }
                             }
                         }
@@ -179,15 +179,7 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
         }
     }
-    const priors = await peaksStore.getMany(peaks.map(x => ([x.activity, x.type, x.period])));
-    for (const [i, x] of peaks.entries()) {
-        const prior = priors[i];
-        if (prior && Math.abs(1 - (x.value / prior.value)) > 0.02) {
-            console.info(x, `https://www.strava.com/activities/${x.activity}/analysis/${x.start}/${x.end}`);
-            console.info(prior, `https://www.strava.com/activities/${prior.activity}/analysis/${prior.start}/${prior.end}`);
-        }
-    }
-    //await peaksStore.putMany(peaks);
+    await peaksStore.putMany(peaks);
     return errors;
 }
 
