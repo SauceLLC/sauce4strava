@@ -32,13 +32,20 @@ async function getActivitiesStreams(activities, streams) {
 
 async function findPeaks(athlete, activities, periods, distances) {
     const actStreams = await getActivitiesStreams(activities, {
-        run: ['time', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
-        ride: ['time', 'watts', 'distance', 'heartrate'],
-        other: ['time', 'watts', 'watts_calc', 'distance', 'heartrate'],
+        run: ['time', 'active', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
+        ride: ['time', 'active', 'watts', 'distance', 'heartrate'],
+        other: ['time', 'active', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
+    await sleep(1);  // Workaround for Safari IDB transaction performance bug.
+    const gender = athlete.gender || 'male';
+    const getRankLevel = (period, p, wp, weight) => {
+        const rank = sauce.power.rankLevel(period, p, wp, weight, gender);
+        if (rank.level > 0) {
+            return rank;
+        }
+    };
     const peaks = [];
     const errors = [];
-    await sleep(1);  // Workaround for Safari IDB transaction performance bug.
     for (const activity of activities) {
         if (activity.peaksExclude) {
             const count = await peaksStore.deleteForActivity(activity.id);
@@ -47,7 +54,9 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
             continue;
         }
+        let weight;
         const streams = actStreams.get(activity.id);
+        const activeStream = streams.active;
         const isRun = activity.basetype === 'run';
         const isRide = activity.basetype === 'ride';
         const addPeak = (type, period, value, roll, extra) => value && peaks.push({
@@ -63,24 +72,13 @@ async function findPeaks(athlete, activities, periods, distances) {
             ts: activity.ts,
             ...extra,
         });
-        let weight;
-        const getRankLevel = (period, p, wp) => {
-            if (!weight || !isRide) {
-                return;
-            }
-            const gender = athlete.gender || 'male';
-            const rank = sauce.power.rankLevel(period, p, wp, weight, gender);
-            if (rank.level > 0) {
-                return rank;
-            }
-        };
         if (streams.heartrate) {
             try {
                 for (const period of periods) {
                     const roll = sauce.data.peakAverage(period, streams.time,
-                        streams.heartrate, {active: true});
+                        streams.heartrate, {active: true, ignoreZeros: true, activeStream});
                     if (roll) {
-                        addPeak('hr', period, roll.avg({active: true}), roll);
+                        addPeak('hr', period, roll.avg(), roll);
                     }
                 }
             } catch(e) {
@@ -96,62 +94,65 @@ async function findPeaks(athlete, activities, periods, distances) {
                     // Instead of using peakPower, peakNP, we do our own reduction to save
                     // repeative iterations on the same dataset; it's about 50% faster.
                     const rp = sauce.power.correctedRollingPower(streams.time, period);
-                    const wrp = period >= 300 && isRide && sauce.power.correctedRollingPower(
-                        streams.time, period, {active: true, inlineNP: true, inlineXP: true});
-                    if (rp || wrp) {
-                        const leaderRolls = {};
-                        const leaderValues = {};
+                    if (rp) {
+                        const wrp = period >= 300 && isRide &&
+                            rp.clone({active: true, inlineNP: true, inlineXP: true});
+                        const leaders = {};
                         for (let i = 0; i < streams.time.length; i++) {
                             const t = streams.time[i];
                             const w = watts[i];
-                            rp.add(t, w);
+                            const a = streams.active[i];
+                            rp.add(t, w, a);
+                            if (wrp) {
+                                wrp.resize();
+                            }
                             if (rp.full()) {
                                 const power = rp.avg();
-                                if (power && (!leaderValues.power || power >= leaderValues.power)) {
-                                    leaderRolls.power = rp.clone();
-                                    leaderValues.power = power;
+                                if (power && (!leaders.power || power >= leaders.power.value)) {
+                                    leaders.power = {roll: rp.clone(), value: power, np: wrp && wrp.np()};
                                 }
                             }
-                            if (wrp) {
-                                wrp.add(t, w);
-                                if (wrp.full({active: true})) {
-                                    const np = wrp.np();
-                                    if (np && (!leaderValues.np || np >= leaderValues.np)) {
-                                        leaderRolls.np = wrp.clone();
-                                        leaderValues.np = np;
-                                    }
-                                    const xp = wrp.xp();
-                                    if (xp && (!leaderValues.xp || xp >= leaderValues.xp)) {
-                                        leaderRolls.xp = wrp.clone();
-                                        leaderValues.xp = xp;
-                                    }
+                            if (wrp && wrp.full()) {
+                                const np = wrp.np();
+                                if (np && (!leaders.np || np >= leaders.np.value)) {
+                                    leaders.np = {roll: wrp.clone(), value: np};
+                                }
+                                const xp = wrp.xp();
+                                if (xp && (!leaders.xp || xp >= leaders.xp.value)) {
+                                    leaders.xp = {roll: wrp.clone(), value: xp};
                                 }
                             }
                         }
                         if (weight === undefined) {
                             weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
                         }
-                        if (leaderRolls.power) {
-                            const p = leaderRolls.power.avg();
-                            const rankLevel = getRankLevel(period, p, leaderRolls.power.np({external: true}));
-                            addPeak('power', period, p, leaderRolls.power, {rankLevel});
+                        if (leaders.power) {
+                            const l = leaders.power;
+                            let rankLevel;
                             if (weight) {
-                                addPeak('power_wkg', period, p / weight, leaderRolls.power, {rankLevel});
+                                rankLevel = isRide ? getRankLevel(l.roll.active(), l.value, l.np, weight) : undefined;
+                                addPeak('power_wkg', period, l.value / weight, l.roll, {rankLevel});
                             }
+                            addPeak('power', period, l.value, l.roll, {rankLevel});
                         }
-                        if (leaderRolls.np) {
-                            const np = leaderRolls.np.np({external: true});
-                            const rankLevel = getRankLevel(period, leaderRolls.np.avg(), np);
-                            addPeak('np', period, np, leaderRolls.np, {rankLevel});
+                        if (leaders.np) {
+                            const l = leaders.np;
+                            const np = l.roll.np({external: true});
+                            const rankLevel = (weight && isRide) ?
+                                getRankLevel(l.roll.active(), l.roll.avg({active: false}), np, weight) : undefined;
+                            addPeak('np', period, np, l.roll, {rankLevel});
                         }
-                        if (leaderRolls.xp) {
-                            const xp = leaderRolls.xp.xp({external: true});
-                            const rankLevel = getRankLevel(period, leaderRolls.xp.avg(), xp);
-                            addPeak('xp', period, xp, leaderRolls.xp, {rankLevel});
+                        if (leaders.xp) {
+                            const l = leaders.xp;
+                            const xp = l.roll.xp({external: true});
+                            const rankLevel = (weight && isRide) ?
+                                getRankLevel(l.roll.active(), l.roll.avg({active: false}), xp, weight) : undefined;
+                            addPeak('xp', period, xp, l.roll, {rankLevel});
                         }
                     }
                 }
             } catch(e) {
+                // XXX make this better than a big try/catch
                 console.error("Failed to create peaks for: " + activity.id, e);
                 errors.push({activity: activity.id, error: e.message});
             }
@@ -159,24 +160,34 @@ async function findPeaks(athlete, activities, periods, distances) {
         if (isRun && streams.distance) {
             try {
                 for (const distance of distances) {
-                    let roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
+                    let roll = sauce.pace.bestPace(distance, streams.time, streams.distance, {activeStream});
                     if (roll) {
                         addPeak('pace', distance, roll.avg(), roll);
                     }
                     if (streams.grade_adjusted_distance) {
-                        roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance);
+                        roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance,
+                            {activeStream});
                         if (roll) {
                             addPeak('gap', distance, roll.avg(), roll);
                         }
                     }
                 }
             } catch(e) {
+                // XXX make this better than a big try/catch
                 console.error("Failed to create peaks for: " + activity.id, e);
                 errors.push({activity: activity.id, error: e.message});
             }
         }
     }
-    await peaksStore.putMany(peaks);
+    const priors = await peaksStore.getMany(peaks.map(x => ([x.activity, x.type, x.period])));
+    for (const [i, x] of peaks.entries()) {
+        const prior = priors[i];
+        if (prior && Math.abs(1 - (x.value / prior.value)) > 0.02) {
+            console.info(x, `https://www.strava.com/activities/${x.activity}/analysis/${x.start}/${x.end}`);
+            console.info(prior, `https://www.strava.com/activities/${prior.activity}/analysis/${prior.start}/${prior.end}`);
+        }
+    }
+    //await peaksStore.putMany(peaks);
     return errors;
 }
 

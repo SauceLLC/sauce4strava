@@ -123,24 +123,28 @@ sauce.ns('data', function() {
 
     function createActiveStream(streams, options={}) {
         // Some broken time streams have enormous gaps.
-        const maxImmobileGap = options.maxImmobileGap != null ? options.maxImmobileGap : 300;
+        const maxImmobileGap = options.maxImmobileGap != null ? options.maxImmobileGap : 75;
         const useCadence = options.isTrainer || options.isSwim;
         const timeStream = streams.time;
         const movingStream = streams.moving;
         const cadenceStream = useCadence && streams.cadence;
         const wattsStream = streams.watts;
         const distStream = streams.distance;
+        const hasDist = !!(distStream && distStream[distStream.length - 1]);
+        // For trainer rides with distance we ignore moving as it tends to be 100% true.
+        // See: https://www.strava.com/activities/566636593
+        const useMoving = !(options.isTrainer && hasDist);
         const activeStream = [];
         const speedMin = 0.447;  // meter/second (1mph)
         for (let i = 0; i < movingStream.length; i++) {
             activeStream.push(!!(
-                movingStream[i] ||
-                (!i || timeStream[i] - timeStream[i - 1] < maxImmobileGap) && (
-                    (cadenceStream && cadenceStream[i]) ||
-                    (wattsStream && wattsStream[i]) ||
-                    (distStream && i &&
-                     (distStream[i] - distStream[i - 1]) /
-                     (timeStream[i] - timeStream[i - 1]) >= speedMin))
+                (!i || timeStream[i] - timeStream[i - 1] < maxImmobileGap) &&
+                ((wattsStream && wattsStream[i]) ||
+                 (useMoving && movingStream[i]) ||
+                 (cadenceStream && cadenceStream[i]) ||
+                 (hasDist && i &&
+                  (distStream[i] - distStream[i - 1]) /
+                  (timeStream[i] - timeStream[i - 1]) >= speedMin))
             ));
         }
         return activeStream;
@@ -292,11 +296,14 @@ sauce.ns('data', function() {
         }
 
         clone(options={}) {
-            const instance = new this.constructor(options.period || this.period);
-            instance.idealGap = this.idealGap;
-            instance.maxGap = this.maxGap;
-            instance._active = this._active;
-            instance._ignoreZeros = this._ignoreZeros;
+            const period = options.period != null ? options.period : this.period;
+            const instance = new this.constructor(period, {
+                idealGap: this.idealGap,
+                maxGap: this.maxGap,
+                active: this._active,
+                ignoreZeros: this._ignoreZeros,
+                ...options,
+            });
             instance._times = this._times;
             instance._values = this._values;
             instance._offt = this._offt;
@@ -327,30 +334,30 @@ sauce.ns('data', function() {
             return clone;
         }
 
-        *_importIter(times, values) {
+        *_importIter(times, values, active) {
             if (times.length !== values.length) {
                 throw new TypeError("times and values not same length");
             }
             for (let i = 0; i < times.length; i++) {
-                yield this.add(times[i], values[i]);
+                yield this.add(times[i], values[i], active && active[i]);
             }
         }
 
-        importData(times, values) {
+        importData(times, values, active) {
             if (times.length !== values.length) {
                 throw new TypeError("times and values not same length");
             }
             for (let i = 0; i < times.length; i++) {
-                this.add(times[i], values[i]);
+                this.add(times[i], values[i], active && active[i]);
             }
         }
 
-        importReduce(times, values, comparator) {
+        importReduce(times, values, active, comparator, cloneOptions) {
             let leader;
-            for (const x of this._importIter(times, values)) {
+            for (const x of this._importIter(times, values, active)) {
                 void x;
                 if (this.full() && (!leader || comparator(this, leader))) {
-                    leader = this.clone();
+                    leader = this.clone(cloneOptions);
                 }
             }
             return leader;
@@ -388,11 +395,11 @@ sauce.ns('data', function() {
             );
         }
 
-        add(ts, value) {
+        add(ts, value, active) {
             if (this._length) {
                 const prevTS = this._times[this._length - 1];
                 const gap = ts - prevTS;
-                if (this.maxGap && gap > this.maxGap) {
+                if ((active == null && (this.maxGap && gap > this.maxGap)) || active === false) {
                     const zeroPad = new Zero();
                     const idealGap = this.idealGap || Math.min(1, gap / 2);
                     const breakGap = 3600;
@@ -467,11 +474,11 @@ sauce.ns('data', function() {
             }
             for (let i = this._length; i < length; i++) {
                 this.processAdd(i);
-            }
-            this._length = length;
-            if (this.period) {
-                while (this.full({offt: 1})) {
-                    this.shift();
+                this._length++;
+                if (this.period) {
+                    while (this.full({offt: 1})) {
+                        this.shift();
+                    }
                 }
             }
         }
@@ -565,22 +572,23 @@ sauce.ns('data', function() {
     }
 
 
-    function correctedAverage(timeStream, valuesStream, options) {
+    function correctedAverage(timeStream, valuesStream, options={}) {
         const roll = correctedRollingAverage(timeStream, null, options);
         if (!roll) {
             return;
         }
-        roll.importData(timeStream, valuesStream);
+        roll.importData(timeStream, valuesStream, options.activeStream);
         return roll;
     }
 
 
-    function peakAverage(period, timeStream, valuesStream, options) {
+    function peakAverage(period, timeStream, valuesStream, options={}) {
         const roll = correctedRollingAverage(timeStream, period, options);
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, valuesStream, (cur, lead) => cur.avg() >= lead.avg());
+        return roll.importReduce(timeStream, valuesStream, options.activeStream,
+            (cur, lead) => cur.avg() >= lead.avg());
     }
 
 
@@ -843,7 +851,7 @@ sauce.ns('power', function() {
             const value = this._values[i];
             if (this._inlineNP) {
                 const state = this._inlineNP;
-                const saved = {};
+                let save;
                 const slot = i % state.rollSize;
                 if (value instanceof sauce.data.Zero) {
                     // Drain the rolling buffer but don't increment the counter.
@@ -857,17 +865,17 @@ sauce.ns('power', function() {
                     const npa = state.rollSum / Math.min(state.rollSize, i + 1 - this._offt);
                     const qnpa = npa * npa * npa * npa;  // unrolled for perf
                     state.total += qnpa;
-                    saved.value = qnpa;
+                    save = qnpa;
                 }
-                state.saved.push(saved);
+                state.saved.push(save);
             }
             if (this._inlineXP) {
                 const state = this._inlineXP;
-                const saved = {};
+                const save = {};
                 if (value instanceof sauce.data.Zero) {
                     if (value instanceof sauce.data.Break) {
                         state.breakPadding += value.pad;
-                        saved.breakPadding = value.pad;
+                        save.breakPadding = value.pad;
                     }
                 } else {
                     const epsilon = 0.1;
@@ -890,10 +898,10 @@ sauce.ns('power', function() {
                     state.total += qw;
                     count++;
                     state.count += count;
-                    saved.value = qw;
-                    saved.count = count;
+                    save.value = qw;
+                    save.count = count;
                 }
-                state.saved.push(saved);
+                state.saved.push(save);
             }
             super.processAdd(i);
         }
@@ -902,18 +910,18 @@ sauce.ns('power', function() {
             super.processShift(i);
             if (this._inlineNP) {
                 const state = this._inlineNP;
-                const saved = state.saved[i];
-                state.total -= saved.value || 0;
+                const save = state.saved[i];
+                state.total -= save || 0;
                 if (this._values[i] instanceof sauce.data.Zero) {
                     state.gapPadCount--;
                 }
             }
             if (this._inlineXP) {
                 const state = this._inlineXP;
-                const saved = state.saved[i];
-                state.total -= saved.value || 0;
-                state.count -= saved.count || 0;
-                state.breakPadding -= saved.breakPadding || 0;
+                const save = state.saved[i];
+                state.total -= save.value || 0;
+                state.count -= save.count || 0;
+                state.breakPadding -= save.breakPadding || 0;
             }
         }
 
@@ -932,7 +940,9 @@ sauce.ns('power', function() {
                 const state = this._inlineNP;
                 return (state.total / (this.size() - state.gapPadCount)) ** 0.25;
             } else {
-                return calcNP(this.values(), 1 / this.idealGap, options);
+                const leadinIdx = Math.max(0, this._offt - 60);
+                const leadin = this._values.slice(leadinIdx, this._offt);
+                return calcNP(this.values(), 1 / this.idealGap, {leadin, ...options});
             }
         }
 
@@ -944,7 +954,9 @@ sauce.ns('power', function() {
                 const state = this._inlineXP;
                 return (state.total / state.count) ** 0.25;
             } else {
-                return calcXP(this.values(), 1 / this.idealGap, options);
+                const leadinIdx = Math.max(0, this._offt - 50);
+                const leadin = this._values.slice(leadinIdx, this._offt);
+                return calcXP(this.values(), 1 / this.idealGap, {leadin, ...options});
             }
         }
 
@@ -952,22 +964,24 @@ sauce.ns('power', function() {
             return this._valuesAcc;
         }
 
-        clone(...args) {
-            const instance = super.clone(...args);
-            if (this._inlineNP) {
+        clone(options={}) {
+            const instance = super.clone(options);
+            if (this._inlineNP && options.inlineNP !== false) {
                 this._copyInlineState('_inlineNP', instance);
             }
-            if (this._inlineXP) {
+            if (this._inlineXP && options.inlineXP !== false) {
                 this._copyInlineState('_inlineXP', instance);
             }
             return instance;
         }
 
         _copyInlineState(key, target) {
-            const saved = this[key].saved;
-            target[key] = {...this[key]};
-            const offt = saved.length - target._length;
-            target[key].saved = saved.slice(offt);
+            const src = this[key];
+            target[key] = {
+                ...src,
+                saved: Array.from(src.saved),
+                roll: src.roll && Array.from(src.roll),
+            };
         }
     }
 
@@ -989,52 +1003,55 @@ sauce.ns('power', function() {
     }
 
 
-    function peakPower(period, timeStream, wattsStream, options) {
+    function peakPower(period, timeStream, wattsStream, options={}) {
         const roll = correctedRollingPower(timeStream, period, options);
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.avg() >= lead.avg());
+        return roll.importReduce(timeStream, wattsStream, options.activeStream,
+            (cur, lead) => cur.avg() >= lead.avg(), {inlineXP: false, inlineNP: false});
     }
 
 
-    function peakNP(period, timeStream, wattsStream, options) {
+    function peakNP(period, timeStream, wattsStream, options={}) {
         const roll = correctedRollingPower(timeStream, period,
             {inlineNP: true, active: true, ...options});
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.np() >= lead.np());
+        return roll.importReduce(timeStream, wattsStream, options.activeStream,
+            (cur, lead) => cur.np() >= lead.np(), {inlineXP: false, inlineNP: false});
     }
 
 
-    function peakXP(period, timeStream, wattsStream, options) {
+    function peakXP(period, timeStream, wattsStream, options={}) {
         const roll = correctedRollingPower(timeStream, period,
             {inlineXP: true, active: true, ...options});
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, wattsStream, (cur, lead) => cur.xp() >= lead.xp());
+        return roll.importReduce(timeStream, wattsStream, options.activeStream,
+            (cur, lead) => cur.xp() >= lead.xp(), {inlineXP: false, inlineNP: false});
     }
 
 
-    function correctedPower(timeStream, wattsStream, options) {
+    function correctedPower(timeStream, wattsStream, options={}) {
         const roll = correctedRollingPower(timeStream, null, options);
         if (!roll) {
             return;
         }
-        roll.importData(timeStream, wattsStream);
+        roll.importData(timeStream, wattsStream, options.activeStream);
         return roll;
     }
 
 
-    function calcNP(stream, sampleRate, options={}) {
+    function calcNP(data, sampleRate, options={}) {
         /* Coggan doesn't recommend NP for less than 20 mins, but we're outlaws
          * and we go as low as 5 mins now! (10-08-2020) */
         sampleRate = sampleRate || 1;
         if (!options.force) {
-            const elapsed = stream.length / sampleRate;
-            if (!stream || elapsed < npMinTime) {
+            const elapsed = data.length / sampleRate;
+            if (!data || elapsed < npMinTime) {
                 return;
             }
         }
@@ -1044,9 +1061,12 @@ sauce.ns('power', function() {
             return;
         }
         const rolling = new Array(rollingSize);
-        let total = 0;
         let count = 0;
+        let total = 0;
+        let leadinTotal = 0;
         let breakPadding = 0;
+        const leadin = options.leadin || [];
+        const stream = leadin.concat(data);
         for (let i = 0, sum = 0, len = stream.length; i < len; i++) {
             const index = i % rollingSize;
             const entry = stream[i];
@@ -1073,21 +1093,27 @@ sauce.ns('power', function() {
             rolling[index] = watts;
             const rollUsedSize = i + 1 + breakPadding;
             const avg = sum / (rollingSize < rollUsedSize ? rollingSize : rollUsedSize);
-            total += avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
+            const qavg = avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
+            total += qavg;
+            if (i < leadin.length) {
+                leadinTotal += qavg;
+            }
             count++;
         }
+        count -= leadin.length;
+        total -= leadinTotal;
         return (total / count) ** 0.25;
     }
 
 
-    function calcXP(stream, sampleRate, options={}) {
+    function calcXP(data, sampleRate, options={}) {
         /* See: https://perfprostudio.com/BETA/Studio/scr/BikeScore.htm
          * xPower is more accurate version of NP that better correlates to how
          * humans recover from oxygen debt. */
         sampleRate = sampleRate || 1;
         if (!options.force) {
-            const elapsed = stream.length / sampleRate;
-            if (!stream || elapsed < xpMinTime) {
+            const elapsed = data.length / sampleRate;
+            if (!data || elapsed < xpMinTime) {
                 return;
             }
         }
@@ -1099,9 +1125,12 @@ sauce.ns('power', function() {
         const sampleWeight = sampleInterval / (samplesPerWindow + sampleInterval);
         let prevTime = 0;
         let weighted = 0;
-        let total = 0;
         let count = 0;
+        let total = 0;
+        let leadinTotal = 0;
         let breakPadding = 0;
+        const leadin = options.leadin || [];
+        const stream = leadin.concat(data);
         for (let i = 0, len = stream.length; i < len; i++) {
             const entry = stream[i];
             const watts = +entry;  // Unlocks some optimizations.
@@ -1121,9 +1150,15 @@ sauce.ns('power', function() {
             weighted *= attenuation;
             weighted += sampleWeight * watts;
             prevTime = time;
-            total += weighted * weighted * weighted * weighted;  // unrolled for perf
+            const qw = weighted * weighted * weighted * weighted;  // unrolled for perf
+            total += qw;
+            if (i < leadin.length) {
+                leadinTotal += qw;
+            }
             count++;
         }
+        count -= leadin.length;
+        total -= leadinTotal;
         return count ? (total / count) ** 0.25 : 0;
     }
 
@@ -1559,12 +1594,13 @@ sauce.ns('pace', function() {
     }
 
 
-    function bestPace(distance, timeStream, distStream) {
+    function bestPace(distance, timeStream, distStream, options={}) {
         if (timeStream.length < 2 || distance[distance.length - 1] < distance) {
             return;
         }
         const roll = new RollingPace(distance);
-        return roll.importReduce(timeStream, distStream, (cur, lead) => cur.avg() <= lead.avg());
+        return roll.importReduce(timeStream, distStream, options.activeStream,
+            (cur, lead) => cur.avg() <= lead.avg());
     }
 
 
@@ -1572,14 +1608,21 @@ sauce.ns('pace', function() {
         const cost = isWalking ? 2 : 4.35;  // Hand tuned by intuition
         const j = cost / ((1 / weight) * (1 / dist));
         const humanMechFactor = 0.24;  // Human mechanical efficiency percentage
-        const kj = j * humanMechFactor / 1000;
-        return kj;
+        return j * humanMechFactor;
+    }
+
+
+    function createWattsStream(timeStream, gradeDistStream, weight) {
+        const vStream = sauce.data.smooth(5, timeStream.map((x, i) =>
+            i ? (gradeDistStream[i] - gradeDistStream[i - 1]) / (x - timeStream[i - 1]) : 0));
+        return vStream.map(v => sauce.pace.work(weight, v));
     }
 
 
     return {
         bestPace,
         work,
+        createWattsStream,
     };
 });
 

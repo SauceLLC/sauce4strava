@@ -279,22 +279,15 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
             }
         }
         if (activity.get('basetype') === 'run') {
-            const gap = streams.grade_adjusted_distance;
+            const gad = streams.grade_adjusted_distance;
             const weight = athlete.getWeightAt(activity.get('ts'));
-            if (gap && weight) {
+            if (gad && weight) {
                 try {
-                    const wattsStream = [0];
-                    for (let i = 1; i < gap.length; i++) {
-                        const dist = gap[i] - gap[i - 1];
-                        const time = streams.time[i] - streams.time[i - 1];
-                        const kj = sauce.pace.work(weight, dist);
-                        wattsStream.push(kj * 1000 / time);
-                    }
                     extraStreams.push({
                         activity: activity.pk,
                         athlete: athlete.pk,
                         stream: 'watts_calc',
-                        data: wattsStream
+                        data: sauce.pace.createWattsStream(streams.time, gad, weight),
                     });
                 } catch(e) {
                     console.warn("Failed to create running watts stream for: " + activity, e);
@@ -320,6 +313,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
     };
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
+        const activeStream = streams.active;
         const stats = {};
         activity.set({stats});
         for (const [statKey, rawKey] of Object.entries(rawAttrMap)) {
@@ -352,12 +346,12 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
         if (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run')) {
             const watts = streams.watts || streams.watts_calc;
             try {
-                const corrected = sauce.power.correctedPower(streams.time, watts);
+                const corrected = sauce.power.correctedPower(streams.time, watts, {activeStream});
                 if (!corrected) {
                     continue;
                 }
                 const active = corrected.active();
-                if (Math.abs((active / stats.activeTime) - 1) > 0.15) {
+                if (Math.abs((active / stats.activeTime) - 1) > 0.10) {
                     // XXX just want to take a look.  I think this will be acts where a power meter died mid ride.
                     console.warn("divergent active time differences with power readings",
                         active - stats.activeTime, Math.round(((active / stats.activeTime)) * 100),
