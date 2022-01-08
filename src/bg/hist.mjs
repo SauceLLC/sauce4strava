@@ -758,7 +758,7 @@ async function syncAthlete(athleteId, options={}) {
     if (options.wait) {
         syncDone = new Promise((resolve, reject) => {
             const onSyncActive = ev => {
-                if (ev.athlete === athleteId && ev.data === false) {
+                if (ev.athlete === athleteId && ev.data.active === false) {
                     syncManager.removeEventListener('active', onSyncActive);
                     resolve();
                 }
@@ -1542,7 +1542,7 @@ class SyncManager extends EventTarget {
         syncJob.addEventListener('status', ev => this.emitForAthlete(athlete, 'status', ev.data));
         syncJob.addEventListener('progress', ev => this.emitForAthlete(athlete, 'progress', ev.data));
         syncJob.addEventListener('ratelimiter', ev => this.emitForAthlete(athlete, 'ratelimiter', ev.data));
-        this.emitForAthlete(athlete, 'active', true);
+        this.emitForAthlete(athlete, 'active', {active: true, athlete: athlete.data});
         this.activeJobs.set(athleteId, syncJob);
         const start = Date.now();
         syncJob.run(options);
@@ -1577,7 +1577,7 @@ class SyncManager extends EventTarget {
             }
             this.activeJobs.delete(athleteId);
             this._refreshEvent.set();
-            this.emitForAthlete(athlete, 'active', false);
+            this.emitForAthlete(athlete, 'active', {active: false, athlete: athlete.data});
         }
     }
 

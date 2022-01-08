@@ -26,7 +26,7 @@ sauce.ns('sync', ns => {
         }
 
         controller.addEventListener('active', ev => {
-            const active = ev.data;
+            const active = ev.data.active;
             $btn.toggleClass('sync-active', active);
             if (active) {
                 syncError = null;
@@ -261,7 +261,7 @@ sauce.ns('sync', ns => {
         }
 
         const listeners = {
-            active: ev => void setActive(ev.data),
+            active: ev => void setActive(ev.data.active),
             error: async ev => {
                 $modal.addClass('has-error');
                 $modal.find('.entry.status value').text(ev.data.error);

@@ -128,6 +128,11 @@ sauce.ns('performance', async ns => {
     }
 
 
+    function hasSyncController(athleteId) {
+        return _syncControllers.has(athleteId);
+    }
+
+
     // XXX maybe Chart.helpers has something like this..
     function setDefault(obj, path, value) {
         path = path.split('.');
@@ -1689,10 +1694,10 @@ sauce.ns('performance', async ns => {
         }
 
         async _onSyncActive(ev) {
-            if (ev.data) {
+            if (ev.data.active) {
                 this.syncError = null;
             }
-            this.sync.active = ev.data;
+            this.sync.active = ev.data.active;
             await this.render();
         }
 
@@ -2369,13 +2374,6 @@ sauce.ns('performance', async ns => {
             this.athletes = athletes;
             this.syncButtons = new Map();
             const f = router.filters;
-            for (const x of athletes.values()) {
-                if (x.lastSync != null && Date.now() - x.lastSync > lastSyncMaxAge) {
-                    // Run current athlete rightaway and everyone else a bit later...
-                    const cooldown = x.id === f.athleteId ? 0 : 15000;
-                    setTimeout(() => sauce.hist.syncAthlete(x.id), cooldown);
-                }
-            }
             await this.setAthleteId(f.athleteId);
             this._setRangeFromRouter();
             this.summaryView = new SummaryView({pageView: this});
@@ -2446,8 +2444,19 @@ sauce.ns('performance', async ns => {
                 this.syncController.removeEventListener('progress', this.onSyncProgress);
             }
             if (this.athlete) {
+                const _athlete = this.athlete;
+                const isNew = !hasSyncController(this.athlete.id);
                 this.syncController = getSyncController(this.athlete.id);
                 this.syncController.addEventListener('progress', this.onSyncProgress);
+                if (isNew) {
+                    // Update our model and monitor for changes.
+                    this.syncController.addEventListener('active', ev =>
+                        Object.assign(_athlete, ev.data.athlete));
+                    Object.assign(_athlete, await sauce.hist.getAthlete(this.athlete.id));
+                }
+                if (this.athlete.lastSync != null && Date.now() - this.athlete.lastSync > lastSyncMaxAge) {
+                    setTimeout(() => sauce.hist.syncAthlete(this.athlete.id), 400);
+                }
             } else {
                 this.syncController = null;
             }
