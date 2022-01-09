@@ -407,12 +407,12 @@ self.sauceBaseInit = function sauceBaseInit() {
                     const latestVersion = migrations[migrations.length - 1].version;
                     const req = indexedDB.open(this.name, latestVersion);
                     req.addEventListener('error', ev => reject(req.error));
-                    req.addEventListener('success', ev => resolve(ev.target.result));
+                    req.addEventListener('success', ev => resolve(req.result));
                     req.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
                     req.addEventListener('upgradeneeded', ev => {
                         console.info(`Upgrading DB from v${ev.oldVersion} to v${ev.newVersion}`);
-                        const idb = ev.target.result;
-                        const t = ev.target.transaction;
+                        const idb = req.result;
+                        const t = req.transaction;
                         const stack = [];
                         for (let i = 0; i < migrations.length; i++) {
                             const migration = migrations[i];
@@ -634,20 +634,39 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async updateMany(updatesMap, options={}) {
+            const s = performance.now();
             if (!(updatesMap instanceof Map)) {
                 throw new TypeError('updatesMap must be Map type');
             }
             if (!this._started) {
                 await this._start();
             }
-            const idbStore = this._getIDBStore('readwrite', options);
-            const ifc = options.index ? idbStore.index(options.index) : idbStore;
-            const ret = await Promise.all(Array.from(updatesMap.entries()).map(async ([key, updates]) => {
-                const data = await this._request(ifc.get(key));
-                const updated = Object.assign({}, data, updates);
-                await this._request(idbStore.put(updated));
-                return updated;
-            }));
+            const ret = await new Promise((resolve, reject) => {
+                const idbStore = this._getIDBStore('readwrite', options);
+                const ifc = options.index ? idbStore.index(options.index) : idbStore;
+                const onAnyError = ev => {
+                    reject(ev.target.error);
+                    idbStore.transaction.abort();
+                };
+                let remaining = updatesMap.size;
+                const onPutSuccess = () => {
+                    if (!--remaining) {
+                        resolve(updated);
+                    }
+                };
+                const updated = [];
+                for (const [key, updates] of updatesMap.entries()) {
+                    const get = ifc.get(key);
+                    get.addEventListener('error', onAnyError);
+                    get.addEventListener('success', () => {
+                        const data = Object.assign(get.result, updates);
+                        updated.push(data);
+                        const put = idbStore.put(data);
+                        put.addEventListener('error', onAnyError);
+                        put.addEventListener('success', onPutSuccess);
+                    });
+                }
+            });
             this.invalidateCaches();
             return ret;
         }
@@ -672,6 +691,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
             const idbStore = this._getIDBStore('readwrite', options);
             const index = options.index && idbStore.index(options.index);
+            // XXX add transaction.abort on failure of any one request
             await Promise.all(datas.map(async data => {
                 let key;
                 if (index) {
@@ -696,6 +716,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             } else {
                 requests.push(idbStore.delete(query));
             }
+            // XXX add transaction.abort on failure of any one request
             await Promise.all(requests.map(x => this._request(x)));
             this.invalidateCaches();
             return requests.length;
@@ -718,6 +739,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             } else {
                 keys = queries;
             }
+            // XXX add transaction.abort on failure of any one request
             await Promise.all(keys.map(k => this._request(idbStore.delete(k))));
             this.invalidateCaches();
         }
@@ -778,7 +800,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             let reject;
             // Callbacks won't invoke until we release control of the event loop, so this is safe..
             req.addEventListener('error', ev => reject(req.error));
-            req.addEventListener('success', ev => resolve(ev.target.result));
+            req.addEventListener('success', ev => resolve(req.result));
             if (options.filter) {
                 throw new TypeError('deprecated');
             }
