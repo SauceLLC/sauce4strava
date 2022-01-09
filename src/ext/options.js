@@ -114,7 +114,7 @@
         const supporter = supporters[Math.floor(Math.random() * supporters.length)];
         const supEl = document.querySelector('p.supporter a');
         if (supEl) {
-            supEl.textContent = supporter;
+            supEl.textContent = supporter.name;
         }
         document.querySelector('a.dismiss').addEventListener('click', () => {
             browser.tabs.update({active: true});  // required to allow self.close()
@@ -180,6 +180,6 @@
         (await sauce.ga.getOrCreateTracker()).send('pageview');
     }
 
-    const supP = fetch('https://saucellc.io/supporters.json').then(x => x.json());
+    const supP = fetch('https://saucellc.io/supporters-v2.json').then(x => x.json());
     document.addEventListener('DOMContentLoaded', main);
 })();

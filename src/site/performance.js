@@ -1938,27 +1938,36 @@ sauce.ns('performance', async ns => {
             row.classList.add('expanded');
             if (!row.querySelector('.expanded-details')) {
                 const id = Number(row.closest('.activity').dataset.id);
-                const peaks = await sauce.hist.getPeaksForActivityId(id);
-                const type = row.dataset.type;
-                const periods = new Set(peakRanges[getPeaksRangeTypeForStream(type)].map(x => x.value));
-                const typedPeaks = peaks.filter(x => x.type === row.dataset.type && periods.has(x.period));
-                if (typedPeaks.length) {
-                    const keyFormatter = getPeaksKeyFormatter(type);
-                    const valueFormatter = getPeaksValueFormatter(type);
-                    const details = document.createElement('div');
-                    details.classList.add('expanded-details');
-                    for (const x of typedPeaks) {
-                        const row = document.createElement('row');
-                        const key = document.createElement('key');
-                        const value = document.createElement('value');
-                        key.textContent = keyFormatter(x.period);
-                        value.textContent = `${valueFormatter(x.value)}${getPeaksUnit(type)}`;
-                        row.appendChild(key);
-                        row.appendChild(value);
-                        details.appendChild(row);
-                    }
-                    row.insertAdjacentElement('beforeend', details);
+                const mode = row.dataset.expandMode;
+                if (mode === 'peaks') {
+                    await this.expandPeaks(row, id);
+                } else {
+                    throw new Error("Unknown expander mode");
                 }
+            }
+        }
+
+        async expandPeaks(row, id) {
+            const peaks = await sauce.hist.getPeaksForActivityId(id);
+            const type = row.dataset.peakType;
+            const periods = new Set(peakRanges[getPeaksRangeTypeForStream(type)].map(x => x.value));
+            const typedPeaks = peaks.filter(x => x.type === type && periods.has(x.period));
+            if (typedPeaks.length) {
+                const keyFormatter = getPeaksKeyFormatter(type);
+                const valueFormatter = getPeaksValueFormatter(type);
+                const details = document.createElement('div');
+                details.classList.add('expanded-details');
+                for (const x of typedPeaks) {
+                    const row = document.createElement('row');
+                    const key = document.createElement('key');
+                    const value = document.createElement('value');
+                    key.textContent = keyFormatter(x.period);
+                    value.textContent = `${valueFormatter(x.value)}${getPeaksUnit(type)}`;
+                    row.appendChild(key);
+                    row.appendChild(value);
+                    details.appendChild(row);
+                }
+                row.insertAdjacentElement('beforeend', details);
             }
         }
 
