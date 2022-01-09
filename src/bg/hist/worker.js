@@ -29,6 +29,7 @@ async function getActivitiesStreams(activities, streams) {
     return actStreams;
 }
 
+const ID = Math.round(Math.random() * 100000);
 
 async function findPeaks(athlete, activities, periods, distances) {
     const actStreams = await getActivitiesStreams(activities, {
@@ -36,6 +37,7 @@ async function findPeaks(athlete, activities, periods, distances) {
         ride: ['time', 'active', 'watts', 'distance', 'heartrate'],
         other: ['time', 'active', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
+    console.info(ID, "Enter findPeaks");
     await sleep(1);  // Workaround for Safari IDB transaction performance bug.
     const gender = athlete.gender || 'male';
     const getRankLevel = (period, p, wp, weight) => {
@@ -54,6 +56,7 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
             continue;
         }
+        console.info(ID, "proc activity");
         let weight;
         const streams = actStreams.get(activity.id);
         const activeStream = streams.active;
@@ -94,6 +97,7 @@ async function findPeaks(athlete, activities, periods, distances) {
                     // Instead of using peakPower, peakNP, we do our own reduction to save
                     // repeative iterations on the same dataset; it's about 50% faster.
                     const rp = sauce.power.correctedRollingPower(streams.time, period);
+                    const leadCloneOpts = {inlineXP: false, inlineNP: false};
                     if (rp) {
                         const wrp = period >= 300 && isRide &&
                             rp.clone({active: true, inlineNP: true, inlineXP: true});
@@ -115,11 +119,11 @@ async function findPeaks(athlete, activities, periods, distances) {
                             if (wrp && wrp.full()) {
                                 const np = wrp.np();
                                 if (np && (!leaders.np || np >= leaders.np.value)) {
-                                    leaders.np = {roll: wrp.clone({inlineNP: false}), value: np};
+                                    leaders.np = {roll: wrp.clone(leadCloneOpts), value: np};
                                 }
                                 const xp = wrp.xp();
                                 if (xp && (!leaders.xp || xp >= leaders.xp.value)) {
-                                    leaders.xp = {roll: wrp.clone({inlineXP: false}), value: xp};
+                                    leaders.xp = {roll: wrp.clone(leadCloneOpts), value: xp};
                                 }
                             }
                         }
@@ -179,7 +183,9 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
         }
     }
+    console.info(ID, 'put store...');
     await peaksStore.putMany(peaks);
+    console.info(ID, 'done put store, exit');
     return errors;
 }
 

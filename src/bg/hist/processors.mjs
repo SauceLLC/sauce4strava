@@ -87,7 +87,7 @@ class WorkerPoolExecutor {
 
 
 let _workerPool;
-function getWorkerPool() {
+function getWorkerPool(options) {
     if (!_workerPool) {
         const extUrl = browser.runtime.getURL('');
         _workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist/worker.js');
@@ -374,11 +374,12 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const len = activities.length;
     const maxWorkers = Math.ceil(len / 30);
     const concurrency = Math.min(maxWorkers, navigator.hardwareConcurrency || 8);
-    const step = Math.ceil(len / concurrency);
+    const step = Math.ceil(Math.max(len / concurrency, 1000 * Math.random()));
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
     for (let i = 0; i < len; i += step) {
         const chunk = activities.slice(i, i + step);
+        console.info("WORK CHUNK", chunk.length, 'step', step);
         work.push(wp.exec('findPeaks', athlete.data, chunk.map(x => x.data), periods, distances));
     }
     for (const errors of await Promise.all(work)) {
