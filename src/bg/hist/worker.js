@@ -31,6 +31,7 @@ async function getActivitiesStreams(activities, streams) {
 
 const ID = Math.round(Math.random() * 100000);
 
+
 async function findPeaks(athlete, activities, periods, distances) {
     const actStreams = await getActivitiesStreams(activities, {
         run: ['time', 'active', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
@@ -56,7 +57,6 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
             continue;
         }
-        console.info(ID, "proc activity");
         let weight;
         const streams = actStreams.get(activity.id);
         const activeStream = streams.active;

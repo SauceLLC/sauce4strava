@@ -81,7 +81,7 @@ ActivityModel.addSyncManifest({
     name: 'peaks',
     version: 10, // Use real watts for runs if available
     depends: ['extra-streams'],
-    data: {processor: processors.peaksProcessor}
+    data: {processor: processors.PeaksProcessor}
 });
 
 ActivityModel.addSyncManifest({

@@ -372,9 +372,8 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const activityMap = new Map(activities.map(x => [x.pk, x]));
     const work = [];
     const len = activities.length;
-    const maxWorkers = Math.ceil(len / 30);
-    const concurrency = Math.min(maxWorkers, navigator.hardwareConcurrency || 8);
-    const step = Math.ceil(Math.max(len / concurrency, 1000 * Math.random()));
+    const concurrency = Math.min(navigator.hardwareConcurrency || 12);
+    const step = Math.ceil(Math.max(len / concurrency));
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
     for (let i = 0; i < len; i += step) {
@@ -389,6 +388,30 @@ export async function peaksProcessor({manifest, activities, athlete}) {
         }
     }
     await Promise.all(work);
+}
+
+
+export class PeaksProcessor extends OffloadProcessor {
+    async processor() {
+        const minWait = 0;
+        const maxWait = 2 * 1000;
+        const maxSize = 200;
+        while (true) {
+            const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
+            if (batch === null) {
+                return;
+            }
+            console.log(batch);
+            await this._process(batch);
+            this.putFinished(batch);
+        }
+    }
+
+    async _process(batch) {
+        for (const a of batch) {
+            console.log(a);
+        }
+    }
 }
 
 
