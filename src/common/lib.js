@@ -2034,7 +2034,8 @@ sauce.ns('perf', function() {
 
     async function fetchHRZones(activity) {
         const resp = await fetch(`https://www.strava.com/activities/${activity}/heartrate_zones`);
-        if (!resp.ok) {
+        // Handle error and 302.  Strava often forwards to dashboard when hr zones are not available.
+        if (!resp.ok || resp.redirected) {
             return;
         }
         const data = await resp.json();
