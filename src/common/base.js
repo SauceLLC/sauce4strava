@@ -634,41 +634,39 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async updateMany(updatesMap, options={}) {
-            const s = performance.now();
             if (!(updatesMap instanceof Map)) {
                 throw new TypeError('updatesMap must be Map type');
+            }
+            if (!updatesMap.size) {
+                return;
             }
             if (!this._started) {
                 await this._start();
             }
-            const ret = await new Promise((resolve, reject) => {
+            await new Promise((resolve, reject) => {
+                let remaining = updatesMap.size;
                 const idbStore = this._getIDBStore('readwrite', options);
                 const ifc = options.index ? idbStore.index(options.index) : idbStore;
                 const onAnyError = ev => {
                     reject(ev.target.error);
                     idbStore.transaction.abort();
                 };
-                let remaining = updatesMap.size;
                 const onPutSuccess = () => {
                     if (!--remaining) {
-                        resolve(updated);
+                        resolve();
                     }
                 };
-                const updated = [];
                 for (const [key, updates] of updatesMap.entries()) {
                     const get = ifc.get(key);
                     get.addEventListener('error', onAnyError);
                     get.addEventListener('success', () => {
-                        const data = Object.assign(get.result, updates);
-                        updated.push(data);
-                        const put = idbStore.put(data);
+                        const put = idbStore.put(Object.assign({}, get.result, updates));
                         put.addEventListener('error', onAnyError);
                         put.addEventListener('success', onPutSuccess);
                     });
                 }
             });
             this.invalidateCaches();
-            return ret;
         }
 
         async put(data, options={}) {
