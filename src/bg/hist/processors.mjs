@@ -30,7 +30,7 @@ async function getActivitiesStreams(activities, streams) {
 class WorkerPoolExecutor {
     constructor(url, options={}) {
         this.url = url;
-        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency || 8);
+        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 4 || 16);
         this._idle = new Set();
         this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
@@ -50,6 +50,10 @@ class WorkerPoolExecutor {
     async exec(call, ...args) {
         const id = this._id++;
         const f = new futures.Future();
+        const stackFrames = new Error().stack.split('\n');
+        if (stackFrames[0] === 'Error') {
+            stackFrames.shift();  // v8 puts the err message in stack
+        }
         const onMessage = ev => {
             if (!ev.data || ev.data.id == null) {
                 f.setError(new Error("Invalid Worker Message"));
@@ -60,7 +64,11 @@ class WorkerPoolExecutor {
                 if (ev.data.success) {
                     f.setResult(ev.data.value);
                 } else {
-                    f.setError(new Error(ev.data.value));
+                    const eDesc = ev.data.value;
+                    const e = new Error(eDesc.message);
+                    e.name = eDesc.name;
+                    e.stack = [eDesc.stack, ...stackFrames].join('\n');
+                    f.setError(e);
                 }
             }
         };
@@ -87,7 +95,7 @@ class WorkerPoolExecutor {
 
 
 let _workerPool;
-function getWorkerPool(options) {
+function getWorkerPool() {
     if (!_workerPool) {
         const extUrl = browser.runtime.getURL('');
         _workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist/worker.js');
@@ -102,6 +110,7 @@ export class OffloadProcessor extends futures.Future {
         this.manifest = manifest;
         this.athlete = athlete;
         this.pending = new Set();
+        this.stopping = false;
         this._incoming = new queues.PriorityQueue();
         this._finished = new queues.Queue();
         this._flushEvent = new locks.Event();
@@ -114,6 +123,9 @@ export class OffloadProcessor extends futures.Future {
     }
 
     putIncoming(activities) {
+        if (this.stopping) {
+            throw new Error("Invalid state for putIncoming");
+        }
         for (const a of activities) {
             this.pending.add(a);
             this._incoming.putNoWait(a, a.get('ts'));
@@ -121,7 +133,7 @@ export class OffloadProcessor extends futures.Future {
         return this._incoming.size;
     }
 
-    getBatch(count) {
+    getFinished(count) {
         const batch = [];
         while (this._finished.size && batch.length < count) {
             const a = this._finished.getNoWait();
@@ -143,6 +155,10 @@ export class OffloadProcessor extends futures.Future {
         for (const a of activities) {
             this._finished.putNoWait(a);
         }
+    }
+
+    async getIncoming(options={}) {
+        return await this.getIncomingDebounced({maxSize: 1, options});
     }
 
     async getIncomingDebounced(options={}) {
@@ -168,11 +184,13 @@ export class OffloadProcessor extends futures.Future {
             }
             await Promise.race(waiters);
             if (this._cancelEvent.isSet()) {
+                this.stopping = true; // XXX try to remove so flush can be optional
                 return null;
             }
             const size = this._incoming.size;
             if (this._flushEvent.isSet()) {
                 if (!size) {
+                    this.stopping = true; // XXX try to remove so flush can be optional
                     return null;
                 }
             } else if (size != lastSize && size < maxSize && Date.now() < deadline) {
@@ -188,19 +206,21 @@ export class OffloadProcessor extends futures.Future {
         }
     }
 
-    async processor() {
-        throw new TypeError("Pure virutal method");
-        /* Subclass should keep this alive for the duration of their execution.
-         * It is also their job to monitor flushEvent and cancelEvent
-         */
-    }
-
     async _runProcessor() {
         try {
             this.setResult(await this.processor());
         } catch(e) {
             this.setError(e);
+        } finally {
+            console.warn("Exit processor", this);
         }
+    }
+
+    async processor() {
+        throw new TypeError("Pure virutal method");
+        /* Subclass should keep this alive for the duration of their execution.
+         * It is also their job to monitor flushEvent and cancelEvent
+         */
     }
 }
 
@@ -387,30 +407,73 @@ export async function peaksProcessor({manifest, activities, athlete}) {
             activity.setSyncError(manifest, new Error(x.error));
         }
     }
-    await Promise.all(work);
+}
+
+
+export class ExtraStreamsProcessor extends OffloadProcessor {
+    async processor() {
+        const jobs = new Set();
+        while (true) {
+            const activities = await this.getIncoming();
+            if (activities === null) {
+                // flush
+                await Promise.all(jobs);
+                return;
+            }
+            const j = this._process(activities);
+            jobs.add(j);
+            j.then(() => jobs.delete(j));
+        }
+    }
+
+    async _process(activities) {
+        const wp = getWorkerPool();
+        const errors = await wp.exec('createExtraStreams', this.athlete.data,
+            activities.map(x => x.data));
+        for (const x of errors) {
+            const activity = activities.find(x => x.pk === x.activity);
+            activity.setSyncError(this.manifest, new Error(x.error));
+        }
+        this.putFinished(activities);
+    }
 }
 
 
 export class PeaksProcessor extends OffloadProcessor {
     async processor() {
-        const minWait = 0;
-        const maxWait = 2 * 1000;
-        const maxSize = 200;
+        this.periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
+        this.distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
+        const jobs = [];
         while (true) {
-            const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
-            if (batch === null) {
+            const activities = await this.getIncoming();
+            if (activities === null) {
+                await Promise.all(jobs);
                 return;
             }
-            console.log(batch);
-            await this._process(batch);
-            this.putFinished(batch);
+            this.putFinished(activities); // XXX
+            //jobs.push(this._process(activities));
         }
     }
 
-    async _process(batch) {
-        for (const a of batch) {
-            console.log(a);
+    async _process(activities) {
+        const concurrency = navigator.hardwareConcurrency || 8;
+        const step = Math.ceil(Math.max(activities.length / concurrency), 10); // XXX bench
+        const work = [];
+        for (let i = 0; i < activities.length; i += step) {
+            work.push(this._findPeaks(activities.slice(i, i + step)));
         }
+        await Promise.all(work);
+    }
+
+    async _findPeaks(activities) {
+        const wp = getWorkerPool();
+        const errors = await wp.exec('findPeaks', this.athlete.data,
+            activities.map(x => x.data), this.periods, this.distances);
+        for (const x of errors) {
+            const activity = activities.find(x => x.pk === x.activity);
+            activity.setSyncError(this.manifest, new Error(x.error));
+        }
+        this.putFinished(activities);
     }
 }
 
@@ -422,9 +485,9 @@ export class TrainingLoadProcessor extends OffloadProcessor {
     }
 
     async processor() {
-        const minWait = 2 * 1000;
-        const maxWait = 30 * 1000;
-        const maxSize = 200;
+        const minWait = 100; // Throttles high ingest rate.
+        const maxSize = 20; // Controls max batching during high ingest rate.
+        const maxWait = 30 * 1000; // Controls latency during slow ingest.
         while (true) {
             const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
             if (batch === null) {

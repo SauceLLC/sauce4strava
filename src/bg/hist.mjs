@@ -61,14 +61,14 @@ ActivityModel.addSyncManifest({
     data: {processor: processors.AthleteSettingsProcessor}
 });
 
-ActivityModel.addSyncManifest({
+/*ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'extra-streams',
     version: 1,
-    data: {processor: processors.extraStreamsProcessor}
-});
+    data: {processor: processors.ExtraStreamsProcessor}
+});*/
 
-ActivityModel.addSyncManifest({
+/*ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
     version: 2,
@@ -82,15 +82,15 @@ ActivityModel.addSyncManifest({
     version: 10, // Use real watts for runs if available
     depends: ['extra-streams'],
     data: {processor: processors.PeaksProcessor}
-});
+});*/
 
-ActivityModel.addSyncManifest({
+/*ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'training-load',
     version: 4,
     depends: ['activity-stats'],
     data: {processor: processors.TrainingLoadProcessor}
-});
+});*/
 
 
 class FetchError extends Error {
@@ -103,7 +103,6 @@ class FetchError extends Error {
 }
 
 
-class ThrottledFetchError extends FetchError {}
 class Timeout extends Error {}
 
 
@@ -136,42 +135,6 @@ async function networkOnline(timeout) {
 }
 
 
-async function retryFetch(urn, options={}) {
-    const maxRetries = 5;
-    const headers = options.headers || {};
-    headers["x-requested-with"] = "XMLHttpRequest";  // Required for most Strava endpoints
-    const url = `https://www.strava.com${urn}`;
-    for (let r = 1;; r++) {
-        let resp;
-        let fetchError;
-        await networkOnline(30000);
-        try {
-            resp = await fetch(url, Object.assign({headers}, options));
-        } catch(e) {
-            fetchError = e;
-        }
-        if (resp && resp.ok) {
-            return resp;
-        }
-        if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxRetries) {
-            console.info(`Server error for: ${urn} - Retry: ${r}/${maxRetries}`);
-            // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
-            // perform a cool down before relinquishing control. Ie. do one last sleep.
-            // See: http://dev.chromium.org/throttling
-            await sleep(1000 * 2 ** r);
-            if (r < maxRetries) {
-                continue;
-            }
-        }
-        if (fetchError) {
-            throw fetchError;
-        } else if (resp.status === 429) {
-            throw ThrottledFetchError.fromResp(resp);
-        } else {
-            throw FetchError.fromResp(resp);
-        }
-    }
-}
 
 
 class SauceRateLimiter extends jobs.RateLimiter {
@@ -212,82 +175,6 @@ async function incrementStreamsUsage() {
 sauce.proxy.export(incrementStreamsUsage, {namespace});
 
 
-async function updateSelfActivities(athlete, options={}) {
-    const forceUpdate = options.forceUpdate;
-    const filteredKeys = [
-        'activity_url',
-        'activity_url_for_twitter',
-        'distance',
-        'elapsed_time',
-        'elevation_gain',
-        'elevation_unit',
-        'moving_time',
-        'long_unit',
-        'short_unit',
-        'start_date',
-        'start_day',
-        'start_time',
-        'static_map',
-        'twitter_msg',
-    ];
-    const knownIds = new Set(forceUpdate ?  [] : await actsStore.getAllKeysForAthlete(athlete.pk));
-    for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
-        const work = new jobs.UnorderedWorkQueue({maxPending: 25});
-        for (let i = 0; page === 1 || page <= pageCount && i < concurrency; page++, i++) {
-            await work.put((async () => {
-                const q = new URLSearchParams();
-                q.set('new_activity_only', 'false');
-                q.set('page', page);
-                const resp = await retryFetch(`/athlete/training_activities?${q}`);
-                return await resp.json();
-            })());
-        }
-        if (!work.pending() && !work.fulfilled()) {
-            break;
-        }
-        const adding = [];
-        for await (const data of work) {
-            if (total === undefined) {
-                total = data.total;
-                pageCount = Math.ceil(total / data.perPage);
-            }
-            for (const x of data.models) {
-                if (!knownIds.has(x.id)) {
-                    const record = Object.assign({
-                        athlete: athlete.pk,
-                        ts: (new Date(x.start_time)).getTime()
-                    }, x);
-                    record.basetype = sauce.model.getActivityBaseType(record.type);
-                    for (const x of filteredKeys) {
-                        delete record[x];
-                    }
-                    adding.push(record);
-                    knownIds.add(x.id);
-                }
-            }
-        }
-        // Don't give up until we've met or exceeded the indicated number of acts.
-        // If a user has deleted acts that we previously fetched our count will
-        // be higher.  So we also require than the entire work group had no effect
-        // before stopping.
-        //
-        // NOTE: If the user deletes a large number of items we may end up not
-        // syncing some activities.  A full resync will be required to recover.
-        if (adding.length) {
-            if (forceUpdate) {
-                console.info(`Updating ${adding.length} activities`);
-                await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
-            } else {
-                console.info(`Adding ${adding.length} new activities`);
-                await actsStore.putMany(adding);
-            }
-        } else if (knownIds.size >= total) {
-            break;
-        }
-    }
-}
-
-
 const _reported = new Set();
 async function reportErrorOnce(e) {
     const key = e.message + e.stack;
@@ -296,164 +183,6 @@ async function reportErrorOnce(e) {
     }
     _reported.add(key);
     return await sauce.report.error(e);
-}
-
-
-async function updatePeerActivities(athlete, options={}) {
-    const forceUpdate = options.forceUpdate;
-    const knownIds = new Set(forceUpdate ? [] : await actsStore.getAllKeysForAthlete(athlete.pk));
-
-    function *yearMonthRange(date) {
-        for (let year = date.getUTCFullYear(), month = date.getUTCMonth() + 1;; year--, month=12) {
-            for (let m = month; m; m--) {
-                yield [year, m];
-            }
-        }
-    }
-
-    async function fetchMonth(year, month) {
-        // Welcome to hell.  It gets really ugly in here in an effort to avoid
-        // any eval usage which is required to render this HTML into a DOM node.
-        // So are doing horrible HTML parsing with regexps..
-        //
-        // Note this code is littered with debugger statements.  All of them are
-        // cases I'd like to personally inspect if they happen.
-        const q = new URLSearchParams();
-        q.set('interval_type', 'month');
-        q.set('chart_type', 'hours');
-        q.set('year_offset', '0');
-        q.set('interval', '' + year +  month.toString().padStart(2, '0'));
-        let data;
-        try {
-            const resp = await retryFetch(`/athletes/${athlete.pk}/interval?${q}`);
-            data = await resp.text();
-        } catch(e) {
-            // In some cases Strava just returns 500 for a month.  I suspect it's when the only
-            // activity data in a month is private, but it's an upstream problem and we need to
-            // treat it like an empty response.
-            reportErrorOnce(new Error(`Upstream activity fetch error: ${athlete.pk} [${q}]`));
-            return [];
-        }
-        const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
-        const batch = [];
-        function addEntry(id, ts, type, name) {
-            if (!id) {
-                reportErrorOnce(new Error('Invalid activity id for athlete: ' + athlete.pk));
-                debugger;
-                return;
-            }
-            let basetype = type && sauce.model.getActivityBaseType(type);
-            if (!basetype) {
-                reportErrorOnce(new Error('Unknown activity type for: ' + id));
-                basetype = 'workout';
-                debugger;
-            }
-            batch.push({
-                id,
-                ts,
-                basetype,
-                athlete: athlete.pk,
-                name
-            });
-        }
-        const frag = document.createElement('div');
-        function parseCard(cardHTML) {
-            // This is just terrible, but we can't use eval..  Strava does some very particular
-            // escaping that mostly has no effect but does break JSON.parse.  Sadly we MUST run
-            // JSON.parse to disambiguate the JSON payload and to unescape unicode sequences.
-            const isActivity = !!cardHTML.match(/data-react-class=\\"Activity\\"/);
-            const isGroupActivity = !!cardHTML.match(/data-react-class=\\"GroupActivity\\"/);
-            if (!isActivity && !isGroupActivity) {
-                return;
-            }
-            const props = cardHTML.match(/data-react-props=\\"(.+?)\\"/)[1];
-            // Unescapes html entities, ie. "&quot;"
-            const htmlEntitiesKey = String.fromCharCode(...[33, 39, 36, 30, 46, 5, 10, 2, 12]
-                .map((x, i) => (x ^ i) + 72));
-            frag[htmlEntitiesKey] = props;
-            const escaped = frag[htmlEntitiesKey]
-                .replace(/\\\\/g, '\\')
-                .replace(/\\\$/g, '$')
-                .replace(/\\`/g, '`');
-            const data = JSON.parse(escaped);
-            if (isGroupActivity) {
-                for (const x of data.rowData.activities.filter(x => x.athlete_id === athlete.pk)) {
-                    addEntry(x.activity_id, (new Date(x.start_date)).getTime(), x.type, x.name);
-                }
-            } else {
-                const a = data.activity;
-                addEntry(Number(a.id), data.cursorData.updated_at * 1000, a.type, a.activityName);
-            }
-        }
-        for (const m of raw.matchAll(/<div class=\\'react-card-container\\'>(.+?)<\\\/div>/g)) {
-            try {
-                parseCard(m[1]);
-            } catch(e) {
-                reportErrorOnce(e);
-                continue;
-            }
-        }
-        return batch;
-    }
-
-    async function batchImport(startDate) {
-        const minEmpty = 12;
-        const minRedundant = 2;
-        const iter = yearMonthRange(startDate);
-        for (let concurrency = 1;; concurrency = Math.min(25, concurrency * 2)) {
-            const work = new jobs.UnorderedWorkQueue({maxPending: 25});
-            for (let i = 0; i < concurrency; i++) {
-                const [year, month] = iter.next().value;
-                await work.put(fetchMonth(year, month));
-            }
-            let empty = 0;
-            let redundant = 0;
-            const adding = [];
-            for await (const data of work) {
-                if (!data.length) {
-                    empty++;
-                    continue;
-                }
-                let foundNew;
-                for (const x of data) {
-                    if (!knownIds.has(x.id)) {
-                        adding.push(x);
-                        knownIds.add(x.id);
-                        foundNew = true;
-                    }
-                }
-                if (!foundNew) {
-                    redundant++;
-                }
-            }
-            if (adding.length) {
-                if (forceUpdate) {
-                    console.info(`Updating ${adding.length} activities`);
-                    await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
-                } else {
-                    console.info(`Adding ${adding.length} new activities`);
-                    await actsStore.putMany(adding);
-                }
-            } else if (empty >= minEmpty && empty >= Math.floor(concurrency)) {
-                const [year, month] = iter.next().value;
-                const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
-                await athlete.save({activitySentinel: date.getTime()});
-                break;
-            } else if (redundant >= minRedundant  && redundant >= Math.floor(concurrency)) {
-                // Entire work set was redundant.  Don't refetch any more.
-                break;
-            }
-        }
-    }
-
-    // Fetch newest activities (or all of them if this is the first time).
-    await batchImport(new Date());
-    const sentinel = await athlete.get('activitySentinel');
-    if (!sentinel) {
-        // We never finished a prior sync so find where we left off..
-        const last = await actsStore.getOldestForAthlete(athlete.pk);
-        await batchImport(new Date(last.ts));
-    }
 }
 
 
@@ -707,7 +436,7 @@ sauce.proxy.export(updateActivity, {namespace});
 
 async function updateActivities(updates) {
     const updateMap = new Map(Object.entries(updates).map(([id, data]) => [Number(id), data]));
-    return await actsStore.updateMany(updateMap);
+    await actsStore.updateMany(updateMap);
 }
 sauce.proxy.export(updateActivities, {namespace});
 
@@ -1082,6 +811,11 @@ class SyncJob extends EventTarget {
     }
 
     async _run(options={}) {
+        if (options.delay) {
+            this.setStatus('delayed');
+            console.debug(`Delaying sync job for: ${Math.round(options.delay / 1000)}s`);
+            await sauce.sleep(options.delay);
+        }
         this.setStatus('checking-network');
         await Promise.race([networkOnline(), this._cancelEvent.wait()]);
         if (this._cancelEvent.isSet()) {
@@ -1089,9 +823,9 @@ class SyncJob extends EventTarget {
         }
         if (!options.noActivityScan) {
             this.setStatus('activity-scan');
-            const updateFn = this.isSelf ? updateSelfActivities : updatePeerActivities;
+            const updateFn = this.isSelf ? this.updateSelfActivities : this.updatePeerActivities;
             try {
-                await updateFn(this.athlete, {forceUpdate: options.forceActivityUpdate});
+                await updateFn.call(this, {forceUpdate: options.forceActivityUpdate});
             } finally {
                 await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
             }
@@ -1104,6 +838,237 @@ class SyncJob extends EventTarget {
             throw e;
         }
         this.setStatus('complete');
+    }
+
+    async updateSelfActivities(options={}) {
+        const forceUpdate = options.forceUpdate;
+        const filteredKeys = [
+            'activity_url',
+            'activity_url_for_twitter',
+            'distance',
+            'elapsed_time',
+            'elevation_gain',
+            'elevation_unit',
+            'moving_time',
+            'long_unit',
+            'short_unit',
+            'start_date',
+            'start_day',
+            'start_time',
+            'static_map',
+            'twitter_msg',
+        ];
+        const knownIds = new Set(forceUpdate ?  [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
+        for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
+            const work = new jobs.UnorderedWorkQueue({maxPending: 25});
+            for (let i = 0; page === 1 || page <= pageCount && i < concurrency; page++, i++) {
+                await work.put((async () => {
+                    const q = new URLSearchParams();
+                    q.set('new_activity_only', 'false');
+                    q.set('page', page);
+                    const resp = await this.retryFetch(`/athlete/training_activities?${q}`);
+                    return await resp.json();
+                })());
+            }
+            if (!work.pending() && !work.fulfilled()) {
+                break;
+            }
+            const adding = [];
+            for await (const data of work) {
+                if (total === undefined) {
+                    total = data.total;
+                    pageCount = Math.ceil(total / data.perPage);
+                }
+                for (const x of data.models) {
+                    if (!knownIds.has(x.id)) {
+                        const record = Object.assign({
+                            athlete: this.athlete.pk,
+                            ts: (new Date(x.start_time)).getTime()
+                        }, x);
+                        record.basetype = sauce.model.getActivityBaseType(record.type);
+                        for (const x of filteredKeys) {
+                            delete record[x];
+                        }
+                        adding.push(record);
+                        knownIds.add(x.id);
+                    }
+                }
+            }
+            // Don't give up until we've met or exceeded the indicated number of acts.
+            // If a user has deleted acts that we previously fetched our count will
+            // be higher.  So we also require than the entire work group had no effect
+            // before stopping.
+            //
+            // NOTE: If the user deletes a large number of items we may end up not
+            // syncing some activities.  A full resync will be required to recover.
+            if (adding.length) {
+                if (forceUpdate) {
+                    console.info(`Updating ${adding.length} activities`);
+                    await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
+                } else {
+                    console.info(`Adding ${adding.length} new activities`);
+                    await actsStore.putMany(adding);
+                }
+            } else if (knownIds.size >= total) {
+                break;
+            }
+        }
+    }
+
+    *_yearMonthRange(date) {
+        for (let year = date.getUTCFullYear(), month = date.getUTCMonth() + 1;; year--, month=12) {
+            for (let m = month; m; m--) {
+                yield [year, m];
+            }
+        }
+    }
+
+    async fetchMonth(year, month) {
+        // Welcome to hell.  It gets really ugly in here in an effort to avoid
+        // any eval usage which is required to render this HTML into a DOM node.
+        // So are doing horrible HTML parsing with regexps..
+        //
+        // Note this code is littered with debugger statements.  All of them are
+        // cases I'd like to personally inspect if they happen.
+        const q = new URLSearchParams();
+        q.set('interval_type', 'month');
+        q.set('chart_type', 'hours');
+        q.set('year_offset', '0');
+        q.set('interval', '' + year +  month.toString().padStart(2, '0'));
+        let data;
+        try {
+            const resp = await this.retryFetch(`/athletes/${this.athlete.pk}/interval?${q}`);
+            data = await resp.text();
+        } catch(e) {
+            // In some cases Strava just returns 500 for a month.  I suspect it's when the only
+            // activity data in a month is private, but it's an upstream problem and we need to
+            // treat it like an empty response.
+            reportErrorOnce(new Error(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`));
+            return [];
+        }
+        const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
+        const batch = [];
+        function addEntry(id, ts, type, name) {
+            if (!id) {
+                reportErrorOnce(new Error('Invalid activity id for athlete: ' + this.athlete.pk));
+                debugger;
+                return;
+            }
+            let basetype = type && sauce.model.getActivityBaseType(type);
+            if (!basetype) {
+                reportErrorOnce(new Error('Unknown activity type for: ' + id));
+                basetype = 'workout';
+                debugger;
+            }
+            batch.push({
+                id,
+                ts,
+                basetype,
+                athlete: this.athlete.pk,
+                name
+            });
+        }
+        const frag = document.createElement('div');
+        function parseCard(cardHTML) {
+            // This is just terrible, but we can't use eval..  Strava does some very particular
+            // escaping that mostly has no effect but does break JSON.parse.  Sadly we MUST run
+            // JSON.parse to disambiguate the JSON payload and to unescape unicode sequences.
+            const isActivity = !!cardHTML.match(/data-react-class=\\"Activity\\"/);
+            const isGroupActivity = !!cardHTML.match(/data-react-class=\\"GroupActivity\\"/);
+            if (!isActivity && !isGroupActivity) {
+                return;
+            }
+            const props = cardHTML.match(/data-react-props=\\"(.+?)\\"/)[1];
+            // Unescapes html entities, ie. "&quot;"
+            const htmlEntitiesKey = String.fromCharCode(...[33, 39, 36, 30, 46, 5, 10, 2, 12]
+                .map((x, i) => (x ^ i) + 72));
+            frag[htmlEntitiesKey] = props;
+            const escaped = frag[htmlEntitiesKey]
+                .replace(/\\\\/g, '\\')
+                .replace(/\\\$/g, '$')
+                .replace(/\\`/g, '`');
+            const data = JSON.parse(escaped);
+            if (isGroupActivity) {
+                for (const x of data.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
+                    addEntry(x.activity_id, (new Date(x.start_date)).getTime(), x.type, x.name);
+                }
+            } else {
+                const a = data.activity;
+                addEntry(Number(a.id), data.cursorData.updated_at * 1000, a.type, a.activityName);
+            }
+        }
+        for (const m of raw.matchAll(/<div class=\\'react-card-container\\'>(.+?)<\\\/div>/g)) {
+            try {
+                parseCard(m[1]);
+            } catch(e) {
+                reportErrorOnce(e);
+                continue;
+            }
+        }
+        return batch;
+    }
+
+    async _batchImport(startDate, knownIds, forceUpdate) {
+        const minEmpty = 12;
+        const minRedundant = 2;
+        const iter = this._yearMonthRange(startDate);
+        for (let concurrency = 1;; concurrency = Math.min(25, concurrency * 2)) {
+            const work = new jobs.UnorderedWorkQueue({maxPending: 25});
+            for (let i = 0; i < concurrency; i++) {
+                const [year, month] = iter.next().value;
+                await work.put(this.fetchMonth(year, month));
+            }
+            let empty = 0;
+            let redundant = 0;
+            const adding = [];
+            for await (const data of work) {
+                if (!data.length) {
+                    empty++;
+                    continue;
+                }
+                let foundNew;
+                for (const x of data) {
+                    if (!knownIds.has(x.id)) {
+                        adding.push(x);
+                        knownIds.add(x.id);
+                        foundNew = true;
+                    }
+                }
+                if (!foundNew) {
+                    redundant++;
+                }
+            }
+            if (adding.length) {
+                if (forceUpdate) {
+                    console.info(`Updating ${adding.length} activities`);
+                    await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
+                } else {
+                    console.info(`Adding ${adding.length} new activities`);
+                    await actsStore.putMany(adding);
+                }
+            } else if (empty >= minEmpty && empty >= Math.floor(concurrency)) {
+                const [year, month] = iter.next().value;
+                const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
+                await this.athlete.save({activitySentinel: date.getTime()});
+                break;
+            } else if (redundant >= minRedundant  && redundant >= Math.floor(concurrency)) {
+                // Entire work set was redundant.  Don't refetch any more.
+                break;
+            }
+        }
+    }
+
+    async updatePeerActivities(options={}) {
+        const forceUpdate = options.forceUpdate;
+        const knownIds = new Set(forceUpdate
+            ? [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
+        await this._batchImport(new Date(), knownIds, forceUpdate);
+        const sentinel = await this.athlete.get('activitySentinel');
+        if (!sentinel) {
+            // We never finished a prior sync so find where we left off..
+            const last = await actsStore.getOldestForAthlete(this.athlete.pk);
+            await this._batchImport(new Date(last.ts), knownIds, forceUpdate);
+        }
     }
 
     async _syncData(options={}) {
@@ -1206,6 +1171,50 @@ class SyncJob extends EventTarget {
         console.info("Completed streams fetch for: " + this.athlete);
     }
 
+    async retryFetch(urn, options={}) {
+        const maxRetries = 5;
+        const headers = options.headers || {};
+        headers["x-requested-with"] = "XMLHttpRequest";  // Required for most Strava endpoints
+        const url = `https://www.strava.com${urn}`;
+        for (let r = 1;; r++) {
+            let resp;
+            let fetchError;
+            await networkOnline(120000);
+            try {
+                resp = await fetch(url, Object.assign({headers}, options));
+            } catch(e) {
+                fetchError = e;
+            }
+            if (resp && resp.ok) {
+                return resp;
+            }
+            if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxRetries) {
+                console.info(`Server error for: ${urn} - Retry: ${r}/${maxRetries}`);
+                // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
+                // perform a cool down before relinquishing control. Ie. do one last sleep.
+                // See: http://dev.chromium.org/throttling
+                await sleep(1000 * 2 ** r);
+                if (r < maxRetries) {
+                    continue;
+                }
+            }
+            if (fetchError) {
+                throw fetchError;
+            } else if (resp.status === 429) {
+                const delay = 60000 * r;
+                console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
+                await Promise.race([sleep(delay), this._cancelEvent.wait()]);
+                if (this._cancelEvent.isSet()) {
+                    return;
+                }
+                console.info("Resuming after throttle period");
+                continue;
+            } else {
+                throw FetchError.fromResp(resp);
+            }
+        }
+    }
+
     async _localSetSyncError(activities, manifest, e) {
         console.warn(`Top level local processing error (${manifest.name}) v${manifest.version}`, e);
         sauce.report.error(e);
@@ -1231,17 +1240,16 @@ class SyncJob extends EventTarget {
 
     async _localProcessWorker() {
         let batchLimit = 20;
-        let lastProgressHash;
         const done = new Set();
         const batch = new Set();
         const offloaded = new Set();
         const offloadedActive = new Map();
         let procQueue = this._procQueue;
+        let pendingProgressEvent;
         while ((procQueue || offloaded.size) && !this._cancelEvent.isSet()) {
-            const available = [...offloaded].some(x => x.size) ||
-                (procQueue && procQueue.size);
+            const available = [...offloaded].some(x => x.size) || (procQueue && procQueue.size);
             if (!available) {
-                const waiters = [...offloaded, this._cancelEvent];
+                const waitables = [...offloaded, this._cancelEvent];
                 if (!procQueue) {
                     // No new incoming data, instruct offload queues to get busy..
                     for (const x of offloaded) {
@@ -1249,33 +1257,48 @@ class SyncJob extends EventTarget {
                         x.flush();
                     }
                 } else {
-                    waiters.push(procQueue);
+                    waitables.push(procQueue);
                 }
                 try {
-                    await Promise.race([...waiters.map(x => x.wait()), ...offloaded]);
+                    await Promise.race([...waitables.map(x => x.wait()), ...offloaded]);
                 } catch(e) {
-                    sauce.report.error(e);
+                    console.warn('Top level waiter or offloaded processor error');
+                    // Offloaded proc error handling still happens next...
                 }
                 if (this._cancelEvent.isSet()) {
                     return;
                 }
             }
-            for (const proc of offloaded) {
-                const finished = proc.getBatch(batchLimit - batch.size);
+            for (const proc of Array.from(offloaded)) {
+                const m = proc.manifest;
+                const finished = proc.getFinished(batchLimit - batch.size);
                 if (finished.length) {
+                    const now = Date.now();
+                    let totTime = 0;
                     for (const a of finished) {
                         batch.add(a);
+                        totTime += now - a._procStart;
+                        delete a._procStart;
                     }
-                    await this._localSetSyncDone(finished, proc.manifest);
+                    await this._localSetSyncDone(finished, m);
+                    const elapsed = Math.round(totTime / finished.length).toLocaleString();
+                    const rate = Math.round(finished.length / (totTime / finished.length / 1000)).toLocaleString();
+                    console.debug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
+                        `activities (${rate}/s)`);
                 }
                 if (proc.done() && !proc.size) {
+                    // It is fulfilled but we need to pickup any errors.
                     try {
                         await proc;
+                        if (proc.pending.size || proc.size) {
+                            throw new Error("Processor prematurely stopped: " + m.name);
+                        }
                     } catch(e) {
-                        await this._localSetSyncError(proc.pending, proc.manifest, e);
+                        await this._localSetSyncError(proc.pending, m, e);
+                    } finally {
+                        offloaded.delete(proc);
                     }
-                    console.debug("Offload processor finished:", proc.manifest.name);
-                    offloaded.delete(proc);
+                    console.debug("Offload processor finished:", m.name);
                 }
                 if (batch.size >= batchLimit) {
                     break;
@@ -1310,29 +1333,36 @@ class SyncJob extends EventTarget {
                 }
                 for (const [m, activities] of manifestBatches.entries()) {
                     const processor = m.data.processor;
+                    const s = Date.now();
                     if (issubclass(processor, processors.OffloadProcessor)) {
-                        let procInstance = offloadedActive.get(processor);
-                        if (!procInstance) {
+                        let proc = offloadedActive.get(processor);
+                        if (!proc || proc.stopping) {
+                            if (proc) {
+                                console.warn("CAUHTEONE!!!", proc);
+                            }
                             console.debug("Creating new offload processor:", m.name);
-                            procInstance = new processor({
+                            proc = new processor({
                                 manifest: m,
                                 athlete: this.athlete,
                                 cancelEvent: this._cancelEvent
                             });
-                            offloadedActive.set(processor, procInstance);
-                            offloaded.add(procInstance);
+                            offloaded.add(proc);
+                            offloadedActive.set(processor, proc);
                             // The processor can remain in the offloaded set until it's fully drained
                             // in the upper queue mgmt section, but we need to remove it from the active
                             // set immediately so we don't requeue data to it.
-                            procInstance.finally(() => void offloadedActive.delete(processor));
+                            proc.finally(() => {
+                                if (offloadedActive.get(processor) === proc) {
+                                    offloadedActive.delete(processor);
+                                }
+                            });
                         }
-                        const qSize = await procInstance.putIncoming(activities);
+                        await proc.putIncoming(activities);
                         for (const a of activities) {
+                            a._procStart = s;
                             batch.delete(a);
                         }
-                        console.debug(`Proc enqueue [${m.name}]: ${activities.length} activities (${qSize} qSize)`);
                     } else {
-                        const s = Date.now();
                         try {
                             await processor({
                                 manifest: m,
@@ -1346,29 +1376,39 @@ class SyncJob extends EventTarget {
                         }
                         const elapsed = Math.round((Date.now() - s)).toLocaleString();
                         const rate = Math.round(activities.length / ((Date.now() - s) / 1000)).toLocaleString();
-                        console.debug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} activities (${rate}/s)`);
+                        console.debug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} ` +
+                            `activities (${rate}/s)`);
                     }
                 }
-                const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
-                const progressHash = JSON.stringify(counts);
-                if (progressHash !== lastProgressHash || done.size) {
-                    lastProgressHash = progressHash;
-                    const ev = new Event('progress');
-                    const d = Array.from(done);
-                    done.clear();
-                    ev.data = {
-                        counts,
-                        done: {
-                            count: d.length,
-                            oldest: d.length ? sauce.data.min(d.map(x => x.get('ts'))) : null,
-                            newest: d.length ? sauce.data.max(d.map(x => x.get('ts'))) : null,
-                            ids: d.map(x => x.pk),
-                        },
-                    };
-                    this.dispatchEvent(ev);
-                }
+                pendingProgressEvent = this.sendProgressEvent(done);
             }
         }
+        await pendingProgressEvent;  // Don't send progress events AFTER other state events.
+    }
+
+    async sendProgressEvent(done) {
+        const chain = this._pendingProgressEvent || Promise.resolve();
+        this._pendingProgressEvent = chain.then(async () => {
+            const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
+            const progressHash = JSON.stringify(counts);
+            if (progressHash === this._lastProgressHash && !done.size) {
+                return;
+            }
+            this._lastProgressHash = progressHash;
+            const ev = new Event('progress');
+            const d = Array.from(done);
+            done.clear();
+            ev.data = {
+                counts,
+                done: {
+                    count: d.length,
+                    oldest: d.length ? sauce.data.min(d.map(x => x.get('ts'))) : null,
+                    newest: d.length ? sauce.data.max(d.map(x => x.get('ts'))) : null,
+                    ids: d.map(x => x.pk),
+                },
+            };
+            this.dispatchEvent(ev);
+        });
     }
 
     async _fetchStreams(activity, q) {
@@ -1397,22 +1437,13 @@ class SyncJob extends EventTarget {
             const localeDate = (new Date(activity.get('ts'))).toLocaleDateString();
             console.debug(`Fetching streams for activity: ${activity.pk} [${localeDate}]`);
             try {
-                const resp = await retryFetch(`/activities/${activity.pk}/streams?${q}`);
+                const resp = await this.retryFetch(`/activities/${activity.pk}/streams?${q}`);
                 return await resp.json();
             } catch(e) {
                 if (!e.resp) {
                     throw e;
                 } else if (e.resp.status === 404) {
                     return null;
-                } else if (e.resp.status === 429) {
-                    const delay = 60000 * i;
-                    console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
-                    await Promise.race([sleep(delay), this._cancelEvent.wait()]);
-                    if (this._cancelEvent.isSet()) {
-                        return;
-                    }
-                    console.info("Resuming after throttle period");
-                    continue;
                 } else {
                     throw e;
                 }
@@ -1426,7 +1457,8 @@ class SyncManager extends EventTarget {
     constructor(currentUser) {
         super();
         console.info(`Starting Sync Manager for:`, currentUser);
-        this.refreshInterval = 6 * 3600 * 1000;
+        //this.refreshInterval = 6 * 3600 * 1000;
+        this.refreshInterval = 300000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 90 * 60 * 1000;
         this.currentUser = currentUser;
@@ -1501,13 +1533,15 @@ class SyncManager extends EventTarget {
     }
 
     async _refresh(syncHash) {
+        let delay = 0;
         for (const a of await athletesStore.getEnabled({models: true})) {
             if (this.isActiveSync(a)) {
                 continue;
             }
             const forceActivityUpdate = a.get('lastSyncActivityListVersion') !== activityListVersion;
+            const requested = this._refreshRequests.has(a.pk);
             const shouldRun =
-                this._refreshRequests.has(a.pk) ||
+                requested ||
                 a.get('lastSyncVersionHash') !== syncHash ||
                 forceActivityUpdate ||
                 this.nextSyncDeadline(a) <= 0;
@@ -1515,9 +1549,11 @@ class SyncManager extends EventTarget {
                 const options = Object.assign({
                     forceActivityUpdate,
                     syncHash,
+                    delay: requested ? 0 : delay,
                 }, this._refreshRequests.get(a.pk));
                 this._refreshRequests.delete(a.pk);
-                this.runSyncJob(a, options);  // bg okay
+                this.runSyncJob(a, options).catch(sauce.report.error);
+                delay = Math.min((delay + 10000) * 1.15, 3600 * 1000);
             }
         }
     }
@@ -1549,7 +1585,7 @@ class SyncManager extends EventTarget {
         try {
             await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
         } catch(e) {
-            sauce.report.error(e);  // bg okay
+            sauce.report.error(e);
             athlete.set('lastSyncError', Date.now());
             this.emitForAthlete(athlete, 'error', {error: e.message});
         } finally {

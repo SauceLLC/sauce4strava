@@ -11,12 +11,14 @@ const peaksStore = new sauce.hist.db.PeaksStore();
 const sleep = sauce.sleep;
 
 
-async function getActivitiesStreams(activities, streams) {
+async function getActivitiesStreams(activities, streamsDesc) {
     const streamKeys = [];
     const actStreams = new Map();
     for (const a of activities) {
-        const type = a.basetype === 'run' ? 'run' : a.basetype === 'ride' ? 'ride' : 'other';
-        for (const stream of streams[type]) {
+        const streams = Array.isArray(streamsDesc) ?
+            streamsDesc :
+            streamsDesc[a.basetype === 'run' ? 'run' : a.basetype === 'ride' ? 'ride' : 'other'];
+        for (const stream of streams) {
             streamKeys.push([a.id, stream]);
         }
         actStreams.set(a.id, {});
@@ -29,7 +31,6 @@ async function getActivitiesStreams(activities, streams) {
     return actStreams;
 }
 
-const ID = Math.round(Math.random() * 100000);
 
 
 async function findPeaks(athlete, activities, periods, distances) {
@@ -38,7 +39,6 @@ async function findPeaks(athlete, activities, periods, distances) {
         ride: ['time', 'active', 'watts', 'distance', 'heartrate'],
         other: ['time', 'active', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
-    console.info(ID, "Enter findPeaks");
     await sleep(1);  // Workaround for Safari IDB transaction performance bug.
     const gender = athlete.gender || 'male';
     const getRankLevel = (period, p, wp, weight) => {
@@ -183,38 +183,79 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
         }
     }
-    console.info(ID, 'put store...');
     await peaksStore.putMany(peaks);
-    console.info(ID, 'done put store, exit');
+    return errors;
+}
+
+
+async function createExtraStreams(athlete, activities) {
+    const errors = [];
+    const actStreams = await getActivitiesStreams(activities,
+        ['time', 'moving', 'cadence', 'watts', 'distance', 'grade_adjusted_distance']);
+    await sleep(1);  // Workaround for Safari IDB transaction performance bug.
+    const extraStreams = [];
+    for (const activity of activities) {
+        const streams = actStreams.get(activity.id);
+        if (streams.moving) {
+            const isTrainer = activity.trainer;
+            try {
+                const activeStream = sauce.data.createActiveStream(streams, {isTrainer});
+                extraStreams.push({
+                    activity: activity.id,
+                    athlete: athlete.pk,
+                    stream: 'active',
+                    data: activeStream
+                });
+            } catch(e) {
+                console.error("Failed to create active stream for: " + activity.id, e);
+                errors.push({activity: activity.id, error: e.message});
+            }
+        }
+        if (activity.basetype === 'run') {
+            const gad = streams.grade_adjusted_distance;
+            const weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
+            if (gad && weight) {
+                try {
+                    extraStreams.push({
+                        activity: activity.id,
+                        athlete: athlete.pk,
+                        stream: 'watts_calc',
+                        data: sauce.pace.createWattsStream(streams.time, gad, weight),
+                    });
+                } catch(e) {
+                    console.error("Failed to create running watts stream for: " + activity.id, e);
+                    errors.push({activity: activity.id, error: e.message});
+                }
+            }
+        }
+    }
+    await streamsStore.putMany(extraStreams);
     return errors;
 }
 
 
 const calls = {
     findPeaks,
+    createExtraStreams,
 };
 
 
 self.addEventListener('message', async ev => {
-    function resolve(value) {
-        self.postMessage({success: true, value, id: ev.data.id});
-    }
-    function reject(error) {
-        self.postMessage({success: false, value: error, id: ev.data.id});
-    }
-    if (!ev.data || !ev.data.call || ev.data.id == null) {
-        reject('invalid-message');
-        throw new Error("Invalid Message");
-    }
-    const call = ev.data.call;
-    if (!calls[call]) {
-        reject('invalid-call');
-        throw new Error("Invalid Call");
-    }
     try {
-        resolve(await calls[call](...ev.data.args));
+        if (!ev.data || !ev.data.call || ev.data.id == null) {
+            throw new Error("Invalid Message");
+        }
+        const call = ev.data.call;
+        if (!calls[call]) {
+            throw new Error("Invalid Call");
+        }
+        const value = await calls[call](...ev.data.args);
+        self.postMessage({success: true, value, id: ev.data.id});
     } catch(e) {
-        reject(e);
-        throw e;
+        self.postMessage({success: false, value: {
+            name: e.name,
+            message: e.message,
+            stack: e.stack
+        }, id: ev.data.id});
     }
 });
