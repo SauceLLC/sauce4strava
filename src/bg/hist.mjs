@@ -64,7 +64,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'extra-streams',
-    version: 1,
+    version: 2, // Updated activeStream and running watts
     data: {processor: processors.extraStreamsProcessor}
 });
 

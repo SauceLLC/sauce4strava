@@ -315,14 +315,34 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
 
 export async function extraStreamsProcessor({manifest, activities, athlete}) {
     const actStreams = await getActivitiesStreams(activities,
-        ['time', 'moving', 'cadence', 'watts', 'distance', 'grade_adjusted_distance']);
+        ['time', 'moving', 'cadence', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance']);
     const extraStreams = [];
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
+        let runWatts;
+        if (activity.get('basetype') === 'run') {
+            const gad = streams.grade_adjusted_distance;
+            const weight = athlete.getWeightAt(activity.get('ts'));
+            if (gad && weight) {
+                try {
+                    runWatts = sauce.pace.createWattsStream(streams.time, gad, weight);
+                    extraStreams.push({
+                        activity: activity.pk,
+                        athlete: athlete.pk,
+                        stream: 'watts_calc',
+                        data: runWatts,
+                    });
+                } catch(e) {
+                    console.warn("Failed to create running watts stream for: " + activity, e);
+                    activity.setSyncError(manifest, e);
+                }
+            }
+        }
         if (streams.moving) {
             const isTrainer = activity.get('trainer');
             try {
-                const activeStream = sauce.data.createActiveStream(streams, {isTrainer});
+                const activeStream = sauce.data.createActiveStream({watts: runWatts, ...streams},
+                    {isTrainer});
                 extraStreams.push({
                     activity: activity.pk,
                     athlete: athlete.pk,
@@ -332,23 +352,6 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
             } catch(e) {
                 console.warn("Failed to create active stream for: " + activity, e);
                 activity.setSyncError(manifest, e);
-            }
-        }
-        if (activity.get('basetype') === 'run') {
-            const gad = streams.grade_adjusted_distance;
-            const weight = athlete.getWeightAt(activity.get('ts'));
-            if (gad && weight) {
-                try {
-                    extraStreams.push({
-                        activity: activity.pk,
-                        athlete: athlete.pk,
-                        stream: 'watts_calc',
-                        data: sauce.pace.createWattsStream(streams.time, gad, weight),
-                    });
-                } catch(e) {
-                    console.warn("Failed to create running watts stream for: " + activity, e);
-                    activity.setSyncError(manifest, e);
-                }
             }
         }
     }
