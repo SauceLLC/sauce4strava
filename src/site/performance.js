@@ -830,15 +830,13 @@ sauce.ns('performance', async ns => {
                 title = H.date(startDate, {style: 'weekdayYear'});
             } else {
                 if (sauce.date.isMonthRange(startDate, endDate)) {
-                    title = H.date(startDate, {style: 'month'});
+                    title = H.date(startDate, {style: 'monthYear'});
+                } else if (sauce.date.isYearRange(startDate, endDate)) {
+                    title = H.date(startDate, {style: 'year'});
                 } else {
-                    const sameYear = startDate.getFullYear() === endDate.getFullYear();
-                    const from = H.date(startDate, {style: sameYear ? 'weekday' : 'weekdayYear'});
-                    const to = H.date(D.adjacentDay(endDate, mostDays - 1), {style: 'weekdayYear'});
-                    const to2 = H.date(D.adjacentDay(startDate, mostDays - 1), {style: 'weekdayYear'});
-                    const to3 = H.date(endDate, {style: 'weekdayYear'});
-                    console.log(from, to, to2, to3, mostDays);
-                    title = `${from} -> ${to2}`;
+                    const from = H.date(startDate, {style: 'weekday'});
+                    const to = H.date(D.adjacentDay(startDate, mostDays - 1), {style: 'weekdayYear'});
+                    title = `${from} -> ${to}`;
                 }
             }
             const caretX = sauce.data.avg(elements.map(x => x.getCenterPoint().x));

@@ -298,6 +298,7 @@ sauce.ns('locale', ns => {
         'monthDay': new Intl.DateTimeFormat([], {month: 'short', day: 'numeric'}),
         'weekday': new Intl.DateTimeFormat([], {weekday: 'short', month: 'short', day: 'numeric'}),
         'weekdayYear': new Intl.DateTimeFormat([], {weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'}),
+        'year': new Intl.DateTimeFormat([], {year: 'numeric'}),
     };
     function humanDate(date, options={}) {
         if (!(date instanceof Date)) {
