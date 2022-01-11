@@ -2246,6 +2246,19 @@ sauce.ns('date', function() {
         return time - offt;
     }
 
+    function isMonthRange(start, end) {
+        // Start should be 00:00:00 of the start day (inclusive)
+        // End should be 00:00:00 of the day after (exclusive)
+        const s = new Date(start);
+        const e = new Date(end);
+        if (start.getDate() !== 1 || end.getDate() !== 1) {
+            return false;
+        }
+        const eom = new Date(s);
+        eom.setMonth(s.getMonth() + 1);
+        return (e.getMonth() === eom.getMonth() && e.getDate() === eom.getDate() &&
+            e.getFullYear() === eom.getFullYear());
+    }
 
     class CalendarRange {
         static isValidMetric(metric) {
@@ -2364,6 +2377,7 @@ sauce.ns('date', function() {
         tomorrow,
         addTZ,
         subtractTZ,
+        isMonthRange,
         CalendarRange,
     };
 });

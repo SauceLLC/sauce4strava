@@ -829,10 +829,17 @@ sauce.ns('performance', async ns => {
             if (mostDays === 1) {
                 title = H.date(startDate, {style: 'weekdayYear'});
             } else {
-                const sameYear = startDate.getFullYear() === endDate.getFullYear();
-                const from = H.date(startDate, {style: sameYear ? 'weekday' : 'weekdayYear'});
-                const to = H.date(D.adjacentDay(endDate, mostDays - 1), {style: 'weekdayYear'});
-                title = `${from} -> ${to}`;
+                if (sauce.date.isMonthRange(startDate, endDate)) {
+                    title = H.date(startDate, {style: 'month'});
+                } else {
+                    const sameYear = startDate.getFullYear() === endDate.getFullYear();
+                    const from = H.date(startDate, {style: sameYear ? 'weekday' : 'weekdayYear'});
+                    const to = H.date(D.adjacentDay(endDate, mostDays - 1), {style: 'weekdayYear'});
+                    const to2 = H.date(D.adjacentDay(startDate, mostDays - 1), {style: 'weekdayYear'});
+                    const to3 = H.date(endDate, {style: 'weekdayYear'});
+                    console.log(from, to, to2, to3, mostDays);
+                    title = `${from} -> ${to2}`;
+                }
             }
             const caretX = sauce.data.avg(elements.map(x => x.getCenterPoint().x));
             const $tooltipEl = jQuery(this.canvas).closest('.sauce-panel').find('.chart-tooltip');
