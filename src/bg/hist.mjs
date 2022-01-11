@@ -81,7 +81,7 @@ ActivityModel.addSyncManifest({
     name: 'peaks',
     version: 10, // Use real watts for runs if available
     depends: ['extra-streams'],
-    data: {processor: processors.PeaksProcessor}
+    data: {processor: processors.peaksProcessor}
 });
 
 ActivityModel.addSyncManifest({
@@ -1338,7 +1338,6 @@ class SyncJob extends EventTarget {
                     a.clearSyncState(m);
                 }
                 await Promise.all(Array.from(manifestBatches.entries()).map(async ([m, activities]) => {
-                //for (const [m, activities] of manifestBatches.entries()) {
                     const processor = m.data.processor;
                     const s = Date.now();
                     if (issubclass(processor, processors.OffloadProcessor)) {
@@ -1387,7 +1386,6 @@ class SyncJob extends EventTarget {
                             `activities (${rate}/s)`);
                     }
                 }));
-                //}
                 pendingProgressEvent = this.sendProgressEvent(done);
             }
         }

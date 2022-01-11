@@ -217,7 +217,6 @@ export class OffloadProcessor extends futures.Future {
             if (flush) {
                 this._flushEvent.clear();
                 if (!size) {
-                    console.count("flush return");
                     // We're just waiting for out-of-band work to finish.
                     continue;
                 }
@@ -240,6 +239,7 @@ export class OffloadProcessor extends futures.Future {
     }
 
     async _runProcessor() {
+        console.debug(`Offload processor startup`);
         try {
             await this.processor();
             this._stopping = true;
@@ -429,12 +429,11 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const work = [];
     const len = activities.length;
     const concurrency = Math.min(navigator.hardwareConcurrency || 12);
-    const step = Math.max(50, Math.ceil(Math.max(len / concurrency)));
+    const step = Math.max(20, Math.ceil(Math.max(len / concurrency)));
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
     for (let i = 0; i < len; i += step) {
         const chunk = activities.slice(i, i + step);
-        console.info("WORK CHUNK", chunk.length, 'step', step);
         work.push(wp.exec('findPeaks', athlete.data, chunk.map(x => x.data), periods, distances));
     }
     for (const errors of await Promise.all(work)) {
@@ -446,73 +445,6 @@ export async function peaksProcessor({manifest, activities, athlete}) {
 }
 
 
-export class ExtraStreamsProcessor extends OffloadProcessor {
-    async processor() {
-        const jobs = new Set();
-        while (!this._stopping) {
-            const activities = await this.getAllIncoming();
-            if (activities) {
-                const j = this._process(activities);
-                jobs.add(j);
-                j.then(() => jobs.delete(j));
-            }
-        }
-        await Promise.all(jobs);  // throw any errors.
-    }
-
-    async _process(activities) {
-        const wp = getWorkerPool();
-        const errors = await wp.exec('createExtraStreams', this.athlete.data,
-            activities.map(x => x.data));
-        for (const x of errors) {
-            const activity = activities.find(x => x.pk === x.activity);
-            activity.setSyncError(this.manifest, new Error(x.error));
-        }
-        this.putFinished(activities);
-    }
-}
-
-
-export class PeaksProcessor extends OffloadProcessor {
-    async processor() {
-        this.periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
-        this.distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
-        const jobs = new Set();
-        while (!this._stopping) {
-            const activities = await this.getAllIncoming();
-            if (activities) {
-                const j = this._process(activities);
-                jobs.add(j);
-                j.then(() => jobs.delete(j));
-                //this.putFinished(activities); // XXX
-            }
-        }
-        await Promise.all(jobs);  // throw any errors.
-    }
-
-    async _process(activities) {
-        const concurrency = navigator.hardwareConcurrency || 8;
-        const step = Math.max(Math.ceil(activities.length / concurrency), 50);
-        const work = [];
-        for (let i = 0; i < activities.length; i += step) {
-            work.push(this._findPeaks(activities.slice(i, i + step)));
-        }
-        await Promise.all(work);
-    }
-
-    async _findPeaks(activities) {
-        const wp = getWorkerPool();
-        const errors = await wp.exec('findPeaks', this.athlete.data,
-            activities.map(x => x.data), this.periods, this.distances);
-        for (const x of errors) {
-            const activity = activities.find(x => x.pk === x.activity);
-            activity.setSyncError(this.manifest, new Error(x.error));
-        }
-        this.putFinished(activities);
-    }
-}
-
-
 export class TrainingLoadProcessor extends OffloadProcessor {
     constructor(...args) {
         super(...args);
@@ -520,9 +452,9 @@ export class TrainingLoadProcessor extends OffloadProcessor {
     }
 
     async processor() {
-        const minWait = 0.5 * 1000; // Throttles high ingest rate.
-        const maxSize = 40; // Controls max batching during high ingest rate.
-        const maxWait = 30 * 1000; // Controls latency during slow ingest.
+        const minWait = 1 * 1000; // Throttles high ingest rate.
+        const maxSize = 50; // Controls max batching during high ingest rate.
+        const maxWait = 30 * 1000; // Controls latency
         while (!this._stopping) {
             const activities = await this.getAllIncoming({minWait, maxWait, maxSize});
             if (activities) {

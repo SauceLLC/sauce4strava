@@ -10,8 +10,6 @@ const streamsStore = new sauce.hist.db.StreamsStore();
 const peaksStore = new sauce.hist.db.PeaksStore();
 const sleep = sauce.sleep;
 
-const ID = Math.round(Math.random() * 1000000);
-
 
 async function getActivitiesStreams(activities, streamsDesc) {
     const streamKeys = [];
@@ -36,14 +34,12 @@ async function getActivitiesStreams(activities, streamsDesc) {
 
 
 async function findPeaks(athlete, activities, periods, distances) {
-    let s = Date.now();
     const actStreams = await getActivitiesStreams(activities, {
         run: ['time', 'active', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
         ride: ['time', 'active', 'watts', 'distance', 'heartrate'],
         other: ['time', 'active', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
     await sleep(1);  // Workaround for Safari IDB transaction performance bug.
-    //console.warn(ID, Date.now() - s, 'fetch'), s = Date.now();
     const gender = athlete.gender || 'male';
     const getRankLevel = (period, p, wp, weight) => {
         const rank = sauce.power.rankLevel(period, p, wp, weight, gender);
@@ -187,68 +183,13 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
         }
     }
-    //console.warn(ID, Date.now() - s, 'cpu'), s = Date.now();
     await peaksStore.putMany(peaks);
-    //console.warn(ID, Date.now() - s, 'save'), s = Date.now();
     return errors;
 }
-
-
-async function createExtraStreams(athlete, activities) {
-    let s = Date.now();
-    const errors = [];
-    const actStreams = await getActivitiesStreams(activities,
-        ['time', 'moving', 'cadence', 'watts', 'distance', 'grade_adjusted_distance']);
-    await sleep(1);  // Workaround for Safari IDB transaction performance bug.
-    //console.warn(ID, Date.now() - s, 'fetch'), s = Date.now();
-    const extraStreams = [];
-    for (const activity of activities) {
-        const streams = actStreams.get(activity.id);
-        if (streams.moving) {
-            const isTrainer = activity.trainer;
-            try {
-                const activeStream = sauce.data.createActiveStream(streams, {isTrainer});
-                extraStreams.push({
-                    activity: activity.id,
-                    athlete: athlete.pk,
-                    stream: 'active',
-                    data: activeStream
-                });
-            } catch(e) {
-                console.error("Failed to create active stream for: " + activity.id, e);
-                errors.push({activity: activity.id, error: e.message});
-            }
-        }
-        if (activity.basetype === 'run') {
-            const gad = streams.grade_adjusted_distance;
-            const weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
-            if (gad && weight) {
-                try {
-                    extraStreams.push({
-                        activity: activity.id,
-                        athlete: athlete.pk,
-                        stream: 'watts_calc',
-                        data: sauce.pace.createWattsStream(streams.time, gad, weight),
-                    });
-                } catch(e) {
-                    console.error("Failed to create running watts stream for: " + activity.id, e);
-                    errors.push({activity: activity.id, error: e.message});
-                }
-            }
-        }
-    }
-    //console.warn(ID, Date.now() - s, 'cpu'), s = Date.now();
-    await streamsStore.putMany(extraStreams);
-    //console.warn(ID, Date.now() - s, 'save'), s = Date.now();
-    return errors;
-}
-
 
 const calls = {
     findPeaks,
-    createExtraStreams,
 };
-
 
 self.addEventListener('message', async ev => {
     try {
