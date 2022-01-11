@@ -1599,7 +1599,7 @@ sauce.ns('pace', function() {
             return;
         }
         const roll = new RollingPace(distance);
-        return roll.importReduce(timeStream, distStream, options.activeStream,
+        return roll.importReduce(timeStream, distStream, null,
             (cur, lead) => cur.avg() <= lead.avg());
     }
 
