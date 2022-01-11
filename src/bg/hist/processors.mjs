@@ -109,11 +109,12 @@ export class OffloadProcessor extends futures.Future {
         super();
         this.manifest = manifest;
         this.athlete = athlete;
-        this.pending = new Set();
-        this.stopping = false;
+        this._inflight = new Set();
+        this._stopping = false;
         this._incoming = new queues.PriorityQueue();
         this._finished = new queues.Queue();
         this._flushEvent = new locks.Event();
+        this._stopEvent = new locks.Event();
         this._cancelEvent = cancelEvent;
         this._runProcessor();
     }
@@ -122,12 +123,41 @@ export class OffloadProcessor extends futures.Future {
         this._flushEvent.set();
     }
 
+    stop() {
+        this._stopping = true;
+        this._stopEvent.set();
+    }
+
+    get pending() {
+        return this._incoming.size + this._incoming._unfinishedTasks;
+    }
+
+    get available() {
+        return this._finished.size;
+    }
+
+    drainAll() {
+        if (!this._stopping) {
+            throw new Error("Invalid state for drainAll");
+        }
+        const items = [];
+        for (const x of this._incoming.getAllNoWait()) {
+            items.push(x);
+        }
+        for (const x of this._finished.getAllNoWait()) {
+            items.push(x);
+        }
+        for (const x of this._inflight) {
+            items.push(x);
+        }
+        return items;
+    }
+
     putIncoming(activities) {
-        if (this.stopping) {
+        if (this._stopping) {
             throw new Error("Invalid state for putIncoming");
         }
         for (const a of activities) {
-            this.pending.add(a);
             this._incoming.putNoWait(a, a.get('ts'));
         }
         return this._incoming.size;
@@ -137,17 +167,14 @@ export class OffloadProcessor extends futures.Future {
         const batch = [];
         while (this._finished.size && batch.length < count) {
             const a = this._finished.getNoWait();
-            this.pending.delete(a);
+            this._inflight.delete(a);
             batch.push(a);
         }
+        this._finished.taskDone(batch.length);
         return batch;
     }
 
-    get size() {
-        return this._finished.size;
-    }
-
-    async wait() {
+    async waitFinished() {
         return await this._finished.wait();
     }
 
@@ -155,22 +182,20 @@ export class OffloadProcessor extends futures.Future {
         for (const a of activities) {
             this._finished.putNoWait(a);
         }
+        this._incoming.taskDone(activities.length);
     }
 
-    async getIncoming(options={}) {
-        return await this.getIncomingDebounced({maxSize: 1, options});
-    }
-
-    async getIncomingDebounced(options={}) {
+    async getAllIncoming(options={}) {
         const minWait = options.minWait;
         const maxWait = options.maxWait;
-        const maxSize = options.maxSize;
+        const maxSize = options.maxSize || 1;
         let deadline = maxWait && Date.now() + maxWait;
         let lastSize;
-        while (true) {
+        while (!this._stopping) {
             const waiters = [
                 this._cancelEvent.wait(),
                 this._flushEvent.wait(),
+                this._stopEvent.wait(),
             ];
             if (maxSize) {
                 waiters.push(this._incoming.wait({size: maxSize}));
@@ -183,17 +208,22 @@ export class OffloadProcessor extends futures.Future {
                 waiters.push(sleep(maxWait));
             }
             await Promise.race(waiters);
-            if (this._cancelEvent.isSet()) {
-                this.stopping = true; // XXX try to remove so flush can be optional
-                return null;
+            if (this._cancelEvent.isSet() || this._stopEvent.isSet()) {
+                this._stopping = true;
+                return;
             }
             const size = this._incoming.size;
-            if (this._flushEvent.isSet()) {
+            const flush = this._flushEvent.isSet();
+            if (flush) {
+                this._flushEvent.clear();
                 if (!size) {
-                    this.stopping = true; // XXX try to remove so flush can be optional
-                    return null;
+                    console.count("flush return");
+                    // We're just waiting for out-of-band work to finish.
+                    continue;
                 }
             } else if (size != lastSize && size < maxSize && Date.now() < deadline) {
+                // We are still within the constraints and have a positive ingest rate.
+                // Continue waiting for stagnation or other events.
                 lastSize = size;
                 continue;
             }
@@ -201,31 +231,37 @@ export class OffloadProcessor extends futures.Future {
             if (!size) {
                 continue;
             }
-            this._flushEvent.clear();
-            return this._incoming.getAllNoWait();
+            const items = this._incoming.getAllNoWait();
+            for (const x of items) {
+                this._inflight.add(x);
+            }
+            return items;
         }
     }
 
     async _runProcessor() {
         try {
-            this.setResult(await this.processor());
+            await this.processor();
+            this._stopping = true;
+            await this._incoming.join();
+            this.setResult();
         } catch(e) {
             this.setError(e);
         } finally {
-            console.warn("Exit processor", this);
+            console.debug(`Offload processor shutdown`);
         }
     }
 
     async processor() {
         throw new TypeError("Pure virutal method");
         /* Subclass should keep this alive for the duration of their execution.
-         * It is also their job to monitor flushEvent and cancelEvent
+         * It is also their job to monitor flushEvent, cancelEvent and stopEvent.
          */
     }
 }
 
 
-export async function AthleteSettingsProcessor({manifest, activities, athlete}) {
+export async function athleteSettingsProcessor({manifest, activities, athlete}) {
     let invalidate;
     const hrTS = athlete.get('hrZonesTS');
     if (hrTS == null || Date.now() - hrTS > 86400 * 1000) {
@@ -393,7 +429,7 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const work = [];
     const len = activities.length;
     const concurrency = Math.min(navigator.hardwareConcurrency || 12);
-    const step = Math.ceil(Math.max(len / concurrency));
+    const step = Math.max(50, Math.ceil(Math.max(len / concurrency)));
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
     for (let i = 0; i < len; i += step) {
@@ -413,17 +449,15 @@ export async function peaksProcessor({manifest, activities, athlete}) {
 export class ExtraStreamsProcessor extends OffloadProcessor {
     async processor() {
         const jobs = new Set();
-        while (true) {
-            const activities = await this.getIncoming();
-            if (activities === null) {
-                // flush
-                await Promise.all(jobs);
-                return;
+        while (!this._stopping) {
+            const activities = await this.getAllIncoming();
+            if (activities) {
+                const j = this._process(activities);
+                jobs.add(j);
+                j.then(() => jobs.delete(j));
             }
-            const j = this._process(activities);
-            jobs.add(j);
-            j.then(() => jobs.delete(j));
         }
+        await Promise.all(jobs);  // throw any errors.
     }
 
     async _process(activities) {
@@ -443,21 +477,22 @@ export class PeaksProcessor extends OffloadProcessor {
     async processor() {
         this.periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
         this.distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
-        const jobs = [];
-        while (true) {
-            const activities = await this.getIncoming();
-            if (activities === null) {
-                await Promise.all(jobs);
-                return;
+        const jobs = new Set();
+        while (!this._stopping) {
+            const activities = await this.getAllIncoming();
+            if (activities) {
+                const j = this._process(activities);
+                jobs.add(j);
+                j.then(() => jobs.delete(j));
+                //this.putFinished(activities); // XXX
             }
-            this.putFinished(activities); // XXX
-            //jobs.push(this._process(activities));
         }
+        await Promise.all(jobs);  // throw any errors.
     }
 
     async _process(activities) {
         const concurrency = navigator.hardwareConcurrency || 8;
-        const step = Math.ceil(Math.max(activities.length / concurrency), 10); // XXX bench
+        const step = Math.max(Math.ceil(activities.length / concurrency), 50);
         const work = [];
         for (let i = 0; i < activities.length; i += step) {
             work.push(this._findPeaks(activities.slice(i, i + step)));
@@ -485,17 +520,16 @@ export class TrainingLoadProcessor extends OffloadProcessor {
     }
 
     async processor() {
-        const minWait = 100; // Throttles high ingest rate.
-        const maxSize = 20; // Controls max batching during high ingest rate.
+        const minWait = 0.5 * 1000; // Throttles high ingest rate.
+        const maxSize = 40; // Controls max batching during high ingest rate.
         const maxWait = 30 * 1000; // Controls latency during slow ingest.
-        while (true) {
-            const batch = await this.getIncomingDebounced({minWait, maxWait, maxSize});
-            if (batch === null) {
-                return;
+        while (!this._stopping) {
+            const activities = await this.getAllIncoming({minWait, maxWait, maxSize});
+            if (activities) {
+                activities.sort((a, b) => a.get('ts') - b.get('ts'));  // oldest -> newest
+                await this._process(activities);
+                this.putFinished(activities);
             }
-            batch.sort((a, b) => a.get('ts') - b.get('ts'));  // oldest -> newest
-            await this._process(batch);
-            this.putFinished(batch);
         }
     }
 

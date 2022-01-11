@@ -10,6 +10,8 @@ const streamsStore = new sauce.hist.db.StreamsStore();
 const peaksStore = new sauce.hist.db.PeaksStore();
 const sleep = sauce.sleep;
 
+const ID = Math.round(Math.random() * 1000000);
+
 
 async function getActivitiesStreams(activities, streamsDesc) {
     const streamKeys = [];
@@ -34,12 +36,14 @@ async function getActivitiesStreams(activities, streamsDesc) {
 
 
 async function findPeaks(athlete, activities, periods, distances) {
+    let s = Date.now();
     const actStreams = await getActivitiesStreams(activities, {
         run: ['time', 'active', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
         ride: ['time', 'active', 'watts', 'distance', 'heartrate'],
         other: ['time', 'active', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
     await sleep(1);  // Workaround for Safari IDB transaction performance bug.
+    //console.warn(ID, Date.now() - s, 'fetch'), s = Date.now();
     const gender = athlete.gender || 'male';
     const getRankLevel = (period, p, wp, weight) => {
         const rank = sauce.power.rankLevel(period, p, wp, weight, gender);
@@ -183,16 +187,20 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
         }
     }
+    //console.warn(ID, Date.now() - s, 'cpu'), s = Date.now();
     await peaksStore.putMany(peaks);
+    //console.warn(ID, Date.now() - s, 'save'), s = Date.now();
     return errors;
 }
 
 
 async function createExtraStreams(athlete, activities) {
+    let s = Date.now();
     const errors = [];
     const actStreams = await getActivitiesStreams(activities,
         ['time', 'moving', 'cadence', 'watts', 'distance', 'grade_adjusted_distance']);
     await sleep(1);  // Workaround for Safari IDB transaction performance bug.
+    //console.warn(ID, Date.now() - s, 'fetch'), s = Date.now();
     const extraStreams = [];
     for (const activity of activities) {
         const streams = actStreams.get(activity.id);
@@ -229,7 +237,9 @@ async function createExtraStreams(athlete, activities) {
             }
         }
     }
+    //console.warn(ID, Date.now() - s, 'cpu'), s = Date.now();
     await streamsStore.putMany(extraStreams);
+    //console.warn(ID, Date.now() - s, 'save'), s = Date.now();
     return errors;
 }
 

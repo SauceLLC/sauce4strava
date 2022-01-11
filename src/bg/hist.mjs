@@ -58,17 +58,17 @@ ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'athlete-settings',
     version: 2,
-    data: {processor: processors.AthleteSettingsProcessor}
+    data: {processor: processors.athleteSettingsProcessor}
 });
 
-/*ActivityModel.addSyncManifest({
+ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'extra-streams',
     version: 1,
-    data: {processor: processors.ExtraStreamsProcessor}
-});*/
+    data: {processor: processors.extraStreamsProcessor}
+});
 
-/*ActivityModel.addSyncManifest({
+ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
     version: 2,
@@ -82,15 +82,15 @@ ActivityModel.addSyncManifest({
     version: 10, // Use real watts for runs if available
     depends: ['extra-streams'],
     data: {processor: processors.PeaksProcessor}
-});*/
+});
 
-/*ActivityModel.addSyncManifest({
+ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'training-load',
     version: 4,
     depends: ['activity-stats'],
     data: {processor: processors.TrainingLoadProcessor}
-});*/
+});
 
 
 class FetchError extends Error {
@@ -948,7 +948,7 @@ class SyncJob extends EventTarget {
         }
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
-        function addEntry(id, ts, type, name) {
+        const addEntry = (id, ts, type, name) => {
             if (!id) {
                 reportErrorOnce(new Error('Invalid activity id for athlete: ' + this.athlete.pk));
                 debugger;
@@ -967,9 +967,9 @@ class SyncJob extends EventTarget {
                 athlete: this.athlete.pk,
                 name
             });
-        }
+        };
         const frag = document.createElement('div');
-        function parseCard(cardHTML) {
+        const parseCard = cardHTML => {
             // This is just terrible, but we can't use eval..  Strava does some very particular
             // escaping that mostly has no effect but does break JSON.parse.  Sadly we MUST run
             // JSON.parse to disambiguate the JSON payload and to unescape unicode sequences.
@@ -996,7 +996,7 @@ class SyncJob extends EventTarget {
                 const a = data.activity;
                 addEntry(Number(a.id), data.cursorData.updated_at * 1000, a.type, a.activityName);
             }
-        }
+        };
         for (const m of raw.matchAll(/<div class=\\'react-card-container\\'>(.+?)<\\\/div>/g)) {
             try {
                 parseCard(m[1]);
@@ -1247,20 +1247,26 @@ class SyncJob extends EventTarget {
         let procQueue = this._procQueue;
         let pendingProgressEvent;
         while ((procQueue || offloaded.size) && !this._cancelEvent.isSet()) {
-            const available = [...offloaded].some(x => x.size) || (procQueue && procQueue.size);
+            const available = [...offloaded].some(x => x.available) || (procQueue && procQueue.size);
             if (!available) {
-                const waitables = [...offloaded, this._cancelEvent];
+                const incoming = [this._cancelEvent.wait()];
                 if (!procQueue) {
-                    // No new incoming data, instruct offload queues to get busy..
+                    // No new incoming data, instruct offload queues to get busy or die..
                     for (const x of offloaded) {
-                        console.debug('Flushing offload processor:', x.manifest.name);
-                        x.flush();
+                        if (x.pending) {
+                            console.warn('Requesting offload processor flush:', x.manifest.name);
+                            x.flush();
+                        } else {
+                            console.warn('Requesting offload processor stop:', x.manifest.name);
+                            x.stop();
+                        }
                     }
                 } else {
-                    waitables.push(procQueue);
+                    incoming.push(procQueue.wait());
                 }
+                const offFin = Array.from(offloaded).map(x => x.waitFinished());
                 try {
-                    await Promise.race([...waitables.map(x => x.wait()), ...offloaded]);
+                    await Promise.race([...offFin, ...incoming, ...offloaded]);
                 } catch(e) {
                     console.warn('Top level waiter or offloaded processor error');
                     // Offloaded proc error handling still happens next...
@@ -1286,19 +1292,19 @@ class SyncJob extends EventTarget {
                     console.debug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
                         `activities (${rate}/s)`);
                 }
-                if (proc.done() && !proc.size) {
+                if (proc.done() && !proc.available) {
                     // It is fulfilled but we need to pickup any errors.
                     try {
                         await proc;
-                        if (proc.pending.size || proc.size) {
+                        if (proc.pending || proc.available) {
                             throw new Error("Processor prematurely stopped: " + m.name);
                         }
                     } catch(e) {
-                        await this._localSetSyncError(proc.pending, m, e);
+                        await this._localSetSyncError(proc.drainAll(), m, e);
                     } finally {
                         offloaded.delete(proc);
                     }
-                    console.debug("Offload processor finished:", m.name);
+                    console.warn("Offload processor finished:", m.name);
                 }
                 if (batch.size >= batchLimit) {
                     break;
@@ -1331,7 +1337,8 @@ class SyncJob extends EventTarget {
                     manifestBatch.push(a);
                     a.clearSyncState(m);
                 }
-                for (const [m, activities] of manifestBatches.entries()) {
+                await Promise.all(Array.from(manifestBatches.entries()).map(async ([m, activities]) => {
+                //for (const [m, activities] of manifestBatches.entries()) {
                     const processor = m.data.processor;
                     const s = Date.now();
                     if (issubclass(processor, processors.OffloadProcessor)) {
@@ -1379,7 +1386,8 @@ class SyncJob extends EventTarget {
                         console.debug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} ` +
                             `activities (${rate}/s)`);
                     }
-                }
+                }));
+                //}
                 pendingProgressEvent = this.sendProgressEvent(done);
             }
         }
@@ -1457,8 +1465,7 @@ class SyncManager extends EventTarget {
     constructor(currentUser) {
         super();
         console.info(`Starting Sync Manager for:`, currentUser);
-        //this.refreshInterval = 6 * 3600 * 1000;
-        this.refreshInterval = 300000;
+        this.refreshInterval = 12 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 90 * 60 * 1000;
         this.currentUser = currentUser;
