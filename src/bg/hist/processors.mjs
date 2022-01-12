@@ -323,7 +323,7 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
         if (activity.get('basetype') === 'run') {
             const gad = streams.grade_adjusted_distance;
             const weight = athlete.getWeightAt(activity.get('ts'));
-            if (gad && weight) {
+            if (gad && weight && streams.time.length > 100) {
                 try {
                     runWatts = sauce.pace.createWattsStream(streams.time, gad, weight);
                     extraStreams.push({
