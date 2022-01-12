@@ -1382,6 +1382,7 @@ sauce.ns('performance', async ns => {
                 const avgTSS = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.tss));
                 const avgDuration = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.duration));
                 const avgDistance = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.distance));
+                console.info(range.start.toDateString(), range.end.toDateString(), days, weighting, daily.at(0).date.toDateString(), daily.at(-1).date.toDateString(), metricData.at(0).date.toDateString(), metricData.at(-1).date.toDateString());
                 predictions = {
                     days,
                     tss: metricData.map((b, i) => ({
@@ -1596,6 +1597,7 @@ sauce.ns('performance', async ns => {
                 await this.setAthlete(pageView.athlete);
             }
             await super.init();
+            this.debouncedRender = sauce.asyncDebounced(this.render);
             this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
         }
 
@@ -1722,7 +1724,9 @@ sauce.ns('performance', async ns => {
         }
 
         async onUpdateActivities({athlete, activities, daily, range}) {
-            await this.setAthlete(athlete);
+            if (this.athlete !== athlete) {
+                await this.setAthlete(athlete);
+            }
             this.daily = daily;
             this.activities = activities;
             this.missingTSS = activities.filter(x => sauce.model.getActivityTSS(x) == null);
@@ -1738,7 +1742,7 @@ sauce.ns('performance', async ns => {
                 this.mostFreqType.pct = this.mostFreqType.count /
                     sauce.data.sum(this.counts.map(x => x.count));
             }
-            await this.render();
+            this.debouncedRender();
         }
 
         async onCollapserClick(ev) {
@@ -2077,6 +2081,7 @@ sauce.ns('performance', async ns => {
             this.rangeEnd = pageView.range.end;
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
+            this.debouncedRender = sauce.asyncDebounced(this.render);
             this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
             this.prefs = {
                 type: 'power',
@@ -2155,12 +2160,12 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onBeforeUpdateActivities({athlete, range}) {
+        onBeforeUpdateActivities({athlete, range}) {
             this.rangeStart = range.start;
             this.rangeEnd = range.end;
             this.athlete = athlete;
             this.athleteNameCache.set(athlete.id, athlete.name);
-            await this.render();
+            this.debouncedRender();
         }
 
         async onTypeChange(ev) {
@@ -2388,6 +2393,7 @@ sauce.ns('performance', async ns => {
             this.athletes = athletes;
             this.syncButtons = new Map();
             const f = router.filters;
+            this.schedUpdateActivities = sauce.asyncDebounced(this._schedUpdateActivities);
             await this.setAthleteId(f.athleteId);
             this._setRangeFromRouter();
             this.summaryView = new SummaryView({pageView: this});
@@ -2566,13 +2572,13 @@ sauce.ns('performance', async ns => {
             sauce.storage.setPref('perfDefaultRange', {period, metric, all: options.all});  // bg okay
         }
 
-        async setRange(period, metric, options={}) {
+        setRange(period, metric, options={}) {
             this._setRange(period, metric, options);
             router.setFilters(this.athlete, this.range, options);
-            await this.updateActivities();
+            this.schedUpdateActivities();
         }
 
-        async shiftRange(offset) {
+        shiftRange(offset) {
             if (offset === Infinity) {
                 this.range.setEndSeed(D.tomorrow());
             } else if (offset === -Infinity) {
@@ -2581,10 +2587,10 @@ sauce.ns('performance', async ns => {
                 this.range.shift(offset);
             }
             router.setFilters(this.athlete, this.range);
-            await this.updateActivities();
+            this.schedUpdateActivities();
         }
 
-        async updateActivities() {
+        async _schedUpdateActivities() {
             this.trigger('before-update-activities', {athlete: this.athlete, range: this.range});
             this._updateActivities(await this._getActivities());
         }

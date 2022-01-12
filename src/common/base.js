@@ -110,6 +110,41 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    /*
+     * Only use for async callbacks.
+     *
+     * - First call will run the async fn.
+     * - While that function is running if a another invocation is made it will queue
+     *   behind the active invocation.
+     * - IF another invocation comes in before the queued invocation takes place, the
+     *   waiting invocation will be cancelled.
+     *
+     * I.e. Only run with the latest set of arguments, drop any invocations between
+     * the active one and the most recent.  Great for rendering engines.
+     */
+    sauce.asyncDebounced = function(fn) {
+        let waiting;
+        let active;
+        const runner = function() {
+            const args = waiting;
+            waiting = null;
+            return fn.apply(...args).finally(() => active = waiting && runner());
+        };
+        const wrap = function(...args) {
+            if (waiting) {
+                console.log('debounced bump of', waiting);
+            }
+            waiting = [this, args];
+            if (!active) {
+                active = runner();
+            }
+        };
+        if (fn.name) {
+            Object.defineProperty(wrap, 'name', {value: `sauce.asyncDebounced[${fn.name}]`});
+        }
+        return wrap;
+    };
+
     sauce.stringDigest = function(algo, input) {
         if (typeof input !== 'string') {
             throw new TypeError('Input should string');
