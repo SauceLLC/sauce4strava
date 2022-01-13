@@ -2532,7 +2532,7 @@ sauce.ns('performance', async ns => {
                 this._setRange(period, metric, {all: true});
             }
             router.setFilters(this.athlete, this.range, {all: this.allRange});
-            await this.updateActivities();
+            this.schedUpdateActivities();
         }
 
         async onRouterNav() {
@@ -2544,7 +2544,7 @@ sauce.ns('performance', async ns => {
                 this.trigger('change-athlete', this.athlete);
             }
             this._setRangeFromRouter();
-            await this.updateActivities();
+            this.schedUpdateActivities();
         }
 
         getAllRange() {
