@@ -379,7 +379,8 @@
         "message": "没有细分受众群或该范围的其他数据。"
     },
     "analysis_best_performances": {
-        "message": "最佳表演"
+        "message": "最佳表现",
+        "description": "IMMUTABLE"
     },
     "analysis_best_all": {
         "message": "全部"
@@ -460,43 +461,55 @@
         "message": "设定值"
     },
     "analysis_rank_place_1": {
-        "message": "1号"
+        "message": "第一",
+        "description": "IMMUTABLE"
     },
     "analysis_rank_place_2": {
-        "message": "第二名"
+        "message": "第二",
+        "description": "IMMUTABLE"
     },
     "analysis_rank_place_3": {
-        "message": "第三名"
+        "message": "第三",
+        "description": "IMMUTABLE"
     },
     "analysis_rank_cat_all": {
-        "message": "全部"
+        "message": "全部",
+        "description": "IMMUTABLE"
     },
     "analysis_rank_cat_year": {
-        "message": "年"
+        "message": "年",
+        "description": "IMMUTABLE"
     },
     "analysis_rank_cat_recent": {
-        "message": "90天"
+        "message": "90天",
+        "description": "IMMUTABLE"
     },
     "analysis_value": {
-        "message": "价值"
+        "message": "值",
+        "description": "IMMUTABLE"
     },
     "analysis_activity": {
-        "message": "活动"
+        "message": "活动",
+        "description": "IMMUTABLE"
     },
     "analysis_date": {
         "message": "日期"
     },
     "analysis_peaks_settings_dialog_title": {
-        "message": "高峰努力设置"
+        "message": "最佳表现设置",
+        "description": "IMMUTABLE"
     },
     "analysis_peaks_ranges": {
-        "message": "高峰努力范围"
+        "message": "最佳表现范围",
+        "description": "IMMUTABLE"
     },
     "analysis_peaks_ranges_intro": {
-        "message": "您可以自定义用于“<i>峰值努力”</i>的时间和距离。根据数据类型，将使用时间或距离值。"
+        "message": "您可以自定义用于<i>“最佳表现”</i>的时间和距离。根据数据类型，将使用时间或距离值。",
+        "description": "IMMUTABLE"
     },
     "analysis_peaks_reset_to_defaults": {
-        "message": "重置为默认值"
+        "message": "重置为默认值",
+        "description": "IMMUTABLE"
     },
     "analysis_pwhr_tooltip": {
         "message": "Pw:Hr 是有氧解耦的度量。它比较了活动前半部分与后半部分的功率与心率之比。正值表示给定功率下的心率随着活动的进行而漂移得更高。这通常发生在长时间的耐力骑行中，代表疲劳。"
@@ -529,40 +542,52 @@
         "message": "小时"
     },
     "time_day": {
-        "message": "天"
+        "message": "天",
+        "description": "IMMUTABLE"
     },
     "time_days": {
-        "message": "天"
+        "message": "天",
+        "description": "IMMUTABLE"
     },
     "time_week": {
-        "message": "周"
+        "message": "周",
+        "description": "IMMUTABLE"
     },
     "time_weeks": {
-        "message": "周"
+        "message": "周",
+        "description": "IMMUTABLE"
     },
     "time_month": {
-        "message": "月"
+        "message": "月",
+        "description": "IMMUTABLE"
     },
     "time_months": {
-        "message": "月"
+        "message": "月",
+        "description": "IMMUTABLE"
     },
     "time_year": {
-        "message": "年"
+        "message": "年",
+        "description": "IMMUTABLE"
     },
     "time_years": {
-        "message": "年份"
+        "message": "年",
+        "description": "IMMUTABLE"
     },
     "time_ago": {
-        "message": "前"
+        "message": "前",
+        "description": "IMMUTABLE"
     },
     "time_in": {
-        "message": "在"
+        "message": "在",
+        "description": "IMMUTABLE"
     },
     "time_now": {
-        "message": "现在"
+        "message": "现在",
+        "description": "IMMUTABLE"
     },
     "time_today": {
-        "message": "今天"
+        "message": "今天",
+        "description": "IMMUTABLE"
     },
     "dialog_help_info_tooltip": {
         "message": "点击了解更多信息"
@@ -873,22 +898,28 @@
         "message": "重新计算同步本地数据，即TSS，NP等。"
     },
     "sync_control_panel_total": {
-        "message": "总"
+        "message": "总共",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_imported": {
-        "message": "进口"
+        "message": "已导入",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_unavailable": {
-        "message": "不可用"
+        "message": "不可用",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_remaining": {
-        "message": "其余的"
+        "message": "剩余",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_processed": {
-        "message": "处理"
+        "message": "已处理",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_unprocessable": {
-        "message": "不可加工"
+        "message": "不可处理",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_delayed_until": {
         "message": "延迟到"
@@ -1088,163 +1119,215 @@
         "message": "本地化建议"
     },
     "performance_rides": {
-        "message": "游乐设施"
+        "message": "骑行",
+        "description": "IMMUTABLE"
     },
     "performance_runs": {
-        "message": "运行"
+        "message": "跑步",
+        "description": "IMMUTABLE"
     },
     "performance_swims": {
-        "message": "游泳"
+        "message": "游泳",
+        "description": "IMMUTABLE"
     },
     "performance_skis": {
-        "message": "滑雪板"
+        "message": "滑雪",
+        "description": "IMMUTABLE"
     },
     "performance_workouts": {
-        "message": "锻炼"
+        "message": "锻炼",
+        "description": "IMMUTABLE"
     },
     "performance_ride": {
-        "message": "骑"
+        "message": "骑行",
+        "description": "IMMUTABLE"
     },
     "performance_run": {
-        "message": "跑"
+        "message": "跑步",
+        "description": "IMMUTABLE"
     },
     "performance_swim": {
-        "message": "游泳"
+        "message": "游泳",
+        "description": "IMMUTABLE"
     },
     "performance_ski": {
-        "message": "滑雪"
+        "message": "滑雪",
+        "description": "IMMUTABLE"
     },
     "performance_workout": {
-        "message": "锻炼"
+        "message": "锻炼",
+        "description": "IMMUTABLE"
     },
     "performance_activity_details": {
-        "message": "活动详情"
+        "message": "活动详情",
+        "description": "IMMUTABLE"
     },
     "performance_activity_details_empty": {
-        "message": "单击图表项目以查看活动详细信息。"
+        "message": "单击图表项目以查看活动详情",
+        "description": "IMMUTABLE"
     },
     "performance_or": {
-        "message": "或者"
+        "message": "或者",
+        "description": "IMMUTABLE"
     },
     "performance_show_some_activities": {
-        "message": "显示一些活动"
+        "message": "显示一些活动",
+        "description": "IMMUTABLE"
     },
     "performance_show_older_activity": {
-        "message": "显示较早的活动"
+        "message": "显示较早的活动",
+        "description": "IMMUTABLE"
     },
     "performance_show_newer_activity": {
-        "message": "显示较新的活动"
+        "message": "显示较新的活动",
+        "description": "IMMUTABLE"
     },
     "performance_override": {
         "message": "覆盖"
     },
     "performance_elevation_gain": {
-        "message": "海拔增益"
+        "message": "海拔爬升",
+        "description": "IMMUTABLE"
     },
     "performance_edit_activity_tooltip": {
-        "message": "编辑活动"
+        "message": "编辑活动",
+        "description": "IMMUTABLE"
     },
     "performance_unavailable": {
-        "message": "不可用"
+        "message": "不可用",
+        "description": "IMMUTABLE"
     },
     "performance_peak_performances_title": {
-        "message": "巅峰表现"
+        "message": "巅峰表现",
+        "description": "IMMUTABLE"
     },
     "performance_training_load_title": {
-        "message": "训练负荷 - 体能、疲劳和形式"
+        "message": "训练负荷 - 健康状况、疲劳度和体能",
+        "description": "IMMUTABLE"
     },
     "performance_activities_title": {
-        "message": "活动"
+        "message": "活动",
+        "description": "IMMUTABLE"
     },
     "performance_elevation_title": {
-        "message": "海拔增益"
+        "message": "海拔爬升",
+        "description": "IMMUTABLE"
     },
     "performance_time_range": {
-        "message": "时间范围"
+        "message": "时间范围",
+        "description": "IMMUTABLE"
     },
     "performance_more_info": {
-        "message": "更多信息"
+        "message": "更多信息",
+        "description": "IMMUTABLE"
     },
     "performance_reset_zoom": {
-        "message": "重置缩放"
+        "message": "重置缩放",
+        "description": "IMMUTABLE"
     },
     "performance_overview": {
-        "message": "概述"
+        "message": "概述",
+        "description": "IMMUTABLE"
     },
     "performance_training": {
-        "message": "训练"
+        "message": "训练",
+        "description": "IMMUTABLE"
     },
     "performance_missing": {
-        "message": "丢失的"
+        "message": "丢失的",
+        "description": "IMMUTABLE"
     },
     "performance_activities": {
-        "message": "活动"
+        "message": "活动",
+        "description": "IMMUTABLE"
     },
     "performance_active_days": {
-        "message": "活跃天数"
+        "message": "活跃天数",
+        "description": "IMMUTABLE"
     },
     "performance_peak_fitness": {
-        "message": "巅峰健身"
+        "message": "巅峰健康状况",
+        "description": "IMMUTABLE"
     },
     "performance_least_form": {
-        "message": "最小形式"
+        "message": "体能峰值",
+        "description": "IMMUTABLE"
     },
     "performance_activity_sync_title": {
-        "message": "活动同步"
+        "message": "活动同步",
+        "description": "IMMUTABLE"
     },
     "performance_peaks_row_tooltip": {
-        "message": "点击查看详情"
+        "message": "点击查看详情",
+        "description": "IMMUTABLE"
     },
     "performance_top": {
-        "message": "最佳"
+        "message": "最佳",
+        "description": "IMMUTABLE"
     },
     "performance_all_results": {
-        "message": "所有结果"
+        "message": "所有结果",
+        "description": "IMMUTABLE"
     },
     "performance_all_dates": {
-        "message": "所有日期"
+        "message": "所有日期",
+        "description": "IMMUTABLE"
     },
     "performance_all_athletes": {
-        "message": "所有运动员"
+        "message": "所有运动员",
+        "description": "IMMUTABLE"
     },
     "performance_predicted": {
-        "message": "预料到的"
+        "message": "预估",
+        "description": "IMMUTABLE"
     },
     "performance_fitness": {
-        "message": "健康"
+        "message": "健康状况",
+        "description": "IMMUTABLE"
     },
     "performance_fatigue": {
-        "message": "疲劳"
+        "message": "疲劳度",
+        "description": "IMMUTABLE"
     },
     "performance_form": {
-        "message": "形式"
+        "message": "体能",
+        "description": "IMMUTABLE"
     },
     "performance_weekly": {
-        "message": "每周"
+        "message": "每周",
+        "description": "IMMUTABLE"
     },
     "performance_monthly": {
-        "message": "每月"
+        "message": "每月",
+        "description": "IMMUTABLE"
     },
     "performance_yearly": {
-        "message": "每年"
+        "message": "每年",
+        "description": "IMMUTABLE"
     },
     "performance_today": {
-        "message": "今天"
+        "message": "今天",
+        "description": "IMMUTABLE"
     },
     "performance_all": {
-        "message": "全部"
+        "message": "全部",
+        "description": "IMMUTABLE"
     },
     "performance_predicted_tss": {
-        "message": "从 ATL/CTL 比率预测"
+        "message": "根据 ATL/CTL 比率预估",
+        "description": "IMMUTABLE"
     },
     "performance_predicted_tss_tooltip": {
-        "message": "使用最新的 ATL 和 CTL 值作为起始斜率因子计算未来的 TSS 预测。衰减因子也用于说明不确定性和人类适应限制。"
+        "message": "未来 TSS 预估值是通过使用最近的 ATL 和 CTL 值作为起始斜率因子计算获得的。考虑到不确定性和人类适应限制的影响，衰减因子也被纳入了计算。",
+        "description": "IMMUTABLE"
     },
     "performance_active_days_title": {
-        "message": "活跃天数"
+        "message": "活跃天数",
+        "description": "IMMUTABLE"
     },
     "performance_inactive": {
-        "message": "不活动"
+        "message": "不活跃",
+        "description": "IMMUTABLE"
     },
     "season_start": {
         "message": "季节开始"
