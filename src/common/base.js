@@ -131,9 +131,6 @@ self.sauceBaseInit = function sauceBaseInit() {
             return fn.apply(...args).finally(() => active = waiting && runner());
         };
         const wrap = function(...args) {
-            if (waiting) {
-                console.log('debounced bump of', waiting);
-            }
             waiting = [this, args];
             if (!active) {
                 active = runner();
@@ -144,6 +141,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
         return wrap;
     };
+
 
     sauce.stringDigest = function(algo, input) {
         if (typeof input !== 'string') {
@@ -709,12 +707,10 @@ self.sauceBaseInit = function sauceBaseInit() {
                 await this._start();
             }
             const idbStore = this._getIDBStore('readwrite', options);
-            let key;
             if (options.index) {
-                const index = idbStore.index(options.index);
-                key = await this._request(index.getKey(this.extractKey(data, index.keyPath)));
+                throw new Error("DEPRECATED");  // Don't use autoIncrement
             }
-            await this._request(idbStore.put(data, key));
+            await this._request(idbStore.put(data));
             this.invalidateCaches();
         }
 
@@ -981,13 +977,17 @@ self.sauceBaseInit = function sauceBaseInit() {
 
     class CacheDatabase extends Database {
         get migrations() {
-            return [{
-                version: 1,
+            return [
+                // Version 1 deprecated
+            {
+                version: 2,
                 migrate: (idb, t, next) => {
-                    const idbStore = idb.createObjectStore("entries", {autoIncrement: true});
-                    idbStore.createIndex('bucket-expiration', ['bucket', 'expiration']);
-                    idbStore.createIndex('bucket-key', ['bucket', 'key'], {unique: true});
-                    next();
+                    if (idb.objectStoreNames.contains('entries')) {
+                        idb.deleteObjectStore("entries");
+                        const store = idb.createObjectStore("entries", {keyPath: ['bucket', 'key']});
+                        store.createIndex('bucket-expiration', ['bucket', 'expiration']);
+                        next();
+                    }
                 }
             }];
         }
@@ -1023,7 +1023,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getEntry(key) {
-            const entry = await this.store.get([this.bucket, key], {index: 'bucket-key'});
+            const entry = await this.store.get([this.bucket, key]);
             if (entry && entry.expiration > Date.now()) {
                 return entry;
             }
@@ -1037,8 +1037,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         async getEntries(keys) {
             // getMany on an index returns an unknown number of entries so disambiguate
             // the results so they are aligned and padded with keys.
-            const entries = await this.store.getMany(keys.map(k => [this.bucket, k]),
-                {index: 'bucket-key'});
+            const entries = await this.store.getMany(keys.map(k => [this.bucket, k]));
             const now = Date.now();
             const valids = new Map();
             for (const x of entries.filter(x => x && x.expiration > now)) {
@@ -1057,7 +1056,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 created,
                 expiration,
                 value
-            }, {index: 'bucket-key'});
+            });
         }
 
         async setObject(obj, options={}) {
@@ -1070,11 +1069,11 @@ self.sauceBaseInit = function sauceBaseInit() {
                 created,
                 expiration,
                 value,
-            })), {index: 'bucket-key'});
+            })));
         }
 
         async delete(key) {
-            await this.store.delete([this.bucket, key], {index: 'bucket-key'});
+            await this.store.delete([this.bucket, key]);
         }
 
         values() {
@@ -1084,7 +1083,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
         keys() {
             const q = IDBKeyRange.bound([this.bucket, Date.now()], [this.bucket, Infinity]);
-            return this.store.keys(q, {index: 'bucket-key'});
+            return this.store.keys(q);
         }
     }
 
