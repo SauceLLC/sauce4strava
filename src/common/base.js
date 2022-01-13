@@ -984,10 +984,10 @@ self.sauceBaseInit = function sauceBaseInit() {
                 migrate: (idb, t, next) => {
                     if (idb.objectStoreNames.contains('entries')) {
                         idb.deleteObjectStore("entries");
-                        const store = idb.createObjectStore("entries", {keyPath: ['bucket', 'key']});
-                        store.createIndex('bucket-expiration', ['bucket', 'expiration']);
-                        next();
                     }
+                    const store = idb.createObjectStore("entries", {keyPath: ['bucket', 'key']});
+                    store.createIndex('bucket-expiration', ['bucket', 'expiration']);
+                    next();
                 }
             }];
         }
