@@ -2668,7 +2668,6 @@ sauce.ns('analysis', ns => {
             {name: 'altitude'},
             {name: 'altitude_smooth_15', label: 'altitude_smooth'},
             {name: 'grade_smooth'},
-            {name: 'grade_adjusted_velocity_smooth'},
         ].map(x => ({
             name: x.name,
             label: x.label || x.name,
@@ -3426,14 +3425,6 @@ sauce.ns('analysis', ns => {
         if (ns.activityType === 'run' && ns.weight) {
             const gad = await fetchGradeDistStream();
             if (gad) {
-                streamData.add('grade_adjusted_velocity_smooth', sauce.data.smooth(5, timeStream.map((x, i) => {
-                    if (i === 0) {
-                        return 0;
-                    }
-                    const gap = x - timeStream[i - 1];
-                    const dist = gad[i] - gad[i - 1];
-                    return dist / gap;
-                })).map(x => +x.toFixed(3)));
                 streamData.add('watts_calc', sauce.pace.createWattsStream(timeStream, gad, ns.weight));
             }
         }

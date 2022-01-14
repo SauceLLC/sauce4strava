@@ -1614,7 +1614,7 @@ sauce.ns('pace', function() {
 
     function createWattsStream(timeStream, gradeDistStream, weight) {
         const vStream = sauce.data.smooth(5, timeStream.map((x, i) =>
-            i ? (gradeDistStream[i] - gradeDistStream[i - 1]) / (x - timeStream[i - 1]) : 0));
+            i ? (gradeDistStream[i] - gradeDistStream[i - 1]) / ((x - timeStream[i - 1]) || 1) : 0));
         return vStream.map(v => sauce.pace.work(weight, v));
     }
 
@@ -2290,7 +2290,7 @@ sauce.ns('date', function() {
             this.setEndSeed(endDateSeed || tomorrow());
         }
 
-        setRange(period, metric, endSeed) {
+        setRangePeriod(period, metric, endSeed) {
             if (typeof period !== 'number') {
                 throw new TypeError("Invalid period");
             }
@@ -2316,8 +2316,9 @@ sauce.ns('date', function() {
             this.setEndSeed(endSeed);
         }
 
-        getDays() {
-            return Math.round((this.end.getTime() - this.start.getTime()) / 86400 / 1000);
+        getDays(options={}) {
+            const end = options.clipped ? this.clippedEnd : this.end;
+            return Math.round((end - this.start) / 86400 / 1000);
         }
 
         setEndSeed(endSeed) {
@@ -2348,6 +2349,7 @@ sauce.ns('date', function() {
             }
             this.start = start;
             this.end = end;
+            this._update();
         }
 
         setStartSeed(startSeed) {
@@ -2371,6 +2373,24 @@ sauce.ns('date', function() {
             }
             this.start = start;
             this.end = end;
+            this._update();
+        }
+
+        _update() {
+            const start = new Date(this.start);
+            const end = new Date(this.end);
+            this.clippedEnd = end > Date.now() ? tomorrow() : end;
+            this.days = this.getDays();
+            this.clippedDays = this.getDays({clipped: true});
+            this.snapshot = {
+                start,
+                end,
+                clippedEnd: this.clippedEnd,
+                period: this.period,
+                metric: this.metric,
+                days: this.days,
+                clippedDays: this.clippedDays,
+            };
         }
     }
 
