@@ -352,15 +352,23 @@ sauce.ns('data', function() {
             }
         }
 
-        importReduce(times, values, active, comparator, cloneOptions) {
-            let leader;
+        importReduce(times, values, active, getter, comparator, cloneOptions) {
+            let leadValue;
+            let leadRoll;
             for (const x of this._importIter(times, values, active)) {
                 void x;
-                if (this.full() && (!leader || comparator(this, leader))) {
-                    leader = this.clone(cloneOptions);
+                if (this.full()) {
+                    const value = getter(this);
+                    if (leadValue !== undefined) {
+                        if (!comparator(value, leadValue)) {
+                            continue;
+                        }
+                    }
+                    leadValue = value;
+                    leadRoll = this.clone(cloneOptions);
                 }
             }
-            return leader;
+            return leadRoll;
         }
 
         elapsed(options={}) {
@@ -587,8 +595,8 @@ sauce.ns('data', function() {
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, valuesStream, options.activeStream,
-            (cur, lead) => cur.avg() >= lead.avg());
+        return roll.importReduce(timeStream, valuesStream, options.activeStream, x => x.avg(),
+            (cur, lead) => cur >= lead);
     }
 
 
@@ -1008,8 +1016,8 @@ sauce.ns('power', function() {
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, wattsStream, options.activeStream,
-            (cur, lead) => cur.avg() >= lead.avg(), {inlineXP: false, inlineNP: false});
+        return roll.importReduce(timeStream, wattsStream, options.activeStream, x => x.avg(),
+            (cur, lead) => cur >= lead);
     }
 
 
@@ -1019,8 +1027,8 @@ sauce.ns('power', function() {
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, wattsStream, options.activeStream,
-            (cur, lead) => cur.np() >= lead.np(), {inlineXP: false, inlineNP: false});
+        return roll.importReduce(timeStream, wattsStream, options.activeStream, x => x.np(),
+            (cur, lead) => cur >= lead, {inlineNP: false});
     }
 
 
@@ -1030,8 +1038,8 @@ sauce.ns('power', function() {
         if (!roll) {
             return;
         }
-        return roll.importReduce(timeStream, wattsStream, options.activeStream,
-            (cur, lead) => cur.xp() >= lead.xp(), {inlineXP: false, inlineNP: false});
+        return roll.importReduce(timeStream, wattsStream, options.activeStream, x => x.xp(),
+            (cur, lead) => cur >= lead, {inlineXP: false});
     }
 
 
@@ -1599,8 +1607,7 @@ sauce.ns('pace', function() {
             return;
         }
         const roll = new RollingPace(distance);
-        return roll.importReduce(timeStream, distStream, null,
-            (cur, lead) => cur.avg() <= lead.avg());
+        return roll.importReduce(timeStream, distStream, null, x => x.avg(), (cur, lead) => cur <= lead);
     }
 
 
