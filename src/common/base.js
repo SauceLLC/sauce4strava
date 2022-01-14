@@ -678,7 +678,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = await this._request(ifc.get(query));
             const updated = Object.assign({}, data, updates);
-            await this._request(idbStore.put(updated), {commit: true});
+            await this._request(idbStore.put(updated));
             this.invalidateCaches();
             return updated;
         }
