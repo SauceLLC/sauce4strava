@@ -127,6 +127,8 @@
     }
 
     .btn-group {
+        user-select: none;
+
         &.btn-group-justified {
             border-collapse: initial;  // Fixes border-radius
         }

@@ -784,6 +784,9 @@ sauce.ns('performance', async ns => {
             // Interrogate valid highlighted datasets first...
             for (let [ds, idx] of adjHiTuples) {
                 const data = ds.data[idx];
+                if (!data) {
+                    continue;
+                }
                 startDate = data.b.date < startDate ? data.b.date : startDate;
                 mostDays = data.b.days > mostDays ? data.b.days : mostDays;
             }
@@ -817,18 +820,22 @@ sauce.ns('performance', async ns => {
                 }
             }
 
-            let desc;
+            let desc = '';
             if (this.options.tooltips.bucketsFormatter) {
-                desc = this.options.tooltips.bucketsFormatter(this.getBucketsAtIndexes(...highlightedTuples));
+                const buckets = this.getBucketsAtIndexes(...highlightedTuples);
+                if (buckets.length) {
+                    desc = this.options.tooltips.bucketsFormatter(buckets);
+                }
             } else if (this.options.tooltips.activitiesFormatter) {
-                desc = this.options.tooltips.activitiesFormatter(this.getActivitiesAtIndexes(...highlightedTuples));
-            } else {
-                desc = '';
+                const acts = this.getActivitiesAtIndexes(...highlightedTuples);
+                if (acts.length) {
+                    desc = this.options.tooltips.activitiesFormatter(acts);
+                }
             }
-            let title;
+            let title = '';
             if (mostDays === 1) {
                 title = H.date(startDate, {style: 'weekdayYear'});
-            } else {
+            } else if (startDate !== Infinity) {
                 if (sauce.date.isMonthRange(startDate, endDate)) {
                     title = H.date(startDate, {style: 'monthYear'});
                 } else if (sauce.date.isYearRange(startDate, endDate)) {
@@ -1092,7 +1099,7 @@ sauce.ns('performance', async ns => {
             const maxTSS = sauce.data.max(daily.map(x => x.tss));
             // When the metric is months or less than weeks we need to pad it out.
             const firstMonday = -D.getISODay(range.start);
-            const lastSunday = range.getDays() + (6 - D.getISODay(D.dayBefore(range.end)));
+            const lastSunday = range.days + (6 - D.getISODay(D.dayBefore(range.end)));
             let offt = 0;
             for (let i = firstMonday; i < lastSunday; i++, offt++) {
                 const day = daily[i] || {
@@ -1229,14 +1236,13 @@ sauce.ns('performance', async ns => {
         }
 
         onUpdateActivities({range, daily, metricData}) {
-            const days = range.getDays();
-            const lineWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
+            const lineWidth = range.days > 366 ? 0.66 : range.days > 60 ? 1 : 1.25;
             const maxCTLIndex = sauce.data.max(daily.map(x => x.ctl), {index: true});
             const minTSBIndex = sauce.data.min(daily.map(x => x.ctl - x.atl), {index: true});
             let future = [];
             if (range.end >= Date.now() && daily.length) {
                 const last = daily[daily.length - 1];
-                const fDays = Math.floor(Math.min(days * 0.10, 62));
+                const fDays = Math.floor(Math.min(range.days * 0.10, 62));
                 const fStart = D.dayAfter(last.date);
                 const fEnd = D.roundToLocaleDayDate(+fStart + fDays * DAY);
                 const predictions = [];
@@ -1375,7 +1381,7 @@ sauce.ns('performance', async ns => {
 
         onUpdateActivities({range, daily, metricData}) {
             let predictions;
-            if (D.tomorrow() <= range.end) {
+            if (D.tomorrow() <= range.end && metricData.length) {
                 const remaining = (range.end - Date.now()) / DAY;
                 const days = Math.round((range.end - metricData[metricData.length - 1].date) / DAY);
                 const weighting = Math.min(days, daily.length);
@@ -1543,7 +1549,7 @@ sauce.ns('performance', async ns => {
 
         onUpdateActivities({range, daily}) {
             let gain = 0;
-            const days = range.getDays();
+            const days = range.days;
             const lineWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
             this.chart.data.datasets = [{
                 id: 'elevation',
@@ -1597,7 +1603,6 @@ sauce.ns('performance', async ns => {
                 await this.setAthlete(pageView.athlete);
             }
             await super.init();
-            this.debouncedRender = sauce.asyncDebounced(this.render);
             this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
         }
 
@@ -1742,7 +1747,7 @@ sauce.ns('performance', async ns => {
                 this.mostFreqType.pct = this.mostFreqType.count /
                     sauce.data.sum(this.counts.map(x => x.count));
             }
-            this.debouncedRender();
+            await this.render();
         }
 
         async onCollapserClick(ev) {
@@ -1806,7 +1811,7 @@ sauce.ns('performance', async ns => {
             this.pageView = pageView;
             this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
             this.listenTo(pageView, 'select-activities', this.setActivities);
-            this.listenTo(pageView, 'new-activities', this.onNewActivities);
+            this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
             this.setAthlete(pageView.athlete);
             await super.init();
         }
@@ -1870,7 +1875,7 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        async onNewActivities() {
+        async onAvailableChanged() {
             await this.render();
         }
 
@@ -1935,8 +1940,9 @@ sauce.ns('performance', async ns => {
         }
 
         async onLoadRecentClick(ev) {
-            const start = +this.pageView.range.start;
-            const end = +this.pageView.range.end;
+            const range = this.pageView.getRangeSnapshot();
+            const start = +range.start;
+            const end = +range.end;
             const activities = await sauce.hist.getActivitiesForAthlete(this.pageView.athlete.id,
                 {start, end, limit: 10, direction: 'prev'});
             await this.setActivities(activities, {noHighlight: true});
@@ -2077,12 +2083,9 @@ sauce.ns('performance', async ns => {
 
         async init({pageView}) {
             this.pageView = pageView;
-            this.rangeStart = pageView.range.start;
-            this.rangeEnd = pageView.range.end;
+            this.range = pageView.getRangeSnapshot();
             this.athlete = pageView.athlete;
             this.athleteNameCache = new Map();
-            this.debouncedRender = sauce.asyncDebounced(this.render);
-            this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
             this.prefs = {
                 type: 'power',
                 limit: 10,
@@ -2092,6 +2095,8 @@ sauce.ns('performance', async ns => {
                 includeAllDates: false,
                 ...sauce.storage.getPrefFast('peaksView'),
             };
+            this.listenTo(pageView, 'before-update-activities',
+                sauce.asyncDebounced(this.onBeforeUpdateActivities));
             await super.init();
         }
 
@@ -2143,8 +2148,8 @@ sauce.ns('performance', async ns => {
                 expandActivities: true,
             };
             if (!this.prefs.includeAllDates) {
-                options.start = +this.rangeStart;
-                options.end = +this.rangeEnd;
+                options.start = +this.range.start;
+                options.end = +this.range.end;
             }
             if (!this.prefs.includeAllAthletes) {
                 this.peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.prefs.type,
@@ -2160,12 +2165,11 @@ sauce.ns('performance', async ns => {
             }
         }
 
-        onBeforeUpdateActivities({athlete, range}) {
-            this.rangeStart = range.start;
-            this.rangeEnd = range.end;
+        async onBeforeUpdateActivities({athlete, range}) {
+            this.range = range;
             this.athlete = athlete;
             this.athleteNameCache.set(athlete.id, athlete.name);
-            this.debouncedRender();
+            await this.render();
         }
 
         async onTypeChange(ev) {
@@ -2247,7 +2251,7 @@ sauce.ns('performance', async ns => {
             return {
                 ...super.events,
                 'change header.filters select[name="range"]': 'onRangeChange',
-                'click header.filters .btn.range': 'onRangeShift',
+                'click header.filters .btn.range': 'onRangeShiftClick',
                 'click header.filters .btn.expand': 'onExpandClick',
                 'click header.filters .btn.compress': 'onCompressClick',
             };
@@ -2268,8 +2272,9 @@ sauce.ns('performance', async ns => {
             this.trainingChartView = new TrainingChartView({pageView});
             this.activityVolumeChartView = new ActivityVolumeChartView({pageView});
             this.elevationChartView = new ElevationChartView({pageView});
+            this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
+            this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
             await super.init();
-            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
         }
 
         setElement(el, ...args) {
@@ -2291,7 +2296,8 @@ sauce.ns('performance', async ns => {
         }
 
         renderAttrs() {
-            return {range: [this.pageView.range.period, this.pageView.range.metric].join()};
+            const range = this.pageView.getRangeSnapshot();
+            return {range: [range.period, range.metric].join()};
         }
 
         async render() {
@@ -2322,26 +2328,36 @@ sauce.ns('performance', async ns => {
             if (all) {
                 [rawPeriod, metric] = this.pageView.getAllRange();
             }
-            this.pageView.setRange(Number(rawPeriod), metric, {all});
+            await this.pageView.setRangePeriod(Number(rawPeriod), metric, {all});
         }
 
-        async onRangeShift(ev) {
+        onRangeShiftClick(ev) {
             const classes = ev.currentTarget.classList;
+            const adj = classes.contains('newest') ?
+                Infinity :
+                classes.contains('oldest') ?
+                    -Infinity :
+                    classes.contains('next') ?
+                        1 :
+                        -1;
             ev.currentTarget.classList.add('sauce-busy');
-            try {
-                if (classes.contains('newest')) {
-                    await this.pageView.shiftRange(Infinity);
-                } else if (classes.contains('oldest')) {
-                    await this.pageView.shiftRange(-Infinity);
-                } else {
-                    await this.pageView.shiftRange(classes.contains('next') ? 1 : -1);
-                }
-            } finally {
-                ev.currentTarget.classList.remove('sauce-busy');
-            }
+            this.pageView.shiftRange(adj).finally(() =>
+                // follows a debounced update-activities
+                ev.currentTarget.classList.remove('sauce-busy'));
+            this.updateRangeButtons();
         }
 
-        onUpdateActivities({range}) {
+        onAvailableChanged({oldest}) {
+            this.updateRangeButtons(null, oldest);
+        }
+
+        onBeforeUpdateActivities({range}) {
+            this.updateRangeButtons(range);
+        }
+
+        updateRangeButtons(range, oldest) {
+            range = range || this.pageView.getRangeSnapshot();
+            oldest = oldest || this.pageView.oldest;
             const localeMetricMap = {
                 weeks: 'weekly',
                 months: 'monthly',
@@ -2350,8 +2366,6 @@ sauce.ns('performance', async ns => {
             this.$('.metric-display').text(this.LM(localeMetricMap[range.metric]));
             const $start = this.$('header .range.start');
             const $end = this.$('header .range.end');
-            const start = range.start;
-            const end = range.end;
             const selectedRange = this.pageView.allRange ? 'all' : `${range.period},${range.metric}`;
             let $option = this.$(`select[name="range"] option[value="${selectedRange}"]`);
             if (!$option.length) {
@@ -2361,16 +2375,16 @@ sauce.ns('performance', async ns => {
                 this.$(`select[name="range"]`).append($option);
             }
             $option[0].selected = true;
-            $start.text(H.date(start));
-            const isStart = start <= this.pageView.oldest;
+            $start.text(H.date(range.start));
+            const isStart = range.start <= oldest;
             this.$('.btn.range.prev').toggleClass('disabled', isStart);
             this.$('.btn.range.oldest').toggleClass('disabled', isStart);
-            const isEnd = end >= Date.now();
+            const isEnd = range.end >= Date.now();
             this.$('.btn.range.next').toggleClass('disabled', isEnd);
             this.$('.btn.range.newest').toggleClass('disabled', isEnd);
             $end.text(isEnd ?
                 new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
-                H.date(D.roundToLocaleDayDate(end - DAY)));
+                H.date(D.roundToLocaleDayDate(range.end - DAY)));
         }
     }
 
@@ -2399,7 +2413,7 @@ sauce.ns('performance', async ns => {
             this.summaryView = new SummaryView({pageView: this});
             this.mainView = new MainView({pageView: this});
             this.detailsView = new DetailsView({pageView: this});
-            router.setFilters(this.athlete, this.range, {replace: true, all: this.allRange});
+            router.setFilters(this.athlete, this._range, {replace: true, all: this.allRange});
             router.on('route:onNav', this.onRouterNav.bind(this));
             router.on('route:onNavAll', this.onRouterNav.bind(this));
             await super.init();
@@ -2411,9 +2425,9 @@ sauce.ns('performance', async ns => {
             this.allRange = f.all || (f.all === undefined && defaults.all);
             if (this.allRange) {
                 const [period, metric] = this.getAllRange();
-                this.range = new D.CalendarRange(null, period, metric);
+                this._range = new D.CalendarRange(null, period, metric);
             } else {
-                this.range = new D.CalendarRange(f.suggestedEnd,
+                this._range = new D.CalendarRange(f.suggestedEnd,
                     f.period || defaults.period || 4,
                     f.metric || defaults.metric || 'weeks');
             }
@@ -2430,7 +2444,8 @@ sauce.ns('performance', async ns => {
             this.syncButtons.clear();  // Must not reuse on re-render() for DOM events.
             const syncBtnPromise = this.athlete && this.getSyncButton(this.athlete.id);
             await super.render();
-            const actsPromise = this.athlete && this._getActivities();
+            const range = this._range.snapshot;
+            const actsPromise = this.athlete && this._getActivities(range);
             if (!this.athlete) {
                 return;
             }
@@ -2443,6 +2458,7 @@ sauce.ns('performance', async ns => {
                 this.detailsView.render(),
                 this.mainView.render(),
             ]);
+            this.trigger('before-update-activities', {athlete: this.athlete, range});
             this._updateActivities(await actsPromise);
         }
 
@@ -2492,12 +2508,10 @@ sauce.ns('performance', async ns => {
             // we need to treat updated activities from about 42 days before our range
             // start as an update to our activities, because it's very possible the
             // ATL/CTL seed values will be forward propagated into our activity range.
-            const rangeStart = +this.range.start - (42 * 86400 * 1000);
-            if (done.oldest <= this.range.end && done.newest >= rangeStart) {
-                await this.updateActivities();
-                if (await this.refreshNewestAndOldest()) {
-                    this.trigger('new-activities');
-                }
+            const rangeStart = +this._range.start - (42 * 86400 * 1000);
+            if (done.oldest <= this._range.end && done.newest >= rangeStart) {
+                await this.schedUpdateActivities();
+                await this.refreshNewestAndOldest();
             }
         }
 
@@ -2511,7 +2525,11 @@ sauce.ns('performance', async ns => {
                 sauce.hist.getNewestActivityForAthlete(id).then(a => a && a.ts),
                 sauce.hist.getOldestActivityForAthlete(id).then(a => a && a.ts),
             ]);
-            return wasNewest !== this.newest || wasOldest !== this.oldest;
+            const updated = wasNewest !== this.newest || wasOldest !== this.oldest;
+            if (updated) {
+                this.trigger('available-activities-changed',
+                    {newest: this.newest, oldest: this.oldest});
+            }
         }
 
         async getSyncButton(id) {
@@ -2529,10 +2547,10 @@ sauce.ns('performance', async ns => {
             this.trigger('change-athlete', this.athlete);
             if (this.allRange) {
                 const [period, metric] = this.getAllRange();
-                this._setRange(period, metric, {all: true});
+                this._setRangePeriod(period, metric, {all: true});
             }
-            router.setFilters(this.athlete, this.range, {all: this.allRange});
-            this.schedUpdateActivities();
+            router.setFilters(this.athlete, this._range, {all: this.allRange});
+            await this.schedUpdateActivities();
         }
 
         async onRouterNav() {
@@ -2544,7 +2562,7 @@ sauce.ns('performance', async ns => {
                 this.trigger('change-athlete', this.athlete);
             }
             this._setRangeFromRouter();
-            this.schedUpdateActivities();
+            await this.schedUpdateActivities();
         }
 
         getAllRange() {
@@ -2563,71 +2581,74 @@ sauce.ns('performance', async ns => {
             return [period, metric];
         }
 
-        _setRange(period, metric, options={}) {
+        _setRangePeriod(period, metric, options={}) {
             // This keeps the range from floating past the present when we go
             // from a big range to a smaller one.
             this.allRange = !!options.all;
-            const endSeed = this.range.end > Date.now() ? D.tomorrow() : undefined;
-            this.range.setRange(period, metric, endSeed);
+            const endSeed = this._range.end > Date.now() ? D.tomorrow() : undefined;
+            this._range.setRangePeriod(period, metric, endSeed);
             sauce.storage.setPref('perfDefaultRange', {period, metric, all: options.all});  // bg okay
         }
 
-        setRange(period, metric, options={}) {
-            this._setRange(period, metric, options);
-            router.setFilters(this.athlete, this.range, options);
-            this.schedUpdateActivities();
+        getRangeSnapshot() {
+            return this._range.snapshot;
+        }
+
+        async setRangePeriod(period, metric, options={}) {
+            this._setRangePeriod(period, metric, options);
+            router.setFilters(this.athlete, this._range, options);
+            await this.schedUpdateActivities();
         }
 
         shiftRange(offset) {
             if (offset === Infinity) {
-                this.range.setEndSeed(D.tomorrow());
+                this._range.setEndSeed(D.tomorrow());
             } else if (offset === -Infinity) {
-                this.range.setStartSeed(this.oldest);
+                this._range.setStartSeed(this.oldest);
             } else {
-                this.range.shift(offset);
+                this._range.shift(offset);
             }
-            router.setFilters(this.athlete, this.range);
-            this.schedUpdateActivities();
+            router.setFilters(this.athlete, this._range);
+            return this.schedUpdateActivities();
         }
 
         async _schedUpdateActivities() {
-            this.trigger('before-update-activities', {athlete: this.athlete, range: this.range});
-            this._updateActivities(await this._getActivities());
+            const range = this._range.snapshot;
+            this.trigger('before-update-activities', {athlete: this.athlete, range});
+            this._updateActivities(await this._getActivities(range));
         }
 
-        async _getActivities() {
-            const start = this.range.start;
-            let end = this.range.end;
-            if (end > Date.now()) {
-                end = D.tomorrow();
-            }
+        async _getActivities(range) {
+            const start = +range.start;
+            const end = +range.clippedEnd;
             const activities = await sauce.hist.getActivitiesForAthlete(this.athlete.id,
-                {start: +start, end: +end, includeTrainingLoadSeed: true, excludeUpper: true});
-            return {activities, start, end};
+                {start, end, includeTrainingLoadSeed: true, excludeUpper: true});
+            return {activities, range};
         }
 
-        _updateActivities({activities, start, end}) {
+        _updateActivities({activities, range}) {
             let atl = 0;
             let ctl = 0;
             if (activities.length) {
                 ({atl, ctl} = activities[0].trainingLoadSeed);
             }
-            this.daily = activitiesByDay(activities, start, end, atl, ctl);
-            if (this.range.metric === 'weeks') {
-                this.metricData = aggregateActivitiesByWeek(this.daily, {isoWeekStart: true});
-            } else if (this.range.metric === 'months') {
-                this.metricData = aggregateActivitiesByMonth(this.daily);
-            } else if (this.range.metric === 'years') {
-                this.metricData = aggregateActivitiesByYear(this.daily);
+            const daily = activitiesByDay(activities, range.start, range.clippedEnd, atl, ctl);
+            let metricData;
+            if (range.metric === 'weeks') {
+                metricData = aggregateActivitiesByWeek(daily, {isoWeekStart: true});
+            } else if (range.metric === 'months') {
+                metricData = aggregateActivitiesByMonth(daily);
+            } else if (range.metric === 'years') {
+                metricData = aggregateActivitiesByYear(daily);
             } else {
-                throw new TypeError('Unsupported range metric: ' + this.range.metric);
+                throw new TypeError('Unsupported range metric: ' + range.metric);
             }
             this.trigger('update-activities', {
                 athlete: this.athlete,
-                range: this.range,
+                range,
                 activities,
-                daily: this.daily,
-                metricData: this.metricData,
+                daily,
+                metricData,
             });
         }
 
