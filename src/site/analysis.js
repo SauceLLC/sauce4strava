@@ -824,8 +824,6 @@ sauce.ns('analysis', ns => {
                             // the peak functions use a continuous rolling avg vs the external method that
                             // only examines the trimmed date set.
                             const native = roll && roll[calcs.rollMethod].call(roll, {external: true});
-                            console.log(roll.np({external: true}) - roll.np());
-                            console.log(roll.xp({external: true}) - roll.xp());
                             if (native) {
                                 const value = H.number(native);
                                 rows.push(_rangeRollToRow({range, roll, native, value, unit: 'w'}));
