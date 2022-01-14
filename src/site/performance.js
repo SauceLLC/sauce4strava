@@ -2454,7 +2454,7 @@ sauce.ns('performance', async ns => {
             this.mainView.setElement(this.$('main'));
             this.detailsView.setElement(this.$('aside.details'));
             await Promise.all([
-                this.summaryView.initializing, // render() is triggered later by onUpdateActivities
+                this.summaryView.render(),
                 this.detailsView.render(),
                 this.mainView.render(),
             ]);
