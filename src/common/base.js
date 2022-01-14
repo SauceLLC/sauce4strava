@@ -121,20 +121,37 @@ self.sauceBaseInit = function sauceBaseInit() {
      *
      * I.e. Only run with the latest set of arguments, drop any invocations between
      * the active one and the most recent.  Great for rendering engines.
+     *
+     * The return promise will resolve with the arguments used for next invocation.
      */
     sauce.asyncDebounced = function(fn) {
-        let waiting;
+        let nextArgs;
+        let nextPromise;
+        let nextResolve;
+        let nextReject;
         let active;
         const runner = function() {
-            const args = waiting;
-            waiting = null;
-            return fn.apply(...args).finally(() => active = waiting && runner());
+            const [scope, args] = nextArgs;
+            const resolve = nextResolve;
+            const reject = nextReject;
+            nextArgs = null;
+            nextPromise = null;
+            return fn.apply(scope, args)
+                .then(x => resolve(args))
+                .catch(reject)
+                .finally(() => active = nextArgs ? runner() : null);
         };
         const wrap = function(...args) {
-            waiting = [this, args];
+            nextArgs = [this, args];
+            if (!nextPromise) {
+                nextPromise = new Promise((resolve, reject) =>
+                    (nextResolve = resolve, nextReject = reject));
+            }
+            const p = nextPromise;
             if (!active) {
                 active = runner();
             }
+            return p;
         };
         if (fn.name) {
             Object.defineProperty(wrap, 'name', {value: `sauce.asyncDebounced[${fn.name}]`});
