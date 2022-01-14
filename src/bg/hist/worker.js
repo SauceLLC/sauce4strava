@@ -40,13 +40,6 @@ async function findPeaks(athlete, activities, periods, distances) {
         other: ['time', 'active', 'watts', 'watts_calc', 'distance', 'heartrate'],
     });
     await sleep(1);  // Workaround for Safari IDB transaction performance bug.
-    const gender = athlete.gender || 'male';
-    const getRankLevel = (period, p, wp, weight) => {
-        const rank = sauce.power.rankLevel(period, p, wp, weight, gender);
-        if (rank.level > 0) {
-            return rank;
-        }
-    };
     const peaks = [];
     const errors = [];
     for (const activity of activities) {
@@ -57,7 +50,6 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
             continue;
         }
-        let weight;
         const streams = actStreams.get(activity.id);
         const activeStream = streams.active;
         const isRun = activity.basetype === 'run';
@@ -73,6 +65,7 @@ async function findPeaks(athlete, activities, periods, distances) {
             activity: activity.id,
             activityType: activity.basetype,
             ts: activity.ts,
+            activeTime: roll.active(),
             ...extra,
         });
         if (streams.heartrate) {
@@ -127,31 +120,21 @@ async function findPeaks(athlete, activities, periods, distances) {
                                 }
                             }
                         }
-                        if (weight === undefined) {
-                            weight = sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, activity.ts);
-                        }
                         if (leaders.power) {
                             const l = leaders.power;
-                            let rankLevel;
-                            if (weight) {
-                                rankLevel = isRide ? getRankLevel(l.roll.active(), l.value, l.np, weight) : undefined;
-                                addPeak('power_wkg', period, l.value / weight, l.roll, {rankLevel});
-                            }
-                            addPeak('power', period, l.value, l.roll, {rankLevel});
+                            addPeak('power', period, l.value, l.roll, {wp: l.np});
                         }
                         if (leaders.np) {
                             const l = leaders.np;
                             const np = l.roll.np({external: true});
-                            const rankLevel = (weight && isRide) ?
-                                getRankLevel(l.roll.active(), l.roll.avg({active: false}), np, weight) : undefined;
-                            addPeak('np', period, np, l.roll, {rankLevel});
+                            const power = l.roll.avg({active: false});
+                            addPeak('np', period, np, l.roll, {power});
                         }
                         if (leaders.xp) {
                             const l = leaders.xp;
                             const xp = l.roll.xp({external: true});
-                            const rankLevel = (weight && isRide) ?
-                                getRankLevel(l.roll.active(), l.roll.avg({active: false}), xp, weight) : undefined;
-                            addPeak('xp', period, xp, l.roll, {rankLevel});
+                            const power = l.roll.avg({active: false});
+                            addPeak('xp', period, xp, l.roll, {power});
                         }
                     }
                 }

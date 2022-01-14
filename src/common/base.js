@@ -632,19 +632,11 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async getAll(query, options={}) {
-            if (options.limit || options.count) {
-                console.error(query, options);
-                debugger;
-            }
             const data = await this._readQuery('getAll', query, options, options.limit);
             return options.models ? data.map(x => new this.Model(x, this)): data;
         }
 
         async getAllKeys(query, options={}) {
-            if (options.limit || options.count) {
-                console.error(query, options);
-                debugger;
-            }
             if (!options.indexKey) {
                 return await this._readQuery('getAllKeys', query, options, options.limit);
             } else {
@@ -660,14 +652,22 @@ self.sauceBaseInit = function sauceBaseInit() {
             return await this._readQuery('count', query, options);
         }
 
-        async getMany(queries, options={}) {
+        async _manyGetter(getter, queries, options={}) {
             if (!this._started) {
                 await this._start();
             }
             const idbStore = this._getIDBStore('readonly', options);
             return await Promise.all(queries.map(q =>
-                this._readQuery('get', q, {...options, idbStore}).then(x =>
+                this._readQuery(getter, q, {...options, idbStore}).then(x =>
                     options.models ? new this.Model(x, this) : x)));
+        }
+
+        async getMany(...args) {
+            return await this._manyGetter('get', ...args);
+        }
+
+        async getAllMany(...args) {
+            return await this._manyGetter('getAll', ...args);
         }
 
         async update(query, updates, options={}) {

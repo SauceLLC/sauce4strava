@@ -5,6 +5,7 @@ import * as futures from '/src/common/jscoop/futures.js';
 import * as locks from '/src/common/jscoop/locks.js';
 
 const actsStore = new sauce.hist.db.ActivitiesStore();
+const peaksStore = new sauce.hist.db.PeaksStore();
 const streamsStore = new sauce.hist.db.StreamsStore();
 const sleep = sauce.sleep;
 
@@ -446,6 +447,48 @@ export async function peaksProcessor({manifest, activities, athlete}) {
         }
     }
 }
+
+
+export async function peaksWkgProcessor({manifest, activities, athlete}) {
+    const ids = activities.map(x => x.pk);
+    const [powers, nps, xps] = await Promise.all([
+        peaksStore.getForActivities(ids, {type: 'power'}),
+        peaksStore.getForActivities(ids, {type: 'np'}),
+        peaksStore.getForActivities(ids, {type: 'xp'}),
+    ]);
+    const gender = athlete.get('gender') || 'male';
+    const getRankLevel = (period, p, wp, weight) => {
+        const rank = sauce.power.rankLevel(period, p, wp, weight, gender);
+        if (rank.level > 0) {
+            return rank;
+        }
+    };
+    const peaks = [];
+    for (const [index, activity] of activities.entries()) {
+        if (activity.get('basetype') !== 'ride') {
+            continue;
+        }
+        const weight = athlete.getWeightAt(activity.get('ts'));
+        if (!weight) {
+            continue;
+        }
+        for (const x of powers[index]) {
+            const rankLevel = getRankLevel(x.activeTime, x.value, x.wp, weight);
+            peaks.push({...x, rankLevel});
+            peaks.push({...x, rankLevel, type: 'power_wkg', value: x.value / weight});
+        }
+        for (const x of nps[index]) {
+            const rankLevel = getRankLevel(x.activeTime, x.power, x.value, weight);
+            peaks.push({...x, rankLevel});
+        }
+        for (const x of xps[index]) {
+            const rankLevel = getRankLevel(x.activeTime, x.power, x.value, weight);
+            peaks.push({...x, rankLevel});
+        }
+    }
+    await peaksStore.putMany(peaks);
+}
+
 
 
 export class TrainingLoadProcessor extends OffloadProcessor {

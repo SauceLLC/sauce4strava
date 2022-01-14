@@ -250,6 +250,20 @@ sauce.ns('hist.db', ns => {
             return await this.getAll(activityId, {index: 'activity', ...options});
         }
 
+        async getForActivities(activityIds, options={}) {
+            const {type, period} = options;
+            if (type && period) {
+                return await this.getMany(activityIds.map(id => [id, type, period]), options);
+            } else if (type) {
+                return await this.getAllMany(activityIds.map(id =>
+                    IDBKeyRange.bound([id, type, 0], [id, type, Infinity])), options);
+            } else if (period) {
+                throw new Error("period without type unsupported");
+            } else {
+                return await this.getAllMany(activityIds, {index: 'activity', ...options});
+            }
+        }
+
         async deleteForActivity(activityId) {
             return await this.delete(activityId, {index: 'activity'});
         }

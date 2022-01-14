@@ -79,9 +79,17 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 10, // Use real watts for runs if available
+    version: 11, // provide extra fields for seperate wkg/rank proc
     depends: ['extra-streams'],
     data: {processor: processors.peaksProcessor}
+});
+
+ActivityModel.addSyncManifest({
+    processor: 'local',
+    name: 'peaks_wkg',
+    version: 1,
+    depends: ['peaks', 'athlete-settings'],
+    data: {processor: processors.peaksWkgProcessor}
 });
 
 ActivityModel.addSyncManifest({
@@ -811,11 +819,6 @@ class SyncJob extends EventTarget {
     }
 
     async _run(options={}) {
-        if (options.delay) {
-            this.setStatus('delayed');
-            console.debug(`Delaying sync job for: ${Math.round(options.delay / 1000)}s`);
-            await sauce.sleep(options.delay);
-        }
         this.setStatus('checking-network');
         await Promise.race([networkOnline(), this._cancelEvent.wait()]);
         if (this._cancelEvent.isSet()) {
@@ -1558,7 +1561,7 @@ class SyncManager extends EventTarget {
                 }, this._refreshRequests.get(a.pk));
                 this._refreshRequests.delete(a.pk);
                 this.runSyncJob(a, options).catch(sauce.report.error);
-                delay = Math.min((delay + 10000) * 1.15, 3600 * 1000);
+                delay = Math.min((delay + 30000) * 1.15, 3600 * 1000);
             }
         }
     }
@@ -1576,7 +1579,6 @@ class SyncManager extends EventTarget {
     }
 
     async runSyncJob(athlete, options) {
-        console.info('Starting sync job for: ' + athlete);
         const athleteId = athlete.pk;
         const isSelf = this.currentUser === athleteId;
         const syncJob = new SyncJob(athlete, isSelf);
@@ -1585,6 +1587,12 @@ class SyncManager extends EventTarget {
         syncJob.addEventListener('ratelimiter', ev => this.emitForAthlete(athlete, 'ratelimiter', ev.data));
         this.emitForAthlete(athlete, 'active', {active: true, athlete: athlete.data});
         this.activeJobs.set(athleteId, syncJob);
+        if (options.delay) {
+            syncJob.setStatus('deferred');
+            console.debug(`Deferring sync job [${Math.round(options.delay / 1000)}s] for: ` + athlete);
+            await sauce.sleep(options.delay);
+        }
+        console.info('Starting sync job for: ' + athlete);
         const start = Date.now();
         syncJob.run(options);
         try {
