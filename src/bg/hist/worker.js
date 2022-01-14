@@ -62,7 +62,7 @@ async function findPeaks(athlete, activities, periods, distances) {
         const activeStream = streams.active;
         const isRun = activity.basetype === 'run';
         const isRide = activity.basetype === 'ride';
-        const addPeak = (type, period, value, roll, extra) => value && peaks.push({
+        const addPeak = (type, period, value, roll, extra) => (value > 0 && value < Infinity) && peaks.push({
             type,
             period,
             value,
