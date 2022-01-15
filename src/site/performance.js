@@ -1388,7 +1388,6 @@ sauce.ns('performance', async ns => {
                 const avgTSS = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.tss));
                 const avgDuration = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.duration));
                 const avgDistance = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.distance));
-                console.info(range.start.toDateString(), range.end.toDateString(), days, weighting, daily.at(0).date.toDateString(), daily.at(-1).date.toDateString(), metricData.at(0).date.toDateString(), metricData.at(-1).date.toDateString());
                 predictions = {
                     days,
                     tss: metricData.map((b, i) => ({
@@ -2069,6 +2068,7 @@ sauce.ns('performance', async ns => {
                 'change .peak-controls select[name="time"]': 'onTimeChange',
                 'change .peak-controls select[name="distance"]': 'onDistanceChange',
                 'change .peak-controls select[name="limit"]': 'onLimitChange',
+                'change .peak-controls select[name="activityType"]': 'onActivityTypeChange',
                 'input .peak-controls input[name="include-all-athletes"]': 'onIncludeAllAthletesInput',
                 'input .peak-controls input[name="include-all-dates"]': 'onIncludeAllDatesInput',
                 'click .results table tbody tr': 'onResultClick',
@@ -2145,6 +2145,7 @@ sauce.ns('performance', async ns => {
         async loadPeaks() {
             const options = {
                 limit: this.prefs.limit,
+                activityType: this.prefs.activityType,
                 expandActivities: true,
             };
             if (!this.prefs.includeAllDates) {
@@ -2193,6 +2194,12 @@ sauce.ns('performance', async ns => {
         async onLimitChange(ev) {
             const limit = Number(ev.currentTarget.value);
             await this.savePrefs({limit});
+            await this.render();
+        }
+
+        async onActivityTypeChange(ev) {
+            const activityType = ev.currentTarget.value || null;
+            await this.savePrefs({activityType});
             await this.render();
         }
 

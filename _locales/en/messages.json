@@ -333,6 +333,7 @@
     "menu_supporters": {"message": "Supporters"},
     "menu_localization": {"message": "Localization Suggestion"},
 
+    "performance_any": {"message": "Any"},
     "performance_rides": {"message": "Rides"},
     "performance_runs": {"message": "Runs"},
     "performance_swims": {"message": "Swims"},

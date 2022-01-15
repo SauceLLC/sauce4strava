@@ -30,6 +30,14 @@
         <option value="0" {{prefs.limit === 0 ? 'selected' : ''}}>{{{all_results}}}</option>
     </select>
 
+    <select name="activityType">
+        <option value="" {{!prefs.activityType ? 'selected' : ''}}>{{{any}}}</option>
+        <option value="ride" {{prefs.activityType === 'ride' ? 'selected' : ''}}>{{{rides}}}</option>
+        <option value="run" {{prefs.activityType === 'run' ? 'selected' : ''}}>{{{runs}}}</option>
+        <option value="swim" {{prefs.activityType === 'swim' ? 'selected' : ''}}>{{{swims}}}</option>
+        <option value="workout" {{prefs.activityType === 'workout' ? 'selected' : ''}}>{{{workouts}}}</option>
+    </select>
+
     <label>
         <input type="checkbox" name="include-all-athletes" {{prefs.includeAllAthletes ? 'checked' : ''}}/>
         {{{all_athletes}}}
