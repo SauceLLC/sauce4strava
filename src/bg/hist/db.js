@@ -199,18 +199,21 @@ sauce.ns('hist.db', ns => {
             }
         }
 
-        orderedAndTrimmed(peaks, type, limit) {
+        orderedAndTrimmed(peaks, type, options={}) {
             // Handle non-numeric types that have on occasion crept in.  Yes, we should fix all these
             // cases upstream before they get into the database, but the chance of it happening is
             // non-zero with the way I hack on this, so be careful about sorting properly here in
             // the event of value===undefined.
+            if (options.activityType) {
+                peaks = peaks.filter(x => x.activityType === options.activityType);
+            }
             if (this.getDirectionForType(type) === 'prev') {
                 peaks.sort((a, b) => (b.value || 0) - (a.value || 0));
             } else {
                 peaks.sort((a, b) => (a.value || 0) - (b.value || 0));
             }
-            if (limit) {
-                peaks.length = Math.min(peaks.length, limit);
+            if (options.limit) {
+                peaks.length = Math.min(peaks.length, options.limit);
             }
             peaks.forEach((x, i) => x.rank = i + 1);
             return peaks;
@@ -228,7 +231,7 @@ sauce.ns('hist.db', ns => {
                 ...options,
                 limit: undefined
             });
-            return this.orderedAndTrimmed(peaks, type, options.limit);
+            return this.orderedAndTrimmed(peaks, type, options);
         }
 
         async getFor(type, period, options={}) {
@@ -243,7 +246,7 @@ sauce.ns('hist.db', ns => {
                 ...options,
                 limit: undefined
             });
-            return this.orderedAndTrimmed(peaks, type, options.limit);
+            return this.orderedAndTrimmed(peaks, type, options);
         }
 
         async getForActivity(activityId, options={}) {
@@ -313,8 +316,16 @@ sauce.ns('hist.db', ns => {
             return await this.getAll(...this._queryForAthlete(athlete, options));
         }
 
-        async *siblings(id, options={}) {
-            const act = await this.get(id);
+        async *siblings(actThing, options={}) {
+            let act;
+            if (actThing instanceof ActivityModel) {
+                act = actThing.data;
+            } else if (typeof actThing === 'number') {
+                console.warn("DEPRECATED");
+                act = await this.get(actThing, options); // uses a full transaction.
+            } else {
+                act = actThing;
+            }
             let start;
             let end;
             if (options.direction === 'prev') {
@@ -329,14 +340,14 @@ sauce.ns('hist.db', ns => {
             yield *this.byAthlete(act.athlete, Object.assign({start, end}, options));
         }
 
-        async getNextSibling(id, options={}) {
-            for await (const x of this.siblings(id, options)) {
+        async getNextSibling(actThing, options={}) {
+            for await (const x of this.siblings(actThing, options)) {
                 return x;
             }
         }
 
-        async getPrevSibling(id, options={}) {
-            for await (const x of this.siblings(id, {direction: 'prev', ...options})) {
+        async getPrevSibling(actThing, options={}) {
+            for await (const x of this.siblings(actThing, {direction: 'prev', ...options})) {
                 return x;
             }
         }

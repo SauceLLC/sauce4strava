@@ -4,9 +4,9 @@ import * as queues from '/src/common/jscoop/queues.js';
 import * as futures from '/src/common/jscoop/futures.js';
 import * as locks from '/src/common/jscoop/locks.js';
 
-const actsStore = new sauce.hist.db.ActivitiesStore();
-const peaksStore = new sauce.hist.db.PeaksStore();
-const streamsStore = new sauce.hist.db.StreamsStore();
+const actsStore = sauce.hist.db.ActivitiesStore.singleton();
+const peaksStore = sauce.hist.db.PeaksStore.singleton();
+const streamsStore = sauce.hist.db.StreamsStore.singleton();
 const sleep = sauce.sleep;
 
 
@@ -19,7 +19,7 @@ async function getActivitiesStreams(activities, streams) {
         }
         actStreams.set(a.pk, {});
     }
-    for (const x of await streamsStore.getMany(streamKeys)) {
+    for (const x of await streamsStore.getMany(streamKeys, {_skipClone: true})) {
         if (x) {
             actStreams.get(x.activity)[x.stream] = x.data;
         }
@@ -242,8 +242,7 @@ export class OffloadProcessor extends futures.Future {
     async _runProcessor() {
         console.debug(`Offload processor startup`);
         try {
-            await this.processor();
-            this._stopping = true;
+            await this.processor().finally(() => this._stopping = true);
             await this._incoming.join();
             this.setResult();
         } catch(e) {
@@ -276,7 +275,7 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
         while (recentActivity && remainingAttempts--) {
             const zones = await sauce.perf.fetchHRZones(recentActivity.id);
             if (!zones) {
-                recentActivity = await actsStore.getPrevSibling(recentActivity.id);
+                recentActivity = await actsStore.getPrevSibling(recentActivity);
                 continue;
             }
             invalidate = !origHash || JSON.stringify(zones) !== origHash;
@@ -371,11 +370,11 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
         distance: 'distance_raw',
         altitudeGain: 'elevation_gain_raw',
     };
+    const updated = [];
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
         const activeStream = streams.active;
         const stats = {};
-        activity.set({stats});
         for (const [statKey, rawKey] of Object.entries(rawAttrMap)) {
             const rawVal = activity.get(rawKey);
             if (rawVal != null) {
@@ -423,7 +422,13 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 continue;
             }
         }
+        const prevStats = activity.get('stats');
+        if ((prevStats && JSON.stringify(prevStats)) !== (stats && JSON.stringify(stats))) {
+            updated.push(activity);
+            activity.set({stats});
+        }
     }
+    await actsStore.saveModels(updated);
 }
 
 
@@ -449,12 +454,18 @@ export async function peaksProcessor({manifest, activities, athlete}) {
 }
 
 
+function rankUpdated(a, b) {
+    return (a && a.level) !== (b && b.level);
+}
+
+
 export async function peaksWkgProcessor({manifest, activities, athlete}) {
     const ids = activities.map(x => x.pk);
-    const [powers, nps, xps] = await Promise.all([
-        peaksStore.getForActivities(ids, {type: 'power'}),
-        peaksStore.getForActivities(ids, {type: 'np'}),
-        peaksStore.getForActivities(ids, {type: 'xp'}),
+    const [wkgs, powers, nps, xps] = await Promise.all([
+        peaksStore.getForActivities(ids, {type: 'power_wkg', _skipClone: true}),
+        peaksStore.getForActivities(ids, {type: 'power', _skipClone: true}),
+        peaksStore.getForActivities(ids, {type: 'np', _skipClone: true}),
+        peaksStore.getForActivities(ids, {type: 'xp', _skipClone: true}),
     ]);
     const gender = athlete.get('gender') || 'male';
     const getRankLevel = (period, p, wp, weight) => {
@@ -474,16 +485,32 @@ export async function peaksWkgProcessor({manifest, activities, athlete}) {
         }
         for (const x of powers[index]) {
             const rankLevel = getRankLevel(x.activeTime, x.value, x.wp, weight);
-            peaks.push({...x, rankLevel});
-            peaks.push({...x, rankLevel, type: 'power_wkg', value: x.value / weight});
+            if (rankUpdated(rankLevel, x.rankLevel)) {
+                peaks.push({...x, rankLevel});
+            }
+            const wkgPeak = {...x, rankLevel, type: 'power_wkg', value: x.value / weight};
+            let noChange;
+            for (const xx of wkgs[index]) {
+                if (xx.period === x.period && wkgPeak.value === xx.value) {
+                    noChange = true;
+                    break;
+                }
+            }
+            if (!noChange) {
+                peaks.push(wkgPeak);
+            }
         }
         for (const x of nps[index]) {
             const rankLevel = getRankLevel(x.activeTime, x.power, x.value, weight);
-            peaks.push({...x, rankLevel});
+            if (rankUpdated(rankLevel, x.rankLevel)) {
+                peaks.push({...x, rankLevel});
+            }
         }
         for (const x of xps[index]) {
             const rankLevel = getRankLevel(x.activeTime, x.power, x.value, weight);
-            peaks.push({...x, rankLevel});
+            if (rankUpdated(rankLevel, x.rankLevel)) {
+                peaks.push({...x, rankLevel});
+            }
         }
     }
     await peaksStore.putMany(peaks);
@@ -542,7 +569,7 @@ export class TrainingLoadProcessor extends OffloadProcessor {
         let ctl = 0;
         let seed;
         // Rewind until we find a valid seed record from a prior day...
-        for await (const a of actsStore.siblings(oldest.pk, {models: true, direction: 'prev'})) {
+        for await (const a of actsStore.siblings(oldest, {models: true, direction: 'prev'})) {
             if (a.getLocaleDay().getTime() !== oldest.getLocaleDay().getTime()) {
                 const tl = a.get('training');
                 if (!tl) {

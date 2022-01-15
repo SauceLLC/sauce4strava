@@ -6,8 +6,8 @@ importScripts('/src/bg/hist/db.js');
 importScripts('/src/common/lib.js');
 
 
-const streamsStore = new sauce.hist.db.StreamsStore();
-const peaksStore = new sauce.hist.db.PeaksStore();
+const streamsStore = sauce.hist.db.StreamsStore.singleton();
+const peaksStore = sauce.hist.db.PeaksStore.singleton();
 const sleep = sauce.sleep;
 
 
@@ -32,14 +32,12 @@ async function getActivitiesStreams(activities, streamsDesc) {
 }
 
 
-
 async function findPeaks(athlete, activities, periods, distances) {
     const actStreams = await getActivitiesStreams(activities, {
-        run: ['time', 'active', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance', 'heartrate'],
-        ride: ['time', 'active', 'watts', 'distance', 'heartrate'],
-        other: ['time', 'active', 'watts', 'watts_calc', 'distance', 'heartrate'],
+        run: ['time', 'active', 'heartrate', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance'],
+        ride: ['time', 'active', 'heartrate', 'watts'],
+        other: ['time', 'active', 'heartrate', 'watts'],
     });
-    await sleep(1);  // Workaround for Safari IDB transaction performance bug.
     const peaks = [];
     const errors = [];
     for (const activity of activities) {

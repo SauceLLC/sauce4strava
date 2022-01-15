@@ -22,10 +22,10 @@ const sleep = sauce.sleep;
 let syncManager;
 
 
-export const actsStore = new ActivitiesStore();
-export const streamsStore = new StreamsStore();
-export const athletesStore = new AthletesStore();
-export const peaksStore = new PeaksStore();
+export const actsStore = ActivitiesStore.singleton();
+export const streamsStore = StreamsStore.singleton();
+export const athletesStore = AthletesStore.singleton();
+export const peaksStore = PeaksStore.singleton();
 
 
 function issubclass(A, B) {
@@ -477,7 +477,7 @@ async function setAthleteHistoryValues(athleteId, key, data, options={}) {
     const clean = athlete.setHistoryValues(key, data);
     await athlete.save();
     if (!options.disableSync) {
-        await invalidateAthleteSyncState(athleteId, 'local', 'activity-stats');
+        await invalidateAthleteSyncState(athleteId, 'local', 'athlete-settings');
     }
     return clean;
 }
@@ -769,6 +769,8 @@ class SyncJob extends EventTarget {
         this._rateLimiters = getStreamRateLimiterGroup();
         this._procQueue = new queues.Queue();
         this._running = false;
+        this.niceSaveActivities = sauce.asyncDebounced(this.saveActivities);
+        this.niceSendProgressEvent = sauce.asyncDebounced(this.sendProgressEvent);
         this.setStatus('init');
     }
 
@@ -1218,16 +1220,15 @@ class SyncJob extends EventTarget {
         }
     }
 
-    async _localSetSyncError(activities, manifest, e) {
+    _localSetSyncError(activities, manifest, e) {
         console.warn(`Top level local processing error (${manifest.name}) v${manifest.version}`, e);
         sauce.report.error(e);
         for (const a of activities) {
             a.setSyncError(manifest, e);
         }
-        await actsStore.saveModels(activities);
     }
 
-    async _localSetSyncDone(activities, manifest) {
+    _localSetSyncDone(activities, manifest) {
         // NOTE: The processor is free to use setSyncError(), but we really can't
         // trust them to consistently use setSyncSuccess().  Failing to do so would
         // be a disaster, so we handle that here.  The model is: Optionally tag the
@@ -1238,17 +1239,18 @@ class SyncJob extends EventTarget {
                 a.setSyncSuccess(manifest);
             }
         }
-        await actsStore.saveModels(activities);
     }
 
     async _localProcessWorker() {
         let batchLimit = 20;
+        const needSave = new Set();
         const done = new Set();
         const batch = new Set();
         const offloaded = new Set();
         const offloadedActive = new Map();
         let procQueue = this._procQueue;
         let pendingProgressEvent;
+        let pendingSave;
         while ((procQueue || offloaded.size) && !this._cancelEvent.isSet()) {
             const available = [...offloaded].some(x => x.available) || (procQueue && procQueue.size);
             if (!available) {
@@ -1257,10 +1259,10 @@ class SyncJob extends EventTarget {
                     // No new incoming data, instruct offload queues to get busy or die..
                     for (const x of offloaded) {
                         if (x.pending) {
-                            console.warn('Requesting offload processor flush:', x.manifest.name);
+                            console.info('Requesting offload processor flush:', x.manifest.name);
                             x.flush();
                         } else {
-                            console.warn('Requesting offload processor stop:', x.manifest.name);
+                            console.info('Requesting offload processor stop:', x.manifest.name);
                             x.stop();
                         }
                     }
@@ -1289,7 +1291,7 @@ class SyncJob extends EventTarget {
                         totTime += now - a._procStart;
                         delete a._procStart;
                     }
-                    await this._localSetSyncDone(finished, m);
+                    this._localSetSyncDone(finished, m);
                     const elapsed = Math.round(totTime / finished.length).toLocaleString();
                     const rate = Math.round(finished.length / (totTime / finished.length / 1000)).toLocaleString();
                     console.debug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
@@ -1303,11 +1305,11 @@ class SyncJob extends EventTarget {
                             throw new Error("Processor prematurely stopped: " + m.name);
                         }
                     } catch(e) {
-                        await this._localSetSyncError(proc.drainAll(), m, e);
+                        this._localSetSyncError(proc.drainAll(), m, e);
                     } finally {
                         offloaded.delete(proc);
                     }
-                    console.warn("Offload processor finished:", m.name);
+                    console.info("Offload processor finished:", m.name);
                 }
                 if (batch.size >= batchLimit) {
                     break;
@@ -1331,6 +1333,7 @@ class SyncJob extends EventTarget {
                     if (!m) {
                         batch.delete(a);
                         done.add(a);
+                        needSave.add(a);
                         continue;
                     }
                     if (!manifestBatches.has(m)) {
@@ -1346,9 +1349,6 @@ class SyncJob extends EventTarget {
                     if (issubclass(processor, processors.OffloadProcessor)) {
                         let proc = offloadedActive.get(processor);
                         if (!proc || proc.stopping) {
-                            if (proc) {
-                                console.warn("CAUHTEONE!!!", proc);
-                            }
                             console.debug("Creating new offload processor:", m.name);
                             proc = new processor({
                                 manifest: m,
@@ -1379,9 +1379,9 @@ class SyncJob extends EventTarget {
                                 athlete: this.athlete,
                                 cancelEvent: this._cancelEvent,
                             });
-                            await this._localSetSyncDone(activities, m);
+                            this._localSetSyncDone(activities, m);
                         } catch(e) {
-                            await this._localSetSyncError(activities, m, e);
+                            this._localSetSyncError(activities, m, e);
                         }
                         const elapsed = Math.round((Date.now() - s)).toLocaleString();
                         const rate = Math.round(activities.length / ((Date.now() - s) / 1000)).toLocaleString();
@@ -1389,35 +1389,40 @@ class SyncJob extends EventTarget {
                             `activities (${rate}/s)`);
                     }
                 }));
-                pendingProgressEvent = this.sendProgressEvent(done);
+                pendingSave = this.niceSaveActivities(needSave);
+                pendingProgressEvent = this.niceSendProgressEvent(done);
             }
         }
+        await pendingSave;
         await pendingProgressEvent;  // Don't send progress events AFTER other state events.
     }
 
+    async saveActivities(needSave) {
+        const saving = Array.from(needSave);
+        needSave.clear();
+        await actsStore.saveModels(saving);
+    }
+
     async sendProgressEvent(done) {
-        const chain = this._pendingProgressEvent || Promise.resolve();
-        this._pendingProgressEvent = chain.then(async () => {
-            const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
-            const progressHash = JSON.stringify(counts);
-            if (progressHash === this._lastProgressHash && !done.size) {
-                return;
-            }
-            this._lastProgressHash = progressHash;
-            const ev = new Event('progress');
-            const d = Array.from(done);
-            done.clear();
-            ev.data = {
-                counts,
-                done: {
-                    count: d.length,
-                    oldest: d.length ? sauce.data.min(d.map(x => x.get('ts'))) : null,
-                    newest: d.length ? sauce.data.max(d.map(x => x.get('ts'))) : null,
-                    ids: d.map(x => x.pk),
-                },
-            };
-            this.dispatchEvent(ev);
-        });
+        const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
+        const progressHash = JSON.stringify(counts);
+        if (progressHash === this._lastProgressHash && !done.size) {
+            return;
+        }
+        this._lastProgressHash = progressHash;
+        const ev = new Event('progress');
+        const d = Array.from(done);
+        done.clear();
+        ev.data = {
+            counts,
+            done: {
+                count: d.length,
+                oldest: d.length ? sauce.data.min(d.map(x => x.get('ts'))) : null,
+                newest: d.length ? sauce.data.max(d.map(x => x.get('ts'))) : null,
+                ids: d.map(x => x.pk),
+            },
+        };
+        this.dispatchEvent(ev);
     }
 
     async _fetchStreams(activity, q) {

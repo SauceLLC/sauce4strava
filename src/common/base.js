@@ -509,14 +509,23 @@ self.sauceBaseInit = function sauceBaseInit() {
     }
 
 
+    const _dbStoreInstances = new Map();
     class DBStore {
+        static singleton(...args) {
+            // Singleton for cache coherency.
+            if (!_dbStoreInstances.has(this)) {
+                _dbStoreInstances.set(this, new this(...args));
+            }
+            return _dbStoreInstances.get(this);
+        }
+
         constructor(db, name, options={}) {
             this.db = db;
             this.name = name;
             this.Model = options.Model;
             this._started = false;
             if (canCacheIDB) {
-                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 1000);
+                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 10000);
                 this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 10000);
                 cacheInvalidationCh.addEventListener('message',
                     ev => void this.invalidateCaches({noBroadcast: true}));
@@ -557,30 +566,39 @@ self.sauceBaseInit = function sauceBaseInit() {
                 throw new TypeError('Misuse of _getIDBStore: db is not started');
             }
             if (options.idbStore) {
-                if (options.idbStore.name !== this.name || options.idbStore.transaction.mode !== mode) {
+                if (options.idbStore.name !== this.name) {
                     throw new TypeError("Invalid options.idbStore");
                 }
+                options.idbStore.commitOwn = () => void 0;
                 return options.idbStore;
             }
-            return this.db.getStore(this.name, mode);
+            const s = this.db.getStore(this.name, mode);
+            s.commitOwn = s.transaction.commit ? () => s.transaction.commit() : () => void 0;
+            return s;
         }
 
 
         async _readQuery(getter, query, options={}, ...getterExtraArgs) {
-            const cacheKey = this._queryCacheKey(query, options, getter);
-            if (cacheKey && this._readsCache.has(cacheKey)) {
-                return this._deepClone(this._readsCache.get(cacheKey));
+            let cacheKey;
+            if (!options._skipCache) {
+                cacheKey = this._queryCacheKey(query, options, getter);
+                if (cacheKey && this._readsCache.has(cacheKey)) {
+                    const data = this._readsCache.get(cacheKey);
+                    return options._skipClone ? data : this._deepClone(data);
+                }
             }
             if (!this._started) {
                 await this._start();
             }
             const idbStore = this._getIDBStore('readonly', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
-            const data = await this._request(ifc[getter](query, ...getterExtraArgs));
+            const p = this._request(ifc[getter](query, ...getterExtraArgs));
+            idbStore.commitOwn();
+            const data = await p;
             if (cacheKey) {
                 this._readsCache.set(cacheKey, data);
             }
-            return this._deepClone(data);
+            return options._skipClone ? data : this._deepClone(data);
         }
 
         _encodeQueryBounds(b) {
@@ -653,13 +671,18 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async _manyGetter(getter, queries, options={}) {
+            if (!queries.length) {
+                return [];
+            }
             if (!this._started) {
                 await this._start();
             }
             const idbStore = this._getIDBStore('readonly', options);
-            return await Promise.all(queries.map(q =>
+            const p = Promise.all(queries.map(q =>
                 this._readQuery(getter, q, {...options, idbStore}).then(x =>
                     options.models ? new this.Model(x, this) : x)));
+            idbStore.commitOwn();
+            return await p;
         }
 
         async getMany(...args) {
@@ -678,8 +701,13 @@ self.sauceBaseInit = function sauceBaseInit() {
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = await this._request(ifc.get(query));
             const updated = Object.assign({}, data, updates);
-            await this._request(idbStore.put(updated));
-            this.invalidateCaches();
+            const p = this._request(idbStore.put(updated));
+            idbStore.commitOwn();
+            try {
+                await p;
+            } finally {
+                this.invalidateCaches();
+            }
             return updated;
         }
 
@@ -693,16 +721,14 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (!this._started) {
                 await this._start();
             }
-            await new Promise((resolve, reject) => {
-                let remaining = updatesMap.size;
+            const p = new Promise((resolve, reject) => {
+                let putsRemaining = updatesMap.size;
+                let getsRemaining = putsRemaining;
                 const idbStore = this._getIDBStore('readwrite', options);
                 const ifc = options.index ? idbStore.index(options.index) : idbStore;
-                const onAnyError = ev => {
-                    reject(ev.target.error);
-                    idbStore.transaction.abort();
-                };
+                const onAnyError = ev => reject(ev.target.error);
                 const onPutSuccess = () => {
-                    if (!--remaining) {
+                    if (!--putsRemaining) {
                         resolve();
                     }
                 };
@@ -713,10 +739,17 @@ self.sauceBaseInit = function sauceBaseInit() {
                         const put = idbStore.put(Object.assign({}, get.result, updates));
                         put.addEventListener('error', onAnyError);
                         put.addEventListener('success', onPutSuccess);
+                        if (!--getsRemaining) {
+                            idbStore.commitOwn();
+                        }
                     });
                 }
             });
-            this.invalidateCaches();
+            try {
+                await p;
+            } finally {
+                this.invalidateCaches();
+            }
         }
 
         async put(data, options={}) {
@@ -727,25 +760,40 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (options.index) {
                 throw new Error("DEPRECATED");  // Don't use autoIncrement
             }
-            await this._request(idbStore.put(data));
-            this.invalidateCaches();
+            const p = this._request(idbStore.put(data));
+            idbStore.commitOwn();
+            try {
+                await p;
+            } finally {
+                this.invalidateCaches();
+            }
         }
 
         async putMany(datas, options={}) {
+            if (!datas.length) {
+                return;
+            }
             if (!this._started) {
                 await this._start();
             }
             const idbStore = this._getIDBStore('readwrite', options);
             const index = options.index && idbStore.index(options.index);
-            // XXX add transaction.abort on failure of any one request
-            await Promise.all(datas.map(async data => {
-                let key;
-                if (index) {
-                    key = await this._request(index.getKey(this.extractKey(data, index.keyPath)));
-                }
-                await this._request(idbStore.put(data, key));
-            }));
-            this.invalidateCaches();
+            let remaining = datas.length;
+            try {
+                await Promise.all(datas.map(async data => {
+                    let key;
+                    if (index) {
+                        key = await this._request(index.getKey(this.extractKey(data, index.keyPath)));
+                    }
+                    const p = this._request(idbStore.put(data, key));
+                    if (!--remaining) {
+                        idbStore.commitOwn();
+                    }
+                    return p;
+                }));
+            } finally {
+                this.invalidateCaches();
+            }
         }
 
         async delete(query, options={}) {
@@ -762,13 +810,20 @@ self.sauceBaseInit = function sauceBaseInit() {
             } else {
                 requests.push(idbStore.delete(query));
             }
-            // XXX add transaction.abort on failure of any one request
-            await Promise.all(requests.map(x => this._request(x)));
-            this.invalidateCaches();
+            const p = Promise.all(requests.map(x => this._request(x)));
+            idbStore.commitOwn();
+            try {
+                await p;
+            } finally {
+                this.invalidateCaches();
+            }
             return requests.length;
         }
 
         async deleteMany(queries, options={}) {
+            if (!queries.length) {
+                return;
+            }
             if (!this._started) {
                 await this._start();
             }
@@ -785,9 +840,13 @@ self.sauceBaseInit = function sauceBaseInit() {
             } else {
                 keys = queries;
             }
-            // XXX add transaction.abort on failure of any one request
-            await Promise.all(keys.map(k => this._request(idbStore.delete(k))));
-            this.invalidateCaches();
+            const p = Promise.all(keys.map(k => this._request(idbStore.delete(k))));
+            idbStore.commitOwn();
+            try {
+                await p;
+            } finally {
+                this.invalidateCaches();
+            }
         }
 
         async *values(query, options={}) {
@@ -871,7 +930,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
         }
 
-        async saveModels(models) {
+        async saveModels(models, options) {
             const updatesMap = new Map();
             const updatedSave = new Map();
             for (const model of models) {
@@ -888,7 +947,7 @@ self.sauceBaseInit = function sauceBaseInit() {
                 model._updated.clear();
             }
             try {
-                await this.updateMany(updatesMap);
+                await this.updateMany(updatesMap, options);
             } catch(e) {
                 // Restore updated keys before throwing, so future saves of the model
                 // might recover and persist their changes.
@@ -1022,7 +1081,7 @@ self.sauceBaseInit = function sauceBaseInit() {
     class TTLCache {
         constructor(bucket, ttl) {
             const db = new CacheDatabase('SauceCache');
-            this.store = new CacheStore(db, 'entries');
+            this.store = CacheStore.singleton(db, 'entries');
             this.bucket = bucket;
             this.ttl = ttl;
             this.gc();  // bg okay
