@@ -64,7 +64,8 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'extra-streams',
-    version: 2, // Updated activeStream and running watts
+    version: 3, // Added a dep. :(
+    depends: ['athlete-settings'], // XXX Unfortunatly yes, just for runs with watts_calc
     data: {processor: processors.extraStreamsProcessor}
 });
 
