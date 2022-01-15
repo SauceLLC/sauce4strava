@@ -8,7 +8,6 @@ importScripts('/src/common/lib.js');
 
 const streamsStore = sauce.hist.db.StreamsStore.singleton();
 const peaksStore = sauce.hist.db.PeaksStore.singleton();
-const sleep = sauce.sleep;
 
 
 async function getActivitiesStreams(activities, streamsDesc) {
