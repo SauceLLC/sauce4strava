@@ -2,18 +2,6 @@
 
 @mixin dialog {
     &.sauce-perf-predictor {
-        // height settings for sticky output..
-        height: max-content !important;
-        // Fixed center pos...
-        position: fixed;
-        top: 1rem !important;
-        left: 1rem !important;
-        right: 1rem !important;
-        bottom: 1rem !important;
-        margin: auto;
-        max-width: calc(100vw - 2rem - (100vw - 100%));
-        max-height: calc(100vh - 2rem - (100vh - 100%));
-
         form.sauce-key-value {
             key {
                 word-break: break-all;

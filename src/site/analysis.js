@@ -806,7 +806,7 @@ sauce.ns('analysis', ns => {
                         }[source];
                         const unit = ns.paceFormatter.shortUnitKey();
                         for (const range of distRanges) {
-                            const roll = sauce.pace.bestPace(range.value, timeStream, dataStream, {activeStream});
+                            const roll = sauce.pace.bestPace(range.value, timeStream, dataStream);
                             if (roll) {
                                 const native = roll.avg();
                                 const value = humanPace(native);
@@ -2946,8 +2946,6 @@ sauce.ns('analysis', ns => {
             flex: true,
             width: '62em',
             dialogClass: 'sauce-perf-predictor no-pad',
-            resizable: false, // XXX don't like anymore, fix this.
-            draggable: false, // XXX don't like anymore, fix this.
             closeOnMobileBack: ns.isMobile,
         });
         function fget(name) {

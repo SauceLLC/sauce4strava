@@ -7,7 +7,6 @@ import * as locks from '/src/common/jscoop/locks.js';
 const actsStore = sauce.hist.db.ActivitiesStore.singleton();
 const peaksStore = sauce.hist.db.PeaksStore.singleton();
 const streamsStore = sauce.hist.db.StreamsStore.singleton();
-const sleep = sauce.sleep;
 
 
 async function getActivitiesStreams(activities, streams) {
@@ -31,7 +30,7 @@ async function getActivitiesStreams(activities, streams) {
 class WorkerPoolExecutor {
     constructor(url, options={}) {
         this.url = url;
-        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 4 || 16);
+        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2 || 8);
         this._idle = new Set();
         this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
@@ -202,11 +201,11 @@ export class OffloadProcessor extends futures.Future {
                 waiters.push(this._incoming.wait({size: maxSize}));
             }
             if (minWait && maxWait) {
-                waiters.push(sleep(Math.min(minWait, deadline - Date.now())));
+                waiters.push(sauce.sleep(Math.min(minWait, deadline - Date.now())));
             } else if (minWait) {
-                waiters.push(sleep(minWait));
+                waiters.push(sauce.sleep(minWait));
             } else if (maxWait) {
-                waiters.push(sleep(maxWait));
+                waiters.push(sauce.sleep(maxWait));
             }
             await Promise.race(waiters);
             if (this._cancelEvent.isSet() || this._stopEvent.isSet()) {
@@ -315,47 +314,113 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
 
 export async function extraStreamsProcessor({manifest, activities, athlete}) {
     const actStreams = await getActivitiesStreams(activities,
-        ['time', 'moving', 'cadence', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance']);
-    const extraStreams = [];
+        ['time', 'moving', 'active', 'cadence', 'watts', 'watts_calc', 'distance',
+         'grade_adjusted_distance']);
+    const upStreams = [];
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
-        let runWatts;
-        if (activity.get('basetype') === 'run') {
+        if (!streams.moving) {
+            continue;
+        }
+        const isTrainer = activity.get('trainer');
+        const basetype = activity.get('basetype');
+        const isSwim = basetype === 'swim';
+        const isRun = basetype === 'run';
+        if (isRun) {
             const gad = streams.grade_adjusted_distance;
             const weight = athlete.getWeightAt(activity.get('ts'));
-            if (gad && weight && streams.time.length > 100) {
+            if (gad && weight && streams.time.length > 25) {
                 try {
-                    runWatts = sauce.pace.createWattsStream(streams.time, gad, weight);
-                    extraStreams.push({
-                        activity: activity.pk,
-                        athlete: athlete.pk,
-                        stream: 'watts_calc',
-                        data: runWatts,
-                    });
+                    const data = sauce.pace.createWattsStream(streams.time, gad, weight);
+                    if (!sauce.data.isArrayEqual(data, streams.watts_calc)) {
+                        streams.watts_calc = data;
+                        upStreams.push({activity: activity.pk, athlete: athlete.pk, stream: 'watts_calc', data});
+                    }
                 } catch(e) {
+                    debugger;
                     console.warn("Failed to create running watts stream for: " + activity, e);
                     activity.setSyncError(manifest, e);
                 }
             }
         }
-        if (streams.moving) {
-            const isTrainer = activity.get('trainer');
+        try {
+            const watts = streams.watts || (basetype === 'run' && streams.watts_calc) || undefined;
+            const data = sauce.data.createActiveStream({...streams, watts}, {isTrainer, isSwim});
+            if (!sauce.data.isArrayEqual(data, streams.active)) {
+                upStreams.push({activity: activity.pk, athlete: athlete.pk, stream: 'active', data});
+            }
+        } catch(e) {
+            debugger;
+            console.warn("Failed to create active stream for: " + activity, e);
+            activity.setSyncError(manifest, e);
+        }
+    }
+    console.warn("streams", upStreams.length, activities.length);
+    await streamsStore.putMany(upStreams);
+}
+
+
+/*
+ * Handle watts_calc generation and also peak power for runs seperately.
+ * Any weight changes will require these to be updated and this makes
+ * much faster work of those sync updates than rerunning all of the peak
+ * calculations.  Note that extra streams may have already generated the
+ * watts_calc stream for us, but we have to double check that it's not
+ * updated here too.
+ */
+export async function runPowerProcessor({manifest, activities, athlete}) {
+    const actStreams = await getActivitiesStreams(activities,
+        ['time', 'active', 'watts', 'watts_calc', 'grade_adjusted_distance']);
+    const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
+    const upStreams = [];
+    const upPeaks = [];
+    for (const activity of activities) {
+        if (activity.get('basetype') !== 'run') {
+            continue;
+        }
+        const streams = actStreams.get(activity.pk);
+        const gad = streams.grade_adjusted_distance;
+        const weight = athlete.getWeightAt(activity.get('ts'));
+        if (gad && weight && streams.time.length > 25) {
             try {
-                const activeStream = sauce.data.createActiveStream({watts: runWatts, ...streams},
-                    {isTrainer});
-                extraStreams.push({
-                    activity: activity.pk,
-                    athlete: athlete.pk,
-                    stream: 'active',
-                    data: activeStream
-                });
+                const data = sauce.pace.createWattsStream(streams.time, gad, weight);
+                if (!sauce.data.isArrayEqual(data, streams.watts_calc)) {
+                    streams.watts_calc = data;
+                    upStreams.push({activity: activity.pk, athlete: athlete.pk, stream: 'watts_calc', data});
+                }
             } catch(e) {
-                console.warn("Failed to create active stream for: " + activity, e);
+                debugger;
+                console.warn("Failed to create running watts stream for: " + activity, e);
+                activity.setSyncError(manifest, e);
+            }
+        }
+        if (streams.watts && streams.watts_calc) {
+            try {
+                const watts = streams.watts || streams.watts_calc;
+                for (const period of periods.filter(x => !!streams.watts || x >= 300)) {
+                    const rp = sauce.power.peakPower(period, streams.time, watts,
+                        {activeStream: streams.active});
+                    if (rp) {
+                        const entry = sauce.peaks.createStoreEntry('power', period, rp.avg(),
+                            rp, streams.time, activity);
+                        if (entry) {
+                            upPeaks.push(entry);
+                        }
+                    }
+                }
+            } catch(e) {
+                debugger;
+                console.error("Failed to create peaks for: " + activity, e);
                 activity.setSyncError(manifest, e);
             }
         }
     }
-    await streamsStore.putMany(extraStreams);
+    console.warn("runstreams", upStreams.length, activities.length);
+    console.warn("runpeaks", upPeaks.length, activities.length);
+    await Promise.all([
+        streamsStore.putMany(upStreams),
+        peaksStore.putMany(upPeaks),
+    ]);
 }
 
 
@@ -370,7 +435,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
         distance: 'distance_raw',
         altitudeGain: 'elevation_gain_raw',
     };
-    const updated = [];
+    const upActs = [];
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
         const activeStream = streams.active;
@@ -395,6 +460,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
                     ltHR, restingHR, maxHR, athlete.get('gender'));
             } catch(e) {
+                debugger;
                 activity.setSyncError(manifest, e);
                 continue;
             }
@@ -424,11 +490,12 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
         }
         const prevStats = activity.get('stats');
         if ((prevStats && JSON.stringify(prevStats)) !== (stats && JSON.stringify(stats))) {
-            updated.push(activity);
+            upActs.push(activity);
             activity.set({stats});
         }
     }
-    await actsStore.saveModels(updated);
+    console.warn("activities", upActs.length, activities.length);
+    await actsStore.saveModels(upActs);
 }
 
 
@@ -438,7 +505,7 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const work = [];
     const len = activities.length;
     const concurrency = Math.min(navigator.hardwareConcurrency || 12);
-    const step = Math.max(20, Math.ceil(Math.max(len / concurrency)));
+    const step = Math.max(200, Math.ceil(Math.max(len / concurrency)));
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
     for (let i = 0; i < len; i += step) {

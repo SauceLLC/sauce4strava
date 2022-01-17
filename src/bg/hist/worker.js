@@ -33,13 +33,14 @@ async function getActivitiesStreams(activities, streamsDesc) {
 
 async function findPeaks(athlete, activities, periods, distances) {
     const actStreams = await getActivitiesStreams(activities, {
-        run: ['time', 'active', 'heartrate', 'watts', 'watts_calc', 'distance', 'grade_adjusted_distance'],
+        run: ['time', 'active', 'heartrate', 'distance', 'grade_adjusted_distance'],
         ride: ['time', 'active', 'heartrate', 'watts'],
         other: ['time', 'active', 'heartrate', 'watts'],
     });
-    const peaks = [];
+    const upPeaks = [];
     const errors = [];
     for (const activity of activities) {
+        const isRun = activity.basetype === 'run';
         if (activity.peaksExclude) {
             const count = await peaksStore.deleteForActivity(activity.id);
             if (count) {
@@ -48,53 +49,41 @@ async function findPeaks(athlete, activities, periods, distances) {
             continue;
         }
         const streams = actStreams.get(activity.id);
-        const activeStream = streams.active;
-        const isRun = activity.basetype === 'run';
-        const isRide = activity.basetype === 'ride';
-        const addPeak = (type, period, value, roll, extra) => (value > 0 && value < Infinity) && peaks.push({
-            type,
-            period,
-            value,
-            timeOffset: roll.firstTime(),
-            start: streams.time.indexOf(roll.firstTime({noPad: true})),
-            end: streams.time.indexOf(roll.lastTime({noPad: true})),
-            athlete: athlete.id,
-            activity: activity.id,
-            activityType: activity.basetype,
-            ts: activity.ts,
-            activeTime: roll.active(),
-            ...extra,
-        });
+        const addPeak = (a1, a2, a3, a4, extra) => {
+            const entry = sauce.peaks.createStoreEntry(a1, a2, a3, a4, streams.time, activity, extra);
+            if (entry) {
+                upPeaks.push(entry);
+            }
+        };
         if (streams.heartrate) {
             try {
                 for (const period of periods) {
                     const roll = sauce.data.peakAverage(period, streams.time,
-                        streams.heartrate, {active: true, ignoreZeros: true, activeStream});
+                        streams.heartrate, {active: true, ignoreZeros: true, activeStream: streams.active});
                     if (roll) {
                         addPeak('hr', period, roll.avg(), roll);
                     }
                 }
             } catch(e) {
                 // XXX make this better than a big try/catch
+                debugger;
                 console.error("Failed to create peaks for: " + activity.id, e);
                 errors.push({activity: activity.id, error: e.message});
             }
         }
-        if (streams.watts || (isRun && streams.watts_calc)) {
+        if (streams.watts && !isRun) { // Runs have their own processor for this.
             try {
-                const watts = streams.watts || streams.watts_calc;
-                for (const period of periods.filter(x => !!streams.watts || x >= 300)) {
+                for (const period of periods) {
                     // Instead of using peakPower, peakNP, we do our own reduction to save
                     // repeative iterations on the same dataset; it's about 50% faster.
                     const rp = sauce.power.correctedRollingPower(streams.time, period);
                     const leadCloneOpts = {inlineXP: false, inlineNP: false};
                     if (rp) {
-                        const wrp = period >= 300 && isRide &&
-                            rp.clone({active: true, inlineNP: true, inlineXP: true});
+                        const wrp = period >= 300 && rp.clone({active: true, inlineNP: true, inlineXP: true});
                         const leaders = {};
                         for (let i = 0; i < streams.time.length; i++) {
                             const t = streams.time[i];
-                            const w = watts[i];
+                            const w = streams.watts[i];
                             const a = streams.active[i];
                             rp.add(t, w, a);
                             if (wrp) {
@@ -137,6 +126,7 @@ async function findPeaks(athlete, activities, periods, distances) {
                 }
             } catch(e) {
                 // XXX make this better than a big try/catch
+                debugger;
                 console.error("Failed to create peaks for: " + activity.id, e);
                 errors.push({activity: activity.id, error: e.message});
             }
@@ -144,13 +134,12 @@ async function findPeaks(athlete, activities, periods, distances) {
         if (isRun && streams.distance) {
             try {
                 for (const distance of distances) {
-                    let roll = sauce.pace.bestPace(distance, streams.time, streams.distance, {activeStream});
+                    let roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
                     if (roll) {
                         addPeak('pace', distance, roll.avg(), roll);
                     }
                     if (streams.grade_adjusted_distance) {
-                        roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance,
-                            {activeStream});
+                        roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance);
                         if (roll) {
                             addPeak('gap', distance, roll.avg(), roll);
                         }
@@ -158,12 +147,14 @@ async function findPeaks(athlete, activities, periods, distances) {
                 }
             } catch(e) {
                 // XXX make this better than a big try/catch
+                debugger;
                 console.error("Failed to create peaks for: " + activity.id, e);
                 errors.push({activity: activity.id, error: e.message});
             }
         }
     }
-    await peaksStore.putMany(peaks);
+    console.warn('updating peaks', upPeaks.length);
+    await peaksStore.putMany(upPeaks);
     return errors;
 }
 

@@ -137,7 +137,9 @@ sauce.ns('data', function() {
         const activeStream = [];
         const speedMin = 0.447;  // meter/second (1mph)
         for (let i = 0; i < movingStream.length; i++) {
+            const timeGap = i ? timeStream[i] - timeStream[i - 1] : 0;
             activeStream.push(!!(
+                (timeGap && timeGap > 0) &&
                 (!i || timeStream[i] - timeStream[i - 1] < maxImmobileGap) &&
                 ((wattsStream && wattsStream[i]) ||
                  (useMoving && movingStream[i]) ||
@@ -263,6 +265,18 @@ sauce.ns('data', function() {
             yield i;
             last = i;
         }
+    }
+
+
+    function isArrayEqual(a, b) {
+        const len = a && a.length;
+        if (!b || len !== b.length) {
+            return false;
+        }
+        // Hand optimized for V8...
+        let i = 0;
+        for (; i < len && (a[i] === b[i] || (Number.isNaN(a[i]) && Number.isNaN(b[i]))); i++);
+        return i === len;
     }
 
 
@@ -398,7 +412,7 @@ sauce.ns('data', function() {
         _isActiveValue(value) {
             return !!(
                 value != null &&
-                !isNaN(value) &&
+                !Number.isNaN(value) &&
                 (value != 0 || (!this._ignoreZeros && !(value instanceof Zero)))
             );
         }
@@ -658,6 +672,7 @@ sauce.ns('data', function() {
         recommendedTimeGaps,
         tabulate,
         range,
+        isArrayEqual,
         RollingAverage,
         Break,
         Zero,
@@ -1529,7 +1544,7 @@ sauce.ns('power', function() {
         const firstHalfRatio = np1 / sauce.data.avg(hrStream.slice(0, midHRIndex));
         const secondHalfRatio = np2 / sauce.data.avg(hrStream.slice(midHRIndex));
         const r = (firstHalfRatio - secondHalfRatio) / firstHalfRatio;
-        if (isNaN(r)) {
+        if (Number.isNaN(r)) {
             debugger;
         }
         return r;
@@ -1585,13 +1600,14 @@ sauce.ns('pace', function() {
             }
         }
 
-        avg() {
+        avg(options={}) {
             const dist = this.distance();
-            const elapsed = this.elapsed();
-            if (!dist || !elapsed) {
+            const active = options.active != null ? options.active : this._active;
+            const duration = active ? this.active() : this.elapsed();
+            if (!dist || !duration) {
                 return;
             }
-            return elapsed / dist;
+            return duration / dist;
         }
 
         full(options) {
@@ -1622,7 +1638,7 @@ sauce.ns('pace', function() {
     function createWattsStream(timeStream, gradeDistStream, weight) {
         const vStream = sauce.data.smooth(5, timeStream.map((x, i) =>
             i ? (gradeDistStream[i] - gradeDistStream[i - 1]) / ((x - timeStream[i - 1]) || 1) : 0));
-        return vStream.map(v => sauce.pace.work(weight, v));
+        return vStream.map(v => Math.round(sauce.pace.work(weight, v)));
     }
 
 
@@ -2540,6 +2556,26 @@ sauce.ns('peaks', function() {
     }
 
 
+    function createStoreEntry(type, period, value, roll, timeStream, activity, extra) {
+        if (!value || value < 0 || value === Infinity) {
+            return;
+        }
+        activity = (activity instanceof sauce.db.Model) ? activity.data : activity;
+        return {
+            type,
+            period,
+            value,
+            timeOffset: roll.firstTime(),
+            start: timeStream.indexOf(roll.firstTime({noPad: true})),
+            end: timeStream.indexOf(roll.lastTime({noPad: true})),
+            athlete: activity.athlete,
+            activity: activity.id,
+            activityType: activity.basetype,
+            ts: activity.ts,
+            activeTime: roll.active(),
+            ...extra
+        };
+    }
 
     return {
         defaults,
@@ -2548,5 +2584,7 @@ sauce.ns('peaks', function() {
         setRanges,
         resetRanges,
         isCustom,
+        createStoreEntry,
     };
 });
+

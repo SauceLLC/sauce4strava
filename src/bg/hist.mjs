@@ -64,16 +64,23 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'extra-streams',
-    version: 3, // Added a dep. :(
-    depends: ['athlete-settings'], // XXX Unfortunatly yes, just for runs with watts_calc
+    version: 3, // Updated active AND run powers (again)
     data: {processor: processors.extraStreamsProcessor}
+});
+
+ActivityModel.addSyncManifest({
+    processor: 'local',
+    name: 'run-power',
+    version: 1,
+    depends: ['extra-streams', 'athlete-settings'],
+    data: {processor: processors.runPowerProcessor}
 });
 
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
     version: 2,
-    depends: ['extra-streams', 'athlete-settings'],
+    depends: ['extra-streams', 'athlete-settings', 'run-power'],
     data: {processor: processors.activityStatsProcessor}
 });
 
@@ -87,9 +94,9 @@ ActivityModel.addSyncManifest({
 
 ActivityModel.addSyncManifest({
     processor: 'local',
-    name: 'peaks_wkg',
+    name: 'peaks-wkg',
     version: 1,
-    depends: ['peaks', 'athlete-settings'],
+    depends: ['athlete-settings', 'run-power'],
     data: {processor: processors.peaksWkgProcessor}
 });
 
@@ -225,7 +232,7 @@ async function _makePeaksFilterOptions(options={}) {
     if (filter === 'year') {
         start = d.setMonth(0, 1);
         end = d.setMonth(12, 1);
-    } else if (!isNaN(Number(filter))) {
+    } else if (!isNaN(filter)) {
         end = +sauce.date.dayAfter(d);
         start = +sauce.date.adjacentDay(d, -Number(filter));
     } else {
