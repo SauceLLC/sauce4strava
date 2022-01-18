@@ -1,6 +1,7 @@
 #!/bin/sh -e
 
 TARGETS="es zh de fr it pt"
+PATH=$PATH:$(dirname $0)/../../node_modules/.bin
 
 for x in $TARGETS; do
     echo Translating to $x...
