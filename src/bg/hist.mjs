@@ -578,6 +578,24 @@ export async function integrityCheck(athleteId, options={}) {
 sauce.proxy.export(integrityCheck, {namespace});
 
 
+export async function danglingAthletes(options={}) {
+    const syncDisabledFor = [];
+    for (const x of await athletesStore.getAll()) {
+        if (!x.sync) {
+            syncDisabledFor.push({athlete: x.id, name: x.name});
+        }
+    }
+    let pruned = [];
+    if (options.prune) {
+        await athletesStore.deleteMany(syncDisabledFor.map(x => x.athlete));
+        pruned.push(...syncDisabledFor);
+        syncDisabledFor.length = 0;
+    }
+    return {syncDisabledFor, pruned};
+}
+sauce.proxy.export(danglingAthletes, {namespace});
+
+
 export async function danglingActivities(options={}) {
     const athletes = new Map((await athletesStore.getAll()).map(x => [x.id, x]));
     const noAthleteFor = [];
@@ -723,6 +741,7 @@ export async function dangling(options={}) {
         peaks: await danglingPeaks(options),
         streams: await danglingStreams(options),
         activities: await danglingActivities(options),
+        athletes: await danglingAthletes(options),
     };
 }
 sauce.proxy.export(dangling, {namespace});
