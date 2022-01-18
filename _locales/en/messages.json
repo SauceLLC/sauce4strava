@@ -4,6 +4,7 @@
     "athlete": {"message": "Athlete"},
     "type": {"message": "Type"},
     "performance": {"message": "Performance"},
+    "all_athletes": {"message": "All Athletes"},
 
     "analysis_options": {"message": "Options"},
     "analysis_tools": {"message": "Tools"},
@@ -252,7 +253,7 @@
 
     "sync_control_panel_intro": {"message": "Activity sync imports all activity history to allow for improved training charts and performance analysis."},
     "sync_control_panel_intro_help": {
-        "message": "Synchronizing activities allows Sauce to provide analysis features not possible without historical data.  This includes a new <a href=\"/sauce/performance\">performance page</a>, as well as extending existing pages, like Analysis, with insights about previous performances.  It is a great feature for advanced athletes and coaches! <br/><br/> Synchronization works by importing raw activity data to your web browser's <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">local database</a>.  This data is analyzed, indexed and stored for fast lookups later on.  As always, Sauce does not use remote servers, so it is recommended to save backups with the \"Export Data\" button."
+        "message": "Synchronizing activities allows Sauce to provide analysis features not possible without historical data.  This includes a new <a href=\"/sauce/performance\">performance page</a>, as well as extending existing pages, like Analysis, with insights about previous performances.  It is a great feature for advanced athletes and coaches! <br/><br/> Synchronization works by importing raw activity data to your web browser's <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">local database</a>.  This data is analyzed, indexed and stored for fast lookups later on.  As always, Sauce does not use remote servers, so it is recommended to create backups occasionally."
     },
     "sync_control_panel_enabled": {"message": "Enabled"},
     "sync_control_panel_status": {"message": "Status"},
@@ -284,6 +285,8 @@
     "sync_control_panel_sync_status": {"message": "Sync Status"},
     "sync_control_panel_enable_sync_and_get_started": {"message": "Enable sync and get started!"},
     "sync_control_panel_athlete_settings": {"message": "Athlete Settings"},
+    "sync_control_panel_backup_data": {"message": "Backup data"},
+    "sync_control_panel_restore_data": {"message": "Restore data"},
 
     "mutable_data_add_entry_tooltip": {"message": "Add a new entry"},
     "mutable_data_delete_entry_tooltip": {"message": "Delete this entry"},
@@ -373,7 +376,6 @@
     "performance_top": {"message": "Top"},
     "performance_all_results": {"message": "All Results"},
     "performance_all_dates": {"message": "All Dates"},
-    "performance_all_athletes": {"message": "All Athletes"},
     "performance_predicted": {"message": "Predicted"},
     "performance_fitness": {"message": "Fitness"},
     "performance_fatigue": {"message": "Fatigue"},

@@ -12,6 +12,9 @@
     "performance": {
         "message": "表现"
     },
+    "all_athletes": {
+        "message": "所有运动员"
+    },
     "analysis_options": {
         "message": "选项",
         "description": "IMMUTABLE"
@@ -523,6 +526,9 @@
     "analysis_download": {
         "message": "下载"
     },
+    "analysis_keyboard_tooltip": {
+        "message": "分析键盘控件处于活动状态。当分析图表聚焦时，您可以使用箭头键更改选择或突出显示的数据。左/右：向左或向右移动光标 1 个数据点。上/下：将光标向左或向右移动 60 个数据点。 Ctrl + 左/右：移动当前选择。 Shift + 左/右：展开当前选择。 Ctrl + Shift + 左/右：缩小当前选择。"
+    },
     "time_sec": {
         "message": "秒"
     },
@@ -859,7 +865,7 @@
         "message": "活动同步会导入所有活动历史记录，以改进培训图表和绩效分析。"
     },
     "sync_control_panel_intro_help": {
-        "message": "同步活动允许 Sauce 提供没有历史数据就无法实现的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面（如分析），其中包含有关以前性能的见解。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>同步的工作原理是将原始活动数据导入 Web 浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库</a>。这些数据经过分析、索引和存储，以便稍后进行快速查找。一如既往，Sauce 不使用远程服务器，因此建议使用“导出数据”按钮保存备份。"
+        "message": "同步活动允许 Sauce 提供没有历史数据就无法提供的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面，如分析，以了解以前的性能。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>通过将原始活动数据导入 Web 浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库</a>来实现同步。分析、索引和存储这些数据，以便以后快速查找。与往常一样，Sauce 不使用远程服务器，因此建议偶尔创建备份。"
     },
     "sync_control_panel_enabled": {
         "message": "已启用"
@@ -956,6 +962,12 @@
     },
     "sync_control_panel_athlete_settings": {
         "message": "运动员设置"
+    },
+    "sync_control_panel_backup_data": {
+        "message": "备份数据"
+    },
+    "sync_control_panel_restore_data": {
+        "message": "恢复数据"
     },
     "mutable_data_add_entry_tooltip": {
         "message": "添加一个新条目"
@@ -1118,6 +1130,9 @@
     "menu_localization": {
         "message": "本地化建议"
     },
+    "performance_any": {
+        "message": "任何"
+    },
     "performance_rides": {
         "message": "骑行",
         "description": "IMMUTABLE"
@@ -1271,10 +1286,6 @@
     },
     "performance_all_dates": {
         "message": "所有日期",
-        "description": "IMMUTABLE"
-    },
-    "performance_all_athletes": {
-        "message": "所有运动员",
         "description": "IMMUTABLE"
     },
     "performance_predicted": {

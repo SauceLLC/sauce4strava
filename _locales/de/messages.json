@@ -11,6 +11,9 @@
     "performance": {
         "message": "Performance"
     },
+    "all_athletes": {
+        "message": "Alle Athleten"
+    },
     "analysis_options": {
         "message": "Optionen"
     },
@@ -482,6 +485,9 @@
     "analysis_download": {
         "message": "Herunterladen"
     },
+    "analysis_keyboard_tooltip": {
+        "message": "Analyse-Tastatursteuerelemente sind aktiv. Wenn die Analysediagramme fokussiert sind, können Sie die Auswahl oder markierte Daten mit den Pfeiltasten ändern. Links/Rechts: Bewegt den Cursor um 1 Datenpunkt nach links oder rechts. Auf/Ab: Bewegt den Cursor um 60 Datenpunkte nach links oder rechts. Strg + Links/Rechts: Verschiebt die aktuelle Auswahl. Umschalt + Links/Rechts: Erweitern Sie die aktuelle Auswahl. Strg + Umschalt + Links/Rechts: Aktuelle Auswahl verkleinern."
+    },
     "time_sec": {
         "message": "Sek.",
         "description": "IMMUTABLE"
@@ -784,7 +790,7 @@
         "message": "Die Aktivitätssynchronisierung importiert den gesamten Aktivitätsverlauf, um verbesserte Trainingsdiagramme und Leistungsanalysen zu ermöglichen."
     },
     "sync_control_panel_intro_help": {
-        "message": "Das Synchronisieren von Aktivitäten ermöglicht es Sauce, Analysefunktionen bereitzustellen, die ohne historische Daten nicht möglich sind. Dazu gehören eine neue <a href=\"/sauce/performance\">Leistungsseite</a> sowie die Erweiterung bestehender Seiten wie Analyse mit Einblicken in frühere Leistungen. Es ist eine großartige Funktion für fortgeschrittene Athleten und Trainer!<br/><br/> Die Synchronisierung funktioniert durch den Import von Aktivitätsrohdaten in die <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">lokale Datenbank</a> Ihres Webbrowsers . Diese Daten werden analysiert, indiziert und für eine spätere schnelle Suche gespeichert. Wie immer verwendet Sauce keine Remote-Server, daher wird empfohlen, Backups mit der Schaltfläche \"Daten exportieren\" zu speichern."
+        "message": "Durch die Synchronisierung von Aktivitäten kann Sauce Analysefunktionen bereitstellen, die ohne historische Daten nicht möglich sind. Dazu gehören eine neue <a href=\"/sauce/performance\">Leistungsseite</a> sowie die Erweiterung bestehender Seiten, wie z. B. Analyse, mit Einblicken in frühere Leistungen. Es ist eine großartige Funktion für fortgeschrittene Athleten und Trainer!<br/><br/> Die Synchronisierung funktioniert durch den Import von rohen Aktivitätsdaten in die <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">lokale Datenbank</a> Ihres Webbrowsers . Diese Daten werden analysiert, indiziert und für eine spätere schnelle Suche gespeichert. Wie immer verwendet Sauce keine Remote-Server, daher wird empfohlen, gelegentlich Backups zu erstellen."
     },
     "sync_control_panel_enabled": {
         "message": "aktiviert"
@@ -876,6 +882,12 @@
     },
     "sync_control_panel_athlete_settings": {
         "message": "Athleteneinstellungen"
+    },
+    "sync_control_panel_backup_data": {
+        "message": "Backup-Daten"
+    },
+    "sync_control_panel_restore_data": {
+        "message": "Daten wiederherstellen"
     },
     "mutable_data_add_entry_tooltip": {
         "message": "Fügen Sie einen neuen Eintrag hinzu"
@@ -1018,6 +1030,9 @@
     "menu_localization": {
         "message": "Lokalisierungsvorschlag"
     },
+    "performance_any": {
+        "message": "Beliebig"
+    },
     "performance_rides": {
         "message": "Fahrten"
     },
@@ -1136,9 +1151,6 @@
     },
     "performance_all_dates": {
         "message": "Alle Termine"
-    },
-    "performance_all_athletes": {
-        "message": "Alle Athleten"
     },
     "performance_predicted": {
         "message": "Vorhergesagt"
