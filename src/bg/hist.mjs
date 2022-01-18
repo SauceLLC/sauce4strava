@@ -1918,7 +1918,7 @@ class DataExchange extends sauce.proxy.Eventing {
     async export() {
         // Use a size estimate scheme to try and stay within platform limits.
         let sizeEstimate = 0;
-        const sizeLimit = 10 * 1024 * 1024;
+        const sizeLimit = 2 * 1024 * 1024;
         let batch = [];
         const dispatch = () => {
             const ev = new Event('data');

@@ -525,8 +525,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             this.Model = options.Model;
             this._started = false;
             if (canCacheIDB) {
-                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 10000);
-                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 10000);
+                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 1000);
+                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 1000);
                 cacheInvalidationCh.addEventListener('message',
                     ev => void this.invalidateCaches({noBroadcast: true}));
             }
@@ -1295,6 +1295,9 @@ self.sauceBaseInit = function sauceBaseInit() {
     sauce.LRUCache = class LRUCache extends Map {
         constructor(capacity) {
             super();
+            if (capacity < 2) {
+                throw new TypeError('Min capacity 2');
+            }
             this._capacity = capacity;
             this._head = null;
             this._tail = null;

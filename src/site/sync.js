@@ -6,6 +6,8 @@ sauce.ns('sync', ns => {
     const controllers = new Map();
     const L = sauce.locale;
     const H = sauce.locale.human;
+    const MB = 1024 * 1024;
+    const GB = 1024 * MB;
 
 
     function setupSyncController($btn, id) {
@@ -53,6 +55,99 @@ sauce.ns('sync', ns => {
             setStatus('Sync disabled', {timeout: 5000});
         });
         controller.isActiveSync().then(x => $btn.toggleClass('sync-active', x));
+    }
+
+
+    function importAllData(progressFn) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.sbin';
+        input.multiple = true;
+        input.style.display = 'none';
+
+        async function onStart() {
+            const jobs = await sauce.getModule('/common/jscoop/jobs');
+            const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
+            const files = input.files;
+            const dataEx = new sauce.hist.DataExchange();
+            let fileNum = 0;
+            for (const f of files) {
+                fileNum++;
+                if (progressFn) {
+                    progressFn('reading', fileNum, files.length);
+                } else {
+                    console.debug('reading', fileNum, files.length);
+                }
+                const ab = await sauce.blobToArrayBuffer(f);
+                const batch = sauce.decodeBundle(ab);
+                const stride = 250;  // ~10MB
+                for (let i = 0; i < batch.length; i += stride) {
+                    importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
+                }
+                let i = 1;
+                for await (const x of importingQueue) {
+                    void x;
+                    const progress = Math.min(i++ * stride, batch.length);
+                    if (progressFn) {
+                        progressFn('importing', fileNum, files.length, progress / batch.length);
+                    } else {
+                        console.debug('importing', fileNum, files.length, progress / batch.length);
+                    }
+                }
+            }
+            await dataEx.flush();
+        }
+
+        // No way to detect if user cancels on all devices, so return
+        // two promises one for if we actually start and one for fulfillement.
+        let started;
+        const completed = new Promise((resCompleted, rejCompleted) => {
+            started = new Promise(resStarted => {
+                input.addEventListener('change', () => {
+                    resStarted();
+                    onStart().then(resCompleted).catch(rejCompleted);
+                });
+            });
+        });
+        document.body.appendChild(input);
+        input.click();
+        input.remove();
+        return {started, completed};
+    }
+
+
+    async function exportAllData(progressFn) {
+        const athletes = await sauce.hist.getEnabledAthletes();
+        for (const x of athletes) {
+            await exportAthleteData(x, progressFn);
+        }
+    }
+
+
+    async function exportAthleteData(athlete, progressFn) {
+        let bigBundle;
+        let page = 1;
+        const mem = navigator.deviceMemory || 4;
+        const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
+        const dl = () => {
+            sauce.ui.downloadBlob(new Blob([bigBundle]), `${athlete.name}-${date}-${page++}.sbin`);
+            bigBundle = null;
+        };
+        const dataEx = new sauce.hist.DataExchange(athlete.id);
+        dataEx.addEventListener('data', async ev => {
+            const bundle = sauce.encodeBundle(ev.data);
+            bigBundle = bigBundle ? sauce.concatBundles(bigBundle, bundle) : bundle;
+            if (progressFn) {
+                progressFn(page, bigBundle);
+            } else {
+                console.debug(page, bigBundle.byteLength);
+            }
+            if (bigBundle.byteLength > Math.min(mem * 0.25, 1) * GB) {
+                dl();
+            }
+        });
+        await dataEx.export();
+        dl();
     }
 
 
@@ -106,81 +201,41 @@ sauce.ns('sync', ns => {
             autoOpen: false,
             closeOnMobileBack: true,
             extraButtons: [{
-                text: 'Import Data',
-                click: ev => {
+                text: 'Import Data', // XXX localize
+                click: async ev => {
                     sauce.report.event('AthleteSync', 'ui-button', 'import');
-                    const btn = ev.currentTarget;
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.sbin';
-                    input.multiple = true;
-                    input.style.display = 'none';
-                    input.addEventListener('change', async ev => {
-                        const jobs = await sauce.getModule('/common/jscoop/jobs');
-                        const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
-                        const files = input.files;
-                        const dataEx = new sauce.hist.DataExchange();
-                        const origText = btn.textContent;
-                        btn.classList.add('sauce-loading', 'disabled');
-                        try {
-                            let fileNum = 0;
-                            for (const f of files) {
-                                fileNum++;
-                                const fileDesc = files.length > 1 ?
-                                    `file ${fileNum} of ${files.length}` : 'file';
-                                btn.textContent = `Reading ${fileDesc}...`;
-                                const ab = await sauce.blobToArrayBuffer(f);
-                                const batch = sauce.decodeBundle(ab);
-                                const stride = 250;  // ~10MB
-                                for (let i = 0; i < batch.length; i += stride) {
-                                    importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
-                                }
-                                let i = 1;
-                                for await (const x of importingQueue) {
-                                    void x;
-                                    const progress = Math.min(i++ * stride, batch.length);
-                                    btn.textContent = `Importing ${fileDesc}: ${H.number(progress / batch.length * 100)}%`;
-                                }
-                            }
-                            await dataEx.flush();
-                        } finally {
-                            btn.textContent = origText;
-                            btn.classList.remove('sauce-loading', 'disabled');
+                    const {started, completed} = importAllData((state, fileNum, numFiles, progress) => {
+                        const fileDesc = numFiles > 1 ?
+                            `file ${fileNum} of ${numFiles}` : 'file';
+                        if (state === 'reading') {
+                            btn.textContent = `Reading ${fileDesc}...`;
+                        } else if (state === 'importing') {
+                            btn.textContent = `Importing ${fileDesc}: ${H.number(progress * 100)}%`;
+                        } else {
+                            console.error("unhandled progress state");
                         }
                     });
-                    document.body.appendChild(input);
-                    input.click();
-                    input.remove();
-                }
-            }, {
-                text: 'Export Data',
-                click: async ev => {
-                    sauce.report.event('AthleteSync', 'ui-button', 'export');
-                    let bigBundle;
-                    let page = 1;
-                    const mem = navigator.deviceMemory || 4;
-                    const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
-                    const dl = () => {
-                        sauce.ui.downloadBlob(new Blob([bigBundle]), `${athlete.name}-${date}-${page++}.sbin`);
-                        bigBundle = null;
-                    };
+                    await started;  // Will not resolve if they hit cancel.
                     const btn = ev.currentTarget;
                     const origText = btn.textContent;
                     btn.classList.add('sauce-loading', 'disabled');
-                    const MB = 1024 * 1024;
-                    const GB = 1024 * MB;
                     try {
-                        const dataEx = new sauce.hist.DataExchange(athlete.id);
-                        dataEx.addEventListener('data', async ev => {
-                            const bundle = sauce.encodeBundle(ev.data);
-                            bigBundle = bigBundle ? sauce.concatBundles(bigBundle, bundle) : bundle;
-                            btn.textContent = `Creating file ${page}: ${H.number(bigBundle.byteLength / MB)}MB`;
-                            if (bigBundle.byteLength > Math.min(mem * 0.25, 1) * GB) {
-                                dl();
-                            }
-                        });
-                        await dataEx.export();
-                        dl();
+                        await completed;
+                    } finally {
+                        btn.textContent = origText;
+                        btn.classList.remove('sauce-loading', 'disabled');
+                    }
+                }
+            }, {
+                text: 'Export Data', // XXX localize
+                click: async ev => {
+                    sauce.report.event('AthleteSync', 'ui-button', 'export');
+                    const btn = ev.currentTarget;
+                    const origText = btn.textContent;
+                    btn.classList.add('sauce-loading', 'disabled');
+                    try {
+                        await exportAthleteData(athlete, (page, bundle) =>
+                            btn.textContent = `Creating file ${page}: ${H.number(bundle.byteLength / MB)}MB`);
                     } finally {
                         btn.textContent = origText;
                         btn.classList.remove('sauce-loading', 'disabled');
@@ -378,5 +433,8 @@ sauce.ns('sync', ns => {
     return {
         createSyncButton,
         activitySyncDialog,
+        exportAthleteData,
+        exportAllData,
+        importAllData,
     };
 });
