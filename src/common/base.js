@@ -853,35 +853,47 @@ self.sauceBaseInit = function sauceBaseInit() {
             const cacheKeyPrefix = this._queryCacheKey(query, {...options, cursor: true});
             let iter;
             let i = 0;
+            const cachePageSize = 256;
             const limit = options.limit || Infinity;
             const skipFilter = count => i - count;
+            let curCachePageKey;
+            let cachePage;
             while (i < limit) {
                 let data, done;
-                if (cacheKeyPrefix && this._cursorCache.has(cacheKeyPrefix + i)) {
-                    ({data, done} = this._cursorCache.get(cacheKeyPrefix + i));
+                const cachePageKey = cacheKeyPrefix && cacheKeyPrefix + Math.floor(i / cachePageSize);
+                const isSameCachePage = cachePageKey === curCachePageKey;
+                if (isSameCachePage || (cacheKeyPrefix && this._cursorCache.has(cachePageKey))) {
+                    cachePage = isSameCachePage ? cachePage :
+                        this._deepClone(this._cursorCache.get(cachePageKey));
+                    ({data, done} = cachePage[i % cachePageSize] || {});
                 } else {
+                    cachePage = null;
+                }
+                if (done === undefined) {
                     if (!iter) {
-                        iter = this.cursor(query, {...options, skipFilter});
+                        iter = this._cursor(query, {...options, skipFilter});
                     }
                     let cursor;
                     ({value: cursor, done} = await iter.next());
-                    data = cursor && cursor.value;
+                    data = cursor && this._deepClone(cursor.value);
                     if (cacheKeyPrefix) {
-                        this._cursorCache.set(cacheKeyPrefix + i, {data, done});
+                        if (!cachePage) {
+                            this._cursorCache.set(cachePageKey, cachePage = []);
+                        }
+                        cachePage[i % cachePageSize] = {data, done};
                     }
                 }
                 if (done) {
                     break;
                 }
+                yield options.models ? new this.Model(data, this) : data;
                 i++;
-                const clone = this._deepClone(data);
-                yield options.models ? new this.Model(clone, this) : clone;
+                curCachePageKey = cachePageKey;
             }
         }
 
         async *keys(query, options={}) {
-            // XXX No caching implemented yet, but hardly used.
-            for await (const c of this.cursor(query, Object.assign({keys: true}, options))) {
+            for await (const c of this._cursor(query, {keys: true, ...options})) {
                 yield options.indexKey ? c.key : c.primaryKey;
             }
         }
@@ -896,9 +908,13 @@ self.sauceBaseInit = function sauceBaseInit() {
             return curFunc.call(ifc, query, options.direction);
         }
 
-        async *cursor(query, options={}) {
+        /* NOTE readwrite caller MUST invalidate caches themselves */
+        async *_cursor(query, options={}) {
             if (!this._started) {
                 await this._start();
+            }
+            if (options.mode === 'readwrite' && !options._willInvalidateCaches) {
+                console.warn("Unsafe readwrite cursor usage: caller must signal intent to clear caches");
             }
             const req = this._cursorRequest(query, options);
             let resolve;
@@ -974,27 +990,37 @@ self.sauceBaseInit = function sauceBaseInit() {
         DBStore.prototype._deepClone = self.structuredClone.bind(self);
     } else {
         const _structuredCloneEmulation = (obj) => {
-            let clone;
-            if (Array.isArray(obj)) {
-                clone = [];
-                for (const x of obj) {
-                    clone.push(_structuredCloneEmulation(x));
+            if (obj) {
+                const objType = typeof obj;
+                if (obj.length !== undefined && obj instanceof Array) {
+                    const clone = Array.from(obj);
+                    for (let i = 0, len = obj.length; i < len; i++) {
+                        const v = obj[i];
+                        const vType = typeof v;
+                        if (v && vType !== 'string' && vType !== 'number' && vType !== 'boolean') {
+                            clone[i] = _structuredCloneEmulation(v);
+                        }
+                    }
+                    return clone;
+                } else if (obj !== null && objType === 'object') {
+                    const clone = {...obj};
+                    const keys = Object.keys(obj);
+                    for (let i = 0, len = keys.length; i < len; i++) {
+                        const v = obj[keys[i]];
+                        const vType = typeof v;
+                        if (v && vType !== 'string' && vType !== 'number' && vType !== 'boolean') {
+                            clone[keys[i]] = _structuredCloneEmulation(v);
+                        }
+                    }
+                    return clone;
+                } else if (objType === 'string' || objType === 'number' || objType === 'boolean') {
+                    return obj;
+                } else {
+                    throw new TypeError("Unexpected type");
                 }
-            } else if (obj !== null && typeof obj === 'object') {
-                clone = {};
-                for (const [k, v] of Object.entries(obj)) {
-                    clone[k] = _structuredCloneEmulation(v);
-                }
-            } else if (ArrayBuffer.isView(obj)) {
-                throw new TypeError("TypedArray not implemented");
-            } else if (obj instanceof ArrayBuffer) {
-                throw new TypeError("ArrayBuffer not implemented");
-            } else if (obj != null && !['string', 'number', 'boolean'].includes(typeof obj)) {
-                throw new TypeError("Unexpected primative type");
             } else {
-                clone = obj;
+                return obj;
             }
-            return clone;
         };
         DBStore.prototype._deepClone = _structuredCloneEmulation;
     }
