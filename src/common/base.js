@@ -532,8 +532,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             this.Model = options.Model;
             this._started = false;
             if (canCacheIDB) {
-                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 512);
-                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 256);
+                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 1024);
+                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 512);
                 cacheInvalidationCh.addEventListener('message',
                     ev => void this.invalidateCaches({noBroadcast: true}));
             }
