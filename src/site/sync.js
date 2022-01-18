@@ -58,7 +58,7 @@ sauce.ns('sync', ns => {
     }
 
 
-    function importAllData(progressFn) {
+    function restoreData(progressFn) {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.sbin';
@@ -116,15 +116,15 @@ sauce.ns('sync', ns => {
     }
 
 
-    async function exportAllData(progressFn) {
-        const athletes = await sauce.hist.getEnabledAthletes();
+    async function backupData(athlete, progressFn) {
+        const athletes = athlete ? [athlete] : await sauce.hist.getEnabledAthletes();
         for (const x of athletes) {
-            await exportAthleteData(x, progressFn);
+            await backupAthleteData(x, progressFn);
         }
     }
 
 
-    async function exportAthleteData(athlete, progressFn) {
+    async function backupAthleteData(athlete, progressFn) {
         let bigBundle;
         let page = 1;
         const mem = navigator.deviceMemory || 4;
@@ -138,7 +138,7 @@ sauce.ns('sync', ns => {
             const bundle = sauce.encodeBundle(ev.data);
             bigBundle = bigBundle ? sauce.concatBundles(bigBundle, bundle) : bundle;
             if (progressFn) {
-                progressFn(page, bigBundle);
+                progressFn(page, bigBundle.length);
             } else {
                 console.debug(page, bigBundle.byteLength);
             }
@@ -179,7 +179,7 @@ sauce.ns('sync', ns => {
     async function activitySyncDialog(athleteId, syncController) {
         const locale = await L.getMessagesObject([
             'total', 'imported', 'unavailable', 'processed', 'unprocessable', 'activities',
-            'delayed_until', 'title', 'remaining',
+            'delayed_until', 'title', 'remaining', 'restore_data', 'backup_data',
         ], 'sync_control_panel');
         let athlete = await sauce.hist.getAthlete(athleteId);
         const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/site/data-views');
@@ -201,10 +201,11 @@ sauce.ns('sync', ns => {
             autoOpen: false,
             closeOnMobileBack: true,
             extraButtons: [{
-                text: 'Import Data', // XXX localize
+                text: locale.restore_data,
+                class: 'btn sauce-restore',
                 click: async ev => {
-                    sauce.report.event('AthleteSync', 'ui-button', 'import');
-                    const {started, completed} = importAllData((state, fileNum, numFiles, progress) => {
+                    sauce.report.event('AthleteSync', 'ui-button', 'restore');
+                    const {started, completed} = restoreData((state, fileNum, numFiles, progress) => {
                         const fileDesc = numFiles > 1 ?
                             `file ${fileNum} of ${numFiles}` : 'file';
                         if (state === 'reading') {
@@ -227,15 +228,16 @@ sauce.ns('sync', ns => {
                     }
                 }
             }, {
-                text: 'Export Data', // XXX localize
+                text: locale.backup_data,
+                class: 'btn sauce-backup',
                 click: async ev => {
-                    sauce.report.event('AthleteSync', 'ui-button', 'export');
+                    sauce.report.event('AthleteSync', 'ui-button', 'backup');
                     const btn = ev.currentTarget;
                     const origText = btn.textContent;
                     btn.classList.add('sauce-loading', 'disabled');
                     try {
-                        await exportAthleteData(athlete, (page, bundle) =>
-                            btn.textContent = `Creating file ${page}: ${H.number(bundle.byteLength / MB)}MB`);
+                        await backupData(athlete, (page, size) =>
+                            btn.textContent = `Creating file ${page}: ${H.number(size / MB)}MB`);
                     } finally {
                         btn.textContent = origText;
                         btn.classList.remove('sauce-loading', 'disabled');
@@ -243,6 +245,7 @@ sauce.ns('sync', ns => {
                 }
             }]
         });
+        const $buttons = $modal.siblings('.ui-dialog-buttonpane');
         const ftpHistView = new FTPHistoryView({
             athlete,
             el: $modal.find('.entry.history.ftp')
@@ -292,6 +295,7 @@ sauce.ns('sync', ns => {
         async function setActive(active) {
             if (active) {
                 $modal.addClass('sync-active');
+                $buttons.addClass('sync-active');
                 $modal.removeClass('has-error');
                 $modal.find('.entry.status value').text('Running...');
                 $modal.find('.entry.last-sync value').empty();
@@ -309,6 +313,7 @@ sauce.ns('sync', ns => {
             } else {
                 clearInterval(rateLimiterInterval);
                 $modal.removeClass('sync-active');
+                $buttons.removeClass('sync-active');
                 $modal.find('.entry.status value').text('Idle');
                 athlete = await sauce.hist.getAthlete(athleteId);
                 await Promise.all([updateSyncCounts(), updateSyncTimes(), updateHRZones()]);
@@ -384,11 +389,13 @@ sauce.ns('sync', ns => {
         });
         $modal.on('click', '.sync-stop.btn', ev => {
             $modal.removeClass('sync-active');
+            $buttons.removeClass('sync-active');
             syncController.cancel();
             sauce.report.event('AthleteSync', 'ui-button', 'stop');
         });
         $modal.on('click', '.sync-recompute.btn', async ev => {
             $modal.addClass('sync-active');
+            $buttons.addClass('sync-active');
             $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
             $modal.find('.entry.synced .text').empty();
             await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local');
@@ -396,6 +403,7 @@ sauce.ns('sync', ns => {
         });
         $modal.on('click', '.sync-hr-zones.btn', async ev => {
             $modal.addClass('sync-active');
+            $buttons.addClass('sync-active');
             $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
             $modal.find('.entry.synced .text').empty();
             await sauce.hist.updateAthlete(athlete.id, {hrZonesTS: null});
@@ -406,6 +414,7 @@ sauce.ns('sync', ns => {
         });
         $modal.on('click', '.sync-start.btn', async ev => {
             $modal.addClass('sync-active');
+            $buttons.addClass('sync-active');
             await sauce.hist.syncAthlete(athlete.id);
             sauce.report.event('AthleteSync', 'ui-button', 'start');
         });
@@ -433,8 +442,7 @@ sauce.ns('sync', ns => {
     return {
         createSyncButton,
         activitySyncDialog,
-        exportAthleteData,
-        exportAllData,
-        importAllData,
+        backupData,
+        restoreData,
     };
 });
