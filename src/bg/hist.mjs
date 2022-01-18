@@ -1918,7 +1918,7 @@ class DataExchange extends sauce.proxy.Eventing {
     async export() {
         // Use a size estimate scheme to try and stay within platform limits.
         let sizeEstimate = 0;
-        const sizeLimit = 2 * 1024 * 1024;
+        const sizeLimit = 4 * 1024 * 1024;
         let batch = [];
         const dispatch = () => {
             const ev = new Event('data');
@@ -1938,8 +1938,8 @@ class DataExchange extends sauce.proxy.Eventing {
         }
         const actsWork = (async () => {
             const iter = this.athleteId ?
-                actsStore.byAthlete(this.athleteId) :
-                actsStore.values();
+                actsStore.byAthlete(this.athleteId, {_skipCache: true}) :
+                actsStore.values(null, {_skipCache: true});
             for await (const data of iter) {
                 batch.push({store: 'activities', data});
                 sizeEstimate += 1500;  // Tuned on my data + headroom.
@@ -1950,8 +1950,8 @@ class DataExchange extends sauce.proxy.Eventing {
         })();
         const streamsWork = (async () => {
             const iter = this.athleteId ?
-                streamsStore.byAthlete(this.athleteId) :
-                streamsStore.values();
+                streamsStore.byAthlete(this.athleteId, null, {_skipCache: true}) :
+                streamsStore.values(null, {_skipCache: true});
             const estSizePerArrayEntry = 6.4;  // Tuned on my data + headroom.
             for await (const data of iter) {
                 batch.push({store: 'streams', data});

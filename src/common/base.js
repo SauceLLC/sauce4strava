@@ -229,17 +229,24 @@ self.sauceBaseInit = function sauceBaseInit() {
             output.set(bin, idx + 4);
             idx += bin.byteLength + 4;
         }
-        return output.buffer;
+        return output;
     };
 
 
-    sauce.concatBundles = function(...bundles) {
-        const dataSize = bundles.reduce((sz, b) => b.byteLength + sz, 0);
-        const output = new Uint8Array(dataSize);
-        for (let offt = 0, i = 0; offt < dataSize; offt += bundles[i++].byteLength) {
+    sauce.concatBundles = function(srcBundle, ...bundles) {
+        const dataSize = srcBundle.byteLength + bundles.reduce((sz, b) => b.byteLength + sz, 0);
+        let output;
+        if (dataSize > srcBundle.buffer.byteLength - srcBundle.byteOffset) {
+            const ab = new ArrayBuffer(Math.ceil(dataSize * 1.33));
+            output = new Uint8Array(ab, 0, dataSize);
+            output.set(srcBundle);
+        } else {
+            output = new Uint8Array(srcBundle.buffer, srcBundle.byteOffset, dataSize);
+        }
+        for (let offt = srcBundle.byteLength, i = 0; offt < dataSize; offt += bundles[i++].byteLength) {
             output.set(new Uint8Array(bundles[i]), offt);
         }
-        return output.buffer;
+        return output;
     };
 
 
@@ -525,8 +532,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             this.Model = options.Model;
             this._started = false;
             if (canCacheIDB) {
-                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 1000);
-                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 1000);
+                this._readsCache = new sauce.LRUCache(options.readsCacheSize || 512);
+                this._cursorCache = new sauce.LRUCache(options.cursorCacheSize || 256);
                 cacheInvalidationCh.addEventListener('message',
                     ev => void this.invalidateCaches({noBroadcast: true}));
             }
@@ -598,7 +605,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (cacheKey) {
                 this._readsCache.set(cacheKey, data);
             }
-            return options._skipClone ? data : this._deepClone(data);
+            return (options._skipClone || options._skipCache) ? data : this._deepClone(data);
         }
 
         _encodeQueryBounds(b) {
@@ -850,10 +857,10 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
 
         async *values(query, options={}) {
-            const cacheKeyPrefix = this._queryCacheKey(query, {...options, cursor: true});
+            const cacheKeyPrefix = !options._skipCache && this._queryCacheKey(query, {...options, cursor: true});
             let iter;
             let i = 0;
-            const cachePageSize = 256;
+            const cachePageSize = 64;
             const limit = options.limit || Infinity;
             const skipFilter = count => i - count;
             let curCachePageKey;
@@ -861,7 +868,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             while (i < limit) {
                 let data, done;
                 const cachePageKey = cacheKeyPrefix && cacheKeyPrefix + Math.floor(i / cachePageSize);
-                const isSameCachePage = cachePageKey === curCachePageKey;
+                const isSameCachePage = cacheKeyPrefix && cachePageKey === curCachePageKey;
                 if (isSameCachePage || (cacheKeyPrefix && this._cursorCache.has(cachePageKey))) {
                     cachePage = isSameCachePage ? cachePage :
                         this._deepClone(this._cursorCache.get(cachePageKey));
