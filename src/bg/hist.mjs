@@ -522,7 +522,7 @@ export async function integrityCheck(athleteId, options={}) {
     const haveStreamsFor = new Set();
     const missingStreamsFor = [];
     const inFalseErrorState = [];
-    for await (const [id,] of streamsStore.byAthlete(athleteId, 'time', {keys: true})) {
+    for await (const [id] of streamsStore.byAthlete(athleteId, 'time', {keys: true})) {
         haveStreamsFor.add(id);
     }
     const streamManifest = ActivityModel.getSyncManifest('streams', 'fetch');
@@ -582,15 +582,38 @@ export async function danglingActivities(options={}) {
     const athletes = new Map((await athletesStore.getAll()).map(x => [x.id, x]));
     const noAthleteFor = [];
     const syncDisabledFor = [];
-    for await (const c of actsStore.cursor(null, {index: 'athlete-ts'})) {
-        const athleteId = c.key[0];
-        if (!athletes.has(athleteId)) {
-            noAthleteFor.push(c.primaryKey);
-        } else if (!athletes.get(athleteId).sync) {
-            syncDisabledFor.push(c.primaryKey);
+    const pruned = [];
+    const cOptions = {
+        keys: !options.prune,  // key cursor can't delete. :/
+        index: 'athlete-ts',
+        mode: options.prune ? 'readwrite' : 'readonly',
+        _willInvalidateCaches: options.prune,
+    };
+    try {
+        for await (const c of actsStore._cursor(null, cOptions)) {
+            const athleteId = c.key[0];
+            if (!athletes.has(athleteId)) {
+                if (options.prune) {
+                    c.delete();
+                    pruned.push(c.primaryKey);
+                } else {
+                    noAthleteFor.push(c.primaryKey);
+                }
+            } else if (!athletes.get(athleteId).sync) {
+                if (options.prune) {
+                    c.delete();
+                    pruned.push(c.primaryKey);
+                } else {
+                    syncDisabledFor.push(c.primaryKey);
+                }
+            }
+        }
+    } finally {
+        if (options.prune) {
+            streamsStore.invalidateCaches();
         }
     }
-    return {noAthleteFor, syncDisabledFor};
+    return {noAthleteFor, syncDisabledFor, pruned};
 }
 sauce.proxy.export(danglingActivities, {namespace});
 
@@ -601,33 +624,108 @@ export async function danglingStreams(options={}) {
     const noActivityFor = [];
     const noAthleteFor = [];
     const syncDisabledFor = [];
-    const mode = options.prune ? 'readwrite' : 'readonly';
-    for await (const c of streamsStore.cursor(null, {index: 'athlete', mode})) {
-        const [activity, stream] = c.primaryKey;
-        const athlete = c.key;
-        if (!activities.has(activity)) {
-            if (options.prune) {
-                c.delete();
-            } else {
-                noActivityFor.push({activity, stream, athlete});
-            }
-        } else if (!athletes.has(athlete)) {
-            if (options.prune) {
-                c.delete();
-            } else {
-                noAthleteFor.push({activity, stream, athlete});
-            }
-        } else if (!athletes.get(athlete).sync) {
-            if (options.prune) {
-                c.delete();
-            } else {
-                syncDisabledFor.push({activity, stream, athlete});
+    const pruned = [];
+    const cOptions = {
+        keys: !options.prune,  // key cursor can't delete. :/
+        index: 'athlete',
+        mode: options.prune ? 'readwrite' : 'readonly',
+        _willInvalidateCaches: options.prune,
+    };
+    try {
+        for await (const c of streamsStore._cursor(null, cOptions)) {
+            const [activity, stream] = c.primaryKey;
+            const athlete = c.key;
+            if (!activities.has(activity)) {
+                if (options.prune) {
+                    c.delete();
+                    pruned.push({activity, stream, athlete});
+                } else {
+                    noActivityFor.push({activity, stream, athlete});
+                }
+            } else if (!athletes.has(athlete)) {
+                if (options.prune) {
+                    c.delete();
+                    pruned.push({activity, stream, athlete});
+                } else {
+                    noAthleteFor.push({activity, stream, athlete});
+                }
+            } else if (!athletes.get(athlete).sync) {
+                if (options.prune) {
+                    c.delete();
+                    pruned.push({activity, stream, athlete});
+                } else {
+                    syncDisabledFor.push({activity, stream, athlete});
+                }
             }
         }
+    } finally {
+        if (options.prune) {
+            streamsStore.invalidateCaches();
+        }
     }
-    return {noActivityFor, noAthleteFor, syncDisabledFor};
+    return {noActivityFor, noAthleteFor, syncDisabledFor, pruned};
 }
-sauce.proxy.export(danglingActivities, {namespace});
+sauce.proxy.export(danglingStreams, {namespace});
+
+
+export async function danglingPeaks(options={}) {
+    const athletes = new Map((await athletesStore.getAll()).map(x => [x.id, x]));
+    const activities = new Set(await actsStore.getAllKeys());
+    const noActivityFor = [];
+    const noAthleteFor = [];
+    const syncDisabledFor = [];
+    const pruned = [];
+    const cOptions = {
+        keys: !options.prune,  // key cursor can't delete. :/
+        index: 'athlete',
+        mode: options.prune ? 'readwrite' : 'readonly',
+        _willInvalidateCaches: options.prune,
+    };
+    try {
+        for await (const c of peaksStore._cursor(null, cOptions)) {
+            const [activity, type, period] = c.primaryKey;
+            const athlete = c.key;
+            if (!activities.has(activity)) {
+                if (options.prune) {
+                    c.delete();
+                    pruned.push({activity, type, period, athlete});
+                } else {
+                    noActivityFor.push({activity, type, period, athlete});
+                }
+            } else if (!athletes.has(athlete)) {
+                if (options.prune) {
+                    c.delete();
+                    pruned.push({activity, type, period, athlete});
+                } else {
+                    noAthleteFor.push({activity, type, period, athlete});
+                }
+            } else if (!athletes.get(athlete).sync) {
+                if (options.prune) {
+                    c.delete();
+                    pruned.push({activity, type, period, athlete});
+                } else {
+                    syncDisabledFor.push({activity, type, period, athlete});
+                }
+            }
+        }
+    } finally {
+        if (options.prune) {
+            streamsStore.invalidateCaches();
+        }
+    }
+    return {noActivityFor, noAthleteFor, syncDisabledFor, pruned};
+}
+sauce.proxy.export(danglingPeaks, {namespace});
+
+
+export async function dangling(options={}) {
+    return {
+        peaks: await danglingPeaks(options),
+        streams: await danglingStreams(options),
+        activities: await danglingActivities(options),
+    };
+}
+sauce.proxy.export(dangling, {namespace});
 
 
 export async function invalidateAthleteSyncState(athleteId, processor, name, options={}) {
