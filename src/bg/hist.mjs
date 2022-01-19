@@ -365,8 +365,15 @@ export async function getAthlete(id) {
 sauce.proxy.export(getAthlete, {namespace});
 
 
-async function getEnabledAthletes() {
-    return await athletesStore.getEnabled();
+export async function getEnabledAthletes() {
+    const athletes = await athletesStore.getEnabled();
+    athletes.sort((a, b) => {
+        // Current user always first, then alphanumeric name.
+        const an = a.name && a.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const bn = b.name && b.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return a.id === self.currentUser ? -1 : (an < bn && b.id !== self.currentUser) ? -1 : 1;
+    });
+    return athletes;
 }
 sauce.proxy.export(getEnabledAthletes, {namespace});
 
@@ -1601,25 +1608,42 @@ class SyncManager extends EventTarget {
         this.syncJobTimeout = 90 * 60 * 1000;
         this.currentUser = currentUser;
         this.activeJobs = new Map();
-        this._stopping = false;
+        this.stopping = false;
+        this.stopped = true;
         this._athleteLock = new locks.Lock();
         this._refreshRequests = new Map();
         this._refreshEvent = new locks.Event();
-        this._refreshLoop = this.refreshLoop();
+        this._refreshLoop = null;
     }
 
-    stop() {
-        this._stopping = true;
+    async stop() {
+        this.stopping = true;
         for (const x of this.activeJobs.values()) {
             x.cancel();
         }
         this._refreshEvent.set();
+        await this.join();
+        this.stopped = true;
+    }
+
+    start() {
+        if (!this.stopped || this._refreshLoop) {
+            throw new TypeError("Not stopped");
+        }
+        this.stopped = false;
+        this.stopping = false;
+        this._refreshLoop = this.refreshLoop();
     }
 
     async join() {
         await Promise.allSettled(Array.from(this.activeJobs.values()).map(x => x.wait()));
-        await this._refreshLoop;
+        try {
+            await this._refreshLoop;
+        } finally {
+            this._refreshLoop = null;
+        }
     }
+
 
     async syncVersionHash() {
         const manifests = [].concat(
@@ -1638,7 +1662,7 @@ class SyncManager extends EventTarget {
     async refreshLoop() {
         let errorBackoff = 1000;
         const syncHash = await this.syncVersionHash();
-        while (!this._stopping) {
+        while (!this.stopping) {
             try {
                 await this._refresh(syncHash);
             } catch(e) {
@@ -1662,8 +1686,8 @@ class SyncManager extends EventTarget {
                     // All activities are active.
                     await this._refreshEvent.wait();
                 } else {
-                    const next = Math.round(deadline / 1000).toLocaleString();
-                    console.debug(`Next Sync Manager refresh in ${next} seconds`);
+                    const next = Math.round(deadline / 1000 / 60).toLocaleString();
+                    console.debug(`Next Sync Manager refresh in ${next} minute(s)`);
                     await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
                 }
             }
@@ -1985,8 +2009,8 @@ class DataExchange extends sauce.proxy.Eventing {
     }
 
     async import(data) {
-        if (syncManager) {
-            await stopSyncManager();
+        if (syncManager && !syncManager.stopped) {
+            await syncManager.stop();
         }
         for (const x of data) {
             const {store, data} = JSON.parse(x);
@@ -2031,13 +2055,12 @@ class DataExchange extends sauce.proxy.Eventing {
 
     async finish() {
         this._finishing = true;
-        if (!syncManager && self.currentUser) {
-            startSyncManager(self.currentUser);
-        }
         if (syncManager) {
+            if (syncManager.stopped) {
+                syncManager.start();
+            }
             for (const x of this.importedAthletes) {
                 await syncManager.enableAthlete(x);
-                await sauce.sleep(60 * 1000);
             }
         }
     }
@@ -2077,6 +2100,7 @@ export function startSyncManager(id) {
             setTimeout(setStoragePersistent, 0);  // Run out of ctx to avoid startup races.
         }
         syncManager = new SyncManager(id);
+        syncManager.start();
     }
 }
 
@@ -2088,8 +2112,7 @@ export async function stopSyncManager() {
     console.info("Stopping Sync Manager...");
     const mgr = syncManager;
     syncManager = null;
-    mgr.stop();
-    await mgr.join();
+    await mgr.stop();
     console.debug("Sync Manager stopped.");
     return true;
 }
