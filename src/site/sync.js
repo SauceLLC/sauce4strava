@@ -70,6 +70,11 @@ sauce.ns('sync', ns => {
             const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
             const files = input.files;
             const dataEx = new sauce.hist.DataExchange();
+            const athletes = new Set();
+            dataEx.addEventListener('importing-athlete', ev => {
+                athletes.add(ev.data);
+                console.debug("Importing data for athlete:", ev.data.name, ev.data.id);
+            });
             let fileNum = 0;
             for (const f of files) {
                 fileNum++;

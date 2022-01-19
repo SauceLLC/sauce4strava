@@ -1821,14 +1821,6 @@ class SyncManager extends EventTarget {
         this._refreshEvent.set();
         this.emitForAthleteId(id, 'disable');
     }
-
-    async purgeAthleteData(athlete) {
-        if (!athlete) {
-            throw new TypeError('Athlete arg required');
-        }
-        // Obviously use with extreme caution!
-        await actsStore.deleteForAthlete(athlete);
-    }
 }
 
 
@@ -1960,6 +1952,10 @@ class DataExchange extends sauce.proxy.Eventing {
                 actsStore.byAthlete(this.athleteId, {_skipCache: true}) :
                 actsStore.values(null, {_skipCache: true});
             for await (const data of iter) {
+                // We want a clean slate on restore.
+                if (data.syncState && data.syncState.local) {
+                    delete data.syncState.local;
+                }
                 batch.push({store: 'activities', data});
                 sizeEstimate += 1500;  // Tuned on my data + headroom.
                 if (sizeEstimate >= sizeLimit) {
@@ -1988,6 +1984,12 @@ class DataExchange extends sauce.proxy.Eventing {
     }
 
     async import(data) {
+        if (syncManager && !this._stoppingSyncManager) {
+            console.info("Stopping sync manager jobs while importing...");
+            syncManager.stop();
+            this._stoppingSyncManager = true;
+            await syncManager.join();
+        }
         for (const x of data) {
             const {store, data} = JSON.parse(x);
             if (!this.importing[store]) {
@@ -2003,13 +2005,31 @@ class DataExchange extends sauce.proxy.Eventing {
 
     async flush() {
         if (this.importing.athletes) {
-            await athletesStore.putMany(this.importing.athletes.splice(0, Infinity));
+            const athletes = this.importing.athletes.splice(0, Infinity);
+            for (const x of athletes) {
+                x.sync = DBFalse;  // Prevent any action during import and force resync later.
+                const ev = new Event('importing-athlete');  // client is responsible re-enabling athlete.
+                ev.data = x;
+                this.dispatchEvent(ev);
+                console.debug(`Importing athlete: ${x.name} [${x.id}]`);
+            }
+            await athletesStore.putMany(athletes);
         }
         if (this.importing.activities) {
-            await actsStore.putMany(this.importing.activities.splice(0, Infinity));
+            const activities = this.importing.activities.splice(0, Infinity);
+            // Ensure we do a full resync after athlete is enabled.
+            for (const x of activities) {
+                if (x.syncState && x.syncState.local) {
+                    delete x.syncState.local;
+                }
+            }
+            console.debug(`Importing ${activities.length} activities`);
+            await actsStore.putMany(activities);
         }
         if (this.importing.streams) {
-            await streamsStore.putMany(this.importing.streams.splice(0, Infinity));
+            const streams = this.importing.streams.splice(0, Infinity);
+            console.debug(`Importing ${streams.length} activities`);
+            await streamsStore.putMany(streams);
         }
     }
 }
