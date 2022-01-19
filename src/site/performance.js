@@ -1602,7 +1602,7 @@ sauce.ns('performance', async ns => {
                 await this.setAthlete(pageView.athlete);
             }
             await super.init();
-            this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
+            this.listenTo(pageView, 'update-activities', sauce.asyncDebounced(this.onUpdateActivities));
         }
 
         async findPeaks() {
