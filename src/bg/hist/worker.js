@@ -153,7 +153,6 @@ async function findPeaks(athlete, activities, periods, distances) {
             }
         }
     }
-    console.warn('updating peaks', upPeaks.length);
     await peaksStore.putMany(upPeaks);
     return errors;
 }

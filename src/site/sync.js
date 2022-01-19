@@ -64,17 +64,12 @@ sauce.ns('sync', ns => {
         input.accept = '.sbin';
         input.multiple = true;
         input.style.display = 'none';
+        const dataEx = new sauce.hist.DataExchange();
 
         async function onStart() {
             const jobs = await sauce.getModule('/common/jscoop/jobs');
             const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
             const files = input.files;
-            const dataEx = new sauce.hist.DataExchange();
-            const athletes = new Set();
-            dataEx.addEventListener('importing-athlete', ev => {
-                athletes.add(ev.data);
-                console.debug("Importing data for athlete:", ev.data.name, ev.data.id);
-            });
             let fileNum = 0;
             for (const f of files) {
                 fileNum++;
@@ -110,7 +105,7 @@ sauce.ns('sync', ns => {
             started = new Promise(resStarted => {
                 input.addEventListener('change', () => {
                     resStarted();
-                    onStart().then(resCompleted).catch(rejCompleted);
+                    onStart().then(resCompleted).catch(rejCompleted).finally(() => dataEx.finish());
                 });
             });
         });

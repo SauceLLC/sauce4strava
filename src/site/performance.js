@@ -865,7 +865,7 @@ sauce.ns('performance', async ns => {
             const d = new Date(data.value);
             if (days < 370) {
                 if (data.showToday) {
-                    return this.view.LM('today');
+                    return this.view.LM('today'); // XXX
                 } else if (data.showYear) {
                     return [H.date(d, {style: 'month'}) + ' ', d.getFullYear()];
                 } else if (data.showMonth) {

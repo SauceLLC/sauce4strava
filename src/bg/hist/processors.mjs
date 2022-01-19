@@ -355,7 +355,6 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
             activity.setSyncError(manifest, e);
         }
     }
-    console.warn("streams", upStreams.length, activities.length);
     await streamsStore.putMany(upStreams);
 }
 
@@ -415,8 +414,6 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
             }
         }
     }
-    console.warn("runstreams", upStreams.length, activities.length);
-    console.warn("runpeaks", upPeaks.length, activities.length);
     await Promise.all([
         streamsStore.putMany(upStreams),
         peaksStore.putMany(upPeaks),
@@ -494,7 +491,6 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
             activity.set({stats});
         }
     }
-    console.warn("activities", upActs.length, activities.length);
     await actsStore.saveModels(upActs);
 }
 

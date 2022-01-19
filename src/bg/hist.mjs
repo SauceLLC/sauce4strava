@@ -1924,6 +1924,7 @@ class DataExchange extends sauce.proxy.Eventing {
         super();
         this.athleteId = athleteId;
         this.importing = {};
+        this.importedAthletes = new Set();
     }
 
     async export() {
@@ -1984,11 +1985,8 @@ class DataExchange extends sauce.proxy.Eventing {
     }
 
     async import(data) {
-        if (syncManager && !this._stoppingSyncManager) {
-            console.info("Stopping sync manager jobs while importing...");
-            syncManager.stop();
-            this._stoppingSyncManager = true;
-            await syncManager.join();
+        if (syncManager) {
+            await stopSyncManager();
         }
         for (const x of data) {
             const {store, data} = JSON.parse(x);
@@ -2004,18 +2002,16 @@ class DataExchange extends sauce.proxy.Eventing {
     }
 
     async flush() {
-        if (this.importing.athletes) {
+        if (this.importing.athletes && this.importing.athletes.length) {
             const athletes = this.importing.athletes.splice(0, Infinity);
             for (const x of athletes) {
-                x.sync = DBFalse;  // Prevent any action during import and force resync later.
-                const ev = new Event('importing-athlete');  // client is responsible re-enabling athlete.
-                ev.data = x;
-                this.dispatchEvent(ev);
+                x.sync = DBTrue;  // It's possible to export disabled athletes.  Just reenable them.
+                this.importedAthletes.add(x.id);
                 console.debug(`Importing athlete: ${x.name} [${x.id}]`);
             }
             await athletesStore.putMany(athletes);
         }
-        if (this.importing.activities) {
+        if (this.importing.activities && this.importing.activities.length) {
             const activities = this.importing.activities.splice(0, Infinity);
             // Ensure we do a full resync after athlete is enabled.
             for (const x of activities) {
@@ -2026,10 +2022,29 @@ class DataExchange extends sauce.proxy.Eventing {
             console.debug(`Importing ${activities.length} activities`);
             await actsStore.putMany(activities);
         }
-        if (this.importing.streams) {
+        if (this.importing.streams && this.importing.streams.length) {
             const streams = this.importing.streams.splice(0, Infinity);
             console.debug(`Importing ${streams.length} activities`);
             await streamsStore.putMany(streams);
+        }
+    }
+
+    async finish() {
+        this._finishing = true;
+        if (!syncManager && self.currentUser) {
+            startSyncManager(self.currentUser);
+        }
+        if (syncManager) {
+            for (const x of this.importedAthletes) {
+                await syncManager.enableAthlete(x);
+                await sauce.sleep(60 * 1000);
+            }
+        }
+    }
+
+    delete() {
+        if (!this._finishing) {
+            this.finish();
         }
     }
 }
@@ -2068,7 +2083,7 @@ export function startSyncManager(id) {
 
 export async function stopSyncManager() {
     if (!syncManager) {
-        return;
+        return false;
     }
     console.info("Stopping Sync Manager...");
     const mgr = syncManager;
@@ -2076,6 +2091,7 @@ export async function stopSyncManager() {
     mgr.stop();
     await mgr.join();
     console.debug("Sync Manager stopped.");
+    return true;
 }
 
 
