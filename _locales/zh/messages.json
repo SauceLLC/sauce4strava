@@ -1208,6 +1208,9 @@
         "message": "编辑活动",
         "description": "IMMUTABLE"
     },
+    "performance_edit_activities": {
+        "message": "编辑活动"
+    },
     "performance_unavailable": {
         "message": "不可用",
         "description": "IMMUTABLE"

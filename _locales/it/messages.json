@@ -1074,6 +1074,9 @@
     "performance_edit_activity_tooltip": {
         "message": "Modifica attività"
     },
+    "performance_edit_activities": {
+        "message": "Modifica attività"
+    },
     "performance_unavailable": {
         "message": "Non disponibile"
     },
