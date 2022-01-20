@@ -10,6 +10,7 @@
             <th>Elevation</th>
             <th>TSS Override</th>
             <th>Exclude Peaks</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -17,7 +18,7 @@
             <tr data-id="{{a.id}}">
                 <td class="activity-name">
                     <div class="name-container">
-                        <a href="https://www.strava.com/activities/{{a.id}}"
+                        <a target="_blank" href="https://www.strava.com/activities/{{a.id}}"
                            title="{{a.name}}{{a.description ? "\n\n" + a .description : ''}}">{{a.name}}</a>
                     </div>
                 </td>
@@ -58,6 +59,11 @@
                 <td class="peaks_exclude">
                     <input type="checkbox" name="peaks_exclude"
                            {{a.peaksExclude ? 'checked' : ''}}/>
+                </td>
+                <td>
+                     <div class="btn btn-icon-only btn-unstyled edit-activity"
+                          data-id="{{a.id}}"
+                          title="Edit activity">{{=icon edit-duotone=}}</div>
                 </td>
             </tr>
         <% } %>

@@ -232,19 +232,16 @@ sauce.ns('performance', async ns => {
             extraButtons: [{
                 text: 'Save', // XXX localize
                 click: async ev => {
+                    const tss = Number($modal.find('input[name="tss_override"]').val() || NaN);
                     const updates = {
-                        tssOverride: Number($modal.find('input[name="tss_override"]').val()) || null,
+                        tssOverride: isNaN(tss) ? null : tss,
                         peaksExclude: $modal.find('input[name="peaks_exclude"]').is(':checked'),
                     };
                     ev.currentTarget.disabled = true;
                     ev.currentTarget.classList.add('sauce-loading');
                     try {
                         await sauce.hist.updateActivity(activity.id, updates);
-                        Object.assign(activity, updates);
-                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'training-load',
-                            {disableSync: true});
-                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', 'peaks',
-                            {wait: true});
+                        await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null);
                     } finally {
                         ev.currentTarget.classList.remove('sauce-loading');
                         ev.currentTarget.disabled = false;
@@ -980,19 +977,29 @@ sauce.ns('performance', async ns => {
             this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
         }
 
+        setElement($el) {
+            if (this.chart) {
+                // Because of the funky config system we never rebuild a chart, we use just one.
+                // So we need to save the canvas from the first render.
+                this.chart.stop();
+                this.$canvas = this.$('canvas');
+                $el.find('canvas').replaceWith(this.$canvas);
+            } else {
+                this.$canvas = $el.find('canvas');
+            }
+            super.setElement($el);
+        }
+
         setChartConfig(config) {
             this._chartConfig = config;
         }
 
         async render() {
-            if (this.chart) {
-                this.chart.destroy();
-                delete this.chart.view;
-                delete this.chart;
-            }
             await super.render();
-            if (this._chartConfig) {
-                const ctx = this.$('canvas')[0].getContext('2d');
+            if (this.chart) {
+                this.chart.update();
+            } else if (this._chartConfig) {
+                const ctx = this.$canvas[0].getContext('2d');
                 this.chart = new this._ChartClass(ctx, this, this._chartConfig);
             }
         }
@@ -1992,6 +1999,10 @@ sauce.ns('performance', async ns => {
 
 
     class BulkActivityEditDialog extends PerfView {
+        get localeKeys() {
+            return ['/save', 'edit_activities'];
+        }
+
         get events() {
             return {
                 ...super.events,
@@ -2019,14 +2030,14 @@ sauce.ns('performance', async ns => {
 
         show() {
             sauce.ui.modal({
-                title: 'Edit Activities',
+                title: this.LM('edit_activities'),
                 el: this.$el,
                 flex: true,
                 width: '60em',
                 icon: this.icon,
                 dialogClass: 'sauce-edit-activities-dialog',
                 extraButtons: [{
-                    text: 'Save', // XXX localize
+                    text: this.LM('save'),
                     click: async ev => {
                         const updates = {};
                         for (const tr of this.$('table tbody tr')) {
@@ -2040,13 +2051,12 @@ sauce.ns('performance', async ns => {
                         try {
                             await sauce.hist.updateActivities(updates);
                             for (const id of Object.keys(updates)) {
-                                await sauce.hist.invalidateActivitySyncState(Number(id), 'local',
-                                    'training-load', {disableSync: true});
-                                await sauce.hist.invalidateActivitySyncState(Number(id), 'local',
-                                    'peaks', {disableSync: true});
+                                await sauce.hist.invalidateActivitySyncState(Number(id), 'local', null,
+                                    {disableSync: true});
                             }
-                            await Promise.all([...this.athletes].map(x => sauce.hist.syncAthlete(x, {wait: true})));
-                            await this.pageView.render();
+                            for (const x of this.athletes) {
+                                await sauce.hist.syncAthlete(x);
+                            }
                         } finally {
                             ev.currentTarget.classList.remove('sauce-loading');
                             ev.currentTarget.disabled = false;
@@ -2056,6 +2066,12 @@ sauce.ns('performance', async ns => {
                     }
                 }]
             });
+        }
+
+        async onEditActivityClick(ev) {
+            const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
+            const activity = await sauce.hist.getActivity(id);
+            editActivityDialogXXX(activity, this.pageView);
         }
     }
 
@@ -2441,9 +2457,11 @@ sauce.ns('performance', async ns => {
         }
 
         renderAttrs() {
+            const range = this.getRangeSnapshot();
             return {
                 athletes: Array.from(this.athletes.values()),
                 athleteId: this.athlete && this.athlete.id,
+                range: [range.period, range.metric].join(),
             };
         }
 

@@ -67,7 +67,7 @@
                         <% } else { %>
                             <small>{{humanDateTime(a.ts, {style: 'weekday'})}}</small>
                         <% } %>
-                        <a class="activity-name" href="/activities/{{a.id}}">{{a.name}}</a>
+                        <a class="activity-name" target="_blank" href="/activities/{{a.id}}">{{a.name}}</a>
                     </header>
                     <% if (a.description) { %>
                         <p class="activity-desc">{{a.description}}</p>
