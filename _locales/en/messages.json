@@ -356,6 +356,7 @@
     "performance_override": {"message": "Override"},
     "performance_elevation_gain": {"message": "Elevation Gain"},
     "performance_edit_activity_tooltip": {"message": "Edit Activity"},
+    "performance_edit_activities": {"message": "Edit Activities"},
     "performance_unavailable": {"message": "Unavailable"},
     "performance_peak_performances_title": {"message": "Peak Performances"},
     "performance_training_load_title": {"message": "Training Load - Fitness, Fatigue and Form"},
