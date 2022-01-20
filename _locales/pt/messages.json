@@ -423,7 +423,8 @@
         "message": "Masculino"
     },
     "analysis_female": {
-        "message": "Feminino"
+        "message": "Feminino",
+        "description": "IMMUTABLE"
     },
     "analysis_power_profile_about1": {
         "message": "O conceito de perfil de potência foi criado pelo Dr. Andy Coggan. É uma estimativa básica dos requisitos de potência para atingir um nível específico de competitividade em provas.",
@@ -957,7 +958,8 @@
         "message": "Configurações do atleta"
     },
     "sync_control_panel_backup_data": {
-        "message": "Criar backup"
+        "message": "Criar backup",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_restore_data": {
         "message": "Restaurar dados"
@@ -1187,6 +1189,9 @@
     },
     "performance_edit_activity_tooltip": {
         "message": "Editar atividade"
+    },
+    "performance_edit_activities": {
+        "message": "Editar atividades"
     },
     "performance_unavailable": {
         "message": "Indisponível"
