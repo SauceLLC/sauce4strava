@@ -1,6 +1,7 @@
 {
     "app_desc": {
-        "message": "Funcionalidade adicional para sua análise de ciclismo e corrida. Esta extensão atualiza o site Strava ™."
+        "message": "Funcionalidades adicionais para sua análise de ciclismo e corrida. Esta extensão complementa o site Strava™.",
+        "description": "IMMUTABLE"
     },
     "athlete": {
         "message": "Atleta"
@@ -9,7 +10,8 @@
         "message": "Modelo"
     },
     "performance": {
-        "message": "atuação"
+        "message": "performance",
+        "description": "IMMUTABLE"
     },
     "all_athletes": {
         "message": "Todos os atletas"
@@ -27,7 +29,8 @@
         "message": "Cronometragem"
     },
     "analysis_gap": {
-        "message": "GAP = VÃO"
+        "message": "RAI",
+        "description": "IMMUTABLE"
     },
     "analysis_climbed": {
         "message": "Escalou"
@@ -45,52 +48,66 @@
         "message": "Máx."
     },
     "analysis_lowest": {
-        "message": "O mais baixo"
+        "message": "Mais baixo",
+        "description": "IMMUTABLE"
     },
     "analysis_highest": {
-        "message": "Altíssima"
+        "message": "Mais alta",
+        "description": "IMMUTABLE"
     },
     "analysis_elapsed": {
         "message": "Decorrido"
     },
     "analysis_elapsed_time_tooltip": {
-        "message": "Tempo decorrido: tempo incluindo paradas"
+        "message": "Tempo decorrido total: tempo incluindo paradas",
+        "description": "IMMUTABLE"
     },
     "analysis_elapsed_power_tooltip": {
-        "message": "Potência média decorrida: as paradas são preenchidas com zeros"
+        "message": "Potência média decorrida: as paradas contam como zeros",
+        "description": "IMMUTABLE"
     },
     "analysis_elapsed_pace_tooltip": {
         "message": "Ritmo médio decorrido: as paradas são incluídas no intervalo de tempo"
     },
     "analysis_active_time_tooltip": {
-        "message": "Apenas tempo ativo"
+        "message": "Apenas tempo em movimento",
+        "description": "IMMUTABLE"
     },
     "analysis_active_power_tooltip": {
-        "message": "Potência ativa média"
+        "message": "Potência média em movimento",
+        "description": "IMMUTABLE"
     },
     "analysis_active_pace_tooltip": {
-        "message": "Ritmo ativo médio"
+        "message": "Ritmo médio em movimento",
+        "description": "IMMUTABLE"
     },
     "analysis_active_speed_tooltip": {
-        "message": "Velocidade ativa média"
+        "message": "Velocidade média considerando apenas o tempo em movimento",
+        "description": "IMMUTABLE"
     },
     "analysis_gap_tooltip": {
-        "message": "Ritmo ajustado de inclinação: Ritmo estimado para terreno plano"
+        "message": "Ritmo Ajustado à Inclinação: Ritmo estimado para terreno plano",
+        "description": "IMMUTABLE"
     },
     "analysis_stride_tooltip": {
-        "message": "Distância média por passo / curso"
+        "message": "Distância média por passo",
+        "description": "IMMUTABLE"
     },
     "analysis_np_tooltip": {
-        "message": "Normalized Power®: Uma estimativa da potência média potencial"
+        "message": "Normalized Power®: Potência média calculada de maneira que representa melhor os esforços mais elevados",
+        "description": "IMMUTABLE"
     },
     "analysis_xp_tooltip": {
-        "message": "xPower: uma estimativa de potência potencial aprimorada inspirada no Normalized Power® (criado pelo Dr. Philip Friere Skiba)"
+        "message": "xPower: um cálculo de potência média ponderada inspirada na Normalized Power® (criado pelo Dr. Philip Friere Skiba)",
+        "description": "IMMUTABLE"
     },
     "analysis_sp_tooltip": {
-        "message": "Sea Power: uma estimativa da potência potencial ao nível do mar"
+        "message": "Sea Power: uma estimativa da potência corrigida para o nível do mar",
+        "description": "IMMUTABLE"
     },
     "analysis_sp_adjust_tooltip": {
-        "message": "Compensação devido ao efeito da altitude em V02Max"
+        "message": "Compensação devido ao efeito da altitude no V02Max",
+        "description": "IMMUTABLE"
     },
     "analysis_energy_tooltip": {
         "message": "Energia gasta em quilojoules"
@@ -99,25 +116,32 @@
         "message": "Quilojoules por hora"
     },
     "analysis_elevation_gain_tooltip": {
-        "message": "Ganho de elevação: escalada"
+        "message": "Ganho de elevação",
+        "description": "IMMUTABLE"
     },
     "analysis_elevation_loss_tooltip": {
-        "message": "Perda de elevação: descendente"
+        "message": "Perda de elevação",
+        "description": "IMMUTABLE"
     },
     "analysis_elevation_avg_tooltip": {
-        "message": "Elevação Média"
+        "message": "Altitude Média",
+        "description": "IMMUTABLE"
     },
     "analysis_grade_tooltip": {
-        "message": "Grau de colina"
+        "message": "Grau de inclinação",
+        "description": "IMMUTABLE"
     },
     "analysis_vam_tooltip": {
-        "message": "Metros de escalada por hora"
+        "message": "Velocidade ascencional média em metros por hora",
+        "description": "IMMUTABLE"
     },
     "analysis_tss_tooltip": {
-        "message": "Training Stress Score®: Um indicador de carga de estresse baseado em energia"
+        "message": "Training Stress Score®: Um indicador de carga de treinamento baseado em potência",
+        "description": "IMMUTABLE"
     },
     "analysis_trimp_tss_tooltip": {
-        "message": "TRIMP (TRaining IMPulse) baseado em Training Stress Score®: Um indicador de carga de estresse baseado em reserva de frequência cardíaca"
+        "message": "TRIMP (TRaining IMPulse) baseado no Training Stress Score®: Um indicador de carga de treinamento em frequência cardíaca de reserva",
+        "description": "IMMUTABLE"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "Tempo deslocado para o início deste esforço"
@@ -126,7 +150,8 @@
         "message": "Watts por quilograma de peso corporal"
     },
     "analysis_max_power_tooltip": {
-        "message": "poder maximo"
+        "message": "Potência maxima",
+        "description": "IMMUTABLE"
     },
     "analysis_low_hr_tooltip": {
         "message": "Menor freqüência cardíaca"
@@ -159,7 +184,8 @@
         "message": "Clique para definir o valor"
     },
     "analysis_ftp_input_tooltip": {
-        "message": "Insira o FTP estimado (Potência Limiar Funcional) para este atleta e pressione Enter. FTP é a média máxima de watt sustentada por 1 hora. Se o atleta já tiver um valor definido em seu perfil, isso substituirá essa configuração. Para redefinir o valor, insira um valor em branco."
+        "message": "Insira o FTP estimado (Potência Limiar Funcional) para este atleta e pressione Enter. FTP é a média máxima de potência sustentada por aproximadamente 1 hora. Se o atleta já tiver um valor definido em seu perfil, isso substituirá essa configuração. Para redefinir o valor, insira um valor em branco.",
+        "description": "IMMUTABLE"
     },
     "analysis_weight_input_tooltip": {
         "message": "Insira o peso estimado para este atleta e pressione Enter. Se o atleta já tiver um valor definido em seu perfil, isso substituirá essa configuração. Para redefinir o valor, insira um valor em branco."
@@ -198,13 +224,16 @@
         "message": "Faixas de ritmo ajustado de grau máximo sustentado"
     },
     "analysis_watt_estimate_tooltip": {
-        "message": "Esses valores estão sendo calculados a partir de estimativas de potência. Para valores precisos, é necessário um dispositivo de medição de potência real."
+        "message": "Esses valores estão sendo calculados a partir de estimativas de potência. Para valores precisos, é necessário um medidor de potência real.",
+        "description": "IMMUTABLE"
     },
     "analysis_stops": {
-        "message": "Pára"
+        "message": "Paradas",
+        "description": "IMMUTABLE"
     },
     "analysis_idle": {
-        "message": "Ocioso"
+        "message": "Em imobilidade",
+        "description": "IMMUTABLE"
     },
     "analysis_active": {
         "message": "Ativo"
@@ -219,16 +248,19 @@
         "message": "Gasto"
     },
     "analysis_rate": {
-        "message": "Avaliar"
+        "message": "Dispêndio",
+        "description": "IMMUTABLE"
     },
     "analysis_elevation": {
-        "message": "Elevação"
+        "message": "Altitude",
+        "description": "IMMUTABLE"
     },
     "analysis_environment": {
         "message": "Ambiente"
     },
     "analysis_grade": {
-        "message": "Grau"
+        "message": "Inclinação",
+        "description": "IMMUTABLE"
     },
     "analysis_estimated": {
         "message": "estimado"
@@ -240,7 +272,8 @@
         "message": "Classificação"
     },
     "analysis_raw": {
-        "message": "cru"
+        "message": "bruto",
+        "description": "IMMUTABLE"
     },
     "analysis_raw_data": {
         "message": "Dados não tratados"
@@ -270,7 +303,8 @@
         "message": "BETA"
     },
     "analysis_start_of_effort": {
-        "message": "Início de esforço"
+        "message": "Início do esforço",
+        "description": "IMMUTABLE"
     },
     "analysis_elapsed_time": {
         "message": "Tempo decorrido"
@@ -279,52 +313,66 @@
         "message": "Frequência cardíaca"
     },
     "analysis_temp": {
-        "message": "Temp"
+        "message": "Temperatura",
+        "description": "IMMUTABLE"
     },
     "analysis_cadence": {
         "message": "Cadência"
     },
     "analysis_stride": {
-        "message": "Stride"
+        "message": "Passada",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_power": {
-        "message": "Pico de energia"
+        "message": "Melhor Potência",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_power_wkg": {
-        "message": "Pico W / kg"
+        "message": "Melhor W/kg",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_sp": {
-        "message": "Peak SP"
+        "message": "Melhor SP",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_np": {
-        "message": "Peak NP®"
+        "message": "Melhor NP®",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_xp": {
-        "message": "Peak xPower"
+        "message": "Melhor xPower",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
-        "message": "HR de pico"
+        "message": "Melhor FC",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_cadence": {
-        "message": "Peak Cadence"
+        "message": "Melhor Cadência",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_vam": {
-        "message": "Peak VAM"
+        "message": "Melhor VAM",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_pace": {
-        "message": "Peak Pace"
+        "message": "Melhor Ritmo",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_gap": {
-        "message": "Peak GAP"
+        "message": "Melhor RAI",
+        "description": "IMMUTABLE"
     },
     "analysis_watts": {
         "message": "Watts"
     },
     "analysis_power": {
-        "message": "Poder"
+        "message": "Potência",
+        "description": "IMMUTABLE"
     },
     "analysis_sea_power": {
-        "message": "Sea Power"
+        "message": "Sea Power",
+        "description": "IMMUTABLE"
     },
     "analysis_weight": {
         "message": "Peso"
@@ -375,19 +423,23 @@
         "message": "Masculino"
     },
     "analysis_female": {
-        "message": "Fêmea"
+        "message": "Feminino"
     },
     "analysis_power_profile_about1": {
-        "message": "O conceito de perfil de energia foi criado pelo Dr. Andy Coggan. É um esboço básico dos requisitos de potência para atingir um nível específico de competitividade em corridas."
+        "message": "O conceito de perfil de potência foi criado pelo Dr. Andy Coggan. É uma estimativa básica dos requisitos de potência para atingir um nível específico de competitividade em provas.",
+        "description": "IMMUTABLE"
     },
     "analysis_power_profile_about2": {
-        "message": "Essas classificações têm como objetivo dar uma ideia aproximada de como sua melhor saída de potência se compara à capacidade máxima de outros pilotos. Eles são mais representativos quando você está trabalhando muito."
+        "message": "Essas classificações têm como objetivo dar uma ideia aproximada de como suas melhores marcas de potência se comparam à capacidade máxima de outros ciclistas. Eles são mais representativos em esforços máximos.",
+        "description": "IMMUTABLE"
     },
     "analysis_power_profile_select": {
-        "message": "Selecione um perfil para ver as saídas de energia necessárias"
+        "message": "Selecione um perfil para ver as marcas de potência necessárias",
+        "description": "IMMUTABLE"
     },
     "analysis_power_profile_footer_leadin": {
-        "message": "NOTA: O algoritmo Sauce é uma interpretação aprimorada do conceito original de Andy. Para esforços entre 20 e 60 minutos, Normalized Power® é gradualmente usado em vez da energia real. Após 1 hora, apenas NP® é usado e um fator de resistência logarítmica é aplicado para melhorar a fadiga do modelo.<br/><br/> Para obter informações adicionais sobre os perfis originais, leia"
+        "message": "NOTA: O algoritmo Sauce é uma interpretação aprimorada do conceito original de Andy. Para esforços entre 20 e 60 minutos, Normalized Power® é gradualmente usado em vez da potência média simples. Após 1 hora, apenas NP® é usado e um fator de resistência logarítmica é aplicado para ajustar a um modelo de fadiga.<br/><br/> Para obter informações adicionais sobre os perfis originais, leia",
+        "description": "IMMUTABLE"
     },
     "analysis_comment_label": {
         "message": "Diga algo"
@@ -402,10 +454,12 @@
         "message": "Análise"
     },
     "analysis_create_live_segment_tooltip": {
-        "message": "Crie um arquivo de segmento ao vivo a partir deste esforço. Compatível com a maioria dos dispositivos Garmin modernos."
+        "message": "Crie um arquivo de Live Segment a partir deste esforço. Compatível com a maioria dos dispositivos Garmin modernos.",
+        "description": "IMMUTABLE"
     },
     "analysis_create": {
-        "message": "Crio"
+        "message": "Criar",
+        "description": "IMMUTABLE"
     },
     "analysis_settings": {
         "message": "Definições"
@@ -435,22 +489,27 @@
         "message": "Atividade"
     },
     "analysis_date": {
-        "message": "Encontro"
+        "message": "Data",
+        "description": "IMMUTABLE"
     },
     "analysis_peaks_settings_dialog_title": {
-        "message": "Configurações de esforços de pico"
+        "message": "Configurações de melhores marcas de esforço",
+        "description": "IMMUTABLE"
     },
     "analysis_peaks_ranges": {
-        "message": "Faixas de esforços de pico"
+        "message": "Faixas de melhores marcas de esforços",
+        "description": "IMMUTABLE"
     },
     "analysis_peaks_ranges_intro": {
-        "message": "Você pode personalizar os tempos e distâncias usados para cálculos de <i>esforços de pico.</i> Dependendo do tipo de dados, valores de tempo ou distâncias serão usados."
+        "message": "Você pode personalizar os tempos e distâncias usados para cálculos das <i>marcas de esforço.</i> Dependendo do tipo de dados, valores de tempo ou distâncias serão usados.",
+        "description": "IMMUTABLE"
     },
     "analysis_peaks_reset_to_defaults": {
         "message": "Redefinir para os padrões"
     },
     "analysis_pwhr_tooltip": {
-        "message": "Pw: Hr é uma medida de desacoplamento aeróbio. Ele compara a relação potência / freqüência cardíaca na primeira metade de uma atividade com a segunda metade. Um valor positivo indica que a freqüência cardíaca em uma determinada potência aumentou conforme a atividade progredia. Freqüentemente, isso acontece em provas de longa duração e representa fadiga."
+        "message": "Pw:Hr é o fator de desacoplamento aeróbio. Ele compara a relação potência / freqüência cardíaca na primeira metade de uma atividade com a segunda metade. Um valor positivo indica que a freqüência cardíaca em uma determinada potência aumentou conforme a atividade progredia. Freqüentemente, isso acontece em provas de longa duração e indica fadiga.",
+        "description": "IMMUTABLE"
     },
     "analysis_click_for_more_nutritional_info": {
         "message": "Clique para obter mais informações nutricionais"
@@ -465,13 +524,15 @@
         "message": "Os controles do teclado de análise estão ativos. Quando os gráficos de análise estão focados, você pode alterar a seleção ou os dados destacados com as teclas de seta. Esquerda/Direita: Mova o cursor 1 ponto de dados para a esquerda ou direita. Para cima/para baixo: Mova o cursor 60 pontos de dados para a esquerda ou para a direita. Ctrl + Esquerda/Direita: Move a seleção atual. Shift + Esquerda/Direita: Expanda a seleção atual. Ctrl + Shift + Esquerda/Direita: reduz a seleção atual."
     },
     "time_sec": {
-        "message": "seg"
+        "message": "segundo",
+        "description": "IMMUTABLE"
     },
     "time_secs": {
         "message": "segundos"
     },
     "time_min": {
-        "message": "min"
+        "message": "minuto",
+        "description": "IMMUTABLE"
     },
     "time_mins": {
         "message": "minutos"
@@ -510,7 +571,8 @@
         "message": "atrás"
     },
     "time_in": {
-        "message": "no"
+        "message": "em",
+        "description": "IMMUTABLE"
     },
     "time_now": {
         "message": "agora"
@@ -522,7 +584,8 @@
         "message": "Clique para mais informações"
     },
     "perf_predictor_intro_help1": {
-        "message": "O preditor de desempenho funciona melhor se você ajustar primeiro os parâmetros de entrada para corresponder ao tempo do desempenho original. Por exemplo, se você estava em uma mountain bike, selecione a opção \"BTT\". Se houver vento frontal predominante durante o esforço, altere o valor da velocidade do vento para indicar o impacto líquido do vento e assim por diante."
+        "message": "O preditor de desempenho funciona melhor se você ajustar primeiro os parâmetros de entrada para corresponder ao tempo do desempenho original. Por exemplo, se você estava em uma mountain bike, selecione a opção \"MTB\". Se houver vento frontal predominante durante o esforço, altere o valor da velocidade do vento para indicar o impacto líquido do vento e assim por diante.",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_intro_help2": {
         "message": "Depois que os valores são ajustados corretamente, o desempenho previsto deve ser semelhante ao desempenho original em uma pequena porcentagem."
@@ -531,25 +594,31 @@
         "message": "Agora você pode alterar diferentes parâmetros como potência, peso e aerodinâmica para estimar o impacto no desempenho que essas mudanças podem ter."
     },
     "perf_predictor_intro": {
-        "message": "O Preditor de desempenho é uma calculadora de energia cíclica que permite examinar o impacto de fatores de desempenho alterados."
+        "message": "O Performance Predictor é uma calculadora de potência que permite examinar o impacto de diferentes no desempenho.",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_intro_note": {
-        "message": "Altere esses parâmetros para ver o efeito estimado no desempenho."
+        "message": "Altere os parâmetros abaixo para ver o efeito estimado no desempenho.",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_help1": {
-        "message": "Certifique-se de que esta configuração corresponda à sua bicicleta e terreno o mais próximo possível. Você pode ajustar a resistência ao rolamento diretamente alterando o valor \"Crr\"."
+        "message": "Certifique-se de que esta configuração corresponda à sua bicicleta e terreno o mais próximo possível. Você pode ajustar a resistência à rolagem diretamente alterando o valor \"Crr\".",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_help2": {
-        "message": "Use valores de \"Crr\" mais baixos (menos resistência) para pneus mais rápidos com boas superfícies de estrada e valores mais altos (mais resistência) para pneus mais pesados em superfícies ásperas, por exemplo, mountain bike."
+        "message": "Use valores de \"Crr\" mais baixos (menor resistência) para pneus mais rápidos com boas superfícies de estrada e valores mais altos (maior resistência) para pneus mais pesados em superfícies ásperas, como por exemplo, mountain bike.",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_heading": {
-        "message": "Resistência ao rolamento"
+        "message": "Resistência à rolagem",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_bike": {
         "message": "Bicicleta"
     },
     "perf_predictor_crr_bike_tooltip": {
-        "message": "Tipo de bicicleta para estimativa de resistência ao rolamento (por exemplo, Crr)"
+        "message": "Tipo de bicicleta para estimativa de resistência à rolagem (por exemplo, Crr)",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_bike_road": {
         "message": "Estrada"
@@ -561,7 +630,8 @@
         "message": "Terreno"
     },
     "perf_predictor_crr_terrain_tooltip": {
-        "message": "Tipo de terreno para estimativa de resistência ao rolamento (por exemplo, Crr)"
+        "message": "Tipo de terreno para estimativa de resistência à rolagem (por exemplo, Crr)",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_asphalt": {
         "message": "Asfalto"
@@ -573,7 +643,8 @@
         "message": "Grama"
     },
     "perf_predictor_crr_terrain_offroad": {
-        "message": "Fora da estrada"
+        "message": "Terra/trilha",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_sand": {
         "message": "Areia"
@@ -582,22 +653,26 @@
         "message": "Personalizado"
     },
     "perf_predictor_crr_tooltip": {
-        "message": "Coeficiente de resistência ao rolamento"
+        "message": "Coeficiente de resistência à rolagem",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help1": {
-        "message": "\"CdA\" representa a resistência aerodinâmica de um piloto e do equipamento. É tecnicamente o coeficiente de arrasto multiplicado pela área da superfície frontal. Valores mais baixos são alcançados andando mais baixo, usando trajes de velocidade e equipamentos especiais, como bicicletas de contra-relógio e rodas de disco."
+        "message": "\"CdA\" representa a resistência aerodinâmica de um ciclista e do equipamento. É tecnicamente o coeficiente de arrasto multiplicado pela área da superfície frontal. Valores mais baixos são alcançados com posição mais encolhida, usando roupas e equipamentos aerodinâmicos, como bicicletas de contra-relógio e rodas de perfil alto.",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help_table_heading": {
         "message": "Alguns valores de exemplo"
     },
     "perf_predictor_cda_help_table_elite_tt": {
-        "message": "Equipamento de contra-relógio de nível de elite e posicionamento aerodinâmico"
+        "message": "Equipamento de contra-relógio de nível elite e posicionamento aerodinâmico",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help_table_good_tt": {
         "message": "Bom equipamento de contra-relógio e posicionamento aerodinâmico / Triathlon"
     },
     "perf_predictor_cda_help_table_road": {
-        "message": "Posições de corrida de bicicleta de estrada / barra cai para o capô"
+        "message": "Posições de corrida de bicicleta de estrada / segurando no STI",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help_table_climbing": {
         "message": "Posições de escalada em bicicleta de estrada / mountain bike XC"
@@ -618,10 +693,12 @@
         "message": "Coeficiente de arrasto aerodinâmico vezes a área da superfície frontal"
     },
     "perf_predictor_power": {
-        "message": "Poder"
+        "message": "Potência",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_tooltip": {
-        "message": "Watts médios de esforço"
+        "message": "Watts médios no esforço",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_body_weight": {
         "message": "Peso corporal"
@@ -630,31 +707,38 @@
         "message": "Apenas peso corporal sem equipamento"
     },
     "perf_predictor_gear_weight": {
-        "message": "Peso da bicicleta / engrenagem"
+        "message": "Peso da bicicleta / acessórios",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_gear_weight_tooltip": {
         "message": "Peso de todo o equipamento e bicicleta, incluindo água e roupas"
     },
     "perf_predictor_slope": {
-        "message": "Declive"
+        "message": "Inclinação",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_slope_tooltip": {
-        "message": "Gradiente de colina ou descida"
+        "message": "Gradiente da subida ou descida",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_distance_tooltip": {
-        "message": "Distância do curso"
+        "message": "Distância do trecho",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_elevation": {
-        "message": "Elevação (média)"
+        "message": "Altitude (média)",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_elevation_tooltip": {
-        "message": "A elevação média do curso"
+        "message": "A altitude média do trecho",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_wind": {
         "message": "Vento"
     },
     "perf_predictor_wind_tooltip": {
-        "message": "A velocidade líquida do vento contra o piloto ou valores negativos para ventos de cauda"
+        "message": "A velocidade relativa do vento contra o ciclista ou valores negativos para ventos a favor",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_time": {
         "message": "Tempo"
@@ -669,88 +753,111 @@
         "message": "mais rápido"
     },
     "perf_predictor_slower": {
-        "message": "Mais devagar"
+        "message": "Mais lento",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_heading": {
-        "message": "Detalhes de energia"
+        "message": "Detalhes de potência",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_gravity": {
         "message": "Gravidade"
     },
     "perf_predictor_power_details_aero": {
-        "message": "Aero"
+        "message": "Aerodinâmica",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_rr": {
-        "message": "Rolando"
+        "message": "Rolagem",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_gravity_tooltip": {
-        "message": "Requisitos de energia e trabalho para superar a gravidade"
+        "message": "Requisitos de potência para superar a gravidade",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_aero_tooltip": {
-        "message": "Requisitos de energia e trabalho para superar o arrasto aerodinâmico"
+        "message": "Requisitos de potência para superar o arrasto aerodinâmico",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_rr_tooltip": {
-        "message": "Requisitos de energia e trabalho para superar a resistência ao rolamento"
+        "message": "Requisitos de energia para superar a resistência ao rolamento",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_drafting": {
-        "message": "Rascunho"
+        "message": "Vácuo",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_drafting_tooltip": {
-        "message": "Selecione esta opção para modelar efeitos de desenho"
+        "message": "Selecione esta opção para modelar efeitos de vácuo",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_riders": {
-        "message": "Cavaleiros"
+        "message": "Ciclistas",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_riders_tooltip": {
-        "message": "Número de passageiros neste grupo"
+        "message": "Número de ciclistas neste pelotão",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_position": {
         "message": "Posição"
     },
     "perf_predictor_power_variance": {
-        "message": "Variância de potência"
+        "message": "Diferença de potência",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_variance_tooltip": {
-        "message": "A diferença de poder entre a posição mais difícil e a posição mais fácil. Normalmente, esta é a potência para a 1ª e a última posição."
+        "message": "A diferença de potência entre a posição mais difícil e a posição mais fácil. Normalmente, esta é a potência para a 1ª e a última posição.",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_group_power": {
-        "message": "Poder do Grupo"
+        "message": "Potência do pelotão",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_group_power_tooltip": {
-        "message": "A potência média para todas as posições neste grupo"
+        "message": "A potência média para todas as posições neste pelotãp",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_position_tooltip": {
         "message": "Sua posição neste grupo"
     },
     "perf_predictor_rotating_paceline": {
-        "message": "Rotativo / Paceline"
+        "message": "Revezamento",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_rotating_tooltip": {
-        "message": "Selecione esta opção para modelar um grupo de pilotos mudando de posição durante o esforço"
+        "message": "Selecione esta opção para modelar um grupo de ciclistas revezando a ponta do pelotão durante o esforço",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_time_at_front": {
-        "message": "Tempo na frente"
+        "message": "Tempo na ponta",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_work_tooltip": {
-        "message": "Selecione a porcentagem de tempo na primeira posição deste grupo"
+        "message": "Selecione a porcentagem de tempo puxando o pelotão na ponta",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_drafting_help": {
-        "message": "Treinar ou andar em um grupo de pilotos oferece benefícios aerodinâmicos significativos. O Preditor de desempenho pode modelar esses efeitos aplicando pesquisas de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen e Bert Blocken</a> .<br/><br/> Observe que este algoritmo funciona bem para grupos de tamanhos menores em formações de arquivo único. Grandes pelotões de pilotos estão sujeitos a forças aerodinâmicas mais complicadas que não são abordadas de forma adequada aqui."
+        "message": "Treinar ou andar em um grupo de pilotos oferece benefícios aerodinâmicos significativos. O Preditor de desempenho pode modelar esses efeitos aplicando pesquisas de <a href=\"https://doi.org/10.1007/s12283-021-00345-2\" target=\"_blank\">Thijs van Druenen e Bert Blocken</a> .<br/><br/> Observe que este algoritmo funciona bem para grupos de tamanhos menores em fileira única. Grandes pelotões de ciclistas estão sujeitos a forças aerodinâmicas mais complicadas que não são abordadas de forma adequada aqui.",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_group_weight": {
         "message": "O peso deles"
     },
     "perf_predictor_group_weight_tooltip": {
-        "message": "Para modelar os efeitos de andar em um grupo com pilotos que pesam mais ou menos que o atleta principal, você pode alterar o peso de todos os outros pilotos. ou seja, os requisitos de energia de outras pessoas quando você é o piloto pesado ou o piloto leve."
+        "message": "Para modelar os efeitos de andar em um grupo com ciclistas que pesam mais ou menos que o atleta principal, você pode alterar o peso de todos os outros pilotos. ou seja, os requisitos de potência de outras pessoas quando você é o ciclista pesado ou o piloto leve.",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_group_use_athlete_weight": {
-        "message": "Use o peso do atleta"
+        "message": "Usar o próprio peso do atleta",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_intro": {
         "message": "A sincronização de atividades importa todo o histórico de atividades para permitir gráficos de treinamento e análises de desempenho aprimorados."
     },
     "sync_control_panel_intro_help": {
-        "message": "A sincronização de atividades permite que o Sauce forneça recursos de análise que não são possíveis sem dados históricos. Isso inclui uma nova <a href=\"/sauce/performance\">página de desempenho</a> , além de estender páginas existentes, como Análise, com informações sobre desempenhos anteriores. É um ótimo recurso para atletas e treinadores avançados!<br/><br/> A sincronização funciona importando dados brutos de atividade para o <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">banco de dados local</a> do seu navegador da web. Esses dados são analisados, indexados e armazenados para pesquisas rápidas posteriores. Como sempre, o Sauce não usa servidores remotos, por isso é recomendável criar backups ocasionalmente."
+        "message": "A sincronização de atividades permite que o Sauce forneça recursos de análise que não são possíveis sem dados históricos. Isso inclui uma nova <a href=\"/sauce/performance\">página de desempenho</a> , além de estender páginas existentes, como Análise, com informações sobre desempenhos anteriores. É um ótimo recurso para atletas e treinadores avançados!<br/><br/> A sincronização funciona importando dados brutos de atividade para o <a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">banco de dados local</a> do seu navegador da web. Esses dados são analisados, indexados e armazenados para buscas rápidas posteriores. Como sempre, o Sauce não usa servidores remotos, por isso é recomendável criar backups ocasionalmente.",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_enabled": {
         "message": "Habilitado"
@@ -771,19 +878,23 @@
         "message": "Próxima sincronização"
     },
     "sync_control_panel_title": {
-        "message": "Sincronização de Atividade de Molho"
+        "message": "Sincronização de Atividade do Sauce",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_resumes": {
-        "message": "Currículos"
+        "message": "Resumos",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_activities": {
         "message": "Atividades"
     },
     "sync_control_panel_sync_stop_tooltip": {
-        "message": "Pare o processo de sincronização atual"
+        "message": "Parar o processo de sincronização atual",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_sync_start_tooltip": {
-        "message": "Inicie o processo de sincronização imediatamente"
+        "message": "Iniciar o processo de sincronização imediatamente",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_sync_recompute_tooltip": {
         "message": "Recompute os dados locais de sincronização, ou seja, TSS, NP, etc ..."
@@ -825,10 +936,12 @@
         "message": "Resistência"
     },
     "sync_control_panel_hr_zone3": {
-        "message": "Tempo"
+        "message": "Ritmado",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_hr_zone4": {
-        "message": "Limiar"
+        "message": "Limite",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_hr_zone5": {
         "message": "Anaeróbico"
@@ -837,13 +950,14 @@
         "message": "Status de sincronização"
     },
     "sync_control_panel_enable_sync_and_get_started": {
-        "message": "Ative a sincronização e comece!"
+        "message": "Ative a sincronização e inicie!",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_athlete_settings": {
         "message": "Configurações do atleta"
     },
     "sync_control_panel_backup_data": {
-        "message": "Dados de backup"
+        "message": "Criar backup"
     },
     "sync_control_panel_restore_data": {
         "message": "Restaurar dados"
@@ -864,16 +978,19 @@
         "message": "História de Peso"
     },
     "mutable_data_peaks_periods_title": {
-        "message": "Intervalos baseados no tempo"
+        "message": "Intervalos baseados em tempo",
+        "description": "IMMUTABLE"
     },
     "mutable_data_peaks_dists_title": {
         "message": "Intervalos baseados em distância"
     },
     "mutable_data_ftp_help": {
-        "message": "O molho suporta a configuração de valores de FTP para qualquer ponto de sua história. Dependendo da data em que uma atividade ocorreu, o valor correspondente será usado para quaisquer cálculos baseados em FTP, como TSS."
+        "message": "O Sauce suporta a configuração de valores de FTP para qualquer ponto de sua história. Dependendo da data em que uma atividade ocorreu, o valor correspondente será usado para qualquer cálculo baseado em FTP, como TSS.",
+        "description": "IMMUTABLE"
     },
     "mutable_data_weight_help": {
-        "message": "Molho apóia a definição de valores de peso para qualquer ponto de sua história. Dependendo da data em que uma atividade ocorreu, o valor correspondente será usado para quaisquer cálculos baseados em peso."
+        "message": "Sauce suporta a definição de valores de peso em qualquer ponto de seu histórico. Dependendo da data em que uma atividade ocorreu, o valor correspondente será usado para qualquer cálculo baseado em peso.",
+        "description": "IMMUTABLE"
     },
     "mutable_data_peaks_periods_help": {
         "message": "Os períodos de tempo são usados para esforços como potência, frequência cardíaca e cadência."
@@ -885,16 +1002,19 @@
         "message": "Inscrição"
     },
     "live_segment_create": {
-        "message": "Crio"
+        "message": "Criar",
+        "description": "IMMUTABLE"
     },
     "live_segment_creator": {
-        "message": "O Criador"
+        "message": "Criador",
+        "description": "IMMUTABLE"
     },
     "live_segment_success_create_title": {
         "message": "Criado com sucesso"
     },
     "live_segment_success_create_body1": {
-        "message": "Seu arquivo de segmento ao vivo agora deve ser baixado para o seu computador."
+        "message": "Seu arquivo de Live Segments agora deve ser baixado para o seu computador.",
+        "description": "IMMUTABLE"
     },
     "live_segment_success_create_body2": {
         "message": "Monte seu dispositivo no computador via USB e copie este arquivo para a pasta \"Garmin / NewFiles\"."
@@ -903,22 +1023,27 @@
         "message": "Certifique-se de ejetar o dispositivo com segurança antes de desconectá-lo."
     },
     "live_segment_use_trial": {
-        "message": "Teste de uso"
+        "message": "Período de testes",
+        "description": "IMMUTABLE"
     },
     "live_segment_remaining": {
         "message": "restante"
     },
     "live_segment_become_patron": {
-        "message": "Torne-se um Patrono"
+        "message": "Torne-se um Patreon",
+        "description": "IMMUTABLE"
     },
     "live_segment_intro_help1": {
-        "message": "O criador do Sauce Live Segment gera um arquivo de segmento de qualquer atividade Strava. O arquivo criado está em conformidade com o padrão de abertura de arquivo de segmento FIT. Este arquivo é compatível com dispositivos Garmin suportados e pode ser compatível com outros dispositivos que podem suportar o carregamento lateral de arquivos de segmento."
+        "message": "O criador do Sauce Live Segment gera um arquivo de segmento de qualquer atividade do Strava. O arquivo criado está em conformidade com o padrão de arquivos FIT. Este arquivo é compatível com dispositivos Garmin suportados e pode ser compatível com outros dispositivos que suportem o carregamento de arquivos de segmentos.",
+        "description": "IMMUTABLE"
     },
     "live_segment_intro_help_side_loading_more_info": {
-        "message": "Mais informações sobre o carregamento lateral da Garmin podem ser encontradas aqui."
+        "message": "Mais informações sobre a importação para o Garmin podem ser encontradas aqui.",
+        "description": "IMMUTABLE"
     },
     "live_segment_intro_help_note": {
-        "message": "NOTA: Os dispositivos Wahoo NÃO suportam arquivos de segmento de carregamento lateral."
+        "message": "NOTA: Os dispositivos Wahoo NÃO suportam arquivos de segmentos.",
+        "description": "IMMUTABLE"
     },
     "live_segment_intro1": {
         "message": "Crie um arquivo de segmento ativo para usar com"
@@ -966,19 +1091,23 @@
         "message": "Ajuste de velocidade"
     },
     "live_segment_speed_adjust_tooltip": {
-        "message": "Ajuste a velocidade geral em alguma porcentagem"
+        "message": "Ajuste a velocidade geral em porcentagem",
+        "description": "IMMUTABLE"
     },
     "live_segment_time": {
         "message": "Tempo"
     },
     "live_segment_beg1": {
-        "message": "Olá, meu nome é Justin e sou o autor de Sauce,"
+        "message": "Olá, meu nome é Justin e sou o autor do Sauce,",
+        "description": "IMMUTABLE"
     },
     "live_segment_beg2": {
-        "message": "Estou trabalhando muito para fazer do Sauce a melhor atualização possível do Strava, mas sem o seu apoio não posso dedicar tempo e energia para tornar isso possível. Considere se tornar um cliente para habilitar esse recurso e obter a experiência completa do molho."
+        "message": "Estou trabalhando muito para fazer do Sauce o melhor complemento possível do Strava, mas sem o seu apoio não posso dedicar tempo e energia para tornar isso possível. Considere se tornar um Patreon para habilitar esse recurso e obter a experiência completa do Sauce.",
+        "description": "IMMUTABLE"
     },
     "live_segment_beg3": {
-        "message": "Muito obrigado por compreender e contribuir para tornar a Sauce ainda melhor!"
+        "message": "Muito obrigado por compreender e contribuir para tornar o Sauce ainda melhor!",
+        "description": "IMMUTABLE"
     },
     "menu_add_review": {
         "message": "Adicione uma avaliação"
@@ -993,34 +1122,44 @@
         "message": "Qualquer"
     },
     "performance_rides": {
-        "message": "Passeios"
+        "message": "Pedaladas",
+        "description": "IMMUTABLE"
     },
     "performance_runs": {
-        "message": "Corre"
+        "message": "Corridas",
+        "description": "IMMUTABLE"
     },
     "performance_swims": {
-        "message": "Nada"
+        "message": "Nados",
+        "description": "IMMUTABLE"
     },
     "performance_skis": {
-        "message": "Esquis"
+        "message": "Esqui",
+        "description": "IMMUTABLE"
     },
     "performance_workouts": {
-        "message": "Treinos"
+        "message": "Exercícios",
+        "description": "IMMUTABLE"
     },
     "performance_ride": {
-        "message": "Andar de"
+        "message": "Pedalada",
+        "description": "IMMUTABLE"
     },
     "performance_run": {
-        "message": "Corre"
+        "message": "Corrida",
+        "description": "IMMUTABLE"
     },
     "performance_swim": {
-        "message": "Nadar"
+        "message": "Nado",
+        "description": "IMMUTABLE"
     },
     "performance_ski": {
-        "message": "Esqui"
+        "message": "Esqui",
+        "description": "IMMUTABLE"
     },
     "performance_workout": {
-        "message": "Treino"
+        "message": "Exercício",
+        "description": "IMMUTABLE"
     },
     "performance_activity_details": {
         "message": "Detalhes da atividade"
@@ -1048,9 +1187,6 @@
     },
     "performance_edit_activity_tooltip": {
         "message": "Editar atividade"
-    },
-    "performance_edit_activities": {
-        "message": "Editar atividades"
     },
     "performance_unavailable": {
         "message": "Indisponível"
@@ -1116,7 +1252,8 @@
         "message": "Previsto"
     },
     "performance_fitness": {
-        "message": "Ginástica"
+        "message": "Condicionamento",
+        "description": "IMMUTABLE"
     },
     "performance_fatigue": {
         "message": "Fadiga"
@@ -1125,10 +1262,12 @@
         "message": "Forma"
     },
     "performance_weekly": {
-        "message": "Semanalmente"
+        "message": "Semanal",
+        "description": "IMMUTABLE"
     },
     "performance_monthly": {
-        "message": "Por mês"
+        "message": "Mensal",
+        "description": "IMMUTABLE"
     },
     "performance_yearly": {
         "message": "Anual"
@@ -1143,7 +1282,8 @@
         "message": "Previsto a partir da relação ATL / CTL"
     },
     "performance_predicted_tss_tooltip": {
-        "message": "As previsões de TSS futuras são calculadas usando os valores ATL e CTL mais recentes como fator de inclinação inicial. Um fator de decaimento também é aplicado para explicar a incerteza e os limites de adaptação humana."
+        "message": "As previsões de TSS futuras são calculadas usando os valores ATL e CTL mais recentes como fator inicial. Um fator de decaimento também é aplicado para explicar a incerteza e os limites de adaptação humana.",
+        "description": "IMMUTABLE"
     },
     "performance_active_days_title": {
         "message": "Dias ativos"
@@ -1155,19 +1295,23 @@
         "message": "Início da temporada"
     },
     "save": {
-        "message": "Salve "
+        "message": "Salvar",
+        "description": "IMMUTABLE"
     },
     "graph_options_wbal_help": {
-        "message": "W'balance é uma representação do trabalho realizado acima do limite criado pelo <a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">Dr. Philip Skiba</a> . Você pode pensar nisso como sua bateria anaeróbica. Cada vez que você faz esforços com seu FTP / CP, sua bateria se esgota e leva tempo para recarregá-la. Se seu W'bal chegar a 0, você achará quase impossível produzir esforços acima de seu FTP / CP por qualquer período de tempo.<br/><br/> Para obter mais informações e uma ótima explicação, consulte <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">este excelente artigo do próprio Dr. Skiba</a> ."
+        "message": "W'balance é uma representação do trabalho realizado acima do limite, criado pelo <a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">Dr. Philip Skiba</a> . Pense no W'bal como uma reserva anaeróbia. Cada vez que você faz esforços acima do seu FTP / CP, sua bateria se esgota e leva algum tempo para recarregá-la. Se seu W'bal chegar a 0, será quase impossível realizar esforços acima do FTP / CP por qualquer período de tempo.<br/><br/> Para obter mais informações e uma ótima explicação detalhada, consulte <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">este excelente artigo do próprio Dr. Skiba</a> .",
+        "description": "IMMUTABLE"
     },
     "graph_options_wprime_help": {
-        "message": "W 'é o tamanho da capacidade de trabalho anaeróbio de um atleta. Em outras palavras, é o tamanho da bateria do atleta ao calcular o equilíbrio W. Este valor varia de atleta para atleta e pode ser ajustado com o auxílio de um técnico."
+        "message": "W 'é o tamanho da reserva anaeróbia de um atleta. Em outras palavras, é a quantidade de energia em kJ disponível para esforços acima do FTP / CP. Este valor varia de atleta para atleta e pode ser determinado com o auxílio de um treinador.",
+        "description": "IMMUTABLE"
     },
     "graph_options_show": {
         "message": "Mostrar"
     },
     "graph_options_smoothing": {
-        "message": "Alisamento"
+        "message": "Suavização",
+        "description": "IMMUTABLE"
     },
     "graph_options_smoothing_tooltip": {
         "message": "Use as setas do teclado para ajustes finos"
@@ -1182,7 +1326,8 @@
         "message": "Cervejas"
     },
     "food_beer_desc": {
-        "message": "Cerveja normal (12 fl. Oz)"
+        "message": "Cerveja normal (355 ml)",
+        "description": "IMMUTABLE"
     },
     "food_pizza_1": {
         "message": "Fatia de pizza"
@@ -1191,7 +1336,8 @@
         "message": "Fatias de Pizza"
     },
     "food_pizza_desc": {
-        "message": "Fatia de pizza (14 polegadas)"
+        "message": "Fatia de pizza (35 cm)",
+        "description": "IMMUTABLE"
     },
     "food_taco_1": {
         "message": "Taco"
@@ -1209,7 +1355,8 @@
         "message": "Vinhos"
     },
     "food_wine_desc": {
-        "message": "Vinho Tinto Pinot Noir (5 fl. Oz)"
+        "message": "Vinho Tinto Pinot Noir (150 ml)",
+        "description": "IMMUTABLE"
     },
     "food_broccoli_1": {
         "message": "Xícara de brócolis"
@@ -1221,10 +1368,12 @@
         "message": "Brócolis cru (1 xícara, picado)"
     },
     "food_fry_1": {
-        "message": "Ordem de fritura"
+        "message": "Porção de fritas",
+        "description": "IMMUTABLE"
     },
     "food_fry_n": {
-        "message": "Pedidos de fritura"
+        "message": "Porções de fritas",
+        "description": "IMMUTABLE"
     },
     "food_fry_desc": {
         "message": "Batatas fritas do McDonald's (médio)"
@@ -1254,7 +1403,8 @@
         "message": "Cenouras"
     },
     "food_carrot_desc": {
-        "message": "Cenoura (77g, 7 polegadas)"
+        "message": "Cenoura (77g, 18 cm)",
+        "description": "IMMUTABLE"
     },
     "food_banana_1": {
         "message": "Banana"
@@ -1263,7 +1413,8 @@
         "message": "Bananas"
     },
     "food_banana_desc": {
-        "message": "Banana (100g, 6 polegadas)"
+        "message": "Banana (100g, 15 cm)",
+        "description": "IMMUTABLE"
     },
     "food_croissant_1": {
         "message": "Croissant"
@@ -1281,7 +1432,8 @@
         "message": "Panquecas"
     },
     "food_pancake_desc": {
-        "message": "Panqueca de leitelho sem xarope (37g, 4 polegadas)"
+        "message": "Panqueca de leite de manteiga sem melado (37g, 10 cm)",
+        "description": "IMMUTABLE"
     },
     "food_bacon_1": {
         "message": "Tira De Bacon"
@@ -1299,13 +1451,16 @@
         "message": "Hambúrgueres"
     },
     "food_hamburger_desc": {
-        "message": "Quarter Pounder do McDonald's com Queijo"
+        "message": "Quarteirão do McDonald's com Queijo",
+        "description": "IMMUTABLE"
     },
     "food_cupcake_1": {
-        "message": "Bolinho"
+        "message": "Cupcake",
+        "description": "IMMUTABLE"
     },
     "food_cupcake_n": {
-        "message": "Bolos de copo"
+        "message": "Cupcakes",
+        "description": "IMMUTABLE"
     },
     "food_cupcake_desc": {
         "message": "Cupcake com cobertura de baunilha (57g)"
@@ -1338,7 +1493,8 @@
         "message": "Cachorro-quente no pão com ketchup"
     },
     "food_steak_1": {
-        "message": "Steak"
+        "message": "Bife",
+        "description": "IMMUTABLE"
     },
     "food_steak_n": {
         "message": "Bifes"
@@ -1362,7 +1518,8 @@
         "message": "Batatas"
     },
     "food_potato_desc": {
-        "message": "Batata Assada (298g, 4 polegadas)"
+        "message": "Batata Assada (300g)",
+        "description": "IMMUTABLE"
     },
     "food_egg_1": {
         "message": "Ovo"
@@ -1371,7 +1528,8 @@
         "message": "Ovos"
     },
     "food_egg_desc": {
-        "message": "Ovo frito (51g)"
+        "message": "Ovo frito (50g)",
+        "description": "IMMUTABLE"
     },
     "food_icecream_1": {
         "message": "Taça de sorvete"
@@ -1389,30 +1547,38 @@
         "message": "Piña Coladas"
     },
     "food_pinacolada_desc": {
-        "message": "Piña Colada (4,5 fl. Oz)"
+        "message": "Piña Colada (135 ml)",
+        "description": "IMMUTABLE"
     },
     "food_donut_1": {
-        "message": "Rosquinha"
+        "message": "Donut",
+        "description": "IMMUTABLE"
     },
     "food_donut_n": {
         "message": "Donuts"
     },
     "food_donut_desc": {
-        "message": "Donut de Chocolate (43g, 3 polegadas)"
+        "message": "Donut de Chocolate (45g)",
+        "description": "IMMUTABLE"
     },
     "dashboard_all": {
-        "message": "Tudo"
+        "message": "em tudo",
+        "description": "IMMUTABLE"
     },
     "dashboard_exclude_virtual": {
-        "message": "Pular Virtual"
+        "message": "Exceto treinos no rolo",
+        "description": "IMMUTABLE"
     },
     "dashboard_exclude_commutes": {
-        "message": "Pular viagens diárias"
+        "message": "Exceto deslocamento urbano",
+        "description": "IMMUTABLE"
     },
     "dashboard_kudo_limit_reached": {
-        "message": "Limite de hora atingido"
+        "message": "Limite de Kudos atingido",
+        "description": "IMMUTABLE"
     },
     "dashboard_kudo_complete": {
-        "message": "Tudo Kudoed"
+        "message": "Todos Kudados!",
+        "description": "IMMUTABLE"
     }
 }
