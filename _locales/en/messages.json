@@ -6,6 +6,10 @@
     "performance": {"message": "Performance"},
     "all_athletes": {"message": "All Athletes"},
 
+    "menu_fitness": {"message": "Fitness"},
+    "menu_best": {"message": "Best"},
+    "menu_compare": {"message": "Compare"},
+
     "analysis_options": {"message": "Options"},
     "analysis_tools": {"message": "Tools"},
     "analysis_time": {"message": "Time"},

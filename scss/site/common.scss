@@ -94,30 +94,41 @@
         }
     }
 
-    li.sauce-options-menu-item {
-        a {
-            color: color.shade(accent, 60%) !important;
-            background-color: color.shade(accent, 5%) !important;
-            position: relative;
+    li.sauce-options-menu-group {
+        background-image: linear-gradient(360deg, #0013f673, transparent),
+                          linear-gradient(135deg, #cd0000, #df7200, #19008b);
 
-            &:hover {
-                background-color: color.shade(accent, -5%) !important;
-            }
+        .sauce-callout {
+            padding: 8px 12px 0px;
+            color: #f0f0f0;
+            font-variant: all-small-caps;
+        }
 
-            img {
-                height: 12px;
-                transform: rotate(-50deg);
-                margin-left: 0.6em;
-            }
+        ul li {
+            a {
+                color: color.shade(accent, 60%) !important;
+                //background-color: color.shade(accent, 5%) !important;
+                position: relative;
 
-            .disclaimer {
-                font-size: 0.65em;
-                text-transform: uppercase;
-                position: absolute;
-                font-weight: bold;
-                bottom: 0.2em;
-                color: #000;
-                opacity: 0.6;
+                &:hover {
+                    background-color: #0003;
+                }
+
+                img {
+                    height: 12px;
+                    transform: rotate(-50deg);
+                    margin-left: 0.6em;
+                }
+
+                .disclaimer {
+                    font-size: 0.65em;
+                    text-transform: uppercase;
+                    position: absolute;
+                    font-weight: bold;
+                    bottom: 0.2em;
+                    color: #000;
+                    opacity: 0.6;
+                }
             }
         }
     }

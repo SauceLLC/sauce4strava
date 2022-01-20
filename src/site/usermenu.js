@@ -47,33 +47,55 @@
         if (sauce.patronLevel < 10 && upsellsHidden()) {
             return;
         }
-        const anchor = document.createElement('a');
-        anchor.textContent = `Sauce ${await sauce.locale.getMessage('performance')}`;
-        const image = document.createElement('img');
-        image.src = sauce.extUrl + 'images/logo_horiz_128x48.png';
-        const disclaimer = document.createElement('div');
-        disclaimer.textContent = 'preview';
-        disclaimer.classList.add('disclaimer');
-        anchor.appendChild(image);
-        anchor.appendChild(disclaimer);
-        anchor.href = '/sauce/performance/';
-        const item = document.createElement('li');
-        item.classList.add('sauce-options-menu-item');
-        if (location.pathname.startsWith('/sauce/performance')) {
-            item.classList.add('selected');
+        const locales = await sauce.locale.getMessagesObject(
+            ['/performance', 'fitness', 'best', 'compare'], 'menu');
+        const menuEntries = [{
+            text: `${locales.fitness}`,
+            href: '/sauce/performance/fitness',
+            image: 'images/logo_horiz_128x48.png',
+        }, {
+            text: `${locales.best}`,
+            href: '/sauce/performance/best',
+        }, {
+            text: `${locales.compare}`,
+            href: '/sauce/performance/compare',
+        }];
+        const group = document.createElement('li');
+        group.classList.add('sauce-options-menu-group');
+        const callout = document.createElement('div');
+        callout.classList.add('sauce-callout');
+        callout.textContent = `Sauce ${locales.performance}`;
+        group.appendChild(callout);
+        const list = document.createElement('ul');
+        group.appendChild(list);
+        for (const x of menuEntries) {
+            const item = document.createElement('li');
+            const a = document.createElement('a');
+            a.textContent = x.text;
+            a.href = x.href;
+            if (x.image) {
+                const image = document.createElement('img');
+                image.src = sauce.extUrl + x.image;
+                a.appendChild(image);
+            }
+            if (location.pathname.startsWith(x.href)) {
+                item.classList.add('selected');
+            }
+            item.appendChild(a);
+            list.appendChild(item);
         }
-        item.appendChild(anchor);
+
         const options = document.querySelector('#global-header .global-nav [data-log-category="training"] .options');
         if (options) {
             const refEl = options.querySelector('li.premium');
             if (refEl) {
-                refEl.insertAdjacentElement('beforebegin', item);
+                refEl.insertAdjacentElement('beforebegin', group);
             }
         } else {
             // React page with obfuscated HTML.
             const prev = document.querySelector('header nav ul li ul li a[href="/athlete/training"]');
             if (prev) {
-                prev.parentElement.insertAdjacentElement('afterend', item);
+                prev.parentElement.insertAdjacentElement('afterend', group);
             }
         }
     }
