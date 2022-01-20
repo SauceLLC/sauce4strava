@@ -78,6 +78,9 @@
                 image.src = sauce.extUrl + x.image;
                 a.appendChild(image);
             }
+            if (location.pathname.startsWith(x.href)) {
+                item.classList.add('selected');
+            }
             item.appendChild(a);
             list.appendChild(item);
         }
@@ -93,24 +96,6 @@
             const prev = document.querySelector('header nav ul li ul li a[href="/athlete/training"]');
             if (prev) {
                 prev.parentElement.insertAdjacentElement('afterend', group);
-            }
-        }
-
-        for (const x of menuEntries) {
-            if (location.pathname.startsWith(x.href)) {
-                const menu = group.closest('li.drop-down-menu');
-                if (menu) {
-                    menu.classList.add('sauce-performance');
-                    const a = menu.querySelector('a.nav-link');
-                    a.textContent = x.text;
-                    a.href = x.href;
-                    if (x.image) {
-                        const image = document.createElement('img');
-                        image.src = sauce.extUrl + x.image;
-                        a.insertAdjacentElement('beforeend', image);
-                    }
-                    group.parentElement.insertAdjacentElement('afterbegin', group);
-                }
             }
         }
     }

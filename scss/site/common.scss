@@ -96,34 +96,14 @@
 
     #container-nav {
         ul.global-nav {
-            li.drop-down-menu.sauce-performance {
-                a.nav-link {
-                    display: flex;
-                    align-items: center;
-                    flex-direction: row;
-                    background: none;
-
-
-                    + button {
-                        background: none;
-                    }
-
-                    > * {
-                        background: none;
-                    }
-
-                    img {
-                        width: 2em;
-                        object-fit: contain;
-                        transform: rotate(245deg);
-                    }
-                }
+            li.drop-down-menu > ul {
+                max-height: calc(99vh - 55px);
             }
         }
         li.sauce-options-menu-group {
-            background-image: linear-gradient(360deg, rgb(225 225 225 / 45%), transparent),
+            background-image:
+                linear-gradient(360deg, rgb(225 225 225 / 45%), transparent),
                 linear-gradient(135deg, rgb(165 165 165), rgb(193 193 193), rgb(191 191 191));
-            border-bottom: 1px solid color.get(accent4);
 
             .sauce-callout {
                 padding: 8px 12px 0px;

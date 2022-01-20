@@ -550,9 +550,9 @@ table.sauce-perf {
         padding: 1.2em;
         background-attachment: local;
         background-image: linear-gradient(to left,
-                                    #{color.shade(bg, 16%)},
-                                    #{color.shade(bg, 12%)} 0.8em,
-                                    #{color.shade(bg, 10%)});
+                                    #{color.shade(bg, 18%)},
+                                    #{color.shade(bg, 15%)} 0.4em,
+                                    #{color.shade(bg, 12%)});
 
         &.compressed {
             display: none;
