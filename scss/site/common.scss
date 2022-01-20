@@ -94,40 +94,68 @@
         }
     }
 
-    li.sauce-options-menu-group {
-        background-image: linear-gradient(360deg, #0013f673, transparent),
-                          linear-gradient(135deg, #cd0000, #df7200, #19008b);
+    #container-nav {
+        ul.global-nav {
+            li.drop-down-menu.sauce-performance {
+                a.nav-link {
+                    display: flex;
+                    align-items: center;
+                    flex-direction: row;
+                    background: none;
 
-        .sauce-callout {
-            padding: 8px 12px 0px;
-            color: #f0f0f0;
-            font-variant: all-small-caps;
+
+                    + button {
+                        background: none;
+                    }
+
+                    > * {
+                        background: none;
+                    }
+
+                    img {
+                        width: 2em;
+                        object-fit: contain;
+                        transform: rotate(245deg);
+                    }
+                }
+            }
         }
+        li.sauce-options-menu-group {
+            background-image: linear-gradient(360deg, rgb(225 225 225 / 45%), transparent),
+                linear-gradient(135deg, rgb(165 165 165), rgb(193 193 193), rgb(191 191 191));
+            border-bottom: 1px solid color.get(accent4);
 
-        ul li {
-            a {
-                color: color.shade(accent, 60%) !important;
-                //background-color: color.shade(accent, 5%) !important;
-                position: relative;
+            .sauce-callout {
+                padding: 8px 12px 0px;
+                color: #f0f0f0;
+                font-variant: all-small-caps;
+            }
 
-                &:hover {
-                    background-color: #0003;
-                }
+            ul li {
+                a {
+                    color: color.shade(accent, 60%) !important;
+                    //background-color: color.shade(accent, 5%) !important;
+                    position: relative;
 
-                img {
-                    height: 12px;
-                    transform: rotate(-50deg);
-                    margin-left: 0.6em;
-                }
+                    &:hover {
+                        background-color: #0003;
+                    }
 
-                .disclaimer {
-                    font-size: 0.65em;
-                    text-transform: uppercase;
-                    position: absolute;
-                    font-weight: bold;
-                    bottom: 0.2em;
-                    color: #000;
-                    opacity: 0.6;
+                    img {
+                        height: 12px;
+                        transform: rotate(-50deg);
+                        margin-left: 0.6em;
+                    }
+
+                    .disclaimer {
+                        font-size: 0.65em;
+                        text-transform: uppercase;
+                        position: absolute;
+                        font-weight: bold;
+                        bottom: 0.2em;
+                        color: #000;
+                        opacity: 0.6;
+                    }
                 }
             }
         }
