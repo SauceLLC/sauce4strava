@@ -55,6 +55,7 @@ sauce.ns('sync', ns => {
             setStatus('Sync disabled', {timeout: 5000});
         });
         controller.isActiveSync().then(x => $btn.toggleClass('sync-active', x));
+        return controller;
     }
 
 
@@ -162,9 +163,13 @@ sauce.ns('sync', ns => {
         }
         const tpl = await sauce.template.getTemplate('sync-button.html');
         const $btn = jQuery(await tpl({status: !options.noStatus}));
-        const athlete = await sauce.hist.getAthlete(id);
+        let athlete = await sauce.hist.getAthlete(id);
         $btn.toggleClass('enabled', !!(athlete && athlete.sync));
-        setupSyncController($btn, id);
+        const controller = setupSyncController($btn, id);
+        controller.addEventListener('importing-athlete', ev => {
+            athlete = ev.data;
+            $btn.toggleClass('enabled', !!athlete.sync);
+        });
         $btn.on('click', async () => {
             if (!athlete && !(await sauce.hist.getAthlete(id))) {
                 await sauce.hist.addAthlete({id, ...athleteData});
@@ -191,10 +196,7 @@ sauce.ns('sync', ns => {
             title: `${locale.title} - ${athlete.name}`,
             icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
             dialogClass: 'sauce-sync-athlete-dialog',
-            body: await tpl({
-                athlete,
-                enabled: initiallyEnabled
-            }),
+            body: await tpl({enabled: initiallyEnabled}),
             flex: true,
             width: '60em',
             autoDestroy: true,
@@ -246,20 +248,28 @@ sauce.ns('sync', ns => {
             }]
         });
         const $buttons = $modal.siblings('.ui-dialog-buttonpane');
-        const ftpHistView = new FTPHistoryView({
-            athlete,
-            el: $modal.find('.entry.history.ftp')
-        });
-        const weightHistView = new WeightHistoryView({
-            athlete,
-            el: $modal.find('.entry.history.weight')
-        });
+
+        let _ftpView, _weightView;
+        async function setAthlete(_athlete) {
+            athlete = _athlete;
+            $modal.toggleClass('sync-disabled', !athlete.sync);
+            $modal.find('input[name="enable"]')[0].checked = !!athlete.sync;
+            _ftpView = new FTPHistoryView({
+                athlete,
+                el: $modal.find('.entry.history.ftp')
+            });
+            _weightView = new WeightHistoryView({
+                athlete,
+                el: $modal.find('.entry.history.weight')
+            });
+            await Promise.all([_ftpView.render(), _weightView.render(), updateHRZones()]);
+        }
 
         async function updateHRZones() {
             $modal.find('.hr-zones').html(await hrZonesTpl({athlete}));
         }
 
-        const rendering = [ftpHistView.render(), weightHistView.render(), updateHRZones()];
+        const bgRender = setAthlete(athlete);
 
         async function updateSyncCounts(counts) {
             counts = counts || await sauce.hist.activityCounts(athlete.id);
@@ -321,14 +331,15 @@ sauce.ns('sync', ns => {
         }
 
         const listeners = {
-            active: ev => void setActive(ev.data.active),
-            error: async ev => {
+            "active": ev => void setActive(ev.data.active),
+            "error": async ev => {
                 $modal.addClass('has-error');
                 $modal.find('.entry.status value').text(ev.data.error);
             },
-            progress: ev => void updateSyncCounts(ev.data.counts),
-            enable: ev => void ($modal.find('input[name="enable"]')[0].checked = true),
-            disable: ev => void ($modal.find('input[name="enable"]')[0].checked = false),
+            "progress": ev => void updateSyncCounts(ev.data.counts),
+            "enable": ev => void ($modal.find('input[name="enable"]')[0].checked = true),
+            "disable": ev => void ($modal.find('input[name="enable"]')[0].checked = false),
+            "importing-athlete": ev => void setAthlete(ev.data),
         };
         for (const [event, cb] of Object.entries(listeners)) {
             syncController.addEventListener(event, cb);
@@ -433,7 +444,7 @@ sauce.ns('sync', ns => {
         } else {
             $modal.addClass('sync-disabled');
         }
-        await Promise.all(rendering);
+        await bgRender;
         $modal.dialog('open');
         return $modal;
     }

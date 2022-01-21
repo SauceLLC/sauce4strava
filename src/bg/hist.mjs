@@ -1871,6 +1871,7 @@ class SyncController extends sauce.proxy.Eventing {
         this._setupEventRelay('disable');
         this._setupEventRelay('progress');
         this._setupEventRelay('ratelimiter');
+        this._setupEventRelay('importing-athlete');
     }
 
     delete() {
@@ -2012,15 +2013,17 @@ class DataExchange extends sauce.proxy.Eventing {
         if (syncManager && !syncManager.stopped) {
             await syncManager.stop();
         }
+        let newAthletes;
         for (const x of data) {
             const {store, data} = JSON.parse(x);
             if (!this.importing[store]) {
                 this.importing[store] = [];
             }
             this.importing[store].push(data);
+            newAthletes |= store === 'athletes';  // Immediate flush for client UI.
         }
         const size = sauce.data.sum(Object.values(this.importing).map(x => x.length));
-        if (size > 1000) {
+        if (size > 1000 || newAthletes) {
             await this.flush();
         }
     }
@@ -2032,8 +2035,11 @@ class DataExchange extends sauce.proxy.Eventing {
                 x.sync = DBTrue;  // It's possible to export disabled athletes.  Just reenable them.
                 this.importedAthletes.add(x.id);
                 console.debug(`Importing athlete: ${x.name} [${x.id}]`);
+                await athletesStore.put(x);
+                if (syncManager) {
+                    syncManager.emitForAthleteId(x.id, 'importing-athlete', x);
+                }
             }
-            await athletesStore.putMany(athletes);
         }
         if (this.importing.activities && this.importing.activities.length) {
             const activities = this.importing.activities.splice(0, Infinity);

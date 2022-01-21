@@ -2679,11 +2679,14 @@ sauce.ns('performance', async ns => {
 
         async onOnboardingEnableClick(ev) {
             ev.currentTarget.classList.add('sauce-loading');
-            const athlete = await sauce.hist.addAthlete({
-                id: currentAthlete.id,
-                gender: currentAthlete.get('gender') === 'F' ? 'female' : 'male',
-                name: currentAthlete.get('display_name'),
-            });
+            let athlete = await sauce.hist.getAthlete(currentAthlete.id);
+            if (!athlete) {
+                athlete = await sauce.hist.addAthlete({
+                    id: currentAthlete.id,
+                    gender: currentAthlete.get('gender') === 'F' ? 'female' : 'male',
+                    name: currentAthlete.get('display_name'),
+                });
+            }
             await sauce.hist.enableAthlete(athlete.id);
             location.reload();
         }
