@@ -96,45 +96,48 @@
 
     #container-nav {
         ul.global-nav {
-            li.drop-down-menu > ul {
+            li.drop-down-menu[data-log-category="training"] > ul {
                 max-height: calc(99vh - 55px);
             }
         }
         li.sauce-options-menu-group {
             background-image:
-                linear-gradient(360deg, rgb(225 225 225 / 45%), transparent),
-                linear-gradient(135deg, rgb(165 165 165), rgb(193 193 193), rgb(191 191 191));
+                linear-gradient(132deg,
+                    color.hue(accent, -13, $shade: -8%, $alpha: 48%),
+                    color.hue(accent, 4, $shade: -15%, $alpha: 80%)),
+                linear-gradient(234deg,
+                    color.hue(accent, -8, $shade: -2%),
+                    color.hue(accent, 40));
 
             .sauce-callout {
                 padding: 8px 12px 0px;
-                color: #f0f0f0;
-                font-variant: all-small-caps;
+                color: color.shade(accent, 70%);
+                text-transform: uppercase;
+                position: relative;
+                padding-right: 24px; // for sauce icon
+
+                img {
+                    position: absolute;
+                    top: 4px;
+                    right: 2px;
+                    height: 16px;
+                    transform: rotate(235deg);
+                    filter: drop-shadow(-2px -2px 4px #0008);
+                }
             }
 
             ul li {
                 a {
                     color: color.shade(accent, 60%) !important;
-                    //background-color: color.shade(accent, 5%) !important;
-                    position: relative;
 
                     &:hover {
                         background-color: #0003;
                     }
 
-                    img {
-                        height: 12px;
-                        transform: rotate(-50deg);
-                        margin-left: 0.6em;
-                    }
-
-                    .disclaimer {
-                        font-size: 0.65em;
-                        text-transform: uppercase;
-                        position: absolute;
-                        font-weight: bold;
-                        bottom: 0.2em;
-                        color: #000;
-                        opacity: 0.6;
+                    svg[data-icon] {
+                        max-height: 1.15em;
+                        width: 1.4em;
+                        margin: -0.2em 0.6em -0.2em 0;
                     }
                 }
             }

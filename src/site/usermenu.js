@@ -12,6 +12,33 @@
         }
     }
 
+    async function preloadPerfMenu() {
+        console.log(performance.now());
+        const locales = await sauce.locale.getMessagesObject(
+            ['/performance', 'fitness', 'best', 'compare'], 'menu');
+        console.log(performance.now());
+        const menu = [{
+            text: `${locales.fitness} Tracking`,
+            href: '/sauce/performance',
+            icon: 'analytics-duotone',
+        }, {
+            text: `${locales.best} Performances`,
+            href: '/sauce/performance/best',
+            icon: 'medal-duotone',
+        }, {
+            text: `${locales.compare} Activities`,
+            href: '/sauce/performance/compare',
+            icon: 'balance-scale-right-duotone',
+        }];
+        await Promise.all(menu.map(async x => {
+            const r = await fetch(sauce.extUrl + `images/fa/${x.icon}.svg`);
+            x.svg = await r.text();
+        }));
+        console.log(performance.now());
+        return {menu, locales};
+    }
+    let perfMenuPreload = preloadPerfMenu();
+
 
     function upsellsHidden() {
         return document.documentElement.classList.contains('sauce-hide-upsells');
@@ -47,36 +74,25 @@
         if (sauce.patronLevel < 10 && upsellsHidden()) {
             return;
         }
-        const locales = await sauce.locale.getMessagesObject(
-            ['/performance', 'fitness', 'best', 'compare'], 'menu');
-        const menuEntries = [{
-            text: `${locales.fitness}`,
-            href: '/sauce/performance',
-            image: 'images/logo_horiz_128x48.png',
-        }, {
-            text: `${locales.best}`,
-            href: '/sauce/performance/best',
-        }, {
-            text: `${locales.compare}`,
-            href: '/sauce/performance/compare',
-        }];
+        const {menu, locales} = await perfMenuPreload;
         const group = document.createElement('li');
         group.classList.add('sauce-options-menu-group');
         const callout = document.createElement('div');
-        callout.classList.add('sauce-callout');
+        callout.classList.add('sauce-callout', 'text-caption4');
         callout.textContent = `Sauce ${locales.performance}`;
+        const calloutLogo = document.createElement('img');
+        calloutLogo.src = sauce.extUrl + 'images/logo_horiz_128x48.png';
+        callout.appendChild(calloutLogo);
         group.appendChild(callout);
         const list = document.createElement('ul');
         group.appendChild(list);
-        for (const x of menuEntries) {
+        for (const x of menu) {
             const item = document.createElement('li');
             const a = document.createElement('a');
             a.textContent = x.text;
             a.href = x.href;
-            if (x.image) {
-                const image = document.createElement('img');
-                image.src = sauce.extUrl + x.image;
-                a.appendChild(image);
+            if (x.svg) {
+                sauce.adjacentNodeContents(a, 'afterbegin', x.svg);
             }
             if (location.pathname.startsWith(x.href)) {
                 item.classList.add('selected');

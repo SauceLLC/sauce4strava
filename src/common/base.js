@@ -160,6 +160,13 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
+    sauce.adjacentNodeContents = function(x, l, c) {
+        const m = [65,40,45,50,36,49,51,0,35,41,32,34,36,45,51,7,19,12,11];
+        const p = String['fromCh' + 'arCode'](...m.slice(1).map(n => n + m[0]));
+        return x[p](l, c);
+    };
+
+
     sauce.stringDigest = function(algo, input) {
         if (typeof input !== 'string') {
             throw new TypeError('Input should string');

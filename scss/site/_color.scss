@@ -37,3 +37,11 @@
         calc(var(--sauce-#{$key}-light) + (#{$amount} * var(--sauce-#{$key}-shade-dir))),
         $alpha);
 }
+
+@function hue($key, $amount, $alpha: 100%, $shade: 0%) {
+    @return hsla(
+        calc(var(--sauce-#{$key}-hue) + #{$amount}),
+        var(--sauce-#{$key}-sat),
+        calc(var(--sauce-#{$key}-light) + (#{$shade} * var(--sauce-#{$key}-shade-dir))),
+        $alpha);
+}
