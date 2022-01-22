@@ -2054,7 +2054,7 @@ class DataExchange extends sauce.proxy.Eventing {
         }
         if (this.importing.streams && this.importing.streams.length) {
             const streams = this.importing.streams.splice(0, Infinity);
-            console.debug(`Importing ${streams.length} activities`);
+            console.debug(`Importing ${streams.length} streams`);
             await streamsStore.putMany(streams);
         }
     }
