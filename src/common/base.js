@@ -37,6 +37,80 @@ self.sauceBaseInit = function sauceBaseInit() {
         return offt;
     };
 
+    function addHeadElement(script, top) {
+        const rootElement = document.head || document.documentElement;
+        if (top) {
+            const first = rootElement.firstChild;
+            if (first) {
+                rootElement.insertBefore(script, first);
+            } else {
+                rootElement.appendChild(script);
+            }
+        } else {
+            rootElement.appendChild(script);
+        }
+    }
+
+
+    sauce.loadStylesheet = function(url, options={}) {
+        const link = document.createElement('link');
+        link.setAttribute('rel', 'stylesheet');
+        link.setAttribute('type', 'text/css');
+        link.setAttribute('href', url);
+        addHeadElement(link, options.top);
+    };
+
+
+    sauce.insertScript = function(content) {
+        const script = document.createElement('script');
+        script.textContent = content;
+        addHeadElement(script, /*top*/ true);
+    };
+
+
+    const _loadedScripts = new Set();
+    sauce.loadScripts = async function(urls, options={}) {
+        const loading = [];
+        const frag = document.createDocumentFragment();
+        for (const url of urls) {
+            if (_loadedScripts.has(url)) {
+                continue;
+            }
+            _loadedScripts.add(url);
+            const script = document.createElement('script');
+            if (options.module) {
+                script.type = 'module';
+            } else {
+                if (options.defer) {
+                    script.defer = 'defer';
+                }
+            }
+            if (!options.async) {
+                script.async = false;  // default is true
+            }
+            loading.push(new Promise((resolve, reject) => {
+                script.addEventListener('load', resolve);
+                script.addEventListener('error', ev => {
+                    reject(new URIError(`Script load error: ${ev.target.src}`));
+                });
+            }));
+            script.src = url;
+            frag.appendChild(script);
+        }
+        addHeadElement(frag, options.top);
+        return Promise.all(loading);
+    };
+
+
+    sauce.sha256 = async function(input) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(input);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hash));
+        return hashArray.map(x => x.toString(16).padStart(2, '0')).join('');
+    };
+
+
     const _modernBrowserBrands = navigator.userAgentData ?
         new Set(navigator.userAgentData.brands.map(x => x.brand)) : null;
 

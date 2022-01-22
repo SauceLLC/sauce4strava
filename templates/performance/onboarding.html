@@ -1,0 +1,100 @@
+<% if (sauce.isSafari()) { %>
+    <div class="safari-disclaimor">Sorry but Safari is not supported due to a broken IndexedDB implementation. Email <a href="mailto:support@saucellc.io" target="_blank">support@saucellc.io</a> for more information.</div>
+<% } %>
+<div class="onboarding-stack">
+    <div class="section-wrap">
+        <section class="cols">
+            <div class="col-left">
+                <img src="https://saucellc.io/images/perf-promo/2.png"/>
+                <% if (sauce.patronLevel >= 10) { %>
+                    <div class="btn btn-xl btn-primary enable">Activate Sauce Performance!</div>
+                <% } else { %>
+                    <div class="patron-link">
+                        <a href="https://www.patreon.com/bePatron?u=32064618"
+                           target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="col-right">
+                <div class="copy welcome">
+                    <h1>Welcome to Sauce Performance!</h1>
+                    <p><b>Upgrade your Strava experience to <i>Cat 1</i> with improved training and performance insights made possible by <span class="saucey">Sauce</span> for Strava!</b></p>
+                    <ol>
+                        <li>See and interact with critical training metrics like Training Stress Balance (TSB/Form) and Cumulative Training Load (CTL/Fitness).</li>
+                        <li>View your best power outputs (and other stats) from every past activity.  You can also see how your efforts rank against other athletes you synchronize.</li>
+                        <li>Coaches can get immediate visibility into their athletes' stress levels as well as how their actual results are shaping up.</li>
+                        <li>Historical athlete weight and FTP management.</li>
+                        <li>Override TSS for any activity, including manually created workouts, to get a complete picture of your training progress.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="section-wrap">
+        <section class="cols">
+            <div class="col-left">
+                <img src="https://saucellc.io/images/perf-promo/3.png"/>
+                <% if (sauce.patronLevel >= 10) { %>
+                    <div class="btn btn-xl btn-primary enable">Enable right meow!</div>
+                <% } else { %>
+                    <div class="patron-link">
+                        <a href="https://www.patreon.com/bePatron?u=32064618"
+                           target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="col-right">
+                <div class="copy how-it-works">
+                    <h2>How it works...</h2>
+                    <p><span class="saucey">Sauce Performance</span> is built on an advanced synchronization system that imports an athlete's entire activity history from Strava servers to your browser's internal storage.  It uses proven browser technology to store, index and analyze the activities without the use of 3rd party servers.  Once an athlete's activity history is synchronized, a world of new activity analysis possibilities are available!</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="section-wrap">
+        <section class="cols">
+            <div class="col-left">
+                <img src="https://saucellc.io/images/perf-promo/1.png"/>
+                <% if (sauce.patronLevel >= 10) { %>
+                    <div class="btn btn-xl btn-primary enable">Start synchronization!</div>
+                <% } else { %>
+                    <div class="patron-link">
+                        <a href="https://www.patreon.com/bePatron?u=32064618"
+                           target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="col-right">
+                <div class="copy faq">
+                    <h2>FAQ</h2>
+                    <dl>
+                        <dt>How much does it cost?</dt>
+                        <dd>You need to be a <a href="https://www.patreon.com/bePatron?u=32064618" target="_blank">Sauce Patron</a> with the <u>Bonus Features</u> benefit.  The most cost effective plan is <i>&quot;Sauce Member&quot;</i> at $2/month <small>(USD)</small>.</dd>
+
+                        <dt>How does <span class="saucey">Sauce</span> get activity data?</dt>
+                        <dd><span class="saucey">Sauce</span> uses the same servers and webpages that the normal Strava website uses.   No special API access or 3rd party servers are used.</dd>
+
+                        <dt>Why does the sync process take so long the first time?</dt>
+                        <dd>If activity data is imported too quickly, Strava will temporarily rate-limit your account.  <span class="saucey">Sauce</span> is programmed to stay safely within these limits.</dd>
+
+                        <dt>Why does <span class="saucey">Sauce</span> need to "Synchronize" my data for the Performance features?</dt>
+                        <dd>To provided advanced training and historical data access, it is necessary to have direct access to all data in one place.  <span class="saucey">Sauce Performance</span> makes use of your browser's own storage facility to do this.
+
+                        <dt>Where is all this data being stored?</dt>
+                        <dd>In your web browser's storage system called IndexedDB.  This is a built-in database that, for most platforms, is capable of storing and querying gigabytes of data efficiently.  Data stays with <b>you</b> on <b>your</b> device.</dd>
+
+                        <dt>How do I protect my data?</dt>
+                        <dd>Backups, backups, backups!  Use the "Export Data" feature in the sync control panel to create backup files that you can place somewhere safe.</dd>
+
+                    </dl>
+                </div>
+            </div>
+        </section>
+    </div>
+
+</div>

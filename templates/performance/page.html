@@ -1,0 +1,19 @@
+<% if (sauce.isSafari()) { %>
+    <div class="safari-disclaimor">Sorry but Safari is not supported due to a broken IndexedDB implementation. Email <a href="mailto:support@saucellc.io" target="_blank">support@saucellc.io</a> for more information.</div>
+<% } %>
+<nav>
+    <b>{{{/athlete}}}:</b>
+    <div class="athlete">
+        <select name="athlete">
+            <% for (const x of athletes) { %>
+                <option value="{{x.id}}" {{x.id === athleteId ? 'selected' : ''}}>{{x.name}}</option>
+            <% } %>
+        </select>
+    </div>
+
+    <div class="summary"></div>
+</nav>
+
+<main></main>
+
+<aside class="details"></aside>

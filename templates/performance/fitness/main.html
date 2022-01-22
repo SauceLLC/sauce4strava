@@ -1,0 +1,72 @@
+<header class="filters">
+    <div class="range-selector">
+        <b class="title">{{{time_range}}}:</b><br/>
+        <select name="range">
+            <option value="4,weeks" {{range === '4,weeks' ? 'selected' : ''}}>4 {{{/time_weeks}}}</option>
+            <option value="12,weeks" {{range === '12,weeks' ? 'selected' : ''}}>12 {{{/time_weeks}}}</option>
+            <option value="6,months" {{range === '6,months' ? 'selected' : ''}}>6 {{{/time_months}}}</option>
+            <option value="12,months" {{range === '12,months' ? 'selected' : ''}}>12 {{{/time_months}}}</option>
+            <option value="5,years" {{range === '5,years' ? 'selected' : ''}}>5 {{{/time_years}}}</option>
+            <option value="all" {{range === 'all' ? 'selected' : ''}}>{{{all}}}</option>
+        </select>
+    </div>
+
+    <div class="start-end">
+        <div class="btn-group btn-group-sm prev">
+            <div class="btn oldest range">{{=icon angle-double-left-regular=}}</div>
+            <div class="btn prev range">{{=icon angle-left-regular=}}</div>
+        </div>
+        <div class="dates">
+            <div class="start range">⋯</div>
+            <div style="pointer-events: none; opacity: 0.5; font-size: 0.8em;"
+                 class="btn btn-unstyled btn-icon-only btn-sm">{{=icon arrow-alt-right-duotone=}}</div>
+            <div class="end range">⋯</div>
+        </div>
+        <div class="btn-group btn-group-sm next">
+            <div class="btn next range">{{=icon angle-right-regular=}}</div>
+            <div class="btn newest range">{{=icon angle-double-right-regular=}}</div>
+        </div>
+    </div>
+
+    <div class="right-padding"></div>
+
+    <div class="window-controls">
+        <div class="btn btn-sm btn-icon-only btn-unstyled expand">{{=icon expand-alt-duotone=}}</div>
+        <div class="btn btn-sm btn-icon-only btn-unstyled compress">{{=icon compress-alt-duotone=}}</div>
+    </div>
+</header>
+
+<section class="sauce-panels">
+
+    <div class="sauce-panel training-chart-view">
+        <header class="title">
+            {{{training_load_title}}}
+            <a href="https://www.cyclingweekly.com/fitness/training-software-369155"
+               class="more-info" target="_blank">[{{{more_info}}}]</a>
+            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">{{{reset_zoom}}}</div>
+        </header>
+
+        <div class="chart-tooltip"></div>
+        <div class="sauce-panel-content chart"><canvas/></div>
+    </div>
+
+    <div class="sauce-panel activity-volume-chart-view">
+        <header class="title">
+            <span>{{{activities_title}}} - <span class="metric-display"></span></span>
+            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">{{{reset_zoom}}}</div>
+        </header>
+
+        <div class="chart-tooltip"></div>
+        <div class="sauce-panel-content chart"><canvas/></div>
+    </div>
+
+    <div class="sauce-panel elevation-chart-view">
+        <header class="title">
+            {{{elevation_title}}}
+            <div class="chart-reset-zoom hidden btn btn-xs btn-outline btn-secondary">{{{reset_zoom}}}</div>
+        </header>
+
+        <div class="chart-tooltip"></div>
+        <div class="sauce-panel-content chart"><canvas/></div>
+    </div>
+</section>

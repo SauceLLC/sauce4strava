@@ -1,12 +1,5 @@
 /* global sauce, Strava */
 
-/* Note that the getMessage* functions are designed to allow the following micro optimization...
- *   let result = getMessages([...]);
- *   if (result instanceof Promise) {
- *       result = await result;
- *   }
- */
-
 sauce.ns('locale', ns => {
     'use strict';
 
@@ -66,7 +59,7 @@ sauce.ns('locale', ns => {
     }
 
 
-    /* async */ function getMessage(key, ...args) {
+    function fastGetMessage(key, ...args) {
         const entry = _getCacheEntry(key, args);
         return entry.hit ?
             entry.value :
@@ -74,7 +67,13 @@ sauce.ns('locale', ns => {
     }
 
 
-    /* async */ function getMessages(keys, ...args) {
+    async function getMessage(...args) {
+        const r = fastGetMessage(...args);
+        return (r instanceof Promise) ? await r : r;
+    }
+
+
+    function fastGetMessages(keys, ...args) {
         const missing = [];
         const hashKeys = [];
         for (const k of keys) {
@@ -90,12 +89,24 @@ sauce.ns('locale', ns => {
     }
 
 
-    /* async */ function getMessagesObject(keys, defaultNamespace) {
+    async function getMessages(...args) {
+        const r = fastGetMessages(...args);
+        return (r instanceof Promise) ? await r : r;
+    }
+
+
+    function fastGetMessagesObject(keys, defaultNamespace) {
         const result = getMessages(keys.map(x =>
             x[0] === '/' ? x.substr(1) : (defaultNamespace ? `${defaultNamespace}_${x}` : x)));
         const reducer = msgs => msgs.reduce((acc, x, i) =>
             (acc[keys[i].replace(/^\//, '')] = x, acc), {});
         return result instanceof Promise ? result.then(reducer) : reducer(result);
+    }
+
+
+    async function getMessagesObject(...args) {
+        const r = fastGetMessagesObject(...args);
+        return (r instanceof Promise) ? await r : r;
     }
 
 
@@ -121,7 +132,7 @@ sauce.ns('locale', ns => {
         const units = ['year', 'week', 'day', 'hour', 'min', 'sec',
                        'years', 'weeks', 'days', 'hours', 'mins', 'secs',
                        'ago', 'in', 'now', 'today'];
-        hdUnits = await getMessagesObject(units, 'time');
+        hdUnits = await fastGetMessagesObject(units, 'time');
         if (options.skipFormatters) {
             initialized = true;
             triggerReady();
@@ -494,6 +505,9 @@ sauce.ns('locale', ns => {
         getMessage,
         getMessages,
         getMessagesObject,
+        fastGetMessage,
+        fastGetMessages,
+        fastGetMessagesObject,
         getPaceFormatter,
         weightUnconvert,
         elevationUnconvert,

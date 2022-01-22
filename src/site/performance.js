@@ -4,7 +4,7 @@ sauce.ns('performance', async ns => {
     'use strict';
 
     const DAY = 86400 * 1000;
-    const urn = 'sauce/performance';
+    const urn = 'sauce/performance/';
     const chartTopPad = 15;
     const lastSyncMaxAge = 3600 * 1000;
     const L = sauce.locale;

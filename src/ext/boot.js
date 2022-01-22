@@ -82,7 +82,7 @@
             'site/sparkline.js',
         ],
         modules: [
-            'site/performance-fitness.mjs',
+            'site/performance/loader.mjs?module=fitness',
         ],
     }, {
         name: 'Sauce Performance - Peaks',
@@ -103,10 +103,12 @@
             'site/chartjs/plugin-datalabels.js',
             'site/chartjs/plugin-zoom.js',
             'site/sparkline.js',
-            'site/performance.js',
+        ],
+        modules: [
+            'site/performance/loader.mjs?module=peaks',
         ],
     }, {
-        name: 'Sauce Performance - Compare',
+        name: 'Sauce Performance - Activity Compare',
         pathMatch: /^\/sauce\/performance\/compare\b/,
         stylesheets: ['site/performance.css'],
         cssClass: ['sauce-performance', 'sauce-performance-compare', 'sauce-responsive'],
@@ -124,8 +126,10 @@
             'site/chartjs/plugin-datalabels.js',
             'site/chartjs/plugin-zoom.js',
             'site/sparkline.js',
-            'site/performance.js',
-        ]
+        ],
+        modules: [
+            'site/performance/loader.mjs?module=compare',
+        ],
     }, {
         name: 'Sauce Patron',
         pathMatch: /^\/sauce\/patron\b/,
@@ -215,80 +219,6 @@
     }];
 
 
-    function addHeadElement(script, top) {
-        const rootElement = document.head || document.documentElement;
-        if (top) {
-            const first = rootElement.firstChild;
-            if (first) {
-                rootElement.insertBefore(script, first);
-            } else {
-                rootElement.appendChild(script);
-            }
-        } else {
-            rootElement.appendChild(script);
-        }
-    }
-
-
-    const _loadedScripts = new Set();
-    function loadScripts(urls, options={}) {
-        const loading = [];
-        const frag = document.createDocumentFragment();
-        for (const url of urls) {
-            if (_loadedScripts.has(url)) {
-                continue;
-            }
-            _loadedScripts.add(url);
-            const script = document.createElement('script');
-            if (options.module) {
-                script.type = 'module';
-            } else {
-                if (options.defer) {
-                    script.defer = 'defer';
-                }
-            }
-            if (!options.async) {
-                script.async = false;  // default is true
-            }
-            loading.push(new Promise((resolve, reject) => {
-                script.addEventListener('load', resolve);
-                script.addEventListener('error', ev => {
-                    reject(new URIError(`Script load error: ${ev.target.src}`));
-                });
-            }));
-            script.src = url;
-            frag.appendChild(script);
-        }
-        addHeadElement(frag, options.top);
-        return Promise.all(loading);
-    }
-
-
-    function loadStylesheet(url, options={}) {
-        const link = document.createElement('link');
-        link.setAttribute('rel', 'stylesheet');
-        link.setAttribute('type', 'text/css');
-        link.setAttribute('href', url);
-        addHeadElement(link, options.top);
-    }
-
-
-    function insertScript(content) {
-        const script = document.createElement('script');
-        script.textContent = content;
-        addHeadElement(script, /*top*/ true);
-    }
-
-
-    async function sha256(input) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(input);
-        const hash = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hash));
-        return hashArray.map(x => x.toString(16).padStart(2, '0')).join('');
-    }
-
-
     async function updatePatronLevelNames() {
         const ts = await sauce.storage.get('patronLevelNamesTimestamp');
         if (!ts || ts < Date.now() - (7 * 86400 * 1000)) {
@@ -347,7 +277,7 @@
     async function getPatronLevelLegacy(athleteId) {
         const resp = await fetch('https://saucellc.io/patrons.json');
         const fullPatrons = await resp.json();
-        const hash = await sha256(athleteId);
+        const hash = await sauce.sha256(athleteId);
         let level = 0;
         let legacy = false;
         if (fullPatrons[hash]) {
@@ -421,7 +351,7 @@
             name: ext.name,
             version: ext.version,
         };
-        insertScript([
+        sauce.insertScript([
             self.sauceBaseInit.toString(),
             self.saucePreloaderInit.toString(),
             `sauceBaseInit();`,
@@ -431,7 +361,7 @@
         self.currentUser = config.currentUser;
         updatePatronLevelNames().catch(sauce.report.error);  // bg okay
         [sauceVars.patronLevel, sauceVars.patronLegacy] = await updatePatronLevel(config);
-        insertScript(`
+        sauce.insertScript(`
             self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(config.options)};
             Object.assign(sauce, ${JSON.stringify(sauceVars)});
@@ -442,7 +372,7 @@
             }
             if (m.stylesheets) {
                 for (const url of m.stylesheets) {
-                    loadStylesheet(`${extUrl}css/${url}`);
+                    sauce.loadStylesheet(`${extUrl}css/${url}`);
                 }
             }
             if (m.callbacks) {
@@ -458,11 +388,11 @@
                 }
             }
             if (m.scripts) {
-                await loadScripts(m.scripts.map(x => `${extUrl}src/${x}`))
+                await sauce.loadScripts(m.scripts.map(x => `${extUrl}src/${x}`))
                     .catch(sauce.report.error);
             }
             if (m.modules) {
-                await loadScripts(m.modules.map(x => `${extUrl}src/${x}`), {module: true})
+                await sauce.loadScripts(m.modules.map(x => `${extUrl}src/${x}`), {module: true})
                     .catch(sauce.report.error);
             }
         }

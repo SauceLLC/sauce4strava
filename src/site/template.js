@@ -128,7 +128,7 @@ sauce.ns('template', ns => {
                     __t = ${localeLookup}.startsWith('/') ?
                         ${localeLookup}.substr(1) :
                         '${settings.localePrefix}' + ${localeLookup};
-                    __t = sauce.locale.getMessage(__t);
+                    __t = sauce.locale.fastGetMessage(__t);
                     __p.push(__t instanceof Promise ? (await __t) : __t);
                 `);
             } else if (locale) {
@@ -173,7 +173,7 @@ sauce.ns('template', ns => {
         }
         let localeMessages;
         if (localeKeys.length) {
-            localeMessages = await sauce.locale.getMessagesObject(localeKeys);
+            localeMessages = await sauce.locale.fastGetMessagesObject(localeKeys);
         }
         let statics;
         if (staticCalls.length) {
