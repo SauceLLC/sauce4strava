@@ -15,6 +15,16 @@
     "all_athletes": {
         "message": "Todos los atletas"
     },
+    "menu_performance_fitness": {
+        "message": "Rastreador de fitness",
+        "description": "IMMUTABLE"
+    },
+    "menu_performance_peaks": {
+        "message": "Actuaciones pico"
+    },
+    "menu_performance_compare": {
+        "message": "Comparar actividades"
+    },
     "analysis_options": {
         "message": "Opciones"
     },

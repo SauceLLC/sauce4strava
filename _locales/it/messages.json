@@ -14,6 +14,16 @@
     "all_athletes": {
         "message": "Tutti gli atleti"
     },
+    "menu_performance_fitness": {
+        "message": "Monitoraggio fitness"
+    },
+    "menu_performance_peaks": {
+        "message": "Prestazioni di picco",
+        "description": "IMMUTABLE"
+    },
+    "menu_performance_compare": {
+        "message": "Confronta attività"
+    },
     "analysis_options": {
         "message": "Opzioni"
     },
@@ -318,7 +328,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
-        "message": "Picco Frequenza Cardiaca",
+        "message": "Picco FC",
         "description": "IMMUTABLE"
     },
     "analysis_peak_cadence": {

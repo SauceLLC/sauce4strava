@@ -15,6 +15,15 @@
     "all_athletes": {
         "message": "所有运动员"
     },
+    "menu_performance_fitness": {
+        "message": "健身追踪"
+    },
+    "menu_performance_peaks": {
+        "message": "巅峰表现"
+    },
+    "menu_performance_compare": {
+        "message": "比较活动"
+    },
     "analysis_options": {
         "message": "选项",
         "description": "IMMUTABLE"

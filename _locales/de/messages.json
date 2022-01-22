@@ -14,6 +14,15 @@
     "all_athletes": {
         "message": "Alle Athleten"
     },
+    "menu_performance_fitness": {
+        "message": "Fitness-Tracking"
+    },
+    "menu_performance_peaks": {
+        "message": "Spitzenleistungen"
+    },
+    "menu_performance_compare": {
+        "message": "Aktivitäten vergleichen"
+    },
     "analysis_options": {
         "message": "Optionen"
     },

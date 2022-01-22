@@ -15,6 +15,17 @@
     "all_athletes": {
         "message": "Tous les athlètes"
     },
+    "menu_performance_fitness": {
+        "message": "Traqueur de Fitness",
+        "description": "IMMUTABLE"
+    },
+    "menu_performance_peaks": {
+        "message": "Performances de apogée",
+        "description": "IMMUTABLE"
+    },
+    "menu_performance_compare": {
+        "message": "Comparer les activités"
+    },
     "analysis_options": {
         "message": "Les options"
     },
@@ -319,7 +330,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_peak_hr": {
-        "message": "Fréquence Cardiaque Apogée",
+        "message": "FC Apogée",
         "description": "IMMUTABLE"
     },
     "analysis_peak_cadence": {
