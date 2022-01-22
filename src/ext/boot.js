@@ -80,7 +80,9 @@
             'site/chartjs/plugin-datalabels.js',
             'site/chartjs/plugin-zoom.js',
             'site/sparkline.js',
-            'site/performance.js',
+        ],
+        modules: [
+            'site/performance-fitness.mjs',
         ],
     }, {
         name: 'Sauce Performance - Peaks',
@@ -238,8 +240,12 @@
             }
             _loadedScripts.add(url);
             const script = document.createElement('script');
-            if (options.defer) {
-                script.defer = 'defer';
+            if (options.module) {
+                script.type = 'module';
+            } else {
+                if (options.defer) {
+                    script.defer = 'defer';
+                }
             }
             if (!options.async) {
                 script.async = false;  // default is true
@@ -452,7 +458,12 @@
                 }
             }
             if (m.scripts) {
-                await loadScripts(m.scripts.map(x => `${extUrl}src/${x}`));
+                await loadScripts(m.scripts.map(x => `${extUrl}src/${x}`))
+                    .catch(sauce.report.error);
+            }
+            if (m.modules) {
+                await loadScripts(m.modules.map(x => `${extUrl}src/${x}`), {module: true})
+                    .catch(sauce.report.error);
             }
         }
         document.documentElement.classList.add('sauce-booted');
