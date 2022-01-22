@@ -3529,22 +3529,28 @@ sauce.ns('analysis', ns => {
         const globNavGroup = document.querySelector('#container-nav ul.global-nav');
         const globNavItems = globNavGroup.querySelectorAll(':scope > li.nav-item');
         const pageNav = document.querySelector('#pagenav');
-        if (mobileMedia.matches) {
+        function handleLinkClick(ev) {
+            if (ev.target.closest('a[href]')) {
+                ev.stopPropagation();  // Prevent it from being eaten in-page router.
+            }
+        }
+        function transplantGlobNav() {
             for (const el of globNavItems) {
                 el.classList.remove('nav-item', 'drop-down-menu');
                 el.classList.add('sauce-transplanted-glob-nav-item');
+                el.addEventListener('click', handleLinkClick);
                 pageNav.appendChild(el);
             }
         }
+        if (mobileMedia.matches) {
+            transplantGlobNav();
+        }
         mobileMedia.addListener(ev => {
             if (ev.matches) {
-                for (const el of globNavItems) {
-                    el.classList.remove('nav-item', 'drop-down-menu');
-                    el.classList.add('sauce-transplanted-glob-nav-item');
-                    pageNav.appendChild(el);
-                }
+                transplantGlobNav();
             } else {
                 for (const el of globNavItems) {
+                    el.removeEventListener('click', handleLinkClick);
                     el.classList.add('nav-item', 'drop-down-menu');
                     el.classList.remove('sauce-transplanted-glob-nav-item');
                     globNavGroup.appendChild(el);
