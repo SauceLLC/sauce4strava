@@ -6,9 +6,9 @@
     "performance": {"message": "Performance"},
     "all_athletes": {"message": "All Athletes"},
 
-    "menu_fitness": {"message": "Fitness"},
-    "menu_best": {"message": "Best"},
-    "menu_compare": {"message": "Compare"},
+    "menu_performance_fitness": {"message": "Fitness Tracking"},
+    "menu_performance_peaks": {"message": "Peak Performances"},
+    "menu_performance_compare": {"message": "Compare Activities"},
 
     "analysis_options": {"message": "Options"},
     "analysis_tools": {"message": "Tools"},

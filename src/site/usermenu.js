@@ -13,28 +13,27 @@
     }
 
     async function preloadPerfMenu() {
-        console.log(performance.now());
-        const locales = await sauce.locale.getMessagesObject(
-            ['/performance', 'fitness', 'best', 'compare'], 'menu');
-        console.log(performance.now());
         const menu = [{
-            text: `${locales.fitness} Tracking`,
-            href: '/sauce/performance',
+            localeKey: 'fitness',
+            href: '/sauce/performance/fitness',
             icon: 'analytics-duotone',
         }, {
-            text: `${locales.best} Performances`,
-            href: '/sauce/performance/best',
+            localeKey: 'peaks',
+            href: '/sauce/performance/peaks',
             icon: 'medal-duotone',
         }, {
-            text: `${locales.compare} Activities`,
+            localeKey: 'compare',
             href: '/sauce/performance/compare',
             icon: 'balance-scale-right-duotone',
         }];
-        await Promise.all(menu.map(async x => {
-            const r = await fetch(sauce.extUrl + `images/fa/${x.icon}.svg`);
-            x.svg = await r.text();
-        }));
-        console.log(performance.now());
+        const [locales] = await Promise.all([
+            sauce.locale.getMessagesObject(
+                ['/performance', ...menu.map(x => x.localeKey)], 'menu_performance'),
+            ...menu.map(async x => {
+                const r = await fetch(sauce.extUrl + `images/fa/${x.icon}.svg`);
+                x.svg = await r.text();
+            })
+        ]);
         return {menu, locales};
     }
     let perfMenuPreload = preloadPerfMenu();
@@ -89,7 +88,7 @@
         for (const x of menu) {
             const item = document.createElement('li');
             const a = document.createElement('a');
-            a.textContent = x.text;
+            a.textContent = locales[x.localeKey];
             a.href = x.href;
             if (x.svg) {
                 sauce.adjacentNodeContents(a, 'afterbegin', x.svg);
