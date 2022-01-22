@@ -9,6 +9,13 @@
 @use 'data_views';
 @use 'sync';
 
+// XXX workaround a Strava bug in the CSS for the analysis page.
+// Affects global nav and left side nav. (see training menu for test).
+@media (max-width: 992px) {
+    html ul {
+        padding-left: unset;
+    }
+}
 
 html.sauce-enabled {
     transition: opacity 400ms;

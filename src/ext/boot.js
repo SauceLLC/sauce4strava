@@ -31,6 +31,7 @@
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
         stylesheets: ['site/analysis.css'],
+        cssClass: 'sauce-analysis',
         scripts: [
             'common/proxy.js',
             'site/proxy.js',
@@ -43,30 +44,28 @@
             'site/sparkline.js',
             'site/analysis.js',
         ],
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-analysis')
-        ]
     }, {
         name: 'Segment Compare',
         pathMatch: /^\/segments\/[0-9]+\/compare\b/,
+        cssClass: 'sauce-segment-compare',
         scripts: [
             'common/proxy.js',
             'site/proxy.js',
             'site/segment-compare.js',
         ],
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-segment-compare')
-        ]
     }, {
         name: 'Route Builder',
         pathMatch: /^\/routes\/new\b/,
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-route-builder')
-        ]
+        cssClass: 'sauce-route-builder',
+    }, {
+        name: 'Sauce Performance - Legacy Redirect',
+        pathMatch: /^\/sauce\/performance(\/)?$/,
+        callbacks: [() => window.location.assign('/sauce/performance/fitness')]
     }, {
         name: 'Sauce Performance - Fitness',
         pathMatch: /^\/sauce\/performance\/fitness\b/,
         stylesheets: ['site/performance.css'],
+        cssClass: ['sauce-performance', 'sauce-performance-fitness', 'sauce-responsive'],
         scripts: [
             'common/proxy.js',
             'site/proxy.js',
@@ -83,14 +82,11 @@
             'site/sparkline.js',
             'site/performance.js',
         ],
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-performance',
-                'sauce-performance-fitness', 'sauce-responsive')
-        ]
     }, {
         name: 'Sauce Performance - Peaks',
         pathMatch: /^\/sauce\/performance\/peaks\b/,
         stylesheets: ['site/performance.css'],
+        cssClass: ['sauce-performance', 'sauce-performance-peaks', 'sauce-responsive'],
         scripts: [
             'common/proxy.js',
             'site/proxy.js',
@@ -107,14 +103,11 @@
             'site/sparkline.js',
             'site/performance.js',
         ],
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-performance',
-                'sauce-performance-peaks', 'sauce-responsive')
-        ]
     }, {
         name: 'Sauce Performance - Compare',
         pathMatch: /^\/sauce\/performance\/compare\b/,
         stylesheets: ['site/performance.css'],
+        cssClass: ['sauce-performance', 'sauce-performance-compare', 'sauce-responsive'],
         scripts: [
             'common/proxy.js',
             'site/proxy.js',
@@ -130,16 +123,12 @@
             'site/chartjs/plugin-zoom.js',
             'site/sparkline.js',
             'site/performance.js',
-        ],
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-performance',
-                'sauce-performance-compare', 'sauce-responsive')
         ]
-
     }, {
         name: 'Sauce Patron',
         pathMatch: /^\/sauce\/patron\b/,
         stylesheets: ['site/patron.css'],
+        cssClass: ['sauce-patron', 'sauce-responsive'],
         scripts: [
             'common/proxy.js',
             'site/proxy.js',
@@ -150,13 +139,11 @@
             'common/lib.js',
             'site/patron.js',
         ],
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-patron', 'sauce-responsive')
-        ]
     }, {
         name: 'Profile',
         pathMatch: /^\/(athletes|pros)\/[0-9]+\/?$/,
         stylesheets: ['site/profile.css'],
+        cssClass: 'sauce-profile',
         scripts: [
             'common/proxy.js',
             'site/proxy.js',
@@ -167,11 +154,7 @@
             'site/sync.js',
             'site/profile.js',
         ],
-        callbacks: [
-            config => void document.documentElement.classList.add('sauce-profile')
-        ]
     }, {
-        stylesheets: ['site/responsive.css'],
         callbacks: [
             config => {
                 if (!config.options.responsive) {
@@ -200,6 +183,7 @@
                 if (document.head) {
                     attachViewportMeta();
                 } else {
+                    // XXX Mutation observer would be better.
                     addEventListener('DOMContentLoaded', attachViewportMeta, {capture: true});
                 }
             }
@@ -413,6 +397,16 @@
         if (document.documentElement.classList.contains('sauce-enabled')) {
             throw new Error("Multiple Sauce extensions active");
         }
+        document.documentElement.classList.add('sauce-enabled');  // legacy
+        const matchingManifests = manifests.filter(m =>
+            !((m.pathMatch && !location.pathname.match(m.pathMatch)) ||
+              (m.pathExclude && location.pathname.match(m.pathExclude))));
+        for (const x of matchingManifests) {
+            if (x.cssClass) {
+                document.documentElement.classList.add(...(typeof x.cssClass === 'string' ?
+                    [x.cssClass] : x.cssClass));
+            }
+        }
         const ext = browser.runtime.getManifest();
         const extUrl = browser.runtime.getURL('');
         const sauceVars = {
@@ -427,7 +421,6 @@
             `sauceBaseInit();`,
             `saucePreloaderInit(${JSON.stringify(sauceVars)});`,
         ].join('\n'));
-        document.documentElement.classList.add('sauce-enabled');
         const config = await sauce.storage.get(null);
         self.currentUser = config.currentUser;
         updatePatronLevelNames().catch(sauce.report.error);  // bg okay
@@ -437,22 +430,25 @@
             sauce.options = ${JSON.stringify(config.options)};
             Object.assign(sauce, ${JSON.stringify(sauceVars)});
         `);
-        for (const m of manifests) {
-            if ((m.pathMatch && !location.pathname.match(m.pathMatch)) ||
-                (m.pathExclude && location.pathname.match(m.pathExclude))) {
-                continue;
-            }
+        for (const m of matchingManifests) {
             if (m.name) {
                 console.info(`Sauce loading: ${m.name}`);
-            }
-            if (m.callbacks) {
-                for (const cb of m.callbacks) {
-                    cb(config);
-                }
             }
             if (m.stylesheets) {
                 for (const url of m.stylesheets) {
                     loadStylesheet(`${extUrl}css/${url}`);
+                }
+            }
+            if (m.callbacks) {
+                for (const cb of m.callbacks) {
+                    try {
+                        const r = cb(config);
+                        if (r instanceof Promise) {
+                            await r;
+                        }
+                    } catch(e) {
+                        sauce.report.error(e);
+                    }
                 }
             }
             if (m.scripts) {
