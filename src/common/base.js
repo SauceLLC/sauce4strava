@@ -102,15 +102,6 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
-    sauce.sha256 = async function(input) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(input);
-        const hash = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hash));
-        return hashArray.map(x => x.toString(16).padStart(2, '0')).join('');
-    };
-
-
     const _modernBrowserBrands = navigator.userAgentData ?
         new Set(navigator.userAgentData.brands.map(x => x.brand)) : null;
 
@@ -242,9 +233,6 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     sauce.stringDigest = function(algo, input) {
-        if (typeof input !== 'string') {
-            throw new TypeError('Input should string');
-        }
         const encoder = new TextEncoder();
         const data = encoder.encode(input);
         return sauce.digest(algo, data);
