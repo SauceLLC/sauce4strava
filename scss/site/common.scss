@@ -101,58 +101,64 @@
                 max-height: calc(99vh - 55px);
             }
         }
-        li.sauce-options-menu-group,
-        li.sauce-options-menu-item {
-            background-image:
-                linear-gradient(132deg,
-                    color.hue(accent, -13, $shade: -8%, $alpha: 48%),
-                    color.hue(accent, 4, $shade: -15%, $alpha: 80%)),
-                linear-gradient(234deg,
-                    color.hue(accent, -8, $shade: -2%),
-                    color.hue(accent, 40));
+    }
 
-            a {
-                color: color.shade(accent, 60%) !important;
+    li.sauce-options-menu-group,
+    li.sauce-options-menu-item {
+        background-image:
+            linear-gradient(132deg,
+                color.hue(accent, -13, $shade: -8%, $alpha: 48%),
+                color.hue(accent, 4, $shade: -15%, $alpha: 80%)),
+            linear-gradient(234deg,
+                color.hue(accent, -8, $shade: -2%),
+                color.hue(accent, 40));
 
-                &:hover {
-                    background-color: #0003;
-                }
+        a {
+            color: color.shade(accent, 60%) !important;
+
+            &:hover {
+                background-color: #0003;
+            }
+        }
+    }
+
+    li.sauce-options-menu-group {
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sauce-callout {
+            padding: 8px 12px 0px;
+            color: color.shade(accent, 70%);
+            text-transform: uppercase;
+            position: relative;
+            padding-right: 24px; // for sauce icon
+
+            img {
+                position: absolute;
+                top: 4px;
+                right: 2px;
+                height: 16px;
+                transform: rotate(235deg);
+                filter: drop-shadow(-2px -2px 4px #0008);
             }
         }
 
-        li.sauce-options-menu-group {
-            .sauce-callout {
-                padding: 8px 12px 0px;
-                color: color.shade(accent, 70%);
-                text-transform: uppercase;
-                position: relative;
-                padding-right: 24px; // for sauce icon
-
-                img {
-                    position: absolute;
-                    top: 4px;
-                    right: 2px;
-                    height: 16px;
-                    transform: rotate(235deg);
-                    filter: drop-shadow(-2px -2px 4px #0008);
-                }
-            }
-
-            ul li {
-                a svg[data-icon] {
-                        width: 1.1em;
-                        margin: -0.2em 0.6em -0.2em 0;
-                }
+        ul li {
+            a svg[data-icon] {
+                    width: 1.1em;
+                    margin: -0.2em 0.6em -0.2em 0;
             }
         }
+    }
 
-        li.sauce-options-menu-item {
-            a img {
-                height: 12px;
-                transform: rotate(-50deg);
-                margin-left: 0.6em;
-                margin-bottom: -2px;
-            }
+    li.sauce-options-menu-item {
+        a img {
+            height: 12px;
+            transform: rotate(-50deg);
+            margin-left: 0.6em;
+            margin-bottom: -2px;
         }
     }
 

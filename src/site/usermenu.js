@@ -45,9 +45,13 @@
 
 
     async function _loadOptions() {
-        const options = document.querySelector('#global-header .user-nav .user-menu .options');
-        if (!options) {
-            return;
+        let menuEl = document.querySelector('#global-header .user-nav .user-menu .options');
+        if (!menuEl) {
+            // React page with obfuscated HTML.
+            menuEl = document.querySelector('header nav ul li ul[labeledby="athlete-menu"]');
+            if (!menuEl) {
+                return;
+            }
         }
         const anchor = document.createElement('a');
         anchor.textContent = `Sauce ${await sauce.locale.getMessage('analysis_options')}`;
@@ -62,7 +66,7 @@
         const item = document.createElement('li');
         item.classList.add('sauce-options-menu-item');
         item.appendChild(anchor);
-        options.appendChild(item);
+        menuEl.appendChild(item);
     }
 
     async function _loadPerf() {
