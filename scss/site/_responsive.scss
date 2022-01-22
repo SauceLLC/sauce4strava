@@ -32,6 +32,13 @@ html.sauce-responsive,
     font-size: 14px;
 }
 
+// XXX workaround a Strava bug in the CSS which affects various lists (mostly navigation)..
+@media (max-width: 992px) {
+    html ul {
+        padding-left: unset;
+    }
+}
+
 
 // global style
 .sauce-responsive {

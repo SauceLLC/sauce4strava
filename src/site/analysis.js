@@ -38,6 +38,7 @@ sauce.ns('analysis', ns => {
     };
     // Preload our food data so we're not waiting around later.
     const foodsPromise = fetch(sauce.extUrl + 'src/site/foods.json').then(r => r.json());
+    const mobileMedia = window.matchMedia('(max-width: 768px)');
 
 
     let _fullActivity;
@@ -913,7 +914,6 @@ sauce.ns('analysis', ns => {
         } else {
             // Monitor for window resize with a media query that matches the mobile
             // css media query..
-            const mobileMedia = window.matchMedia('(max-width: 768px)');
             mobileMedia.addListener(ev => void placeInfo(ev.matches));
             placeInfo(mobileMedia.matches);
         }
@@ -3526,6 +3526,31 @@ sauce.ns('analysis', ns => {
         const $navHeader = jQuery('#global-header > nav');
         $navHeader.prepend(jQuery(`<div style="display: none" class="menu-expander">${svg}</div>`));
         $navHeader.find('.menu-expander').on('click', toggleMobileNavMenu);
+        const globNavGroup = document.querySelector('#container-nav ul.global-nav');
+        const globNavItems = globNavGroup.querySelectorAll(':scope > li.nav-item');
+        const pageNav = document.querySelector('#pagenav');
+        if (mobileMedia.matches) {
+            for (const el of globNavItems) {
+                el.classList.remove('nav-item', 'drop-down-menu');
+                el.classList.add('sauce-transplanted-glob-nav-item');
+                pageNav.appendChild(el);
+            }
+        }
+        mobileMedia.addListener(ev => {
+            if (ev.matches) {
+                for (const el of globNavItems) {
+                    el.classList.remove('nav-item', 'drop-down-menu');
+                    el.classList.add('sauce-transplanted-glob-nav-item');
+                    pageNav.appendChild(el);
+                }
+            } else {
+                for (const el of globNavItems) {
+                    el.classList.add('nav-item', 'drop-down-menu');
+                    el.classList.remove('sauce-transplanted-glob-nav-item');
+                    globNavGroup.appendChild(el);
+                }
+            }
+        });
     }
 
 
@@ -3590,7 +3615,6 @@ sauce.ns('analysis', ns => {
             document.body.classList.add('sauce-disabled-scroll-listener');
             pageView.handlePageScroll = function() {};
             // Disable animations for mobile screens (reduces jank and works better for some nav changes)
-            const mobileMedia = window.matchMedia('(max-width: 768px)');
             mobileMedia.addListener(ev => {
                 jQuery.fx.off = ev.matches;
                 ns.isMobile = ev.matches;

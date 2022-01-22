@@ -343,13 +343,17 @@
                     > li > div > a,
                     > li.group > .title,
                     > li.sauce-group > .sauce-header,
-                    > li.sauce-group > ul > li > a {
-                        padding: 1rem 2.5rem;
+                    > li.sauce-group > ul > li > a,
+                    > li.group > ul li a,
+                    > li.sauce-transplanted-glob-nav-item > ul.options li a,
+                    > li.sauce-transplanted-glob-nav-item .sauce-callout {
+                        padding: 1rem 2rem;
+                        font-size: 1.1em;
                     }
 
-                    li.group > ul li a {
-                        padding: 0.65rem 3rem 0.65rem 3.5rem;
-                        font-size: 1em;  // shrink less than desktop
+                    > li.group > .title.small {
+                        padding-bottom: 0.5rem;
+                        font-size: 0.68em;
                     }
 
                     li > a {
@@ -375,6 +379,24 @@
 
                 #pagenav {
                     margin: 0;
+
+                    > li.sauce-transplanted-glob-nav-item {
+                        > a,
+                        > a::after,
+                        > button.nav-link,
+                        .subscription-callout {
+                            display: none !important;
+                        }
+
+                        ul li.selected > a {
+                            box-shadow: none !important;
+                        }
+
+                        .sauce-callout {
+                            font-size: 0.68em !important;
+                            padding-bottom: 0.5rem !important;
+                        }
+                    }
                 }
 
                 .actions-menu {
