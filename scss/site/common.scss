@@ -99,6 +99,11 @@
             li.drop-down-menu[data-log-category="training"] > ul {
                 max-height: calc(99vh - 55px);
             }
+
+            li.drop-down-menu ul.options li ul {
+                // Fix a strava css bug for screens < 992px  The bug affects all ULs actualy but it's particularlly nasty here.
+                padding-left: 0;
+            }
         }
         li.sauce-options-menu-group,
         li.sauce-options-menu-item {
@@ -156,6 +161,12 @@
     }
 
     &.sauce-hide-upsells {
+        &.sauce-non-premium-user {
+            .global-nav .drop-down-menu ul.options li.premium {
+                display: none !important;
+            }
+        }
+
         .js-snw-goals-upsell,
         .user-nav .nav-item.upgrade,
         #segments-upsell,
@@ -163,6 +174,7 @@
         .seg-leaderboard-upsell,
         .leaderboards-upsell,
         .recent-efforts-upsell,
+        .upsell-others,
         .sauce-upsell {
             display: none !important;
         }

@@ -64,8 +64,8 @@
             config => void document.documentElement.classList.add('sauce-route-builder')
         ]
     }, {
-        name: 'Sauce Performance',
-        pathMatch: /^\/sauce\/performance\b/,
+        name: 'Sauce Performance - Fitness',
+        pathMatch: /^\/sauce\/performance\/fitness\b/,
         stylesheets: ['site/performance.css'],
         scripts: [
             'common/proxy.js',
@@ -84,8 +84,58 @@
             'site/performance.js',
         ],
         callbacks: [
-            config => void document.documentElement.classList.add('sauce-performance', 'sauce-responsive')
+            config => void document.documentElement.classList.add('sauce-performance',
+                'sauce-performance-fitness', 'sauce-responsive')
         ]
+    }, {
+        name: 'Sauce Performance - Peaks',
+        pathMatch: /^\/sauce\/performance\/peaks\b/,
+        stylesheets: ['site/performance.css'],
+        scripts: [
+            'common/proxy.js',
+            'site/proxy.js',
+            'site/locale.js',
+            'site/storage.js',
+            'site/ui.js',
+            'site/template.js',
+            'common/lib.js',
+            'site/sync.js',
+            'site/chartjs/Chart.js',
+            'site/chartjs/adapter-date-fns.bundle.js',
+            'site/chartjs/plugin-datalabels.js',
+            'site/chartjs/plugin-zoom.js',
+            'site/sparkline.js',
+            'site/performance.js',
+        ],
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-performance',
+                'sauce-performance-peaks', 'sauce-responsive')
+        ]
+    }, {
+        name: 'Sauce Performance - Compare',
+        pathMatch: /^\/sauce\/performance\/compare\b/,
+        stylesheets: ['site/performance.css'],
+        scripts: [
+            'common/proxy.js',
+            'site/proxy.js',
+            'site/locale.js',
+            'site/storage.js',
+            'site/ui.js',
+            'site/template.js',
+            'common/lib.js',
+            'site/sync.js',
+            'site/chartjs/Chart.js',
+            'site/chartjs/adapter-date-fns.bundle.js',
+            'site/chartjs/plugin-datalabels.js',
+            'site/chartjs/plugin-zoom.js',
+            'site/sparkline.js',
+            'site/performance.js',
+        ],
+        callbacks: [
+            config => void document.documentElement.classList.add('sauce-performance',
+                'sauce-performance-compare', 'sauce-responsive')
+        ]
+
     }, {
         name: 'Sauce Patron',
         pathMatch: /^\/sauce\/patron\b/,

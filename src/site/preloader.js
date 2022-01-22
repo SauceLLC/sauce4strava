@@ -831,5 +831,6 @@ self.saucePreloaderInit = function saucePreloaderInit(sauceVars) {
     sauce.propDefined('currentAthlete', athlete => {
         document.documentElement.dataset.sauceCurrentUser = athlete.id || '';
         document.documentElement.dispatchEvent(new Event('sauceCurrentUserUpdate'));
+        document.documentElement.classList.toggle('sauce-non-premium-user', !athlete.isPremium());
     }, {once: true});
 };
