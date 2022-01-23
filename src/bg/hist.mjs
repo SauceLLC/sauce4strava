@@ -89,7 +89,7 @@ ActivityModel.addSyncManifest({
     name: 'peaks',
     version: 11, // provide extra fields for seperate wkg/rank proc
     depends: ['extra-streams'],
-    data: {processor: processors.peaksProcessor}
+    data: {processor: processors.PeaksProcessor}
 });
 
 ActivityModel.addSyncManifest({

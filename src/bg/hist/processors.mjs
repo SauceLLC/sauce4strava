@@ -582,6 +582,51 @@ export async function peaksWkgProcessor({manifest, activities, athlete}) {
 }
 
 
+export class PeaksProcessor extends OffloadProcessor {
+    constructor(...args) {
+        super(...args);
+        this.completedWith = new Map();
+    }
+
+    async processor() {
+        const working = [];
+        while (!this._stopping) {
+            const activities = await this.getAllIncoming();
+            if (activities) {
+                working.push(this._consume(activities));
+            } else {
+                await Promise.allSettled(working);
+            }
+        }
+    }
+
+    async _consume(activities) {
+        const wp = getWorkerPool();
+        const activityMap = new Map(activities.map(x => [x.pk, x]));
+        const work = [];
+        const len = activities.length;
+        const concurrency = Math.min(navigator.hardwareConcurrency || 4);
+        // Tuned for Chrome's very slow IndexedDB perf.
+        const minChunk = sauce.isChrome() ? 100 : 100;
+        const step = Math.max(minChunk, Math.ceil(Math.max(len / concurrency)));
+        const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
+        const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
+        for (let i = 0; i < len; i += step) {
+            const chunk = activities.slice(i, i + step);
+            console.debug("adding new activities chunk", chunk.length);
+            work.push(wp.exec('findPeaks', this.athlete.data, chunk.map(x => x.data), periods, distances).then(errors => {
+                console.debug("chunk done", chunk.length);
+                for (const x of errors) {
+                    const activity = activityMap.get(x.activity);
+                    activity.setSyncError(this.manifest, new Error(x.error));
+                }
+                this.putFinished(chunk);
+            }));
+        }
+        await Promise.all(work);
+    }
+}
+
 
 export class TrainingLoadProcessor extends OffloadProcessor {
     constructor(...args) {
