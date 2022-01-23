@@ -84,7 +84,7 @@ class WorkerPoolExecutor {
                 worker.gcTimeout = setTimeout(() => {
                     this._idle.delete(worker);
                     worker.terminate();
-                }, 30000);
+                }, 5000);
                 this._idle.add(worker);
             }
         } finally {
@@ -393,7 +393,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                 activity.setSyncError(manifest, e);
             }
         }
-        if (streams.watts || streams.watts_calc) {
+        if ((streams.watts || streams.watts_calc) && !activity.get('peaksExclude')) {
             try {
                 const watts = streams.watts || streams.watts_calc;
                 for (const period of periods.filter(x => !!streams.watts || x >= 300)) {
@@ -500,8 +500,10 @@ export async function peaksProcessor({manifest, activities, athlete}) {
     const activityMap = new Map(activities.map(x => [x.pk, x]));
     const work = [];
     const len = activities.length;
-    const concurrency = Math.min(navigator.hardwareConcurrency || 12);
-    const step = Math.max(200, Math.ceil(Math.max(len / concurrency)));
+    const concurrency = Math.min(navigator.hardwareConcurrency || 4);
+    // Tuned for Chrome's very slow IndexedDB perf.
+    const minChunk = sauce.isChrome() ? 100 : 20;
+    const step = Math.max(minChunk, Math.ceil(Math.max(len / concurrency)));
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
     for (let i = 0; i < len; i += step) {

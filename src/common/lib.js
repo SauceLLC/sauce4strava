@@ -348,15 +348,6 @@ sauce.ns('data', function() {
             return clone;
         }
 
-        *_importIter(times, values, active) {
-            if (times.length !== values.length) {
-                throw new TypeError("times and values not same length");
-            }
-            for (let i = 0; i < times.length; i++) {
-                yield this.add(times[i], values[i], active && active[i]);
-            }
-        }
-
         importData(times, values, active) {
             if (times.length !== values.length) {
                 throw new TypeError("times and values not same length");
@@ -367,10 +358,13 @@ sauce.ns('data', function() {
         }
 
         importReduce(times, values, active, getter, comparator, cloneOptions) {
+            if (times.length !== values.length) {
+                throw new TypeError("times and values not same length");
+            }
             let leadValue;
             let leadRoll;
-            for (const x of this._importIter(times, values, active)) {
-                void x;
+            for (let i = 0; i < times.length; i++) {
+                this.add(times[i], values[i], active && active[i]);
                 if (this.full()) {
                     const value = getter(this);
                     if (leadValue !== undefined) {
@@ -410,7 +404,8 @@ sauce.ns('data', function() {
         }
 
         _isActiveValue(value) {
-            return !!(
+            const num = +value;
+            return !!num || !!(
                 value != null &&
                 !Number.isNaN(value) &&
                 (value != 0 || (!this._ignoreZeros && !(value instanceof Zero)))
