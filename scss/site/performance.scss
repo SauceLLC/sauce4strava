@@ -554,7 +554,7 @@ table.sauce-perf {
                                     #{color.shade(bg, 15%)} 0.4em,
                                     #{color.shade(bg, 12%)});
 
-        &.compressed {
+        &.collapsed {
             display: none;
         }
 
@@ -900,12 +900,12 @@ table.sauce-perf {
         display: flex;
         flex-direction: column;
 
-        &.expanded {
+        &.maximized {
             .window-controls .btn.expand {
                 display: none;
             }
         }
-        &:not(.expanded) {
+        &:not(.maximized) {
             .window-controls .btn.compress {
                 display: none;
             }
@@ -1166,7 +1166,7 @@ table.sauce-perf {
 
     > aside.details {
         overflow: auto;
-        flex: 1 0 0;
+        flex: 1 0 $aside-width;
         color: color.shade(bg, 5%);
         background-attachment: local;
         $bg-gradient: linear-gradient(to right,
@@ -1175,8 +1175,8 @@ table.sauce-perf {
                                       #{color.shade(bg, 90%)});
         background-image: $bg-gradient;
 
-        &.expanded {
-            flex-basis: $aside-width;
+        &.collapsed {
+            flex-basis: 0;
         }
 
         .activity-name {

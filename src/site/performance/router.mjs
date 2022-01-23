@@ -8,20 +8,17 @@ const D = sauce.date;
 
 class RangeRouter extends Backbone.Router {
     constructor(urn, pageTitle) {
-        super();
+        const routes = {
+            [`${urn}/:athleteId/:period/:metric/:endDay`]: 'onNav',
+            [`${urn}/:athleteId/:period/:metric`]: 'onNav',
+            [`${urn}/:athleteId/all`]: 'onNavAll',
+            [`${urn}/:athleteId`]: 'onNav',
+            [urn]: 'onNav',
+        };
+        super({routes});
         this.urn = urn;
         this.pageTitle = pageTitle;
         this.filters = {};
-    }
-
-    get routes() {
-        return {
-            [`${this.urn}/:athleteId/:period/:metric/:endDay`]: 'onNav',
-            [`${this.urn}/:athleteId/:period/:metric`]: 'onNav',
-            [`${this.urn}/:athleteId/all`]: 'onNavAll',
-            [`${this.urn}/:athleteId`]: 'onNav',
-            [this.urn]: 'onNav',
-        };
     }
 
     onNavAll(athleteId) {

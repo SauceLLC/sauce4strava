@@ -1,5 +1,5 @@
 <% if (obj.athlete) { %>
-    <section class="overview {{collapsed.overview === true ? 'collapsed' : ''}}"
+    <section class="overview {{prefs.collapsed.overview === true ? 'collapsed' : ''}}"
              data-id="overview">
         <header>
             <i class="icon">{{=icon info-circle-duotone=}}</i>
@@ -73,7 +73,7 @@
         <% } %>
     </section>
 
-    <section class="training {{collapsed.training === true ? 'collapsed' : ''}}"
+    <section class="training {{prefs.collapsed.training === true ? 'collapsed' : ''}}"
              data-id="training">
         <header>
             <i class="icon">{{=icon transporter-1-duotone=}}</i>
@@ -113,7 +113,7 @@
         <% } %>
     </section>
 
-    <section class="highlights {{collapsed.highlights === true ? 'collapsed' : ''}}"
+    <section class="highlights {{prefs.collapsed.highlights === true ? 'collapsed' : ''}}"
              data-id="highlights">
         <header>
             <i class="icon">{{=icon medal-duotone=}}</i>
@@ -123,13 +123,13 @@
         </header>
 
         <select name="type">
-            <option value="power" {{type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
-            <option value="power_wkg" {{type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
-            <option value="np" {{type === 'np' ? 'selected' : ''}}>NP</option>
-            <option value="xp" {{type === 'xp' ? 'selected' : ''}}>xPower</option>
-            <option value="pace" {{type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
-            <option value="gap" {{type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
-            <option value="hr" {{type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
+            <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
+            <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
+            <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP</option>
+            <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
+            <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
+            <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
+            <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
         </select>
 
         <% for (const x of peaks) { %>
@@ -142,7 +142,7 @@
         <% } %>
     </section>
 
-    <section class="sync-stats {{collapsed.sync_stats === true  ? 'collapsed' : ''}}"
+    <section class="sync-stats {{prefs.collapsed.sync_stats === true  ? 'collapsed' : ''}}"
              data-id="sync_stats">
         <header>
             <i class="icon">{{=icon sync-alt-duotone=}}</i>

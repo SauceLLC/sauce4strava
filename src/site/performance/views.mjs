@@ -1,8 +1,9 @@
-/* global sauce currentAthlete */
+/* global sauce currentAthlete jQuery */
 
 import {SauceView} from '../view.mjs';
 import * as data from './data.mjs';
 
+const DAY = 86400 * 1000;
 const L = sauce.locale;
 const H = L.human;
 const D = sauce.date;
@@ -24,7 +25,7 @@ function hasSyncController(athleteId) {
 
 
 let _peakRanges = {};
-async function getPeakRanges(type) {
+export async function getPeakRanges(type) {
     if (!_peakRanges[type]) {
         _peakRanges[type] = await sauce.peaks.getRanges(type);
     }
@@ -73,7 +74,7 @@ function getPeaksValueFormatter(streamType) {
 }
 
 
-async function editActivityDialogXXX(activity, pageView) {
+export async function editActivityDialogXXX(activity, pageView) {
     // XXX replace this trash with a view and module
     const tss = sauce.model.getActivityTSS(activity);
     const $modal = await sauce.ui.modal({
@@ -156,6 +157,25 @@ export class PerfView extends SauceView {
     get localeNS() {
         return 'performance';
     }
+
+    get defaultPrefs() {
+        return {};
+    }
+
+    getPrefs() {
+        if (!this._prefs) {
+            this._prefs = {
+                ...this.defaultPrefs,
+                ...sauce.storage.getPrefFast(this.constructor.name),
+            };
+        }
+        return this._prefs;
+    }
+
+    async savePrefs(updates) {
+        Object.assign(this._prefs, updates);
+        await sauce.storage.setPref(this.constructor.name, this._prefs);
+    }
 }
 
 
@@ -180,6 +200,13 @@ export class SummaryView extends PerfView {
         return ['rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'];
     }
 
+    get defaultPrefs() {
+        return {
+            type: 'power',
+            collapsed: {},
+        };
+    }
+
     async init({pageView}) {
         this.pageView = pageView;
         this.sync = {};
@@ -189,8 +216,6 @@ export class SummaryView extends PerfView {
         this.onSyncStatus = this._onSyncStatus.bind(this);
         this.onSyncError = this._onSyncError.bind(this);
         this.onSyncProgress = this._onSyncProgress.bind(this);
-        this.collapsed = sauce.storage.getPrefFast('perfSummarySectionCollapsed') || {};
-        this.type = sauce.storage.getPrefFast('perfSummarySectionType') || 'power';
         if (pageView.athlete) {
             await this.setAthlete(pageView.athlete);
         }
@@ -203,15 +228,16 @@ export class SummaryView extends PerfView {
         if (start == null || end == null) {
             return [];
         }
-        const ranges = await getPeakRanges(getPeaksRangeTypeForStream(this.type));
-        const keyFormatter = getPeaksKeyFormatter(this.type);
-        const valueFormatter = getPeaksValueFormatter(this.type);
-        const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, this.type,
+        const type = this.getPrefs().type;
+        const ranges = await getPeakRanges(getPeaksRangeTypeForStream(type));
+        const keyFormatter = getPeaksKeyFormatter(type);
+        const valueFormatter = getPeaksValueFormatter(type);
+        const peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, type,
             ranges.map(x => x.value), {limit: 1, start, end});
         return peaks.map(x => ({
             key: keyFormatter(x.period),
             prettyValue: valueFormatter(x.value),
-            unit: getPeaksUnit(this.type),
+            unit: getPeaksUnit(type),
             activity: x.activity,
         }));
     }
@@ -223,8 +249,7 @@ export class SummaryView extends PerfView {
         const totalAltGain = sauce.data.sum(this.daily.map(x => x.altGain));
         const r = {
             athlete: this.athlete,
-            collapsed: this.collapsed,
-            type: this.type,
+            prefs: this.getPrefs(),
             sync: this.sync,
             activeDays: this.daily.filter(x => x.activities.length).length,
             tssAvg: this.daily.length ? sauce.data.sum(this.daily.map(x =>
@@ -292,8 +317,8 @@ export class SummaryView extends PerfView {
     }
 
     async onTypeChange(ev) {
-        this.type = ev.currentTarget.value;
-        await sauce.storage.setPref(`perfSummarySectionType`, this.type);
+        const type = ev.currentTarget.value;
+        await this.savePrefs({type});
         await this.render();
     }
 
@@ -343,11 +368,11 @@ export class SummaryView extends PerfView {
     }
 
     async onCollapserClick(ev) {
-        await this.setCollapsed(ev.currentTarget.closest('section'), true);
+        await this.toggleCollapsed(ev.currentTarget.closest('section'), true);
     }
 
     async onExpanderClick(ev) {
-        await this.setCollapsed(ev.currentTarget.closest('section'), false);
+        await this.toggleCollapsed(ev.currentTarget.closest('section'), false);
     }
 
     async onHighlightClick(ev) {
@@ -367,15 +392,18 @@ export class SummaryView extends PerfView {
 
     async onDblClickHeader(ev) {
         const section = ev.currentTarget.closest('section');
-        await this.setCollapsed(section, !section.classList.contains('collapsed'));
+        await this.toggleCollapsed(section);
     }
 
-    async setCollapsed(section, en) {
+    async toggleCollapsed(section, en) {
+        const collapsed = this.getPrefs().collapsed;
         const id = section.dataset.id;
-        const collapsed = en !== false;
-        section.classList.toggle('collapsed', collapsed);
-        this.collapsed[id] = collapsed;
-        await sauce.storage.setPref(`perfSummarySectionCollapsed.${id}`, collapsed);
+        if (en == null) {
+            en = !section.classList.contains('collapsed');
+        }
+        const isCollapsed = collapsed[id] = (en !== false);
+        section.classList.toggle('collapsed', isCollapsed);
+        await this.savePrefs({collapsed});
     }
 }
 
@@ -398,6 +426,12 @@ export class DetailsView extends PerfView {
         return 'performance/details.html';
     }
 
+    get defaultPrefs() {
+        return {
+            collapsed: false,
+        };
+    }
+
     async init({pageView}) {
         this.onSyncProgress = this._onSyncProgress.bind(this);
         this.pageView = pageView;
@@ -410,8 +444,7 @@ export class DetailsView extends PerfView {
 
     setElement(el, ...args) {
         const r = super.setElement(el, ...args);
-        const expanded = sauce.storage.getPrefFast('perfDetailsAsideVisible');
-        this.setExpanded(expanded, {noSave: true});
+        this.toggleCollapsed(this.getPrefs().collapsed, {noSave: true});
         return r;
     }
 
@@ -471,12 +504,15 @@ export class DetailsView extends PerfView {
         await this.render();
     }
 
-    async setExpanded(en, options={}) {
-        const visible = en !== false;
-        this.$el.toggleClass('expanded', visible);
-        if (!options.noSave) {
-            await sauce.storage.setPref('perfDetailsAsideVisible', visible);
+    async toggleCollapsed(collapsed, options={}) {
+        if (collapsed == null) {
+            collapsed = !this.$el.hasClass('collapsed');
         }
+        this.$el.toggleClass('collapsed', collapsed);
+        if (!options.noSave) {
+            await this.savePrefs({collapsed});
+        }
+        return collapsed;
     }
 
     async setActivities(activities, options={}) {
@@ -484,11 +520,11 @@ export class DetailsView extends PerfView {
         this.activities.sort((a, b) => (a.ts || 0) - (b.ts || 0));
         await this.render();
         if (!options.noHighlight) {
-            const expanded = this.$el.hasClass('expanded');
-            await this.setExpanded();
-            if (expanded) {
+            const collapsed = this.$el.hasClass('collapsed');
+            if (!collapsed) {
                 this.el.scrollIntoView({behavior: 'smooth'});
             } else {
+                this.toggleCollapsed();  // bg okay
                 this.$el.one('transitionend', () =>
                     this.el.scrollIntoView({behavior: 'smooth'}));
             }
@@ -496,7 +532,7 @@ export class DetailsView extends PerfView {
     }
 
     async onCollapserClick(ev) {
-        await this.setExpanded(false);
+        await this.toggleCollapsed(true);
     }
 
     async onEditActivityClick(ev) {
@@ -557,7 +593,7 @@ export class DetailsView extends PerfView {
     async expandPeaks(row, id) {
         const peaks = await sauce.hist.getPeaksForActivityId(id);
         const type = row.dataset.peakType;
-        const periods = new Set(await getPeakRanges(getPeaksRangeTypeForStream(type)).map(x => x.value));
+        const periods = new Set((await getPeakRanges(getPeaksRangeTypeForStream(type))).map(x => x.value));
         const typedPeaks = peaks.filter(x => x.type === type && periods.has(x.period));
         if (typedPeaks.length) {
             const keyFormatter = getPeaksKeyFormatter(type);
@@ -662,6 +698,134 @@ export class BulkActivityEditDialog extends PerfView {
 }
 
 
+export class MainView extends PerfView {
+    get events() {
+        return {
+            ...super.events,
+            'change header.filters select[name="range"]': 'onRangeChange',
+            'click header.filters .btn.range': 'onRangeShiftClick',
+            'click header.filters .btn.expand': 'onExpandClick',
+            'click header.filters .btn.compress': 'onCompressClick',
+        };
+    }
+
+    get tpl() {
+        return 'performance/fitness/main.html';
+    }
+
+    get localeKeys() {
+        return ['weekly', 'monthly', 'yearly', 'activities', 'today'];
+    }
+
+    get defaultPrefs() {
+        return {
+            maximized: false,
+        };
+    }
+
+    async init({pageView}) {
+        this.pageView = pageView;
+        this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
+        this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
+        await super.init();
+    }
+
+    setElement(el, ...args) {
+        const r = super.setElement(el, ...args);
+        this.toggleMaximized(this.getPrefs().maximized, {noSave: true, noAside: true});
+        return r;
+    }
+
+    async toggleMaximized(maximized, options={}) {
+        this.$el.toggleClass('maximized', maximized);
+        this.$el.prev('nav').toggleClass('collapsed', maximized);
+        if (!options.noAside) {
+            await this.pageView.detailsView.toggleCollapsed(maximized);
+        }
+        if (!options.noSave) {
+            await this.savePrefs({maximized});
+        }
+    }
+
+    renderAttrs() {
+        const range = this.pageView.getRangeSnapshot();
+        return {range: [range.period, range.metric].join()};
+    }
+
+    async onExpandClick(ev) {
+        await this.toggleMaximized(true);
+    }
+
+    async onCompressClick(ev) {
+        await this.toggleMaximized(false);
+    }
+
+    async onRangeChange(ev) {
+        let [rawPeriod, metric] = ev.currentTarget.value.split(',');
+        const all = !metric && rawPeriod === 'all';
+        if (all) {
+            [rawPeriod, metric] = this.pageView.getAllRange();
+        }
+        await this.pageView.setRangePeriod(Number(rawPeriod), metric, {all});
+    }
+
+    onRangeShiftClick(ev) {
+        const classes = ev.currentTarget.classList;
+        const adj = classes.contains('newest') ?
+            Infinity :
+            classes.contains('oldest') ?
+                -Infinity :
+                classes.contains('next') ?
+                    1 :
+                    -1;
+        ev.currentTarget.classList.add('sauce-busy');
+        this.pageView.shiftRange(adj).finally(() =>
+            // follows a debounced update-activities
+            ev.currentTarget.classList.remove('sauce-busy'));
+        this.updateRangeButtons();
+    }
+
+    onAvailableChanged({oldest}) {
+        this.updateRangeButtons(null, oldest);
+    }
+
+    onBeforeUpdateActivities({range}) {
+        this.updateRangeButtons(range);
+    }
+
+    updateRangeButtons(range, oldest) {
+        range = range || this.pageView.getRangeSnapshot();
+        oldest = oldest || this.pageView.oldest;
+        const localeMetricMap = {
+            weeks: 'weekly',
+            months: 'monthly',
+            years: 'yearly',
+        };
+        this.$('.metric-display').text(this.LM(localeMetricMap[range.metric]));
+        const $start = this.$('header .range.start');
+        const $end = this.$('header .range.end');
+        const selectedRange = this.pageView.allRange ? 'all' : `${range.period},${range.metric}`;
+        let $option = this.$(`select[name="range"] option[value="${selectedRange}"]`);
+        if (!$option.length) {
+            // Just manually add an entry.  The user may be playing with the URL and that's fine.
+            $option = jQuery(`<option value="${range.period},${range.metric}"]>` +
+                `${range.period} ${range.metric}</option>`);
+            this.$(`select[name="range"]`).append($option);
+        }
+        $option[0].selected = true;
+        $start.text(H.date(range.start));
+        const isStart = range.start <= oldest;
+        this.$('.btn.range.prev').toggleClass('disabled', isStart);
+        this.$('.btn.range.oldest').toggleClass('disabled', isStart);
+        const isEnd = range.end >= Date.now();
+        this.$('.btn.range.next').toggleClass('disabled', isEnd);
+        this.$('.btn.range.newest').toggleClass('disabled', isEnd);
+        $end.text(isEnd ?
+            new Intl.RelativeTimeFormat([], {numeric: 'auto'}).format(0, 'day') :
+            H.date(D.roundToLocaleDayDate(range.end - DAY)));
+    }
+}
+
 
 export class PageView extends PerfView {
     get events() {
@@ -674,6 +838,16 @@ export class PageView extends PerfView {
 
     get tpl() {
         return 'performance/page.html';
+    }
+
+    get defaultPrefs() {
+        return {
+            defaultRange: {
+                period: 4,
+                metric: 'weeks',
+                all: false,
+            }
+        };
     }
 
     async init({router, MainView, athletes}) {
@@ -696,7 +870,7 @@ export class PageView extends PerfView {
 
     _setRangeFromRouter() {
         const f = this.router.filters;
-        const defaults = sauce.storage.getPrefFast('perfDefaultRange') || {};
+        const defaults = this.getPrefs().defaultRange;
         this.allRange = f.all || (f.all === undefined && defaults.all);
         if (this.allRange) {
             const [period, metric] = this.getAllRange();
@@ -864,7 +1038,7 @@ export class PageView extends PerfView {
         this.allRange = !!options.all;
         const endSeed = this._range.end > Date.now() ? D.tomorrow() : undefined;
         this._range.setRangePeriod(period, metric, endSeed);
-        sauce.storage.setPref('perfDefaultRange', {period, metric, all: options.all});  // bg okay
+        this.savePrefs({defaultRange: {period, metric, all: options.all}});  // bg okay
     }
 
     getRangeSnapshot() {
