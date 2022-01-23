@@ -293,6 +293,8 @@ sauce.ns('data', function() {
         }
     }
 
+    const ZERO = new Zero();
+
 
     class RollingAverage {
         constructor(period, options={}) {
@@ -404,11 +406,12 @@ sauce.ns('data', function() {
         }
 
         _isActiveValue(value) {
-            const num = +value;
-            return !!num || !!(
-                value != null &&
-                !Number.isNaN(value) &&
-                (value != 0 || (!this._ignoreZeros && !(value instanceof Zero)))
+            return !!(
+                +value || (
+                    value != null &&
+                    !Number.isNaN(value) &&
+                    (!this._ignoreZeros && !(value instanceof Zero))
+                )
             );
         }
 
@@ -417,7 +420,6 @@ sauce.ns('data', function() {
                 const prevTS = this._times[this._length - 1];
                 const gap = ts - prevTS;
                 if ((active == null && (this.maxGap && gap > this.maxGap)) || active === false) {
-                    const zeroPad = new Zero();
                     const idealGap = this.idealGap || Math.min(1, gap / 2);
                     const breakGap = 3600;
                     if (gap > breakGap) {
@@ -426,15 +428,15 @@ sauce.ns('data', function() {
                         // max number of zero pads on either end of the gap.
                         const bookEndTime = Math.floor(breakGap / 2) - idealGap;
                         for (let i = idealGap; i < bookEndTime; i += idealGap) {
-                            this._add(prevTS + i, zeroPad);
+                            this._add(prevTS + i, ZERO);
                         }
                         this._add(prevTS + bookEndTime, new Break(gap - (bookEndTime * 2)));
                         for (let i = gap - bookEndTime; i < gap; i += idealGap) {
-                            this._add(prevTS + i, zeroPad);
+                            this._add(prevTS + i, ZERO);
                         }
                     } else {
                         for (let i = idealGap; i < gap; i += idealGap) {
-                            this._add(prevTS + i, zeroPad);
+                            this._add(prevTS + i, ZERO);
                         }
                     }
                 } else if (this.idealGap && gap > this.idealGap) {
