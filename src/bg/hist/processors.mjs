@@ -393,7 +393,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                 activity.setSyncError(manifest, e);
             }
         }
-        if (streams.watts && streams.watts_calc) {
+        if (streams.watts || streams.watts_calc) {
             try {
                 const watts = streams.watts || streams.watts_calc;
                 for (const period of periods.filter(x => !!streams.watts || x >= 300)) {

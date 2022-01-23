@@ -447,5 +447,4 @@ class FitnessMainView extends views.MainView {
 export default async function load({athletes, router, $page}) {
     self.pv = new views.PageView({athletes, router, MainView: FitnessMainView, el: $page});
     await self.pv.render();
-    console.log(performance.now());
 }
