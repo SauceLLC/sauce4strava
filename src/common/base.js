@@ -1422,4 +1422,19 @@ self.sauceBaseInit = function sauceBaseInit() {
             super.clear();
         }
     };
+
+    sauce.lruCache = function(func, size=100) {
+        const _lc = new sauce.LRUCache(size);
+        const wrap = function(...args) {
+            const sig = JSON.stringify(args);
+            if (!_lc.has(sig)) {
+                const r = func.apply(this, args);
+                return (r instanceof Promise) ? r.then(x => _lc.set(sig, x)) : _lc.set(sig, r), r;
+            } else {
+                return _lc.get(sig);
+            }
+        };
+        Object.defineProperty(wrap, 'name', {value: func.name});
+        return wrap;
+    };
 };
