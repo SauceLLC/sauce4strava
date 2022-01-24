@@ -454,6 +454,51 @@ sauce.ns('hist.db', ns => {
             return this.getSyncManifests(processor, name)[0];
         }
 
+        // Who we depends ON...
+        static requiredManifests(processor, name) {
+            const manifests = new Set();
+            const bubble = deps => {
+                console.count('requiredManfiests');
+                for (const x of deps) {
+                    const m = this.getSyncManifest(processor, x);
+                    manifests.add(m);
+                    if (m.depends) {
+                        bubble(m.depends);
+                    }
+                }
+            };
+            const root = this.getSyncManifest(processor, name);
+            if (root.depends) {
+                bubble(root.depends);
+            }
+            return [...manifests];
+        }
+
+        // Who depends on US...
+        static dependantManifests(processor, name) {
+            if (!this._dependantManifestsCache) {
+                this._dependantManifestsCache = new Map();
+            }
+            const cacheKey = processor + name;
+            if (this._dependantManifestsCache.has(cacheKey)) {
+                return this._dependantManifestsCache.get(cacheKey);
+            }
+            const allManifests = this.getSyncManifests(processor);
+            const manifests = new Set();
+            const cascade = _name => {
+                for (const x of allManifests) {
+                    if (x.depends && x.depends.includes(_name)) {
+                        manifests.add(x);
+                        cascade(x.name);
+                    }
+                }
+            };
+            cascade(name);
+            const r = Object.freeze(Array.from(manifests));
+            this._dependantManifestsCache.set(cacheKey, r);
+            return r;
+        }
+
         toString() {
             if (this.data && this.data.ts) {
                 return `<Activity (${this.pk}) - ${(new Date(this.data.ts)).toLocaleDateString()}>`;
@@ -492,7 +537,7 @@ sauce.ns('hist.db', ns => {
                 throw new TypeError("Cannot set 'error' without 'version'");
             }
             if (!options.noRecurse) {
-                for (const dep of this.dependantManifests(manifest.processor, manifest.name)) {
+                for (const dep of this.constructor.dependantManifests(manifest.processor, manifest.name)) {
                     // It might be safe to clear deps in error state too, but I'm being
                     // paranoid for now in the offchance that I'm missing a way that this
                     // could break backoff handling (i.e. runaway processing).
@@ -566,21 +611,6 @@ sauce.ns('hist.db', ns => {
                     this._setSyncState(manifest, state);
                 }
             }
-        }
-
-        dependantManifests(processor, manifest) {
-            const allManifests = this.constructor.getSyncManifests(processor);
-            const deps = new Set();
-            function dependants(name) {
-                for (const x of allManifests) {
-                    if (x.depends && x.depends.includes(name)) {
-                        deps.add(x);
-                        dependants(x.name);
-                    }
-                }
-            }
-            dependants(manifest);
-            return [...deps];
         }
 
         nextAvailManifest(processor) {
