@@ -1389,13 +1389,14 @@ class SyncJob extends EventTarget {
                 const incoming = [this._cancelEvent.wait()];
                 if (!procQueue) {
                     // No new incoming data, instruct offload queues to get busy or die..
+                    const anyPending = Array.from(offloaded).some(x => x.pending);
                     for (const x of offloaded) {
-                        if (x.pending) {
-                            console.info('Requesting offload processor flush:', x.manifest.name);
-                            x.flush();
-                        } else {
+                        if (!anyPending) {
                             console.info('Requesting offload processor stop:', x.manifest.name);
                             x.stop();
+                        } else if (x.pending) {
+                            console.debug('Requesting offload processor flush:', x.manifest.name);
+                            x.flush();
                         }
                     }
                 } else {
