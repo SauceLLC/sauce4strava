@@ -2483,10 +2483,26 @@ sauce.ns('model', function() {
     }
 
 
+    function getActivitySyncErrors(a, manifests) {
+        const errors = [];
+        if (a.syncState) {
+            for (const m of manifests) {
+                const proc = a.syncState && a.syncState[m.processor];
+                const state = proc && proc[m.name];
+                const error = state && state.error;
+                if (error) {
+                    errors.push({name: m.name, error});
+                }
+            }
+        }
+        return errors.length ? errors : null;
+    }
+
     return {
         getAthleteHistoryValueAt,
         getActivityTSS,
         getActivityBaseType,
+        getActivitySyncErrors,
     };
 });
 

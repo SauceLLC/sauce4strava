@@ -158,6 +158,16 @@
                             </row>
                         <% } %>
                     <% } %>
+                    <% const errors = getSyncErrors(a);%>
+                    <% if (errors) { %>
+                        <% for (const x of errors) { %>
+                            <row>
+                                <key class="sauce-negative">{{{sync_error}}}:</key>
+                                <value>{{humanDate(x.error.ts)}}</value>
+                                <pre><br/><b>{{x.name}}:</b> {{x.error.message}}</pre>
+                            </row>
+                        <% } %>
+                    <% } %>
                     <% if (obj.debug) { %>
                         <row>
                             <key>DEBUG:</key>

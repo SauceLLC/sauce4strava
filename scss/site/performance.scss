@@ -1165,6 +1165,7 @@ table.sauce-perf {
     }
 
     > aside.details {
+        --sauce-negative: #ff2e2e;
         overflow: auto;
         flex: 1 0 $aside-width;
         color: color.shade(bg, 5%);

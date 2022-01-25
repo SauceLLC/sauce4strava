@@ -439,6 +439,7 @@ export class DetailsView extends PerfView {
         this.listenTo(pageView, 'select-activities', this.setActivities);
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
         this.setAthlete(pageView.athlete);
+        this.manifests = await sauce.hist.getActivitySyncManifests('local');
         await super.init();
     }
 
@@ -459,6 +460,7 @@ export class DetailsView extends PerfView {
         }
         return {
             daily: this.activities ? data.activitiesByDay(this.activities) : null,
+            getSyncErrors: x => sauce.model.getActivitySyncErrors(x, this.manifests),
             hasNewer,
             hasOlder,
             debug: !!location.search.match(/debug/),
