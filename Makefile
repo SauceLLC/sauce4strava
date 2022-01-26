@@ -18,6 +18,7 @@ SRC := $(shell find src scss pages templates images -type f 2>/dev/null)
 
 $(PACKAGES): package.json
 	npm install
+	$(MAKE) -C $(MODS)/sauce-chartjs
 	touch $@
 
 $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git/index
@@ -36,7 +37,6 @@ lib:
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/jobs.mjs lib/jscoop/jobs.mjs
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/locks.mjs lib/jscoop/locks.mjs
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/queues.mjs lib/jscoop/queues.mjs
-	$(MAKE) -C $(MODS)/sauce-chartjs
 	$(TOOLPATH)/tersify $(MODS)/sauce-chartjs/dist/Chart.terser.js lib/Chart.js
 
 clean:
