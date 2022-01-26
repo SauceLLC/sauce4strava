@@ -48,7 +48,7 @@ export const baseTypes = [
     {invalid: 0xffffffff, name: 'uint32', size: 4, TypedArray: Uint32Array},
     {invalid: 0x00, name: 'string', size: 1, TypedArray: Uint8Array},
     {invalid: 0xffffffff, name: 'float32', size: 4, TypedArray: Float32Array},
-    {invalid: 0xffffffffffffffff, name: 'float64', size: 8, TypedArray: Float64Array},
+    {invalid: BigInt('0xffffffffffffffff'), name: 'float64', size: 8, TypedArray: Float64Array},
     {invalid: 0x00, name: 'uint8z', size: 1, TypedArray: Uint8Array},
     {invalid: 0x0000, name: 'uint16z', size: 2, TypedArray: Uint16Array},
     {invalid: 0x00000000, name: 'uint32z', size: 4, TypedArray: Uint32Array},
