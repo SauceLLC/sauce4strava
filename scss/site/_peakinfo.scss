@@ -407,7 +407,7 @@
                         word-break: break-word;
 
                         &::first-line {
-                            font-size: (1 / $overflow-font-size) * 1em;
+                            font-size: calc((1 / #{$overflow-font-size}) * 1em);
                         }
                     }
                 }

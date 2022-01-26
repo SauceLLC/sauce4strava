@@ -573,7 +573,7 @@ table.sauce-perf {
                         align-items: center;
                         justify-content: center;
                         right: 0.8em;
-                        top: calc(50% - #{$icon-size / 2});
+                        top: calc(50% - #{$icon-size} / 2);
                         pointer-events: none;
                         width: $icon-size;
                         height: $icon-size;
@@ -1035,9 +1035,9 @@ table.sauce-perf {
                         position: absolute;
                         width: 0;
                         height: 0;
-                        border-left: ($size / 2) solid transparent;
-                        border-right: ($size / 2) solid transparent;
-                        border-top: ($size / 2) solid $border-color;
+                        border-left: calc(#{$size} / 2) solid transparent;
+                        border-right: calc(#{$size} / 2) solid transparent;
+                        border-top: calc(#{$size} / 2) solid $border-color;
                         display: block;
                         bottom: calc(-#{$size} / 2 - #{$border-width});
                         left: calc(var(--caret-left) - (#{$size} / 2));
