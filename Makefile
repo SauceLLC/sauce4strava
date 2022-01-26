@@ -6,7 +6,8 @@ PACKAGES := node_modules/.packages.build
 BUILD := build.json
 MANIFEST := manifest.json
 
-NPATH := $(shell pwd)/node_modules/.bin
+MODS := $(shell pwd)/node_modules
+NPATH := $(MODS)/.bin
 TOOLPATH := $(shell pwd)/tools/bin
 SRC := $(shell find src scss pages templates images -type f 2>/dev/null)
 
@@ -21,11 +22,22 @@ $(PACKAGES): package.json
 
 $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git/index
 	$(MAKE) sass
+	$(MAKE) lib
 	echo '{"git_commit": "$(or $(SOURCE_VERSION),$(shell git rev-parse HEAD))"}' > $@
 
 sass:
 	$(TOOLPATH)/sassrender
 	cp -a scss/site/fonts css/site/
+
+lib:
+	mkdir -p lib/jscoop
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/coop.mjs lib/jscoop/coop.mjs
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/futures.mjs lib/jscoop/futures.mjs
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/jobs.mjs lib/jscoop/jobs.mjs
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/locks.mjs lib/jscoop/locks.mjs
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/queues.mjs lib/jscoop/queues.mjs
+	$(MAKE) -C $(MODS)/sauce-chartjs
+	$(TOOLPATH)/tersify $(MODS)/sauce-chartjs/dist/Chart.terser.js lib/Chart.js
 
 clean:
 	rm -rf $(PACKAGES) builds css
@@ -66,4 +78,4 @@ lint-watch:
 	$(TOOLPATH)/lintwatch
 
 
-.PHONY: lint sass clean realclean packages manifest build
+.PHONY: lint sass clean realclean packages manifest build lib

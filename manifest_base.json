@@ -76,6 +76,7 @@
     "web_accessible_resources": [
         "build.json",
         "src/*",
+        "lib/*",
         "css/*",
         "templates/*",
         "images/*",
