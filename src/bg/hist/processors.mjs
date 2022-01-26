@@ -1,8 +1,8 @@
 /* global sauce, browser */
 
-import * as queues from '/src/common/jscoop/queues.js';
-import * as futures from '/src/common/jscoop/futures.js';
-import * as locks from '/src/common/jscoop/locks.js';
+import * as queues from '/lib/jscoop/queues.mjs';
+import * as futures from '/lib/jscoop/futures.mjs';
+import * as locks from '/lib/jscoop/locks.mjs';
 
 const actsStore = sauce.hist.db.ActivitiesStore.singleton();
 const peaksStore = sauce.hist.db.PeaksStore.singleton();
@@ -27,80 +27,139 @@ async function getActivitiesStreams(activities, streams) {
 }
 
 
-class WorkerPoolExecutor {
-    constructor(url, options={}) {
-        this.url = url;
-        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2 || 8);
-        this._idle = new Set();
-        this._sem = new locks.Semaphore(this.maxWorkers);
-        this._id = 0;
+class WorkerInterface {
+    constructor({id, worker, outgoingPort, incomingPort, executor}) {
+        this.id = id;
+        this._worker = worker;
+        this._outgoingPort = outgoingPort;
+        this._incomingPort = incomingPort;
+        this._executor = executor;
+        this._seq = 1;
+        this._sending = new Map();
+        this.doneQueue = new queues.Queue();
+        outgoingPort.addEventListener('message', ev => this._onSendAck(ev.data));
+        incomingPort.addEventListener('message', ev => this.doneQueue.put(ev.data));
+        outgoingPort.start();
+        incomingPort.start();
     }
 
-    _getWorker() {
-        if (this._idle.size) {
-            const worker = this._idle.values().next().value;
-            clearTimeout(worker.gcTimeout);
-            this._idle.delete(worker);
-            return worker;
+    _onSendAck({seq, success, error}) {
+        const {resolve, reject} = this._sending.get(seq);
+        this._sending.delete(seq);
+        if (success) {
+            resolve();
         } else {
-            return new Worker(this.url);
+            reject(error);
         }
     }
 
-    async exec(call, ...args) {
-        const id = this._id++;
-        const f = new futures.Future();
-        const stackFrames = new Error().stack.split('\n');
-        if (stackFrames[0] === 'Error') {
-            stackFrames.shift();  // v8 puts the err message in stack
+    async _send(op, {data, timeout}) {
+        const seq = this._seq++;
+        let resolve, reject;
+        const p = new Promise((_res, _rej) => (resolve = _res, reject = _rej));
+        this._sending.set(seq, {resolve, reject});
+        this._outgoingPort.postMessage({
+            seq,
+            op,
+            data,
+            ts: Date.now()
+        });
+        const TIMEOUT = new Object();
+        if (timeout) {
+            const r = await Promise.race([p, sauce.sleep(timeout).then(() => TIMEOUT)]);
+            if (Object.is(r, TIMEOUT)) {
+                throw new Error("timeout");
+            }
+            return r;
+        } else {
+            return await p;
         }
-        const onMessage = ev => {
-            if (!ev.data || ev.data.id == null) {
-                f.setError(new Error("Invalid Worker Message"));
-            } else if (ev.data.id !== id) {
-                console.error('Ignoring worker message from other job');
-                return;
-            } else {
-                if (ev.data.success) {
-                    f.setResult(ev.data.value);
-                } else {
-                    const eDesc = ev.data.value;
-                    const e = new Error(eDesc.message);
-                    e.name = eDesc.name;
-                    e.stack = [eDesc.stack, ...stackFrames].join('\n');
-                    f.setError(e);
-                }
-            }
-        };
-        await this._sem.acquire();
+    }
+
+    async sendData(data, timeout=60000) {
+        return await this._send('data', {data, timeout});
+    }
+
+    async stop() {
         try {
-            const worker = this._getWorker();
-            worker.addEventListener('message', onMessage);
-            try {
-                worker.postMessage({call, args, id});
-                return await f;
-            } finally {
-                worker.removeEventListener('message', onMessage);
-                worker.gcTimeout = setTimeout(() => {
-                    this._idle.delete(worker);
-                    worker.terminate();
-                }, 5000);
-                this._idle.add(worker);
-            }
+            await this._send('stop', {timeout: 300000});
         } finally {
-            this._sem.release();
+            this._executor._sem.release();
+            // Paranoid IndexedDB cooldown for firefox.
+            setTimeout(() => this._worker.terminate(), 5000);
         }
     }
 }
 
 
-let _workerPool;
-function getWorkerPool() {
-    if (!_workerPool) {
-        const extUrl = browser.runtime.getURL('');
-        _workerPool = new WorkerPoolExecutor(extUrl + 'src/bg/hist/worker.js');
+class WorkerExecutor {
+    constructor(url, options={}) {
+        this.url = url;
+        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2 || 8);
+        this._sem = new locks.Semaphore(this.maxWorkers);
+        this._id = 0;
     }
-    return _workerPool;
+
+    async start(processor, options) {
+        const id = this._id++;
+        const sendCh = new MessageChannel();
+        const recvCh = new MessageChannel();
+        const [outgoingPort, theirIncomingPort] = [sendCh.port1, sendCh.port2];
+        const [incomingPort, theirOutgoingPort] = [recvCh.port1, recvCh.port2];
+        let worker;
+        await this._sem.acquire();
+        try {
+            const p = new Promise((resolve, reject) => {
+                worker = new Worker(this.url);
+                worker.addEventListener('message', ev => {
+                    if (!ev.data) {
+                        reject(new Error("Invalid Worker Message"));
+                    } else if (ev.data.success) {
+                        resolve();
+                    } else {
+                        const eDesc = ev.data.error;
+                        const e = new Error(eDesc.message);
+                        e.name = eDesc.name;
+                        e.stack = eDesc.stack;
+                        reject(e);
+                    }
+                });
+                worker.addEventListener('messageerror', ev => {
+                    debugger; // find error
+                    console.error('Worker message error', ev);
+                    reject(new Error('worker message error'));
+                });
+                worker.addEventListener('error', ev =>
+                    reject(new Error(ev.message || ev.error || 'generic worker error')));
+            });
+            worker.postMessage({
+                id,
+                processor,
+                op: 'start',
+                incomingPort: theirIncomingPort,
+                outgoingPort: theirOutgoingPort,
+                ...options,
+            }, [theirIncomingPort, theirOutgoingPort]);
+            await p;
+            return new WorkerInterface({id, worker, incomingPort, outgoingPort, executor: this});
+        } catch(e) {
+            this._sem.release();
+            if (worker) {
+                worker.terminate();
+            }
+            throw e;
+        }
+    }
+}
+
+
+let _workerExec;
+function getWorkerExec() {
+    if (!_workerExec) {
+        const extUrl = browser.runtime.getURL('');
+        _workerExec = new WorkerExecutor(extUrl + 'src/bg/hist/worker.js');
+    }
+    return _workerExec;
 }
 
 
@@ -115,7 +174,10 @@ export class OffloadProcessor extends futures.Future {
         this._finished = new queues.Queue();
         this._flushEvent = new locks.Event();
         this._stopEvent = new locks.Event();
-        this._cancelEvent = cancelEvent;
+        cancelEvent.wait().then(() => this.stop());
+    }
+
+    start() {
         this._runProcessor();
     }
 
@@ -174,8 +236,9 @@ export class OffloadProcessor extends futures.Future {
         return batch;
     }
 
-    async waitFinished() {
-        return await this._finished.wait();
+    waitFinished() {
+        // Returns Future, must use <ret>.cancel() if not consuming data.
+        return this._finished.wait();
     }
 
     putFinished(activities) {
@@ -190,26 +253,23 @@ export class OffloadProcessor extends futures.Future {
         const maxWait = options.maxWait;
         const maxSize = options.maxSize || 1;
         let deadline = maxWait && Date.now() + maxWait;
-        let lastSize;
+        const stop = this._stopEvent.wait();
         while (!this._stopping) {
-            const waiters = [
-                this._cancelEvent.wait(),
-                this._flushEvent.wait(),
-                this._stopEvent.wait(),
-            ];
-            if (maxSize) {
-                waiters.push(this._incoming.wait({size: maxSize}));
-            }
+            const timeouts = [];
             if (minWait && maxWait) {
-                waiters.push(sauce.sleep(Math.min(minWait, deadline - Date.now())));
+                timeouts.push(sauce.sleep(Math.min(minWait, deadline - Date.now())));
             } else if (minWait) {
-                waiters.push(sauce.sleep(minWait));
+                timeouts.push(sauce.sleep(minWait));
             } else if (maxWait) {
-                waiters.push(sauce.sleep(maxWait));
+                timeouts.push(sauce.sleep(maxWait));
             }
-            await Promise.race(waiters);
-            if (this._cancelEvent.isSet() || this._stopEvent.isSet()) {
-                this._stopping = true;
+            const dataWait = this._incoming.wait({size: maxSize});
+            await Promise.race([stop, dataWait, this._flushEvent.wait(), ...timeouts]);
+            const moreData = dataWait.done();
+            if (!moreData) {
+                dataWait.cancel();
+            }
+            if (this._stopEvent.isSet()) {
                 return;
             }
             const size = this._incoming.size;
@@ -220,10 +280,9 @@ export class OffloadProcessor extends futures.Future {
                     // We're just waiting for out-of-band work to finish.
                     continue;
                 }
-            } else if (size != lastSize && size < maxSize && Date.now() < deadline) {
+            } else if (moreData && size < maxSize && Date.now() < deadline) {
                 // We are still within the constraints and have a positive ingest rate.
                 // Continue waiting for stagnation or other events.
-                lastSize = size;
                 continue;
             }
             deadline = maxWait && Date.now() + maxWait;
@@ -239,23 +298,19 @@ export class OffloadProcessor extends futures.Future {
     }
 
     async _runProcessor() {
-        console.debug(`Offload processor startup`);
         try {
             await this.processor().finally(() => this._stopping = true);
             await this._incoming.join();
             this.setResult();
         } catch(e) {
             this.setError(e);
-        } finally {
-            console.debug(`Offload processor shutdown`);
         }
     }
 
     async processor() {
         throw new TypeError("Pure virutal method");
         /* Subclass should keep this alive for the duration of their execution.
-         * It is also their job to monitor flushEvent, cancelEvent and stopEvent.
-         */
+         * It is also their job to monitor flushEvent and stopEvent. */
     }
 }
 
@@ -264,7 +319,7 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
     let invalidate;
     const hrTS = athlete.get('hrZonesTS');
     if (hrTS == null || Date.now() - hrTS > 86400 * 1000) {
-        // The HR zones API is based on activities, so technically it is historical but
+        // The HR zones API is based on activities, so techniprocessor it is historical but
         // this leads to a lot of complications so we simply look for the latest values.
         // If the zones are updated we need to trigger an invalidation of all activities.
         const origZones = athlete.get('hrZones');
@@ -496,19 +551,19 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
 
 
 export async function peaksProcessor({manifest, activities, athlete}) {
-    const wp = getWorkerPool();
+    const workerExec = getWorkerExec();
     const activityMap = new Map(activities.map(x => [x.pk, x]));
     const work = [];
     const len = activities.length;
     const concurrency = Math.min(navigator.hardwareConcurrency || 4);
     // Tuned for Chrome's very slow IndexedDB perf.
-    const minChunk = sauce.isChrome() ? 100 : 20;
+    const minChunk = sauce.isChrome() ? 100 : 40;
     const step = Math.max(minChunk, Math.ceil(Math.max(len / concurrency)));
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
     const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
     for (let i = 0; i < len; i += step) {
         const chunk = activities.slice(i, i + step);
-        work.push(wp.exec('findPeaks', athlete.data, chunk.map(x => x.data), periods, distances));
+        work.push(workerExec.exec('findPeaks', athlete.data, chunk.map(x => x.data), periods, distances));
     }
     for (const errors of await Promise.all(work)) {
         for (const x of errors) {
@@ -585,45 +640,88 @@ export async function peaksWkgProcessor({manifest, activities, athlete}) {
 export class PeaksProcessor extends OffloadProcessor {
     constructor(...args) {
         super(...args);
-        this.completedWith = new Map();
+        this.workers = new Set();
+        this.workerAddedEvent = new locks.Event();
+        this.maxWorkers = Math.min(navigator.hardwareConcurrency || 4);
+        this.workerExec = getWorkerExec();
     }
 
-    async processor() {
-        const working = [];
-        while (!this._stopping) {
-            const activities = await this.getAllIncoming();
-            if (activities) {
-                working.push(this._consume(activities));
-            } else {
-                await Promise.allSettled(working);
+    drainWorkerResults() {
+        for (const worker of this.workers) {
+            for (const {done, errors} of worker.doneQueue.getAllNoWait()) {
+                for (const x of errors) {
+                    const act = worker.pending.get(x.activity);
+                    act.setSyncError(this.manifest, new Error(x.error));
+                }
+                this.putFinished(done.map(x => {
+                    const act = worker.pending.get(x);
+                    worker.pending.delete(x);
+                    return act;
+                }));
             }
         }
     }
 
-    async _consume(activities) {
-        const wp = getWorkerPool();
-        const activityMap = new Map(activities.map(x => [x.pk, x]));
-        const work = [];
-        const len = activities.length;
-        const concurrency = Math.min(navigator.hardwareConcurrency || 4);
-        // Tuned for Chrome's very slow IndexedDB perf.
-        const minChunk = sauce.isChrome() ? 100 : 100;
-        const step = Math.max(minChunk, Math.ceil(Math.max(len / concurrency)));
-        const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
-        const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
-        for (let i = 0; i < len; i += step) {
-            const chunk = activities.slice(i, i + step);
-            console.debug("adding new activities chunk", chunk.length);
-            work.push(wp.exec('findPeaks', this.athlete.data, chunk.map(x => x.data), periods, distances).then(errors => {
-                console.debug("chunk done", chunk.length);
-                for (const x of errors) {
-                    const activity = activityMap.get(x.activity);
-                    activity.setSyncError(this.manifest, new Error(x.error));
+    async processor() {
+        this.periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
+        this.distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
+        const inProc = this.incomingProcessor();
+        const outProc = this.outgoingProcessor();
+        await Promise.all([inProc, outProc]);
+    }
+
+    async incomingProcessor() {
+        while (!this._stopping) {
+            const activities = await this.getAllIncoming();
+            if (activities) {
+                for (let i = 0; i < activities.length;) {
+                    const spanse = Math.ceil((Math.random() * 100));
+                    await this._consume(activities.slice(i, i += spanse));
                 }
-                this.putFinished(chunk);
-            }));
+            }
         }
-        await Promise.all(work);
+    }
+
+    async outgoingProcessor() {
+        const stop = this._stopEvent.wait();
+        while (!this._stopping) {
+            const workers = Array.from(this.workers);
+            if (!workers.some(x => x.doneQueue.size)) {
+                const dataWaits = workers.map(x => x.doneQueue.wait());
+                await Promise.race([stop, ...dataWaits, this.workerAddedEvent.wait()]);
+                this.workerAddedEvent.clear();
+                for (const f of dataWaits) {
+                    f.cancel();
+                }
+            }
+            this.drainWorkerResults();
+        }
+        await Promise.all(Array.from(this.workers).map(x => x.stop()));
+        this.workers.clear();
+    }
+
+    async getWorker() {
+        const workers = Array.from(this.workers).sort((a, b) => a.pending.size - b.pending.size);
+        const count = workers.length;
+        if (!count || (workers[0].pending.size > 50 && count < this.maxWorkers)) {
+            const worker = await this.workerExec.start('find-peaks',
+                {periods: this.periods, distances: this.distances});
+            worker.pending = new Map();
+            this.workers.add(worker);
+            this.workerAddedEvent.set();
+            return worker;
+        } else {
+            // least busy worker...
+            return workers[0];
+        }
+    }
+
+    async _consume(activities) {
+        const worker = await this.getWorker();
+        await worker.sendData(activities.map(x => x.data));
+        for (const x of activities) {
+            worker.pending.set(x.pk, x);
+        }
     }
 }
 

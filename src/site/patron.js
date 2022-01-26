@@ -8,7 +8,7 @@ sauce.ns('patron', async ns => {
     await L.init();
     await sauce.propDefined('Backbone', {once: true});
     await sauce.proxy.connected;
-    const view = await sauce.getModule('/site/view');
+    const view = await sauce.getModule('/src/site/view');
 
 
     class NonMember extends Error {}

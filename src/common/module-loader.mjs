@@ -5,19 +5,19 @@ const module = url.searchParams.get('module');
     /* Ugly but makes web-ext lint (firefox) happy */
     let p;
     switch (module) {
-    case '/common/jscoop/jobs':
-        p = import('/src/common/jscoop/jobs.js');
+    case '/lib/jscoop/jobs':
+        p = import('/lib/jscoop/jobs.mjs');
         break;
-    case '/site/data-views':
+    case '/src/site/data-views':
         p = import('/src/site/data-views.mjs');
         break;
-    case '/site/export':
+    case '/src/site/export':
         p = import('/src/site/export.mjs');
         break;
-    case '/site/jsfit/fit-parser':
+    case '/src/site/jsfit/fit-parser':
         p = import('/src/site/jsfit/fit-parser.mjs');
         break;
-    case '/site/view':
+    case '/src/site/view':
         p = import('/src/site/view.mjs');
         break;
     }

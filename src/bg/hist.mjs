@@ -1,8 +1,8 @@
 /* global sauce */
 
-import * as jobs from '/src/common/jscoop/jobs.js';
-import * as queues from '/src/common/jscoop/queues.js';
-import * as locks from '/src/common/jscoop/locks.js';
+import * as jobs from '/lib/jscoop/jobs.mjs';
+import * as queues from '/lib/jscoop/queues.mjs';
+import * as locks from '/lib/jscoop/locks.mjs';
 import * as processors from '/src/bg/hist/processors.mjs';
 
 const {
@@ -96,7 +96,7 @@ ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks-wkg',
     version: 1,
-    depends: ['athlete-settings', 'run-power'],
+    depends: ['athlete-settings', 'run-power', 'peaks'],
     data: {processor: processors.peaksWkgProcessor}
 });
 
@@ -449,6 +449,12 @@ export async function getActivity(id) {
     return await actsStore.get(id);
 }
 sauce.proxy.export(getActivity, {namespace});
+
+
+export function getActivitySyncManifests(processor) {
+    return ActivityModel.getSyncManifests(processor);
+}
+sauce.proxy.export(getActivitySyncManifests, {namespace});
 
 
 export async function updateActivity(id, updates) {
@@ -835,42 +841,36 @@ export async function activityCounts(athleteId, activities) {
     let processed = 0;
     let unprocessable = 0;
     for (const a of activities) {
-        let success = null;
+        let successes = 0;
         for (const m of streamManifests) {
             if (a.hasSyncError(m)) {
-                success = false;
+                successes = -1;
                 break;
             } else if (a.hasSyncSuccess(m)) {
-                success = true;
-            } else {
-                success = null;
-                break;
+                successes++;
             }
         }
-        if (success) {
+        if (successes === streamManifests.length) {
             imported++;
         } else {
-            if (success === false) {
+            if (successes === -1) {
                 unavailable++;
             }
             continue;
         }
-        success = null;
+        successes = 0;
         for (const m of localManifests) {
             if (a.hasSyncError(m)) {
-                success = false;
+                successes = -1;
                 break;
             } else if (a.hasSyncSuccess(m)) {
-                success = true;
-            } else {
-                success = null;
-                break;
+                successes++;
             }
         }
-        if (success) {
+        if (successes === localManifests.length) {
             processed++;
         } else {
-            if (success === false) {
+            if (successes === -1) {
                 unprocessable++;
             }
         }
@@ -1373,16 +1373,54 @@ class SyncJob extends EventTarget {
         }
     }
 
+    async _localDrainOffloaded(offloaded, batch) {
+        for (const proc of Array.from(offloaded)) {
+            const m = proc.manifest;
+            const finished = proc.getFinished(this.batchLimit - batch.size);
+            if (finished.length) {
+                const now = Date.now();
+                let totTime = 0;
+                for (const a of finished) {
+                    batch.add(a);
+                    totTime += now - a._procStart;
+                    delete a._procStart;
+                }
+                this._localSetSyncDone(finished, m);
+                const elapsed = Math.round(totTime / finished.length).toLocaleString();
+                const rate = Math.round(finished.length / (totTime / finished.length / 1000)).toLocaleString();
+                console.debug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
+                    `activities (${rate}/s)`);
+            }
+            if (proc.done() && !proc.available) {
+                // It is fulfilled but we need to pickup any errors.
+                try {
+                    await proc;
+                    if (proc.pending || proc.available) {
+                        throw new Error("Processor prematurely stopped: " + m.name);
+                    }
+                } catch(e) {
+                    const inError = proc.drainAll();
+                    this._localSetSyncError(inError, m, e);
+                    // Save them since they never re-enter the batch.
+                    for (const x of inError) {
+                        this.needSave.add(x);
+                    }
+                } finally {
+                    offloaded.delete(proc);
+                }
+                console.info("Offload processor finished:", m.name);
+            }
+        }
+    }
+
     async _localProcessWorker() {
-        let batchLimit = 20;
-        const needSave = new Set();
+        this.batchLimit = 20;
+        this.needSave = new Set();
         const done = new Set();
         const batch = new Set();
         const offloaded = new Set();
         const offloadedActive = new Map();
         let procQueue = this._procQueue;
-        let pendingProgressEvent;
-        let pendingSave;
         while ((procQueue || offloaded.size) && !this._cancelEvent.isSet()) {
             const available = [...offloaded].some(x => x.available) || (procQueue && procQueue.size);
             if (!available) {
@@ -1402,54 +1440,27 @@ class SyncJob extends EventTarget {
                 } else {
                     incoming.push(procQueue.wait());
                 }
-                const offFin = Array.from(offloaded).map(x => x.waitFinished());
+                const offFinWaiters = Array.from(offloaded).map(x => x.waitFinished());
                 try {
-                    await Promise.race([...offFin, ...incoming, ...offloaded]);
+                    await Promise.race([...offFinWaiters, ...incoming, ...offloaded]);
                 } catch(e) {
                     console.warn('Top level waiter or offloaded processor error');
                     // Offloaded proc error handling still happens next...
+                }
+                for (const f of offFinWaiters) {
+                    if (!f.done()) {
+                        f.cancel();
+                    }
                 }
                 if (this._cancelEvent.isSet()) {
                     return;
                 }
             }
-            for (const proc of Array.from(offloaded)) {
-                const m = proc.manifest;
-                const finished = proc.getFinished(batchLimit - batch.size);
-                if (finished.length) {
-                    const now = Date.now();
-                    let totTime = 0;
-                    for (const a of finished) {
-                        batch.add(a);
-                        totTime += now - a._procStart;
-                        delete a._procStart;
-                    }
-                    this._localSetSyncDone(finished, m);
-                    const elapsed = Math.round(totTime / finished.length).toLocaleString();
-                    const rate = Math.round(finished.length / (totTime / finished.length / 1000)).toLocaleString();
-                    console.debug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
-                        `activities (${rate}/s)`);
-                }
-                if (proc.done() && !proc.available) {
-                    // It is fulfilled but we need to pickup any errors.
-                    try {
-                        await proc;
-                        if (proc.pending || proc.available) {
-                            throw new Error("Processor prematurely stopped: " + m.name);
-                        }
-                    } catch(e) {
-                        this._localSetSyncError(proc.drainAll(), m, e);
-                    } finally {
-                        offloaded.delete(proc);
-                    }
-                    console.info("Offload processor finished:", m.name);
-                }
-                if (batch.size >= batchLimit) {
-                    break;
-                }
-            }
+
+            await this._localDrainOffloaded(offloaded, batch);
+
             if (procQueue) {
-                while (procQueue.size && batch.size < batchLimit) {
+                while (procQueue.size && batch.size < this.batchLimit) {
                     const a = procQueue.getNoWait();
                     if (a === null) {
                         procQueue = null;
@@ -1458,7 +1469,7 @@ class SyncJob extends EventTarget {
                     batch.add(a);
                 }
             }
-            batchLimit = Math.min(500, Math.ceil(batchLimit * 1.8));
+            this.batchLimit = Math.min(500, Math.ceil(this.batchLimit * 1.8));
             while (batch.size && !this._cancelEvent.isSet()) {
                 const manifestBatches = new Map();
                 for (const a of batch) {
@@ -1466,7 +1477,7 @@ class SyncJob extends EventTarget {
                     if (!m) {
                         batch.delete(a);
                         done.add(a);
-                        needSave.add(a);
+                        this.needSave.add(a);
                         continue;
                     }
                     if (!manifestBatches.has(m)) {
@@ -1498,6 +1509,7 @@ class SyncJob extends EventTarget {
                                     offloadedActive.delete(processor);
                                 }
                             });
+                            proc.start();
                         }
                         await proc.putIncoming(activities);
                         for (const a of activities) {
@@ -1522,17 +1534,20 @@ class SyncJob extends EventTarget {
                             `activities (${rate}/s)`);
                     }
                 }));
-                pendingSave = this.niceSaveActivities(needSave);
-                pendingProgressEvent = this.niceSendProgressEvent(done);
+
+                await this._localDrainOffloaded(offloaded, batch);
+
+                this.niceSaveActivities();
+                this.niceSendProgressEvent(done);
             }
         }
-        await pendingSave;
-        await pendingProgressEvent;  // Don't send progress events AFTER other state events.
+        await this.niceSaveActivities();
+        await this.niceSendProgressEvent(done);
     }
 
-    async saveActivities(needSave) {
-        const saving = Array.from(needSave);
-        needSave.clear();
+    async saveActivities() {
+        const saving = Array.from(this.needSave);
+        this.needSave.clear();
         await actsStore.saveModels(saving);
     }
 
@@ -1604,7 +1619,7 @@ class SyncManager extends EventTarget {
     constructor(currentUser) {
         super();
         console.info(`Starting Sync Manager for:`, currentUser);
-        this.refreshInterval = 12 * 3600 * 1000;
+        this.refreshInterval = 120 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 90 * 60 * 1000;
         this.currentUser = currentUser;

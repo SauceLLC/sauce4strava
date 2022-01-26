@@ -190,7 +190,7 @@ sauce.ns('dashboard', function(ns) {
     let _kudoRateLimiter;
     async function getKudoRateLimiter() {
         if (!_kudoRateLimiter) {
-            const jobs = await sauce.getModule('/common/jscoop/jobs');
+            const jobs = await sauce.getModule('/lib/jscoop/jobs');
 
             class KudoRateLimiter extends jobs.RateLimiter {
                 async getState() {
