@@ -74,14 +74,15 @@ sauce.ns('template', ns => {
             console.warn("deprecated: use {{=icon foobar}} instead");
             return await sauce.ui.getImage(`fa/${icon}.svg`);
         },
-        icon: x => sauce.ui.getImage(`fa/${x}.svg`)
+        icon: x => sauce.ui.getImage(`fa/${x}.svg`),
+        embed: async (file, data) => (await ns.getTemplate(file))(data),
     };
     if (sauce.locale && sauce.locale.templateHelpers) {
         Object.assign(ns.helpers, sauce.locale.templateHelpers);
     }
 
     ns.staticHelpers = {
-        icon: x => sauce.ui.getImage(`fa/${x}.svg`)
+        icon: x => sauce.ui.getImage(`fa/${x}.svg`),
     };
 
 
