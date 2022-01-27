@@ -16,6 +16,16 @@ html .ui-dialog {
     border: none;
     font-size: 1em; // This is the default in analysis but not other pages, so we need to set it.
 
+    &.sauce-small {
+        font-size: 0.9em;
+
+        .ui-widget-header {
+            font-size: 1em;
+            padding-top: 0.2em;
+            padding-bottom: 0.2em;
+        }
+    }
+
     .ui-widget-content,
     .ui-dialog-content {
         $bg: color.shade(bg, 3%);
@@ -225,6 +235,26 @@ html .ui-dialog {
 
     form.sauce-key-value {
         padding-bottom: 1.2em;
+
+        &.sauce-vertical {
+            key,
+            value {
+                display: flex;
+                width: 100%;
+            }
+
+            value input {
+                flex: 1 1 100%;
+            }
+
+            value input + span {
+                font-size: 0.88em;
+                margin-left: 0.5em;
+                flex: 0 0 auto;
+                min-width: 4.5ch;
+                text-align: center;
+            }
+        }
 
         label {
             display: inline-block;
