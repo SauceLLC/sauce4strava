@@ -991,6 +991,8 @@ table.sauce-perf {
 
         section.sauce-panels {
             padding: 1em;
+            display: flex;
+            flex-direction: column;
 
             .sauce-panel {
                 position: relative;
