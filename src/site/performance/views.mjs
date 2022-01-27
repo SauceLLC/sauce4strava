@@ -130,7 +130,7 @@ export async function editActivityDialogXXX(activity, pageView) {
             }
         }, {
             text: 'Delete', // XXX localize
-            class: 'btn btn-secondary',
+            class: 'btn sauce-negative',
             click: async ev => {
                 // XXX See: https://github.com/SauceLLC/sauce4strava/issues/55
                 // Also, we'll need to handle updates to affected areas in here if
@@ -721,7 +721,7 @@ export class MainView extends PerfView {
 
     get localeKeys() {
         return ['weekly', 'monthly', 'yearly', 'activities', 'today', 'panel_settings_title',
-                'auto'];
+                'auto', '/delete'];
     }
 
     get defaultPrefs() {
@@ -767,7 +767,7 @@ export class MainView extends PerfView {
     async addPanel(view, selector) {
         const id = view.constructor.name;
         const $el = this.$(selector);
-        const panel = $el[0];
+        const panel = $el[0].closest('.sauce-panel');
         panel.dataset.id = id;
         const defaultOrder = (Object.keys(this.panels).length + 2) * 10;
         const settings = this.getPanelSettings(id);
@@ -795,23 +795,30 @@ export class MainView extends PerfView {
         const positionHint = () => !settings.position ? this.LM('auto') : settings.position;
         const heightHint = () => !settings.heightFactor ? this.LM('auto') : H.number(settings.heightFactor * 100) + '%';
         const $dialog = sauce.ui.dialog({
-            width: '25em',
+            width: '18em',
             autoDestroy: true,
             flex: true,
             title: this.LM('panel_settings_title'),
+            icon: await sauce.ui.getImage('fa/cog-duotone.svg'),
             body: await template({
                 settings,
                 panelCount: this.$('.sauce-panel').length,
                 positionHint,
                 heightHint,
             }),
-            icon: await sauce.ui.getImage('fa/cog-duotone.svg'),
+            extraButtons: [{
+                text: this.LM('delete'),
+                class: 'btn sauce-negative',
+                click: () => {
+                    debugger;
+                }
+            }],
             position: {
                 my: 'right top',
                 at: 'right-2 top+2',
                 of: ev.currentTarget, // XXX try this first
             },
-            dialogClass: 'sauce-performance-panel-settings no-pad',
+            dialogClass: 'sauce-performance-panel-settings no-pad sauce-small',
             resizable: false,
         });
         $dialog.on('input', 'input[name="position"]', async ev => {

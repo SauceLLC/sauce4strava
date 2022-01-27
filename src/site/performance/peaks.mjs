@@ -254,8 +254,7 @@ class PeaksMainView extends views.MainView {
 
     async render() {
         await super.render();
-        this.peaksTableView.setElement(this.$('.peaks-view'));
-        await this.peaksTableView.render();
+        this.addPanel(this.peaksTableView, '.peaks-view');
     }
 }
 
