@@ -16,6 +16,19 @@
     "all_athletes": {
         "message": "Todos os atletas"
     },
+    "name": {
+        "message": "Nome"
+    },
+    "export": {
+        "message": "Exportar"
+    },
+    "male": {
+        "message": "Masculino"
+    },
+    "female": {
+        "message": "Feminino",
+        "description": "IMMUTABLE"
+    },
     "menu_performance_fitness": {
         "message": "Rastreador de fitness",
         "description": "IMMUTABLE"
@@ -406,9 +419,6 @@
     "analysis_best_90d": {
         "message": "90 dias"
     },
-    "analysis_name": {
-        "message": "Nome"
-    },
     "analysis_overlap": {
         "message": "Sobreposição"
     },
@@ -426,16 +436,6 @@
     },
     "analysis_view": {
         "message": "Visualizar"
-    },
-    "analysis_export": {
-        "message": "Exportar"
-    },
-    "analysis_male": {
-        "message": "Masculino"
-    },
-    "analysis_female": {
-        "message": "Feminino",
-        "description": "IMMUTABLE"
     },
     "analysis_power_profile_about1": {
         "message": "O conceito de perfil de potência foi criado pelo Dr. Andy Coggan. É uma estimativa básica dos requisitos de potência para atingir um nível específico de competitividade em provas.",

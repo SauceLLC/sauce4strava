@@ -14,6 +14,18 @@
     "all_athletes": {
         "message": "Tutti gli atleti"
     },
+    "name": {
+        "message": "Nome"
+    },
+    "export": {
+        "message": "Esportare"
+    },
+    "male": {
+        "message": "Maschio"
+    },
+    "female": {
+        "message": "Femmina"
+    },
     "menu_performance_fitness": {
         "message": "Monitoraggio fitness"
     },
@@ -377,9 +389,6 @@
     "analysis_best_90d": {
         "message": "90 giorni"
     },
-    "analysis_name": {
-        "message": "Nome"
-    },
     "analysis_overlap": {
         "message": "Sovrapposizione"
     },
@@ -397,15 +406,6 @@
     },
     "analysis_view": {
         "message": "Visualizza"
-    },
-    "analysis_export": {
-        "message": "Esportare"
-    },
-    "analysis_male": {
-        "message": "Maschio"
-    },
-    "analysis_female": {
-        "message": "Femmina"
     },
     "analysis_power_profile_about1": {
         "message": "Il concetto di power profiling è stato creato dal Dr. Andy Coggan. È un profilo di base dei requisiti di potenza per essere ad un livello specifico di competitività delle corse."

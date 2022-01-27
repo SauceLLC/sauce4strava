@@ -14,6 +14,19 @@
     "all_athletes": {
         "message": "Alle Athleten"
     },
+    "name": {
+        "message": "Name"
+    },
+    "export": {
+        "message": "Exportieren",
+        "description": "IMMUTABLE"
+    },
+    "male": {
+        "message": "Männlich"
+    },
+    "female": {
+        "message": "Weiblich"
+    },
     "menu_performance_fitness": {
         "message": "Fitness-Tracking"
     },
@@ -375,9 +388,6 @@
     "analysis_best_90d": {
         "message": "90 Tage"
     },
-    "analysis_name": {
-        "message": "Name"
-    },
     "analysis_overlap": {
         "message": "Überlappung"
     },
@@ -398,16 +408,6 @@
     },
     "analysis_view": {
         "message": "Aussicht"
-    },
-    "analysis_export": {
-        "message": "Exportieren",
-        "description": "IMMUTABLE"
-    },
-    "analysis_male": {
-        "message": "Männlich"
-    },
-    "analysis_female": {
-        "message": "Weiblich"
     },
     "analysis_power_profile_about1": {
         "message": "Das Konzept der Leistungsprofilerstellung wurde von Dr. Andy Coggan entwickelt. Es ist ein grundlegender Überblick über die Leistungsanforderungen, um auf einem bestimmten Niveau der Wettbewerbsfähigkeit im Rennsport zu sein."

@@ -15,6 +15,19 @@
     "all_athletes": {
         "message": "所有运动员"
     },
+    "name": {
+        "message": "名称"
+    },
+    "export": {
+        "message": "导出",
+        "description": "IMMUTABLE"
+    },
+    "male": {
+        "message": "男"
+    },
+    "female": {
+        "message": "女"
+    },
     "menu_performance_fitness": {
         "message": "健身追踪"
     },
@@ -403,9 +416,6 @@
     "analysis_best_90d": {
         "message": "90天"
     },
-    "analysis_name": {
-        "message": "名称"
-    },
     "analysis_overlap": {
         "message": "交叠"
     },
@@ -425,16 +435,6 @@
     },
     "analysis_view": {
         "message": "视图"
-    },
-    "analysis_export": {
-        "message": "导出",
-        "description": "IMMUTABLE"
-    },
-    "analysis_male": {
-        "message": "男"
-    },
-    "analysis_female": {
-        "message": "女"
     },
     "analysis_power_profile_about1": {
         "message": "功率分析的概念是由 Andy Coggan 博士创建的。这是在特定水平的竞速上对功率要求的基本概述。",

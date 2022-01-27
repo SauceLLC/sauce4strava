@@ -15,6 +15,18 @@
     "all_athletes": {
         "message": "Tous les athlètes"
     },
+    "name": {
+        "message": "Nom"
+    },
+    "export": {
+        "message": "Exportation"
+    },
+    "male": {
+        "message": "Masculin"
+    },
+    "female": {
+        "message": "Femme"
+    },
     "menu_performance_fitness": {
         "message": "Traqueur de Fitness",
         "description": "IMMUTABLE"
@@ -379,9 +391,6 @@
     "analysis_best_90d": {
         "message": "90 jours"
     },
-    "analysis_name": {
-        "message": "Nom"
-    },
     "analysis_overlap": {
         "message": "Chevauchement"
     },
@@ -400,15 +409,6 @@
     },
     "analysis_view": {
         "message": "Vue"
-    },
-    "analysis_export": {
-        "message": "Exportation"
-    },
-    "analysis_male": {
-        "message": "Masculin"
-    },
-    "analysis_female": {
-        "message": "Femme"
     },
     "analysis_power_profile_about1": {
         "message": "Le concept de profilage de puissance a été créé par le Dr Andy Coggan. C'est un aperçu de base des exigences de puissance pour être à un niveau spécifique de compétitivité de course."

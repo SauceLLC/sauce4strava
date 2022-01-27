@@ -15,6 +15,18 @@
     "all_athletes": {
         "message": "Todos los atletas"
     },
+    "name": {
+        "message": "Nombre"
+    },
+    "export": {
+        "message": "Exportar"
+    },
+    "male": {
+        "message": "Masculino"
+    },
+    "female": {
+        "message": "Hembra"
+    },
     "menu_performance_fitness": {
         "message": "Rastreador de fitness",
         "description": "IMMUTABLE"
@@ -371,9 +383,6 @@
     "analysis_best_90d": {
         "message": "90 dias"
     },
-    "analysis_name": {
-        "message": "Nombre"
-    },
     "analysis_overlap": {
         "message": "Superposición"
     },
@@ -391,15 +400,6 @@
     },
     "analysis_view": {
         "message": "Ver"
-    },
-    "analysis_export": {
-        "message": "Exportar"
-    },
-    "analysis_male": {
-        "message": "Masculino"
-    },
-    "analysis_female": {
-        "message": "Hembra"
     },
     "analysis_power_profile_about1": {
         "message": "El concepto de perfil de poder fue creado por el Dr. Andy Coggan. Es un resumen básico de los requisitos de potencia para estar en un nivel específico de competitividad en las carreras."
