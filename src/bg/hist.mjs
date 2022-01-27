@@ -1619,7 +1619,7 @@ class SyncManager extends EventTarget {
     constructor(currentUser) {
         super();
         console.info(`Starting Sync Manager for:`, currentUser);
-        this.refreshInterval = 120 * 3600 * 1000;
+        this.refreshInterval = 12 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 90 * 60 * 1000;
         this.currentUser = currentUser;
