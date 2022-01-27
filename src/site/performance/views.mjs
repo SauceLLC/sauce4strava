@@ -720,8 +720,14 @@ export class MainView extends PerfView {
     }
 
     get localeKeys() {
-        return ['weekly', 'monthly', 'yearly', 'activities', 'today', 'panel_settings_title',
-                'auto', '/delete'];
+        return [
+            'weekly', 'monthly', 'yearly', 'activities', 'today', 'panel_settings_title',
+            'auto', '/delete', '/add'
+        ];
+    }
+
+    get panelSpecs() {
+        return [];
     }
 
     get defaultPrefs() {
@@ -730,12 +736,23 @@ export class MainView extends PerfView {
         };
     }
 
+    getPanelView(name) {}
+
     async init({pageView}) {
-        this.panels = {};
+        this.panels = [];
         this.pageView = pageView;
         this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
         await super.init();
+        for (const prefs of this.getPrefs('panels')) {
+            const View = this.getPanelView(prefs.view);
+            const view = new View({pageView});
+            this.panels.push({
+                view,
+                prefs,
+                spec: this.panelSpecs.find(x => x.View === View),
+            });
+        }
     }
 
     setElement(el, ...args) {
@@ -760,22 +777,17 @@ export class MainView extends PerfView {
         return {range: [range.period, range.metric].join()};
     }
 
-    getPanelSettings(id) {
-        return this.getPrefs(`panelSettings-${id}`, {});
-    }
-
-    async addPanel(view, selector) {
-        const id = view.constructor.name;
-        const $el = this.$(selector);
-        const panel = $el[0].closest('.sauce-panel');
-        panel.dataset.id = id;
-        const defaultOrder = (Object.keys(this.panels).length + 2) * 10;
-        const settings = this.getPanelSettings(id);
-        panel.style.order = settings.position ? settings.position * 10 : defaultOrder;
-        panel.style.setProperty('--height-factor', settings.heightFactor || 1);
-        view.setElement($el);
-        this.panels[id] = {view, id, defaultOrder};
-        await view.render();
+    async render() {
+        await super.render();
+        const $panels = this.$('.sauce-panels');
+        for (const [i, x] of this.panels.entries()) {
+            x.view.el.classList.add('sauce-panel');
+            x.view.el.dataset.id = x.prefs.id;
+            x.view.el.style.order = i;
+            x.view.el.style.setProperty('--height-factor', x.prefs.settings.heightFactor || 1);
+            await x.view.render();
+            $panels.append(x.view.$el);
+        }
     }
 
     async onExpandClick(ev) {
@@ -786,13 +798,42 @@ export class MainView extends PerfView {
         await this.toggleMaximized(false);
     }
 
+    async onPanelAddClick(ev) {
+        const template = await sauce.template.getTemplate('performance/panel-add.html', 'performance');
+        sauce.ui.dialog({
+            width: '18em',
+            autoDestroy: true,
+            flex: true,
+            title: this.LM('panel_add_title'),
+            icon: await sauce.ui.getImage('fa/layer-plus-duotone.svg'),
+            body: await template({
+                specs: this.panelSpecs,
+            }),
+            extraButtons: [{
+                text: this.LM('add'),
+                class: 'btn btn-primary',
+                click: () => {
+                    debugger; // XXX
+                }
+            }],
+            position: {
+                my: 'right top',
+                at: 'right-2 top+2',
+                of: ev.currentTarget,
+            },
+            dialogClass: 'sauce-performance-panel-settings no-pad sauce-small',
+            resizable: false,
+        });
+    }
+
     async onPanelSettingsClick(ev) {
-        const panel = ev.currentTarget.closest('.sauce-panel');
-        const id = panel.dataset.id;
-        const {defaultOrder} = this.panels[id];
+        const panelEl = ev.currentTarget.closest('.sauce-panel');
+        const id = panelEl.dataset.id;
+        let order = this.panels.findIndex(x => x.prefs.id === id);
+        const allPrefs = this.getPrefs('panels');
+        const panel = this.panels[order];
         const template = await sauce.template.getTemplate('performance/panel-settings.html', 'performance');
-        const settings = this.getPanelSettings(id);
-        const positionHint = () => !settings.position ? this.LM('auto') : settings.position;
+        const settings = panel.prefs.settings;
         const heightHint = () => !settings.heightFactor ? this.LM('auto') : H.number(settings.heightFactor * 100) + '%';
         const $dialog = sauce.ui.dialog({
             width: '18em',
@@ -801,39 +842,48 @@ export class MainView extends PerfView {
             title: this.LM('panel_settings_title'),
             icon: await sauce.ui.getImage('fa/cog-duotone.svg'),
             body: await template({
+                panel,
                 settings,
-                panelCount: this.$('.sauce-panel').length,
-                positionHint,
+                panelCount: this.panels.length,
+                order,
                 heightHint,
             }),
             extraButtons: [{
                 text: this.LM('delete'),
                 class: 'btn sauce-negative',
                 click: () => {
-                    debugger;
+                    debugger; // XXX
                 }
             }],
             position: {
                 my: 'right top',
                 at: 'right-2 top+2',
-                of: ev.currentTarget, // XXX try this first
+                of: ev.currentTarget,
             },
             dialogClass: 'sauce-performance-panel-settings no-pad sauce-small',
             resizable: false,
         });
         $dialog.on('input', 'input[name="position"]', async ev => {
             const el = ev.currentTarget;
-            settings.position = Number(el.value);
-            el.nextElementSibling.textContent = positionHint();
-            panel.style.order = settings.position ? settings.position * 10 : defaultOrder;
+            // XXX streamline splicing to just one entitity
+            const tp = allPrefs[order];
+            allPrefs.splice(order, 1);
+            this.panels.splice(order, 1);
+            order = Number(el.value);
+            allPrefs.splice(order, 0, tp);
+            this.panels.splice(order, 0, panel);
+            el.nextElementSibling.textContent = order + 1;
+            for (const [i, x] of this.panels.entries()) {
+                x.view.$el[0].style.order = i;
+            }
             await this.savePrefs();
-            panel.scrollIntoView({behavior: 'smooth'});
+            panel.view.el.scrollIntoView({behavior: 'smooth'});
         });
         $dialog.on('input', 'input[name="height-factor"]', async ev => {
             const el = ev.currentTarget;
             settings.heightFactor = Number(el.value);
             el.nextElementSibling.textContent = heightHint();
-            panel.style.setProperty('--height-factor', settings.heightFactor || 1);
+            panel.view.el.style.setProperty('--height-factor', settings.heightFactor || 1);
             await this.savePrefs();
         });
     }

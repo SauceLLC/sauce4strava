@@ -1,16 +1,27 @@
-<form class="sauce-key-value">
+<form class="sauce-key-value sauce-vertical">
     <div class="entry">
-        <key>{{{panel_enabled}}}:</key>
-        <input type="checkbox" name="enabled" {{settings.enabled !== false ? 'checked' : ''}}/>
+        <key>{{{/name}}}:</key>
+        <value>
+            <input type="text" name="name"
+                   value="<% if (settings.name) { %>{{settings.name}}<% } else { %>{{{[panel.spec.nameLocaleKey]}}}<% } %>"/>
+        </value>
     </div>
 
     <div class="entry">
         <key>{{{panel_position}}}:</key>
-        <input type="range" name="position" value="{{settings.position || 0}}" min="0" max="{{panelCount + 2}}" step="1"/> <span>{{positionHint()}}<span>
+        <value>
+            <input type="range" name="position" value="{{order}}"
+                   min="0" max="{{panelCount - 1}}" step="1"/>
+            <span>{{order + 1}}<span>
+        </value>
     </div>
 
     <div class="entry">
         <key>{{{panel_height}}}:</key>
-        <input type="range" name="height-factor" value="{{settings.heightFactor || 0}}" min="0" max="5" step="any"/> <span>{{heightHint()}}</span>
+        <value>
+            <input type="range" name="height-factor" value="{{settings.heightFactor || 0}}"
+                   min="0" max="5" step="any"/>
+            <span>{{heightHint()}}</span>
+        </value>
     </div>
 </form>

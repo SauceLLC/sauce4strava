@@ -1560,7 +1560,7 @@ sauce.ns('analysis', ns => {
 
 
     async function attachActionMenuItems() {
-        const exportLocale = await LM('export');
+        const exportLocale = await L.getMessage('export');
         const $menu = jQuery('nav.sidenav .actions-menu .drop-down-menu ul.options');
         if (!$menu.length) {
             console.warn('Side nav menu not found: Probably a flagged activity');
@@ -3816,7 +3816,7 @@ sauce.ns('analysis', ns => {
                 at: 'right-2 top+2',
                 of: btn[0][0].closest('svg')
             },
-            dialogClass: 'sauce-analysis-graph-options no-pad',
+            dialogClass: 'sauce-analysis-graph-options no-pad sauce-small',
             resizable: false,
         });
         let nextSmoothing;

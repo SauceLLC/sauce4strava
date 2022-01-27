@@ -586,15 +586,6 @@ export class ChartView extends views.PerfView {
     }
 
     setElement($el) {
-        if (this.chart) {
-            // Because of the funky config system we never rebuild a chart, we use just one.
-            // So we need to save the canvas from the first render.
-            this.chart.stop();
-            this.$canvas = this.$('canvas');
-            $el.find('canvas').replaceWith(this.$canvas);
-        } else {
-            this.$canvas = $el.find('canvas');
-        }
         super.setElement($el);
     }
 
@@ -605,8 +596,14 @@ export class ChartView extends views.PerfView {
     async render() {
         await super.render();
         if (this.chart) {
+            // Because of the funky config system we never rebuild a chart, we use just one.
+            // So we need to save the canvas from the first render.
+            this.chart.stop();
+            this.$canvas = this.$('canvas');
+            this.$('canvas').replaceWith(this.$canvas);
             this.chart.update();
         } else if (this._chartConfig) {
+            this.$canvas = this.$('canvas');
             const ctx = this.$canvas[0].getContext('2d');
             this.chart = new this._ChartClass(ctx, this, this._chartConfig);
         }

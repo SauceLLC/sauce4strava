@@ -12,6 +12,10 @@ const D = sauce.date;
 
 
 class TrainingChartView extends charts.ActivityTimeRangeChartView {
+    get tpl() {
+        return 'performance/fitness/training-load.html';
+    }
+
     get localeKeys() {
         return [
             'activities', 'predicted_tss', 'predicted_tss_tooltip', 'fitness',
@@ -188,6 +192,10 @@ class TrainingChartView extends charts.ActivityTimeRangeChartView {
 
 
 class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
+    get tpl() {
+        return 'performance/fitness/activity-volume.html';
+    }
+
     get localeKeys() {
         return ['predicted', '/analysis_time', '/analysis_distance', 'activities'];
     }
@@ -363,6 +371,10 @@ class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
 
 
 class ElevationChartView extends charts.ActivityTimeRangeChartView {
+    get tpl() {
+        return 'performance/fitness/elevation.html';
+    }
+
     get localeKeys() {
         return ['/analysis_gain', 'activities'];
     }
@@ -425,18 +437,48 @@ class FitnessMainView extends views.MainView {
         return 'performance/fitness/main.html';
     }
 
-    async init({pageView}) {
-        this.trainingChartView = new TrainingChartView({pageView});
-        this.activityVolumeChartView = new ActivityVolumeChartView({pageView});
-        this.elevationChartView = new ElevationChartView({pageView});
-        await super.init({pageView});
+    getPanelView(name) {
+        // non-eval safe View lookup.
+        return {
+            TrainingChartView,
+            ActivityVolumeChartView,
+            ElevationChartView,
+        }[name];
     }
 
-    async render() {
-        await super.render();
-        await this.addPanel(this.trainingChartView, '.training-chart-view');
-        await this.addPanel(this.activityVolumeChartView, '.activity-volume-chart-view');
-        await this.addPanel(this.elevationChartView, '.elevation-chart-view');
+    get panelSpecs() {
+        return [{
+            View: TrainingChartView,
+            nameLocaleKey: 'training_load_title',
+            descLocaleKey: 'training_load_desc',
+        }, {
+            View: ActivityVolumeChartView,
+            nameLocaleKey: 'activities_title',
+            descLocaleKey: 'activities_desc',
+        }, {
+            View: ElevationChartView,
+            nameLocaleKey: 'elevation_title',
+            descLocaleKey: 'elevation_desc',
+        }];
+    }
+
+    get defaultPrefs() {
+        return {
+            ...super.defaultPrefs,
+            panels: [{
+                id: 'default-training-load-0',
+                view: 'TrainingChartView',
+                settings: {},
+            }, {
+                id: 'default-activity-volume-1',
+                view: 'ActivityVolumeChartView',
+                settings: {},
+            }, {
+                id: 'default-elevation-2',
+                view: 'ElevationChartView',
+                settings: {},
+            }]
+        };
     }
 }
 
