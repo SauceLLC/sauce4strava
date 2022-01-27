@@ -162,14 +162,17 @@ export class PerfView extends SauceView {
         return {};
     }
 
-    getPrefs() {
+    getPrefs(key, defaultValue) {
         if (!this._prefs) {
             this._prefs = {
                 ...this.defaultPrefs,
                 ...sauce.storage.getPrefFast(this.constructor.name),
             };
         }
-        return this._prefs;
+        if (key && defaultValue !== undefined && !this._prefs[key]) {
+            this._prefs[key] = defaultValue;
+        }
+        return key ? this._prefs[key] : this._prefs;
     }
 
     async savePrefs(updates) {
@@ -228,7 +231,7 @@ export class SummaryView extends PerfView {
         if (start == null || end == null) {
             return [];
         }
-        const type = this.getPrefs().type;
+        const type = this.getPrefs('type');
         const ranges = await getPeakRanges(getPeaksRangeTypeForStream(type));
         const keyFormatter = getPeaksKeyFormatter(type);
         const valueFormatter = getPeaksValueFormatter(type);
@@ -396,7 +399,7 @@ export class SummaryView extends PerfView {
     }
 
     async toggleCollapsed(section, en) {
-        const collapsed = this.getPrefs().collapsed;
+        const collapsed = this.getPrefs('collapsed');
         const id = section.dataset.id;
         if (en == null) {
             en = !section.classList.contains('collapsed');
@@ -445,7 +448,7 @@ export class DetailsView extends PerfView {
 
     setElement(el, ...args) {
         const r = super.setElement(el, ...args);
-        this.toggleCollapsed(this.getPrefs().collapsed, {noSave: true});
+        this.toggleCollapsed(this.getPrefs('collapsed'), {noSave: true});
         return r;
     }
 
@@ -708,6 +711,7 @@ export class MainView extends PerfView {
             'click header.filters .btn.range': 'onRangeShiftClick',
             'click header.filters .btn.expand': 'onExpandClick',
             'click header.filters .btn.compress': 'onCompressClick',
+            'click .sauce-panel .sauce-panel-settings.btn': 'onPanelSettingsClick',
         };
     }
 
@@ -716,7 +720,8 @@ export class MainView extends PerfView {
     }
 
     get localeKeys() {
-        return ['weekly', 'monthly', 'yearly', 'activities', 'today'];
+        return ['weekly', 'monthly', 'yearly', 'activities', 'today', 'panel_settings_title',
+                'auto'];
     }
 
     get defaultPrefs() {
@@ -726,6 +731,7 @@ export class MainView extends PerfView {
     }
 
     async init({pageView}) {
+        this.panels = {};
         this.pageView = pageView;
         this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
@@ -734,7 +740,7 @@ export class MainView extends PerfView {
 
     setElement(el, ...args) {
         const r = super.setElement(el, ...args);
-        this.toggleMaximized(this.getPrefs().maximized, {noSave: true, noAside: true});
+        this.toggleMaximized(this.getPrefs('maximized'), {noSave: true, noAside: true});
         return r;
     }
 
@@ -754,12 +760,75 @@ export class MainView extends PerfView {
         return {range: [range.period, range.metric].join()};
     }
 
+    getPanelSettings(id) {
+        return this.getPrefs(`panelSettings-${id}`, {});
+    }
+
+    async addPanel(view, selector) {
+        const id = view.constructor.name;
+        const $el = this.$(selector);
+        const panel = $el[0];
+        panel.dataset.id = id;
+        const defaultOrder = (Object.keys(this.panels).length + 2) * 10;
+        const settings = this.getPanelSettings(id);
+        panel.style.order = settings.position ? settings.position * 10 : defaultOrder;
+        panel.style.setProperty('--height-factor', settings.heightFactor || 1);
+        view.setElement($el);
+        this.panels[id] = {view, id, defaultOrder};
+        await view.render();
+    }
+
     async onExpandClick(ev) {
         await this.toggleMaximized(true);
     }
 
     async onCompressClick(ev) {
         await this.toggleMaximized(false);
+    }
+
+    async onPanelSettingsClick(ev) {
+        const panel = ev.currentTarget.closest('.sauce-panel');
+        const id = panel.dataset.id;
+        const {defaultOrder} = this.panels[id];
+        const template = await sauce.template.getTemplate('performance/panel-settings.html', 'performance');
+        const settings = this.getPanelSettings(id);
+        const positionHint = () => !settings.position ? this.LM('auto') : settings.position;
+        const heightHint = () => !settings.heightFactor ? this.LM('auto') : H.number(settings.heightFactor * 100) + '%';
+        const $dialog = sauce.ui.dialog({
+            width: '25em',
+            autoDestroy: true,
+            flex: true,
+            title: this.LM('panel_settings_title'),
+            body: await template({
+                settings,
+                panelCount: this.$('.sauce-panel').length,
+                positionHint,
+                heightHint,
+            }),
+            icon: await sauce.ui.getImage('fa/cog-duotone.svg'),
+            position: {
+                my: 'right top',
+                at: 'right-2 top+2',
+                of: ev.currentTarget, // XXX try this first
+            },
+            dialogClass: 'sauce-performance-panel-settings no-pad',
+            resizable: false,
+        });
+        $dialog.on('input', 'input[name="position"]', async ev => {
+            const el = ev.currentTarget;
+            settings.position = Number(el.value);
+            el.nextElementSibling.textContent = positionHint();
+            panel.style.order = settings.position ? settings.position * 10 : defaultOrder;
+            await this.savePrefs();
+            panel.scrollIntoView({behavior: 'smooth'});
+        });
+        $dialog.on('input', 'input[name="height-factor"]', async ev => {
+            const el = ev.currentTarget;
+            settings.heightFactor = Number(el.value);
+            el.nextElementSibling.textContent = heightHint();
+            panel.style.setProperty('--height-factor', settings.heightFactor || 1);
+            await this.savePrefs();
+        });
     }
 
     async onRangeChange(ev) {

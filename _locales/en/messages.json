@@ -395,6 +395,11 @@
     "performance_active_days_title": {"message": "Active Days"},
     "performance_inactive": {"message": "Inactive"},
     "performance_sync_error": {"message": "Sync Error"},
+    "performance_panel_settings_title": {"message": "Panel Settings"},
+    "performance_panel_enabled": {"message": "Panel Enabled"},
+    "performance_panel_position": {"message": "Position"},
+    "performance_panel_height": {"message": "Height"},
+    "performance_auto": {"message": "auto"},
 
     "season_start": {"message": "Season Start"},
     "save": {"message": "Save"},

@@ -434,12 +434,9 @@ class FitnessMainView extends views.MainView {
 
     async render() {
         await super.render();
-        this.trainingChartView.setElement(this.$('.training-chart-view'));
-        this.activityVolumeChartView.setElement(this.$('.activity-volume-chart-view'));
-        this.elevationChartView.setElement(this.$('.elevation-chart-view'));
-        await this.trainingChartView.render();
-        await this.activityVolumeChartView.render();
-        await this.elevationChartView.render();
+        await this.addPanel(this.trainingChartView, '.training-chart-view');
+        await this.addPanel(this.activityVolumeChartView, '.activity-volume-chart-view');
+        await this.addPanel(this.elevationChartView, '.elevation-chart-view');
     }
 }
 

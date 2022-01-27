@@ -1,0 +1,16 @@
+<form class="sauce-key-value">
+    <div class="entry">
+        <key>{{{panel_enabled}}}:</key>
+        <input type="checkbox" name="enabled" {{settings.enabled !== false ? 'checked' : ''}}/>
+    </div>
+
+    <div class="entry">
+        <key>{{{panel_position}}}:</key>
+        <input type="range" name="position" value="{{settings.position || 0}}" min="0" max="{{panelCount + 2}}" step="1"/> <span>{{positionHint()}}<span>
+    </div>
+
+    <div class="entry">
+        <key>{{{panel_height}}}:</key>
+        <input type="range" name="height-factor" value="{{settings.heightFactor || 0}}" min="0" max="5" step="any"/> <span>{{heightHint()}}</span>
+    </div>
+</form>

@@ -3,7 +3,11 @@
 <section class="sauce-panels">
 
     <div class="sauce-panel">
-        <header class="title">{{{peak_performances_title}}}</header>
+        <header class="title">
+            {{{peak_performances_title}}}
+            <div class="btn btn-xs btn-icon-only btn-unstyled sauce-panel-settings"
+                 title="{{{panel_settings_tooltip}}}">{{=icon cog-duotone=}}</div>
+        </header>
         <div class="sauce-panel-content peaks-view loading-mask"></div>
     </div>
 

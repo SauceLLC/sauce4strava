@@ -18,6 +18,11 @@ $scrollbar-safety: 25px;
     width: auto !important;  // XXX Not sure why, but I need this to prevent clipping.
 }
 
+input[type="range"] {
+    width: revert; // Reset Strava CSS for 404 page
+    display: revert; // Reset Strava CSS for 404 page
+}
+
 
 html.sauce-performance {
     &, body {
@@ -30,6 +35,11 @@ html.sauce-performance {
     }
 }
 
+.sauce-dialog.sauce-performance-panel-settings {
+    form {
+        padding: 1em 0;
+    }
+}
 
 @media only screen and (min-width: 991px) {
     html.sauce-performance {
@@ -791,8 +801,6 @@ table.sauce-perf {
         border-radius: 0.28em;
         overflow: hidden;
         font-size: 0.96em;
-        margin-left: 1rem;
-        margin-right: 1rem;
 
         &:empty {
             min-height: calc(#{$results-height} + 2em);
@@ -987,6 +995,13 @@ table.sauce-perf {
             .sauce-panel {
                 position: relative;
 
+                &:hover {
+                    > header .sauce-panel-settings.btn {
+                        opacity: 0.8;
+                        visibility: visible;
+                    }
+                }
+
                 > header {
                     font-size: 0.92em;
                     font-weight: bold;
@@ -994,11 +1009,21 @@ table.sauce-perf {
                     align-items: center;
                     justify-content: center;
                     margin-bottom: 1em;
+                    position: relative;
 
                     .more-info {
                         padding-left: 1em;
                         font-size: 0.86em;
                         opacity: 0.7;
+                    }
+
+                    .sauce-panel-settings.btn {
+                        position: absolute;
+                        top: 0.1em;
+                        right: 0.25em;
+                        opacity: 0;
+                        visibility: hidden;
+                        transition: opacity 400ms, visibility 400ms;
                     }
                 }
 
@@ -1156,9 +1181,9 @@ table.sauce-perf {
                 flex-direction: column;
 
                 &.chart {
-                    min-height: 12em;
-                    height: 22vh;
-                    max-height: 24em;
+                    min-height: calc(12em * var(--height-factor));
+                    height: calc(22vh * var(--height-factor));
+                    max-height: calc(24em * var(--height-factor));
                 }
             }
         }
@@ -1347,11 +1372,6 @@ table.sauce-perf {
                     margin-left: 0.2em !important;
                     margin-right: 0.2em !important;
                 }
-            }
-
-            .peaks-view {
-                margin-left: 0;
-                margin-right: 0;
             }
 
             > header.filters {
