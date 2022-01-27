@@ -75,7 +75,10 @@ sauce.ns('template', ns => {
             return await sauce.ui.getImage(`fa/${icon}.svg`);
         },
         icon: x => sauce.ui.getImage(`fa/${x}.svg`),
-        embed: async (file, data) => (await ns.getTemplate(file))(data),
+        embed: async function(file, data) {
+            const localeKey = this.settings.localePrefix && this.settings.localePrefix.slice(0, -1);
+            return (await ns.getTemplate(file, localeKey))(data);
+        },
     };
     if (sauce.locale && sauce.locale.templateHelpers) {
         Object.assign(ns.helpers, sauce.locale.templateHelpers);
@@ -95,8 +98,8 @@ sauce.ns('template', ns => {
             interpolate: /\{-(.+?)-\}/g,
             evaluate: /<%([\s\S]+?)%>/g,
             localePrefix: '',
-            helpers: ns.helpers,
         }, settingsOverrides);
+        settings.helpers = Object.fromEntries(Object.entries(ns.helpers).map(([k, fn]) => ([k, fn.bind({settings})])));
         const noMatch = /(.)^/;
         // Combine delimiters into one regular expression via alternation.
         const matcher = RegExp([
