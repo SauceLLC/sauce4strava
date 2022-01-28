@@ -1,102 +1,109 @@
-<div class="peak-controls">
-    <select name="type">
-        <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
-        <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
-        <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP</option>
-        <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
-        <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
-        <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
-        <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
-    </select>
-    <% if (['pace', 'gap'].includes(prefs.type)) { %>
-        <select name="distance">
-            <% for (const x of peakRanges.distances) { %>
-                <option value="{{x.value}}" {{prefs.distance === x.value ? 'selected' : ''}}>{{humanRaceDistance(x.value)}}</option>
-            <% } %>
+<header class="title">
+    {{{peak_performances_title}}}
+    <div class="btn btn-xs btn-icon-only btn-unstyled sauce-panel-settings"
+         title="{{{panel_settings_tooltip}}}">{{=icon cog-duotone=}}</div>
+</header>
+<div class="sauce-panel-content peaks-view loading-mask">
+    <div class="peak-controls">
+        <select name="type">
+            <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
+            <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
+            <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP</option>
+            <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
+            <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
+            <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
+            <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
         </select>
-    <% } else { %>
-        <select name="time">
-            <% for (const x of peakRanges.periods) { %>
-                <option value="{{x.value}}" {{prefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
-            <% } %>
-        </select>
-    <% } %>
-
-    <select name="limit">
-        <option value="10" {{prefs.limit === 10 ? 'selected' : ''}}>{{{top}}} 10</option>
-        <option value="25" {{prefs.limit === 25 ? 'selected' : ''}}>{{{top}}} 25</option>
-        <option value="100" {{prefs.limit === 100 ? 'selected' : ''}}>{{{top}}} 100</option>
-        <option value="500" {{prefs.limit === 500 ? 'selected' : ''}}>{{{top}}} 500</option>
-        <option value="0" {{prefs.limit === 0 ? 'selected' : ''}}>{{{all_results}}}</option>
-    </select>
-
-    <select name="activityType">
-        <option value="" {{!prefs.activityType ? 'selected' : ''}}>{{{any}}}</option>
-        <option value="ride" {{prefs.activityType === 'ride' ? 'selected' : ''}}>{{{rides}}}</option>
-        <option value="run" {{prefs.activityType === 'run' ? 'selected' : ''}}>{{{runs}}}</option>
-        <option value="swim" {{prefs.activityType === 'swim' ? 'selected' : ''}}>{{{swims}}}</option>
-        <option value="workout" {{prefs.activityType === 'workout' ? 'selected' : ''}}>{{{workouts}}}</option>
-    </select>
-
-    <label>
-        <input type="checkbox" name="include-all-athletes" {{prefs.includeAllAthletes ? 'checked' : ''}}/>
-        {{{/all_athletes}}}
-    </label>
-
-    <label>
-        <input type="checkbox" name="include-all-dates" {{prefs.includeAllDates ? 'checked' : ''}}/>
-        {{{all_dates}}}
-    </label>
-</div>
-
-<div class="results">
-    <table class="sauce-perf">
-        <thead>
-            <tr>
-                <th>{{{/analysis_rank}}}</th>
-                <th>{{{/analysis_value}}}</th>
-                <% if (prefs.includeAllAthletes) { %>
-                    <th>{{{/athlete}}}</th>
+        <% if (['pace', 'gap'].includes(prefs.type)) { %>
+            <select name="distance">
+                <% for (const x of peakRanges.distances) { %>
+                    <option value="{{x.value}}" {{prefs.distance === x.value ? 'selected' : ''}}>{{humanRaceDistance(x.value)}}</option>
                 <% } %>
-                <th>{{{/analysis_activity}}}</th>
-                <th>{{{/type}}}</th>
-                <th>{{{/analysis_date}}}</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            <% let i = 1; %>
-            <% for (const x of peaks.filter(x => x.activity)) { %>
-                <tr data-id="{{x.activity.id}}" title="{{{peaks_row_tooltip}}}">
-                    <td>{{humanNumber(i++)}}</td>
-                    <td>
-                        {{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>
-                        <% if (x.rankBadge && x.rankBadge.cat) { %>
-                            <img src="{{x.rankBadge.badge}}" class="sauce-rank"
-                                 data-cat="{{x.rankBadge.cat}}" title="{{x.rankBadge.tooltip}}"/>
-                        <% } %>
-                    </td>
-                    <% if (prefs.includeAllAthletes) { %>
-                        <td>{{await athleteName(x.activity.athlete)}}</td>
-                    <% } %>
-                    <td class="activity-name">
-                        <div class="name-container">
-                            <a href="https://www.strava.com/activities/{{x.activity.id}}/analysis/{{x.start}}/{{x.end}}"
-                               title="{{x.activity.name}}{{x.activity.description ? '\n\n' + x.activity.description : ''}}"
-                               target="_blank">{{x.activity.name}}</a>
-                        </div>
-                    </td>
-                    <td>{{x.activityType}}</td>
-                    <td>{{humanDate(x.activity.ts)}}</td>
-                    <td>
-                        <div class="btn btn-icon-only btn-unstyled edit-activity"
-                             data-id="{{x.activity.id}}"
-                             title="Edit activity">{{=icon edit-duotone=}}</div>
-                    </td>
-                </tr>
-            <% } %>
-        </tbody>
-    </table>
-</div>
+            </select>
+        <% } else { %>
+            <select name="time">
+                <% for (const x of peakRanges.periods) { %>
+                    <option value="{{x.value}}" {{prefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
+                <% } %>
+            </select>
+        <% } %>
 
-<div class="resize-drag">{{=icon grip-lines-light=}}</div>
+        <select name="limit">
+            <option value="10" {{prefs.limit === 10 ? 'selected' : ''}}>{{{top}}} 10</option>
+            <option value="25" {{prefs.limit === 25 ? 'selected' : ''}}>{{{top}}} 25</option>
+            <option value="100" {{prefs.limit === 100 ? 'selected' : ''}}>{{{top}}} 100</option>
+            <option value="500" {{prefs.limit === 500 ? 'selected' : ''}}>{{{top}}} 500</option>
+            <option value="0" {{prefs.limit === 0 ? 'selected' : ''}}>{{{all_results}}}</option>
+        </select>
+
+        <select name="activityType">
+            <option value="" {{!prefs.activityType ? 'selected' : ''}}>{{{any}}}</option>
+            <option value="ride" {{prefs.activityType === 'ride' ? 'selected' : ''}}>{{{rides}}}</option>
+            <option value="run" {{prefs.activityType === 'run' ? 'selected' : ''}}>{{{runs}}}</option>
+            <option value="swim" {{prefs.activityType === 'swim' ? 'selected' : ''}}>{{{swims}}}</option>
+            <option value="workout" {{prefs.activityType === 'workout' ? 'selected' : ''}}>{{{workouts}}}</option>
+        </select>
+
+        <label>
+            <input type="checkbox" name="include-all-athletes" {{prefs.includeAllAthletes ? 'checked' : ''}}/>
+            {{{/all_athletes}}}
+        </label>
+
+        <label>
+            <input type="checkbox" name="include-all-dates" {{prefs.includeAllDates ? 'checked' : ''}}/>
+            {{{all_dates}}}
+        </label>
+    </div>
+
+    <div class="results">
+        <table class="sauce-perf">
+            <thead>
+                <tr>
+                    <th>{{{/analysis_rank}}}</th>
+                    <th>{{{/analysis_value}}}</th>
+                    <% if (prefs.includeAllAthletes) { %>
+                        <th>{{{/athlete}}}</th>
+                    <% } %>
+                    <th>{{{/analysis_activity}}}</th>
+                    <th>{{{/type}}}</th>
+                    <th>{{{/analysis_date}}}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <% let i = 1; %>
+                <% for (const x of peaks.filter(x => x.activity)) { %>
+                    <tr data-id="{{x.activity.id}}" title="{{{peaks_row_tooltip}}}">
+                        <td>{{humanNumber(i++)}}</td>
+                        <td>
+                            {{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>
+                            <% if (x.rankBadge && x.rankBadge.cat) { %>
+                                <img src="{{x.rankBadge.badge}}" class="sauce-rank"
+                                     data-cat="{{x.rankBadge.cat}}" title="{{x.rankBadge.tooltip}}"/>
+                            <% } %>
+                        </td>
+                        <% if (prefs.includeAllAthletes) { %>
+                            <td>{{await athleteName(x.activity.athlete)}}</td>
+                        <% } %>
+                        <td class="activity-name">
+                            <div class="name-container">
+                                <a href="https://www.strava.com/activities/{{x.activity.id}}/analysis/{{x.start}}/{{x.end}}"
+                                   title="{{x.activity.name}}{{x.activity.description ? '\n\n' + x.activity.description : ''}}"
+                                   target="_blank">{{x.activity.name}}</a>
+                            </div>
+                        </td>
+                        <td>{{x.activityType}}</td>
+                        <td>{{humanDate(x.activity.ts)}}</td>
+                        <td>
+                            <div class="btn btn-icon-only btn-unstyled edit-activity"
+                                 data-id="{{x.activity.id}}"
+                                 title="Edit activity">{{=icon edit-duotone=}}</div>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="resize-drag">{{=icon grip-lines-light=}}</div>
+</div>

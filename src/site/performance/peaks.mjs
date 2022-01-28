@@ -1,6 +1,7 @@
 /* global sauce */
 
 import * as views from './views.mjs';
+import * as fitness from './fitness.mjs';
 
 const L = sauce.locale;
 const H = L.human;
@@ -247,14 +248,50 @@ class PeaksMainView extends views.MainView {
         return 'performance/peaks/main.html';
     }
 
-    async init({pageView}) {
-        this.peaksTableView = new PeaksTableView({pageView});
-        await super.init({pageView});
+    safeGetPanelView(name) {
+        // non-eval safe View lookup.
+        return {
+            PeaksTableView,
+            TrainingChartView: fitness.TrainingChartView,
+            ActivityVolumeChartView: fitness.ActivityVolumeChartView,
+            ElevationChartView: fitness.ElevationChartView,
+        }[name];
     }
 
-    async render() {
-        await super.render();
-        this.addPanel(this.peaksTableView, '.peaks-view');
+    // XXX deprecate : move to View prototype
+    get panelSpecs() {
+        return [{
+            View: PeaksTableView,
+            nameLocaleKey: 'peak_performances_title',
+            descLocaleKey: 'peak_performances_desc',
+        }, {
+            View: fitness.TrainingChartView,
+            nameLocaleKey: 'training_load_title',
+            descLocaleKey: 'training_load_desc',
+        }, {
+            View: fitness.ActivityVolumeChartView,
+            nameLocaleKey: 'activities_title',
+            descLocaleKey: 'activities_desc',
+        }, {
+            View: fitness.ElevationChartView,
+            nameLocaleKey: 'elevation_title',
+            descLocaleKey: 'elevation_desc',
+        }];
+    }
+
+    get defaultPrefs() {
+        return {
+            ...super.defaultPrefs,
+            panels: [{
+                id: 'default-peaks-table-0',
+                view: 'PeaksTableView',
+                settings: {},
+            }, {
+                id: 'default-activity-volume-xxx-1',
+                view: 'ActivityVolumeChartView',
+                settings: {},
+            }]
+        };
     }
 }
 

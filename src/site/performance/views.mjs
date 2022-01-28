@@ -751,7 +751,7 @@ export class MainView extends PerfView {
         };
     }
 
-    getPanelView(name) {}
+    safeGetPanelView(name) {}
 
     async init({pageView}) {
         this.panels = [];
@@ -765,7 +765,7 @@ export class MainView extends PerfView {
     }
 
     _createPanel(prefs) {
-        const View = this.getPanelView(prefs.view);
+        const View = this.safeGetPanelView(prefs.view);
         const spec = this.panelSpecs.find(x => x.View === View);
         const name = prefs.settings.name || this.LM(spec.nameLocaleKey);
         const id = prefs.id;

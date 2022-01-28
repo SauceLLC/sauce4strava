@@ -11,7 +11,7 @@ const H = L.human;
 const D = sauce.date;
 
 
-class TrainingChartView extends charts.ActivityTimeRangeChartView {
+export class TrainingChartView extends charts.ActivityTimeRangeChartView {
     get tpl() {
         return 'performance/fitness/training-load.html';
     }
@@ -191,7 +191,7 @@ class TrainingChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
-class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
+export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
     get tpl() {
         return 'performance/fitness/activity-volume.html';
     }
@@ -371,7 +371,7 @@ class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
-class ElevationChartView extends charts.ActivityTimeRangeChartView {
+export class ElevationChartView extends charts.ActivityTimeRangeChartView {
     get tpl() {
         return 'performance/fitness/elevation.html';
     }
@@ -438,7 +438,7 @@ class FitnessMainView extends views.MainView {
         return 'performance/fitness/main.html';
     }
 
-    getPanelView(name) {
+    safeGetPanelView(name) {
         // non-eval safe View lookup.
         return {
             TrainingChartView,
