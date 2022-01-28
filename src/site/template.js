@@ -129,9 +129,9 @@ sauce.ns('template', ns => {
             index = offset + match.length;
             if (localeLookup) {
                 code.push(`
-                    __t = ${localeLookup}.startsWith('/') ?
-                        ${localeLookup}.substr(1) :
-                        '${settings.localePrefix}' + ${localeLookup};
+                    __t = (${localeLookup}).startsWith('/') ?
+                        (${localeLookup}).substr(1) :
+                        '${settings.localePrefix}' + (${localeLookup});
                     __t = sauce.locale.fastGetMessage(__t);
                     __p.push(__t instanceof Promise ? (await __t) : __t);
                 `);
