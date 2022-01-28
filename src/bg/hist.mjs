@@ -79,7 +79,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
-    version: 2,
+    version: 3,  // add coggan power zones
     depends: ['extra-streams', 'athlete-settings', 'run-power'],
     data: {processor: processors.activityStatsProcessor}
 });

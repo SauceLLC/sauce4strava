@@ -1554,6 +1554,20 @@ sauce.ns('power', function() {
     }
 
 
+    // Also used by Strava
+    function cogganZones(ftp) {
+        return {
+            z1: ftp * 0.55, // Active Recovery
+            z2: ftp * 0.75, // Endurance
+            z3: ftp * 0.90, // Tempo
+            z4: ftp * 1.05, // Threshold
+            z5: ftp * 1.20, // V02Max
+            z6: ftp * 1.50, // Anaerobic
+            z7: Infinity,   // Neuromuscular
+        };
+    }
+
+
     return {
         peakPower,
         peakNP,
@@ -1567,6 +1581,7 @@ sauce.ns('power', function() {
         calcWPrimeBalDifferential,
         calcPwHrDecouplingFromRoll,
         calcPwHrDecoupling,
+        cogganZones,
         rank,
         rankLevel,
         rankBadge,
