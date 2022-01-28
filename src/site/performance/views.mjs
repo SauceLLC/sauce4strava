@@ -154,9 +154,7 @@ export async function editActivityDialogXXX(activity, pageView) {
 
 
 export class PerfView extends SauceView {
-    get localeNS() {
-        return 'performance';
-    }
+    static localeNS = 'performance';
 
     get defaultPrefs() {
         return {};
@@ -193,6 +191,16 @@ export class PerfView extends SauceView {
 
 
 export class SummaryView extends PerfView {
+    static tpl = 'performance/summary.html';
+    static localeKeys = ['rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'];
+
+    get defaultPrefs() {
+        return {
+            type: 'power',
+            collapsed: {},
+        };
+    }
+
     get events() {
         return {
             ...super.events,
@@ -202,21 +210,6 @@ export class SummaryView extends PerfView {
             'click section.highlights a[data-id]': 'onHighlightClick',
             'dblclick section > header': 'onDblClickHeader',
             'change select[name="type"]': 'onTypeChange',
-        };
-    }
-
-    get tpl() {
-        return 'performance/summary.html';
-    }
-
-    get localeKeys() {
-        return ['rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'];
-    }
-
-    get defaultPrefs() {
-        return {
-            type: 'power',
-            collapsed: {},
         };
     }
 
@@ -422,6 +415,8 @@ export class SummaryView extends PerfView {
 
 
 export class DetailsView extends PerfView {
+    static tpl = 'performance/details.html';
+
     get events() {
         return {
             ...super.events,
@@ -433,10 +428,6 @@ export class DetailsView extends PerfView {
             'click row .btn.expand': 'onExpandRowClick',
             'click row .btn.compress': 'onCompressRowClick',
         };
-    }
-
-    get tpl() {
-        return 'performance/details.html';
     }
 
     get defaultPrefs() {
@@ -636,9 +627,7 @@ export class DetailsView extends PerfView {
 
 
 export class BulkActivityEditDialog extends PerfView {
-    get localeKeys() {
-        return ['/save', 'edit_activities'];
-    }
+    static localeKeys = ['/save', 'edit_activities'];
 
     get events() {
         return {
@@ -714,6 +703,9 @@ export class BulkActivityEditDialog extends PerfView {
 
 
 export class MainView extends PerfView {
+    static localeKeys = ['activities', 'today', 'panel_settings_title', 'auto', '/delete', '/add', 'panel_add_title'];
+    static tpl = 'performance/fitness/main.html';
+
     get events() {
         return {
             ...super.events,
@@ -726,30 +718,15 @@ export class MainView extends PerfView {
         };
     }
 
-    get tpl() {
-        return 'performance/fitness/main.html';
-    }
-
-    get localeKeys() {
-        const keys = [
-            'activities', 'today', 'panel_settings_title', 'auto', '/delete', '/add', 'panel_add_title',
-        ];
-        keys.push(...this.panelSpecs.map(x => x.nameLocaleKey));
-        keys.push(...this.panelSpecs.map(x => x.descLocaleKey));
-        return keys;
-    }
-
-    get panelSpecs() {
-        return [];
-    }
-
     get defaultPrefs() {
         return {
             maximized: false,
         };
     }
 
-    safeGetPanelView(name) {}
+    get availablePanelViews() {
+        return {};
+    }
 
     async init({pageView, ...options}) {
         this.panels = [];
@@ -758,17 +735,16 @@ export class MainView extends PerfView {
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
         await super.init(options);
         for (const panelPrefs of this.getPrefs('panels')) {
-            this.panels.push(this._createPanel(panelPrefs));
+            this.panels.push(await this._createPanel(panelPrefs));
         }
     }
 
-    _createPanel(prefs) {
-        const View = this.safeGetPanelView(prefs.view);
-        const spec = this.panelSpecs.find(x => x.View === View);
-        const name = prefs.settings.name || this.LM(spec.nameLocaleKey);
+    async _createPanel(prefs) {
+        const View = this.availablePanelViews[prefs.view];
+        const name = prefs.settings.name || await L.getMessage(View.nameLocaleKey);
         const id = prefs.id;
         const view = new View({id, name, pageView: this.pageView});
-        return {view, prefs, spec};
+        return {view, prefs};
     }
 
     setElement(el, ...args) {
@@ -822,31 +798,28 @@ export class MainView extends PerfView {
 
     async onPanelAddClick(ev) {
         const template = await sauce.template.getTemplate('performance/panel-add.html', 'performance');
-        let selected = 0;
+        const panelViews = this.availablePanelViews;
+        let selected = Object.values(panelViews)[0].name;
         const $dialog = sauce.ui.dialog({
             width: '18em',
             autoDestroy: true,
             flex: true,
             title: this.LM('panel_add_title'),
             icon: await sauce.ui.getImage('fa/layer-plus-duotone.svg'),
-            body: await template({
-                specs: this.panelSpecs,
-            }),
+            body: await template({panelViews, selected}),
             extraButtons: [{
                 text: this.LM('add'),
                 class: 'btn btn-primary',
                 click: async () => {
-                    const spec = this.panelSpecs[selected];
-                    const view = spec.View.name;
                     const panelPrefs = {
-                        id: `custom-${view}-${Date.now()}`,
-                        view,
+                        id: `custom-${selected}-${Date.now()}`,
+                        view: selected,
                         settings: {
                             name: $dialog.find('input[name="name"]').val() || undefined,
                         }
                     };
                     this.getPrefs('panels').unshift(panelPrefs);
-                    this.panels.unshift(this._createPanel(panelPrefs));
+                    this.panels.unshift(await this._createPanel(panelPrefs));
                     await this.savePrefs();
                     await this.render();
                     await this.pageView.schedUpdateActivities();
@@ -863,10 +836,11 @@ export class MainView extends PerfView {
         });
         $dialog.on('change', 'select[name="type"]', async ev => {
             const el = ev.currentTarget;
-            selected = Number(el.value);
-            const spec = this.panelSpecs[selected];
-            $dialog.find('.desc').text(this.LM(spec.descLocaleKey));
-            $dialog.find('input[name="name"]').attr('placeholder', this.LM(spec.nameLocaleKey));
+            selected = el.value;
+            const View = panelViews[selected];
+            $dialog.find('.desc').text(await L.getMessage(View.descLocaleKey));
+            $dialog.find('input[name="name"]').attr('placeholder',
+                await L.getMessage(View.nameLocaleKey));
         });
     }
 
@@ -918,7 +892,7 @@ export class MainView extends PerfView {
             const name = el.value || undefined;
             const nameEl = panelEl.querySelector('.panel-name');
             if (nameEl) {
-                nameEl.textContent = name || this.LM(panel.spec.nameLocaleKey);
+                nameEl.textContent = name || await L.getMessage(panel.view.constructor.nameLocaleKey);
             }
             settings.name = name;
             await this.savePrefs();
@@ -1014,9 +988,8 @@ export class MainView extends PerfView {
 
 
 export class PageView extends PerfView {
-    get localeKeys() {
-        return ['weekly', 'monthly', 'yearly'];
-    }
+    static localeKeys = ['weekly', 'monthly', 'yearly'];
+    static tpl = 'performance/page.html';
 
     get events() {
         return {
@@ -1024,10 +997,6 @@ export class PageView extends PerfView {
             'change nav select[name=athlete]': 'onAthleteChange',
             'click .onboarding-stack .btn.enable': 'onOnboardingEnableClick',
         };
-    }
-
-    get tpl() {
-        return 'performance/page.html';
     }
 
     get defaultPrefs() {

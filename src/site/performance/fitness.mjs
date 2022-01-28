@@ -3,6 +3,7 @@
 import * as views from './views.mjs';
 import * as data from './data.mjs';
 import * as charts from './charts.mjs';
+import * as peaks from './peaks.mjs';
 
 
 const DAY = 86400 * 1000;
@@ -12,16 +13,13 @@ const D = sauce.date;
 
 
 export class TrainingChartView extends charts.ActivityTimeRangeChartView {
-    get tpl() {
-        return 'performance/fitness/training-load.html';
-    }
-
-    get localeKeys() {
-        return [
-            'activities', 'predicted_tss', 'predicted_tss_tooltip', 'fitness',
-            'fatigue', 'form', 'today',
-        ];
-    }
+    static nameLocaleKey = 'performance_training_load_title';
+    static descLocaleKey = 'performance_training_load_desc';
+    static tpl = 'performance/fitness/training-load.html';
+    static localeKeys = [
+        'activities', 'predicted_tss', 'predicted_tss_tooltip', 'fitness', 'fatigue', 'form',
+        'today',
+    ];
 
     async init(options) {
         await super.init(options);
@@ -192,13 +190,10 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
 
 
 export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
-    get tpl() {
-        return 'performance/fitness/activity-volume.html';
-    }
-
-    get localeKeys() {
-        return ['predicted', '/analysis_time', '/analysis_distance', 'activities'];
-    }
+    static nameLocaleKey = 'performance_activities_title';
+    static descLocaleKey = 'performance_activities_desc';
+    static tpl = 'performance/fitness/activity-volume.html';
+    static localeKeys = ['predicted', '/analysis_time', '/analysis_distance', 'activities'];
 
     async init(options) {
         await super.init(options);
@@ -372,13 +367,10 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
 
 
 export class ElevationChartView extends charts.ActivityTimeRangeChartView {
-    get tpl() {
-        return 'performance/fitness/elevation.html';
-    }
-
-    get localeKeys() {
-        return ['/analysis_gain', 'activities'];
-    }
+    static nameLocaleKey = 'performance_elevation_title';
+    static descLocaleKey = 'performance_elevation_desc';
+    static tpl = 'performance/fitness/elevation.html';
+    static localeKeys = ['/analysis_gain', 'activities'];
 
     async init(options) {
         const thousandFeet = 1609.344 / 5280 * 100;
@@ -433,34 +425,18 @@ export class ElevationChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
+export const PanelViews = {
+    TrainingChartView,
+    ActivityVolumeChartView,
+    ElevationChartView,
+};
+
+
 class FitnessMainView extends views.MainView {
-    get tpl() {
-        return 'performance/fitness/main.html';
-    }
+    static tpl = 'performance/fitness/main.html';
 
-    safeGetPanelView(name) {
-        // non-eval safe View lookup.
-        return {
-            TrainingChartView,
-            ActivityVolumeChartView,
-            ElevationChartView,
-        }[name];
-    }
-
-    get panelSpecs() {
-        return [{
-            View: TrainingChartView,
-            nameLocaleKey: 'training_load_title',
-            descLocaleKey: 'training_load_desc',
-        }, {
-            View: ActivityVolumeChartView,
-            nameLocaleKey: 'activities_title',
-            descLocaleKey: 'activities_desc',
-        }, {
-            View: ElevationChartView,
-            nameLocaleKey: 'elevation_title',
-            descLocaleKey: 'elevation_desc',
-        }];
+    get availablePanelViews() {
+        return {...PanelViews, ...peaks.PanelViews};
     }
 
     get defaultPrefs() {

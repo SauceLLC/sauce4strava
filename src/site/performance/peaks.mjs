@@ -47,7 +47,11 @@ function getPeaksValueFormatter(streamType) {
 }
 
 
-class PeaksTableView extends views.PerfView {
+export class PeaksTableView extends views.PerfView {
+    static tpl = 'performance/peaks/table.html';
+    static nameLocaleKey = 'performance_peak_performances_title';
+    static descLocaleKey = 'performance_peak_performances_desc';
+
     get events() {
         return {
             ...super.events,
@@ -62,10 +66,6 @@ class PeaksTableView extends views.PerfView {
             'click .edit-activity': 'onEditActivityClick',
             'pointerdown .resize-drag': 'onResizePointerDown',
         };
-    }
-
-    get tpl() {
-        return 'performance/peaks/table.html';
     }
 
     get defaultPrefs() {
@@ -245,40 +245,16 @@ class PeaksTableView extends views.PerfView {
 }
 
 
+export const PanelViews = {
+    PeaksTableView,
+};
+
+
 class PeaksMainView extends views.MainView {
-    get tpl() {
-        return 'performance/peaks/main.html';
-    }
+    static tpl = 'performance/peaks/main.html';
 
-    safeGetPanelView(name) {
-        // non-eval safe View lookup.
-        return {
-            PeaksTableView,
-            TrainingChartView: fitness.TrainingChartView,
-            ActivityVolumeChartView: fitness.ActivityVolumeChartView,
-            ElevationChartView: fitness.ElevationChartView,
-        }[name];
-    }
-
-    // XXX deprecate : move to View prototype
-    get panelSpecs() {
-        return [{
-            View: PeaksTableView,
-            nameLocaleKey: 'peak_performances_title',
-            descLocaleKey: 'peak_performances_desc',
-        }, {
-            View: fitness.TrainingChartView,
-            nameLocaleKey: 'training_load_title',
-            descLocaleKey: 'training_load_desc',
-        }, {
-            View: fitness.ActivityVolumeChartView,
-            nameLocaleKey: 'activities_title',
-            descLocaleKey: 'activities_desc',
-        }, {
-            View: fitness.ElevationChartView,
-            nameLocaleKey: 'elevation_title',
-            descLocaleKey: 'elevation_desc',
-        }];
+    get availablePanelViews() {
+        return {...PanelViews, ...fitness.PanelViews};
     }
 
     get defaultPrefs() {

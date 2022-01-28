@@ -4,6 +4,10 @@ import {SauceView} from './view.mjs';
 
 
 export class MutableDataView extends SauceView {
+    static localeNS = 'mutable_data';
+    static tpl = 'mutable-data-view.html';
+    static entryTpl = null;  // subclass impl required
+
     get events() {
         return {
             'click .mutable-data-entry-add': '_onAddEntry',
@@ -13,21 +17,9 @@ export class MutableDataView extends SauceView {
         };
     }
 
-    get tpl() {
-        return 'mutable-data-view.html';
-    }
-
-    get localeNS() {
-        return 'mutable_data';
-    }
-
-    get entryTpl() {
-        throw new TypeError("subclass impl required");
-    }
-
     async init(options) {
         this.$el.addClass('mutable-data-view');
-        this._entryTpl = await sauce.template.getTemplate(this.entryTpl, this.localeNS);
+        this._entryTpl = await sauce.template.getTemplate(this.constructor.entryTpl, this.constructor.localeNS);
         this.attrs = {
             localeHelpKey: null,
             localeTitleKey: null,
@@ -108,9 +100,7 @@ export class MutableDataView extends SauceView {
 
 
 class HistoryView extends MutableDataView {
-    get entryTpl() {
-        return 'history-view-entry.html';
-    }
+    static entryTpl = 'history-view-entry.html';
 
     async init(options) {
         this.$el.addClass('history-view');
@@ -223,9 +213,7 @@ class PeaksRangesView extends MutableDataView {
 
 
 export class PeaksPeriodsView extends PeaksRangesView {
-    get entryTpl() {
-        return 'peaks-periods-view-entry.html';
-    }
+    static entryTpl = 'peaks-periods-view-entry.html';
 
     async init(options) {
         this.type = 'periods';
@@ -245,9 +233,7 @@ export class PeaksPeriodsView extends PeaksRangesView {
 
 
 export class PeaksDistancesView extends PeaksRangesView {
-    get entryTpl() {
-        return 'peaks-distances-view-entry.html';
-    }
+    static entryTpl = 'peaks-distances-view-entry.html';
 
     async init(options) {
         this.type = 'distances';

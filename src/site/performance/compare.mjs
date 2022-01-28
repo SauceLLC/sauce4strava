@@ -4,7 +4,7 @@ import * as views from './views.mjs';
 
 
 class CompareMainView extends views.MainView {
-    get tpl() {
+    static get tpl() {
         return 'performance/compare/main.html';
     }
 

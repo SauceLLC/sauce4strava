@@ -1,37 +1,23 @@
 /* global Backbone, sauce */
 
 export class SauceView extends Backbone.View {
+    static localeNS;  // Subclass returns locale namespace for template and localeKeys.
+    static localeKeys;  // Subclasses can provide an array of keys.
+    static tpl;  // Subclass should provide name of template;
+
     constructor(...args) {
         super(...args);
-        if (this.localeKeys) {
-            this._localePromise = sauce.locale.getMessagesObject(this.localeKeys, this.localeNS);
+        const cls = this.constructor;
+        if (cls.localeKeys) {
+            this._localePromise = sauce.locale.getMessagesObject(cls.localeKeys, cls.localeNS);
         }
         this.initializing = this.init(...args);
     }
 
-    get tpl() {
-        // Subclass returns name of template;
-        return undefined;
-    }
-
-    get localeKeys() {
-        // Subclasses can provide an array of keys a la.,
-        //    ['speed', 'energy', '/analysis_distance', ...]
-        // See: localeNS() to change default ns.
-        // Results are available after init() with lm(<key>) a la.,
-        //    this.LM('speed')
-        return undefined;
-    }
-
-    get localeNS() {
-        // Subclass returns locale namespace for template and localeKeys;
-        return undefined;
-    }
-
     async init() {
-        const tpl = this.tpl;
+        const tpl = this.constructor.tpl;
         if (tpl) {
-            this._tpl = await sauce.template.getTemplate(this.tpl, this.localeNS);
+            this._tpl = await sauce.template.getTemplate(tpl, this.constructor.localeNS);
         }
         if (this._localePromise) {
             this._localeMessages = await this._localePromise;

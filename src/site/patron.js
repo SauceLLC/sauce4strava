@@ -15,6 +15,8 @@ sauce.ns('patron', async ns => {
 
 
     class PageView extends view.SauceView {
+        static tpl = 'patron.html';
+
         get events() {
             return {
                 ...super.events,
@@ -24,10 +26,6 @@ sauce.ns('patron', async ns => {
 
         onSauceOptionsClick() {
             sauce.menu.openOptionsPage();
-        }
-
-        get tpl() {
-            return 'patron.html';
         }
 
         renderAttrs(data) {
