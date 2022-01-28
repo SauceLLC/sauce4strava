@@ -3,6 +3,20 @@
 sauce.ns('ui', ns => {
     'use strict';
 
+    ns.throttledAnimationFrame = function() {
+        let nextFrame;
+        return function(callback) {
+            if (nextFrame) {
+                cancelAnimationFrame(nextFrame);
+            }
+            nextFrame = requestAnimationFrame(() => {
+                nextFrame = null;
+                callback();
+            });
+        };
+    };
+
+ 
     ns.downloadBlob = function(blob, name) {
         const url = URL.createObjectURL(blob);
         try {

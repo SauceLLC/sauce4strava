@@ -151,30 +151,6 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
-    /* Only use for non-async callbacks */
-    sauce.debounced = function(scheduler, callback) {
-        let nextPending;
-        const wrap = function() {
-            const waiting = !!nextPending;
-            nextPending = [this, arguments];
-            if (waiting) {
-                return;
-            }
-            scheduler(() => {
-                try {
-                    callback.apply(...nextPending);
-                } finally {
-                    nextPending = null;
-                }
-            });
-        };
-        if (callback.name) {
-            Object.defineProperty(wrap, 'name', {value: `sauce.debounced[${callback.name}]`});
-        }
-        return wrap;
-    };
-
-
     /*
      * Only use for async callbacks.
      *
@@ -189,7 +165,7 @@ self.sauceBaseInit = function sauceBaseInit() {
      *
      * The return promise will resolve with the arguments used for next invocation.
      */
-    sauce.asyncDebounced = function(fn) {
+    sauce.debounced = function(asyncFn) {
         let nextArgs;
         let nextPromise;
         let nextResolve;
@@ -201,7 +177,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             const reject = nextReject;
             nextArgs = null;
             nextPromise = null;
-            return fn.apply(scope, args)
+            return asyncFn.apply(scope, args)
                 .then(x => resolve(args))
                 .catch(reject)
                 .finally(() => active = nextArgs ? runner() : null);
@@ -218,8 +194,8 @@ self.sauceBaseInit = function sauceBaseInit() {
             }
             return p;
         };
-        if (fn.name) {
-            Object.defineProperty(wrap, 'name', {value: `sauce.asyncDebounced[${fn.name}]`});
+        if (asyncFn.name) {
+            Object.defineProperty(wrap, 'name', {value: `sauce.debounced[${asyncFn.name}]`});
         }
         return wrap;
     };
