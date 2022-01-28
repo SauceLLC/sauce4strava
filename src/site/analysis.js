@@ -3664,8 +3664,8 @@ sauce.ns('analysis', ns => {
                     schedUpdateAnalysisStats();
                 }
             }
-            let keyAnimationFrame;
             let keyAnimationDone;
+            const keyAnimation = sauce.ui.throttledAnimationFrame();
             const onChartKeyDown = ev => {
                 const ed = pageView.eventDispatcher();
                 const bView = sauce.basicAnalysisView;
@@ -3729,11 +3729,7 @@ sauce.ns('analysis', ns => {
                      start < 0 || end > lastIndex)) {
                     return;
                 }
-                if (keyAnimationFrame) {
-                    cancelAnimationFrame(keyAnimationFrame);
-                }
-                keyAnimationFrame = requestAnimationFrame(() => {
-                    keyAnimationFrame = null;
+                keyAnimation(() => {
                     if (adj && (sizeSel || moveSel)) {
                         ed.dispatchUnconditionalHover(null, xAxisType, start, end);
                         if (elChart) {
@@ -3801,7 +3797,7 @@ sauce.ns('analysis', ns => {
         const smoothing = sauce.options['analysis-graph-smoothing'] || 0;
         const template = await getTemplate('graph-options.html', 'graph_options');
         const $dialog = sauce.ui.dialog({
-            width: '25em',
+            width: '26em',
             autoDestroy: true,
             flex: true,
             title: `Analysis Graph Options`,
@@ -3819,14 +3815,13 @@ sauce.ns('analysis', ns => {
             dialogClass: 'sauce-analysis-graph-options no-pad sauce-small',
             resizable: false,
         });
-        let nextSmoothing;
+        const smoothAnimation = sauce.ui.throttledAnimationFrame();
         $dialog.on('input', 'input[name="smoothing"]', async ev => {
             const el = ev.currentTarget;
             const smoothing = Number(el.value);
             el.nextElementSibling.textContent = smoothing ? H.timer(smoothing) : '--';
             sauce.options['analysis-graph-smoothing'] = Number(el.value);
-            cancelAnimationFrame(nextSmoothing);  // debounce spurious updates.
-            nextSmoothing = requestAnimationFrame(() => {
+            smoothAnimation(() => {
                 const start = view.zoomStart != null ? view.zoomStart : undefined;
                 const end = view.zoomEnd != null ? view.zoomEnd : undefined;
                 const updates = [];
