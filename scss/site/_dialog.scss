@@ -17,12 +17,15 @@ html .ui-dialog {
     font-size: 1em; // This is the default in analysis but not other pages, so we need to set it.
 
     &.sauce-small {
-        font-size: 0.9em;
+        font-size: 0.94em;
 
         .ui-widget-header {
-            font-size: 1em;
-            padding-top: 0.2em;
-            padding-bottom: 0.2em;
+            font-size: 1.1em;
+
+            .title-label {
+                padding-top: 1px; // offset bottom border
+                line-height: normal;
+            }
         }
     }
 
@@ -295,6 +298,12 @@ html .ui-dialog {
             }
         }
 
+        input[type="checkbox"] {
+            margin: revert;  // RESET Strava orion
+            padding: revert;  // RESET Strava orion
+            top: revert;  // RESET Strava orion
+        }
+
         select {
             border-radius: 0.22em;
             padding: 0.25em 0.5em;
@@ -386,7 +395,7 @@ html .ui-dialog {
             color: color.get(accent4);
             font-weight: bold;
         }
-        
+
         ul.notes {
             &,
             li {
