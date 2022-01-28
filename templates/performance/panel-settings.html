@@ -2,8 +2,8 @@
     <div class="entry">
         <key>{{{/name}}}:</key>
         <value>
-            <input type="text" name="name"
-                   value="<% if (settings.name) { %>{{settings.name}}<% } else { %>{{{[panel.spec.nameLocaleKey]}}}<% } %>"/>
+            <input type="text" name="name" value="{{settings.name}}"
+                   placeholder="{{{[panel.spec.nameLocaleKey]}}}"/>
         </value>
     </div>
 

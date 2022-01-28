@@ -162,11 +162,16 @@ export class PerfView extends SauceView {
         return {};
     }
 
+    _prefKey() {
+        const name = this.constructor.name;
+        return this.id ? `${name}-${this.id}` : name;
+    }
+
     getPrefs(key, defaultValue) {
         if (!this._prefs) {
             this._prefs = {
                 ...this.defaultPrefs,
-                ...sauce.storage.getPrefFast(this.constructor.name),
+                ...sauce.storage.getPrefFast(this._prefKey()),
             };
         }
         if (key && defaultValue !== undefined && !this._prefs[key]) {
@@ -177,7 +182,14 @@ export class PerfView extends SauceView {
 
     async savePrefs(updates) {
         Object.assign(this._prefs, updates);
-        await sauce.storage.setPref(this.constructor.name, this._prefs);
+        await sauce.storage.setPref(this._prefKey(), this._prefs);
+    }
+
+    async init(options={}) {
+        if (options.name) {
+            this.name = options.name;
+        }
+        await super.init(options);
     }
 }
 
@@ -711,6 +723,7 @@ export class MainView extends PerfView {
             'click header.filters .btn.range': 'onRangeShiftClick',
             'click header.filters .btn.expand': 'onExpandClick',
             'click header.filters .btn.compress': 'onCompressClick',
+            'click header.filters .btn.add-panel': 'onPanelAddClick',
             'click .sauce-panel .sauce-panel-settings.btn': 'onPanelSettingsClick',
         };
     }
@@ -720,10 +733,12 @@ export class MainView extends PerfView {
     }
 
     get localeKeys() {
-        return [
-            'weekly', 'monthly', 'yearly', 'activities', 'today', 'panel_settings_title',
-            'auto', '/delete', '/add'
+        const keys = [
+            'activities', 'today', 'panel_settings_title', 'auto', '/delete', '/add', 'panel_add_title',
         ];
+        keys.push(...this.panelSpecs.map(x => x.nameLocaleKey));
+        keys.push(...this.panelSpecs.map(x => x.descLocaleKey));
+        return keys;
     }
 
     get panelSpecs() {
@@ -744,15 +759,18 @@ export class MainView extends PerfView {
         this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
         await super.init();
-        for (const prefs of this.getPrefs('panels')) {
-            const View = this.getPanelView(prefs.view);
-            const view = new View({pageView});
-            this.panels.push({
-                view,
-                prefs,
-                spec: this.panelSpecs.find(x => x.View === View),
-            });
+        for (const panelPrefs of this.getPrefs('panels')) {
+            this.panels.push(this._createPanel(panelPrefs));
         }
+    }
+
+    _createPanel(prefs) {
+        const View = this.getPanelView(prefs.view);
+        const spec = this.panelSpecs.find(x => x.View === View);
+        const name = prefs.settings.name || this.LM(spec.nameLocaleKey);
+        const id = prefs.id;
+        const view = new View({id, name, pageView: this.pageView});
+        return {view, prefs, spec};
     }
 
     setElement(el, ...args) {
@@ -778,6 +796,7 @@ export class MainView extends PerfView {
     }
 
     async render() {
+        const hadPanels = this.$('.sauce-panels .sauce-panel').length;
         await super.render();
         const $panels = this.$('.sauce-panels');
         for (const [i, x] of this.panels.entries()) {
@@ -787,6 +806,10 @@ export class MainView extends PerfView {
             x.view.el.style.setProperty('--height-factor', x.prefs.settings.heightFactor || 1);
             await x.view.render();
             $panels.append(x.view.$el);
+            if (hadPanels) {
+                // Our original element was stomped we need to readd event handlers.
+                x.view.delegateEvents();
+            }
         }
     }
 
@@ -800,7 +823,8 @@ export class MainView extends PerfView {
 
     async onPanelAddClick(ev) {
         const template = await sauce.template.getTemplate('performance/panel-add.html', 'performance');
-        sauce.ui.dialog({
+        let selected = 0;
+        const $dialog = sauce.ui.dialog({
             width: '18em',
             autoDestroy: true,
             flex: true,
@@ -812,8 +836,22 @@ export class MainView extends PerfView {
             extraButtons: [{
                 text: this.LM('add'),
                 class: 'btn btn-primary',
-                click: () => {
-                    debugger; // XXX
+                click: async () => {
+                    const spec = this.panelSpecs[selected];
+                    const view = spec.View.name;
+                    const panelPrefs = {
+                        id: `custom-${view}-${Date.now()}`,
+                        view,
+                        settings: {
+                            name: $dialog.find('input[name="name"]').val() || undefined,
+                        }
+                    };
+                    this.getPrefs('panels').unshift(panelPrefs);
+                    this.panels.unshift(this._createPanel(panelPrefs));
+                    await this.savePrefs();
+                    await this.render();
+                    await this.pageView.schedUpdateActivities();
+                    $dialog.dialog('destroy');
                 }
             }],
             position: {
@@ -823,6 +861,13 @@ export class MainView extends PerfView {
             },
             dialogClass: 'sauce-performance-panel-settings no-pad sauce-small',
             resizable: false,
+        });
+        $dialog.on('change', 'select[name="type"]', async ev => {
+            const el = ev.currentTarget;
+            selected = Number(el.value);
+            const spec = this.panelSpecs[selected];
+            $dialog.find('.desc').text(this.LM(spec.descLocaleKey));
+            $dialog.find('input[name="name"]').attr('placeholder', this.LM(spec.nameLocaleKey));
         });
     }
 
@@ -851,8 +896,12 @@ export class MainView extends PerfView {
             extraButtons: [{
                 text: this.LM('delete'),
                 class: 'btn sauce-negative',
-                click: () => {
-                    debugger; // XXX
+                click: async () => {
+                    allPrefs.splice(order, 1);
+                    this.panels.splice(order, 1);
+                    await this.savePrefs();
+                    await this.render();
+                    $dialog.dialog('destroy');
                 }
             }],
             position: {
@@ -862,6 +911,16 @@ export class MainView extends PerfView {
             },
             dialogClass: 'sauce-performance-panel-settings no-pad sauce-small',
             resizable: false,
+        });
+        $dialog.on('input', 'input[name="name"]', async ev => {
+            const el = ev.currentTarget;
+            const name = el.value || undefined;
+            const nameEl = panelEl.querySelector('.panel-name');
+            if (nameEl) {
+                nameEl.textContent = name || this.LM(panel.spec.nameLocaleKey);
+            }
+            settings.name = name;
+            await this.savePrefs();
         });
         $dialog.on('input', 'input[name="position"]', async ev => {
             const el = ev.currentTarget;
@@ -924,12 +983,6 @@ export class MainView extends PerfView {
     updateRangeButtons(range, oldest) {
         range = range || this.pageView.getRangeSnapshot();
         oldest = oldest || this.pageView.oldest;
-        const localeMetricMap = {
-            weeks: 'weekly',
-            months: 'monthly',
-            years: 'yearly',
-        };
-        this.$('.metric-display').text(this.LM(localeMetricMap[range.metric]));
         const $start = this.$('header .range.start');
         const $end = this.$('header .range.end');
         const selectedRange = this.pageView.allRange ? 'all' : `${range.period},${range.metric}`;
@@ -956,6 +1009,10 @@ export class MainView extends PerfView {
 
 
 export class PageView extends PerfView {
+    get localeKeys() {
+        return ['weekly', 'monthly', 'yearly'];
+    }
+
     get events() {
         return {
             ...super.events,
@@ -1008,6 +1065,15 @@ export class PageView extends PerfView {
                 f.period || defaults.period || 4,
                 f.metric || defaults.metric || 'weeks');
         }
+    }
+
+    getMetricLocale(metric) {
+        const localeMetricMap = {
+            weeks: 'weekly',
+            months: 'monthly',
+            years: 'yearly',
+        };
+        return this.LM(localeMetricMap[metric]);
     }
 
     renderAttrs() {

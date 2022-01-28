@@ -46,23 +46,7 @@ export function setDefault(obj, path, value) {
 
 class ChartVisibilityPlugin {
     constructor(config, view) {
-        const _this = this;
-        setDefault(config, 'options.legend.onClick', function(...args) {
-            _this.onLegendClick(this, ...args);
-        });
         this.view = view;
-    }
-
-    onLegendClick(element, ev, item) {
-        // WARNING: this code has been unused for a while.
-        this.legendClicking = true;
-        try {
-            Chart.defaults.global.legend.onClick.call(element, ev, item);
-        } finally {
-            this.legendClicking = false;
-        }
-        const index = item.datasetIndex;
-        this.view.toggleDataVisibility(element.chart.data.datasets[index].id);
     }
 
     beforeUpdate(chart) {
@@ -574,19 +558,14 @@ export class ChartView extends views.PerfView {
         };
     }
 
-    async init({pageView, id, ChartClass=SauceChart}) {
-        if (!pageView || !id || !ChartClass) {
+    async init({pageView, ChartClass=SauceChart, ...options}) {
+        if (!pageView || !ChartClass) {
             throw new TypeError('missing args');
         }
         this.pageView = pageView;
-        this.id = id;
         this._ChartClass = ChartClass;
-        await super.init();
+        await super.init(options);
         this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
-    }
-
-    setElement($el) {
-        super.setElement($el);
     }
 
     setChartConfig(config) {
@@ -594,17 +573,23 @@ export class ChartView extends views.PerfView {
     }
 
     async render() {
-        await super.render();
-        if (this.chart) {
+        const $canvas = this.$el && this.$('canvas');
+        if ($canvas && $canvas.length) {
             // Because of the funky config system we never rebuild a chart, we use just one.
-            // So we need to save the canvas from the first render.
-            this.chart.stop();
-            this.$canvas = this.$('canvas');
-            this.$('canvas').replaceWith(this.$canvas);
+            // So we need to save the canvas from the first render and then reattach after.
+            if (this.chart) {
+                this.chart.stop();
+            }
+            $canvas.detach();
+        }
+        await super.render();
+        if ($canvas && $canvas.length) {
+            this.$('canvas').replaceWith($canvas);
+        }
+        if (this.chart) {
             this.chart.update();
         } else if (this._chartConfig) {
-            this.$canvas = this.$('canvas');
-            const ctx = this.$canvas[0].getContext('2d');
+            const ctx = this.$('canvas')[0].getContext('2d');
             this.chart = new this._ChartClass(ctx, this, this._chartConfig);
         }
     }
@@ -648,6 +633,10 @@ export class ActivityTimeRangeChartView extends ChartView {
 
     async init(options) {
         await super.init({ChartClass: ActivityTimeRangeChart, ...options});
+    }
+
+    renderAttrs(extra) {
+        return {name: this.name, ...extra};
     }
 
     onDataLabelClick(ev) {

@@ -24,7 +24,7 @@ class TrainingChartView extends charts.ActivityTimeRangeChartView {
     }
 
     async init(options) {
-        await super.init({...options, id: 'training'});
+        await super.init(options);
         this.setChartConfig({
             plugins: [charts.overUnderFillPlugin],
             options: {
@@ -201,7 +201,7 @@ class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
     }
 
     async init(options) {
-        await super.init({...options, id: 'activity-volume'});
+        await super.init(options);
         const distStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
         this.setChartConfig({
             type: 'bar',
@@ -242,6 +242,7 @@ class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
     }
 
     onUpdateActivities({range, daily, metricData}) {
+        this.$('.metric-display').text(this.pageView.getMetricLocale(range.metric));
         let predictions;
         if (D.tomorrow() <= range.end && metricData.length) {
             const remaining = (range.end - Date.now()) / DAY;
@@ -382,7 +383,7 @@ class ElevationChartView extends charts.ActivityTimeRangeChartView {
     async init(options) {
         const thousandFeet = 1609.344 / 5280 * 100;
         const stepSize = L.elevationFormatter.unitSystem === 'imperial' ? thousandFeet : 1000;
-        await super.init({...options, id: 'elevation'});
+        await super.init(options);
         this.setChartConfig({
             options: {
                 elements: {

@@ -1,0 +1,19 @@
+<form class="sauce-key-value sauce-vertical">
+    <div class="entry">
+        <key>{{{/type}}}:</key>
+        <value>
+            <select name="type">
+                <% for (const [i, x] of specs.entries()) { %>
+                    <option value="{{i}}">{{{[x.nameLocaleKey]}}}</option>
+                <% } %>
+            </select>
+        </value>
+        <br/>
+        <p class="desc">{{{[specs[0].descLocaleKey]}}}</p>
+    </div>
+
+    <div class="entry">
+        <key>{{{/name}}}:</key>
+        <value><input type="text" name="name" placeholder="{{{[specs[0].nameLocaleKey]}}}"/></value>
+    </div>
+</form>
