@@ -33,6 +33,17 @@ html.sauce-performance {
     body {
         overflow: auto;
     }
+
+    input:not([type="range"]),
+    textarea {
+        border: 1px solid color.shade(bg, 20%);
+    }
+
+    input:focus:not([type="range"]),
+    textarea:focus {
+        border-color: color.shade(accent4, 0%);
+        outline: none;
+    }
 }
 
 .sauce-dialog.sauce-performance-panel-settings {
@@ -794,7 +805,7 @@ table.sauce-perf {
         }
     }
 
-    .peaks-view {
+    .sauce-panel-content.peaks-view {
         $results-height: calc(25vh * var(--height-factor));
         background-color: color.shade(bg, 3%);
         border: 1px solid color.shade(fg, 20%, 0.2);
@@ -997,9 +1008,14 @@ table.sauce-perf {
         section.sauce-panels {
             padding: 1em;
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: space-around;
 
             .sauce-panel {
+                --width-factor: 1;
+                --height-factor: 1;
+                flex: 0 1 calc((100% * var(--width-factor)) - 2px); // 2px for safety
+                overflow: hidden;
                 position: relative;
 
                 &:hover {
@@ -1263,8 +1279,8 @@ table.sauce-perf {
 
             .activity {
                 row .btn {
+                    font-size: 0.68em;
                     color: inherit;
-                    float: right;
                 }
             }
 

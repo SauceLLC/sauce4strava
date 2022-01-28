@@ -331,9 +331,13 @@ export class ActivityTimeRangeChart extends SauceChart {
         setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
         setDefault(config, 'options.tooltips.activitiesFormatter', (...args) =>
             _this.activitiesTooltipFormatter(...args));
-        setDefault(config, 'options.tooltips.custom', sauce.debounced(requestAnimationFrame, tt =>
-            tt.dataPoints && tt.dataPoints.length &&
-            _this.updateTooltips(...tt.dataPoints.map(x => [x.datasetIndex, x.index]))));
+        const ttAnimation = sauce.ui.throttledAnimationFrame();
+        setDefault(config, 'options.tooltips.custom', tt => {
+            if (tt.dataPoints && tt.dataPoints.length) {
+                const tuples = tt.dataPoints.map(x => [x.datasetIndex, x.index]);
+                ttAnimation(() => _this.updateTooltips(...tuples));
+            }
+        });
         setDefault(config, 'options.plugins.zoom.enabled', true);
         setDefault(config, 'options.plugins.zoom.callbacks.beforeZoom', (...args) =>
             _this.onBeforeZoom(...args));

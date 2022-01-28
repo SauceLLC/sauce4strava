@@ -408,6 +408,7 @@
     "performance_panel_settings_tooltip": {"message": "Edit settings for this panel"},
     "performance_panel_settings_title": {"message": "Panel Settings"},
     "performance_panel_position": {"message": "Position"},
+    "performance_panel_width": {"message": "Width"},
     "performance_panel_height": {"message": "Height"},
     "performance_panel_add_tooltip": {"message": "Add a new panel to this page"},
     "performance_panel_add_title": {"message": "Add New Panel"},

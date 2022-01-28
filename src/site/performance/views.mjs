@@ -185,10 +185,8 @@ export class PerfView extends SauceView {
         await sauce.storage.setPref(this._prefKey(), this._prefs);
     }
 
-    async init(options={}) {
-        if (options.name) {
-            this.name = options.name;
-        }
+    async init({name, ...options}) {
+        this.name = name;
         await super.init(options);
     }
 }
@@ -222,7 +220,7 @@ export class SummaryView extends PerfView {
         };
     }
 
-    async init({pageView}) {
+    async init({pageView, ...options}) {
         this.pageView = pageView;
         this.sync = {};
         this.daily = [];
@@ -234,8 +232,8 @@ export class SummaryView extends PerfView {
         if (pageView.athlete) {
             await this.setAthlete(pageView.athlete);
         }
-        await super.init();
-        this.listenTo(pageView, 'update-activities', sauce.asyncDebounced(this.onUpdateActivities));
+        await super.init(options);
+        this.listenTo(pageView, 'update-activities', sauce.debounced(this.onUpdateActivities));
     }
 
     async findPeaks() {
@@ -447,7 +445,7 @@ export class DetailsView extends PerfView {
         };
     }
 
-    async init({pageView}) {
+    async init({pageView, ...options}) {
         this.onSyncProgress = this._onSyncProgress.bind(this);
         this.pageView = pageView;
         this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
@@ -455,7 +453,7 @@ export class DetailsView extends PerfView {
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
         this.setAthlete(pageView.athlete);
         this.manifests = await sauce.hist.getActivitySyncManifests('local');
-        await super.init();
+        await super.init(options);
     }
 
     setElement(el, ...args) {
@@ -653,12 +651,12 @@ export class BulkActivityEditDialog extends PerfView {
         return 'performance/bulkedit.html';
     }
 
-    async init({activities, pageView}) {
+    async init({activities, pageView, ...options}) {
         this.activities = activities;
         this.pageView = pageView;
         this.athletes = new Set(activities.map(x => x.athlete));
         this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
-        await super.init();
+        await super.init(options);
     }
 
     renderAttrs() {
@@ -753,12 +751,12 @@ export class MainView extends PerfView {
 
     safeGetPanelView(name) {}
 
-    async init({pageView}) {
+    async init({pageView, ...options}) {
         this.panels = [];
         this.pageView = pageView;
         this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
-        await super.init();
+        await super.init(options);
         for (const panelPrefs of this.getPrefs('panels')) {
             this.panels.push(this._createPanel(panelPrefs));
         }
@@ -804,6 +802,7 @@ export class MainView extends PerfView {
             x.view.el.dataset.id = x.prefs.id;
             x.view.el.style.order = i;
             x.view.el.style.setProperty('--height-factor', x.prefs.settings.heightFactor || 1);
+            x.view.el.style.setProperty('--width-factor', x.prefs.settings.widthFactor || 1);
             await x.view.render();
             $panels.append(x.view.$el);
             if (hadPanels) {
@@ -879,7 +878,9 @@ export class MainView extends PerfView {
         const panel = this.panels[order];
         const template = await sauce.template.getTemplate('performance/panel-settings.html', 'performance');
         const settings = panel.prefs.settings;
-        const heightHint = () => !settings.heightFactor ? this.LM('auto') : H.number(settings.heightFactor * 100) + '%';
+        const sizeHint = key => !settings[key + 'Factor'] ?
+            this.LM('auto') : H.number(settings[key + 'Factor'] * 100) + '%';
+        const throttleAnimation = sauce.ui.throttledAnimationFrame();
         const $dialog = sauce.ui.dialog({
             width: '18em',
             autoDestroy: true,
@@ -891,7 +892,7 @@ export class MainView extends PerfView {
                 settings,
                 panelCount: this.panels.length,
                 order,
-                heightHint,
+                sizeHint,
             }),
             extraButtons: [{
                 text: this.LM('delete'),
@@ -938,11 +939,15 @@ export class MainView extends PerfView {
             await this.savePrefs();
             panel.view.el.scrollIntoView({behavior: 'smooth'});
         });
-        $dialog.on('input', 'input[name="height-factor"]', async ev => {
+        $dialog.on('input', 'input.size-factor[type="range"]', async ev => {
             const el = ev.currentTarget;
-            settings.heightFactor = Number(el.value);
-            el.nextElementSibling.textContent = heightHint();
-            panel.view.el.style.setProperty('--height-factor', settings.heightFactor || 1);
+            const key = el.name;
+            const value = Number(el.value);
+            settings[key + 'Factor'] = value;
+            throttleAnimation(() => {
+                el.nextElementSibling.textContent = sizeHint(key);
+                panel.view.el.style.setProperty(`--${key}-factor`, value || 1);
+            });
             await this.savePrefs();
         });
     }
@@ -1035,13 +1040,13 @@ export class PageView extends PerfView {
         };
     }
 
-    async init({router, MainView, athletes}) {
+    async init({router, MainView, athletes, ...options}) {
         this.router = router;
         this.onSyncProgress = this._onSyncProgress.bind(this);
         this.athletes = athletes;
         this.syncButtons = new Map();
         const f = router.filters;
-        this.schedUpdateActivities = sauce.asyncDebounced(this._schedUpdateActivities);
+        this.schedUpdateActivities = sauce.debounced(this._schedUpdateActivities);
         await this.setAthleteId(f.athleteId);
         this._setRangeFromRouter();
         this.summaryView = new SummaryView({pageView: this});
@@ -1050,7 +1055,7 @@ export class PageView extends PerfView {
         router.setFilters(this.athlete, this._range, {replace: true, all: this.allRange});
         router.on('route:onNav', this.onRouterNav.bind(this));
         router.on('route:onNavAll', this.onRouterNav.bind(this));
-        await super.init();
+        await super.init(options);
     }
 
     _setRangeFromRouter() {
@@ -1312,7 +1317,7 @@ export class OnboardingView extends PerfView {
         return 'performance/onboarding.html';
     }
 
-    async init() {
+    async init(options) {
         this.$el.addClass('onboarding');
         if (self.CSS && self.CSS.registerProperty) {
             this.$el.addClass('animate-hue');
@@ -1323,7 +1328,7 @@ export class OnboardingView extends PerfView {
                 initialValue: 0
             });
         }
-        await super.init();
+        await super.init(options);
     }
 
     async onOnboardingEnableClick(ev) {

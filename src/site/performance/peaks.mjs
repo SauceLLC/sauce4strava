@@ -80,23 +80,24 @@ class PeaksTableView extends views.PerfView {
         };
     }
 
-    async init({pageView}) {
+    async init({pageView, ...options}) {
         this.pageView = pageView;
         this.range = pageView.getRangeSnapshot();
         this.athlete = pageView.athlete;
         this.athleteNameCache = new Map();
         this.listenTo(pageView, 'before-update-activities',
-            sauce.asyncDebounced(this.onBeforeUpdateActivities));
+            sauce.debounced(this.onBeforeUpdateActivities));
         this.peakRanges = {
             periods: await views.getPeakRanges('periods'),
             distances: await views.getPeakRanges('distances'),
         };
-        await super.init();
+        await super.init(options);
     }
 
     renderAttrs() {
         const prefs = this.getPrefs();
         return {
+            name: this.name,
             prefs,
             peaks: this.peaks,
             mile: 1609.344,
@@ -223,17 +224,18 @@ class PeaksTableView extends views.PerfView {
     onResizePointerDown(ev) {
         ev.preventDefault();
         ev.stopPropagation();
-        const origHeight = this.$el.height();
+        const $content = this.$('.sauce-panel-content');
+        const origHeight = $content.height();
         const origPageY = ev.pageY;
-        this.$el.height(origHeight);
-        this.$el.addClass('fixed-height');
+        $content.height(origHeight);
+        $content.addClass('fixed-height');
         const onDragDone = () => {
             removeEventListener('pointermove', onDrag);
             removeEventListener('pointerup', onDragDone);
             removeEventListener('pointercancel', onDragDone);
         };
         const onDrag = ev => {
-            this.$el.height(origHeight + (ev.pageY - origPageY));
+            $content.height(origHeight + (ev.pageY - origPageY));
         };
         addEventListener('pointermove', onDrag);
         addEventListener('pointerup', onDragDone);

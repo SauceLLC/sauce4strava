@@ -901,8 +901,8 @@ class SyncJob extends EventTarget {
         this._rateLimiters = getStreamRateLimiterGroup();
         this._procQueue = new queues.Queue();
         this._running = false;
-        this.niceSaveActivities = sauce.asyncDebounced(this.saveActivities);
-        this.niceSendProgressEvent = sauce.asyncDebounced(this.sendProgressEvent);
+        this.niceSaveActivities = sauce.debounced(this.saveActivities);
+        this.niceSendProgressEvent = sauce.debounced(this.sendProgressEvent);
         this.setStatus('init');
     }
 
