@@ -27,6 +27,24 @@
     "female": {
         "message": "Weiblich"
     },
+    "maximize_tooltip": {
+        "message": "Maximieren"
+    },
+    "restore_tooltip": {
+        "message": "Wiederherstellen"
+    },
+    "remove": {
+        "message": "Entfernen"
+    },
+    "delete": {
+        "message": "Löschen"
+    },
+    "save": {
+        "message": "speichern"
+    },
+    "add": {
+        "message": "Hinzufügen"
+    },
     "menu_performance_fitness": {
         "message": "Fitness-Tracking"
     },
@@ -1109,15 +1127,27 @@
     "performance_peak_performances_title": {
         "message": "Spitzenleistungen"
     },
+    "performance_peak_performances_desc": {
+        "message": "Beste oder höchste Leistungen für verschiedene Zeiten und Distanzen"
+    },
     "performance_training_load_title": {
-        "message": "Trainingsbelastung - Fitness, Müdigkeit und Form"
+        "message": "Trainingsbelastung"
+    },
+    "performance_training_load_desc": {
+        "message": "Fitness, Müdigkeit und Form"
     },
     "performance_activities_title": {
         "message": "Aktivitäten"
     },
+    "performance_activities_desc": {
+        "message": "Entfernung, Stunden und TSS im Laufe der Zeit"
+    },
     "performance_elevation_title": {
         "message": "Höhenmeter",
         "description": "IMMUTABLE"
+    },
+    "performance_elevation_desc": {
+        "message": "Vertikaler Aufstieg im Laufe der Zeit"
     },
     "performance_time_range": {
         "message": "Zeitspanne"
@@ -1203,11 +1233,32 @@
     "performance_inactive": {
         "message": "Inaktiv"
     },
+    "performance_sync_error": {
+        "message": "Synchronisierungsfehler"
+    },
+    "performance_panel_settings_tooltip": {
+        "message": "Bearbeiten Sie die Einstellungen für dieses Panel"
+    },
+    "performance_panel_settings_title": {
+        "message": "Panel-Einstellungen"
+    },
+    "performance_panel_position": {
+        "message": "Position"
+    },
+    "performance_panel_height": {
+        "message": "Höhe"
+    },
+    "performance_panel_add_tooltip": {
+        "message": "Fügen Sie dieser Seite ein neues Panel hinzu"
+    },
+    "performance_panel_add_title": {
+        "message": "Neues Bedienfeld hinzufügen"
+    },
+    "performance_auto": {
+        "message": "Auto"
+    },
     "season_start": {
         "message": "Saisonbeginn"
-    },
-    "save": {
-        "message": "speichern"
     },
     "graph_options_wbal_help": {
         "message": "<a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">W'balance ist eine von Dr. Philip Skiba</a> erstellte Darstellung der Arbeit, die oberhalb des Schwellenwerts geleistet wurde. Sie können es sich als Ihre anaerobe Batterie vorstellen. Jedes Mal, wenn Sie sich über Ihr FTP/CP bemühen, wird Ihr Akku entladen und es dauert seine Zeit, ihn wieder aufzufüllen. Wenn Ihr W'bal 0 erreicht, werden Sie es fast unmöglich finden, über einen längeren Zeitraum Anstrengungen über Ihrem FTP/CP zu produzieren.<br/><br/> Weitere Informationen und eine großartige Erklärung finden Sie in <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">diesem ausgezeichneten Artikel von Dr. Skiba selbst</a> ."

@@ -28,6 +28,25 @@
     "female": {
         "message": "女"
     },
+    "maximize_tooltip": {
+        "message": "最大化"
+    },
+    "restore_tooltip": {
+        "message": "恢复"
+    },
+    "remove": {
+        "message": "消除"
+    },
+    "delete": {
+        "message": "删除"
+    },
+    "save": {
+        "message": "保存",
+        "description": "IMMUTABLE"
+    },
+    "add": {
+        "message": "添加"
+    },
     "menu_performance_fitness": {
         "message": "健身追踪"
     },
@@ -1228,17 +1247,29 @@
         "message": "巅峰表现",
         "description": "IMMUTABLE"
     },
+    "performance_peak_performances_desc": {
+        "message": "不同时间和距离的最佳或最高性能"
+    },
     "performance_training_load_title": {
         "message": "训练负荷 - 健康状况、疲劳度和体能",
         "description": "IMMUTABLE"
+    },
+    "performance_training_load_desc": {
+        "message": "健身、疲劳和形式"
     },
     "performance_activities_title": {
         "message": "活动",
         "description": "IMMUTABLE"
     },
+    "performance_activities_desc": {
+        "message": "距离、小时数和 TSS 随时间变化"
+    },
     "performance_elevation_title": {
         "message": "海拔爬升",
         "description": "IMMUTABLE"
+    },
+    "performance_elevation_desc": {
+        "message": "随着时间的推移垂直上升"
     },
     "performance_time_range": {
         "message": "时间范围",
@@ -1352,12 +1383,32 @@
         "message": "不活跃",
         "description": "IMMUTABLE"
     },
+    "performance_sync_error": {
+        "message": "同步错误"
+    },
+    "performance_panel_settings_tooltip": {
+        "message": "编辑此面板的设置"
+    },
+    "performance_panel_settings_title": {
+        "message": "面板设置"
+    },
+    "performance_panel_position": {
+        "message": "位置"
+    },
+    "performance_panel_height": {
+        "message": "高度"
+    },
+    "performance_panel_add_tooltip": {
+        "message": "向此页面添加新面板"
+    },
+    "performance_panel_add_title": {
+        "message": "添加新面板"
+    },
+    "performance_auto": {
+        "message": "汽车"
+    },
     "season_start": {
         "message": "季节开始"
-    },
-    "save": {
-        "message": "保存",
-        "description": "IMMUTABLE"
     },
     "graph_options_wbal_help": {
         "message": "<a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">W'balance 是 Philip Skiba 博士</a>创建的描述高于阈值强度的输出表现。你可以把它想象成是你的无氧电池储备。每次你在高于 FTP/CP 的强度之上输出时，你的电池就会损耗并且需要时间来补充。如果你的 W'bal 减小到 0，那么你会发现几乎就无法在高于 FTP/CP 的强度上进行持续的输出了。<br/><br/>更多相关的信息和充分的解释，请参阅<a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\"> Skiba 博士本人撰写的这篇优秀文章</a>。",

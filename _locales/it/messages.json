@@ -26,6 +26,24 @@
     "female": {
         "message": "Femmina"
     },
+    "maximize_tooltip": {
+        "message": "Massimizza"
+    },
+    "restore_tooltip": {
+        "message": "Ristabilire"
+    },
+    "remove": {
+        "message": "Rimuovere"
+    },
+    "delete": {
+        "message": "Eliminare"
+    },
+    "save": {
+        "message": "Salva"
+    },
+    "add": {
+        "message": "Aggiungere"
+    },
     "menu_performance_fitness": {
         "message": "Monitoraggio fitness"
     },
@@ -1093,14 +1111,26 @@
     "performance_peak_performances_title": {
         "message": "Prestazioni di punta"
     },
+    "performance_peak_performances_desc": {
+        "message": "Prestazioni migliori o più elevate per tempi e distanze differenti"
+    },
     "performance_training_load_title": {
-        "message": "Carico di allenamento - Fitness, fatica e forma"
+        "message": "Carico di allenamento"
+    },
+    "performance_training_load_desc": {
+        "message": "Fitness, Fatica e Forma"
     },
     "performance_activities_title": {
         "message": "Attività"
     },
+    "performance_activities_desc": {
+        "message": "Distanza, ore e TSS nel tempo"
+    },
     "performance_elevation_title": {
         "message": "Dislivello"
+    },
+    "performance_elevation_desc": {
+        "message": "Salita verticale nel tempo"
     },
     "performance_time_range": {
         "message": "Intervallo di tempo"
@@ -1186,11 +1216,32 @@
     "performance_inactive": {
         "message": "Non attivo"
     },
+    "performance_sync_error": {
+        "message": "Errore di sincronizzazione"
+    },
+    "performance_panel_settings_tooltip": {
+        "message": "Modifica le impostazioni per questo pannello"
+    },
+    "performance_panel_settings_title": {
+        "message": "Impostazioni del pannello"
+    },
+    "performance_panel_position": {
+        "message": "Posizione"
+    },
+    "performance_panel_height": {
+        "message": "Altezza"
+    },
+    "performance_panel_add_tooltip": {
+        "message": "Aggiungi un nuovo pannello a questa pagina"
+    },
+    "performance_panel_add_title": {
+        "message": "Aggiungi nuovo pannello"
+    },
+    "performance_auto": {
+        "message": "auto"
+    },
     "season_start": {
         "message": "Inizio della stagione"
-    },
-    "save": {
-        "message": "Salva"
     },
     "graph_options_wbal_help": {
         "message": "W'balance è una rappresentazione del lavoro svolto sopra la soglia creata dal <a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">Dr. Philip Skiba</a> . Puoi pensarla come la tua batteria anaerobica. Ogni volta che fai sforzi sul tuo FTP/CP, la batteria si scarica e ci vuole tempo per ricaricarla. Se il tuo W'bal raggiunge lo 0, troverai quasi impossibile produrre sforzi al di sopra del tuo FTP/CP per qualsiasi periodo di tempo.<br/><br/> Per ulteriori informazioni e un'ottima spiegazione, vedere <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">questo eccellente articolo dello stesso Dr. Skiba</a> ."

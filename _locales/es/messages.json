@@ -27,6 +27,24 @@
     "female": {
         "message": "Hembra"
     },
+    "maximize_tooltip": {
+        "message": "Maximizar"
+    },
+    "restore_tooltip": {
+        "message": "Restaurar"
+    },
+    "remove": {
+        "message": "Eliminar"
+    },
+    "delete": {
+        "message": "Borrar"
+    },
+    "save": {
+        "message": "Salvar"
+    },
+    "add": {
+        "message": "Agregar"
+    },
     "menu_performance_fitness": {
         "message": "Rastreador de fitness",
         "description": "IMMUTABLE"
@@ -1087,14 +1105,26 @@
     "performance_peak_performances_title": {
         "message": "Actuaciones pico"
     },
+    "performance_peak_performances_desc": {
+        "message": "Las mejores o más altas actuaciones para diferentes tiempos y distancias."
+    },
     "performance_training_load_title": {
-        "message": "Carga de entrenamiento: condición física, fatiga y forma"
+        "message": "Carga de entrenamiento"
+    },
+    "performance_training_load_desc": {
+        "message": "Fitness, Fatiga y Forma"
     },
     "performance_activities_title": {
         "message": "Ocupaciones"
     },
+    "performance_activities_desc": {
+        "message": "Distancia, horas y TSS a lo largo del tiempo"
+    },
     "performance_elevation_title": {
         "message": "Desnivel"
+    },
+    "performance_elevation_desc": {
+        "message": "Ascenso vertical en el tiempo"
     },
     "performance_time_range": {
         "message": "Intervalo de tiempo"
@@ -1180,11 +1210,32 @@
     "performance_inactive": {
         "message": "Inactivo"
     },
+    "performance_sync_error": {
+        "message": "Error de sincronización"
+    },
+    "performance_panel_settings_tooltip": {
+        "message": "Editar la configuración de este panel"
+    },
+    "performance_panel_settings_title": {
+        "message": "Configuración del panel"
+    },
+    "performance_panel_position": {
+        "message": "Posición"
+    },
+    "performance_panel_height": {
+        "message": "Altura"
+    },
+    "performance_panel_add_tooltip": {
+        "message": "Agregar un nuevo panel a esta página"
+    },
+    "performance_panel_add_title": {
+        "message": "Agregar nuevo panel"
+    },
+    "performance_auto": {
+        "message": "auto"
+    },
     "season_start": {
         "message": "Inicio de temporada"
-    },
-    "save": {
-        "message": "Salvar"
     },
     "graph_options_wbal_help": {
         "message": "W'balance es una representación del trabajo realizado por encima del umbral creado por el <a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">Dr. Philip Skiba</a> . Puede pensar en él como su batería anaeróbica. Cada vez que realiza esfuerzos en su FTP / CP, la batería se agota y lleva tiempo recargarla. Si su W'bal llega a 0, le resultará casi imposible realizar esfuerzos por encima de su FTP / CP durante cualquier período de tiempo.<br/><br/> Para obtener más información y una gran explicación, consulte <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">este excelente artículo del propio Dr. Skiba</a> ."
