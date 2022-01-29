@@ -515,6 +515,10 @@ class FitnessMainView extends views.MainView {
                 view: 'ActivityVolumeChartView',
                 settings: {},
             }, {
+                id: 'panel-default-zonetimes-3',
+                view: 'ZoneTimeChartView',
+                settings: {},
+            }, {
                 id: 'panel-default-elevation-2',
                 view: 'ElevationChartView',
                 settings: {},
