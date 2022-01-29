@@ -1395,6 +1395,9 @@
     "performance_panel_position": {
         "message": "位置"
     },
+    "performance_panel_width": {
+        "message": "宽度"
+    },
     "performance_panel_height": {
         "message": "高度"
     },
@@ -1406,6 +1409,18 @@
     },
     "performance_auto": {
         "message": "汽车"
+    },
+    "performance_power_zones": {
+        "message": "电源区"
+    },
+    "performance_hr_zones": {
+        "message": "人力资源区"
+    },
+    "performance_zonetime_title": {
+        "message": "各区时间"
+    },
+    "performance_zonetime_desc": {
+        "message": "在不同功率和/或心率区花费的时间细分。"
     },
     "season_start": {
         "message": "季节开始"

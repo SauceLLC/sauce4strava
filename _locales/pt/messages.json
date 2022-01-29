@@ -1352,6 +1352,9 @@
     "performance_panel_position": {
         "message": "Posição"
     },
+    "performance_panel_width": {
+        "message": "Largura"
+    },
     "performance_panel_height": {
         "message": "Altura"
     },
@@ -1363,6 +1366,18 @@
     },
     "performance_auto": {
         "message": "auto"
+    },
+    "performance_power_zones": {
+        "message": "Zonas de energia"
+    },
+    "performance_hr_zones": {
+        "message": "Zonas de RH"
+    },
+    "performance_zonetime_title": {
+        "message": "Horário nas zonas"
+    },
+    "performance_zonetime_desc": {
+        "message": "Repartição do tempo gasto nas diferentes zonas de potência e/ou frequência cardíaca."
     },
     "season_start": {
         "message": "Início da temporada"

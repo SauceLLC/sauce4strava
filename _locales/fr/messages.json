@@ -1231,6 +1231,9 @@
     "performance_panel_position": {
         "message": "Positionner"
     },
+    "performance_panel_width": {
+        "message": "Largeur"
+    },
     "performance_panel_height": {
         "message": "Hauteur"
     },
@@ -1242,6 +1245,18 @@
     },
     "performance_auto": {
         "message": "auto"
+    },
+    "performance_power_zones": {
+        "message": "Zones de puissance"
+    },
+    "performance_hr_zones": {
+        "message": "Zones FC"
+    },
+    "performance_zonetime_title": {
+        "message": "Heure dans les zones"
+    },
+    "performance_zonetime_desc": {
+        "message": "Répartition du temps passé dans les différentes zones de puissance et/ou de fréquence cardiaque."
     },
     "season_start": {
         "message": "Début de la saison"
