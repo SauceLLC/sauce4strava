@@ -23,12 +23,21 @@ input[type="range"] {
     display: revert; // Reset Strava CSS for 404 page
 }
 
+// The CSS for the 404 page (orion) is missing a few things.
+.btn {
+    &.btn-sm,
+    &.btn-icon-only {
+        min-height: 30px;
+    }
+}
+
 
 html.sauce-performance {
     &, body {
         width: 100%;
         height: 100%;
     }
+
 
     body {
         overflow: auto;

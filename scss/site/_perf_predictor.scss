@@ -2,12 +2,6 @@
 
 @mixin dialog {
     &.sauce-perf-predictor {
-        form.sauce-key-value {
-            key {
-                word-break: break-all;
-            }
-        }
-
         .ui-dialog-content {
             display: flex;
             flex-wrap: wrap;
@@ -39,28 +33,11 @@
         form.input {
             flex: 1 1 55%;
             max-width: 100%;
-        }
 
-        input[type="checkbox"] {
-            top: initial;
-        }
-
-        .collapsable {
-            min-height: 2em;
-            padding-top: 0.4em !important;
-        }
-
-        .entry.flex {
-            display: flex;
-
-            key {
-                flex: 0 0 auto;
+            .entry {
+                padding-top: 0.2em;
+                padding-bottom: 0.2em;
             }
-        }
-
-        .indent {
-            display: flex;
-            flex-direction: column;
         }
 
         .columns {
@@ -246,6 +223,10 @@
             &:not(.visible) {
                 display: none;
             }
+        }
+
+        input[type="range"] {
+            max-width: 19vw;
         }
 
         input + .annotation {

@@ -374,8 +374,10 @@ sauce.ns('analysis', ns => {
                 await view.render();
                 const $modal = sauce.ui.modal({
                     title: `Edit Athlete ${isFTP ? 'FTP': 'Weight'}`, // XXX locale
+                    dialogClass: 'no-pad',
                     el: view.$el,
-                    width: '35em',
+                    width: '25em',
+                    height: 250,
                 });
                 $modal.on('dialogclose', async () => {
                     if (!view.edited) {

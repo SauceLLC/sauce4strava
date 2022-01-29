@@ -2,28 +2,18 @@
 @use 'buttons';
 
 .mutable-data-view {
-    @include buttons.uniform;
-
-    input {
-        background-color: transparent;
-        border: 1px solid color.shade(bg, 14%);
-        padding: 0.28em 0.4em;
-        border-radius: 0.22em;
-        line-height: normal;
-        height: initial;
-
-        &:invalid {
-            border: 1px dashed red;
-        }
-    }
-
-    input[type="number"] {
-        width: 7ch;
-        text-align: right;
-    }
+    max-height: 100%;
 
     .mutable-data-header {
         padding: 0.6em 1em 0.2em 1em;
+        position: relative;
+
+        a.help-info {
+            float: initial !important;
+            position: absolute;
+            top: 0.4rem;
+            right: 0.7rem;
+        }
     }
 
     .mutable-data-footer {
@@ -38,17 +28,21 @@
     .mutable-data-entries {
         padding: 0.4em 0;
         margin-bottom: 0.2em;
-        max-height: 10em;
         overflow: auto;
 
         .mutable-data-entry {
-            padding: 0.1em 1.2em;
+            padding: 0.2em 1.2em;
             display: flex;
             align-items: center;
 
             &:hover {
-                background-color: color.shade(bg, 20%, 0.4);
-                border-radius: 0.28em;
+                background-color: color.shade(bg, 20%, 0.4) !important;
+            }
+
+
+            input[type="number"] {
+                width: 7ch;
+                text-align: right;
             }
 
             key {
@@ -70,6 +64,13 @@
                     max-width: 100%;
                 }
             }
+        }
+
+        .mutable-data-entry:nth-child(even) {
+            background-color: color.shade(bg, 10%, 0.2);
+        }
+        .mutable-data-entry:nth-child(odd) {
+            background-color: color.shade(bg, 5%, 0.2);
         }
     }
 
@@ -97,14 +98,19 @@
     }
 
     .btn.mutable-data-entry-add {
-        color: green !important;
+        color: var(--sauce-positive) !important;
     }
 
     .btn.mutable-data-entry-delete {
-        color: red !important;
+        color: var(--sauce-negative) !important;
         flex: 1 0;
         display: flex;
         justify-content: flex-end;
         min-height: initial;
+
+        > svg[data-icon] {
+            height: 1em !important;
+            margin: -0.2em 0.1em;
+        }
     }
 }

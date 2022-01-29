@@ -70,6 +70,8 @@ html .ui-dialog {
     max-width: calc(100vw - (100vw - 100%));  // full viewport minus possible scrollbar
     max-height: calc(100vh - (100vh - 100%)); // full viewport minus possible scrollbar
     box-sizing: border-box;
+    line-height: normal;
+    color: color.shade(fg, 16%);
 
     *,
     *::before,
@@ -87,6 +89,8 @@ html .ui-dialog {
     .ui-dialog-buttonpane  .ui-dialog-buttonset {
         button,
         .btn {
+            min-height: 34px;  // equalize all pages (perf in particular)
+
             svg[data-icon] {
                 width: 1em;
                 margin-left: 0.44em;
@@ -266,7 +270,33 @@ html .ui-dialog {
         }
 
         .entry {
-            padding: 0.2rem 1rem;
+            padding: 0.5rem 1rem;
+            position: relative;
+
+            &.flex {
+                display: flex;
+
+                key {
+                    flex: 0 0 auto;
+                }
+            }
+
+            &.collapsable {
+                min-height: 2em;
+                padding-top: 0.4em !important;
+            }
+
+            > a.help-info {
+                float: initial;
+                position: absolute;
+                top: 0.2em;
+                right: 1rem;
+            }
+
+            .indent {
+                display: flex;
+                flex-direction: column;
+            }
         }
 
         > .entry:nth-of-type(odd) {
@@ -276,41 +306,41 @@ html .ui-dialog {
         key {
             width: 16ch;
             display: inline-block;
+            word-break: break-all;
         }
 
-        input {
-            vertical-align: middle;
+    }
+
+    input:not([type="range"]) {
+        top: revert; // reset strava
+        width: revert; // reset strava
+        vertical-align: middle;
+        background-color: color.shade(bg, 0%);
+        border: 1px solid color.shade(bg, 14%);
+        border-radius: 0.24em;
+        padding: 0.24em 0.5em;
+        line-height: normal;
+        height: initial;
+
+        &:invalid {
+            border: 1px dashed var(--sauce-negative);
         }
 
-        input[type="number"],
-        input[type="text"],
-        input[type="date"] {
-            border-radius: 0.22em;
-            padding: 0.2em 0.5em;
-            height: auto;
-
-            &:invalid {
-                border-color: red;
-            }
-
-            &::placeholder {
-                opacity: 0.8;
-            }
+        &::placeholder {
+            opacity: 0.8;
         }
 
-        input[type="checkbox"] {
-            margin: revert;  // RESET Strava orion
-            padding: revert;  // RESET Strava orion
-            top: revert;  // RESET Strava orion
+        &:focus {
+            border-color: color.shade(accent4, -10%);
         }
+    }
 
-        select {
-            border-radius: 0.22em;
-            padding: 0.25em 0.5em;
-            margin: 0;
-            top: initial;
-            height: auto;
-        }
+    select {
+        border-radius: 0.22em;
+        padding: 0.25em 0.5em;
+        margin: 0;
+        top: initial;
+        height: auto;
     }
 
     // Reset firefox number input arrows to look like normal text input
@@ -321,6 +351,15 @@ html .ui-dialog {
     }
     input[type=number] {
         -moz-appearance:textfield;
+    }
+
+    // Bit of a hack, but the calender widget on chrome is currently too tall because the
+    // icon below is too big.  This makes it the same height as a normal text input.
+    // Tested on linux and mac.
+    input[type="date" i]::-webkit-calendar-picker-indicator {
+        height: 0.8em;
+        padding-top: 0.1em;
+        padding-bottom: 0.1em;
     }
 
     @include perf_predictor.dialog;
@@ -375,7 +414,6 @@ html .ui-dialog {
     .ui-dialog-buttonpane {
         button,
         .btn {
-            min-height: unset;
             border-radius: 0.25em;
             padding: 0.5em 0.8em;
             margin: 0.3em;

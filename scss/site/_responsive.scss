@@ -249,17 +249,6 @@ html.sauce-responsive,
         padding: 1.5rem !important;
     }
 
-    :not(.toggle-button) {
-        > .btn,
-        > .button,
-        > button,
-        > input[type='submit'],
-        > input[type='button'] {
-            font-size: 0.9em;
-            min-height: 2em;
-        }
-    }
-
     .pagenav > li {
         > a,
         > .title {
