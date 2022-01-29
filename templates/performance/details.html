@@ -28,6 +28,24 @@
                             <value>{{humanNumber(day.tss)}}</value>
                         </row>
                     <% } %>
+                    <% if (day.powerZonesTime.length) { %>
+                        <row>
+                            <key>{{{power_zones}}}:</key>
+                            <value> </value>
+                            <div class="btn btn-icon-only btn-unstyled expand"
+                                 title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
+                            <div class="btn btn-icon-only btn-unstyled compress"
+                                 title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+                            <div class="expanded-details">
+                                <% for (const [i, x] of day.powerZonesTime.entries()) { %>
+                                    <row>
+                                        <key>{{{/analysis_power}}} Z{{i + 1}}:</key>
+                                        <value>{{humanTimer(x)}}</value>
+                                    </row>
+                                <% } %>
+                            </div>
+                        </row>
+                    <% } %>
                     <% if (day.duration) { %>
                         <row>
                             <key>{{{/analysis_time}}}:</key>
@@ -111,6 +129,24 @@
                         </row>
                     <% } %>
                     <% if (a.stats) { %>
+                        <% if (a.stats.intensity != null) { %>
+                            <row>
+                                <key>IF:</key>
+                                <value>{{humanNumber(a.stats.intensity * 100)}}%</value>
+                                <div class="btn btn-icon-only btn-unstyled expand"
+                                     title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
+                                <div class="btn btn-icon-only btn-unstyled compress"
+                                     title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+                                <div class="expanded-details">
+                                    <% for (const [i, x] of a.stats.powerZonesTime.entries()) { %>
+                                        <row>
+                                            <key>{{{/analysis_power}}} Z{{i + 1}}:</key>
+                                            <value>{{humanTimer(x)}}</value>
+                                        </row>
+                                    <% } %>
+                                </div>
+                            </row>
+                        <% } %>
                         <% if (a.stats.activeTime) { %>
                             <row>
                                 <key>{{{/analysis_time}}}:</key>

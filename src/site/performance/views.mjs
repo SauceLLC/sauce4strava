@@ -161,8 +161,7 @@ export class PerfView extends SauceView {
     }
 
     _prefKey() {
-        const name = this.constructor.name;
-        return this.id ? `${name}-${this.id}` : name;
+        return this.id || this.constructor.name;
     }
 
     getPrefs(key, defaultValue) {
@@ -812,7 +811,7 @@ export class MainView extends PerfView {
                 class: 'btn btn-primary',
                 click: async () => {
                     const panelPrefs = {
-                        id: `custom-${selected}-${Date.now()}`,
+                        id: `panel-custom-${selected}-${Date.now()}`,
                         view: selected,
                         settings: {
                             name: $dialog.find('input[name="name"]').val() || undefined,

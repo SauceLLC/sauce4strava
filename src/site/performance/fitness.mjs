@@ -189,6 +189,69 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
+export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
+    static nameLocaleKey = 'performance_zonetime_title';
+    static descLocaleKey = 'performance_zonetime_desc';
+    static localeKeys = ['power_zones', 'activities'];
+    static tpl = 'performance/fitness/zonetime.html';
+
+    async init(options) {
+        await super.init(options);
+        this.setChartConfig({
+            type: 'bar',
+            options: {
+                scales: {
+                    xAxes: [{
+                        stacked: true,
+                    }],
+                    yAxes: [{
+                        id: 'time',
+                        position: 'right',
+                        ticks: {
+                            min: 0,
+                            suggestedMax: 1 * 3600,
+                            stepSize: 3600,
+                            maxTicksLimit: 7,
+                            callback: v => H.duration(v, {maxPeriod: 3600, minPeriod: 3600}),
+                        }
+                    }]
+                },
+            }
+        });
+    }
+
+    onUpdateActivities({range, daily, metricData}) {
+        this.$('.metric-display').text(this.pageView.getMetricLocale(range.metric));
+        const zones = [
+            {id: 'power-z1', h: 180, s: 10, l: 70},
+            {id: 'power-z2', h: 100, s: 65, l: 60},
+            {id: 'power-z3', h: 60, s: 70, l: 60},
+            {id: 'power-z4', h: 0, s: 70, l: 60},
+            {id: 'power-z5', h: 320, s: 70, l: 50},
+            {id: 'power-z6', h: 300, s: 70, l: 40},
+            {id: 'power-z7', h: 280, s: 70, l: 20},
+        ];
+        this.chart.data.datasets = zones.map((x, zoneIndex) => ({
+            id: x.id,
+            label: `Z${zoneIndex + 1}`,
+            backgroundColor: `hsla(${x.h}deg, ${x.s - 3}%, ${x.l + 2}%, 0.8)`,
+            hoverBackgroundColor: `hsla(${x.h}deg, ${x.s + 3}%, ${x.l - 2}%, 0.9)`,
+            borderColor: `hsla(${x.h}deg, ${x.s - 3}%, ${x.l - 10}%, 0.9)`,
+            hoverBorderColor: `hsla(${x.h}deg, ${x.s + 3}%, ${x.l - 20}%, 0.9)`,
+            borderWidth: 1,
+            yAxisID: 'time',
+            stack: 'power',
+            tooltipFormat: (x, i) => {
+                const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
+                return tips;
+            },
+            data: metricData.map((b, i) => ({b, x: b.date, y: b.powerZonesTime[zoneIndex] || 0})),
+        }));
+        this.chart.update();
+    }
+}
+
+
 export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_activities_title';
     static descLocaleKey = 'performance_activities_desc';
@@ -429,6 +492,7 @@ export const PanelViews = {
     TrainingChartView,
     ActivityVolumeChartView,
     ElevationChartView,
+    ZoneTimeChartView,
 };
 
 
@@ -443,15 +507,15 @@ class FitnessMainView extends views.MainView {
         return {
             ...super.defaultPrefs,
             panels: [{
-                id: 'default-training-load-0',
+                id: 'panel-default-training-load-0',
                 view: 'TrainingChartView',
                 settings: {},
             }, {
-                id: 'default-activity-volume-1',
+                id: 'panel-default-activity-volume-1',
                 view: 'ActivityVolumeChartView',
                 settings: {},
             }, {
-                id: 'default-elevation-2',
+                id: 'panel-default-elevation-2',
                 view: 'ElevationChartView',
                 settings: {},
             }]

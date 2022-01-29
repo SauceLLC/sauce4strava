@@ -261,11 +261,11 @@ class PeaksMainView extends views.MainView {
         return {
             ...super.defaultPrefs,
             panels: [{
-                id: 'default-peaks-table-0',
+                id: 'panel-default-peaks-table-0',
                 view: 'PeaksTableView',
                 settings: {},
             }, {
-                id: 'default-activity-volume-xxx-1',
+                id: 'panel-default-activity-volume-xxx-1',
                 view: 'ActivityVolumeChartView',
                 settings: {},
             }]

@@ -19,6 +19,7 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
         let altGain = 0;
         let distance = 0;
         let kj = 0;
+        let powerZonesTime = [];
         const ts = date.getTime();
         const daily = [];
         if (i < acts.length - 1 && acts[i].ts < ts) {
@@ -29,10 +30,21 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
             const a = acts[i++];
             daily.push(a);
             tss += sauce.model.getActivityTSS(a) || 0;
-            duration += a.stats && a.stats.activeTime || 0;
-            altGain += a.stats && a.stats.altitudeGain || 0;
-            distance += a.stats && a.stats.distance || 0;
-            kj += a.stats && a.stats.kj || 0;
+            if (a.stats) {
+                duration += a.stats.activeTime || 0;
+                altGain += a.stats.altitudeGain || 0;
+                distance += a.stats.distance || 0;
+                kj += a.stats.kj || 0;
+                if (a.stats.powerZonesTime) {
+                    if (!powerZonesTime.length) {
+                        powerZonesTime = Array.from(a.stats.powerZonesTime);
+                    } else {
+                        for (let j = 0; j < a.stats.powerZonesTime.length; j++) {
+                            powerZonesTime[j] += a.stats.powerZonesTime[j];
+                        }
+                    }
+                }
+            }
         }
         atl = sauce.perf.calcATL([tss], atl);
         ctl = sauce.perf.calcCTL([tss], ctl);
@@ -47,6 +59,7 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
             altGain,
             distance,
             kj,
+            powerZonesTime,
         });
     }
     // XXX remove this I think, it's okay if acts is a superset.
@@ -80,6 +93,7 @@ export function aggregateActivitiesByFn(daily, indexFn, aggregateFn) {
                 distance: slot.distance,
                 kj: slot.kj,
                 days: 1,
+                powerZonesTime: Array.from(slot.powerZonesTime),
                 activities: [...slot.activities],
             };
         } else {
@@ -91,6 +105,15 @@ export function aggregateActivitiesByFn(daily, indexFn, aggregateFn) {
             entry.kj += slot.kj;
             entry.days++;
             entry.activities.push(...slot.activities);
+            if (slot.powerZonesTime.length) {
+                if (!entry.powerZonesTime.length) {
+                    entry.powerZonesTime = Array.from(slot.powerZonesTime);
+                } else {
+                    for (let j = 0; j < slot.powerZonesTime.length; j++) {
+                        entry.powerZonesTime[j] += slot.powerZonesTime[j];
+                    }
+                }
+            }
         }
     }
     if (metricData.length) {

@@ -538,34 +538,23 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                         powerZones = sauce.power.cogganZones(ftp);
                         powerZonesFTP = ftp;
                     }
-                    stats.powerZonesTime = Object.fromEntries(Object.keys(powerZones).map(k => [k, 0]));
+                    stats.powerZonesTime = Object.keys(powerZones).map(() => 0);
                     let prevT;
                     for (let [t, w] of corrected.entries()) {
                         const gap = t - prevT;
                         prevT = t;
                         if (gap && w) {
-                            // Unrolled for speed, make sure we have enough conditionals all systems.
-                            if (w <= powerZones.z1) {
-                                stats.powerZonesTime.z1 += gap;
-                            } else if (w <= powerZones.z2) {
-                                stats.powerZonesTime.z2 += gap;
-                            } else if (w <= powerZones.z3) {
-                                stats.powerZonesTime.z3 += gap;
-                            } else if (w <= powerZones.z4) {
-                                stats.powerZonesTime.z4 += gap;
-                            } else if (w <= powerZones.z5) {
-                                stats.powerZonesTime.z5 += gap;
-                            } else if (w <= powerZones.z6) {
-                                stats.powerZonesTime.z6 += gap;
-                            } else if (w <= powerZones.z7) {
-                                stats.powerZonesTime.z7 += gap;
-                            } else if (w <= powerZones.z8) {
-                                stats.powerZonesTime.z8 += gap;
-                            } else if (w <= powerZones.z9) {
-                                stats.powerZonesTime.z9 += gap;
-                            } else {
-                                throw new TypeError("Unexpected power zone");
-                            }
+                            // Unrolled for speed, make sure we have enough for all systems.
+                            if (w <= powerZones.z1) stats.powerZonesTime[0] += gap;
+                            else if (w <= powerZones.z2) stats.powerZonesTime[1] += gap;
+                            else if (w <= powerZones.z3) stats.powerZonesTime[2] += gap;
+                            else if (w <= powerZones.z4) stats.powerZonesTime[3] += gap;
+                            else if (w <= powerZones.z5) stats.powerZonesTime[4] += gap;
+                            else if (w <= powerZones.z6) stats.powerZonesTime[5] += gap;
+                            else if (w <= powerZones.z7) stats.powerZonesTime[6] += gap;
+                            else if (w <= powerZones.z8) stats.powerZonesTime[7] += gap;
+                            else if (w <= powerZones.z9) stats.powerZonesTime[8] += gap;
+                            else throw new TypeError("Unexpected power zone");
                         }
                     }
                     stats.tss = sauce.power.calcTSS(stats.np || stats.power, corrected.active(), ftp);
