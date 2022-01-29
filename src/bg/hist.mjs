@@ -452,7 +452,7 @@ sauce.proxy.export(getActivity, {namespace});
 
 
 export function getActivitySyncManifests(processor) {
-    return ActivityModel.getSyncManifests(processor);
+    return ActivityModel.getSyncManifests(processor).map(x => ({...x, data: undefined}));
 }
 sauce.proxy.export(getActivitySyncManifests, {namespace});
 

@@ -4,9 +4,7 @@ import * as views from './views.mjs';
 
 
 class CompareMainView extends views.MainView {
-    static get tpl() {
-        return 'performance/compare/main.html';
-    }
+    static tpl = 'performance/compare/main.html';
 
     async render() {
         await super.render();

@@ -626,6 +626,7 @@ export class DetailsView extends PerfView {
 
 
 export class BulkActivityEditDialog extends PerfView {
+    static tpl = 'performance/bulkedit.html';
     static localeKeys = ['/save', 'edit_activities'];
 
     get events() {
@@ -633,10 +634,6 @@ export class BulkActivityEditDialog extends PerfView {
             ...super.events,
             'click .edit-activity': 'onEditActivityClick',
         };
-    }
-
-    get tpl() {
-        return 'performance/bulkedit.html';
     }
 
     async init({activities, pageView, ...options}) {
@@ -1274,15 +1271,13 @@ export class PageView extends PerfView {
 
 
 export class OnboardingView extends PerfView {
+    static tpl = 'performance/onboarding.html';
+
     get events() {
         return {
             ...super.events,
             'click .onboarding-stack .btn.enable': 'onOnboardingEnableClick',
         };
-    }
-
-    get tpl() {
-        return 'performance/onboarding.html';
     }
 
     async init(options) {

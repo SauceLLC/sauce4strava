@@ -152,11 +152,19 @@ table.sauce-perf {
                 max-width: min(20ch, 25vw) !important;
             }
 
+            tr:hover {
+                background: color.shade(bg, 10%);
+            }
+
             td.type {
                 max-width: 8ch;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 text-transform: capitalize;
+            }
+
+            td .btn-icon-only svg[data-icon] {
+                font-size: 0.8em;
             }
         }
 
