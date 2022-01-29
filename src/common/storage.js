@@ -4,10 +4,10 @@ sauce.ns('storage', ns => {
     "use strict";
 
 
-    function maybeExport(fn) {
+    function maybeExport(fn, options) {
         // storage is used in ext pages where proxy is not used.
         if (sauce.proxy && sauce.proxy.export && !browser.runtime.getBackgroundPage) {
-            sauce.proxy.export(fn, {namespace: 'storage'});
+            sauce.proxy.export(fn, {namespace: 'storage', ...options});
         }
     }
 
