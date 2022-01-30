@@ -75,22 +75,24 @@
 
             <div class="entry" title="{{{est_power_tooltip}}}">
                 <key>{{{est_run_power}}}:</key>
-                <value><input name="est-run-watts" type="checkbox"
+                <value><input data-athlete-bool="estRunWatts" name="est-run-watts" type="checkbox"
                               {{athlete.estRunWatts ? 'checked' : ''}}/></value>
                 <div class="sub-entry est-cycling-peaks" title="{{{est_power_peaks_tooltip}}}">
                     <key>{{{est_power_peaks}}}:</key>
-                    <value><input name="est-run-peaks" type="checkbox"
+                    <value><input data-athlete-bool="estRunPeaks" class="sub-option" name="est-run-peaks"
+                                  type="checkbox" {{!athlete.estRunWatts ? 'disabled' : ''}}
                                   {{athlete.estRunPeaks ? 'checked' : ''}}/></value>
                 </div>
             </div>
 
             <div class="entry est-cycling-power" title="{{{est_power_tooltip}}}">
                 <key>{{{est_cycling_power}}}:</key>
-                <value><input name="est-cycling-watts" type="checkbox"
+                <value><input data-athlete-bool="estCyclingWatts" name="est-cycling-watts" type="checkbox"
                               {{athlete.estCyclingWatts ? 'checked' : ''}}/></value>
                 <div class="sub-entry est-cycling-peaks" title="{{{est_power_peaks_tooltip}}}">
                     <key>{{{est_power_peaks}}}:</key>
-                    <value><input name="est-cycling-peaks" type="checkbox"
+                    <value><input data-athlete-bool="estCyclingPeaks" class="sub-option" name="est-cycling-peaks"
+                                  type="checkbox" {{!athlete.estCyclingWatts ? 'disabled' : ''}}
                                   {{athlete.estCyclingPeaks ? 'checked' : ''}}/></value>
                 </div>
             </div>

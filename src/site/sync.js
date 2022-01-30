@@ -187,6 +187,7 @@ sauce.ns('sync', ns => {
             'delayed_until', 'title', 'remaining', 'restore_data', 'backup_data',
         ], 'sync_control_panel');
         let athlete = await sauce.hist.getAthlete(athleteId);
+        let dirty;
         const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views');
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
         const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
@@ -366,6 +367,16 @@ sauce.ns('sync', ns => {
             $modal.toggleClass('sync-disabled', !enabled);
             sauce.report.event('AthleteSync', 'ui-button', enabled ? 'enable' : 'disable');
         });
+        $modal.on('input', '.sync-settings input[data-athlete-bool]', async ev => {
+            const enabled = ev.currentTarget.checked;
+            const entry = ev.currentTarget.closest('.entry');
+            if (!ev.currentTarget.classList.contains('sub-option')) {
+                entry.querySelector('input.sub-option').disabled = !enabled;
+            }
+            athlete[ev.currentTarget.dataset.athleteBool] = enabled;
+            await sauce.hist.updateAthlete(athlete.id, athlete);
+            dirty = true;
+        });
         $modal.on('click', '.perf-promo .btn.enable', async ev => {
             $modal.find('input[name="enable"]').click();
         });
@@ -433,6 +444,9 @@ sauce.ns('sync', ns => {
         $modal.on('dialogclose', () => {
             for (const [event, cb] of Object.entries(listeners)) {
                 syncController.removeEventListener(event, cb);
+            }
+            if (dirty) {
+                sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', 'athlete-settings');
             }
         });
         if (initiallyEnabled) {
