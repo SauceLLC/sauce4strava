@@ -188,7 +188,6 @@ sauce.ns('sync', ns => {
         ], 'sync_control_panel');
         let athlete = await sauce.hist.getAthlete(athleteId);
         let dirty;
-        let addPeaks;
         const {FTPHistoryView, WeightHistoryView} = await sauce.getModule('/src/site/data-views');
         const tpl = await sauce.template.getTemplate('sync-control-panel.html', 'sync_control_panel');
         const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
@@ -370,7 +369,6 @@ sauce.ns('sync', ns => {
         });
         $modal.on('input', '.sync-settings input[data-athlete-bool]', async ev => {
             const enabled = ev.currentTarget.checked;
-            addPeaks |= enabled;
             const entry = ev.currentTarget.closest('.entry');
             if (!ev.currentTarget.classList.contains('sub-option')) {
                 entry.querySelector('input.sub-option').disabled = !enabled;
@@ -448,7 +446,9 @@ sauce.ns('sync', ns => {
                 syncController.removeEventListener(event, cb);
             }
             if (dirty) {
-                sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', !addPeaks ? 'athlete-settings' : undefined);
+                const fullSync = athlete.estCyclingWatts && athlete.estCyclingPeaks;
+                sauce.hist.invalidateAthleteSyncState(athlete.id, 'local',
+                    fullSync ? undefined : 'athlete-settings');
             }
         });
         if (initiallyEnabled) {

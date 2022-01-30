@@ -180,7 +180,9 @@ class FindPeaks extends WorkerProcessor {
                         const rp = sauce.power.correctedRollingPower(streams.time, period);
                         const leadCloneOpts = {inlineXP: false, inlineNP: false};
                         if (rp) {
-                            const wrp = period >= 300 && rp.clone({active: true, inlineNP: true, inlineXP: true});
+                            const wrp = (!estimate && period >= 300) ?
+                                rp.clone({active: true, inlineNP: true, inlineXP: true}) :
+                                undefined;
                             const leaders = {};
                             for (let i = 0; i < streams.time.length; i++) {
                                 const t = streams.time[i];

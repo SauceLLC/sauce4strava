@@ -79,8 +79,9 @@
                               {{athlete.estRunWatts ? 'checked' : ''}}/></value>
                 <div class="sub-entry est-cycling-peaks" title="{{{est_power_peaks_tooltip}}}">
                     <key>{{{est_power_peaks}}}:</key>
-                    <value><input data-athlete-bool="estRunPeaks" class="sub-option" name="est-run-peaks"
-                                  type="checkbox" {{!athlete.estRunWatts ? 'disabled' : ''}}
+                    <value><input data-athlete-bool="estRunPeaks" class="sub-option peaks"
+                                  name="est-run-peaks" type="checkbox"
+                                  {{!athlete.estRunWatts ? 'disabled' : ''}}
                                   {{athlete.estRunPeaks ? 'checked' : ''}}/></value>
                 </div>
             </div>
@@ -91,8 +92,9 @@
                               {{athlete.estCyclingWatts ? 'checked' : ''}}/></value>
                 <div class="sub-entry est-cycling-peaks" title="{{{est_power_peaks_tooltip}}}">
                     <key>{{{est_power_peaks}}}:</key>
-                    <value><input data-athlete-bool="estCyclingPeaks" class="sub-option" name="est-cycling-peaks"
-                                  type="checkbox" {{!athlete.estCyclingWatts ? 'disabled' : ''}}
+                    <value><input data-athlete-bool="estCyclingPeaks" class="sub-option peaks"
+                                  name="est-cycling-peaks" type="checkbox"
+                                  {{!athlete.estCyclingWatts ? 'disabled' : ''}}
                                   {{athlete.estCyclingPeaks ? 'checked' : ''}}/></value>
                 </div>
             </div>

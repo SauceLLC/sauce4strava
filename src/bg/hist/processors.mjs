@@ -76,17 +76,17 @@ class WorkerInterface {
         }
     }
 
-    async sendData(data, timeout=60000) {
+    async sendData(data, timeout=300000) {
         return await this._send('data', {data, timeout});
     }
 
     async stop() {
         try {
-            await this._send('stop', {timeout: 300000});
+            await this._send('stop', {timeout: 600000});
         } finally {
             this._executor._sem.release();
             // Paranoid IndexedDB cooldown for firefox.
-            setTimeout(() => this._worker.terminate(), 5000);
+            setTimeout(() => this._worker.terminate(), 15000);
         }
     }
 }
@@ -538,8 +538,10 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 stats.estimate = !streams.watts;
                 stats.kj = corrected.joules() / 1000;
                 stats.power = corrected.avg({active: true});
-                stats.np = corrected.np();
-                stats.xp = corrected.xp();
+                if (!stats.estimate) {
+                    stats.np = corrected.np();
+                    stats.xp = corrected.xp();
+                }
                 if (ftp) {
                     if (ftp !== powerZonesFTP) {
                         powerZones = sauce.power.cogganZones(ftp);
@@ -605,11 +607,11 @@ export async function peaksWkgAndCleanupProcessor({manifest, activities, athlete
             return rank;
         }
     };
-    const useRunPeaks = athlete.data.estRunWatts && athlete.data.estRunPeaks;
-    const useCyclingPeaks = athlete.data.estCyclingWatts && athlete.data.estCyclingPeaks;
-    const deletePowerPeaks = actData =>
-        (actData.basetype === 'run' && !useRunPeaks) ||
-        (actData.basetype === 'ride' && !useCyclingPeaks);
+    const useEstRunPeaks = athlete.data.estRunWatts && athlete.data.estRunPeaks;
+    const useEstCyclingPeaks = athlete.data.estCyclingWatts && athlete.data.estCyclingPeaks;
+    const deleteEstPeaks = actData =>
+        (actData.basetype === 'run' && !useEstRunPeaks) ||
+        (actData.basetype === 'ride' && !useEstCyclingPeaks);
     const peaks = [];
     const deleting = [];
     for (const [index, activity] of activities.entries()) {
@@ -617,18 +619,12 @@ export async function peaksWkgAndCleanupProcessor({manifest, activities, athlete
         if (actData.basetype !== 'ride' && actData.basetype !== 'run') {
             continue;
         }
-        if (deletePowerPeaks(actData)) {
-            for (const x of powers[index]) {
-                deleting.push([x.activity, x.type, x.period]);
-            }
-            for (const x of nps[index]) {
-                deleting.push([x.activity, x.type, x.period]);
-            }
-            for (const x of xps[index]) {
-                deleting.push([x.activity, x.type, x.period]);
-            }
-            for (const x of wkgs[index]) {
-                deleting.push([x.activity, x.type, x.period]);
+        const estimated = powers[index].some(x => x.estimate);
+        if (estimated && deleteEstPeaks(actData)) {
+            for (const peaks of [powers, nps, xps, wkgs]) {
+                for (const x of peaks[index]) {
+                    deleting.push([x.activity, x.type, x.period]);
+                }
             }
             continue;
         }
