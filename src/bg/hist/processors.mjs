@@ -319,7 +319,7 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
     let invalidate;
     const hrTS = athlete.get('hrZonesTS');
     if (hrTS == null || Date.now() - hrTS > 86400 * 1000) {
-        // The HR zones API is based on activities, so techniprocessor it is historical but
+        // The HR zones API is based on activities, so technically it is historical but
         // this leads to a lot of complications so we simply look for the latest values.
         // If the zones are updated we need to trigger an invalidation of all activities.
         const origZones = athlete.get('hrZones');
@@ -372,6 +372,7 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
         ['time', 'moving', 'active', 'cadence', 'watts', 'watts_calc', 'distance',
          'grade_adjusted_distance']);
     const upStreams = [];
+    const createRunWatts = athlete.get('estRunWatts');
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
         if (!streams.moving) {
@@ -381,7 +382,7 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
         const basetype = activity.get('basetype');
         const isSwim = basetype === 'swim';
         const isRun = basetype === 'run';
-        if (isRun) {
+        if (isRun && createRunWatts) {
             const gad = streams.grade_adjusted_distance;
             const weight = athlete.getWeightAt(activity.get('ts'));
             if (gad && weight && streams.time.length > 25) {
@@ -423,6 +424,8 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
  * updated here too.
  */
 export async function runPowerProcessor({manifest, activities, athlete}) {
+    const createEstWatts = athlete.get('estRunWatts');
+    const createEstPeaks = createEstWatts && athlete.get('estRunPeaks');
     const actStreams = await getActivitiesStreams(activities,
         ['time', 'active', 'watts', 'watts_calc', 'grade_adjusted_distance']);
     const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
@@ -435,7 +438,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
         const streams = actStreams.get(activity.pk);
         const gad = streams.grade_adjusted_distance;
         const weight = athlete.getWeightAt(activity.get('ts'));
-        if (gad && weight && streams.time.length > 25) {
+        if (createEstWatts && gad && weight && streams.time.length > 25) {
             try {
                 const data = sauce.pace.createWattsStream(streams.time, gad, weight);
                 if (!sauce.data.isArrayEqual(data, streams.watts_calc)) {
@@ -448,7 +451,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                 activity.setSyncError(manifest, e);
             }
         }
-        if ((streams.watts || streams.watts_calc) && !activity.get('peaksExclude')) {
+        if ((streams.watts || (createEstPeaks && streams.watts_calc)) && !activity.get('peaksExclude')) {
             try {
                 const watts = streams.watts || streams.watts_calc;
                 for (const period of periods.filter(x => !!streams.watts || x >= 300)) {
@@ -490,6 +493,9 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
     const upActs = [];
     let powerZones;
     let powerZonesFTP;
+    const useEstWatts = activity =>
+        (activity.data.basetype === 'run' && athlete.data.estRunWatts) ||
+        (activity.data.basetype === 'ride' && athlete.data.estCyclingWatts);
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
         const activeStream = streams.active;
@@ -522,13 +528,14 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
         if (streams.altitude && stats.altitudeGain == null) {
             stats.altitudeGain = sauce.geo.altitudeChanges(streams.altitude).gain;
         }
-        if (streams.watts || (streams.watts_calc && activity.get('basetype') === 'run')) {
+        if (streams.watts || (streams.watts_calc && useEstWatts(activity))) {
             const watts = streams.watts || streams.watts_calc;
             try {
                 const corrected = sauce.power.correctedPower(streams.time, watts, {activeStream});
                 if (!corrected) {
                     continue;
                 }
+                stats.estimate = !streams.watts;
                 stats.kj = corrected.joules() / 1000;
                 stats.power = corrected.avg({active: true});
                 stats.np = corrected.np();
@@ -540,7 +547,10 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                     }
                     stats.powerZonesTime = Object.keys(powerZones).map(() => 0);
                     let prevT;
-                    for (let [t, w] of corrected.entries()) {
+                    // Use internal interface for iteration as it's much faster on FF.
+                    for (let i = corrected._offt; i < corrected._length; i++) {
+                        const t = corrected._times[i];
+                        const w = corrected._values[i];
                         const gap = t - prevT;
                         prevT = t;
                         if (gap && w) {
@@ -575,36 +585,12 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
 }
 
 
-export async function peaksProcessor({manifest, activities, athlete}) {
-    const workerExec = getWorkerExec();
-    const activityMap = new Map(activities.map(x => [x.pk, x]));
-    const work = [];
-    const len = activities.length;
-    const concurrency = Math.min(navigator.hardwareConcurrency || 4);
-    // Tuned for Chrome's very slow IndexedDB perf.
-    const minChunk = sauce.isChrome() ? 100 : 40;
-    const step = Math.max(minChunk, Math.ceil(Math.max(len / concurrency)));
-    const periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
-    const distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
-    for (let i = 0; i < len; i += step) {
-        const chunk = activities.slice(i, i + step);
-        work.push(workerExec.exec('findPeaks', athlete.data, chunk.map(x => x.data), periods, distances));
-    }
-    for (const errors of await Promise.all(work)) {
-        for (const x of errors) {
-            const activity = activityMap.get(x.activity);
-            activity.setSyncError(manifest, new Error(x.error));
-        }
-    }
-}
-
-
 function rankUpdated(a, b) {
     return (a && a.level) !== (b && b.level);
 }
 
 
-export async function peaksWkgProcessor({manifest, activities, athlete}) {
+export async function peaksWkgAndCleanupProcessor({manifest, activities, athlete}) {
     const ids = activities.map(x => x.pk);
     const [wkgs, powers, nps, xps] = await Promise.all([
         peaksStore.getForActivities(ids, {type: 'power_wkg', _skipClone: true}),
@@ -619,12 +605,34 @@ export async function peaksWkgProcessor({manifest, activities, athlete}) {
             return rank;
         }
     };
+    const useRunPeaks = athlete.data.estRunWatts && athlete.data.estRunPeaks;
+    const useCyclingPeaks = athlete.data.estCyclingWatts && athlete.data.estCyclingPeaks;
+    const deletePowerPeaks = actData =>
+        (actData.basetype === 'run' && !useRunPeaks) ||
+        (actData.basetype === 'ride' && !useCyclingPeaks);
     const peaks = [];
+    const deleting = [];
     for (const [index, activity] of activities.entries()) {
-        if (activity.get('basetype') !== 'ride') {
+        const actData = activity.data;
+        if (actData.basetype !== 'ride' && actData.basetype !== 'run') {
             continue;
         }
-        const weight = athlete.getWeightAt(activity.get('ts'));
+        if (deletePowerPeaks(actData)) {
+            for (const x of powers[index]) {
+                deleting.push([x.activity, x.type, x.period]);
+            }
+            for (const x of nps[index]) {
+                deleting.push([x.activity, x.type, x.period]);
+            }
+            for (const x of xps[index]) {
+                deleting.push([x.activity, x.type, x.period]);
+            }
+            for (const x of wkgs[index]) {
+                deleting.push([x.activity, x.type, x.period]);
+            }
+            continue;
+        }
+        const weight = athlete.getWeightAt(actData.ts);
         if (!weight) {
             continue;
         }
@@ -659,6 +667,10 @@ export async function peaksWkgProcessor({manifest, activities, athlete}) {
         }
     }
     await peaksStore.putMany(peaks);
+    if (deleting.length) {
+        console.warn("Cleaning up peaks:", deleting.length);
+        await peaksStore.deleteMany(deleting);
+    }
 }
 
 
@@ -730,7 +742,7 @@ export class PeaksProcessor extends OffloadProcessor {
         const count = workers.length;
         if (!count || (workers[0].pending.size > 50 && count < this.maxWorkers)) {
             const worker = await this.workerExec.start('find-peaks',
-                {periods: this.periods, distances: this.distances});
+                {periods: this.periods, distances: this.distances, athlete: this.athlete.data});
             worker.pending = new Map();
             this.workers.add(worker);
             this.workerAddedEvent.set();

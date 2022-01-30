@@ -111,6 +111,7 @@ class FindPeaks extends WorkerProcessor {
         super(options);
         this.periods = options.periods;
         this.distances = options.distances;
+        this.useEstWatts = options.athlete.estCyclingWatts && options.athlete.estCyclingPeaks;
     }
 
     async processor() {
@@ -128,7 +129,8 @@ class FindPeaks extends WorkerProcessor {
     async findPeaks(activities) {
         const actStreams = await getActivitiesStreams(activities, {
             run: ['time', 'active', 'heartrate', 'distance', 'grade_adjusted_distance'],
-            ride: ['time', 'active', 'heartrate', 'watts'],
+            ride: ['time', 'active', 'heartrate', 'watts', 'watts_calc'].filter(x =>
+                x !== 'watts_calc' || this.useEstWatts),
             other: ['time', 'active', 'heartrate', 'watts'],
         });
         const upPeaks = [];
@@ -165,11 +167,16 @@ class FindPeaks extends WorkerProcessor {
                     errors.push({activity: activity.id, error: e.message});
                 }
             }
-            if (streams.watts && !isRun) { // Runs have their own processor for this.
+            const watts = streams.watts || streams.watts_calc;
+            if (watts && !isRun) { // Runs have their own processor for this.
+                const estimate = !streams.watts;
                 try {
                     for (const period of this.periods) {
                         // Instead of using peakPower, peakNP, we do our own reduction to save
                         // repeative iterations on the same dataset; it's about 50% faster.
+                        if (estimate && period < 300) {
+                            continue;
+                        }
                         const rp = sauce.power.correctedRollingPower(streams.time, period);
                         const leadCloneOpts = {inlineXP: false, inlineNP: false};
                         if (rp) {
@@ -177,7 +184,7 @@ class FindPeaks extends WorkerProcessor {
                             const leaders = {};
                             for (let i = 0; i < streams.time.length; i++) {
                                 const t = streams.time[i];
-                                const w = streams.watts[i];
+                                const w = watts[i];
                                 const a = streams.active[i];
                                 rp.add(t, w, a);
                                 if (wrp) {
@@ -202,19 +209,19 @@ class FindPeaks extends WorkerProcessor {
                             }
                             if (leaders.power) {
                                 const l = leaders.power;
-                                addPeak('power', period, l.value, l.roll, {wp: l.np});
+                                addPeak('power', period, l.value, l.roll, {wp: l.np, estimate});
                             }
                             if (leaders.np) {
                                 const l = leaders.np;
                                 const np = l.roll.np({external: true});
                                 const power = l.roll.avg({active: false});
-                                addPeak('np', period, np, l.roll, {power});
+                                addPeak('np', period, np, l.roll, {power, estimate});
                             }
                             if (leaders.xp) {
                                 const l = leaders.xp;
                                 const xp = l.roll.xp({external: true});
                                 const power = l.roll.avg({active: false});
-                                addPeak('xp', period, xp, l.roll, {power});
+                                addPeak('xp', period, xp, l.roll, {power, estimate});
                             }
                         }
                     }

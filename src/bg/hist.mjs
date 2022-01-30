@@ -97,7 +97,7 @@ ActivityModel.addSyncManifest({
     name: 'peaks-wkg',
     version: 1,
     depends: ['athlete-settings', 'run-power', 'peaks'],
-    data: {processor: processors.peaksWkgProcessor}
+    data: {processor: processors.peaksWkgAndCleanupProcessor}
 });
 
 ActivityModel.addSyncManifest({
