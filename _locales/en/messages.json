@@ -293,6 +293,7 @@
     "sync_control_panel_hr_zone4": {"message": "Threshold"},
     "sync_control_panel_hr_zone5": {"message": "Anaerobic"},
     "sync_control_panel_sync_status": {"message": "Sync Status"},
+    "sync_control_panel_sync_settings": {"message": "Sync Settings"},
     "sync_control_panel_enable_sync_and_get_started": {"message": "Enable sync and get started!"},
     "sync_control_panel_performance_settings": {"message": "Performance Settings"},
     "sync_control_panel_backup_data": {"message": "Backup data"},

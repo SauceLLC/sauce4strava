@@ -267,7 +267,7 @@ sauce.ns('sync', ns => {
         }
 
         async function updateHRZones() {
-            $modal.find('.hr-zones').html(await hrZonesTpl({athlete}));
+            $modal.find('.hr-zones-panel').html(await hrZonesTpl({athlete}));
         }
 
         const bgRender = setAthlete(athlete);

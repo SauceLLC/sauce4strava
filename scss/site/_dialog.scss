@@ -299,8 +299,11 @@ html .ui-dialog {
             }
         }
 
-        > .entry:nth-of-type(odd) {
-            background-color: color.shade(bg, 5%);
+        &,
+        section {
+            > .entry:nth-of-type(odd) {
+                background-color: color.shade(bg, 5%);
+            }
         }
 
         key {
@@ -464,26 +467,6 @@ html .ui-dialog {
 
         .ui-resizable-handle {
             display: none !important;
-        }
-
-        form.sauce-key-value {
-            .entry {
-                &.mutable-data-view {
-                    margin: 1em 0 !important;
-                    border: none !important;
-                    border-radius: 0 !important;
-                    background: unset !important;
-
-                    .mutable-data-entries {
-                        max-height: initial !important;
-                        padding: 1em 0 !important;
-
-                        .mutable-data-entry {
-                            padding: 0.4em 0 !important;
-                        }
-                    }
-                }
-            }
         }
     }
 }
