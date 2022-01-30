@@ -24,7 +24,7 @@ input[type="range"] {
 }
 
 // The CSS for the 404 page (orion) is missing a few things.
-.btn {
+:not(.btn-unstyled) {
     &.btn-sm,
     &.btn-icon-only {
         min-height: 30px;
@@ -881,7 +881,6 @@ table.sauce-perf {
 
                     .edit-activity.btn {
                         min-width: initial;
-                        min-height: initial;
 
                         svg[data-icon] {
                             height: 0.9em;
