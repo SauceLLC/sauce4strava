@@ -392,7 +392,6 @@ export class SummaryView extends PerfView {
         });
         await bulkEditDialog.render();
         bulkEditDialog.show();
-        sauce.report.event('PerfBulkActivityDialog', 'show');
     }
 
     async onDblClickHeader(ev) {
@@ -633,6 +632,7 @@ export class BulkActivityEditDialog extends PerfView {
         return {
             ...super.events,
             'click .edit-activity': 'onEditActivityClick',
+            'click tbody tr': 'onRowClick',
         };
     }
 
@@ -641,6 +641,7 @@ export class BulkActivityEditDialog extends PerfView {
         this.pageView = pageView;
         this.athletes = new Set(activities.map(x => x.athlete));
         this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
+        this.activityTpl = await sauce.template.getTemplate('performance/activity-analysis.html', 'performance');
         await super.init(options);
     }
 
@@ -694,6 +695,12 @@ export class BulkActivityEditDialog extends PerfView {
         const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
         const activity = await sauce.hist.getActivity(id);
         editActivityDialogXXX(activity, this.pageView);
+    }
+
+    async onRowClick(ev) {
+        const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
+        const activity = await sauce.hist.getActivity(id);
+        this.$('.activity-analysis').html(await this.activityTpl(activity));
     }
 }
 

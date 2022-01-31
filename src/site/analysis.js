@@ -933,7 +933,7 @@ sauce.ns('analysis', ns => {
 
 
     function humanPace(raw, options={}) {
-        return H.pace(raw, Object.assign({type: ns.paceType}, options));
+        return H.pace(raw, {type: ns.paceType, ...options});
     }
 
 
@@ -1135,26 +1135,28 @@ sauce.ns('analysis', ns => {
         source, originEl, isDistanceRange}) {
         const powerRoll = await correctedRollTimeRange('watts', wallStartTime, wallEndTime);
         const elapsedTime = wallEndTime - wallStartTime;
-        const timeStream = await fetchStreamTimeRange('time', startTime, endTime);
-        const distStream = await fetchStreamTimeRange('distance', startTime, endTime);
+        const streams = {
+            time: await fetchStreamTimeRange('time', startTime, endTime),
+            distance: await fetchStreamTimeRange('distance', startTime, endTime),
+            altitude: await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime),
+            velocity_smooth: await fetchStreamTimeRange('velocity_smooth', startTime, endTime),
+        };
+        if (!streams.velocity_smooth) {
+            const paceStream = await fetchStreamTimeRange('pace', startTime, endTime);
+            streams.velocity_smooth = paceStream.map(x => 1 / x);
+        }
         const hrRoll = await correctedRollTimeRange('heartrate', wallStartTime, wallEndTime,
             {active: true, ignoreZeros: true});
         const cadenceRoll = await correctedRollTimeRange('cadence', wallStartTime, wallEndTime,
             {active: true, ignoreZeros: true});
-        const altStream = await fetchSmoothStreamTimeRange('altitude', null, startTime, endTime);
-        let velocityStream = await fetchStreamTimeRange('velocity_smooth', startTime, endTime);
-        if (!velocityStream) {
-            const paceStream = await fetchStreamTimeRange('pace', startTime, endTime);
-            velocityStream = paceStream.map(x => 1 / x);
-        }
         const tempStream = await fetchStreamTimeRange('temp', startTime, endTime);
-        const distance = streamDelta(distStream);
+        const distance = streamDelta(streams.distance);
         const startIdx = getStreamTimeIndex(wallStartTime);
         const endIdx = getStreamTimeIndex(wallEndTime);
-        let gap, gradeDistStream;
+        let gap;
         if (ns.activityType === 'run') {
-            gradeDistStream = distStream && await fetchGradeDistStream({startTime, endTime});
-            gap = gradeDistStream && streamDelta(gradeDistStream) / elapsedTime;
+            streams.grade_adjusted_distance = streams.distance && await fetchGradeDistStream({startTime, endTime});
+            gap = streams.grade_adjusted_distance && streamDelta(streams.grade_adjusted_distance) / elapsedTime;
         }
         const heading = await LM(source);
         const textLabel = jQuery(`<div>${label}</div>`).text();
@@ -1174,7 +1176,7 @@ sauce.ns('analysis', ns => {
         const body = await template({
             startsAt: H.timer(wallStartTime),
             elapsed: H.timer(elapsedTime),
-            power: powerRoll && powerData(powerRoll, altStream, {
+            power: powerRoll && powerData(powerRoll, streams.altitude, {
                 max: sauce.data.max(powerRoll.values()),
                 np: supportsNP() ? powerRoll.np() : null,
                 xp: supportsXP() ? powerRoll.xp() : null,
@@ -1182,7 +1184,7 @@ sauce.ns('analysis', ns => {
             }),
             pace: distance && {
                 avg: humanPace(distance / elapsedTime, {velocity: true}),
-                max: humanPace(sauce.data.max(velocityStream), {velocity: true}),
+                max: humanPace(sauce.data.max(streams.velocity_smooth), {velocity: true}),
                 gap: gap && humanPace(gap, {velocity: true}),
             },
             isSpeed: ns.paceMode === 'speed',
@@ -1194,7 +1196,7 @@ sauce.ns('analysis', ns => {
             distanceUnit: L.distanceFormatter.shortUnitKey(),
             stride: stride && H.stride(stride),
             strideUnit: L.elevationFormatter.shortUnitKey(),  // for meters/feet
-            elevation: elevationData(altStream, elapsedTime, distance),
+            elevation: elevationData(streams.altitude, elapsedTime, distance),
             elevationUnit: L.elevationFormatter.shortUnitKey(),
             elevationUnitLong: L.elevationFormatter.longUnitKey(),
             temp: tempStream && L.tempFormatter.format(sauce.data.avg(tempStream)), // XXX check gap handling
@@ -1210,156 +1212,45 @@ sauce.ns('analysis', ns => {
             start: startTime, end: endTime});
         const $sparkline = $dialog.find('.sauce-sparkline');
         async function renderGraphs() {
-            const specs = [];
+            const graphs = [];
             for (const x of _activeGraphs) {
                 if (x === 'power') {
-                    const label = await LM('power');
-                    const formatter = source === 'peak_power_wkg' ?
-                        x => `${label}: ${(x / ns.weight).toFixed(1)}<abbr class="unit short">w/kg</abbr>` :
-                        x => `${label}: ${H.number(x)}<abbr class="unit short">w</abbr>`;
-                    specs.push({
-                        data: powerRoll.values(),
-                        formatter,
-                        colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
-                            {hStart: 360, hEnd: 280, sStart: 40, sEnd: 100, lStart: 60, lEnd: 20})
-                    });
+                    const watts = powerRoll.values();
+                    if (source === 'peak_power_wkg') {
+                        graphs.push('power_wkg');
+                        streams['watts_kg'] = watts.map(x => x / ns.weight);
+                    } else {
+                        graphs.push('power');
+                        streams['watts'] = watts;
+                    }
                 } else if (x === 'sp') {
+                    graphs.push('sp');
                     const spRoll = await correctedRollTimeRange('watts_sealevel', wallStartTime, wallEndTime);
-                    const label = await LM('sea_power');
-                    specs.push({
-                        data: spRoll.values(),
-                        formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">w (SP)</abbr>`,
-                        colorSteps: hslValueGradientSteps([0, 100, 400, 1200],
-                            {hStart: 208, hEnd: 256, sStart: 0, sEnd: 100, lStart: 80, lEnd: 40})
-                    });
+                    streams.watts_seapower = spRoll.values();
                 } else if (x === 'pace') {
-                    const thresholds = {
-                        ride: [4, 12, 20, 28],
-                        run: [0.5, 2, 5, 10],
-                        swim: [0.5, 0.85, 1.1, 1.75],
-                        other: [0.5, 10, 15, 30],
-                    }[ns.activityType];
-                    const labelKey = ns.paceMode === 'speed' ? 'speed' : 'pace';
-                    const label = await LM(labelKey);
-                    specs.push({
-                        data: velocityStream,
-                        formatter: x => `${label}: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
-                        colorSteps: hslValueGradientSteps(thresholds,
-                            {hStart: 216, sStart: 100, lStart: 84, lEnd: 20}),
-                    });
+                    graphs.push('pace');
                 } else if (x === 'cadence') {
-                    const unit = ns.cadenceFormatter.shortUnitKey();
-                    const format = x => ns.cadenceFormatter.format(x);
-                    const label = await LM('cadence');
-                    const thresholds = {
-                        ride: [40, 80, 120, 150],
-                        run: [50, 80, 90, 100],
-                        swim: [20, 25, 30, 35],
-                        other: [10, 50, 100, 160]
-                    }[ns.activityType];
-                    specs.push({
-                        data: cadenceRoll.values(),
-                        formatter: x => `${label}: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
-                        colorSteps: hslValueGradientSteps(thresholds, {hStart: 60, hEnd: 80, sStart: 95, lStart: 50}),
-                    });
+                    graphs.push('cadence');
+                    streams.cadence = cadenceRoll.values();
                 } else if (x === 'gap') {
-                    const gradeVelocity = [];
-                    for (let i = 1; i < gradeDistStream.length; i++) {
-                        const dist = gradeDistStream[i] - gradeDistStream[i - 1];
-                        const elapsed = timeStream[i] - timeStream[i - 1];
-                        gradeVelocity.push(elapsed ? dist / elapsed : 0);
-                    }
-                    const label = await LM('gap');
-                    specs.push({
-                        data: gradeVelocity,
-                        formatter: x => `${label}: ${humanPace(x, {velocity: true, html: true, suffix: true})}`,
-                        colorSteps: hslValueGradientSteps([0.5, 2, 5, 10], {
-                            hStart: 216, // XXX Change a bit
-                            sStart: 100,
-                            lStart: 84,
-                            lEnd: 20,
-                        }),
-                    });
+                    graphs.push('gap');
                 } else if (x === 'hr') {
-                    const unit = L.hrFormatter.shortUnitKey();
-                    const label = await LM('heartrate');
-                    specs.push({
-                        data: hrRoll.values(),
-                        formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">${unit}</abbr>`,
-                        colorSteps: hslValueGradientSteps([40, 100, 150, 200],
-                            {hStart: 0, sStart: 50, sEnd: 100, lStart: 50})
-                    });
+                    graphs.push('hr');
+                    streams.heartrate = hrRoll.values();
                 } else if (x === 'vam') {
-                    specs.push({
-                        data: sauce.geo.createVAMStream(timeStream, altStream).slice(1),  // first entry is always 0
-                        formatter: x => `VAM: ${H.number(x)}<abbr class="unit short">Vm/h</abbr>`,
-                        colorSteps: hslValueGradientSteps([-500, 500, 1000, 2000],
-                            {hStart: 260, sStart: 65, sEnd: 100, lStart: 75, lend: 50}),
-                    });
+                    graphs.push('vam');
                 } else if (x === 'elevation') {
-                    const unit = L.elevationFormatter.shortUnitKey();
-                    const label = await LM('elevation');
-                    specs.push({
-                        data: altStream,
-                        formatter: x => `${label}: ${H.elevation(x)}<abbr class="unit short">${unit}</abbr>`,
-                        colorSteps: hslValueGradientSteps([0, 1000, 2000, 4000],
-                            {hStart: 0, sStart: 0, lStart: 60, lEnd: 20}),
-                    });
-                } else {
-                    throw new TypeError(`Invalid graph: ${x}`);
+                    graphs.push('elevation');
                 }
             }
-            if (!specs.length) {
-                $sparkline.empty();
-            } else {
-                const opacityLimit = 0.25;
-                const maxMarginLimit = 2;
-                const minMarginLimit = 0.8;
-                let opacity = 0.85;
-                let maxMargin = 0;
-                let minMargin = minMarginLimit + 0.1;
-                let composite = false;
-                for (const spec of specs) {
-                    let data = spec.data;
-                    if (!data) {
-                        const id = Array.from(_activeGraphs)[specs.indexOf(spec)];
-                        sauce.report.error(new Error(`Invalid info graph data for: ${id} (${textLabel})`));
-                        continue;
-                    }
-                    if (data.length > 120) {
-                        data = sauce.data.resample(data, 120);
-                    }
-                    const dataMin = sauce.data.min(data);
-                    const dataMax = sauce.data.max(data);
-                    const range = dataMax - dataMin;
-                    minMargin -= minMarginLimit / specs.length;
-                    $sparkline.sparkline(data, {
-                        type: 'line',
-                        width: 300,  // Is scaled by DPR in sparkline()
-                        height: 64,  //  "
-                        lineColor: '#EA400DA0',
-                        composite,
-                        disableHiddenCheck: true,  // Fix issue with detached composite render
-                        fillColor: {
-                            type: 'gradient',
-                            opacity,
-                            steps: spec.colorSteps
-                        },
-                        chartRangeMin: dataMin - (range * minMargin),
-                        chartRangeMax: dataMax + (range * maxMargin),
-                        tooltipFormatter: (_, __, data) => {
-                            const legendColor = data.fillColor.steps[Math.floor(data.fillColor.steps.length / 2)].color;
-                            return `
-                                <div class="jqs-legend" style="background-color: ${legendColor};"></div>
-                                ${spec.formatter(data.y)}
-                            `;
-                        }
-                    });
-                    composite = true;
-                    opacity -= opacityLimit / specs.length;
-                    maxMargin += maxMarginLimit / specs.length;
-                }
-            }
+            await sauce.ui.createStreamGraphs($sparkline, {
+                streams,
+                graphs,
+                width: 300,
+                height: 64,
+                paceType: ns.paceType,
+                activityType: ns.activityType,
+            });
         }
         let ranksLoaded;
         async function loadRanks(filter) {
