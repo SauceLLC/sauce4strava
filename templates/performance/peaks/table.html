@@ -45,11 +45,6 @@
         </select>
 
         <div class="options">
-            <label title="{{{skip_estimates_tooltip}}}">
-                <input type="checkbox" class="pref" name="skipEstimates" {{prefs.skipEstimates ? 'checked' : ''}}/>
-                {{{skip_estimates}}}
-            </label>
-
             <label>
                 <input type="checkbox" class="pref" name="includeAllAthletes" {{prefs.includeAllAthletes ? 'checked' : ''}}/>
                 {{{/all_athletes}}}
@@ -58,6 +53,11 @@
             <label>
                 <input type="checkbox" class="pref" name="includeAllDates" {{prefs.includeAllDates ? 'checked' : ''}}/>
                 {{{all_dates}}}
+            </label>
+
+            <label title="{{{skip_estimates_tooltip}}}">
+                <input type="checkbox" class="pref" name="skipEstimates" {{prefs.skipEstimates ? 'checked' : ''}}/>
+                {{{skip_estimates}}}
             </label>
         </div>
     </div>
