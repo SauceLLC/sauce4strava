@@ -3,6 +3,7 @@
 
 .mutable-data-view {
     max-height: 100%;
+    min-height: 8em;
 
     .mutable-data-header {
         padding: 0.6em 1em 0.2em 1em;
@@ -14,14 +15,10 @@
             top: 0.4rem;
             right: 0.7rem;
         }
-    }
 
-    .mutable-data-footer {
-        padding: 0 1em;
-
-        .btn {
-            display: flex;
-            margin: 0.6em 0;
+        .btn.btn-sm {
+            min-height: initial;
+            font-size: 0.8em;
         }
     }
 
