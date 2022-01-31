@@ -60,8 +60,7 @@ export class PeaksTableView extends views.PerfView {
             'change .peak-controls select[name="distance"]': 'onDistanceChange',
             'change .peak-controls select[name="limit"]': 'onLimitChange',
             'change .peak-controls select[name="activityType"]': 'onActivityTypeChange',
-            'input .peak-controls input[name="include-all-athletes"]': 'onIncludeAllAthletesInput',
-            'input .peak-controls input[name="include-all-dates"]': 'onIncludeAllDatesInput',
+            'input .peak-controls input.pref[type="checkbox"]': 'onPrefCheckboxInput',
             'click .results table tbody tr': 'onResultClick',
             'click .edit-activity': 'onEditActivityClick',
             'pointerdown .resize-drag': 'onResizePointerDown',
@@ -77,6 +76,7 @@ export class PeaksTableView extends views.PerfView {
             includeAllAthletes: false,
             includeAllDates: false,
             activityType: null,
+            skipEstimates: null,
         };
     }
 
@@ -137,6 +137,7 @@ export class PeaksTableView extends views.PerfView {
         const options = {
             limit: prefs.limit,
             activityType: prefs.activityType,
+            skipEstimates: prefs.skipEstimates,
             expandActivities: true,
         };
         if (!prefs.includeAllDates) {
@@ -194,15 +195,8 @@ export class PeaksTableView extends views.PerfView {
         await this.render();
     }
 
-    async onIncludeAllAthletesInput(ev) {
-        const includeAllAthletes = ev.currentTarget.checked;
-        await this.savePrefs({includeAllAthletes});
-        await this.render();
-    }
-
-    async onIncludeAllDatesInput(ev) {
-        const includeAllDates = ev.currentTarget.checked;
-        await this.savePrefs({includeAllDates});
+    async onPrefCheckboxInput(ev) {
+        await this.savePrefs({[ev.currentTarget.name]: ev.currentTarget.checked});
         await this.render();
     }
 

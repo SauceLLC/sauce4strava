@@ -207,6 +207,9 @@ sauce.ns('hist.db', ns => {
             if (options.activityType) {
                 peaks = peaks.filter(x => x.activityType === options.activityType);
             }
+            if (options.skipEstimates) {
+                peaks = peaks.filter(x => !x.estimate);
+            }
             if (this.getDirectionForType(type) === 'prev') {
                 peaks.sort((a, b) => (b.value || 0) - (a.value || 0));
             } else {

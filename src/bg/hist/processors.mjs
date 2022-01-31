@@ -459,7 +459,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                         {activeStream: streams.active});
                     if (rp) {
                         const entry = sauce.peaks.createStoreEntry('power', period, rp.avg(),
-                            rp, streams.time, activity);
+                            rp, streams.time, activity, {estimate: !streams.watts});
                         if (entry) {
                             upPeaks.push(entry);
                         }

@@ -397,6 +397,8 @@
     "performance_top": {"message": "Top"},
     "performance_all_results": {"message": "All Results"},
     "performance_all_dates": {"message": "All Dates"},
+    "performance_skip_estimates": {"message": "Skip Estimates"},
+    "performance_skip_estimates_tooltip": {"message": "Exclude peak results based on estimated watts."},
     "performance_predicted": {"message": "Predicted"},
     "performance_fitness": {"message": "Fitness"},
     "performance_fatigue": {"message": "Fatigue"},

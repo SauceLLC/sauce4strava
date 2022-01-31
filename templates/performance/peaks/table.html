@@ -44,23 +44,31 @@
             <option value="workout" {{prefs.activityType === 'workout' ? 'selected' : ''}}>{{{workouts}}}</option>
         </select>
 
-        <label>
-            <input type="checkbox" name="include-all-athletes" {{prefs.includeAllAthletes ? 'checked' : ''}}/>
-            {{{/all_athletes}}}
-        </label>
+        <div class="options">
+            <label title="{{{skip_estimates_tooltip}}}">
+                <input type="checkbox" class="pref" name="skipEstimates" {{prefs.skipEstimates ? 'checked' : ''}}/>
+                {{{skip_estimates}}}
+            </label>
 
-        <label>
-            <input type="checkbox" name="include-all-dates" {{prefs.includeAllDates ? 'checked' : ''}}/>
-            {{{all_dates}}}
-        </label>
+            <label>
+                <input type="checkbox" class="pref" name="includeAllAthletes" {{prefs.includeAllAthletes ? 'checked' : ''}}/>
+                {{{/all_athletes}}}
+            </label>
+
+            <label>
+                <input type="checkbox" class="pref" name="includeAllDates" {{prefs.includeAllDates ? 'checked' : ''}}/>
+                {{{all_dates}}}
+            </label>
+        </div>
     </div>
 
     <div class="results">
         <table class="sauce-perf">
             <thead>
                 <tr>
-                    <th>{{{/analysis_rank}}}</th>
-                    <th>{{{/analysis_value}}}</th>
+                    <th class="centered">{{{/analysis_rank}}}</th>
+                    <th class="righted">{{{/analysis_value}}}</th>
+                    <th></th>
                     <% if (prefs.includeAllAthletes) { %>
                         <th>{{{/athlete}}}</th>
                     <% } %>
@@ -74,14 +82,17 @@
                 <% let i = 1; %>
                 <% for (const x of peaks.filter(x => x.activity)) { %>
                     <tr data-id="{{x.activity.id}}" title="{{{peaks_row_tooltip}}}">
-                        <td>{{humanNumber(i++)}}</td>
-                        <td>
-                            {{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>
+                        <td class="centered">{{humanNumber(i++)}}</td>
+                        <td class="righted">
+                            {{x.estimate ? '~' : ''}}{{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>
+                        </td>
+                        <td class="centered">
                             <% if (x.rankBadge && x.rankBadge.cat) { %>
                                 <img src="{{x.rankBadge.badge}}" class="sauce-rank"
                                      data-cat="{{x.rankBadge.cat}}" title="{{x.rankBadge.tooltip}}"/>
                             <% } %>
                         </td>
+
                         <% if (prefs.includeAllAthletes) { %>
                             <td>{{await athleteName(x.activity.athlete)}}</td>
                         <% } %>

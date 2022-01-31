@@ -839,7 +839,7 @@ table.sauce-perf {
         }
 
         .peak-controls {
-            padding: 1em;
+            padding: 0 1rem 1rem;
             background-color: color.shade(bg, 5%);
             font-size: 0.92em;
             display: flex;
@@ -847,11 +847,29 @@ table.sauce-perf {
             align-items: center;
 
             > * {
-                margin-right: 1em !important;
+                margin-top: 1rem;
+                margin-right: 0.5rem !important;
             }
 
             label {
                 margin: 0;
+            }
+
+            .options {
+                display: inline-flex;
+                flex-wrap: wrap;
+                align-items: center;
+
+                > * {
+                    display: inline-flex;
+                    margin-right: 0.5rem;
+
+                    input[type="checkbox"] {
+                        margin: 0 0.4em 0 0;
+                    }
+
+                    vertical-align: center;
+                }
             }
         }
 
@@ -864,6 +882,16 @@ table.sauce-perf {
             flex-direction: column;
 
             table {
+                td.centered,
+                th.centered {
+                    text-align: center;
+                }
+
+                td.righted,
+                th.righted {
+                    text-align: right;
+                }
+
                 tbody tr {
                     cursor: pointer;
 
@@ -891,7 +919,7 @@ table.sauce-perf {
 
                     img.sauce-rank {
                         max-height: 1.6em;
-                        margin: -0.6em 0 -0.5em 0.3em;
+                        margin: -0.6em 0 -0.5em;
                         opacity: 0.8;
                     }
                 }
