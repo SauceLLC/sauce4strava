@@ -569,7 +569,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                             else throw new TypeError("Unexpected power zone");
                         }
                     }
-                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, corrected.active(), ftp);
+                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
                     stats.intensity = (stats.np || stats.power) / ftp;
                 }
             } catch(e) {
