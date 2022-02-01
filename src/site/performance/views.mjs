@@ -624,6 +624,66 @@ export class DetailsView extends PerfView {
 }
 
 
+export class ActivityAnalysisView extends PerfView {
+    static tpl = 'performance/activity-analysis.html';
+
+    get events() {
+        return {
+            ...super.events,
+        };
+    }
+
+    async init({pageView, ...options}) {
+        this.pageView = pageView;
+        await super.init(options);
+    }
+
+    renderAttrs() {
+        return {
+            activity: this.activity,
+        };
+    }
+
+    async setActivity(activity) {
+        this.activity = activity;
+        this.streams = await sauce.hist.getStreamsForActivity(activity.id);
+        await this.render();
+    }
+
+    async render() {
+        await super.render();
+        if (this.streams.time) {
+            const options = {
+                streams: this.streams,
+                width: '100%',
+                height: 64,
+                paceType: this.activity.basetype === 'run' ? 'pace' : 'speed',
+                activityType: this.activity.basetype,
+            };
+            const $root = this.$('.sauce-graphs');
+            if (this.streams.power) {
+                await sauce.ui.createStreamGraphs($root.find('.power-graph'),
+                    {graphs: ['power', 'power_wkg', 'sp'], ...options});
+            }
+            if (this.streams.heartrate) {
+                await sauce.ui.createStreamGraphs($root.find('.hr-graph'), {graphs: ['hr'], ...options});
+            }
+            if (this.streams.distance) {
+                const graphs = ['pace'];
+                if (this.activity.basetype === 'run') {
+                    graphs.push('gap');
+                }
+                await sauce.ui.createStreamGraphs($root.find('.pace-graph'), {graphs, ...options});
+            }
+            if (this.streams.altitude) {
+                await sauce.ui.createStreamGraphs($root.find('.elevation-graph'),
+                    {graphs: ['elevation', 'vam'], ...options});
+            }
+        }
+    }
+}
+
+
 export class BulkActivityEditDialog extends PerfView {
     static tpl = 'performance/bulkedit.html';
     static localeKeys = ['/save', 'edit_activities'];
@@ -641,7 +701,7 @@ export class BulkActivityEditDialog extends PerfView {
         this.pageView = pageView;
         this.athletes = new Set(activities.map(x => x.athlete));
         this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
-        this.activityTpl = await sauce.template.getTemplate('performance/activity-analysis.html', 'performance');
+        this.analysisView = new ActivityAnalysisView({pageView});
         await super.init(options);
     }
 
@@ -649,6 +709,11 @@ export class BulkActivityEditDialog extends PerfView {
         return {
             activities: this.activities,
         };
+    }
+
+    async render() {
+        await super.render();
+        this.analysisView.setElement(this.$('.activity-analysis'));
     }
 
     show() {
@@ -700,7 +765,8 @@ export class BulkActivityEditDialog extends PerfView {
     async onRowClick(ev) {
         const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
         const activity = await sauce.hist.getActivity(id);
-        this.$('.activity-analysis').html(await this.activityTpl(activity));
+        await this.analysisView.setActivity(activity);
+        this.el.parentElement.scrollIntoView({behavior: 'smooth'});
     }
 }
 

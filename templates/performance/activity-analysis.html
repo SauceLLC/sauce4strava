@@ -1,12 +1,11 @@
-<h1>{{obj.name}}</h1>
-<h2>{{obj.desc}}</h2>
-<h3>{{obj.stats && obj.stats.activeTime}}</h3>
-<h3>{{obj.stats && obj.stats.activePower}}</h3>
-<pre>{{JSON.stringify(obj, null, 4)}}</pre>
+<h3>{{activity.name}}</h3>
+<b>{{activity.desc}}</b>
+<pre>{{JSON.stringify(activity.training, null, 4)}}</pre>
+<pre>{{JSON.stringify(activity.stats, null, 4)}}</pre>
 <div class="sauce-graphs">
     <div class="power-graph"></div>
     <div class="hr-graph"></div>
-    <div class="speed-graph"></div>
+    <div class="pace-graph"></div>
     <div class="cadence-graph"></div>
-    <div class="wprimebal-graph"></div>
+    <div class="elevation-graph"></div>
 </div>
