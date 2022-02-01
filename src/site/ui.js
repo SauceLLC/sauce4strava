@@ -169,8 +169,8 @@ sauce.ns('ui', ns => {
             if (g === 'power' || g === 'power_wkg') {
                 const label = await LM('power');
                 const formatter = g === 'power_wkg' ?
-                    x => `${label}: ${x.toFixed(1)}<abbr class="unit short">w/kg</abbr>` :
-                    x => `${label}: ${H.number(x)}<abbr class="unit short">w</abbr>`;
+                    x => `${label}: ${x.toFixed(1)} <abbr class="unit short">w/kg</abbr>` :
+                    x => `${label}: ${H.number(x)} <abbr class="unit short">w</abbr>`;
                 specs.push({
                     data: g === 'power_wkg' ? streams.watts_kg : (streams.watts || streams.watts_calc),
                     formatter,
@@ -181,7 +181,7 @@ sauce.ns('ui', ns => {
                 const label = await LM('sea_power');
                 specs.push({
                     data: streams.watts_seapower,
-                    formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">w (SP)</abbr>`,
+                    formatter: x => `${label}: ${H.number(x)} <abbr class="unit short">w</abbr>`,
                     colorSteps: ns.hslValueGradientSteps([0, 100, 400, 1200],
                         {hStart: 208, hEnd: 256, sStart: 0, sEnd: 100, lStart: 80, lEnd: 40})
                 });
@@ -190,8 +190,7 @@ sauce.ns('ui', ns => {
                     ride: [4, 12, 20, 28],
                     run: [0.5, 2, 5, 10],
                     swim: [0.5, 0.85, 1.1, 1.75],
-                    other: [0.5, 10, 15, 30],
-                }[activityType];
+                }[activityType] || [0.5, 10, 15, 30];
                 const labelKey = paceType === 'speed' ? 'speed' : 'pace';
                 const label = await LM(labelKey);
                 specs.push({
@@ -208,11 +207,10 @@ sauce.ns('ui', ns => {
                     ride: [40, 80, 120, 150],
                     run: [50, 80, 90, 100],
                     swim: [20, 25, 30, 35],
-                    other: [10, 50, 100, 160]
-                }[activityType];
+                }[activityType] || [10, 50, 100, 160];
                 specs.push({
                     data: streams.cadence,
-                    formatter: x => `${label}: ${format(x)}<abbr class="unit short">${unit}</abbr>`,
+                    formatter: x => `${label}: ${format(x)} <abbr class="unit short">${unit}</abbr>`,
                     colorSteps: ns.hslValueGradientSteps(thresholds, {hStart: 60, hEnd: 80, sStart: 95, lStart: 50}),
                 });
             } else if (g === 'gap') {
@@ -232,14 +230,14 @@ sauce.ns('ui', ns => {
                 const label = await LM('heartrate');
                 specs.push({
                     data: streams.heartrate,
-                    formatter: x => `${label}: ${H.number(x)}<abbr class="unit short">${unit}</abbr>`,
+                    formatter: x => `${label}: ${H.number(x)} <abbr class="unit short">${unit}</abbr>`,
                     colorSteps: ns.hslValueGradientSteps([40, 100, 150, 200],
                         {hStart: 0, sStart: 50, sEnd: 100, lStart: 50})
                 });
             } else if (g === 'vam') {
                 specs.push({
                     data: sauce.geo.createVAMStream(streams.time, streams.altitude).slice(1),  // first entry is always 0
-                    formatter: x => `VAM: ${H.number(x)}<abbr class="unit short">Vm/h</abbr>`,
+                    formatter: x => `VAM: ${H.number(x)} <abbr class="unit short">Vm/h</abbr>`,
                     colorSteps: ns.hslValueGradientSteps([-500, 500, 1000, 2000],
                         {hStart: 260, sStart: 65, sEnd: 100, lStart: 75, lend: 50}),
                 });
@@ -248,7 +246,7 @@ sauce.ns('ui', ns => {
                 const label = await LM('elevation');
                 specs.push({
                     data: streams.altitude,
-                    formatter: x => `${label}: ${H.elevation(x)}<abbr class="unit short">${unit}</abbr>`,
+                    formatter: x => `${label}: ${H.elevation(x)} <abbr class="unit short">${unit}</abbr>`,
                     colorSteps: ns.hslValueGradientSteps([0, 1000, 2000, 4000],
                         {hStart: 0, sStart: 0, lStart: 60, lEnd: 20}),
                 });

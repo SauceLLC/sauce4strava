@@ -16,6 +16,11 @@ $scrollbar-safety: 25px;
 
 .jqstooltip {
     width: auto !important;  // XXX Not sure why, but I need this to prevent clipping.
+    height: auto !important;  // XXX Not sure why, but I need this to prevent clipping.
+}
+
+ul, ol {
+    margin-bottom: initial; // Reset Strava CSS 
 }
 
 input[type="range"] {
