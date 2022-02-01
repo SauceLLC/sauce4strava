@@ -438,6 +438,7 @@
         $section-padding-bottom: 1mm;
         $section-margin-top: 1.5mm;
 
+        line-height: normal;
         display: grid;
         grid-template-columns: 70% 30%;
         padding: 0;
@@ -461,17 +462,16 @@
             }
 
             .graph-select {
-                content: '';
                 width: 0.5em;
                 height: 0.5em;
                 background-color: color.shade(bg, 5%);
                 border: 1px solid color.shade(fg, 20%);
                 border-radius: 50%;
                 position: absolute;
-                left: -0.92em;
-                top: 0.333em;
+                left: -0.42em;
+                top: 0.26em;
                 cursor: pointer;
-                opacity: 0;
+                opacity: 0.2;
                 transition: opacity 200ms;
             }
 
@@ -491,14 +491,15 @@
             border-bottom: var(--sauce-thin-border);
             border-color: color.shade(fg, 0%, 0.08);
             justify-content: space-between;
+            font-size: 1.08em;
 
             &.selectable .graph-select {
-                top: 0.5em;
+                top: 0.4em;
+                left: -0.72em;
             }
 
             .title {
                 font-variant: all-small-caps;
-                font-size: 1.08em;
                 font-weight: bold;
                 color: color.shade(fg, 25%);
             }
@@ -517,6 +518,7 @@
             row {
                 display: flex;
                 position: relative;
+                align-items: center;
 
                 key,
                 value {
@@ -570,8 +572,7 @@
 
             .icon-background {
                 position: absolute;
-                //top: calc(-#{$heading-bottom-margin} / 3);
-                top: 0;  // a little lower than ^^^ needs testing.. XXX
+                top: 0;
                 width: calc(100% + (#{$highlight-margin-right} * 2));
                 opacity: 0.18;
                 display: flex;
