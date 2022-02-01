@@ -163,6 +163,11 @@ sauce.ns('hist.db', ns => {
             options.index = 'athlete';
             return await this.getAllKeys(q, options);
         }
+
+        async getForActivity(activityId, options={}) {
+            const data = await this.getAll(activityId, {index: 'activity', ...options});
+            return Object.fromEntries(data.map(({stream, data}) => [stream, data]));
+        }
     }
 
 

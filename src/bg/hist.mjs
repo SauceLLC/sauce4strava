@@ -478,6 +478,12 @@ export async function deleteActivity(id) {
 sauce.proxy.export(deleteActivity, {namespace});
 
 
+export async function getStreamsForActivity(id) {
+    return await streamsStore.getForActivity(id);
+}
+sauce.proxy.export(getStreamsForActivity, {namespace});
+
+
 export async function enableAthlete(id) {
     return await syncManager.enableAthlete(id);
 }
