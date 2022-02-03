@@ -12,6 +12,17 @@ const H = L.human;
 const D = sauce.date;
 
 
+function humanKJ(kj) {
+    if (kj >= 1000000) {
+        return `${H.number(kj / 1000000, 1)} gJ`;
+    } else if (kj >= 1000) {
+        return `${H.number(kj / 1000, 1)} mJ`;
+    } else {
+        return `${H.number(kj)} kJ`;
+    }
+}
+
+
 export class TrainingChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_training_load_title';
     static descLocaleKey = 'performance_training_load_desc';
@@ -72,7 +83,7 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
                         }
                         return -1;
                     }
-                },
+                }
             }
         });
     }
@@ -256,7 +267,9 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_activities_title';
     static descLocaleKey = 'performance_activities_desc';
     static tpl = 'performance/fitness/activity-volume.html';
-    static localeKeys = ['predicted', '/analysis_time', '/analysis_distance', 'activities'];
+    static settingsTpl = 'performance/fitness/activity-volume-settings.html';
+    static localeKeys = ['predicted', '/analysis_time', '/analysis_distance', 'activities',
+        '/analysis_energy'];
 
     async init(options) {
         await super.init(options);
@@ -293,8 +306,17 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                             maxTicksLimit: 7,
                             callback: v => H.distance(v, 0, {suffix: true}),
                         },
+                    }, {
+                        id: 'kj',
+                        position: 'right',
+                        gridLines: {display: false},
+                        ticks: {
+                            min: 0,
+                            maxTicksLimit: 6,
+                            callback: v => humanKJ(v),
+                        },
                     }]
-                },
+                }
             }
         });
     }
@@ -306,6 +328,7 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
             const remaining = (range.end - Date.now()) / DAY;
             const days = Math.round((range.end - metricData[metricData.length - 1].date) / DAY);
             const weighting = Math.min(days, daily.length);
+            const avgKJ = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.kj));
             const avgTSS = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.tss));
             const avgDuration = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.duration));
             const avgDistance = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.distance));
@@ -326,6 +349,11 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                     x: b.date,
                     y: i === metricData.length - 1 ? avgDistance * remaining : null,
                 })),
+                kj: metricData.map((b, i) => ({
+                    b,
+                    x: b.date,
+                    y: i === metricData.length - 1 ? avgKJ * remaining : null,
+                }))
             };
         }
         const commonOptions = {
@@ -390,6 +418,26 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 return tips;
             },
             data: metricData.map((b, i) => ({b, x: b.date, y: b.distance})),
+        }, {
+            id: 'kj',
+            label: this.LM('analysis_energy'),
+            backgroundColor: '#8ccd6cd0',
+            borderColor: '#7cbd5cf0',
+            hoverBackgroundColor: '#7cbd5c',
+            hoverBorderColor: '#7cbd5c',
+            yAxisID: 'kj',
+            stack: 'kj',
+            tooltipFormat: (x, i) => {
+                const kjDay = H.number(x / metricData[i].days);
+                const tips = [`${humanKJ(x)} <small>(${kjDay}/d)</small>`];
+                if (predictions && i === metricData.length - 1) {
+                    const pkj = predictions.kj[i].y + x;
+                    const pkjDay = H.number(pkj / predictions.days);
+                    tips.push(`${this.LM('predicted')}: <b>~${humanKJ(pkj)} <small>(${pkjDay}/d)</small></b>`);
+                }
+                return tips;
+            },
+            data: metricData.map((b, i) => ({b, x: b.date, y: b.kj})),
         }];
         if (predictions) {
             this.chart.data.datasets.push({
@@ -419,6 +467,15 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'distance',
                 stack: 'distance',
                 data: predictions.distance,
+            }, {
+                id: 'kj',
+                backgroundColor: '#8ccd6c50',
+                borderColor: '#7cbd5c50',
+                hoverBackgroundColor: '#7cbd5c60',
+                hoverBorderColor: '#7cbd5c60',
+                yAxisID: 'kj',
+                stack: 'kj',
+                data: predictions.kj,
             });
         }
         for (const [i, x] of this.chart.data.datasets.entries()) {

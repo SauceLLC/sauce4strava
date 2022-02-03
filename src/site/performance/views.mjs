@@ -933,6 +933,7 @@ export class MainView extends PerfView {
             body: await template({
                 panel,
                 settings,
+                prefs: panel.prefs,
                 panelCount: this.panels.length,
                 order,
                 sizeHint,

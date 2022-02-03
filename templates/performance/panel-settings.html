@@ -34,3 +34,6 @@
         </value>
     </div>
 </form>
+<% if (panel.view.constructor.settingsTpl) { %>
+    {- await embed(panel.view.constructor.settingsTpl, obj) -}
+<% } %>
