@@ -150,13 +150,26 @@ addTests([
         assertEqual(p5NoPad.avg(), 480);
     },
     function test_correctedpower_time_with_head_and_tail_padding() {
-        const times =   [ 1,  2, 100,  101, 200, 201];
-        const values =  [10, 10,  10,   10,  10,  10];
+        const times = [1, 2, 100, 101, 200, 201];
+        const values = times.map(x => 10);
         const full = sauce.power.correctedPower(times, values, {idealGap: 1, maxGap: 5});
         const headTailPad = full.slice(50, 150);
         assertEqual(headTailPad.elapsed({allowPadBounds: true}), 100);
         assertEqual(headTailPad.active({allowPadBounds: true}), 2);
         assertEqual(headTailPad.elapsed(), 1);
         assertEqual(headTailPad.active(), 1);
+    },
+    function test_peak_break() {
+        // Support for huge gaps: https://www.strava.com/activities/452115433/analysis/5264/5319
+        const times = [1, 2, 3].concat(timeStream(10000000, 10000000 + 10000));
+        const values = times.map(x => 10);
+        for (const p of [5, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600, 7200, 9600]) {
+            let peak = sauce.power.peakPower(p, times, values, {idealGap: 1, maxGap: 5});
+            //assertEqual(peak.active(), p);
+        }
+        for (const p of [5, 15, 30, 60, 120, 300, 600, 1200, 1800, 3600, 7200, 9600]) {
+            let peak = sauce.data.peakAverage(p, times, values, {idealGap: 1, maxGap: 5, ignoreZeros: true, active: true});
+            //assertEqual(peak.active(), p);
+        }
     },
 ]);

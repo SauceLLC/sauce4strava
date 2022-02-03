@@ -466,30 +466,28 @@ sauce.ns('data', function() {
             if (this._length) {
                 const prevTS = this._times[this._length - 1];
                 const gap = ts - prevTS;
-                if ((active == null && (this.maxGap && gap > this.maxGap)) || active === false) {
-                    const idealGap = this.idealGap || Math.min(1, gap / 2);
-                    const breakGap = 3600;
-                    if (gap > breakGap) {
-                        // Handle massive gaps between time stamps seen by Garmin devices glitching.
-                        // Note, to play nice with elapsed time based rolling avgs, we include the
-                        // max number of zero pads on either end of the gap.
-                        const bookEndTime = Math.floor(breakGap / 2) - idealGap;
-                        for (let i = idealGap; i < bookEndTime; i += idealGap) {
-                            this._add(prevTS + i, ZERO);
-                        }
-                        this._add(prevTS + bookEndTime, new Break(gap - (bookEndTime * 2)));
-                        for (let i = gap - bookEndTime; i < gap; i += idealGap) {
-                            this._add(prevTS + i, ZERO);
-                        }
-                    } else {
-                        for (let i = idealGap; i < gap; i += idealGap) {
-                            this._add(prevTS + i, ZERO);
-                        }
+                const safeIdealGap = this.idealGap || Math.min(1, gap / 2);
+                const breakGap = 3600;
+                if (gap > breakGap) {
+                    // Handle massive gaps between time stamps seen by Garmin devices glitching.
+                    // Note, to play nice with elapsed time based rolling avgs, we include the
+                    // max number of zero pads on either end of the gap.
+                    const bookEndTime = Math.floor(breakGap / 2) - safeIdealGap;
+                    for (let i = safeIdealGap; i < bookEndTime; i += safeIdealGap) {
+                        this._add(prevTS + i, ZERO);
+                    }
+                    this._add(prevTS + bookEndTime, new Break(gap - (bookEndTime * 2)));
+                    for (let i = gap - bookEndTime; i < gap; i += safeIdealGap) {
+                        this._add(prevTS + i, ZERO);
+                    }
+                } else if ((active == null && (this.maxGap && gap > this.maxGap)) || active === false) {
+                    for (let i = safeIdealGap; i < gap; i += safeIdealGap) {
+                        this._add(prevTS + i, ZERO);
                     }
                 } else if (this.idealGap && gap > this.idealGap) {
                     if (this.maxGap && gap > this.maxGap) {
                         // Zero pad everything up to the maxgap zone.  No free rides.
-                        for (let i = this.idealGap; i <= gap - this.maxGap; i += this.idealGap) {
+                        for (let i = safeIdealGap; i <= gap - this.maxGap; i += safeIdealGap) {
                             this._add(prevTS + i, ZERO);
                         }
                     }
@@ -497,7 +495,7 @@ sauce.ns('data', function() {
                     const refTS = this._times[this._length - 1];
                     const refV = this._values[this._length - 1] || 0;
                     const padGap = Math.min(this.maxGap, gap);
-                    const padGaps = Array.from(sauce.data.range(this.idealGap, padGap, this.idealGap));
+                    const padGaps = Array.from(sauce.data.range(safeIdealGap, padGap, safeIdealGap));
                     const padSeeds = padGaps.map(x => value);
                     const weighting = Math.max(Math.round(padSeeds.length / 2), 2);
                     for (const [i, x] of sauce.data.enumerate(sauce.perf.expWeightedIter(weighting, padSeeds, refV))) {
