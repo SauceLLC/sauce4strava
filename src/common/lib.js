@@ -408,7 +408,11 @@ sauce.ns('data', function() {
             return leadRoll;
         }
 
-        elapsed({offt=0, allowPadBounds}={}) {
+        elapsed(...args) {
+            return this._elapsedMeta(...args).time;
+        }
+
+        _elapsedMeta({offt=0, allowPadBounds}={}) {
             let end = this._length - 1;
             let start = offt + this._offt;
             if (!(allowPadBounds != null ? allowPadBounds : this._allowPadBounds)) {
@@ -419,10 +423,18 @@ sauce.ns('data', function() {
                     end--;
                 }
             }
-            return end > start ? this._times[end] - this._times[start] : 0;
+            return {
+                time: end > start ? this._times[end] - this._times[start] : 0,
+                start,
+                end
+            };
         }
 
-        active({offt=0, predicate=0, allowPadBounds}={}) {
+        active(...args) {
+            return this._activeMeta(...args).time;
+        }
+
+        _activeMeta({offt=0, predicate=0, allowPadBounds}={}) {
             let t = this._activeAcc;
             if (offt) {
                 const lim = Math.min(this._length, this._offt + offt);
@@ -432,9 +444,9 @@ sauce.ns('data', function() {
                     }
                 }
             }
+            let end = this._length - 1;
+            let start = offt + this._offt;
             if (!(allowPadBounds != null ? allowPadBounds : this._allowPadBounds)) {
-                let end = this._length - 1;
-                let start = offt + this._offt;
                 while (t >= predicate && start < end && this._values[start] instanceof Pad) {
                     // As with processShift, we care about index+1 when it comes to internal counters.
                     if (this._isActiveValue(this._values[start + 1])) {
@@ -449,7 +461,11 @@ sauce.ns('data', function() {
                     end--;
                 }
             }
-            return t > 0 ? t : 0;
+            return {
+                time: t > 0 ? t : 0,
+                start,
+                end
+            };
         }
 
         _isActiveValue(value) {
@@ -553,8 +569,17 @@ sauce.ns('data', function() {
                 this.processAdd(i);
                 this._length++;
                 if (this.period) {
-                    while (this.full({offt: 1})) {
-                        this.shift();
+                    //while (this.full({offt: 1})) {
+                    const timeFn = this._active ? this._activeMeta : this._elapsedMeta;
+                    while (true) {
+                        const {time, start} = timeFn.call(this, {offt: 1, predicate: this.period});
+                        if (time >= this.period) {
+                            for (let i = 0; i < start - this._offt; i++) {
+                                this.shift();
+                            }
+                        } else {
+                            break;
+                        }
                     }
                 }
             }
@@ -1679,6 +1704,22 @@ sauce.ns('pace', function() {
                 return;
             }
             return duration / dist;
+        }
+
+        resize(size) {
+            const length = size ? this._length + size : this._values.length;
+            if (length > this._values.length) {
+                throw new Error('resize underflow');
+            }
+            for (let i = this._length; i < length; i++) {
+                this.processAdd(i);
+                this._length++;
+                if (this.period) {
+                    while (this.full({offt: 1})) {
+                        this.shift();
+                    }
+                }
+            }
         }
 
         full(options) {
