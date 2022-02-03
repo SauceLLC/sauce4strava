@@ -1165,7 +1165,7 @@ table.sauce-perf {
 
                         &.tt-labels {
                             justify-content: space-evenly;
-                            min-height: 2.5em; // Less jumping for 2 line entries
+                            min-height: 2.65em; // Less jumping for 2 line entries
                         }
 
                         &.tt-horiz {
@@ -1189,14 +1189,29 @@ table.sauce-perf {
                     }
 
                     .data-label {
-                        margin-left: 0.5em;
                         cursor: pointer;
                         opacity: 0.88;
                         transition: opacity 200ms;
+                        position: relative;
+                        display: flex;
+                        align-items: baseline;
+                        margin-left: 0.7em;
 
                         &.ds-hidden {
-                            text-decoration: line-through;
-                            opacity: 0.5;
+                            .label {
+                                text-decoration: line-through;
+                                opacity: 0.5;
+                            }
+
+                            .line .value,
+                            .line.extra {
+                                display: none;
+                            }
+                        }
+                        &:not(.ds-hidden) {
+                            .label::after {
+                                content: ':';
+                            }
                         }
 
                         &:hover {
@@ -1207,45 +1222,36 @@ table.sauce-perf {
                             }
                         }
 
-                        &::before {
-                            content: '';
-                            display: inline-block;
+                        .color-bubble {
+                            flex: 0 0 auto;
                             width: 0.8em;
                             height: 0.8em;
                             border-radius: 100%;
                             background-color: var(--bg-color);
                             border: 2px solid var(--border-color);
-                            margin-right: 0.1em;
+                            margin-right: 0.4em;
                         }
 
-                        key, value {
-                            display: inline-block;
-                            text-decoration: inherit;
-                        }
-
-                        key {
-                        }
-
-                        value {
-                            min-width: 5ch;
+                        .line {
                             font-variant: tabular-nums;
-                            font-weight: bold;
 
-                            &:not(:first-of-type) {
-                                display: block;
-                                font-weight: normal;
+                            &.extra {
                                 opacity: 0.9;
-                                margin-left: 1.1rem;
                                 margin-top: 0.26em;
-                                margin-bottom: -0.8em;  // combined with min-height of container we avoid jumping.
                                 font-size: 0.92em;
                             }
+                        }
 
-                            small {
-                                font-size: 0.88em;
-                                display: initial;
-                                line-height: inherit;
-                            }
+                        small {
+                            font-size: 0.88em;
+                            display: initial;
+                            line-height: inherit;
+                        }
+
+                        .value {
+                            display: inline-block;
+                            min-width: 8ch;
+                            font-weight: bold;
                         }
                     }
                 }

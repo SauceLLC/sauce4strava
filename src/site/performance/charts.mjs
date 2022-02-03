@@ -406,8 +406,13 @@ export class ActivityTimeRangeChart extends SauceChart {
                     <div class="data-label ${ds.hidden ? "ds-hidden" : ''}" data-ds="${ds.id}"
                          style="--border-color: ${ds.borderColor};
                                 --bg-color: ${ds.backgroundColor};">
-                        <key>${ds.label}${ds.hidden ? '' : ':'}</key>
-                        ${ds.hidden ? '' : values.map(x => `<value>${x}</value>`).join('')}
+                        <div class="color-bubble"></div>
+                        <div class="lines">
+                            <div class="line">
+                                <span class="label">${ds.label}</span> <span class="value">${values[0]}</span>
+                            </div>
+                            ${values.slice(1).map(x => `<div class="line extra">${x}</div>`).join('')}
+                        </div>
                     </div>
                 `);
             }
