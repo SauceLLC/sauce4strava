@@ -268,6 +268,31 @@ sauce.ns('data', function() {
     }
 
 
+    function *zip(...iterables) {
+        const iters = iterables.map(x => x[Symbol.iterator]());
+        while (true) {
+            const nexts = iters.map(x => x.next());
+            if (nexts.some(x => x.done)) {
+                break;
+            }
+            yield nexts.map(x => x.value);
+        }
+    }
+
+
+    function *enumerate(iterable) {
+        const iter = iterable[Symbol.iterator]();
+        let i = 0;
+        while (true) {
+            const n = iter.next();
+            if (n.done) {
+                break;
+            }
+            yield [i++, n.value];
+        }
+    }
+
+
     function isArrayEqual(a, b) {
         const len = a && a.length;
         if (!b || len !== b.length) {
@@ -303,6 +328,7 @@ sauce.ns('data', function() {
             this.maxGap = options.maxGap;
             this._active = options.active;
             this._ignoreZeros = options.ignoreZeros;
+            this._allowPadBounds = options.allowPadBounds;
             this._times = [];
             this._values = [];
             this._offt = 0;
@@ -318,6 +344,7 @@ sauce.ns('data', function() {
                 maxGap: this.maxGap,
                 active: this._active,
                 ignoreZeros: this._ignoreZeros,
+                allowPadBounds: this._allowPadBounds,
                 ...options,
             });
             instance._times = this._times;
@@ -381,28 +408,48 @@ sauce.ns('data', function() {
             return leadRoll;
         }
 
-        elapsed(options={}) {
-            const len = this._length;
-            const offt = (options.offt || 0) + this._offt;
-            if (len - offt === 0) {
-                return 0;
+        elapsed({offt=0, allowPadBounds}={}) {
+            let end = this._length - 1;
+            let start = offt + this._offt;
+            if (!(allowPadBounds != null ? allowPadBounds : this._allowPadBounds)) {
+                while (start < end && this._values[start] instanceof Pad) {
+                    start++;
+                }
+                while (end > start && this._values[end] instanceof Pad) {
+                    end--;
+                }
             }
-            return this._times[len - 1] - this._times[offt];
+            return end > start ? this._times[end] - this._times[start] : 0;
         }
 
-        active(options={}) {
+        active({offt=0, predicate=0, allowPadBounds}={}) {
             let t = this._activeAcc;
-            const predicate = options.predicate || 0;
-            if (options.offt) {
-                const lim = Math.min(this._length, this._offt + options.offt);
+            if (offt) {
+                const lim = Math.min(this._length, this._offt + offt);
                 for (let i = this._offt; i < lim && t >= predicate; i++) {
                     if (this._isActiveValue(this._values[i + 1])) {
-                        const gap = this._times[i + 1] - this._times[i];
-                        t -= gap;
+                        t -= this._times[i + 1] - this._times[i];
                     }
                 }
             }
-            return t;
+            if (!(allowPadBounds != null ? allowPadBounds : this._allowPadBounds)) {
+                let end = this._length - 1;
+                let start = offt + this._offt;
+                while (t >= predicate && start < end && this._values[start] instanceof Pad) {
+                    // As with processShift, we care about index+1 when it comes to internal counters.
+                    if (this._isActiveValue(this._values[start + 1])) {
+                        t -= this._times[start + 1] - this._times[start];
+                    }
+                    start++;
+                }
+                while (t >= predicate && end > start && this._values[end] instanceof Pad) {
+                    if (this._isActiveValue(this._values[end])) {
+                        t -= this._times[end] - this._times[end - 1];
+                    }
+                    end--;
+                }
+            }
+            return t > 0 ? t : 0;
         }
 
         _isActiveValue(value) {
@@ -440,8 +487,21 @@ sauce.ns('data', function() {
                         }
                     }
                 } else if (this.idealGap && gap > this.idealGap) {
-                    for (let i = this.idealGap; i < gap; i += this.idealGap) {
-                        this._add(prevTS + i, new Pad(value));
+                    if (this.maxGap && gap > this.maxGap) {
+                        // Zero pad everything up to the maxgap zone.  No free rides.
+                        for (let i = this.idealGap; i <= gap - this.maxGap; i += this.idealGap) {
+                            this._add(prevTS + i, ZERO);
+                        }
+                    }
+                    // Attenuate with a exp weighted series between prev and cur value.
+                    const refTS = this._times[this._length - 1];
+                    const refV = this._values[this._length - 1] || 0;
+                    const padGap = Math.min(this.maxGap, gap);
+                    const padGaps = Array.from(sauce.data.range(this.idealGap, padGap, this.idealGap));
+                    const padSeeds = padGaps.map(x => value);
+                    const weighting = Math.max(Math.round(padSeeds.length / 2), 2);
+                    for (const [i, x] of sauce.data.enumerate(sauce.perf.expWeightedIter(weighting, padSeeds, refV))) {
+                        this._add(refTS + padGaps[i], new Pad(Math.round(x)));
                     }
                 }
             }
@@ -564,11 +624,10 @@ sauce.ns('data', function() {
             this.processPop(--this._length);
         }
 
-        full(options={}) {
-            const offt = options.offt;
-            const active = options.active != null ? options.active : this._active;
+        full({offt, active, allowPadBounds}={}) {
+            active = active != null ? active : this._active;
             const fn = active ? this.active : this.elapsed;
-            const time = fn.call(this, {offt, predicate: this.period});
+            const time = fn.call(this, {offt, predicate: this.period, allowPadBounds});
             return time >= this.period;
         }
     }
@@ -627,7 +686,7 @@ sauce.ns('data', function() {
             const x = rawValues[i];
             buf.push(x);
             t += x;
-            sValues[sIndex++] = t / i;
+            sValues[sIndex++] = t / (i + 1);
         }
         for (let i = period; i < len; i++) {
             const offt = i % period;
@@ -669,6 +728,8 @@ sauce.ns('data', function() {
         recommendedTimeGaps,
         tabulate,
         range,
+        zip,
+        enumerate,
         isArrayEqual,
         RollingAverage,
         Break,
@@ -2179,6 +2240,15 @@ sauce.ns('perf', function() {
     }
 
 
+    function *expWeightedIter(size, data, seed=0) {
+        const c = 1 - Math.exp(-1 / size);
+        let v = seed;
+        for (const x of data) {
+            yield (v = (v * (1 - c)) + (x * c));
+        }
+    }
+
+
     return {
         fetchSelfFTPs,
         fetchHRZones,
@@ -2191,6 +2261,7 @@ sauce.ns('perf', function() {
         calcCTL,
         calcATL,
         expWeightedAvg,
+        expWeightedIter,
     };
 });
 

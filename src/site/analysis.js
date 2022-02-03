@@ -2639,7 +2639,7 @@ sauce.ns('analysis', ns => {
                 click: () => {
                     const range = start && end ? `-${start}-${end}` : '';
                     const name = `${pageView.activity().id}${range}.csv`;
-                    sauce.ui.downloadBlob(new Blob([currentData], {type: 'text/csv'}), name);
+                    sauce.ui.downloadBlob(new Blob([currentData + '\n'], {type: 'text/csv'}), name);
                 }
             }]
         });

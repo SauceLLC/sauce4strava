@@ -276,7 +276,7 @@ sauce.ns('ui', ns => {
                 }
                 const dataMin = sauce.data.min(data);
                 const dataMax = sauce.data.max(data);
-                const range = dataMax - dataMin;
+                const range = (dataMax - dataMin) || 1;
                 minMargin -= minMarginLimit / specs.length;
                 $el.sparkline(data, {
                     type: 'line',
