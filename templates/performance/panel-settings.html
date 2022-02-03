@@ -3,7 +3,7 @@
         <key>{{{/name}}}:</key>
         <value>
             <input type="text" name="name" value="{{settings.name}}"
-                   placeholder="{{{['/' + panel.view.constructor.nameLocaleKey]}}}"/>
+                   placeholder="{{{['/' + panelView.constructor.nameLocaleKey]}}}"/>
         </value>
     </div>
 
@@ -34,6 +34,4 @@
         </value>
     </div>
 </form>
-<% if (panel.view.constructor.settingsTpl) { %>
-    {- await embed(panel.view.constructor.settingsTpl, obj) -}
-<% } %>
+<div class="panel-settings"></div>

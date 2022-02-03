@@ -931,10 +931,9 @@ export class MainView extends PerfView {
             title: this.LM('panel_settings_title'),
             icon: await sauce.ui.getImage('fa/cog-duotone.svg'),
             body: await template({
-                panel,
-                settings,
-                prefs: panel.prefs,
+                panelView: panel.view,
                 panelCount: this.panels.length,
+                settings,
                 order,
                 sizeHint,
             }),
@@ -957,6 +956,12 @@ export class MainView extends PerfView {
             dialogClass: 'sauce-performance-panel-settings no-pad sauce-small',
             resizable: false,
         });
+        if (panel.view.constructor.SettingsView) {
+            const v = new panel.view.constructor.SettingsView(panel.view,
+                {el: $dialog.find('.panel-settings')});
+            v.render();  // bg okay
+            $dialog.on('dialogclose', () => v.remove());
+        }
         $dialog.on('input', 'input[name="name"]', async ev => {
             const el = ev.currentTarget;
             const name = el.value || undefined;

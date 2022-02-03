@@ -15,6 +15,7 @@
     "delete": {"message": "Delete"},
     "save": {"message": "Save"},
     "add": {"message": "Add"},
+    "enable": {"message": "Enable"},
 
     "menu_performance_fitness": {"message": "Fitness Tracking"},
     "menu_performance_peaks": {"message": "Peak Performances"},

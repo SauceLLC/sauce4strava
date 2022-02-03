@@ -1,19 +1,22 @@
 <form class="sauce-key-value">
-    {{JSON.stringify(prefs)}}
     <div class="entry">
-        <key>Show TSS</key>
-        <value><input type="checkbox" name="tss"/></value>
+        <key>{{{/enable}}} TSS</key>
+        <value><input class="ds-vis" type="checkbox" name="tss"
+            {{disabledDatasets.tss ? '' : 'checked'}}/></value>
     </div>
     <div class="entry">
-        <key>Show Distance</key>
-        <value><input type="checkbox" name="distance"/></value>
+        <key>{{{/enable}}} {{{/analysis_distance}}}</key>
+        <value><input class="ds-vis" type="checkbox" name="distance"
+            {{disabledDatasets.distance ? '' : 'checked'}}/></value>
     </div>
     <div class="entry">
-        <key>Show Hours</key>
-        <value><input type="checkbox" name="hours"/></value>
+        <key>{{{/enable}}} {{{/analysis_time}}}</key>
+        <value><input class="ds-vis" type="checkbox" name="duration"
+            {{disabledDatasets.duration ? '' : 'checked'}}/></value>
     </div>
     <div class="entry">
-        <key>Show Energy</key>
-        <value><input type="checkbox" name="energy"/></value>
+        <key>{{{/enable}}} {{{/analysis_energy}}}</key>
+        <value><input class="ds-vis" type="checkbox" name="energy"
+            {{disabledDatasets.energy ? '' : 'checked'}}/></value>
     </div>
 </form>

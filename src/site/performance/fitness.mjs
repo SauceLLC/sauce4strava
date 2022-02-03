@@ -263,13 +263,45 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
+class PanelSettingsView extends views.PerfView {
+    constructor(panelView, options) {
+        super(options);
+        this.panelView = panelView;
+    }
+
+    renderAttrs() {
+        return this.panelView.getPrefs();
+    }
+}
+
+
+class ActivityVolumentChartSettingsView extends PanelSettingsView {
+    static tpl = 'performance/fitness/activity-volume-settings.html';
+
+    get events() {
+        return {
+            'input input.ds-vis[type="checkbox"]': 'onDatasetVisibilityInput',
+        };
+    }
+
+    async onDatasetVisibilityInput(ev) {
+        const enabled = ev.currentTarget.checked;
+        const name = ev.currentTarget.name;
+        this.panelView.getPrefs('hiddenDatasets', {})[name] = !enabled;
+        this.panelView.getPrefs('disabledDatasets', {})[name] = !enabled;
+        await this.panelView.savePrefs();
+        await this.panelView.render();
+    }
+}
+
+
 export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_activities_title';
     static descLocaleKey = 'performance_activities_desc';
     static tpl = 'performance/fitness/activity-volume.html';
-    static settingsTpl = 'performance/fitness/activity-volume-settings.html';
     static localeKeys = ['predicted', '/analysis_time', '/analysis_distance', 'activities',
         '/analysis_energy'];
+    static SettingsView = ActivityVolumentChartSettingsView;
 
     async init(options) {
         await super.init(options);
@@ -307,7 +339,7 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                             callback: v => H.distance(v, 0, {suffix: true}),
                         },
                     }, {
-                        id: 'kj',
+                        id: 'energy',
                         position: 'right',
                         gridLines: {display: false},
                         ticks: {
@@ -349,7 +381,7 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                     x: b.date,
                     y: i === metricData.length - 1 ? avgDistance * remaining : null,
                 })),
-                kj: metricData.map((b, i) => ({
+                energy: metricData.map((b, i) => ({
                     b,
                     x: b.date,
                     y: i === metricData.length - 1 ? avgKJ * remaining : null,
@@ -419,19 +451,19 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
             },
             data: metricData.map((b, i) => ({b, x: b.date, y: b.distance})),
         }, {
-            id: 'kj',
+            id: 'energy',
             label: this.LM('analysis_energy'),
             backgroundColor: '#8ccd6cd0',
             borderColor: '#7cbd5cf0',
             hoverBackgroundColor: '#7cbd5c',
             hoverBorderColor: '#7cbd5c',
-            yAxisID: 'kj',
-            stack: 'kj',
+            yAxisID: 'energy',
+            stack: 'energy',
             tooltipFormat: (x, i) => {
                 const kjDay = H.number(x / metricData[i].days);
                 const tips = [`${humanKJ(x)} <small>(${kjDay}/d)</small>`];
                 if (predictions && i === metricData.length - 1) {
-                    const pkj = predictions.kj[i].y + x;
+                    const pkj = predictions.energy[i].y + x;
                     const pkjDay = H.number(pkj / predictions.days);
                     tips.push(`${this.LM('predicted')}: <b>~${humanKJ(pkj)} <small>(${pkjDay}/d)</small></b>`);
                 }
@@ -468,14 +500,14 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 stack: 'distance',
                 data: predictions.distance,
             }, {
-                id: 'kj',
+                id: 'energy',
                 backgroundColor: '#8ccd6c50',
                 borderColor: '#7cbd5c50',
                 hoverBackgroundColor: '#7cbd5c60',
                 hoverBorderColor: '#7cbd5c60',
-                yAxisID: 'kj',
-                stack: 'kj',
-                data: predictions.kj,
+                yAxisID: 'energy',
+                stack: 'energy',
+                data: predictions.energy,
             });
         }
         for (const [i, x] of this.chart.data.datasets.entries()) {

@@ -61,6 +61,7 @@ class ChartVisibilityPlugin {
                 continue;
             }
             ds.hidden = this.view.isDatasetHidden(ds.id);
+            ds.disabled = this.view.isDatasetDisabled(ds.id);
             displayStates[ds.yAxisID || 0] |= !ds.hidden;
         }
         for (const [id, display] of Object.entries(displayStates)) {
@@ -386,7 +387,7 @@ export class ActivityTimeRangeChart extends SauceChart {
         const endDate = D.adjacentDay(startDate, mostDays);
         // Gather stats from all datasets (vis and hidden) in the range detected from visible...
         for (const ds of this.data.datasets) {
-            if (!ds || !ds.data || !ds.label) {
+            if (!ds || !ds.data || !ds.label || ds.disabled) {
                 continue;
             }
             const inRangeIndexes = ds.data
@@ -636,7 +637,8 @@ export class ActivityTimeRangeChartView extends ChartView {
 
     get defaultPrefs() {
         return {
-            hiddenDatasets: {}
+            hiddenDatasets: {},
+            disabledDatasets: {},
         };
     }
 
@@ -658,13 +660,16 @@ export class ActivityTimeRangeChartView extends ChartView {
     }
 
     isDatasetHidden(dataId) {
-        const hiddenDatasets = this.getPrefs().hiddenDatasets;
-        return !!(hiddenDatasets && hiddenDatasets[dataId]);
+        return !!this.getPrefs('hiddenDatasets', {})[dataId];
+    }
+
+    isDatasetDisabled(dataId) {
+        return !!this.getPrefs('disabledDatasets', {})[dataId];
     }
 
     toggleDataVisibility(dataId) {
         const index = this.chart.data.datasets.findIndex(x => x.id === dataId);
-        const hiddenDatasets = this.getPrefs().hiddenDatasets;
+        const hiddenDatasets = this.getPrefs('hiddenDatasets', {});
         hiddenDatasets[dataId] = !!this.chart.isDatasetVisible(index);
         this.savePrefs({hiddenDatasets});  // bg okay
         this.chart.update();
