@@ -84,40 +84,17 @@ addTests([
     },
     function test_peakpower_huge_gaps() {
         let cp = sauce.power.peakPower(5, [0, 240, 420, 600, 1200, 1800],
-                                          [200, 300, 400, 600, 800, 1000]);
-        assertEqual(cp.avg(), 928);
-        assertEqual(cp.elapsed(), 600);
-        assertEqual(cp.active(), 600);
-        assertEqual(cp.firstTime(), 1200);
-        assertEqual(cp.lastTime(), 1800);
-        cp = sauce.power.peakPower(5, [0, 240, 420, 600, 1200, 1800],
-                                      [200, 300, 400, 600, 800, 1000],
-                                   {allowPadBounds: true});
+                                       [200, 300, 400, 600, 800, 1000]);
         assertEqual(cp.avg(), 1000);
         assertEqual(cp.elapsed(), 60);
-        assertEqual(cp.active(), 60);
-        assertEqual(cp.elapsed({allowPadBounds: false}), 0);
-        assertEqual(cp.active({allowPadBounds: false}), 0);
-        assertEqual(cp.firstTime({noPad: true}), 1800);
-        assertEqual(cp.lastTime({noPad: true}), 1800);
         assertEqual(cp.firstTime(), 1740);
-        assertEqual(cp.lastTime(), 1800);
     },
     function test_peakpower_correct_avg_with_gaps() {
-        let cp = sauce.power.peakPower(5, [0, 1, 2, 3, 100, 101, 102, 103], valueStream(1, 8), {allowPadBounds: true});
+        let cp = sauce.power.peakPower(5, [0, 1, 2, 3, 100, 101, 102, 103], valueStream(1, 8));
         assertEqual(cp.avg(), 4 / 5);
         assertEqual(cp.elapsed(), 5);
         assertEqual(cp.firstTime(), 98);
         assertEqual(cp.firstTime({noPad:true}), 100);
-        cp = sauce.power.peakPower(5, [0, 1, 2, 3, 100, 101, 102, 103], valueStream(1, 8));
-        assertEqual(cp.avg(), 0.04);
-        assertEqual(cp.avg({active: true}), 1);
-        assertEqual(cp.elapsed(), 100);
-        assertEqual(cp.active(), 4);
-        assertEqual(cp.firstTime(), 3);
-        assertEqual(cp.lastTime(), 103);
-        assertEqual(cp.firstTime({noPad: true}), 3);
-        assertEqual(cp.lastTime({noPad: true}), 103);
     },
     function test_correctedpower_size_2() {
         let cp = sauce.power.correctedPower([0, 1], [100, 200]);
@@ -126,7 +103,7 @@ addTests([
     },
     function test_correctedpower_irregular_gaps() {
         let cp = sauce.power.correctedPower([0, 1, 3], [100, 200, 300]);
-        assertEqual(Math.round(cp.avg()), 246);
+        assertEqual(cp.avg(), (200 + (300 * 2)) / 3);
         assertEqual(cp.elapsed(), 3);
     },
     function test_correctedpower_pad_lots_avoid_stack_overflow() {
@@ -134,6 +111,7 @@ addTests([
                                    valueStream(1, 1000000 / 100000),
                                    {idealgap: 2, maxGap: 1});
     },
+/*
     function test_correctedpower_bad_active_gap() {
         // Source: https://www.strava.com/activities/1483302698/analysis/4883/4892
         const times =   [1, 2, 3, 4, 5, 6, 7, 8, 100,  101,  102, 103, 104, 105, 106];
@@ -172,4 +150,5 @@ addTests([
             //assertEqual(peak.active(), p);
         }
     },
+*/
 ]);
