@@ -1462,9 +1462,6 @@ class SyncJob extends EventTarget {
                     return;
                 }
             }
-
-            await this._localDrainOffloaded(offloaded, batch);
-
             if (procQueue) {
                 while (procQueue.size && batch.size < this.batchLimit) {
                     const a = procQueue.getNoWait();
@@ -1475,6 +1472,7 @@ class SyncJob extends EventTarget {
                     batch.add(a);
                 }
             }
+            await this._localDrainOffloaded(offloaded, batch);
             this.batchLimit = Math.min(500, Math.ceil(this.batchLimit * 1.8));
             while (batch.size && !this._cancelEvent.isSet()) {
                 const manifestBatches = new Map();
