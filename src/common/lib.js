@@ -268,31 +268,6 @@ sauce.ns('data', function() {
     }
 
 
-    function *zip(...iterables) {
-        const iters = iterables.map(x => x[Symbol.iterator]());
-        while (true) {
-            const nexts = iters.map(x => x.next());
-            if (nexts.some(x => x.done)) {
-                break;
-            }
-            yield nexts.map(x => x.value);
-        }
-    }
-
-
-    function *enumerate(iterable) {
-        const iter = iterable[Symbol.iterator]();
-        let i = 0;
-        while (true) {
-            const n = iter.next();
-            if (n.done) {
-                break;
-            }
-            yield [i++, n.value];
-        }
-    }
-
-
     function isArrayEqual(a, b) {
         const len = a && a.length;
         if (!b || len !== b.length) {
@@ -328,7 +303,6 @@ sauce.ns('data', function() {
             this.maxGap = options.maxGap;
             this._active = options.active;
             this._ignoreZeros = options.ignoreZeros;
-            this._allowPadBounds = options.allowPadBounds;
             this._times = [];
             this._values = [];
             this._offt = 0;
@@ -344,7 +318,6 @@ sauce.ns('data', function() {
                 maxGap: this.maxGap,
                 active: this._active,
                 ignoreZeros: this._ignoreZeros,
-                allowPadBounds: this._allowPadBounds,
                 ...options,
             });
             instance._times = this._times;
@@ -408,64 +381,28 @@ sauce.ns('data', function() {
             return leadRoll;
         }
 
-        elapsed(...args) {
-            return this._elapsedMeta(...args).time;
-        }
-
-        _elapsedMeta({offt=0, allowPadBounds}={}) {
-            let end = this._length - 1;
-            let start = offt + this._offt;
-            if (!(allowPadBounds != null ? allowPadBounds : this._allowPadBounds)) {
-                while (start < end && this._values[start] instanceof Pad) {
-                    start++;
-                }
-                while (end > start && this._values[end] instanceof Pad) {
-                    end--;
-                }
+        elapsed(options={}) {
+            const len = this._length;
+            const offt = (options.offt || 0) + this._offt;
+            if (len - offt === 0) {
+                return 0;
             }
-            return {
-                time: end > start ? this._times[end] - this._times[start] : 0,
-                start,
-                end
-            };
+            return this._times[len - 1] - this._times[offt];
         }
 
-        active(...args) {
-            return this._activeMeta(...args).time;
-        }
-
-        _activeMeta({offt=0, predicate=0, allowPadBounds}={}) {
+        active(options={}) {
             let t = this._activeAcc;
-            if (offt) {
-                const lim = Math.min(this._length, this._offt + offt);
+            const predicate = options.predicate || 0;
+            if (options.offt) {
+                const lim = Math.min(this._length, this._offt + options.offt);
                 for (let i = this._offt; i < lim && t >= predicate; i++) {
                     if (this._isActiveValue(this._values[i + 1])) {
-                        t -= this._times[i + 1] - this._times[i];
+                        const gap = this._times[i + 1] - this._times[i];
+                        t -= gap;
                     }
                 }
             }
-            let end = this._length - 1;
-            let start = offt + this._offt;
-            if (!(allowPadBounds != null ? allowPadBounds : this._allowPadBounds)) {
-                while (t >= predicate && start < end && this._values[start] instanceof Pad) {
-                    // As with processShift, we care about index+1 when it comes to internal counters.
-                    if (this._isActiveValue(this._values[start + 1])) {
-                        t -= this._times[start + 1] - this._times[start];
-                    }
-                    start++;
-                }
-                while (t >= predicate && end > start && this._values[end] instanceof Pad) {
-                    if (this._isActiveValue(this._values[end])) {
-                        t -= this._times[end] - this._times[end - 1];
-                    }
-                    end--;
-                }
-            }
-            return {
-                time: t > 0 ? t : 0,
-                start,
-                end
-            };
+            return t;
         }
 
         _isActiveValue(value) {
@@ -482,40 +419,29 @@ sauce.ns('data', function() {
             if (this._length) {
                 const prevTS = this._times[this._length - 1];
                 const gap = ts - prevTS;
-                const safeIdealGap = this.idealGap || Math.min(1, gap / 2);
-                const breakGap = 3600;
-                if (gap > breakGap) {
-                    // Handle massive gaps between time stamps seen by Garmin devices glitching.
-                    // Note, to play nice with elapsed time based rolling avgs, we include the
-                    // max number of zero pads on either end of the gap.
-                    const bookEndTime = Math.floor(breakGap / 2) - safeIdealGap;
-                    for (let i = safeIdealGap; i < bookEndTime; i += safeIdealGap) {
-                        this._add(prevTS + i, ZERO);
-                    }
-                    this._add(prevTS + bookEndTime, new Break(gap - (bookEndTime * 2)));
-                    for (let i = gap - bookEndTime; i < gap; i += safeIdealGap) {
-                        this._add(prevTS + i, ZERO);
-                    }
-                } else if ((active == null && (this.maxGap && gap > this.maxGap)) || active === false) {
-                    for (let i = safeIdealGap; i < gap; i += safeIdealGap) {
-                        this._add(prevTS + i, ZERO);
-                    }
-                } else if (this.idealGap && gap > this.idealGap) {
-                    if (this.maxGap && gap > this.maxGap) {
-                        // Zero pad everything up to the maxgap zone.  No free rides.
-                        for (let i = safeIdealGap; i <= gap - this.maxGap; i += safeIdealGap) {
+                if ((active == null && (this.maxGap && gap > this.maxGap)) || active === false) {
+                    const idealGap = this.idealGap || Math.min(1, gap / 2);
+                    const breakGap = 3600;
+                    if (gap > breakGap) {
+                        // Handle massive gaps between time stamps seen by Garmin devices glitching.
+                        // Note, to play nice with elapsed time based rolling avgs, we include the
+                        // max number of zero pads on either end of the gap.
+                        const bookEndTime = Math.floor(breakGap / 2) - idealGap;
+                        for (let i = idealGap; i < bookEndTime; i += idealGap) {
+                            this._add(prevTS + i, ZERO);
+                        }
+                        this._add(prevTS + bookEndTime, new Break(gap - (bookEndTime * 2)));
+                        for (let i = gap - bookEndTime; i < gap; i += idealGap) {
+                            this._add(prevTS + i, ZERO);
+                        }
+                    } else {
+                        for (let i = idealGap; i < gap; i += idealGap) {
                             this._add(prevTS + i, ZERO);
                         }
                     }
-                    // Attenuate with a exp weighted series between prev and cur value.
-                    const refTS = this._times[this._length - 1];
-                    const refV = this._values[this._length - 1] || 0;
-                    const padGap = Math.min(this.maxGap, gap);
-                    const padGaps = Array.from(sauce.data.range(safeIdealGap, padGap, safeIdealGap));
-                    const padSeeds = padGaps.map(x => value);
-                    const weighting = Math.max(Math.round(padSeeds.length / 2), 2);
-                    for (const [i, x] of sauce.data.enumerate(sauce.perf.expWeightedIter(weighting, padSeeds, refV))) {
-                        this._add(refTS + padGaps[i], new Pad(Math.round(x)));
+                } else if (this.idealGap && gap > this.idealGap) {
+                    for (let i = this.idealGap; i < gap; i += this.idealGap) {
+                        this._add(prevTS + i, new Pad(value));
                     }
                 }
             }
@@ -569,17 +495,8 @@ sauce.ns('data', function() {
                 this.processAdd(i);
                 this._length++;
                 if (this.period) {
-                    //while (this.full({offt: 1})) {
-                    const timeFn = this._active ? this._activeMeta : this._elapsedMeta;
-                    while (true) {
-                        const {time, start} = timeFn.call(this, {offt: 1, predicate: this.period});
-                        if (time >= this.period) {
-                            for (let i = 0; i < start - this._offt; i++) {
-                                this.shift();
-                            }
-                        } else {
-                            break;
-                        }
+                    while (this.full({offt: 1})) {
+                        this.shift();
                     }
                 }
             }
@@ -647,10 +564,11 @@ sauce.ns('data', function() {
             this.processPop(--this._length);
         }
 
-        full({offt, active, allowPadBounds}={}) {
-            active = active != null ? active : this._active;
+        full(options={}) {
+            const offt = options.offt;
+            const active = options.active != null ? options.active : this._active;
             const fn = active ? this.active : this.elapsed;
-            const time = fn.call(this, {offt, predicate: this.period, allowPadBounds});
+            const time = fn.call(this, {offt, predicate: this.period});
             return time >= this.period;
         }
     }
@@ -751,8 +669,6 @@ sauce.ns('data', function() {
         recommendedTimeGaps,
         tabulate,
         range,
-        zip,
-        enumerate,
         isArrayEqual,
         RollingAverage,
         Break,
@@ -1706,22 +1622,6 @@ sauce.ns('pace', function() {
             return duration / dist;
         }
 
-        resize(size) {
-            const length = size ? this._length + size : this._values.length;
-            if (length > this._values.length) {
-                throw new Error('resize underflow');
-            }
-            for (let i = this._length; i < length; i++) {
-                this.processAdd(i);
-                this._length++;
-                if (this.period) {
-                    while (this.full({offt: 1})) {
-                        this.shift();
-                    }
-                }
-            }
-        }
-
         full(options) {
             options = options || {};
             const offt = options.offt;
@@ -2279,15 +2179,6 @@ sauce.ns('perf', function() {
     }
 
 
-    function *expWeightedIter(size, data, seed=0) {
-        const c = 1 - Math.exp(-1 / size);
-        let v = seed;
-        for (const x of data) {
-            yield (v = (v * (1 - c)) + (x * c));
-        }
-    }
-
-
     return {
         fetchSelfFTPs,
         fetchHRZones,
@@ -2300,7 +2191,6 @@ sauce.ns('perf', function() {
         calcCTL,
         calcATL,
         expWeightedAvg,
-        expWeightedIter,
     };
 });
 
