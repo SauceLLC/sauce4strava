@@ -44,15 +44,20 @@ class WorkerProcessor {
         this._incomingPort = incomingPort;
         this.stopping = false;
         this.incoming = [];
+        this._lastSeq;
         incomingPort.addEventListener('message', ev => this._onIncoming(ev.data));
         incomingPort.start();
         outgoingPort.start();  // We don't actually use listeners, but I don't want to forget.
     }
 
     async _onIncoming({seq, op, data}) {
+        if (this._lastSeq && seq - this._lastSeq !== 1) {
+            debugger;
+            console.error("Worker message is out of sequence", this._lastSeq, seq);
+        }
         try {
             if (this.stopping) {
-                debugger;
+                console.error("Worker recieved message after stop request", {seq, op});
                 throw new Error('worker is stopping/stopped');
             }
             await this.__onIncoming({data, op});
@@ -121,8 +126,7 @@ class FindPeaks extends WorkerProcessor {
                 const errors = await this.findPeaks(batch);
                 this.send({done: batch.map(x => x.id), errors});
             }
-            //console.error('evil hack'); // XXX
-            await sauce.sleep(1000);
+            await sauce.sleep(100); // XXX Use an Event object or equiv
         }
     }
 
@@ -268,24 +272,9 @@ const processors = {
 
 
 self.addEventListener('message', async ev => {
-    try {
-        if (!ev.data || !ev.data.processor || ev.data.id == null) {
-            throw new Error("Invalid Message");
-        }
-        const processor = processors[ev.data.processor];
-        if (!processor) {
-            throw new Error("Invalid Processor");
-        }
-        await processor(ev.data);
-        self.postMessage({success: true});
-    } catch(e) {
-        self.postMessage({
-            success: false,
-            error: {
-                name: e.name,
-                message: e.message,
-                stack: e.stack
-            }
-        });
+    const processor = processors[ev.data.processor];
+    if (!processor) {
+        throw new Error("Invalid Processor");
     }
+    await processor(ev.data);
 });

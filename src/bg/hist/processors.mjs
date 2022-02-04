@@ -28,19 +28,32 @@ async function getActivitiesStreams(activities, streams) {
 
 
 class WorkerInterface {
-    constructor({id, worker, outgoingPort, incomingPort, executor}) {
+    constructor({id, worker, executor}) {
         this.id = id;
+        const sendCh = new MessageChannel();
+        const recvCh = new MessageChannel();
+        [this._outgoingPort, this._theirIncomingPort] = [sendCh.port1, sendCh.port2];
+        [this._incomingPort, this._theirOutgoingPort] = [recvCh.port1, recvCh.port2];
         this._worker = worker;
-        this._outgoingPort = outgoingPort;
-        this._incomingPort = incomingPort;
         this._executor = executor;
         this._seq = 1;
         this._sending = new Map();
         this.doneQueue = new queues.Queue();
-        outgoingPort.addEventListener('message', ev => this._onSendAck(ev.data));
-        incomingPort.addEventListener('message', ev => this.doneQueue.put(ev.data));
-        outgoingPort.start();
-        incomingPort.start();
+        this._outgoingPort.addEventListener('message', ev => this._onSendAck(ev.data));
+        this._incomingPort.addEventListener('message', ev => this.doneQueue.put(ev.data));
+        this._outgoingPort.start();
+        this._incomingPort.start();
+    }
+
+    start(processor, options={}) {
+        this._worker.postMessage({
+            id: this.id,
+            processor,
+            op: 'start',
+            incomingPort: this._theirIncomingPort,
+            outgoingPort: this._theirOutgoingPort,
+            ...options,
+        }, [this._theirIncomingPort, this._theirOutgoingPort]);
     }
 
     _onSendAck({seq, success, error}) {
@@ -80,13 +93,19 @@ class WorkerInterface {
         return await this._send('data', {data, timeout});
     }
 
+    detach() {
+        this._executor = null;
+        this._worker = null;
+    }
+
     async stop() {
         try {
             await this._send('stop', {timeout: 600000});
         } finally {
-            this._executor._sem.release();
-            // Paranoid IndexedDB cooldown for firefox.
-            setTimeout(() => this._worker.terminate(), 15000);
+            if (this._executor && this._worker) {
+                this._executor.free(this._worker);
+                this.detach();
+            }
         }
     }
 }
@@ -98,50 +117,49 @@ class WorkerExecutor {
         this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2 || 8);
         this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
+        this._minIdle = 2;
+        this._idle = new Set();
+        for (let i = 0; i < this._minIdle; i++) {
+            this._idle.add(this._make());
+        }
     }
 
-    async start(processor, options) {
+    _make() {
+        const worker = new Worker(this.url);
+        worker.addEventListener('error', ev => {
+            sauce.report.error(new Error(`Generic worker error: ${ev.message}`));
+            // Being pretty paranoid here, just cover all the states as if
+            // we had programming errors for now.
+            if (worker._wi) {
+                worker._wi.detach();
+                worker._wi = null;
+                this._sem.release();
+            }
+            if (this._idle.has(worker)) {
+                this._idle.delete(worker);
+            }
+            if (worker._gc) {
+                clearInterval(worker._gc);
+            }
+            worker.terminate();
+        });
+        return worker;
+    }
+
+    async get() {
         const id = this._id++;
-        const sendCh = new MessageChannel();
-        const recvCh = new MessageChannel();
-        const [outgoingPort, theirIncomingPort] = [sendCh.port1, sendCh.port2];
-        const [incomingPort, theirOutgoingPort] = [recvCh.port1, recvCh.port2];
         let worker;
         await this._sem.acquire();
         try {
-            const p = new Promise((resolve, reject) => {
-                worker = new Worker(this.url);
-                worker.addEventListener('message', ev => {
-                    if (!ev.data) {
-                        reject(new Error("Invalid Worker Message"));
-                    } else if (ev.data.success) {
-                        resolve();
-                    } else {
-                        const eDesc = ev.data.error;
-                        const e = new Error(eDesc.message);
-                        e.name = eDesc.name;
-                        e.stack = eDesc.stack;
-                        reject(e);
-                    }
-                });
-                worker.addEventListener('messageerror', ev => {
-                    debugger; // find error
-                    console.error('Worker message error', ev);
-                    reject(new Error('worker message error'));
-                });
-                worker.addEventListener('error', ev =>
-                    reject(new Error(ev.message || ev.error || 'generic worker error')));
-            });
-            worker.postMessage({
-                id,
-                processor,
-                op: 'start',
-                incomingPort: theirIncomingPort,
-                outgoingPort: theirOutgoingPort,
-                ...options,
-            }, [theirIncomingPort, theirOutgoingPort]);
-            await p;
-            return new WorkerInterface({id, worker, incomingPort, outgoingPort, executor: this});
+            if (this._idle.size) {
+                worker = this._idle.values().next().value;
+                this._idle.delete(worker);
+                clearInterval(worker._gc);
+            } else {
+                worker = this._make();
+            }
+            worker._wi = new WorkerInterface({id, worker, executor: this});
+            return worker._wi;
         } catch(e) {
             this._sem.release();
             if (worker) {
@@ -150,17 +168,21 @@ class WorkerExecutor {
             throw e;
         }
     }
-}
 
-
-let _workerExec;
-function getWorkerExec() {
-    if (!_workerExec) {
-        const extUrl = browser.runtime.getURL('');
-        _workerExec = new WorkerExecutor(extUrl + 'src/bg/hist/worker.js');
+    free(worker) {
+        this._idle.add(worker);
+        worker._gc = setInterval(() => {
+            if (this._idle.size > this._minIdle) {
+                this._idle.delete(worker);
+                clearInterval(worker._gc);
+                worker.terminate();
+            }
+        }, 15000);
+        this._sem.release();
     }
-    return _workerExec;
 }
+
+const workerExec = new WorkerExecutor(browser.runtime.getURL('src/bg/hist/worker.js'));
 
 
 export class OffloadProcessor extends futures.Future {
@@ -186,6 +208,10 @@ export class OffloadProcessor extends futures.Future {
     }
 
     stop() {
+        if (this._inflight.size || this._incoming.size || this._finished.size) {
+            console.error("Premature stop of offload proc", this);
+            debugger;
+        }
         this._stopping = true;
         this._stopEvent.set();
     }
@@ -211,6 +237,7 @@ export class OffloadProcessor extends futures.Future {
         }
         for (const x of this._inflight) {
             items.push(x);
+            this._inflight.clear();
         }
         return items;
     }
@@ -676,7 +703,6 @@ export class PeaksProcessor extends OffloadProcessor {
         this.workers = new Set();
         this.workerAddedEvent = new locks.Event();
         this.maxWorkers = Math.min(navigator.hardwareConcurrency || 4);
-        this.workerExec = getWorkerExec();
     }
 
     drainWorkerResults() {
@@ -698,24 +724,29 @@ export class PeaksProcessor extends OffloadProcessor {
     async processor() {
         this.periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
         this.distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
-        const inProc = this.incomingProcessor();
-        const outProc = this.outgoingProcessor();
-        await Promise.all([inProc, outProc]);
+        await this._consumer(this._producer());
     }
 
-    async incomingProcessor() {
+    async _producer() {
         while (!this._stopping) {
             const activities = await this.getAllIncoming();
             if (activities) {
                 for (let i = 0; i < activities.length;) {
-                    const spanse = Math.ceil((Math.random() * 100));
-                    await this._consume(activities.slice(i, i += spanse));
+                    const worker = await this.getWorker();
+                    const batch = activities.slice(i, (i += 50));
+                    for (const x of batch) {
+                        worker.pending.set(x.pk, x);
+                    }
+                    console.log ("finally sending data to worker:", batch.length);
+                    const s = Date.now();
+                    await worker.sendData(batch.map(x => x.data));
+                    console.warn("took time to sent to worker", batch.length, Date.now() - s, 'ms');
                 }
             }
         }
     }
 
-    async outgoingProcessor() {
+    async _consumer(producer) {
         const stop = this._stopEvent.wait();
         while (!this._stopping) {
             const workers = Array.from(this.workers);
@@ -729,6 +760,11 @@ export class PeaksProcessor extends OffloadProcessor {
             }
             this.drainWorkerResults();
         }
+        if (Array.from(this.workers).some(x => x.pending.size)) {
+            console.error("In stopping state with pending work XXX"); // XXX could be cancel, but need to track this down.
+            debugger;
+        }
+        await producer;
         await Promise.all(Array.from(this.workers).map(x => x.stop()));
         this.workers.clear();
     }
@@ -737,25 +773,26 @@ export class PeaksProcessor extends OffloadProcessor {
         const workers = Array.from(this.workers).sort((a, b) => a.pending.size - b.pending.size);
         const count = workers.length;
         if (!count || (workers[0].pending.size > 50 && count < this.maxWorkers)) {
-            const worker = await this.workerExec.start('find-peaks',
-                {periods: this.periods, distances: this.distances, athlete: this.athlete.data});
+            console.warn("Try to get new worker", workerExec._sem);
+            const s = Date.now();
+            const worker = await workerExec.get();
+            worker.start('find-peaks', {
+                periods: this.periods,
+                distances: this.distances,
+                athlete: this.athlete.data
+            });
+            console.warn("GOT that worker", this.workers.size, Date.now() - s);
             worker.pending = new Map();
             this.workers.add(worker);
             this.workerAddedEvent.set();
             return worker;
         } else {
             // least busy worker...
+            console.warn("REUSING A WORKER", this.workers.size);
             return workers[0];
         }
     }
 
-    async _consume(activities) {
-        const worker = await this.getWorker();
-        await worker.sendData(activities.map(x => x.data));
-        for (const x of activities) {
-            worker.pending.set(x.pk, x);
-        }
-    }
 }
 
 
