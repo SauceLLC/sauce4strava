@@ -181,7 +181,7 @@ sauce.ns('data', function() {
     }
 
 
-    let _timeGapsCache = new Map();
+    let _timeGapsCache = new WeakMap();
     function recommendedTimeGaps(timeStream) {
         const hash = `${timeStream.length}-${timeStream[0]}-${timeStream[timeStream.length - 1]}`;
         if (!_timeGapsCache.has(timeStream) || _timeGapsCache.get(timeStream).hash !== hash) {

@@ -62,7 +62,7 @@ class ChartVisibilityPlugin {
             }
             ds.hidden = this.view.isDatasetHidden(ds.id);
             ds.disabled = this.view.isDatasetDisabled(ds.id);
-            displayStates[ds.yAxisID || 0] |= !ds.hidden;
+            displayStates[ds.yAxisID || 0] |= (!ds.hidden && !ds.disabled);
         }
         for (const [id, display] of Object.entries(displayStates)) {
             if (typeof id === 'number') {

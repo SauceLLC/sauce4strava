@@ -18,7 +18,7 @@ async function getActivitiesStreams(activities, streams) {
         }
         actStreams.set(a.pk, {});
     }
-    for (const x of await streamsStore.getMany(streamKeys, {_skipClone: true})) {
+    for (const x of await streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true})) {
         if (x) {
             actStreams.get(x.activity)[x.stream] = x.data;
         }
@@ -41,8 +41,6 @@ class WorkerInterface {
         this.doneQueue = new queues.Queue();
         this._outgoingPort.addEventListener('message', ev => this._onSendAck(ev.data));
         this._incomingPort.addEventListener('message', ev => this.doneQueue.put(ev.data));
-        this._outgoingPort.start();
-        this._incomingPort.start();
     }
 
     start(processor, options={}) {
@@ -54,6 +52,8 @@ class WorkerInterface {
             outgoingPort: this._theirOutgoingPort,
             ...options,
         }, [this._theirIncomingPort, this._theirOutgoingPort]);
+        this._outgoingPort.start();
+        this._incomingPort.start();
     }
 
     _onSendAck({seq, success, error}) {
@@ -94,6 +94,8 @@ class WorkerInterface {
     }
 
     detach() {
+        this._outgoingPort.close();
+        this._incomingPort.close();
         this._executor = null;
         this._worker = null;
     }
@@ -102,9 +104,8 @@ class WorkerInterface {
         try {
             await this._send('stop', {timeout: 600000});
         } finally {
-            if (this._executor && this._worker) {
-                this._executor.free(this._worker);
-                this.detach();
+            if (this._executor) {
+                this._executor.free(this);
             }
         }
     }
@@ -117,11 +118,7 @@ class WorkerExecutor {
         this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2 || 8);
         this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
-        this._minIdle = 2;
         this._idle = new Set();
-        for (let i = 0; i < this._minIdle; i++) {
-            this._idle.add(this._make());
-        }
     }
 
     _make() {
@@ -139,45 +136,64 @@ class WorkerExecutor {
                 this._idle.delete(worker);
             }
             if (worker._gc) {
-                clearInterval(worker._gc);
+                clearTimeout(worker._gc);
             }
             worker.terminate();
         });
         return worker;
     }
 
-    async get() {
-        const id = this._id++;
-        let worker;
-        await this._sem.acquire();
-        try {
-            if (this._idle.size) {
-                worker = this._idle.values().next().value;
-                this._idle.delete(worker);
-                clearInterval(worker._gc);
-            } else {
-                worker = this._make();
-            }
-            worker._wi = new WorkerInterface({id, worker, executor: this});
-            return worker._wi;
-        } catch(e) {
-            this._sem.release();
-            if (worker) {
-                worker.terminate();
-            }
-            throw e;
-        }
+    available() {
+        return !this._sem.locked();
     }
 
-    free(worker) {
-        this._idle.add(worker);
-        worker._gc = setInterval(() => {
-            if (this._idle.size > this._minIdle) {
-                this._idle.delete(worker);
-                clearInterval(worker._gc);
-                worker.terminate();
+    get() {
+        const f = new futures.Future();
+        const acquire = this._sem.acquire();
+        f.addImmediateCallback(() => {
+            if (f.cancelled()) {
+                acquire.cancel();
             }
+        });
+        acquire.addImmediateCallback(() => {
+            if (acquire.cancelled()) {
+                return;
+            }
+            const id = this._id++;
+            let worker;
+            try {
+                if (this._idle.size) {
+                    worker = this._idle.values().next().value;
+                    this._idle.delete(worker);
+                    clearTimeout(worker._gc);
+                } else {
+                    worker = this._make();
+                }
+                worker._wi = new WorkerInterface({id, worker, executor: this});
+                f.setResult(worker._wi);
+            } catch(e) {
+                this._sem.release();
+                if (worker) {
+                    worker.terminate();
+                }
+                f.setError(e);
+            }
+        });
+        return f;
+    }
+
+    free(wi) {
+        const worker = wi._worker;
+        if (!worker) {
+            return;  // already detached, probably by our error handler.
+        }
+        wi.detach();
+        worker._gc = setTimeout(() => {
+            this._idle.delete(worker);
+            worker.terminate();
         }, 15000);
+        worker._wi = null;
+        this._idle.add(worker);
         this._sem.release();
     }
 }
@@ -196,7 +212,7 @@ export class OffloadProcessor extends futures.Future {
         this._finished = new queues.Queue();
         this._flushEvent = new locks.Event();
         this._stopEvent = new locks.Event();
-        cancelEvent.wait().then(() => this.stop());
+        cancelEvent.wait().then(() => this._stop());
     }
 
     start() {
@@ -212,6 +228,10 @@ export class OffloadProcessor extends futures.Future {
             console.error("Premature stop of offload proc", this);
             debugger;
         }
+        this._stop();
+    }
+
+    _stop() {
         this._stopping = true;
         this._stopEvent.set();
     }
@@ -622,10 +642,10 @@ function rankUpdated(a, b) {
 export async function peaksWkgAndCleanupProcessor({manifest, activities, athlete}) {
     const ids = activities.map(x => x.pk);
     const [wkgs, powers, nps, xps] = await Promise.all([
-        peaksStore.getForActivities(ids, {type: 'power_wkg', _skipClone: true}),
-        peaksStore.getForActivities(ids, {type: 'power', _skipClone: true}),
-        peaksStore.getForActivities(ids, {type: 'np', _skipClone: true}),
-        peaksStore.getForActivities(ids, {type: 'xp', _skipClone: true}),
+        peaksStore.getForActivities(ids, {type: 'power_wkg', _skipClone: true, _skipCache: true}),
+        peaksStore.getForActivities(ids, {type: 'power', _skipClone: true, _skipCache: true}),
+        peaksStore.getForActivities(ids, {type: 'np', _skipClone: true, _skipCache: true}),
+        peaksStore.getForActivities(ids, {type: 'xp', _skipClone: true, _skipCache: true}),
     ]);
     const gender = athlete.get('gender') || 'male';
     const getRankLevel = (period, p, wp, weight) => {
@@ -691,7 +711,6 @@ export async function peaksWkgAndCleanupProcessor({manifest, activities, athlete
     }
     await peaksStore.putMany(peaks);
     if (deleting.length) {
-        console.warn("Cleaning up peaks:", deleting.length);
         await peaksStore.deleteMany(deleting);
     }
 }
@@ -730,19 +749,22 @@ export class PeaksProcessor extends OffloadProcessor {
     async _producer() {
         while (!this._stopping) {
             const activities = await this.getAllIncoming();
-            if (activities) {
-                for (let i = 0; i < activities.length;) {
-                    const worker = await this.getWorker();
-                    const batch = activities.slice(i, (i += 50));
-                    for (const x of batch) {
-                        worker.pending.set(x.pk, x);
-                    }
-                    console.log ("finally sending data to worker:", batch.length);
-                    const s = Date.now();
-                    await worker.sendData(batch.map(x => x.data));
-                    console.warn("took time to sent to worker", batch.length, Date.now() - s, 'ms');
-                }
+            if (!activities) {
+                continue;
             }
+            const sending = [];
+            for (let i = 0; i < activities.length;) {
+                const worker = await this.getWorker();
+                if (!worker) {
+                    break; // stopping
+                }
+                const batch = activities.slice(i, (i += 50));
+                for (const x of batch) {
+                    worker.pending.set(x.pk, x);
+                }
+                sending.push(worker.sendData(batch.map(x => x.data)));
+            }
+            await Promise.all(sending);
         }
     }
 
@@ -752,7 +774,7 @@ export class PeaksProcessor extends OffloadProcessor {
             const workers = Array.from(this.workers);
             if (!workers.some(x => x.doneQueue.size)) {
                 const dataWaits = workers.map(x => x.doneQueue.wait());
-                await Promise.race([stop, ...dataWaits, this.workerAddedEvent.wait()]);
+                await Promise.race([...dataWaits, this.workerAddedEvent.wait(), stop]);
                 this.workerAddedEvent.clear();
                 for (const f of dataWaits) {
                     f.cancel();
@@ -760,35 +782,38 @@ export class PeaksProcessor extends OffloadProcessor {
             }
             this.drainWorkerResults();
         }
-        if (Array.from(this.workers).some(x => x.pending.size)) {
-            console.error("In stopping state with pending work XXX"); // XXX could be cancel, but need to track this down.
-            debugger;
-        }
+        console.warn("Stopping peaks proc for", this.athlete);
         await producer;
+        console.warn("GOOD producer shutdown", this.athlete);
         await Promise.all(Array.from(this.workers).map(x => x.stop()));
+        console.warn("GOOD worker stop", this.athlete);
         this.workers.clear();
     }
 
     async getWorker() {
         const workers = Array.from(this.workers).sort((a, b) => a.pending.size - b.pending.size);
         const count = workers.length;
-        if (!count || (workers[0].pending.size > 50 && count < this.maxWorkers)) {
-            console.warn("Try to get new worker", workerExec._sem);
-            const s = Date.now();
-            const worker = await workerExec.get();
+        const stop = this._stopEvent.wait();
+        if (!count || (workers[0].pending.size > 50 &&
+            count < this.maxWorkers && workerExec.available())) {
+            const getting = workerExec.get();
+            await Promise.race([getting, stop]);
+            if (!getting.done()) {
+                getting.cancel();
+                return null;
+            }
+            const worker = getting.result();
             worker.start('find-peaks', {
                 periods: this.periods,
                 distances: this.distances,
                 athlete: this.athlete.data
             });
-            console.warn("GOT that worker", this.workers.size, Date.now() - s);
             worker.pending = new Map();
             this.workers.add(worker);
             this.workerAddedEvent.set();
             return worker;
         } else {
             // least busy worker...
-            console.warn("REUSING A WORKER", this.workers.size);
             return workers[0];
         }
     }

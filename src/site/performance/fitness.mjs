@@ -303,6 +303,15 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
         '/analysis_energy'];
     static SettingsView = ActivityVolumentChartSettingsView;
 
+    get defaultPrefs() {
+        return {
+            ...super.defaultPrefs,
+            disabledDatasets: {
+                energy: true,
+            },
+        };
+    }
+
     async init(options) {
         await super.init(options);
         const distStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;

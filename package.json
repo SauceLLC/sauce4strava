@@ -18,7 +18,7 @@
   "homepage": "https://github.com/SauceLLC/sauce4strava#readme",
   "devDependencies": {
     "eslint": "8.7.0",
-    "jscoop": "https://github.com/mayfield/jscoop.git#0900efdfb261b1aa9e87e4c063ac2c315eb2b10f",
+    "jscoop": "https://github.com/mayfield/jscoop.git#fa8e3b70f60f3ba425093259924f6c79c224ac6b",
     "sass": "1.49.0",
     "sauce-chartjs": "https://github.com/SauceLLC/Chart.js.git#0e32852c8e02664d840963a3332f36fbba348e5b",
     "sauce-terser": "https://github.com/mayfield/terser.git#35dbaf580ac94e1b899314acb9df47b69159c84a",

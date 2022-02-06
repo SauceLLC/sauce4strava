@@ -1077,7 +1077,7 @@ export class PageView extends PerfView {
     get defaultPrefs() {
         return {
             defaultRange: {
-                period: 4,
+                period: 12,
                 metric: 'weeks',
                 all: false,
             }

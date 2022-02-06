@@ -6,6 +6,28 @@ importScripts('/src/bg/hist/db.js');
 importScripts('/src/common/lib.js');
 
 
+class SimpleEvent {
+    constructor() {
+        this._reset();
+    }
+
+    _reset() {
+        this._p = new Promise(resolve => {
+            this._resolve = resolve;
+        });
+        this._p.finally(() => this._reset());
+    }
+
+    async wait() {
+        await this._p;
+    }
+
+    set() {
+        this._resolve();
+    }
+}
+
+
 const streamsStore = sauce.hist.db.StreamsStore.singleton();
 const peaksStore = sauce.hist.db.PeaksStore.singleton();
 
@@ -22,7 +44,7 @@ async function getActivitiesStreams(activities, streamsDesc) {
         }
         actStreams.set(a.id, {});
     }
-    for (const x of await streamsStore.getMany(streamKeys)) {
+    for (const x of await streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true})) {
         if (x) {
             actStreams.get(x.activity)[x.stream] = x.data;
         }
@@ -45,6 +67,7 @@ class WorkerProcessor {
         this.stopping = false;
         this.incoming = [];
         this._lastSeq;
+        this.wakeEvent = new SimpleEvent();
         incomingPort.addEventListener('message', ev => this._onIncoming(ev.data));
         incomingPort.start();
         outgoingPort.start();  // We don't actually use listeners, but I don't want to forget.
@@ -73,6 +96,7 @@ class WorkerProcessor {
                 this.incoming.push(x);
                 // XXX Wake event surely?
             }
+            this.wakeEvent.set();
         } else if (op === 'stop') {
             await this.stop();
         } else {
@@ -93,6 +117,7 @@ class WorkerProcessor {
             throw new TypeError('already stopping');
         }
         this.stopping = true;
+        this.wakeEvent.set();
         await this._procTask;
     }
 
@@ -126,7 +151,7 @@ class FindPeaks extends WorkerProcessor {
                 const errors = await this.findPeaks(batch);
                 this.send({done: batch.map(x => x.id), errors});
             }
-            await sauce.sleep(100); // XXX Use an Event object or equiv
+            await this.wakeEvent.wait();
         }
     }
 
@@ -139,7 +164,13 @@ class FindPeaks extends WorkerProcessor {
         });
         const upPeaks = [];
         const errors = [];
+        let ts = Date.now();
         for (const activity of activities) {
+            if (Date.now() - ts > 400) {
+                // Reduce message ACK latency by inserting defering for one task iteration.
+                await sauce.sleep(0);
+                ts = Date.now();
+            }
             const isRun = activity.basetype === 'run';
             if (activity.peaksExclude) {
                 const count = await peaksStore.deleteForActivity(activity.id);

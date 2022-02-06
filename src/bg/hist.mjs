@@ -1491,7 +1491,7 @@ class SyncJob extends EventTarget {
                     manifestBatch.push(a);
                     a.clearSyncState(m);
                 }
-                await Promise.all(Array.from(manifestBatches.entries()).map(async ([m, activities]) => {
+                for (const [m, activities] of manifestBatches.entries()) {
                     const processor = m.data.processor;
                     const s = Date.now();
                     if (issubclass(processor, processors.OffloadProcessor)) {
@@ -1537,10 +1537,9 @@ class SyncJob extends EventTarget {
                         console.debug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} ` +
                             `activities (${rate}/s)`);
                     }
-                }));
-
+                    await sauce.sleep(0); // Run in next task for better offloaded latency
+                }
                 await this._localDrainOffloaded(offloaded, batch);
-
                 this.niceSaveActivities();
                 this.niceSendProgressEvent(done);
             }
