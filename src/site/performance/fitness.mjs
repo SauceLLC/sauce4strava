@@ -290,7 +290,7 @@ class ActivityVolumentChartSettingsView extends PanelSettingsView {
         this.panelView.getPrefs('hiddenDatasets', {})[name] = !enabled;
         this.panelView.getPrefs('disabledDatasets', {})[name] = !enabled;
         await this.panelView.savePrefs();
-        await this.panelView.render();
+        this.panelView.updateChart();
     }
 }
 
@@ -363,34 +363,45 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
     }
 
     onUpdateActivities({range, daily, metricData}) {
+        this._range = range;
+        this._daily = daily;
+        this._metricData = metricData;
+        this.updateChart();
+    }
+
+    updateChart() {
+        const range = this._range;
+        const daily = this._daily;
+        const metricData = this._metricData;
         this.$('.metric-display').text(this.pageView.getMetricLocale(range.metric));
+        const disabled = this.getPrefs('disabledDatasets', {});
         let predictions;
+        let predictionDays;
         if (D.tomorrow() <= range.end && metricData.length) {
             const remaining = (range.end - Date.now()) / DAY;
-            const days = Math.round((range.end - metricData[metricData.length - 1].date) / DAY);
-            const weighting = Math.min(days, daily.length);
+            predictionDays = Math.round((range.end - metricData[metricData.length - 1].date) / DAY);
+            const weighting = Math.min(predictionDays, daily.length);
             const avgKJ = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.kj));
             const avgTSS = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.tss));
             const avgDuration = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.duration));
             const avgDistance = sauce.perf.expWeightedAvg(weighting, daily.map(x => x.distance));
             predictions = {
-                days,
-                tss: metricData.map((b, i) => ({
+                tss: !disabled.tss && metricData.map((b, i) => ({
                     b,
                     x: b.date,
                     y: i === metricData.length - 1 ? avgTSS * remaining : null,
                 })),
-                duration: metricData.map((b, i) => ({
+                duration: !disabled.duration && metricData.map((b, i) => ({
                     b,
                     x: b.date,
                     y: i === metricData.length - 1 ? avgDuration * remaining : null,
                 })),
-                distance: metricData.map((b, i) => ({
+                distance: !disabled.distance && metricData.map((b, i) => ({
                     b,
                     x: b.date,
                     y: i === metricData.length - 1 ? avgDistance * remaining : null,
                 })),
-                energy: metricData.map((b, i) => ({
+                energy: !disabled.energy && metricData.map((b, i) => ({
                     b,
                     x: b.date,
                     y: i === metricData.length - 1 ? avgKJ * remaining : null,
@@ -400,88 +411,100 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
         const commonOptions = {
             borderWidth: 1
         };
-        this.chart.data.datasets = [{
-            id: 'tss',
-            label: 'TSS',
-            backgroundColor: '#1d86cdd0',
-            borderColor: '#0d76bdf0',
-            hoverBackgroundColor: '#0d76bd',
-            hoverBorderColor: '#0d76bd',
-            yAxisID: 'tss',
-            stack: 'tss',
-            tooltipFormat: (x, i) => {
-                const tss = Math.round(x).toLocaleString();
-                const tssDay = Math.round(x / metricData[i].days).toLocaleString();
-                const tips = [`${tss} <small>(${tssDay}/d)</small>`];
-                if (predictions && i === metricData.length - 1) {
-                    const ptssRaw = predictions.tss[i].y + x;
-                    const ptss = Math.round(ptssRaw).toLocaleString();
-                    const ptssDay = Math.round(ptssRaw / predictions.days).toLocaleString();
-                    tips.push(`${this.LM('predicted')}: <b>~${ptss} <small>(${ptssDay}/d)</small></b>`);
-                }
-                return tips;
-            },
-            data: metricData.map((b, i) => ({b, x: b.date, y: b.tssSum})),
-        }, {
-            id: 'duration',
-            label: this.LM('analysis_time'),
-            backgroundColor: '#fc7d0bd0',
-            borderColor: '#dc5d00f0',
-            hoverBackgroundColor: '#ec6d00',
-            hoverBorderColor: '#dc5d00',
-            yAxisID: 'duration',
-            stack: 'duration',
-            tooltipFormat: (x, i) => {
-                const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
-                if (predictions && i === metricData.length - 1) {
-                    const pdur = H.duration(predictions.duration[i].y + x,
-                        {maxPeriod: 3600, minPeriod: 3600, digits: 1});
-                    tips.push(`${this.LM('predicted')}: <b>~${pdur}</b>`);
-                }
-                return tips;
-            },
-            data: metricData.map((b, i) => ({b, x: b.date, y: b.duration})),
-        }, {
-            id: 'distance',
-            label: this.LM('analysis_distance'),
-            backgroundColor: '#244d',
-            borderColor: '#022f',
-            hoverBackgroundColor: '#133',
-            hoverBorderColor: '#022',
-            yAxisID: 'distance',
-            stack: 'distance',
-            tooltipFormat: (x, i) => {
-                const tips = [L.distanceFormatter.formatShort(x)];
-                if (predictions && i === metricData.length - 1) {
-                    const pdist = L.distanceFormatter.formatShort(predictions.distance[i].y + x, 0);
-                    tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
-                }
-                return tips;
-            },
-            data: metricData.map((b, i) => ({b, x: b.date, y: b.distance})),
-        }, {
-            id: 'energy',
-            label: this.LM('analysis_energy'),
-            backgroundColor: '#8ccd6cd0',
-            borderColor: '#7cbd5cf0',
-            hoverBackgroundColor: '#7cbd5c',
-            hoverBorderColor: '#7cbd5c',
-            yAxisID: 'energy',
-            stack: 'energy',
-            tooltipFormat: (x, i) => {
-                const kjDay = H.number(x / metricData[i].days);
-                const tips = [`${humanKJ(x)} <small>(${kjDay}/d)</small>`];
-                if (predictions && i === metricData.length - 1) {
-                    const pkj = predictions.energy[i].y + x;
-                    const pkjDay = H.number(pkj / predictions.days);
-                    tips.push(`${this.LM('predicted')}: <b>~${humanKJ(pkj)} <small>(${pkjDay}/d)</small></b>`);
-                }
-                return tips;
-            },
-            data: metricData.map((b, i) => ({b, x: b.date, y: b.kj})),
-        }];
-        if (predictions) {
-            this.chart.data.datasets.push({
+        const datasets = [];
+        if (!disabled.tss) {
+            datasets.push({
+                id: 'tss',
+                label: 'TSS',
+                backgroundColor: '#1d86cdd0',
+                borderColor: '#0d76bdf0',
+                hoverBackgroundColor: '#0d76bd',
+                hoverBorderColor: '#0d76bd',
+                yAxisID: 'tss',
+                stack: 'tss',
+                tooltipFormat: (x, i) => {
+                    const tss = Math.round(x).toLocaleString();
+                    const tssDay = Math.round(x / metricData[i].days).toLocaleString();
+                    const tips = [`${tss} <small>(${tssDay}/d)</small>`];
+                    if (predictions && i === metricData.length - 1) {
+                        const ptssRaw = predictions.tss[i].y + x;
+                        const ptss = Math.round(ptssRaw).toLocaleString();
+                        const ptssDay = Math.round(ptssRaw / predictionDays).toLocaleString();
+                        tips.push(`${this.LM('predicted')}: <b>~${ptss} <small>(${ptssDay}/d)</small></b>`);
+                    }
+                    return tips;
+                },
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.tssSum})),
+            });
+        }
+        if (!disabled.duration) {
+            datasets.push({
+                id: 'duration',
+                label: this.LM('analysis_time'),
+                backgroundColor: '#fc7d0bd0',
+                borderColor: '#dc5d00f0',
+                hoverBackgroundColor: '#ec6d00',
+                hoverBorderColor: '#dc5d00',
+                yAxisID: 'duration',
+                stack: 'duration',
+                tooltipFormat: (x, i) => {
+                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
+                    if (predictions && i === metricData.length - 1) {
+                        const pdur = H.duration(predictions.duration[i].y + x,
+                            {maxPeriod: 3600, minPeriod: 3600, digits: 1});
+                        tips.push(`${this.LM('predicted')}: <b>~${pdur}</b>`);
+                    }
+                    return tips;
+                },
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.duration})),
+            });
+        }
+        if (!disabled.distance) {
+            datasets.push({
+                id: 'distance',
+                label: this.LM('analysis_distance'),
+                backgroundColor: '#244d',
+                borderColor: '#022f',
+                hoverBackgroundColor: '#133',
+                hoverBorderColor: '#022',
+                yAxisID: 'distance',
+                stack: 'distance',
+                tooltipFormat: (x, i) => {
+                    const tips = [L.distanceFormatter.formatShort(x)];
+                    if (predictions && i === metricData.length - 1) {
+                        const pdist = L.distanceFormatter.formatShort(predictions.distance[i].y + x, 0);
+                        tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
+                    }
+                    return tips;
+                },
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.distance})),
+            });
+        }
+        if (!disabled.energy) {
+            datasets.push({
+                id: 'energy',
+                label: this.LM('analysis_energy'),
+                backgroundColor: '#8ccd6cd0',
+                borderColor: '#7cbd5cf0',
+                hoverBackgroundColor: '#7cbd5c',
+                hoverBorderColor: '#7cbd5c',
+                yAxisID: 'energy',
+                stack: 'energy',
+                tooltipFormat: (x, i) => {
+                    const kjDay = H.number(x / metricData[i].days);
+                    const tips = [`${humanKJ(x)} <small>(${kjDay}/d)</small>`];
+                    if (predictions && i === metricData.length - 1) {
+                        const pkj = predictions.energy[i].y + x;
+                        const pkjDay = H.number(pkj / predictionDays);
+                        tips.push(`${this.LM('predicted')}: <b>~${humanKJ(pkj)} <small>(${pkjDay}/d)</small></b>`);
+                    }
+                    return tips;
+                },
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.kj})),
+            });
+        }
+        if (predictions && predictions.tss) {
+            datasets.push({
                 id: 'tss',
                 backgroundColor: '#1d86cd30',
                 borderColor: '#0d76bd50',
@@ -490,7 +513,10 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'tss',
                 stack: 'tss',
                 data: predictions.tss,
-            }, {
+            });
+        }
+        if (predictions && predictions.duration) {
+            datasets.push({
                 id: 'duration',
                 backgroundColor: '#fc7d0b30',
                 borderColor: '#dc5d0050',
@@ -499,7 +525,10 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'duration',
                 stack: 'duration',
                 data: predictions.duration,
-            }, {
+            });
+        }
+        if (predictions && predictions.distance) {
+            datasets.push({
                 id: 'distance',
                 backgroundColor: '#2443',
                 borderColor: '#0225',
@@ -508,7 +537,10 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'distance',
                 stack: 'distance',
                 data: predictions.distance,
-            }, {
+            });
+        }
+        if (predictions && predictions.energy) {
+            datasets.push({
                 id: 'energy',
                 backgroundColor: '#8ccd6c50',
                 borderColor: '#7cbd5c50',
@@ -519,9 +551,8 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 data: predictions.energy,
             });
         }
-        for (const [i, x] of this.chart.data.datasets.entries()) {
-            this.chart.data.datasets[i] = Object.assign({}, commonOptions, x);
-        }
+        this.chart.data.datasets.length = 0;
+        this.chart.data.datasets.push(...datasets.map(x => Object.assign({}, commonOptions, x)));
         this.chart.update();
     }
 }

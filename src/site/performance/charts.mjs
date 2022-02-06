@@ -61,20 +61,10 @@ class ChartVisibilityPlugin {
                 continue;
             }
             ds.hidden = this.view.isDatasetHidden(ds.id);
-            ds.disabled = this.view.isDatasetDisabled(ds.id);
-            displayStates[ds.yAxisID || 0] |= (!ds.hidden && !ds.disabled);
+            displayStates[ds.yAxisID || 0] |= !ds.hidden;
         }
-        for (const [id, display] of Object.entries(displayStates)) {
-            if (typeof id === 'number') {
-                chart.options.scales.yAxes[id].display = display;
-            } else {
-                for (const y of chart.options.scales.yAxes) {
-                    if (y.id === id) {
-                        y.display = !!display;
-                        break;
-                    }
-                }
-            }
+        for (const scale of chart.options.scales.yAxes) {
+            scale.display = !!displayStates[scale.id || 0];
         }
     }
 }
@@ -387,7 +377,7 @@ export class ActivityTimeRangeChart extends SauceChart {
         const endDate = D.adjacentDay(startDate, mostDays);
         // Gather stats from all datasets (vis and hidden) in the range detected from visible...
         for (const ds of this.data.datasets) {
-            if (!ds || !ds.data || !ds.label || ds.disabled) {
+            if (!ds || !ds.data || !ds.label) {
                 continue;
             }
             const inRangeIndexes = ds.data
@@ -660,11 +650,10 @@ export class ActivityTimeRangeChartView extends ChartView {
     }
 
     isDatasetHidden(dataId) {
-        return !!this.getPrefs('hiddenDatasets', {})[dataId];
-    }
-
-    isDatasetDisabled(dataId) {
-        return !!this.getPrefs('disabledDatasets', {})[dataId];
+        return (
+            !!this.getPrefs('hiddenDatasets', {})[dataId] ||
+            !!this.getPrefs('disabledDatasets', {})[dataId]
+        );
     }
 
     toggleDataVisibility(dataId) {
