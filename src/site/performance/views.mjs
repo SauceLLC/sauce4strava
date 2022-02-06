@@ -949,8 +949,8 @@ export class MainView extends PerfView {
                 }
             }],
             position: {
-                my: 'right top',
-                at: 'right-2 top+2',
+                my: 'left top',
+                at: 'left+38 top-8',
                 of: ev.currentTarget,
             },
             dialogClass: 'sauce-performance-panel-settings no-pad sauce-small',
@@ -1385,5 +1385,17 @@ export class OnboardingView extends PerfView {
         }
         await sauce.hist.enableAthlete(athlete.id);
         location.reload();
+    }
+}
+
+
+export class PanelSettingsView extends PerfView {
+    constructor(panelView, options) {
+        super(options);
+        this.panelView = panelView;
+    }
+
+    renderAttrs() {
+        return this.panelView.getPrefs();
     }
 }

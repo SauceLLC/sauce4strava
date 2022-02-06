@@ -572,6 +572,17 @@ export class ChartView extends views.PerfView {
         this._chartConfig = config;
     }
 
+    updateChart() {
+        throw new Error("unimplemented");
+    }
+
+    onUpdateActivities({range, daily, metricData}) {
+        this.range = range;
+        this.daily = daily;
+        this.metricData = metricData;
+        this.updateChart();
+    }
+
     async render() {
         const $canvas = this.$el && this.$('canvas');
         if ($canvas && $canvas.length) {
@@ -612,12 +623,39 @@ export class ChartView extends views.PerfView {
             }
         }
     }
+}
 
-    onUpdateActivities() { }
+
+class ChartViewSettingsView extends views.PanelSettingsView {
+    static tpl = 'performance/chart-settings.html';
+
+    get events() {
+        return {
+            'input input.ds-vis[type="checkbox"]': 'onDatasetVisibilityInput',
+        };
+    }
+
+    async onDatasetVisibilityInput(ev) {
+        const enabled = ev.currentTarget.checked;
+        const name = ev.currentTarget.name;
+        this.panelView.getPrefs('hiddenDatasets', {})[name] = !enabled;
+        this.panelView.getPrefs('disabledDatasets', {})[name] = !enabled;
+        await this.panelView.savePrefs();
+        this.panelView.updateChart();
+    }
+
+    renderAttrs() {
+        return {
+            ...super.renderAttrs(),
+            availableDatasets: this.panelView.availableDatasets,
+        };
+    }
 }
 
 
 export class ActivityTimeRangeChartView extends ChartView {
+    static SettingsView = ChartViewSettingsView;
+
     get events() {
         return {
             ...super.events,
