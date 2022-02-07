@@ -36,7 +36,6 @@ input[type="range"] {
     }
 }
 
-
 html.sauce-performance {
     &, body {
         width: 100%;
@@ -161,36 +160,38 @@ table.sauce-perf {
         display: flex;
         flex-direction: column;
 
-        .activity-list,
-        .activity-analysis {
-            flex: 1 1 50%;
+        .activity-list {
             overflow: auto;
-        }
 
-        table {
-            font-size: 0.9em;
+            table {
+                font-size: 0.9em;
 
-            .name-container {
-                max-width: min(20ch, 25vw) !important;
-            }
+                .name-container {
+                    max-width: min(20ch, 25vw) !important;
+                }
 
-            tr {
-                cursor: pointer;
-            }
+                tr {
+                    cursor: pointer;
 
-            tr:hover {
-                background: color.shade(bg, 10%);
-            }
+                    &.activity-streams td {
+                        padding: 0;
+                    }
+                }
 
-            td.type {
-                max-width: 8ch;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                text-transform: capitalize;
-            }
+                tr:hover {
+                    background: color.shade(bg, 10%);
+                }
 
-            td .btn-icon-only svg[data-icon] {
-                font-size: 0.8em;
+                td.type {
+                    max-width: 8ch;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    text-transform: capitalize;
+                }
+
+                td .btn-icon-only svg[data-icon] {
+                    font-size: 0.8em;
+                }
             }
         }
 
@@ -198,11 +199,49 @@ table.sauce-perf {
             width: 6ch;
         }
     }
+}
 
-    .activity-analysis {
-        flex-shrink: 0;
-        background: black;
-        color: white;
+
+.loading-mask {
+    position: relative;
+
+    &::before,
+    &::after {
+        visibility: hidden;
+        position: absolute;
+        pointer-events: none;
+        z-index: -10;
+        opacity: 0;
+    }
+    &::before {
+        width: 3em;
+        top: calc(50% - 1.5em);
+        left: calc(50% - 1.5em);
+        line-height: 0;
+        content: url(../../images/fa/spinner-third-duotone.svg);
+    }
+    &::after {
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: color.shade(bg, 0%, 0.8);
+        content: '';
+    }
+    &.loading {
+        &::before,
+        &::after {
+            visibility: visible;
+            opacity: 1;
+            z-index: 2;
+            transition: visibility, opacity, background;
+            transition-duration: 1s;
+            pointer-events: initial;
+        }
+        &::before {
+            animation: rotation 3s infinite steps(24 * 3);
+            z-index: 3;
+        }
     }
 }
 
@@ -271,49 +310,6 @@ table.sauce-perf {
         font-size: 0.8em;
         opacity: 0.9;
         margin-left: 0.1em;
-    }
-
-    .loading-mask {
-        position: relative;
-
-        &::before,
-        &::after {
-            visibility: hidden;
-            position: absolute;
-            pointer-events: none;
-            z-index: -10;
-            opacity: 0;
-        }
-        &::before {
-            width: 3em;
-            top: calc(50% - 1.5em);
-            left: calc(50% - 1.5em);
-            line-height: 0;
-            content: url(../../images/fa/spinner-third-duotone.svg);
-        }
-        &::after {
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #0001;
-            content: '';
-        }
-        &.loading {
-            &::before,
-            &::after {
-                visibility: visible;
-                opacity: 1;
-                z-index: 2;
-                transition: visibility, opacity;
-                transition-duration: 1s;
-                pointer-events: initial;
-            }
-            &::before {
-                animation: rotation 3s infinite steps(24 * 3);
-                z-index: 3;
-            }
-        }
     }
 
     .title {
@@ -1164,8 +1160,9 @@ table.sauce-perf {
                         margin: 0.5em 1em;
 
                         &.tt-labels {
+                            margin-top: 0;
                             justify-content: space-evenly;
-                            min-height: 2.65em; // Less jumping for 2 line entries
+                            min-height: 3.15em; // Less jumping for 2 line entries
                         }
 
                         &.tt-horiz {
@@ -1194,8 +1191,10 @@ table.sauce-perf {
                         transition: opacity 200ms;
                         position: relative;
                         display: flex;
+                        flex-wrap: wrap;
                         align-items: baseline;
                         margin-left: 0.7em;
+                        margin-top: 0.5em;
 
                         &.ds-hidden {
                             .label {

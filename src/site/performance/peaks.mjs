@@ -109,12 +109,12 @@ export class PeaksTableView extends views.PerfView {
     }
 
     async render() {
-        this.$el.addClass('loading');
+        this.$('.loading-mask').addClass('loading');
         try {
             await this.loadPeaks();
             await super.render();
         } finally {
-            this.$el.removeClass('loading');
+            this.$('.loading-mask').removeClass('loading');
         }
     }
 

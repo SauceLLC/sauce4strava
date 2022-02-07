@@ -624,8 +624,8 @@ export class DetailsView extends PerfView {
 }
 
 
-export class ActivityAnalysisView extends PerfView {
-    static tpl = 'performance/activity-analysis.html';
+export class ActivityStreamGraphsView extends PerfView {
+    static tpl = 'performance/activity-stream-graphs.html';
 
     get events() {
         return {
@@ -660,23 +660,22 @@ export class ActivityAnalysisView extends PerfView {
                 paceType: this.activity.basetype === 'run' ? 'pace' : 'speed',
                 activityType: this.activity.basetype,
             };
-            const $root = this.$('.sauce-graphs');
             if (this.streams.power) {
-                await sauce.ui.createStreamGraphs($root.find('.power-graph'),
+                await sauce.ui.createStreamGraphs(this.$('.power-graph'),
                     {graphs: ['power', 'power_wkg', 'sp'], ...options});
             }
             if (this.streams.heartrate) {
-                await sauce.ui.createStreamGraphs($root.find('.hr-graph'), {graphs: ['hr'], ...options});
+                await sauce.ui.createStreamGraphs(this.$('.hr-graph'), {graphs: ['hr'], ...options});
             }
             if (this.streams.distance) {
                 const graphs = ['pace'];
                 if (this.activity.basetype === 'run') {
                     graphs.push('gap');
                 }
-                await sauce.ui.createStreamGraphs($root.find('.pace-graph'), {graphs, ...options});
+                await sauce.ui.createStreamGraphs(this.$('.pace-graph'), {graphs, ...options});
             }
             if (this.streams.altitude) {
-                await sauce.ui.createStreamGraphs($root.find('.elevation-graph'),
+                await sauce.ui.createStreamGraphs(this.$('.elevation-graph'),
                     {graphs: ['elevation', 'vam'], ...options});
             }
         }
@@ -701,7 +700,7 @@ export class BulkActivityEditDialog extends PerfView {
         this.pageView = pageView;
         this.athletes = new Set(activities.map(x => x.athlete));
         this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
-        this.analysisView = new ActivityAnalysisView({pageView});
+        this.streamsView = new ActivityStreamGraphsView({pageView});
         await super.init(options);
     }
 
@@ -713,7 +712,7 @@ export class BulkActivityEditDialog extends PerfView {
 
     async render() {
         await super.render();
-        this.analysisView.setElement(this.$('.activity-analysis'));
+        this.streamsView.setElement(this.$('tr.activity-streams td'));
     }
 
     show() {
@@ -763,10 +762,16 @@ export class BulkActivityEditDialog extends PerfView {
     }
 
     async onRowClick(ev) {
-        const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
-        const activity = await sauce.hist.getActivity(id);
-        await this.analysisView.setActivity(activity);
-        this.el.parentElement.scrollIntoView({behavior: 'smooth'});
+        const id = Number(ev.currentTarget.dataset.id);
+        ev.currentTarget.insertAdjacentElement('afterend',
+            this.streamsView.el.closest('tr'));
+        this.streamsView.$('.loading-mask').addClass('loading');
+        try {
+            const activity = await sauce.hist.getActivity(id);
+            await this.streamsView.setActivity(activity);
+        } finally {
+            this.streamsView.$('.loading-mask').removeClass('loading');
+        }
     }
 }
 
