@@ -8,18 +8,20 @@
     <option value="hr" {{panelPrefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
 </select>
 
-<% if (['pace', 'gap'].includes(panelPrefs.type)) { %>
-    <select name="distance">
-        <% for (const x of peakRanges.distances) { %>
-            <option value="{{x.value}}" {{panelPrefs.distance === x.value ? 'selected' : ''}}>{{humanRaceDistance(x.value)}}</option>
-        <% } %>
-    </select>
-<% } else { %>
-    <select name="time">
-        <% for (const x of peakRanges.periods) { %>
-            <option value="{{x.value}}" {{panelPrefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
-        <% } %>
-    </select>
+<% if (!obj.disablePeriod) { %>
+    <% if (['pace', 'gap'].includes(panelPrefs.type)) { %>
+        <select name="distance">
+            <% for (const x of peakRanges.distances) { %>
+                <option value="{{x.value}}" {{panelPrefs.distance === x.value ? 'selected' : ''}}>{{humanRaceDistance(x.value)}}</option>
+            <% } %>
+        </select>
+    <% } else { %>
+        <select name="time">
+            <% for (const x of peakRanges.periods) { %>
+                <option value="{{x.value}}" {{panelPrefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
+            <% } %>
+        </select>
+    <% } %>
 <% } %>
 
 <% if (!obj.disableLimit) { %>

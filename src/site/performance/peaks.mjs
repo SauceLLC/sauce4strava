@@ -301,7 +301,8 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
             panelView: this,
             disableLimit: true,
             disableIncludeAllDates: true,
-            disableIncludeAllAthletes: true
+            disableIncludeAllAthletes: true,
+            disablePeriod: true,
         });
         this.availableDatasets = {
             ...Object.fromEntries(this.peakRanges.periods.map(x =>
