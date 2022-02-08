@@ -1,0 +1,65 @@
+<select name="type">
+    <option value="power" {{panelPrefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
+    <option value="power_wkg" {{panelPrefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
+    <option value="np" {{panelPrefs.type === 'np' ? 'selected' : ''}}>NP</option>
+    <option value="xp" {{panelPrefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
+    <option value="pace" {{panelPrefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
+    <option value="gap" {{panelPrefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
+    <option value="hr" {{panelPrefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
+</select>
+
+<% if (['pace', 'gap'].includes(panelPrefs.type)) { %>
+    <select name="distance">
+        <% for (const x of peakRanges.distances) { %>
+            <option value="{{x.value}}" {{panelPrefs.distance === x.value ? 'selected' : ''}}>{{humanRaceDistance(x.value)}}</option>
+        <% } %>
+    </select>
+<% } else { %>
+    <select name="time">
+        <% for (const x of peakRanges.periods) { %>
+            <option value="{{x.value}}" {{panelPrefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
+        <% } %>
+    </select>
+<% } %>
+
+<% if (!obj.disableLimit) { %>
+    <select name="limit">
+        <option value="10" {{panelPrefs.limit === 10 ? 'selected' : ''}}>{{{top}}} 10</option>
+        <option value="25" {{panelPrefs.limit === 25 ? 'selected' : ''}}>{{{top}}} 25</option>
+        <option value="100" {{panelPrefs.limit === 100 ? 'selected' : ''}}>{{{top}}} 100</option>
+        <option value="500" {{panelPrefs.limit === 500 ? 'selected' : ''}}>{{{top}}} 500</option>
+        <option value="0" {{panelPrefs.limit === 0 ? 'selected' : ''}}>{{{all_results}}}</option>
+    </select>
+<% } %>
+<% if (!obj.disableActivityType) { %>
+    <select name="activityType">
+        <option value="" {{!panelPrefs.activityType ? 'selected' : ''}}>{{{any}}}</option>
+        <option value="ride" {{panelPrefs.activityType === 'ride' ? 'selected' : ''}}>{{{rides}}}</option>
+        <option value="run" {{panelPrefs.activityType === 'run' ? 'selected' : ''}}>{{{runs}}}</option>
+        <option value="swim" {{panelPrefs.activityType === 'swim' ? 'selected' : ''}}>{{{swims}}}</option>
+        <option value="workout" {{panelPrefs.activityType === 'workout' ? 'selected' : ''}}>{{{workouts}}}</option>
+    </select>
+<% } %>
+
+<% if (!obj.disableOptions) { %>
+    <div class="options">
+        <% if (!obj.disableIncludeAllAthletes) { %>
+            <label>
+                <input type="checkbox" class="pref" name="includeAllAthletes" {{panelPrefs.includeAllAthletes ? 'checked' : ''}}/>
+                {{{/all_athletes}}}
+            </label>
+        <% } %>
+        <% if (!obj.disableIncludeAllDates) { %>
+            <label>
+                <input type="checkbox" class="pref" name="includeAllDates" {{panelPrefs.includeAllDates ? 'checked' : ''}}/>
+                {{{all_dates}}}
+            </label>
+        <% } %>
+        <% if (!obj.disableSkipEstimates) { %>
+            <label title="{{{skip_estimates_tooltip}}}">
+                <input type="checkbox" class="pref" name="skipEstimates" {{panelPrefs.skipEstimates ? 'checked' : ''}}/>
+                {{{skip_estimates}}}
+            </label>
+        <% } %>
+    </div>
+<% } %>

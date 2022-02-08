@@ -182,7 +182,7 @@ export class PerfView extends SauceView {
         await sauce.storage.setPref(this._prefKey(), this._prefs);
     }
 
-    async init({name, ...options}) {
+    async init({name, ...options}={}) {
         this.name = name;
         await super.init(options);
     }

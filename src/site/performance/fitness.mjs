@@ -28,8 +28,8 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
     static descLocaleKey = 'performance_training_load_desc';
     static tpl = 'performance/fitness/training-load.html';
     static localeKeys = [
-        'activities', 'predicted_tss', 'predicted_tss_tooltip', 'fitness', 'fatigue', 'form',
-        'today',
+        'predicted_tss', 'predicted_tss_tooltip', 'fitness', 'fatigue', 'form',
+        ...super.localeKeys,
     ];
 
     async init(options) {
@@ -220,7 +220,7 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
 export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_zonetime_title';
     static descLocaleKey = 'performance_zonetime_desc';
-    static localeKeys = ['power_zones', 'activities'];
+    static localeKeys = ['power_zones', ...super.localeKeys];
     static tpl = 'performance/fitness/zonetime.html';
 
     async init(options) {
@@ -298,8 +298,10 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_activities_title';
     static descLocaleKey = 'performance_activities_desc';
     static tpl = 'performance/fitness/activity-volume.html';
-    static localeKeys = ['predicted', '/analysis_time', '/analysis_distance', 'activities',
-        '/analysis_energy'];
+    static localeKeys = [
+        'predicted', '/analysis_time', '/analysis_distance', '/analysis_energy',
+        ...super.localeKeys
+    ];
 
     get defaultPrefs() {
         return {
@@ -556,7 +558,7 @@ export class ElevationChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_elevation_title';
     static descLocaleKey = 'performance_elevation_desc';
     static tpl = 'performance/fitness/elevation.html';
-    static localeKeys = ['/analysis_gain', 'activities'];
+    static localeKeys = ['/analysis_gain', ...super.localeKeys];
 
     async init(options) {
         const thousandFeet = 1609.344 / 5280 * 100;

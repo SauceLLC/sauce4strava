@@ -4,64 +4,7 @@
          title="{{{panel_settings_tooltip}}}">{{=icon cog-duotone=}}</div>
 </header>
 <div class="sauce-panel-content peaks-view loading-mask loading">
-    <div class="peak-controls">
-        <select name="type">
-            <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
-            <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
-            <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP</option>
-            <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
-            <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
-            <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
-            <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>
-        </select>
-        <% if (['pace', 'gap'].includes(prefs.type)) { %>
-            <select name="distance">
-                <% for (const x of peakRanges.distances) { %>
-                    <option value="{{x.value}}" {{prefs.distance === x.value ? 'selected' : ''}}>{{humanRaceDistance(x.value)}}</option>
-                <% } %>
-            </select>
-        <% } else { %>
-            <select name="time">
-                <% for (const x of peakRanges.periods) { %>
-                    <option value="{{x.value}}" {{prefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
-                <% } %>
-            </select>
-        <% } %>
-
-        <select name="limit">
-            <option value="10" {{prefs.limit === 10 ? 'selected' : ''}}>{{{top}}} 10</option>
-            <option value="25" {{prefs.limit === 25 ? 'selected' : ''}}>{{{top}}} 25</option>
-            <option value="100" {{prefs.limit === 100 ? 'selected' : ''}}>{{{top}}} 100</option>
-            <option value="500" {{prefs.limit === 500 ? 'selected' : ''}}>{{{top}}} 500</option>
-            <option value="0" {{prefs.limit === 0 ? 'selected' : ''}}>{{{all_results}}}</option>
-        </select>
-
-        <select name="activityType">
-            <option value="" {{!prefs.activityType ? 'selected' : ''}}>{{{any}}}</option>
-            <option value="ride" {{prefs.activityType === 'ride' ? 'selected' : ''}}>{{{rides}}}</option>
-            <option value="run" {{prefs.activityType === 'run' ? 'selected' : ''}}>{{{runs}}}</option>
-            <option value="swim" {{prefs.activityType === 'swim' ? 'selected' : ''}}>{{{swims}}}</option>
-            <option value="workout" {{prefs.activityType === 'workout' ? 'selected' : ''}}>{{{workouts}}}</option>
-        </select>
-
-        <div class="options">
-            <label>
-                <input type="checkbox" class="pref" name="includeAllAthletes" {{prefs.includeAllAthletes ? 'checked' : ''}}/>
-                {{{/all_athletes}}}
-            </label>
-
-            <label>
-                <input type="checkbox" class="pref" name="includeAllDates" {{prefs.includeAllDates ? 'checked' : ''}}/>
-                {{{all_dates}}}
-            </label>
-
-            <label title="{{{skip_estimates_tooltip}}}">
-                <input type="checkbox" class="pref" name="skipEstimates" {{prefs.skipEstimates ? 'checked' : ''}}/>
-                {{{skip_estimates}}}
-            </label>
-        </div>
-    </div>
-
+    <div class="peaks-controls-view"></div>
     <div class="results">
         <table class="sauce-perf">
             <thead>

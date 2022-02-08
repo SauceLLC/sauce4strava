@@ -626,7 +626,7 @@ export class ChartView extends views.PerfView {
 }
 
 
-class ChartViewSettingsView extends views.PanelSettingsView {
+export class ChartViewSettingsView extends views.PanelSettingsView {
     static tpl = 'performance/chart-settings.html';
 
     get events() {
@@ -644,10 +644,11 @@ class ChartViewSettingsView extends views.PanelSettingsView {
         this.panelView.updateChart();
     }
 
-    renderAttrs() {
+    renderAttrs(attrs) {
         return {
             ...super.renderAttrs(),
             availableDatasets: this.panelView.availableDatasets,
+            ...attrs,
         };
     }
 }
@@ -655,6 +656,7 @@ class ChartViewSettingsView extends views.PanelSettingsView {
 
 export class ActivityTimeRangeChartView extends ChartView {
     static SettingsView = ChartViewSettingsView;
+    static localeKeys = ['today', 'activities'];
 
     get events() {
         return {

@@ -2,9 +2,11 @@
 
 import * as views from './views.mjs';
 import * as fitness from './fitness.mjs';
+import * as charts from './charts.mjs';
 
 const L = sauce.locale;
 const H = L.human;
+const athleteNameCache = new Map();
 
 
 const _athleteCache = new Map();
@@ -16,6 +18,15 @@ async function getAthlete(id, maxAge=3600 * 1000) {
         const athlete = await sauce.hist.getAthlete(id);
         _athleteCache.set(id, {ts: Date.now(), value: athlete});
         return athlete;
+    }
+}
+
+
+function getPeriodType(streamType) {
+    if (['pace', 'gap'].includes(streamType)) {
+        return 'distance';
+    } else {
+        return 'period';
     }
 }
 
@@ -47,20 +58,110 @@ function getPeaksValueFormatter(streamType) {
 }
 
 
-export class PeaksTableView extends views.PerfView {
-    static tpl = 'performance/peaks/table.html';
-    static nameLocaleKey = 'performance_peak_performances_title';
-    static descLocaleKey = 'performance_peak_performances_desc';
+async function getPeaks({type, period, activityType, limit, skipEstimates, ...optional}) {
+    const options = {
+        limit,
+        activityType,
+        skipEstimates,
+        expandActivities: true,
+    };
+    if (!optional.includeAllDates) {
+        options.start = +optional.start;
+        options.end = +optional.end;
+    }
+    let peaks;
+    if (!optional.includeAllAthletes) {
+        peaks = await sauce.hist.getPeaksForAthlete(optional.athlete.id, type, period, options);
+    } else {
+        peaks = await sauce.hist.getPeaksFor(type, period, options);
+    }
+    for (const x of peaks) {
+        if (x.rankLevel) {
+            x.rankBadge = sauce.power.rankBadge(x.rankLevel);
+        }
+    }
+    return peaks;
+}
+
+
+class PeaksControlsView extends views.PerfView {
+    static tpl = 'performance/peaks/controls.html';
 
     get events() {
         return {
             ...super.events,
-            'change .peak-controls select[name="type"]': 'onTypeChange',
-            'change .peak-controls select[name="time"]': 'onTimeChange',
-            'change .peak-controls select[name="distance"]': 'onDistanceChange',
-            'change .peak-controls select[name="limit"]': 'onLimitChange',
-            'change .peak-controls select[name="activityType"]': 'onActivityTypeChange',
-            'input .peak-controls input.pref[type="checkbox"]': 'onPrefCheckboxInput',
+            'change select[name="type"]': 'onTypeChange',
+            'change select[name="time"]': 'onTimeChange',
+            'change select[name="distance"]': 'onDistanceChange',
+            'change select[name="limit"]': 'onLimitChange',
+            'change select[name="activityType"]': 'onActivityTypeChange',
+            'input input.pref[type="checkbox"]': 'onPrefCheckboxInput',
+        };
+    }
+
+    async init({panelView, ...attrs}) {
+        this.panelView = panelView;
+        this.attrs = attrs;
+        this.peakRanges = {
+            periods: await views.getPeakRanges('periods'),
+            distances: await views.getPeakRanges('distances'),
+        };
+        await super.init();
+    }
+
+    renderAttrs() {
+        return {
+            ...this.attrs,
+            peakRanges: this.peakRanges,
+            panelPrefs: this.panelView.getPrefs(),
+        };
+    }
+
+    async onTypeChange(ev) {
+        const type = ev.currentTarget.value;
+        await this.panelView.savePrefs({type});
+        await this.panelView.render();
+    }
+
+    async onTimeChange(ev) {
+        const time = Number(ev.currentTarget.value);
+        await this.panelView.savePrefs({time});
+        await this.panelView.render();
+    }
+
+    async onDistanceChange(ev) {
+        const distance = Number(ev.currentTarget.value);
+        await this.panelView.savePrefs({distance});
+        await this.panelView.render();
+    }
+
+    async onLimitChange(ev) {
+        const limit = Number(ev.currentTarget.value);
+        await this.panelView.savePrefs({limit});
+        await this.panelView.render();
+    }
+
+    async onActivityTypeChange(ev) {
+        const activityType = ev.currentTarget.value || null;
+        await this.panelView.savePrefs({activityType});
+        await this.panelView.render();
+    }
+
+    async onPrefCheckboxInput(ev) {
+        await this.panelView.savePrefs({[ev.currentTarget.name]: ev.currentTarget.checked});
+        await this.panelView.render();
+    }
+}
+
+
+export class PeaksTableView extends views.PerfView {
+    static tpl = 'performance/peaks/table.html';
+    static nameLocaleKey = 'performance_peaks_table_title';
+    static descLocaleKey = 'performance_peaks_desc';
+
+    get events() {
+        return {
+            ...super.events,
             'click .results table tbody tr': 'onResultClick',
             'click .edit-activity': 'onEditActivityClick',
             'pointerdown .resize-drag': 'onResizePointerDown',
@@ -84,13 +185,9 @@ export class PeaksTableView extends views.PerfView {
         this.pageView = pageView;
         this.range = pageView.getRangeSnapshot();
         this.athlete = pageView.athlete;
-        this.athleteNameCache = new Map();
+        this.controlsView = new PeaksControlsView({panelView: this});
         this.listenTo(pageView, 'before-update-activities',
             sauce.debounced(this.onBeforeUpdateActivities));
-        this.peakRanges = {
-            periods: await views.getPeakRanges('periods'),
-            distances: await views.getPeakRanges('distances'),
-        };
         await super.init(options);
     }
 
@@ -100,19 +197,22 @@ export class PeaksTableView extends views.PerfView {
             name: this.name,
             prefs,
             peaks: this.peaks,
-            mile: 1609.344,
             unit: getPeaksUnit(prefs.type),
             valueFormatter: getPeaksValueFormatter(prefs.type),
             athleteName: this.athleteName.bind(this),
-            peakRanges: this.peakRanges,
         };
     }
 
     async render() {
+        const prefs = this.getPrefs();
+        const period = getPeriodType(prefs.type) === 'distance' ? prefs.distance : prefs.time;
+        const {start, end} = this.range;
         this.$('.loading-mask').addClass('loading');
         try {
-            await this.loadPeaks();
+            this.peaks = await getPeaks({period, start, end, athlete: this.athlete, ...prefs});
             await super.render();
+            this.controlsView.setElement(this.$('.peaks-controls-view'));
+            await this.controlsView.render();
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
@@ -123,80 +223,10 @@ export class PeaksTableView extends views.PerfView {
         return athlete ? athlete.name : `<${id}>`;
     }
 
-    getWindow() {
-        const prefs = this.getPrefs();
-        if (['pace', 'gap'].includes(prefs.type)) {
-            return prefs.distance;
-        } else {
-            return prefs.time;
-        }
-    }
-
-    async loadPeaks() {
-        const prefs = this.getPrefs();
-        const options = {
-            limit: prefs.limit,
-            activityType: prefs.activityType,
-            skipEstimates: prefs.skipEstimates,
-            expandActivities: true,
-        };
-        if (!prefs.includeAllDates) {
-            options.start = +this.range.start;
-            options.end = +this.range.end;
-        }
-        if (!prefs.includeAllAthletes) {
-            this.peaks = await sauce.hist.getPeaksForAthlete(this.athlete.id, prefs.type,
-                this.getWindow(), options);
-        } else {
-            this.peaks = await sauce.hist.getPeaksFor(prefs.type,
-                this.getWindow(), options);
-        }
-        for (const x of this.peaks) {
-            if (x.rankLevel) {
-                x.rankBadge = sauce.power.rankBadge(x.rankLevel);
-            }
-        }
-    }
-
     async onBeforeUpdateActivities({athlete, range}) {
         this.range = range;
         this.athlete = athlete;
-        this.athleteNameCache.set(athlete.id, athlete.name);
-        await this.render();
-    }
-
-    async onTypeChange(ev) {
-        const type = ev.currentTarget.value;
-        await this.savePrefs({type});
-        await this.render();
-    }
-
-    async onTimeChange(ev) {
-        const time = Number(ev.currentTarget.value);
-        await this.savePrefs({time});
-        await this.render();
-    }
-
-    async onDistanceChange(ev) {
-        const distance = Number(ev.currentTarget.value);
-        await this.savePrefs({distance});
-        await this.render();
-    }
-
-    async onLimitChange(ev) {
-        const limit = Number(ev.currentTarget.value);
-        await this.savePrefs({limit});
-        await this.render();
-    }
-
-    async onActivityTypeChange(ev) {
-        const activityType = ev.currentTarget.value || null;
-        await this.savePrefs({activityType});
-        await this.render();
-    }
-
-    async onPrefCheckboxInput(ev) {
-        await this.savePrefs({[ev.currentTarget.name]: ev.currentTarget.checked});
+        athleteNameCache.set(athlete.id, athlete.name);
         await this.render();
     }
 
@@ -239,8 +269,142 @@ export class PeaksTableView extends views.PerfView {
 }
 
 
+export class PeaksChartView extends charts.ActivityTimeRangeChartView {
+    static tpl = 'performance/peaks/chart.html';
+    static nameLocaleKey = 'performance_peaks_chart_title';
+    static descLocaleKey = 'performance_peaks_desc';
+    static localeKeys = [...super.localeKeys];
+
+    get defaultPrefs() {
+        return {
+            type: 'power',
+            time: 300,
+            distance: 10000,
+            activityType: null,
+            skipEstimates: null,
+            disabledDatasets: {
+                p5: true,
+                d400: true,
+            },
+        };
+    }
+
+    async init({pageView, ...options}) {
+        this.pageView = pageView;
+        this.range = pageView.getRangeSnapshot();
+        this.athlete = pageView.athlete;
+        this.peakRanges = {
+            periods: await views.getPeakRanges('periods'),
+            distances: await views.getPeakRanges('distances'),
+        };
+        this.controlsView = new PeaksControlsView({
+            panelView: this,
+            disableLimit: true,
+            disableIncludeAllDates: true,
+            disableIncludeAllAthletes: true
+        });
+        this.availableDatasets = {
+            ...Object.fromEntries(this.peakRanges.periods.map(x =>
+                [`p${x.value}`, {period: x.value, type: 'period', label: `${H.duration(x.value)}`}])),
+            ...Object.fromEntries(this.peakRanges.distances.map(x =>
+                [`d${x.value}`, {period: x.value, type: 'distance', label: `${H.raceDistance(x.value)}`}])),
+        };
+        this.setChartConfig({
+            options: {
+                elements: {
+                    point: {
+                        pointStyle: 'circle',
+                    },
+                },
+                scales: {
+                    xAxes: [{
+                        distribution: 'time', // XXX Maybe use daily/metricData and map getPeaks into it.
+                    }],
+                    yAxes: [{
+                        id: 'values',
+                        ticks: {
+                            min: 0,
+                            maxTicksLimit: 8,
+                            callback: x => {
+                                const prefs = this.getPrefs();
+                                return `${getPeaksValueFormatter(prefs.type)(x)} ${getPeaksUnit(prefs.type)}`;
+                            }
+                        },
+                    }]
+                },
+                tooltips: {
+                    intersect: false,
+                },
+            }
+        });
+        await super.init({pageView, ...options});
+    }
+
+    async render() {
+        this.$('.loading-mask').addClass('loading');
+        const prefs = this.getPrefs();
+        this.valueFormatter = getPeaksValueFormatter(prefs.type);
+        try {
+            await super.render();
+            this.controlsView.setElement(this.$('.peaks-controls-view'));
+            await this.controlsView.render();
+            await this.updateChart();
+        } finally {
+            this.$('.loading-mask').removeClass('loading');
+        }
+    }
+
+    getActiveDatasets() {
+        const disabled = this.getPrefs('disabledDatasets', {});
+        const prefs = this.getPrefs();
+        const periodType = getPeriodType(prefs.type);
+        const datasets = [];
+        for (const [id, x] of Object.entries(this.availableDatasets)) {
+            if (!disabled[id] && x.type === periodType) {
+                datasets.push([id, x]);
+            }
+        }
+        return datasets;
+    }
+
+    async updateChart() {
+        const prefs = this.getPrefs();
+        const {start, end} = this.range;
+        const peaksGroups = await Promise.all(this.getActiveDatasets().map(async ([id, x]) => {
+            const peaks = await getPeaks({period: x.period, start, end, athlete: this.athlete, ...prefs});
+            peaks.sort((a, b) => a.ts - b.ts);
+            return {peaks, id, ...x};
+        }));
+        //const days = this.range.days;
+        //const borderWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
+        const datasets = [];
+        for (const {peaks, id, label} of peaksGroups) {
+            datasets.push({
+                id,
+                label,
+                //borderWidth,
+                yAxisID: 'values',
+                tooltipFormat: x => this.valueFormatter(x),
+                data: peaks.map(x => ({
+                    b: {
+                        date: new Date(x.ts),
+                        days: 1,
+                        activities: [x.activity]
+                    },
+                    x: x.ts,
+                    y: x.value
+                })),
+            });
+        }
+        this.chart.data.datasets = datasets;
+        this.chart.update();
+    }
+}
+
+
 export const PanelViews = {
     PeaksTableView,
+    PeaksChartView,
 };
 
 
@@ -259,8 +423,8 @@ class PeaksMainView extends views.MainView {
                 view: 'PeaksTableView',
                 settings: {},
             }, {
-                id: 'panel-default-activity-volume-xxx-1',
-                view: 'ActivityVolumeChartView',
+                id: 'panel-default-peaks-chart-1',
+                view: 'PeaksChartView',
                 settings: {},
             }]
         };
