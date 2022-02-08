@@ -301,9 +301,6 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                     },
                 },
                 scales: {
-                    xAxes: [{
-                        distribution: 'time', // XXX Maybe use daily/metricData and map getPeaks into it.
-                    }],
                     yAxes: [{
                         id: 'values',
                         ticks: {
@@ -396,14 +393,13 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
             return {metricData, id, ...x};
         }));
         this.chart.options.scales.yAxes[0].ticks.reverse = reverse;
-        //const days = this.range.days;
-        //const borderWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
         const datasets = [];
-        for (const {metricData, id, label} of metricPeaks) {
+        for (const [i, {metricData, id, label}] of metricPeaks.entries()) {
             datasets.push({
                 id,
                 label,
-                //borderWidth,
+                borderColor: `hsla(10deg, ${100 - (65 * ((i + 1) / metricPeaks.length))}%, 50%, 0.7)`,
+                backgroundColor: `hsla(10deg, ${100 - (65 * ((i + 1) / metricPeaks.length))}%, 50%, 0.9)`,
                 yAxisID: 'values',
                 tooltipFormat: x => this.valueFormatter(x),
                 data: metricData.map(b => ({
