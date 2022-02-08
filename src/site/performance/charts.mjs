@@ -559,13 +559,9 @@ export class ChartView extends views.PerfView {
     }
 
     async init({pageView, ChartClass=SauceChart, ...options}) {
-        if (!pageView || !ChartClass) {
-            throw new TypeError('missing args');
-        }
-        this.pageView = pageView;
         this._ChartClass = ChartClass;
-        await super.init(options);
         this.listenTo(pageView, 'update-activities', this.onUpdateActivities);
+        await super.init({pageView, ...options});
     }
 
     setChartConfig(config) {
@@ -576,10 +572,8 @@ export class ChartView extends views.PerfView {
         throw new Error("unimplemented");
     }
 
-    onUpdateActivities({range, daily, metricData}) {
-        this.range = range;
-        this.daily = daily;
-        this.metricData = metricData;
+    onUpdateActivities(obj) {
+        Object.assign(this, obj);
         this.updateChart();
     }
 
@@ -631,11 +625,11 @@ export class ChartViewSettingsView extends views.PanelSettingsView {
 
     get events() {
         return {
-            'input input.ds-vis[type="checkbox"]': 'onDatasetVisibilityInput',
+            'input input.ds-en[type="checkbox"]': 'onDatasetEnabledInput',
         };
     }
 
-    async onDatasetVisibilityInput(ev) {
+    async onDatasetEnabledInput(ev) {
         const enabled = ev.currentTarget.checked;
         const name = ev.currentTarget.name;
         this.panelView.getPrefs('hiddenDatasets', {})[name] = !enabled;

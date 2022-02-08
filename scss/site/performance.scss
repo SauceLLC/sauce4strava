@@ -875,6 +875,10 @@ table.sauce-perf {
         }
     }
 
+    .fixed-height.sauce-panel .peaks-view .results {
+        max-height: initial;
+    }
+
     .sauce-panel-content.peaks-view {
         $results-height: calc(25vh * var(--height-factor));
         background-color: color.shade(bg, 3%);
@@ -882,6 +886,7 @@ table.sauce-perf {
         border-radius: 0.28em;
         overflow: hidden;
         font-size: 0.96em;
+        flex: 1 1 auto;
 
         &:empty {
             min-height: calc(#{$results-height} + 2em);
@@ -890,6 +895,7 @@ table.sauce-perf {
                                   #{color.shade(bg, 5%)},
                                   #{color.shade(bg, 2%)});
         }
+
 
         .peaks-controls-view {
             padding: 0 1rem 1rem;
@@ -949,9 +955,6 @@ table.sauce-perf {
             }
         }
 
-        &.fixed-height .results {
-            max-height: initial;
-        }
 
         .resize-drag {
             height: 0.65em;
@@ -1067,6 +1070,10 @@ table.sauce-perf {
                 right: 0;
                 font-size: 0.92em;
 
+                .btn {
+                    margin-left: 0.4em;
+                }
+
                 svg[data-icon] {
                     opacity: 0.8;
                 }
@@ -1082,6 +1089,8 @@ table.sauce-perf {
             .sauce-panel {
                 --width-factor: 1;
                 --height-factor: 1;
+                display: flex;
+                flex-direction: column;
                 flex: 0 1 calc((100% * var(--width-factor)) - 2px); // 2px for safety
                 overflow: hidden;
                 position: relative;

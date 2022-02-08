@@ -182,8 +182,13 @@ export class PerfView extends SauceView {
         await sauce.storage.setPref(this._prefKey(), this._prefs);
     }
 
-    async init({name, ...options}={}) {
-        this.name = name;
+    async init({name, pageView, ...options}={}) {
+        if (name) {
+            this.name = name;
+        }
+        if (pageView) {
+            this.pageView = pageView;
+        }
         await super.init(options);
     }
 }
@@ -213,7 +218,6 @@ export class SummaryView extends PerfView {
     }
 
     async init({pageView, ...options}) {
-        this.pageView = pageView;
         this.sync = {};
         this.daily = [];
         this.missingTSS = [];
@@ -224,7 +228,7 @@ export class SummaryView extends PerfView {
         if (pageView.athlete) {
             await this.setAthlete(pageView.athlete);
         }
-        await super.init(options);
+        await super.init({pageView, ...options});
         this.listenTo(pageView, 'update-activities', sauce.debounced(this.onUpdateActivities));
     }
 
@@ -436,13 +440,12 @@ export class DetailsView extends PerfView {
 
     async init({pageView, ...options}) {
         this.onSyncProgress = this._onSyncProgress.bind(this);
-        this.pageView = pageView;
         this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
         this.listenTo(pageView, 'select-activities', this.setActivities);
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
         this.setAthlete(pageView.athlete);
         this.manifests = await sauce.hist.getActivitySyncManifests('local');
-        await super.init(options);
+        await super.init({pageView, ...options});
     }
 
     setElement(el, ...args) {
@@ -627,17 +630,6 @@ export class DetailsView extends PerfView {
 export class ActivityStreamGraphsView extends PerfView {
     static tpl = 'performance/activity-stream-graphs.html';
 
-    get events() {
-        return {
-            ...super.events,
-        };
-    }
-
-    async init({pageView, ...options}) {
-        this.pageView = pageView;
-        await super.init(options);
-    }
-
     renderAttrs() {
         return {
             activity: this.activity,
@@ -697,11 +689,10 @@ export class BulkActivityEditDialog extends PerfView {
 
     async init({activities, pageView, ...options}) {
         this.activities = activities;
-        this.pageView = pageView;
         this.athletes = new Set(activities.map(x => x.athlete));
         this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
         this.streamsView = new ActivityStreamGraphsView({pageView});
-        await super.init(options);
+        await super.init({pageView, ...options});
     }
 
     renderAttrs() {
@@ -780,8 +771,11 @@ export class BulkActivityEditDialog extends PerfView {
 
 
 export class MainView extends PerfView {
-    static localeKeys = ['activities', 'today', 'panel_settings_title', 'auto', '/delete', '/add', 'panel_add_title'];
     static tpl = 'performance/fitness/main.html';
+    static localeKeys = [
+        'activities', 'today', 'panel_settings_title', 'auto', '/delete', '/add',
+        'panel_add_title'
+    ];
 
     get events() {
         return {
@@ -807,17 +801,33 @@ export class MainView extends PerfView {
 
     async init({pageView, ...options}) {
         this.panels = [];
-        this.pageView = pageView;
         this.listenTo(pageView, 'before-update-activities', this.onBeforeUpdateActivities);
         this.listenTo(pageView, 'available-activities-changed', this.onAvailableChanged);
-        await super.init(options);
-        for (const panelPrefs of this.getPrefs('panels')) {
-            this.panels.push(await this._createPanel(panelPrefs));
+        await super.init({pageView, ...options});
+        const invalid = [];
+        const panelPrefs = this.getPrefs('panels');
+        for (const [i, x] of panelPrefs.entries()) {
+            const p = await this._createPanel(x);
+            if (!p) {
+                invalid.unshift(i);  // splice from back to front
+            } else {
+                this.panels.push(p);
+            }
+        }
+        if (invalid.length) {
+            for (const i of invalid) {
+                console.warn("Removing invalid panel view:", panelPrefs[i]);
+                panelPrefs.splice(i, 1);
+            }
+            await this.savePrefs();
         }
     }
 
     async _createPanel(prefs) {
         const View = this.availablePanelViews[prefs.view];
+        if (!View) {
+            return;  // deprecated view (hopefully)
+        }
         const name = prefs.settings.name || await L.getMessage(View.nameLocaleKey);
         const id = prefs.id;
         const view = new View({id, name, pageView: this.pageView});
@@ -847,7 +857,6 @@ export class MainView extends PerfView {
     }
 
     async render() {
-        const hadPanels = this.$('.sauce-panels .sauce-panel').length;
         await super.render();
         const $panels = this.$('.sauce-panels');
         for (const [i, x] of this.panels.entries()) {
@@ -856,12 +865,10 @@ export class MainView extends PerfView {
             x.view.el.style.order = i;
             x.view.el.style.setProperty('--height-factor', x.prefs.settings.heightFactor || 1);
             x.view.el.style.setProperty('--width-factor', x.prefs.settings.widthFactor || 1);
+            // Required if parent view re-rendered due to jQuery.html removing child event listeners.
+            x.view.delegateEvents();
             await x.view.render();
             $panels.append(x.view.$el);
-            if (hadPanels) {
-                // Our original element was stomped we need to readd event handlers.
-                x.view.delegateEvents();
-            }
         }
     }
 
@@ -1071,8 +1078,8 @@ export class MainView extends PerfView {
 
 
 export class PageView extends PerfView {
-    static localeKeys = ['weekly', 'monthly', 'yearly'];
     static tpl = 'performance/page.html';
+    static localeKeys = ['weekly', 'monthly', 'yearly'];
 
     get events() {
         return {

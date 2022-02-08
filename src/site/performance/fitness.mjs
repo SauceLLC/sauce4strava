@@ -24,9 +24,9 @@ function humanKJ(kj) {
 
 
 export class TrainingChartView extends charts.ActivityTimeRangeChartView {
+    static tpl = 'performance/fitness/training-load.html';
     static nameLocaleKey = 'performance_training_load_title';
     static descLocaleKey = 'performance_training_load_desc';
-    static tpl = 'performance/fitness/training-load.html';
     static localeKeys = [
         'predicted_tss', 'predicted_tss_tooltip', 'fitness', 'fatigue', 'form',
         ...super.localeKeys,
@@ -218,10 +218,10 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
 
 
 export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
+    static tpl = 'performance/fitness/zonetime.html';
     static nameLocaleKey = 'performance_zonetime_title';
     static descLocaleKey = 'performance_zonetime_desc';
     static localeKeys = ['power_zones', ...super.localeKeys];
-    static tpl = 'performance/fitness/zonetime.html';
 
     async init(options) {
         await super.init(options);
@@ -295,9 +295,9 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
 
 
 export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
+    static tpl = 'performance/fitness/activity-volume.html';
     static nameLocaleKey = 'performance_activities_title';
     static descLocaleKey = 'performance_activities_desc';
-    static tpl = 'performance/fitness/activity-volume.html';
     static localeKeys = [
         'predicted', '/analysis_time', '/analysis_distance', '/analysis_energy',
         ...super.localeKeys
@@ -555,9 +555,9 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
 
 
 export class ElevationChartView extends charts.ActivityTimeRangeChartView {
+    static tpl = 'performance/fitness/elevation.html';
     static nameLocaleKey = 'performance_elevation_title';
     static descLocaleKey = 'performance_elevation_desc';
-    static tpl = 'performance/fitness/elevation.html';
     static localeKeys = ['/analysis_gain', ...super.localeKeys];
 
     async init(options) {

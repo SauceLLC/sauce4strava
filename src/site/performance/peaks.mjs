@@ -6,19 +6,15 @@ import * as charts from './charts.mjs';
 
 const L = sauce.locale;
 const H = L.human;
-const athleteNameCache = new Map();
 
 
 const _athleteCache = new Map();
-async function getAthlete(id, maxAge=3600 * 1000) {
-    const cached = _athleteCache.get(id);
-    if (cached && (Date.now() - cached.ts) < maxAge) {
-        return cached.value;
-    } else {
+async function getAthlete(id) {
+    if (!_athleteCache.has(id)) {
         const athlete = await sauce.hist.getAthlete(id);
-        _athleteCache.set(id, {ts: Date.now(), value: athlete});
-        return athlete;
+        _athleteCache.set(id, athlete);
     }
+    return _athleteCache.get(id);
 }
 
 
@@ -59,6 +55,7 @@ function getPeaksValueFormatter(streamType) {
 
 
 async function getPeaks({type, period, activityType, limit, skipEstimates, ...optional}) {
+    console.error("get peaks", type, period, activityType, limit, skipEstimates, optional);
     const options = {
         limit,
         activityType,
@@ -90,11 +87,7 @@ class PeaksControlsView extends views.PerfView {
     get events() {
         return {
             ...super.events,
-            'change select[name="type"]': 'onTypeChange',
-            'change select[name="time"]': 'onTimeChange',
-            'change select[name="distance"]': 'onDistanceChange',
-            'change select[name="limit"]': 'onLimitChange',
-            'change select[name="activityType"]': 'onActivityTypeChange',
+            'change select.pref[name]': 'onPrefSelectChange',
             'input input.pref[type="checkbox"]': 'onPrefCheckboxInput',
         };
     }
@@ -117,39 +110,21 @@ class PeaksControlsView extends views.PerfView {
         };
     }
 
-    async onTypeChange(ev) {
-        const type = ev.currentTarget.value;
-        await this.panelView.savePrefs({type});
-        await this.panelView.render();
+    async updatePanelPref(updates) {
+        await this.panelView.savePrefs(updates);
+        await this.panelView.render({update: true});
     }
 
-    async onTimeChange(ev) {
-        const time = Number(ev.currentTarget.value);
-        await this.panelView.savePrefs({time});
-        await this.panelView.render();
-    }
-
-    async onDistanceChange(ev) {
-        const distance = Number(ev.currentTarget.value);
-        await this.panelView.savePrefs({distance});
-        await this.panelView.render();
-    }
-
-    async onLimitChange(ev) {
-        const limit = Number(ev.currentTarget.value);
-        await this.panelView.savePrefs({limit});
-        await this.panelView.render();
-    }
-
-    async onActivityTypeChange(ev) {
-        const activityType = ev.currentTarget.value || null;
-        await this.panelView.savePrefs({activityType});
-        await this.panelView.render();
+    async onPrefSelectChange(ev) {
+        const raw = ev.currentTarget.value;
+        const typedValue = raw ? isNaN(raw) ? raw : Number(raw) : null;
+        const updates = {[ev.currentTarget.name]: typedValue};
+        await this.updatePanelPref(updates);
     }
 
     async onPrefCheckboxInput(ev) {
-        await this.panelView.savePrefs({[ev.currentTarget.name]: ev.currentTarget.checked});
-        await this.panelView.render();
+        const updates = {[ev.currentTarget.name]: ev.currentTarget.checked};
+        await this.updatePanelPref(updates);
     }
 }
 
@@ -182,13 +157,13 @@ export class PeaksTableView extends views.PerfView {
     }
 
     async init({pageView, ...options}) {
-        this.pageView = pageView;
+        this.peaks = [];
         this.range = pageView.getRangeSnapshot();
         this.athlete = pageView.athlete;
         this.controlsView = new PeaksControlsView({panelView: this});
         this.listenTo(pageView, 'before-update-activities',
             sauce.debounced(this.onBeforeUpdateActivities));
-        await super.init(options);
+        await super.init({pageView, ...options});
     }
 
     renderAttrs() {
@@ -199,35 +174,39 @@ export class PeaksTableView extends views.PerfView {
             peaks: this.peaks,
             unit: getPeaksUnit(prefs.type),
             valueFormatter: getPeaksValueFormatter(prefs.type),
-            athleteName: this.athleteName.bind(this),
+            getAthleteName: id => this.getAthleteName(id),
         };
     }
 
-    async render() {
-        const prefs = this.getPrefs();
-        const period = getPeriodType(prefs.type) === 'distance' ? prefs.distance : prefs.time;
-        const {start, end} = this.range;
+    async render({update}={}) {
         this.$('.loading-mask').addClass('loading');
         try {
-            this.peaks = await getPeaks({period, start, end, athlete: this.athlete, ...prefs});
+            if (update) {
+                await this.updatePeaks();
+            }
             await super.render();
-            this.controlsView.setElement(this.$('.peaks-controls-view'));
-            await this.controlsView.render();
+            await this.controlsView.setElement(this.$('.peaks-controls-view')).render();
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
     }
 
-    async athleteName(id) {
+    async getAthleteName(id) {
         const athlete = await getAthlete(id);
         return athlete ? athlete.name : `<${id}>`;
+    }
+
+    async updatePeaks() {
+        const {start, end} = this.range;
+        const prefs = this.getPrefs();
+        const period = getPeriodType(prefs.type) === 'distance' ? prefs.distance : prefs.time;
+        this.peaks = await getPeaks({period, start, end, athlete: this.athlete, ...prefs});
     }
 
     async onBeforeUpdateActivities({athlete, range}) {
         this.range = range;
         this.athlete = athlete;
-        athleteNameCache.set(athlete.id, athlete.name);
-        await this.render();
+        await this.render({update: true});
     }
 
     async onResultClick(ev) {
@@ -248,18 +227,17 @@ export class PeaksTableView extends views.PerfView {
     onResizePointerDown(ev) {
         ev.preventDefault();
         ev.stopPropagation();
-        const $content = this.$('.sauce-panel-content');
-        const origHeight = $content.height();
+        const origHeight = this.$el.height();
         const origPageY = ev.pageY;
-        $content.height(origHeight);
-        $content.addClass('fixed-height');
+        this.$el.height(origHeight);
+        this.$el.addClass('fixed-height');
         const onDragDone = () => {
             removeEventListener('pointermove', onDrag);
             removeEventListener('pointerup', onDragDone);
             removeEventListener('pointercancel', onDragDone);
         };
         const onDrag = ev => {
-            $content.height(origHeight + (ev.pageY - origPageY));
+            this.$el.height(origHeight + (ev.pageY - origPageY));
         };
         addEventListener('pointermove', onDrag);
         addEventListener('pointerup', onDragDone);
@@ -289,10 +267,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
         };
     }
 
-    async init({pageView, ...options}) {
-        this.pageView = pageView;
-        this.range = pageView.getRangeSnapshot();
-        this.athlete = pageView.athlete;
+    async init(options) {
         this.peakRanges = {
             periods: await views.getPeakRanges('periods'),
             distances: await views.getPeakRanges('distances'),
@@ -338,7 +313,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                 },
             }
         });
-        await super.init({pageView, ...options});
+        await super.init(options);
     }
 
     async render() {
@@ -349,7 +324,6 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
             await super.render();
             this.controlsView.setElement(this.$('.peaks-controls-view'));
             await this.controlsView.render();
-            await this.updateChart();
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
@@ -376,6 +350,10 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
             peaks.sort((a, b) => a.ts - b.ts);
             return {peaks, id, ...x};
         }));
+        const peaksIters = peaksGroups.map(x => x.peaks.values());
+        for (const x of this.metricData) {
+        }
+        this.chart.options.scales.yAxes[0].ticks.reverse = getPeriodType(prefs.type) === 'distance';
         //const days = this.range.days;
         //const borderWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
         const datasets = [];

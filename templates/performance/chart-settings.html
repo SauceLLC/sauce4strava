@@ -2,7 +2,7 @@
     <% for (const [id, {label}] of Object.entries(availableDatasets)) { %>
         <div class="entry">
             <key>{{{/enable}}} {{label}}</key>
-            <value><input class="ds-vis" type="checkbox" name="{{id}}"
+            <value><input class="ds-en" type="checkbox" name="{{id}}"
                 {{disabledDatasets[id] ? '' : 'checked'}}/></value>
         </div>
     <% } %>
