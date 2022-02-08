@@ -763,6 +763,9 @@ export class BulkActivityEditDialog extends PerfView {
 
     async onRowClick(ev) {
         const id = Number(ev.currentTarget.dataset.id);
+        if (!id) {
+            return; // graphs
+        }
         ev.currentTarget.insertAdjacentElement('afterend',
             this.streamsView.el.closest('tr'));
         this.streamsView.$('.loading-mask').addClass('loading');
