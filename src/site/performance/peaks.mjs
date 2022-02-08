@@ -6,6 +6,7 @@ import * as charts from './charts.mjs';
 
 const L = sauce.locale;
 const H = L.human;
+const D = sauce.date;
 
 
 const _athleteCache = new Map();
@@ -60,7 +61,7 @@ async function getPeaks({type, period, activityType, limit, skipEstimates, ...op
         limit,
         activityType,
         skipEstimates,
-        expandActivities: true,
+        expandActivities: optional.expandActivities,
     };
     if (!optional.includeAllDates) {
         options.start = +optional.start;
@@ -200,7 +201,14 @@ export class PeaksTableView extends views.PerfView {
         const {start, end} = this.range;
         const prefs = this.getPrefs();
         const period = getPeriodType(prefs.type) === 'distance' ? prefs.distance : prefs.time;
-        this.peaks = await getPeaks({period, start, end, athlete: this.athlete, ...prefs});
+        this.peaks = await getPeaks({
+            period,
+            start,
+            end,
+            athlete: this.athlete,
+            expandActivities: true,
+            ...prefs
+        });
     }
 
     async onBeforeUpdateActivities({athlete, range}) {
@@ -316,14 +324,16 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
         await super.init(options);
     }
 
-    async render() {
+    async render({update}={}) {
         this.$('.loading-mask').addClass('loading');
         const prefs = this.getPrefs();
         this.valueFormatter = getPeaksValueFormatter(prefs.type);
         try {
             await super.render();
-            this.controlsView.setElement(this.$('.peaks-controls-view'));
-            await this.controlsView.render();
+            await this.controlsView.setElement(this.$('.peaks-controls-view')).render();
+            if (update) {
+                await this.updateChart();
+            }
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
@@ -333,45 +343,73 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
         const disabled = this.getPrefs('disabledDatasets', {});
         const prefs = this.getPrefs();
         const periodType = getPeriodType(prefs.type);
-        const datasets = [];
+        const datasets = {};
         for (const [id, x] of Object.entries(this.availableDatasets)) {
             if (!disabled[id] && x.type === periodType) {
-                datasets.push([id, x]);
+                datasets[id] = x;
             }
         }
         return datasets;
     }
 
+    isInMetricRange(date, m) {
+        return date >= m.date && date < D.adjacentDay(m.date, m.days);
+    }
+
     async updateChart() {
         const prefs = this.getPrefs();
+        const reverse = getPeriodType(prefs.type) === 'distance';
         const {start, end} = this.range;
-        const peaksGroups = await Promise.all(this.getActiveDatasets().map(async ([id, x]) => {
+        const activeDatasets = this.getActiveDatasets();
+        const metricPeaks = await Promise.all(Object.entries(activeDatasets).map(async ([id, x]) => {
             const peaks = await getPeaks({period: x.period, start, end, athlete: this.athlete, ...prefs});
             peaks.sort((a, b) => a.ts - b.ts);
-            return {peaks, id, ...x};
+            const metricData = this.metricData.map(x => ({...x}));  // shallow copy
+            const peaksIter = peaks.values();
+            let peak;
+            for (const m of metricData) {
+                const allActs = m.activities;
+                m.activities = [];
+                if (peak) {
+                    // Handle unconsumed peak from prev iteration.
+                    if (this.isInMetricRange(peak._day, m)) {
+                        m.peak = peak;
+                        m.activities = allActs.filter(x => x.id === peak.activity);
+                    } else {
+                        continue;
+                    }
+                }
+                for (peak of peaksIter) {
+                    peak._day = sauce.date.toLocaleDayDate(peak.ts);
+                    if (this.isInMetricRange(peak._day, m)) {
+                        if (!m.peak ||
+                            ((reverse && m.peak.value > peak.value) ||
+                             (!reverse && m.peak.value < peak.value))) {
+                            m.peak = peak;
+                            m.activities = allActs.filter(x => x.id === peak.activity);
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+            return {metricData, id, ...x};
         }));
-        const peaksIters = peaksGroups.map(x => x.peaks.values());
-        for (const x of this.metricData) {
-        }
-        this.chart.options.scales.yAxes[0].ticks.reverse = getPeriodType(prefs.type) === 'distance';
+        this.chart.options.scales.yAxes[0].ticks.reverse = reverse;
         //const days = this.range.days;
         //const borderWidth = days > 366 ? 0.66 : days > 60 ? 1 : 1.25;
         const datasets = [];
-        for (const {peaks, id, label} of peaksGroups) {
+        for (const {metricData, id, label} of metricPeaks) {
             datasets.push({
                 id,
                 label,
                 //borderWidth,
                 yAxisID: 'values',
                 tooltipFormat: x => this.valueFormatter(x),
-                data: peaks.map(x => ({
-                    b: {
-                        date: new Date(x.ts),
-                        days: 1,
-                        activities: [x.activity]
-                    },
-                    x: x.ts,
-                    y: x.value
+                data: metricData.map(b => ({
+                    b,
+                    x: b.date,
+                    y: b.peak ? b.peak.value : null,
                 })),
             });
         }

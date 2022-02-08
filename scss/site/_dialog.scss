@@ -242,6 +242,7 @@ html .ui-dialog {
 
     form.sauce-key-value {
         padding-bottom: 1.2em;
+        $default-h-pad: 1rem;
 
         &.sauce-vertical {
             key,
@@ -263,14 +264,24 @@ html .ui-dialog {
             }
         }
 
+        .heading {
+            font-weight: bold;
+            margin: 0.3em $default-h-pad 0.2em;;
+            padding-bottom: 0.2em;
+            border-bottom: 1px solid color.shade(fg, 0%, 0.2);
+        }
+
         label {
             display: inline-block;
             padding: 0.5em 0.2em;
             margin: 0;
+            font-weight: initial; // reset strava orion
+            user-select: none;
+            cursor: pointer;
         }
 
         .entry {
-            padding: 0.5rem 1rem;
+            padding: 0.5rem $default-h-pad;
             position: relative;
 
             &.flex {
@@ -317,6 +328,7 @@ html .ui-dialog {
     input:not([type="range"]) {
         top: revert; // reset strava
         width: revert; // reset strava
+        margin: revert; // reset strava
         vertical-align: middle;
         background-color: color.shade(bg, 0%);
         border: 1px solid color.shade(bg, 14%);

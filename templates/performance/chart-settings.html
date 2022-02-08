@@ -1,7 +1,8 @@
 <form class="sauce-key-value">
+    <div class="heading">{{{chart_categories}}}</div>
     <% for (const [id, {label}] of Object.entries(availableDatasets)) { %>
         <div class="entry">
-            <key>{{{/enable}}} {{label}}</key>
+            <key>{{label}}</key>
             <value><input class="ds-en" type="checkbox" name="{{id}}"
                 {{disabledDatasets[id] ? '' : 'checked'}}/></value>
         </div>

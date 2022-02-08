@@ -60,8 +60,13 @@ html.sauce-performance {
 }
 
 .sauce-dialog.sauce-performance-panel-settings {
-    form {
-        padding: 0.6em 0;
+    .panel-settings {
+        max-height: 12em;
+        overflow: auto;
+
+        form.sauce-key-value {
+            padding-bottom: 0;
+        }
     }
 }
 

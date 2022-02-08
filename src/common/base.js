@@ -81,13 +81,9 @@ self.sauceBaseInit = function sauceBaseInit() {
             if (options.module) {
                 script.type = 'module';
             } else {
-                if (options.defer) {
-                    script.defer = 'defer';
-                }
+                script.defer = !!options.defer;
             }
-            if (!options.async) {
-                script.async = false;  // default is true
-            }
+            script.async = !!options.async;  // Defaults to true.
             loading.push(new Promise((resolve, reject) => {
                 script.addEventListener('load', resolve);
                 script.addEventListener('error', ev => {

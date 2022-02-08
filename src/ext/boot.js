@@ -62,10 +62,9 @@
         pathMatch: /^\/sauce\/performance(\/)?$/,
         callbacks: [() => window.location.assign('/sauce/performance/fitness')]
     }, {
-        name: 'Sauce Performance - Fitness',
-        pathMatch: /^\/sauce\/performance\/fitness\b/,
-        stylesheets: ['site/performance.css'],
-        cssClass: ['sauce-performance', 'sauce-performance-fitness', 'sauce-responsive'],
+        name: 'Sauce Libs',
+        pathMatch: /^\/sauce\/.+/,
+        cssClass: ['sauce-responsive'],
         scripts: [
             'src/common/proxy.js',
             'src/site/proxy.js',
@@ -74,59 +73,39 @@
             'src/site/ui.js',
             'src/site/template.js',
             'src/common/lib.js',
+        ]
+    }, {
+        name: 'Sauce Performance - Common',
+        pathMatch: /^\/sauce\/performance\/.+/,
+        stylesheets: ['site/performance.css'],
+        cssClass: ['sauce-performance'],
+        scripts: [
             'src/site/sync.js',
             'lib/Chart.js',
+            'lib/jquery.multi-select.js',
             'src/site/chartjs/adapter-date-fns.bundle.js',
             'src/site/chartjs/plugin-datalabels.js',
             'src/site/chartjs/plugin-zoom.js',
             'src/site/sparkline.js',
         ],
+    }, {
+        name: 'Sauce Performance - Fitness',
+        pathMatch: /^\/sauce\/performance\/fitness\b/,
+        cssClass: ['sauce-performance-fitness'],
         modules: [
             'src/site/performance/loader.mjs?module=fitness',
         ],
     }, {
         name: 'Sauce Performance - Peaks',
         pathMatch: /^\/sauce\/performance\/peaks\b/,
-        stylesheets: ['site/performance.css'],
-        cssClass: ['sauce-performance', 'sauce-performance-peaks', 'sauce-responsive'],
-        scripts: [
-            'src/common/proxy.js',
-            'src/site/proxy.js',
-            'src/site/locale.js',
-            'src/site/storage.js',
-            'src/site/ui.js',
-            'src/site/template.js',
-            'src/common/lib.js',
-            'src/site/sync.js',
-            'lib/Chart.js',
-            'src/site/chartjs/adapter-date-fns.bundle.js',
-            'src/site/chartjs/plugin-datalabels.js',
-            'src/site/chartjs/plugin-zoom.js',
-            'src/site/sparkline.js',
-        ],
+        cssClass: ['sauce-performance-peaks'],
         modules: [
             'src/site/performance/loader.mjs?module=peaks',
         ],
     }, {
         name: 'Sauce Performance - Activity Compare',
         pathMatch: /^\/sauce\/performance\/compare\b/,
-        stylesheets: ['site/performance.css'],
-        cssClass: ['sauce-performance', 'sauce-performance-compare', 'sauce-responsive'],
-        scripts: [
-            'src/common/proxy.js',
-            'src/site/proxy.js',
-            'src/site/locale.js',
-            'src/site/storage.js',
-            'src/site/ui.js',
-            'src/site/template.js',
-            'src/common/lib.js',
-            'src/site/sync.js',
-            'lib/Chart.js',
-            'src/site/chartjs/adapter-date-fns.bundle.js',
-            'src/site/chartjs/plugin-datalabels.js',
-            'src/site/chartjs/plugin-zoom.js',
-            'src/site/sparkline.js',
-        ],
+        cssClass: ['sauce-performance-compare'],
         modules: [
             'src/site/performance/loader.mjs?module=compare',
         ],
@@ -136,13 +115,6 @@
         stylesheets: ['site/patron.css'],
         cssClass: ['sauce-patron', 'sauce-responsive'],
         scripts: [
-            'src/common/proxy.js',
-            'src/site/proxy.js',
-            'src/site/locale.js',
-            'src/site/storage.js',
-            'src/site/ui.js',
-            'src/site/template.js',
-            'src/common/lib.js',
             'src/site/patron.js',
         ],
     }, {
@@ -366,6 +338,7 @@
             sauce.options = ${JSON.stringify(config.options)};
             Object.assign(sauce, ${JSON.stringify(sauceVars)});
         `);
+        const loading = [];
         for (const m of matchingManifests) {
             if (m.name) {
                 console.info(`Sauce loading: ${m.name}`);
@@ -388,12 +361,12 @@
                 }
             }
             if (m.scripts) {
-                await sauce.loadScripts(m.scripts.map(x => extUrl + x))
-                    .catch(sauce.report.error);
+                loading.push(sauce.loadScripts(m.scripts.map(x => extUrl + x), {defer: true})
+                    .catch(sauce.report.error));
             }
             if (m.modules) {
-                await sauce.loadScripts(m.modules.map(x => extUrl + x), {module: true})
-                    .catch(sauce.report.error);
+                loading.push(sauce.loadScripts(m.modules.map(x => extUrl + x), {module: true})
+                    .catch(sauce.report.error));
             }
         }
         document.documentElement.classList.add('sauce-booted');
