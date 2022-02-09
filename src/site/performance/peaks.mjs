@@ -56,7 +56,6 @@ function getPeaksValueFormatter(streamType) {
 
 
 async function getPeaks({type, period, activityType, limit, skipEstimates, ...optional}) {
-    console.error("get peaks", type, period, activityType, limit, skipEstimates, optional);
     const options = {
         limit,
         activityType,
@@ -304,7 +303,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                     yAxes: [{
                         id: 'values',
                         ticks: {
-                            min: 0,
+                            beginAtZero: false,
                             maxTicksLimit: 8,
                             callback: x => {
                                 const prefs = this.getPrefs();
@@ -402,7 +401,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                 backgroundColor: `hsla(10deg, ${100 - (65 * ((i + 1) / metricPeaks.length))}%, 50%, 0.9)`,
                 yAxisID: 'values',
                 tooltipFormat: x => this.valueFormatter(x),
-                data: metricData.map(b => ({
+                data: metricData.filter(b => b.peak && b.peak.value).map(b => ({
                     b,
                     x: b.date,
                     y: b.peak ? b.peak.value : null,

@@ -317,7 +317,7 @@ export class ActivityTimeRangeChart extends SauceChart {
         setDefault(config, 'options.scales.xAxes[0].ticks.minor.fontSize', 10);
         setDefault(config, 'options.scales.yAxes[0].type', 'linear');
         setDefault(config, 'options.scales.yAxes[0].scaleLabel.display', true);
-        setDefault(config, 'options.scales.yAxes[0].ticks.min', 0);
+        setDefault(config, 'options.scales.yAxes[0].ticks.beginAtZero', true);
         setDefault(config, 'options.tooltips.mode', 'index');
         setDefault(config, 'options.tooltips.enabled', false);  // Use custom html.
         setDefault(config, 'options.tooltips.activitiesFormatter', (...args) =>

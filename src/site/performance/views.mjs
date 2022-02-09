@@ -966,6 +966,7 @@ export class MainView extends PerfView {
             position: {
                 my: 'left top',
                 at: 'left+38 top-8',
+                collision: 'flip',
                 of: ev.currentTarget,
             },
             dialogClass: 'sauce-performance-panel-settings no-pad sauce-small',

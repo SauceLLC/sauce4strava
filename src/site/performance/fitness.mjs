@@ -35,9 +35,9 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
     async init(options) {
         await super.init(options);
         this.availableDatasets = {
-            'tsb': {label: `TSB (${this.LM('form')})`},
-            'atl': {label: `ATL (${this.LM('fatigue')})`},
             'ctl': {label: `CTL (${this.LM('fitness')})`},
+            'atl': {label: `ATL (${this.LM('fatigue')})`},
+            'tsb': {label: `TSB (${this.LM('form')})`},
         };
         this.setChartConfig({
             plugins: [charts.overUnderFillPlugin],
