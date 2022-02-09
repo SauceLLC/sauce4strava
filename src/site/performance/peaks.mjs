@@ -261,6 +261,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
     static localeKeys = [...super.localeKeys];
 
     get defaultPrefs() {
+        const mile = 1609.344;
         return {
             type: 'power',
             time: 300,
@@ -268,8 +269,28 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
             activityType: null,
             skipEstimates: null,
             disabledDatasets: {
-                p5: true,
+                // XXX want a small list but we don't know the user's ranges here.. :/
+                p5: false,
+                p15: true,
+                p30: true,
+                p60: false,
+                p120: true,
+                p600: true,
+                p1800: true,
+                p3600: true,
+                p10800: true,
+
                 d400: true,
+                d1000: true,
+                [`d${Math.round(mile)}`]: false,
+                d3000: true,
+                d5000: false,
+                d10000: true,
+                [`d${Math.round(mile * 13.1)}`]: true,
+                [`d${Math.round(mile * 26.2)}`]: true,
+                d50000: true,
+                d100000: true,
+                [`d${Math.round(mile * 100)}`]: true,
             },
         };
     }
@@ -393,12 +414,31 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
         }));
         this.chart.options.scales.yAxes[0].ticks.reverse = reverse;
         const datasets = [];
+        const hslSeeds = {
+            power: [300, 50, 40],
+            power_wkg: [300, 80, 50],
+            np: [320, 100, 50],
+            xp: [300, 100, 50],
+            pace: [220, 100, 50],
+            gap: [200, 100, 50],
+            hr: [10, 100, 50],
+        };
+        const hueSeed = hslSeeds[prefs.type];
+        const periodColor = (i, opacity) => {
+            const hsla = [
+                hueSeed[0],
+                hueSeed[1] - ((hueSeed[1] * 0.65) * ((i + 1) / metricPeaks.length)),
+                hueSeed[2],
+                opacity,
+            ];
+            return `hsla(${hsla[0]}deg, ${hsla[1]}%, ${hsla[2]}%, ${hsla[3]})`;
+        };
         for (const [i, {metricData, id, label}] of metricPeaks.entries()) {
             datasets.push({
                 id,
                 label,
-                borderColor: `hsla(10deg, ${100 - (65 * ((i + 1) / metricPeaks.length))}%, 50%, 0.7)`,
-                backgroundColor: `hsla(10deg, ${100 - (65 * ((i + 1) / metricPeaks.length))}%, 50%, 0.9)`,
+                borderColor: periodColor(i, 0.7),
+                backgroundColor: periodColor(i, 0.9),
                 yAxisID: 'values',
                 tooltipFormat: x => this.valueFormatter(x),
                 data: metricData.filter(b => b.peak && b.peak.value).map(b => ({

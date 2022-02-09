@@ -1181,7 +1181,7 @@ table.sauce-perf {
                             flex-wrap: wrap;
                             margin-top: 0;
                             justify-content: space-evenly;
-                            min-height: 3.15em; // Less jumping for 2 line entries
+                            min-height: 3.5em; // Less jumping for 2 line entries and 2 line wrap.
                         }
 
                         &.tt-horiz {
