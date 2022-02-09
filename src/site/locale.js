@@ -433,9 +433,8 @@ sauce.ns('locale', ns => {
             return '';
         }
         const n = Number(value);
-        if (isNaN(n)) {
-            console.warn("Value is not a number:", value);
-            return value;
+        if (Number.isNaN(n)) {
+            return '';
         }
         if (precision === null) {
             return n.toLocaleString();

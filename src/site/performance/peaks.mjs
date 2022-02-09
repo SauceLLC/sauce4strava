@@ -45,7 +45,7 @@ function getPeaksUnit(streamType) {
 function getPeaksValueFormatter(streamType) {
     return {
         power: H.number,
-        power_wkg: x => x.toFixed(1),
+        power_wkg: x => x != null ? x.toFixed(1) : '',
         np: H.number,
         xp: H.number,
         hr: H.number,
