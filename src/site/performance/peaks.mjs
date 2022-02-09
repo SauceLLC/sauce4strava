@@ -388,7 +388,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                 const allActs = m.activities;
                 m.activities = [];
                 if (peak) {
-                    // Handle unconsumed peak from prev iteration.
+                    // Handle unconsumed peak from prev peaksIter iteration.
                     if (this.isInMetricRange(peak._day, m)) {
                         m.peak = peak;
                         m.activities = allActs.filter(x => x.id === peak.activity);
@@ -427,7 +427,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
         const periodColor = (i, opacity) => {
             const hsla = [
                 hueSeed[0],
-                hueSeed[1] - ((hueSeed[1] * 0.65) * ((i + 1) / metricPeaks.length)),
+                hueSeed[1] - ((hueSeed[1] * 0.8) * (i / metricPeaks.length)),
                 hueSeed[2],
                 opacity,
             ];
