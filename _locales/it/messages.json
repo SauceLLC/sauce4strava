@@ -44,6 +44,9 @@
     "add": {
         "message": "Aggiungere"
     },
+    "enable": {
+        "message": "Abilitare"
+    },
     "menu_performance_fitness": {
         "message": "Monitoraggio fitness"
     },
@@ -889,17 +892,35 @@
     "sync_control_panel_sync_status": {
         "message": "Stato sincronizzazione"
     },
+    "sync_control_panel_sync_settings": {
+        "message": "Sincronizza impostazioni"
+    },
     "sync_control_panel_enable_sync_and_get_started": {
         "message": "Abilita la sincronizzazione e inizia!"
     },
-    "sync_control_panel_athlete_settings": {
-        "message": "Impostazioni atleta"
+    "sync_control_panel_performance_settings": {
+        "message": "Impostazioni delle prestazioni"
     },
     "sync_control_panel_backup_data": {
         "message": "Dati di backup"
     },
     "sync_control_panel_restore_data": {
         "message": "Ripristinare i dati"
+    },
+    "sync_control_panel_est_run_power": {
+        "message": "Potenza di funzionamento stimata"
+    },
+    "sync_control_panel_est_cycling_power": {
+        "message": "Potenza ciclabile stimata"
+    },
+    "sync_control_panel_est_power_tooltip": {
+        "message": "Usa i watt stimati per il monitoraggio del fitness (TSS) e, facoltativamente, i risultati delle prestazioni di picco."
+    },
+    "sync_control_panel_est_power_peaks": {
+        "message": "Includi nei risultati delle prestazioni di picco"
+    },
+    "sync_control_panel_est_power_peaks_tooltip": {
+        "message": "Includere i calcoli della potenza stimata nei risultati per i risultati delle prestazioni di picco. NOTA: Ciò può portare a risultati errati."
     },
     "mutable_data_add_entry_tooltip": {
         "message": "Aggiungi una nuova voce"
@@ -1108,10 +1129,13 @@
     "performance_unavailable": {
         "message": "Non disponibile"
     },
-    "performance_peak_performances_title": {
-        "message": "Prestazioni di punta"
+    "performance_peaks_table_title": {
+        "message": "Tabella delle prestazioni di picco"
     },
-    "performance_peak_performances_desc": {
+    "performance_peaks_chart_title": {
+        "message": "Grafico delle prestazioni di picco"
+    },
+    "performance_peaks_desc": {
         "message": "Prestazioni migliori o più elevate per tempi e distanze differenti"
     },
     "performance_training_load_title": {
@@ -1176,6 +1200,12 @@
     },
     "performance_all_dates": {
         "message": "Tutte le date"
+    },
+    "performance_skip_estimates": {
+        "message": "Salta le stime"
+    },
+    "performance_skip_estimates_tooltip": {
+        "message": "Escludere i risultati di picco in base ai watt stimati."
     },
     "performance_predicted": {
         "message": "previsto"
@@ -1254,6 +1284,9 @@
     },
     "performance_zonetime_desc": {
         "message": "Ripartizione del tempo trascorso nelle diverse zone di potenza e/o frequenza cardiaca."
+    },
+    "performance_chart_categories": {
+        "message": "Categorie di grafici"
     },
     "season_start": {
         "message": "Inizio della stagione"

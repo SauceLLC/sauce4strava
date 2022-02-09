@@ -45,6 +45,9 @@
     "add": {
         "message": "Agregar"
     },
+    "enable": {
+        "message": "Permitir"
+    },
     "menu_performance_fitness": {
         "message": "Rastreador de fitness",
         "description": "IMMUTABLE"
@@ -882,11 +885,14 @@
     "sync_control_panel_sync_status": {
         "message": "Estado de sincronización"
     },
+    "sync_control_panel_sync_settings": {
+        "message": "Configuración de sincronización"
+    },
     "sync_control_panel_enable_sync_and_get_started": {
         "message": "¡Habilite la sincronización y comience!"
     },
-    "sync_control_panel_athlete_settings": {
-        "message": "Configuración del atleta"
+    "sync_control_panel_performance_settings": {
+        "message": "Configuración de rendimiento"
     },
     "sync_control_panel_backup_data": {
         "message": "Copia de seguridad",
@@ -894,6 +900,21 @@
     },
     "sync_control_panel_restore_data": {
         "message": "Restaurar datos"
+    },
+    "sync_control_panel_est_run_power": {
+        "message": "Potencia de ejecución estimada"
+    },
+    "sync_control_panel_est_cycling_power": {
+        "message": "Potencia de ciclismo estimada"
+    },
+    "sync_control_panel_est_power_tooltip": {
+        "message": "Use los vatios estimados para el seguimiento del estado físico (TSS) y, opcionalmente, para los resultados de rendimiento máximo."
+    },
+    "sync_control_panel_est_power_peaks": {
+        "message": "Incluir en los resultados de rendimiento máximo"
+    },
+    "sync_control_panel_est_power_peaks_tooltip": {
+        "message": "Incluya los cálculos de potencia estimada en los resultados de rendimiento máximo. NOTA: Esto puede dar lugar a resultados erróneos."
     },
     "mutable_data_add_entry_tooltip": {
         "message": "Agregar una nueva entrada"
@@ -1102,10 +1123,13 @@
     "performance_unavailable": {
         "message": "Indisponible"
     },
-    "performance_peak_performances_title": {
-        "message": "Actuaciones pico"
+    "performance_peaks_table_title": {
+        "message": "Tabla de rendimiento máximo"
     },
-    "performance_peak_performances_desc": {
+    "performance_peaks_chart_title": {
+        "message": "Gráfico de rendimiento máximo"
+    },
+    "performance_peaks_desc": {
         "message": "Las mejores o más altas actuaciones para diferentes tiempos y distancias."
     },
     "performance_training_load_title": {
@@ -1170,6 +1194,12 @@
     },
     "performance_all_dates": {
         "message": "Todas las fechas"
+    },
+    "performance_skip_estimates": {
+        "message": "Saltar estimaciones"
+    },
+    "performance_skip_estimates_tooltip": {
+        "message": "Excluya los resultados máximos en función de los vatios estimados."
     },
     "performance_predicted": {
         "message": "Predicho"
@@ -1248,6 +1278,9 @@
     },
     "performance_zonetime_desc": {
         "message": "Desglose del tiempo de permanencia en las distintas zonas de potencia y/o frecuencia cardíaca."
+    },
+    "performance_chart_categories": {
+        "message": "Categorías de gráficos"
     },
     "season_start": {
         "message": "Inicio de temporada"

@@ -47,6 +47,9 @@
     "add": {
         "message": "添加"
     },
+    "enable": {
+        "message": "使能够"
+    },
     "menu_performance_fitness": {
         "message": "健身追踪"
     },
@@ -985,17 +988,35 @@
     "sync_control_panel_sync_status": {
         "message": "同步状态"
     },
+    "sync_control_panel_sync_settings": {
+        "message": "同步设置"
+    },
     "sync_control_panel_enable_sync_and_get_started": {
         "message": "启用同步并开始使用！"
     },
-    "sync_control_panel_athlete_settings": {
-        "message": "运动员设置"
+    "sync_control_panel_performance_settings": {
+        "message": "性能设置"
     },
     "sync_control_panel_backup_data": {
         "message": "备份数据"
     },
     "sync_control_panel_restore_data": {
         "message": "恢复数据"
+    },
+    "sync_control_panel_est_run_power": {
+        "message": "预计运行功率"
+    },
+    "sync_control_panel_est_cycling_power": {
+        "message": "预计骑行功率"
+    },
+    "sync_control_panel_est_power_tooltip": {
+        "message": "使用估计的瓦数进行健身追踪 (TSS) 和可选的峰值性能结果。"
+    },
+    "sync_control_panel_est_power_peaks": {
+        "message": "包含在最佳性能结果中"
+    },
+    "sync_control_panel_est_power_peaks_tooltip": {
+        "message": "在峰值性能结果的结果中包括估计的功率计算。注意：这可能会导致错误的结果。"
     },
     "mutable_data_add_entry_tooltip": {
         "message": "添加一个新条目"
@@ -1243,11 +1264,13 @@
         "message": "不可用",
         "description": "IMMUTABLE"
     },
-    "performance_peak_performances_title": {
-        "message": "巅峰表现",
-        "description": "IMMUTABLE"
+    "performance_peaks_table_title": {
+        "message": "峰值性能表"
     },
-    "performance_peak_performances_desc": {
+    "performance_peaks_chart_title": {
+        "message": "峰值性能图表"
+    },
+    "performance_peaks_desc": {
         "message": "不同时间和距离的最佳或最高性能"
     },
     "performance_training_load_title": {
@@ -1330,6 +1353,12 @@
     "performance_all_dates": {
         "message": "所有日期",
         "description": "IMMUTABLE"
+    },
+    "performance_skip_estimates": {
+        "message": "跳过估计"
+    },
+    "performance_skip_estimates_tooltip": {
+        "message": "根据估计的瓦特排除峰值结果。"
     },
     "performance_predicted": {
         "message": "预估",
@@ -1421,6 +1450,9 @@
     },
     "performance_zonetime_desc": {
         "message": "在不同功率和/或心率区花费的时间细分。"
+    },
+    "performance_chart_categories": {
+        "message": "图表类别"
     },
     "season_start": {
         "message": "季节开始"
