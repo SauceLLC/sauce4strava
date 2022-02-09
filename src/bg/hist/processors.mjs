@@ -670,30 +670,31 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
     for (const [index, activity] of activities.entries()) {
         const actData = activity.data;
         const deleteEstimates = !allowEstPowerPeaks(actData);
+        const deleteAll = actData.peaksExclude;
+
         // Cleanup: Remove estimated powers and/or obsolete periods/distances...
         for (const peaks of [powers, nps, xps, wkgs]) {
             for (const x of peaks[index]) {
-                // Handle legacy entries via boolean requirement.
-                if ((deleteEstimates && x.estimate !== false) || !validPeriods.has(x.period)) {
+                // Handle legacy wkg entries via boolean requirement.
+                if (deleteAll || (deleteEstimates && x.estimate !== false) || !validPeriods.has(x.period)) {
                     deleting.add(x);
                 }
             }
         }
         for (const x of hrs[index]) {
-            if (!validPeriods.has(x.period)) {
-                debugger;
+            if (deleteAll || !validPeriods.has(x.period)) {
                 deleting.add(x);
             }
         }
         for (const peaks of [paces, gaps]) {
             for (const x of peaks[index]) {
-                if (!validDistances.has(x.period)) {
+                if (deleteAll || !validDistances.has(x.period)) {
                     deleting.add(x);
                 }
             }
         }
 
-        // Addendum: Add ranks and power_wkg where applicable...
+        // Addendum: Update ranks and power_wkg where applicable...
         const weight = athlete.getWeightAt(actData.ts);
         if (!weight) {
             continue;
@@ -708,8 +709,14 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
             if (rankUpdated(rankLevel, x.rankLevel)) {
                 peaks.push({...x, rankLevel}, wkgPeak);
             } else {
+                // Even if rank didn't change we could have a wkg change..
                 const existing = wkgs[index].find(xx => xx.period === x.period);
-                if (!existing || existing.value !== wkgPeak.value) {
+                if (!existing ||
+                    (existing.value !== wkgPeak.value ||
+                     rankUpdated(rankLevel, existing.rankLevel))) {
+                    if (deleting.has(existing)) {
+                        deleting.delete(existing);  // legacy value, but we're overwriting it.
+                    }
                     peaks.push(wkgPeak);
                 }
             }
@@ -724,13 +731,14 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
             }
         }
     }
-    // MUST delete first.  Legacy power_wkg will be in the deleting AND updated with the same PK.
     if (deleting.size) {
         console.warn("Cleaning up obsolete peaks:", deleting.size);
         await peaksStore.deleteMany(Array.from(deleting).map(x => [x.activity, x.type, x.period]));
     }
-    console.info("Adding/updating peaks:", peaks.length);
-    await peaksStore.putMany(peaks);
+    if (peaks.length) {
+        console.info("Adding/updating peaks:", peaks.length);
+        await peaksStore.putMany(peaks);
+    }
 }
 
 

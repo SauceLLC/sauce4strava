@@ -137,11 +137,13 @@ class WorkerProcessor {
 
 
 class FindPeaks extends WorkerProcessor {
-    constructor(options) {
-        super(options);
-        this.periods = options.periods;
-        this.distances = options.distances;
-        this.useEstWatts = options.athlete.estCyclingWatts && options.athlete.estCyclingPeaks;
+    constructor({periods, distances, athlete, ...args}) {
+        super(args);
+        this.periods = periods;
+        this.distances = distances;
+        this.useEstWatts = athlete.estCyclingWatts && athlete.estCyclingPeaks;
+        this.athlete = athlete;
+        this.gender = athlete.gender || 'male';
     }
 
     async processor() {
@@ -152,6 +154,13 @@ class FindPeaks extends WorkerProcessor {
                 this.send({done: batch.map(x => x.id), errors});
             }
             await this.wakeEvent.wait();
+        }
+    }
+
+    getRankLevel(period, p, wp, weight) {
+        const rank = sauce.power.rankLevel(period, p, wp, weight, this.gender);
+        if (rank.level > 0) {
+            return rank;
         }
     }
 
@@ -167,18 +176,15 @@ class FindPeaks extends WorkerProcessor {
         let ts = Date.now();
         for (const activity of activities) {
             if (Date.now() - ts > 400) {
-                // Reduce message ACK latency by inserting defering for one task iteration.
+                // Reduce message ACK latency by defering for one task iteration.
                 await sauce.sleep(0);
                 ts = Date.now();
             }
-            const isRun = activity.basetype === 'run';
             if (activity.peaksExclude) {
-                const count = await peaksStore.deleteForActivity(activity.id);
-                if (count) {
-                    console.warn(this.id, `Deleted ${count} peaks for activity: ${activity.id}`);
-                }
-                continue;
+                continue;  // cleanup happens in finalizer proc.
             }
+            const isRun = activity.basetype === 'run';
+            const isRide = activity.basetype === 'ride';
             const streams = actStreams.get(activity.id);
             const addPeak = (a1, a2, a3, a4, extra) => {
                 const entry = sauce.peaks.createStoreEntry(a1, a2, a3, a4, streams.time, activity, extra);
@@ -205,61 +211,66 @@ class FindPeaks extends WorkerProcessor {
             const watts = streams.watts || streams.watts_calc;
             if (watts && !isRun) { // Runs have their own processor for this.
                 const estimate = !streams.watts;
+                const weight = sauce.model.getAthleteHistoryValueAt(this.athlete.weightHistory, activity.ts);
                 try {
                     for (const period of this.periods) {
-                        // Instead of using peakPower, peakNP, we do our own reduction to save
-                        // repeative iterations on the same dataset; it's about 50% faster.
                         if (estimate && period < 300) {
                             continue;
                         }
                         const rp = sauce.power.correctedRollingPower(streams.time, period);
+                        if (!rp) {
+                            continue;
+                        }
                         const leadCloneOpts = {inlineXP: false, inlineNP: false};
-                        if (rp) {
-                            const wrp = (!estimate && period >= 300) ?
-                                rp.clone({active: true, inlineNP: true, inlineXP: true}) :
-                                undefined;
-                            const leaders = {};
-                            for (let i = 0; i < streams.time.length; i++) {
-                                const t = streams.time[i];
-                                const w = watts[i];
-                                const a = streams.active[i];
-                                rp.add(t, w, a);
-                                if (wrp) {
-                                    wrp.resize();
-                                }
-                                if (rp.full()) {
-                                    const power = rp.avg();
-                                    if (power && (!leaders.power || power >= leaders.power.value)) {
-                                        leaders.power = {roll: rp.clone(), value: power, np: wrp && wrp.np()};
-                                    }
-                                }
-                                if (wrp && wrp.full()) {
-                                    const np = wrp.np();
-                                    if (np && (!leaders.np || np >= leaders.np.value)) {
-                                        leaders.np = {roll: wrp.clone(leadCloneOpts), value: np};
-                                    }
-                                    const xp = wrp.xp();
-                                    if (xp && (!leaders.xp || xp >= leaders.xp.value)) {
-                                        leaders.xp = {roll: wrp.clone(leadCloneOpts), value: xp};
-                                    }
+                        const wrp = (!estimate && period >= 300) ?
+                            rp.clone({active: true, inlineNP: true, inlineXP: true}) :
+                            undefined;
+                        const leaders = {};
+                        // Instead of using peakPower, peakNP, we do our own reduction to save
+                        // repeative iterations on the same dataset; it's about 50% faster.
+                        for (let i = 0; i < streams.time.length; i++) {
+                            const t = streams.time[i];
+                            const w = watts[i];
+                            const a = streams.active[i];
+                            rp.add(t, w, a);
+                            if (wrp) {
+                                wrp.resize();
+                            }
+                            if (rp.full()) {
+                                const power = rp.avg();
+                                if (power && (!leaders.power || power >= leaders.power.value)) {
+                                    leaders.power = {roll: rp.clone(), value: power, np: wrp && wrp.np()};
                                 }
                             }
-                            if (leaders.power) {
-                                const l = leaders.power;
-                                addPeak('power', period, l.value, l.roll, {wp: l.np, estimate});
+                            if (wrp && wrp.full()) {
+                                const np = wrp.np();
+                                if (np && (!leaders.np || np >= leaders.np.value)) {
+                                    leaders.np = {roll: wrp.clone(leadCloneOpts), value: np};
+                                }
+                                const xp = wrp.xp();
+                                if (xp && (!leaders.xp || xp >= leaders.xp.value)) {
+                                    leaders.xp = {roll: wrp.clone(leadCloneOpts), value: xp};
+                                }
                             }
-                            if (leaders.np) {
-                                const l = leaders.np;
-                                const np = l.roll.np({external: true});
-                                const power = l.roll.avg({active: false});
-                                addPeak('np', period, np, l.roll, {power, estimate});
-                            }
-                            if (leaders.xp) {
-                                const l = leaders.xp;
-                                const xp = l.roll.xp({external: true});
-                                const power = l.roll.avg({active: false});
-                                addPeak('xp', period, xp, l.roll, {power, estimate});
-                            }
+                        }
+                        if (leaders.power) {
+                            const l = leaders.power;
+                            const rankLevel = isRide ? this.getRankLevel(l.roll.active(), l.value, l.np, weight) : undefined;
+                            addPeak('power', period, l.value, l.roll, {wp: l.np, estimate, rankLevel});
+                        }
+                        if (leaders.np) {
+                            const l = leaders.np;
+                            const np = l.roll.np({external: true});
+                            const power = l.roll.avg({active: false});
+                            const rankLevel = isRide ? this.getRankLevel(l.roll.active(), power, np, weight) : undefined;
+                            addPeak('np', period, np, l.roll, {power, estimate, rankLevel});
+                        }
+                        if (leaders.xp) {
+                            const l = leaders.xp;
+                            const xp = l.roll.xp({external: true});
+                            const power = l.roll.avg({active: false});
+                            const rankLevel = isRide ? this.getRankLevel(l.roll.active(), power, xp, weight) : undefined;
+                            addPeak('xp', period, xp, l.roll, {power, estimate, rankLevel});
                         }
                     }
                 } catch(e) {
