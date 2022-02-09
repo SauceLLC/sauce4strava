@@ -635,18 +635,24 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
 
 
 function rankUpdated(a, b) {
-    return (a && a.level) !== (b && b.level);
+    return (a && a.level || null) !== (b && b.level || null);
 }
 
 
-export async function peaksWkgAndCleanupProcessor({manifest, activities, athlete}) {
+export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
+    // Add/update w/kg peaks and do cleanup for unused entries.
     const ids = activities.map(x => x.pk);
-    const [wkgs, powers, nps, xps] = await Promise.all([
+    const [wkgs, powers, nps, xps, paces, gaps, hrs] = await Promise.all([
         peaksStore.getForActivities(ids, {type: 'power_wkg', _skipClone: true, _skipCache: true}),
         peaksStore.getForActivities(ids, {type: 'power', _skipClone: true, _skipCache: true}),
         peaksStore.getForActivities(ids, {type: 'np', _skipClone: true, _skipCache: true}),
         peaksStore.getForActivities(ids, {type: 'xp', _skipClone: true, _skipCache: true}),
+        peaksStore.getForActivities(ids, {type: 'pace', _skipClone: true, _skipCache: true}),
+        peaksStore.getForActivities(ids, {type: 'gap', _skipClone: true, _skipCache: true}),
+        peaksStore.getForActivities(ids, {type: 'hr', _skipClone: true, _skipCache: true}),
     ]);
+    const validPeriods = new Set((await sauce.peaks.getRanges('periods')).map(x => x.value));
+    const validDistances = new Set((await sauce.peaks.getRanges('distances')).map(x => x.value));
     const gender = athlete.get('gender') || 'male';
     const getRankLevel = (period, p, wp, weight) => {
         const rank = sauce.power.rankLevel(period, p, wp, weight, gender);
@@ -654,65 +660,77 @@ export async function peaksWkgAndCleanupProcessor({manifest, activities, athlete
             return rank;
         }
     };
-    const useEstRunPeaks = athlete.data.estRunWatts && athlete.data.estRunPeaks;
-    const useEstCyclingPeaks = athlete.data.estCyclingWatts && athlete.data.estCyclingPeaks;
-    const deleteEstPeaks = actData =>
-        (actData.basetype === 'run' && !useEstRunPeaks) ||
-        (actData.basetype === 'ride' && !useEstCyclingPeaks);
+    const useEstPowerRunPeaks = athlete.data.estRunWatts && athlete.data.estRunPeaks;
+    const useEstPowerCyclingPeaks = athlete.data.estCyclingWatts && athlete.data.estCyclingPeaks;
+    const allowEstPowerPeaks = actData =>
+        (actData.basetype === 'run' && useEstPowerRunPeaks) ||
+        (actData.basetype === 'ride' && useEstPowerCyclingPeaks);
     const peaks = [];
-    const deleting = [];
+    const deleting = new Set();
     for (const [index, activity] of activities.entries()) {
         const actData = activity.data;
-        if (actData.basetype !== 'ride' && actData.basetype !== 'run') {
-            continue;
-        }
-        const estimated = powers[index].some(x => x.estimate);
-        if (estimated && deleteEstPeaks(actData)) {
-            for (const peaks of [powers, nps, xps, wkgs]) {
-                for (const x of peaks[index]) {
-                    deleting.push([x.activity, x.type, x.period]);
+        const deleteEstimates = !allowEstPowerPeaks(actData);
+        // Cleanup: Remove estimated powers and/or obsolete periods/distances...
+        for (const peaks of [powers, nps, xps, wkgs]) {
+            for (const x of peaks[index]) {
+                // Handle legacy entries via boolean requirement.
+                if ((deleteEstimates && x.estimate !== false) || !validPeriods.has(x.period)) {
+                    deleting.add(x);
                 }
             }
-            continue;
         }
+        for (const x of hrs[index]) {
+            if (!validPeriods.has(x.period)) {
+                debugger;
+                deleting.add(x);
+            }
+        }
+        for (const peaks of [paces, gaps]) {
+            for (const x of peaks[index]) {
+                if (!validDistances.has(x.period)) {
+                    deleting.add(x);
+                }
+            }
+        }
+
+        // Addendum: Add ranks and power_wkg where applicable...
         const weight = athlete.getWeightAt(actData.ts);
         if (!weight) {
             continue;
         }
+        const isRide = actData.basetype === 'ride';
         for (const x of powers[index]) {
-            const rankLevel = getRankLevel(x.activeTime, x.value, x.wp, weight);
-            if (rankUpdated(rankLevel, x.rankLevel)) {
-                peaks.push({...x, rankLevel});
+            if (deleting.has(x)) {
+                continue;
             }
+            const rankLevel = isRide ? getRankLevel(x.activeTime, x.value, x.wp, weight) : undefined;
             const wkgPeak = {...x, rankLevel, type: 'power_wkg', value: x.value / weight};
-            let noChange;
-            for (const xx of wkgs[index]) {
-                if (xx.period === x.period && wkgPeak.value === xx.value) {
-                    noChange = true;
-                    break;
+            if (rankUpdated(rankLevel, x.rankLevel)) {
+                peaks.push({...x, rankLevel}, wkgPeak);
+            } else {
+                const existing = wkgs[index].find(xx => xx.period === x.period);
+                if (!existing || existing.value !== wkgPeak.value) {
+                    peaks.push(wkgPeak);
                 }
             }
-            if (!noChange) {
-                peaks.push(wkgPeak);
-            }
         }
-        for (const x of nps[index]) {
-            const rankLevel = getRankLevel(x.activeTime, x.power, x.value, weight);
-            if (rankUpdated(rankLevel, x.rankLevel)) {
-                peaks.push({...x, rankLevel});
+        for (const x of [...nps[index], ...xps[index]]) {
+            if (deleting.has(x)) {
+                continue;
             }
-        }
-        for (const x of xps[index]) {
-            const rankLevel = getRankLevel(x.activeTime, x.power, x.value, weight);
+            const rankLevel = isRide ? getRankLevel(x.activeTime, x.power, x.value, weight) : undefined;
             if (rankUpdated(rankLevel, x.rankLevel)) {
                 peaks.push({...x, rankLevel});
             }
         }
     }
+    // MUST delete first.  Legacy power_wkg will be in the deleting AND updated with the same PK.
+    if (deleting.size) {
+        console.warn("Cleaning up obsolete peaks:", deleting.size);
+        await peaksStore.deleteMany(Array.from(deleting).map(x => [x.activity, x.type, x.period]));
+    }
+    console.info("Adding/updating peaks:", peaks.length);
     await peaksStore.putMany(peaks);
-    if (deleting.length) {
-        await peaksStore.deleteMany(deleting);
-    }
 }
 
 
@@ -782,12 +800,11 @@ export class PeaksProcessor extends OffloadProcessor {
             }
             this.drainWorkerResults();
         }
-        console.warn("Stopping peaks proc for", this.athlete);
+        console.info("Stopping peaks processor...");
         await producer;
-        console.warn("GOOD producer shutdown", this.athlete);
         await Promise.all(Array.from(this.workers).map(x => x.stop()));
-        console.warn("GOOD worker stop", this.athlete);
         this.workers.clear();
+        console.info("Stopped peaks processor");
     }
 
     async getWorker() {

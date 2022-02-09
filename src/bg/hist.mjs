@@ -87,17 +87,17 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 11, // provide extra fields for seperate wkg/rank proc
+    version: 12, // Always set estimate flag for powers
     depends: ['extra-streams'],
     data: {processor: processors.PeaksProcessor}
 });
 
 ActivityModel.addSyncManifest({
     processor: 'local',
-    name: 'peaks-wkg',
+    name: 'peaks-finalizer',
     version: 1,
     depends: ['athlete-settings', 'run-power', 'peaks'],
-    data: {processor: processors.peaksWkgAndCleanupProcessor}
+    data: {processor: processors.peaksFinalizerProcessor}
 });
 
 ActivityModel.addSyncManifest({
@@ -1734,7 +1734,7 @@ class SyncManager extends EventTarget {
                 }, this._refreshRequests.get(a.pk));
                 this._refreshRequests.delete(a.pk);
                 this.runSyncJob(a, options).catch(sauce.report.error);
-                delay = Math.min((delay + 30000) * 1.15, 3600 * 1000);
+                delay = Math.min((delay + 90000) * 1.10, 3600 * 1000);
             }
         }
     }
