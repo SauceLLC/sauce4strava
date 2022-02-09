@@ -18,12 +18,12 @@
         tmpText: 'Peak Performances',
         href: '/sauce/performance/peaks',
         icon: 'medal-duotone',
-    }, {
+    }/*, {
         localeKey: 'compare',
         tmpText: 'Compare Activities',
         href: '/sauce/performance/compare',
         icon: 'balance-scale-right-duotone',
-    }];
+    }*/];
     const localesPromise = sauce.locale.getMessagesObject(
         ['/performance', '/analysis_options', ...perfMenu.map(x => x.localeKey)],
         'menu_performance');
