@@ -82,7 +82,6 @@
         scripts: [
             'src/site/sync.js',
             'lib/Chart.js',
-            'lib/jquery.multi-select.js',
             'src/site/chartjs/adapter-date-fns.bundle.js',
             'src/site/chartjs/plugin-datalabels.js',
             'src/site/chartjs/plugin-zoom.js',
