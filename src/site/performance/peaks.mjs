@@ -441,7 +441,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                 backgroundColor: periodColor(i, 0.9),
                 yAxisID: 'values',
                 tooltipFormat: x => this.valueFormatter(x),
-                data: metricData.filter(b => b.peak && b.peak.value).map(b => ({
+                data: metricData.map(b => ({
                     b,
                     x: b.date,
                     y: b.peak ? b.peak.value : null,
