@@ -12,13 +12,22 @@ const H = L.human;
 const D = sauce.date;
 
 
-function humanKJ(kj) {
-    if (kj >= 1000000) {
-        return `${H.number(kj / 1000000, 1)} gJ`;
-    } else if (kj >= 1000) {
-        return `${H.number(kj / 1000, 1)} mJ`;
+function humanKJ(kj, options={}) {
+    let val, unit;
+    if (kj >= 10000000) {
+        val = H.number(kj / 1000000);
+        unit = 'gJ';
+    } else if (kj >= 100000) {
+        val = H.number(kj / 1000);
+        unit = 'mJ';
     } else {
-        return `${H.number(kj)} kJ`;
+        val = H.number(kj);
+        unit = 'kJ';
+    }
+    if (options.html) {
+        return `${val} <abbr class="unit">${unit}</abbr>`;
+    } else {
+        return `${val} ${unit}`;
     }
 }
 
@@ -280,7 +289,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             yAxisID: 'time',
             stack: 'power',
             tooltipFormat: (x, i) => {
-                const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
+                const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})];
                 return tips;
             },
             data: this.metricData.map((b, i) => ({
@@ -445,10 +454,10 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'duration',
                 stack: 'duration',
                 tooltipFormat: (x, i) => {
-                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1})];
+                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})];
                     if (predictions && i === metricData.length - 1) {
                         const pdur = H.duration(predictions.duration[i].y + x,
-                            {maxPeriod: 3600, minPeriod: 3600, digits: 1});
+                            {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true});
                         tips.push(`${this.LM('predicted')}: <b>~${pdur}</b>`);
                     }
                     return tips;
@@ -467,9 +476,10 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'distance',
                 stack: 'distance',
                 tooltipFormat: (x, i) => {
-                    const tips = [L.distanceFormatter.formatShort(x)];
+                    const tips = [H.distance(x, 0, {suffix: true, html: true})];
                     if (predictions && i === metricData.length - 1) {
-                        const pdist = L.distanceFormatter.formatShort(predictions.distance[i].y + x, 0);
+                        const pdist = H.distance(predictions.distance[i].y + x, 0,
+                            {suffix: true, html: true});
                         tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
                     }
                     return tips;
@@ -489,11 +499,12 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
                 stack: 'energy',
                 tooltipFormat: (x, i) => {
                     const kjDay = H.number(x / metricData[i].days);
-                    const tips = [`${humanKJ(x)} <small>(${kjDay}/d)</small>`];
+                    const tips = [`${humanKJ(x, {html: true})} <small>(${kjDay}/d)</small>`];
                     if (predictions && i === metricData.length - 1) {
                         const pkj = predictions.energy[i].y + x;
                         const pkjDay = H.number(pkj / predictionDays);
-                        tips.push(`${this.LM('predicted')}: <b>~${humanKJ(pkj)} <small>(${pkjDay}/d)</small></b>`);
+                        tips.push(`${this.LM('predicted')}: <b>~${humanKJ(pkj, {html: true})} ` +
+                            `<small>(${pkjDay}/d)</small></b>`);
                     }
                     return tips;
                 },
@@ -608,7 +619,7 @@ export class ElevationChartView extends charts.ActivityTimeRangeChartView {
                 label: this.availableDatasets.elevation.label,
                 borderWidth: lineWidth,
                 yAxisID: 'elevation',
-                tooltipFormat: x => H.elevation(x, {suffix: true}),
+                tooltipFormat: x => H.elevation(x, {suffix: true, html: true}),
                 data: this.daily.map(b => {
                     gain += b.altGain;
                     return {b, x: b.date, y: gain};

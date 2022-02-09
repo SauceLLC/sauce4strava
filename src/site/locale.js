@@ -229,7 +229,7 @@ sauce.ns('locale', ns => {
                 break;
             }
             if (elapsed >= period || (!stack.length && i === units.length)) {
-                if (elapsed >= 2 * period || elapsed < period) {
+                if (elapsed != period) {
                     key += 's';
                 }
                 const suffix = options.html ? `<abbr class="unit">${hdUnits[key]}</abbr>` : hdUnits[key];

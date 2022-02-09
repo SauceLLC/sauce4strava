@@ -45,7 +45,7 @@ function getPeaksUnit(streamType) {
 function getPeaksValueFormatter(streamType) {
     return {
         power: H.number,
-        power_wkg: x => x != null ? x.toFixed(1) : '',
+        power_wkg: (x, prec=1) => x != null ? x.toFixed(prec) : '',
         np: H.number,
         xp: H.number,
         hr: H.number,
@@ -321,14 +321,17 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                     },
                 },
                 scales: {
+                    xAxes: [{
+                        offset: false,
+                    }],
                     yAxes: [{
                         id: 'values',
                         ticks: {
                             beginAtZero: false,
-                            maxTicksLimit: 8,
+                            maxTicksLimit: 7,
                             callback: x => {
                                 const prefs = this.getPrefs();
-                                return `${getPeaksValueFormatter(prefs.type)(x)} ${getPeaksUnit(prefs.type)}`;
+                                return `${getPeaksValueFormatter(prefs.type)(x, 0)} ${getPeaksUnit(prefs.type)}`;
                             }
                         },
                     }]
@@ -344,7 +347,10 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
     async render({update}={}) {
         this.$('.loading-mask').addClass('loading');
         const prefs = this.getPrefs();
-        this.valueFormatter = getPeaksValueFormatter(prefs.type);
+        this.valueFormatter = x => x != null ?
+            [getPeaksValueFormatter(prefs.type)(x),
+             `<abbr class="unit">${getPeaksUnit(prefs.type)}</abbr>`].join(' ') :
+            '-';
         try {
             await super.render();
             await this.controlsView.setElement(this.$('.peaks-controls-view')).render();
