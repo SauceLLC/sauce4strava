@@ -1277,13 +1277,15 @@ export class PageView extends PerfView {
 
     getAllRange() {
         let period, metric;
-        const days = (this.newest - this.oldest) / 1000 / 86400;
+        const now = new Date();
+        const days = (now - this.oldest) / 1000 / 86400;
         if (days > 3 * 365) {
             metric = 'years';
-            period = Math.ceil(days / 365);
+            period = (now.getFullYear() - new Date(this.oldest).getFullYear()) + 1;
         } else if (days > 200) {
             metric = 'months';
-            period = Math.ceil(days / 30.416);
+            const years = (now.getFullYear() - new Date(this.oldest).getFullYear());
+            period = ((now.getMonth() + (years * 12)) - new Date(this.oldest).getMonth()) + 1;
         } else {
             metric = 'weeks';
             period = Math.ceil(days / 7);
