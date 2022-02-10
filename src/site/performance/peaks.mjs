@@ -344,41 +344,6 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
         await super.init(options);
     }
 
-    async render({update}={}) {
-        this.$('.loading-mask').addClass('loading');
-        const prefs = this.getPrefs();
-        this.valueFormatter = x => x != null ?
-            [getPeaksValueFormatter(prefs.type)(x),
-             `<abbr class="unit">${getPeaksUnit(prefs.type)}</abbr>`].join(' ') :
-            '-';
-        try {
-            await super.render();
-            await this.controlsView.setElement(this.$('.peaks-controls-view')).render();
-            if (update) {
-                await this.updateChart();
-            }
-        } finally {
-            this.$('.loading-mask').removeClass('loading');
-        }
-    }
-
-    getActiveDatasets() {
-        const disabled = this.getPrefs('disabledDatasets', {});
-        const prefs = this.getPrefs();
-        const periodType = getPeriodType(prefs.type);
-        const datasets = {};
-        for (const [id, x] of Object.entries(this.availableDatasets)) {
-            if (!disabled[id] && x.type === periodType) {
-                datasets[id] = x;
-            }
-        }
-        return datasets;
-    }
-
-    isInMetricRange(date, m) {
-        return date >= m.date && date < D.adjacentDay(m.date, m.days);
-    }
-
     async updateChart() {
         const prefs = this.getPrefs();
         const reverse = getPeriodType(prefs.type) === 'distance';
@@ -445,6 +410,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                 label,
                 borderColor: periodColor(i, 0.7),
                 backgroundColor: periodColor(i, 0.9),
+                spanGaps: true,
                 yAxisID: 'values',
                 tooltipFormat: x => this.valueFormatter(x),
                 data: metricData.map(b => ({
@@ -456,6 +422,41 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
         }
         this.chart.data.datasets = datasets;
         this.chart.update();
+    }
+
+    async render({update}={}) {
+        this.$('.loading-mask').addClass('loading');
+        const prefs = this.getPrefs();
+        this.valueFormatter = x => x != null ?
+            [getPeaksValueFormatter(prefs.type)(x),
+             `<abbr class="unit">${getPeaksUnit(prefs.type)}</abbr>`].join(' ') :
+            '-';
+        try {
+            await super.render();
+            await this.controlsView.setElement(this.$('.peaks-controls-view')).render();
+            if (update) {
+                await this.updateChart();
+            }
+        } finally {
+            this.$('.loading-mask').removeClass('loading');
+        }
+    }
+
+    getActiveDatasets() {
+        const disabled = this.getPrefs('disabledDatasets', {});
+        const prefs = this.getPrefs();
+        const periodType = getPeriodType(prefs.type);
+        const datasets = {};
+        for (const [id, x] of Object.entries(this.availableDatasets)) {
+            if (!disabled[id] && x.type === periodType) {
+                datasets[id] = x;
+            }
+        }
+        return datasets;
+    }
+
+    isInMetricRange(date, m) {
+        return date >= m.date && date < D.adjacentDay(m.date, m.days);
     }
 }
 
