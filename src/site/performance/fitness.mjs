@@ -68,6 +68,9 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
                     },
                 },
                 scales: {
+                    xAxes: [{
+                        offset: false,
+                    }],
                     yAxes: [{
                         id: 'tss',
                         scaleLabel: {labelString: 'TSS'},
