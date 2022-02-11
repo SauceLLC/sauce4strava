@@ -171,7 +171,8 @@ sauce.ns('sync', ns => {
             $btn.toggleClass('enabled', !!athlete.sync);
         });
         $btn.on('click', async () => {
-            if (!athlete && !(await sauce.hist.getAthlete(id))) {
+            if (!athlete || !athlete.sync) {
+                // This is idempotent and will just update ftp and weight with most cur info.
                 await sauce.hist.addAthlete({id, ...athleteData});
             }
             await activitySyncDialog(id, controllers.get(id));

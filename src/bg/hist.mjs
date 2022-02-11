@@ -330,7 +330,7 @@ async function addAthlete({id, ...data}) {
         throw new TypeError('id and name values are required');
     }
     const athlete = await athletesStore.get(id, {model: true});
-    const athleteInfo = await sauce.storage.getAthleteInfo(id);
+    const athleteInfo = (await sauce.storage.getAthleteInfo(id)) || {};
     if (!data.ftpHistory && (!athlete || !athlete.get('ftpHistory'))) {
         if (id === self.currentUser) {
             data.ftpHistory = await getSelfFTPHistory();
@@ -346,6 +346,9 @@ async function addAthlete({id, ...data}) {
         if (w) {
             data.weightHistory = [{ts: Date.now(), value: w}];
         }
+    }
+    if (!data.gender) {
+        data.gender = athleteInfo.gender || 'male';
     }
     if (athlete) {
         await athlete.save(data);
