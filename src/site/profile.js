@@ -11,7 +11,9 @@ sauce.ns('profile', ns => {
         if (sauce.patronLevel && sauce.patronLevel >= 10 && self.currentAthlete.isLoggedIn()) {
             const $name = jQuery('.profile-heading .athlete-name');
             const name = $name.text().trim();
-            const $btn = await sauce.sync.createSyncButton(athleteId, {name});
+            const genderGuess = document.querySelector('#athlete-profile .main a.tab[href$="/segments/leader"]');
+            const gender = (genderGuess && genderGuess.textContent.match(/QOMs/)) ? 'female' : undefined;
+            const $btn = await sauce.sync.createSyncButton(athleteId, {name, gender});
             const $buttonBox = $name.siblings('.follow-action');
             if ($buttonBox.length) {
                 // Peer

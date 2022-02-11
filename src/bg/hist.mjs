@@ -330,20 +330,19 @@ async function addAthlete({id, ...data}) {
         throw new TypeError('id and name values are required');
     }
     const athlete = await athletesStore.get(id, {model: true});
+    const athleteInfo = await sauce.storage.getAthleteInfo(id);
     if (!data.ftpHistory && (!athlete || !athlete.get('ftpHistory'))) {
         if (id === self.currentUser) {
             data.ftpHistory = await getSelfFTPHistory();
         } else {
-            const ftp = (await sauce.storage.getAthleteProp(id, 'ftp_override')) ||
-                        (await sauce.storage.getAthleteProp(id, 'ftp_lastknown'));
+            const ftp = athleteInfo.ftp_override || athleteInfo.ftp_lastknown;
             if (ftp) {
                 data.ftpHistory = [{ts: Date.now(), value: ftp}];
             }
         }
     }
     if (!data.weightHistory && (!athlete || !athlete.get('weightHistory'))) {
-        const w = (await sauce.storage.getAthleteProp(id, 'weight_override')) ||
-                  (await sauce.storage.getAthleteProp(id, 'weight_lastknown'));
+        const w = athleteInfo.weight_override || athleteInfo.weight_lastknown;
         if (w) {
             data.weightHistory = [{ts: Date.now(), value: w}];
         }

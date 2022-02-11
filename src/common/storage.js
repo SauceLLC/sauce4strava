@@ -72,19 +72,6 @@ sauce.ns('storage', ns => {
     maybeExport(ns.updateAthleteInfo);
 
 
-    ns.setAthleteProp = async function setAthleteProp(id, key, value) {
-        await ns.updateAthleteInfo(id, {[key]: value});
-    };
-    maybeExport(ns.setAthleteProp);
-
-
-    ns.getAthleteProp = async function getAthleteProp(id, key) {
-        const info = await ns.getAthleteInfo(id);
-        return info && info[key];
-    };
-    maybeExport(ns.getAthleteProp);
-
-
     ns.getPref = async function getPref(path) {
         const prefs = await ns.get('preferences');
         let ref = prefs || {};

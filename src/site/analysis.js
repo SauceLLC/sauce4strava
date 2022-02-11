@@ -254,17 +254,19 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function updateAthleteInfo(athlete, extra) {
-        // This is just for display purposes, but it helps keep things clear in the options.
-        const updates = Object.assign({name: athlete.get('display_name')}, extra);
-        await sauce.storage.updateAthleteInfo(athlete.id, updates);
+    async function updateAthleteInfo(updates) {
+        const athlete = pageView.activityAthlete();
+        await sauce.storage.updateAthleteInfo(athlete.id, {
+            name: athlete.get('display_name'),
+            ...updates
+        });
     }
 
 
     function attachEditableFTP($parent) {
         const $field = $parent.find('.sauce-editable-field.ftp');
         async function save(ftp_override) {
-            await updateAthleteInfo(ns.athlete, {ftp_override});
+            await updateAthleteInfo({ftp_override});
         }
         editableField($field, {
             validator: rawValue => {
@@ -306,7 +308,7 @@ sauce.ns('analysis', ns => {
         const $field = $parent.find('.sauce-editable-field.weight');
         async function save(v) {
             const weight_override = L.weightUnconvert(v);
-            await updateAthleteInfo(ns.athlete, {weight_override});
+            await updateAthleteInfo({weight_override});
         }
         editableField($field, {
             validator: rawValue => {
@@ -2184,7 +2186,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function getFTPInfo(athleteId) {
+    async function getFTPInfo(athleteInfo) {
         if (ns.syncAthlete) {
             // XXX this is a weak integration for now.  Will need complete overhaul...
             const dbFTP = ns.syncAthlete.getFTPAt(getActivityTS());
@@ -2196,7 +2198,7 @@ sauce.ns('analysis', ns => {
             }
         }
         const info = {};
-        const override = await sauce.storage.getAthleteProp(athleteId, 'ftp_override');
+        const override = athleteInfo.ftp_override;
         if (override) {
             info.ftp = override;
             info.ftpOrigin = 'sauce';
@@ -2223,13 +2225,9 @@ sauce.ns('analysis', ns => {
                 // Runs never display ftp, so if the athlete is multisport and
                 // we've seen one activity (ride) with ftp, remember it for looking
                 // at runs later.
-                if (athleteId === ns.athlete.id) {
-                    await updateAthleteInfo(ns.athlete, {ftp_lastknown: stravaFtp});
-                } else {
-                    await sauce.storage.setAthleteProp(athleteId, 'ftp_lastknown', stravaFtp);
-                }
+                await updateAthleteInfo({ftp_lastknown: stravaFtp});
             } else {
-                const lastKnown = await sauce.storage.getAthleteProp(athleteId, 'ftp_lastknown');
+                const lastKnown = athleteInfo.ftp_lastknown;
                 if (lastKnown) {
                     info.ftp = lastKnown;
                     info.ftpOrigin = 'sauce';
@@ -2243,7 +2241,7 @@ sauce.ns('analysis', ns => {
     }
 
 
-    async function getWeightInfo(athleteId) {
+    async function getWeightInfo(athleteInfo) {
         if (ns.syncAthlete) {
             // XXX this is a weak integration for now.  Will need complete overhaul...
             const dbWeight = ns.syncAthlete.getWeightAt(getActivityTS());
@@ -2255,7 +2253,7 @@ sauce.ns('analysis', ns => {
             }
         }
         const info = {};
-        const override = await sauce.storage.getAthleteProp(athleteId, 'weight_override');
+        const override = athleteInfo.weight_override;
         if (override) {
             info.weight = override;
             info.weightOrigin = 'sauce';
@@ -2267,13 +2265,9 @@ sauce.ns('analysis', ns => {
                 // Runs never display weight, so if the athlete is multisport and
                 // we've seen one activity (ride) with weight, remember it for looking
                 // at runs later.
-                if (athleteId === ns.athlete.id) {
-                    await updateAthleteInfo(ns.athlete, {weight_lastknown: stravaWeight});
-                } else {
-                    await sauce.storage.setAthleteProp(athleteId, 'weight_lastknown', stravaWeight);
-                }
+                await updateAthleteInfo({weight_lastknown: stravaWeight});
             } else {
-                const lastKnown = await sauce.storage.getAthleteProp(athleteId, 'weight_lastknown');
+                const lastKnown = athleteInfo.weight_lastknown;
                 if (lastKnown) {
                     info.weight = lastKnown;
                     info.weightOrigin = 'sauce';
@@ -2695,7 +2689,8 @@ sauce.ns('analysis', ns => {
     async function getAthleteBike() {
         const bikeEl = document.querySelector('.gear-name');
         const bikeName = (bikeEl && bikeEl.textContent.trim()) || '_default_';
-        const bikes = await sauce.storage.getAthleteProp(ns.athlete.id, 'bikes');
+        const athleteInfo = (await sauce.storage.getAthleteInfo(ns.athlete.id)) || {};
+        const bikes = athleteInfo.bikes;
         return bikes && bikes[bikeName];
     }
 
@@ -2703,12 +2698,13 @@ sauce.ns('analysis', ns => {
     async function updateAthleteBike(settings) {
         const bikeEl = document.querySelector('.gear-name');
         const bikeName = (bikeEl && bikeEl.textContent.trim()) || '_default_';
-        const bikes = (await sauce.storage.getAthleteProp(ns.athlete.id, 'bikes')) || {};
+        const athleteInfo = (await sauce.storage.getAthleteInfo(ns.athlete.id)) || {};
+        const bikes = athleteInfo.bikes || {};
         if (!bikes[bikeName]) {
             bikes[bikeName] = {};
         }
         Object.assign(bikes[bikeName], settings);
-        await sauce.storage.setAthleteProp(ns.athlete.id, 'bikes', bikes);
+        await updateAthleteInfo({bikes});
     }
 
 
@@ -3205,20 +3201,22 @@ sauce.ns('analysis', ns => {
 
     async function initSyncActivity(activity, athleteId) {
         let setSyncDone;
-        const syncEvent = new Promise(resolve => void (setSyncDone = resolve));
+        const ret = {
+            afterSyncActivity: new Promise(resolve => void (setSyncDone = resolve))
+        };
         if (!(sauce.patronLevel >= 10)) {
-            return {syncEvent};
+            return ret;
         }
         const athleteData = await sauce.hist.getAthlete(athleteId);
         if (!athleteData || !athleteData.sync) {
-            return {syncEvent};
+            return ret;
         }
-        ns.syncAthlete = new SyncAthlete(athleteData);
-        ns.syncActivity = await sauce.hist.getActivity(activity.id);
-        if (!ns.syncActivity) {
+        ret.syncAthlete = new SyncAthlete(athleteData);
+        ret.syncActivity = await sauce.hist.getActivity(activity.id);
+        if (!ret.syncActivity) {
             sauce.sleep(100).then(async () => {
-                await sauce.hist.syncAthlete(ns.syncAthlete.id, {wait: true});
-                ns.syncActivity = await sauce.hist.getActivity(activity.id);
+                await sauce.hist.syncAthlete(ret.syncAthlete.id, {wait: true});
+                ret.syncActivity = await sauce.hist.getActivity(activity.id);
                 setSyncDone();
             });
         } else {
@@ -3230,21 +3228,21 @@ sauce.ns('analysis', ns => {
                 }
                 const updates = {};
                 for (const x of ['type', 'name', 'description']) {
-                    if (fullAct.get(x) !== ns.syncActivity[x]) {
+                    if (fullAct.get(x) !== ret.syncActivity[x]) {
                         updates[x] = fullAct.get(x);
                     }
                 }
                 if (updates.type) {
                     const basetype = sauce.model.getActivityBaseType(updates.type);
-                    if (basetype && basetype !== ns.syncActivity.basetype) {
+                    if (basetype && basetype !== ret.syncActivity.basetype) {
                         await sauce.report.event('SyncActivity', 'type-change',
-                            `${ns.syncActivity.basetype} -> ${basetype}`);
+                            `${ret.syncActivity.basetype} -> ${basetype}`);
                         updates.basetype = basetype;
                     }
                 }
                 if (Object.keys(updates).length) {
                     await sauce.hist.updateActivity(activity.id, updates);
-                    Object.assign(ns.syncActivity, updates);
+                    Object.assign(ret.syncActivity, updates);
                     if (updates.basetype) {
                         await sauce.hist.deletePeaksForActivity(activity.id);
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null,
@@ -3255,7 +3253,7 @@ sauce.ns('analysis', ns => {
                 }
             });
         }
-        return {syncEvent};
+        return ret;
     }
 
 
@@ -3264,12 +3262,14 @@ sauce.ns('analysis', ns => {
         ns.athlete = pageView.activityAthlete();
         ns.gender = ns.athlete.get('gender') === 'F' ? 'female' : 'male';
         await Promise.all([sauce.proxy.connected, _localeInit]);
-        ({syncEvent: ns.afterSyncActivity} = await initSyncActivity(activity, ns.athlete.id));
-        await Promise.all([
-            getWeightInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
-            getFTPInfo(ns.athlete.id).then(x => Object.assign(ns, x)),
-            sauce.storage.getAthleteProp(ns.athlete.id, 'wPrime').then(x => ns.wPrime = x || 20000),
-        ]);
+        Object.assign(ns, await initSyncActivity(activity, ns.athlete.id));
+        const athleteInfo = (await sauce.storage.getAthleteInfo(ns.athlete.id)) || {};
+        Object.assign(ns, await getWeightInfo(athleteInfo));
+        Object.assign(ns, await getFTPInfo(athleteInfo));
+        if (athleteInfo.gender != ns.gender) {
+            updateAthleteInfo({gender: ns.gender});  // bg okay
+        }
+        ns.wPrime = athleteInfo.wPrime || 20000;
         ns.cadenceFormatter = activity.isRun() ?
             L.cadenceFormatterRun :
             activity.isSwim() ?
@@ -3764,7 +3764,7 @@ sauce.ns('analysis', ns => {
             ns.wPrime = wPrime;
             $dialog.addClass('reload-needed');
             reloadNeeded = true;
-            await sauce.storage.setAthleteProp(ns.athlete.id, 'wPrime', wPrime);
+            await updateAthleteInfo({wPrime});
         });
         $dialog.on('dialogclose', () => {
             if (reloadNeeded) {
