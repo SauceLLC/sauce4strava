@@ -718,7 +718,7 @@ export class BulkActivityEditDialog extends PerfView {
                 text: this.LM('save'),
                 click: async ev => {
                     const updates = {};
-                    for (const tr of this.$('table tbody tr')) {
+                    for (const tr of this.$('table tbody tr[data-id]')) {
                         updates[Number(tr.dataset.id)] = {
                             tssOverride: Number(tr.querySelector('input[name="tss_override"]').value) || null,
                             peaksExclude: tr.querySelector('input[name="peaks_exclude"]').checked,
