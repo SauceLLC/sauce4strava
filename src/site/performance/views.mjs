@@ -796,7 +796,7 @@ export class MainView extends PerfView {
     }
 
     get availablePanelViews() {
-        return {};
+        return [];
     }
 
     async init({pageView, ...options}) {
@@ -824,9 +824,12 @@ export class MainView extends PerfView {
     }
 
     async _createPanel(prefs) {
-        const View = this.availablePanelViews[prefs.view];
+        const View = this.availablePanelViews.find(x => x.uuid === prefs.view);
         if (!View) {
             return;  // deprecated view (hopefully)
+        }
+        if (!prefs.settings) {
+            prefs.settings = {};
         }
         const name = prefs.settings.name || await L.getMessage(View.nameLocaleKey);
         const id = prefs.id;
@@ -883,7 +886,7 @@ export class MainView extends PerfView {
     async onPanelAddClick(ev) {
         const template = await sauce.template.getTemplate('performance/panel-add.html', 'performance');
         const panelViews = this.availablePanelViews;
-        let selected = Object.values(panelViews)[0].name;
+        let selected = Object.values(panelViews)[0];
         const $dialog = sauce.ui.dialog({
             width: '18em',
             autoDestroy: true,
@@ -896,8 +899,8 @@ export class MainView extends PerfView {
                 class: 'btn btn-primary',
                 click: async () => {
                     const panelPrefs = {
-                        id: `panel-custom-${selected}-${Date.now()}`,
-                        view: selected,
+                        id: `panel-custom-${selected.uuid}-${Date.now()}`,
+                        view: selected.uuid,
                         settings: {
                             name: $dialog.find('input[name="name"]').val() || undefined,
                         }
@@ -920,11 +923,10 @@ export class MainView extends PerfView {
         });
         $dialog.on('change', 'select[name="type"]', async ev => {
             const el = ev.currentTarget;
-            selected = el.value;
-            const View = panelViews[selected];
-            $dialog.find('.desc').text(await L.getMessage(View.descLocaleKey));
+            selected = panelViews.find(x => x.uuid === el.value);
+            $dialog.find('.desc').text(await L.getMessage(selected.descLocaleKey));
             $dialog.find('input[name="name"]').attr('placeholder',
-                await L.getMessage(View.nameLocaleKey));
+                await L.getMessage(selected.nameLocaleKey));
         });
     }
 

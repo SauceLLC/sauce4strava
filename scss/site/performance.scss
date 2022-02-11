@@ -577,9 +577,23 @@ table.sauce-perf {
             }
         }
 
+        &.power .expanded-details {
+            background-color: #ff000030; // redish
+        }
+
+        &.if-zones .expanded-details {
+            background-color: #ffda2c25; // yellowish
+        }
+
+        &.pace .expanded-details {
+            background-color: #0070ff1a; // blueish
+        }
+
         .expanded-details {
             flex: 1 0 100%;
-            padding: 0.4em;
+            padding: 0.1em 0.2em;
+            margin: 0.2em 0;
+            border-radius: 0.22em;
         }
 
         &:nth-child(even) {

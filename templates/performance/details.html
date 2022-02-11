@@ -36,7 +36,7 @@
                                  title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                             <div class="btn btn-icon-only btn-unstyled compress"
                                  title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
-                            <div class="expanded-details">
+                            <div class="expanded-details power">
                                 <% for (const [i, x] of day.powerZonesTime.entries()) { %>
                                     <row>
                                         <key>{{{/analysis_power}}} Z{{i + 1}}:</key>
@@ -130,7 +130,7 @@
                     <% } %>
                     <% if (a.stats) { %>
                         <% if (a.stats.intensity != null) { %>
-                            <row>
+                            <row class="if-zones">
                                 <key>IF:</key>
                                 <value>{{humanNumber(a.stats.intensity * 100)}}%</value>
                                 <div class="btn btn-icon-only btn-unstyled expand"
@@ -154,7 +154,7 @@
                             </row>
                         <% } %>
                         <% if (a.stats.power) { %>
-                            <row data-expand-mode="peaks" data-peak-type="power">
+                            <row class="power" data-expand-mode="peaks" data-peak-type="power">
                                 <key>{{{/analysis_power}}}:</key>
                                 <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
                                 <div class="btn btn-icon-only btn-unstyled expand"
@@ -164,7 +164,7 @@
                             </row>
                         <% } %>
                         <% if (a.basetype === 'run' && a.stats.activeTime && a.stats.distance) { %>
-                            <row data-expand-mode="peaks" data-peak-type="pace">
+                            <row class="pace" data-expand-mode="peaks" data-peak-type="pace">
                                 <key>{{{/analysis_pace}}}:</key>
                                 <value>{{humanPace(a.stats.activeTime / a.stats.distance, {suffix: true})}}</value>
                                 <div class="btn btn-icon-only btn-unstyled expand"

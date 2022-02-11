@@ -130,8 +130,10 @@ class PeaksControlsView extends views.PerfView {
 
 
 export class PeaksTableView extends views.PerfView {
+    static uuid = '9e0e835b-0d71-4116-9b5a-eb6924386526';
     static tpl = 'performance/peaks/table.html';
-    static nameLocaleKey = 'performance_peaks_table_title';
+    static typeLocaleKey = 'performance_peaks_table_type';
+    static nameLocaleKey = 'performance_peaks_table_name';
     static descLocaleKey = 'performance_peaks_desc';
 
     get events() {
@@ -255,8 +257,10 @@ export class PeaksTableView extends views.PerfView {
 
 
 export class PeaksChartView extends charts.ActivityTimeRangeChartView {
+    static uuid = '1479b2a2-c8e3-48f9-bf6f-9acce30b12d8';
     static tpl = 'performance/peaks/chart.html';
-    static nameLocaleKey = 'performance_peaks_chart_title';
+    static typeLocaleKey = 'performance_peaks_chart_type';
+    static nameLocaleKey = 'performance_peaks_chart_name';
     static descLocaleKey = 'performance_peaks_desc';
     static localeKeys = [...super.localeKeys];
 
@@ -461,30 +465,28 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
-export const PanelViews = {
+export const PanelViews = [
     PeaksTableView,
     PeaksChartView,
-};
+];
 
 
 class PeaksMainView extends views.MainView {
     static tpl = 'performance/peaks/main.html';
 
     get availablePanelViews() {
-        return {...PanelViews, ...fitness.PanelViews};
+        return [...PanelViews, ...fitness.PanelViews];
     }
 
     get defaultPrefs() {
         return {
             ...super.defaultPrefs,
             panels: [{
-                id: 'panel-default-peaks-table-0',
-                view: 'PeaksTableView',
-                settings: {},
+                id: 'panel-default-peaks-peaks-table-0',
+                view: '9e0e835b-0d71-4116-9b5a-eb6924386526',
             }, {
-                id: 'panel-default-peaks-chart-1',
-                view: 'PeaksChartView',
-                settings: {},
+                id: 'panel-default-peaks-peaks-chart-0',
+                view: '1479b2a2-c8e3-48f9-bf6f-9acce30b12d8',
             }]
         };
     }

@@ -33,8 +33,10 @@ function humanKJ(kj, options={}) {
 
 
 export class TrainingChartView extends charts.ActivityTimeRangeChartView {
+    static uuid = 'a6e7bb31-7860-4946-91e5-da4c82c0a3f4';
     static tpl = 'performance/fitness/training-load.html';
-    static nameLocaleKey = 'performance_training_load_title';
+    static typeLocaleKey = 'performance_training_load_type';
+    static nameLocaleKey = 'performance_training_load_name';
     static descLocaleKey = 'performance_training_load_desc';
     static localeKeys = [
         'predicted_tss', 'predicted_tss_tooltip', 'fitness', 'fatigue', 'form',
@@ -230,8 +232,10 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
 
 
 export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
+    static uuid = 'bb297504-5d68-4f69-b055-5fbabac4651a';
     static tpl = 'performance/fitness/zonetime.html';
-    static nameLocaleKey = 'performance_zonetime_title';
+    static typeLocaleKey = 'performance_zonetime_type';
+    static nameLocaleKey = 'performance_zonetime_name';
     static descLocaleKey = 'performance_zonetime_desc';
     static localeKeys = ['power_zones', ...super.localeKeys];
 
@@ -306,10 +310,12 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
-export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
-    static tpl = 'performance/fitness/activity-volume.html';
-    static nameLocaleKey = 'performance_activities_title';
-    static descLocaleKey = 'performance_activities_desc';
+export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
+    static uuid = '1b087d9a-d6ad-4c95-98c7-0c4b565edd29';
+    static tpl = 'performance/fitness/activity-stats.html';
+    static typeLocaleKey = 'performance_activity_stats_type';
+    static nameLocaleKey = 'performance_activity_stats_name';
+    static descLocaleKey = 'performance_activity_stats_desc';
     static localeKeys = [
         'predicted', '/analysis_time', '/analysis_distance', '/analysis_energy',
         ...super.localeKeys
@@ -569,8 +575,10 @@ export class ActivityVolumeChartView extends charts.ActivityTimeRangeChartView {
 
 
 export class ElevationChartView extends charts.ActivityTimeRangeChartView {
+    static uuid = 'c9aaaca7-f567-4d34-ab4f-ff0eabc9c406';
     static tpl = 'performance/fitness/elevation.html';
-    static nameLocaleKey = 'performance_elevation_title';
+    static typeLocaleKey = 'performance_elevation_type';
+    static nameLocaleKey = 'performance_elevation_name';
     static descLocaleKey = 'performance_elevation_desc';
     static localeKeys = ['/analysis_gain', ...super.localeKeys];
 
@@ -635,40 +643,36 @@ export class ElevationChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
-export const PanelViews = {
+export const PanelViews = [
     TrainingChartView,
-    ActivityVolumeChartView,
+    ActivityStatsChartView,
     ElevationChartView,
     ZoneTimeChartView,
-};
+];
 
 
 class FitnessMainView extends views.MainView {
     static tpl = 'performance/fitness/main.html';
 
     get availablePanelViews() {
-        return {...PanelViews, ...peaks.PanelViews};
+        return [...PanelViews, ...peaks.PanelViews];
     }
 
     get defaultPrefs() {
         return {
             ...super.defaultPrefs,
             panels: [{
-                id: 'panel-default-training-load-0',
-                view: 'TrainingChartView',
-                settings: {},
+                id: 'panel-default-fitness-training-load-0',
+                view: 'a6e7bb31-7860-4946-91e5-da4c82c0a3f4',
             }, {
-                id: 'panel-default-activity-volume-1',
-                view: 'ActivityVolumeChartView',
-                settings: {},
+                id: 'panel-default-fitness-activity-stats-0',
+                view: '1b087d9a-d6ad-4c95-98c7-0c4b565edd29',
             }, {
-                id: 'panel-default-zonetimes-3',
-                view: 'ZoneTimeChartView',
-                settings: {},
+                id: 'panel-default-fitness-zonetimes-0',
+                view: 'bb297504-5d68-4f69-b055-5fbabac4651a',
             }, {
-                id: 'panel-default-elevation-2',
-                view: 'ElevationChartView',
-                settings: {},
+                id: 'panel-default-fitness-elevation-0',
+                view: 'c9aaaca7-f567-4d34-ab4f-ff0eabc9c406',
             }]
         };
     }

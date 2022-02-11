@@ -3,17 +3,17 @@
         <key>{{{/type}}}:</key>
         <value>
             <select name="type">
-                <% for (const x of Object.values(panelViews)) { %>
-                    <option value="{{x.name}}">{{{['/' + x.nameLocaleKey]}}}</option>
+                <% for (const x of panelViews) { %>
+                    <option value="{{x.uuid}}">{{{['/' + x.typeLocaleKey]}}}</option>
                 <% } %>
             </select>
         </value>
         <br/>
-        <p class="desc">{{{['/' + panelViews[selected].descLocaleKey]}}}</p>
+        <p class="desc">{{{['/' + selected.descLocaleKey]}}}</p>
     </div>
 
     <div class="entry">
         <key>{{{/name}}}:</key>
-        <value><input type="text" name="name" placeholder="{{{['/' + panelViews[selected].nameLocaleKey]}}}"/></value>
+        <value><input type="text" name="name" placeholder="{{{['/' + selected.nameLocaleKey]}}}"/></value>
     </div>
 </form>
