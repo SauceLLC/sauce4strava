@@ -1340,7 +1340,8 @@ table.activity-table {
                 flex-direction: column;
 
                 &.chart {
-                    min-height: calc(12em * var(--height-factor));
+                    // Eventually use clamp (it works better in tests, but compat..)
+                    min-height: max(10em, calc(22vw * var(--height-factor)));
                     height: calc(22vh * var(--height-factor));
                     max-height: calc(24em * var(--height-factor));
                 }
