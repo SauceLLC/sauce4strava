@@ -197,6 +197,13 @@ table.activity-table {
         max-width: min(20ch, 25vw) !important;
     }
 
+    th {
+        .sort-by {
+            margin-left: 0.4em;
+            font-weight: normal;
+        }
+    }
+
     tr {
         cursor: pointer;
 

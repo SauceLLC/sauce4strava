@@ -1,16 +1,18 @@
 <table class="sauce-perf activity-table">
     <thead>
         <tr>
-            <th data-sort-id="name">{{{/name}}}{{sortBy === 'name' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
-            <th data-sort-id="date">{{{/analysis_date}}}{{sortBy === 'date' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
-            <th data-sort-id="type">{{{/type}}}{{sortBy === 'type' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
-            <th data-sort-id="duration">{{{/analysis_time}}}{{sortBy === 'duration' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
-            <th data-sort-id="distance">{{{/analysis_distance}}}{{sortBy === 'distance' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
-            <th data-sort-id="pace">{{{/analysis_pace}}}{{sortBy === 'pace' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
-            <th data-sort-id="elevation">{{{/analysis_elevation}}}{{sortBy === 'elevation' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
-            <th data-sort-id="tss">TSS{{sortBy === 'tss' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <% const up = '<span class="sort-by up">↑</span>'; %>
+            <% const down = '<span class="sort-by down">↓</span>'; %>
+            <th data-sort-id="name">{{{/name}}}{-sortBy === 'name' ? (sortDesc ? down : up) : ''-}</th>
+            <th data-sort-id="date">{{{/analysis_date}}}{-sortBy === 'date' ? (sortDesc ? down : up) : ''-}</th>
+            <th data-sort-id="type">{{{/type}}}{-sortBy === 'type' ? (sortDesc ? down : up) : ''-}</th>
+            <th data-sort-id="duration">{{{/analysis_time}}}{-sortBy === 'duration' ? (sortDesc ? down : up) : ''-}</th>
+            <th data-sort-id="distance">{{{/analysis_distance}}}{-sortBy === 'distance' ? (sortDesc ? down : up) : ''-}</th>
+            <th data-sort-id="pace">{{{/analysis_pace}}}{-sortBy === 'pace' ? (sortDesc ? down : up) : ''-}</th>
+            <th data-sort-id="elevation">{{{/analysis_elevation}}}{-sortBy === 'elevation' ? (sortDesc ? down : up) : ''-}</th>
+            <th data-sort-id="tss">TSS{-sortBy === 'tss' ? (sortDesc ? down : up) : ''-}</th>
             <th data-sort-id="exclude_peaks"
-                title="{{{exclude_peaks_tooltip}}}">{{{exclude}}}{{sortBy === 'exclude_peaks' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+                title="{{{exclude_peaks_tooltip}}}">{{{exclude}}}{-sortBy === 'exclude_peaks' ? (sortDesc ? down : up) : ''-}</th>
             <th></th>
         </tr>
     </thead>
