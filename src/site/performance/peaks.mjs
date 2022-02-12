@@ -455,7 +455,7 @@ class PeaksMainView extends views.MainView {
     static tpl = 'performance/peaks/main.html';
 
     get availablePanelViews() {
-        return [...PanelViews, ...fitness.PanelViews];
+        return [...PanelViews, ...fitness.PanelViews, ...views.PanelViews];
     }
 
     get defaultPrefs() {

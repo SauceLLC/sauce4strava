@@ -713,8 +713,10 @@ export class ActivityTablePanelView extends ResizablePerfView {
     static descLocaleKey = 'performance_activity_table_desc';
 
     async init({pageView, ...options}) {
-        this.activityTable = new ActivityTableView({pageView, mode: 'readonly', ...options});
         await super.init({pageView, ...options});
+        const {sortBy, sortDesc} = this.getPrefs();
+        this.activityTable = new ActivityTableView({pageView, mode: 'readonly', sortBy, sortDesc, ...options});
+        this.listenTo(this.activityTable, 'sort', this.onTableSort);
         this.listenTo(pageView, 'before-update-activities', () =>
             this.$('.loading-mask').addClass('loading'));
         this.listenTo(pageView, 'update-activities', sauce.debounced(this.onUpdateActivities));
@@ -727,8 +729,17 @@ export class ActivityTablePanelView extends ResizablePerfView {
     }
 
     async render() {
-        await super.render();
-        await this.activityTable.setElement(this.$('.table-wrap')).render();
+        this.$('.loading-mask').addClass('loading');
+        try {
+            await super.render();
+            await this.activityTable.setElement(this.$('.table-wrap')).render();
+        } finally {
+            this.$('.loading-mask').removeClass('loading');
+        }
+    }
+
+    async onTableSort({sortBy, sortDesc}) {
+        await this.savePrefs({sortBy, sortDesc});
     }
 
     async onUpdateActivities({activities}) {
@@ -754,13 +765,13 @@ export class ActivityTableView extends PerfView {
         };
     }
 
-    async init({pageView, mode, ...options}) {
+    async init({pageView, mode, sortBy, sortDesc, ...options}) {
         this.mode = mode;
         this.activities = Array.from(options.activities || []);
         this.streamsView = new ActivityStreamGraphsView({pageView});
         this.rowPageSize = 50;
-        this.sortBy = 'date';
-        this.sortDesc = true;
+        this.sortBy = sortBy || 'date';
+        this.sortDesc = sortDesc != null ? sortDesc : true;
         this.rowLimit = this.rowPageSize;
         await super.init({pageView, ...options});
     }
@@ -822,6 +833,7 @@ export class ActivityTableView extends PerfView {
             this.sortBy = id;
         }
         this.sort();
+        this.trigger('sort', {sortBy: id, sortDesc: this.sortDesc});
         await this.render();
     }
 
