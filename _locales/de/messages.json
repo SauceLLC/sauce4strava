@@ -48,6 +48,9 @@
     "enable": {
         "message": "Ermöglichen"
     },
+    "load_more": {
+        "message": "Mehr laden"
+    },
     "menu_performance_fitness": {
         "message": "Fitness-Tracking"
     },
@@ -1145,30 +1148,53 @@
     "performance_unavailable": {
         "message": "Nicht verfügbar"
     },
-    "performance_peaks_table_title": {
+    "performance_peaks_table_type": {
         "message": "Spitzenleistungstabelle"
     },
-    "performance_peaks_chart_title": {
+    "performance_peaks_chart_type": {
         "message": "Peak-Performance-Diagramm"
     },
-    "performance_peaks_desc": {
-        "message": "Beste oder höchste Leistungen für verschiedene Zeiten und Distanzen"
+    "performance_peaks_table_name": {
+        "message": "Spitzenleistungen"
     },
-    "performance_training_load_title": {
+    "performance_peaks_chart_name": {
+        "message": "Spitzenleistungen"
+    },
+    "performance_peaks_desc": {
+        "message": "Beste oder maximale Leistungen für eine Reihe von Zeiten und Distanzen"
+    },
+    "performance_training_load_type": {
+        "message": "Trainingsbelastungsdiagramm"
+    },
+    "performance_training_load_name": {
         "message": "Trainingsbelastung"
     },
     "performance_training_load_desc": {
         "message": "Fitness, Müdigkeit und Form"
     },
-    "performance_activities_title": {
+    "performance_activity_table_type": {
+        "message": "Aktivitätstabelle"
+    },
+    "performance_activity_table_name": {
         "message": "Aktivitäten"
     },
-    "performance_activities_desc": {
-        "message": "Entfernung, Stunden und TSS im Laufe der Zeit"
+    "performance_activity_table_desc": {
+        "message": "Tabelle der Aktivitäten in diesem Zeitraum"
     },
-    "performance_elevation_title": {
-        "message": "Höhenmeter",
-        "description": "IMMUTABLE"
+    "performance_activity_stats_type": {
+        "message": "Aktivitätsstatistik-Diagramm"
+    },
+    "performance_activity_stats_name": {
+        "message": "Aktivitätsstatistiken"
+    },
+    "performance_activity_stats_desc": {
+        "message": "Distanz, Stunden, TSS und Kilojoule im Zeitverlauf"
+    },
+    "performance_elevation_type": {
+        "message": "Höhengewinn-Diagramm"
+    },
+    "performance_elevation_name": {
+        "message": "Höhengewinn"
     },
     "performance_elevation_desc": {
         "message": "Vertikaler Aufstieg im Laufe der Zeit"
@@ -1190,6 +1216,9 @@
     },
     "performance_missing": {
         "message": "Fehlen"
+    },
+    "performance_activities_title": {
+        "message": "Aktivitäten"
     },
     "performance_activities": {
         "message": "Aktivitäten"
@@ -1296,14 +1325,23 @@
     "performance_hr_zones": {
         "message": "HR-Zonen"
     },
-    "performance_zonetime_title": {
+    "performance_zonetime_type": {
+        "message": "Zeit im Zonendiagramm"
+    },
+    "performance_zonetime_name": {
         "message": "Zeit in Zonen"
     },
     "performance_zonetime_desc": {
-        "message": "Aufschlüsselung der in den verschiedenen Leistungs- und/oder Herzfrequenzzonen verbrachten Zeit."
+        "message": "Balkendiagramm der in den verschiedenen Leistungszonen verbrachten Zeit"
     },
     "performance_chart_categories": {
         "message": "Diagrammkategorien"
+    },
+    "performance_exclude": {
+        "message": "Ausschließen"
+    },
+    "performance_exclude_peaks_tooltip": {
+        "message": "Schließen Sie diese Aktivität aus den Spitzenleistungsergebnissen aus"
     },
     "season_start": {
         "message": "Saisonbeginn"

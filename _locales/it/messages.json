@@ -47,6 +47,9 @@
     "enable": {
         "message": "Abilitare"
     },
+    "load_more": {
+        "message": "Carica di più"
+    },
     "menu_performance_fitness": {
         "message": "Monitoraggio fitness"
     },
@@ -1129,28 +1132,52 @@
     "performance_unavailable": {
         "message": "Non disponibile"
     },
-    "performance_peaks_table_title": {
+    "performance_peaks_table_type": {
         "message": "Tabella delle prestazioni di picco"
     },
-    "performance_peaks_chart_title": {
+    "performance_peaks_chart_type": {
         "message": "Grafico delle prestazioni di picco"
     },
-    "performance_peaks_desc": {
-        "message": "Prestazioni migliori o più elevate per tempi e distanze differenti"
+    "performance_peaks_table_name": {
+        "message": "Prestazioni di punta"
     },
-    "performance_training_load_title": {
+    "performance_peaks_chart_name": {
+        "message": "Prestazioni di punta"
+    },
+    "performance_peaks_desc": {
+        "message": "Migliori, o massime, prestazioni per una gamma di tempi e distanze"
+    },
+    "performance_training_load_type": {
+        "message": "Grafico del carico di allenamento"
+    },
+    "performance_training_load_name": {
         "message": "Carico di allenamento"
     },
     "performance_training_load_desc": {
         "message": "Fitness, Fatica e Forma"
     },
-    "performance_activities_title": {
+    "performance_activity_table_type": {
+        "message": "Tabella delle attività"
+    },
+    "performance_activity_table_name": {
         "message": "Attività"
     },
-    "performance_activities_desc": {
-        "message": "Distanza, ore e TSS nel tempo"
+    "performance_activity_table_desc": {
+        "message": "Tabella delle attività in questo periodo di tempo"
     },
-    "performance_elevation_title": {
+    "performance_activity_stats_type": {
+        "message": "Grafico delle statistiche dell'attività"
+    },
+    "performance_activity_stats_name": {
+        "message": "Statistiche attività"
+    },
+    "performance_activity_stats_desc": {
+        "message": "Distanza, ore, TSS e kilojoule nel tempo"
+    },
+    "performance_elevation_type": {
+        "message": "Grafico del guadagno di quota"
+    },
+    "performance_elevation_name": {
         "message": "Dislivello"
     },
     "performance_elevation_desc": {
@@ -1173,6 +1200,9 @@
     },
     "performance_missing": {
         "message": "Mancante"
+    },
+    "performance_activities_title": {
+        "message": "Attività"
     },
     "performance_activities": {
         "message": "attività"
@@ -1279,14 +1309,23 @@
     "performance_hr_zones": {
         "message": "Zone HR"
     },
-    "performance_zonetime_title": {
+    "performance_zonetime_type": {
+        "message": "Grafico del tempo in zone"
+    },
+    "performance_zonetime_name": {
         "message": "Tempo in zone"
     },
     "performance_zonetime_desc": {
-        "message": "Ripartizione del tempo trascorso nelle diverse zone di potenza e/o frequenza cardiaca."
+        "message": "Grafico a barre del tempo trascorso nelle diverse zone di alimentazione"
     },
     "performance_chart_categories": {
         "message": "Categorie di grafici"
+    },
+    "performance_exclude": {
+        "message": "Escludere"
+    },
+    "performance_exclude_peaks_tooltip": {
+        "message": "Escludere questa attività dai risultati delle prestazioni di picco"
     },
     "season_start": {
         "message": "Inizio della stagione"

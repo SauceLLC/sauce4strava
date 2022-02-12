@@ -50,6 +50,9 @@
     "enable": {
         "message": "使能够"
     },
+    "load_more": {
+        "message": "装载更多"
+    },
     "menu_performance_fitness": {
         "message": "健身追踪"
     },
@@ -1264,32 +1267,53 @@
         "message": "不可用",
         "description": "IMMUTABLE"
     },
-    "performance_peaks_table_title": {
+    "performance_peaks_table_type": {
         "message": "峰值性能表"
     },
-    "performance_peaks_chart_title": {
+    "performance_peaks_chart_type": {
         "message": "峰值性能图表"
     },
-    "performance_peaks_desc": {
-        "message": "不同时间和距离的最佳或最高性能"
+    "performance_peaks_table_name": {
+        "message": "巅峰表现"
     },
-    "performance_training_load_title": {
-        "message": "训练负荷 - 健康状况、疲劳度和体能",
-        "description": "IMMUTABLE"
+    "performance_peaks_chart_name": {
+        "message": "巅峰表现"
+    },
+    "performance_peaks_desc": {
+        "message": "在一定时间和距离范围内的最佳或最大性能"
+    },
+    "performance_training_load_type": {
+        "message": "训练负荷图"
+    },
+    "performance_training_load_name": {
+        "message": "训练负荷"
     },
     "performance_training_load_desc": {
         "message": "健身、疲劳和形式"
     },
-    "performance_activities_title": {
-        "message": "活动",
-        "description": "IMMUTABLE"
+    "performance_activity_table_type": {
+        "message": "活动表"
     },
-    "performance_activities_desc": {
-        "message": "距离、小时数和 TSS 随时间变化"
+    "performance_activity_table_name": {
+        "message": "活动"
     },
-    "performance_elevation_title": {
-        "message": "海拔爬升",
-        "description": "IMMUTABLE"
+    "performance_activity_table_desc": {
+        "message": "这段时间的活动表"
+    },
+    "performance_activity_stats_type": {
+        "message": "活动统计图表"
+    },
+    "performance_activity_stats_name": {
+        "message": "活动统计"
+    },
+    "performance_activity_stats_desc": {
+        "message": "距离、小时数、TSS 和千焦耳随时间变化"
+    },
+    "performance_elevation_type": {
+        "message": "海拔增益图"
+    },
+    "performance_elevation_name": {
+        "message": "海拔增益"
     },
     "performance_elevation_desc": {
         "message": "随着时间的推移垂直上升"
@@ -1316,6 +1340,10 @@
     },
     "performance_missing": {
         "message": "丢失的",
+        "description": "IMMUTABLE"
+    },
+    "performance_activities_title": {
+        "message": "活动",
         "description": "IMMUTABLE"
     },
     "performance_activities": {
@@ -1445,14 +1473,23 @@
     "performance_hr_zones": {
         "message": "人力资源区"
     },
-    "performance_zonetime_title": {
+    "performance_zonetime_type": {
+        "message": "时区图表"
+    },
+    "performance_zonetime_name": {
         "message": "各区时间"
     },
     "performance_zonetime_desc": {
-        "message": "在不同功率和/或心率区花费的时间细分。"
+        "message": "在不同功率区花费的时间条形图"
     },
     "performance_chart_categories": {
         "message": "图表类别"
+    },
+    "performance_exclude": {
+        "message": "排除"
+    },
+    "performance_exclude_peaks_tooltip": {
+        "message": "从最佳绩效结果中排除此活动"
     },
     "season_start": {
         "message": "季节开始"
