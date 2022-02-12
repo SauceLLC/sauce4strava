@@ -1,0 +1,27 @@
+<table class="sauce-perf activity-table">
+    <thead>
+        <tr>
+            <th data-sort-id="name">{{{/name}}}{{sortBy === 'name' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th data-sort-id="date">{{{/analysis_date}}}{{sortBy === 'date' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th data-sort-id="type">{{{/type}}}{{sortBy === 'type' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th data-sort-id="duration">{{{/analysis_time}}}{{sortBy === 'duration' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th data-sort-id="distance">{{{/analysis_distance}}}{{sortBy === 'distance' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th data-sort-id="pace">{{{/analysis_pace}}}{{sortBy === 'pace' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th data-sort-id="elevation">{{{/analysis_elevation}}}{{sortBy === 'elevation' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th data-sort-id="tss">TSS{{sortBy === 'tss' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th data-sort-id="exclude_peaks"
+                title="{{{exclude_peaks_tooltip}}}">{{{exclude}}}{{sortBy === 'exclude_peaks' ? (sortDesc ? '⭳' : '⭱') : ''}}</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <% for (const a of activities.slice(0, rowLimit)) { %>
+            {-await embed(entryTpl, {a, ...obj})-}
+        <% } %>
+        <tr class="load-more">
+            <td colspan="10"
+                class="centered {{activities.length <= rowLimit ? 'hidden' : ''}}">{{{/load_more}}}</td>
+        </tr>
+        <tr class="activity-streams"><td colspan="10"></td></tr>
+    </tbody>
+</table>

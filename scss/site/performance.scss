@@ -119,6 +119,16 @@ html.sauce-performance {
 table.sauce-perf {
     width: 100%; // For firefox
 
+    td.centered,
+    th.centered {
+        text-align: center;
+    }
+
+    td.righted,
+    th.righted {
+        text-align: right;
+    }
+
     td, th {
         padding: 0.6em 0.6em 0.6em 0.2em;
         white-space: nowrap;
@@ -130,6 +140,9 @@ table.sauce-perf {
 
     thead tr {
         background-color: color.shade(bg, 8%);
+        position: sticky;
+        top: 0;
+        z-index: 1;
 
         th {
             padding-top: 0.8em;
@@ -140,6 +153,24 @@ table.sauce-perf {
     tbody tr {
         &:nth-child(even) {
             background-color: color.shade(bg, 6%);
+        }
+
+        &.load-more {
+            background-color: color.shade(bg, 20%);
+            cursor: pointer;
+
+            &:hover {
+                background-color: color.shade(bg, 24%);
+            }
+
+            &.hidden {
+                display: none;
+            }
+
+            &.loading {
+                pointer-events: none;
+                cursor: busy;
+            }
         }
 
         td.activity-name {
@@ -159,50 +190,47 @@ table.sauce-perf {
     }
 }
 
+table.activity-table {
+    font-size: 0.9em;
+
+    .name-container {
+        max-width: min(20ch, 25vw) !important;
+    }
+
+    tr {
+        cursor: pointer;
+
+        &.activity-streams td {
+            padding: 0;
+        }
+    }
+
+    tr:hover {
+        background: color.shade(bg, 10%);
+    }
+
+    td.type {
+        max-width: 8ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-transform: capitalize;
+    }
+
+    td .btn-icon-only svg[data-icon] {
+        font-size: 0.8em;
+    }
+
+    tr td.tss input[name="tss"] {
+        width: 6ch;
+    }
+}
+
+
 .sauce-edit-activities-dialog.ui-dialog {
     .ui-dialog-content {
         padding: 0;
         display: flex;
         flex-direction: column;
-
-        .activity-list {
-            overflow: auto;
-
-            table {
-                font-size: 0.9em;
-
-                .name-container {
-                    max-width: min(20ch, 25vw) !important;
-                }
-
-                tr {
-                    cursor: pointer;
-
-                    &.activity-streams td {
-                        padding: 0;
-                    }
-                }
-
-                tr:hover {
-                    background: color.shade(bg, 10%);
-                }
-
-                td.type {
-                    max-width: 8ch;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    text-transform: capitalize;
-                }
-
-                td .btn-icon-only svg[data-icon] {
-                    font-size: 0.8em;
-                }
-            }
-        }
-
-        input[name="tss_override"] {
-            width: 6ch;
-        }
     }
 }
 
@@ -894,12 +922,12 @@ table.sauce-perf {
         }
     }
 
-    .fixed-height.sauce-panel .peaks-view .results {
-        max-height: initial;
+    .fixed-height.sauce-panel .table-wrap {
+        max-height: initial !important;
     }
 
-    .sauce-panel-content.peaks-view {
-        $results-height: calc(25vh * var(--height-factor));
+    .sauce-panel-content.table-view {
+        $panel-height: calc(25vh * var(--height-factor));
         background-color: color.shade(bg, 3%);
         border: 1px solid color.shade(fg, 20%, 0.2);
         border-radius: 0.28em;
@@ -907,39 +935,53 @@ table.sauce-perf {
         font-size: 0.96em;
         flex: 1 1 auto;
 
-        &:empty {
-            min-height: calc(#{$results-height} + 2em);
+        .table-wrap {
+            max-height: $panel-height;
+            overflow-y: auto;
+            font-size: 0.96em;
+            flex: 1 1 100%;
+            display: flex;
+            flex-direction: column;
+        };
+ 
+        &.loading-mask.loading {
+            min-height: calc(#{$panel-height} + 2em);
             background-image: linear-gradient(to bottom,
                                   #{color.shade(bg, 1%)},
                                   #{color.shade(bg, 5%)},
                                   #{color.shade(bg, 2%)});
         }
 
+        .resize-drag {
+            height: 0.65em;
+            background-color: color.shade(bg, 10%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: row-resize;
+            opacity: 0.7;
+            transition: opacity 200ms, box-shadow 200ms;
 
-        .peaks-controls-view {
-            padding: 0 1rem 1rem;
-            background-color: color.shade(bg, 5%);
+            &:hover {
+                opacity: 1;
+            }
+
+            &:active {
+                box-shadow: 0 0 0 3px color.shade(fg, 40%, 0.1) inset;
+            }
+
+            svg[data-icon] {
+                height: 100%;
+            }
         }
 
-        .results {
-            max-height: $results-height;
-            overflow-y: auto;
-            font-size: 0.96em;
-            flex: 1 1 100%;
-            display: flex;
-            flex-direction: column;
+        &.peaks-view {
+            .peaks-controls-view {
+                padding: 0 1rem 1rem;
+                background-color: color.shade(bg, 5%);
+            }
 
-            table {
-                td.centered,
-                th.centered {
-                    text-align: center;
-                }
-
-                td.righted,
-                th.righted {
-                    text-align: right;
-                }
-
+            table.sauce-perf {
                 tbody tr {
                     cursor: pointer;
 
@@ -971,30 +1013,6 @@ table.sauce-perf {
                         opacity: 0.8;
                     }
                 }
-            }
-        }
-
-
-        .resize-drag {
-            height: 0.65em;
-            background-color: color.shade(bg, 10%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: row-resize;
-            opacity: 0.7;
-            transition: opacity 200ms, box-shadow 200ms;
-
-            &:hover {
-                opacity: 1;
-            }
-
-            &:active {
-                box-shadow: 0 0 0 3px color.shade(fg, 40%, 0.1) inset;
-            }
-
-            svg[data-icon] {
-                height: 100%;
             }
         }
     }

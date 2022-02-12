@@ -129,7 +129,7 @@ class PeaksControlsView extends views.PerfView {
 }
 
 
-export class PeaksTableView extends views.PerfView {
+export class PeaksTableView extends views.ResizablePerfView {
     static uuid = '9e0e835b-0d71-4116-9b5a-eb6924386526';
     static tpl = 'performance/peaks/table.html';
     static typeLocaleKey = 'performance_peaks_table_type';
@@ -233,26 +233,6 @@ export class PeaksTableView extends views.PerfView {
         views.editActivityDialogXXX(activity, this.pageView);
     }
 
-    onResizePointerDown(ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        const origHeight = this.$el.height();
-        const origPageY = ev.pageY;
-        this.$el.height(origHeight);
-        this.$el.addClass('fixed-height');
-        const onDragDone = () => {
-            removeEventListener('pointermove', onDrag);
-            removeEventListener('pointerup', onDragDone);
-            removeEventListener('pointercancel', onDragDone);
-        };
-        const onDrag = ev => {
-            this.$el.height(origHeight + (ev.pageY - origPageY));
-        };
-        addEventListener('pointermove', onDrag);
-        addEventListener('pointerup', onDragDone);
-        addEventListener('pointercancel', onDragDone);
-        sauce.report.event('PerfPeaksTableView', 'resize');
-    }
 }
 
 

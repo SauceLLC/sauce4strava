@@ -1,0 +1,60 @@
+<% let tmp; %>
+<tr data-id="{{a.id}}">
+    <td class="activity-name">
+        <div class="name-container">
+            <a target="_blank" href="https://www.strava.com/activities/{{a.id}}"
+               title="{{a.name}}{{a.description ? "\n\n" + a .description : ''}}">{{a.name}}</a>
+        </div>
+    </td>
+    <td class="date">{{humanDate(a.ts)}}</td>
+    <td class="type">{{a.type || a.basetype}}</td>
+    <% if (a.stats) { %>
+        <% if (a.stats.activeTime) { %>
+            <td class="time">{{humanTimer(a.stats.activeTime)}}</td>
+        <% } else { %>
+            <td>-</td>
+        <% } %>
+        <% if (a.stats.distance) { %>
+            <td class="distance">{{humanDistance(a.stats.distance, 0, {suffix: true})}}</td>
+        <% } else { %>
+            <td>-</td>
+        <% } %>
+        <% if (a.stats.activeTime && a.stats.distance) { %>
+            <td class="pace">{{humanPace(1 / (a.stats.distance / a.stats.activeTime), {precision: 0, activityType: a.basetype, suffix: true})}}</td>
+        <% } else { %>
+            <td>-</td>
+        <% } %>
+        <% if (a.stats.altitudeGain) { %>
+            <td class="elevation">+{{humanElevation(a.stats.altitudeGain, {suffix: true})}}</td>
+        <% } else { %>
+            <td>-</td>
+        <% } %>
+    <% } else { %>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+    <% } %>
+    <td class="tss">
+        <% if (mode === 'readwrite') { %>
+            <input type="number" name="tss" value="{{a.tssOverride}}"
+                   placeholder="{{tmp = sauce.model.getActivityTSS(a), tmp != null ? Math.round(tmp) : '-'}}"/>
+        <% } else { %>
+            {{humanNumber(sauce.model.getActivityTSS(a))}}
+        <% } %>
+    </td>
+    <td class="peaks_exclude" title="{{{exclude_peaks_tooltip}}}">
+        <% if (mode === 'readwrite') { %>
+            <input type="checkbox" name="peaks_exclude"
+                   {{a.peaksExclude ? 'checked' : ''}}/>
+        <% } else { %>
+            {{a.peaksExclude ? '✓' : ''}}
+        <% } %>
+    </td>
+    <td>
+         <div class="btn btn-icon-only btn-unstyled edit-activity"
+              data-id="{{a.id}}"
+              title="Edit activity">{{=icon edit-duotone=}}</div>
+    </td>
+</tr>
+

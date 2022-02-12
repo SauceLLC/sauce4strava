@@ -194,6 +194,36 @@ export class PerfView extends SauceView {
 }
 
 
+export class ResizablePerfView extends PerfView {
+    get events() {
+        return {
+            ...super.events,
+            'pointerdown .resize-drag': 'onResizePointerDown',
+        };
+    }
+
+    onResizePointerDown(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const origHeight = this.$el.height();
+        const origPageY = ev.pageY;
+        this.$el.height(origHeight);
+        this.$el.addClass('fixed-height');
+        const onDragDone = () => {
+            removeEventListener('pointermove', onDrag);
+            removeEventListener('pointerup', onDragDone);
+            removeEventListener('pointercancel', onDragDone);
+        };
+        const onDrag = ev => {
+            this.$el.height(origHeight + (ev.pageY - origPageY));
+        };
+        addEventListener('pointermove', onDrag);
+        addEventListener('pointerup', onDragDone);
+        addEventListener('pointercancel', onDragDone);
+    }
+}
+
+
 export class SummaryView extends PerfView {
     static tpl = 'performance/summary.html';
     static localeKeys = ['rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'];
@@ -652,9 +682,9 @@ export class ActivityStreamGraphsView extends PerfView {
                 paceType: this.activity.basetype === 'run' ? 'pace' : 'speed',
                 activityType: this.activity.basetype,
             };
-            if (this.streams.power) {
+            if (this.streams.watts || this.streams.watts_calc) {
                 await sauce.ui.createStreamGraphs(this.$('.power-graph'),
-                    {graphs: ['power', 'power_wkg', 'sp'], ...options});
+                    {graphs: ['power'], ...options});
             }
             if (this.streams.heartrate) {
                 await sauce.ui.createStreamGraphs(this.$('.hr-graph'), {graphs: ['hr'], ...options});
@@ -675,35 +705,180 @@ export class ActivityStreamGraphsView extends PerfView {
 }
 
 
-export class BulkActivityEditDialog extends PerfView {
-    static tpl = 'performance/bulkedit.html';
-    static localeKeys = ['/save', 'edit_activities'];
+export class ActivityTablePanelView extends ResizablePerfView {
+    static uuid = 'c9222e6a-80ee-4ccc-a45c-dfe996c3ec16';
+    static tpl = 'performance/activity-table-panel.html';
+    static typeLocaleKey = 'performance_activity_table_type';
+    static nameLocaleKey = 'performance_activity_table_name';
+    static descLocaleKey = 'performance_activity_table_desc';
 
-    get events() {
-        return {
-            ...super.events,
-            'click .edit-activity': 'onEditActivityClick',
-            'click tbody tr': 'onRowClick',
-        };
-    }
-
-    async init({activities, pageView, ...options}) {
-        this.activities = activities;
-        this.athletes = new Set(activities.map(x => x.athlete));
-        this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
-        this.streamsView = new ActivityStreamGraphsView({pageView});
+    async init({pageView, ...options}) {
+        this.activityTable = new ActivityTableView({pageView, mode: 'readonly', ...options});
         await super.init({pageView, ...options});
+        this.listenTo(pageView, 'before-update-activities', () =>
+            this.$('.loading-mask').addClass('loading'));
+        this.listenTo(pageView, 'update-activities', sauce.debounced(this.onUpdateActivities));
     }
 
     renderAttrs() {
         return {
+            name: this.name,
+        };
+    }
+
+    async render() {
+        await super.render();
+        await this.activityTable.setElement(this.$('.table-wrap')).render();
+    }
+
+    async onUpdateActivities({activities}) {
+        try {
+            await this.activityTable.setActivities(activities);
+        } finally {
+            this.$('.loading-mask').removeClass('loading');
+        }
+    }
+}
+
+
+export class ActivityTableView extends PerfView {
+    static tpl = 'performance/activity-table.html';
+
+    get events() {
+        return {
+            ...super.events,
+            'click tbody tr[data-id]': 'onDataRowClick',
+            'click tbody tr.load-more': 'onLoadMoreClick',
+            'click thead th[data-sort-id]': 'onSortClick',
+            'click .edit-activity': 'onEditActivityClick',
+        };
+    }
+
+    async init({pageView, mode, ...options}) {
+        this.mode = mode;
+        this.activities = Array.from(options.activities || []);
+        this.streamsView = new ActivityStreamGraphsView({pageView});
+        this.rowPageSize = 50;
+        this.sortBy = 'date';
+        this.sortDesc = true;
+        this.rowLimit = this.rowPageSize;
+        await super.init({pageView, ...options});
+    }
+
+    async setActivities(activities) {
+        this.rowLimit = this.rowPageSize;
+        this.activities = Array.from(activities || []);
+        this.sort();
+        await this.render();
+    }
+
+    async setMode(mode) {
+        this.mode = mode;
+        await this.render();
+    }
+
+    renderAttrs() {
+        return {
+            entryTpl: '/performance/activity-table-entry.html',
             activities: this.activities,
+            mode: this.mode,
+            rowLimit: this.rowLimit,
+            sortBy: this.sortBy,
+            sortDesc: this.sortDesc,
         };
     }
 
     async render() {
         await super.render();
         this.streamsView.setElement(this.$('tr.activity-streams td'));
+    }
+
+    sort() {
+        const sortKeys = {
+            name: x => x.name.toLowerCase(),
+            date: x => x.ts,
+            type: x => x.type || x.basetype,
+            duration: x => x.stats && x.stats.activeTime || 0,
+            distance: x => x.stats && x.stats.distance || 0,
+            pace: x => ((x.stats.activeTime && x.stats.distance) ? x.stats.distance / x.stats.activeTime : 0),
+            elevation: x => x.stats && x.stats.altitudeGain || 0,
+            tss: x => sauce.model.getActivityTSS(x) || 0,
+            exclude_peaks: x => !!x.peaksExclude,
+        };
+        const sortRev = {
+            name: true,
+            type: true,
+        };
+        const keyFn = sortKeys[this.sortBy];
+        const sortDir = (this.sortDesc ? 1 : -1) * (sortRev[this.sortBy] ? -1 : 1);
+        this.activities.sort((a, b) => keyFn(a) < keyFn(b) ? sortDir : -sortDir);
+    }
+
+    async onSortClick(ev) {
+        const id = ev.currentTarget.dataset.sortId;
+        if (id === this.sortBy) {
+            this.sortDesc = !this.sortDesc;
+        } else {
+            this.sortBy = id;
+        }
+        this.sort();
+        await this.render();
+    }
+
+    async onLoadMoreClick(ev) {
+        const loadMore = ev.currentTarget;
+        loadMore.classList.add('loading');
+        try {
+            const tpl = await sauce.template.getTemplate('/performance/activity-table-entry.html', 'performance');
+            const attrs = this.renderAttrs();
+            const moreActs = this.activities.slice(this.rowLimit, this.rowLimit += this.rowPageSize);
+            const newRows = await Promise.all(moreActs.map(a => tpl({a, ...attrs})));
+            sauce.adjacentNodeContents(this.el.querySelector('.load-more'), 'beforebegin', newRows.join('\n'));
+        } finally {
+            if (this.activities.length <= this.rowLimit) {
+                loadMore.classList.add('hidden');
+            }
+            loadMore.classList.remove('loading');
+        }
+    }
+
+    async onDataRowClick(ev) {
+        const id = Number(ev.currentTarget.dataset.id);
+        ev.currentTarget.insertAdjacentElement('afterend',
+            this.streamsView.el.closest('tr'));
+        this.streamsView.$('.loading-mask').addClass('loading');
+        try {
+            const activity = await sauce.hist.getActivity(id);
+            await this.streamsView.setActivity(activity);
+        } finally {
+            this.streamsView.$('.loading-mask').removeClass('loading');
+        }
+    }
+
+    async onEditActivityClick(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
+        const activity = await sauce.hist.getActivity(id);
+        editActivityDialogXXX(activity, this.pageView);
+    }
+}
+
+
+export class BulkActivityEditDialog extends PerfView {
+    static localeKeys = ['/save', 'edit_activities'];
+
+    async init({activities, pageView, ...options}) {
+        this.athletes = new Set(activities.map(x => x.athlete));
+        this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
+        this.activityTable = new ActivityTableView({activities, pageView, mode: 'readwrite', ...options});
+        await super.init({pageView, ...options});
+    }
+
+    async render() {
+        this.$el.addClass('activity-table');
+        await super.render();
+        await this.activityTable.setElement(this.$el).render();
     }
 
     show() {
@@ -720,7 +895,7 @@ export class BulkActivityEditDialog extends PerfView {
                     const updates = {};
                     for (const tr of this.$('table tbody tr[data-id]')) {
                         updates[Number(tr.dataset.id)] = {
-                            tssOverride: Number(tr.querySelector('input[name="tss_override"]').value) || null,
+                            tssOverride: Number(tr.querySelector('input[name="tss"]').value) || null,
                             peaksExclude: tr.querySelector('input[name="peaks_exclude"]').checked,
                         };
                     }
@@ -745,29 +920,12 @@ export class BulkActivityEditDialog extends PerfView {
             }]
         });
     }
-
-    async onEditActivityClick(ev) {
-        const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
-        const activity = await sauce.hist.getActivity(id);
-        editActivityDialogXXX(activity, this.pageView);
-    }
-
-    async onRowClick(ev) {
-        const id = Number(ev.currentTarget.dataset.id);
-        if (!id) {
-            return; // graphs
-        }
-        ev.currentTarget.insertAdjacentElement('afterend',
-            this.streamsView.el.closest('tr'));
-        this.streamsView.$('.loading-mask').addClass('loading');
-        try {
-            const activity = await sauce.hist.getActivity(id);
-            await this.streamsView.setActivity(activity);
-        } finally {
-            this.streamsView.$('.loading-mask').removeClass('loading');
-        }
-    }
 }
+
+
+export const PanelViews = [
+    ActivityTablePanelView
+];
 
 
 export class MainView extends PerfView {
@@ -796,7 +954,7 @@ export class MainView extends PerfView {
     }
 
     get availablePanelViews() {
-        return [];
+        return [ActivityTablePanelView];
     }
 
     async init({pageView, ...options}) {

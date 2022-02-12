@@ -655,7 +655,7 @@ class FitnessMainView extends views.MainView {
     static tpl = 'performance/fitness/main.html';
 
     get availablePanelViews() {
-        return [...PanelViews, ...peaks.PanelViews];
+        return [...PanelViews, ...peaks.PanelViews, ...views.PanelViews];
     }
 
     get defaultPrefs() {

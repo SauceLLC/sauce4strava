@@ -16,6 +16,7 @@
     "save": {"message": "Save"},
     "add": {"message": "Add"},
     "enable": {"message": "Enable"},
+    "load_more": {"message": "Load More"},
 
     "menu_performance_fitness": {"message": "Fitness Tracking"},
     "menu_performance_peaks": {"message": "Peak Performances"},
@@ -438,6 +439,8 @@
     "performance_zonetime_name": {"message": "Time in Zones"},
     "performance_zonetime_desc": {"message": "Bar chart of time spent in the different power zones"},
     "performance_chart_categories": {"message": "Chart Categories"},
+    "performance_exclude": {"message": "Exclude"},
+    "performance_exclude_peaks_tooltip": {"message": "Exclude this activity from the Peak Performance results"},
 
     "season_start": {"message": "Season Start"},
     "graph_options_wbal_help": {"message": "W'balance is a representation of work done above threshold created by <a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">Dr. Philip Skiba</a>.  You can think of it as your anaerobic battery.  Every time you make efforts over your FTP/CP, your battery is drained and it takes time to replenish it.  If your W'bal reaches 0 then you will find it nearly impossible to produce efforts above your FTP/CP for any duration of time.<br/><br/>For more information and a great explanation see <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">this excellent article by Dr. Skiba himself</a>."},
