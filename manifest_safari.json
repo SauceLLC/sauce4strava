@@ -1,0 +1,11 @@
+{
+    "background": {
+        "persistent": false
+    },
+    "permissions": [
+        "tabs",
+        "https://saucellc.io/*",
+        "https://api.saucellc.io/*",
+        "https://www.strava.com/*"
+    ]
+}

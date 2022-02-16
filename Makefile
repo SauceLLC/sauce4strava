@@ -47,6 +47,12 @@ realclean: clean
 
 build: $(BUILD)
 
+build-gecko:
+	TARGET=gecko $(MAKE) manifest build
+
+build-safari:
+	TARGET=safari $(MAKE) manifest build
+
 lint:
 	$(NPATH)/eslint src
 	$(NPATH)/eslint --config .eslintrc.modules.json --ext .mjs src
