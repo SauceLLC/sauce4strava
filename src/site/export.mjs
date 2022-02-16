@@ -4,14 +4,15 @@ import FitParser from './jsfit/fit-parser.mjs';
 
 
 class Serializer {
-    constructor(name, desc, type, start, laps) {
+    constructor({name, desc, type, date, laps, athlete}) {
         this.activity = {
             name,
             desc,
             type,
-            start,
+            date,
             laps
         };
+        this.athlete = athlete;
     }
 
     start() {
@@ -19,7 +20,7 @@ class Serializer {
     }
 
     loadStreams(streams) {
-        const adjStartDate = new Date(this.activity.start.getTime() + (streams.time[0] * 1000));
+        const adjStartDate = new Date(this.activity.date.getTime() + (streams.time[0] * 1000));
         this.processStreams(streams, adjStartDate);
     }
 
@@ -96,7 +97,7 @@ export class GPXSerializer extends DOMSerializer {
         };
         this.addNodeTo(trk, 'type', trackTypeEnum[this.activity.type]);
         const trkseg = this.addNodeTo(trk, 'trkseg');
-        const startTime = this.activity.start.getTime();
+        const startTime = this.activity.date.getTime();
         for (let i = 0; i < streams.time.length; i++) {
             const point = this.addNodeTo(trkseg, 'trkpt');
             if (streams.latlng) {
@@ -178,7 +179,7 @@ export class TCXSerializer extends DOMSerializer {
         this.addNodeTo(creator, 'UnitId', 0);
         this.addNodeTo(creator, 'ProductId', 0);
         creator.appendChild(this.sauceVersion.cloneNode(/*deep*/ true));
-        const startTime = this.activity.start.getTime();
+        const startTime = this.activity.date.getTime();
         const hasLaps = !!(this.activity.laps && this.activity.laps.length);
         const laps = hasLaps ? this.activity.laps : [[0, streams.time.length - 1]];
         for (const [start, end] of laps) {
@@ -256,6 +257,14 @@ export class FITSerializer extends Serializer {
                 vminor.slice(0, 2).padStart(2, '0')].join('')),
             hardware_version: null,
         });
+        if (this.athlete) {
+            this.fitParser.addMessage('user_profile', {
+                friendly_name: this.athlete.name,
+                gender: this.athlete.gender || 'male',
+                weight: this.athlete.weight || 0,
+                weight_setting: 'metric',
+            });
+        }
     }
 
     processStreams(streams, adjStartDate) {
@@ -271,7 +280,7 @@ export class FITSerializer extends Serializer {
             timestamp: adjStartDate,
             data: 'manual',
         });
-        const startTime = this.activity.start.getTime();
+        const startTime = this.activity.date.getTime();
         const hasLaps = !!(this.activity.laps && this.activity.laps.length);
         const laps = hasLaps ? this.activity.laps : [[0, streams.time.length - 1]];
         let lapNumber = 0;

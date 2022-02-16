@@ -1653,11 +1653,11 @@ sauce.ns('analysis', ns => {
         }
         const fullActivity = await fetchFullActivity();
         const realStartTime = fullActivity && fullActivity.get('start_time');
-        let startDate;
+        let date;
         if (realStartTime) {
-            startDate = new Date(realStartTime);
+            date = new Date(realStartTime);
         } else {
-            startDate = await getEstimatedActivityStart();
+            date = await getEstimatedActivityStart();
         }
         // Name and description are not available in the activity model for other users..
         let name = document.querySelector('#heading .activity-name').textContent.trim();
@@ -1672,7 +1672,13 @@ sauce.ns('analysis', ns => {
             gpx : exportModule.GPXSerializer,
             fit : exportModule.FITSerializer,
         }[type];
-        const serializer = new Serializer(name, desc, ns.activityType, startDate, laps);
+        const a = pageView.activityAthlete();
+        const athlete =  {
+            name: a.get('display_name'),
+            weight: ns.weight,
+            gender: ns.gender,
+        };
+        const serializer = new Serializer({name, desc, type: ns.activityType, date, laps, athlete});
         serializer.start();
         serializer.loadStreams(streams);
         sauce.ui.downloadBlob(serializer.toFile());
