@@ -54,16 +54,12 @@
 
             .suboption {
                 display: block;
-                margin-top: 0.25em;
+                margin-top: 0.35em;
                 padding-left: 2em;
-                font-size: 0.8em;
+                font-size: 0.9em;
             }
             .suboption.disabled {
                 opacity: 0.6;
-            }
-
-            .suboption:last-child {
-                margin-bottom: 1em;
             }
 
             .sauce-beta {
@@ -116,12 +112,15 @@
                     </select>
                 </div>
 
-                <div class="option" title="Make most pages work with any screen size.  Also adds BETA support for mobile Firefox!">
-                    <label><input type="checkbox" name="responsive"/>Responsive/Mobile Layout</label>
+                <div class="option" title="Make most pages work with any screen size">
+                    <label><input type="checkbox" name="responsive"/>Responsive/Mobile Layout <i>(recommended)</i></label>
                 </div>
 
-                <div class="option" title="Hide all banners related to subscription upselling.">
+                <div class="option" title="Hide all content related to subscription upselling.">
                     <label><input type="checkbox" name="hide-upsells"/>Hide subscription upsells</label>
+                    <div class="suboption not-patron" title="Hide all content related to Sauce upselling.">
+                        <label><input type="checkbox" name="hide-sauce-bonus-features"/>Hide Sauce Bonus Features</label>
+                    </div>
                 </div>
             </div>
 

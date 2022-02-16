@@ -617,8 +617,7 @@ self.saucePreloaderInit = function saucePreloaderInit(sauceVars) {
         async function addButtons() {
             const segId = this.viewModel.model.id;
             const supportsLiveSeg = pageView.activity().isRide() || pageView.activity().isRun();
-            const isPatron = sauce.patronLevel && sauce.patronLevel >= 10;
-            if (supportsLiveSeg && (isPatron || (sauce.options && !sauce.options['hide-upsells']))) {
+            if (supportsLiveSeg && !sauce.hideBonusFeatures) {
                 const tooltip = await sauce.locale.getMessage('analysis_create_live_segment_tooltip');
                 const icon = await sauce.ui.getImage('fa/trophy-duotone.svg');
                 await addButton.call(this, segId, `Live Segment`, tooltip, `live-segment`, icon);

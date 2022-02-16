@@ -10,9 +10,11 @@
     }
 
     function resetSuboptions(input) {
-        for (const suboption of input.closest('.option').querySelectorAll('.suboption')) {
-            suboption.classList.toggle('disabled', !input.checked);
-            suboption.querySelector('input').disabled = !input.checked;
+        if (!input.closest('.suboption')) {
+            for (const suboption of input.closest('.option').querySelectorAll('.suboption')) {
+                suboption.classList.toggle('disabled', !input.checked);
+                suboption.querySelector('input').disabled = !input.checked;
+            }
         }
     }
 

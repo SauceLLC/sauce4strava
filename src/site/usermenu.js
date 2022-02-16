@@ -40,11 +40,6 @@
     }
 
 
-    function upsellsHidden() {
-        return document.documentElement.classList.contains('sauce-hide-upsells');
-    }
-
-
     function _loadOptions() {
         let menuEl = document.querySelector('#global-header .user-nav .user-menu .options');
         if (!menuEl) {
@@ -78,7 +73,7 @@
             // Only permit legacy safari from seeing this since we already let them.
             return;
         }
-        if (sauce.patronLevel < 10 && upsellsHidden()) {
+        if (sauce.hideBonusFeatures) {
             return;
         }
         const group = document.createElement('li');

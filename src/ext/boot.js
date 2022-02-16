@@ -21,9 +21,12 @@
         ]
     }, {
         callbacks: [
-            config => {
+            (config, sauce) => {
                 if (config.options['hide-upsells']) {
                     document.documentElement.classList.add('sauce-hide-upsells');
+                }
+                if (sauce.hideBonusFeatures) {
+                    document.documentElement.classList.add('sauce-sauce-bonus-features');
                 }
             }
         ]
@@ -329,12 +332,16 @@
             `saucePreloaderInit(${JSON.stringify(sauceVars)});`,
         ].join('\n'));
         const config = await sauce.storage.get(null);
+        const options = config.options;
         self.currentUser = config.currentUser;
         updatePatronLevelNames().catch(sauce.report.error);  // bg okay
         [sauceVars.patronLevel, sauceVars.patronLegacy] = await updatePatronLevel(config);
+        sauceVars.hideBonusFeatures = (sauceVars.patronLevel || 0) < 10 && !!(options &&
+            options['hide-upsells'] &&
+            options['hide-sauce-bonus-features']);
         sauce.insertScript(`
             self.sauce = self.sauce || {};
-            sauce.options = ${JSON.stringify(config.options)};
+            sauce.options = ${JSON.stringify(options || {})};
             Object.assign(sauce, ${JSON.stringify(sauceVars)});
         `);
         const loading = [];
@@ -350,7 +357,7 @@
             if (m.callbacks) {
                 for (const cb of m.callbacks) {
                     try {
-                        const r = cb(config);
+                        const r = cb(config, sauceVars);
                         if (r instanceof Promise) {
                             await r;
                         }
