@@ -144,7 +144,7 @@ function decodeTypedData(data, fDef, fields) {
                 const result = {flags:[]};
                 for (const [key, label] of Object.entries(customType)) {
                     const flag = Number(key);
-                    if (isNaN(flag)) {
+                    if (Number.isNaN(flag)) {
                         continue;
                     }
                     if ((x & flag) === flag) {

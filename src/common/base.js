@@ -52,6 +52,33 @@ self.sauceBaseInit = function sauceBaseInit() {
     }
 
 
+    sauce.getURL = function(urn='') {
+        if (self.browser && self.browser.runtime) {
+            return self.browser.runtime.getURL(urn);
+        } else {
+            return sauce.extUrl + urn;
+        }
+    };
+
+
+    let _name = sauce.name;  // may have been set by ext/boot
+    sauce.getName = function() {
+        if (!_name) {
+            _name = self.browser.runtime.getManifest().name;
+        }
+        return _name;
+    };
+
+
+    let _version = sauce.version;  // may have been set by ext/boot
+    sauce.getVersion = function() {
+        if (!_version) {
+            _version = self.browser.runtime.getManifest().version;
+        }
+        return _version;
+    };
+
+
     sauce.loadStylesheet = function(url, options={}) {
         const link = document.createElement('link');
         link.setAttribute('rel', 'stylesheet');

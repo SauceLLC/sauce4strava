@@ -105,7 +105,7 @@ export default class FitParser {
             mDef.fieldDefs.push({
                 attrs,
                 fDefNum: attrs.defNum,
-                size: NaN,  // Must be set via encoder.
+                size: undefined,  // Must be set via encoder.
                 endianAbility: (baseTypeId & endianFlag) === endianFlag,
                 littleEndian,
                 baseTypeId,
@@ -114,7 +114,7 @@ export default class FitParser {
         }
         this.messages.push({
             type: 'data',
-            size: NaN,
+            size: undefined,
             mDef,
             fields,
         });

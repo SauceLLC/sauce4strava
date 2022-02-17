@@ -5,6 +5,7 @@ import * as queues from '/lib/jscoop/queues.mjs';
 import * as locks from '/lib/jscoop/locks.mjs';
 import * as processors from '/src/bg/hist/processors.mjs';
 
+
 const {
     ActivitiesStore,
     StreamsStore,
@@ -1965,6 +1966,54 @@ class SyncController extends sauce.proxy.Eventing {
 sauce.proxy.export(SyncController, {namespace});
 
 
+export async function exportFiles(athleteId, type='fit') {
+    const exportModule = await import('/src/site/export.mjs');
+    const Serializer = exportModule[{
+        fit: 'FITSerializer',
+        tcx: 'TCXSerializer',
+        gpx: 'GPXSerializer',
+    }[type]];
+    const athlete = await athletesStore.get(athleteId, {model: true});
+    const activities = await actsStore.getAllForAthlete(athleteId,
+        {_skipClone: true, _skipCache: true});
+    const athleteName = athlete.get('name');
+    const gender = athlete.get('gender');
+    while (activities.length) {
+        const act = activities.pop();
+        const streams = await streamsStore.getForActivity(act.id, {_skipClone: true, _skipCache: true});
+        if (!streams || !streams.time) {
+            continue;
+        }
+        const date = new Date(act.ts);
+        const serializer = new Serializer({
+            name: act.name,
+            desc: act.desc,
+            type: act.basetype,
+            date,
+            athlete: {
+                name: athleteName,
+                weight: athlete.getWeightAt(act.ts),
+                gender,
+            }
+        });
+        serializer.start();
+        serializer.loadStreams(streams);
+        const file = serializer.toFile(`${athleteName}-${date.toISOString()}`);
+        const url = URL.createObjectURL(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        try {
+            link.click();
+        } finally {
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+    }
+}
+
 class DataExchange extends sauce.proxy.Eventing {
     constructor(athleteId) {
         super();
@@ -2012,8 +2061,8 @@ class DataExchange extends sauce.proxy.Eventing {
         })();
         const streamsWork = (async () => {
             const iter = this.athleteId ?
-                streamsStore.byAthlete(this.athleteId, null, {_skipCache: true}) :
-                streamsStore.values(null, {_skipCache: true});
+                streamsStore.byAthlete(this.athleteId, null, {_skipClone: true, _skipCache: true}) :
+                streamsStore.values(null, {_skipClone: true, _skipCache: true});
             const estSizePerArrayEntry = 6.4;  // Tuned on my data + headroom.
             for await (const data of iter) {
                 batch.push({store: 'streams', data});

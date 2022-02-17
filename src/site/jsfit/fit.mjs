@@ -878,7 +878,7 @@ for (const [k, obj] of Object.entries(messages)) {
     messagesIndex[obj.name] = {id, fields: {}};
     for (const [k, fObj] of Object.entries(obj)) {
         const defNum = Number(k);
-        if (isNaN(defNum)) {
+        if (Number.isNaN(defNum)) {
             continue;
         }
         messagesIndex[obj.name].fields[fObj.field] = Object.assign({defNum}, fObj);
@@ -4494,7 +4494,7 @@ export const typesIndex = {};
 for (const [type, obj] of Object.entries(types)) {
     typesIndex[type] = {values: {}};
     for (const [k, v] of Object.entries(obj)) {
-        if (isNaN(Number(k))) {
+        if (isNaN(k)) {
             typesIndex[type][k] = v;
         } else {
             typesIndex[type].values[v] = Number(k);
