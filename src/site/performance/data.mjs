@@ -13,7 +13,7 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
     end = end || D.dayAfter(acts[acts.length - 1].ts);
     const startDay = D.toLocaleDayDate(start);
     let i = 0;
-    for (const date of D.dayRange(startDay, new Date(end))) {
+    for (const date of D.dayRange(startDay, end)) {
         let tss = 0;
         let duration = 0;
         let altGain = 0;
