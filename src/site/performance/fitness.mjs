@@ -42,6 +42,26 @@ function humanWatts(watts, options={}) {
 }
 
 
+function getAthleteWeightAt(athlete, ts) {
+    return sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, ts);
+}
+
+
+function getAthleteFTPAt(athlete, ts) {
+    return sauce.model.getAthleteHistoryValueAt(athlete.ftpHistory, ts);
+}
+
+
+function roundNumber(n, prec) {
+    return Number(n.toFixed(prec));
+}
+
+
+function roundAvg(arr, prec) {
+    return roundNumber(sauce.data.avg(arr), prec);
+}
+
+
 export class TrainingChartView extends charts.ActivityTimeRangeChartView {
     static uuid = 'a6e7bb31-7860-4946-91e5-da4c82c0a3f4';
     static tpl = 'performance/fitness/training-load.html';
@@ -696,8 +716,6 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
                     yAxes: [{
                         id: 'weight',
                         scaleLabel: {labelString: this.LM('analysis_weight'), display: true},
-                        position: 'right',
-                        gridLines: {display: false},
                         ticks: {
                             maxTicksLimit: 7,
                             stepSize: L.weightFormatter.unitSystem === 'imperial' ? 10 / 2.20462 : 10,
@@ -707,6 +725,8 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
                     }, {
                         id: 'ftp',
                         scaleLabel: {labelString: 'FTP', display: true},
+                        position: 'right',
+                        gridLines: {display: false},
                         ticks: {
                             maxTicksLimit: 7,
                             stepSize: 10,
@@ -734,12 +754,14 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'weight',
                 backgroundColor: '#16a7',
                 borderColor: '#059f',
-                tooltipFormat: x => H.weight(x, {suffix: true, html: true}),
+                tooltipFormat: x => x ? H.weight(x, {precision: 2, suffix: true, html: true}) : '-',
                 data: this.metricData.map(b => {
                     return {
                         b,
                         x: b.date,
-                        y: sauce.model.getAthleteHistoryValueAt(this.athlete.weightHistory, b.date),
+                        y: b.activities.length ?
+                            roundAvg(b.activities.map(x => getAthleteWeightAt(this.athlete, x.ts)), 4) :
+                            roundNumber(getAthleteWeightAt(this.athlete, b.date), 4),
                     };
                 }),
             });
@@ -751,12 +773,14 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'ftp',
                 backgroundColor: '#e347',
                 borderColor: '#d23f',
-                tooltipFormat: x => humanWatts(x, {html: true}),
+                tooltipFormat: x => x ? humanWatts(x, {html: true}) : '-',
                 data: this.metricData.map(b => {
                     return {
                         b,
                         x: b.date,
-                        y: sauce.model.getAthleteHistoryValueAt(this.athlete.ftpHistory, b.date),
+                        y: b.activities.length ?
+                            roundAvg(b.activities.map(x => getAthleteFTPAt(this.athlete, x.ts)), 4) :
+                            roundNumber(getAthleteFTPAt(this.athlete, b.date), 4),
                     };
                 }),
             });
