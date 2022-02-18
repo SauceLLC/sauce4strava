@@ -426,6 +426,39 @@ async function getActivitiesForAthlete(athleteId, options={}) {
 sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
+async function getWeightsForAthlete(athleteId, options={}) {
+    const acts = await actsStore.getAllForAthlete(athleteId);
+    const weights = [];
+    let lastWeight;
+    for (const x of acts) {
+        let resp
+        try {
+            resp = await retryFetch(`/activities/${x.id}/power_data`);
+        } catch(e) {
+            console.info(e);
+            continue;
+        }
+        if (!resp.ok) {
+            continue;
+        }
+        let data;
+        try {
+            data = await resp.json();
+        } catch(e) {
+            console.info(e);
+            continue;
+        }
+        const weight = data.athlete_weight;
+        if (weight && weight !== lastWeight) {
+            weights.push({ts: x.ts, weight});
+            lastWeight = weight;
+        }
+    }
+    return weights;
+}
+sauce.proxy.export(getWeightsForAthlete, {namespace});
+
+
 async function getNewestActivityForAthlete(athleteId, options) {
     return await actsStore.getNewestForAthlete(athleteId, options);
 }
@@ -901,6 +934,55 @@ export async function activityTypeCounts(athleteId, options) {
 sauce.proxy.export(activityTypeCounts, {namespace});
 
 
+async function retryFetch(urn, options={}) {
+    const maxRetries = 5;
+    const headers = options.headers || {};
+    headers["x-requested-with"] = "XMLHttpRequest";  // Required for most Strava endpoints
+    const url = `https://www.strava.com${urn}`;
+    for (let r = 1;; r++) {
+        let resp;
+        let fetchError;
+        await networkOnline(120000);
+        try {
+            resp = await fetch(url, Object.assign({headers}, options));
+        } catch(e) {
+            fetchError = e;
+        }
+        if (resp && resp.ok) {
+            return resp;
+        }
+        if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxRetries) {
+            console.info(`Server error for: ${urn} - Retry: ${r}/${maxRetries}`);
+            // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
+            // perform a cool down before relinquishing control. Ie. do one last sleep.
+            // See: http://dev.chromium.org/throttling
+            await sleep(1000 * 2 ** r);
+            if (r < maxRetries) {
+                continue;
+            }
+        }
+        if (fetchError) {
+            throw fetchError;
+        } else if (resp.status === 429) {
+            const delay = 60000 * r;
+            console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
+            if (options.cancelEvent) {
+                await Promise.race([sleep(delay), options.cancelEvent.wait()]);
+                if (options.cancelEvent.isSet()) {
+                    return;
+                }
+            } else {
+                await sleep(delay);
+            }
+            console.info("Resuming after throttle period");
+            continue;
+        } else {
+            throw FetchError.fromResp(resp);
+        }
+    }
+}
+
+
 class SyncJob extends EventTarget {
     constructor(athlete, isSelf) {
         super();
@@ -984,6 +1066,10 @@ class SyncJob extends EventTarget {
             throw e;
         }
         this.setStatus('complete');
+    }
+
+    async retryFetch(urn, options={}) {
+        return await retryFetch(urn, {cancelEvent: this._cancelEvent, ...options});
     }
 
     async updateSelfActivities(options={}) {
@@ -1325,50 +1411,6 @@ class SyncJob extends EventTarget {
             await activity.save();
         }
         console.info("Completed streams fetch for: " + this.athlete);
-    }
-
-    async retryFetch(urn, options={}) {
-        const maxRetries = 5;
-        const headers = options.headers || {};
-        headers["x-requested-with"] = "XMLHttpRequest";  // Required for most Strava endpoints
-        const url = `https://www.strava.com${urn}`;
-        for (let r = 1;; r++) {
-            let resp;
-            let fetchError;
-            await networkOnline(120000);
-            try {
-                resp = await fetch(url, Object.assign({headers}, options));
-            } catch(e) {
-                fetchError = e;
-            }
-            if (resp && resp.ok) {
-                return resp;
-            }
-            if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxRetries) {
-                console.info(`Server error for: ${urn} - Retry: ${r}/${maxRetries}`);
-                // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
-                // perform a cool down before relinquishing control. Ie. do one last sleep.
-                // See: http://dev.chromium.org/throttling
-                await sleep(1000 * 2 ** r);
-                if (r < maxRetries) {
-                    continue;
-                }
-            }
-            if (fetchError) {
-                throw fetchError;
-            } else if (resp.status === 429) {
-                const delay = 60000 * r;
-                console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
-                await Promise.race([sleep(delay), this._cancelEvent.wait()]);
-                if (this._cancelEvent.isSet()) {
-                    return;
-                }
-                console.info("Resuming after throttle period");
-                continue;
-            } else {
-                throw FetchError.fromResp(resp);
-            }
-        }
     }
 
     _localSetSyncError(activities, manifest, e) {
