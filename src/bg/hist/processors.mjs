@@ -933,9 +933,10 @@ export class TrainingLoadProcessor extends OffloadProcessor {
                 ctl = sauce.perf.calcCTL(zeros, ctl);
             }
         }
-        const future = new Date(Date.now() + 7 * 86400 * 1000);
         let i = 0;
-        for (const day of sauce.date.dayRange(oldest.getLocaleDay(), future)) {
+        // dayRange is end-exclusive so to handle activities starting at midnight add 1 ms.
+        const beyondNewestTS = ordered[ordered.length - 1].get('ts') + 1;
+        for (const day of sauce.date.dayRange(oldest.getLocaleDay(), beyondNewestTS)) {
             if (i >= ordered.length) {
                 break;
             }
@@ -955,7 +956,9 @@ export class TrainingLoadProcessor extends OffloadProcessor {
             }
         }
         if (i < ordered.length) {
-            throw new Error("Internal Error");
+            debugger;
+            sauce.report.error(new Error(`Training day bucket error: ${i}, ${ordered.length}, ` +
+                `${beyondNewestTS} ${oldest.get('ts')}`));
         }
         await actsStore.saveModels(external);
     }

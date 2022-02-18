@@ -2199,12 +2199,8 @@ sauce.ns('date', function() {
     'use strict';
 
     function *dayRange(start, end, days=1) {
-        // This function uses some caveats of Date.setDate() to handle daylight
-        // savings properly.  The returned date object will always be exactly
-        // midnight.
-        for (const date = new Date(start);
-            date.getTime() < end.getTime();
-            date.setDate(date.getDate() + days)) {
+        const endTS = +(new Date(end));
+        for (const date = new Date(start); date < endTS; date.setDate(date.getDate() + days)) {
             yield new Date(date);
         }
     }
