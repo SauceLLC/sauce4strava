@@ -229,16 +229,16 @@ sauce.ns('locale', ns => {
                 break;
             }
             if (elapsed >= period || (!stack.length && i === units.length)) {
-                if (elapsed != period) {
-                    key += 's';
-                }
-                const suffix = options.html ? `<abbr class="unit">${hdUnits[key]}</abbr>` : hdUnits[key];
                 let val;
                 if (options.digits && units[units.length - 1][1] === period) {
                     val = humanNumber(elapsed / period, options.digits);
                 } else {
                     val = humanNumber(Math.floor(elapsed / period));
                 }
+                if (val !== '1') {
+                    key += 's';
+                }
+                const suffix = options.html ? `<abbr class="unit">${hdUnits[key]}</abbr>` : hdUnits[key];
                 stack.push(`${val} ${suffix}`);
                 elapsed %= period;
             }
@@ -288,8 +288,26 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanWeight(kg) {
-        return humanNumber(ns.weightFormatter.convert(kg), 1);
+    function humanWeight(kg, options={}) {
+        assertInit();
+        const precision = options.precision != null ? options.precision : 1;
+        if (options.html) {
+            const save = ns.weightFormatter.precision;
+            ns.weightFormatter.precision = precision;
+            try {
+                return ns.weightFormatter.abbreviated(kg);
+            } finally {
+                ns.weightFormatter.precision = save;
+            }
+        } else if (options.suffix) {
+            if (options.longSuffix) {
+                return ns.weightFormatter.formatLong(kg, precision);
+            } else {
+                return ns.weightFormatter.formatShort(kg, precision);
+            }
+        } else {
+            return ns.weightFormatter.format(kg, precision);
+        }
     }
 
 

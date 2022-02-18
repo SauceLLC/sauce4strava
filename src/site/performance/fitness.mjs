@@ -32,6 +32,36 @@ function humanKJ(kj, options={}) {
 }
 
 
+function humanWatts(watts, options={}) {
+    watts = H.number(watts);
+    if (options.html) {
+        return `${watts} <abbr class="unit">w</abbr>`;
+    } else {
+        return `${watts} w`;
+    }
+}
+
+
+function getAthleteWeightAt(athlete, ts) {
+    return sauce.model.getAthleteHistoryValueAt(athlete.weightHistory, ts);
+}
+
+
+function getAthleteFTPAt(athlete, ts) {
+    return sauce.model.getAthleteHistoryValueAt(athlete.ftpHistory, ts);
+}
+
+
+function roundNumber(n, prec) {
+    return Number(n.toFixed(prec));
+}
+
+
+function roundAvg(arr, prec) {
+    return roundNumber(sauce.data.avg(arr), prec);
+}
+
+
 export class TrainingChartView extends charts.ActivityTimeRangeChartView {
     static uuid = 'a6e7bb31-7860-4946-91e5-da4c82c0a3f4';
     static tpl = 'performance/fitness/training-load.html';
@@ -70,9 +100,6 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
                     },
                 },
                 scales: {
-                    xAxes: [{
-                        offset: false,
-                    }],
                     yAxes: [{
                         id: 'tss',
                         scaleLabel: {labelString: 'TSS'},
@@ -253,9 +280,29 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
         this.setChartConfig({
             type: 'bar',
             options: {
+                plugins: {
+                    datalabels: {
+                        display: ctx => {
+                            const meta = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
+                            if (meta._model.width < 28) {
+                                return false;
+                            }
+                            const height = meta._model.base - meta._model.y;
+                            return height > 20 ? 'auto' : false;
+                        },
+                        formatter: (value, ctx) =>
+                            H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b.powerZonesTime) * 100) + '%',
+                        backgroundColor: ctx => ctx.dataset.backgroundColor,
+                        borderRadius: 2,
+                        color: x => [0, 1, 2].includes(x.datasetIndex) ? 'black' : 'white',
+                        padding: {top: 2, bottom: 2, left: 4, right: 4},
+                        font: {size: 10},
+                    },
+                },
                 scales: {
                     xAxes: [{
                         stacked: true,
+                        offset: true,
                     }],
                     yAxes: [{
                         id: 'time',
@@ -295,10 +342,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             borderWidth: 1,
             yAxisID: 'time',
             stack: 'power',
-            tooltipFormat: (x, i) => {
-                const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})];
-                return tips;
-            },
+            tooltipFormat: x => H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true}),
             data: this.metricData.map((b, i) => ({
                 b,
                 x: b.date,
@@ -345,6 +389,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                 scales: {
                     xAxes: [{
                         stacked: true,
+                        offset: true,
                     }],
                     yAxes: [{
                         id: 'tss',
@@ -643,11 +688,117 @@ export class ElevationChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
+export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
+    static uuid = '41f40c5a-fbe3-4f2d-a3ba-7cbc0dba922d';
+    static tpl = 'performance/fitness/athlete-stats-chart.html';
+    static typeLocaleKey = 'performance_athlete_chart_type';
+    static nameLocaleKey = 'performance_athlete_chart_name';
+    static descLocaleKey = 'performance_athlete_chart_desc';
+    static localeKeys = ['/analysis_weight', ...super.localeKeys];
+
+    async init(options) {
+        await super.init(options);
+        this.availableDatasets = {
+            'weight': {label: this.LM('analysis_weight')},
+            'ftp': {label: 'FTP'},
+        };
+        this.setChartConfig({
+            options: {
+                elements: {
+                    point: {
+                        pointStyle: 'circle',
+                    },
+                    line: {
+                        cubicInterpolationMode: 'monotone',
+                    }
+                },
+                scales: {
+                    yAxes: [{
+                        id: 'weight',
+                        scaleLabel: {labelString: this.LM('analysis_weight'), display: true},
+                        ticks: {
+                            maxTicksLimit: 7,
+                            stepSize: L.weightFormatter.unitSystem === 'imperial' ? 10 / 2.20462 : 10,
+                            callback: v => H.weight(v, {suffix: true, precision: 0}),
+                            beginAtZero: false,
+                        },
+                    }, {
+                        id: 'ftp',
+                        scaleLabel: {labelString: 'FTP', display: true},
+                        position: 'right',
+                        gridLines: {display: false},
+                        ticks: {
+                            maxTicksLimit: 7,
+                            stepSize: 10,
+                            callback: v => humanWatts(v),
+                            beginAtZero: false,
+                        },
+                    }]
+                },
+                tooltips: {
+                    intersect: false,
+                },
+            }
+        });
+    }
+
+    updateChart() {
+        let gain = 0;
+        const days = this.range.days;
+        const disabled = this.getPrefs('disabledDatasets', {});
+        const datasets = [];
+        if (!disabled.weight) {
+            datasets.push({
+                id: 'weight',
+                label: this.availableDatasets.weight.label,
+                yAxisID: 'weight',
+                backgroundColor: '#16a7',
+                borderColor: '#059f',
+                tooltipFormat: x => x ? H.weight(x, {precision: 2, suffix: true, html: true}) : '-',
+                data: this.metricData.map(b => {
+                    return {
+                        b,
+                        x: b.date,
+                        y: b.activities.length ?
+                            roundAvg(b.activities.map(x => getAthleteWeightAt(this.athlete, x.ts)), 4) :
+                            roundNumber(getAthleteWeightAt(this.athlete, b.date), 4),
+                    };
+                }),
+            });
+        }
+        if (!disabled.ftp) {
+            datasets.push({
+                id: 'ftp',
+                label: this.availableDatasets.ftp.label,
+                yAxisID: 'ftp',
+                backgroundColor: '#e347',
+                borderColor: '#d23f',
+                tooltipFormat: x => x ? humanWatts(x, {html: true}) : '-',
+                data: this.metricData.map(b => {
+                    return {
+                        b,
+                        x: b.date,
+                        y: b.activities.length ?
+                            roundAvg(b.activities.map(x => getAthleteFTPAt(this.athlete, x.ts)), 4) :
+                            roundNumber(getAthleteFTPAt(this.athlete, b.date), 4),
+                    };
+                }),
+            });
+        }
+
+        this.chart.data.datasets = datasets;
+        this.chart.update();
+    }
+}
+
+
+
 export const PanelViews = [
     TrainingChartView,
     ActivityStatsChartView,
     ElevationChartView,
     ZoneTimeChartView,
+    AthleteStatsChartView,
 ];
 
 

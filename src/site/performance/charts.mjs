@@ -295,7 +295,6 @@ export class ActivityTimeRangeChart extends SauceChart {
         setDefault(config, 'options.legend.labels.padding', 20);
         setDefault(config, 'options.legend.labels.usePointStyle', true);
         setDefault(config, 'options.scales.xAxes[0].id', 'days');
-        setDefault(config, 'options.scales.xAxes[0].offset', true);
         setDefault(config, 'options.scales.xAxes[0].type', 'time');
         setDefault(config, 'options.scales.xAxes[0].distribution', 'series');
         setDefault(config, 'options.scales.xAxes[0].gridLines.display', true);
