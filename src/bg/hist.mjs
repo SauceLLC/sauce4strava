@@ -1013,7 +1013,14 @@ class SyncJob extends EventTarget {
                     q.set('new_activity_only', 'false');
                     q.set('page', page);
                     const resp = await this.retryFetch(`/athlete/training_activities?${q}`);
-                    return await resp.json();
+                    try {
+                        return await resp.json();
+                    } catch(e) {
+                        // If the credentials are not valid Strava returns HTML
+                        // This would seem impossible, but with addons like Facebook Containers
+                        // it can happen and has happend to some users.
+                        return;
+                    }
                 })());
             }
             if (!work.pending() && !work.fulfilled()) {
@@ -1021,6 +1028,9 @@ class SyncJob extends EventTarget {
             }
             const adding = [];
             for await (const data of work) {
+                if (!data) {
+                    continue;  // skip non JSON resp.
+                }
                 if (total === undefined) {
                     total = data.total;
                     pageCount = Math.ceil(total / data.perPage);
