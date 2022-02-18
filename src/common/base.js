@@ -56,7 +56,7 @@ self.sauceBaseInit = function sauceBaseInit() {
         if (self.browser && self.browser.runtime) {
             return self.browser.runtime.getURL(urn);
         } else {
-            return sauce.extUrl + urn;
+            return sauce.extUrl + urn.replace(/^\//, '');
         }
     };
 
@@ -343,37 +343,6 @@ self.sauceBaseInit = function sauceBaseInit() {
         reader.readAsArrayBuffer(blob);
         await done;
         return reader.result;
-    };
-
-
-    const _modules = {};
-    sauce.getModule = async function(urn) {
-        // Note: modules are only supported in the site context and the background page.
-        // Content scripts of the extention itself do NOT work and cannot work without
-        // browser support due to isolation issues.
-        if (!_modules[urn]) {
-            const script = document.createElement('script');
-            const doneEvent = 'smid-' + (Date.now() + Math.random());
-            const extUrl = (self.browser && self.browser.runtime) ?
-                self.browser.runtime.getURL('') : sauce.extUrl;
-            _modules[urn] = await new Promise((resolve, reject) => {
-                script.addEventListener('error', ev => reject(new Error(`Module load error: ${urn}`)));
-                script.type = 'module';
-                script.src = extUrl + `src/common/module-loader.mjs?ondone=${doneEvent}&module=${urn}`;
-                function onDone(ev) {
-                    document.removeEventListener(doneEvent, onDone);
-                    script.remove();
-                    if (ev.error) {
-                        reject(ev.error);
-                    } else {
-                        resolve(ev.module);
-                    }
-                }
-                document.addEventListener(doneEvent, onDone);
-                document.documentElement.appendChild(script);
-            });
-        }
-        return _modules[urn];
     };
 
 

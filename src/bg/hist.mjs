@@ -1977,7 +1977,7 @@ sauce.proxy.export(SyncController, {namespace});
 
 
 export async function exportFiles(athleteId, type='fit') {
-    const exportModule = await import('/src/site/export.mjs');
+    const exportModule = await import(sauce.getURL('/src/site/export.mjs'));
     const Serializer = exportModule[{
         fit: 'FITSerializer',
         tcx: 'TCXSerializer',
@@ -2023,6 +2023,8 @@ export async function exportFiles(athleteId, type='fit') {
         }
     }
 }
+sauce.proxy.export(exportFiles, {namespace});
+
 
 class DataExchange extends sauce.proxy.Eventing {
     constructor(athleteId) {
