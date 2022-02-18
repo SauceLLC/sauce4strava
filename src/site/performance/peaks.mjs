@@ -305,9 +305,6 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                     },
                 },
                 scales: {
-                    xAxes: [{
-                        offset: false,
-                    }],
                     yAxes: [{
                         id: 'values',
                         ticks: {
