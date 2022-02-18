@@ -375,6 +375,7 @@
                     .catch(sauce.report.error));
             }
         }
+        await Promise.all(loading);
         document.documentElement.classList.add('sauce-booted');
         const ev = new Event('sauceBooted');
         document.dispatchEvent(ev);
