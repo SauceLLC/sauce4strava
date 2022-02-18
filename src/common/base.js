@@ -61,19 +61,19 @@ self.sauceBaseInit = function sauceBaseInit() {
     };
 
 
-    let _name = sauce.name;  // may have been set by ext/boot
+    let _name;
     sauce.getName = function() {
         if (!_name) {
-            _name = self.browser.runtime.getManifest().name;
+            _name = sauce.name || self.browser.runtime.getManifest().name;
         }
         return _name;
     };
 
 
-    let _version = sauce.version;  // may have been set by ext/boot
+    let _version;
     sauce.getVersion = function() {
         if (!_version) {
-            _version = self.browser.runtime.getManifest().version;
+            _version = sauce.version || self.browser.runtime.getManifest().version;
         }
         return _version;
     };
