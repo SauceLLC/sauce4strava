@@ -71,8 +71,9 @@ export default class FitParser {
         const profile_version = profile_version_major * 100 + profile_version_minor;
         headerBuf.set(bin.uint16leBytes(profile_version), 2);
         headerBuf.set('.FIT'.split('').map(x => x.charCodeAt(0)), 8);
-        const localMsgTypes = {};
-        const dataBuf = bin.joinBuffers(this.messages.map(x => bin.writeMessage(x, localMsgTypes, this._devFields)));
+        const localMsgTypes = new Map();
+        const dataBuf = bin.joinBuffers(this.messages.map(x =>
+            bin.writeMessage(x, localMsgTypes, this._devFields)));
         headerBuf.set(bin.uint32leBytes(dataBuf.byteLength), 4);
         const headerCrc = bin.calculateCRC(headerBuf, 0, 12);
         headerBuf.set(bin.uint16leBytes(headerCrc), 12);

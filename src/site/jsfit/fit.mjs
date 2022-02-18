@@ -4502,13 +4502,11 @@ for (const [type, obj] of Object.entries(types)) {
     }
 }
 
+
 export function getBaseType(baseType) {
-    const t = baseTypes[Number(baseType) & 0x1f];
-    if (!t) {
-        throw new TypeError(`Invalid base type: ${baseType}`);
-    }
-    return t;
+    return baseType != null ? baseTypes[Number(baseType) & 0x1f] : undefined;
 }
+
 
 export function getBaseTypeByName(name) {
     for (const x of baseTypes) {

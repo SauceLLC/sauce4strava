@@ -30,7 +30,7 @@ function writeTypedData(data, fDef) {
     const typeSize = fDef.baseType.TypedArray.BYTES_PER_ELEMENT;
     const isLittleEndian = fDef.endianAbility ? fDef.littleEndian : true; // XXX Not sure if we should default to true.
     let view;
-    if (typeof data === 'bigint' || typeof data === 'number') {
+    if (typeof data === 'number' || typeof data === 'bigint') {
         view = new DataView(new ArrayBuffer(typeSize));
         view[`set${typeName}`](0, data, isLittleEndian);
     } else if (data instanceof Array) {
@@ -52,12 +52,7 @@ function encodeTypedData(data, fDef, fields) {
     const isArray = type.endsWith('_array');
     const rootType = isArray ? type.split('_array')[0] : type;
     let customType;
-    try {
-        getBaseTypeId(rootType);
-    } catch(e) {
-        if (!(e instanceof ReferenceError)) {
-            throw e;
-        }
+    if (getBaseTypeId(rootType) === undefined) {
         customType = fit.typesIndex[type];
         if (!customType) {
             throw new TypeError(`Unsupported type: ${type}`);
@@ -125,12 +120,7 @@ function decodeTypedData(data, fDef, fields) {
     const isArray = type.endsWith('_array');
     const rootType = isArray ? type.split('_array')[0] : type;
     let customType;
-    try {
-        getBaseTypeId(rootType);
-    } catch(e) {
-        if (!(e instanceof ReferenceError)) {
-            throw e;
-        }
+    if (getBaseTypeId(rootType) === undefined) {
         customType = fit.types[type];
         if (!customType) {
             throw new TypeError(`Unsupported type: ${type}`);
@@ -196,6 +186,7 @@ function decodeTypedData(data, fDef, fields) {
     return isArray ? Array.from(data).map(decode) : decode(data[0]);
 }
 
+
 function getInvalidValue(type) {
     const bt = fit.getBaseType(getBaseTypeId(type));
     if (bt === undefined) {
@@ -203,6 +194,26 @@ function getInvalidValue(type) {
     }
     return bt.invalid;
 }
+
+
+function msgDefSig(mDef) {
+    const materials = [
+        mDef.littleEndian,
+        mDef.globalMessageNumber,
+        mDef.fieldCount,
+    ];
+    for (const x of mDef.fieldDefs) {
+        materials.push(
+            x.attrs.type,
+            x.fDefNum,
+            x.endianAbility,
+            x.littleEndian,
+            x.baseTypeId,
+        );
+    }
+    return materials.join('-');
+}
+
 
 export function writeMessage(msg, localMsgTypes, devFields) {
     const buffers = [];
@@ -220,14 +231,14 @@ export function writeMessage(msg, localMsgTypes, devFields) {
             buffers.push(buf);
         }
     }
-    const mDefSig = JSON.stringify(msg.mDef);
-    const hasMatchingDef = mDefSig in localMsgTypes;
-    const localMsgType = hasMatchingDef ? localMsgTypes[mDefSig] : Object.keys(localMsgTypes).length;
+    const mDefSig = msgDefSig(msg.mDef);
+    const hasMatchingDef = localMsgTypes.has(mDefSig);
+    const localMsgType = hasMatchingDef ? localMsgTypes.get(mDefSig) : localMsgTypes.size;
     const dataHeader = new Uint8Array(1);
     dataHeader[0] = localMsgType & 0xf;
     buffers.unshift(dataHeader);
     if (!hasMatchingDef) {
-        localMsgTypes[mDefSig] = localMsgType;
+        localMsgTypes.set(mDefSig, localMsgType);
         const defBuf = new Uint8Array(6 + (msg.mDef.fieldDefs.length * 3)); // XXX does not support devfields
         const defView = new DataView(defBuf.buffer, defBuf.byteOffset, defBuf.byteLength);
         const definitionFlag = 0x40;
@@ -292,13 +303,17 @@ function readDefinitionMessage(dataView, recordHeader, localMessageType, definit
         const fDefNum = dataView.getUint8(fDefIndex);
         const baseTypeId = dataView.getUint8(fDefIndex + 2);
         const baseType = fit.getBaseType(baseTypeId);
+        if (!baseType) {
+            console.error("Unexpected basetype:", baseTypeId);
+            continue;
+        }
         let attrs = message && message[fDefNum];
         if (!attrs) {
             attrs = {
                 field: `UNDOCUMENTED[${fDefNum}]`,
                 type: baseType.name
             };
-            console.warn(`Undocumented field: (${baseType.name}) ${message && message.name}[${fDefNum}]`); 
+            console.warn(`Undocumented field: (${baseType.name}) ${message && message.name}[${fDefNum}]`);
         }
         mDef.fieldDefs.push({
             attrs,
@@ -348,7 +363,7 @@ function readDataMessage(dataView, recordHeader, localMessageType, definitions, 
     const compressedFlag = 0x80;
     if ((recordHeader & compressedFlag) === compressedFlag) {
         // TODO: handle compressed header
-        throw new TypeError("Compressed header not supported"); 
+        throw new TypeError("Compressed header not supported");
     }
     let offt = 1;
     let size = 1;
@@ -423,11 +438,10 @@ export function uint16leBytes(value) {
     return leBytes(value, Uint16Array);
 }
 
-export function getBaseTypeId(key) {
-    for (const [id, label] of Object.entries(fit.types.fit_base_type)) {
-        if (label === key) {
-            return id;
-        }
+let _baseTypeLabels;
+export function getBaseTypeId(label) {
+    if (!_baseTypeLabels) {
+        _baseTypeLabels = new Map(Object.entries(fit.types.fit_base_type).map(([id, label]) => [label, id]));
     }
-    throw new ReferenceError(`Unknown base type: ${key}`);
+    return _baseTypeLabels.get(label);
 }
