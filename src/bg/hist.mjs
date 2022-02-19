@@ -2033,7 +2033,7 @@ export async function exportFiles(athleteId, type='fit') {
     while (activities.length) {
         const act = activities.pop();
         const streams = await streamsStore.getForActivity(act.id, {_skipClone: true, _skipCache: true});
-        if (!streams || !streams.time) {
+        if (!streams || !streams.time || !streams.time.length) {
             continue;
         }
         const date = new Date(act.ts);
