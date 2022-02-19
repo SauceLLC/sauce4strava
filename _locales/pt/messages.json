@@ -1451,6 +1451,15 @@
     "performance_exclude_peaks_tooltip": {
         "message": "Excluir esta atividade dos resultados de desempenho máximo"
     },
+    "performance_athlete_chart_name": {
+        "message": "Informações do Atleta"
+    },
+    "performance_athlete_chart_type": {
+        "message": "Tabela de informações do atleta"
+    },
+    "performance_athlete_chart_desc": {
+        "message": "Atleta FTP e peso ao longo do tempo."
+    },
     "season_start": {
         "message": "Início da temporada"
     },

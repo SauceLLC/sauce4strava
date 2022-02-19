@@ -1327,6 +1327,15 @@
     "performance_exclude_peaks_tooltip": {
         "message": "Escludere questa attività dai risultati delle prestazioni di picco"
     },
+    "performance_athlete_chart_name": {
+        "message": "Informazioni sull'atleta"
+    },
+    "performance_athlete_chart_type": {
+        "message": "Tabella delle informazioni sull'atleta"
+    },
+    "performance_athlete_chart_desc": {
+        "message": "Atleta FTP e peso nel tempo."
+    },
     "season_start": {
         "message": "Inizio della stagione"
     },
