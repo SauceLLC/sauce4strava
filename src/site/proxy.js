@@ -18,7 +18,6 @@ sauce.ns('proxy', ns => {
 
 
     class ProxyClient {
-
         static makeMethodCall(call) {
             const fn = function(...nativeArgs) {
                 const pid = proxyId++;

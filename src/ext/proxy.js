@@ -59,8 +59,10 @@ sauce.ns('proxy', ns => {
                         // The first message back is the response to the exec call.
                         // After that it's up to the user how they use the port.
                         bgPort.onMessage.removeListener(onAck);
-                        bgPort.onMessage.addListener(port.postMessage.bind(port));
                         resolve(msg);
+                        // Safari will send THIS event to any handlers registered in
+                        // the same microtask, but only sometimes;  Register new listener outside. :(
+                        queueMicrotask(() => bgPort.onMessage.addListener(port.postMessage.bind(port)));
                     };
                     bgPort.onMessage.addListener(onAck);
                     bgPort.postMessage({desc, args, pid, type: 'sauce-proxy-establish-port'});
