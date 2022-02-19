@@ -426,12 +426,12 @@ async function getActivitiesForAthlete(athleteId, options={}) {
 sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
-async function getWeightsForAthlete(athleteId, options={}) {
+export async function getWeightsForAthlete(athleteId, options={}) {
     const acts = await actsStore.getAllForAthlete(athleteId);
     const weights = [];
     let lastWeight;
     for (const x of acts) {
-        let resp
+        let resp;
         try {
             resp = await retryFetch(`/activities/${x.id}/power_data`);
         } catch(e) {

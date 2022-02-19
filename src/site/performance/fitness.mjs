@@ -743,8 +743,6 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
     }
 
     updateChart() {
-        let gain = 0;
-        const days = this.range.days;
         const disabled = this.getPrefs('disabledDatasets', {});
         const datasets = [];
         if (!disabled.weight) {
