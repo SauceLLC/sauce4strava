@@ -38,7 +38,7 @@
     <td class="tss">
         <% if (mode === 'readwrite') { %>
             <input type="number" name="tss" value="{{a.tssOverride}}"
-                   placeholder="{{tmp = sauce.model.getActivityTSS(a), tmp != null ? Math.round(tmp) : '-'}}"/>
+                   placeholder="{{tmp = sauce.model.getActivityTSS(a), tmp != null ? Math.round(tmp) : ''}}"/>
         <% } else { %>
             {{humanNumber(sauce.model.getActivityTSS(a))}}
         <% } %>
@@ -47,14 +47,17 @@
         <% if (mode === 'readwrite') { %>
             <input type="checkbox" name="peaks_exclude"
                    {{a.peaksExclude ? 'checked' : ''}}/>
-        <% } else { %>
-            {{a.peaksExclude ? '✓' : ''}}
+        <% } else if (a.peaksExclude) { %>
+            {{=icon eye-slash-regular=}}
         <% } %>
     </td>
     <td>
+         <div class="btn btn-icon-only btn-unstyled collapse-activity"
+              title="{{{/analysis_collapse_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+         <div class="btn btn-icon-only btn-unstyled expand-activity"
+              title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
          <div class="btn btn-icon-only btn-unstyled edit-activity"
-              data-id="{{a.id}}"
-              title="Edit activity">{{=icon edit-duotone=}}</div>
+              title="{{{edit_activity_tooltip}}}">{{=icon edit-duotone=}}</div>
     </td>
 </tr>
 

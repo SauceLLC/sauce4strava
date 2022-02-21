@@ -668,13 +668,17 @@ export class ActivityStreamGraphsView extends PerfView {
 
     async setActivity(activity) {
         this.activity = activity;
-        this.streams = await sauce.hist.getStreamsForActivity(activity.id);
+        if (activity) {
+            this.streams = await sauce.hist.getStreamsForActivity(activity.id);
+        } else {
+            this.streams = null;
+        }
         await this.render();
     }
 
     async render() {
         await super.render();
-        if (this.streams.time) {
+        if (this.streams && this.streams.time) {
             const options = {
                 streams: this.streams,
                 width: '100%',
@@ -761,7 +765,9 @@ export class ActivityTableView extends PerfView {
             'click tbody tr[data-id]': 'onDataRowClick',
             'click tbody tr.load-more': 'onLoadMoreClick',
             'click thead th[data-sort-id]': 'onSortClick',
-            'click .edit-activity': 'onEditActivityClick',
+            'click .btn.collapse-activity': 'onCollapseActivityClick',
+            'click .btn.expand-activity': 'onExpandActivityClick',
+            'click .btn.edit-activity': 'onEditActivityClick',
         };
     }
 
@@ -773,6 +779,7 @@ export class ActivityTableView extends PerfView {
         this.sortBy = sortBy || 'date';
         this.sortDesc = sortDesc != null ? sortDesc : true;
         this.rowLimit = this.rowPageSize;
+        this.expandedRow;
         await super.init({pageView, ...options});
     }
 
@@ -856,11 +863,31 @@ export class ActivityTableView extends PerfView {
 
     async onDataRowClick(ev) {
         const id = Number(ev.currentTarget.dataset.id);
-        ev.currentTarget.insertAdjacentElement('afterend',
-            this.streamsView.el.closest('tr'));
+        const activity = await sauce.hist.getActivity(id);
+        await this.pageView.detailsView.setActivities([activity]);
+    }
+
+    async onCollapseActivityClick(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.expandedRow.classList.remove('expanded');
+        this.expandedRow = null;
+        await this.streamsView.setActivity(null);
+    }
+
+    async onExpandActivityClick(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const row = ev.currentTarget.closest('tr[data-id]');
+        if (this.expandedRow) {
+            this.expandedRow.classList.remove('expanded');
+        }
+        this.expandedRow = row;
+        row.classList.add('expanded');
+        row.insertAdjacentElement('afterend', this.streamsView.el.closest('tr'));
         this.streamsView.$('.loading-mask').addClass('loading');
         try {
-            const activity = await sauce.hist.getActivity(id);
+            const activity = await sauce.hist.getActivity(Number(row.dataset.id));
             await this.streamsView.setActivity(activity);
         } finally {
             this.streamsView.$('.loading-mask').removeClass('loading');

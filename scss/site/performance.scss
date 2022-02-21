@@ -197,6 +197,10 @@ table.activity-table {
         max-width: min(20ch, 25vw) !important;
     }
 
+    svg[data-icon] {
+        width: 1em;
+    }
+
     th {
         .sort-by {
             margin-left: 0.4em;
@@ -229,6 +233,13 @@ table.activity-table {
 
     tr td.tss input[name="tss"] {
         width: 6ch;
+    }
+
+    tr.expanded td .btn.expand-activity {
+        display: none;
+    }
+    tr:not(.expanded) td .btn.collapse-activity {
+        display: none;
     }
 }
 
