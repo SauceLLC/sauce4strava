@@ -526,6 +526,10 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
 }
 
 
+export async function activityAthleteStatsProcessor({manifest, activities, athlete}) {
+}
+
+
 export async function activityStatsProcessor({manifest, activities, athlete}) {
     const actStreams = await getActivitiesStreams(activities,
         ['time', 'heartrate', 'active', 'watts', 'watts_calc', 'altitude', 'distance']);
@@ -545,7 +549,6 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
         (activity.data.basetype === 'ride' && athlete.data.estCyclingWatts);
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
-        const activeStream = streams.active;
         const stats = {};
         for (const [statKey, rawKey] of Object.entries(rawAttrMap)) {
             const rawVal = activity.get(rawKey);
@@ -553,75 +556,75 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                 stats[statKey] = rawVal;
             }
         }
-        if (!streams.time || !streams.active) {
-            continue;
-        }
-        stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
-        if (streams.distance && stats.distance == null && streams.distance.length > 1) {
-            stats.distance = streams.distance[streams.distance.length - 1] - streams.distance[0];
-        }
-        const ftp = athlete.getFTPAt(activity.get('ts'));
-        if (streams.heartrate && hrZones) {
-            try {
-                const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
-                stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
-                    ltHR, restingHR, maxHR, athlete.get('gender'));
-            } catch(e) {
-                debugger;
-                activity.setSyncError(manifest, e);
-                continue;
+        if (streams.time && streams.active) {
+            stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
+            if (streams.distance && stats.distance == null && streams.distance.length > 1) {
+                stats.distance = streams.distance[streams.distance.length - 1] - streams.distance[0];
             }
-        }
-        if (streams.altitude && stats.altitudeGain == null) {
-            stats.altitudeGain = sauce.geo.altitudeChanges(streams.altitude).gain;
-        }
-        if (streams.watts || (streams.watts_calc && useEstWatts(activity))) {
-            const watts = streams.watts || streams.watts_calc;
-            try {
-                const corrected = sauce.power.correctedPower(streams.time, watts, {activeStream});
-                if (!corrected) {
+            const ftp = athlete.getFTPAt(activity.get('ts'));
+            if (streams.heartrate && hrZones) {
+                try {
+                    const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
+                    stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
+                        ltHR, restingHR, maxHR, athlete.get('gender'));
+                } catch(e) {
+                    debugger;
+                    activity.setSyncError(manifest, e);
                     continue;
                 }
-                stats.estimate = !streams.watts;
-                stats.kj = corrected.joules() / 1000;
-                stats.power = corrected.avg({active: true});
-                if (!stats.estimate) {
-                    stats.np = corrected.np();
-                    stats.xp = corrected.xp();
-                }
-                if (ftp) {
-                    if (ftp !== powerZonesFTP) {
-                        powerZones = sauce.power.cogganZones(ftp);
-                        powerZonesFTP = ftp;
+            }
+            if (streams.altitude && stats.altitudeGain == null) {
+                stats.altitudeGain = sauce.geo.altitudeChanges(streams.altitude).gain;
+            }
+            if (streams.watts || (streams.watts_calc && useEstWatts(activity))) {
+                const watts = streams.watts || streams.watts_calc;
+                try {
+                    const corrected = sauce.power.correctedPower(streams.time, watts,
+                        {activeStream: streams.active});
+                    if (!corrected) {
+                        continue;
                     }
-                    stats.powerZonesTime = Object.keys(powerZones).map(() => 0);
-                    let prevT;
-                    // Use internal interface for iteration as it's much faster on FF.
-                    for (let i = corrected._offt; i < corrected._length; i++) {
-                        const t = corrected._times[i];
-                        const w = corrected._values[i];
-                        const gap = t - prevT;
-                        prevT = t;
-                        if (gap && w) {
-                            // Unrolled for speed, make sure we have enough for all systems.
-                            if (w <= powerZones.z1) stats.powerZonesTime[0] += gap;
-                            else if (w <= powerZones.z2) stats.powerZonesTime[1] += gap;
-                            else if (w <= powerZones.z3) stats.powerZonesTime[2] += gap;
-                            else if (w <= powerZones.z4) stats.powerZonesTime[3] += gap;
-                            else if (w <= powerZones.z5) stats.powerZonesTime[4] += gap;
-                            else if (w <= powerZones.z6) stats.powerZonesTime[5] += gap;
-                            else if (w <= powerZones.z7) stats.powerZonesTime[6] += gap;
-                            else if (w <= powerZones.z8) stats.powerZonesTime[7] += gap;
-                            else if (w <= powerZones.z9) stats.powerZonesTime[8] += gap;
-                            else throw new TypeError("Unexpected power zone");
+                    stats.estimate = !streams.watts;
+                    stats.kj = corrected.joules() / 1000;
+                    stats.power = corrected.avg({active: true});
+                    if (!stats.estimate) {
+                        stats.np = corrected.np();
+                        stats.xp = corrected.xp();
+                    }
+                    if (ftp) {
+                        if (ftp !== powerZonesFTP) {
+                            powerZones = sauce.power.cogganZones(ftp);
+                            powerZonesFTP = ftp;
                         }
+                        stats.powerZonesTime = Object.keys(powerZones).map(() => 0);
+                        let prevT;
+                        // Use internal interface for iteration as it's much faster on FF.
+                        for (let i = corrected._offt; i < corrected._length; i++) {
+                            const t = corrected._times[i];
+                            const w = corrected._values[i];
+                            const gap = t - prevT;
+                            prevT = t;
+                            if (gap && w) {
+                                // Unrolled for speed, make sure we have enough for all systems.
+                                if (w <= powerZones.z1) stats.powerZonesTime[0] += gap;
+                                else if (w <= powerZones.z2) stats.powerZonesTime[1] += gap;
+                                else if (w <= powerZones.z3) stats.powerZonesTime[2] += gap;
+                                else if (w <= powerZones.z4) stats.powerZonesTime[3] += gap;
+                                else if (w <= powerZones.z5) stats.powerZonesTime[4] += gap;
+                                else if (w <= powerZones.z6) stats.powerZonesTime[5] += gap;
+                                else if (w <= powerZones.z7) stats.powerZonesTime[6] += gap;
+                                else if (w <= powerZones.z8) stats.powerZonesTime[7] += gap;
+                                else if (w <= powerZones.z9) stats.powerZonesTime[8] += gap;
+                                else throw new TypeError("Unexpected power zone");
+                            }
+                        }
+                        stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
+                        stats.intensity = (stats.np || stats.power) / ftp;
                     }
-                    stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
-                    stats.intensity = (stats.np || stats.power) / ftp;
+                } catch(e) {
+                    activity.setSyncError(manifest, e);
+                    continue;
                 }
-            } catch(e) {
-                activity.setSyncError(manifest, e);
-                continue;
             }
         }
         const prevStats = activity.get('stats');
