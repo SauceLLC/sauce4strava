@@ -16,10 +16,12 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
     for (const date of D.dayRange(startDay, end)) {
         let tss = 0;
         let duration = 0;
+        let intensityTime = 0;
         let altGain = 0;
         let distance = 0;
         let kj = 0;
         let powerZonesTime = [];
+        let hrZonesTime = [];
         const ts = date.getTime();
         const daily = [];
         if (i < acts.length - 1 && acts[i].ts < ts) {
@@ -32,6 +34,7 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
             tss += sauce.model.getActivityTSS(a) || 0;
             if (a.stats) {
                 duration += a.stats.activeTime || 0;
+                intensityTime += a.stats.intensity * duration;
                 altGain += a.stats.altitudeGain || 0;
                 distance += a.stats.distance || 0;
                 kj += a.stats.kj || 0;
@@ -41,6 +44,15 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
                     } else {
                         for (let j = 0; j < a.stats.powerZonesTime.length; j++) {
                             powerZonesTime[j] += a.stats.powerZonesTime[j];
+                        }
+                    }
+                }
+                if (a.stats.hrZonesTime) {
+                    if (!hrZonesTime.length) {
+                        hrZonesTime = Array.from(a.stats.hrZonesTime);
+                    } else {
+                        for (let j = 0; j < a.stats.hrZonesTime.length; j++) {
+                            hrZonesTime[j] += a.stats.hrZonesTime[j];
                         }
                     }
                 }
@@ -56,50 +68,43 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
             duration,
             atl,
             ctl,
+            intensityTime,
             altGain,
             distance,
             kj,
             powerZonesTime,
+            hrZonesTime,
         });
-    }
-    // XXX remove this I think, it's okay if acts is a superset.
-    if (i !== acts.length) {
-        throw new Error('Internal Error');
     }
     return slots;
 }
 
 
-export function aggregateActivitiesByFn(daily, indexFn, aggregateFn) {
+export function aggregateActivitiesByFn(daily, indexFn) {
     const metricData = [];
-    function agg(entry) {
-        entry.tss = entry.tssSum / entry.days;
-        if (aggregateFn) {
-            aggregateFn(entry);
-        }
-    }
     for (let i = 0; i < daily.length; i++) {
         const slot = daily[i];
         const index = indexFn(slot, i);
         if (!metricData[index]) {
-            if (index) {
-                agg(metricData[index - 1]);
-            }
             metricData[index] = {
                 date: slot.date,
-                tssSum: slot.tss,
+                tss: slot.tss,
                 duration: slot.duration,
+                intensityTime: slot.intensityTime,
                 altGain: slot.altGain,
                 distance: slot.distance,
                 kj: slot.kj,
                 days: 1,
                 powerZonesTime: Array.from(slot.powerZonesTime),
+                hrZonesTime: Array.from(slot.hrZonesTime),
                 activities: [...slot.activities],
             };
         } else {
             const entry = metricData[index];
-            entry.tssSum += slot.tss;
+            entry.tss += slot.tss;
+            entry.intensitySum += slot.intensitySum;
             entry.duration += slot.duration;
+            entry.intensityTime += slot.intensityTime;
             entry.altGain += slot.altGain;
             entry.distance += slot.distance;
             entry.kj += slot.kj;
@@ -114,10 +119,16 @@ export function aggregateActivitiesByFn(daily, indexFn, aggregateFn) {
                     }
                 }
             }
+            if (slot.hrZonesTime.length) {
+                if (!entry.hrZonesTime.length) {
+                    entry.hrZonesTime = Array.from(slot.hrZonesTime);
+                } else {
+                    for (let j = 0; j < slot.hrZonesTime.length; j++) {
+                        entry.hrZonesTime[j] += slot.hrZonesTime[j];
+                    }
+                }
+            }
         }
-    }
-    if (metricData.length) {
-        agg(metricData[metricData.length - 1]);
     }
     return metricData;
 }

@@ -60,7 +60,7 @@ class ChartVisibilityPlugin {
                 console.warn("Missing ID on dataset: visiblity state unmanaged");
                 continue;
             }
-            ds.hidden = this.view.isDatasetHidden(ds.id);
+            ds.hidden = this.view.isDatasetHidden(ds);
             displayStates[ds.yAxisID || 0] |= !ds.hidden;
         }
         for (const scale of chart.options.scales.yAxes) {
@@ -625,6 +625,7 @@ export class ChartViewSettingsView extends views.PanelSettingsView {
     get events() {
         return {
             'input input.ds-en[type="checkbox"]': 'onDatasetEnabledInput',
+            'input input.ds-group-en[type="checkbox"]': 'onDatasetGroupEnabledInput',
         };
     }
 
@@ -637,10 +638,19 @@ export class ChartViewSettingsView extends views.PanelSettingsView {
         this.panelView.updateChart();
     }
 
+    async onDatasetGroupEnabledInput(ev) {
+        const enabled = ev.currentTarget.checked;
+        const name = ev.currentTarget.name;
+        this.panelView.getPrefs('disabledDatasetGroups', {})[name] = !enabled;
+        await this.panelView.savePrefs();
+        this.panelView.updateChart();
+    }
+
     renderAttrs(attrs) {
         return {
             ...super.renderAttrs(),
             availableDatasets: this.panelView.availableDatasets,
+            availableDatasetGroups: this.panelView.availableDatasetGroups,
             ...attrs,
         };
     }
@@ -662,6 +672,7 @@ export class ActivityTimeRangeChartView extends ChartView {
         return {
             hiddenDatasets: {},
             disabledDatasets: {},
+            disabledDatasetGroups: {},
         };
     }
 
@@ -682,10 +693,11 @@ export class ActivityTimeRangeChartView extends ChartView {
         this.toggleDataVisibility(dataId);
     }
 
-    isDatasetHidden(dataId) {
+    isDatasetHidden(ds) {
         return (
-            !!this.getPrefs('hiddenDatasets', {})[dataId] ||
-            !!this.getPrefs('disabledDatasets', {})[dataId]
+            !!this.getPrefs('hiddenDatasets', {})[ds.id] ||
+            !!this.getPrefs('disabledDatasets', {})[ds.id] ||
+            !!(ds.group && this.getPrefs('disabledDatasetGroups', {})[ds.group])
         );
     }
 

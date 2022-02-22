@@ -264,40 +264,36 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
     static typeLocaleKey = 'performance_zonetime_type';
     static nameLocaleKey = 'performance_zonetime_name';
     static descLocaleKey = 'performance_zonetime_desc';
-    static localeKeys = ['power_zones', ...super.localeKeys];
+    static localeKeys = [
+        'power_zones', 'hr_zones', '/analysis_hr', '/analysis_power', ...super.localeKeys
+    ];
 
     async init(options) {
         await super.init(options);
-        this.availableDatasets = {
-            'power-z1': {label: `Z1`},
-            'power-z2': {label: `Z2`},
-            'power-z3': {label: `Z3`},
-            'power-z4': {label: `Z4`},
-            'power-z5': {label: `Z5`},
-            'power-z6': {label: `Z6`},
-            'power-z7': {label: `Z7`},
+        this.availableDatasetGroups = {
+            'power': {label: this.LM('power_zones')},
+            'hr': {label: this.LM('hr_zones')},
         };
+        this.availableDatasets = {
+            'power-z1': {label: this.LM('analysis_power') + ' Z1', group: 'power'},
+            'power-z2': {label: this.LM('analysis_power') + ' Z2', group: 'power'},
+            'power-z3': {label: this.LM('analysis_power') + ' Z3', group: 'power'},
+            'power-z4': {label: this.LM('analysis_power') + ' Z4', group: 'power'},
+            'power-z5': {label: this.LM('analysis_power') + ' Z5', group: 'power'},
+            'power-z6': {label: this.LM('analysis_power') + ' Z6', group: 'power'},
+            'power-z7': {label: this.LM('analysis_power') + ' Z7', group: 'power'},
+            'hr-z1': {label: this.LM('analysis_hr') + ' Z1', group: 'hr'},
+            'hr-z2': {label: this.LM('analysis_hr') + ' Z2', group: 'hr'},
+            'hr-z3': {label: this.LM('analysis_hr') + ' Z3', group: 'hr'},
+            'hr-z4': {label: this.LM('analysis_hr') + ' Z4', group: 'hr'},
+            'hr-z5': {label: this.LM('analysis_hr') + ' Z5', group: 'hr'},
+        };
+
         this.setChartConfig({
             type: 'bar',
             options: {
-                plugins: {
-                    datalabels: {
-                        display: ctx => {
-                            const meta = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
-                            if (meta._model.width < 28) {
-                                return false;
-                            }
-                            const height = meta._model.base - meta._model.y;
-                            return height > 20 ? 'auto' : false;
-                        },
-                        formatter: (value, ctx) =>
-                            H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b.powerZonesTime) * 100) + '%',
-                        backgroundColor: ctx => ctx.dataset.backgroundColor,
-                        borderRadius: 2,
-                        color: x => [0, 1, 2].includes(x.datasetIndex) ? 'black' : 'white',
-                        padding: {top: 2, bottom: 2, left: 4, right: 4},
-                        font: {size: 10},
-                    },
+                layout: {
+                    padding: {top: 20},
                 },
                 scales: {
                     xAxes: [{
@@ -306,7 +302,6 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                     }],
                     yAxes: [{
                         id: 'time',
-                        position: 'right',
                         ticks: {
                             min: 0,
                             suggestedMax: 1 * 3600,
@@ -322,7 +317,17 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
 
     updateChart() {
         this.$('.metric-display').text(this.pageView.getMetricLocale(this.range.metric));
-        const zones = [
+        const hueShift = -80;
+        const satShift = 0;
+        const disabledGroups = this.getPrefs('disabledDatasetGroups', {});
+        const hrZones = !disabledGroups.hr ? [
+            {id: 'hr-z1', i: 0, h: 180 + hueShift, s: 10 + satShift, l: 70},
+            {id: 'hr-z2', i: 1, h: 100 + hueShift, s: 65 + satShift, l: 60},
+            {id: 'hr-z3', i: 2, h: 60 + hueShift, s: 70 + satShift, l: 60},
+            {id: 'hr-z4', i: 3, h: 0 + hueShift, s: 70 + satShift, l: 60},
+            {id: 'hr-z5', i: 4, h: 320 + hueShift, s: 70 + satShift, l: 50},
+        ] : [];
+        const pZones = !disabledGroups.power ? [
             {id: 'power-z1', i: 0, h: 180, s: 10, l: 70},
             {id: 'power-z2', i: 1, h: 100, s: 65, l: 60},
             {id: 'power-z3', i: 2, h: 60, s: 70, l: 60},
@@ -330,23 +335,63 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             {id: 'power-z5', i: 4, h: 320, s: 70, l: 50},
             {id: 'power-z6', i: 5, h: 300, s: 70, l: 40},
             {id: 'power-z7', i: 6, h: 280, s: 70, l: 20},
-        ];
+        ] : [];
         const disabled = this.getPrefs('disabledDatasets', {});
-        this.chart.data.datasets = zones.filter(x => !disabled[x.id]).map(x => ({
-            id: x.id,
-            label: this.availableDatasets[x.id].label,
-            backgroundColor: `hsla(${x.h}deg, ${x.s - 3}%, ${x.l + 2}%, 0.8)`,
-            hoverBackgroundColor: `hsla(${x.h}deg, ${x.s + 3}%, ${x.l - 2}%, 0.9)`,
-            borderColor: `hsla(${x.h}deg, ${x.s - 3}%, ${x.l - 10}%, 0.9)`,
-            hoverBorderColor: `hsla(${x.h}deg, ${x.s + 3}%, ${x.l - 20}%, 0.9)`,
+        const allZones = [
+            ...pZones.map(o => ({stack: 'power', ...o})),
+            ...hrZones.map(o => ({stack: 'hr', ...o})),
+        ];
+        this.chart.data.datasets = allZones.filter(x => !disabled[x.id]).map(zone => ({
+            id: zone.id,
+            label: this.availableDatasets[zone.id].label,
+            backgroundColor: `hsla(${zone.h}deg, ${zone.s - 3}%, ${zone.l + 2}%, 0.8)`,
+            hoverBackgroundColor: `hsla(${zone.h}deg, ${zone.s + 3}%, ${zone.l - 2}%, 0.9)`,
+            borderColor: `hsla(${zone.h}deg, ${zone.s - 3}%, ${zone.l - 10}%, 0.9)`,
+            hoverBorderColor: `hsla(${zone.h}deg, ${zone.s + 3}%, ${zone.l - 20}%, 0.9)`,
             borderWidth: 1,
             yAxisID: 'time',
-            stack: 'power',
+            stack: zone.stack,
             tooltipFormat: x => H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true}),
+            datalabels: {
+                labels: {
+                    value: {
+                        display: ctx => {
+                            const meta = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
+                            if (meta._model.width < 28) {
+                                return false;
+                            }
+                            const height = meta._model.base - meta._model.y;
+                            return height > 20 ? 'auto' : false;
+                        },
+                        formatter: (value, ctx) => {
+                            const zones = ctx.dataset.id.startsWith('hr') ? 'hrZonesTime' : 'powerZonesTime';
+                            return H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b[zones]) * 100) + '%';
+                        },
+                        backgroundColor: ctx => ctx.dataset.backgroundColor,
+                        borderRadius: 2,
+                        color: x => [0, 1, 2, 7, 8, 9].includes(x.datasetIndex) ? 'black' : 'white',
+                        padding: {top: 2, bottom: 2, left: 4, right: 4},
+                        font: {size: 10},
+                    },
+                    group: {
+                        display: ctx => ctx.dataset === ctx.chart.data.datasets.findLast(x =>
+                            x.stack === ctx.dataset.stack && !x.hidden),
+                        formatter: () => this.LM(`analysis_${zone.stack}`),
+                        anchor: 'end',
+                        align: 'end',
+                        backgroundColor: '#999c',
+                        rotation: 0,
+                        borderRadius: 2,
+                        color: '#fff',
+                        padding: {top: 2, bottom: 2, left: 2, right: 2},
+                        font: {size: 10},
+                    }
+                }
+            },
             data: this.metricData.map((b, i) => ({
                 b,
                 x: b.date,
-                y: b.powerZonesTime[x.i] || 0
+                y: b[`${zone.stack}ZonesTime`][zone.i] || 0,
             })),
         }));
         this.chart.update();
@@ -494,7 +539,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                     }
                     return tips;
                 },
-                data: metricData.map((b, i) => ({b, x: b.date, y: b.tssSum})),
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.tss})),
             });
         }
         if (!disabled.duration) {
