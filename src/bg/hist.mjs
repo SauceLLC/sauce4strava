@@ -80,7 +80,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
-    version: 3,  // add coggan power zones
+    version: 4,  // add hr zones, fix manual entries
     depends: ['extra-streams', 'athlete-settings', 'run-power'],
     data: {processor: processors.activityStatsProcessor}
 });
@@ -108,6 +108,13 @@ ActivityModel.addSyncManifest({
     depends: ['activity-stats'],
     data: {processor: processors.TrainingLoadProcessor}
 });
+
+/*ActivityModel.addSyncManifest({
+    processor: 'local',
+    name: 'activity-athlete-stats',
+    version: 1,
+    data: {processor: processors.activityAthleteStatsProcessor}
+});*/
 
 
 class FetchError extends Error {
@@ -426,37 +433,89 @@ async function getActivitiesForAthlete(athleteId, options={}) {
 sauce.proxy.export(getActivitiesForAthlete, {namespace});
 
 
-export async function getWeightsForAthlete(athleteId, options={}) {
-    const acts = await actsStore.getAllForAthlete(athleteId);
-    const weights = [];
-    let lastWeight;
-    for (const x of acts) {
-        let resp;
-        try {
-            resp = await retryFetch(`/activities/${x.id}/power_data`);
-        } catch(e) {
-            console.info(e);
-            continue;
+// EXPERIMENT
+export async function fetchAthleteStatsHistory(athleteId) {
+    // If we find no delta of two readings in a <n> day period we stop "searching"
+    // for new activity based athlete stats.
+    const minSearch = 14 * 86400 * 1000;
+    const stats = new Map();
+    function same(a, b) {
+        return (a && a.weight) == (b && b.weight) && (a && a.ftp) == (b && b.ftp);
+    }
+    async function search(batch, seeds={}) {
+        let leftStats = seeds.leftStats;
+        let leftIndex;
+        if (!leftStats) {
+            for (const [i, x] of batch.entries()) {
+                leftStats = await fetchAthleteStatsForActivity(x.id);
+                if (leftStats) {
+                    stats.set(x.ts, leftStats);
+                    leftIndex = i;
+                    break;
+                }
+            }
+        } else {
+            leftIndex = batch.findIndex(x => x.id === leftStats.activity);
         }
-        if (!resp.ok) {
-            continue;
+        let rightStats = seeds.rightStats;
+        let rightIndex;
+        if (leftStats && !rightStats) {
+            for (rightIndex = batch.length - 1; rightIndex > leftIndex; rightIndex--) {
+                const x = batch[rightIndex];
+                rightStats = await fetchAthleteStatsForActivity(x.id);
+                if (rightStats) {
+                    stats.set(x.ts, rightStats);
+                    break;
+                }
+            }
+        } else if (leftStats) {
+            rightIndex = batch.findIndex(x => x.id === rightStats.activity);
         }
-        let data;
-        try {
-            data = await resp.json();
-        } catch(e) {
-            console.info(e);
-            continue;
-        }
-        const weight = data.athlete_weight;
-        if (weight && weight !== lastWeight) {
-            weights.push({ts: x.ts, weight});
-            lastWeight = weight;
+        const size = (rightIndex - leftIndex) + 1;
+        if (size > 2 && leftStats && rightStats) {
+            if (!same(leftStats, rightStats) ||
+                (batch[rightIndex].ts - batch[leftIndex].ts > minSearch)) {
+                const midIndex = leftIndex + Math.ceil(size / 2);
+                await search(batch.slice(leftIndex, midIndex), {leftStats});
+                if (midIndex !== rightIndex) {
+                    await search(batch.slice(midIndex, rightIndex + 1), {rightStats});
+                }
+            }
         }
     }
-    return weights;
+    await search(await actsStore.getAllForAthlete(athleteId));
+    const sorted = Array.from(stats.entries()).sort(([a], [b]) => a - b);
+    let prev;
+    const history = [];
+    for (const [ts, x] of sorted) {
+        if (!prev || !same(prev, x)) {
+            history.push({ts, ...x});
+            prev = x;
+        }
+    }
+    return history;
 }
-sauce.proxy.export(getWeightsForAthlete, {namespace});
+sauce.proxy.export(fetchAthleteStatsHistory, {namespace});
+
+
+export async function fetchAthleteStatsForActivity(activityId) {
+    let data;
+    try {
+        const resp = await retryFetch(`/activities/${activityId}/power_data`);
+        data = await resp.json();
+    } catch(e) {
+        if (!e.resp || ![401, 404].includes(e.resp.status)) {
+            console.error('Activity power_data api error:', e);
+        }
+        return;
+    }
+    return {
+        activity: activityId,
+        weight: data.athlete_weight,
+        ftp: data.athlete_ftp,
+    };
+}
+sauce.proxy.export(fetchAthleteStatsForActivity, {namespace});
 
 
 async function getNewestActivityForAthlete(athleteId, options) {
@@ -1010,40 +1069,22 @@ class SyncJob extends EventTarget {
     }
 
     run(options) {
-        const start = Date.now();
-        this.reportEvent('start');
         this._running = true;
-        this._runPromise = this._run(options).then(() => {
-            const duration = Math.round((Date.now() - start) / 1000);
-            this.reportEvent('completed', duration < 5 * 60 ?
-                `${Math.round(duration / 60)}-mins` :
-                `${(duration / 3600).toFixed(1)}-hours`);
-        }).finally(() => this._running = false);
-    }
-
-    emit(name, data) {
-        const ev = new Event(name);
-        ev.data = data;
-        this.dispatchEvent(ev);
-    }
-
-    reportEvent(action, label, options) {
-        sauce.report.event('SyncJob', action, label, {
-            nonInteraction: true,
-            ...options
-        });  // bg okay
-    }
-
-    setStatus(status) {
-        this.status = status;
-        this.emit('status', status);
-    }
-
-    isRunning() {
-        return !!this._running;
+        this._runPromise = this._run(options).finally(() => this._running = false);
     }
 
     async _run(options={}) {
+        if (options.delay) {
+            this.setStatus('deferred');
+            console.debug(`Deferring sync job [${Math.round(options.delay / 1000)}s] for: ` + this.athlete);
+            await Promise.race([sauce.sleep(options.delay), this._cancelEvent.wait()]);
+        }
+        if (this._cancelEvent.isSet()) {
+            return;
+        }
+        console.info('Starting sync job for: ' + this.athlete);
+        const start = Date.now();
+        this.reportEvent('start');
         this.setStatus('checking-network');
         await Promise.race([networkOnline(), this._cancelEvent.wait()]);
         if (this._cancelEvent.isSet()) {
@@ -1066,6 +1107,34 @@ class SyncJob extends EventTarget {
             throw e;
         }
         this.setStatus('complete');
+        const duration = Math.round((Date.now() - start) / 1000);
+        console.info(`Sync completed in ${duration.toLocaleString()} seconds for: ` + this.athlete);
+        this.reportEvent('completed', duration < 5 * 60 ?
+            `${Math.round(duration / 60)}-mins` :
+            `${(duration / 3600).toFixed(1)}-hours`);
+
+    }
+
+    emit(name, data) {
+        const ev = new Event(name);
+        ev.data = data;
+        this.dispatchEvent(ev);
+    }
+
+    reportEvent(action, label, options) {
+        sauce.report.event('SyncJob', action, label, {
+            nonInteraction: true,
+            ...options
+        });  // bg okay
+    }
+
+    setStatus(status) {
+        this.status = status;
+        this.emit('status', status);
+    }
+
+    isRunning() {
+        return !!this._running;
     }
 
     async retryFetch(urn, options={}) {
@@ -1815,13 +1884,6 @@ class SyncManager extends EventTarget {
         syncJob.addEventListener('ratelimiter', ev => this.emitForAthlete(athlete, 'ratelimiter', ev.data));
         this.emitForAthlete(athlete, 'active', {active: true, athlete: athlete.data});
         this.activeJobs.set(athleteId, syncJob);
-        if (options.delay) {
-            syncJob.setStatus('deferred');
-            console.debug(`Deferring sync job [${Math.round(options.delay / 1000)}s] for: ` + athlete);
-            await sauce.sleep(options.delay);
-        }
-        console.info('Starting sync job for: ' + athlete);
-        const start = Date.now();
         syncJob.run(options);
         try {
             await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
@@ -1841,8 +1903,6 @@ class SyncManager extends EventTarget {
                 await syncJob.wait();
                 this._refreshRequests.set(athleteId, {});
             } else {
-                const duration = Math.round((Date.now() - start) / 1000).toLocaleString();
-                console.info(`Sync completed in ${duration} seconds for: ` + athlete);
                 athlete.set('lastSyncVersionHash', options.syncHash);
                 athlete.set('lastSync', Date.now());
             }

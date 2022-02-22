@@ -567,6 +567,24 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                     const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
                     stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
                         ltHR, restingHR, maxHR, athlete.get('gender'));
+                    const zones = {...hrZones, z5: Infinity}; // XXX Z5 was always just implied.
+                    stats.hrZonesTime = Object.keys(zones).map(() => 0);
+                    let prevT;
+                    for (const [i, hr] of streams.heartrate.entries()) {
+                        const active = streams.active[i];
+                        const t = streams.time[i];
+                        const gap = t - prevT;
+                        prevT = t;
+                        if (gap && gap > 0 && hr && active) {
+                            // Unrolled for speed.
+                            if (hr <= zones.z1) stats.hrZonesTime[0] += gap;
+                            else if (hr <= zones.z2) stats.hrZonesTime[1] += gap;
+                            else if (hr <= zones.z3) stats.hrZonesTime[2] += gap;
+                            else if (hr <= zones.z4) stats.hrZonesTime[3] += gap;
+                            else if (hr <= zones.z5) stats.hrZonesTime[4] += gap;
+                            else throw new TypeError("Unexpected power zone");
+                        }
+                    }
                 } catch(e) {
                     debugger;
                     activity.setSyncError(manifest, e);
@@ -604,7 +622,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                             const w = corrected._values[i];
                             const gap = t - prevT;
                             prevT = t;
-                            if (gap && w) {
+                            if (gap && gap > 0 && w) {  // !!w is because z1 is "active" recovery
                                 // Unrolled for speed, make sure we have enough for all systems.
                                 if (w <= powerZones.z1) stats.powerZonesTime[0] += gap;
                                 else if (w <= powerZones.z2) stats.powerZonesTime[1] += gap;
@@ -613,8 +631,6 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                                 else if (w <= powerZones.z5) stats.powerZonesTime[4] += gap;
                                 else if (w <= powerZones.z6) stats.powerZonesTime[5] += gap;
                                 else if (w <= powerZones.z7) stats.powerZonesTime[6] += gap;
-                                else if (w <= powerZones.z8) stats.powerZonesTime[7] += gap;
-                                else if (w <= powerZones.z9) stats.powerZonesTime[8] += gap;
                                 else throw new TypeError("Unexpected power zone");
                             }
                         }
