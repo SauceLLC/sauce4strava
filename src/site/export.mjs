@@ -68,7 +68,7 @@ export class GPXSerializer extends DOMSerializer {
     start() {
         this.fileExt = 'gpx';
         this.rootNode = this.addNodeTo(this.doc, 'gpx');
-        this.rootNode.setAttribute('creator', sauce.getName());
+        this.rootNode.setAttribute('creator', sauce.name);
         this.rootNode.setAttribute('version', '1.1');
         this.rootNode.setAttribute('xmlns', 'http://www.topografix.com/GPX/1/1');
         this.rootNode.setAttribute('xmlns:gpx3', 'http://www.garmin.com/xmlschemas/GpxExtensions/v3');
@@ -146,12 +146,12 @@ export class TCXSerializer extends DOMSerializer {
         ].join(' '));
         const author = this.addNodeTo(this.rootNode, 'Author');
         author.setAttribute('xsi:type', 'Application_t');
-        this.addNodeTo(author, 'Name', sauce.getName());
+        this.addNodeTo(author, 'Name', sauce.name);
         this.addNodeTo(author, 'LangID', 'en');
         this.addNodeTo(author, 'PartNumber', '867-5309');
         const build = this.addNodeTo(author, 'Build');
         this.sauceVersion = this.addNodeTo(build, 'Version');
-        const [vmajor, vminor, bmajor] = sauce.getVersion().split('.');
+        const [vmajor, vminor, bmajor] = sauce.version.split('.');
         this.addNodeTo(this.sauceVersion, 'VersionMajor', vmajor);
         this.addNodeTo(this.sauceVersion, 'VersionMinor', vminor);
         this.addNodeTo(this.sauceVersion, 'BuildMajor', bmajor);
@@ -173,7 +173,7 @@ export class TCXSerializer extends DOMSerializer {
         this.addNodeTo(this.activityNode, 'Notes', notes);
         const creator = this.addNodeTo(this.activityNode, 'Creator');
         creator.setAttribute('xsi:type', 'Device_t');  // Could maybe be Application_t too.
-        this.addNodeTo(creator, 'Name', sauce.getName());
+        this.addNodeTo(creator, 'Name', sauce.name);
         this.addNodeTo(creator, 'UnitId', 0);
         this.addNodeTo(creator, 'ProductId', 0);
         creator.appendChild(this.sauceVersion.cloneNode(/*deep*/ true));
@@ -246,9 +246,9 @@ export class FITSerializer extends Serializer {
             time_created: new Date(),
             serial_number: 0,
             number: null,
-            product_name: sauce.getName(),
+            product_name: sauce.name,
         });
-        const [vmajor, vminor] = sauce.getVersion().split('.');
+        const [vmajor, vminor] = sauce.version.split('.');
         this.fitParser.addMessage('file_creator', {
             software_version: Number([vmajor.slice(0, 2),
                 vminor.slice(0, 2).padStart(2, '0')].join('')),

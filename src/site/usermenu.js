@@ -55,7 +55,7 @@
         a.appendChild(span);
         localesPromise.then(locales => span.textContent = `Sauce ${locales.analysis_options}`);
         const logo = document.createElement('img');
-        logo.src = sauce.extUrl + 'images/logo_horiz_128x48.png';
+        logo.src = sauce.getURL('images/logo_horiz_128x48.png');
         a.appendChild(logo);
         a.href = 'javascript:void(0);';
         a.addEventListener('click', () => {
@@ -85,7 +85,7 @@
         callout.appendChild(calloutSpan);
         localesPromise.then(locales => calloutSpan.textContent = `Sauce ${locales.performance}`);
         const calloutLogo = document.createElement('img');
-        calloutLogo.src = sauce.extUrl + 'images/logo_horiz_128x48.png';
+        calloutLogo.src = sauce.getURL('images/logo_horiz_128x48.png');
         callout.appendChild(calloutLogo);
         group.appendChild(callout);
         const list = document.createElement('ul');
@@ -103,7 +103,7 @@
                 localesPromise.then(locales => span.textContent = locales[x.localeKey]);
             }
             if (x.icon) {
-                fetch(sauce.extUrl + `images/fa/${x.icon}.svg`).then(resp =>
+                fetch(sauce.getURL(`images/fa/${x.icon}.svg`)).then(resp =>
                     resp.text().then(svg => sauce.adjacentNodeContents(a, 'afterbegin', svg)));
             }
             if (location.pathname.startsWith(x.href)) {

@@ -12,7 +12,7 @@ sauce.ns('analysis', ns => {
         };
     });
 
-    const tplUrl = sauce.extUrl + 'templates';
+    const tplUrl = sauce.getURL('templates');
     const L = sauce.locale;
     const H = sauce.locale.human;
     const LM = m => L.getMessage(`analysis_${m}`);
@@ -37,7 +37,7 @@ sauce.ns('analysis', ns => {
         peak_xp: 'xp',
     };
     // Preload our food data so we're not waiting around later.
-    const foodsPromise = fetch(sauce.extUrl + 'src/site/foods.json').then(r => r.json());
+    const foodsPromise = fetch(sauce.getURL('src/site/foods.json')).then(r => r.json());
     const mobileMedia = window.matchMedia('(max-width: 768px)');
 
 
@@ -1465,7 +1465,7 @@ sauce.ns('analysis', ns => {
             <li class="sauce-group">
                 <div class="sauce-header">
                     <div class="sauce-title">SAUCE</div>
-                    <img src="${sauce.extUrl}images/logo_horiz_320x120.png"/>
+                    <img src="${sauce.getURL('images/logo_horiz_320x120.png')}"/>
                 </div>
                 <ul>
                     <li><a title="TCX files are best for activities with power data (watts)."
@@ -2002,7 +2002,7 @@ sauce.ns('analysis', ns => {
         const $tfModal = sauce.ui.modal({
             title: `Trailforks Overviews`,
             dialogClass: 'trailforks-overviews no-pad',
-            icon: `<img src="${sauce.extUrl}images/trailforks-250x250.png"/>`,
+            icon: `<img src="${sauce.getURL('images/trailforks-250x250.png')}"/>`,
             body: `
                 <ul class="tabs">
                     ${descs.map(x => `
@@ -2419,7 +2419,7 @@ sauce.ns('analysis', ns => {
         const distance = streamDelta(distStream);
         const pausedTime = elapsedTime - activeTime;
         const tplData = {
-            logo: sauce.extUrl + 'images/logo_vert_48x128.png',
+            logo: sauce.getURL('images/logo_vert_48x128.png'),
             supportsRankBadge: pageView.activity().isRide(),
             supportsPerfPredictor: !!(pageView.activity().isRide() && distance && altStream),
             elapsed: H.timer(elapsedTime),

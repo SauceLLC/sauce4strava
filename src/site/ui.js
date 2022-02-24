@@ -53,7 +53,7 @@ sauce.ns('ui', ns => {
             try {
                 if (!_textFetching.has(path)) {
                     _textFetching.set(path, (async () => {
-                        const resp = await fetch(`${sauce.extUrl}images/${path.replace(/^\/+/, '')}`);
+                        const resp = await fetch(sauce.getURL(`images/${path.replace(/^\/+/, '')}`));
                         _textCache.set(path, resp.ok ? await resp.text() : undefined);
                         _textFetching.delete(path);
                     })());

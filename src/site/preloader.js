@@ -1,7 +1,7 @@
 /* global sauce, jQuery, Strava, pageView, Backbone, d3 */
 
 // NOTE: Must be assigned to self and have matching name for FF
-self.saucePreloaderInit = function saucePreloaderInit(sauceVars) {
+self.saucePreloaderInit = function saucePreloaderInit() {
     'use strict';
 
     self.sauce = self.sauce || {};
@@ -184,7 +184,7 @@ self.saucePreloaderInit = function saucePreloaderInit(sauceVars) {
             btn.append('image').attr({
                 height: 18, width: 35,
                 x: 0, y: 3,
-                href: `${sauceVars.extUrl}images/fa/cog-duotone.svg`
+                href: sauce.getURL('images/fa/cog-duotone.svg'),
             });
             btn.on('click', () => sauce.analysis.handleGraphOptionsClick(btn, this));
         };
@@ -579,10 +579,11 @@ self.saucePreloaderInit = function saucePreloaderInit(sauceVars) {
             const renderSave = Klass.prototype.render;
             Klass.prototype.render = function() {
                 const ret = renderSave.apply(this, arguments);
+                const dlIconUrl = sauce.getURL('images/fa/external-link-duotone.svg');
                 this.$('.lightbox-more-controls').prepend(`
                     <button class="btn btn-unstyled sauce-download" title="Open fullsize photo">
                         <div class="app-icon sauce-download-icon icon-xs"
-                             style="background-image: url(${sauceVars.extUrl}images/fa/external-link-duotone.svg);"></div>
+                             style="background-image: url(${dlIconUrl});"></div>
                     </button>
                 `);
                 this.$el.on('click', 'button.sauce-download', async ev => {

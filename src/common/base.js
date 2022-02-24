@@ -1,10 +1,17 @@
 /* global sauce */
 
 // NOTE: Must be assigned to self and have matching name for FF
-self.sauceBaseInit = function sauceBaseInit() {
+self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     'use strict';
 
     self.sauce = self.sauce || {};
+
+    sauce.extId = extId;
+    sauce.extUrl = extUrl;
+    sauce.name = extManifest.name;
+    sauce.version = extManifest.version;
+    sauce.isDev = sauce.name.endsWith('[DEV]');
+
     sauce._pendingAsyncExports = [];
 
     const canCacheIDB = !!self.BroadcastChannel;
@@ -53,29 +60,7 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     sauce.getURL = function(urn='') {
-        if (sauce.extUrl) {
-            return sauce.extUrl + urn.replace(/^\//, '');
-        } else {
-            return self.browser.runtime.getURL(urn);
-        }
-    };
-
-
-    let _name;
-    sauce.getName = function() {
-        if (!_name) {
-            _name = sauce.name || self.browser.runtime.getManifest().name;
-        }
-        return _name;
-    };
-
-
-    let _version;
-    sauce.getVersion = function() {
-        if (!_version) {
-            _version = sauce.version || self.browser.runtime.getManifest().version;
-        }
-        return _version;
+        return extUrl + urn.replace(/^\//, '');
     };
 
 
@@ -1247,11 +1232,13 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     async function reportEvent(eventCategory, eventAction, eventLabel, options) {
-        await ga('send', 'event', Object.assign({
-            eventCategory,
-            eventAction,
-            eventLabel,
-        }, options));
+        if (!sauce.isDev) {
+            await ga('send', 'event', Object.assign({
+                eventCategory,
+                eventAction,
+                eventLabel,
+            }, options));
+        }
     }
 
 
@@ -1261,10 +1248,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             return;
         }
         const page = location.pathname;
-        const isExt = !!(self.browser && browser.runtime && browser.runtime.id);
-        const version = (sauce && sauce.version) ||
-            (isExt && self.browser.runtime.getManifest().version);
-        const desc = [`v${version}`];
+        const desc = [`v${sauce.version}`];
         try {
             if (!(e instanceof Error) && (e == null || !e.stack)) {
                 console.error("Non-exception object was thrown:", e);
@@ -1293,7 +1277,6 @@ self.sauceBaseInit = function sauceBaseInit() {
                     desc.push(e.toString());
                 }
                 // Reduce cardinality from randomly generated urls (safari & firefox)
-                const extUrl = isExt ? self.browser.runtime.getURL('') : sauce.extUrl;
                 const genericUrl = extUrl.split('://', 1)[0] + '://<sauce>/';
                 if (e.stack) {
                     desc.push(e.stack.replaceAll(extUrl, genericUrl));
@@ -1304,12 +1287,14 @@ self.sauceBaseInit = function sauceBaseInit() {
         }
         const exDescription = desc.join('\n').replaceAll('\n', ' -- ');
         console.error('Sauce Error:', e);
-        await ga('send', 'exception', {
-            exDescription,
-            exFatal: true,
-            page
-        });
-        await reportEvent('Error', 'exception', exDescription, {nonInteraction: true, page});
+        if (!sauce.isDev) {
+            await ga('send', 'exception', {
+                exDescription,
+                exFatal: true,
+                page
+            });
+            await reportEvent('Error', 'exception', exDescription, {nonInteraction: true, page});
+        }
     }
 
 

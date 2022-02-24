@@ -21,7 +21,7 @@
         ]
     }, {
         callbacks: [
-            (config, sauce) => {
+            config => {
                 if (config.options['hide-upsells']) {
                     document.documentElement.classList.add('sauce-hide-upsells');
                 }
@@ -317,32 +317,28 @@
                     [x.cssClass] : x.cssClass));
             }
         }
-        const ext = browser.runtime.getManifest();
+        const manifest = browser.runtime.getManifest();
         const extUrl = browser.runtime.getURL('');
-        const sauceVars = {
-            extUrl,
-            extId: browser.runtime.id,
-            name: ext.name,
-            version: ext.version,
-        };
         sauce.insertScript([
             self.sauceBaseInit.toString(),
             self.saucePreloaderInit.toString(),
-            `sauceBaseInit();`,
-            `saucePreloaderInit(${JSON.stringify(sauceVars)});`,
+            `sauceBaseInit('${browser.runtime.id}', '${extUrl}', ${JSON.stringify(manifest)});`,
+            `saucePreloaderInit();`,
         ].join('\n'));
         const config = await sauce.storage.get(null);
         const options = config.options;
         self.currentUser = config.currentUser;
         updatePatronLevelNames().catch(sauce.report.error);  // bg okay
-        [sauceVars.patronLevel, sauceVars.patronLegacy] = await updatePatronLevel(config);
-        sauceVars.hideBonusFeatures = (sauceVars.patronLevel || 0) < 10 && !!(options &&
+        const patronVars = {};
+        [patronVars.patronLevel, patronVars.patronLegacy] = await updatePatronLevel(config);
+        patronVars.hideBonusFeatures = (patronVars.patronLevel || 0) < 10 && !!(options &&
             options['hide-upsells'] &&
             options['hide-sauce-bonus-features']);
+        Object.assign(sauce, patronVars);
         sauce.insertScript(`
             self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(options || {})};
-            Object.assign(sauce, ${JSON.stringify(sauceVars)});
+            Object.assign(sauce, ${JSON.stringify(patronVars)});
         `);
         const loading = [];
         for (const m of matchingManifests) {
@@ -357,7 +353,7 @@
             if (m.callbacks) {
                 for (const cb of m.callbacks) {
                     try {
-                        const r = cb(config, sauceVars);
+                        const r = cb(config);
                         if (r instanceof Promise) {
                             await r;
                         }

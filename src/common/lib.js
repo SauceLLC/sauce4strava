@@ -724,7 +724,6 @@ sauce.ns('power', function() {
     const npMinTime = 300;  // Andy says 20, but we're rebels.
     const xpMinTime = 300;
 
-    const badgeURN = `${sauce.extUrl}images/ranking`;
     const rankLevels = [{
         levelRequirement: 7 / 8,
         label: 'World Class',
@@ -817,7 +816,7 @@ sauce.ns('power', function() {
                 return {
                     level,
                     catLevel,
-                    badge: x.cat && `${badgeURN}/${x.cat}${suffix}`,
+                    badge: x.cat && sauce.getURL(`images/ranking/${x.cat}${suffix}`),
                     weightedPower,
                     weightedRatio,
                     wKg,
