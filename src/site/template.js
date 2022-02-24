@@ -17,14 +17,11 @@ sauce.ns('template', ns => {
         const cacheKey = '' + filename + localeKey;
         if (!_tplCache.has(cacheKey)) {
             if (!_tplFetching.has(cacheKey)) {
-                const extUrl = (self.browser && self.browser.runtime) ?
-                    self.browser.runtime.getURL('') : sauce.extUrl;
-                const tplUrl = extUrl + 'templates';
                 if (sauce.locale) {
                     await sauce.locale.init();
                 }
                 _tplFetching.set(cacheKey, (async () => {
-                    const resp = await fetch(`${tplUrl}/${filename}`);
+                    const resp = await fetch(sauce.getURL(`templates/${filename}`));
                     const tplText = await resp.text();
                     const localePrefix = localeKey && `${localeKey}_`;
                     const name = filename.split(/\..+$/)[0];

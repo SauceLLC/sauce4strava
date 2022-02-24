@@ -53,10 +53,10 @@ self.sauceBaseInit = function sauceBaseInit() {
 
 
     sauce.getURL = function(urn='') {
-        if (self.browser && self.browser.runtime) {
-            return self.browser.runtime.getURL(urn);
-        } else {
+        if (sauce.extUrl) {
             return sauce.extUrl + urn.replace(/^\//, '');
+        } else {
+            return self.browser.runtime.getURL(urn);
         }
     };
 
@@ -1261,7 +1261,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             return;
         }
         const page = location.pathname;
-        const isExt = !!(self.browser && self.browser.runtime);
+        const isExt = !!(self.browser && browser.runtime && browser.runtime.id);
         const version = (sauce && sauce.version) ||
             (isExt && self.browser.runtime.getManifest().version);
         const desc = [`v${version}`];
@@ -1303,7 +1303,7 @@ self.sauceBaseInit = function sauceBaseInit() {
             desc.push(`Internal error during report error: ${intError.stack} ::: ${e}`);
         }
         const exDescription = desc.join('\n').replaceAll('\n', ' -- ');
-        console.error('Reporting:', e);
+        console.error('Sauce Error:', e);
         await ga('send', 'exception', {
             exDescription,
             exFatal: true,
