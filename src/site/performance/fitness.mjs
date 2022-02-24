@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, Chart */
 
 import * as views from './views.mjs';
 import * as data from './data.mjs';
@@ -258,6 +258,14 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
 }
 
 
+class ZoneTimeChart extends charts.ActivityTimeRangeChart {
+    updateTooltips(...tuples) {
+        super.updateTooltips(...tuples);
+        this.view.updateHighlightChart(tuples[0][1]);
+    }
+}
+
+
 export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
     static uuid = 'bb297504-5d68-4f69-b055-5fbabac4651a';
     static tpl = 'performance/fitness/zonetime.html';
@@ -269,32 +277,37 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
     ];
 
     async init(options) {
-        await super.init(options);
+        await super.init({ChartClass: ZoneTimeChart, ...options});
         this.availableDatasetGroups = {
             'power': {label: this.LM('power_zones')},
             'hr': {label: this.LM('hr_zones')},
         };
         this.availableDatasets = {
-            'power-z1': {label: this.LM('analysis_power') + ' Z1', group: 'power'},
-            'power-z2': {label: this.LM('analysis_power') + ' Z2', group: 'power'},
-            'power-z3': {label: this.LM('analysis_power') + ' Z3', group: 'power'},
-            'power-z4': {label: this.LM('analysis_power') + ' Z4', group: 'power'},
-            'power-z5': {label: this.LM('analysis_power') + ' Z5', group: 'power'},
-            'power-z6': {label: this.LM('analysis_power') + ' Z6', group: 'power'},
-            'power-z7': {label: this.LM('analysis_power') + ' Z7', group: 'power'},
-            'hr-z1': {label: this.LM('analysis_hr') + ' Z1', group: 'hr'},
-            'hr-z2': {label: this.LM('analysis_hr') + ' Z2', group: 'hr'},
-            'hr-z3': {label: this.LM('analysis_hr') + ' Z3', group: 'hr'},
-            'hr-z4': {label: this.LM('analysis_hr') + ' Z4', group: 'hr'},
-            'hr-z5': {label: this.LM('analysis_hr') + ' Z5', group: 'hr'},
+            'power-z1': {label: 'Z1', group: 'power', z: 1},
+            'power-z2': {label: 'Z2', group: 'power', z: 2},
+            'power-z3': {label: 'Z3', group: 'power', z: 3},
+            'power-z4': {label: 'Z4', group: 'power', z: 4},
+            'power-z5': {label: 'Z5', group: 'power', z: 5},
+            'power-z6': {label: 'Z6', group: 'power', z: 6},
+            'power-z7': {label: 'Z7', group: 'power', z: 7},
+            'hr-z1': {label: '❤️ Z1', group: 'hr', z: 1},
+            'hr-z2': {label: '❤️ Z2', group: 'hr', z: 2},
+            'hr-z3': {label: '❤️ Z3', group: 'hr', z: 3},
+            'hr-z4': {label: '❤️ Z4', group: 'hr', z: 4},
+            'hr-z5': {label: '❤️ Z5', group: 'hr', z: 5},
         };
-
+        this.zoneColors = {
+            1: {h: 180, s: 10, l: 70},
+            2: {h: 100, s: 65, l: 60},
+            3: {h: 60, s: 70, l: 60},
+            4: {h: 0, s: 70, l: 60},
+            5: {h: 320, s: 70, l: 50},
+            6: {h: 300, s: 70, l: 40},
+            7: {h: 280, s: 70, l: 20},
+        };
         this.setChartConfig({
             type: 'bar',
             options: {
-                layout: {
-                    padding: {top: 20},
-                },
                 scales: {
                     xAxes: [{
                         stacked: true,
@@ -315,86 +328,141 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
         });
     }
 
+    getZoneColor(zone, hShift=0, sShift=0, lShift=0, alpha=1) {
+        const c = this.zoneColors[zone];
+        return `hsla(${c.h + hShift}deg, ${c.s + sShift}%, ${c.l + lShift}%, ${alpha})`;
+    }
+
+    async render(...args) {
+        await super.render(...args);
+        const ctx = this.el.querySelector('.highlight canvas').getContext('2d');
+        this.highlightChart = new Chart(ctx, {
+            type: 'doughnut',
+            options: {
+                animation: {
+                    animateRotate: false,
+                    animateScale: false,
+                },
+                legend: {display: false},
+                aspectRatio: 1,
+                layout: {
+                    padding: 20,
+                },
+            },
+        });
+    }
+
     updateChart() {
         this.$('.metric-display').text(this.pageView.getMetricLocale(this.range.metric));
-        const hueShift = -80;
-        const satShift = 0;
         const disabledGroups = this.getPrefs('disabledDatasetGroups', {});
-        const hrZones = !disabledGroups.hr ? [
-            {id: 'hr-z1', i: 0, h: 180 + hueShift, s: 10 + satShift, l: 70},
-            {id: 'hr-z2', i: 1, h: 100 + hueShift, s: 65 + satShift, l: 60},
-            {id: 'hr-z3', i: 2, h: 60 + hueShift, s: 70 + satShift, l: 60},
-            {id: 'hr-z4', i: 3, h: 0 + hueShift, s: 70 + satShift, l: 60},
-            {id: 'hr-z5', i: 4, h: 320 + hueShift, s: 70 + satShift, l: 50},
-        ] : [];
-        const pZones = !disabledGroups.power ? [
-            {id: 'power-z1', i: 0, h: 180, s: 10, l: 70},
-            {id: 'power-z2', i: 1, h: 100, s: 65, l: 60},
-            {id: 'power-z3', i: 2, h: 60, s: 70, l: 60},
-            {id: 'power-z4', i: 3, h: 0, s: 70, l: 60},
-            {id: 'power-z5', i: 4, h: 320, s: 70, l: 50},
-            {id: 'power-z6', i: 5, h: 300, s: 70, l: 40},
-            {id: 'power-z7', i: 6, h: 280, s: 70, l: 20},
-        ] : [];
         const disabled = this.getPrefs('disabledDatasets', {});
-        const allZones = [
-            ...pZones.map(o => ({stack: 'power', ...o})),
-            ...hrZones.map(o => ({stack: 'hr', ...o})),
-        ];
-        this.chart.data.datasets = allZones.filter(x => !disabled[x.id]).map(zone => ({
-            id: zone.id,
-            label: this.availableDatasets[zone.id].label,
-            backgroundColor: `hsla(${zone.h}deg, ${zone.s - 3}%, ${zone.l + 2}%, 0.8)`,
-            hoverBackgroundColor: `hsla(${zone.h}deg, ${zone.s + 3}%, ${zone.l - 2}%, 0.9)`,
-            borderColor: `hsla(${zone.h}deg, ${zone.s - 3}%, ${zone.l - 10}%, 0.9)`,
-            hoverBorderColor: `hsla(${zone.h}deg, ${zone.s + 3}%, ${zone.l - 20}%, 0.9)`,
-            borderWidth: 1,
-            yAxisID: 'time',
-            stack: zone.stack,
-            tooltipFormat: x => H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true}),
-            datalabels: {
-                labels: {
-                    value: {
-                        display: ctx => {
-                            const meta = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
-                            if (meta._model.width < 28) {
-                                return false;
-                            }
-                            const height = meta._model.base - meta._model.y;
-                            return height > 20 ? 'auto' : false;
-                        },
-                        formatter: (value, ctx) => {
-                            const zones = ctx.dataset.id.startsWith('hr') ? 'hrZonesTime' : 'powerZonesTime';
-                            return H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b[zones]) * 100) + '%';
-                        },
-                        backgroundColor: ctx => ctx.dataset.backgroundColor,
-                        borderRadius: 2,
-                        color: x => [0, 1, 2, 7, 8, 9].includes(x.datasetIndex) ? 'black' : 'white',
-                        padding: {top: 2, bottom: 2, left: 4, right: 4},
-                        font: {size: 10},
-                    },
-                    group: {
-                        display: ctx => ctx.dataset === ctx.chart.data.datasets.findLast(x =>
-                            x.stack === ctx.dataset.stack && !x.hidden),
-                        formatter: () => this.LM(`analysis_${zone.stack}`),
-                        anchor: 'end',
-                        align: 'end',
-                        backgroundColor: '#999c',
-                        rotation: 0,
-                        borderRadius: 2,
-                        color: '#fff',
-                        padding: {top: 2, bottom: 2, left: 2, right: 2},
-                        font: {size: 10},
-                    }
+        this.specs = [{
+            group: 'power',
+            zones: Object.values(this.availableDatasets).filter(x => x.group === 'power'),
+            lightShift: 0,
+        }, {
+            group: 'hr',
+            zones: Object.values(this.availableDatasets).filter(x => x.group === 'hr'),
+            lightShift: -20,
+        }];
+        const datasets = [];
+        for (const spec of this.specs) {
+            if (disabledGroups[spec.group]) {
+                continue;
+            }
+            for (const zone of spec.zones) {
+                const id = `${zone.group}-z${zone.z}`;
+                if (disabled[id]) {
+                    continue;
                 }
-            },
-            data: this.metricData.map((b, i) => ({
-                b,
-                x: b.date,
-                y: b[`${zone.stack}ZonesTime`][zone.i] || 0,
-            })),
-        }));
+                const dataKey = `${zone.group}ZonesTime`;
+                datasets.push({
+                    id,
+                    label: zone.label,
+                    backgroundColor: this.getZoneColor(zone.z, 0, -3, 2 + spec.lightShift, 0.8),
+                    hoverBackgroundColor: this.getZoneColor(zone.z, 0, 3, -2 + spec.lightShift, 0.9),
+                    borderColor: this.getZoneColor(zone.z, 0, -3, -10 + spec.lightShift, 0.9),
+                    hoverBorderColor: this.getZoneColor(zone.z, 0, 3, -20 + spec.lightShift, 0.9),
+                    borderWidth: 1,
+                    yAxisID: 'time',
+                    stack: zone.group,
+                    tooltipFormat: x => H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true}),
+                    datalabels: {
+                        labels: {
+                            value: {
+                                display: ctx => {
+                                    const meta = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
+                                    if (meta._model.width < 28) {
+                                        return false;
+                                    }
+                                    const height = meta._model.base - meta._model.y;
+                                    return height > 20 ? 'auto' : false;
+                                },
+                                formatter: (value, ctx) =>
+                                    H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b[dataKey]) * 100) + '%',
+                                backgroundColor: ctx => ctx.dataset.backgroundColor,
+                                borderRadius: 2,
+                                color: x => [0, 1, 2, 7, 8, 9].includes(x.datasetIndex) ? 'black' : 'white',
+                                padding: {top: 2, bottom: 2, left: 4, right: 4},
+                                font: {size: 10},
+                            },
+                            group: {
+                                display: false,
+                                formatter: () => zone.group === 'power' ? '' : '❤️',
+                                anchor: 'end',
+                                align: 'end',
+                                font: {size: 9},
+                                opacity: 0.8,
+                            }
+                        }
+                    },
+                    data: this.metricData.map((b, i) => ({
+                        b,
+                        x: b.date,
+                        y: b[dataKey][zone.z - 1] || 0,
+                    })),
+                });
+            }
+            if (datasets.length) {
+                datasets[datasets.length - 1].datalabels.labels.group.display = true;
+            }
+        }
+        this.chart.data.datasets = datasets;
         this.chart.update();
+        this.updateHighlightChart(-1);
+    }
+
+    updateHighlightChart(i) {
+        const disabledGroups = this.getPrefs('disabledDatasetGroups', {});
+        const disabled = this.getPrefs('disabledDatasets', {});
+        const hidden = this.getPrefs('hiddenDatasets', {});
+        const datasets = [];
+        const data = this.metricData[i] || this.metricData[this.metricData.length - 1];
+        if (!data) {
+            return;
+        }
+        for (const spec of this.specs) {
+            if (disabledGroups[spec.group]) {
+                continue;
+            }
+            const zones = spec.zones.filter(x => {
+                const id = `${x.group}-z${x.z}`;
+                return !disabled[id] && !hidden[id];
+            });
+            if (zones.length) {
+                const dataKey = `${zones[0].group}ZonesTime`;
+                datasets.push({
+                    backgroundColor: zones.map(x => this.getZoneColor(x.z, 0, -3, 2 + spec.lightShift, 0.8)),
+                    hoverBackgroundColor: zones.map(x => this.getZoneColor(x.z, 0, 3, -2 + spec.lightShift, 0.9)),
+                    borderColor: zones.map(x => this.getZoneColor(x.z, 0, -3, -10 + spec.lightShift, 0.9)),
+                    hoverBorderColor: zones.map(x => this.getZoneColor(x.z, 0, 3, -20 + spec.lightShift, 0.9)),
+                    borderWidth: 1,
+                    data: zones.map(x => data[dataKey][x.z - 1] || 0),
+                });
+            }
+        }
+        this.highlightChart.data.datasets = datasets;
+        this.highlightChart.update();
     }
 }
 

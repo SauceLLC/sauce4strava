@@ -1185,6 +1185,7 @@ table.activity-table {
                 .chart-tooltip {
                     display: flex;
                     flex-direction: column;
+                    width: 100%;
                     font-size: 0.96em;
                     position: relative;
                     --caret-left: center;
@@ -1195,11 +1196,6 @@ table.activity-table {
 
                         .tt-labels {
                             flex-direction: column;
-                        }
-
-                        &::after {
-                            display: none;
-                            content: none;
                         }
                     }
 
@@ -1360,14 +1356,33 @@ table.activity-table {
                     min-height: max(10em, calc(22vw * var(--height-factor)));
                     height: calc(22vh * var(--height-factor));
                     max-height: calc(24em * var(--height-factor));
+                    position: relative;  // chart resizer is absolute
                 }
 
                 &.horizontal {
                     flex-direction: row;
-                    //flex-wrap: wrap;
+                    flex-wrap: wrap;
+
+                    > * {
+                        max-width: 100%;
+                        overflow: hidden;
+                        position: relative;
+                        min-width: 300px;
+                    }
 
                     .chart {
-                        flex: 1 1 auto;
+                        flex: 1 1 75%;
+                        min-width: 300px;
+                        display: flex;
+                        align-items: center;
+                    }
+
+                    .highlight {
+                        flex: 0 1 25%;
+                        min-width: 150px;
+                        max-width: 17em;
+                        display: flex;
+                        align-items: center;
                     }
                 }
             }
