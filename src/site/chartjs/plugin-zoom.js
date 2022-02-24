@@ -26,6 +26,9 @@
         id: 'zoom',
 
         afterInit: function(chart) {
+            if (!this.getOption(chart, 'enabled')) {
+                return;
+            }
             if (chart.config.options.scales.xAxes.length == 0) {
                 return;
             }
@@ -38,9 +41,6 @@
             }
             if (chart.options.plugins.zoom === undefined) {
                 chart.options.plugins.zoom = defaultOptions;
-            }
-            if (!this.getOption(chart, 'enabled')) {
-                return;
             }
             chart._zoomState = {
                 originalData: [],
