@@ -257,9 +257,10 @@ class SauceChart extends Chart {
             const ds = datasets[dsIndex];
             if (ds && ds.data && ds.data[index]) {
                 if (ds.data[index].b == null) {
-                    throw new Error("Missing bucket entry in dataset");
+                    console.warn("Missing bucket entry in dataset", ds.data[index]);
+                } else {
+                    buckets.add(ds.data[index].b);
                 }
-                buckets.add(ds.data[index].b);
             }
         }
         return Array.from(buckets);
@@ -367,7 +368,7 @@ export class ActivityTimeRangeChart extends SauceChart {
         // Interrogate valid highlighted datasets first...
         for (let [ds, idx] of adjHiTuples) {
             const data = ds.data[idx];
-            if (!data) {
+            if (!data || !data.b) {
                 continue;
             }
             startDate = data.b.date < startDate ? data.b.date : startDate;
@@ -380,7 +381,7 @@ export class ActivityTimeRangeChart extends SauceChart {
                 continue;
             }
             const inRangeIndexes = ds.data
-                .map((x, i) => x.b.date >= startDate && x.b.date < endDate ? i : -1)
+                .map((x, i) => x.b && x.b.date >= startDate && x.b.date < endDate ? i : -1)
                 .filter(x => x !== -1);
             for (const i of inRangeIndexes) {
                 const data = ds.data[i];
