@@ -8,7 +8,7 @@ fi
 KIND=$1
 
 TMPDIR=$(mktemp -d)
-rsync -av \
+rsync -a \
     --exclude '.git*' \
     --exclude 'manifest*.json' \
     --exclude 'README.md' \
@@ -20,6 +20,7 @@ rsync -av \
     --exclude 'node_modules' \
     --exclude 'tools' \
     --exclude 'assets' \
+    --exclude 'images/*dev.png' \
     --exclude 'scss' \
     --exclude 'css' \
     --exclude 'builds' \
@@ -45,7 +46,7 @@ BUILDS=$(pwd)/builds
 mkdir -p $BUILDS
 cd $TMPDIR
 OUTFILE="${BUILDS}/sauce-${KIND}-${VERSION}-${GIT_COMMIT}.${EXT}"
-zip -r -FS "$OUTFILE" *
+zip -9 -r -FS "$OUTFILE" *
 cd -
 rm -rf $TMPDIR
 echo Wrote $OUTFILE

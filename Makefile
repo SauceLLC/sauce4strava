@@ -64,7 +64,9 @@ $(MANIFEST): manifest_base.json manifest_$(TARGET).json Makefile
 	$(MAKE) manifest
 
 manifest:
-	$(TOOLPATH)/mergejson manifest_base.json manifest_$(TARGET).json > manifest.json
+	$(TOOLPATH)/mergejson manifest_base.json manifest_$(TARGET).json > manifest.json.tmp
+	$(TOOLPATH)/mergejson manifest.json.tmp manifest_dev.json > manifest.json
+	rm -f manifest.json.tmp
 
 packages:
 	$(TOOLPATH)/package gecko
