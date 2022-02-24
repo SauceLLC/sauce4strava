@@ -283,18 +283,13 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             'hr': {label: this.LM('hr_zones')},
         };
         this.availableDatasets = {
-            'power-z1': {label: 'Z1', group: 'power', z: 1},
-            'power-z2': {label: 'Z2', group: 'power', z: 2},
-            'power-z3': {label: 'Z3', group: 'power', z: 3},
-            'power-z4': {label: 'Z4', group: 'power', z: 4},
-            'power-z5': {label: 'Z5', group: 'power', z: 5},
-            'power-z6': {label: 'Z6', group: 'power', z: 6},
-            'power-z7': {label: 'Z7', group: 'power', z: 7},
-            'hr-z1': {label: '❤️ Z1', group: 'hr', z: 1},
-            'hr-z2': {label: '❤️ Z2', group: 'hr', z: 2},
-            'hr-z3': {label: '❤️ Z3', group: 'hr', z: 3},
-            'hr-z4': {label: '❤️ Z4', group: 'hr', z: 4},
-            'hr-z5': {label: '❤️ Z5', group: 'hr', z: 5},
+            'z1': {label: 'Z1', z: 1},
+            'z2': {label: 'Z2', z: 2},
+            'z3': {label: 'Z3', z: 3},
+            'z4': {label: 'Z4', z: 4},
+            'z5': {label: 'Z5', z: 5},
+            'z6': {label: 'Z6', z: 6},
+            'z7': {label: 'Z7', z: 7},
         };
         this.zoneColors = {
             1: {h: 180, s: 10, l: 70},
@@ -308,6 +303,9 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
         this.setChartConfig({
             type: 'bar',
             options: {
+                layout: {
+                    padding: {top: 24},
+                },
                 scales: {
                     xAxes: [{
                         stacked: true,
@@ -336,6 +334,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
     async render(...args) {
         await super.render(...args);
         const ctx = this.el.querySelector('.highlight canvas').getContext('2d');
+        let pendingFooter;
         this.highlightChart = new Chart(ctx, {
             type: 'doughnut',
             options: {
@@ -348,7 +347,33 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                 layout: {
                     padding: 20,
                 },
-            },
+                tooltips: {
+                    callbacks: {
+                        label: ({datasetIndex, index}) => {
+                            const ds = this.highlightChart.data.datasets[datasetIndex];
+                            const zone = ds.zones[index];
+                            const group = ds.group;
+                            const val = H.duration(ds.data[index], {short: true});
+                            let zones;
+                            let units;
+                            if (group === 'power') {
+                                zones = sauce.power.cogganZones(getAthleteFTPAt(this.athlete, ds.ts));
+                                units = 'w';
+                            } else if (group === 'hr') {
+                                zones = {...this.athlete.hrZones, z5: Infinity};
+                                units = 'bpm';  // XXX localize
+                            } else {
+                                throw new Error("Internal zone tooltip error");
+                            }
+                            const ceil = H.number(zones[zone.id]);
+                            const floor = H.number(zones[`z${zone.z - 1}`] || 1);
+                            pendingFooter = `\n${floor}${units} -> ${ceil}${units}`;
+                            return `${zone.label} ${group === 'power' ? '🗲' : '♡'}: ${val}`;
+                        },
+                        afterBody: () => pendingFooter
+                    }
+                }
+            }
         });
     }
 
@@ -356,37 +381,39 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
         this.$('.metric-display').text(this.pageView.getMetricLocale(this.range.metric));
         const disabledGroups = this.getPrefs('disabledDatasetGroups', {});
         const disabled = this.getPrefs('disabledDatasets', {});
+        const powerZones = Object.entries(this.availableDatasets).map(([id, x]) => ({id, ...x}));
+        const hrZones = powerZones.slice(0, 5);
         this.specs = [{
             group: 'power',
-            zones: Object.values(this.availableDatasets).filter(x => x.group === 'power'),
+            zones: powerZones.filter(x => !disabled[x.id]),
             lightShift: 0,
         }, {
             group: 'hr',
-            zones: Object.values(this.availableDatasets).filter(x => x.group === 'hr'),
+            zones: hrZones.filter(x => !disabled[x.id]),
             lightShift: -20,
-        }];
+        }].filter(x => !disabledGroups[x.group]);
         const datasets = [];
         for (const spec of this.specs) {
-            if (disabledGroups[spec.group]) {
-                continue;
-            }
             for (const zone of spec.zones) {
-                const id = `${zone.group}-z${zone.z}`;
-                if (disabled[id]) {
-                    continue;
-                }
-                const dataKey = `${zone.group}ZonesTime`;
+                const dataKey = `${spec.group}ZonesTime`;
                 datasets.push({
-                    id,
-                    label: zone.label,
+                    id: zone.id,
+                    label: (spec.group === 'power' || this.specs.length === 1) ? zone.label : false,
                     backgroundColor: this.getZoneColor(zone.z, 0, -3, 2 + spec.lightShift, 0.8),
                     hoverBackgroundColor: this.getZoneColor(zone.z, 0, 3, -2 + spec.lightShift, 0.9),
                     borderColor: this.getZoneColor(zone.z, 0, -3, -10 + spec.lightShift, 0.9),
                     hoverBorderColor: this.getZoneColor(zone.z, 0, 3, -20 + spec.lightShift, 0.9),
                     borderWidth: 1,
                     yAxisID: 'time',
-                    stack: zone.group,
-                    tooltipFormat: x => H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true}),
+                    stack: spec.group,
+                    tooltipFormatExtraLines: 'same',
+                    tooltipFormat: (val, idx, ds) => {
+                        const datas = datasets.filter(x => x.id == ds.id).map(x => [x.stack, x.data[idx].y]);
+                        return datas.map(([stack, t]) =>
+                            H.duration(t, {short: true, html: true}) +
+                            (stack === 'power' ? ' 🗲 ' : ' ♡')
+                        );
+                    },
                     datalabels: {
                         labels: {
                             value: {
@@ -400,19 +427,17 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                                 },
                                 formatter: (value, ctx) =>
                                     H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b[dataKey]) * 100) + '%',
-                                backgroundColor: ctx => ctx.dataset.backgroundColor,
-                                borderRadius: 2,
                                 color: x => [0, 1, 2, 7, 8, 9].includes(x.datasetIndex) ? 'black' : 'white',
-                                padding: {top: 2, bottom: 2, left: 4, right: 4},
-                                font: {size: 10},
+                                font: {size: 9},
                             },
                             group: {
                                 display: false,
-                                formatter: () => zone.group === 'power' ? '' : '❤️',
+                                formatter: () => spec.group === 'power' ? '🗲' : '♡',
+                                padding: {bottom: -10},
                                 anchor: 'end',
                                 align: 'end',
-                                font: {size: 9},
-                                opacity: 0.8,
+                                font: {size: 18},
+                                opacity: 1,
                             }
                         }
                     },
@@ -433,8 +458,6 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
     }
 
     updateHighlightChart(i) {
-        const disabledGroups = this.getPrefs('disabledDatasetGroups', {});
-        const disabled = this.getPrefs('disabledDatasets', {});
         const hidden = this.getPrefs('hiddenDatasets', {});
         const datasets = [];
         const data = this.metricData[i] || this.metricData[this.metricData.length - 1];
@@ -442,16 +465,13 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             return;
         }
         for (const spec of this.specs) {
-            if (disabledGroups[spec.group]) {
-                continue;
-            }
-            const zones = spec.zones.filter(x => {
-                const id = `${x.group}-z${x.z}`;
-                return !disabled[id] && !hidden[id];
-            });
+            const zones = spec.zones.filter(x => !hidden[x.id]);
             if (zones.length) {
-                const dataKey = `${zones[0].group}ZonesTime`;
+                const dataKey = `${spec.group}ZonesTime`;
                 datasets.push({
+                    ts: +data.date,
+                    group: spec.group,
+                    zones,
                     backgroundColor: zones.map(x => this.getZoneColor(x.z, 0, -3, 2 + spec.lightShift, 0.8)),
                     hoverBackgroundColor: zones.map(x => this.getZoneColor(x.z, 0, 3, -2 + spec.lightShift, 0.9)),
                     borderColor: zones.map(x => this.getZoneColor(x.z, 0, -3, -10 + spec.lightShift, 0.9)),

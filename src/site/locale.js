@@ -204,6 +204,10 @@ sauce.ns('locale', ns => {
 
     function humanDuration(elapsed, options={}) {
         assertInit();
+        if (options.short) {
+            return ns.timeFormatter.abbreviated(elapsed, /*seconds*/ false,
+                /*empty str*/ null, !!options.html);
+        }
         const min = 60;
         const hour = min * 60;
         const day = hour * 24;

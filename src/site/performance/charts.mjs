@@ -383,6 +383,14 @@ export class ActivityTimeRangeChart extends SauceChart {
             const inRangeIndexes = ds.data
                 .map((x, i) => x.b && x.b.date >= startDate && x.b.date < endDate ? i : -1)
                 .filter(x => x !== -1);
+            const extraLineFormatter = ds.tooltipFormatExtraLines === 'same' ?
+                x => `
+                    <div class="line">
+                        <span class="label" style="visibility: hidden;">${ds.label}</span>
+                        <span class="value">${x}</span>
+                    </div>
+                ` :
+                x => `<div class="line extra">${x}</div>`;
             for (const i of inRangeIndexes) {
                 const data = ds.data[i];
                 const raw = data.y;
@@ -402,7 +410,7 @@ export class ActivityTimeRangeChart extends SauceChart {
                             <div class="line">
                                 <span class="label">${ds.label}</span> <span class="value">${values[0]}</span>
                             </div>
-                            ${values.slice(1).map(x => `<div class="line extra">${x}</div>`).join('')}
+                            ${values.slice(1).map(extraLineFormatter).join('')}
                         </div>
                     </div>
                 `);

@@ -1207,6 +1207,10 @@ table.activity-table {
                         }
                     }
 
+                    &.zonetime .line.extra {
+                        padding-left: 1rem;
+                    }
+
                     // Tuned carefully for caret alignment...
                     $border-color: color.shade(accent4, 0%, 0.8);
                     $border-width: 2px;
@@ -1301,7 +1305,10 @@ table.activity-table {
                             opacity: 1;
 
                             &:not(.ds-hidden) {
-                                text-decoration: underline;
+                                &,
+                                .line > * {
+                                    text-decoration: underline;
+                                }
                             }
                         }
 
