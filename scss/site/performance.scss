@@ -4,7 +4,16 @@
 @use 'buttons';
 @use 'sync';
 
-@import url('https://fonts.googleapis.com/css?family=Permanent+Marker&display=swap');
+@font-face {
+    font-family: 'Material Icons';
+    font-weight: 400;
+    src: url('fonts/Material-Icons-Regular.woff2') format('woff2');
+}
+
+
+body {
+    font-family: "MaisonNeue", "Segoe UI", "Helvetica Neue", -apple-system, system-ui, BlinkMacSystemFont, Roboto, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Material Icons";
+}
 
 
 // Use px for media query compat..
@@ -41,7 +50,6 @@ html.sauce-performance {
         width: 100%;
         height: 100%;
     }
-
 
     body {
         overflow: auto;

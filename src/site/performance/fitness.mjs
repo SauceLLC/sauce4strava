@@ -278,6 +278,8 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
 
     async init(options) {
         await super.init({ChartClass: ZoneTimeChart, ...options});
+        this.powerIcon = '\uea0b';
+        this.hrIcon = '\ue87e';
         this.availableDatasetGroups = {
             'power': {label: this.LM('power_zones')},
             'hr': {label: this.LM('hr_zones')},
@@ -368,7 +370,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                             const ceil = H.number(zones[zone.id]);
                             const floor = H.number(zones[`z${zone.z - 1}`] || 1);
                             pendingFooter = `\n${floor}${units} -> ${ceil}${units}`;
-                            return `${zone.label} ${group === 'power' ? '🗲' : '♡'}: ${val}`;
+                            return `${zone.label} ${group === 'power' ? this.powerIcon : this.hrIcon}: ${val}`;
                         },
                         afterBody: () => pendingFooter
                     }
@@ -393,6 +395,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             lightShift: -20,
         }].filter(x => !disabledGroups[x.group]);
         const datasets = [];
+        const metricLen = this.metricData.length;
         for (const spec of this.specs) {
             for (const zone of spec.zones) {
                 const dataKey = `${spec.group}ZonesTime`;
@@ -410,8 +413,8 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                     tooltipFormat: (val, idx, ds) => {
                         const datas = datasets.filter(x => x.id == ds.id).map(x => [x.stack, x.data[idx].y]);
                         return datas.map(([stack, t]) =>
-                            H.duration(t, {short: true, html: true}) +
-                            (stack === 'power' ? ' 🗲 ' : ' ♡')
+                            H.duration(t, {short: true, html: true}) + ' ' +
+                            (stack === 'power' ? this.powerIcon : this.hrIcon)
                         );
                     },
                     datalabels: {
@@ -420,27 +423,24 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                                 display: ctx => {
                                     const el = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
                                     const m = el._model;
-                                    if ((m.width || 0) < 10) {
+                                    if ((m.width || 0) < 20) {
                                         return false;
                                     }
-                                    //const fontSize = Math.min(m.width / 4, 14);
-                                    //datasets[ctx.datasetIndex].datalabels.labels.value.font.size = fontSize;
                                     const height = m.base - m.y;
-                                    return height > 11 ? 'auto' : false;
+                                    return height > 16 ? 'auto' : false;
                                 },
                                 formatter: (value, ctx) =>
                                     H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b[dataKey]) * 100) + '%',
-                                color: x => [0, 1, 2, 7, 8, 9].includes(x.datasetIndex) ? 'black' : 'white',
-                                font: {size: 10},
+                                color: x => [0, 1, 2, 7, 8, 9].includes(x.datasetIndex) ? '#0009' : '#fffc',
+                                font: {size: metricLen >= 12 ? 9 : 10},
                             },
                             group: {
                                 display: false,
-                                formatter: () => spec.group === 'power' ? '🗲' : '♡',
+                                formatter: () => spec.group === 'power' ? this.powerIcon : this.hrIcon,
                                 padding: {bottom: -10},
                                 anchor: 'end',
                                 align: 'end',
-                                font: {size: 15},
-                                opacity: 1,
+                                font: {size: metricLen >= 12 ? 12 : 15},
                             }
                         }
                     },
