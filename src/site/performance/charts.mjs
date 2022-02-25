@@ -577,7 +577,7 @@ export class ChartView extends views.PerfView {
     get events() {
         return {
             ...super.events,
-            'click canvas': 'onChartClick',
+            'click .chart canvas': 'onChartClick',
         };
     }
 
@@ -601,23 +601,24 @@ export class ChartView extends views.PerfView {
     }
 
     async render() {
-        const $canvas = this.$el && this.$('canvas');
-        if ($canvas && $canvas.length) {
+        let $canvas;
+        if (this.chart && this.chart.canvas) {
             // Because of the funky config system we never rebuild a chart, we use just one.
             // So we need to save the canvas from the first render and then reattach after.
             if (this.chart) {
                 this.chart.stop();
             }
+            $canvas = jQuery(this.chart.canvas);
             $canvas.detach();
         }
         await super.render();
         if ($canvas && $canvas.length) {
-            this.$('canvas').replaceWith($canvas);
+            this.$('.chart canvas').replaceWith($canvas);
         }
         if (this.chart) {
             this.chart.update();
         } else if (this._chartConfig) {
-            const ctx = this.$('canvas')[0].getContext('2d');
+            const ctx = this.$('.chart canvas')[0].getContext('2d');
             this.chart = new this._ChartClass(ctx, this, this._chartConfig);
         }
     }

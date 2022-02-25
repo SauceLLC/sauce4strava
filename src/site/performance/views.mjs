@@ -1159,6 +1159,7 @@ export class MainView extends PerfView {
                     this.panels.splice(order, 1);
                     await this.savePrefs();
                     await this.render();
+                    await this.pageView.schedUpdateActivities();
                     $dialog.dialog('destroy');
                 }
             }],
