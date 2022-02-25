@@ -1,7 +1,9 @@
 /* global importScripts, sauce */
 
 importScripts('/src/common/base.js');
-self.sauceBaseInit();
+const version = new URLSearchParams(location.search).get('version');
+const url = `${location.protocol}//${location.hostname}/`;
+self.sauceBaseInit(null, url, {name: 'Sauce Worker', version});
 importScripts('/src/bg/hist/db.js');
 importScripts('/src/common/lib.js');
 

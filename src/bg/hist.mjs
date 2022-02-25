@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, browser */
 
 import * as jobs from '/lib/jscoop/jobs.mjs';
 import * as queues from '/lib/jscoop/queues.mjs';
@@ -157,8 +157,6 @@ async function networkOnline(timeout) {
         }
     });
 }
-
-
 
 
 class SauceRateLimiter extends jobs.RateLimiter {
@@ -894,7 +892,6 @@ export async function invalidateSyncState(...args) {
     }
 }
 sauce.proxy.export(invalidateSyncState, {namespace});
-
 
 
 export async function invalidateActivitySyncState(activityId, processor, name, options={}) {

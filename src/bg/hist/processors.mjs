@@ -198,7 +198,7 @@ class WorkerExecutor {
     }
 }
 
-const workerExec = new WorkerExecutor(browser.runtime.getURL('src/bg/hist/worker.js'));
+const workerExec = new WorkerExecutor(browser.runtime.getURL(`src/bg/hist/worker.js?version=${sauce.version}`));
 
 
 export class OffloadProcessor extends futures.Future {
