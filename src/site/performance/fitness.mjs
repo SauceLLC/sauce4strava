@@ -304,7 +304,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
             type: 'bar',
             options: {
                 layout: {
-                    padding: {top: 24},
+                    padding: {top: 25},
                 },
                 scales: {
                     xAxes: [{
@@ -418,17 +418,20 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                         labels: {
                             value: {
                                 display: ctx => {
-                                    const meta = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
-                                    if (meta._model.width < 28) {
+                                    const el = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.dataIndex];
+                                    const m = el._model;
+                                    if ((m.width || 0) < 10) {
                                         return false;
                                     }
-                                    const height = meta._model.base - meta._model.y;
-                                    return height > 20 ? 'auto' : false;
+                                    //const fontSize = Math.min(m.width / 4, 14);
+                                    //datasets[ctx.datasetIndex].datalabels.labels.value.font.size = fontSize;
+                                    const height = m.base - m.y;
+                                    return height > 11 ? 'auto' : false;
                                 },
                                 formatter: (value, ctx) =>
                                     H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b[dataKey]) * 100) + '%',
                                 color: x => [0, 1, 2, 7, 8, 9].includes(x.datasetIndex) ? 'black' : 'white',
-                                font: {size: 9},
+                                font: {size: 10},
                             },
                             group: {
                                 display: false,
@@ -436,7 +439,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                                 padding: {bottom: -10},
                                 anchor: 'end',
                                 align: 'end',
-                                font: {size: 18},
+                                font: {size: 15},
                                 opacity: 1,
                             }
                         }

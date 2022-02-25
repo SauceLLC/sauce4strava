@@ -1,4 +1,4 @@
-/* global sauce Chart jQuery */
+/* global sauce, Chart, jQuery, Color */
 
 import * as views from './views.mjs';
 
@@ -7,6 +7,21 @@ const chartTopPad = 15;
 const L = sauce.locale;
 const H = L.human;
 const D = sauce.date;
+
+
+function setStyle() {
+    const style = getComputedStyle(document.body);
+    Chart.defaults.global.defaultFontFamily = style.fontFamily;
+    Chart.defaults.global.defaultFontColor = (new Color(style.color)).alpha(0.75).rgbaString();
+    Chart.defaults.scale.gridLines.color = (new Color(style.color)).alpha(0.1).rgbaString();
+}
+
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setStyle);
+} else {
+    setStyle();
+}
 
 
 // XXX maybe Chart.helpers has something like this..
