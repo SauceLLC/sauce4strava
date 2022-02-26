@@ -1,4 +1,4 @@
-/* global sauce, browser */
+/* global sauce */
 
 import * as jobs from '/lib/jscoop/jobs.mjs';
 import * as queues from '/lib/jscoop/queues.mjs';
@@ -1783,7 +1783,6 @@ class SyncManager extends EventTarget {
             this._refreshLoop = null;
         }
     }
-
 
     async syncVersionHash() {
         const manifests = [].concat(

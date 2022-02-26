@@ -62,7 +62,7 @@ sauce.ns('sync', ns => {
     function restoreData(progressFn) {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.sbin';
+        input.accept = '.sbin,.sbinz';
         input.multiple = true;
         input.style.display = 'none';
         const dataEx = new sauce.hist.DataExchange();
@@ -72,27 +72,53 @@ sauce.ns('sync', ns => {
             const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
             const files = input.files;
             let fileNum = 0;
+            const fflate = await import(sauce.getURL('lib/fflate.mjs'));
+            let totalBundles = 0;
             for (const f of files) {
+                const gunzip = new fflate.Gunzip();
                 fileNum++;
                 if (progressFn) {
-                    progressFn('reading', fileNum, files.length);
+                    progressFn('reading', fileNum, files.length, 0);
                 } else {
-                    console.debug('reading', fileNum, files.length);
+                    console.debug('reading', fileNum, files.length, 0);
                 }
-                const ab = await sauce.blobToArrayBuffer(f);
-                const batch = sauce.decodeBundle(ab);
                 const stride = 250;  // ~10MB
-                for (let i = 0; i < batch.length; i += stride) {
-                    importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
+                let pendingBuf;
+                let bytesRead = 0;
+                for await (const ab of sauce.streamBlobAsArrayBuffers(f)) {
+                    bytesRead += ab.byteLength;
+                    if (progressFn) {
+                        progressFn('reading', fileNum, files.length, bytesRead / f.size);
+                    } else {
+                        console.debug('reading', fileNum, files.length, bytesRead / f.size);
+                    }
+                    let buf;
+                    if (f.name.endsWith('.sbinz')) {
+                        gunzip.ondata = b => buf = b;
+                        gunzip.push(new Uint8Array(ab));
+                        if (!buf) {
+                            // nothing available for decode yet.
+                            console.warn("decompressor needs more data");
+                            continue;
+                        }
+                    } else {
+                        buf = ab;
+                    }
+                    const [batch, remBuf] = sauce.decodeBundle(pendingBuf ? sauce.concatBuffers(pendingBuf, buf) : buf);
+                    for (let i = 0; i < batch.length; i += stride) {
+                        await importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
+                    }
+                    totalBundles += batch.length;
+                    pendingBuf = remBuf;
                 }
                 let i = 1;
                 for await (const x of importingQueue) {
                     void x;
-                    const progress = Math.min(i++ * stride, batch.length);
+                    const progress = Math.min(i++ * stride, totalBundles);
                     if (progressFn) {
-                        progressFn('importing', fileNum, files.length, progress / batch.length);
+                        progressFn('importing', fileNum, files.length, progress / totalBundles);
                     } else {
-                        console.debug('importing', fileNum, files.length, progress / batch.length);
+                        console.debug('importing', fileNum, files.length, progress / totalBundles);
                     }
                 }
             }
@@ -126,29 +152,38 @@ sauce.ns('sync', ns => {
 
 
     async function backupAthleteData(athlete, progressFn) {
-        let bigBundle;
+        let compressedBundles;
+        const fflate = await import(sauce.getURL('lib/fflate.mjs'));
+        const gzip = new fflate.Gzip();
         let page = 1;
         const mem = navigator.deviceMemory || 4;
         const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
         const dl = () => {
-            sauce.ui.downloadBlob(new Blob([bigBundle]), `${athlete.name}-${date}-${page++}.sbin`);
-            bigBundle = null;
+            sauce.ui.downloadBlob(new Blob([compressedBundles]), `${athlete.name}-${date}-${page++}.sbinz`);
+            compressedBundles = null;
         };
         const dataEx = new sauce.hist.DataExchange(athlete.id);
-        dataEx.addEventListener('data', async ev => {
-            const bundle = sauce.encodeBundle(ev.data);
-            bigBundle = bigBundle ? sauce.concatBundles(bigBundle, bundle) : bundle;
-            if (progressFn) {
-                progressFn(page, bigBundle.length);
-            } else {
-                console.debug(page, bigBundle.byteLength);
-            }
-            if (bigBundle.byteLength > Math.min(mem * 0.25, 1) * GB) {
+        gzip.ondata = (chunk, isLast) => {
+            compressedBundles = compressedBundles ? sauce.concatBuffers(compressedBundles, chunk) : chunk;
+            if (isLast) {
                 dl();
+            }
+        };
+        dataEx.addEventListener('data', async ev => {
+            gzip.push(sauce.encodeBundle(ev.data));
+            if (progressFn) {
+                progressFn(page, compressedBundles.length);
+            } else {
+                console.debug(page, compressedBundles.byteLength);
+            }
+            if (compressedBundles.byteLength >= Math.min(mem * 0.25, 1) * GB) {
+                gzip.push(new Uint8Array(), true);
             }
         });
         await dataEx.export();
-        dl();
+        if (compressedBundles) {
+            gzip.push(new Uint8Array(), true);
+        }
     }
 
 
@@ -214,7 +249,7 @@ sauce.ns('sync', ns => {
                         const fileDesc = numFiles > 1 ?
                             `file ${fileNum} of ${numFiles}` : 'file';
                         if (state === 'reading') {
-                            btn.textContent = `Reading ${fileDesc}...`;
+                            btn.textContent = `Reading ${fileDesc}: ${H.number(progress * 100)}%`;
                         } else if (state === 'importing') {
                             btn.textContent = `Importing ${fileDesc}: ${H.number(progress * 100)}%`;
                         } else {

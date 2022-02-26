@@ -286,7 +286,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     };
 
 
-    sauce.concatBundles = function(srcBundle, ...bundles) {
+    sauce.concatBuffers = function(srcBundle, ...bundles) {
         const dataSize = srcBundle.byteLength + bundles.reduce((sz, b) => b.byteLength + sz, 0);
         let output;
         if (dataSize > srcBundle.buffer.byteLength - srcBundle.byteOffset) {
@@ -304,18 +304,22 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
 
 
     sauce.decodeBundle = function(buffer) {
-        const input = new Uint8Array(buffer);
-        const view = new DataView(buffer);
+        const input = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+        const view = new DataView(input.buffer, input.byteOffset, input.byteLength);
         const text = new TextDecoder('utf-8');
         const datas = [];
-        let idx = 0;
-        while (idx < input.byteLength) {
-            const size = view.getUint32(idx);
-            idx += 4;
-            datas.push(text.decode(input.slice(idx, idx + size)));
-            idx += size;
+        const prefixSize = 4;
+        let offt = 0;
+        while (offt < (input.byteLength - prefixSize)) {
+            const size = view.getUint32(offt);
+            if (input.byteLength - offt - prefixSize < size) {
+                break; // short read.
+            }
+            offt += prefixSize;
+            datas.push(text.decode(input.slice(offt, offt + size)));
+            offt += size;
         }
-        return datas;
+        return [datas, offt < input.byteLength ? input.slice(offt) : null];
     };
 
 
@@ -328,6 +332,25 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
         reader.readAsArrayBuffer(blob);
         await done;
         return reader.result;
+    };
+
+
+    sauce.streamBlobAsArrayBuffers = async function*(blob, stride=1024*1024) {
+        let offt = 0;
+        while (true) {
+            const chunk = blob.slice(offt, (offt += stride));
+            if (!chunk.size) {
+                break;
+            }
+            const reader = new FileReader();
+            const ready = new Promise((resolve, reject) => {
+                reader.addEventListener('load', resolve);
+                reader.addEventListener('error', () => reject(new Error('invalid blob')));
+            });
+            reader.readAsArrayBuffer(chunk);
+            await ready;
+            yield reader.result;
+        }
     };
 
 

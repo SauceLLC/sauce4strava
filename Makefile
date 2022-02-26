@@ -38,6 +38,7 @@ lib:
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/locks.mjs lib/jscoop/locks.mjs
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/queues.mjs lib/jscoop/queues.mjs
 	$(TOOLPATH)/tersify $(MODS)/sauce-chartjs/dist/Chart.terser.js lib/Chart.js
+	$(TOOLPATH)/tersify $(MODS)/fflate/esm/browser.js lib/fflate.mjs
 
 clean:
 	rm -rf $(PACKAGES) builds css
