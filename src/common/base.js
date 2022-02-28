@@ -127,10 +127,14 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
             !!navigator.userAgent.match(/ Edg\//);
     };
 
-    sauce.isChrome = function() {
-        return !sauce.isEdge() && (_modernBrowserBrands ?
+    sauce.isChromium = function() {
+        return _modernBrowserBrands ?
             _modernBrowserBrands.has('Chromium') :
-            !!navigator.userAgent.match(/ Chrome\//));
+            !!navigator.userAgent.match(/ Chrome\//);
+    };
+
+    sauce.isChrome = function() {
+        return !sauce.isEdge() && sauce.isChromium();
     };
 
     sauce.isMobile = function() {
