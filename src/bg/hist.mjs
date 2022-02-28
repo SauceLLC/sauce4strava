@@ -2263,16 +2263,6 @@ class DataExchange extends sauce.proxy.Eventing {
     }
 
     async exportActivityFiles(type='fit') {
-        try {
-            return await this._exportActivityFiles();
-        } catch(e) {
-            console.error(e);
-            debugger;
-            throw e;
-        }
-    }
-
-    async _exportActivityFiles(type='fit') {
         const s = Date.now();
         const exportModule = await import(sauce.getURL('/src/site/export.mjs'));
         const Serializer = exportModule[{
