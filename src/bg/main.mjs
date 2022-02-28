@@ -115,7 +115,7 @@ browser.runtime.onInstalled.addListener(async details => {
     }
 });
 
-browser.runtime.onMessage.addListener(msg => {
+browser.runtime.onMessage.addListener(async msg => {
     if (msg && msg.source === 'ext/boot') {
         if (msg.op === 'setCurrentUser') {
             const id = msg.currentUser || undefined;
