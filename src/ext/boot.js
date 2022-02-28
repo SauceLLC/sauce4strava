@@ -301,6 +301,28 @@
     sauce.proxy.export(setBackgroundPageCurrentUser);
 
 
+    // We can quickly download blob URLs made by the background page, but only in this
+    // context.  Downloading them in the background page works for Chromium only, but
+    // this works on everything.
+    async function downloadExtBlobURL(url, name) {
+        const resp = await fetch(url);
+        const data = await resp.arrayBuffer();
+        const blob = new Blob([data]);
+        const link = document.createElement('a');
+        link.download = name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.href = URL.createObjectURL(blob);
+        try {
+            link.click();
+        } finally {
+            URL.revokeObjectURL(link.href);
+            link.remove();
+        }
+    }
+    sauce.proxy.export(downloadExtBlobURL);
+
+
     async function load() {
         /* Using the src works but is async, this will block the page from loading while the scripts
          * are evaluated and executed, preventing race conditions in our preloader */

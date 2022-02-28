@@ -168,6 +168,11 @@ sauce.ns('hist.db', ns => {
             const data = await this.getAll(activityId, {index: 'activity', ...options});
             return Object.fromEntries(data.map(({stream, data}) => [stream, data]));
         }
+
+        async getManyForActivities(activityIds, options={}) {
+            const data = await this.getAllMany(activityIds, {index: 'activity', ...options});
+            return data.map(x => Object.fromEntries(x.map(({stream, data}) => [stream, data])));
+        }
     }
 
 

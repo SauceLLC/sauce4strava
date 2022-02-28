@@ -2074,54 +2074,53 @@ class SyncController extends sauce.proxy.Eventing {
 sauce.proxy.export(SyncController, {namespace});
 
 
-export async function exportFiles(athleteId, type='fit') {
-    const exportModule = await import(sauce.getURL('/src/site/export.mjs'));
-    const Serializer = exportModule[{
-        fit: 'FITSerializer',
-        tcx: 'TCXSerializer',
-        gpx: 'GPXSerializer',
-    }[type]];
-    const athlete = await athletesStore.get(athleteId, {model: true});
-    const activities = await actsStore.getAllForAthlete(athleteId,
-        {_skipClone: true, _skipCache: true});
-    const athleteName = athlete.get('name');
-    const gender = athlete.get('gender');
-    while (activities.length) {
-        const act = activities.pop();
-        const streams = await streamsStore.getForActivity(act.id, {_skipClone: true, _skipCache: true});
-        if (!streams || !streams.time || !streams.time.length) {
-            continue;
+import * as fflate from '/lib/fflate.mjs';
+
+class SauceZip extends fflate.Zip {
+    constructor() {
+        super();
+        this.ondata = this._ondata.bind(this);
+        this.size = 0;
+        this._chunks = [];
+        this._isDone;
+    }
+
+    _ondata(e, data, isLast) {
+        if (e) {
+            throw e;
         }
-        const date = new Date(act.ts);
-        const serializer = new Serializer({
-            name: act.name,
-            desc: act.desc,
-            type: act.basetype,
-            date,
-            athlete: {
-                name: athleteName,
-                weight: athlete.getWeightAt(act.ts),
-                gender,
-            }
-        });
-        serializer.start();
-        serializer.loadStreams(streams);
-        const file = serializer.toFile(`${athleteName}-${date.toISOString()}`);
-        const url = URL.createObjectURL(file);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.name;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        try {
-            link.click();
-        } finally {
-            link.remove();
-            URL.revokeObjectURL(url);
+        this._chunks.push(data);
+        this.size += data.byteLength;
+    }
+
+    addFile(name, data, {level, mem, mtime}={}) {
+        if (this._isDone) {
+            throw new TypeError("ZIP is done");
         }
+        const zf = new fflate.ZipDeflate(name, {level, mem});
+        if (mtime) {
+            zf.mtime = +mtime;
+        }
+        const prevSize = this.size;
+        this.add(zf);
+        zf.push(data instanceof ArrayBuffer ? new Uint8Array(data) : data, /*isLast*/ true);
+        return this.size - prevSize;
+    }
+
+    end() {
+        super.end();
+        this._isDone = true;
+    }
+
+    getBlob() {
+        if (!this._isDone) {
+            this.end();
+        }
+        const b = new Blob(this._chunks, {type: 'application/octet-stream'});
+        this._chunks.length = 0;
+        return b;
     }
 }
-sauce.proxy.export(exportFiles, {namespace});
 
 
 class DataExchange extends sauce.proxy.Eventing {
@@ -2130,6 +2129,7 @@ class DataExchange extends sauce.proxy.Eventing {
         this.athleteId = athleteId;
         this.importing = {};
         this.importedAthletes = new Set();
+        this.blobURLs = new Set();
     }
 
     async export() {
@@ -2241,6 +2241,9 @@ class DataExchange extends sauce.proxy.Eventing {
 
     async finish() {
         this._finishing = true;
+        for (const url of this.blobURLs) {
+            URL.revokeObjectURL(url);
+        }
         if (syncManager) {
             if (syncManager.stopped) {
                 syncManager.start();
@@ -2251,6 +2254,87 @@ class DataExchange extends sauce.proxy.Eventing {
         }
     }
 
+    dispatchBlobURL(blob) {
+        const url = URL.createObjectURL(blob);
+        this.blobURLs.add(url);
+        const ev = new Event('url');
+        ev.data = url;
+        this.dispatchEvent(ev);
+    }
+
+    async exportActivityFiles(type='fit') {
+        try {
+            return await this._exportActivityFiles();
+        } catch(e) {
+            console.error(e);
+            debugger;
+            throw e;
+        }
+    }
+
+    async _exportActivityFiles(type='fit') {
+        const s = Date.now();
+        const exportModule = await import(sauce.getURL('/src/site/export.mjs'));
+        const Serializer = exportModule[{
+            fit: 'FITSerializer',
+            tcx: 'TCXSerializer',
+            gpx: 'GPXSerializer',
+        }[type]];
+        const athlete = await athletesStore.get(this.athleteId, {model: true});
+        const activities = await actsStore.getAllForAthlete(this.athleteId,
+            {_skipClone: true, _skipCache: true});
+        const athleteName = athlete.get('name');
+        const gender = athlete.get('gender');
+        let zip = new SauceZip();
+        const maxSize = 512 * 1024 * 1024;
+        const step = 100;  // Speedup IDB
+        for (let offt = 0; offt < activities.length; offt += step) {
+            const actsBatch = activities.slice(offt, offt + step);
+            const streamsBatch = await streamsStore.getManyForActivities(actsBatch.map(x => x.id), {index: 'activity',
+                _skipClone: true, _skipCache: true});
+            console.debug("Adding FIT files to ZIP archive", offt + actsBatch.length, activities.length);
+            for (const [i, streams] of streamsBatch.entries()) {
+                const act = actsBatch[i];
+                if (!streams || !streams.time || !streams.time.length) {
+                    continue;
+                }
+                const date = new Date(act.ts);
+                const serializer = new Serializer({
+                    name: act.name,
+                    desc: act.desc,
+                    type: act.basetype,
+                    date,
+                    athlete: {
+                        name: athleteName,
+                        weight: athlete.getWeightAt(act.ts),
+                        gender,
+                    }
+                });
+                serializer.start();
+                serializer.loadStreams(streams);
+                const file = serializer.toFile();
+                if (zip.size + file.size > maxSize) {  // file.size is uncompressed but we don't want to go over.
+                    this.dispatchBlobURL(zip.getBlob());
+                    zip = new SauceZip();
+                }
+                zip.addFile(`${athleteName.replace(/[^a-zA-Z0-9]/, '')}/${act.id}.${type}`,
+                    await file.arrayBuffer(), {mtime: date});
+                const ev = new Event('progress');
+                ev.data = zip.size;
+                this.dispatchEvent(ev);
+            }
+        }
+        if (zip.size) {
+            this.dispatchBlobURL(zip.getBlob());
+        }
+        console.warn("Took", Date.now() - s);
+    }
+
+    revokeObjectURL(url) {
+        URL.revokeObjectURL(url);
+        this.blobURLs.delete(url);
+    }
+
     delete() {
         if (!this._finishing) {
             this.finish();
@@ -2258,6 +2342,12 @@ class DataExchange extends sauce.proxy.Eventing {
     }
 }
 sauce.proxy.export(DataExchange, {namespace});
+
+
+export async function exportActivityFiles(athleteId) {
+    const dataEx = new DataExchange(athleteId);
+    return await dataEx.exportActivityFiles();
+}
 
 
 async function setStoragePersistent() {

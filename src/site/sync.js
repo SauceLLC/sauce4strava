@@ -159,7 +159,7 @@ sauce.ns('sync', ns => {
         const mem = navigator.deviceMemory || 4;
         const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
         const dl = () => {
-            sauce.ui.downloadBlob(new Blob([compressedBundles]), `${athlete.name}-${date}-${page++}.sbinz`);
+            sauce.ui.downloadBlob(new Blob([compressedBundles]), `${safeName(athlete.name)}-${date}-${page++}.sbinz`);
             compressedBundles = null;
         };
         const dataEx = new sauce.hist.DataExchange(athlete.id);
@@ -184,6 +184,37 @@ sauce.ns('sync', ns => {
         if (compressedBundles) {
             gzip.push(new Uint8Array(), true);
         }
+    }
+
+
+    async function exportActivityFiles(athlete, progressFn, type) {
+        const athletes = athlete ? [athlete] : await sauce.hist.getEnabledAthletes();
+        for (const x of athletes) {
+            await exportAthleteActivityFiles(x, progressFn);
+        }
+    }
+
+
+    function safeName(name) {
+        return name.replace(/[^a-zA-Z0-9_-]/, '');
+    }
+
+
+    async function exportAthleteActivityFiles(athlete, progressFn, type) {
+        let page = 1;
+        const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
+        const dataEx = new sauce.hist.DataExchange(athlete.id);
+        dataEx.addEventListener('url', async ev => {
+            sauce.downloadExtBlobURL(ev.data, `${safeName(athlete.name)}-${date}-${page++}.zip`);
+        });
+        dataEx.addEventListener('progress', async ev => {
+            if (progressFn) {
+                progressFn(page, ev.data);
+            } else {
+                console.debug(page, ev.data);
+            }
+        });
+        await dataEx.exportActivityFiles();
     }
 
 
@@ -220,7 +251,7 @@ sauce.ns('sync', ns => {
     async function activitySyncDialog(athleteId, syncController) {
         const locale = await L.getMessagesObject([
             'total', 'imported', 'unavailable', 'processed', 'unprocessable', 'activities',
-            'delayed_until', 'title', 'remaining', 'restore_data', 'backup_data',
+            'delayed_until', 'title', 'remaining', 'restore_data', 'backup_data', 'export_fit_files',
         ], 'sync_control_panel');
         let athlete = await sauce.hist.getAthlete(athleteId);
         let dirty;
@@ -283,6 +314,23 @@ sauce.ns('sync', ns => {
                         btn.classList.remove('sauce-loading', 'disabled');
                     }
                 }
+            }, {
+                text: locale.export_fit_files,
+                class: 'btn sauce-export-activity-files',
+                click: async ev => {
+                    sauce.report.event('AthleteSync', 'ui-button', 'export-activity-files');
+                    const btn = ev.currentTarget;
+                    const origText = btn.textContent;
+                    btn.classList.add('sauce-loading', 'disabled');
+                    try {
+                        await exportActivityFiles(athlete, (page, size) =>
+                            btn.textContent = `Creating ZIP file ${page}: ${H.number(size / MB)}MB`);
+                    } finally {
+                        btn.textContent = origText;
+                        btn.classList.remove('sauce-loading', 'disabled');
+                    }
+                }
+
             }]
         });
         const $buttons = $modal.siblings('.ui-dialog-buttonpane');
@@ -508,5 +556,6 @@ sauce.ns('sync', ns => {
         activitySyncDialog,
         backupData,
         restoreData,
+        exportActivityFiles,
     };
 });
