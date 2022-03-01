@@ -1,6 +1,6 @@
 /* global sauce */
 
-import FitParser from './jsfit/fit-parser.mjs';
+import * as fit from '../../lib/jsfit/fit.mjs';
 
 
 class Serializer {
@@ -238,7 +238,7 @@ export class TCXSerializer extends DOMSerializer {
 export class FITSerializer extends Serializer {
     start() {
         this.fileExt = 'fit';
-        this.fitParser = new FitParser();
+        this.fitParser = new fit.FitParser();
         this.fitParser.addMessage('file_id', {
             type: 'activity',
             manufacturer: 0,

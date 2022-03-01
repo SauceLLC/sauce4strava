@@ -31,7 +31,7 @@ sass:
 	cp -a scss/site/fonts css/site/
 
 lib:
-	mkdir -p lib/jscoop
+	mkdir -p lib/jscoop lib/jsfit
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/coop.mjs lib/jscoop/coop.mjs
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/futures.mjs lib/jscoop/futures.mjs
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/jobs.mjs lib/jscoop/jobs.mjs
@@ -39,6 +39,9 @@ lib:
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/queues.mjs lib/jscoop/queues.mjs
 	$(TOOLPATH)/tersify $(MODS)/sauce-chartjs/dist/Chart.terser.js lib/Chart.js
 	$(TOOLPATH)/tersify $(MODS)/fflate/esm/browser.js lib/fflate.mjs
+	$(TOOLPATH)/tersify $(MODS)/jsfit/src/fit.mjs lib/jsfit/fit.mjs
+	$(TOOLPATH)/tersify $(MODS)/jsfit/src/binary.mjs lib/jsfit/binary.mjs
+	$(TOOLPATH)/tersify $(MODS)/jsfit/src/parser.mjs lib/jsfit/parser.mjs
 
 clean:
 	rm -rf $(PACKAGES) builds css
