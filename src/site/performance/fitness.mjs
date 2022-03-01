@@ -53,7 +53,7 @@ function getAthleteFTPAt(athlete, ts) {
 
 
 function roundNumber(n, prec) {
-    return Number(n.toFixed(prec));
+    return n ? Number(n.toFixed(prec)) : 0;
 }
 
 
