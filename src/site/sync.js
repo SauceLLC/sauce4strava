@@ -260,61 +260,52 @@ sauce.ns('sync', ns => {
         const hrZonesTpl = await sauce.template.getTemplate('sync-control-panel-hr-zones.html',
             'sync_control_panel');
         const initiallyEnabled = !!athlete.sync;
-        const $modal = sauce.ui.modal({
-            title: `${locale.title} - ${athlete.name}`,
-            icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
-            dialogClass: 'sauce-sync-athlete-dialog',
-            body: await tpl({athlete}),
-            flex: true,
-            width: '60em',
-            height: 720,
-            autoDestroy: true,
-            autoOpen: false,
-            closeOnMobileBack: true,
-            extraButtons: [{
-                text: locale.restore_data,
-                class: 'btn sauce-restore',
-                click: async ev => {
-                    sauce.report.event('AthleteSync', 'ui-button', 'restore');
-                    const {started, completed} = restoreData((state, fileNum, numFiles, progress) => {
-                        const fileDesc = numFiles > 1 ?
-                            `file ${fileNum} of ${numFiles}` : 'file';
-                        if (state === 'reading') {
-                            btn.textContent = `Reading ${fileDesc}: ${H.number(progress * 100)}%`;
-                        } else if (state === 'importing') {
-                            btn.textContent = `Importing ${fileDesc}: ${H.number(progress * 100)}%`;
-                        } else {
-                            console.error("unhandled progress state");
-                        }
-                    });
-                    await started;  // Will not resolve if they hit cancel.
-                    const btn = ev.currentTarget;
-                    const origText = btn.textContent;
-                    btn.classList.add('sauce-loading', 'disabled');
-                    try {
-                        await completed;
-                    } finally {
-                        btn.textContent = origText;
-                        btn.classList.remove('sauce-loading', 'disabled');
+        const extraButtons = [{
+            text: locale.restore_data,
+            class: 'btn sauce-restore',
+            click: async ev => {
+                sauce.report.event('AthleteSync', 'ui-button', 'restore');
+                const {started, completed} = restoreData((state, fileNum, numFiles, progress) => {
+                    const fileDesc = numFiles > 1 ?
+                        `file ${fileNum} of ${numFiles}` : 'file';
+                    if (state === 'reading') {
+                        btn.textContent = `Reading ${fileDesc}: ${H.number(progress * 100)}%`;
+                    } else if (state === 'importing') {
+                        btn.textContent = `Importing ${fileDesc}: ${H.number(progress * 100)}%`;
+                    } else {
+                        console.error("unhandled progress state");
                     }
+                });
+                await started;  // Will not resolve if they hit cancel.
+                const btn = ev.currentTarget;
+                const origText = btn.textContent;
+                btn.classList.add('sauce-loading', 'disabled');
+                try {
+                    await completed;
+                } finally {
+                    btn.textContent = origText;
+                    btn.classList.remove('sauce-loading', 'disabled');
                 }
-            }, {
-                text: locale.backup_data,
-                class: 'btn sauce-backup',
-                click: async ev => {
-                    sauce.report.event('AthleteSync', 'ui-button', 'backup');
-                    const btn = ev.currentTarget;
-                    const origText = btn.textContent;
-                    btn.classList.add('sauce-loading', 'disabled');
-                    try {
-                        await backupData(athlete, (page, size) =>
-                            btn.textContent = `Creating file ${page}: ${H.number(size / MB)}MB`);
-                    } finally {
-                        btn.textContent = origText;
-                        btn.classList.remove('sauce-loading', 'disabled');
-                    }
+            }
+        }, {
+            text: locale.backup_data,
+            class: 'btn sauce-backup',
+            click: async ev => {
+                sauce.report.event('AthleteSync', 'ui-button', 'backup');
+                const btn = ev.currentTarget;
+                const origText = btn.textContent;
+                btn.classList.add('sauce-loading', 'disabled');
+                try {
+                    await backupData(athlete, (page, size) =>
+                        btn.textContent = `Creating file ${page}: ${H.number(size / MB)}MB`);
+                } finally {
+                    btn.textContent = origText;
+                    btn.classList.remove('sauce-loading', 'disabled');
                 }
-            }, {
+            }
+        }];
+        if (!sauce.isSafari()) {
+            extraButtons.push({
                 text: locale.export_fit_files,
                 class: 'btn sauce-export-activity-files',
                 click: async ev => {
@@ -330,8 +321,20 @@ sauce.ns('sync', ns => {
                         btn.classList.remove('sauce-loading', 'disabled');
                     }
                 }
-
-            }]
+            });
+        }
+        const $modal = sauce.ui.modal({
+            title: `${locale.title} - ${athlete.name}`,
+            icon: await sauce.ui.getImage('fa/sync-alt-duotone.svg'),
+            dialogClass: 'sauce-sync-athlete-dialog',
+            body: await tpl({athlete}),
+            flex: true,
+            width: '60em',
+            height: 720,
+            autoDestroy: true,
+            autoOpen: false,
+            closeOnMobileBack: true,
+            extraButtons,
         });
         const $buttons = $modal.siblings('.ui-dialog-buttonpane');
 
