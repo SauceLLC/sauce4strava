@@ -20,7 +20,7 @@
     "eslint": "8.7.0",
     "fflate": "0.7.3",
     "jscoop": "https://github.com/mayfield/jscoop.git#fa8e3b70f60f3ba425093259924f6c79c224ac6b",
-    "jsfit": "https://github.com/mayfield/jsfit.git#10bef729a64845459de03566b43d8397bca293a1",
+    "jsfit": "https://github.com/mayfield/jsfit.git#d1c4112a70cc3deabd315bb76817a85f1967318e",
     "sass": "1.49.0",
     "sauce-chartjs": "https://github.com/SauceLLC/Chart.js.git#1288a30b4c29f1c91cdb095dc7c539e7f69862a1",
     "sauce-terser": "https://github.com/mayfield/terser.git#35dbaf580ac94e1b899314acb9df47b69159c84a",

@@ -42,6 +42,7 @@ lib:
 	$(TOOLPATH)/tersify $(MODS)/jsfit/src/fit.mjs lib/jsfit/fit.mjs
 	$(TOOLPATH)/tersify $(MODS)/jsfit/src/binary.mjs lib/jsfit/binary.mjs
 	$(TOOLPATH)/tersify $(MODS)/jsfit/src/parser.mjs lib/jsfit/parser.mjs
+	du -sk lib
 
 clean:
 	rm -rf $(PACKAGES) builds css
