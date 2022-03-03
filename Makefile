@@ -58,6 +58,9 @@ build-gecko:
 build-safari:
 	TARGET=safari $(MAKE) manifest build
 
+build-safari-release:
+	TARGET=safari $(MAKE) manifest-release build
+
 lint:
 	$(NPATH)/eslint src
 	$(NPATH)/eslint --config .eslintrc.modules.json --ext .mjs src
@@ -72,6 +75,9 @@ manifest:
 	$(TOOLPATH)/mergejson manifest_base.json manifest_$(TARGET).json > manifest.json.tmp
 	$(TOOLPATH)/mergejson manifest.json.tmp manifest_dev.json > manifest.json
 	rm -f manifest.json.tmp
+
+manifest-release:
+	$(TOOLPATH)/mergejson manifest_base.json manifest_$(TARGET).json > manifest.json
 
 packages:
 	$(TOOLPATH)/package gecko
