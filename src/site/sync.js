@@ -196,7 +196,7 @@ sauce.ns('sync', ns => {
 
 
     function safeName(name) {
-        return name.replace(/[^a-zA-Z0-9_-]/, '');
+        return name.replace(/[^a-zA-Z0-9_-]/g, '');
     }
 
 

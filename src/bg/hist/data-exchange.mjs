@@ -232,7 +232,7 @@ export class DataExchange extends sauce.proxy.Eventing {
         let zip = new SauceZip();
         const maxSize = 512 * 1024 * 1024;
         const step = 100;  // Speedup IDB
-        const dir = athleteName.replace(/[^a-zA-Z0-9]/, '');
+        const dir = athleteName.replace(/[^a-zA-Z0-9]/g, '');
         for (let offt = 0; offt < activities.length; offt += step) {
             const actsBatch = activities.slice(offt, offt + step);
             const streamsBatch = await streamsStore.getManyForActivities(actsBatch.map(x => x.id), {index: 'activity',
