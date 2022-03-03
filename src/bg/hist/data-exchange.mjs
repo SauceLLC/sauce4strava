@@ -10,7 +10,6 @@ const {
     AthletesStore,
 } = sauce.hist.db;
 
-const namespace = 'hist';
 const DBTrue = 1;
 
 const actsStore = ActivitiesStore.singleton();
@@ -25,6 +24,7 @@ class SauceZip extends fflate.Zip {
         this.size = 0;
         this._chunks = [];
         this._isDone;
+        this._dirs = new Set();
     }
 
     _ondata(e, data, isLast) {
@@ -39,11 +39,23 @@ class SauceZip extends fflate.Zip {
         if (this._isDone) {
             throw new TypeError("ZIP is done");
         }
+        const prevSize = this.size;
+        const dirs = name.split('/').filter(x => x);
+        dirs.pop();
+        for (let i = 1; i <= dirs.length; i++) {
+            const dir = dirs.slice(0, i).join('/') + '/';
+            if (!this._dirs.has(dir)) {
+                const zd = new fflate.ZipPassThrough(dir);
+                zd.attrs = 0x10;  // Directory
+                this.add(zd);
+                zd.push(new Uint8Array(), /*isLast*/ true);
+                this._dirs.add(dir);
+            }
+        }
         const zf = new fflate.ZipDeflate(name, {level, mem});
         if (mtime) {
             zf.mtime = +mtime;
         }
-        const prevSize = this.size;
         this.add(zf);
         zf.push(data instanceof ArrayBuffer ? new Uint8Array(data) : data, /*isLast*/ true);
         return this.size - prevSize;
@@ -220,6 +232,7 @@ export class DataExchange extends sauce.proxy.Eventing {
         let zip = new SauceZip();
         const maxSize = 512 * 1024 * 1024;
         const step = 100;  // Speedup IDB
+        const dir = athleteName.replace(/[^a-zA-Z0-9]/, '');
         for (let offt = 0; offt < activities.length; offt += step) {
             const actsBatch = activities.slice(offt, offt + step);
             const streamsBatch = await streamsStore.getManyForActivities(actsBatch.map(x => x.id), {index: 'activity',
@@ -249,7 +262,7 @@ export class DataExchange extends sauce.proxy.Eventing {
                     this.dispatchBlobURL(zip.getBlob());
                     zip = new SauceZip();
                 }
-                zip.addFile(`${athleteName.replace(/[^a-zA-Z0-9]/, '')}/${act.id}.${type}`,
+                zip.addFile(`${dir}/${act.id}.${type}`,
                     await file.arrayBuffer(), {mtime: date});
                 const ev = new Event('progress');
                 ev.data = zip.size;
@@ -259,7 +272,7 @@ export class DataExchange extends sauce.proxy.Eventing {
         if (zip.size) {
             this.dispatchBlobURL(zip.getBlob());
         }
-        console.warn("Took", Date.now() - s);
+        console.info("FIT export completed in", Math.round((Date.now() - s) / 1000), 'seconds');
     }
 
     revokeObjectURL(url) {
