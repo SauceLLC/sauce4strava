@@ -24,7 +24,6 @@ class SauceZip extends fflate.Zip {
         this.size = 0;
         this._chunks = [];
         this._isDone;
-        this._dirs = new Set();
     }
 
     _ondata(e, data, isLast) {
@@ -40,18 +39,6 @@ class SauceZip extends fflate.Zip {
             throw new TypeError("ZIP is done");
         }
         const prevSize = this.size;
-        const dirs = name.split('/').filter(x => x);
-        dirs.pop();
-        for (let i = 1; i <= dirs.length; i++) {
-            const dir = dirs.slice(0, i).join('/') + '/';
-            if (!this._dirs.has(dir)) {
-                const zd = new fflate.ZipPassThrough(dir);
-                zd.attrs = 0x10;  // Directory
-                this.add(zd);
-                zd.push(new Uint8Array(), /*isLast*/ true);
-                this._dirs.add(dir);
-            }
-        }
         const zf = new fflate.ZipDeflate(name, {level, mem});
         if (mtime) {
             zf.mtime = +mtime;
