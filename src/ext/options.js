@@ -107,8 +107,7 @@
     }
 
     async function reportEvent(eventCategory, eventAction, eventLabel) {
-        const t = await sauce.ga.getOrCreateTracker();
-        return t.send('event', {eventCategory, eventAction, eventLabel});
+        // TBD need firefox safe impl
     }
 
     async function main() {
@@ -179,7 +178,6 @@
             detailsEl.appendChild(tr);
         }
         manageOptions(config.options, config.patronLevel);
-        (await sauce.ga.getOrCreateTracker()).send('pageview');
     }
 
     const supP = fetch('https://saucellc.io/supporters-v2.json').then(x => x.json());

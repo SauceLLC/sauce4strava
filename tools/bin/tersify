@@ -1,16 +1,8 @@
 #!/bin/sh -e
 TOOLS=$(dirname $0)
 EXT="${1##*.}"
-if [ "$EXT" == "mjs" ]; then
-    ESMODULE_COMPRESS_OPTIONS=",module"
-    ESMODULE_MANGLE_OPTIONS="module"
-fi
-
 exec $TOOLS/../../node_modules/sauce-terser/bin/terser \
     --ecma 6 \
     --keep-classnames --keep-fnames \
-    --compress booleans=false,drop_debugger=false,passes=3,toplevel,keep_infinity \
-    --compress sequences=false,typeofs=false${ESMODULE_COMPRESS_OPTIONS} \
-    --mangle $ESMODULE_MANGLE_OPTIONS \
     -f beautify,comments=false,keep_numbers,quote_style=3,indent_space='"\t"',indent_level=1 \
     -o "$2" -- "$1"

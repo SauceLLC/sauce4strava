@@ -1250,22 +1250,8 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     };
 
 
-    async function ga(...args) {
-        if (!sauce.ga || !sauce.ga.applyWithContext) {
-            await sauce.proxy.connected;
-        }
-        return await sauce.ga.applyWithContext({referrer: document.referrer}, ...args);
-    }
-
-
     async function reportEvent(eventCategory, eventAction, eventLabel, options) {
-        if (!sauce.isDev) {
-            await ga('send', 'event', Object.assign({
-                eventCategory,
-                eventAction,
-                eventLabel,
-            }, options));
-        }
+        // TBD: Need firefox safe impl
     }
 
 
@@ -1314,14 +1300,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
         }
         const exDescription = desc.join('\n').replaceAll('\n', ' -- ');
         console.error('Sauce Error:', e);
-        if (!sauce.isDev) {
-            await ga('send', 'exception', {
-                exDescription,
-                exFatal: true,
-                page
-            });
-            await reportEvent('Error', 'exception', exDescription, {nonInteraction: true, page});
-        }
+        // TBD: Need firefox safe impl
     }
 
 

@@ -130,8 +130,7 @@
 
 
     async function reportEvent(eventCategory, eventAction, eventLabel) {
-        const t = await sauce.ga.getOrCreateTracker();
-        return t.send('event', {eventCategory, eventAction, eventLabel});
+        // TBD need firefox safe impl
     }
 
 
@@ -201,7 +200,6 @@
             await sleep(5000);
             status.textContent = '';
         });
-        (await sauce.ga.getOrCreateTracker()).send('pageview');
     }
 
     document.addEventListener('DOMContentLoaded', main);

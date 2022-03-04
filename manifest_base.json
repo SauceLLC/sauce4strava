@@ -47,8 +47,6 @@
         "open_in_tab": true
     },
 
-    "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
-
     "content_scripts": [{
         "run_at": "document_start",
         "matches": ["https://www.strava.com/*"],
