@@ -37,7 +37,7 @@ lib:
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/jobs.mjs lib/jscoop/jobs.mjs
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/locks.mjs lib/jscoop/locks.mjs
 	$(TOOLPATH)/tersify $(MODS)/jscoop/src/queues.mjs lib/jscoop/queues.mjs
-	$(TOOLPATH)/tersify $(MODS)/sauce-chartjs/dist/Chart.terser.js lib/Chart.js
+	$(TOOLPATH)/tersify $(MODS)/sauce-chartjs/dist/Chart.pretty.js lib/Chart.js
 	$(TOOLPATH)/tersify $(MODS)/fflate/esm/browser.js lib/fflate.mjs
 	$(TOOLPATH)/tersify $(MODS)/jsfit/src/fit.mjs lib/jsfit/fit.mjs
 	$(TOOLPATH)/tersify $(MODS)/jsfit/src/binary.mjs lib/jsfit/binary.mjs

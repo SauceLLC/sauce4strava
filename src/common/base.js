@@ -1320,7 +1320,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     }
 
     sauce.report = {
-        ga,
+        ga: async () => void 0, // XXX TBD need new impl for firefox
         event: reportEvent,
         error: reportError,
         auditStackFrame,
