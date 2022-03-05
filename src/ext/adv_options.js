@@ -129,11 +129,6 @@
     }
 
 
-    async function reportEvent(eventCategory, eventAction, eventLabel) {
-        // TBD need firefox safe impl
-    }
-
-
     async function main() {
         const type = browser.runtime.getURL('').split(':')[0];
         const doc = document.documentElement;
@@ -159,7 +154,7 @@
                     browser.tabs.reload();
                 }
                 try {
-                    await reportEvent('AdvancedOptions', 'erase-all-data');
+                    await sauce.report.event('AdvancedOptions', 'erase-all-data');
                 } finally {
                     window.location.reload();
                 }
@@ -177,7 +172,7 @@
             delete athlete_info[id];
             await sauce.storage.set({athlete_info});
             await renderAthleteInfo(athleteEl);
-            reportEvent('AdvancedOptions', 'remove-athlete-info');  // bg okay
+            sauce.report.event('AdvancedOptions', 'remove-athlete-info');  // bg okay
         });
         document.getElementById('save').addEventListener('click', async () => {
             const status = document.getElementById('status');
@@ -196,7 +191,7 @@
             if (isPopup) {
                 browser.tabs.reload();
             }
-            reportEvent('AdvancedOptions', 'save');  // bg okay
+            sauce.report.event('AdvancedOptions', 'save');  // bg okay
             await sleep(5000);
             status.textContent = '';
         });

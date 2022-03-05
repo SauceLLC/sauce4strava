@@ -29,7 +29,7 @@
         } else {
             prettyValue = JSON.stringify(value);
         }
-        return await reportEvent('Options', `set-${name}`, prettyValue);
+        return await sauce.report.event('Options', `set-${name}`, prettyValue);
     }
 
     function manageOptions(options, patronLevel) {
@@ -104,10 +104,6 @@
     async function getBuildInfo() {
         const resp = await fetch('/build.json');
         return await resp.json();
-    }
-
-    async function reportEvent(eventCategory, eventAction, eventLabel) {
-        sauce.
     }
 
     async function main() {
