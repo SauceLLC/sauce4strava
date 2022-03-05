@@ -5,6 +5,7 @@ sauce.ns('ga', ns => {
 
     const namespace = 'ga';
     const tabsState = new Map();
+    let dnt = !!localStorage.getItem('dnt') || navigator.doNotTrack === '1';
     let clientUuid = localStorage.getItem("anonymousClientUuid");
     if (!clientUuid) {
         clientUuid = sauce.randomUUID();
@@ -34,7 +35,8 @@ sauce.ns('ga', ns => {
 
     const pendingSends = [];
     let sendBatchId;
-    function sendBatch() {
+    let onlineErrorCount = 0;
+    async function sendBatch() {
         // Ref: https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide#batch-limitations
         if (navigator.onLine === false) {
             sendBatchId = setTimeout(sendBatch, 4000);
@@ -61,14 +63,29 @@ sauce.ns('ga', ns => {
                     batch.shift();
                 }
             }
-            fetch('https://www.google-analytics.com/batch', {
-                method: 'POST',
-                body: entries.join('\n'),
-            }).catch(e => void 0);
+            try {
+                const r = await fetch('https://www.google-analytics.com/batch', {
+                    method: 'POST',
+                    body: entries.join('\n'),
+                });
+                if (!r.ok) {
+                    throw new Error(e.status);
+                }
+            } catch(e) {
+                if (navigator.onLine === true) {
+                    if (++onlineErrorCount > 10) {
+                        dnt = true;
+                        localStorage.setItem('dnt', '1');
+                    }
+                }
+            }
         }
     }
 
     ns.sendSoon = function sendSoon(type, options={}) {
+        if (dnt) {
+            return;
+        }
         const id = getTabId(this);
         const state = getTabState(id);
         const gaHostname = 'www.strava.com';  // Has to be this to avoid GA filtering it out.
@@ -120,9 +137,11 @@ sauce.ns('ga', ns => {
             };
             const limit = specLimits[k];
             if (limit && v.length > limit) {
-                debugger;
                 q.set(k, v.slice(0, limit));
             }
+        }
+        while (pendingSends.length > 100) {
+            pendingSends.shift();
         }
         pendingSends.push([Date.now(), q]);
         if (sendBatchId) {
