@@ -2,8 +2,7 @@
 
 import * as hist from '/src/bg/hist.mjs';
 
-// For console debugging only.
-sauce.ns('hist', () => Object.fromEntries(Object.entries(hist)));
+sauce.ns('hist', () => Object.fromEntries(Object.entries(hist))); // For console debugging only.
 
 // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
 // to try migrations every startup.

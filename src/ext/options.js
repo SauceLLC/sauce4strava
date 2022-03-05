@@ -107,7 +107,7 @@
     }
 
     async function reportEvent(eventCategory, eventAction, eventLabel) {
-        // TBD need firefox safe impl
+        sauce.
     }
 
     async function main() {

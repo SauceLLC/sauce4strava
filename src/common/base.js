@@ -244,6 +244,11 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     };
 
 
+    sauce.randomUUID = crypto.randomUUID ? () => crypto.randomUUID() : () =>
+        ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+
+
     sauce.formatInputDate = function(ts) {
         // Return a input[type="date"] compliant value from a ms timestamp.
         return ts ? (new Date(ts)).toISOString().split('T')[0] : '';
@@ -1250,8 +1255,24 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     };
 
 
+    if (sauce.proxy && document.referrer) {
+        debugger;
+        sauce.proxy.connected.then(async () => {
+            await sauce.ga.set('referrer', document.referrer);
+        });
+    }
+
+
     async function reportEvent(eventCategory, eventAction, eventLabel, options) {
-        // TBD: Need firefox safe impl
+        if (!sauce.isDev || 'XXX') {
+            await sauce.proxy.connected;
+            await sauce.ga.sendSoon('event', {
+                eventCategory,
+                eventAction,
+                eventLabel,
+                ...options
+            });
+        }
     }
 
 
@@ -1260,7 +1281,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
             console.warn('Ignoring non-reporting error:', e);
             return;
         }
-        const page = location.pathname;
+        const page = location.pathname; // XXX Hmmmmm not sure why we need this.  For extenion context?
         const desc = [`v${sauce.version}`];
         try {
             if (!(e instanceof Error) && (e == null || !e.stack)) {
@@ -1300,7 +1321,15 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
         }
         const exDescription = desc.join('\n').replaceAll('\n', ' -- ');
         console.error('Sauce Error:', e);
-        // TBD: Need firefox safe impl
+        if (!sauce.isDev || 'XXX') {
+            await sauce.proxy.connected;
+            await sauce.ga.sendSoon('exception', {
+                exDescription,
+                exFatal: true,
+                page
+            });
+            await reportEvent('Error', 'exception', exDescription, {nonInteraction: true, page});
+        }
     }
 
 
@@ -1320,7 +1349,6 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     }
 
     sauce.report = {
-        ga: async () => void 0, // XXX TBD need new impl for firefox
         event: reportEvent,
         error: reportError,
         auditStackFrame,

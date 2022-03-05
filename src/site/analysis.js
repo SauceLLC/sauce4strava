@@ -3529,7 +3529,7 @@ sauce.ns('analysis', ns => {
         await pageViewAssembled();
         const activity = pageView.activity();
         const type = activity.get('type');
-        const gaSetTitlePromsie = sauce.report.ga('set', 'title', `Sauce Analysis - ${type}`);
+        const gaSetTitlePromsie = sauce.ga.set('title', `Sauce Analysis - ${type}`);
         ns.activityType = {
             'Ride': 'ride',
             'Run': 'run',
@@ -3687,7 +3687,7 @@ sauce.ns('analysis', ns => {
             ns.unsupported = true;
             console.info('Unsupported activity type:', type);
         }
-        gaSetTitlePromsie.then(() => sauce.report.ga('send', 'pageview'));
+        gaSetTitlePromsie.then(() => sauce.ga.sendSoon('pageview'));
     }
 
 

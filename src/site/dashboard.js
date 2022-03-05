@@ -172,8 +172,8 @@ sauce.ns('dashboard', function(ns) {
 
 
     async function sendGAPageView(type) {
-        await sauce.report.ga('set', 'title', 'Sauce Dashboard');
-        await sauce.report.ga('send', 'pageview');
+        await sauce.ga.set('title', 'Sauce Dashboard');
+        await sauce.ga.sendSoon('pageview');
     }
 
 
