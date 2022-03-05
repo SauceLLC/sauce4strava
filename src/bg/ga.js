@@ -129,6 +129,6 @@ sauce.ns('ga', ns => {
             clearTimeout(sendBatchId);
         }
         sendBatchId = setTimeout(sendBatch, 5000);
-    }
+    };
     sauce.proxy.export(ns.sendSoon, {namespace});
 });

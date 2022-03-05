@@ -1310,7 +1310,7 @@ sauce.ns('power', function() {
         }));
         const estAvg = field => sauce.data.sum(positions.map((x, i) => x.pct * estimates[i][field]));
         if (Math.abs(estAvg('watts') - args.power) > 0.01) {
-            sauce.report.error(new Error('velocity from perf search seed is invalid'));
+            console.error('velocity from perf search seed is invalid');
         }
         return {
             gForce: estAvg('gForce'),

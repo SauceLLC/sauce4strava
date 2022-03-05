@@ -1264,7 +1264,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
 
 
     async function reportEvent(eventCategory, eventAction, eventLabel, options) {
-        if (!sauce.isDev || 'XXX') {
+        if (!sauce.isDev) {
             await sauce.proxy.connected;
             await sauce.ga.sendSoon('event', {
                 eventCategory,
@@ -1281,7 +1281,6 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
             console.warn('Ignoring non-reporting error:', e);
             return;
         }
-        const page = location.pathname; // XXX Hmmmmm not sure why we need this.  For extenion context?
         const desc = [`v${sauce.version}`];
         try {
             if (!(e instanceof Error) && (e == null || !e.stack)) {
@@ -1321,14 +1320,10 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
         }
         const exDescription = desc.join('\n').replaceAll('\n', ' -- ');
         console.error('Sauce Error:', e);
-        if (!sauce.isDev || 'XXX') {
+        if (!sauce.isDev) {
             await sauce.proxy.connected;
-            await sauce.ga.sendSoon('exception', {
-                exDescription,
-                exFatal: true,
-                page
-            });
-            await reportEvent('Error', 'exception', exDescription, {nonInteraction: true, page});
+            await sauce.ga.sendSoon('exception', {exDescription});
+            await reportEvent('Error', 'exception', exDescription, {nonInteraction: true});
         }
     }
 
