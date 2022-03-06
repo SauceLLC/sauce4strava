@@ -69,7 +69,7 @@ sauce.ns('ga', ns => {
                     body: entries.join('\n'),
                 });
                 if (!r.ok) {
-                    throw new Error(e.status);
+                    throw new Error(r.status);
                 }
             } catch(e) {
                 if (navigator.onLine === true) {
@@ -89,7 +89,9 @@ sauce.ns('ga', ns => {
         const id = getTabId(this);
         const state = getTabState(id);
         const gaHostname = 'www.strava.com';  // Has to be this to avoid GA filtering it out.
-        if (this && this.url) {
+        if (options.href) {
+            state.location = options.href.split('#')[0];
+        } else if (this && this.url) {
             const url = new URL(this.url);
             if (url.hostname === gaHostname) {
                 state.location = url.href.split('#')[0];
@@ -102,6 +104,9 @@ sauce.ns('ga', ns => {
         if (this && this.tab) {
             state.viewportSize = `${this.tab.width}x${this.tab.height}`;
         }
+        if (options.referrer) {
+            state.referrer = options.referrer;
+        }
         // Ref: https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
         const params = {
             v: 1, // version
@@ -113,7 +118,6 @@ sauce.ns('ga', ns => {
             t: type,
             dr: state.referrer,
             dl: state.location,
-            dt: state.title,
             ec: options.eventCategory,
             ea: options.eventAction,
             el: options.eventLabel,

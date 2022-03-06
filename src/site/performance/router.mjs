@@ -48,6 +48,7 @@ class RangeRouter extends Backbone.Router {
             this.filters.metric = range.metric;
             this.filters.suggestedEnd = range.end < Date.now() ? range.end : null;
         }
+        const hrefParts = [location.origin, this.urn];
         if (options.all && f.athleteId != null) {
             this.navigate(`${this.urn}/${f.athleteId}/all`, options);
         } else if (f.suggestedEnd != null &&
@@ -56,10 +57,13 @@ class RangeRouter extends Backbone.Router {
             f.athleteId != null) {
             const endDay = D.subtractTZ(f.suggestedEnd) / DAY;
             this.navigate(`${this.urn}/${f.athleteId}/${f.period}/${f.metric}/${endDay}`, options);
+            hrefParts.push('***', f.period, f.metric, endDay);
         } else if (f.period != null && f.metric != null && f.athleteId != null) {
             this.navigate(`${this.urn}/${f.athleteId}/${f.period}/${f.metric}`, options);
+            hrefParts.push('***', f.period, f.metric);
         } else if (f.athleteId != null) {
             this.navigate(`${this.urn}/${f.athleteId}`, options);
+            hrefParts.push('***');
         } else {
             this.navigate(`${this.urn}`, options);
         }
@@ -70,6 +74,9 @@ class RangeRouter extends Backbone.Router {
         } else {
             document.title = this.pageTitle;
         }
+        // Must include href (sanitized) because ext context is not updated with these updates.
+        const href = hrefParts.join('/');
+        sauce.ga.sendSoon('pageview', {referrer: document.referrer, href}).catch(() => void 0);
     }
 }
 export default RangeRouter;

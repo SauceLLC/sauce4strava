@@ -173,8 +173,7 @@ sauce.ns('dashboard', function(ns) {
 
     async function sendGAPageView(type) {
         await sauce.proxy.connected;
-        await sauce.ga.set('title', 'Sauce Dashboard');
-        await sauce.ga.sendSoon('pageview');
+        await sauce.ga.sendSoon('pageview', {referrer: document.referrer});
     }
 
 
@@ -365,7 +364,7 @@ sauce.ns('dashboard', function(ns) {
         } else {
             loadAfterDOM().catch(sauce.report.error);
         }
-        sendGAPageView();  // bg okay
+        sendGAPageView().catch(() => void 0);
     }
 
 

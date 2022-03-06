@@ -1255,23 +1255,10 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     };
 
 
-    if (sauce.proxy && document.referrer) {
-        debugger;
-        sauce.proxy.connected.then(async () => {
-            await sauce.ga.set('referrer', document.referrer);
-        });
-    }
-
-
     async function reportEvent(eventCategory, eventAction, eventLabel, options) {
         if (!sauce.isDev) {
             await sauce.proxy.connected;
-            await sauce.ga.sendSoon('event', {
-                eventCategory,
-                eventAction,
-                eventLabel,
-                ...options
-            });
+            await sauce.ga.sendSoon('event', {eventCategory, eventAction, eventLabel, ...options});
         }
     }
 
