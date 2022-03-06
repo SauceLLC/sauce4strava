@@ -7,7 +7,7 @@
     "description": "__MSG_app_desc__",
     "homepage_url": "https://saucellc.io",
     "author": "Sauce, LLC",
-    "version": "8.0.4.1",
+    "version": "8.0.5",
 
     "permissions": [
         "storage",
