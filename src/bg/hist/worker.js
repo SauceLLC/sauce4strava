@@ -310,13 +310,13 @@ class FindPeaks extends WorkerProcessor {
 }
 
 
-const processors = {
+const processors = new Map(Object.entries({
     "find-peaks": (...args) => FindPeaks.factory(...args),
-};
+}));
 
 
 self.addEventListener('message', async ev => {
-    const processor = processors[ev.data.processor];
+    const processor = processors.get(ev.data.processor);
     if (!processor) {
         throw new Error("Invalid Processor");
     }
