@@ -155,6 +155,29 @@ table.sauce-perf {
         th {
             padding-top: 0.8em;
             padding-bottom: 0.8em;
+
+            .btn {
+                font-size: 0.6em;
+            }
+
+            input.filter {
+                display: none;
+                border-radius: 0.22em;
+                font-weight: 300;
+                font-size: 0.86em;
+                width: 8ch;
+                padding: 0.3em;
+                margin-top: 0.2em;
+                transition: width 200ms;
+
+                &:focus {
+                    width: 16ch;
+                }
+
+                &.visible {
+                    display: block;
+                }
+            }
         }
     }
 

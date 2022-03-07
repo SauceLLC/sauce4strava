@@ -225,11 +225,12 @@ sauce.ns('hist.db', ns => {
             } else {
                 peaks.sort((a, b) => (a.value || 0) - (b.value || 0));
             }
-            if (options.limit) {
-                peaks.length = Math.min(peaks.length, options.limit);
+            const skip = options.skip || 0;
+            if (options.limit + skip) {
+                peaks.length = Math.min(peaks.length, options.limit + skip);
             }
             peaks.forEach((x, i) => x.rank = i + 1);
-            return peaks;
+            return skip ? peaks.slice(skip) : peaks;
         }
 
         async getForAthlete(athleteId, type, period, options={}) {

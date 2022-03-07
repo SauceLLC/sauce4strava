@@ -852,7 +852,7 @@ export class ActivityTableView extends PerfView {
             const attrs = this.renderAttrs();
             const moreActs = this.activities.slice(this.rowLimit, this.rowLimit += this.rowPageSize);
             const newRows = await Promise.all(moreActs.map(a => tpl({a, ...attrs})));
-            sauce.adjacentNodeContents(this.el.querySelector('.load-more'), 'beforebegin', newRows.join('\n'));
+            sauce.adjacentNodeContents(loadMore, 'beforebegin', newRows.join('\n'));
         } finally {
             if (this.activities.length <= this.rowLimit) {
                 loadMore.classList.add('hidden');

@@ -61,6 +61,7 @@ async function getPeaks({type, period, activityType, limit, skipEstimates, ...op
         activityType,
         skipEstimates,
         expandActivities: optional.expandActivities,
+        skip: optional.skip,
     };
     if (!optional.includeAllDates) {
         options.start = +optional.start;
@@ -139,8 +140,11 @@ export class PeaksTableView extends views.ResizablePerfView {
     get events() {
         return {
             ...super.events,
-            'click .results table tbody tr': 'onResultClick',
+            'click .results table tbody tr[data-id]': 'onResultClick',
             'click .edit-activity': 'onEditActivityClick',
+            'click tbody tr.load-more': 'onLoadMoreClick',
+            'click thead .btn.filter': 'onFilterClick',
+            'input thead input.filter': 'onFilterInput',
             'pointerdown .resize-drag': 'onResizePointerDown',
         };
     }
@@ -148,7 +152,6 @@ export class PeaksTableView extends views.ResizablePerfView {
     get defaultPrefs() {
         return {
             type: 'power',
-            limit: 10,
             time: 300,
             distance: 10000,
             includeAllAthletes: false,
@@ -160,6 +163,9 @@ export class PeaksTableView extends views.ResizablePerfView {
 
     async init({pageView, ...options}) {
         this.peaks = [];
+        this.filters = {};
+        this.hasMore = false;
+        this.pageSize = 100;
         this.range = pageView.getRangeSnapshot();
         this.athlete = pageView.athlete;
         this.controlsView = new PeaksControlsView({panelView: this});
@@ -168,15 +174,20 @@ export class PeaksTableView extends views.ResizablePerfView {
         await super.init({pageView, ...options});
     }
 
-    renderAttrs() {
+    renderAttrs({peaks}={}) {
         const prefs = this.getPrefs();
+        peaks = peaks || this.peaks;
+        if (this.filterPeak) {
+            peaks = peaks.filter(x => this.filterPeak(x));
+        }
         return {
             name: this.name,
             prefs,
-            peaks: this.peaks,
+            peaks,
+            filters: this.filters,
             unit: getPeaksUnit(prefs.type),
             valueFormatter: getPeaksValueFormatter(prefs.type),
-            getAthleteName: id => this.getAthleteName(id),
+            hasMore: this.hasMore,
         };
     }
 
@@ -193,23 +204,40 @@ export class PeaksTableView extends views.ResizablePerfView {
         }
     }
 
+    async makeTableRows(peaks) {
+        const tpl = await sauce.template.getTemplate('/performance/peaks/table-rows.html',
+            'performance');
+        return await tpl(this.renderAttrs({peaks}));
+    }
+
     async getAthleteName(id) {
         const athlete = await getAthlete(id);
         return athlete ? athlete.name : `<${id}>`;
     }
 
-    async updatePeaks() {
+    async getPeaks(options={}) {
         const {start, end} = this.range;
         const prefs = this.getPrefs();
         const period = getPeriodType(prefs.type) === 'distance' ? prefs.distance : prefs.time;
-        this.peaks = await getPeaks({
+        const peaks = (await getPeaks({
             period,
             start,
             end,
             athlete: this.athlete,
             expandActivities: true,
-            ...prefs
-        });
+            ...prefs,
+            ...options,
+            limit: this.pageSize,
+        })).filter(x => x.activity);
+        for (const x of peaks) {
+            x.activity.athleteName = await this.getAthleteName(x.athlete);
+        }
+        return peaks;
+    }
+
+    async updatePeaks() {
+        this.peaks = await this.getPeaks();
+        this.hasMore = this.peaks.length === this.pageSize;
     }
 
     async onBeforeUpdateActivities({athlete, range}) {
@@ -233,6 +261,67 @@ export class PeaksTableView extends views.ResizablePerfView {
         views.editActivityDialogXXX(activity, this.pageView);
     }
 
+    async onLoadMoreClick(ev) {
+        const loadMore = ev.currentTarget;
+        loadMore.classList.add('loading');
+        try {
+            const morePeaks = await this.getPeaks({skip: this.peaks.length});
+            this.peaks = this.peaks.concat(morePeaks);
+            this.hasMore = morePeaks.length === this.pageSize;
+            const moreRows = await this.makeTableRows(morePeaks);
+            sauce.adjacentNodeContents(loadMore.closest('table').querySelector('tbody.data'),
+                'beforeend', moreRows);
+        } finally {
+            if (!this.hasMore) {
+                loadMore.classList.add('hidden');
+            }
+            loadMore.classList.remove('loading');
+        }
+    }
+
+    async onFilterClick(ev) {
+        const input = ev.currentTarget.parentElement.querySelector('input.filter');
+        input.classList.toggle('visible');
+        if (input.classList.contains('visible')) {
+            input.focus();
+        }
+    }
+
+    async onFilterInput(ev) {
+        const input = ev.currentTarget;
+        const val = input.value;
+        const field = input.dataset.activityField;
+        if (val) {
+            const terms = val.split(',').map(x => x.trim()).filter(x => x);
+            const inTerms = terms.filter(x => !x.startsWith('!'));
+            const exTerms = terms.filter(x => x.startsWith('!')).map(x => x.substr(1));
+            if (inTerms.length + exTerms.length) {
+                this.filters[field] = {
+                    filter: peak => {
+                        const v = peak.activity[field].toLowerCase();
+                        return (!inTerms.length || inTerms.some(x => v.includes(x))) &&
+                            exTerms.every(x => !v.includes(x));
+                    },
+                    val
+                };
+            } else {
+                delete this.filters[field];
+            }
+        } else {
+            delete this.filters[field];
+        }
+        // Build a filter chain instead of doing iteration in the filter func.
+        this.filterPeak = null;
+        for (const {filter} of Object.values(this.filters)) {
+            if (this.filterPeak) {
+                const prevFilter = this.filterPeak;
+                this.filterPeak = x => prevFilter(x) && filter(x);
+            } else {
+                this.filterPeak = filter;
+            }
+        }
+        this.$('tbody.data').html(await this.makeTableRows(this.peaks));
+    }
 }
 
 

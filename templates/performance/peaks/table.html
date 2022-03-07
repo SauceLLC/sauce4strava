@@ -13,48 +13,38 @@
                     <th class="righted">{{{/analysis_value}}}</th>
                     <th></th>
                     <% if (prefs.includeAllAthletes) { %>
-                        <th>{{{/athlete}}}</th>
+                        <th>
+                            <span>{{{/athlete}}}</span>
+                            <div class="btn btn-icon-only btn-unstyled filter"
+                                 title="{{{filter_tooltip}}}">{{=icon search-duotone=}}</div>
+                            <input class="filter {{filters.athleteName ? 'visible' : ''}}"
+                                   type="text" data-activity-field="athleteName"
+                                   placeholder="{{{filter}}}..."
+                                   value="{{filters.athleteName ? filters.athleteName.val : ''}}"/>
+                        </th>
                     <% } %>
-                    <th>{{{/analysis_activity}}}</th>
+                    <th>
+                        <span>{{{/analysis_activity}}}
+                        <div class="btn btn-icon-only btn-unstyled filter"
+                             title="{{{filter_tooltip}}}">{{=icon search-duotone=}}</div>
+                        <input class="filter {{filters.name ? 'visible' : ''}}" type="text"
+                               data-activity-field="name" placeholder="{{{filter}}}..."
+                               value="{{filters.name ? filters.name.val : ''}}"/>
+                    </th>
                     <th>{{{/type}}}</th>
                     <th>{{{/analysis_date}}}</th>
                     <th></th>
                 </tr>
             </thead>
+            <tbody class="data">
+                {- await embed('performance/peaks/table-rows.html', obj) -}
+            </tbody>
             <tbody>
-                <% let i = 1; %>
-                <% for (const x of peaks.filter(x => x.activity)) { %>
-                    <tr data-id="{{x.activity.id}}" title="{{{peaks_row_tooltip}}}">
-                        <td class="centered">{{humanNumber(i++)}}</td>
-                        <td class="righted">
-                            {{x.estimate ? '~' : ''}}{{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>
-                        </td>
-                        <td class="centered">
-                            <% if (x.rankBadge && x.rankBadge.cat) { %>
-                                <img src="{{x.rankBadge.badge}}" class="sauce-rank"
-                                     data-cat="{{x.rankBadge.cat}}" title="{{x.rankBadge.tooltip}}"/>
-                            <% } %>
-                        </td>
-
-                        <% if (prefs.includeAllAthletes) { %>
-                            <td>{{await getAthleteName(x.activity.athlete)}}</td>
-                        <% } %>
-                        <td class="activity-name">
-                            <div class="name-container">
-                                <a href="https://www.strava.com/activities/{{x.activity.id}}/analysis/{{x.start}}/{{x.end}}"
-                                   title="{{x.activity.name}}{{x.activity.description ? '\n\n' + x.activity.description : ''}}"
-                                   target="_blank">{{x.activity.name}}</a>
-                            </div>
-                        </td>
-                        <td>{{x.activityType}}</td>
-                        <td>{{humanDate(x.activity.ts)}}</td>
-                        <td>
-                            <div class="btn btn-icon-only btn-unstyled edit-activity"
-                                 data-id="{{x.activity.id}}"
-                                 title="Edit activity">{{=icon edit-duotone=}}</div>
-                        </td>
-                    </tr>
-                <% } %>
+                <tr class="load-more">
+                    <% const colspan = prefs.includeAllAthletes ? 8 : 7; %>
+                    <td colspan="{{colspan}}"
+                        class="centered {{hasMore ? '' : 'hidden'}}">{{{/load_more}}}</td>
+                </tr>
             </tbody>
         </table>
     </div>

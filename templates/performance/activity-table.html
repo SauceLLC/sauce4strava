@@ -20,9 +20,8 @@
         <% for (const a of activities.slice(0, rowLimit)) { %>
             {-await embed(entryTpl, {a, ...obj})-}
         <% } %>
-        <tr class="load-more">
-            <td colspan="10"
-                class="centered {{activities.length <= rowLimit ? 'hidden' : ''}}">{{{/load_more}}}</td>
+        <tr class="load-more {{activities.length <= rowLimit ? 'hidden' : ''}}">
+            <td colspan="10" class="centered">{{{/load_more}}}</td>
         </tr>
         <tr class="activity-streams"><td colspan="10"></td></tr>
     </tbody>

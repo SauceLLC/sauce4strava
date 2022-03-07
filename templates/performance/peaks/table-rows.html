@@ -1,0 +1,32 @@
+<% for (const [i, x] of peaks.entries()) { %>
+    <tr data-id="{{x.activity.id}}" title="{{{peaks_row_tooltip}}}">
+        <td class="centered">{{humanNumber(x.rank)}}</td>
+        <td class="righted">
+            {{x.estimate ? '~' : ''}}{{valueFormatter(x.value)}}<abbr class="unit short">{{unit}}</abbr>
+        </td>
+        <td class="centered">
+            <% if (x.rankBadge && x.rankBadge.cat) { %>
+                <img src="{{x.rankBadge.badge}}" class="sauce-rank"
+                     data-cat="{{x.rankBadge.cat}}" title="{{x.rankBadge.tooltip}}"/>
+            <% } %>
+        </td>
+
+        <% if (prefs.includeAllAthletes) { %>
+            <td>{{x.activity.athleteName}}</td>
+        <% } %>
+        <td class="activity-name">
+            <div class="name-container">
+                <a href="https://www.strava.com/activities/{{x.activity.id}}/analysis/{{x.start}}/{{x.end}}"
+                   title="{{x.activity.name}}{{x.activity.description ? '\n\n' + x.activity.description : ''}}"
+                   target="_blank">{{x.activity.name}}</a>
+            </div>
+        </td>
+        <td>{{x.activityType}}</td>
+        <td>{{humanDate(x.activity.ts)}}</td>
+        <td>
+            <div class="btn btn-icon-only btn-unstyled edit-activity"
+                 data-id="{{x.activity.id}}"
+                 title="Edit activity">{{=icon edit-duotone=}}</div>
+        </td>
+    </tr>
+<% } %>

@@ -24,15 +24,6 @@
     <% } %>
 <% } %>
 
-<% if (!obj.disableLimit) { %>
-    <select name="limit" class="pref">
-        <option value="10" {{panelPrefs.limit === 10 ? 'selected' : ''}}>{{{top}}} 10</option>
-        <option value="25" {{panelPrefs.limit === 25 ? 'selected' : ''}}>{{{top}}} 25</option>
-        <option value="100" {{panelPrefs.limit === 100 ? 'selected' : ''}}>{{{top}}} 100</option>
-        <option value="500" {{panelPrefs.limit === 500 ? 'selected' : ''}}>{{{top}}} 500</option>
-        <option value="0" {{panelPrefs.limit === 0 ? 'selected' : ''}}>{{{all_results}}}</option>
-    </select>
-<% } %>
 <% if (!obj.disableActivityType) { %>
     <select name="activityType" class="pref">
         <option value="" {{!panelPrefs.activityType ? 'selected' : ''}}>{{{any}}}</option>
