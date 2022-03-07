@@ -327,6 +327,10 @@
     "analysis_heartrate": {
         "message": "Ritmo cardiaco"
     },
+    "analysis_hr": {
+        "message": "RC",
+        "description": "IMMUTABLE"
+    },
     "analysis_temp": {
         "message": "Temperatura"
     },
@@ -897,6 +901,9 @@
     "sync_control_panel_performance_settings": {
         "message": "Configuración de rendimiento"
     },
+    "sync_control_panel_export_fit_files": {
+        "message": "Exportar archivos FIT"
+    },
     "sync_control_panel_backup_data": {
         "message": "Copia de seguridad",
         "description": "IMMUTABLE"
@@ -1329,6 +1336,12 @@
     },
     "performance_athlete_chart_desc": {
         "message": "FTP del atleta y peso a lo largo del tiempo."
+    },
+    "performance_filter_tooltip": {
+        "message": "Filtre esta columna por uno o más términos. Utilice la coma para separar los términos y el signo de exclamación para excluir un término. es decir, aunque cuentes hasta tres o cuatro, ¡pero cinco está fuera!"
+    },
+    "performance_filter": {
+        "message": "Filtrar"
     },
     "season_start": {
         "message": "Inicio de temporada"

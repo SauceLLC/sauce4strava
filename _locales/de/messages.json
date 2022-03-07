@@ -332,6 +332,10 @@
     "analysis_heartrate": {
         "message": "Pulsschlag"
     },
+    "analysis_hr": {
+        "message": "HF",
+        "description": "IMMUTABLE"
+    },
     "analysis_temp": {
         "message": "Temp"
     },
@@ -919,6 +923,9 @@
     "sync_control_panel_performance_settings": {
         "message": "Leistungseinstellungen"
     },
+    "sync_control_panel_export_fit_files": {
+        "message": "FIT-Dateien exportieren"
+    },
     "sync_control_panel_backup_data": {
         "message": "Backup-Daten"
     },
@@ -1351,6 +1358,12 @@
     },
     "performance_athlete_chart_desc": {
         "message": "FTP und Gewicht des Athleten im Laufe der Zeit."
+    },
+    "performance_filter_tooltip": {
+        "message": "Filtern Sie diese Spalte nach einem oder mehreren Begriffen. Verwenden Sie ein Komma, um Begriffe zu trennen, und ein Ausrufezeichen, um einen Begriff auszuschließen. dh Obwohl soll bis drei oder vier zählen, !aber fünf ist richtig"
+    },
+    "performance_filter": {
+        "message": "Filter"
     },
     "season_start": {
         "message": "Saisonbeginn"

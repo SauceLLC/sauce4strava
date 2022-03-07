@@ -334,6 +334,10 @@
     "analysis_heartrate": {
         "message": "Frequenza cardiaca"
     },
+    "analysis_hr": {
+        "message": "FC",
+        "description": "IMMUTABLE"
+    },
     "analysis_temp": {
         "message": "Temp"
     },
@@ -904,6 +908,9 @@
     "sync_control_panel_performance_settings": {
         "message": "Impostazioni delle prestazioni"
     },
+    "sync_control_panel_export_fit_files": {
+        "message": "Esporta file FIT"
+    },
     "sync_control_panel_backup_data": {
         "message": "Dati di backup"
     },
@@ -1335,6 +1342,12 @@
     },
     "performance_athlete_chart_desc": {
         "message": "Atleta FTP e peso nel tempo."
+    },
+    "performance_filter_tooltip": {
+        "message": "Filtra questa colonna in base a uno o più termini. Utilizzare la virgola per separare i termini e il punto esclamativo per escludere un termine. cioè anche se conterà fino a tre, o quattro, ma cinque è giusto"
+    },
+    "performance_filter": {
+        "message": "Filtro"
     },
     "season_start": {
         "message": "Inizio della stagione"

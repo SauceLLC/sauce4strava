@@ -336,6 +336,10 @@
         "message": "Fréquence Cardiaque",
         "description": "IMMUTABLE"
     },
+    "analysis_hr": {
+        "message": "FC",
+        "description": "IMMUTABLE"
+    },
     "analysis_temp": {
         "message": "Temp"
     },
@@ -907,6 +911,9 @@
     "sync_control_panel_performance_settings": {
         "message": "Paramètres de performances"
     },
+    "sync_control_panel_export_fit_files": {
+        "message": "Exporter des fichiers FIT"
+    },
     "sync_control_panel_backup_data": {
         "message": "Données de sauvegarde"
     },
@@ -1338,6 +1345,12 @@
     },
     "performance_athlete_chart_desc": {
         "message": "FTP et poids de l'athlète au fil du temps."
+    },
+    "performance_filter_tooltip": {
+        "message": "Filtrez cette colonne par un ou plusieurs termes. Utilisez une virgule pour séparer les termes et un point d'exclamation pour exclure un terme. c'est-à-dire que tu compteras jusqu'à trois, ou quatre, mais cinq c'est juste"
+    },
+    "performance_filter": {
+        "message": "Filtre"
     },
     "season_start": {
         "message": "Début de la saison"

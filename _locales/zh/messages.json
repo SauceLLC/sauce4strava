@@ -359,6 +359,10 @@
     "analysis_heartrate": {
         "message": "心率"
     },
+    "analysis_hr": {
+        "message": "心率",
+        "description": "IMMUTABLE"
+    },
     "analysis_temp": {
         "message": "温度"
     },
@@ -1000,6 +1004,9 @@
     "sync_control_panel_performance_settings": {
         "message": "性能设置"
     },
+    "sync_control_panel_export_fit_files": {
+        "message": "导出 FIT 文件"
+    },
     "sync_control_panel_backup_data": {
         "message": "备份数据"
     },
@@ -1499,6 +1506,12 @@
     },
     "performance_athlete_chart_desc": {
         "message": "运动员 FTP 和体重随时间变化。"
+    },
+    "performance_filter_tooltip": {
+        "message": "按一个或多个术语过滤此列。使用逗号分隔术语，使用感叹号排除术语。即虽然要数到三或四，但是五是正确的"
+    },
+    "performance_filter": {
+        "message": "筛选"
     },
     "season_start": {
         "message": "季节开始"
