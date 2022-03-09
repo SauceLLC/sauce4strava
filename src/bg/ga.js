@@ -99,7 +99,7 @@ sauce.ns('ga', ns => {
                 state.location = `https://${gaHostname}/EXTENSION_PAGE${url.pathname}${url.search}`;
             }
         } else {
-            state.location = `https://${gaHostname}/EXTENSION_BG/${location.pathname}${location.search}`;
+            state.location = `https://${gaHostname}/EXTENSION_BG${location.pathname}${location.search}`;
         }
         if (this && this.tab) {
             state.viewportSize = `${this.tab.width}x${this.tab.height}`;
