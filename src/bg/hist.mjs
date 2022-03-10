@@ -90,7 +90,7 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 12, // Always set estimate flag for powers
+    version: 13, // Updated np and xp (simplified and true)
     depends: ['extra-streams'],
     data: {processor: processors.PeaksProcessor}
 });
