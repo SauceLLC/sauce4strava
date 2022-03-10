@@ -881,10 +881,13 @@ sauce.ns('power', function() {
                     state.rollSum += value;
                     state.rollSum -= state.roll[slot] || 0;
                     state.roll[slot] = value;
-                    const npa = state.rollSum / Math.min(state.rollSize, i + 1 - this._offt);
-                    const qnpa = npa * npa * npa * npa;  // unrolled for perf
-                    state.total += qnpa;
-                    save = qnpa;
+                    const size = i + 1 - this._offt;
+                    if (size >= state.rollSize) {
+                        const npa = state.rollSum / state.rollSize;
+                        const qnpa = npa * npa * npa * npa;  // unrolled for perf
+                        state.total += qnpa;
+                        save = qnpa;
+                    }
                 }
                 state.saved.push(save);
             }
@@ -959,9 +962,7 @@ sauce.ns('power', function() {
                 const state = this._inlineNP;
                 return (state.total / (this.size() - state.gapPadCount)) ** 0.25;
             } else {
-                const leadinIdx = Math.max(0, this._offt - 60);
-                const leadin = this._values.slice(leadinIdx, this._offt);
-                return calcNP(this.values(), 1 / this.idealGap, {leadin, ...options});
+                return calcNP(this.values(), 1 / this.idealGap, options);
             }
         }
 
@@ -1082,13 +1083,10 @@ sauce.ns('power', function() {
         const rolling = new Array(rollingSize);
         let count = 0;
         let total = 0;
-        let leadinTotal = 0;
         let breakPadding = 0;
-        const leadin = options.leadin || [];
-        const stream = leadin.concat(data);
-        for (let i = 0, sum = 0, len = stream.length; i < len; i++) {
+        for (let i = 0, sum = 0, len = data.length; i < len; i++) {
             const index = i % rollingSize;
-            const entry = stream[i];
+            const entry = data[i];
             const watts = +entry;  // Unlocks some optimizations.
             // Drain the rolling buffer but don't increment the counter for gaps...
             if (!watts) {
@@ -1110,17 +1108,13 @@ sauce.ns('power', function() {
             }
             sum -= rolling[index] || 0;
             rolling[index] = watts;
-            const rollUsedSize = i + 1 + breakPadding;
-            const avg = sum / (rollingSize < rollUsedSize ? rollingSize : rollUsedSize);
-            const qavg = avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
-            total += qavg;
-            if (i < leadin.length) {
-                leadinTotal += qavg;
+            if (i + 1 + breakPadding >= rollingSize) {
+                const avg = sum / rollingSize;
+                const qavg = avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
+                total += qavg;
+                count++;
             }
-            count++;
         }
-        count -= leadin.length;
-        total -= leadinTotal;
         return (total / count) ** 0.25;
     }
 
