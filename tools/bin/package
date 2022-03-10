@@ -40,7 +40,7 @@ else
     EXT=zip
 fi
 
-GIT_COMMIT=$(git rev-parse --short HEAD)
+GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo 0)
 VERSION=$($(dirname $0)/version $TMPDIR/manifest.json)
 BUILDS=$(pwd)/builds
 mkdir -p $BUILDS
