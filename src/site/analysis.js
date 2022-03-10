@@ -1647,7 +1647,7 @@ sauce.ns('analysis', ns => {
         const streamTypes = ['time', 'watts', 'heartrate', 'altitude', 'active',
                              'cadence', 'temp', 'latlng', 'distance', 'velocity_smooth'];
         const streams = (await fetchStreams(streamTypes)).reduce((acc, x, i) =>
-            (acc[streamTypes[i]] = x && x.slice(start, end), acc), {});
+            (acc[streamTypes[i]] = x && x.slice(start, end != null ? end + 1 : end), acc), {});
         if (!streams.watts) {
             streams.watts = await fetchStream('watts_calc');
         }
