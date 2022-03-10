@@ -974,9 +974,7 @@ sauce.ns('power', function() {
                 const state = this._inlineXP;
                 return (state.total / state.count) ** 0.25;
             } else {
-                const leadinIdx = Math.max(0, this._offt - 50);
-                const leadin = this._values.slice(leadinIdx, this._offt);
-                return calcXP(this.values(), 1 / this.idealGap, {leadin, ...options});
+                return calcXP(this.values(), 1 / this.idealGap, options);
             }
         }
 
@@ -1140,12 +1138,9 @@ sauce.ns('power', function() {
         let weighted = 0;
         let count = 0;
         let total = 0;
-        let leadinTotal = 0;
         let breakPadding = 0;
-        const leadin = options.leadin || [];
-        const stream = leadin.concat(data);
-        for (let i = 0, len = stream.length; i < len; i++) {
-            const entry = stream[i];
+        for (let i = 0, len = data.length; i < len; i++) {
+            const entry = data[i];
             const watts = +entry;  // Unlocks some optimizations.
             if (!watts && (entry instanceof sauce.data.Zero)) {
                 if (entry instanceof sauce.data.Break) {
@@ -1165,13 +1160,8 @@ sauce.ns('power', function() {
             prevTime = time;
             const qw = weighted * weighted * weighted * weighted;  // unrolled for perf
             total += qw;
-            if (i < leadin.length) {
-                leadinTotal += qw;
-            }
             count++;
         }
-        count -= leadin.length;
-        total -= leadinTotal;
         return count ? (total / count) ** 0.25 : 0;
     }
 
