@@ -26,6 +26,9 @@ $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git/index
 	$(MAKE) mods
 	echo '{"git_commit": "$(or $(SOURCE_VERSION),$(shell git rev-parse HEAD))"}' > $@
 
+# Needed when mozilla store QA runs a build in a zip bundle
+.git/index:
+
 sass:
 	$(TOOLPATH)/sassrender
 	cp -a scss/site/fonts css/site/
