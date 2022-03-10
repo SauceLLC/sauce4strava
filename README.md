@@ -74,8 +74,8 @@ Feature Highlights
  1. Get Linux machine with node, npm and make.
  2. `unzip <bundle>.zip`
  3. `cd <bundle dir>`
- 4. `GIT_COMMIT=0 TARGET=gecko make`
- 5. OPTIONAL: `GIT_COMMIT=0 TARGET=gecko make packages` -> artifacts in build/
+ 4. `TARGET=gecko make`
+ 5. OPTIONAL: `TARGET=gecko make packages` -> artifacts in build/
 
 
 Release Notes
