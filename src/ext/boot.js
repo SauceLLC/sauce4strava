@@ -84,7 +84,7 @@
         cssClass: ['sauce-performance'],
         scripts: [
             'src/site/sync.js',
-            'lib/Chart.js',
+            'src/site/chartjs/Chart.js',
             'src/site/chartjs/adapter-date-fns.bundle.js',
             'src/site/chartjs/plugin-datalabels.js',
             'src/site/chartjs/plugin-zoom.js',

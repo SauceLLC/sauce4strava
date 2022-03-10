@@ -1,8 +1,8 @@
 /* global sauce */
 
-import * as jobs from '/lib/jscoop/jobs.mjs';
-import * as queues from '/lib/jscoop/queues.mjs';
-import * as locks from '/lib/jscoop/locks.mjs';
+import * as jobs from '/src/common/jscoop/jobs.mjs';
+import * as queues from '/src/common/jscoop/queues.mjs';
+import * as locks from '/src/common/jscoop/locks.mjs';
 import * as processors from '/src/bg/hist/processors.mjs';
 import * as dataExchange from '/src/bg/hist/data-exchange.mjs';
 

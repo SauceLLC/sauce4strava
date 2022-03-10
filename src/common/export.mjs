@@ -1,6 +1,6 @@
 /* global sauce */
 
-import * as fit from '../../lib/jsfit/fit.mjs';
+import * as fit from '../common/jsfit/fit.mjs';
 
 
 class Serializer {

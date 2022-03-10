@@ -1,7 +1,8 @@
 /* global sauce */
 
 import * as hist from '/src/bg/hist.mjs';
-import * as fflate from '/lib/fflate.mjs';
+import * as fflate from '/src/common/fflate.mjs';
+import {FITSerializer, TCXSerializer, GPXSerializer} from '/src/common/export.mjs';
 
 
 const {
@@ -205,12 +206,11 @@ export class DataExchange extends sauce.proxy.Eventing {
 
     async exportActivityFiles(type='fit') {
         const s = Date.now();
-        const exportModule = await import(sauce.getURL('/src/site/export.mjs'));
-        const Serializer = exportModule[{
-            fit: 'FITSerializer',
-            tcx: 'TCXSerializer',
-            gpx: 'GPXSerializer',
-        }[type]];
+        const Serializer = {
+            fit: FITSerializer,
+            tcx: TCXSerializer,
+            gpx: GPXSerializer,
+        }[type];
         const athlete = await athletesStore.get(this.athleteId, {model: true});
         const activities = await actsStore.getAllForAthlete(this.athleteId,
             {_skipClone: true, _skipCache: true});

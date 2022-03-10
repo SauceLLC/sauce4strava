@@ -1,2 +1,3 @@
 src/ext/webext.js
 src/site/chartjs/
+src/common/fflate.mjs

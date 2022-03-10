@@ -1,1 +1,4 @@
-open
+site/chartjs/Chart.js
+common/jscoop
+common/jsfit
+common/fflate.mjs

@@ -1,8 +1,8 @@
 /* global sauce, browser */
 
-import * as queues from '/lib/jscoop/queues.mjs';
-import * as futures from '/lib/jscoop/futures.mjs';
-import * as locks from '/lib/jscoop/locks.mjs';
+import * as queues from '/src/common/jscoop/queues.mjs';
+import * as futures from '/src/common/jscoop/futures.mjs';
+import * as locks from '/src/common/jscoop/locks.mjs';
 
 const actsStore = sauce.hist.db.ActivitiesStore.singleton();
 const peaksStore = sauce.hist.db.PeaksStore.singleton();

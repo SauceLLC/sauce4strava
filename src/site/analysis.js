@@ -1666,7 +1666,7 @@ sauce.ns('analysis', ns => {
         }
         const descEl = document.querySelector('#heading .activity-description .content');
         const desc = descEl && descEl.textContent;
-        const exportModule = await import(sauce.getURL('/src/site/export.mjs'));
+        const exportModule = await import(sauce.getURL('/src/common/export.mjs'));
         const Serializer = {
             tcx: exportModule.TCXSerializer,
             gpx : exportModule.GPXSerializer,
@@ -2716,7 +2716,7 @@ sauce.ns('analysis', ns => {
 
     async function createLiveSegment({start, end, uuid, segmentName, leaderName, leaderType,
         timeMultiplier}) {
-        const {FitParser} = await import(sauce.getURL('lib/jsfit/fit.mjs'));
+        const {FitParser} = await import(sauce.getURL('src/common/jsfit/fit.mjs'));
         const timeStreamOrig = await fetchStream('time', start, end);
         const timeStream = (timeMultiplier && timeMultiplier !== 1) ?
             timeStreamOrig.map(x => x * timeMultiplier) : timeStreamOrig;

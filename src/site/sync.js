@@ -68,11 +68,11 @@ sauce.ns('sync', ns => {
         const dataEx = new sauce.hist.DataExchange();
 
         async function onStart() {
-            const jobs = await import(sauce.getURL('/lib/jscoop/jobs.mjs'));
+            const jobs = await import(sauce.getURL('/src/common/jscoop/jobs.mjs'));
             const importingQueue = new jobs.UnorderedWorkQueue({maxPending: 12});
             const files = input.files;
             let fileNum = 0;
-            const fflate = await import(sauce.getURL('lib/fflate.mjs'));
+            const fflate = await import(sauce.getURL('src/common/fflate.mjs'));
             let totalBundles = 0;
             for (const f of files) {
                 const gunzip = new fflate.Gunzip();
@@ -153,7 +153,7 @@ sauce.ns('sync', ns => {
 
     async function backupAthleteData(athlete, progressFn) {
         let compressedBundles;
-        const fflate = await import(sauce.getURL('lib/fflate.mjs'));
+        const fflate = await import(sauce.getURL('src/common/fflate.mjs'));
         const gzip = new fflate.Gzip();
         let page = 1;
         const mem = navigator.deviceMemory || 4;

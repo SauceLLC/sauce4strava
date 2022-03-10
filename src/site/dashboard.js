@@ -190,7 +190,7 @@ sauce.ns('dashboard', function(ns) {
     let _kudoRateLimiter;
     async function getKudoRateLimiter() {
         if (!_kudoRateLimiter) {
-            const jobs = await import(sauce.getURL('/lib/jscoop/jobs.mjs'));
+            const jobs = await import(sauce.getURL('/src/common/jscoop/jobs.mjs'));
 
             class KudoRateLimiter extends jobs.RateLimiter {
                 async getState() {
