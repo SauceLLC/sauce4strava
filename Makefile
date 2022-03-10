@@ -23,26 +23,26 @@ $(PACKAGES): package.json
 
 $(BUILD): $(SRC) $(MANIFEST) $(PACKAGES) Makefile .git/index
 	$(MAKE) sass
-	$(MAKE) lib
+	$(MAKE) open
 	echo '{"git_commit": "$(or $(SOURCE_VERSION),$(shell git rev-parse HEAD))"}' > $@
 
 sass:
 	$(TOOLPATH)/sassrender
 	cp -a scss/site/fonts css/site/
 
-lib:
-	mkdir -p lib/jscoop lib/jsfit
-	$(TOOLPATH)/tersify $(MODS)/jscoop/src/coop.mjs lib/jscoop/coop.mjs
-	$(TOOLPATH)/tersify $(MODS)/jscoop/src/futures.mjs lib/jscoop/futures.mjs
-	$(TOOLPATH)/tersify $(MODS)/jscoop/src/jobs.mjs lib/jscoop/jobs.mjs
-	$(TOOLPATH)/tersify $(MODS)/jscoop/src/locks.mjs lib/jscoop/locks.mjs
-	$(TOOLPATH)/tersify $(MODS)/jscoop/src/queues.mjs lib/jscoop/queues.mjs
-	$(TOOLPATH)/tersify $(MODS)/sauce-chartjs/dist/Chart.pretty.js lib/Chart.js
-	$(TOOLPATH)/tersify $(MODS)/fflate/esm/browser.js lib/fflate.mjs
-	$(TOOLPATH)/tersify $(MODS)/jsfit/src/fit.mjs lib/jsfit/fit.mjs
-	$(TOOLPATH)/tersify $(MODS)/jsfit/src/binary.mjs lib/jsfit/binary.mjs
-	$(TOOLPATH)/tersify $(MODS)/jsfit/src/parser.mjs lib/jsfit/parser.mjs
-	du -sk lib
+open:
+	mkdir -p src/open/jscoop src/open/jsfit
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/coop.mjs src/open/jscoop/coop.mjs
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/futures.mjs src/open/jscoop/futures.mjs
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/jobs.mjs src/open/jscoop/jobs.mjs
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/locks.mjs src/open/jscoop/locks.mjs
+	$(TOOLPATH)/tersify $(MODS)/jscoop/src/queues.mjs src/open/jscoop/queues.mjs
+	$(TOOLPATH)/tersify $(MODS)/sauce-chartjs/dist/Chart.pretty.js src/open/Chart.js
+	$(TOOLPATH)/tersify $(MODS)/fflate/esm/browser.js src/open/fflate.mjs
+	$(TOOLPATH)/tersify $(MODS)/jsfit/src/fit.mjs src/open/jsfit/fit.mjs
+	$(TOOLPATH)/tersify $(MODS)/jsfit/src/binary.mjs src/open/jsfit/binary.mjs
+	$(TOOLPATH)/tersify $(MODS)/jsfit/src/parser.mjs src/open/jsfit/parser.mjs
+	du -sk src/open
 
 clean:
 	rm -rf $(PACKAGES) builds css
@@ -97,4 +97,4 @@ lint-watch:
 	$(TOOLPATH)/lintwatch
 
 
-.PHONY: lint sass clean realclean packages manifest build lib
+.PHONY: lint sass clean realclean packages manifest build open
