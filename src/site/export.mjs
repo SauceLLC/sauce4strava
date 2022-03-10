@@ -190,7 +190,7 @@ export class TCXSerializer extends DOMSerializer {
                 this.addNodeTo(lap, 'DistanceMeters', streams.distance[end] - streams.distance[start]);
             }
             if (streams.heartrate) {
-                const lapStream = streams.heartrate.slice(start, end);
+                const lapStream = streams.heartrate.slice(start, end + 1);
                 const avg = this.addNodeTo(lap, 'AverageHeartRateBpm');
                 this.addNodeTo(avg, 'Value', Math.round(sauce.data.avg(lapStream)));
                 const max = this.addNodeTo(lap, 'MaximumHeartRateBpm');
