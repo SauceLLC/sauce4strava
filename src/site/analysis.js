@@ -145,7 +145,7 @@ sauce.ns('analysis', ns => {
         }
         await fetchStreams([name]);
         const rawStream = _getStream(name);
-        if (rawStream) {
+        if (rawStream && rawStream.length > period * 2) {
             const smooth = sauce.data.smooth(period, rawStream);
             pageView.streams().streamData.add(fqName, smooth);
             return _getStream(fqName, start, end);
