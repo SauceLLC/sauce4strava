@@ -4,63 +4,80 @@
         "description": "IMMUTABLE"
     },
     "athlete": {
-        "message": "运动员"
+        "message": "运动员",
+        "description": "IMMUTABLE"
     },
     "type": {
-        "message": "类型"
+        "message": "类型",
+        "description": "IMMUTABLE"
     },
     "performance": {
-        "message": "表现"
+        "message": "表现",
+        "description": "IMMUTABLE"
     },
     "all_athletes": {
-        "message": "所有运动员"
+        "message": "所有运动员",
+        "description": "IMMUTABLE"
     },
     "name": {
-        "message": "名称"
+        "message": "名称",
+        "description": "IMMUTABLE"
     },
     "export": {
         "message": "导出",
         "description": "IMMUTABLE"
     },
     "male": {
-        "message": "男"
+        "message": "男",
+        "description": "IMMUTABLE"
     },
     "female": {
-        "message": "女"
+        "message": "女",
+        "description": "IMMUTABLE"
     },
     "maximize_tooltip": {
-        "message": "最大化"
+        "message": "最大化",
+        "description": "IMMUTABLE"
     },
     "restore_tooltip": {
-        "message": "恢复"
+        "message": "还原",
+        "description": "IMMUTABLE"
     },
     "remove": {
-        "message": "消除"
+        "message": "移除",
+        "description": "IMMUTABLE"
     },
     "delete": {
-        "message": "删除"
+        "message": "删除",
+        "description": "IMMUTABLE"
     },
     "save": {
         "message": "保存",
         "description": "IMMUTABLE"
     },
     "add": {
-        "message": "添加"
+        "message": "添加",
+        "description": "IMMUTABLE"
     },
     "enable": {
-        "message": "使能够"
+        "message": "激活",
+        "description": "IMMUTABLE"
     },
     "load_more": {
-        "message": "装载更多"
+        "message": "加载更多",
+        "description": "IMMUTABLE"
     },
     "menu_performance_fitness": {
-        "message": "健身追踪"
+        "message": "健康追踪",
+        "description": "IMMUTABLE"
     },
     "menu_performance_peaks": {
-        "message": "巅峰表现"
+        "message": "巅峰表现",
+        "description": "IMMUTABLE"
     },
     "menu_performance_compare": {
-        "message": "比较活动"
+        "message": "活动比较",
+        "description": "IMMUTABLE"
     },
     "analysis_options": {
         "message": "选项",
@@ -71,10 +88,12 @@
         "description": "IMMUTABLE"
     },
     "analysis_time": {
-        "message": "时间"
+        "message": "时间",
+        "description": "IMMUTABLE"
     },
     "analysis_timing": {
-        "message": "定时"
+        "message": "计时",
+        "description": "IMMUTABLE"
     },
     "analysis_gap": {
         "message": "GAP",
@@ -85,10 +104,12 @@
         "description": "IMMUTABLE"
     },
     "analysis_descended": {
-        "message": "下降"
+        "message": "下降",
+        "description": "IMMUTABLE"
     },
     "analysis_avg": {
-        "message": "平均"
+        "message": "平均",
+        "description": "IMMUTABLE"
     },
     "analysis_min": {
         "message": "最小",
@@ -99,10 +120,12 @@
         "description": "IMMUTABLE"
     },
     "analysis_lowest": {
-        "message": "最低"
+        "message": "最低",
+        "description": "IMMUTABLE"
     },
     "analysis_highest": {
-        "message": "最高"
+        "message": "最高",
+        "description": "IMMUTABLE"
     },
     "analysis_elapsed": {
         "message": "经过",
@@ -133,45 +156,56 @@
         "description": "IMMUTABLE"
     },
     "analysis_active_speed_tooltip": {
-        "message": "平均活动速度"
+        "message": "平均活动速度",
+        "description": "IMMUTABLE"
     },
     "analysis_gap_tooltip": {
-        "message": "坡度调整步幅：平坦地形的估计步速"
+        "message": "坡度调整步幅：平坦地形的估计配速",
+        "description": "IMMUTABLE"
     },
     "analysis_stride_tooltip": {
-        "message": "每步/行程的平均距离"
+        "message": "每步/行程的平均距离",
+        "description": "IMMUTABLE"
     },
     "analysis_np_tooltip": {
         "message": "标准化功率®：潜在平均功率的估计",
         "description": "IMMUTABLE"
     },
     "analysis_xp_tooltip": {
-        "message": "xPower：一种改进的潜在功率估算，受NormalizedPower®（由Philip Friere Skiba博士创建）启发"
+        "message": "xPower：一种改进的潜在功率估算，受NormalizedPower®（由Philip Friere Skiba博士创建）启发",
+        "description": "IMMUTABLE"
     },
     "analysis_sp_tooltip": {
-        "message": "海力：海平面上的潜在功率估计"
+        "message": "海平面调整功率：海平面上的潜在功率估计",
+        "description": "IMMUTABLE"
     },
     "analysis_sp_adjust_tooltip": {
-        "message": "由于海拔高度对V02Max的影响而进行的补偿"
+        "message": "基于海拔高度对 V02Max 的影响而进行的补偿",
+        "description": "IMMUTABLE"
     },
     "analysis_energy_tooltip": {
-        "message": "能量消耗以千焦耳为单位"
+        "message": "能量消耗以千焦耳为单位",
+        "description": "IMMUTABLE"
     },
     "analysis_energy_rate_tooltip": {
-        "message": "每小时千焦"
+        "message": "每小时千焦",
+        "description": "IMMUTABLE"
     },
     "analysis_elevation_gain_tooltip": {
         "message": "海拔高度上升：爬升",
         "description": "IMMUTABLE"
     },
     "analysis_elevation_loss_tooltip": {
-        "message": "海拔损失：下降"
+        "message": "海拔损失：下降",
+        "description": "IMMUTABLE"
     },
     "analysis_elevation_avg_tooltip": {
-        "message": "平均海拔"
+        "message": "平均海拔",
+        "description": "IMMUTABLE"
     },
     "analysis_grade_tooltip": {
-        "message": "坡度"
+        "message": "坡度",
+        "description": "IMMUTABLE"
     },
     "analysis_vam_tooltip": {
         "message": "每小时海拔爬升",
@@ -185,81 +219,100 @@
         "message": "基于TRIMP（过渡冲动）的Training StressScore®：基于心率储备的压力负荷指标"
     },
     "analysis_start_of_effort_tooltip": {
-        "message": "开始工作的时间偏移"
+        "message": "开始努力的时间偏移",
+        "description": "IMMUTABLE"
     },
     "analysis_wkg_tooltip": {
         "message": "功体比",
         "description": "IMMUTABLE"
     },
     "analysis_max_power_tooltip": {
-        "message": "最大功率"
+        "message": "最大功率",
+        "description": "IMMUTABLE"
     },
     "analysis_low_hr_tooltip": {
-        "message": "最低心率"
+        "message": "最低心率",
+        "description": "IMMUTABLE"
     },
     "analysis_high_hr_tooltip": {
-        "message": "最高心率"
+        "message": "最高心率",
+        "description": "IMMUTABLE"
     },
     "analysis_low_speed_tooltip": {
-        "message": "最低速度"
+        "message": "最低速度",
+        "description": "IMMUTABLE"
     },
     "analysis_high_speed_tooltip": {
-        "message": "最高速度"
+        "message": "最高速度",
+        "description": "IMMUTABLE"
     },
     "analysis_low_pace_tooltip": {
         "message": "最低配速",
         "description": "IMMUTABLE"
     },
     "analysis_high_pace_tooltip": {
-        "message": "最高速度"
+        "message": "最高配速",
+        "description": "IMMUTABLE"
     },
     "analysis_expand_tooltip": {
-        "message": "点击展开"
+        "message": "点击展开",
+        "description": "IMMUTABLE"
     },
     "analysis_compress_tooltip": {
-        "message": "点击折叠"
+        "message": "点击折叠",
+        "description": "IMMUTABLE"
     },
     "analysis_ftp_link_tooltip": {
-        "message": "点击设置值"
+        "message": "点击设置值",
+        "description": "IMMUTABLE"
     },
     "analysis_weight_link_tooltip": {
-        "message": "点击设置值"
+        "message": "点击设置值",
+        "description": "IMMUTABLE"
     },
     "analysis_ftp_input_tooltip": {
-        "message": "输入该运动员的估计FTP（功能阈值功率），然后按Enter。 FTP是持续1小时的最大平均功率。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。"
+        "message": "输入该运动员的估计 FTP（功能阈值功率），然后按回车。FTP 是持续 1 小时的最大平均功率。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。",
+        "description": "IMMUTABLE"
     },
     "analysis_weight_input_tooltip": {
-        "message": "输入该运动员的估计体重，然后按Enter。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。"
+        "message": "输入该运动员的估计体重，然后按回车。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。",
+        "description": "IMMUTABLE"
     },
     "analysis_intensity_tooltip": {
         "message": "强度因子",
         "description": "IMMUTABLE"
     },
     "analysis_peak_power_tooltip": {
-        "message": "最大持续功率范围"
+        "message": "最大持续功率范围",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_power_wkg_tooltip": {
-        "message": "最大持续瓦特/千克体重"
+        "message": "最大持续功体比",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_sp_tooltip": {
-        "message": "最大海平面调整功率范围"
+        "message": "最大海平面调整功率范围",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_np_tooltip": {
         "message": "最大标准化功率范围",
         "description": "IMMUTABLE"
     },
     "analysis_peak_xp_tooltip": {
-        "message": "最大xPower范围"
+        "message": "最大 xPower 范围",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_hr_tooltip": {
-        "message": "最大持续心率范围"
+        "message": "最大持续心率范围",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_cadence_tooltip": {
         "message": "最大持续踏频范围",
         "description": "IMMUTABLE"
     },
     "analysis_peak_vam_tooltip": {
-        "message": "最大持续爬升速度范围"
+        "message": "最大持续爬升速度范围",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_pace_tooltip": {
         "message": "最大持续配速范围",
@@ -273,7 +326,8 @@
         "description": "IMMUTABLE"
     },
     "analysis_stops": {
-        "message": "停止"
+        "message": "停止",
+        "description": "IMMUTABLE"
     },
     "analysis_idle": {
         "message": "空闲",
@@ -284,21 +338,24 @@
         "description": "IMMUTABLE"
     },
     "analysis_stats": {
-        "message": "统计资料"
+        "message": "统计资料",
+        "description": "IMMUTABLE"
     },
     "analysis_energy": {
         "message": "能耗",
         "description": "IMMUTABLE"
     },
     "analysis_expended": {
-        "message": "已支出"
+        "message": "已展开",
+        "description": "IMMUTABLE"
     },
     "analysis_rate": {
         "message": "速率",
         "description": "IMMUTABLE"
     },
     "analysis_elevation": {
-        "message": "海拔"
+        "message": "海拔",
+        "description": "IMMUTABLE"
     },
     "analysis_environment": {
         "message": "环境"
@@ -308,10 +365,12 @@
         "description": "IMMUTABLE"
     },
     "analysis_estimated": {
-        "message": "估计的"
+        "message": "估计的",
+        "description": "IMMUTABLE"
     },
     "analysis_data": {
-        "message": "数据"
+        "message": "数据",
+        "description": "IMMUTABLE"
     },
     "analysis_rank": {
         "message": "排名",
@@ -322,13 +381,16 @@
         "description": "IMMUTABLE"
     },
     "analysis_raw_data": {
-        "message": "原始数据"
+        "message": "原始数据",
+        "description": "IMMUTABLE"
     },
     "analysis_graphed_data": {
-        "message": "图形数据"
+        "message": "图形数据",
+        "description": "IMMUTABLE"
     },
     "analysis_graphs": {
-        "message": "图表"
+        "message": "图表",
+        "description": "IMMUTABLE"
     },
     "analysis_perf_predictor_tooltip": {
         "message": "预测自行车运动的表现。"
@@ -338,33 +400,40 @@
         "description": "IMMUTABLE"
     },
     "analysis_speed": {
-        "message": "速度"
+        "message": "速度",
+        "description": "IMMUTABLE"
     },
     "analysis_distance": {
-        "message": "距离"
+        "message": "距离",
+        "description": "IMMUTABLE"
     },
     "analysis_samples": {
         "message": "采样",
         "description": "IMMUTABLE"
     },
     "analysis_beta": {
-        "message": "测试版"
+        "message": "测试版",
+        "description": "IMMUTABLE"
     },
     "analysis_start_of_effort": {
-        "message": "开始努力"
+        "message": "开始努力",
+        "description": "IMMUTABLE"
     },
     "analysis_elapsed_time": {
-        "message": "经过时间"
+        "message": "经过时间",
+        "description": "IMMUTABLE"
     },
     "analysis_heartrate": {
-        "message": "心率"
+        "message": "心率",
+        "description": "IMMUTABLE"
     },
     "analysis_hr": {
         "message": "心率",
         "description": "IMMUTABLE"
     },
     "analysis_temp": {
-        "message": "温度"
+        "message": "温度",
+        "description": "IMMUTABLE"
     },
     "analysis_cadence": {
         "message": "踏频",
@@ -415,16 +484,20 @@
         "description": "IMMUTABLE"
     },
     "analysis_watts": {
-        "message": "瓦数"
+        "message": "瓦数",
+        "description": "IMMUTABLE"
     },
     "analysis_power": {
-        "message": "功率"
+        "message": "功率",
+        "description": "IMMUTABLE"
     },
     "analysis_sea_power": {
-        "message": "海上力量"
+        "message": "海平面调整功率",
+        "description": "IMMUTABLE"
     },
     "analysis_weight": {
-        "message": "重量"
+        "message": "重量",
+        "description": "IMMUTABLE"
     },
     "analysis_segments": {
         "message": "区隔"
@@ -463,7 +536,8 @@
         "description": "IMMUTABLE"
     },
     "analysis_view": {
-        "message": "视图"
+        "message": "视图",
+        "description": "IMMUTABLE"
     },
     "analysis_power_profile_about1": {
         "message": "功率分析的概念是由 Andy Coggan 博士创建的。这是在特定水平的竞速上对功率要求的基本概述。",
@@ -481,25 +555,32 @@
         "description": "IMMUTABLE"
     },
     "analysis_comment_label": {
-        "message": "说些什么"
+        "message": "说些什么",
+        "description": "IMMUTABLE"
     },
     "analysis_comment_placeholder": {
-        "message": "您的评论在这里"
+        "message": "您的评论在这里",
+        "description": "IMMUTABLE"
     },
     "analysis_comment": {
-        "message": "评论"
+        "message": "评论",
+        "description": "IMMUTABLE"
     },
     "analysis_title": {
-        "message": "分析"
+        "message": "分析",
+        "description": "IMMUTABLE"
     },
     "analysis_create_live_segment_tooltip": {
-        "message": "通过这项工作，可以创建一个实时细分文件。与大多数现代Garmin设备兼容。"
+        "message": "通过这项努力，可以创建一个实时路段文件。与大多数现代 Garmin 设备兼容。",
+        "description": "IMMUTABLE"
     },
     "analysis_create": {
-        "message": "创造"
+        "message": "创建",
+        "description": "IMMUTABLE"
     },
     "analysis_settings": {
-        "message": "设定值"
+        "message": "设定值",
+        "description": "IMMUTABLE"
     },
     "analysis_rank_place_1": {
         "message": "第一",
@@ -568,22 +649,28 @@
         "message": "分析键盘控件处于活动状态。当分析图表聚焦时，您可以使用箭头键更改选择或突出显示的数据。左/右：向左或向右移动光标 1 个数据点。上/下：将光标向左或向右移动 60 个数据点。 Ctrl + 左/右：移动当前选择。 Shift + 左/右：展开当前选择。 Ctrl + Shift + 左/右：缩小当前选择。"
     },
     "time_sec": {
-        "message": "秒"
+        "message": "秒",
+        "description": "IMMUTABLE"
     },
     "time_secs": {
-        "message": "秒"
+        "message": "秒",
+        "description": "IMMUTABLE"
     },
     "time_min": {
-        "message": "分"
+        "message": "分",
+        "description": "IMMUTABLE"
     },
     "time_mins": {
-        "message": "分钟"
+        "message": "分钟",
+        "description": "IMMUTABLE"
     },
     "time_hour": {
-        "message": "小时"
+        "message": "小时",
+        "description": "IMMUTABLE"
     },
     "time_hours": {
-        "message": "小时"
+        "message": "小时",
+        "description": "IMMUTABLE"
     },
     "time_day": {
         "message": "天",
@@ -634,14 +721,16 @@
         "description": "IMMUTABLE"
     },
     "dialog_help_info_tooltip": {
-        "message": "点击了解更多信息"
+        "message": "点击了解更多信息",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_intro_help1": {
         "message": "如果您首先调整输入参数以匹配原始性能的时间，则性能预测器最有效。例如，如果您正在骑山地自行车，请选择 “MTB” 自行车选项。如果在尝试过程中盛行逆风，请更改风速值以指示净风影响等。",
         "description": "IMMUTABLE"
     },
     "perf_predictor_intro_help2": {
-        "message": "正确调整值后，预测性能应在很小的百分比内与原始性能相似。"
+        "message": "正确调整值后，预测性能应在很小的百分比内与原始性能相似。",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_intro_help3": {
         "message": "现在，您可以更改不同的参数，例如功率，重量和空气阻力，以估计这些更改可能会对性能产生影响。",
@@ -652,7 +741,8 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_intro_note": {
-        "message": "更改这些参数以查看对性能的估计影响。"
+        "message": "更改这些参数以查看对性能的估计影响。",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_help1": {
         "message": "确保此设置尽可能匹配您的自行车和地形。您可以通过更改 “Crr” 值直接微调滚动阻力。",
@@ -663,54 +753,66 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_crr_heading": {
-        "message": "滚动阻力"
+        "message": "滚动阻力",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_bike": {
-        "message": "自行车"
+        "message": "自行车",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_bike_tooltip": {
-        "message": "用于估算滚动阻力的自行车类型（例如Crr）"
+        "message": "用于估算滚动阻力的自行车类型（例如Crr）",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_bike_road": {
         "message": "公路车",
         "description": "IMMUTABLE"
     },
     "perf_predictor_crr_bike_mtb": {
-        "message": "山地车"
+        "message": "山地车",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain": {
-        "message": "地形"
+        "message": "地形",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_tooltip": {
         "message": "滚动阻力估算的地形类型（例如Crr）"
     },
     "perf_predictor_crr_terrain_asphalt": {
-        "message": "沥青"
+        "message": "沥青",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_gravel": {
-        "message": "砾石"
+        "message": "砾石",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_grass": {
-        "message": "草"
+        "message": "草地",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_offroad": {
-        "message": "越野"
+        "message": "越野",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_sand": {
         "message": "砂土",
         "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_custom": {
-        "message": "自订"
+        "message": "自订",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_crr_tooltip": {
-        "message": "滚动阻力系数"
+        "message": "滚动阻力系数",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help1": {
         "message": "“ CdA”代表骑手和装备的空气动力学阻力。从技术上讲，它是阻力系数乘以正面表面积。通过骑低速运动服，使用速滑服和使用诸如计时自行车和碟形轮之类的专用设备来降低价值。"
     },
     "perf_predictor_cda_help_table_heading": {
-        "message": "一些示例值"
+        "message": "一些示例值",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help_table_elite_tt": {
         "message": "精英级计时赛装备和气动姿势",
@@ -729,10 +831,12 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help_table_upright": {
-        "message": "穿着休闲服装的直立姿势"
+        "message": "穿着休闲服装的直立姿势",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_cda_heading": {
-        "message": "空气阻力"
+        "message": "空气阻力",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_cda_position": {
         "message": "气动姿势",
@@ -746,13 +850,16 @@
         "message": "空气阻力系数乘以正面表面积"
     },
     "perf_predictor_power": {
-        "message": "功率"
+        "message": "功率",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_tooltip": {
-        "message": "平均瓦数"
+        "message": "平均瓦数",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_body_weight": {
-        "message": "体重"
+        "message": "体重",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_body_weight_tooltip": {
         "message": "只是体重，没有器材",
@@ -763,7 +870,8 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_gear_weight_tooltip": {
-        "message": "所有装备和自行车的重量，包括水和衣服"
+        "message": "所有装备和自行车的重量，包括水和衣服",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_slope": {
         "message": "坡度",
@@ -781,7 +889,8 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_elevation_tooltip": {
-        "message": "路线的平均海拔"
+        "message": "路线的平均海拔",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_wind": {
         "message": "风速",
@@ -792,13 +901,16 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_time": {
-        "message": "时间"
+        "message": "时间",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_original_performance": {
-        "message": "原始表现"
+        "message": "原始表现",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_predicted_performance": {
-        "message": "预期表现"
+        "message": "预期表现",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_faster": {
         "message": "更快",
@@ -813,14 +925,16 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_gravity": {
-        "message": "重力"
+        "message": "重力",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_aero": {
         "message": "空气",
         "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_rr": {
-        "message": "滚动"
+        "message": "滚动",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_details_gravity_tooltip": {
         "message": "克服重力的所需功率",
@@ -839,20 +953,24 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_drafting_tooltip": {
-        "message": "选择此选项以模拟制图效果"
+        "message": "选择此选项以模拟跟风效果",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_riders": {
-        "message": "车手"
+        "message": "车手",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_riders_tooltip": {
         "message": "集团中的车手人数",
         "description": "IMMUTABLE"
     },
     "perf_predictor_position": {
-        "message": "位置"
+        "message": "位置",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_variance": {
-        "message": "功率方差"
+        "message": "功率方差",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_power_variance_tooltip": {
         "message": "最困难的位置和最容易的位置之间的功率差异。通常是第一个和最后一个位置。",
@@ -891,55 +1009,70 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_group_weight": {
-        "message": "他们的体重"
+        "message": "他们的体重",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_group_weight_tooltip": {
         "message": "要模拟与体重高于或低于主要运动员的骑手一起骑行的影响，您可以更改所有其他骑手的体重。即当您是重骑手或轻骑手时，其他人的功率要求。"
     },
     "perf_predictor_group_use_athlete_weight": {
-        "message": "使用运动员体重"
+        "message": "使用运动员体重",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_intro": {
-        "message": "活动同步会导入所有活动历史记录，以改进培训图表和绩效分析。"
+        "message": "活动同步会导入所有活动历史记录，以改进训练图表和表现分析。",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_intro_help": {
         "message": "同步活动允许 Sauce 提供没有历史数据就无法提供的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面，如分析，以了解以前的性能。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>通过将原始活动数据导入 Web 浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库</a>来实现同步。分析、索引和存储这些数据，以便以后快速查找。与往常一样，Sauce 不使用远程服务器，因此建议偶尔创建备份。"
     },
     "sync_control_panel_enabled": {
-        "message": "已启用"
+        "message": "已启用",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_status": {
-        "message": "状态"
+        "message": "状态",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_last_error": {
-        "message": "最后错误"
+        "message": "最后错误",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_synced": {
-        "message": "已同步"
+        "message": "已同步",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_last_sync": {
-        "message": "上次同步"
+        "message": "上次同步",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_next_sync": {
-        "message": "下次同步"
+        "message": "下次同步",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_title": {
-        "message": "调味活动同步"
+        "message": "Sauce 活动同步",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_resumes": {
-        "message": "履历表"
+        "message": "恢复",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_activities": {
-        "message": "活动"
+        "message": "活动",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_sync_stop_tooltip": {
-        "message": "停止当前的同步过程"
+        "message": "停止当前的同步过程",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_sync_start_tooltip": {
-        "message": "立即开始同步过程"
+        "message": "立即开始同步过程",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_sync_recompute_tooltip": {
-        "message": "重新计算同步本地数据，即TSS，NP等。"
+        "message": "重新计算同步本地数据，即 TSS，NP 等。",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_total": {
         "message": "总共",
@@ -966,103 +1099,136 @@
         "description": "IMMUTABLE"
     },
     "sync_control_panel_delayed_until": {
-        "message": "延迟到"
+        "message": "延迟到",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_no_hr_zones": {
-        "message": "心率区尚未建立。"
+        "message": "心率区间尚未建立。",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_hr_zones": {
-        "message": "心率区"
+        "message": "心率区间",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_updated": {
-        "message": "更新"
+        "message": "更新",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_hr_zone1": {
-        "message": "恢复"
+        "message": "恢复",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_hr_zone2": {
-        "message": "耐力"
+        "message": "耐力",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_hr_zone3": {
-        "message": "速度"
+        "message": "节奏",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_hr_zone4": {
-        "message": "临界点"
+        "message": "阀值",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_hr_zone5": {
-        "message": "厌氧"
+        "message": "厌氧",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_sync_status": {
-        "message": "同步状态"
+        "message": "同步状态",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_sync_settings": {
-        "message": "同步设置"
+        "message": "同步设置",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_enable_sync_and_get_started": {
-        "message": "启用同步并开始使用！"
+        "message": "启用同步并开始使用！",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_performance_settings": {
-        "message": "性能设置"
+        "message": "表现设置",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_export_fit_files": {
-        "message": "导出 FIT 文件"
+        "message": "导出 FIT 文件",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_backup_data": {
-        "message": "备份数据"
+        "message": "备份数据",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_restore_data": {
-        "message": "恢复数据"
+        "message": "恢复数据",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_est_run_power": {
-        "message": "预计运行功率"
+        "message": "预计跑步功率",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_est_cycling_power": {
-        "message": "预计骑行功率"
+        "message": "预计骑行功率",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_est_power_tooltip": {
-        "message": "使用估计的瓦数进行健身追踪 (TSS) 和可选的峰值性能结果。"
+        "message": "使用估算的瓦数进行健身追踪 (TSS) 和可选的最佳表现结果。",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_est_power_peaks": {
-        "message": "包含在最佳性能结果中"
+        "message": "包含在最佳表现结果中",
+        "description": "IMMUTABLE"
     },
     "sync_control_panel_est_power_peaks_tooltip": {
-        "message": "在峰值性能结果的结果中包括估计的功率计算。注意：这可能会导致错误的结果。"
+        "message": "在最佳表现结果的结果中包括估算的功率数据。注意：这可能会导致结果不准确。",
+        "description": "IMMUTABLE"
     },
     "mutable_data_add_entry_tooltip": {
-        "message": "添加一个新条目"
+        "message": "添加一个新条目",
+        "description": "IMMUTABLE"
     },
     "mutable_data_delete_entry_tooltip": {
-        "message": "删除此项"
+        "message": "删除此项",
+        "description": "IMMUTABLE"
     },
     "mutable_data_save": {
-        "message": "保存更改"
+        "message": "保存更改",
+        "description": "IMMUTABLE"
     },
     "mutable_data_ftp_title": {
-        "message": "FTP历史"
+        "message": "FTP 记录",
+        "description": "IMMUTABLE"
     },
     "mutable_data_weight_title": {
-        "message": "体重记录"
+        "message": "体重记录",
+        "description": "IMMUTABLE"
     },
     "mutable_data_peaks_periods_title": {
-        "message": "基于时间的范围"
+        "message": "基于时间的范围",
+        "description": "IMMUTABLE"
     },
     "mutable_data_peaks_dists_title": {
-        "message": "基于距离的范围"
+        "message": "基于距离的范围",
+        "description": "IMMUTABLE"
     },
     "mutable_data_ftp_help": {
-        "message": "Sauce支持为历史记录中的任何点设置FTP值。根据活动发生的日期，相应的值将用于任何基于FTP的计算，例如TSS。"
+        "message": "Sauce 支持为历史记录中的任何点设置 FTP 值。根据活动发生的日期，相应的值将用于任何基于 FTP 的计算，例如 TSS。",
+        "description": "IMMUTABLE"
     },
     "mutable_data_weight_help": {
-        "message": "Sauce支持为历史记录中的任何点设置权重值。根据活动发生的日期，相应的值将用于任何基于权重的计算。"
+        "message": "Sauce 支持为历史记录中的任何点设置体重值。根据活动发生的日期，相应的值将用于任何基于体重的计算。",
+        "description": "IMMUTABLE"
     },
     "mutable_data_peaks_periods_help": {
-        "message": "时间段用于力量，心律和节奏等努力。"
+        "message": "用于诸如功率，心率和踏频等表现的时间段。",
+        "description": "IMMUTABLE"
     },
     "mutable_data_peaks_dists_help": {
-        "message": "距离用于诸如步伐和坡度调整的步伐之类的努力。"
+        "message": "用于诸如配速和坡度调整配速等表现的距离。",
+        "description": "IMMUTABLE"
     },
     "subscription": {
-        "message": "订阅"
+        "message": "订阅",
+        "description": "IMMUTABLE"
     },
     "live_segment_create": {
         "message": "创建",
@@ -1073,7 +1239,8 @@
         "description": "IMMUTABLE"
     },
     "live_segment_success_create_title": {
-        "message": "成功创建"
+        "message": "创建成功",
+        "description": "IMMUTABLE"
     },
     "live_segment_success_create_body1": {
         "message": "您的 Live Segment 文件现在应该下载到计算机上了。",
@@ -1084,17 +1251,20 @@
         "description": "IMMUTABLE"
     },
     "live_segment_success_create_body3": {
-        "message": "断开设备连接之前，请确保安全弹出设备。"
+        "message": "断开设备连接之前，请确保安全弹出设备。",
+        "description": "IMMUTABLE"
     },
     "live_segment_use_trial": {
         "message": "试用",
         "description": "IMMUTABLE"
     },
     "live_segment_remaining": {
-        "message": "剩余的"
+        "message": "剩余的",
+        "description": "IMMUTABLE"
     },
     "live_segment_become_patron": {
-        "message": "成为赞助人"
+        "message": "成为赞助人",
+        "description": "IMMUTABLE"
     },
     "live_segment_intro_help1": {
         "message": "Sauce Live Segment 创建器可以从任何 Strava 活动中生成路段文件。创建的文件符合 FIT 路段文件的打开标准。该文件与受支持的 Garmin 设备兼容，并且可能与支持路段文件的侧载的其他设备兼容。",
@@ -1129,26 +1299,32 @@
         "description": "IMMUTABLE"
     },
     "live_segment_leader_name": {
-        "message": "领导者姓名"
+        "message": "领先者姓名",
+        "description": "IMMUTABLE"
     },
     "live_segment_leader_type": {
-        "message": "领导者类型"
+        "message": "领先者类型",
+        "description": "IMMUTABLE"
     },
     "live_segment_rival": {
-        "message": "对手"
+        "message": "对手",
+        "description": "IMMUTABLE"
     },
     "live_segment_Goal": {
-        "message": "目标"
+        "message": "目标",
+        "description": "IMMUTABLE"
     },
     "live_segment_pr": {
         "message": "个人记录",
         "description": "IMMUTABLE"
     },
     "live_segment_challenger": {
-        "message": "挑战者"
+        "message": "挑战者",
+        "description": "IMMUTABLE"
     },
     "live_segment_kom": {
-        "message": "KOM"
+        "message": "KOM",
+        "description": "IMMUTABLE"
     },
     "live_segment_qom": {
         "message": "QOM",
@@ -1159,14 +1335,16 @@
         "description": "IMMUTABLE"
     },
     "live_segment_speed_adjust": {
-        "message": "调速"
+        "message": "调速",
+        "description": "IMMUTABLE"
     },
     "live_segment_speed_adjust_tooltip": {
         "message": "按百分比调整一下整体速度",
         "description": "IMMUTABLE"
     },
     "live_segment_time": {
-        "message": "时间"
+        "message": "时间",
+        "description": "IMMUTABLE"
     },
     "live_segment_beg1": {
         "message": "嗨，我叫 Justin，我是《Sauce》的作者，",
@@ -1181,16 +1359,20 @@
         "description": "IMMUTABLE"
     },
     "menu_add_review": {
-        "message": "添加评论"
+        "message": "添加评论",
+        "description": "IMMUTABLE"
     },
     "menu_supporters": {
-        "message": "支持者"
+        "message": "支持者",
+        "description": "IMMUTABLE"
     },
     "menu_localization": {
-        "message": "本地化建议"
+        "message": "本地化建议",
+        "description": "IMMUTABLE"
     },
     "performance_any": {
-        "message": "任何"
+        "message": "任何",
+        "description": "IMMUTABLE"
     },
     "performance_rides": {
         "message": "骑行",
@@ -1257,7 +1439,8 @@
         "description": "IMMUTABLE"
     },
     "performance_override": {
-        "message": "覆盖"
+        "message": "覆盖",
+        "description": "IMMUTABLE"
     },
     "performance_elevation_gain": {
         "message": "海拔爬升",
@@ -1268,62 +1451,80 @@
         "description": "IMMUTABLE"
     },
     "performance_edit_activities": {
-        "message": "编辑活动"
+        "message": "编辑活动",
+        "description": "IMMUTABLE"
     },
     "performance_unavailable": {
         "message": "不可用",
         "description": "IMMUTABLE"
     },
     "performance_peaks_table_type": {
-        "message": "峰值性能表"
+        "message": "巅峰表现表格",
+        "description": "IMMUTABLE"
     },
     "performance_peaks_chart_type": {
-        "message": "峰值性能图表"
+        "message": "巅峰表现图表",
+        "description": "IMMUTABLE"
     },
     "performance_peaks_table_name": {
-        "message": "巅峰表现"
+        "message": "巅峰表现",
+        "description": "IMMUTABLE"
     },
     "performance_peaks_chart_name": {
-        "message": "巅峰表现"
+        "message": "巅峰表现",
+        "description": "IMMUTABLE"
     },
     "performance_peaks_desc": {
-        "message": "在一定时间和距离范围内的最佳或最大性能"
+        "message": "在一定时间和距离范围内的最佳或最大表现",
+        "description": "IMMUTABLE"
     },
     "performance_training_load_type": {
-        "message": "训练负荷图"
+        "message": "训练负荷图",
+        "description": "IMMUTABLE"
     },
     "performance_training_load_name": {
-        "message": "训练负荷"
+        "message": "训练负荷",
+        "description": "IMMUTABLE"
     },
     "performance_training_load_desc": {
-        "message": "健身、疲劳和形式"
+        "message": "健康状态、疲劳度和体能",
+        "description": "IMMUTABLE"
     },
     "performance_activity_table_type": {
-        "message": "活动表"
+        "message": "活动表",
+        "description": "IMMUTABLE"
     },
     "performance_activity_table_name": {
-        "message": "活动"
+        "message": "活动",
+        "description": "IMMUTABLE"
     },
     "performance_activity_table_desc": {
-        "message": "这段时间的活动表"
+        "message": "当前时间段的活动表",
+        "description": "IMMUTABLE"
     },
     "performance_activity_stats_type": {
-        "message": "活动统计图表"
+        "message": "活动统计图表",
+        "description": "IMMUTABLE"
     },
     "performance_activity_stats_name": {
-        "message": "活动统计"
+        "message": "活动统计",
+        "description": "IMMUTABLE"
     },
     "performance_activity_stats_desc": {
-        "message": "距离、小时数、TSS 和千焦耳随时间变化"
+        "message": "随时间变化的距离、小时数、TSS 和千焦耳",
+        "description": "IMMUTABLE"
     },
     "performance_elevation_type": {
-        "message": "海拔增益图"
+        "message": "海拔增益图",
+        "description": "IMMUTABLE"
     },
     "performance_elevation_name": {
-        "message": "海拔增益"
+        "message": "海拔增益",
+        "description": "IMMUTABLE"
     },
     "performance_elevation_desc": {
-        "message": "随着时间的推移垂直上升"
+        "message": "随着时间变化的垂直爬升",
+        "description": "IMMUTABLE"
     },
     "performance_time_range": {
         "message": "时间范围",
@@ -1390,10 +1591,12 @@
         "description": "IMMUTABLE"
     },
     "performance_skip_estimates": {
-        "message": "跳过估计"
+        "message": "跳过估算",
+        "description": "IMMUTABLE"
     },
     "performance_skip_estimates_tooltip": {
-        "message": "根据估计的瓦特排除峰值结果。"
+        "message": "根据估算的瓦特排除峰值结果。",
+        "description": "IMMUTABLE"
     },
     "performance_predicted": {
         "message": "预估",
@@ -1448,73 +1651,96 @@
         "description": "IMMUTABLE"
     },
     "performance_sync_error": {
-        "message": "同步错误"
+        "message": "同步错误",
+        "description": "IMMUTABLE"
     },
     "performance_panel_settings_tooltip": {
-        "message": "编辑此面板的设置"
+        "message": "编辑此面板的设置",
+        "description": "IMMUTABLE"
     },
     "performance_panel_settings_title": {
-        "message": "面板设置"
+        "message": "面板设置",
+        "description": "IMMUTABLE"
     },
     "performance_panel_position": {
-        "message": "位置"
+        "message": "位置",
+        "description": "IMMUTABLE"
     },
     "performance_panel_width": {
-        "message": "宽度"
+        "message": "宽度",
+        "description": "IMMUTABLE"
     },
     "performance_panel_height": {
-        "message": "高度"
+        "message": "高度",
+        "description": "IMMUTABLE"
     },
     "performance_panel_add_tooltip": {
-        "message": "向此页面添加新面板"
+        "message": "向此页面添加新面板",
+        "description": "IMMUTABLE"
     },
     "performance_panel_add_title": {
-        "message": "添加新面板"
+        "message": "添加新面板",
+        "description": "IMMUTABLE"
     },
     "performance_auto": {
-        "message": "汽车"
+        "message": "自动",
+        "description": "IMMUTABLE"
     },
     "performance_power_zones": {
-        "message": "电源区"
+        "message": "功率区间",
+        "description": "IMMUTABLE"
     },
     "performance_hr_zones": {
-        "message": "人力资源区"
+        "message": "心率区间",
+        "description": "IMMUTABLE"
     },
     "performance_zonetime_type": {
-        "message": "时区图表"
+        "message": "时区图表",
+        "description": "IMMUTABLE"
     },
     "performance_zonetime_name": {
-        "message": "各区时间"
+        "message": "各区时间",
+        "description": "IMMUTABLE"
     },
     "performance_zonetime_desc": {
-        "message": "在不同功率区花费的时间条形图"
+        "message": "在不同功率区花费的时间条形图",
+        "description": "IMMUTABLE"
     },
     "performance_chart_categories": {
-        "message": "图表类别"
+        "message": "图表类别",
+        "description": "IMMUTABLE"
     },
     "performance_exclude": {
-        "message": "排除"
+        "message": "排除",
+        "description": "IMMUTABLE"
     },
     "performance_exclude_peaks_tooltip": {
-        "message": "从最佳绩效结果中排除此活动"
+        "message": "从巅峰表现结果中排除此活动",
+        "description": "IMMUTABLE"
     },
     "performance_athlete_chart_name": {
-        "message": "运动员信息"
+        "message": "运动员信息",
+        "description": "IMMUTABLE"
     },
     "performance_athlete_chart_type": {
-        "message": "运动员信息表"
+        "message": "运动员信息表",
+        "description": "IMMUTABLE"
     },
     "performance_athlete_chart_desc": {
-        "message": "运动员 FTP 和体重随时间变化。"
+        "message": "运动员 FTP 和体重随时间变化。",
+        "description": "IMMUTABLE"
     },
     "performance_filter_tooltip": {
-        "message": "按一个或多个术语过滤此列。使用逗号分隔术语，使用感叹号排除术语。即虽然要数到三或四，但是五是正确的"
+        "message": "按一个或多个项过滤此列。使用逗号分隔项，使用感叹号排除项。",
+        "description": "IMMUTABLE"
     },
     "performance_filter": {
-        "message": "筛选"
+        "message": "过滤",
+        "description": "IMMUTABLE"
     },
     "season_start": {
-        "message": "季节开始"
+        "message": "赛季开始",
+        "description": "IMMUTABLE"
     },
     "graph_options_wbal_help": {
         "message": "<a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">W'balance 是 Philip Skiba 博士</a>创建的描述高于阈值强度的输出表现。你可以把它想象成是你的无氧电池储备。每次你在高于 FTP/CP 的强度之上输出时，你的电池就会损耗并且需要时间来补充。如果你的 W'bal 减小到 0，那么你会发现几乎就无法在高于 FTP/CP 的强度上进行持续的输出了。<br/><br/>更多相关的信息和充分的解释，请参阅<a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\"> Skiba 博士本人撰写的这篇优秀文章</a>。",
@@ -1525,16 +1751,20 @@
         "description": "IMMUTABLE"
     },
     "graph_options_show": {
-        "message": "展示"
+        "message": "展示",
+        "description": "IMMUTABLE"
     },
     "graph_options_smoothing": {
-        "message": "平滑"
+        "message": "平滑",
+        "description": "IMMUTABLE"
     },
     "graph_options_smoothing_tooltip": {
-        "message": "使用键盘方向键进行微调"
+        "message": "使用键盘方向键进行微调",
+        "description": "IMMUTABLE"
     },
     "graph_options_reload_needed": {
-        "message": "需要重新加载页面"
+        "message": "需要重新加载页面",
+        "description": "IMMUTABLE"
     },
     "food_beer_1": {
         "message": "啤酒",
@@ -1841,13 +2071,16 @@
         "description": "IMMUTABLE"
     },
     "dashboard_exclude_virtual": {
-        "message": "跳过虚拟"
+        "message": "跳过虚拟",
+        "description": "IMMUTABLE"
     },
     "dashboard_exclude_commutes": {
-        "message": "跳过通勤"
+        "message": "跳过通勤",
+        "description": "IMMUTABLE"
     },
     "dashboard_kudo_limit_reached": {
-        "message": "达到每小时限制"
+        "message": "达到每小时限制",
+        "description": "IMMUTABLE"
     },
     "dashboard_kudo_complete": {
         "message": "全部 Kudoed",
