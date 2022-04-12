@@ -205,8 +205,7 @@ export class PeaksTableView extends views.ResizablePerfView {
     }
 
     async makeTableRows(peaks) {
-        const tpl = await sauce.template.getTemplate('/performance/peaks/table-rows.html',
-            'performance');
+        const tpl = await sauce.template.getTemplate('performance/peaks/table-rows.html', 'performance');
         return await tpl(this.renderAttrs({peaks}));
     }
 

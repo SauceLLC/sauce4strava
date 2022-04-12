@@ -14,6 +14,10 @@ sauce.ns('template', ns => {
 
     ns.getTemplate = async function(filename, localeKey) {
         localeKey = localeKey || '';
+        if (filename.startsWith('/')) {
+            // This actually works for most browsers except firefox and only then if packaged
+            filename = filename.replace(/^\//, '');
+        }
         const cacheKey = '' + filename + localeKey;
         if (!_tplCache.has(cacheKey)) {
             if (!_tplFetching.has(cacheKey)) {

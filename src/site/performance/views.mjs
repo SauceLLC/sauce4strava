@@ -797,7 +797,7 @@ export class ActivityTableView extends PerfView {
 
     renderAttrs() {
         return {
-            entryTpl: '/performance/activity-table-entry.html',
+            entryTpl: 'performance/activity-table-entry.html',
             activities: this.activities,
             mode: this.mode,
             rowLimit: this.rowLimit,
@@ -848,7 +848,7 @@ export class ActivityTableView extends PerfView {
         const loadMore = ev.currentTarget;
         loadMore.classList.add('loading');
         try {
-            const tpl = await sauce.template.getTemplate('/performance/activity-table-entry.html', 'performance');
+            const tpl = await sauce.template.getTemplate('performance/activity-table-entry.html', 'performance');
             const attrs = this.renderAttrs();
             const moreActs = this.activities.slice(this.rowLimit, this.rowLimit += this.rowPageSize);
             const newRows = await Promise.all(moreActs.map(a => tpl({a, ...attrs})));
