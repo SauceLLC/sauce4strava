@@ -846,8 +846,8 @@ sauce.ns('power', function() {
                     slot: 0,
                     roll: new Array(rollSize),
                     rollSum: 0,
+                    count: 0,
                     total: 0,
-                    gapPadCount: 0,
                 };
             }
             if (options.inlineXP) {
@@ -876,7 +876,6 @@ sauce.ns('power', function() {
                     // Drain the rolling buffer but don't increment the counter.
                     state.rollSum -= state.roll[slot] || 0;
                     state.roll[slot] = 0;
-                    state.gapPadCount++;
                 } else {
                     state.rollSum += value;
                     state.rollSum -= state.roll[slot] || 0;
@@ -886,6 +885,7 @@ sauce.ns('power', function() {
                         const npa = state.rollSum / state.rollSize;
                         const qnpa = npa * npa * npa * npa;  // unrolled for perf
                         state.total += qnpa;
+                        state.count++;
                         save = qnpa;
                     }
                 }
@@ -934,9 +934,7 @@ sauce.ns('power', function() {
                 const state = this._inlineNP;
                 const save = state.saved[i];
                 state.total -= save || 0;
-                if (this._values[i] instanceof sauce.data.Zero) {
-                    state.gapPadCount--;
-                }
+                state.count -= save !== undefined && !(this._values[i] instanceof sauce.data.Zero) ? 1 : 0;
             }
             if (this._inlineXP) {
                 const state = this._inlineXP;
@@ -960,7 +958,7 @@ sauce.ns('power', function() {
                     return;
                 }
                 const state = this._inlineNP;
-                return (state.total / (this.size() - state.gapPadCount)) ** 0.25;
+                return state.count ? (state.total / state.count) ** 0.25 : undefined;
             } else {
                 return calcNP(this.values(), 1 / this.idealGap, options);
             }
@@ -972,7 +970,7 @@ sauce.ns('power', function() {
                     return;
                 }
                 const state = this._inlineXP;
-                return (state.total / state.count) ** 0.25;
+                return state.count ? (state.total / state.count) ** 0.25 : undefined;
             } else {
                 return calcXP(this.values(), 1 / this.idealGap, options);
             }
@@ -1113,7 +1111,7 @@ sauce.ns('power', function() {
                 count++;
             }
         }
-        return (total / count) ** 0.25;
+        return count ? (total / count) ** 0.25 : undefined;
     }
 
 
