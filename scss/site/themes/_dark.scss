@@ -47,26 +47,23 @@
         filter: $map-filter;
     }
 
-    .feed {
-        /* NEW... */
+    .feed-container,
+    .virtual-feed-container {
         .react-feed-component {
             .react-feed-entry {
-                img[class*="PhotosAndMapImage--activity-map--"] {
+                img[class*="PhotosAndMapImage--"] {
                     filter: $map-filter;
                 }
 
                 [class*="PhotosAndMapImage--activity-map-create-route--"] button {
                     color: color.get(fg);
                 }
+
+                [class*="Activity--entry-icon--"] {
+                    filter: invert(1);
+                }
             }
         }
-        /* /NEW... */
-
-        /* OLD... */
-        .activity .activity-map .activity-map-create-route .btn {
-            color: color.get(fg);
-        }
-        /* /OLD... */
     }
 
     .app-icon {

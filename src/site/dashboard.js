@@ -2,6 +2,8 @@
 
 sauce.ns('dashboard', function(ns) {
 
+    const cardSelector = '[class*="Feed--entry-container--"]';
+
     async function feedEvent(action, category, count) {
         if (!count) {
             return;
@@ -17,56 +19,67 @@ sauce.ns('dashboard', function(ns) {
     function getCardProps(cardEl) {
         if (!_cardPropCache.has(cardEl)) {
             try {
-                _cardPropCache.set(cardEl, JSON.parse(cardEl.dataset.reactProps));
+                for (const [k, v] of Object.entries(cardEl)) {
+                    if (k.startsWith('__reactEventHandlers$')) {
+                        if (v && v.children && v.children.props) {
+                            _cardPropCache.set(cardEl, v.children.props);
+                            console.debug("Found props:", v.children.props);
+                        } else {
+                            console.warn("Could not find props for:", cardEl);
+                            _cardPropCache.set(cardEl, {});
+                        }
+                        break;
+                    }
+                }
             } catch(e) {
                 sauce.report.error(e);
                 _cardPropCache.set(cardEl, {});
             }
         }
-        return _cardPropCache.get(cardEl, {});
+        return _cardPropCache.get(cardEl) || {};
     }
 
 
-    function hideContainers(feedEl, klass) {
+    function hideCards(feedEl, label, filterFn) {
         let count = 0;
-        const qs = `.react-card-container:not(.hidden-by-sauce) > [data-react-class="${klass}"]`;
+        const qs = `${cardSelector}:not(.hidden-by-sauce):not(.sauce-checked-${label})`;
         for (const x of feedEl.querySelectorAll(qs)) {
-            x.parentElement.classList.add('hidden-by-sauce');
-            count++;
-        }
-        return count;
-    }
-
-
-    function hideActivities(feedEl, label, filterFn) {
-        let count = 0;
-        const qs = `.react-card-container:not(.hidden-by-sauce):not(.sauce-checked-${label})` +
-            ` > [data-react-props]`;
-        for (const x of feedEl.querySelectorAll(qs)) {
-            const container = x.parentElement;
-            container.classList.add(`sauce-checked-${label}`);
+            x.classList.add(`sauce-checked-${label}`);
             try {
                 if (filterFn(x)) {
-                    console.debug("Hiding:", label);
-                    container.classList.add('hidden-by-sauce');
+                    console.debug("Hiding:", label, x);
+                    x.classList.add('hidden-by-sauce');
                     count++;
                 }
             } catch(e) {
                 sauce.report.error(e);
             }
         }
-        feedEvent('hide', `${label}-activity`, count);
+        feedEvent('hide', label, count);
         return !!count;
     }
 
 
     function hideVirtual(feedEl) {
-        return hideActivities(feedEl, 'virtual', isPeerVirtual);
+        return hideCards(feedEl, 'virtual-activity', isPeerVirtual);
     }
 
 
     function hideCommutes(feedEl) {
-        return hideActivities(feedEl, 'commute', isPeerCommute);
+        return hideCards(feedEl, 'commute-activity', isPeerCommute);
+    }
+
+
+    function hideChallenges(feedEl) {
+        return hideCards(feedEl, 'challenge-card', card =>
+            getCardProps(card).entity === 'Challenge');
+    }
+
+
+    function hidePromotions(feedEl) {
+        return hideCards(feedEl, 'promo-card', card =>
+            getCardProps(card).entity === 'Promo'); // XXX find and test..
+        //const count = hideContainers(feedEl, 'SimplePromo') + hideContainers(feedEl, 'FancyPromo');
     }
 
 
@@ -119,20 +132,6 @@ sauce.ns('dashboard', function(ns) {
             }
         }
         return false;
-    }
-
-
-    function hideChallenges(feedEl) {
-        const count = hideContainers(feedEl, 'ChallengeJoin');
-        feedEvent('hide', 'challenge-card', count);  // bg okay
-        return !!count;
-    }
-
-
-    function hidePromotions(feedEl) {
-        const count = hideContainers(feedEl, 'SimplePromo') + hideContainers(feedEl, 'FancyPromo');
-        feedEvent('hide', 'promo-card', count);  // bg okay
-        return !!count;
     }
 
 
@@ -251,8 +250,7 @@ sauce.ns('dashboard', function(ns) {
             resetKudoButton();
         });
         $kudoAll.on('click', 'button.sauce-invoke', async ev => {
-            const cards = document.querySelectorAll(
-                `.react-card-container:not(.hidden-by-sauce) > [data-react-props]`);
+            const cards = document.querySelectorAll(`${cardSelector}:not(.hidden-by-sauce)`);
             const kudoButtons = [];
             const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge', 'Club']);
             for (const card of cards) {
@@ -335,7 +333,7 @@ sauce.ns('dashboard', function(ns) {
 
 
     function load() {
-        const feedSelector = '.main .feed-container .feed';
+        const feedSelector = '.main .feed-container .react-feed-component';
         const feedEl = document.querySelector(feedSelector);
         if (!feedEl) {
             // We're early, monitor the DOM until it's here..

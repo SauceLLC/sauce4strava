@@ -1045,166 +1045,93 @@
         }
     }
 
-    .feed {
-        /* NEW... */
-        .react-feed-component {
-            .react-feed-entry {
-                background-color: color.shade(bg, 8%);
-                color: color.shade(fg, 10%);
+    .feed-container,
+    .virtual-feed-container {
+        .react-feed-entry {
+            background-color: color.shade(bg, 8%);
+            color: color.shade(fg, 10%);
 
-                [class*="EntryHeader--icon-container--"] {
+            [class*="EntryHeader--icon-container--"] {
+                background-color: color.shade(bg, 5%);
+                border-color: color.shade(bg, 5%);
+            }
+
+            [class*="ActivityEntryBody--trophy-count-btn--"],
+            [class*="KudosAndComments--count-wrapper--"],
+            [class*="CommentsThread--comments--"] {
+                button {
+                    background-color: transparent;
+                    color: color.shade(fg, 10%);
+                }
+            }
+
+            button[class*="CommentsThread--more-comments-button--"] {
+                color: color.shade(fg, 10%) !important;
+            }
+
+            [class*="PhotosAndMapImage--entry-image-wrapper--"] {
+                background-color: color.shade(bg, 11%);
+            }
+
+            [class*="--icon-container--"] {
+                background-color: transparent;
+            }
+
+            [class*="Avatar--img-wrapper--"] {
+                background-color: transparent;
+            }
+
+            [class*="KudosAndComments--kudos-and-comments--"] {
+                ol[class*="AvatarGroup--list--"] li > div {
                     background-color: color.shade(bg, 5%);
                     border-color: color.shade(bg, 5%);
-                }
 
-                [class*="ActivityEntryBody--trophy-count-btn--"],
-                [class*="KudosAndComments--count-wrapper--"],
-                [class*="CommentsThread--comments--"] {
-                    button {
-                        background-color: transparent;
-                        color: color.shade(fg, 10%);
-                    }
-                }
-
-                button[class*="CommentsThread--more-comments-button--"] {
-                    color: color.shade(fg, 10%) !important;
-                }
-
-                [class*="PhotosAndMapImage--entry-image-wrapper--"] {
-                    background-color: color.shade(bg, 11%);
-                }
-
-                [class*="KudosAndComments--kudos-and-comments--"] {
-                    ol[class*="AvatarGroup--list--"] li > div {
+                    > div {
                         background-color: color.shade(bg, 5%);
-                        border-color: color.shade(bg, 5%);
-
-                        > div {
-                            background-color: color.shade(bg, 5%);
-                        }
-                    }
-
-                    [class*="KudosAndComments--media-actions--"] button {
-                        background-color: color.shade(bg, 15%);
-                        border-color: $hard-border-color;
-                        color: color.shade(fg, 10%);
-                        opacity: 0.8;
-
-                        &:hover {
-                            opacity: 1;
-                        }
                     }
                 }
 
-                li strong {
-                    color: color.shade(fg, 0%);
-                }
-
-                ul[class*="Stats--list-stats--"] {
-                    color: color.shade(fg, 8%);
-
-                    [class*="Stat--stat-label--"] {
-                        color: color.shade(fg, 12%);
-                    }
-                }
-
-                [class*="ActivityEntryBody--achievements-summary--"],
-                [class*="ActivityEntryBody--stat-subtext--"] {
-                    color: color.shade(fg, 10%);
-                }
-
-                [class*="MaharajAchievementCelebration--achievement-celebration--"] {
-                    background-color: color.shade(bg, 20%);
-                    color: color.shade(fg, 10%);
-                }
-            }
-        }
-        /* /NEW... */
-
-        /* OLD... */
-        .group-activity {
-            .list-entries .avatar,
-            .group-activity-icon {
-                background-color: color.shade(bg, 15%);
-                border-color: $hard-border-color;
-            }
-
-            > .entry-media::before,
-            .list-entries > li::before {
-                border-color: $hard-border-color;
-            }
-        }
-
-        .feed-entry {
-            .entry-title {
-                color: color.get(fg);
-            }
-
-            .kudos-comments {
-                border-top-color: $hard-border-color;
-
-                .media-actions .btn {
+                [class*="KudosAndComments--media-actions--"] button {
                     background-color: color.shade(bg, 15%);
                     border-color: $hard-border-color;
+                    color: color.shade(fg, 10%);
+                    opacity: 0.8;
 
                     &:hover {
-                        background-color: color.shade(bg, 20%);
+                        opacity: 1;
                     }
-
-                    &:active {
-                        background-color: color.shade(bg, 5%);
-                    }
-                }
-
-                .kudos-facepile .avatar img {
-                    background-color: color.shade(bg, 15%);
-                    border-color: $hard-border-color;
                 }
             }
 
-            .entry-comments form .media-content {
-                border-color: $hard-border-color;
+            li strong {
+                color: color.shade(fg, 0%);
             }
 
-            a, .entry-athlete, .entry-author {
+            ul[class*="Stats--list-stats--"] {
                 color: color.shade(fg, 8%);
+
+                [class*="Stat--stat-label--"] {
+                    color: color.shade(fg, 12%);
+                }
             }
 
-            .list-stats, .goal-message, .featured-achivements {
-                color: color.shade(fg, 12%);
+            [class*="ActivityEntryBody--achievements-summary--"],
+            [class*="ActivityEntryBody--description-body--"],
+            [class*="ActivityEntryBody--stat-subtext--"],
+            [class*="GroupActivity--headline-text-btn--"],
+            [class*="MediaBody--media-body--"] {
+                color: color.shade(fg, 10%) !important;
             }
 
-            .entry-container > .entry-head::before,
-            .entry-container > .entry-body::before {
-                border-color: $hard-border-color !important;
-            }
-
-            .entry::before {
-                background-color: color.shade(bg, 20%) !important;
-            }
-
-            .entry-body .media {
-                border-color: $hard-border-color !important;
-            }
-
-            .dropdown .dropdown-toggle:hover {
-                background-color: color.shade(bg, 12%);
-            }
-
-            .comments li {
-                border-color: $hard-border-color !important;
-            }
-
-            .achievement-celebration {
-                background-color: color.shade(bg, 12%);
-                color: color.shade(fg, 4%);
+            [class*="MaharajAchievementCelebration--achievement-celebration--"] {
+                background-color: color.shade(bg, 20%);
+                color: color.shade(fg, 10%);
             }
         }
-        /* /OLD... */
     }
 
     .stat-subtext,
-    .feed time {
+    .react-feed-component time {
         color: color.shade(fg, 10%);
     }
 

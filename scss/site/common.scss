@@ -66,20 +66,7 @@
 
 
 .sauce-enabled {
-    .main .feed-container .feed {
-        display: flex;
-        flex-direction: column;
-    }
-
-    &.sauce-hide-dashboard-media .main .feed-container .feed .card .entry-media {
-        display: none !important;
-    }
-
-    &.sauce-hide-dashboard-images .main .feed-container .feed .card .entry-images {
-        display: none !important;
-    }
-
-    .react-card-container.hidden-by-sauce {
+    .hidden-by-sauce {
         display: none !important;
     }
 
