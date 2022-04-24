@@ -1143,6 +1143,78 @@ class SyncJob extends EventTarget {
         return await retryFetch(urn, {cancelEvent: this._cancelEvent, ...options});
     }
 
+    async updateSelfActivitiesV2(options={}) {
+        const forceUpdate = options.forceUpdate;
+        const knownIds = new Set(forceUpdate ?  [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
+        const q = new URLSearchParams({feed_type: 'my_activity'});
+        while (true) {
+            const resp = await this.retryFetch(`/dashboard/feed?${q}`);
+            let data;
+            try {
+                data = await resp.json();
+            } catch(e) {
+                // If the credentials are not valid Strava returns HTML
+                // This would seem impossible, but with addons like Facebook Containers
+                // it can happen and has happend to some users.
+                break;
+            }
+            let batch = [];
+            for (const x of data.entries) {
+                if (x.entity === 'Activity') {
+                    const a = x.activity;
+                    const id = Number(a.id);
+                    if (!knownIds.has(id)) {
+                        batch.push(this.activityToDatabase({
+                            id,
+                            ts: x.cursorData.updated_at * 1000,
+                            type: a.type,
+                            name: a.activityName,
+                            description: a.description,
+                            virtual: a.isVirtual,
+                            trainer: a.isVirtual ? true : undefined,
+                            commute: a.isCommute,
+                            map: a.mapAndPhotos && a.mapAndPhotos.activityMap ?
+                                a.mapAndPhotos.activityMap.url : undefined,
+                            photos: a.mapAndPhotos && a.mapAndPhotos.photoList ?
+                                a.mapAndPhotos.photoList.map(p => p && p.large).filter(p => p).map(url => ({url})) :
+                                undefined,
+                        }));
+                    }
+                } else if (x.entity === 'GroupActivity') {
+                    for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
+                        debugger;
+                        if (!knownIds.has(a.activity_id)) {
+                            batch.push(this.activityToDatabase({
+                                id: a.activity_id,
+                                ts: (new Date(a.start_date)).getTime(),
+                                type: a.type,
+                                name: a.name,
+                                description: a.description,
+                                virtual: a.is_virtual,
+                                trainer: a.is_virtual ? true : undefined,
+                                commute: a.is_commute,
+                                map: a.activity_map && a.activity_map.url,
+                                photos: a.photos ? this.groupPhotosToDatabase(a.photos) : undefined,
+                            }));
+                        }
+                    }
+                }
+                q.set('before', x.cursorData.updated_at);
+            }
+            if (!batch.length) {
+                break;
+            }
+            batch = batch.filter(x => x);
+            if (forceUpdate) {
+                console.info(`Updating ${batch.length} activities`);
+                await actsStore.updateMany(new Map(batch.map(x => [x.id, x])));
+            } else {
+                console.info(`Adding ${batch.length} new activities`);
+                await actsStore.putMany(batch);
+            }
+        }
+    }
+
     async updateSelfActivities(options={}) {
         const forceUpdate = options.forceUpdate;
         const filteredKeys = [
@@ -1236,6 +1308,52 @@ class SyncJob extends EventTarget {
         }
     }
 
+    parseRawReactProps(raw) {
+        const frag = document.createElement('div');
+        // Unescapes html entities, ie. "&quot;"
+        const htmlEntitiesKey = String.fromCharCode(...[33, 39, 36, 30, 46, 5, 10, 2, 12]
+            .map((x, i) => (x ^ i) + 72));
+        frag[htmlEntitiesKey] = raw;
+        return JSON.parse(frag[htmlEntitiesKey]
+            .replace(/\\\\/g, '\\')
+            .replace(/\\\$/g, '$')
+            .replace(/\\`/g, '`'));
+    }
+
+    groupPhotosToDatabase(stravaData) {
+        if (stravaData) {
+            return stravaData.map(x => {
+                const bySize = Object.entries(x.urls);
+                bySize.sort((a, b) => b[0] - a[0]);
+                return {url: bySize[0][1]};
+            });
+        }
+    }
+
+    activityToDatabase({id, ts, type, name, ...extra}) {
+        if (!id) {
+            reportErrorOnce(new Error('Invalid activity id for athlete: ' + this.athlete.pk));
+            debugger;
+            return;
+        }
+        let basetype = type && sauce.model.getActivityBaseType(type);
+        if (!basetype) {
+            reportErrorOnce(new Error('Unknown activity type for: ' + id));
+            basetype = 'workout';
+            debugger;
+        }
+        const data = {
+            id,
+            ts,
+            type,
+            basetype,
+            athlete: this.athlete.pk,
+            name,
+            ...extra,
+        };
+        return data;
+    }
+
     async fetchMonth(year, month) {
         // Welcome to hell.  It gets really ugly in here in an effort to avoid
         // any eval usage which is required to render this HTML into a DOM node.
@@ -1261,64 +1379,92 @@ class SyncJob extends EventTarget {
         }
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
-        const addEntry = (id, ts, type, name) => {
-            if (!id) {
-                reportErrorOnce(new Error('Invalid activity id for athlete: ' + this.athlete.pk));
-                debugger;
-                return;
-            }
-            let basetype = type && sauce.model.getActivityBaseType(type);
-            if (!basetype) {
-                reportErrorOnce(new Error('Unknown activity type for: ' + id));
-                basetype = 'workout';
-                debugger;
-            }
-            batch.push({
-                id,
-                ts,
-                basetype,
-                athlete: this.athlete.pk,
-                name
-            });
-        };
-        const frag = document.createElement('div');
-        const parseCard = cardHTML => {
-            // This is just terrible, but we can't use eval..  Strava does some very particular
-            // escaping that mostly has no effect but does break JSON.parse.  Sadly we MUST run
-            // JSON.parse to disambiguate the JSON payload and to unescape unicode sequences.
-            const isActivity = !!cardHTML.match(/data-react-class=\\"Activity\\"/);
-            const isGroupActivity = !!cardHTML.match(/data-react-class=\\"GroupActivity\\"/);
-            if (!isActivity && !isGroupActivity) {
-                return;
-            }
-            const props = cardHTML.match(/data-react-props=\\"(.+?)\\"/)[1];
-            // Unescapes html entities, ie. "&quot;"
-            const htmlEntitiesKey = String.fromCharCode(...[33, 39, 36, 30, 46, 5, 10, 2, 12]
-                .map((x, i) => (x ^ i) + 72));
-            frag[htmlEntitiesKey] = props;
-            const escaped = frag[htmlEntitiesKey]
-                .replace(/\\\\/g, '\\')
-                .replace(/\\\$/g, '$')
-                .replace(/\\`/g, '`');
-            const data = JSON.parse(escaped);
-            if (isGroupActivity) {
-                for (const x of data.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
-                    addEntry(x.activity_id, (new Date(x.start_date)).getTime(), x.type, x.name);
-                }
-            } else {
-                const a = data.activity;
-                addEntry(Number(a.id), data.cursorData.updated_at * 1000, a.type, a.activityName);
-            }
-        };
-        for (const m of raw.matchAll(/<div class=\\'react-card-container\\'>(.+?)<\\\/div>/g)) {
+        const feedPropsMatch = raw.match(/data-react-class=\\"FeedRouter\\" data-react-props=\\"(.+?)\\"/);
+        if (feedPropsMatch) {
+            // Updated react feed puts all props in FeedRouter.
             try {
-                parseCard(m[1]);
+                const data = this.parseRawReactProps(feedPropsMatch[1]);
+                for (const x of data.preFetchedEntries) {
+                    if (x.entity === 'Activity') {
+                        const a = x.activity;
+                        batch.push(this.activityToDatabase({
+                            id: Number(a.id),
+                            ts: x.cursorData.updated_at * 1000,
+                            type: a.type,
+                            name: a.activityName,
+                            description: a.description,
+                            virtual: a.isVirtual,
+                            trainer: a.isVirtual ? true : undefined,
+                            commute: a.isCommute,
+                            map: a.mapAndPhotos && a.mapAndPhotos.activityMap ?
+                                a.mapAndPhotos.activityMap.url : undefined,
+                            photos: a.mapAndPhotos && a.mapAndPhotos.photoList ?
+                                a.mapAndPhotos.photoList.map(p => p && p.large).filter(p => p).map(url => ({url})) :
+                                undefined,
+                        }));
+                    } else if (x.entity === 'GroupActivity') {
+                        for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
+                            batch.push(this.activityToDatabase({
+                                id: a.activity_id,
+                                ts: (new Date(a.start_date)).getTime(),
+                                type: a.type,
+                                name: a.name,
+                                description: a.description,
+                                virtual: a.is_virtual,
+                                trainer: a.is_virtual ? true : undefined,
+                                commute: a.is_commute,
+                                map: a.activity_map && a.activity_map.url,
+                                photos: a.photos ? this.groupPhotosToDatabase(a.photos) : undefined,
+                            }));
+                        }
+                    }
+                }
             } catch(e) {
                 reportErrorOnce(e);
-                continue;
+            }
+        } else {
+            // legacy system, remove in future release
+            const parseCard = cardHTML => {
+                // This is just terrible, but we can't use eval..  Strava does some very particular
+                // escaping that mostly has no effect but does break JSON.parse.  Sadly we MUST run
+                // JSON.parse to disambiguate the JSON payload and to unescape unicode sequences.
+                const isActivity = !!cardHTML.match(/data-react-class=\\"Activity\\"/);
+                const isGroupActivity = !!cardHTML.match(/data-react-class=\\"GroupActivity\\"/);
+                if (!isActivity && !isGroupActivity) {
+                    return;
+                }
+                const props = cardHTML.match(/data-react-props=\\"(.+?)\\"/)[1];
+                const data = this.parseRawReactProps(props);
+                if (isGroupActivity) {
+                    for (const x of data.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
+                        batch.push(this.activityToDatabase({
+                            id: x.activity_id,
+                            ts: (new Date(x.start_date)).getTime(),
+                            type: x.type,
+                            name: x.name
+                        }));
+                    }
+                } else {
+                    const a = data.activity;
+                    const id = Number(a.id);
+                    batch.push(this.activityToDatabase({
+                        id,
+                        ts: data.cursorData.updated_at * 1000,
+                        type: a.type,
+                        name: a.activityName
+                    }));
+                }
+            };
+            for (const m of raw.matchAll(/<div class=\\'react-card-container\\'>(.+?)<\\\/div>/g)) {
+                try {
+                    parseCard(m[1]);
+                } catch(e) {
+                    reportErrorOnce(e);
+                    continue;
+                }
             }
         }
-        return batch;
+        return batch.filter(x => x);
     }
 
     async _batchImport(startDate, knownIds, forceUpdate) {
