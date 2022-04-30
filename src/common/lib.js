@@ -870,26 +870,27 @@ sauce.ns('power', function() {
             const value = this._values[i];
             if (this._inlineNP) {
                 const state = this._inlineNP;
-                let save;
                 const slot = i % state.rollSize;
+                const size = i + 1 - this._offt;
                 if (value instanceof sauce.data.Zero) {
                     // Drain the rolling buffer but don't increment the counter.
                     state.rollSum -= state.roll[slot] || 0;
                     state.roll[slot] = 0;
+                    if (size >= state.rollSize) {
+                        state.saved.push(undefined);
+                    }
                 } else {
                     state.rollSum += value;
                     state.rollSum -= state.roll[slot] || 0;
                     state.roll[slot] = value;
-                    const size = i + 1 - this._offt;
                     if (size >= state.rollSize) {
                         const npa = state.rollSum / state.rollSize;
                         const qnpa = npa * npa * npa * npa;  // unrolled for perf
                         state.total += qnpa;
                         state.count++;
-                        save = qnpa;
+                        state.saved.push(qnpa);
                     }
                 }
-                state.saved.push(save);
             }
             if (this._inlineXP) {
                 const state = this._inlineXP;
@@ -934,7 +935,7 @@ sauce.ns('power', function() {
                 const state = this._inlineNP;
                 const save = state.saved[i];
                 state.total -= save || 0;
-                state.count -= save !== undefined && !(this._values[i] instanceof sauce.data.Zero) ? 1 : 0;
+                state.count -= save !== undefined ? 1 : 0;
             }
             if (this._inlineXP) {
                 const state = this._inlineXP;
