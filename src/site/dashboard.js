@@ -23,7 +23,6 @@ sauce.ns('dashboard', function(ns) {
                     if (k.startsWith('__reactEventHandlers$')) {
                         if (v && v.children && v.children.props) {
                             _cardPropCache.set(cardEl, v.children.props);
-                            console.debug("Found props:", v.children.props);
                         } else {
                             console.warn("Could not find props for:", cardEl);
                             _cardPropCache.set(cardEl, {});
