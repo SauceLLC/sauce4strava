@@ -859,7 +859,6 @@ sauce.ns('power', function() {
                     sampleWeight: this.idealGap / (samplesPerWindow + this.idealGap),
                     prevTime: 0,
                     weighted: 0,
-                    breakPadding: 0,
                     count: 0,
                     total: 0,
                 };
@@ -872,59 +871,43 @@ sauce.ns('power', function() {
                 const state = this._inlineNP;
                 const slot = i % state.rollSize;
                 const size = i + 1 - this._offt;
-                if (value instanceof sauce.data.Zero) {
-                    // Drain the rolling buffer but don't increment the counter.
-                    state.rollSum -= state.roll[slot] || 0;
-                    state.roll[slot] = 0;
-                    if (size >= state.rollSize) {
-                        state.saved.push(undefined);
-                    }
-                } else {
-                    state.rollSum += value;
-                    state.rollSum -= state.roll[slot] || 0;
-                    state.roll[slot] = value;
-                    if (size >= state.rollSize) {
-                        const npa = state.rollSum / state.rollSize;
-                        const qnpa = npa * npa * npa * npa;  // unrolled for perf
-                        state.total += qnpa;
-                        state.count++;
-                        state.saved.push(qnpa);
-                    }
+                state.rollSum += value;
+                state.rollSum -= state.roll[slot] || 0;
+                state.roll[slot] = value;
+                if (size >= state.rollSize) {
+                    const npa = state.rollSum / state.rollSize;
+                    const qnpa = npa * npa * npa * npa;  // unrolled for perf
+                    state.total += qnpa;
+                    state.count++;
+                    state.saved.push(qnpa);
                 }
             }
             if (this._inlineXP) {
                 const state = this._inlineXP;
-                const save = {};
-                if (value instanceof sauce.data.Zero) {
-                    if (value instanceof sauce.data.Break) {
-                        state.breakPadding += value.pad;
-                        save.breakPadding = value.pad;
-                    }
-                } else {
-                    const epsilon = 0.1;
-                    const negligible = 0.1;
-                    const time = (i * this.idealGap) + state.breakPadding;
-                    let count = 0;
-                    while ((state.weighted > negligible) &&
-                           time > state.prevTime + this.idealGap + epsilon) {
-                        state.weighted *= state.attenuation;
-                        state.prevTime += this.idealGap;
-                        const w = state.weighted;
-                        state.total += w * w * w * w;  // unroll for perf
-                        count++;
-                    }
+                const epsilon = 0.1;
+                const negligible = 0.1;
+                const time = i * this.idealGap;
+                let count = 0;
+                while ((state.weighted > negligible) &&
+                       time > state.prevTime + this.idealGap + epsilon) {
                     state.weighted *= state.attenuation;
-                    state.weighted += state.sampleWeight * value;
-                    state.prevTime = time;
+                    state.prevTime += this.idealGap;
                     const w = state.weighted;
-                    const qw = w * w * w * w;  // unrolled for perf
-                    state.total += qw;
+                    state.total += w * w * w * w;  // unroll for perf
                     count++;
-                    state.count += count;
-                    save.value = qw;
-                    save.count = count;
                 }
-                state.saved.push(save);
+                state.weighted *= state.attenuation;
+                state.weighted += state.sampleWeight * value;
+                state.prevTime = time;
+                const w = state.weighted;
+                const qw = w * w * w * w;  // unrolled for perf
+                state.total += qw;
+                count++;
+                state.count += count;
+                state.saved.push({
+                    value: qw,
+                    count: count,
+                });
             }
             super.processAdd(i);
         }
@@ -942,7 +925,6 @@ sauce.ns('power', function() {
                 const save = state.saved[i];
                 state.total -= save.value || 0;
                 state.count -= save.count || 0;
-                state.breakPadding -= save.breakPadding || 0;
             }
         }
 
@@ -1080,34 +1062,15 @@ sauce.ns('power', function() {
         const rolling = new Array(rollingSize);
         let count = 0;
         let total = 0;
-        let breakPadding = 0;
         for (let i = 0, sum = 0, len = data.length; i < len; i++) {
             const index = i % rollingSize;
-            const entry = data[i];
-            const watts = +entry;  // Unlocks some optimizations.
-            // Drain the rolling buffer but don't increment the counter for gaps...
-            if (!watts) {
-                if (entry instanceof sauce.data.Break) {
-                    for (let j = 0; j < Math.min(rollingSize, entry.pad); j++) {
-                        const rollIndex = (index + j) % rollingSize;
-                        sum -= rolling[rollIndex] || 0;
-                        rolling[rollIndex] = 0;
-                    }
-                    breakPadding += entry.pad;
-                    continue;
-                } else if (entry instanceof sauce.data.Zero) {
-                    sum -= rolling[index] || 0;
-                    rolling[index] = 0;
-                    continue;
-                }
-            } else {
-                sum += watts;
-            }
+            const watts = data[i];
+            sum += watts;
             sum -= rolling[index] || 0;
             rolling[index] = watts;
-            if (i + 1 + breakPadding >= rollingSize) {
+            if (i + 1 >= rollingSize) {
                 const avg = sum / rollingSize;
-                const qavg = avg * avg * avg * avg;  // About 100 x faster than Math.pow and **
+                const qavg = avg * avg * avg * avg;  // unrolled for perf
                 total += qavg;
                 count++;
             }
@@ -1137,17 +1100,9 @@ sauce.ns('power', function() {
         let weighted = 0;
         let count = 0;
         let total = 0;
-        let breakPadding = 0;
         for (let i = 0, len = data.length; i < len; i++) {
-            const entry = data[i];
-            const watts = +entry;  // Unlocks some optimizations.
-            if (!watts && (entry instanceof sauce.data.Zero)) {
-                if (entry instanceof sauce.data.Break) {
-                    breakPadding += entry.pad;
-                }
-                continue; // Skip Zero pads so after the inner while loop can attenuate on its terms.
-            }
-            const time = (i * sampleInterval) + breakPadding;
+            const watts = data[i];
+            const time = i * sampleInterval;
             while ((weighted > negligible) && time > prevTime + sampleInterval + epsilon) {
                 weighted *= attenuation;
                 prevTime += sampleInterval;
