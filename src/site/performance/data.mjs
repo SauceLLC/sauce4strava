@@ -33,8 +33,9 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
             daily.push(a);
             tss += sauce.model.getActivityTSS(a) || 0;
             if (a.stats) {
-                duration += a.stats.activeTime || 0;
-                intensityTime += a.stats.intensity * duration;
+                const activeTime = a.stats.activeTime || 0;
+                duration += activeTime;
+                intensityTime += a.stats.intensity * activeTime;
                 altGain += a.stats.altitudeGain || 0;
                 distance += a.stats.distance || 0;
                 kj += a.stats.kj || 0;
