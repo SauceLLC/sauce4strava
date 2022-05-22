@@ -1046,8 +1046,9 @@
     }
 
     .feed-container,
+    .react-feed-container,
     .virtual-feed-container {
-        .react-feed-entry {
+        [data-testid="web-feed-entry"] {
             background-color: color.shade(bg, 8%);
             color: color.shade(fg, 10%);
 

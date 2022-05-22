@@ -76,9 +76,10 @@ sauce.ns('dashboard', function(ns) {
 
 
     function hidePromotions(feedEl) {
-        return hideCards(feedEl, 'promo-card', card =>
-            getCardProps(card).entity === 'Promo'); // XXX find and test..
-        //const count = hideContainers(feedEl, 'SimplePromo') + hideContainers(feedEl, 'FancyPromo');
+        return hideCards(feedEl, 'promo-card', card => {
+            const ent = getCardProps(card).entity;
+            return !!(ent && ent.match && ent.match(/Promo/));
+        });
     }
 
 

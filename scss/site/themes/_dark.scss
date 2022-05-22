@@ -48,9 +48,10 @@
     }
 
     .feed-container,
-    .virtual-feed-container {
+    .virtual-feed-container,
+    .react-feed-container {
         .react-feed-component {
-            .react-feed-entry {
+            [data-testid="web-feed-entry"] {
                 img[class*="PhotosAndMapImage--"] {
                     filter: $map-filter;
                 }
