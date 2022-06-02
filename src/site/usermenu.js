@@ -33,6 +33,7 @@
         try {
             _loadPerf();
             _loadOptions();
+            _removeBadCSS();
         } catch(e) {
             sauce.report.error(e);
             throw e;
@@ -67,6 +68,7 @@
         item.appendChild(a);
         menuEl.appendChild(item);
     }
+
 
     function _loadPerf() {
         if (!sauce.patronLegacy && sauce.isSafari()) {
@@ -125,6 +127,14 @@
             if (prev) {
                 prev.parentElement.insertAdjacentElement('afterend', group);
             }
+        }
+    }
+
+
+    function _removeBadCSS() {
+        const inviteCss = document.querySelector('#global-header #container-nav > link[rel="stylesheet"]');
+        if (inviteCss) {
+            inviteCss.remove();
         }
     }
 
