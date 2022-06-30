@@ -369,13 +369,10 @@ sauce.ns('data', function() {
                 this.add(times[i], values[i], active && active[i]);
                 if (this.full()) {
                     const value = getter(this);
-                    if (leadValue !== undefined) {
-                        if (!comparator(value, leadValue)) {
-                            continue;
-                        }
+                    if (leadValue === undefined || comparator(value, leadValue)) {
+                        leadValue = value;
+                        leadRoll = this.clone(cloneOptions);
                     }
-                    leadValue = value;
-                    leadRoll = this.clone(cloneOptions);
                 }
             }
             return leadRoll;
@@ -867,19 +864,25 @@ sauce.ns('power', function() {
 
         processAdd(i) {
             const value = this._values[i];
+            const nValue = +value;
             if (this._inlineNP) {
                 const state = this._inlineNP;
                 const slot = i % state.rollSize;
                 const size = i + 1 - this._offt;
-                state.rollSum += value;
+                state.rollSum += nValue;
                 state.rollSum -= state.roll[slot] || 0;
-                state.roll[slot] = value;
+                state.roll[slot] = nValue;
                 if (size >= state.rollSize) {
                     const npa = state.rollSum / state.rollSize;
-                    const qnpa = npa * npa * npa * npa;  // unrolled for perf
-                    state.total += qnpa;
-                    state.count++;
-                    state.saved.push(qnpa);
+                    if (!npa && value instanceof sauce.data.Zero) {
+                        // Drained already and we're looking at pad values, don't increment count.
+                        state.saved.push(undefined);
+                    } else {
+                        const qnpa = npa * npa * npa * npa;  // unrolled for perf
+                        state.total += qnpa;
+                        state.saved.push(qnpa);
+                        state.count++;
+                    }
                 }
             }
             if (this._inlineXP) {
@@ -897,12 +900,14 @@ sauce.ns('power', function() {
                     count++;
                 }
                 state.weighted *= state.attenuation;
-                state.weighted += state.sampleWeight * value;
+                state.weighted += state.sampleWeight * nValue;
                 state.prevTime = time;
                 const w = state.weighted;
                 const qw = w * w * w * w;  // unrolled for perf
                 state.total += qw;
-                count++;
+                if (w > negligible || !(value instanceof sauce.data.Zero)) {
+                    count++;
+                }
                 state.count += count;
                 state.saved.push({
                     value: qw,
@@ -1072,7 +1077,9 @@ sauce.ns('power', function() {
                 const avg = sum / rollingSize;
                 const qavg = avg * avg * avg * avg;  // unrolled for perf
                 total += qavg;
-                count++;
+                if (avg || !(watts instanceof sauce.data.Zero)) {
+                    count++;
+                }
             }
         }
         return count ? (total / count) ** 0.25 : undefined;
@@ -1114,7 +1121,9 @@ sauce.ns('power', function() {
             prevTime = time;
             const qw = weighted * weighted * weighted * weighted;  // unrolled for perf
             total += qw;
-            count++;
+            if (weighted > negligible || !(watts instanceof sauce.data.Zero)) {
+                count++;
+            }
         }
         return count ? (total / count) ** 0.25 : 0;
     }
