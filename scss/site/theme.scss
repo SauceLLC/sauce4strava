@@ -2771,18 +2771,20 @@
 }
 
 
-.sauce-theme-dark {
-    @include dark.theme;
-}
+:root {
+    &.sauce-theme-dark {
+        @include dark.theme;
+    }
 
-.sauce-theme-windows31 {
-    @include windows31.theme;
-}
+    &.sauce-theme-windows31 {
+        @include windows31.theme;
+    }
 
-.sauce-theme-royalpeach {
-    @include royalpeach.theme;
-}
+    &.sauce-theme-royalpeach {
+        @include royalpeach.theme;
+    }
 
-.sauce-theme-deepred {
-    @include deepred.theme;
+    &.sauce-theme-deepred {
+        @include deepred.theme;
+    }
 }
