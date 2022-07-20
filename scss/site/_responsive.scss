@@ -1,5 +1,4 @@
 @use 'mobile';
-@use 'defines';
 @use 'color';
 
 
@@ -30,6 +29,7 @@ html.sauce-responsive,
         font-size: 11px;
     }
     font-size: 14px;
+    line-height: normal;
 }
 
 // XXX workaround a Strava bug in the CSS which affects various lists (mostly navigation)..
@@ -623,7 +623,7 @@ html.sauce-responsive,
         .page.container {
             $hmargin: 1rem;
             display: grid;
-            grid-template-columns: minmax(calc(#{defines.$analysis-page-sidenav-width} + (2 * #{$hmargin})), 1fr)
+            grid-template-columns: minmax(13rem, 1fr)
                                    minmax(0, 10fr);
             grid-template-rows: auto 1fr;
             grid-auto-flow: row;
