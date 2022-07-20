@@ -98,7 +98,7 @@
                 <h4>General Options:</h4>
 
                 <div class="option">
-                    <label><input type="checkbox" style="visibility: hidden;"/>Theme:</label>
+                    <label>Theme:</label>
                     <select name="theme">
                         <option value="">Default Strava</option>
                         <option value="system"
@@ -111,6 +111,24 @@
                         <option value="deepred" disabled data-restriction="10"
                                 title="Available to Sauce patrons">Deep Red</option>
                     </select>
+                </div>
+
+                <div class="option">
+                    <label>Custom Font:</label>
+                    <select name="font-custom-family" class="no-reload">
+                        <option value="">Default Strava</option>
+                        <option value="Jost">Jost</option>
+                        <option value="Permanent Marker">Permanent Marker</option>
+                        <option value="I drawed this v2">I drawed this v2</option>
+                        <option value="Gluten">Gluten</option>
+                    </select>
+                    <div class="suboption">
+                        <label>
+                            Font Size:
+                            <input class="no-reload" type="range" min="10" step="1" max="28" name="font-custom-size"/>
+                        </label>
+                    </div>
+                    <br/>
                 </div>
 
                 <div class="option" title="Make most pages work with any screen size">

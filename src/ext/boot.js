@@ -17,6 +17,35 @@
                         'sauce-theme-enabled',
                         `sauce-theme-${theme}`);
                 }
+                const root = document.documentElement;
+                browser.runtime.onMessage.addListener(msg => {
+                    if (msg && msg.op === 'options-change') {
+                        if (msg.key === 'font-custom-family') {
+                            root.classList.toggle('sauce-font-custom-family', !!msg.value);
+                            if (msg.value) {
+                                root.style.setProperty('--sauce-font-custom-family', `'${msg.value}'`);
+                                if (config.options['font-custom-size']) {
+                                    root.classList.add('sauce-font-custom-size');
+                                }
+                            } else {
+                                root.classList.remove('sauce-font-custom-size');
+                            }
+                        } else if (msg.key === 'font-custom-size') {
+                            root.classList.toggle('sauce-font-custom-size', !!msg.value);
+                            if (msg.value) {
+                                root.style.setProperty('--sauce-font-custom-size', `${msg.value}px`);
+                            }
+                        }
+                    }
+                });
+                root.style.setProperty('--sauce-font-custom-family', `'${config.options['font-custom-family']}'`);
+                root.style.setProperty('--sauce-font-custom-size', `${config.options['font-custom-size']}px`);
+                if (config.options['font-custom-family']) {
+                    root.classList.add('sauce-font-custom-family');
+                    if (config.options['font-custom-size']) {
+                        root.classList.add('sauce-font-custom-size');
+                    }
+                }
             }
         ]
     }, {

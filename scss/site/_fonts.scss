@@ -1,0 +1,27 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Gluten:wght@100;200;300;400;500;600;700;800;900&family=Jost:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Permanent+Marker&display=swap');
+
+@font-face {
+    font-family: 'MSSansSerif';
+    font-weight: 400;
+    src: url('fonts/MSSansSerif.woff2') format("truetype");
+}
+
+@font-face {
+    font-family: 'I drawed this v2';
+    font-weight: 400;
+    src: url('fonts/Idrawedthis_v2.woff2') format("truetype");
+}
+
+:root.sauce-enabled {
+    &.sauce-font-custom-family body {
+        font-family: var(--sauce-font-custom-family), "MaisonNeue", "Segoe UI", "Helvetica Neue", -apple-system, system-ui, BlinkMacSystemFont, Roboto, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    }
+
+    &.sauce-font-custom-size {
+        &,
+        body {
+            font-size: var(--sauce-font-custom-size);
+        }
+    }
+}

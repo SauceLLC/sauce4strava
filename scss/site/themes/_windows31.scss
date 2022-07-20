@@ -1,23 +1,6 @@
 @use '../color';
 
 
-@font-face {
-    font-family: 'RetroSans';
-    font-weight: 300;
-    src: url('fonts/Roboto-Light.ttf') format("truetype");
-}
-@font-face {
-    font-family: 'RetroSans';
-    font-weight: 400;
-    src: url('fonts/Roboto-Regular.ttf') format("truetype");
-}
-@font-face {
-    font-family: 'RetroSans';
-    font-weight: 700;
-    src: url('fonts/Roboto-Medium.ttf') format("truetype");
-}
-
-
 @mixin windows-border {
     border-style: solid;
     border-image-source: url(../../images/win31-border.svg);
@@ -54,7 +37,7 @@
     --sauce-border-shade-dir: -1;
 
     body {
-        font-family: 'RetroSans';
+        font-family: 'MSSansSerif', sans-serif;
     }
 
     .btn,

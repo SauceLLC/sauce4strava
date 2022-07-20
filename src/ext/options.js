@@ -12,8 +12,9 @@
     function resetSuboptions(input) {
         if (!input.closest('.suboption')) {
             for (const suboption of input.closest('.option').querySelectorAll('.suboption')) {
-                suboption.classList.toggle('disabled', !input.checked);
-                suboption.querySelector('input').disabled = !input.checked;
+                const disabled = typeof input.checked === 'boolean' ? !input.checked : !input.value;
+                suboption.classList.toggle('disabled', disabled);
+                suboption.querySelector('input').disabled = disabled;
             }
         }
     }
@@ -47,7 +48,7 @@
                 options[input.name] = input.checked;
                 resetSuboptions(input);
                 await sauce.storage.set('options', options);
-                if (isPopup) {
+                if (isPopup && !input.classList.contains('no-reload')) {
                     browser.tabs.reload();
                 }
                 await reportOptionSet(input.name, input.checked);
@@ -66,7 +67,7 @@
             input.addEventListener('change', async ev => {
                 options[input.name] = input.value;
                 await sauce.storage.set('options', options);
-                if (isPopup) {
+                if (isPopup && !input.classList.contains('no-reload')) {
                     browser.tabs.reload();
                 }
                 await reportOptionSet(input.name, input.value);
@@ -92,12 +93,34 @@
             select.addEventListener('change', async ev => {
                 const value = Array.from(select.selectedOptions).map(x => x.value).join(',');
                 options[select.name] = value;
+                resetSuboptions(select);
                 await sauce.storage.set('options', options);
-                if (isPopup) {
+                if (isPopup && !select.classList.contains('no-reload')) {
                     browser.tabs.reload();
                 }
                 await reportOptionSet(select.name, value);
             });
+            resetSuboptions(select);
+        }
+        const ranges = document.querySelectorAll('.option input[type="range"]');
+        for (const input of ranges) {
+            input.value = options[input.name];
+            if (input.dataset.restriction) {
+                input.disabled = patronLevel < Number(input.dataset.restriction);
+                if (input.disabled && isSafari) {
+                    input.style.display = 'none';
+                }
+            }
+            input.addEventListener('change', async ev => {
+                options[input.name] = input.value;
+                resetSuboptions(input);
+                await sauce.storage.set('options', options);
+                if (isPopup && !input.classList.contains('no-reload')) {
+                    browser.tabs.reload();
+                }
+                await reportOptionSet(input.name, input.value);
+            });
+            resetSuboptions(input);
         }
     }
 
@@ -174,6 +197,23 @@
             detailsEl.appendChild(tr);
         }
         manageOptions(config.options, config.patronLevel);
+        handleCustomActions();
+    }
+
+    async function optionsChange(key, value) {
+        for (const t of await browser.tabs.query({active: true})) {
+            browser.tabs.sendMessage(t.id, {op: "options-change", key, value});
+        }
+    }
+
+    function handleCustomActions() {
+        if (!isPopup) {
+            return;
+        }
+        const family = document.querySelector('[name="font-custom-family"]');
+        const size = document.querySelector('[name="font-custom-size"]');
+        family.addEventListener('input', ev => optionsChange('font-custom-family', family.value));
+        size.addEventListener('input', ev => optionsChange('font-custom-size', size.value));
     }
 
     const supP = fetch('https://saucellc.io/supporters-v2.json').then(x => x.json());
