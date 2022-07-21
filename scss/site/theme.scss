@@ -579,14 +579,87 @@
         background-color: color.lighten(bg, 5%);
     }
 
-    [class*="ModalWithTabs--content--"] {
-        color: black; // XXX no theme for now.
+    [class*="Modal--body--"] {
+        color: unset;
+    }
+
+    [class*="ModalWithTabs--content--"],
+    [class*="ModalWithTabs--dialog--"] {
+        color: color.shade(fg, 0%);
 
         [class*="ModalWithTabs--tab-list--"] {
+            background-color: color.shade(bg, 10%);
+            color: unset;
+            border-bottom: $hard-border-color;
+
             [class*="ModalWithTabs--tab--"] {
                 background-color: transparent;
                 color: unset;
             }
+
+            button[data-selected] {
+                background-color: color.shade(bg, 5%);
+            }
+            button:hover:not([data-selected]) {
+                background-color: color.shade(bg, 3%) !important;
+            }
+        }
+
+        [class*="ModalWithTabs--tabs--"] {
+            background-color: unset;
+            color: unset;
+        }
+
+        [class*="KudosCommentsAndAchievementsModal--footer--"] {
+            background-color: color.shade(bg, 15%);
+            color: unset;
+            border-color: $hard-border-color;
+        }
+
+        [class*="KudosCommentsAndAchievementsModal--"] {
+            a:visited,
+            a:link {
+                color: unset;
+                color: $link-color;
+
+                &:hover {
+                    color: $link-color-hover;
+                }
+            }
+        }
+
+        button[class*="Button--btn--"] {
+            background-color: transparent;
+            border-color: transparent;
+        }
+    }
+
+    [class*="StravaMentionsInput--body--"],
+    .sauce-new-comment {
+        textarea {
+            font-family: unset; // Fix for @mentions overlay
+            font-size: unset; // Fix for @mentions overlay
+        }
+    }
+
+    [class*="StravaMentionsInput--suggestions--"],
+    [class*="MentionableComment--suggestions--"] {
+        ul {
+            background-color: color.shade(bg, 4%);
+
+            li[aria-selected="true"] {
+                background-color: color.shade(bg, 10%) !important;
+            }
+
+            li:hover {
+                background-color: color.shade(bg, 7%) !important;
+            }
+        }
+    }
+
+    #kudos-comments-container {
+        [class*="ADPKudosAndComments--count--"] {
+            color: unset;
         }
     }
 

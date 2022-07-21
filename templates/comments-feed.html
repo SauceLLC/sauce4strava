@@ -7,15 +7,7 @@
             <div class="sauce-header" title="{{comment.athlete.name}}">
                 {{comment.athlete.firstname}} • {{humanRelTime(comment.date, {precision: 60})}}
             </div>
-            <p>
-                <% for (const token of comment.tokens) { %>
-                    <% if (token.type === "mention_token") { %>
-                        <a href="{{token.path}}">{{token.text}}</a>
-                    <% } else { %>
-                        {{token.text}}
-                    <% } %>
-                <% } %>
-            </p>
+            <p>{-comment.comment-}</p>
         </div>
     </div>
 <% } %>

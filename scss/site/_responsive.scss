@@ -213,6 +213,15 @@ html.sauce-responsive,
         }
     }
 
+    .comments.sauce-inline-comments {
+        font-size: unset;
+        line-height: unset;
+
+        .mentionable-comment-field div[class^="MentionableComment--highlighter"] {
+            max-height: unset;
+        }
+    }
+
     @media only screen and (max-width: 768px) {
         @include mobile.global;
     }

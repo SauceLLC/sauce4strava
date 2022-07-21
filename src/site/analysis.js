@@ -1697,20 +1697,47 @@ sauce.ns('analysis', ns => {
             placeHolder: await LM('comment_placeholder'),
             buttonText: await LM('comment'),
         };
+        const newCommentsHack = [];
         const $comments = jQuery(await commentsTpl({mentionProps}));
         async function render() {
-            const comments = [];
-            const commentsHash = `Activity-${actId}`;
-            for (const x of pageView.commentsController().getFromHash(commentsHash)) {
-                comments.push({
-                    tokens: x.comment,
-                    athlete: x.athlete,
-                    date: new Date(jQuery(x.timestamp).attr('datetime'))
-                });
+            let comments;
+            const reactNode = document.querySelector('[data-react-class="ADPKudosAndComments"]');
+            if (reactNode) {
+                for (const [k, v] of Object.entries(reactNode)) {
+                    if (k.startsWith('__reactContainere$')) {
+                        if (v && v.alternate && v.alternate.child && v.alternate.child.memoizedProps) {
+                            comments = v.alternate.child.memoizedProps.comments;
+                        }
+                        break;
+                    }
+                }
+            } else {
+                // Legacy method.  Still kinda works but I expect it to disappear.
+                comments = pageView.commentsController().hash;
             }
-            $comments.find('.sauce-comments-feed').html((await feedTpl({comments})).trim());
+            comments = (comments || []).concat(newCommentsHack);
+            if (comments.length) {
+                const data = comments.map(x => ({
+                    comment: x.comment,
+                    athlete: x.athlete,
+                    date: new Date(jQuery(x.timestamp).attr('datetime')),
+                }));
+                $comments.find('.sauce-comments-feed').html((await feedTpl({comments: data})).trim());
+            }
         }
-        pageView.commentsController().on('commentCompleted', async () => {
+        pageView.commentsController().on('commentCreated', async comment => {
+            // Convert legacy format to a html string.
+            newCommentsHack.push({
+                comment: comment.comment.reduce((agg, x) => {
+                    if (x.type === 'mention_token') {
+                        return agg + `<a href="${x.path}">${x.text}</a>`;
+                    } else {
+                        return agg + x.text;
+                    }
+                }, ''),
+                athlete: comment.athlete,
+                timestamp: comment.timestamp,
+            });
             await render();
             sauce.report.event('Comment', 'submit');
         });

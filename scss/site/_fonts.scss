@@ -31,6 +31,14 @@
             "Segoe UI Emoji",
             "Segoe UI Symbol",
             "Material Icons";
+
+        [class*="StravaMentionsInput--body--"],
+        .sauce-new-comment {
+            textarea {
+                font-family: unset; // Fix for @mentions overlay 
+                font-size: unset; // Fix for @mentions overlay 
+            }
+        }
     }
 
     &.sauce-font-custom-size {

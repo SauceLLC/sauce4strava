@@ -48,7 +48,7 @@
 
             .sauce-header {
                 font-size: 0.75em;
-                color: #666;
+                color: color.shade(fg, 15%);
             }
         }
     }
