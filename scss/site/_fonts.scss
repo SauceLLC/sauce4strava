@@ -15,7 +15,21 @@
 
 :root.sauce-enabled {
     &.sauce-font-custom-family body {
-        font-family: var(--sauce-font-custom-family), "MaisonNeue", "Segoe UI", "Helvetica Neue", -apple-system, system-ui, BlinkMacSystemFont, Roboto, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        font-family:
+            var(--sauce-font-custom-family),
+            "MaisonNeue",
+            "Segoe UI",
+            "Helvetica Neue",
+            -apple-system,
+            system-ui,
+            BlinkMacSystemFont,
+            Roboto,
+            Arial,
+            sans-serif,
+            "Apple Color Emoji",
+            "Segoe UI Emoji",
+            "Segoe UI Symbol",
+            "Material Icons";
     }
 
     &.sauce-font-custom-size {

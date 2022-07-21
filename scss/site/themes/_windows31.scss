@@ -37,7 +37,22 @@
     --sauce-border-shade-dir: -1;
 
     body {
-        font-family: 'MSSansSerif', sans-serif;
+        font-family:
+            'MSSansSerif',
+            "MaisonNeue",
+            "Segoe UI",
+            "Helvetica Neue",
+            -apple-system,
+            system-ui,
+            BlinkMacSystemFont,
+            Roboto,
+            Arial,
+            sans-serif,
+            "Apple Color Emoji",
+            "Segoe UI Emoji",
+            "Segoe UI Symbol",
+            "Material Icons";
+
     }
 
     .btn,
