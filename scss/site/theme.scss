@@ -639,6 +639,7 @@
         textarea {
             font-family: unset; // Fix for @mentions overlay
             font-size: unset; // Fix for @mentions overlay
+            height: auto;
         }
     }
 
