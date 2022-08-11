@@ -703,7 +703,7 @@ sauce.ns('analysis', ns => {
                 power = powerRoll.avg({active: true});
                 np = supportsNP() ? powerRoll.np() : null;
                 if (ns.ftp) {
-                    tss = sauce.power.calcTSS(np || power, powerRoll.active(), ns.ftp);
+                    tss = sauce.power.calcTSS(np || power, activeTime, ns.ftp);
                     intensity = (np || power) / ns.ftp;
                 }
             }
@@ -1164,11 +1164,11 @@ sauce.ns('analysis', ns => {
         const textLabel = jQuery(`<div>${label}</div>`).text();
         const template = await getTemplate('info-dialog.html');
         const cadence = cadenceRoll && cadenceRoll.avg();
+        const activeTime = getActiveTime(startIdx, endIdx);
         let stride;
         if (cadence &&
             (ns.cadenceFormatter.key === 'step_cadence' ||
              ns.cadenceFormatter.key === 'swim_cadence')) {
-            const activeTime = getActiveTime(startIdx, endIdx);
             stride = distance / activeTime / (cadence * 2 / 60);
         }
         const supportsRanks = ns.syncAthlete && sourcePeakTypes[source] &&
@@ -1182,7 +1182,8 @@ sauce.ns('analysis', ns => {
                 max: sauce.data.max(powerRoll.values()),
                 np: supportsNP() ? powerRoll.np() : null,
                 xp: supportsXP() ? powerRoll.xp() : null,
-                estimate: powerRoll.isEstimate
+                estimate: powerRoll.isEstimate,
+                activeTime,
             }),
             pace: distance && {
                 avg: humanPace(distance / elapsedTime, {velocity: true}),
@@ -2395,7 +2396,8 @@ sauce.ns('analysis', ns => {
             activeWKg: (ns.weight && activeAvg != null) && activeAvg / ns.weight,
             elapsedWKg: (ns.weight && elapsedAvg != null) && elapsedAvg / ns.weight,
             rank: (ns.weight && elapsedAvg) &&
-                sauce.power.rank(powerRoll.active(), elapsedAvg, extra.np, ns.weight, ns.gender),
+                sauce.power.rank(extra.activeTime || powerRoll.active(), elapsedAvg,
+                    extra.np, ns.weight, ns.gender),
         }, extra);
     }
 
@@ -2464,7 +2466,7 @@ sauce.ns('analysis', ns => {
             const j = powerRoll.joules();
             let tss, tTss, intensity, pwhr;
             const np = supportsNP() ? powerRoll.np() : null;
-            tplData.power = powerData(powerRoll, altStream, {np});
+            tplData.power = powerData(powerRoll, altStream, {np, activeTime});
             const hrStream = await fetchStream('heartrate', start, end);
             if (hasAccurateWatts()) {
                 tplData.power.np = np;
