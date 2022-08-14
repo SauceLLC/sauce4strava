@@ -46,6 +46,10 @@
                         root.classList.add('sauce-font-custom-size');
                     }
                 }
+                if (config.options['analysis-max-page-width']) {
+                    root.style.setProperty('--analysis-max-page-width',
+                        `${config.options['analysis-max-page-width']}px`);
+                }
             }
         ]
     }, {

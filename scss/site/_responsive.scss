@@ -206,6 +206,9 @@ html.sauce-responsive,
     }
 
     .view {
+        max-width: var(--analysis-max-page-width);
+        margin: auto;
+
         .footer-promos .container,
         .footer-global.container {
             min-width: initial;
