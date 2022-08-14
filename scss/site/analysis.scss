@@ -455,3 +455,11 @@ table.hidden-segments {
         color: color.get(accent);
     }
 }
+
+section.run.segments-list {
+    min-height: 720px;
+
+    .segment-effort-detail {
+        min-width: min(100%, 440px);
+    }
+}
