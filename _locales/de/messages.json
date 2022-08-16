@@ -435,7 +435,8 @@
         "description": "IMMUTABLE"
     },
     "analysis_view": {
-        "message": "Aussicht"
+        "message": "Darstellung",
+        "description": "IMMUTABLE"
     },
     "analysis_power_profile_about1": {
         "message": "Das Konzept der Leistungsprofilerstellung wurde von Dr. Andy Coggan entwickelt. Es ist ein grundlegender Überblick über die Leistungsanforderungen, um auf einem bestimmten Niveau der Wettbewerbsfähigkeit im Rennsport zu sein."
