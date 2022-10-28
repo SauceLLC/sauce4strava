@@ -11,6 +11,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     sauce.name = extManifest.name;
     sauce.version = extManifest.version;
     sauce.isDev = sauce.name.endsWith('[DEV]');
+    sauce.fetch = self.nativeFetch = fetch.bind(self);  // Sentry monkey patch is buggy (breaks CORS)
 
     sauce._pendingAsyncExports = [];
 

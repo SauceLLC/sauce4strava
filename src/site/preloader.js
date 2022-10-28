@@ -654,7 +654,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
         const qStr = q.toString();
         const fqUrl = qStr ? `${url}?${qStr}` : url;
-        const resp = await fetch(fqUrl, {
+        const resp = await sauce.fetch(fqUrl, {
             redirect: 'error',
             headers: {'X-Requested-With': 'XMLHttpRequest'},  // Required to avoid 301s and 404s
         });

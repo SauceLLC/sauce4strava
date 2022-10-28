@@ -25,7 +25,7 @@ sauce.ns('template', ns => {
                     await sauce.locale.init();
                 }
                 _tplFetching.set(cacheKey, (async () => {
-                    const resp = await fetch(sauce.getURL(`templates/${filename}`));
+                    const resp = await sauce.fetch(sauce.getURL(`templates/${filename}`));
                     const tplText = await resp.text();
                     const localePrefix = localeKey && `${localeKey}_`;
                     const name = filename.split(/\..+$/)[0];

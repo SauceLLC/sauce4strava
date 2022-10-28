@@ -37,7 +37,7 @@ sauce.ns('analysis', ns => {
         peak_xp: 'xp',
     };
     // Preload our food data so we're not waiting around later.
-    const foodsPromise = fetch(sauce.getURL('src/site/foods.json')).then(r => r.json());
+    const foodsPromise = sauce.fetch(sauce.getURL('src/site/foods.json')).then(r => r.json());
     const mobileMedia = window.matchMedia('(max-width: 768px)');
 
 
@@ -2196,7 +2196,7 @@ sauce.ns('analysis', ns => {
             }
             if (!self.JST['#photo-lightbox-template']) {
                 // Workaround for missing templates when activity doesn't have photos of its own.
-                const tplResp = await fetch(`${tplUrl}/photo-lightbox-template-backup.html`);
+                const tplResp = await sauce.fetch(`${tplUrl}/photo-lightbox-template-backup.html`);
                 self.JST['#photo-lightbox-template'] = self._.template(await tplResp.text());
                 self.JST['#reporting-modal-template'] = self._.template('<div style="display: none;" id="reporting-modal"><form/></div>');
             }
@@ -3493,7 +3493,7 @@ sauce.ns('analysis', ns => {
         if (!recentUpdate) {
             return;
         }
-        const resp = await fetch('https://saucellc.io/release_notes.json');
+        const resp = await sauce.fetch('https://saucellc.io/release_notes.json');
         let releases = await resp.json();
         releases.reverse();
         const bigIntVersion = v => {

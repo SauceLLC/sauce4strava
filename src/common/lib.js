@@ -1994,14 +1994,14 @@ sauce.ns('perf', function() {
 
 
     async function fetchSelfFTPs() {
-        const resp = await fetch("https://www.strava.com/settings/performance");
+        const resp = await sauce.fetch("https://www.strava.com/settings/performance");
         const raw = await resp.text();
         return JSON.parse(raw.match(/all_ftps = (\[.*\]);/)[1]);
     }
 
 
     async function fetchPeerGender(activity) {
-        const resp = await fetch(`https://www.strava.com/activities/${activity}`);
+        const resp = await sauce.fetch(`https://www.strava.com/activities/${activity}`);
         if (!resp.ok) {
             return;
         }
@@ -2014,7 +2014,7 @@ sauce.ns('perf', function() {
 
 
     async function fetchHRZones(activity) {
-        const resp = await fetch(`https://www.strava.com/activities/${activity}/heartrate_zones`);
+        const resp = await sauce.fetch(`https://www.strava.com/activities/${activity}/heartrate_zones`);
         // Handle error and 302.  Strava often forwards to dashboard when hr zones are not available.
         if (!resp.ok || resp.redirected) {
             return;
@@ -2036,7 +2036,7 @@ sauce.ns('perf', function() {
 
 
     async function fetchPaceZones(activity) {
-        const resp = await fetch(`https://www.strava.com/activities/${activity}/pace_zones`);
+        const resp = await sauce.fetch(`https://www.strava.com/activities/${activity}/pace_zones`);
         if (!resp.ok) {
             return;
         }

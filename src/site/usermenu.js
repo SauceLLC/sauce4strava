@@ -105,7 +105,7 @@
                 localesPromise.then(locales => span.textContent = locales[x.localeKey]);
             }
             if (x.icon) {
-                fetch(sauce.getURL(`images/fa/${x.icon}.svg`)).then(resp =>
+                sauce.fetch(sauce.getURL(`images/fa/${x.icon}.svg`)).then(resp =>
                     resp.text().then(svg => sauce.adjacentNodeContents(a, 'afterbegin', svg)));
             }
             if (location.pathname.startsWith(x.href)) {
