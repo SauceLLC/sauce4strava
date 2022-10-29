@@ -2567,7 +2567,7 @@ sauce.propDefined('jQuery', function($) {
             const refCanvas = document.createElement('canvas');
             refCanvas.width = size;
             refCanvas.height = 2;
-            const refContext = refCanvas.getContext('2d');
+            const refContext = refCanvas.getContext('2d', {willReadFrequently: true});
             const refGradient = refContext.createLinearGradient(0, 0, size, 0);
             const refMin = sauce.data.min(spec.steps.map(x => x.value));
             const refMax = sauce.data.max(spec.steps.map(x => x.value));
