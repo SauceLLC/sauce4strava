@@ -1377,6 +1377,9 @@ class SyncJob extends EventTarget {
             reportErrorOnce(new Error(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`));
             return [];
         }
+        // Desc seems to be wrapped in a <p> but I'm not sure if this is 100% of the time and doing
+        // other html sanitizing is inconsistent with how other html chars are escaped (or not escaped).
+        const unwrapDesc = x => x && x.replace(/^\s*?<p>/, '').replace(/<\/p>\s*?$/, '');
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
         const feedPropsMatch = raw.match(/data-react-class=\\"FeedRouter\\" data-react-props=\\"(.+?)\\"/);
@@ -1392,7 +1395,7 @@ class SyncJob extends EventTarget {
                             ts: x.cursorData.updated_at * 1000,
                             type: a.type,
                             name: a.activityName,
-                            description: a.description,
+                            description: unwrapDesc(a.description),
                             virtual: a.isVirtual,
                             trainer: a.isVirtual ? true : undefined,
                             commute: a.isCommute,
@@ -1409,7 +1412,7 @@ class SyncJob extends EventTarget {
                                 ts: (new Date(a.start_date)).getTime(),
                                 type: a.type,
                                 name: a.name,
-                                description: a.description,
+                                description: unwrapDesc(a.description),
                                 virtual: a.is_virtual,
                                 trainer: a.is_virtual ? true : undefined,
                                 commute: a.is_commute,

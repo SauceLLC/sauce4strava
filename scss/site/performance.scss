@@ -1448,6 +1448,7 @@ table.activity-table {
             font-size: 0.7em;
             margin: 0.3em 0;
             display: block;
+            word-break: break-word;
 
             &::first-line {
                 font-size: 1.4em;
@@ -1456,6 +1457,7 @@ table.activity-table {
 
         .activity-desc {
             white-space: pre-line;
+            word-break: break-word;
             font-size: 0.8em;
             margin: 0;
             padding: 0;
