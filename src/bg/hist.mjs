@@ -993,7 +993,7 @@ sauce.proxy.export(activityTypeCounts, {namespace});
 
 
 async function retryFetch(urn, options={}) {
-    const maxRetries = 5;
+    const maxErrors = 3;
     const headers = options.headers || {};
     headers["x-requested-with"] = "XMLHttpRequest";  // Required for most Strava endpoints
     const url = `https://www.strava.com${urn}`;
@@ -1009,30 +1009,37 @@ async function retryFetch(urn, options={}) {
         if (resp && resp.ok) {
             return resp;
         }
-        if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxRetries) {
-            console.info(`Server error for: ${urn} - Retry: ${r}/${maxRetries}`);
+        if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxErrors) {
+            console.info(`Server error for: ${urn} - Retry: ${r}/${maxErrors}`);
             // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
             // perform a cool down before relinquishing control. Ie. do one last sleep.
             // See: http://dev.chromium.org/throttling
-            await sleep(1000 * 2 ** r);
-            if (r < maxRetries) {
+            const sleeping = sleep(5000 * 2 ** r);
+            if (options.cancelEvent) {
+                await Promise.race([sleeping, options.cancelEvent.wait()]);
+                if (options.cancelEvent.isSet()) {
+                    throw new Error('cancelled');
+                }
+            } else {
+                await sleeping;
+            }
+            if (r < maxErrors) {
                 continue;
             }
         }
         if (fetchError) {
             throw fetchError;
         } else if (resp.status === 429) {
-            const delay = 60000 * r;
+            const delay = 30000 * 2 ** r;
             console.warn(`Hit Throttle Limits: Delaying next request for ${Math.round(delay / 1000)}s`);
             if (options.cancelEvent) {
                 await Promise.race([sleep(delay), options.cancelEvent.wait()]);
                 if (options.cancelEvent.isSet()) {
-                    return;
+                    throw new Error('cancelled');
                 }
             } else {
                 await sleep(delay);
             }
-            console.info("Resuming after throttle period");
             continue;
         } else {
             throw FetchError.fromResp(resp);
@@ -1235,13 +1242,17 @@ class SyncJob extends EventTarget {
         ];
         const knownIds = new Set(forceUpdate ?  [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
         for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
+            if (this._cancelEvent.isSet()) {
+                break;
+            }
             const work = new jobs.UnorderedWorkQueue({maxPending: 25});
             for (let i = 0; page === 1 || page <= pageCount && i < concurrency; page++, i++) {
                 await work.put((async () => {
                     const q = new URLSearchParams();
                     q.set('new_activity_only', 'false');
                     q.set('page', page);
-                    const resp = await this.retryFetch(`/athlete/training_activities?${q}`);
+                    const resp = await this.retryFetch(`/athlete/training_activities?${q}`,
+                        {cancelEvent: this._cancelEvent});
                     try {
                         return await resp.json();
                     } catch(e) {
@@ -1368,7 +1379,8 @@ class SyncJob extends EventTarget {
         q.set('interval', '' + year +  month.toString().padStart(2, '0'));
         let data;
         try {
-            const resp = await this.retryFetch(`/athletes/${this.athlete.pk}/interval?${q}`);
+            const resp = await this.retryFetch(`/athletes/${this.athlete.pk}/interval?${q}`,
+                {cancelEvent: this._cancelEvent});
             data = await resp.text();
         } catch(e) {
             // In some cases Strava just returns 500 for a month.  I suspect it's when the only
@@ -1471,23 +1483,28 @@ class SyncJob extends EventTarget {
     }
 
     async _batchImport(startDate, knownIds, forceUpdate) {
-        const minEmpty = 12;
+        const minEmpty = knownIds.size ? 2 : 16;
         const minRedundant = 2;
+        const maxConcurrent = 10;
         const iter = this._yearMonthRange(startDate);
-        for (let concurrency = 1;; concurrency = Math.min(25, concurrency * 2)) {
-            const work = new jobs.UnorderedWorkQueue({maxPending: 25});
+        let empty = 0;
+        let redundant = 0;
+        for (let concurrency = 1;; concurrency = Math.min(maxConcurrent, concurrency * 2)) {
+            if (this._cancelEvent.isSet()) {
+                break;
+            }
+            const work = new jobs.UnorderedWorkQueue({maxPending: maxConcurrent});
             for (let i = 0; i < concurrency; i++) {
                 const [year, month] = iter.next().value;
                 await work.put(this.fetchMonth(year, month));
             }
-            let empty = 0;
-            let redundant = 0;
             const adding = [];
             for await (const data of work) {
                 if (!data.length) {
                     empty++;
                     continue;
                 }
+                empty = 0;
                 let foundNew;
                 for (const x of data) {
                     if (!knownIds.has(x.id)) {
@@ -1498,6 +1515,8 @@ class SyncJob extends EventTarget {
                 }
                 if (!foundNew) {
                     redundant++;
+                } else {
+                    redundant = 0;
                 }
             }
             if (adding.length) {
@@ -1508,12 +1527,12 @@ class SyncJob extends EventTarget {
                     console.info(`Adding ${adding.length} new activities`);
                     await actsStore.putMany(adding);
                 }
-            } else if (empty >= minEmpty && empty >= Math.floor(concurrency)) {
+            } else if (empty >= minEmpty) {
                 const [year, month] = iter.next().value;
                 const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
                 await this.athlete.save({activitySentinel: date.getTime()});
                 break;
-            } else if (redundant >= minRedundant  && redundant >= Math.floor(concurrency)) {
+            } else if (redundant >= minRedundant) {
                 // Entire work set was redundant.  Don't refetch any more.
                 break;
             }
