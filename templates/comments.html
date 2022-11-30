@@ -2,8 +2,7 @@
     <div class="sauce-comments-feed"></div>
     <div class="sauce-label">{{{comment_label}}}</div>
     <form>
-        <div class="sauce-new-comment mentionable-comment-field media-content"
-             data-react-class="MentionableComment"
-             data-react-props='{{JSON.stringify(mentionProps)}}'></div>
+        <input type="text" autocomplete="off" name="comment" placeholder="{{{comment_placeholder}}}"/>
+        <input type="submit" name="post" value="{{{comment}}}"/>
     </form>
 </div>

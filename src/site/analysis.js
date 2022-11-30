@@ -1687,19 +1687,10 @@ sauce.ns('analysis', ns => {
 
 
     async function attachComments() {
-        const actId = pageView.activity().id;
         const commentsTpl = await getTemplate('comments.html');
         const feedTpl = await getTemplate('comments-feed.html');
-        const mentionProps = {
-            entity: 'Activity',
-            entityId: actId,
-            buttonClasses: 'btn btn-default btn-sm',
-            suggestionLimit: 5,
-            placeHolder: await LM('comment_placeholder'),
-            buttonText: await LM('comment'),
-        };
         const newCommentsHack = [];
-        const $comments = jQuery(await commentsTpl({mentionProps}));
+        const $comments = jQuery(await commentsTpl());
         async function render() {
             let comments;
             const reactNode = document.querySelector('[data-react-class="ADPKudosAndComments"]');
@@ -1744,8 +1735,16 @@ sauce.ns('analysis', ns => {
         });
         jQuery('.activity-summary').append($comments);
         // Inject the react based mentionable-comment component...
-        document.dispatchEvent(new CustomEvent("JSCreatedReactNode",
-            {detail: {node: $comments.find('.sauce-new-comment')}}));
+        $comments.on('submit', 'form', async ev => {
+            ev.preventDefault();
+            const $input = $comments.find('form input[name="comment"]');
+            const comment = $input.val();
+            if (!comment) {
+                return;
+            }
+            pageView.commentsController().comment('Activity', pageView.activity().id, comment);
+            $input.val('');
+        });
         await render();
     }
 

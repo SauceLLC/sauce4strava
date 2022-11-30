@@ -5,12 +5,14 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     'use strict';
 
     self.sauce = self.sauce || {};
+    sauce.reactComponents = {};
 
     const cacheRefreshThreshold = 120 * 1000;
     const maybeRequestIdleCallback = self.requestIdleCallback || (fn => fn());  // Safari
     const booted = document.documentElement.classList.contains('sauce-booted') ?
         Promise.resolve() :
         new Promise(resolve => document.addEventListener('sauceBooted', resolve, {once: true}));
+
 
     sauce.propDefined('pageView', view => {
         const assembleSave = view.assemble;
@@ -833,4 +835,8 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         document.documentElement.dispatchEvent(new Event('sauceCurrentUserUpdate'));
         document.documentElement.classList.toggle('sauce-non-premium-user', !athlete.isPremium());
     }, {once: true});
+
+
+    sauce.propDefined('StravaSentry', x => x.enabled = false, {once: true});
+    window.__SENTRY_TRACING__ = false;
 };
