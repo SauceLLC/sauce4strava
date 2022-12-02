@@ -109,7 +109,7 @@ export const overUnderFillPlugin = {
         const refCanvas = document.createElement('canvas');
         refCanvas.width = size;
         refCanvas.height = 2;
-        const refContext = refCanvas.getContext('2d');
+        const refContext = refCanvas.getContext('2d', {willReadFrequently: true});
         const refGradient = refContext.createLinearGradient(0, 0, size, 0);
         refGradient.addColorStop(0, startColor);
         refGradient.addColorStop(1, endColor);
