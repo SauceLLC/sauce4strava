@@ -1394,7 +1394,7 @@ class SyncJob extends EventTarget {
         const unwrapDesc = x => x && x.replace(/^\s*?<p>/, '').replace(/<\/p>\s*?$/, '');
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
-        const feedPropsMatch = raw.match(/data-react-class=\\"FeedRouter\\" data-react-props=\\"(.+?)\\"/);
+        const feedPropsMatch = raw.match(/data-react-class=\\['"]FeedRouter\\['"] data-react-props=\\['"](.+?)\\['"]/);
         if (feedPropsMatch) {
             // Updated react feed puts all props in FeedRouter.
             try {
