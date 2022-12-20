@@ -56,6 +56,9 @@ async function init() {
 
 
 async function load({athletes, router, pageLoad}) {
+    for (const x of document.querySelectorAll('body > [data-react-class], body > link')) {
+        x.remove();
+    }
     const $page = jQuery(document.getElementById('error404'));
     $page.empty();
     $page.removeClass();  // removes all

@@ -1,3 +1,4 @@
-#error404 {
+#error404,
+body > [data-react-class] {
     display: none !important;
 }
