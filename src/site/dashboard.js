@@ -74,6 +74,10 @@ sauce.ns('dashboard', function(ns) {
             getCardProps(card).entity === 'Challenge');
     }
 
+    function hideWinter(feedEl) {
+        return hideCards(feedEl, 'winter-activity', isPeerWinter);
+    }
+
 
     function hidePromotions(feedEl) {
         return hideCards(feedEl, 'promo-card', card => {
@@ -134,6 +138,21 @@ sauce.ns('dashboard', function(ns) {
         return false;
     }
 
+    function isPeerWinter(card) {
+        const props = getCardProps(card);
+        if (!isSelfActivity(props)) {
+            if (props.entity === 'Activity') {
+                if (props.activity.type === "AlpineSki" || props.activity.type === "NordicSki") {
+                    return true;
+                }
+            } else if (props.entity === 'GroupActivity') {
+                if (props.rowData.activities.every(x => (x.type === "AlpineSki" || x.type === "NordicSki"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     function filterFeed(feedEl) {
         try {
@@ -157,6 +176,9 @@ sauce.ns('dashboard', function(ns) {
         }
         if (sauce.options['activity-hide-challenges']) {
             resetFeedLoader |= hideChallenges(feedEl);
+        }
+        if (sauce.options['activity-hide-winter']) {
+            resetFeedLoader |= hideWinter(feedEl);
         }
         if (resetFeedLoader) {
             // To prevent breaking infinite scroll we need to reset the feed loader state.
