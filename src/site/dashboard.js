@@ -140,13 +140,14 @@ sauce.ns('dashboard', function(ns) {
 
     function isPeerWinter(card) {
         const props = getCardProps(card);
+        const winterTags = new Set(['AlpineSki', 'NordicSki', 'Snowboard']);
         if (!isSelfActivity(props)) {
             if (props.entity === 'Activity') {
-                if (props.activity.type === "AlpineSki" || props.activity.type === "NordicSki") {
+                if (winterTags.has(props.activity.type)) {
                     return true;
                 }
             } else if (props.entity === 'GroupActivity') {
-                if (props.rowData.activities.every(x => (x.type === "AlpineSki" || x.type === "NordicSki"))) {
+                if (props.rowData.activities.every(x => winterTags.has(x.type))) {
                     return true;
                 }
             }
