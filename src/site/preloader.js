@@ -684,7 +684,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     d.resolve(data);
                 }).catch(e => {
                     if (!e.fallback) {
-                        console.error(`Sauce inteceptCallback failed (falling back to ajax):`, e);
+                        console.error(`Sauce interceptCallback failed (falling back to ajax):`, e);
                     }
                     const xhr = BackboneAjaxSave.apply(this, arguments);
                     xhr.done(d.resolve).fail(d.reject);
