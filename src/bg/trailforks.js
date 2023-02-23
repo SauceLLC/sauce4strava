@@ -506,6 +506,11 @@ sauce.ns('trailforks', ns => {
     }
 
 
+    /*
+     * Trailforks switch to "being attacked mode" following a breach.
+     * Check if this works in a future release as it's nicer to them actually.
+     */
+    /*
     async function fetchTrailsUnofficial(bbox) {
         const bboxKey = `bbox-${JSON.stringify(bbox)}`;
         let data = await tfCache.get(bboxKey);
@@ -535,6 +540,7 @@ sauce.ns('trailforks', ns => {
             });
         });
     }
+    */
 
 
     function tfApiKey() {
@@ -543,7 +549,6 @@ sauce.ns('trailforks', ns => {
     }
 
 
-    /*
     async function fetchTrails(bbox) {
         //const tfHost = 'https://www.trailforks.com';
         const tfHost = 'https://d35dnzkynq0s8c.cloudfront.net';
@@ -571,7 +576,6 @@ sauce.ns('trailforks', ns => {
         }
         return trails;
     }
-    */
 
 
     async function intersections(latlngStream, distStream) {
@@ -586,8 +590,8 @@ sauce.ns('trailforks', ns => {
             return cacheHit;
         }
         const bbox = sauce.geo.boundingBox(latlngStream, {pad: 50});
-        //const trails = await fetchTrails(bbox);
-        const trails = await fetchTrailsUnofficial(bbox);
+        const trails = await fetchTrails(bbox);
+        //const trails = await fetchTrailsUnofficial(bbox);
         const intersections = [];
         for (const trail of trails) {
             const path = decodePolyline(trail.track.encodedPath);
