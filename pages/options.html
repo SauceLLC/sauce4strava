@@ -157,22 +157,117 @@
             </div>
 
             <div class="actions">
-                <h4>Activity Feed Options:</h4>
-                <div class="option" title="Hide other people's Zwift rides and runs from your activity feed.  Note, your virtual activities will still be shown.">
-                    <label><input type="checkbox" name="activity-hide-virtual"/>Hide virtual activities <small>(<i>e.g. Zwift</i>)</small></label>
-                </div>
-
-                <div class="option" title="Hide other people's commutes from your activity feed.  Note, your commutes will still be shown.">
-                    <label><input type="checkbox" name="activity-hide-commutes"/>Hide commutes</label>
-                </div>
-
-                <div class="option" title="Do not show challenge announcements.">
-                    <label><input type="checkbox" name="activity-hide-challenges"/>Hide challenges</label>
-                </div>
-
-                <div class="option" title="Do not show promotional content.">
-                    <label><input type="checkbox" name="activity-hide-promotions"/>Hide promotions</label>
-                </div>
+                <h4>Activity Feed Filters:</h4>
+                <table class="activity-filters">
+                    <thead><tr>
+                        <th class="type">Type</th>
+                        <th class="criteria">Criteria</th>
+                        <th class="action">Action</th>
+                        <th class="op"></th>
+                    </tr></thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr class="add-entry-title">
+                            <td>Add new filter for:</td>
+                            <td>matching:</td>
+                            <td>that will:</td>
+                            <td></td>
+                        </tr>
+                        <tr class="add-entry-row">
+                            <td>
+                                <a title="Click to edit" class="select-toggle"><i>&lt;type&gt;</i></a>
+                                <select data-filter-property="type" class="custom">
+                                    <option value="*">All</option>
+                                    <optgroup label="Virtual">
+                                        <option value="virtual">All Virtual</option>
+                                        <option value="zwift">Zwift</option>
+                                        <option value="peleton">Peleton</option>
+                                    </optgroup>
+                                    <optgroup label="Category">
+                                        <option value="commute">Commute</option>
+                                        <option value="challenge">Challenge</option>
+                                        <option value="club">Club</option>
+                                        <option value="promotion">Promotion</option>
+                                    </optgroup>
+                                    <optgroup label="Sport">
+                                        <option value="Ride">Ride</option>
+                                        <option value="Swim">Swim</option>
+                                        <option value="Walk">Walk</option>
+                                        <option value="Hike">Hike</option>
+                                        <option value="TrailRun">Trail Run</option>
+                                        <option value="MountainBikeRide">Mountain Bike Ride</option>
+                                        <option value="GravelRide">Gravel Ride</option>
+                                        <option value="EBikeRide">E-Bike Ride</option>
+                                        <option value="EMountainBikeRide">E-Mountain Bike Ride</option>
+                                        <option value="AlpineSki">Alpine Ski</option>
+                                        <option value="Badminton">Badminton</option>
+                                        <option value="BackcountrySki">Backcountry Ski</option>
+                                        <option value="Canoeing">Canoe</option>
+                                        <option value="Crossfit">Crossfit</option>
+                                        <option value="Elliptical">Elliptical</option>
+                                        <option value="Golf">Golf</option>
+                                        <option value="IceSkate">Ice Skate</option>
+                                        <option value="InlineSkate">Inline Skate</option>
+                                        <option value="Handcycle">Handcycle</option>
+                                        <option value="HighIntensityIntervalTraining">HIIT</option>
+                                        <option value="Kayaking">Kayaking</option>
+                                        <option value="Kitesurf">Kitesurf</option>
+                                        <option value="NordicSki">Nordic Ski</option>
+                                        <option value="Pickleball">Pickleball</option>
+                                        <option value="Pilates">Pilates</option>
+                                        <option value="Racquetball">Racquetball</option>
+                                        <option value="RockClimbing">Rock Climb</option>
+                                        <option value="RollerSki">Roller Ski</option>
+                                        <option value="Rowing">Rowing</option>
+                                        <option value="Sail">Sail</option>
+                                        <option value="Skateboard">Skateboard</option>
+                                        <option value="Snowboard">Snowboard</option>
+                                        <option value="Snowshoe">Snowshoe</option>
+                                        <option value="Soccer">Football (Soccer)</option>
+                                        <option value="Squash">Squash</option>
+                                        <option value="StandUpPaddling">Stand Up Paddling</option>
+                                        <option value="StairStepper">Stair-Stepper</option>
+                                        <option value="Surfing">Surfing</option>
+                                        <option value="TableTennis">Table Tennis</option>
+                                        <option value="Tennis">Tennis</option>
+                                        <option value="Velomobile">Velomobile</option>
+                                        <option value="WeightTraining">Weight Training</option>
+                                        <option value="Windsurf">Windsurf</option>
+                                        <option value="Wheelchair">Wheelchair</option>
+                                        <option value="Workout">Workout</option>
+                                        <option value="Yoga">Yoga</option></select>
+                                    </optgroup>
+                                </select>
+                            </td><td>
+                                <a title="Click to edit" class="select-toggle"><i>&lt;criteria&gt;</i></a>
+                                <select data-filter-property="criteria" class="custom">
+                                    <option value="*">Any</option>
+                                    <optgroup label="Time">
+                                        <option value="time-600">&lt; 10 minutes</option>
+                                        <option value="time-1800">&lt; 30 minutes</option>
+                                        <option value="time-3600">&lt; 60 minutes</option>
+                                    </optgroup>
+                                    <optgroup label="Distance">
+                                        <option value="dist-1000">&lt; 1 km</option>
+                                        <option value="dist-5000">&lt; 5 km</option>
+                                        <option value="dist-10000">&lt; 10 km</option>
+                                        <option value="dist-40000">&lt; 40 km</option>
+                                    </optgroup>
+                                </select>
+                            </td><td>
+                                <a title="Click to edit" class="select-toggle"><i>&lt;do&gt;</i></a>
+                                <select data-filter-property="action" class="custom">
+                                    <option value="hide">Hide</option>
+                                    <option value="hide-images">Hide images</option>
+                                    <option value="hide-media" title="Hide maps, images, etc">Hide media</option>
+                                    <option value="highlight">Visual highlight</option>
+                                </select>
+                            </td><td>
+                                <button class="add-entry disabled">+</button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
 
             <div class="actions">

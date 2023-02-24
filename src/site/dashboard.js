@@ -2,7 +2,10 @@
 
 sauce.ns('dashboard', function(ns) {
 
-    const cardSelector = '[class*="Feed--entry-container--"]';
+    const cardSelectors = [
+        '[class*="Feed--entry-container--"]',  // old
+        '[class*="FeedEntry__entry-container--"]',  // new
+    ];
 
     async function feedEvent(action, category, count) {
         if (!count) {
@@ -41,7 +44,7 @@ sauce.ns('dashboard', function(ns) {
 
     function hideCards(feedEl, label, filterFn) {
         let count = 0;
-        const qs = `${cardSelector}:not(.hidden-by-sauce):not(.sauce-checked-${label})`;
+        const qs = cardSelectors.map(x => `${x}:not(.hidden-by-sauce):not(.sauce-checked-${label})`).join(', ');
         for (const x of feedEl.querySelectorAll(qs)) {
             x.classList.add(`sauce-checked-${label}`);
             try {
@@ -250,7 +253,8 @@ sauce.ns('dashboard', function(ns) {
             resetKudoButton();
         });
         $kudoAll.on('click', 'button.sauce-invoke', async ev => {
-            const cards = document.querySelectorAll(`${cardSelector}:not(.hidden-by-sauce)`);
+            const cards = document.querySelectorAll(cardSelectors.map(x =>
+                `${x}:not(.hidden-by-sauce)`).join(', '));
             const kudoButtons = [];
             const ignore = new Set(['FancyPromo', 'SimplePromo', 'Challenge', 'Club']);
             for (const card of cards) {

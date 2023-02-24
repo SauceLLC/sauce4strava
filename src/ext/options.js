@@ -9,6 +9,7 @@
         document.documentElement.classList.add('popup');
     }
 
+
     function resetSuboptions(input) {
         if (!input.closest('.suboption')) {
             for (const suboption of input.closest('.option').querySelectorAll('.suboption')) {
@@ -18,6 +19,7 @@
             }
         }
     }
+
 
     async function reportOptionSet(name, value) {
         let prettyValue;
@@ -33,9 +35,9 @@
         return await sauce.report.event('Options', `set-${name}`, prettyValue);
     }
 
+
     function manageOptions(options, patronLevel) {
-        options = options || {};
-        const checkboxes = document.querySelectorAll('.option input[type="checkbox"]');
+        const checkboxes = document.querySelectorAll('.option:not(.custom) input[type="checkbox"]');
         for (const input of checkboxes) {
             input.checked = !!options[input.name];
             if (input.dataset.restriction) {
@@ -55,7 +57,7 @@
             });
             resetSuboptions(input);
         }
-        const radios = document.querySelectorAll('.option input[type="radio"]');
+        const radios = document.querySelectorAll('.option:not(.custom) input[type="radio"]');
         for (const input of radios) {
             input.checked = options[input.name] === input.value;
             if (input.dataset.restriction) {
@@ -73,7 +75,7 @@
                 await reportOptionSet(input.name, input.value);
             });
         }
-        const selects = document.querySelectorAll('.option select');
+        const selects = document.querySelectorAll('.option:not(.custom) select');
         for (const select of selects) {
             if (select.dataset.restriction) {
                 select.disabled = patronLevel < Number(select.dataset.restriction);
@@ -102,7 +104,7 @@
             });
             resetSuboptions(select);
         }
-        const ranges = document.querySelectorAll('.option input[type="range"]');
+        const ranges = document.querySelectorAll('.option:not(.custom) input[type="range"]');
         for (const input of ranges) {
             input.value = options[input.name];
             if (input.dataset.restriction) {
@@ -124,10 +126,88 @@
         }
     }
 
+
+    function renderActivityFilters(table, options) {
+        const tbody = table.querySelector('tbody');
+        const filters = options['activity-filters'] = (options['activity-filters'] || []);
+        tbody.textContent = '';
+        if (!filters || !filters.length) {
+            sauce.adjacentNodeContents(tbody, 'afterbegin',
+                `<tr><td colspan="4"><i>No activity filters are configured</i></td></tr>`);
+        } else {
+            for (const [i, filter] of filters.entries()) {
+                const row = document.createElement('tr');
+                for (const key of ['type', 'criteria', 'action']) {
+                    const q = `[data-filter-property="${key}"] option[value="${filter[key]}"]`;
+                    const label = table.querySelector(q).textContent || `invalid(${filter[key]})`;
+                    const td = document.createElement('td');
+                    td.classList.add(key);
+                    td.textContent = label;
+                    row.append(td);
+                }
+                const delTd = document.createElement('td');
+                delTd.classList.add('op');
+                const btn = document.createElement('button');
+                btn.classList.add('button', 'delete');
+                btn.textContent = '🗙';
+                btn.title = 'Delete filter';
+                btn.addEventListener('click', ev => {
+                    ev.preventDefault();
+                    filters.splice(i, 1);
+                    sauce.storage.set('options', options); // bg okay
+                    renderActivityFilters(table, options);
+                });
+                delTd.append(btn);
+                row.append(delTd);
+                tbody.append(row);
+            }
+        }
+    }
+
+
+    function manageCustomOptions(options) {
+        const actFilters = document.querySelector('table.activity-filters');
+        const addBtn = actFilters.querySelector('button.add-entry');
+        const filters = options['activity-filters'] = (options['activity-filters'] || []);
+        addBtn.addEventListener('click', ev => {
+            const filter = {};
+            for (const x of actFilters.querySelectorAll('select')) {
+                filter[x.dataset.filterProperty] = x.value;
+            }
+            filters.push(filter);
+            sauce.storage.set('options', options); // bg okay
+            renderActivityFilters(actFilters, options);
+        });
+        const untouched = new Set();
+        for (const anchor of actFilters.querySelectorAll('a.select-toggle')) {
+            untouched.add(anchor);
+            anchor.addEventListener('click', ev => {
+                ev.preventDefault();
+                anchor.closest('td').classList.add('editing');
+                untouched.delete(anchor);
+                if (!untouched.size) {
+                    addBtn.classList.remove('disabled');
+                }
+            });
+        }
+        for (const select of actFilters.querySelectorAll('select')) {
+            const handle = ev => {
+                const td = select.closest('td');
+                td.classList.remove('editing');
+                td.querySelector('a.select-toggle').textContent = select.options[select.selectedIndex].text;
+            };
+            select.addEventListener('change', handle);
+            select.addEventListener('blur', handle);
+        }
+        renderActivityFilters(actFilters, options);
+    }
+
+ 
     async function getBuildInfo() {
         const resp = await fetch('/build.json');
         return await resp.json();
     }
+
 
     async function main() {
         const supporters = await supP;
@@ -196,15 +276,19 @@
             tr.appendChild(tdVal);
             detailsEl.appendChild(tr);
         }
+        config.options = config.options || {};
         manageOptions(config.options, config.patronLevel);
+        manageCustomOptions(config.options);
         handleCustomActions();
     }
+
 
     async function optionsChange(key, value) {
         for (const t of await browser.tabs.query({active: true})) {
             browser.tabs.sendMessage(t.id, {op: "options-change", key, value});
         }
     }
+
 
     function handleCustomActions() {
         if (!isPopup) {

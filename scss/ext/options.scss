@@ -74,6 +74,7 @@ html {
             padding: 1.2em;
             border-radius: 0.22em;
             box-shadow: 1px 1px 8px #fff5;
+            min-width: 462px;
         }
     }
 }
@@ -251,4 +252,159 @@ td .error {
 .actions h4 {
     color: #333;
     margin: 0.6em 0;
+}
+
+table.activity-filters {
+    font-size: 0.82em;
+    border-radius: 0.28em;
+    background-color: #6f542233;
+    table-layout: fixed;
+    max-width: 100%;
+    overflow: hidden;
+
+    thead {
+        font-size: 1.2em;
+        background-color: #ee410e33;
+        border-bottom: 1px solid #0008;
+        font-variant: all-small-caps;
+
+        th.type {
+            width: 30%;
+        }
+        th.op {
+            width: 2em;
+        }
+    }
+
+    tbody {
+        tr {
+            border-bottom: 1px solid #0003;
+
+            td {
+                padding-top: 0.2em;
+                padding-bottom: 0.2em;
+            }
+
+            &:hover td {
+                background-color: #fff1;
+            }
+        }
+
+        tr:nth-child(even) {
+            background-color: #4441;
+        }
+    }
+
+    button {
+        margin: 0;
+        padding: 0 0.4em;
+
+        &.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        &.delete {
+            font-size: 0.8em;
+            color: #a00;
+        }
+    }
+
+    tfoot {
+        background-color: #fff6;
+        border-top: 1px solid #0008;
+        transition: background-color 200ms;
+
+        &:hover {
+            background-color: #fff3;
+        }
+
+        .add-entry-title td {
+            font-variant: all-small-caps;
+            padding-bottom: 0;
+            opacity: 0.88;
+            padding-right: 0.5em;
+        }
+
+        .add-entry-row {
+            td {
+                max-width: 10em;
+                position: relative;
+                padding-bottom: 0.5em;
+
+                &:not(.editing) {
+                    select {
+                        display: none;
+                    }
+                }
+
+                &.editing {
+                    a.select-toggle {
+                        display: none;
+                    }
+                }
+
+                a.select-toggle {
+                    color: inherit;
+                    text-decoration: underline;
+                    text-decoration-style: dotted;
+                    text-decoration-color: #0008;
+                    text-underline-position: under;
+                    cursor: pointer;
+                    opacity: 0.8;
+                    transition: text-decoration-color 200ms, opacity 200ms;
+
+                    &:hover {
+                        opacity: 1;
+                        text-decoration-color: #000;
+                    }
+
+                    &::after {
+                        white-space: nowrap;
+                        content: ' 🖉';
+                        font-size: 0.8em;
+                    }
+                }
+
+                select {
+                    max-width: 100%;
+                    white-space: normal;
+                    -webkit-appearance: none;
+                    appearance: none;
+                    border-radius: 0.25em;
+                    padding: 0.3em 1.2em 0.3em 0.5em;
+                    background-image: url(../../images/fa/chevron-down-duotone.svg);
+                    background-position: right 0.6em center;
+                    background-repeat: no-repeat;
+                    background-size: auto 0.8em;
+                    background-color: #eee;
+                    border: 1px solid #0003;
+                    outline: none;
+                    transition-property: border-color, filter;
+                    transition-duration: 150ms;
+                    cursor: pointer;
+
+                    &:hover {
+                        border-color: #0005;
+                        filter: brightness(1.1);
+                    }
+                }
+            }
+        }
+    }
+
+    td, th {
+        padding: 0.4em 0.2em;
+        text-align: left;
+
+        &:first-child {
+            padding-left: 0.5em;
+        }
+        &:last-child:not(:first-child) {
+            text-align: center;
+        }
+        &:last-child {
+            padding-right: 0.5em;
+        }
+    }
 }
