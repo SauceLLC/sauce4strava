@@ -12,9 +12,11 @@
 	}
 })(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : this, (function(module) {
 	"use strict";
-	if (typeof browser === "undefined" || Object.getPrototypeOf(browser) !== Object.prototype) {
+	if (!globalThis.chrome?.runtime?.id) {
+		throw new Error("This script should only be loaded in a browser extension.");
+	}
+	if (typeof globalThis.browser === "undefined" || Object.getPrototypeOf(globalThis.browser) !== Object.prototype) {
 		const CHROME_SEND_MESSAGE_CALLBACK_NO_RESPONSE_MESSAGE = "The message port closed before a response was received.";
-		const SEND_RESPONSE_DEPRECATION_WARNING = "Returning a Promise is the preferred way to send a reply from an onMessage/onMessageExternal listener, as the sendResponse will be removed from the specs (See https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage)";
 		const wrapAPIs = extensionAPIs => {
 			const apiMetadata = {
 				alarms: {
@@ -725,8 +727,8 @@
 					if (metadata.fallbackToNoCallback) {
 						try {
 							target[name](...args, makeCallback({
-								resolve: resolve,
-								reject: reject
+								resolve,
+								reject
 							}, metadata));
 						} catch (cbError) {
 							console.warn(`${name} API method doesn't seem to support the callback parameter, ` + "falling back to call it without a callback: ", cbError);
@@ -740,8 +742,8 @@
 						resolve();
 					} else {
 						target[name](...args, makeCallback({
-							resolve: resolve,
-							reject: reject
+							resolve,
+							reject
 						}, metadata));
 					}
 				}));
@@ -838,7 +840,6 @@
 					listener(wrappedReq);
 				};
 			}));
-			let loggedSendResponseDeprecationWarning = false;
 			const onMessageWrappers = new DefaultWeakMap((listener => {
 				if (typeof listener !== "function") {
 					return listener;
@@ -848,10 +849,6 @@
 					let wrappedSendResponse;
 					let sendResponsePromise = new Promise((resolve => {
 						wrappedSendResponse = function(response) {
-							if (!loggedSendResponseDeprecationWarning) {
-								console.warn(SEND_RESPONSE_DEPRECATION_WARNING, (new Error).stack);
-								loggedSendResponseDeprecationWarning = true;
-							}
 							didCallSendResponse = true;
 							resolve(response);
 						};
@@ -878,7 +875,7 @@
 							}
 							sendResponse({
 								__mozWebExtensionPolyfillReject__: true,
-								message: message
+								message
 							});
 						})).catch((err => {
 							console.error("Failed to send onMessage rejected reply", err);
@@ -892,7 +889,7 @@
 					return true;
 				};
 			}));
-			const wrappedSendMessageCallback = ({reject: reject, resolve: resolve}, reply) => {
+			const wrappedSendMessageCallback = ({reject, resolve}, reply) => {
 				if (extensionAPIs.runtime.lastError) {
 					if (extensionAPIs.runtime.lastError.message === CHROME_SEND_MESSAGE_CALLBACK_NO_RESPONSE_MESSAGE) {
 						resolve();
@@ -914,8 +911,8 @@
 				}
 				return new Promise(((resolve, reject) => {
 					const wrappedCb = wrappedSendMessageCallback.bind(null, {
-						resolve: resolve,
-						reject: reject
+						resolve,
+						reject
 					});
 					args.push(wrappedCb);
 					apiNamespaceObj.sendMessage(...args);
@@ -969,11 +966,8 @@
 			};
 			return wrapObject(extensionAPIs, staticWrappers, apiMetadata);
 		};
-		if (typeof chrome != "object" || !chrome || !chrome.runtime || !chrome.runtime.id) {
-			throw new Error("This script should only be loaded in a browser extension.");
-		}
 		module.exports = wrapAPIs(chrome);
 	} else {
-		module.exports = browser;
+		module.exports = globalThis.browser;
 	}
 }));
