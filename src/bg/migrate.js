@@ -97,6 +97,29 @@ sauce.ns(namespace, ns => {
                 await sauce.storage.set({options});
             }
         }
+    }, {
+        version: 8,
+        name: 'advanced_feed_filters',
+        migrate: async config => {
+            const filters = (config.options['activity-filters'] = []);
+            if (config.options['activity-hide-promotions']) {
+                filters.push({type: 'cat-promotion', criteria: '*', action: 'hide'});
+            }
+            if (config.options['activity-hide-virtual']) {
+                filters.push({type: 'virtual-*', criteria: '*', action: 'hide'});
+            }
+            if (config.options['activity-hide-commutes']) {
+                filters.push({type: 'cat-commute', criteria: '*', action: 'hide'});
+            }
+            if (config.options['activity-hide-challenges']) {
+                filters.push({type: 'cat-challenge', criteria: '*', action: 'hide'});
+            }
+            delete config.options['activity-hide-promotions'];
+            delete config.options['activity-hide-virtual'];
+            delete config.options['activity-hide-commutes'];
+            delete config.options['activity-hide-challenges'];
+            await sauce.storage.set({options: config.options});
+        }
     }];
 
 
