@@ -135,6 +135,10 @@
             align-items: baseline;
             font-size: 0.90em;
 
+            &:not(:last-child) {
+                padding-bottom: 0.33em;
+            }
+
             &.heading {
                 font-size: 0.95em;
 
