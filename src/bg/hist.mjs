@@ -1394,12 +1394,28 @@ class SyncJob extends EventTarget {
         const unwrapDesc = x => x && x.replace(/^\s*?<p>/, '').replace(/<\/p>\s*?$/, '');
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
-        const feedPropsMatch = raw.match(/data-react-class=\\['"]FeedRouter\\['"] data-react-props=\\['"](.+?)\\['"]/);
-        if (feedPropsMatch) {
-            // Updated react feed puts all props in FeedRouter.
+        const rawProps = raw.match(
+            /data-react-class=\\['"]Microfrontend\\['"] data-react-props=\\['"](.+?)\\['"]/);
+        let feedEntries;
+        try {
+            if (rawProps) {
+                const data = this.parseRawReactProps(rawProps[1]);
+                feedEntries = data.appContext.preFetchedEntries;
+            } else {
+                // Legacy as of 03-2023, remove in future release.
+                const legacyRawProps = raw.match(
+                    /data-react-class=\\['"]FeedRouter\\['"] data-react-props=\\['"](.+?)\\['"]/);
+                if (legacyRawProps) {
+                    const data = this.parseRawReactProps(legacyRawProps[1]);
+                    feedEntries = data.preFetchedEntries;
+                }
+            }
+        } catch(e) {
+            reportErrorOnce(e);
+        }
+        if (feedEntries) {
             try {
-                const data = this.parseRawReactProps(feedPropsMatch[1]);
-                for (const x of data.preFetchedEntries) {
+                for (const x of feedEntries) {
                     if (x.entity === 'Activity') {
                         const a = x.activity;
                         batch.push(this.activityToDatabase({
@@ -1438,46 +1454,7 @@ class SyncJob extends EventTarget {
                 reportErrorOnce(e);
             }
         } else {
-            // legacy system, remove in future release
-            const parseCard = cardHTML => {
-                // This is just terrible, but we can't use eval..  Strava does some very particular
-                // escaping that mostly has no effect but does break JSON.parse.  Sadly we MUST run
-                // JSON.parse to disambiguate the JSON payload and to unescape unicode sequences.
-                const isActivity = !!cardHTML.match(/data-react-class=\\"Activity\\"/);
-                const isGroupActivity = !!cardHTML.match(/data-react-class=\\"GroupActivity\\"/);
-                if (!isActivity && !isGroupActivity) {
-                    return;
-                }
-                const props = cardHTML.match(/data-react-props=\\"(.+?)\\"/)[1];
-                const data = this.parseRawReactProps(props);
-                if (isGroupActivity) {
-                    for (const x of data.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
-                        batch.push(this.activityToDatabase({
-                            id: x.activity_id,
-                            ts: (new Date(x.start_date)).getTime(),
-                            type: x.type,
-                            name: x.name
-                        }));
-                    }
-                } else {
-                    const a = data.activity;
-                    const id = Number(a.id);
-                    batch.push(this.activityToDatabase({
-                        id,
-                        ts: data.cursorData.updated_at * 1000,
-                        type: a.type,
-                        name: a.activityName
-                    }));
-                }
-            };
-            for (const m of raw.matchAll(/<div class=\\'react-card-container\\'>(.+?)<\\\/div>/g)) {
-                try {
-                    parseCard(m[1]);
-                } catch(e) {
-                    reportErrorOnce(e);
-                    continue;
-                }
-            }
+            console.warn("No feed entries were found, upstream change?");
         }
         return batch.filter(x => x);
     }
