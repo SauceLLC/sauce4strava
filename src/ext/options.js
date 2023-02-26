@@ -139,7 +139,8 @@
                 const row = document.createElement('tr');
                 for (const key of ['type', 'criteria', 'action']) {
                     const q = `[data-filter-property="${key}"] option[value="${filter[key]}"]`;
-                    const label = table.querySelector(q).textContent || `invalid(${filter[key]})`;
+                    const option = table.querySelector(q);
+                    const label = option ? option.textContent : `invalid(${filter[key]})`;
                     const td = document.createElement('td');
                     td.classList.add(key);
                     td.textContent = label;
@@ -178,14 +179,19 @@
             sauce.storage.set('options', options); // bg okay
             renderActivityFilters(actFilters, options);
         });
-        const untouched = new Set();
+        const unset = new Set(['type', 'action']);
+        let editing;
         for (const anchor of actFilters.querySelectorAll('a.select-toggle')) {
-            untouched.add(anchor);
             anchor.addEventListener('click', ev => {
                 ev.preventDefault();
-                anchor.closest('td').classList.add('editing');
-                untouched.delete(anchor);
-                if (!untouched.size) {
+                const td = anchor.closest('td');
+                td.classList.add('editing');
+                if (editing) {
+                    editing.classList.remove('editing');
+                }
+                editing = td;
+                unset.delete(td.querySelector('select').dataset.filterProperty);
+                if (!unset.size) {
                     addBtn.classList.remove('disabled');
                 }
             });
@@ -194,6 +200,9 @@
             const handle = ev => {
                 const td = select.closest('td');
                 td.classList.remove('editing');
+                if (editing === td) {
+                    editing = null;
+                }
                 td.querySelector('a.select-toggle').textContent = select.options[select.selectedIndex].text;
             };
             select.addEventListener('change', handle);

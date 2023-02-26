@@ -70,6 +70,38 @@
         display: none !important;
     }
 
+    .feed-container {
+        .hide-images-by-sauce {
+            [data-testid="photo"],
+            [data-testid="video"] {
+                display: none !important;
+            }
+
+            [data-testid="entry-images"] {
+                grid-template-columns: 1fr;
+
+                &::before,
+                &::after {
+                    display: none !important;
+                }
+            }
+        }
+
+        .hide-media-by-sauce {
+            [data-testid="entry-images"] {
+                display: none !important;
+            }
+        }
+
+        .highlight-by-sauce {
+            [data-testid="web-feed-entry"] {
+                border: 8px solid #df2d44cc !important;
+                border-radius: 0.3em;
+                box-shadow: 1px 1px 5px 0 #0006;
+            }
+        }
+    }
+
     #smartbanner-orion {
         display: none !important;
     }
