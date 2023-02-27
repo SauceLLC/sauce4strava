@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BC490D7D27BD9A6B00798141 /* lib in Resources */ = {isa = PBXBuildFile; fileRef = BC490D7C27BD9A6B00798141 /* lib */; };
-		BC490D7E27BD9A6B00798141 /* lib in Resources */ = {isa = PBXBuildFile; fileRef = BC490D7C27BD9A6B00798141 /* lib */; };
 		BC920328270272C9001F0213 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC920327270272C9001F0213 /* AppDelegate.swift */; };
 		BC92032A270272C9001F0213 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC920329270272C9001F0213 /* SceneDelegate.swift */; };
 		BC92032D270272C9001F0213 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC92032B270272C9001F0213 /* LaunchScreen.storyboard */; };
@@ -92,7 +90,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		BC490D7C27BD9A6B00798141 /* lib */ = {isa = PBXFileReference; lastKnownFileType = folder; name = lib; path = ../../../lib; sourceTree = "<group>"; };
 		BC920318270272C8001F0213 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = ../Base.lproj/Main.html; sourceTree = "<group>"; };
 		BC920319270272C8001F0213 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 		BC92031A270272C8001F0213 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
@@ -255,7 +252,6 @@
 		BC920372270272C9001F0213 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				BC490D7C27BD9A6B00798141 /* lib */,
 				BC920376270272C9001F0213 /* css */,
 				BC920377270272C9001F0213 /* images */,
 				BC920384270272C9001F0213 /* manifest.json */,
@@ -421,7 +417,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC490D7D27BD9A6B00798141 /* lib in Resources */,
 				BC9203A9270272C9001F0213 /* images in Resources */,
 				BC9203BD270272C9001F0213 /* src in Resources */,
 				BC9203B8270272C9001F0213 /* _locales in Resources */,
@@ -437,7 +432,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC490D7E27BD9A6B00798141 /* lib in Resources */,
 				BC920390270272C9001F0213 /* images in Resources */,
 				BC9203A4270272C9001F0213 /* src in Resources */,
 				BC92039F270272C9001F0213 /* _locales in Resources */,
