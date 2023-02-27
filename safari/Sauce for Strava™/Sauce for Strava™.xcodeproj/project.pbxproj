@@ -13,8 +13,8 @@
 		BC920330270272C9001F0213 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC92032E270272C9001F0213 /* Main.storyboard */; };
 		BC920339270272C9001F0213 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC920338270272C9001F0213 /* AppDelegate.swift */; };
 		BC92033C270272C9001F0213 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC92033A270272C9001F0213 /* Main.storyboard */; };
-		BC920344270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BC920343270272C9001F0213 /* Sauce for Strava™ Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		BC92034E270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BC92034D270272C9001F0213 /* Sauce for Strava™ Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC920344270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC920343270272C9001F0213 /* Sauce for Strava™ Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC92034E270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC92034D270272C9001F0213 /* Sauce for Strava™ Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BC920354270272C9001F0213 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BC920317270272C8001F0213 /* Main.html */; };
 		BC920355270272C9001F0213 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BC920317270272C8001F0213 /* Main.html */; };
 		BC920356270272C9001F0213 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BC920319270272C8001F0213 /* Icon.png */; };
@@ -65,26 +65,26 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		BC920367270272C9001F0213 /* Embed App Extensions */ = {
+		BC920367270272C9001F0213 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				BC920344270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed App Extensions */,
+				BC920344270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BC92036E270272C9001F0213 /* Embed App Extensions */ = {
+		BC92036E270272C9001F0213 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				BC92034E270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed App Extensions */,
+				BC92034E270272C9001F0213 /* Sauce for Strava™ Extension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -275,7 +275,7 @@
 				BC920320270272C9001F0213 /* Sources */,
 				BC920321270272C9001F0213 /* Frameworks */,
 				BC920322270272C9001F0213 /* Resources */,
-				BC920367270272C9001F0213 /* Embed App Extensions */,
+				BC920367270272C9001F0213 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -294,7 +294,7 @@
 				BC920332270272C9001F0213 /* Sources */,
 				BC920333270272C9001F0213 /* Frameworks */,
 				BC920334270272C9001F0213 /* Resources */,
-				BC92036E270272C9001F0213 /* Embed App Extensions */,
+				BC92036E270272C9001F0213 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -348,7 +348,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1300;
-				LastUpgradeCheck = 1300;
+				LastUpgradeCheck = 1420;
 				TargetAttributes = {
 					BC920323270272C9001F0213 = {
 						CreatedOnToolsVersion = 13.0;
@@ -566,6 +566,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -625,6 +626,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -648,7 +650,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
@@ -660,7 +662,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 8.0.8;
+				MARKETING_VERSION = 8.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -681,7 +683,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
@@ -693,7 +695,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 8.0.8;
+				MARKETING_VERSION = 8.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -718,7 +720,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (App)/Info.plist";
@@ -733,7 +735,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 8.0.8;
+				MARKETING_VERSION = 8.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -758,7 +760,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "iOS (App)/Info.plist";
@@ -773,7 +775,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 8.0.8;
+				MARKETING_VERSION = 8.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -797,7 +799,8 @@
 				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -809,8 +812,8 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 8.0.8;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = 8.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -831,7 +834,8 @@
 				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -843,8 +847,8 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 8.0.8;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = 8.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -868,7 +872,8 @@
 				CODE_SIGN_ENTITLEMENTS = "macOS (App)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -881,8 +886,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 8.0.8;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = 8.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -907,7 +912,8 @@
 				CODE_SIGN_ENTITLEMENTS = "macOS (App)/sauce4strava.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 200;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7P47F44SKP;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -920,8 +926,8 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 8.0.8;
+				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MARKETING_VERSION = 8.2.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
