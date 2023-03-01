@@ -91,7 +91,7 @@ sauce.ns('patron', async ns => {
 
         async getMembership() {
             try {
-                return await sauce.getPatreonMembership({detailed: true});
+                return await sauce.patron.getPatreonMembership({detailed: true});
             } catch(e) {
                 this.setError(e);
             }

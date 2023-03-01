@@ -1,6 +1,9 @@
 /* global browser, sauce */
 
+import * as patron from '/src/bg/patron.mjs';
 import * as hist from '/src/bg/hist.mjs';
+
+patron.initProxyExports();
 
 sauce.ns('hist', () => Object.fromEntries(Object.entries(hist))); // For console debugging only.
 

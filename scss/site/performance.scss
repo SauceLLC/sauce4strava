@@ -493,10 +493,10 @@ table.activity-table {
                 radial-gradient(#000b, transparent);
 
             &:nth-child(1) {
-                background-image: $gradient, url('https://saucellc.io/images/perf-onboarding/tdf-yellow.jpg');
+                background-image: $gradient, url('https://www.sauce.llc/images/perf-onboarding/tdf-yellow.jpg');
             }
             &:nth-child(2) {
-                background-image: $gradient, url('https://saucellc.io/images/perf-onboarding/breakaway.jpg');
+                background-image: $gradient, url('https://www.sauce.llc/images/perf-onboarding/breakaway.jpg');
             }
             &:nth-child(n + 3) {
                 background-image: $gradient;
