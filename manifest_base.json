@@ -5,9 +5,9 @@
     "name": "Sauce for Strava™",
     "short_name": "Sauce",
     "description": "__MSG_app_desc__",
-    "homepage_url": "https://saucellc.io",
+    "homepage_url": "https://www.sauce.llc",
     "author": "Sauce, LLC",
-    "version": "8.2.0",
+    "version": "8.2.1",
 
     "permissions": [
         "storage",
