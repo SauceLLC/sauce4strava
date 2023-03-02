@@ -289,7 +289,8 @@
         const config = await sauce.storage.get(null);
         const options = config.options;
         self.currentUser = config.currentUser;
-        sauce.patron.updatePatronLevelNames().catch(sauce.report.error);  // bg okay
+        sauce.proxy.connected.then(() =>
+            sauce.patron.updatePatronLevelNames().catch(sauce.report.error));  // bg okay
         const patronVars = {};
         if ((config.patronLevelExpiration || 0) > Date.now()) {
             patronVars.patronLegacy = config.patronLegacy == null ?
@@ -297,7 +298,8 @@
             patronVars.patronLevel = config.patronLevel || 0;
         } else {
             [patronVars.patronLevel, patronVars.patronLegacy] =
-                await sauce.patron.updatePatronLevel(self.currentUser);
+                await sauce.proxy.connected.then(() =>
+                    sauce.patron.updatePatronLevel(self.currentUser));
         }
         patronVars.hideBonusFeatures = (patronVars.patronLevel || 0) < 10 && !!(options &&
             options['hide-upsells'] &&

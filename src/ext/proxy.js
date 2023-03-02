@@ -7,17 +7,20 @@ sauce.ns('proxy', ns => {
     const mainBGPort = browser.runtime.connect({name: `sauce-proxy-port`});
     const inflight = new Map();
 
+    ns.isConnected = false;
+
     mainBGPort.onMessage.addListener(msg => {
         const resolve = inflight.get(msg.pid);
         inflight.delete(msg.pid);
         resolve(msg);
     });
 
-    const bgInit = (new Promise(resolve => inflight.set(-1, resolve))).then(x => {
+    ns.connected = (new Promise(resolve => inflight.set(-1, resolve))).then(x => {
         for (const desc of x.exports) {
             ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
         }
         ns.bindExports(x.exports, buildProxyFunc);
+        ns.isConnected = true;
     });
     mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: -1});
 
@@ -101,7 +104,7 @@ sauce.ns('proxy', ns => {
         });
         ev.data.requestPort.addEventListener('messageerror', ev => console.error("Message Error:", ev));
         ev.data.requestPort.start();
-        await bgInit;
+        await ns.connected;
         while (sauce._pendingAsyncExports.length) {
             const pending = Array.from(sauce._pendingAsyncExports);
             sauce._pendingAsyncExports.length = 0;
