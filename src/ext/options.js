@@ -244,7 +244,7 @@
             ['Version', `${manifest.version_name || manifest.version} (${commit})`],
         ];
         const patronLink = document.createElement('a');
-        patronLink.href = "https://saucellc.io/patreon-oauth";
+        patronLink.href = "https://www.sauce.llc/patreon-oauth";
         patronLink.target = "_blank";
         if (config.patronLevel) {
             // There is going to be small window where names are not available
@@ -309,6 +309,7 @@
         size.addEventListener('input', ev => optionsChange('font-custom-size', size.value));
     }
 
-    const supP = fetch('https://saucellc.io/supporters-v2.json').then(x => x.json());
+    // XXX I don't think firefox will allow this.. move to bg page I think
+    const supP = fetch('https://www.sauce.llc/supporters-v2.json').then(x => x.json());
     document.addEventListener('DOMContentLoaded', main);
 })();

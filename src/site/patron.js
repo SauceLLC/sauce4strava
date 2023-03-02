@@ -49,7 +49,7 @@ sauce.ns('patron', async ns => {
         }
 
         async _api(res, options) {
-            const r = await sauce.fetch('https://api.saucellc.io' + res, options);
+            const r = await sauce.fetch('https://api.sauce.llc' + res, options);
             const body = await r.text();
             const data = body ? JSON.parse(body) : null;
             if (r.status === 404) {

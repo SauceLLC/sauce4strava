@@ -72,7 +72,7 @@ async function getPatreonMembership(options={}) {
     const auth = await sauce.storage.get('patreon-auth');
     if (auth) {
         const q = options.detailed ? 'detailed=1' : '';
-        const r = await fetch(`https://api.saucellc.io/patreon/membership?${q}`, {
+        const r = await fetch(`https://api.sauce.llc/patreon/membership?${q}`, {
             headers: {Authorization: `${auth.id} ${auth.secret}`}
         });
         if (!r.ok) {

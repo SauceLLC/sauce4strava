@@ -80,7 +80,7 @@ Feature Highlights
 
 Release Notes
 --------
-https://saucellc.io/release_notes
+https://www.sauce.llc/release_notes
 
 
 Disclaimer

@@ -3492,7 +3492,7 @@ sauce.ns('analysis', ns => {
         if (!recentUpdate) {
             return;
         }
-        const resp = await sauce.fetch('https://saucellc.io/release_notes.json');
+        const resp = await sauce.fetch('https://www.sauce.llc/release_notes.json');
         let releases = await resp.json();
         releases.reverse();
         const bigIntVersion = v => {

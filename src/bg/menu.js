@@ -8,7 +8,7 @@
         const pageActions = {
             supporters: {
                 title: browser.i18n.getMessage('menu_supporters'),
-                onClick: () => void browser.tabs.create({url: 'https://saucellc.io/supporters.html'})
+                onClick: () => void browser.tabs.create({url: 'https://www.sauce.llc/supporters.html'})
             }
         };
         const reviewUrl = {
