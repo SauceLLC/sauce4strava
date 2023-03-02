@@ -294,7 +294,7 @@
         if ((config.patronLevelExpiration || 0) > Date.now()) {
             patronVars.patronLegacy = config.patronLegacy == null ?
                 !!config.patronLevel : config.patronLegacy;
-            config.patronLevel = config.patronLevel || 0;
+            patronVars.patronLevel = config.patronLevel || 0;
         } else {
             [patronVars.patronLevel, patronVars.patronLegacy] =
                 await sauce.patron.updatePatronLevel(self.currentUser);
