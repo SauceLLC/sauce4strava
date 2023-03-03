@@ -16,14 +16,25 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
+    function _findActivityProps(p) {
+        let depth = 0;
+        for (let depth = 0; depth < 10 && p; depth++, p = p.children && p.children.props) {
+            if (p.cursorData) {
+                return p;
+            }
+        }
+    }
+
+
     const _cardPropCache = new Map();
     function getCardProps(cardEl) {
         if (!_cardPropCache.has(cardEl)) {
             try {
-                for (const [k, v] of Object.entries(cardEl)) {
+                for (const [k, o] of Object.entries(cardEl)) {
                     if (k.startsWith('__reactEventHandlers$')) {
-                        if (v && v.children && v.children.props) {
-                            _cardPropCache.set(cardEl, v.children.props);
+                        const props = _findActivityProps(o);
+                        if (props) {
+                            _cardPropCache.set(cardEl, props);
                         } else {
                             console.warn("Could not find props for:", cardEl);
                             _cardPropCache.set(cardEl, {});
