@@ -51,13 +51,16 @@ sauce.ns('proxy', ns => {
         _proxyConstructor(desc, port, nativeArgs) {
             const pid = proxyId++;
             const p = new Promise((resolve, reject) => inflight.set(pid, {resolve, reject}));
+            // Must not include the transfer port in the data arg because of WebKit bug:
+            // https://bugs.webkit.org/show_bug.cgi?id=254777
+            const transfer = [port];
             requestPort.postMessage({
                 pid,
                 desc,
                 args: ns.encodeArgs(nativeArgs),
                 type: 'sauce-proxy-request',
-                port
-            }, [port]);
+                portIndex: transfer.indexOf(port),
+            }, transfer);
             p.then(() => delete this._instantiated);
             return p;
         }
@@ -181,16 +184,19 @@ sauce.ns('proxy', ns => {
                     return;
                 }
                 ns.bindExports(ev.data.exports, buildProxyFunc, buildProxyClass);
-                resolve(ev.data.responsePort);
+                resolve(ev.ports[ev.data.responsePortIndex]);
             }
             reqPort.addEventListener('message', onMessageEstablishChannelAck);
             reqPort.addEventListener('messageerror', ev => console.error('Message Error:', ev));
             reqPort.start();
+            // Must not include the transfer port in the data arg because of WebKit bug:
+            // https://bugs.webkit.org/show_bug.cgi?id=254777
+            const transfer = [reqChannel.port2];
             self.postMessage({
                 type: 'sauce-proxy-establish-channel',
                 extId: sauce.extId,
-                requestPort: reqChannel.port2,
-            }, self.origin, [reqChannel.port2]);
+                requestPortIndex: transfer.indexOf(reqChannel.port2),
+            }, self.origin, transfer);
         });
         return [reqPort, respPort];
     }

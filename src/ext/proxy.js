@@ -91,30 +91,35 @@ sauce.ns('proxy', ns => {
         self.removeEventListener('message', onMessageEstablishChannel);
         const respChannel = new MessageChannel();
         const respPort = respChannel.port1;
-        ev.data.requestPort.addEventListener('message', async ev => {
-            let data;
+        // Must get port from ports[] array because of WebKit bug:
+        // https://bugs.webkit.org/show_bug.cgi?id=254777
+        const requestPort = ev.ports[ev.data.requestPortIndex];
+        requestPort.addEventListener('message', async ev => {
             const entry = ns.exports.get(ev.data.desc.call);
+            let data;
             if (!entry) {
                 data = ns._wrapError(new Error('Invalid proxy call: ' + ev.data.desc.call));
             } else {
+                ev.data.port = ev.ports[ev.data.portIndex];
                 data = await entry.exec(ev.data);
             }
             data.type = 'sauce-proxy-response';
             respPort.postMessage(data);
         });
-        ev.data.requestPort.addEventListener('messageerror', ev => console.error("Message Error:", ev));
-        ev.data.requestPort.start();
+        requestPort.addEventListener('messageerror', ev => console.error("Message Error:", ev));
+        requestPort.start();
         await ns.connected;
         while (sauce._pendingAsyncExports.length) {
             const pending = Array.from(sauce._pendingAsyncExports);
             sauce._pendingAsyncExports.length = 0;
             await Promise.allSettled(pending);
         }
-        ev.data.requestPort.postMessage({
+        const transfer = [respChannel.port2];
+        requestPort.postMessage({
             type: 'sauce-proxy-establish-channel-ack',
             exports: Array.from(ns.exports.values()).map(x => x.desc),
-            responsePort: respChannel.port2
-        }, [respChannel.port2]);
+            responsePortIndex: transfer.indexOf(respChannel.port2),
+        }, transfer);
     }
     self.addEventListener('message', onMessageEstablishChannel);
 });
