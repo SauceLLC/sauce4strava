@@ -310,6 +310,8 @@ sauce.ns('dashboard', function(ns) {
             'cat-promotion': x => !!(x.entity && x.entity.match && x.entity.match(/Promo/)),
             'cat-challenge': x => x.entity === 'Challenge',
             'cat-club': x => x.entity === 'Club',
+            'cat-club-post': x => x.entity === 'Post' && !!x.post.club_id,
+            'cat-post': x => x.entity === 'Post',
             'cat-commute': isCommute,
             'virtual': isVirtual,
             'base': isBaseType,

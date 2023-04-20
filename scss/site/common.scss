@@ -80,6 +80,11 @@
             [data-testid="entry-images"] {
                 grid-template-columns: 1fr;
 
+                [data-testid="post"],
+                [data-testid="more-text"] {
+                    display: none !important;
+                }
+
                 &::before,
                 &::after {
                     display: none !important;
