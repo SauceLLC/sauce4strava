@@ -7,7 +7,7 @@
     "description": "__MSG_app_desc__",
     "homepage_url": "https://www.sauce.llc",
     "author": "Sauce, LLC",
-    "version": "8.2.3",
+    "version": "8.2.4",
 
     "permissions": [
         "storage",
