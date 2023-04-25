@@ -30,6 +30,7 @@
     box-sizing: border-box;
     flex-wrap: wrap; // Looks terrible but needed to prevent overflow
     padding-bottom: $expander-height;
+    line-height: normal;
 
     &:empty {
         display: none;
