@@ -941,11 +941,12 @@ html.sauce-responsive,
         }
 
         > .spans9 {
-            //flex-basis: 56.25%;
+            flex-basis: 56.25%;
         }
 
         > .spans7 {
-            //flex-basis: 43.75%;
+            flex-basis: 43.75%;
+            min-width: 430px;
         }
     }
 

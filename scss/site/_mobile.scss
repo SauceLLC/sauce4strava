@@ -857,13 +857,30 @@
     }
 
     #leaderboard-table {
+        table-layout: fixed;
+
         thead {
             display: none;
         }
 
+        // button
+        td:nth-child(1) { width: 8%; }
+        // placement
+        td:nth-child(2) { width: 6%; }
+        // avatar and name
+        td:nth-child(3) { width: 36%; }
+        // date
+        td:nth-child(4) { width: 20%; }
+        // time
+        td:nth-child(5) { width: 12%; }
+        // bpm
+        td:nth-child(6) { width: 8%; }
+
         td {
             padding: 1.3em 0.2em 1.2em 0.4em;
             font-size: 0.85em;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         td:first-child {
@@ -873,18 +890,6 @@
 
         td[class*="avatar-"] {
             white-space: nowrap;
-
-            > .minimal {
-                white-space: nowrap;
-            }
-        }
-
-        td.effort-date {
-            position: absolute;
-            right: 0em;
-            padding: 0.2em;
-            border: none;
-            opacity: 0.7;
         }
 
         .add-to-roster,
@@ -944,6 +949,12 @@
                 padding-left: 0.5em;
                 padding-right: 0.3em;
             }
+        }
+    }
+
+    #segment-map-wrapper {
+        .spans7 {
+            min-width: initial;
         }
     }
 
