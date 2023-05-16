@@ -9,7 +9,8 @@
         "message": "Typ"
     },
     "performance": {
-        "message": "Performance"
+        "message": "Performance",
+        "description": "IMMUTABLE"
     },
     "all_athletes": {
         "message": "Alle Athleten"
@@ -77,10 +78,10 @@
         "description": "IMMUTABLE"
     },
     "analysis_climbed": {
-        "message": "Kletterte"
+        "message": "Geklettert"
     },
     "analysis_descended": {
-        "message": "Abstieg"
+        "message": "Abgestiegen"
     },
     "analysis_avg": {
         "message": "Schnitt",
@@ -587,13 +588,13 @@
         "message": "vor"
     },
     "time_in": {
-        "message": "im"
+        "message": "In"
     },
     "time_now": {
-        "message": "jetzt"
+        "message": "Jetzt"
     },
     "time_today": {
-        "message": "heute"
+        "message": "Heute"
     },
     "dialog_help_info_tooltip": {
         "message": "Klicken Sie hier, um weitere Informationen zu erhalten"
@@ -744,7 +745,7 @@
         "message": "Voraussichtliche Leistung"
     },
     "perf_predictor_faster": {
-        "message": "schneller"
+        "message": "Schneller"
     },
     "perf_predictor_slower": {
         "message": "langsamer",
@@ -853,7 +854,7 @@
         "message": "Sauce-Aktivitätssynchronisierung"
     },
     "sync_control_panel_resumes": {
-        "message": "Wird fortgesetzt"
+        "message": "Lebensläufe"
     },
     "sync_control_panel_activities": {
         "message": "Aktivitäten"
@@ -1112,7 +1113,7 @@
         "message": "Fahrt"
     },
     "performance_run": {
-        "message": "Lauf"
+        "message": "Laufen"
     },
     "performance_swim": {
         "message": "Schwimmen"

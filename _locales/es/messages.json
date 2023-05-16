@@ -793,7 +793,8 @@
         "message": "La diferencia de poder entre la posición más difícil y la posición más fácil. Por lo general, este es el poder para la primera y la última posición."
     },
     "perf_predictor_group_power": {
-        "message": "potencia del grupo"
+        "message": "Potencia del grupo",
+        "description": "IMMUTABLE"
     },
     "perf_predictor_group_power_tooltip": {
         "message": "El poder promedio para todas las posiciones en este grupo"

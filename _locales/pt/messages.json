@@ -240,7 +240,8 @@
         "message": "Insira o peso estimado para este atleta e pressione Enter. Se o atleta já tiver um valor definido em seu perfil, isso substituirá essa configuração. Para redefinir o valor, insira um valor em branco."
     },
     "analysis_intensity_tooltip": {
-        "message": "Intensity Factor®"
+        "message": "Intensity Factor®",
+        "description": "IMMUTABLE"
     },
     "analysis_peak_power_tooltip": {
         "message": "Faixas máximas de potência sustentada"
