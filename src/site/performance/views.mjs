@@ -83,7 +83,7 @@ export async function editActivityDialogXXX(activity, pageView) {
         icon: await sauce.ui.getImage('fa/edit-duotone.svg'),
         body: `
             <b>${activity.name}</b><hr/>
-            <label>TSS Override:
+            <label>TSS® Override:
                 <input name="tss_override" type="number"
                        value="${activity.tssOverride != null ? activity.tssOverride : ''}"
                        placeholder="${tss != null ? Math.round(tss) : ''}"/>

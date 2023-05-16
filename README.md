@@ -23,7 +23,7 @@ Feature Highlights
 --------
  * Peak performance table:
    * Power
-   * Normalized Power
+   * [Normalized Power®](#attr-tp)
    * Heart Rate
    * Pace
    * Grade Adjusted Pace
@@ -39,8 +39,8 @@ Feature Highlights
  * Analysis page stats are extended to include:
    * Elapsed power average, normalized power, moving power average and watts/kg.
    * Grade adjusted pace
-   * TSS
-   * Intensity Factory
+   * [TSS®](#attr-tp)
+   * [Intensity Factory®](#attr-tp)
    * VAM
    * Elevation gain/loss
    * Raw data and graph views
@@ -94,3 +94,10 @@ Legal
 --------
 Because lawyers and Google:
 [Privacy Policy](https://SauceLLC.github.io/sauce4strava/pages/privacy.html)
+
+
+Attribution
+--------
+<a name="attr-tp"></a> Normalized Power®, NP®, Training Stress Score®, TSS®,
+Intensity Factor®, IF® are trademarks of TrainingPeaks, LLC and are used with permission.
+Learn more at <a href="https://www.trainingpeaks.com" target="_blank">https://www.trainingpeaks.com</a>.”

@@ -84,14 +84,14 @@
 
         <% if (missingTSS.length) { %>
             <row class="warning">
-                <key>{{=icon exclamation-triangle-duotone=}}{{{missing}}} TSS:</key>
+                <key>{{=icon exclamation-triangle-duotone=}}{{{missing}}} TSS®:</key>
                 <value><a href="javascript:void(0);" class="missing-tss">{{missingTSS.length}} {{{activities}}}</a></value>
             </row>
         <% } %>
 
         <% if (tssAvg) { %>
             <row>
-                <key>{{{/analysis_avg}}} TSS:</key>
+                <key>{{{/analysis_avg}}} TSS®:</key>
                 <value>{{humanNumber(tssAvg)}}</value>
             </row>
         <% } %>
@@ -125,7 +125,7 @@
         <select name="type">
             <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
             <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
-            <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP</option>
+            <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP®</option>
             <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
             <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
             <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>

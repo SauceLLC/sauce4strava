@@ -102,7 +102,7 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
                 scales: {
                     yAxes: [{
                         id: 'tss',
-                        scaleLabel: {labelString: 'TSS'},
+                        scaleLabel: {labelString: 'TSS®'},
                         ticks: {min: 0, maxTicksLimit: 6},
                     }, {
                         id: 'tsb',
@@ -145,7 +145,7 @@ export class TrainingChartView extends charts.ActivityTimeRangeChartView {
         } else if (day.activities.length === 1) {
             desc = day.activities[0].name;
         }
-        return `${desc ? desc + ' ' : ''}(${day.future ? '~' : ''}${H.number(day.tss)} TSS)`;
+        return `${desc ? desc + ' ' : ''}(${day.future ? '~' : ''}${H.number(day.tss)} TSS®)`;
     }
 
     updateChart() {
@@ -513,7 +513,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
     async init(options) {
         await super.init(options);
         this.availableDatasets = {
-            'tss': {label: 'TSS'},
+            'tss': {label: 'TSS®'},
             'duration': {label: this.LM('analysis_time')},
             'distance': {label: this.LM('analysis_distance')},
             'energy': {label: this.LM('analysis_energy')},
@@ -529,7 +529,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                     }],
                     yAxes: [{
                         id: 'tss',
-                        scaleLabel: {labelString: 'TSS'},
+                        scaleLabel: {labelString: 'TSS®'},
                         ticks: {min: 0, maxTicksLimit: 6},
                     }, {
                         id: 'duration',
