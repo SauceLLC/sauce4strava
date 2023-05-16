@@ -7,14 +7,14 @@
         "message": "Atleta"
     },
     "type": {
-        "message": "Modelo"
+        "message": "Tipo"
     },
     "performance": {
         "message": "performance",
         "description": "IMMUTABLE"
     },
     "all_athletes": {
-        "message": "Todos os atletas"
+        "message": "Todos os Atletas"
     },
     "name": {
         "message": "Nome"
@@ -23,7 +23,7 @@
         "message": "Exportar"
     },
     "male": {
-        "message": "Masculino"
+        "message": "Macho"
     },
     "female": {
         "message": "Feminino",
@@ -75,26 +75,26 @@
         "message": "Tempo"
     },
     "analysis_timing": {
-        "message": "Cronometragem"
+        "message": "Tempo"
     },
     "analysis_gap": {
         "message": "RAI",
         "description": "IMMUTABLE"
     },
     "analysis_climbed": {
-        "message": "Escalou"
+        "message": "escalou"
     },
     "analysis_descended": {
-        "message": "Descida"
+        "message": "descendente"
     },
     "analysis_avg": {
-        "message": "Média"
+        "message": "médio"
     },
     "analysis_min": {
-        "message": "Min"
+        "message": "mín."
     },
     "analysis_max": {
-        "message": "Máx."
+        "message": "máx."
     },
     "analysis_lowest": {
         "message": "Mais baixo",
@@ -105,7 +105,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_elapsed": {
-        "message": "Decorrido"
+        "message": "decorrido"
     },
     "analysis_elapsed_time_tooltip": {
         "message": "Tempo decorrido total: tempo incluindo paradas",
@@ -159,10 +159,10 @@
         "description": "IMMUTABLE"
     },
     "analysis_energy_tooltip": {
-        "message": "Energia gasta em quilojoules"
+        "message": "Energia gasta em kilojoules"
     },
     "analysis_energy_rate_tooltip": {
-        "message": "Quilojoules por hora"
+        "message": "quilojoules por hora"
     },
     "analysis_elevation_gain_tooltip": {
         "message": "Ganho de elevação",
@@ -193,7 +193,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_start_of_effort_tooltip": {
-        "message": "Tempo deslocado para o início deste esforço"
+        "message": "Deslocamento de tempo para o início deste esforço"
     },
     "analysis_wkg_tooltip": {
         "message": "Watts por quilograma de peso corporal"
@@ -203,16 +203,16 @@
         "description": "IMMUTABLE"
     },
     "analysis_low_hr_tooltip": {
-        "message": "Menor freqüência cardíaca"
+        "message": "Frequência cardíaca mais baixa"
     },
     "analysis_high_hr_tooltip": {
-        "message": "Maior freqüência cardíaca"
+        "message": "Frequência cardíaca mais alta"
     },
     "analysis_low_speed_tooltip": {
         "message": "Velocidade mais baixa"
     },
     "analysis_high_speed_tooltip": {
-        "message": "Velocidade mais alta"
+        "message": "Maior velocidade"
     },
     "analysis_low_pace_tooltip": {
         "message": "Ritmo mais baixo"
@@ -246,31 +246,31 @@
         "message": "Faixas máximas de potência sustentada"
     },
     "analysis_peak_power_wkg_tooltip": {
-        "message": "Máximo de watts sustentados / kg de peso corporal"
+        "message": "Máximo sustentado de watts/kg de peso corporal"
     },
     "analysis_peak_sp_tooltip": {
-        "message": "Faixas máximas de potência ajustadas ao nível do mar"
+        "message": "Faixas de potência ajustadas ao nível máximo do mar"
     },
     "analysis_peak_np_tooltip": {
-        "message": "Faixas de Potência máxima normalizada®"
+        "message": "Faixas Máximas de Potência Normalizada®"
     },
     "analysis_peak_xp_tooltip": {
         "message": "Faixas máximas de xPower"
     },
     "analysis_peak_hr_tooltip": {
-        "message": "Faixas de freqüência cardíaca máxima sustentada"
+        "message": "Faixas máximas de frequência cardíaca sustentada"
     },
     "analysis_peak_cadence_tooltip": {
         "message": "Faixas máximas de cadência sustentada"
     },
     "analysis_peak_vam_tooltip": {
-        "message": "Faixas de velocidade máxima de escalada sustentada"
+        "message": "Faixas máximas de velocidade de subida sustentada"
     },
     "analysis_peak_pace_tooltip": {
         "message": "Faixas máximas de ritmo sustentado"
     },
     "analysis_peak_gap_tooltip": {
-        "message": "Faixas de ritmo ajustado de grau máximo sustentado"
+        "message": "Faixas máximas de ritmo ajustado de grau sustentado"
     },
     "analysis_watt_estimate_tooltip": {
         "message": "Esses valores estão sendo calculados a partir de estimativas de potência. Para valores precisos, é necessário um medidor de potência real.",
@@ -294,7 +294,7 @@
         "message": "Energia"
     },
     "analysis_expended": {
-        "message": "Gasto"
+        "message": "gasto"
     },
     "analysis_rate": {
         "message": "Dispêndio",
@@ -328,7 +328,7 @@
         "message": "Dados não tratados"
     },
     "analysis_graphed_data": {
-        "message": "Dados Gráficos"
+        "message": "Dados gráficos"
     },
     "analysis_graphs": {
         "message": "gráficos"
@@ -434,13 +434,13 @@
         "message": "Segmentos"
     },
     "analysis_empty_info_aside": {
-        "message": "Sem segmentos ou outros dados para este intervalo."
+        "message": "Nenhum segmento ou outros dados para este intervalo."
     },
     "analysis_best_performances": {
         "message": "Melhores Performances"
     },
     "analysis_best_all": {
-        "message": "Tudo"
+        "message": "Todos"
     },
     "analysis_best_year": {
         "message": "Ano"
@@ -483,10 +483,10 @@
         "description": "IMMUTABLE"
     },
     "analysis_comment_label": {
-        "message": "Diga algo"
+        "message": "Dizer algo"
     },
     "analysis_comment_placeholder": {
-        "message": "Seu comentário aqui"
+        "message": "seu comentário aqui"
     },
     "analysis_comment": {
         "message": "Comente"
@@ -503,25 +503,25 @@
         "description": "IMMUTABLE"
     },
     "analysis_settings": {
-        "message": "Definições"
+        "message": "Configurações"
     },
     "analysis_rank_place_1": {
-        "message": "1ª"
+        "message": "1º"
     },
     "analysis_rank_place_2": {
-        "message": "2ª"
+        "message": "2º"
     },
     "analysis_rank_place_3": {
-        "message": "3ª"
+        "message": "3º"
     },
     "analysis_rank_cat_all": {
-        "message": "Tudo"
+        "message": "Todos"
     },
     "analysis_rank_cat_year": {
         "message": "Ano"
     },
     "analysis_rank_cat_recent": {
-        "message": "90 d"
+        "message": "90 dias"
     },
     "analysis_value": {
         "message": "Valor"
@@ -553,16 +553,16 @@
         "description": "IMMUTABLE"
     },
     "analysis_click_for_more_nutritional_info": {
-        "message": "Clique para obter mais informações nutricionais"
+        "message": "Clique para mais informações nutricionais"
     },
     "analysis_click_to_change": {
-        "message": "Clique para mudar"
+        "message": "Clique para alterar"
     },
     "analysis_download": {
         "message": "Download"
     },
     "analysis_keyboard_tooltip": {
-        "message": "Os controles do teclado de análise estão ativos. Quando os gráficos de análise estão focados, você pode alterar a seleção ou os dados destacados com as teclas de seta. Esquerda/Direita: Mova o cursor 1 ponto de dados para a esquerda ou direita. Para cima/para baixo: Mova o cursor 60 pontos de dados para a esquerda ou para a direita. Ctrl + Esquerda/Direita: Move a seleção atual. Shift + Esquerda/Direita: Expanda a seleção atual. Ctrl + Shift + Esquerda/Direita: reduz a seleção atual."
+        "message": "Os controles do teclado de análise estão ativos. Quando os gráficos de análise estão focados, você pode alterar a seleção ou os dados realçados com as teclas de seta. Esquerda/Direita: Mova o cursor 1 ponto de dados para a esquerda ou para a direita. Para cima/para baixo: Mova o cursor 60 pontos de dados para a esquerda ou para a direita. Ctrl + Esquerda/Direita: move a seleção atual. Shift + Esquerda/Direita: expande a seleção atual. Ctrl + Shift + Esquerda/Direita: Reduz a seleção atual."
     },
     "time_sec": {
         "message": "seg",
@@ -631,10 +631,10 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_intro_help2": {
-        "message": "Depois que os valores são ajustados corretamente, o desempenho previsto deve ser semelhante ao desempenho original em uma pequena porcentagem."
+        "message": "Depois que os valores forem ajustados corretamente, o desempenho previsto deve ser semelhante ao desempenho original em uma pequena porcentagem."
     },
     "perf_predictor_intro_help3": {
-        "message": "Agora você pode alterar diferentes parâmetros como potência, peso e aerodinâmica para estimar o impacto no desempenho que essas mudanças podem ter."
+        "message": "Agora você pode alterar diferentes parâmetros, como potência, peso e aerodinâmica, para estimar o impacto no desempenho que essas alterações podem ter."
     },
     "perf_predictor_intro": {
         "message": "O Performance Predictor é uma calculadora de potência que permite examinar o impacto de diferentes no desempenho.",
@@ -667,7 +667,7 @@
         "message": "Estrada"
     },
     "perf_predictor_crr_bike_mtb": {
-        "message": "MTB"
+        "message": "BTT"
     },
     "perf_predictor_crr_terrain": {
         "message": "Terreno"
@@ -711,23 +711,23 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help_table_good_tt": {
-        "message": "Bom equipamento de contra-relógio e posicionamento aerodinâmico / Triathlon"
+        "message": "Bom equipamento de contra-relógio e posicionamento aerodinâmico / Triatlo"
     },
     "perf_predictor_cda_help_table_road": {
         "message": "Posições de corrida de bicicleta de estrada / segurando no STI",
         "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help_table_climbing": {
-        "message": "Posições de escalada em bicicleta de estrada / mountain bike XC"
+        "message": "Posições de escalada de bicicleta de estrada / mountain bike XC"
     },
     "perf_predictor_cda_help_table_upright": {
-        "message": "Posição vertical com roupas casuais"
+        "message": "Posição ereta com roupas casuais"
     },
     "perf_predictor_cda_heading": {
-        "message": "Resistência aerodinâmica"
+        "message": "resistência aerodinâmica"
     },
     "perf_predictor_cda_position": {
-        "message": "Posição aerodinâmica"
+        "message": "posição aerodinâmica"
     },
     "perf_predictor_cda_position_tooltip": {
         "message": "Posição aerodinâmica na bicicleta para estimativa de CdA"
@@ -787,7 +787,7 @@
         "message": "Tempo"
     },
     "perf_predictor_original_performance": {
-        "message": "Performance original"
+        "message": "Desempenho original"
     },
     "perf_predictor_predicted_performance": {
         "message": "Desempenho previsto"
@@ -885,7 +885,7 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_group_weight": {
-        "message": "O peso deles"
+        "message": "Seu peso"
     },
     "perf_predictor_group_weight_tooltip": {
         "message": "Para modelar os efeitos de andar em um grupo com ciclistas que pesam mais ou menos que o atleta principal, você pode alterar o peso de todos os outros pilotos. ou seja, os requisitos de potência de outras pessoas quando você é o ciclista pesado ou o piloto leve.",
@@ -909,13 +909,13 @@
         "message": "Status"
     },
     "sync_control_panel_last_error": {
-        "message": "Último Erro"
+        "message": "último erro"
     },
     "sync_control_panel_synced": {
-        "message": "Sincronizado"
+        "message": "sincronizado"
     },
     "sync_control_panel_last_sync": {
-        "message": "Última sincronização"
+        "message": "última sincronização"
     },
     "sync_control_panel_next_sync": {
         "message": "Próxima sincronização"
@@ -940,13 +940,13 @@
         "description": "IMMUTABLE"
     },
     "sync_control_panel_sync_recompute_tooltip": {
-        "message": "Recompute os dados locais de sincronização, ou seja, TSS, NP, etc ..."
+        "message": "Recalcule os dados locais de sincronização, ou seja, TSS®, NP®, etc..."
     },
     "sync_control_panel_total": {
         "message": "Total"
     },
     "sync_control_panel_imported": {
-        "message": "Importado"
+        "message": "importado"
     },
     "sync_control_panel_unavailable": {
         "message": "Indisponível"
@@ -961,7 +961,7 @@
         "message": "Não processável"
     },
     "sync_control_panel_delayed_until": {
-        "message": "Atrasado até"
+        "message": "atrasado até"
     },
     "sync_control_panel_no_hr_zones": {
         "message": "As zonas de frequência cardíaca não foram estabelecidas."
@@ -1003,7 +1003,7 @@
         "message": "Configurações de desempenho"
     },
     "sync_control_panel_export_fit_files": {
-        "message": "Exportar arquivos FIT"
+        "message": "Exportar Ficheiros FIT"
     },
     "sync_control_panel_backup_data": {
         "message": "Criar backup",
@@ -1016,22 +1016,22 @@
         "message": "Potência de execução estimada"
     },
     "sync_control_panel_est_cycling_power": {
-        "message": "Potência Cíclica Estimada"
+        "message": "Potência de Ciclismo Estimada"
     },
     "sync_control_panel_est_power_tooltip": {
-        "message": "Use watts estimados para rastreamento de condicionamento físico (TSS) e, opcionalmente, resultados de desempenho máximo."
+        "message": "Use watts estimados para rastreamento de condicionamento físico (TSS®) e, opcionalmente, resultados de pico de desempenho."
     },
     "sync_control_panel_est_power_peaks": {
         "message": "Incluir nos resultados de desempenho máximo"
     },
     "sync_control_panel_est_power_peaks_tooltip": {
-        "message": "Inclua cálculos de energia estimados nos resultados para resultados de desempenho máximo. NOTA: Isso pode levar a resultados errôneos."
+        "message": "Inclua cálculos de energia estimados nos resultados para resultados de desempenho de pico. NOTA: Isso pode levar a resultados incorretos."
     },
     "mutable_data_add_entry_tooltip": {
         "message": "Adicionar uma nova entrada"
     },
     "mutable_data_delete_entry_tooltip": {
-        "message": "Exclua esta entrada"
+        "message": "Excluir esta entrada"
     },
     "mutable_data_save": {
         "message": "Salvar alterações"
@@ -1040,7 +1040,7 @@
         "message": "Histórico de FTP"
     },
     "mutable_data_weight_title": {
-        "message": "História de Peso"
+        "message": "Histórico de peso"
     },
     "mutable_data_peaks_periods_title": {
         "message": "Intervalos baseados em tempo",
@@ -1058,10 +1058,10 @@
         "description": "IMMUTABLE"
     },
     "mutable_data_peaks_periods_help": {
-        "message": "Os períodos de tempo são usados para esforços como potência, frequência cardíaca e cadência."
+        "message": "Períodos de tempo são usados para esforços como potência, frequência cardíaca e cadência."
     },
     "mutable_data_peaks_dists_help": {
-        "message": "As distâncias são usadas para esforços como ritmo e ritmo ajustado ao nível."
+        "message": "As distâncias são usadas para esforços como ritmo e ritmo ajustado à inclinação."
     },
     "subscription": {
         "message": "Inscrição"
@@ -1082,7 +1082,7 @@
         "description": "IMMUTABLE"
     },
     "live_segment_success_create_body2": {
-        "message": "Monte seu dispositivo no computador via USB e copie este arquivo para a pasta \"Garmin / NewFiles\"."
+        "message": "Monte seu dispositivo em seu computador via USB e copie este arquivo para a pasta \"Garmin/NewFiles\"."
     },
     "live_segment_success_create_body3": {
         "message": "Certifique-se de ejetar o dispositivo com segurança antes de desconectá-lo."
@@ -1111,22 +1111,22 @@
         "description": "IMMUTABLE"
     },
     "live_segment_intro1": {
-        "message": "Crie um arquivo de segmento ativo para usar com"
+        "message": "Crie um arquivo Live Segment para uso com"
     },
     "live_segment_intro_supported_devices": {
         "message": "dispositivos Garmin suportados"
     },
     "live_segment_intro_note": {
-        "message": "Isso irá gerar um arquivo de segmento FIT que pode ser colocado na pasta \"Garmin / NewFiles\" do seu Garmin ao conectá-lo a um computador via USB."
+        "message": "Isso gerará um arquivo de segmento FIT que pode ser colocado na pasta \"Garmin/NewFiles\" do seu Garmin quando você o conectar a um computador via USB."
     },
     "live_segment_segment_name_help": {
-        "message": "O nome do segmento é como este segmento aparece em seu dispositivo quando você se aproxima do local de partida."
+        "message": "O nome do segmento é como esse segmento aparece em seu dispositivo quando você se aproxima do local inicial."
     },
     "live_segment_segment_name": {
-        "message": "Nome do Segmento"
+        "message": "Nome do segmento"
     },
     "live_segment_leader_name": {
-        "message": "Nome do Líder"
+        "message": "Nome do líder"
     },
     "live_segment_leader_type": {
         "message": "Tipo de líder"
@@ -1138,7 +1138,7 @@
         "message": "Meta"
     },
     "live_segment_pr": {
-        "message": "PR"
+        "message": "relações públicas"
     },
     "live_segment_challenger": {
         "message": "Desafiador"
@@ -1150,7 +1150,7 @@
         "message": "QOM"
     },
     "live_segment_club_leader": {
-        "message": "Líder de Clube"
+        "message": "Líder do clube"
     },
     "live_segment_speed_adjust": {
         "message": "Ajuste de velocidade"
@@ -1236,7 +1236,7 @@
         "message": "ou"
     },
     "performance_show_some_activities": {
-        "message": "Mostre algumas atividades"
+        "message": "Mostrar algumas atividades"
     },
     "performance_show_older_activity": {
         "message": "Mostrar atividade mais antiga"
@@ -1254,7 +1254,7 @@
         "message": "Editar atividade"
     },
     "performance_edit_activities": {
-        "message": "Editar atividades"
+        "message": "Editar Atividades"
     },
     "performance_unavailable": {
         "message": "Indisponível"
@@ -1263,19 +1263,19 @@
         "message": "Tabela de desempenhos de pico"
     },
     "performance_peaks_chart_type": {
-        "message": "Gráfico de desempenhos de pico"
+        "message": "Tabela de desempenhos de pico"
     },
     "performance_peaks_table_name": {
-        "message": "Pico de desempenho"
+        "message": "desempenhos de pico"
     },
     "performance_peaks_chart_name": {
-        "message": "Pico de desempenho"
+        "message": "desempenhos de pico"
     },
     "performance_peaks_desc": {
-        "message": "Melhores, ou máximas, performances para uma variedade de tempos e distâncias"
+        "message": "Melhores ou máximos desempenhos para uma variedade de tempos e distâncias"
     },
     "performance_training_load_type": {
-        "message": "Tabela de Carga de Treinamento"
+        "message": "Tabela de carga de treinamento"
     },
     "performance_training_load_name": {
         "message": "Carga de treinamento"
@@ -1284,7 +1284,7 @@
         "message": "Fitness, Fadiga e Forma"
     },
     "performance_activity_table_type": {
-        "message": "Tabela de atividades"
+        "message": "Tabela de Atividades"
     },
     "performance_activity_table_name": {
         "message": "Atividades"
@@ -1299,7 +1299,7 @@
         "message": "Estatísticas de atividade"
     },
     "performance_activity_stats_desc": {
-        "message": "Distância, horas, TSS e quilojoules ao longo do tempo"
+        "message": "Distância, horas, TSS® e kilojoules ao longo do tempo"
     },
     "performance_elevation_type": {
         "message": "Gráfico de ganho de elevação"
@@ -1311,13 +1311,13 @@
         "message": "Subida vertical ao longo do tempo"
     },
     "performance_time_range": {
-        "message": "Intervalo de tempo"
+        "message": "intervalo de tempo"
     },
     "performance_more_info": {
         "message": "mais informações"
     },
     "performance_reset_zoom": {
-        "message": "Redefinir o zoom"
+        "message": "Redefinir zoom"
     },
     "performance_overview": {
         "message": "Visão geral"
@@ -1338,34 +1338,34 @@
         "message": "Dias ativos"
     },
     "performance_peak_fitness": {
-        "message": "Aptidão máxima"
+        "message": "Máximo condicionamento físico"
     },
     "performance_least_form": {
-        "message": "Menos forma"
+        "message": "menos forma"
     },
     "performance_activity_sync_title": {
-        "message": "Sincronização de atividade"
+        "message": "Sincronização de atividades"
     },
     "performance_peaks_row_tooltip": {
-        "message": "Clique para ver os detalhes"
+        "message": "Clique para ver detalhes"
     },
     "performance_top": {
         "message": "Principal"
     },
     "performance_all_results": {
-        "message": "Todos os resultados"
+        "message": "Todos os Resultados"
     },
     "performance_all_dates": {
         "message": "Todas as datas"
     },
     "performance_skip_estimates": {
-        "message": "Pular estimativas"
+        "message": "Ignorar estimativas"
     },
     "performance_skip_estimates_tooltip": {
-        "message": "Exclua os resultados de pico com base em watts estimados."
+        "message": "Excluir resultados de pico com base em watts estimados."
     },
     "performance_predicted": {
-        "message": "Previsto"
+        "message": "previsto"
     },
     "performance_fitness": {
         "message": "Condicionamento",
@@ -1392,17 +1392,17 @@
         "message": "Hoje"
     },
     "performance_all": {
-        "message": "Tudo"
+        "message": "Todos"
     },
     "performance_predicted_tss": {
-        "message": "Previsto a partir da relação ATL / CTL"
+        "message": "Previsto da relação ATL / CTL"
     },
     "performance_predicted_tss_tooltip": {
         "message": "As previsões de TSS futuras são calculadas usando os valores ATL e CTL mais recentes como fator inicial. Um fator de decaimento também é aplicado para explicar a incerteza e os limites de adaptação humana.",
         "description": "IMMUTABLE"
     },
     "performance_active_days_title": {
-        "message": "Dias ativos"
+        "message": "Dias Ativos"
     },
     "performance_inactive": {
         "message": "Inativo"
@@ -1441,16 +1441,16 @@
         "message": "Zonas de RH"
     },
     "performance_zonetime_type": {
-        "message": "Gráfico de tempo em zonas"
+        "message": "Tabela de tempo em zonas"
     },
     "performance_zonetime_name": {
-        "message": "Horário nas zonas"
+        "message": "Tempo em Zonas"
     },
     "performance_zonetime_desc": {
-        "message": "Gráfico de barras do tempo gasto nas diferentes zonas de potência"
+        "message": "Gráfico de barras do tempo gasto nas diferentes zonas de energia"
     },
     "performance_chart_categories": {
-        "message": "Categorias de gráfico"
+        "message": "Categorias de gráficos"
     },
     "performance_exclude": {
         "message": "Excluir"
@@ -1462,19 +1462,19 @@
         "message": "Informações do Atleta"
     },
     "performance_athlete_chart_type": {
-        "message": "Tabela de informações do atleta"
+        "message": "Tabela de Informações do Atleta"
     },
     "performance_athlete_chart_desc": {
-        "message": "Atleta FTP e peso ao longo do tempo."
+        "message": "FTP do atleta e peso ao longo do tempo."
     },
     "performance_filter_tooltip": {
-        "message": "Filtre esta coluna por um ou mais termos. Use vírgula para separar termos e ponto de exclamação para excluir um termo. ie Embora conte até três, ou quatro, mas cinco está certo"
+        "message": "Filtre esta coluna por um ou mais termos. Use vírgula para separar termos e ponto de exclamação para excluir um termo. isto é, embora conte até três, ou quatro, mas cinco está fora"
     },
     "performance_filter": {
         "message": "Filtro"
     },
     "season_start": {
-        "message": "Início da temporada"
+        "message": "início da temporada"
     },
     "graph_options_wbal_help": {
         "message": "W'balance é uma representação do trabalho realizado acima do limite, criado pelo <a href=\"https://physfarm.com/new/?page_id=37\" target=\"_blank\">Dr. Philip Skiba</a> . Pense no W'bal como uma reserva anaeróbia. Cada vez que você faz esforços acima do seu FTP / CP, sua bateria se esgota e leva algum tempo para recarregá-la. Se seu W'bal chegar a 0, será quase impossível realizar esforços acima do FTP / CP por qualquer período de tempo.<br/><br/> Para obter mais informações e uma ótima explicação detalhada, consulte <a href=\"https://physfarm.com/new/?page_id=563\" target=\"_blank\">este excelente artigo do próprio Dr. Skiba</a> .",
@@ -1495,13 +1495,13 @@
         "message": "Use as setas do teclado para ajustes finos"
     },
     "graph_options_reload_needed": {
-        "message": "É necessário recarregar a página"
+        "message": "Necessário recarregar a página"
     },
     "food_beer_1": {
         "message": "Cerveja"
     },
     "food_beer_n": {
-        "message": "Cervejas"
+        "message": "cervejas"
     },
     "food_beer_desc": {
         "message": "Cerveja normal (355 ml)",
@@ -1511,39 +1511,39 @@
         "message": "Fatia de pizza"
     },
     "food_pizza_n": {
-        "message": "Fatias de Pizza"
+        "message": "fatias de pizza"
     },
     "food_pizza_desc": {
         "message": "Fatia de pizza (35 cm)",
         "description": "IMMUTABLE"
     },
     "food_taco_1": {
-        "message": "Taco"
+        "message": "taco"
     },
     "food_taco_n": {
-        "message": "Tacos"
+        "message": "tacos"
     },
     "food_taco_desc": {
-        "message": "Taco Bell Crunchy Beef Taco"
+        "message": "Taco Bell Taco de carne crocante"
     },
     "food_wine_1": {
         "message": "Vinho"
     },
     "food_wine_n": {
-        "message": "Vinhos"
+        "message": "vinhos"
     },
     "food_wine_desc": {
         "message": "Vinho Tinto Pinot Noir (150 ml)",
         "description": "IMMUTABLE"
     },
     "food_broccoli_1": {
-        "message": "Xícara de brócolis"
+        "message": "xícara de brócolis"
     },
     "food_broccoli_n": {
-        "message": "Xícaras de brócolis"
+        "message": "xícaras de brócolis"
     },
     "food_broccoli_desc": {
-        "message": "Brócolis cru (1 xícara, picado)"
+        "message": "Brócolis cru (1 xícara, em cubos)"
     },
     "food_fry_1": {
         "message": "Porção de fritas",
@@ -1554,7 +1554,7 @@
         "description": "IMMUTABLE"
     },
     "food_fry_desc": {
-        "message": "Batatas fritas do McDonald's (médio)"
+        "message": "Batata frita do McDonald's (média)"
     },
     "food_cookie_1": {
         "message": "Biscoito"
@@ -1563,7 +1563,7 @@
         "message": "Biscoitos"
     },
     "food_cookie_desc": {
-        "message": "Biscoito de Chocolate (11g)"
+        "message": "Biscoito de chocolate (11g)"
     },
     "food_pepper_1": {
         "message": "Pimenta"
@@ -1572,7 +1572,7 @@
         "message": "Pimenta"
     },
     "food_pepper_desc": {
-        "message": "Pimenta Vermelha Quente (45g)"
+        "message": "Pimenta malagueta vermelha quente (45g)"
     },
     "food_carrot_1": {
         "message": "Cenoura"
@@ -1588,7 +1588,7 @@
         "message": "Banana"
     },
     "food_banana_n": {
-        "message": "Bananas"
+        "message": "banana"
     },
     "food_banana_desc": {
         "message": "Banana (100g, 15 cm)",
@@ -1614,13 +1614,13 @@
         "description": "IMMUTABLE"
     },
     "food_bacon_1": {
-        "message": "Tira De Bacon"
+        "message": "tira de bacon"
     },
     "food_bacon_n": {
         "message": "Fatias de bacon"
     },
     "food_bacon_desc": {
-        "message": "Tira de bacon frito (8,5g)"
+        "message": "Tira de Bacon Frito (8,5g)"
     },
     "food_hamburger_1": {
         "message": "Hamburger"
@@ -1647,19 +1647,19 @@
         "message": "Pedaço de torta"
     },
     "food_pie_n": {
-        "message": "Fatias de Torta"
+        "message": "fatias de torta"
     },
     "food_pie_desc": {
-        "message": "Fatia de torta de maçã (156g)"
+        "message": "Fatia de Torta de Maçã (156g)"
     },
     "food_nigiri_1": {
-        "message": "Nigiri"
+        "message": "nigiri"
     },
     "food_nigiri_n": {
-        "message": "Nigiris"
+        "message": "nigiris"
     },
     "food_nigiri_desc": {
-        "message": "Atum Nigiri (2 peças)"
+        "message": "Niguiri de atum (2 peças)"
     },
     "food_hotdog_1": {
         "message": "Cachorro-quente"
@@ -1675,19 +1675,19 @@
         "description": "IMMUTABLE"
     },
     "food_steak_n": {
-        "message": "Bifes"
+        "message": "bifes"
     },
     "food_steak_desc": {
-        "message": "Bife sem ossos grelhado (210g)"
+        "message": "Ribeye desossado grelhado (210g)"
     },
     "food_rice_1": {
-        "message": "Xícara de arroz"
+        "message": "xícara de arroz"
     },
     "food_rice_n": {
-        "message": "Xícaras de arroz"
+        "message": "xícaras de arroz"
     },
     "food_rice_desc": {
-        "message": "Arroz Branco cozido (1 xícara)"
+        "message": "Arroz Branco Cozido (1 xícara)"
     },
     "food_potato_1": {
         "message": "Batata"
@@ -1710,10 +1710,10 @@
         "description": "IMMUTABLE"
     },
     "food_icecream_1": {
-        "message": "Taça de sorvete"
+        "message": "copo de sorvete"
     },
     "food_icecream_n": {
-        "message": "Taças de sorvete"
+        "message": "copos de sorvete"
     },
     "food_icecream_desc": {
         "message": "Sorvete de baunilha (1 xícara)"
@@ -1733,7 +1733,7 @@
         "description": "IMMUTABLE"
     },
     "food_donut_n": {
-        "message": "Donuts"
+        "message": "rosquinhas"
     },
     "food_donut_desc": {
         "message": "Donut de Chocolate (45g)",

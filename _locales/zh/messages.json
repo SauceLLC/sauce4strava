@@ -216,7 +216,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_trimp_tss_tooltip": {
-        "message": "基于TRIMP（过渡冲动）的Training StressScore®：基于心率储备的压力负荷指标"
+        "message": "基于 TRIMP（TRAining IMPulse）的 Training Stress Score®：基于心率储备的压力负荷指标"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "开始努力的时间偏移",
@@ -319,7 +319,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_peak_gap_tooltip": {
-        "message": "最大持续成绩调整步幅范围"
+        "message": "最大持续坡度调整配速范围"
     },
     "analysis_watt_estimate_tooltip": {
         "message": "这些值是根据瓦特数估算得出的。为了获得准确的值，需要一个真实的功率测量设备。",
@@ -393,7 +393,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_perf_predictor_tooltip": {
-        "message": "预测自行车运动的表现。"
+        "message": "预测骑自行车运动的表现。"
     },
     "analysis_pace": {
         "message": "配速",
@@ -500,10 +500,10 @@
         "description": "IMMUTABLE"
     },
     "analysis_segments": {
-        "message": "区隔"
+        "message": "段"
     },
     "analysis_empty_info_aside": {
-        "message": "没有细分受众群或该范围的其他数据。"
+        "message": "此范围没有段或其他数据。"
     },
     "analysis_best_performances": {
         "message": "最佳表现",
@@ -519,13 +519,13 @@
         "message": "90天"
     },
     "analysis_overlap": {
-        "message": "交叠"
+        "message": "重叠"
     },
     "analysis_overlap_tooltip": {
-        "message": "段上的重叠量。 100％表示遍历整个段。"
+        "message": "段上的重叠量。 100% 表示遍历了整个段。"
     },
     "analysis_change": {
-        "message": "更改"
+        "message": "改变"
     },
     "analysis_gain": {
         "message": "上升",
@@ -548,7 +548,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_power_profile_select": {
-        "message": "选择一个配置文件以查看所需的功率输出"
+        "message": "选择配置文件以查看所需的功率输出"
     },
     "analysis_power_profile_footer_leadin": {
         "message": "注意：Sauce 算法是对 Andy 原始概念的增强解释。对于 20 到 60 分钟之间的输出，逐渐使用 NormalizedPower®（标准功率）代替实际功率。 1小时后，仅使用 NP®，并应用对数耐力因子以更好地模拟疲劳。<br/><br/>有关原始配置文件的其他信息，请阅读",
@@ -634,7 +634,7 @@
         "description": "IMMUTABLE"
     },
     "analysis_pwhr_tooltip": {
-        "message": "Pw:Hr 是有氧解耦的度量。它比较了活动前半部分与后半部分的功率与心率之比。正值表示给定功率下的心率随着活动的进行而漂移得更高。这通常发生在长时间的耐力骑行中，代表疲劳。"
+        "message": "Pw:Hr 是有氧解偶联的测量值。它比较活动前半部分和后半部分的功率心率比。正值表示随着活动的进行，给定功率下的心率漂移更高。这通常发生在长时间的耐力骑行中并且代表疲劳。"
     },
     "analysis_click_for_more_nutritional_info": {
         "message": "点击了解更多营养信息"
@@ -646,7 +646,7 @@
         "message": "下载"
     },
     "analysis_keyboard_tooltip": {
-        "message": "分析键盘控件处于活动状态。当分析图表聚焦时，您可以使用箭头键更改选择或突出显示的数据。左/右：向左或向右移动光标 1 个数据点。上/下：将光标向左或向右移动 60 个数据点。 Ctrl + 左/右：移动当前选择。 Shift + 左/右：展开当前选择。 Ctrl + Shift + 左/右：缩小当前选择。"
+        "message": "分析键盘控件处于活动状态。当分析图表获得焦点时，您可以使用箭头键更改选择或突出显示的数据。左/右：将光标向左或向右移动 1 个数据点。上/下：将光标向左或向右移动 60 个数据点。 Ctrl + 左/右：移动当前选择。 Shift + 左/右：扩展当前选择。 Ctrl + Shift + 左/右：缩小当前选择。"
     },
     "time_sec": {
         "message": "秒",
@@ -777,7 +777,7 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_crr_terrain_tooltip": {
-        "message": "滚动阻力估算的地形类型（例如Crr）"
+        "message": "滚动阻力估计的地形类型（例如 Crr）"
     },
     "perf_predictor_crr_terrain_asphalt": {
         "message": "沥青",
@@ -808,7 +808,7 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_cda_help1": {
-        "message": "“ CdA”代表骑手和装备的空气动力学阻力。从技术上讲，它是阻力系数乘以正面表面积。通过骑低速运动服，使用速滑服和使用诸如计时自行车和碟形轮之类的专用设备来降低价值。"
+        "message": "“CdA”代表骑手和装备的空气阻力。从技术上讲，它是阻力系数乘以正面表面积。通过降低骑行速度、使用速度服和使用计时自行车和盘式车轮等专用设备来实现较低的值。"
     },
     "perf_predictor_cda_help_table_heading": {
         "message": "一些示例值",
@@ -847,7 +847,7 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_cda_tooltip": {
-        "message": "空气阻力系数乘以正面表面积"
+        "message": "气动阻力系数乘以正面表面积"
     },
     "perf_predictor_power": {
         "message": "功率",
@@ -882,7 +882,7 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_distance_tooltip": {
-        "message": "航向距离"
+        "message": "课程距离"
     },
     "perf_predictor_elevation": {
         "message": "海拔（平均）",
@@ -1013,7 +1013,7 @@
         "description": "IMMUTABLE"
     },
     "perf_predictor_group_weight_tooltip": {
-        "message": "要模拟与体重高于或低于主要运动员的骑手一起骑行的影响，您可以更改所有其他骑手的体重。即当您是重骑手或轻骑手时，其他人的功率要求。"
+        "message": "要模拟与体重比主要运动员重或轻的骑手一起骑行的影响，您可以更改所有其他骑手的体重。即当您是重型骑手或轻型骑手时其他人的功率需求。"
     },
     "perf_predictor_group_use_athlete_weight": {
         "message": "使用运动员体重",
@@ -1024,7 +1024,7 @@
         "description": "IMMUTABLE"
     },
     "sync_control_panel_intro_help": {
-        "message": "同步活动允许 Sauce 提供没有历史数据就无法提供的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面，如分析，以了解以前的性能。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>通过将原始活动数据导入 Web 浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库</a>来实现同步。分析、索引和存储这些数据，以便以后快速查找。与往常一样，Sauce 不使用远程服务器，因此建议偶尔创建备份。"
+        "message": "同步活动允许 Sauce 提供没有历史数据就不可能提供的分析功能。这包括一个新的<a href=\"/sauce/performance\">性能页面</a>，以及扩展现有页面，如分析，以了解以前的性能。对于高级运动员和教练来说，这是一个很棒的功能！<br/><br/>同步通过将原始活动数据导入网络浏览器的<a href=\"https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API\" target=\"_blank\">本地数据库</a>来实现。这些数据经过分析、索引和存储，以便以后快速查找。一如既往，Sauce 不使用远程服务器，因此建议偶尔创建备份。"
     },
     "sync_control_panel_enabled": {
         "message": "已启用",
