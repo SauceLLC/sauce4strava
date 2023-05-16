@@ -90,14 +90,15 @@ the writing of this extension.  All the information used in this extension is
 readily available within the Strava.com website.
 
 
+Attribution
+--------
+ * <a name="attr-tp"></a> Normalized Power®, NP®, Training Stress Score®, TSS®,
+   Intensity Factor®, IF® are trademarks of TrainingPeaks, LLC and are used with permission.
+
+   Learn more at <a href="https://www.trainingpeaks.com" target="_blank">https://www.trainingpeaks.com</a>.
+
+
 Legal
 --------
 Because lawyers and Google:
 [Privacy Policy](https://SauceLLC.github.io/sauce4strava/pages/privacy.html)
-
-
-Attribution
---------
-<a name="attr-tp"></a> Normalized Power®, NP®, Training Stress Score®, TSS®,
-Intensity Factor®, IF® are trademarks of TrainingPeaks, LLC and are used with permission.
-Learn more at <a href="https://www.trainingpeaks.com" target="_blank">https://www.trainingpeaks.com</a>.”
