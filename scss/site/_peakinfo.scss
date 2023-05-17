@@ -433,7 +433,7 @@
     section {
         $highlight-value-offset: 2mm;
         $highlight-margin-right: 3mm;
-        $heading-bottom-margin: 2mm;
+        $heading-bottom-margin: 1.4mm;
         $section-padding-bottom: 1mm;
         $section-margin-top: 1.5mm;
 
@@ -468,7 +468,6 @@
                 border-radius: 50%;
                 position: absolute;
                 left: -0.42em;
-                top: 0.26em;
                 cursor: pointer;
                 opacity: 0.2;
                 transition: opacity 200ms;
@@ -522,8 +521,8 @@
                 key,
                 value {
                     flex: 1 1 50%;
-                    padding-top: 0.2mm;
-                    padding-bottom: 0.3mm;
+                    padding-top: 0.7mm;
+                    padding-bottom: 0.4mm;
                 }
 
                 key {
