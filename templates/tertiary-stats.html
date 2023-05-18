@@ -2,7 +2,7 @@
     <% if (obj.np) { %>
         <li title="{{{np_tooltip}}}">
             <strong>{{humanNumber(np)}}<abbr class="unit">w</abbr></strong>
-            <div class="label">NP®</div>
+            <div class="label"><attr for="tp">NP®</attr></div>
         </li>
     <% } else if (obj.power) { %>
         <li>
@@ -15,19 +15,19 @@
     <% if (obj.intensity) { %>
         <li title="{{{intensity_tooltip}}}">
             <strong>{{humanNumber(intensity * 100)}}<abbr class="unit">%</abbr></strong>
-            <div class="label">IF®</div>
+            <div class="label"><attr for="tp">IF®</attr></div>
         </li>
     <% } %>
 
     <% if (obj.tss) { %>
         <li title="{{{tss_tooltip}}}">
             <strong>{{humanNumber(tss)}}</strong>
-            <div class="label">TSS®</div>
+            <div class="label"><attr for="tp">TSS®</attr></div>
         </li>
     <% } else if (obj.tTss) { %>
         <li title="{{{trimp_tss_tooltip}}}">
             <strong>{{humanNumber(tTss)}}</strong>
-            <div class="label">tTSS®</div>
+            <div class="label"><attr for="tp">tTSS®</attr></div>
         </li>
     <% } %>
 

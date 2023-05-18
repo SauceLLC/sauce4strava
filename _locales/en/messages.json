@@ -535,5 +535,6 @@
     "dashboard_exclude_virtual": {"message": "Skip Virtual"},
     "dashboard_exclude_commutes": {"message": "Skip Commutes"},
     "dashboard_kudo_limit_reached": {"message": "Hourly Limit Reached"},
-    "dashboard_kudo_complete": {"message": "Everything Kudoed"}
+    "dashboard_kudo_complete": {"message": "Everything Kudoed"},
+    "attribution_tp": {"message": "Normalized Power®, NP®, Training Stress Score®, TSS®, Intensity Factor®, IF® are trademarks of TrainingPeaks, LLC and are used with permission.\n\nLearn more at <a href=\"https://www.trainingpeaks.com\">https://www.trainingpeaks.com</a>."}
 }

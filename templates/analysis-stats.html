@@ -67,7 +67,7 @@
 
         <% if (obj.power.np) { %>
             <line title="{{{np_tooltip}}}">
-                <key>NP®</key>
+                <key><attr for="tp">NP®</attr></key>
                 <value>{{humanNumber(power.np)}}<abbr class="unit">w</abbr></value>
             </line>
         <% } %>
@@ -108,12 +108,12 @@
 
         <% if (energy.tss) { %>
             <line title="{{{tss_tooltip}}}">
-                <key>TSS®</key>
+                <key><attr for="tp">TSS®</attr></key>
                 <value>{{humanNumber(energy.tss)}}</value>
             </line>
         <% } else if (energy.tTss) { %>
             <line title="{{{trimp_tss_tooltip}}}">
-                <key>tTSS®</key>
+                <key><attr for="tp">tTSS®</attr></key>
                 <value>{{humanNumber(energy.tTss)}}</value>
             </line>
         <% } %>
@@ -133,7 +133,7 @@
 
         <% if (energy.intensity) { %>
             <line title="{{{intensity_tooltip}}}">
-                <key>IF®</key>
+                <key><attr for="tp">IF®</attr></key>
                 <value>{{humanNumber(energy.intensity * 100)}}<abbr class="unit">%</abbr></value>
             </line>
         <% } %>

@@ -1,5 +1,41 @@
 /* global sauce, browser */
 
+
+let _attrDialog;
+function handleAttributionDialog() {
+    document.documentElement.addEventListener('click', ev => {
+        const attr = ev.target.closest('attr[for]');
+        if (!attr) {
+            return;
+        }
+        if (_attrDialog) {
+            _attrDialog.close();
+        } else {
+            const dialog = document.createElement('dialog');
+            dialog.classList.add('sauce-attr');
+            sauce.adjacentNodeContents(dialog, 'beforeend',
+                browser.i18n.getMessage(`attribution_${attr.getAttribute('for')}`));
+            const pos = attr.getBoundingClientRect(attr);
+            if (pos.left || pos.top) {
+                dialog.style.setProperty('top', pos.top + pos.height + 'px');
+                dialog.style.setProperty('left', pos.left + 'px');
+                dialog.classList.add('anchored');
+            }
+            dialog.addEventListener('click', ev => dialog.close());
+            dialog.addEventListener('close', ev => {
+                if (dialog === _attrDialog) {
+                    _attrDialog = null;
+                    dialog.remove();
+                }
+            });
+            _attrDialog = dialog;
+            document.body.append(dialog);
+            dialog.showModal();
+        }
+    });
+}
+
+
 (async function() {
     'use strict';
 
@@ -7,6 +43,7 @@
         pathExclude: /^\/($|subscribe|login|register|legal|routes\/new|.+?\/heatmaps\/|.+?\/training\/log|segments\/.+?\/local-legend)(\/.*|\b|$)/,
         stylesheets: ['site/theme.css'],
         callbacks: [
+            handleAttributionDialog,
             config => {
                 let theme = config.options.theme;
                 if (theme === 'system') {

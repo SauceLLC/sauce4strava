@@ -1,7 +1,7 @@
 <select name="type" class="pref">
     <option value="power" {{panelPrefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
     <option value="power_wkg" {{panelPrefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
-    <option value="np" {{panelPrefs.type === 'np' ? 'selected' : ''}}>NP®</option>
+    <option value="np" {{panelPrefs.type === 'np' ? 'selected' : ''}}><attr for="tp">NP®</attr></option>
     <option value="xp" {{panelPrefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
     <option value="pace" {{panelPrefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
     <option value="gap" {{panelPrefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>

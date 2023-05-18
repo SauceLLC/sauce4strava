@@ -24,14 +24,14 @@
                     </header>
                     <% if (day.tss) { %>
                         <row>
-                            <key>TSS®:</key>
+                            <key><attr for="tp">TSS®</attr>:</key>
                             <value>{{humanNumber(day.tss)}}</value>
                         </row>
                     <% } %>
                     <% if (day.intensityTime || day.hrZonesTime.length) { %>
                         <row class="if-zones">
                             <% if (day.intensityTime) { %>
-                                <key>IF®:</key>
+                                <key><attr for="tp">IF®</attr>:</key>
                                 <value>{{humanNumber(day.intensityTime / day.duration * 100)}}%</value>
                             <% } else { %>
                                 <key>{{{hr_zones}}}:</key>
@@ -109,7 +109,7 @@
                     <% } %>
                     <% if (sauce.model.getActivityTSS(a) != null) { %>
                         <row>
-                            <key>TSS®:</key>
+                            <key><attr for="tp">TSS®</attr>:</key>
                             <value>{{humanNumber(sauce.model.getActivityTSS(a))}}</value>
                             <div class="btn btn-icon-only btn-unstyled expand"
                                  title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
@@ -118,19 +118,19 @@
                             <div class="expanded-details">
                                 <% if (a.tssOverride != null) { %>
                                     <row>
-                                        <key>TSS® {{{override}}}:</key>
+                                        <key><attr for="tp">TSS®</attr> {{{override}}}:</key>
                                         <value>{{humanNumber(a.tssOverride)}}</value>
                                     </row>
                                 <% } %>
                                 <% if (a.stats && a.stats.tss != null) { %>
                                     <row>
-                                        <key>TSS® {{{/analysis_power}}}:</key>
+                                        <key><attr for="tp">TSS®</attr> {{{/analysis_power}}}:</key>
                                         <value>{{humanNumber(a.stats.tss)}}</value>
                                     </row>
                                 <% } %>
                                 <% if (a.stats && a.stats.tTss != null) { %>
                                     <row>
-                                        <key>tTSS®:</key>
+                                        <key><attr for="tp">tTSS®</attr>:</key>
                                         <value>{{humanNumber(a.stats.tTss)}}</value>
                                     </row>
                                 <% } %>
@@ -138,7 +138,7 @@
                         </row>
                     <% } else { %>
                         <row>
-                            <key>TSS®:</key>
+                            <key><attr for="tp">TSS®</attr>:</key>
                             <value class="sauce-negative">
                                 <a class="edit-activity sauce-negative"
                                    title="Click to edit">{{{unavailable}}}</a>
@@ -149,7 +149,7 @@
                         <% if (a.stats.intensity || (a.stats.hrZonesTime && a.stats.hrZonesTime.length)) { %>
                             <row class="if-zones">
                                 <% if (a.stats.intensity) { %>
-                                    <key>IF®:</key>
+                                    <key><attr for="tp">IF®</attr>:</key>
                                     <value>{{humanNumber(a.stats.intensity * 100)}}%</value>
                                 <% } else { %>
                                     <key>{{{hr_zones}}}:</key>
