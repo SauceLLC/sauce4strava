@@ -95,7 +95,7 @@ Attribution
  * <a id="tp"></a> Normalized Power®, NP®, Training Stress Score®, TSS®,
    Intensity Factor®, IF® are trademarks of TrainingPeaks, LLC and are used with permission.
 
-   Learn more at <a href="https://www.trainingpeaks.com">https://www.trainingpeaks.com</a>.
+   Learn more at <a href="https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/?utm_source=newsletter&utm_medium=partner&utm_term=sauce_trademark&utm_content=cta&utm_campaign=sauce">https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/</a>.
 
 
 Legal
