@@ -17,7 +17,7 @@ sauce.ns('dashboard', function(ns) {
 
 
     function _findActivityProps(p) {
-        for (let depth = 0; depth < 10 && p; depth++, p = p.children && p.children.props) {
+        for (let depth = 0; depth < 10 && p; depth++, p = p.children && p.children[1] && p.children[1].props || p.children.props) {
             if (p.cursorData) {
                 return p;
             }
