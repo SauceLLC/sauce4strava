@@ -16,10 +16,26 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    function _findActivityProps(p) {
-        for (let depth = 0; depth < 10 && p; depth++, p = p.children && p.children[1] && p.children[1].props || p.children.props) {
-            if (p.cursorData) {
-                return p;
+    function _findActivityProps(p, _depth=1) {
+        if (!p) {
+            return;
+        }
+        // cursorData is just the most generic test property.
+        if (p && p.cursorData) {
+            return p;
+        }
+        if (_depth < 10) {
+            if (Array.isArray(p.children)) {
+                for (const x of p.children) {
+                    if (x.props) {
+                        const r = _findActivityProps(x.props, _depth + 1);
+                        if (r) {
+                            return r;
+                        }
+                    }
+                }
+            } else if (p.children && p.children.props) {
+                return _findActivityProps(p.children.props, _depth + 1);
             }
         }
     }
@@ -77,7 +93,7 @@ sauce.ns('dashboard', function(ns) {
                     }
                 }
             } else if (props.entity === 'GroupActivity') {
-                if (props.rowData.activities.every(x => x.is_virtual)) {
+                if ((!tag || tag === '*') && props.rowData.activities.every(x => x.is_virtual)) {
                     return true;
                 }
             }
