@@ -1153,7 +1153,9 @@
                 background-color: transparent;
             }
 
-            [class*="Avatar--img-wrapper--"] {
+            [class*="Avatar--img-wrapper--"],
+            [class*="Avatar-module__imgWrapper--"],
+            [class*="__iconContainer--"] {
                 background-color: transparent;
             }
 
@@ -1194,13 +1196,31 @@
             [class*="ActivityEntryBody--achievements-summary--"],
             [class*="ActivityEntryBody--description-body--"],
             [class*="ActivityEntryBody--stat-subtext--"],
-            [class*="GroupActivity--headline-text-btn--"],
-            [class*="MediaBody--media-body--"] {
+            [class*="GroupActivity--headline-text-btn--"], // old
+            [class*="GroupActivity__headline-text-btn--"], // new
+            [class*="MediaBody--media-body--"],
+            [class*="__subtitle-wrapper--"] *,
+            [class*="__achievements-summary--"] *,
+            [class*="__comment-text--"] {
                 color: color.shade(fg, 10%) !important;
             }
 
-            [class*="MaharajAchievementCelebration--achievement-celebration--"] {
-                background-color: color.shade(bg, 20%);
+            [class*="__statLabel--"],
+            [class*="__stat-subtext--"] {
+                color: color.shade(fg, 15%) !important;
+            }
+            [class*="__statValue--"],
+            [class*="__stat-text--"] {
+                color: color.shade(fg, 10%) !important;
+            }
+
+            button {
+                color: color.shade(accent4, 10%);
+            }
+
+            [class*="MaharajAchievementCelebration--achievement-celebration--"],
+            [class*="AchievementCelebration__achievement-celebration--"] {
+                background-color: color.shade(bg, 15%);
                 color: color.shade(fg, 10%);
             }
         }

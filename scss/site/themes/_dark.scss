@@ -52,7 +52,8 @@
     .react-feed-container {
         .react-feed-component {
             [data-testid="web-feed-entry"] {
-                img[class*="PhotosAndMapImage--"] {
+                img[class*="PhotosAndMapImage--"],
+                img[data-testid="map"] {
                     filter: $map-filter;
                 }
 
