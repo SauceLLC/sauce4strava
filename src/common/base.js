@@ -1341,12 +1341,8 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     sauce.LRUCache = class LRUCache extends Map {
         constructor(capacity) {
             super();
-            if (capacity < 2) {
-                throw new TypeError('Min capacity 2');
-            }
             this._capacity = capacity;
             this._head = null;
-            this._tail = null;
         }
 
         get(key) {
@@ -1354,41 +1350,53 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
             if (entry === undefined) {
                 return;
             }
-            if (entry.next !== null) {
-                this._moveToHead(entry);
-            }
+            this._moveToHead(entry);
             return entry.value;
         }
 
         set(key, value) {
             let entry = super.get(key);
-            if (!entry) {
-                entry = {key, value, next: null};
-                if (!this.size) {
-                    this._head = (this._tail = entry);
-                } else if (this.size === this._capacity) {
-                    this.delete(this._tail.key);
-                    this._tail = this._tail.next;
+            if (entry === undefined) {
+                if (this.size === this._capacity) {
+                    // Fast path: just replace tail and rotate.
+                    entry = this._head.prev;
+                    this._head = entry;
+                    this.delete(entry.key);
+                } else {
+                    entry = {};
+                    if (!this.size) {
+                        entry.next = entry.prev = entry;
+                        this._head = entry;
+                    } else {
+                        this._moveToHead(entry);
+                    }
                 }
+                entry.key = key;
+                entry.value = value;
                 super.set(key, entry);
+            } else {
+                entry.value = value;
+                this._moveToHead(entry);
             }
-            this._moveToHead(entry);
         }
 
         _moveToHead(entry) {
-            if (this._tail === entry && entry.next !== null) {
-                this._tail = entry.next;
+            if (entry === this._head) {
+                return;
             }
-            entry.next = null;
-            if (this._head !== entry) {
-                this._head.next = entry;
-                this._head = entry;
+            if (entry.next) {
+                entry.next.prev = entry.prev;
+                entry.prev.next = entry.next;
             }
+            entry.next = this._head;
+            entry.prev = this._head.prev;
+            this._head.prev.next = entry;
+            this._head.prev = entry;
+            this._head = entry;
         }
 
         clear() {
             this._head = null;
-            this._tail = null;
             super.clear();
         }
     };
