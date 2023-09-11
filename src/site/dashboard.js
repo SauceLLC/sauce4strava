@@ -5,17 +5,6 @@ sauce.ns('dashboard', function(ns) {
     const cardSelector = '[class*="FeedEntry__entry-container--"]';
 
 
-    async function feedEvent(action, category, count) {
-        if (!count) {
-            return;
-        }
-        await sauce.report.event('ActivityFeed', action, category, {
-            nonInteraction: true,
-            eventValue: count
-        });
-    }
-
-
     function _findActivityProps(p, _depth=1) {
         if (!p) {
             return;
@@ -376,12 +365,6 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    async function sendGAPageView(type) {
-        await sauce.proxy.connected;
-        await sauce.ga.sendSoon('pageview', {referrer: document.referrer});
-    }
-
-
     function monitorFeed(feedEl) {
         const mo = new MutationObserver(() => {
             filterFeed(feedEl);
@@ -418,14 +401,7 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    async function loadAfterDOM() {
-        if (!sauce.options['dashboard-disable-kudoall']) {
-            await loadKudoAll();
-        }
-    }
-
-
-    async function loadKudoAll() {
+    async function loadKudoAll(el) {
         // Strava kinda has bootstrap dropdowns, but most of the style is missing or broken.
         // I think it still is worth it to reuse the basics though (for now)  A lot of css
         // is required to fix this up though.
@@ -442,7 +418,7 @@ sauce.ns('dashboard', function(ns) {
         if (suspended) {
             rl.wait().then(() => void $kudoAll.removeClass('limit-reached'));
         }
-        jQuery('#dashboard-feed > .feed-header').append($kudoAll);
+        jQuery(el).append($kudoAll);
         $kudoAll.find('dropdown-toggle').dropdown();
         $kudoAll.on('click', 'label.filter', ev => void ev.stopPropagation()); // prevent menu close
         $kudoAll.on('input', 'label.filter input[type="checkbox"]', async ev => {
@@ -498,30 +474,21 @@ sauce.ns('dashboard', function(ns) {
             const $status = $kudoAll.find('.status');
             $status.text(`0 / ${toKudo.length}`);
             $kudoAll.addClass('active');
-            let count = 0;
             try {
                 for (const [i, x] of toKudo.entries()) {
                     // Rate limiter wait and anti-bot sleep.
                     const impendingSuspend = rl.willSuspendFor();
                     if (impendingSuspend > 10000) {
                         $kudoAll.removeClass('active').addClass('limit-reached');
-                        if (count) {
-                            feedEvent('kudo', 'all', count);
-                            count = 0;
-                        }
                     }
                     await rl.wait();
                     await sauce.sleep(150 + Math.random() ** 10 * 8000);  // low weighted jitter
                     $kudoAll.removeClass('limit-reached').addClass('active');
                     x.click();
-                    count++;
                     $status.text(`${i + 1} / ${toKudo.length}`);
                 }
             } finally {
                 $kudoAll.removeClass('active').addClass('complete');
-                if (count) {
-                    feedEvent('kudo', 'all', count);
-                }
             }
         });
     }
@@ -536,10 +503,9 @@ sauce.ns('dashboard', function(ns) {
 
 
     function load() {
-        const feedSelector = '.main .feed-container .feed-ui';
+        const feedSelector = 'main .feed-ui';
         const feedEl = document.querySelector(feedSelector);
         if (!feedEl) {
-            // We're early, monitor the DOM until it's here..
             const mo = new MutationObserver(() => {
                 const feedEl = document.querySelector(feedSelector);
                 if (feedEl) {
@@ -553,6 +519,24 @@ sauce.ns('dashboard', function(ns) {
         } else {
             monitorFeed(feedEl);
         }
+        if (!sauce.options['dashboard-disable-kudoall']) {
+            const feedHeaderSelector = 'main [class*="_feedCol-"]';
+            const feedHeaderEl = document.querySelector(feedHeaderSelector);
+            if (!feedHeaderEl) {
+                const mo = new MutationObserver(() => {
+                    const feedHeaderEl = document.querySelector(feedHeaderSelector);
+                    if (feedHeaderEl) {
+                        mo.disconnect();
+                        // Chrome devtools bug workaround...
+                        //setTimeout(() => monitorFeed(feedHeaderEl), 0);
+                        loadKudoAll(feedHeaderEl);
+                    }
+                });
+                mo.observe(document.documentElement, {childList: true, subtree: true});
+            } else {
+                loadKudoAll(feedHeaderEl);
+            }
+        }
         if (sauce.options['activity-hide-media']) {
             document.documentElement.classList.add('sauce-hide-dashboard-media');
         }
@@ -562,12 +546,6 @@ sauce.ns('dashboard', function(ns) {
         if (sauce.options['activity-dense-mode']) {
             document.documentElement.classList.add('sauce-dense-dashboard');
         }
-        if (!(['interactive', 'complete']).includes(document.readyState)) {
-            addEventListener('DOMContentLoaded', () => loadAfterDOM().catch(sauce.report.error));
-        } else {
-            loadAfterDOM().catch(sauce.report.error);
-        }
-        sendGAPageView().catch(() => void 0);
     }
 
 

@@ -2,8 +2,14 @@
 @use 'animations';
 
 
+[class*="_feedCol-"] {
+    position: relative;
+}
+
 #sauce-kudo-all {
-    float: right; // XXX ick
+    position: absolute;
+    right: 6px;
+    top: 10px;
     display: flex;
     padding-top: 0.6em;
 

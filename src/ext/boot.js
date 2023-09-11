@@ -40,7 +40,7 @@ function handleAttributionDialog() {
     'use strict';
 
     const manifests = [{
-        pathExclude: /^\/($|subscribe|login|register|legal|routes\/new|.+?\/heatmaps\/|.+?\/training\/log|segments\/.+?\/local-legend)(\/.*|\b|$)/,
+        pathExclude: /^\/($|subscribe|login|register|legal|dashboard|routes\/new|.+?\/heatmaps\/|.+?\/training\/log|segments\/.+?\/local-legend)(\/.*|\b|$)/,
         stylesheets: ['site/theme.css'],
         callbacks: [
             handleAttributionDialog,
