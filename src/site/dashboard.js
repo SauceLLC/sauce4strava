@@ -520,7 +520,7 @@ sauce.ns('dashboard', function(ns) {
             monitorFeed(feedEl);
         }
         if (!sauce.options['dashboard-disable-kudoall']) {
-            const feedHeaderSelector = 'main [class*="_feedCol-"]';
+            const feedHeaderSelector = 'main [class*="_feedCol-"], #dashboard-feed .feed-header';
             const feedHeaderEl = document.querySelector(feedHeaderSelector);
             if (!feedHeaderEl) {
                 const mo = new MutationObserver(() => {
