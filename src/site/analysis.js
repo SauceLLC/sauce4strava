@@ -2431,9 +2431,11 @@ sauce.ns('analysis', ns => {
 
 
     function supportsPeaksRanks(type) {
-        return !!(type &&
+        return !!(type && (
+            ['np', 'xp', 'hr'].includes(type) ||
             (type.startsWith('power') && hasAccurateWatts()) ||
-            (['pace', 'gap'].includes(type) && pageView.isRun()));
+            (['pace', 'gap'].includes(type) && pageView.isRun())
+        ));
     }
 
 
