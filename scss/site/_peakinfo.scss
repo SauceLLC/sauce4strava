@@ -113,7 +113,7 @@
             }
 
             &[data-source="peak_vam"],
-            &[data-source="peak_cadence"],
+            &[data-source="peak_cadence"] {
                 td:last-child {
                     padding-right: 1em;
                 }
