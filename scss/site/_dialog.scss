@@ -468,12 +468,13 @@ html .ui-dialog {
         max-height: 100vh !important;
         top: 0 !important;
         left: 0 !important;
-        font-size: 1.2em;
+        font-size: 1.08em;
         border: none;
         border-radius: 0;
 
-        .ui-dialog-buttonpane {
-            font-size: 1.1em;
+        .ui-dialog-titlebar {
+            padding-top: 0.8em;
+            padding-bottom: 0.8em;
         }
 
         .ui-resizable-handle {

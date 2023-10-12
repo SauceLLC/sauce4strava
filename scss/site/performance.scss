@@ -1592,11 +1592,6 @@ table.activity-table {
 
 @media only screen and (max-width: 768px) {
 
-    body {
-        // The responsive body fontsize is constrained by the analysis page; not us.
-        font-size: 1.12em !important;
-    }
-
     table.sauce-perf {
         td, th {
             white-space: initial;

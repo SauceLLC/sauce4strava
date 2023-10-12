@@ -112,6 +112,11 @@
             flex-direction: row;
             padding: 0;
 
+            .sync-mgmt,
+            .performance-mgmt {
+                min-width: 350px;
+            }
+
             .sync-mgmt {
                 flex: 1 1;
                 max-width: 100%;
@@ -288,6 +293,10 @@
         }
 
         .ui-dialog-buttonpane {
+            @media only screen and (max-width: 400px) {
+                font-size: 0.8em;
+            }
+
             &.sync-active {
                 .btn.sauce-backup,
                 .btn.sauce-restore {
