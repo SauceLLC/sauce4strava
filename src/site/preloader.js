@@ -17,7 +17,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     sauce.propDefined('pageView', view => {
         const assembleSave = view.assemble;
         view.assemble = function(_, weight) {
-            sauce.stravaAthleteWeight = weight;
+            sauce.stravaAthleteWeight = weight; // only set for self activities
             return assembleSave.apply(this, arguments);
         };
         const addCustomRoutes = view.addCustomRoutes;
@@ -38,7 +38,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             // routes can set classes on this element.
             const pageNav = document.querySelector('#pagenav');
             const overview = pageNav && pageNav.querySelector('[data-menu="overview"]');
-            // Some indoor workouts for non-premium members don't have pageNav (ie. peleton)
+            // Some indoor workouts for non-premium members don't have pageNav (ie. peloton)
             if (overview) {
                 const li = document.createElement('li');
                 li.style.display = 'none';
@@ -238,6 +238,10 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 stream: 'watts_calc',
                 formatter: Strava.I18n.PowerFormatter,
                 filter: () => !this.context.streamsContext.data.has('watts'),
+            }, {
+                // Runs with real watts need this to be manually added..
+                stream: 'watts',
+                formatter: Strava.I18n.PowerFormatter,
             }, {
                 stream: 'grade_adjusted_pace',
                 formatter: Strava.I18n.ChartLabelPaceFormatter,
