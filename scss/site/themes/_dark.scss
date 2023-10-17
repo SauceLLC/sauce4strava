@@ -231,4 +231,8 @@
     [class*="ActionsDropdown--more-icon--"] {
         filter: invert(1);
     }
+
+    #basic-analysis g#watts_calc .simple-line {
+        stroke: #ddd;
+    }
 }
