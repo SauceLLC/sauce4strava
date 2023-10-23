@@ -546,6 +546,12 @@ export async function getActivity(id) {
 sauce.proxy.export(getActivity, {namespace});
 
 
+export async function getActivities(ids) {
+    return await actsStore.getMany(ids);
+}
+sauce.proxy.export(getActivities, {namespace});
+
+
 export function getActivitySyncManifests(processor) {
     return ActivityModel.getSyncManifests(processor).map(x => ({...x, data: undefined}));
 }

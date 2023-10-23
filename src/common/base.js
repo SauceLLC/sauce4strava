@@ -639,7 +639,6 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
             return s;
         }
 
-
         async _readQuery(getter, query, options={}, ...getterExtraArgs) {
             let cacheKey;
             if (!options._skipCache) {
