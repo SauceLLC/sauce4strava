@@ -24,6 +24,16 @@ function hasSyncController(athleteId) {
 }
 
 
+function pulseHighlightElement(el) {
+    const animClass = 'sauce-pulse-highlight';
+    if (el.classList.contains(animClass)) {
+        el.classList.remove(animClass);
+        el.offsetWidth;
+    }
+    el.classList.add(animClass);
+}
+
+
 let _peakRanges = {};
 export async function getPeakRanges(type) {
     if (!_peakRanges[type]) {
@@ -484,7 +494,7 @@ export class DetailsView extends PerfView {
         return r;
     }
 
-    async renderAttrs() {
+    async renderAttrs(obj) {
         let hasNewer;
         let hasOlder;
         if (this.activities && this.activities.length && this.pageView.newest) {
@@ -499,6 +509,7 @@ export class DetailsView extends PerfView {
             hasNewer,
             hasOlder,
             debug: !!location.search.match(/debug/),
+            ...obj,
         };
     }
 
@@ -555,16 +566,9 @@ export class DetailsView extends PerfView {
     async setActivities(activities, options={}) {
         this.activities = Array.from(activities);
         this.activities.sort((a, b) => (a.ts || 0) - (b.ts || 0));
-        await this.render();
-        if (!options.noHighlight) {
-            const collapsed = this.$el.hasClass('collapsed');
-            if (!collapsed) {
-                this.el.scrollIntoView({behavior: 'smooth'});
-            } else {
-                this.toggleCollapsed();  // bg okay
-                this.$el.one('transitionend', () =>
-                    this.el.scrollIntoView({behavior: 'smooth'}));
-            }
+        await this.render(options);
+        if (!options.noHighlight && this.$el.hasClass('collapsed')) {
+            this.toggleCollapsed();  // bg okay
         }
     }
 

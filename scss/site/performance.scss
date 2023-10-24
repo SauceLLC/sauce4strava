@@ -16,6 +16,14 @@ body {
 }
 
 
+@keyframes pulse-highlight {
+    50% { filter: brightness(1.33);}
+}
+
+.sauce-pulse-highlight {
+    animation: pulse-highlight 300ms 2 linear;
+}
+
 // Use px for media query compat..
 $nav-width: 260px;
 $main-width: 600px;

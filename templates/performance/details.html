@@ -15,9 +15,12 @@
                  title="{{{show_newer_activity}}}">{{=icon ellipsis-h-light=}}</div>
         <% } %>
 
+        <% const highlightClass = !obj.noHighlight ? 'sauce-pulse-highlight' : ''; %>
+
         <% for (const day of Array.from(daily).reverse()) { %>
-            <% const multiple = day.activities.length > 1;  if (multiple) { %>
-                <div class="entry day">
+            <% const multiple = day.activities.length > 1; %>
+            <% if (multiple) { %>
+                <div class="entry day {{highlightClass}}">
                     <header class="title">
                         <small>{{humanDate(day.date, {style: 'weekday'})}}</small><br/>
                         {{day.activities.length}} Activities
@@ -93,7 +96,7 @@
                     <% } %>
             <% } %>
             <% for (const a of day.activities.reverse()) { %>
-                <div class="activity {{!multiple ? 'entry' : ''}}" data-id="{{a.id}}">
+                <div class="activity {{!multiple ? `entry ${highlightClass}` : ''}}" data-id="{{a.id}}">
                     <header class="title">
                         <div class="btn btn-icon-only btn-unstyled edit-activity"
                              title="{{{edit_activity_tooltip}}}">{{=icon edit-duotone=}}</div>
