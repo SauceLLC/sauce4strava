@@ -3406,10 +3406,15 @@ sauce.ns('analysis', ns => {
         }
         const timeStream = await fetchStream('time');
         const streamData = pageView.streams().streamData;
-        if (ns.activityType === 'run' && ns.weight) {
-            const gad = await fetchGradeDistStream();
-            if (gad) {
-                streamData.add('watts_calc', sauce.pace.createWattsStream(timeStream, gad, ns.weight));
+        if (ns.activityType === 'run') {
+            if (sauce.options['analysis-disable-run-watts']) {
+                Object.defineProperty(streamData.data, 'watts', {get: () => null});
+            }
+            if (ns.weight) {
+                const gad = await fetchGradeDistStream();
+                if (gad) {
+                    streamData.add('watts_calc', sauce.pace.createWattsStream(timeStream, gad, ns.weight));
+                }
             }
         }
         const wattsStream = (await fetchStream('watts')) || (await fetchStream('watts_calc'));

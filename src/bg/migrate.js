@@ -120,8 +120,22 @@ sauce.ns(namespace, ns => {
             delete config.options['activity-hide-challenges'];
             await sauce.storage.set({options: config.options});
         }
+    }, {
+        version: 9,
+        name: 'run-power-disable',
+        migrate: async config => {
+            const defaultOptions = {
+                "analysis-disable-run-watts": true,
+            };
+            const options = config.options || {};
+            for (const [key, value] of Object.entries(defaultOptions)) {
+                if (options[key] === undefined) {
+                    options[key] = value;
+                }
+            }
+            await sauce.storage.set({options});
+        }
     }];
-
 
     let _activeMigration;
     ns.runMigrations = async function() {
