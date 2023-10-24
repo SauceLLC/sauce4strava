@@ -1042,9 +1042,6 @@ sauce.ns('analysis', ns => {
 
     const _correctedRolls = new Map();
     async function correctedRollTimeRange(stream, wallStartTime, wallEndTime, options) {
-        // startTime and endTime can be pad based values with corrected power sources.
-        // Using wall time values and starting with full streams gives us the correct
-        // padding as the source.
         const key = stream;
         if (!_correctedRolls.has(key)) {
             let fullStream = await fetchStream(stream);
@@ -1153,8 +1150,8 @@ sauce.ns('analysis', ns => {
             {active: true, ignoreZeros: true});
         const tempStream = await fetchStreamTimeRange('temp', startTime, endTime);
         const distance = streamDelta(streams.distance);
-        const startIdx = getStreamTimeIndex(wallStartTime);
-        const endIdx = getStreamTimeIndex(wallEndTime);
+        const startIdx = getStreamTimeIndex(startTime);
+        const endIdx = getStreamTimeIndex(endTime);
         let gap;
         if (ns.activityType === 'run') {
             streams.grade_adjusted_distance = streams.distance && await fetchGradeDistStream({startTime, endTime});
@@ -1869,44 +1866,33 @@ sauce.ns('analysis', ns => {
 
 
     function addBadge(row) {
-        if (!ns.weight || row.querySelector(':scope > td.sauce-mark')) {
+        if (!ns.weight || row.classList.contains('sauce-mark')) {
             return;
         }
+        row.classList.add('sauce-mark');
         const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
         if (!segment) {
             console.warn('Segment data not found for:', row.dataset.segmentEffortId);
             return;
+        }
+        const score = segment.get('score');
+        if (typeof score === 'number') {
+            jQuery(row.querySelector(':scope > td.starred-col'))
+                .append(`<div class="sauce-segment-score" title="Segment popularity score">${score.toLocaleString()}</div>`);
         }
         const rank = sauce.power.rank(segment.get('elapsed_time_raw'),
             segment.get('avg_watts_raw'), null, ns.weight, ns.gender);
         if (!rank || !rank.badge) {
             return;  // Too slow/weak
         }
-        let targetTD;
-        for (const td of row.querySelectorAll(':scope > td')) {
-            const unit = td.querySelector('abbr.unit');
-            if (unit && unit.innerText.toLowerCase() === 'w') {
-                // This is the highest pref for placement.  The TD doesn't have any other indications besides
-                // the watts unit abbr tag.  The title value is translated, so we have to look for this.
-                targetTD = td;
-                break;
-            }
+        const targetTD = row.querySelector('.local-legend-col');
+        const badgeHTML = `<img src="${rank.badge}" data-cat="${rank.cat}" class="sauce-rank" ` +
+            `title="${rank.tooltip}"/>`;
+        if (targetTD.innerHTML) {
+            jQuery(targetTD).html(`<div class="sauce-rank-holder">${targetTD.innerHTML}${badgeHTML}</div>`);
+        } else {
+            jQuery(targetTD).html(badgeHTML);
         }
-        if (!targetTD) {
-            // Use fallback strategy of using a TD column with a real identifier.
-            targetTD = row.querySelector('.time-col');
-        }
-        if (!targetTD) {
-            throw new Error('Badge Fail: row query selector failed');
-        }
-        targetTD.classList.add('sauce-mark');
-        jQuery(targetTD).html(`
-            <div class="sauce-rank-holder">
-                <div>${targetTD.innerHTML}</div>
-                <img src="${rank.badge}" data-cat="${rank.cat}" class="sauce-rank"
-                     title="${rank.tooltip}"/>
-            </div>
-        `);
     }
 
 
@@ -2219,6 +2205,41 @@ sauce.ns('analysis', ns => {
     }
 
 
+    let _loadingPowerCtrl = null;
+    function loadPowerController() {
+        if (_loadingPowerCtrl !== null) {
+            return _loadingPowerCtrl;
+        }
+        const powerCtrl = (pageView.powerController && pageView.powerController()) ||
+            (pageView.estPowerController && pageView.estPowerController());
+        if (!powerCtrl) {
+            _loadingPowerCtrl = undefined;
+        } else {
+            _loadingPowerCtrl = new Promise(resolve => {
+                powerCtrl.deferred.done(resolve);
+                powerCtrl.deferred.fail(resolve);
+            }).then(() => {
+                if (!powerCtrl.has('athlete_ftp') && !powerCtrl.has('athlete_weight')) {
+                    powerCtrl.set(sauce.perf.inferPowerDataAthleteInfo(powerCtrl.attributes));
+                }
+                return powerCtrl;
+            });
+        }
+        return _loadingPowerCtrl;
+    }
+
+
+    let _loadingAthletePowerData = null;
+    function loadAthletePowerData(athleteId, ts) {
+        if (_loadingAthletePowerData !== null) {
+            return _loadingAthletePowerData;
+        }
+        _loadingAthletePowerData = sauce.perf.fetchAthletePowerData(athleteId, ts).then(powerData =>
+            powerData && sauce.perf.inferPowerDataAthleteInfo(powerData));
+        return _loadingAthletePowerData;
+    }
+
+
     async function getFTPInfo(athleteInfo) {
         if (ns.syncAthlete) {
             // XXX this is a weak integration for now.  Will need complete overhaul...
@@ -2237,19 +2258,11 @@ sauce.ns('analysis', ns => {
             info.ftpOrigin = 'sauce';
         } else {
             let stravaFtp;
-            const powerCtrl = pageView.powerController && pageView.powerController();
+            const powerCtrl = await loadPowerController();
             if (powerCtrl) {
-                try {
-                    await new Promise((resolve, reject) => {
-                        powerCtrl.deferred.done(resolve);
-                        powerCtrl.deferred.fail(reject);
-                    });
-                    stravaFtp = powerCtrl.get('athlete_ftp');
-                } catch(e) {/*no-pragma*/}
+                stravaFtp = powerCtrl.get('athlete_ftp');
             }
             if (stravaFtp == null) {
-                /* This fallback is for athletes that once had premium, set their FTP, then let
-                 * their subscription pass.  It only works for them, but it's a nice to have. */
                 stravaFtp = pageView.activity().get('ftp');
             }
             if (stravaFtp) {
@@ -2274,6 +2287,16 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function getActivityValuesViaSimilar(id) {
+        if (!pageView.similarActivitiesData || !pageView.similarActivitiesData()) {
+            return;
+        }
+        const efforts = pageView.similarActivitiesData().efforts || [];
+        const match = efforts.find(x => x.activity_id === id);
+        return match && match.activity_values;
+    }
+
+
     async function getWeightInfo(athleteInfo) {
         if (ns.syncAthlete) {
             // XXX this is a weak integration for now.  Will need complete overhaul...
@@ -2287,11 +2310,48 @@ sauce.ns('analysis', ns => {
         }
         const info = {};
         const override = athleteInfo.weight_override;
+        const activityId = pageView.activityId();
         if (override) {
             info.weight = override;
             info.weightOrigin = 'sauce';
         } else {
-            const stravaWeight = sauce.stravaAthleteWeight;
+            let stravaWeight;
+            const activityData = getActivityValuesViaSimilar(activityId);
+            if (activityData && activityData.values) {
+                stravaWeight = activityData.values.athlete_weight;
+                console.warn("similar activities based good weight:", stravaWeight);
+            }
+            if (stravaWeight == null) {
+                const powerCtrl = await loadPowerController();
+                if (powerCtrl) {
+                    stravaWeight = powerCtrl.get('athlete_weight');
+                    console.warn("power controller inferred weight:", stravaWeight);
+                }
+            }
+            if (stravaWeight == null) {
+                stravaWeight = sauce.stravaAthleteWeight;
+                console.warn("strava reported athlete weight on activity:", stravaWeight);
+            }
+            if (stravaWeight == null) {
+                const data = getActivityValuesViaSimilar(activityId);
+                if (data && data.values && data.values.athlete_weight) {
+                    stravaWeight = data.values.athlete_weight;
+                    console.warn("similar activity matched weight:", stravaWeight);
+                }
+            }
+            if (stravaWeight == null && ns.athlete.id === pageView.currentAthlete().id) {
+                let ts = pageView.activity().get('startDateLocal');
+                if (!ts) {
+                    const data = getActivityValuesViaSimilar(activityId);
+                    ts = data && data.start_date;
+                    debugger; // XXX maybe this makes no sense since I'd expect a match from above? verify
+                }
+                const powerData = await loadAthletePowerData(ns.athlete.id, ts || (Date.now() / 1000 | 0));
+                if (powerData && powerData.athlete_weight) {
+                    stravaWeight = powerData.athlete_weight;
+                    console.warn("athlete power profile inferred weight:", stravaWeight);
+                }
+            }
             if (stravaWeight) {
                 info.weight = stravaWeight;
                 info.weightOrigin = 'strava';

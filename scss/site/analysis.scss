@@ -158,13 +158,17 @@ html.sauce-enabled {
 img.sauce-rank {
     margin-left: 0.8em;
     width: 3.5em;
-    opacity: 0.9;
+    opacity: 0.88;
     object-fit: contain;
     transition: opacity 200ms;
+
+    &:hover {
+        opacity: 1;
+    }
 }
 
-img.sauce-rank:hover {
-    opacity: 1;
+.local-legend-col > .sauce-rank {
+    margin-left: 0;
 }
 
 .sauce-rank-widget {
@@ -180,6 +184,18 @@ img.sauce-rank:hover {
 
 .sauce-rank {
     cursor: pointer;
+}
+
+.sauce-segment-score {
+    font-size: 0.68em;
+    font-weight: 800;
+    opacity: 0.5;
+    line-height: 0.9;
+    transition: opacity 200ms;
+}
+
+tr:hover .sauce-segment-score {
+    opacity: 1;
 }
 
 abbr.unit {

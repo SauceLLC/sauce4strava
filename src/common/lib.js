@@ -98,9 +98,9 @@ sauce.ns('data', function() {
 
 
     function stddev(data) {
-        const mean = sauce.data.avg(data);
+        const mean = avg(data);
         const variance = data.map(x => (mean - x) ** 2);
-        return Math.sqrt(sauce.data.avg(variance));
+        return Math.sqrt(avg(variance));
     }
 
 
@@ -2054,6 +2054,54 @@ sauce.ns('perf', function() {
     }
 
 
+    async function fetchAthletePowerData(athleteId, start) {
+        const q = new URLSearchParams({start, week_span: -1});
+        const resp = await sauce.fetch(`https://www.strava.com/athletes/${athleteId}/power_data?${q}`);
+        if (!resp.ok) {
+            console.warn("Failed to fetch power data:", resp.status, await resp.text());
+            return;
+        }
+        // Guard empty body responses from bad requests that are still 200 OK.
+        const text = await resp.text();
+        return text ? JSON.parse(text) : undefined;
+    }
+
+
+    async function fetchActivityPowerData(activity) {
+        const resp = await sauce.fetch(`https://www.strava.com/activities/${activity}/power_data`);
+        if (!resp.ok) {
+            console.warn("Failed to fetch power data:", resp.status, await resp.text());
+            return;
+        }
+        const data = await resp.json();
+        return data;
+    }
+
+
+    function inferPowerDataAthleteInfo(data) {
+        const info = {};
+        if (data.cp_data_wkg && data.cp_data) {
+            info.athlete_weight = sauce.data.avg(data.cp_data.map((x, i) => x.at(-1) / data.cp_data_wkg[i].at(-1)));
+        }
+        if (data.range_array) {
+            const zones = data.range_array.map(x => parseInt(x)); // lower bounds
+            if (typeof zones[1] === 'number') {
+                info.athlete_ftp = Math.round(sauce.data.avg([
+                    zones[1] / 0.55,
+                    zones[2] / 0.75,
+                    zones[3] / 0.90,
+                    zones[4] / 1.05,
+                    zones[5] / 1.20,
+                    zones[6] / 1.50,
+                ]));
+            }
+        } else if (data.estimated_cp) {
+            info.athlete_ftp = data.estimated_cp;
+        }
+        return info;
+    }
+
+
     function calcTRIMP(duration, hrr, gender) {
         const y = hrr * (gender === 'female' ? 1.67 : 1.92);
         return (duration / 60) * hrr * 0.64 * Math.exp(y);
@@ -2129,6 +2177,9 @@ sauce.ns('perf', function() {
         fetchSelfFTPs,
         fetchHRZones,
         fetchPaceZones,
+        fetchAthletePowerData,
+        fetchActivityPowerData,
+        inferPowerDataAthleteInfo,
         fetchPeerGender,
         calcTRIMP,
         tTSS,
