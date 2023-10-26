@@ -24,16 +24,6 @@ function hasSyncController(athleteId) {
 }
 
 
-function pulseHighlightElement(el) {
-    const animClass = 'sauce-pulse-highlight';
-    if (el.classList.contains(animClass)) {
-        el.classList.remove(animClass);
-        el.offsetWidth;
-    }
-    el.classList.add(animClass);
-}
-
-
 let _peakRanges = {};
 export async function getPeakRanges(type) {
     if (!_peakRanges[type]) {
@@ -684,13 +674,25 @@ export class ActivityStreamGraphsView extends PerfView {
         await super.render();
         if (this.streams && this.streams.time) {
             const options = {
-                streams: this.streams,
+                streams: {...this.streams},
                 width: '100%',
                 height: 64,
                 paceType: this.activity.basetype === 'run' ? 'pace' : 'speed',
                 activityType: this.activity.basetype,
             };
-            if (this.streams.watts || this.streams.watts_calc) {
+            let watts;
+            if (this.activity.basetype === 'run') {
+                if (!this.pageView.athlete.disableRunWatts) {
+                    watts = this.streams.watts;
+                }
+                if (!watts && this.pageView.athlete.estRunWatts) {
+                    watts = this.streams.watts_calc;
+                }
+            } else {
+                watts = this.streams.watts;
+            }
+            if (watts) {
+                options.streams.watts = watts;
                 await sauce.ui.createStreamGraphs(this.$('.power-graph'),
                     {graphs: ['power'], ...options});
             }

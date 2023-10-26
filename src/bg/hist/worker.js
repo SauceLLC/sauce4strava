@@ -77,7 +77,6 @@ class WorkerProcessor {
 
     async _onIncoming({seq, op, data}) {
         if (this._lastSeq && seq - this._lastSeq !== 1) {
-            debugger;
             console.error("Worker message is out of sequence", this._lastSeq, seq);
         }
         try {
@@ -205,12 +204,14 @@ class FindPeaks extends WorkerProcessor {
                     }
                 } catch(e) {
                     // XXX make this better than a big try/catch
-                    debugger;
                     console.error(this.id, "Failed to create peaks for: " + activity.id, e);
                     errors.push({activity: activity.id, error: e.message});
                 }
             }
             const watts = streams.watts || streams.watts_calc;
+            if (watts && isRun) {
+                debugger; // How the fuck? XXX
+            }
             if (watts && !isRun) { // Runs have their own processor for this.
                 const estimate = !streams.watts;
                 const weight = sauce.model.getAthleteHistoryValueAt(this.athlete.weightHistory, activity.ts);
@@ -277,7 +278,6 @@ class FindPeaks extends WorkerProcessor {
                     }
                 } catch(e) {
                     // XXX make this better than a big try/catch
-                    debugger;
                     console.error(this.id, "Failed to create peaks for: " + activity.id, e);
                     errors.push({activity: activity.id, error: e.message});
                 }
@@ -298,7 +298,6 @@ class FindPeaks extends WorkerProcessor {
                     }
                 } catch(e) {
                     // XXX make this better than a big try/catch
-                    debugger;
                     console.error(this.id, "Failed to create peaks for: " + activity.id, e);
                     errors.push({activity: activity.id, error: e.message});
                 }

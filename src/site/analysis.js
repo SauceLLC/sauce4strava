@@ -3407,7 +3407,8 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time');
         const streamData = pageView.streams().streamData;
         if (ns.activityType === 'run') {
-            if (sauce.options['analysis-disable-run-watts']) {
+            if (sauce.options['analysis-disable-run-watts'] ||
+                (ns.syncAthlete && ns.syncAthlete.disableRunWatts)) {
                 Object.defineProperty(streamData.data, 'watts', {get: () => null});
             }
             if (ns.weight) {

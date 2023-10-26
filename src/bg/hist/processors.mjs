@@ -419,7 +419,8 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
         ['time', 'moving', 'active', 'cadence', 'watts', 'watts_calc', 'distance',
          'grade_adjusted_distance']);
     const upStreams = [];
-    const createRunWatts = athlete.get('estRunWatts');
+    const disableRunWatts = athlete.get('disableRunWatts');
+    const createEstRunWatts = athlete.get('estRunWatts');
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
         if (!streams.moving) {
@@ -429,32 +430,38 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
         const basetype = activity.get('basetype');
         const isSwim = basetype === 'swim';
         const isRun = basetype === 'run';
-        if (isRun && createRunWatts) {
-            const gad = streams.grade_adjusted_distance;
-            const weight = athlete.getWeightAt(activity.get('ts'));
-            if (gad && weight && streams.time.length > 25) {
-                try {
-                    const data = sauce.pace.createWattsStream(streams.time, gad, weight);
-                    if (!sauce.data.isArrayEqual(data, streams.watts_calc)) {
-                        streams.watts_calc = data;
-                        upStreams.push({activity: activity.pk, athlete: athlete.pk, stream: 'watts_calc', data});
+        let watts;
+        if (isRun) {
+            if (createEstRunWatts) {
+                const gad = streams.grade_adjusted_distance;
+                const weight = athlete.getWeightAt(activity.get('ts'));
+                if (gad && weight && streams.time.length > 25) {
+                    try {
+                        const data = sauce.pace.createWattsStream(streams.time, gad, weight);
+                        if (!sauce.data.isArrayEqual(data, streams.watts_calc)) {
+                            streams.watts_calc = data;
+                            upStreams.push({activity: activity.pk, athlete: athlete.pk, stream: 'watts_calc', data});
+                        }
+                    } catch(e) {
+                        console.error("Failed to create running watts stream for: " + activity, e);
+                        activity.setSyncError(manifest, e);
                     }
-                } catch(e) {
-                    debugger;
-                    console.warn("Failed to create running watts stream for: " + activity, e);
-                    activity.setSyncError(manifest, e);
                 }
+                // Real watts can still take prio unless disableRunWatts is active.
+                watts = disableRunWatts ? streams.watts_calc : streams.watts || streams.watts_calc;
+            } else if (!disableRunWatts) {
+                watts = streams.watts;
             }
+        } else {
+            watts = streams.watts;
         }
         try {
-            const watts = streams.watts || (basetype === 'run' && streams.watts_calc) || undefined;
             const data = sauce.data.createActiveStream({...streams, watts}, {isTrainer, isSwim});
             if (!sauce.data.isArrayEqual(data, streams.active)) {
                 upStreams.push({activity: activity.pk, athlete: athlete.pk, stream: 'active', data});
             }
         } catch(e) {
-            debugger;
-            console.warn("Failed to create active stream for: " + activity, e);
+            console.error("Failed to create active stream for: " + activity, e);
             activity.setSyncError(manifest, e);
         }
     }
@@ -471,6 +478,7 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
  * updated here too.
  */
 export async function runPowerProcessor({manifest, activities, athlete}) {
+    const disableRunWatts = athlete.get('disableRunWatts');
     const createEstWatts = athlete.get('estRunWatts');
     const createEstPeaks = createEstWatts && athlete.get('estRunPeaks');
     const actStreams = await getActivitiesStreams(activities,
@@ -493,20 +501,31 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                     upStreams.push({activity: activity.pk, athlete: athlete.pk, stream: 'watts_calc', data});
                 }
             } catch(e) {
-                debugger;
-                console.warn("Failed to create running watts stream for: " + activity, e);
+                console.error("Failed to create running watts stream for: " + activity, e);
                 activity.setSyncError(manifest, e);
             }
         }
-        if ((streams.watts || (createEstPeaks && streams.watts_calc)) && !activity.get('peaksExclude')) {
+        if (activity.get('peaksExclude')) {
+            continue;
+        }
+        let watts;
+        let estimate;
+        if (createEstPeaks && streams.watts_calc) {
+            watts = streams.watts_calc;
+            estimate = true;
+        }
+        if (!disableRunWatts && streams.watts) {
+            watts = streams.watts;
+            estimate = false;
+        }
+        if (watts) {
             try {
-                const watts = streams.watts || streams.watts_calc;
                 for (const period of periods.filter(x => !!streams.watts || x >= 300)) {
                     const rp = sauce.power.peakPower(period, streams.time, watts,
                         {activeStream: streams.active});
                     if (rp) {
                         const entry = sauce.peaks.createStoreEntry('power', period, rp.avg(),
-                            rp, streams.time, activity, {estimate: !streams.watts});
+                            rp, streams.time, activity, {estimate});
                         if (entry) {
                             upPeaks.push(entry);
                         }
@@ -547,6 +566,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
     const useEstWatts = activity =>
         (activity.data.basetype === 'run' && athlete.data.estRunWatts) ||
         (activity.data.basetype === 'ride' && athlete.data.estCyclingWatts);
+    const disableRunWatts = athlete.data.disableRunWatts;
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
         const stats = {};
@@ -586,7 +606,6 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                         }
                     }
                 } catch(e) {
-                    debugger;
                     activity.setSyncError(manifest, e);
                     continue;
                 }
@@ -594,15 +613,20 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
             if (streams.altitude && stats.altitudeGain == null) {
                 stats.altitudeGain = sauce.geo.altitudeChanges(streams.altitude).gain;
             }
-            if (streams.watts || (streams.watts_calc && useEstWatts(activity))) {
-                const watts = streams.watts || streams.watts_calc;
+            let estimate = false;
+            let watts = activity.data.basetype !== 'run' && !disableRunWatts ? streams.watts : undefined;
+            if (!watts && useEstWatts(activity)) {
+                watts = streams.watts_calc;
+                estimate = true;
+            }
+            if (watts) {
                 try {
                     const corrected = sauce.power.correctedPower(streams.time, watts,
                         {activeStream: streams.active});
                     if (!corrected) {
                         continue;
                     }
-                    stats.estimate = !streams.watts;
+                    stats.estimate = estimate;
                     stats.kj = corrected.joules() / 1000;
                     stats.power = corrected.avg({active: true});
                     if (!stats.estimate) {
@@ -681,6 +705,7 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
     };
     const useEstPowerRunPeaks = athlete.data.estRunWatts && athlete.data.estRunPeaks;
     const useEstPowerCyclingPeaks = athlete.data.estCyclingWatts && athlete.data.estCyclingPeaks;
+    const disableRunWatts = athlete.data.disableRunWatts;
     const allowEstPowerPeaks = actData =>
         (actData.basetype === 'run' && useEstPowerRunPeaks) ||
         (actData.basetype === 'ride' && useEstPowerCyclingPeaks);
@@ -694,8 +719,9 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
         // Cleanup: Remove estimated powers and/or obsolete periods/distances...
         for (const peaks of [powers, nps, xps, wkgs]) {
             for (const x of peaks[index]) {
-                // Handle legacy wkg entries via boolean requirement.
-                if (deleteAll || (deleteEstimates && x.estimate !== false) || !validPeriods.has(x.period)) {
+                if (deleteAll || !validPeriods.has(x.period) ||
+                    ((deleteEstimates && x.estimate) ||
+                     (!x.estimate && disableRunWatts && actData.basetype === 'run'))) {
                     deleting.add(x);
                 }
             }
