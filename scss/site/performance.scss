@@ -716,6 +716,10 @@ table.activity-table {
                                     #{color.shade(bg, 15%)} 0.4em,
                                     #{color.shade(bg, 12%)});
 
+        @media only screen and (max-width: 768px) {
+            padding: 1em 0.5em;
+        }
+
         &.collapsed {
             display: none;
         }
@@ -1611,7 +1615,7 @@ table.activity-table {
             padding: 1em 0;
 
             section.sauce-panels {
-                padding: 1em 0;
+                padding: 1em 0.4em;
 
                 .sauce-panel .chart-tooltip {
                     padding-left: 0 !important;
@@ -1628,7 +1632,7 @@ table.activity-table {
 
                 .start-end {
                     margin: 1em 0 0 0;
-                    flex: 1;
+                    flex: 1 1 100%;
                     justify-content: space-between;
 
                     .btn.range.oldest,

@@ -4,29 +4,23 @@
 
 html.sauce-responsive,
 .sauce-responsive body {
-    @media only screen and (min-width: 515px) and (max-width: 768px) {
+    @media only screen and (min-width: 488px) and (max-width: 768px) {
         font-size: 18px;
     }
-    @media only screen and (min-width: 488px) and (max-width: 515px) {
+    @media only screen and (min-width: 458px) and (max-width: 488px) {
         font-size: 17px;
     }
-    @media only screen and (min-width: 458px) and (max-width: 488px) {
+    @media only screen and (min-width: 430px) and (max-width: 458px) {
+        font-size: 17px;
+    }
+    @media only screen and (min-width: 392px) and (max-width: 430px) {
         font-size: 16px;
     }
-    @media only screen and (min-width: 430px) and (max-width: 458px) {
+    @media only screen and (min-width: 370px) and (max-width: 392px) {
         font-size: 15px;
     }
-    @media only screen and (min-width: 395px) and (max-width: 430px) {
+    @media only screen and (max-width: 370px) {
         font-size: 14px;
-    }
-    @media only screen and (min-width: 372px) and (max-width: 395px) {
-        font-size: 13px;
-    }
-    @media only screen and (min-width: 350px) and (max-width: 372px) {
-        font-size: 12px;
-    }
-    @media only screen and (max-width: 350px) {
-        font-size: 11px;
     }
     font-size: 14px;
     line-height: normal;
