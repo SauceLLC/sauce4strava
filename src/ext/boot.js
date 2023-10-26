@@ -75,13 +75,15 @@ function handleAttributionDialog() {
                         }
                     }
                 });
-                root.style.setProperty('--sauce-font-custom-family', `'${config.options['font-custom-family']}'`);
-                root.style.setProperty('--sauce-font-custom-size', `${config.options['font-custom-size']}px`);
                 if (config.options['font-custom-family']) {
-                    root.classList.add('sauce-font-custom-family');
                     if (config.options['font-custom-size']) {
+                        root.style.setProperty('--sauce-font-custom-size',
+                            `${config.options['font-custom-size']}px`);
                         root.classList.add('sauce-font-custom-size');
                     }
+                    root.style.setProperty('--sauce-font-custom-family',
+                        `'${config.options['font-custom-family']}'`);
+                    root.classList.add('sauce-font-custom-family');
                 }
                 if (config.options['analysis-max-page-width']) {
                     root.style.setProperty('--analysis-max-page-width',
