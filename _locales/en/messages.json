@@ -307,6 +307,8 @@
     "sync_control_panel_est_power_tooltip": {"message": "Use estimated watts for fitness tracking (TSS®) and optionally Peak Performance results."},
     "sync_control_panel_est_power_peaks": {"message": "Include in Peak Performance results"},
     "sync_control_panel_est_power_peaks_tooltip": {"message": "Include estimated power calculations in the results for Peak Performance results. \n\n NOTE: This may lead to erroneous results."},
+    "sync_control_panel_disable_run_watts": {"message": "Disable Run watts data"},
+    "sync_control_panel_disable_run_watts_tooltip": {"message": "Exclude the use of native watts data from runs.  Recommended for cases where erroneous watt values are included by the source device such as a Garmin."},
 
     "mutable_data_add_entry_tooltip": {"message": "Add a new entry"},
     "mutable_data_delete_entry_tooltip": {"message": "Delete this entry"},

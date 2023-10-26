@@ -950,6 +950,12 @@
     "sync_control_panel_est_power_peaks_tooltip": {
         "message": "Beziehen Sie geschätzte Leistungsberechnungen in die Ergebnisse für Spitzenleistungsergebnisse ein. HINWEIS: Dies kann zu fehlerhaften Ergebnissen führen."
     },
+    "sync_control_panel_disable_run_watts": {
+        "message": "Deaktivieren Sie die Run-Watt-Daten"
+    },
+    "sync_control_panel_disable_run_watts_tooltip": {
+        "message": "Schließen Sie die Verwendung nativer Wattdaten aus den Läufen aus. Empfohlen für Fälle, in denen das Quellgerät, z. B. Garmin, fehlerhafte Wattwerte übermittelt."
+    },
     "mutable_data_add_entry_tooltip": {
         "message": "Fügen Sie einen neuen Eintrag hinzu"
     },
@@ -1629,5 +1635,8 @@
     "dashboard_kudo_complete": {
         "message": "Alles Kudo",
         "description": "IMMUTABLE"
+    },
+    "attribution_tp": {
+        "message": "Normalized Power®, NP®, Training Stress Score®, TSS®, Intensity Factor®, IF® sind Marken von TrainingPeaks, LLC und werden mit Genehmigung verwendet. Erfahren Sie mehr unter <a href=\"https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/?utm_source=newsletter&utm_medium=partner&utm_term=sauce_trademark&utm_content=cta&utm_campaign=sauce\">https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/</a> ."
     }
 }

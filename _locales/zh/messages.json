@@ -1194,6 +1194,12 @@
         "message": "在最佳表现结果的结果中包括估算的功率数据。注意：这可能会导致结果不准确。",
         "description": "IMMUTABLE"
     },
+    "sync_control_panel_disable_run_watts": {
+        "message": "禁用运行瓦数数据"
+    },
+    "sync_control_panel_disable_run_watts_tooltip": {
+        "message": "从运行中排除使用本机瓦数数据。建议用于 Garmin 等源设备包含错误瓦特值的情况。"
+    },
     "mutable_data_add_entry_tooltip": {
         "message": "添加一个新条目",
         "description": "IMMUTABLE"
@@ -2097,5 +2103,8 @@
     "dashboard_kudo_complete": {
         "message": "全部 Kudoed",
         "description": "IMMUTABLE"
+    },
+    "attribution_tp": {
+        "message": "Normalized Power®、NP®、Training Stress Score®、TSS®、Intensity Factor®、IF® 是 TrainingPeaks, LLC 的商标，经许可使用。了解更多信息，请访问<a href=\"https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/?utm_source=newsletter&utm_medium=partner&utm_term=sauce_trademark&utm_content=cta&utm_campaign=sauce\">https://www.trainingpeaks.com/learn/articles/glossary-of-trainingpeaks-metrics/</a> 。"
     }
 }

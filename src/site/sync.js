@@ -458,7 +458,7 @@ sauce.ns('sync', ns => {
             const enabled = ev.currentTarget.checked;
             const entry = ev.currentTarget.closest('.entry');
             if (!ev.currentTarget.classList.contains('sub-option')) {
-                entry.querySelector('input.sub-option').disabled = !enabled;
+                entry.querySelectorAll('input.sub-option').forEach(x => x.disabled = !enabled);
             }
             athlete[ev.currentTarget.dataset.athleteBool] = enabled;
             await sauce.hist.updateAthlete(athlete.id, athlete);
