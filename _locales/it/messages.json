@@ -1,6 +1,7 @@
 {
     "app_desc": {
-        "message": "Funzionalità aggiuntive per l'analisi del ciclismo e della corsa. Questa estensione aggiorna il sito Web Strava™."
+        "message": "Funzionalità aggiuntive per l'analisi del ciclismo. Questa estensione aggiorna il sito web Strava™.",
+        "description": "IMMUTABLE"
     },
     "athlete": {
         "message": "Atleta"
