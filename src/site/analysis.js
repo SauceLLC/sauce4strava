@@ -1865,20 +1865,16 @@ sauce.ns('analysis', ns => {
     }
 
 
-    function addBadge(row) {
-        if (!ns.weight || row.classList.contains('sauce-mark')) {
+    function addSegmentBadge(row) {
+        const markCls = 'sauce-badge-mark';
+        if (!ns.weight || row.classList.contains(markCls)) {
             return;
         }
-        row.classList.add('sauce-mark');
+        row.classList.add(markCls);
         const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
         if (!segment) {
             console.warn('Segment data not found for:', row.dataset.segmentEffortId);
             return;
-        }
-        const score = segment.get('score');
-        if (typeof score === 'number') {
-            jQuery(row.querySelector(':scope > td.starred-col'))
-                .append(`<div class="sauce-segment-score" title="Segment popularity score">${score.toLocaleString()}</div>`);
         }
         const rank = sauce.power.rank(segment.get('elapsed_time_raw'),
             segment.get('avg_watts_raw'), null, ns.weight, ns.gender);
@@ -1896,6 +1892,26 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function addSegmentScore(row) {
+        const markCls = 'sauce-score-mark';
+        if (row.classList.contains(markCls)) {
+            return;
+        }
+        row.classList.add(markCls);
+        const segment = pageView.segmentEfforts().getEffort(row.dataset.segmentEffortId);
+        if (!segment) {
+            console.warn('Segment data not found for:', row.dataset.segmentEffortId);
+            return;
+        }
+        const score = segment.get('score');
+        if (typeof score === 'number') {
+            jQuery(row.querySelector(':scope > td.starred-col')).append(
+                `<div class="sauce-segment-score"
+                      title="Segment popularity score">${score.toLocaleString()}</div>`);
+        }
+    }
+
+
     async function addSegmentBadges() {
         if (!ns.weight) {
             return;
@@ -1905,7 +1921,20 @@ sauce.ns('analysis', ns => {
         rows.push.apply(rows, document.querySelectorAll('table.hidden-segments tr[data-segment-effort-id]'));
         for (const row of rows) {
             try {
-                addBadge(row);
+                addSegmentBadge(row);
+            } catch(e) {
+                sauce.report.error(e);
+            }
+        }
+    }
+
+
+    function addSegmentScores() {
+        const rows = Array.from(document.querySelectorAll('table.segments tr[data-segment-effort-id]'));
+        rows.push.apply(rows, document.querySelectorAll('table.hidden-segments tr[data-segment-effort-id]'));
+        for (const row of rows) {
+            try {
+                addSegmentScore(row);
             } catch(e) {
                 sauce.report.error(e);
             }
@@ -3450,7 +3479,10 @@ sauce.ns('analysis', ns => {
         const segments = document.querySelector('table.segments');
         if (segments) {
             if (sauce.options['analysis-segment-badges']) {
-                addSegmentBadges();
+                addSegmentBadges();  // bg okay
+            }
+            if (!sauce.options['analysis-disable-segment-score']) {
+                addSegmentScores();
             }
             if (sauce.options['analysis-trailforks']) {
                 addTrailforksOverlay();
