@@ -161,7 +161,7 @@ sauce.ns(namespace, ns => {
             try {
                 await x.migrate(await sauce.storage.get(null));
             } catch(e) {
-                sauce.report.error(e);
+                console.error('Migration error:', e);
                 break;
             }
             await sauce.storage.set('migrationVersion', x.version);

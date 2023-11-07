@@ -124,7 +124,7 @@ class WorkerExecutor {
     _make() {
         const worker = new Worker(this.url);
         worker.addEventListener('error', ev => {
-            sauce.report.error(new Error(`Generic worker error: ${ev.message}`));
+            console.error(`Generic worker error: ${ev.message}`);
             // Being pretty paranoid here, just cover all the states as if
             // we had programming errors for now.
             if (worker._wi) {
@@ -226,7 +226,6 @@ export class OffloadProcessor extends futures.Future {
     stop() {
         if (this._inflight.size || this._incoming.size || this._finished.size) {
             console.error("Premature stop of offload proc", this);
-            debugger;
         }
         this._stop();
     }
@@ -393,7 +392,7 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
             const gender = await sauce.perf.fetchPeerGender(activity.pk);
             if (!gender) {
                 if (--remainingAttempts) {
-                    sauce.report.error(new Error("Unable to to learn gender"));
+                    console.error("Unable to to learn gender");
                     break;
                 }
                 continue;
@@ -406,10 +405,8 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
     if (invalidate) {
         console.info("Athlete settings updated for:", athlete.pk, athlete.get('name'));
         sauce.hist.invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name,
-            {noStreamsFetch: false}).catch(e => {
-            console.error("Failed to force resync during athlete settings update:", e);
-            sauce.report.error(e);
-        });
+            {noStreamsFetch: false}).catch(e =>
+            console.error("Failed to force resync during athlete settings update:", e));
     }
 }
 
@@ -532,7 +529,6 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                     }
                 }
             } catch(e) {
-                debugger;
                 console.error("Failed to create peaks for: " + activity, e);
                 activity.setSyncError(manifest, e);
             }
@@ -1001,9 +997,8 @@ export class TrainingLoadProcessor extends OffloadProcessor {
             }
         }
         if (i < ordered.length) {
-            debugger;
-            sauce.report.error(new Error(`Training day bucket error: ${i}, ${ordered.length}, ` +
-                `${beyondNewestTS} ${oldest.get('ts')}`));
+            console.error(`Training day bucket error: ${i}, ${ordered.length}, ` +
+                `${beyondNewestTS} ${oldest.get('ts')}`);
         }
         await actsStore.saveModels(external);
     }

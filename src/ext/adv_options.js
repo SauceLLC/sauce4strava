@@ -153,11 +153,7 @@
                 if (isPopup) {
                     browser.tabs.reload();
                 }
-                try {
-                    await sauce.report.event('AdvancedOptions', 'erase-all-data');
-                } finally {
-                    window.location.reload();
-                }
+                window.location.reload();
             });
         });
         const optionsEl = document.getElementById('options');
@@ -172,7 +168,6 @@
             delete athlete_info[id];
             await sauce.storage.set({athlete_info});
             await renderAthleteInfo(athleteEl);
-            sauce.report.event('AdvancedOptions', 'remove-athlete-info');  // bg okay
         });
         document.getElementById('save').addEventListener('click', async () => {
             const status = document.getElementById('status');
@@ -191,7 +186,6 @@
             if (isPopup) {
                 browser.tabs.reload();
             }
-            sauce.report.event('AdvancedOptions', 'save');  // bg okay
             await sleep(5000);
             status.textContent = '';
         });

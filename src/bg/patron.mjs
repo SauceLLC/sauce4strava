@@ -34,7 +34,7 @@ async function updatePatronLevel(athleteId) {
     if (errors.length) {
         for (const e of errors) {
             if (e.message && !e.message.match(/NetworkError/)) {
-                sauce.report.error(e);
+                console.error('Update patron level error:', e);
             }
         }
         await sauce.storage.set('patronLevelExpiration', Date.now() + (12 * 3600 * 1000));  // backoff
@@ -80,7 +80,7 @@ async function getPatreonMembership(options={}) {
                 await sauce.storage.set('patreon-auth', null);
             }
             if (r.status !== 404) {
-                sauce.report.error(new Error('Failed to get patreon membership: ' + r.status));
+                console.error('Failed to get patreon membership: ' + r.status);
             }
         } else {
             const data = await r.json();

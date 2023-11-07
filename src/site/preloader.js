@@ -637,7 +637,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
         }
         Klass.prototype.render = function() {
             const ret = renderSave.apply(this, arguments);
-            booted.then(() => addButtons.call(this).catch(sauce.report.error));
+            booted.then(() => addButtons.call(this));
             document.documentElement.dispatchEvent(new Event('sauceResetPageMonitor'));
             return ret;
         };

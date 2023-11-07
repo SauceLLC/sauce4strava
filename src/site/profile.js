@@ -28,8 +28,8 @@ sauce.ns('profile', ns => {
 
 
     if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
-        addEventListener('DOMContentLoaded', () => load().catch(sauce.report.error));
+        addEventListener('DOMContentLoaded', load);
     } else {
-        load().catch(sauce.report.error);
+        load();
     }
 });

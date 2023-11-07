@@ -21,21 +21,6 @@
     }
 
 
-    async function reportOptionSet(name, value) {
-        let prettyValue;
-        if (value === null) {
-            prettyValue = 'null';
-        } else if (value === undefined) {
-            prettyValue = 'undefined';
-        } else if (value.toString) {
-            prettyValue = value.toString();
-        } else {
-            prettyValue = JSON.stringify(value);
-        }
-        return await sauce.report.event('Options', `set-${name}`, prettyValue);
-    }
-
-
     function manageOptions(options, patronLevel) {
         const checkboxes = document.querySelectorAll('.option:not(.custom) input[type="checkbox"]');
         for (const input of checkboxes) {
@@ -53,7 +38,6 @@
                 if (isPopup && !input.classList.contains('no-reload')) {
                     browser.tabs.reload();
                 }
-                await reportOptionSet(input.name, input.checked);
             });
             resetSuboptions(input);
         }
@@ -72,7 +56,6 @@
                 if (isPopup && !input.classList.contains('no-reload')) {
                     browser.tabs.reload();
                 }
-                await reportOptionSet(input.name, input.value);
             });
         }
         const selects = document.querySelectorAll('.option:not(.custom) select');
@@ -100,7 +83,6 @@
                 if (isPopup && !select.classList.contains('no-reload')) {
                     browser.tabs.reload();
                 }
-                await reportOptionSet(select.name, value);
             });
             resetSuboptions(select);
         }
@@ -120,7 +102,6 @@
                 if (isPopup && !input.classList.contains('no-reload')) {
                     browser.tabs.reload();
                 }
-                await reportOptionSet(input.name, input.value);
             });
             resetSuboptions(input);
         }

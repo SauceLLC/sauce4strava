@@ -328,8 +328,7 @@ function handleAttributionDialog() {
         const config = await sauce.storage.get(null);
         const options = config.options;
         self.currentUser = config.currentUser;
-        sauce.proxy.connected.then(() =>
-            sauce.patron.updatePatronLevelNames().catch(sauce.report.error));  // bg okay
+        sauce.proxy.connected.then(() => sauce.patron.updatePatronLevelNames());  // bg okay
         const patronVars = {};
         if ((config.patronLevelExpiration || 0) > Date.now()) {
             patronVars.patronLegacy = config.patronLegacy == null ?
@@ -367,17 +366,17 @@ function handleAttributionDialog() {
                             await r;
                         }
                     } catch(e) {
-                        sauce.report.error(e);
+                        console.error('Boot callback error:', e);
                     }
                 }
             }
             if (m.scripts) {
                 loading.push(sauce.loadScripts(m.scripts.map(x => extUrl + x), {defer: true})
-                    .catch(sauce.report.error));
+                    .catch(console.error));
             }
             if (m.modules) {
                 loading.push(sauce.loadScripts(m.modules.map(x => extUrl + x), {module: true})
-                    .catch(sauce.report.error));
+                    .catch(console.error));
             }
         }
         await Promise.all(loading);

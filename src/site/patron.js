@@ -63,7 +63,7 @@ sauce.ns('patron', async ns => {
 
         setError(e) {
             this.error = e.message;
-            sauce.report.error(e);
+            console.error('Patron page view error', e);
         }
 
         async link(code) {
@@ -122,8 +122,8 @@ sauce.ns('patron', async ns => {
 
 
     if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
-        addEventListener('DOMContentLoaded', () => load().catch(sauce.report.error));
+        addEventListener('DOMContentLoaded', load);
     } else {
-        load().catch(sauce.report.error);
+        load();
     }
 });

@@ -30,14 +30,9 @@
 
 
     function load() {
-        try {
-            _loadPerf();
-            _loadOptions();
-            _removeBadCSS();
-        } catch(e) {
-            sauce.report.error(e);
-            throw e;
-        }
+        _loadPerf();
+        _loadOptions();
+        _removeBadCSS();
     }
 
 
@@ -59,10 +54,7 @@
         logo.src = sauce.getURL('images/logo_horiz_128x48.png');
         a.appendChild(logo);
         a.href = 'javascript:void(0);';
-        a.addEventListener('click', () => {
-            sauce.menu.openOptionsPage().catch(sauce.report.error);  // bg okay
-            sauce.report.event('UserMenu', 'options');
-        });
+        a.addEventListener('click', () => sauce.menu.openOptionsPage());
         const item = document.createElement('li');
         item.classList.add('sauce-options-menu-item');
         item.appendChild(a);

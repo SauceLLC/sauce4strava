@@ -103,14 +103,11 @@ if (browser.runtime.getURL('').startsWith('safari-web-extension:')) {
 
 // Required to make site start with alarms API
 browser.alarms.onAlarm.addListener(() =>
-    void maybeStartSyncManager().catch(sauce.report.error)); // pur pot hack. :/
+    void maybeStartSyncManager().catch(console.error)); // pur pot hack. :/
 
 browser.runtime.onInstalled.addListener(async details => {
     if (['install', 'update'].includes(details.reason) && !details.temporary) {
         const version = browser.runtime.getManifest().version;
-        sauce.report.event('ExtensionLifecycle', details.reason,
-            details.previousVersion ? `${details.previousVersion} -> ${version}` : version,
-            {nonInteraction: true, page: location.pathname});  // bg okay
         if (details.previousVersion && version !== details.previousVersion) {
             await sauce.storage.set('recentUpdate', {previousVersion: details.previousVersion, version});
         }
@@ -158,4 +155,4 @@ if (browser.declarativeContent) {
     });
 }
 
-maybeStartSyncManager().catch(sauce.report.error);
+maybeStartSyncManager();

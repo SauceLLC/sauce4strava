@@ -5,7 +5,7 @@ sauce.ns('segmentCompare', ns => {
 
     // Using mutation observers on the entire document leads to perf issues in chrome.
     let _pageMonitorsBackoff = 10;
-    async function startPageMonitors() {
+    function startPageMonitors() {
         if (sauce.options['responsive']) {
             maintainScalableSVG();
         }
@@ -54,14 +54,6 @@ sauce.ns('segmentCompare', ns => {
 });
 
 
-(async function() {
-    if (sauce.testing) {
-        return;
-    }
-    try {
-        sauce.segmentCompare.load();
-    } catch(e) {
-        await sauce.report.error(e);
-        throw e;
-    }
-})();
+if (!sauce.testing) {
+    sauce.segmentCompare.load();
+}

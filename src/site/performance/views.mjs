@@ -112,7 +112,6 @@ export async function editActivityDialogXXX(activity, pageView) {
                     ev.currentTarget.disabled = false;
                 }
                 $modal.dialog('destroy');
-                sauce.report.event('EditActivity', 'save', Object.keys(updates).join());
             }
         }, {
             text: 'Reimport', // XXX localize
@@ -126,7 +125,6 @@ export async function editActivityDialogXXX(activity, pageView) {
                     ev.currentTarget.disabled = false;
                 }
                 $modal.dialog('destroy');
-                sauce.report.event('EditActivity', 'reimport');
             }
         }, {
             text: 'Delete', // XXX localize
@@ -145,7 +143,6 @@ export async function editActivityDialogXXX(activity, pageView) {
                     ev.currentTarget.disabled = false;
                 }
                 $modal.dialog('destroy');
-                sauce.report.event('EditActivity', 'delete');
             }
         }]
     });
@@ -960,7 +957,6 @@ export class BulkActivityEditDialog extends PerfView {
                         ev.currentTarget.disabled = false;
                     }
                     this.$el.dialog('destroy');
-                    sauce.report.event('PerfBulkActivityDialog', 'save');
                 }
             }]
         });

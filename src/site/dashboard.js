@@ -47,7 +47,7 @@ sauce.ns('dashboard', function(ns) {
                     }
                 }
             } catch(e) {
-                sauce.report.error(e);
+                console.error('Get card props error:', e);
                 _cardPropCache.set(cardEl, {});
             }
         }
@@ -300,7 +300,7 @@ sauce.ns('dashboard', function(ns) {
         try {
             _filterFeed(feedEl);
         } catch(e) {
-            sauce.report.error(e);
+            console.error('Filter feed error:', e);
         }
     }
 
@@ -555,11 +555,4 @@ sauce.ns('dashboard', function(ns) {
 });
 
 
-(async function() {
-    try {
-        sauce.dashboard.load();
-    } catch(e) {
-        await sauce.report.error(e);
-        throw e;
-    }
-})();
+sauce.dashboard.load();

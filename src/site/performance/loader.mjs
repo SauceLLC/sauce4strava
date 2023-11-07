@@ -48,9 +48,9 @@ async function init() {
     Backbone.history.start({pushState: true});
     const args = {athletes, router, pageLoad};
     if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
-        addEventListener('DOMContentLoaded', () => load(args).catch(sauce.report.error));
+        addEventListener('DOMContentLoaded', () => load(args));
     } else {
-        load(args).catch(sauce.report.error);
+        load(args);
     }
 }
 
@@ -73,7 +73,7 @@ async function load({athletes, router, pageLoad}) {
 }
 
 if (self.Backbone) {
-    init().catch(sauce.report.error);
+    init();
 } else {
-    sauce.propDefined('Backbone', () => init().catch(sauce.report.error), {once: true});
+    sauce.propDefined('Backbone', init, {once: true});
 }

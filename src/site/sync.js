@@ -242,7 +242,6 @@ sauce.ns('sync', ns => {
                 await sauce.hist.addAthlete({id, ...athleteData});
             }
             await activitySyncDialog(id, controllers.get(id));
-            sauce.report.event('AthleteSync', 'ui-button', 'show-dialog');
         });
         return $btn;
     }
@@ -264,7 +263,6 @@ sauce.ns('sync', ns => {
             text: locale.restore_data,
             class: 'btn sauce-restore',
             click: async ev => {
-                sauce.report.event('AthleteSync', 'ui-button', 'restore');
                 const {started, completed} = restoreData((state, fileNum, numFiles, progress) => {
                     const fileDesc = numFiles > 1 ?
                         `file ${fileNum} of ${numFiles}` : 'file';
@@ -291,7 +289,6 @@ sauce.ns('sync', ns => {
             text: locale.backup_data,
             class: 'btn sauce-backup',
             click: async ev => {
-                sauce.report.event('AthleteSync', 'ui-button', 'backup');
                 const btn = ev.currentTarget;
                 const origText = btn.textContent;
                 btn.classList.add('sauce-loading', 'disabled');
@@ -309,7 +306,6 @@ sauce.ns('sync', ns => {
                 text: locale.export_fit_files,
                 class: 'btn sauce-export-activity-files',
                 click: async ev => {
-                    sauce.report.event('AthleteSync', 'ui-button', 'export-activity-files');
                     const btn = ev.currentTarget;
                     const origText = btn.textContent;
                     btn.classList.add('sauce-loading', 'disabled');
@@ -452,7 +448,6 @@ sauce.ns('sync', ns => {
                 await sauce.hist.disableAthlete(athlete.id);
             }
             $modal.toggleClass('sync-disabled', !enabled);
-            sauce.report.event('AthleteSync', 'ui-button', enabled ? 'enable' : 'disable');
         });
         $modal.on('input', '.sync-settings input[data-athlete-bool]', async ev => {
             const enabled = ev.currentTarget.checked;
@@ -501,7 +496,6 @@ sauce.ns('sync', ns => {
             $modal.removeClass('sync-active');
             $buttons.removeClass('sync-active');
             syncController.cancel();
-            sauce.report.event('AthleteSync', 'ui-button', 'stop');
         });
         $modal.on('click', '.sync-recompute.btn', async ev => {
             $modal.addClass('sync-active');
@@ -509,7 +503,6 @@ sauce.ns('sync', ns => {
             $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
             $modal.find('.entry.synced .text').empty();
             await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local');
-            sauce.report.event('AthleteSync', 'ui-button', 'recompute');
         });
         $modal.on('click', '.sync-hr-zones.btn', async ev => {
             $modal.addClass('sync-active');
@@ -520,13 +513,11 @@ sauce.ns('sync', ns => {
             athlete.hrZonesTS = null;
             await updateHRZones();
             await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', 'athlete-settings');
-            sauce.report.event('AthleteSync', 'ui-button', 'hr-zones');
         });
         $modal.on('click', '.sync-start.btn', async ev => {
             $modal.addClass('sync-active');
             $buttons.addClass('sync-active');
             await sauce.hist.syncAthlete(athlete.id);
-            sauce.report.event('AthleteSync', 'ui-button', 'start');
         });
         $modal.on('dialogclose', () => {
             for (const [event, cb] of Object.entries(listeners)) {

@@ -63,7 +63,6 @@ sauce.ns('analysis', ns => {
     class ThrottledNetworkError extends Error {
         constructor() {
             super('Strava returned API throttle response: 429');
-            this.disableReport = true;
         }
     }
 
@@ -294,11 +293,7 @@ sauce.ns('analysis', ns => {
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect FTP change.</b>'
                 });
-                try {
-                    await sauce.report.event('AthleteInfo', 'edit', 'ftp');
-                } finally {
-                    location.reload();
-                }
+                location.reload();
             }
         });
     }
@@ -336,11 +331,7 @@ sauce.ns('analysis', ns => {
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect weight change.</b>'
                 });
-                try {
-                    await sauce.report.event('AthleteInfo', 'edit', 'weight');
-                } finally {
-                    location.reload();
-                }
+                location.reload();
             }
         });
     }
@@ -389,11 +380,7 @@ sauce.ns('analysis', ns => {
                         title: 'Reloading...',
                         body: '<b>Reloading page to reflect change.</b>'
                     });
-                    try {
-                        await sauce.report.event('AthleteInfo', 'edit', isFTP ? 'ftp' : 'weight');
-                    } finally {
-                        location.reload();
-                    }
+                    location.reload();
                 });
             });
         } else {
@@ -425,25 +412,18 @@ sauce.ns('analysis', ns => {
             this.$el.on('click', '.group tr[data-range-value]', async ev => {
                 ev.stopPropagation();  // prevent click-away detection from closing dialog.
                 const row = ev.currentTarget;
-                try {
-                    await showInfoDialog({
-                        startTime: Number(row.dataset.startTime),
-                        endTime: Number(row.dataset.endTime),
-                        wallStartTime: Number(row.dataset.wallStartTime),
-                        wallEndTime: Number(row.dataset.wallEndTime),
-                        label: row.dataset.rangeLabel,
-                        range: Number(row.dataset.rangeValue),
-                        icon: row.dataset.rangeIcon,
-                        source: this._selectedSource,
-                        originEl: row,
-                        isDistanceRange: !!row.dataset.distanceRange,
-                    });
-                } catch (e) {
-                    sauce.report.error(e);
-                    throw e;
-                }
-                sauce.report.event('InfoDialog', 'open',
-                    `${this._selectedSource}-${row.dataset.rangeValue}`);
+                await showInfoDialog({
+                    startTime: Number(row.dataset.startTime),
+                    endTime: Number(row.dataset.endTime),
+                    wallStartTime: Number(row.dataset.wallStartTime),
+                    wallEndTime: Number(row.dataset.wallEndTime),
+                    label: row.dataset.rangeLabel,
+                    range: Number(row.dataset.rangeValue),
+                    icon: row.dataset.rangeIcon,
+                    source: this._selectedSource,
+                    originEl: row,
+                    isDistanceRange: !!row.dataset.distanceRange,
+                });
             });
             this.$el.on('click', '.drop-down-menu .options li[data-source]', async ev => {
                 await this.setSelectedSource(ev.currentTarget.dataset.source);
@@ -491,7 +471,6 @@ sauce.ns('analysis', ns => {
         async setSelectedSource(source) {
             this._selectedSource = source;
             await sauce.storage.update('analysis_peak_ranges', {[this.sourceKey]: source});
-            sauce.report.event('PeakRange', 'select', source);
         }
     }
 
@@ -717,7 +696,7 @@ sauce.ns('analysis', ns => {
                 tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ns.gender);
             }
         }
-        assignTrailforksToSegments().catch(sauce.report.error);
+        assignTrailforksToSegments().catch(console.error);
         renderTertiaryStats({
             weight: H.number(L.weightFormatter.convert(ns.weight), 2),
             weightUnit: L.weightFormatter.shortUnitKey(),
@@ -731,7 +710,7 @@ sauce.ns('analysis', ns => {
             np,
             kj,
             power,
-        }).catch(sauce.report.error);
+        }).catch(console.error);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
             if (wattsStream) {
@@ -1361,7 +1340,6 @@ sauce.ns('analysis', ns => {
 
 
     async function showPeaksSettingsDialog() {
-        sauce.report.event('PeaksSettings', 'show', 'dialog');
         const {PeaksPeriodsView, PeaksDistancesView} = await import(sauce.getURL('/src/site/data-views.mjs'));
         const periods = new PeaksPeriodsView({ranges: await sauce.peaks.getRanges('periods')});
         const dists = new PeaksDistancesView({ranges: await sauce.peaks.getRanges('distances')});
@@ -1404,7 +1382,6 @@ sauce.ns('analysis', ns => {
                 if (ns.syncAthlete) {
                     sauce.hist.invalidateSyncState('local', 'peaks');  // bg required
                 }
-                sauce.report.event('PeaksSettings', 'save', 'changes');
                 sauce.ui.modal({
                     title: 'Reloading...',
                     body: '<b>Reloading page to reflect changes.</b>'
@@ -1485,13 +1462,11 @@ sauce.ns('analysis', ns => {
         }
         $menu.find('a.tcx').on('click', async () => {
             const laps = await getLaps();
-            exportActivity('tcx', {laps}).catch(sauce.report.error);
-            sauce.report.event('ActionsMenu', 'export', 'tcx');
+            exportActivity('tcx', {laps}).catch(console.error);
         });
         $menu.find('a.fit').on('click', async () => {
             const laps = await getLaps();
-            exportActivity('fit', {laps}).catch(sauce.report.error);
-            sauce.report.event('ActionsMenu', 'export', 'fit');
+            exportActivity('fit', {laps}).catch(console.error);
         });
         if (!$menu.find('a[href$="/export_gpx"]').length) {
             $menu.find('.sauce-group ul').append(jQuery(`
@@ -1500,8 +1475,7 @@ sauce.ns('analysis', ns => {
             `));
             $menu.find('a.gpx').on('click', async () => {
                 const laps = await getLaps();
-                exportActivity('gpx', {laps}).catch(sauce.report.error);
-                sauce.report.event('ActionsMenu', 'export', 'gpx');
+                exportActivity('gpx', {laps}).catch(console.error);
             });
         }
     }
@@ -1596,7 +1570,6 @@ sauce.ns('analysis', ns => {
             $genderSelect.on('change', drawGraph);
             $dialog.on('dialogresize', drawGraph);
             drawGraph();
-            sauce.report.event('PowerProfileHelp', 'show');
         });
     }
 
@@ -1728,7 +1701,6 @@ sauce.ns('analysis', ns => {
                 timestamp: comment.timestamp,
             });
             await render();
-            sauce.report.event('Comment', 'submit');
         });
         jQuery('.activity-summary').append($comments);
         // Inject the react based mentionable-comment component...
@@ -1751,13 +1723,13 @@ sauce.ns('analysis', ns => {
         jQuery(document).on('click', `${segView} .sauce-button.live-segment`, async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
-            showLiveSegmentDialog(details).catch(sauce.report.error);
+            await showLiveSegmentDialog(details);
         });
         jQuery(document).on('click', `${segView} .sauce-button.perf-predictor`, async ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
             const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
-            showPerfPredictor(start, end).catch(sauce.report.error);
+            showPerfPredictor(start, end);
         });
     }
 
@@ -1795,24 +1767,18 @@ sauce.ns('analysis', ns => {
                 class: 'btn btn-primary',
                 click: async () => {
                     const $form = $dialog.find('form');
-                    try {
-                        await createLiveSegment({
-                            // Avoid collision with strava ids so we can coexist
-                            uuid: `sauce-${details.get('segment_id')}-${pageView.activity().id}`,
-                            start,
-                            end,
-                            segmentName: $form.find('[name="segment-name"]').val(),
-                            leaderName: $form.find('[name="leader-name"]').val(),
-                            leaderType: $form.find('[name="leader-type"]').val(),
-                            timeMultiplier
-                        });
-                    } catch(e) {
-                        sauce.report.error(e);
-                        return;
-                    }
+                    await createLiveSegment({
+                        // Avoid collision with strava ids so we can coexist
+                        uuid: `sauce-${details.get('segment_id')}-${pageView.activity().id}`,
+                        start,
+                        end,
+                        segmentName: $form.find('[name="segment-name"]').val(),
+                        leaderName: $form.find('[name="leader-name"]').val(),
+                        leaderType: $form.find('[name="leader-type"]').val(),
+                        timeMultiplier
+                    });
                     if (useTrial) {
                         await sauce.storage.set('live_segment_trial_count', trialCount + 1, {sync: true});
-                        sauce.report.event('LiveSegment', 'trial');
                     }
                     $dialog.dialog('destroy');
                     sauce.ui.modal({
@@ -1833,9 +1799,9 @@ sauce.ns('analysis', ns => {
                 extraButtons.push({
                     text: `${locale.use_trial} (${maxTrials - trialCount} ${locale.remaining})`,
                     class: 'btn btn-primary btn-outline',
-                    click: () => {
+                    click: async () => {
                         $dialog.dialog('destroy');
-                        showLiveSegmentDialog(details, /*useTrial*/ true).catch(sauce.report.error);
+                        await showLiveSegmentDialog(details, /*useTrial*/ true);
                     }
                 });
             }
@@ -1861,7 +1827,6 @@ sauce.ns('analysis', ns => {
             const adjustedTime = timeMultiplier * streamDelta(timeStream);
             $dialog.find('.leader-time').text(H.timer(adjustedTime));
         });
-        sauce.report.event('LiveSegment', 'show');
     }
 
 
@@ -1923,7 +1888,7 @@ sauce.ns('analysis', ns => {
             try {
                 addSegmentBadge(row);
             } catch(e) {
-                sauce.report.error(e);
+                console.error('Add segment badge error:', e);
             }
         }
     }
@@ -1936,7 +1901,7 @@ sauce.ns('analysis', ns => {
             try {
                 addSegmentScore(row);
             } catch(e) {
-                sauce.report.error(e);
+                console.error('Add segment score error:', e);
             }
         }
     }
@@ -1959,7 +1924,7 @@ sauce.ns('analysis', ns => {
         }
         const rows = Array.from(document.querySelectorAll('table.segments > tbody > tr[data-segment-effort-id]'));
         for (const row of rows) {
-            addTrailforksRow(row).catch(sauce.report.error);
+            addTrailforksRow(row).catch(console.error);
         }
     }
 
@@ -2019,13 +1984,7 @@ sauce.ns('analysis', ns => {
         }));
         $tf.on('click', async ev => {
             ev.stopPropagation();
-            try {
-                await showTrailforksModal(descs);
-                sauce.report.event('Trailforks', 'show');
-            } catch(e) {
-                sauce.report.error(e);
-                throw e;
-            }
+            await showTrailforksModal(descs);
         });
         jQuery(tfCol).append($tf);
     }
@@ -2095,9 +2054,6 @@ sauce.ns('analysis', ns => {
                     docClasses.add('sauce-loading');
                     try {
                         return await renderTFDetailedReport(desc.trail.id, this.$el, options);
-                    } catch(e) {
-                        sauce.report.error(e);
-                        throw e;
                     } finally {
                         docClasses.remove('sauce-loading');
                     }
@@ -2348,37 +2304,33 @@ sauce.ns('analysis', ns => {
             const activityData = getActivityValuesViaSimilar(activityId);
             if (activityData && activityData.values) {
                 stravaWeight = activityData.values.athlete_weight;
-                console.warn("similar activities based good weight:", stravaWeight);
             }
             if (stravaWeight == null) {
                 const powerCtrl = await loadPowerController();
                 if (powerCtrl) {
                     stravaWeight = powerCtrl.get('athlete_weight');
-                    console.warn("power controller inferred weight:", stravaWeight);
                 }
             }
             if (stravaWeight == null) {
                 stravaWeight = sauce.stravaAthleteWeight;
-                console.warn("strava reported athlete weight on activity:", stravaWeight);
             }
             if (stravaWeight == null) {
                 const data = getActivityValuesViaSimilar(activityId);
                 if (data && data.values && data.values.athlete_weight) {
                     stravaWeight = data.values.athlete_weight;
-                    console.warn("similar activity matched weight:", stravaWeight);
                 }
             }
             if (stravaWeight == null && ns.athlete.id === pageView.currentAthlete().id) {
                 let ts = pageView.activity().get('startDateLocal');
                 if (!ts) {
+                    // XXX maybe this makes no sense since I'd expect a match from above? verify..
+                    debugger;
                     const data = getActivityValuesViaSimilar(activityId);
                     ts = data && data.start_date;
-                    debugger; // XXX maybe this makes no sense since I'd expect a match from above? verify
                 }
                 const powerData = await loadAthletePowerData(ns.athlete.id, ts || (Date.now() / 1000 | 0));
                 if (powerData && powerData.athlete_weight) {
                     stravaWeight = powerData.athlete_weight;
-                    console.warn("athlete power profile inferred weight:", stravaWeight);
                 }
             }
             if (stravaWeight) {
@@ -2650,7 +2602,7 @@ sauce.ns('analysis', ns => {
             const now = Date.now();
             if (!_schedUpdateErrorTS || (now - _schedUpdateErrorTS) > 5000) {
                 _schedUpdateErrorTS = now;
-                sauce.report.error(e);
+                console.error(e);
             }
         });
     }
@@ -2769,7 +2721,6 @@ sauce.ns('analysis', ns => {
             $dialog.find('pre').html(data);
             $dialog.dialog('option', 'width', `calc(${width}ch + 4em)`);
         });
-        sauce.report.event('RawData', 'show');
     }
 
 
@@ -2807,7 +2758,6 @@ sauce.ns('analysis', ns => {
         }
         $selector.on('update', renderGraphs);
         await renderGraphs();
-        sauce.report.event('GraphData', 'show');
     }
 
 
@@ -2898,7 +2848,6 @@ sauce.ns('analysis', ns => {
         const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
         const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
         sauce.ui.downloadBlob(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
-        sauce.report.event('LiveSegment', 'create');
     }
 
 
@@ -3225,7 +3174,6 @@ sauce.ns('analysis', ns => {
         });
         $dialog.on('input', 'input', () => setTimeout(recalc, 0));
         recalc(/*initial*/ true);
-        sauce.report.event('PerfPredictor', 'show');
     }
 
 
@@ -3242,25 +3190,23 @@ sauce.ns('analysis', ns => {
         }
         $el.find('#stacked-chart').before(ns.$analysisKeyboardHint);
         $el.find('#stacked-chart').before(ns.$analysisStats);
-        $el.on('click', 'a.sauce-raw-data', () => showRawData().catch(sauce.report.error));
-        $el.on('click', 'a.sauce-graph-data', () => showGraphData().catch(sauce.report.error));
-        $el.on('click', 'a.sauce-perf-predictor', () => {
+        $el.on('click', 'a.sauce-raw-data', showRawData);
+        $el.on('click', 'a.sauce-graph-data', showGraphData);
+        $el.on('click', 'a.sauce-perf-predictor', async () => {
             const start = ns.$analysisStats.data('start');
             const end = ns.$analysisStats.data('end');
-            showPerfPredictor(start, end).catch(sauce.report.error);
+            await showPerfPredictor(start, end);
         });
-        $el.on('click', 'a.sauce-export', ev => {
+        $el.on('click', 'a.sauce-export', async ev => {
             const start = ns.$analysisStats.data('start');
             const end = ns.$analysisStats.data('end');
             const format = ev.currentTarget.dataset.format;
-            exportActivity(format, {start, end}).catch(sauce.report.error);
-            sauce.report.event('AnalysisStats', 'export', format);
+            await exportActivity(format, {start, end});
         });
         $el.on('click', '.expander', async ev => {
             const el = ev.currentTarget.closest('.sauce-analysis-stats');
             const expanded = el.classList.toggle('expanded');
             await sauce.storage.setPref('expandAnalysisStats', expanded);
-            sauce.report.event('AnalysisStats', expanded ? 'expand' : 'collapse');
         });
     }
 
@@ -3359,8 +3305,6 @@ sauce.ns('analysis', ns => {
                 if (updates.type) {
                     const basetype = sauce.model.getActivityBaseType(updates.type);
                     if (basetype && basetype !== ret.syncActivity.basetype) {
-                        await sauce.report.event('SyncActivity', 'type-change',
-                            `${ret.syncActivity.basetype} -> ${basetype}`);
                         updates.basetype = basetype;
                     }
                 }
@@ -3373,7 +3317,6 @@ sauce.ns('analysis', ns => {
                             {wait: true});
                         setSyncDone();
                     }
-                    await sauce.report.event('SyncActivity', 'update', Object.keys(updates).join());
                 }
             });
         }
@@ -3421,10 +3364,10 @@ sauce.ns('analysis', ns => {
         } else if (activity.isSwim()) {
             ns.peakIcons.peak_pace = 'fa/swimmer-duotone.svg';
         }
-        updateSideNav().catch(sauce.report.error);
-        attachActionMenuItems().catch(sauce.report.error);
-        attachComments().catch(sauce.report.error);
-        attachSegmentToolHandlers();
+        updateSideNav();  // bg okay
+        attachActionMenuItems();  // bg okay
+        attachComments();  // bg okay
+        attachSegmentToolHandlers();  // bg okay
         ns.allPeriodRanges = await sauce.peaks.getForActivityType('periods', ns.activityType);
         ns.allDistRanges = await sauce.peaks.getForActivityType('distances', ns.activityType);
         for (const range of ns.allPeriodRanges) {
@@ -3642,7 +3585,7 @@ sauce.ns('analysis', ns => {
     async function load() {
         await sauce.propDefined('pageView', {once: true});
         if (sauce.options['responsive']) {
-            attachMobileMenuExpander().catch(sauce.report.error);
+            attachMobileMenuExpander().catch(console.error);
             pageView.unbindScrollListener();
             document.body.classList.add('sauce-disabled-scroll-listener');
             pageView.handlePageScroll = function() {};
@@ -3666,7 +3609,7 @@ sauce.ns('analysis', ns => {
         }[type];
         if (ns.activityType) {
             // Start network load early..
-            fetchStreams(prefetchStreams).catch(sauce.report.error);
+            fetchStreams(prefetchStreams).catch(console.error);
             const pageRouter = pageView.router();
             pageRouter.on('route', page => {
                 document.body.dataset.route = page;
@@ -3814,7 +3757,6 @@ sauce.ns('analysis', ns => {
             ns.unsupported = true;
             console.info('Unsupported activity type:', type);
         }
-        sauce.ga.sendSoon('pageview', {referrer: document.referrer}).catch(() => void 0);
     }
 
 
@@ -3926,11 +3868,6 @@ sauce.ns('analysis', ns => {
     if (sauce.testing) {
         return;
     }
-    try {
-        await sauce.analysis.load();
-    } catch(e) {
-        await sauce.report.error(e);
-        throw e;
-    }
+    await sauce.analysis.load();
     sauce.analysis.checkIfUpdated();
 })();

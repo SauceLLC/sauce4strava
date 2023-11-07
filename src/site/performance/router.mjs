@@ -74,9 +74,6 @@ class RangeRouter extends Backbone.Router {
         } else {
             document.title = this.pageTitle;
         }
-        // Must include href (sanitized) because ext context is not updated with these updates.
-        const href = hrefParts.join('/');
-        sauce.ga.sendSoon('pageview', {referrer: document.referrer, href}).catch(() => void 0);
     }
 }
 export default RangeRouter;

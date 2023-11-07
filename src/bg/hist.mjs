@@ -199,17 +199,6 @@ async function incrementStreamsUsage() {
 sauce.proxy.export(incrementStreamsUsage, {namespace});
 
 
-const _reported = new Set();
-async function reportErrorOnce(e) {
-    const key = e.message + e.stack;
-    if (_reported.has(key)) {
-        return;
-    }
-    _reported.add(key);
-    return await sauce.report.error(e);
-}
-
-
 async function expandPeakActivities(peaks) {
     const activities = await actsStore.getMany(peaks.map(x => x.activity));
     for (let i = 0; i < activities.length; i++) {
@@ -1099,7 +1088,6 @@ class SyncJob extends EventTarget {
         }
         console.info('Starting sync job for: ' + this.athlete);
         const start = Date.now();
-        this.reportEvent('start');
         this.setStatus('checking-network');
         await Promise.race([networkOnline(), this._cancelEvent.wait()]);
         if (this._cancelEvent.isSet()) {
@@ -1124,23 +1112,12 @@ class SyncJob extends EventTarget {
         this.setStatus('complete');
         const duration = Math.round((Date.now() - start) / 1000);
         console.info(`Sync completed in ${duration.toLocaleString()} seconds for: ` + this.athlete);
-        this.reportEvent('completed', duration < 5 * 60 ?
-            `${Math.round(duration / 60)}-mins` :
-            `${(duration / 3600).toFixed(1)}-hours`);
-
     }
 
     emit(name, data) {
         const ev = new Event(name);
         ev.data = data;
         this.dispatchEvent(ev);
-    }
-
-    reportEvent(action, label, options) {
-        sauce.report.event('SyncJob', action, label, {
-            nonInteraction: true,
-            ...options
-        });  // bg okay
     }
 
     setStatus(status) {
@@ -1349,15 +1326,13 @@ class SyncJob extends EventTarget {
 
     activityToDatabase({id, ts, type, name, ...extra}) {
         if (!id) {
-            reportErrorOnce(new Error('Invalid activity id for athlete: ' + this.athlete.pk));
-            debugger;
+            console.error('Invalid activity id for athlete: ' + this.athlete.pk);
             return;
         }
         let basetype = type && sauce.model.getActivityBaseType(type);
         if (!basetype) {
-            reportErrorOnce(new Error('Unknown activity type for: ' + id));
+            console.error('Unknown activity type for: ' + id);
             basetype = 'workout';
-            debugger;
         }
         const data = {
             id,
@@ -1392,7 +1367,7 @@ class SyncJob extends EventTarget {
             // In some cases Strava just returns 500 for a month.  I suspect it's when the only
             // activity data in a month is private, but it's an upstream problem and we need to
             // treat it like an empty response.
-            reportErrorOnce(new Error(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`));
+            console.error(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`);
             return [];
         }
         // Desc seems to be wrapped in a <p> but I'm not sure if this is 100% of the time and doing
@@ -1417,7 +1392,7 @@ class SyncJob extends EventTarget {
                 }
             }
         } catch(e) {
-            reportErrorOnce(e);
+            console.error('Parse activity feed props error:', e);
         }
         if (feedEntries) {
             try {
@@ -1457,7 +1432,7 @@ class SyncJob extends EventTarget {
                     }
                 }
             } catch(e) {
-                reportErrorOnce(e);
+                console.error('Error processing activity props:', e);
             }
         } else {
             console.warn("No feed entries were found, upstream change?");
@@ -1575,14 +1550,10 @@ class SyncJob extends EventTarget {
     }
 
     async _fetchStreamsWorker(...args) {
-        let imported;
         try {
-            imported = await this.__fetchStreamsWorker(...args);
+            await this.__fetchStreamsWorker(...args);
         } finally {
             this._procQueue.putNoWait(null);
-        }
-        if (imported) {
-            this.reportEvent('imported', 'streams', {eventValue: imported});
         }
     }
 
@@ -1636,8 +1607,7 @@ class SyncJob extends EventTarget {
     }
 
     _localSetSyncError(activities, manifest, e) {
-        console.warn(`Top level local processing error (${manifest.name}) v${manifest.version}`, e);
-        sauce.report.error(e);
+        console.error(`Top level local processing error (${manifest.name}) v${manifest.version}`, e);
         for (const a of activities) {
             a.setSyncError(manifest, e);
         }
@@ -1961,7 +1931,7 @@ class SyncManager extends EventTarget {
             try {
                 await this._refresh(syncHash);
             } catch(e) {
-                sauce.report.error(e);
+                console.error('Sync refresh error:', e);
                 await sleep(errorBackoff *= 1.5);
             }
             this._refreshEvent.clear();
@@ -2009,7 +1979,7 @@ class SyncManager extends EventTarget {
                     delay: requested ? 0 : delay,
                 }, this._refreshRequests.get(a.pk));
                 this._refreshRequests.delete(a.pk);
-                this.runSyncJob(a, options).catch(sauce.report.error);
+                this.runSyncJob(a, options).catch(e => console.error('Sync job error:', e));
                 delay = Math.min((delay + 90000) * 1.10, 3600 * 1000);
             }
         }
@@ -2040,7 +2010,7 @@ class SyncManager extends EventTarget {
         try {
             await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
         } catch(e) {
-            sauce.report.error(e);
+            console.error('Sync job run error:', e);
             athlete.set('lastSyncError', Date.now());
             this.emitForAthlete(athlete, 'error', {error: e.message});
         } finally {

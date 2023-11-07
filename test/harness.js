@@ -115,7 +115,6 @@ function assertDefined(a, failMessage) {
 self.sauce = self.sauce || {};
 sauce.testing = true;
 sauce.rpc = {};
-sauce.rpc.reportError = function() {};
 
 
 let logEl;

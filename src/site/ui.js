@@ -268,7 +268,7 @@ sauce.ns('ui', ns => {
                 let data = spec.data;
                 if (!data) {
                     const id = Array.from(graphs)[specs.indexOf(spec)];
-                    sauce.report.error(new Error(`Invalid info graph data for: ${id}`));
+                    console.error(`Invalid info graph data for: ${id}`);
                     continue;
                 }
                 if (data.length > 120) {
