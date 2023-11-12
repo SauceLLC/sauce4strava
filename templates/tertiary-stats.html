@@ -34,24 +34,22 @@
 
     <div class="divider"></div>
 
-    <% if (obj.ftpOrigin) { %>
-        <li>
-            <strong class="sauce-editable-field ftp">
-                <a class="origin-{{ftpOrigin}}"
-                   title="{{{ftp_link_tooltip}}}">{{humanNumber(ftp)}}</a><!--
-                --><input data-width="5ch" type="text" value="{{ftp}}"
-                       title="{{{ftp_input_tooltip}}}"/><!--
-                --><abbr class="unit" title="Watts">W</abbr>
-            </strong>
-            <div class="label">FTP</div>
-        </li>
-    <% } %>
+    <li>
+        <strong class="sauce-editable-field ftp">
+            <a class="origin-{{ftpOrigin}}"
+               title="{{{ftp_link_tooltip}}}">{{ftp ? humanNumber(ftp) : '?'}}</a><!--
+            --><input data-width="5ch" type="text" value="{{ftp || ''}}"
+                   title="{{{ftp_input_tooltip}}}"/><!--
+            --><abbr class="unit" title="Watts">W</abbr>
+        </strong>
+        <div class="label">FTP</div>
+    </li>
 
     <li>
         <strong class="sauce-editable-field weight">
             <a class="origin-{{weightOrigin}}"
-               title="{{{weight_link_tooltip}}}">{{weightNorm}}</a><!--
-            --><input data-width="6ch" type="text" value="{{weight}}"
+               title="{{{weight_link_tooltip}}}">{{weightNorm || '?'}}</a><!--
+            --><input data-width="6ch" type="text" value="{{weight || ''}}"
                    title="{{{weight_input_tooltip}}}"/><!--
             --><abbr class="unit" title="Weight">{{weightUnit}}</abbr>
         </strong>

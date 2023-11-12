@@ -294,6 +294,9 @@ sauce.ns('locale', ns => {
 
     function humanWeight(kg, options={}) {
         assertInit();
+        if (kg == null || kg === '' || Number.isNaN(kg)) {
+            return '';
+        }
         const precision = options.precision != null ? options.precision : 1;
         if (options.html) {
             const save = ns.weightFormatter.precision;

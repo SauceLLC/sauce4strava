@@ -697,13 +697,14 @@ sauce.ns('analysis', ns => {
             }
         }
         assignTrailforksToSegments().catch(console.error);
+        const localeWeight = ns.weight ? L.weightFormatter.convert(ns.weight) : undefined;
         renderTertiaryStats({
-            weight: H.number(L.weightFormatter.convert(ns.weight), 2),
+            weight: localeWeight && Number(localeWeight.toFixed(2)),
             weightUnit: L.weightFormatter.shortUnitKey(),
-            weightNorm: H.weight(ns.weight),
-            weightOrigin: ns.weightOrigin,
+            weightNorm: ns.weight && H.weight(ns.weight).replace(/0+$/, '').replace(/\.$/, ''),
+            weightOrigin: ns.weightOrigin || 'default',
             ftp: ns.ftp,
-            ftpOrigin: ns.ftpOrigin,
+            ftpOrigin: ns.ftpOrigin || 'default',
             intensity,
             tss,
             tTss,
@@ -2200,10 +2201,8 @@ sauce.ns('analysis', ns => {
         if (!powerCtrl) {
             _loadingPowerCtrl = undefined;
         } else {
-            _loadingPowerCtrl = new Promise(resolve => {
-                powerCtrl.deferred.done(resolve);
-                powerCtrl.deferred.fail(resolve);
-            }).then(() => {
+            // Note: be careful with Deferred objects which have a `.then()` return value.
+            _loadingPowerCtrl = new Promise(resolve => powerCtrl.deferred.always(() => resolve())).then(() => {
                 if (!powerCtrl.has('athlete_ftp') && !powerCtrl.has('athlete_weight')) {
                     powerCtrl.set(sauce.perf.inferPowerDataAthleteInfo(powerCtrl.attributes));
                 }
@@ -2262,9 +2261,6 @@ sauce.ns('analysis', ns => {
                 if (lastKnown) {
                     info.ftp = lastKnown;
                     info.ftpOrigin = 'sauce';
-                } else {
-                    info.ftp = 0;
-                    info.ftpOrigin = 'default';
                 }
             }
         }
@@ -2345,9 +2341,6 @@ sauce.ns('analysis', ns => {
                 if (lastKnown) {
                     info.weight = lastKnown;
                     info.weightOrigin = 'sauce';
-                } else {
-                    info.weight = 0;
-                    info.weightOrigin = 'default';
                 }
             }
         }
@@ -3331,8 +3324,14 @@ sauce.ns('analysis', ns => {
         await Promise.all([sauce.proxy.connected, _localeInit]);
         Object.assign(ns, await initSyncActivity(activity, ns.athlete.id));
         const athleteInfo = (await sauce.storage.getAthleteInfo(ns.athlete.id)) || {};
-        Object.assign(ns, await getWeightInfo(athleteInfo));
-        Object.assign(ns, await getFTPInfo(athleteInfo));
+        try {
+            Object.assign(ns, await getWeightInfo(athleteInfo));
+            Object.assign(ns, await getFTPInfo(athleteInfo));
+        } catch(e) {
+            // Have had a regression with these before and I don't trust them to not fail
+            // in the future due to upstream changes..
+            console.error('Error while looking for weight of FTP:', e);
+        }
         if (athleteInfo.gender != ns.gender) {
             updateAthleteInfo({gender: ns.gender});  // bg okay
         }
