@@ -568,7 +568,9 @@ export class ActivityTimeRangeChart extends SauceChart {
         }
         first = first > 0 ? first - 1 : first;
         last = last > 0 ? last : data.length - 1;
-        return [data[first].b.date, data[last].b.date];
+        const zoomDates = [data[first].b.date, data[last].b.date];
+        this.view.trigger('before-zoom', {zoomDates});
+        return zoomDates;
     }
 }
 
@@ -703,6 +705,8 @@ export class ActivityTimeRangeChartView extends ChartView {
 
     async init(options) {
         await super.init({ChartClass: ActivityTimeRangeChart, ...options});
+        this.listenTo(options.pageView, 'before-update-activities', this._onBeforeUpdateCheckZoom);
+        this.on('before-zoom', this._onBeforeZoom);
     }
 
     renderAttrs(extra) {
@@ -732,5 +736,22 @@ export class ActivityTimeRangeChartView extends ChartView {
         hiddenDatasets[dataId] = !!this.chart.isDatasetVisible(index);
         this.savePrefs({hiddenDatasets});  // bg okay
         this.chart.update();
+    }
+
+    _onBeforeUpdateCheckZoom({athlete, range}) {
+        if (this.chart.zoomState && this.chart.zoomState.zoomed) {
+            const zc = this._zoomContext;
+            if (zc && (athlete !== zc.athlete || range.start !== zc.range.start
+                || range.end !== zc.range.end)) {
+                this.chart.resetZoom();
+            }
+        }
+    }
+
+    _onBeforeZoom() {
+        this._zoomContext = {
+            athlete: this.pageView.athlete,
+            range: this.pageView.getRangeSnapshot(),
+        };
     }
 }

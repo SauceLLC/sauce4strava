@@ -42,7 +42,8 @@
             if (chart.options.plugins.zoom === undefined) {
                 chart.options.plugins.zoom = defaultOptions;
             }
-            chart._zoomState = {
+            chart.zoomState = {
+                zoomed: false,
                 originalData: [],
                 originalXRange: {},
                 dragActive: false,
@@ -50,7 +51,8 @@
                 dragCurX: null,
                 resetButton: chart.canvas.closest('.sauce-panel').querySelector('.chart-reset-zoom'),
             };
-            chart._zoomState.resetButton.addEventListener('click', () => this.resetZoom(chart));
+            chart.resetZoom = () => this.resetZoom(chart);
+            chart.zoomState.resetButton.addEventListener('click', () => this.resetZoom(chart));
             chart.canvas.addEventListener('pointerdown', ev => {
                 this.removePointerCallbacks(chart);
                 if (ev.buttons !== /*primary*/ 1) {
@@ -62,7 +64,7 @@
                     return; // Out of bounds
                 }
                 ev.preventDefault();
-                const state = chart._zoomState;
+                const state = chart.zoomState;
                 state.dragCallbacks = {
                     move: this.onPointerMove.bind(this, chart, state),
                     done: this.onPointerDone.bind(this, chart, state),
@@ -90,7 +92,7 @@
         },
 
         removePointerCallbacks: function(chart) {
-            const state = chart._zoomState;
+            const state = chart.zoomState;
             if (state.dragCallbacks) {
                 document.removeEventListener('pointerup', state.dragCallbacks.done);
                 document.removeEventListener('pointercancel', state.dragCallbacks.done);
@@ -131,7 +133,7 @@
             if (!this.getOption(chart, 'enabled')) {
                 return;
             }
-            const state = chart._zoomState;
+            const state = chart.zoomState;
             if (state.dragActive) {
                 this.drawZoombox(chart);
             }
@@ -139,10 +141,13 @@
         },
 
         resetZoom: function(chart) {
-            const state = chart._zoomState;
+            const state = chart.zoomState;
+            if (!state.zoomed) {
+                return;
+            }
             state.resetButton.classList.add('hidden');
             for (const x of chart.data.datasets) {
-                x.data = state.originalData.shift(0);
+                x.data = state.originalData.shift();
             }
             if (state.originalXRange.min) {
                 chart.options.scales.xAxes[0].ticks.min = state.originalXRange.min;
@@ -156,6 +161,7 @@
             } else {
                 delete chart.options.scales.xAxes[0].ticks.max;
             }
+            state.zoomed = false;
             const save = chart.options.animation;
             chart.options.animation = false;
             try {
@@ -166,7 +172,7 @@
         },
 
         doZoom: function(chart, start, end) {
-            const state = chart._zoomState;
+            const state = chart.zoomState;
             // swap start/end if user dragged from right to left
             if (start > end) {
                 [start, end] = [end, start];
@@ -180,6 +186,7 @@
                     [start, end] = ret;
                 }
             }
+            state.zoomed = true;
             if (chart.options.scales.xAxes[0].ticks.min && state.originalData.length === undefined) {
                 state.originalXRange.min = chart.options.scales.xAxes[0].ticks.min;
             }
@@ -216,7 +223,7 @@
         },
 
         drawZoombox: function(chart) {
-            const state = chart._zoomState;
+            const state = chart.zoomState;
             const xScale = this.getXScale(chart);
             const yScale = this.getYScale(chart);
             const borderColor = this.getOption(chart, 'zoomboxBorderColor');
