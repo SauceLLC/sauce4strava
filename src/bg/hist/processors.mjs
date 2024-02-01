@@ -115,7 +115,7 @@ class WorkerInterface {
 class WorkerExecutor {
     constructor(url, options={}) {
         this.url = url;
-        this.maxWorkers = options.maxWorkers || (navigator.hardwareConcurrency * 2 || 8);
+        this.maxWorkers = Math.min(options.maxWorkers || navigator.hardwareConcurrency || 2, 64);
         this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
         this._idle = new Set();
@@ -788,7 +788,7 @@ export class PeaksProcessor extends OffloadProcessor {
         super(...args);
         this.workers = new Set();
         this.workerAddedEvent = new locks.Event();
-        this.maxWorkers = Math.min(navigator.hardwareConcurrency || 4);
+        this.maxWorkers = Math.min(navigator.hardwareConcurrency || 2, 4);
     }
 
     drainWorkerResults() {

@@ -36,64 +36,69 @@ async function maybeStartSyncManager() {
 }
 
 
-(function monkeyPatchSetTimeout() {
-    // Make setTimeout suspend safe.  Internally the clock for a site does not increment
-    // during OS power save modes.  Timeouts spanning such a suspend event will eventually
-    // run but without consideration for wall clock changes.  We prefer wall clock for everything
-    // so we modify the behavior globally to use a setInterval wake loop to resume timeouts
-    // affected by this.
-    const setTimeoutSave = self.setTimeout;
-    const clearTimeoutSave = self.clearTimeout;
-    const _timeoutsQ = [];
-    const _timeoutsH = {};
-    let wakeLoopId;
+// Make a suspend safe timeout.  Internally the clock for a site does not increment
+// during OS power save modes.  Timeouts spanning such a suspend event will eventually
+// run but without consideration for wall clock changes (i.e. they are late).
+const _timeoutsQ = [];
+const _timeoutsH = {};
+let wakeLoopId;
 
-    function wakeLoop() {
-        const now = Date.now();
-        let i = _timeoutsQ.length;
-        while (i && _timeoutsQ[i - 1].ts < now) {
-            const entry = _timeoutsQ[--i];
-            if (!entry.complete && !entry.cleared) {
-                clearTimeoutSave(entry.id);
-                setTimeoutSave(entry.callback, 0, ...entry.args);
-            }
-            delete _timeoutsH[entry.id];
+function wakeLoop() {
+    const now = Date.now();
+    let i = _timeoutsQ.length;
+    while (i && _timeoutsQ[i - 1].ts < now) {
+        const entry = _timeoutsQ[--i];
+        if (!entry.complete && !entry.cleared) {
+            clearTimeout(entry.id);
+            setTimeout(entry.callback, 0, ...entry.args);
         }
-        _timeoutsQ.length = i;
-        if (!i) {
-            clearInterval(wakeLoopId);
-            wakeLoopId = null;
-        }
+        delete _timeoutsH[entry.id];
     }
+    _timeoutsQ.length = i;
+    if (!i) {
+        clearInterval(wakeLoopId);
+        wakeLoopId = null;
+    }
+}
 
-    self.setTimeout = function suspendSafeSetTimeout(callback, ms, ...args) {
-        const entry = {ts: Date.now() + ms, callback, args};
-        entry.id = setTimeoutSave(() => {
-            entry.complete = true;
-            callback(...args);
-        }, ms);
-        _timeoutsQ.push(entry);
-        _timeoutsQ.sort((a, b) => b.ts - a.ts);
-        _timeoutsH[entry.id] = entry;
-        if (wakeLoopId == null && (_timeoutsQ.length > 100 || ms > 1000)) {
-            wakeLoopId = setInterval(wakeLoop, 1000);
-        }
-        if (ms > 60000) {
-            // This will reload the entire page if we were unloaded.
-            const when = Math.round(Date.now() + ms);
-            browser.alarms.create(`SetTimeoutBackup-${when}`, {when});
-        }
-        return entry.id;
-    };
 
-    self.clearTimeout = function suspendSafeClearTimeout(id) {
-        const entry = _timeoutsH[id];
-        if (entry) {
-            entry.cleared = true;
-        }
-        clearTimeoutSave(id);
-    };
-})();
+sauce.suspendSafeSetTimeout = function(callback, ms, ...args) {
+    const entry = {ts: Date.now() + ms, callback, args};
+    entry.id = setTimeout(() => {
+        entry.complete = true;
+        callback(...args);
+    }, ms);
+    _timeoutsQ.push(entry);
+    _timeoutsQ.sort((a, b) => b.ts - a.ts);
+    _timeoutsH[entry.id] = entry;
+    if (wakeLoopId == null && (_timeoutsQ.length > 100 || ms > 1000)) {
+        wakeLoopId = setInterval(wakeLoop, 1000);
+    }
+    return entry.id;
+};
+
+
+sauce.suspendSafeClearTimeout = function(id) {
+    const entry = _timeoutsH[id];
+    if (entry) {
+        entry.cleared = true;
+    }
+    clearTimeout(id);
+};
+
+
+sauce.setWakeupAlarm = function(ms) {
+    // This will reload the entire page if we were unloaded.
+    const when = Math.round(Date.now() + ms);
+    console.warn("alarm", ms);
+    browser.alarms.create(`SetTimeoutBackup-${when}`, {when});
+};
+
+
+sauce.suspendSafeSleep = function(ms) {
+    return new Promise(resolve => sauce.suspendSafeSetTimeout(resolve, ms));
+};
+
 
 if (browser.runtime.getURL('').startsWith('safari-web-extension:')) {
     // Workaround for visibiltyState = 'prerender' causing GA to pause until unload

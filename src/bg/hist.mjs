@@ -36,6 +36,18 @@ function issubclass(A, B) {
 }
 
 
+// Try to make sure we wake or even restart the whole bg page around the time
+// this sleep should resolve.
+function aggressiveSleep(ms) {
+    if (ms < 120000) {
+        return sauce.sleep(ms);
+    } else {
+        sauce.setWakeupAlarm(ms);
+        return sauce.suspendSafeSleep(ms);
+    }
+}
+
+
 ActivityModel.addSyncManifest({
     processor: 'streams',
     name: 'fetch',
@@ -162,6 +174,10 @@ async function networkOnline(timeout) {
 
 
 class SauceRateLimiter extends jobs.RateLimiter {
+    constructor(name, spec) {
+        super(name, spec, {sleep: aggressiveSleep});
+    }
+
     async getState() {
         const storeKey = `hist-rate-limiter-${this.label}`;
         return await sauce.storage.get(storeKey);
@@ -1932,7 +1948,7 @@ class SyncManager extends EventTarget {
                 await this._refresh(syncHash);
             } catch(e) {
                 console.error('Sync refresh error:', e);
-                await sleep(errorBackoff *= 1.5);
+                await aggressiveSleep(errorBackoff *= 1.5);
             }
             this._refreshEvent.clear();
             const enabledAthletes = await athletesStore.getEnabled({models: true});
@@ -1953,7 +1969,7 @@ class SyncManager extends EventTarget {
                 } else {
                     const next = Math.round(deadline / 1000 / 60).toLocaleString();
                     console.debug(`Next Sync Manager refresh in ${next} minute(s)`);
-                    await Promise.race([sleep(deadline), this._refreshEvent.wait()]);
+                    await Promise.race([aggressiveSleep(deadline), this._refreshEvent.wait()]);
                 }
             }
         }

@@ -19,7 +19,7 @@
   "devDependencies": {
     "eslint": "8.7.0",
     "fflate": "0.7.3",
-    "jscoop": "https://github.com/mayfield/jscoop.git#fa8e3b70f60f3ba425093259924f6c79c224ac6b",
+    "jscoop": "https://github.com/mayfield/jscoop.git#f9649be95db7830190a9a4511bce9709a1c0999a",
     "jsfit": "https://github.com/mayfield/jsfit.git#6fffb00fcf887a726d4ef662714054c0ae8921e7",
     "sass": "1.49.0",
     "sauce-chartjs": "https://github.com/SauceLLC/Chart.js.git#79a3f8ed1b1581c35bbae61626f0a453273d0734",

@@ -148,9 +148,12 @@ class FindPeaks extends WorkerProcessor {
     }
 
     async processor() {
+        // NOTE: The spec requires that 8 is the max mem value returned, so this is
+        // just a low mem device check at best.
+        const maxBatch = navigator.deviceMemory < 8 ? 50 : 200;
         while (!this.stopping) {
             while (this.incoming.length) {
-                const batch = this.incoming.splice(0, Infinity);
+                const batch = this.incoming.splice(0, maxBatch);
                 const errors = await this.findPeaks(batch);
                 this.send({done: batch.map(x => x.id), errors});
             }
@@ -209,9 +212,6 @@ class FindPeaks extends WorkerProcessor {
                 }
             }
             const watts = streams.watts || streams.watts_calc;
-            if (watts && isRun) {
-                debugger; // How the fuck? XXX
-            }
             if (watts && !isRun) { // Runs have their own processor for this.
                 const estimate = !streams.watts;
                 const weight = sauce.model.getAthleteHistoryValueAt(this.athlete.weightHistory, activity.ts);
