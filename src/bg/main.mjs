@@ -90,7 +90,6 @@ sauce.suspendSafeClearTimeout = function(id) {
 sauce.setWakeupAlarm = function(ms) {
     // This will reload the entire page if we were unloaded.
     const when = Math.round(Date.now() + ms);
-    console.warn("alarm", ms);
     browser.alarms.create(`SetTimeoutBackup-${when}`, {when});
 };
 
