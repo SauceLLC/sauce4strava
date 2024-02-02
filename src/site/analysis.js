@@ -1541,7 +1541,7 @@ sauce.ns('analysis', ns => {
                     chartRangeMin,
                     chartRangeMax,
                     tooltipFormatter: (_, __, data) => `
-                        Top level: ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr>
+                        Top level: ${H.number(data.y, {fixed: true, precision: 1})}<abbr class="unit short">W/kg</abbr>
                         ${wattsTooltip(data.y)}`
                 });
                 $graph.sparkline(requirements[gender].map(({high, low}) => (minPct * (high - low)) + low), {
@@ -1553,7 +1553,7 @@ sauce.ns('analysis', ns => {
                     chartRangeMin,
                     chartRangeMax,
                     tooltipFormatter: (_, __, data) => `
-                        Bottom level: ${H.number(data.y, 1)}<abbr class="unit short">W/kg</abbr>
+                        Bottom level: ${H.number(data.y, {fixed: true, precision: 1})}<abbr class="unit short">W/kg</abbr>
                         ${wattsTooltip(data.y)}`
                 });
 
@@ -2112,7 +2112,7 @@ sauce.ns('analysis', ns => {
                 return [
                     // XXX localize
                     `Altitude: ${H.elevation(data.y, {suffix: true})}`,
-                    `Distance: ${H.distance(data.x, 2)} ${L.distanceFormatter.shortUnitKey()}`
+                    `Distance: ${H.distance(data.x, {precision: 2})} ${L.distanceFormatter.shortUnitKey()}`
                 ].join('<br/>');
             }
         });
@@ -2875,7 +2875,7 @@ sauce.ns('analysis', ns => {
         const body = await template({
             power: power && Math.round(power),
             hasWeight: !!ns.weight,
-            wkg: power && ns.weight && H.number(power / ns.weight, 1),
+            wkg: power && ns.weight && H.number(power / ns.weight, {fixed: true, precision: 1}),
             bodyWeight: L.weightFormatter.convert(ns.weight).toFixed(1),
             gearWeight: L.weightFormatter.convert(bikeDefaults.gearWeight).toFixed(1),
             slope: (slope * 100).toFixed(1),
@@ -3055,11 +3055,11 @@ sauce.ns('analysis', ns => {
             const $timeAhead = $pred.find('.time + .ahead-behind');
             if (est.velocity && time < origTime) {
                 const pct = (origTime / time - 1) * 100;
-                $timeAhead.text(`${H.number(pct, 1)}% ${locale.faster}`);
+                $timeAhead.text(`${H.number(pct, {precision: 1})}% ${locale.faster}`);
                 $timeAhead.addClass('sauce-positive').removeClass('sauce-negative');
             } else if (est.velocity && time > origTime) {
                 const pct = (time / origTime - 1) * 100;
-                $timeAhead.text(`${H.number(pct, 1)}% ${locale.slower}`);
+                $timeAhead.text(`${H.number(pct, {precision: 1})}% ${locale.slower}`);
                 $timeAhead.addClass('sauce-negative').removeClass('sauce-positive');
             } else {
                 $timeAhead.empty();
@@ -3067,7 +3067,7 @@ sauce.ns('analysis', ns => {
             $pred.find('.speed').text(humanPace(est.velocity, {velocity: true}));
             $pred.find('.time').text(H.timer(time));
             $pred.find('.distance').text(H.distance(distance));
-            $pred.find('.wkg').text(H.number(power / bodyWeight, 1));
+            $pred.find('.wkg').text(H.number(power / bodyWeight, {fixed: true, precision: 1}));
             const watts = [est.gWatts, est.aWatts, est.rWatts];
             const wattRange = sauce.data.sum(watts.map(Math.abs));
             const pcts = {

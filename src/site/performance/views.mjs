@@ -64,7 +64,7 @@ function getPeaksKeyFormatter(streamType) {
 function getPeaksValueFormatter(streamType) {
     return {
         power: H.number,
-        power_wkg: x => x.toFixed(1),
+        power_wkg: x => H.number(x, {fixed: true, precision: 1}),
         np: H.number,
         xp: H.number,
         hr: H.number,

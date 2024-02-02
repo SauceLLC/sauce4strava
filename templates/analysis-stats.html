@@ -61,7 +61,7 @@
         <% if (power.activeWKg) { %>
             <line title="{{{wkg_tooltip}}}">
                 <key>{{{watts}}}/kg</key>
-                <value>{{humanNumber(power.activeWKg, 1)}}</value>
+                <value>{{humanNumber(power.activeWKg, {fixed: true, precision: 1})}}</value>
             </line>
         <% } %>
 
@@ -91,7 +91,7 @@
                 <key>SP</key>
                 <value>{{humanNumber(power.activeSP)}}<abbr class="unit">w</abbr>
                     <sup class="sauce-positive"
-                         title="{{{sp_adjust_tooltip}}}">+{{humanNumber((power.activeSPAdjust - 1) * 100, 1)}}%</sup>
+                         title="{{{sp_adjust_tooltip}}}">+{{humanNumber((power.activeSPAdjust - 1) * 100, {precision: 1})}}%</sup>
                 </value>
             </line>
         <% } %>
@@ -122,7 +122,7 @@
             <line title="{{{pwhr_tooltip}}}">
                 <key>Pw:Hr</key>
                 <value class="{{energy.pwhr < 0 ? 'sauce-positive' : 'sauce-negative'}}"
-                    >{{humanNumber(energy.pwhr * 100, 1)}}<abbr class="unit">%</abbr></value>
+                    >{{humanNumber(energy.pwhr * 100, {precision: 1})}}<abbr class="unit">%</abbr></value>
             </line>
         <% } %>
 

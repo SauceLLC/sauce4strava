@@ -68,7 +68,7 @@
             <% } %>
             >
             <strong>
-                {{humanNumber(foodReward.count, foodReward.count < 1 ? 1 : 0)}}
+                {{humanNumber(foodReward.count, {precision: foodReward.count < 1 ? 1 : 0})}}
                 <span class="sauce-icon">{{foodReward.icon}}</span>
             </strong>
             <div class="label">{{{[foodReward.labelLocaleKey]}}}</div>

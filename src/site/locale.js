@@ -204,10 +204,6 @@ sauce.ns('locale', ns => {
 
     function humanDuration(elapsed, options={}) {
         assertInit();
-        if (options.short) {
-            return ns.timeFormatter.abbreviated(elapsed, /*seconds*/ false,
-                /*empty str*/ null, !!options.html);
-        }
         const min = 60;
         const hour = min * 60;
         const day = hour * 24;
@@ -224,30 +220,31 @@ sauce.ns('locale', ns => {
             (options.maxPeriod ? period <= options.maxPeriod : true) &&
             (options.minPeriod ? period >= options.minPeriod : true));
         const stack = [];
-        const precision = options.precision || 1;
-        elapsed = Math.round(elapsed / precision) * precision;
+        const round = options.round || 1;
+        elapsed = Math.round(elapsed / round) * round;
         let i = 0;
         for (let [key, period] of units) {
             i++;
-            if (precision > period) {
+            if (round > period) {
                 break;
             }
             if (elapsed >= period || (!stack.length && i === units.length)) {
                 let val;
-                if (options.digits && units[units.length - 1][1] === period) {
-                    val = humanNumber(elapsed / period, options.digits);
+                if (options.precision && units[units.length - 1][1] === period) {
+                    val = humanNumber(elapsed / period, {precision: options.precision});
                 } else {
                     val = humanNumber(Math.floor(elapsed / period));
                 }
                 if (val !== '1') {
                     key += 's';
                 }
-                const suffix = options.html ? `<abbr class="unit">${hdUnits[key]}</abbr>` : hdUnits[key];
-                stack.push(`${val} ${suffix}`);
+                const unit = options.short ? hdUnits[key][0] : hdUnits[key];
+                const suffix = options.html ? `<abbr class="unit">${unit}</abbr>` : unit;
+                stack.push(`${val}${!options.short ? ' ' : ''}${suffix}`);
                 elapsed %= period;
             }
         }
-        return stack.slice(0, 2).join(', ');
+        return stack.slice(0, 2).join(options.short ? ' ' : ', ');
     }
 
 
@@ -283,7 +280,7 @@ sauce.ns('locale', ns => {
                 return `${hdUnits.in} ${duration}`;
             }
         } else {
-            if (options.precision && options.precision >= 86400) {
+            if (options.round && options.round >= 86400) {
                 return hdUnits.today;
             } else {
                 return hdUnits.now;
@@ -407,8 +404,9 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanDistance(meters, precision=1, options={}) {
+    function humanDistance(meters, options={}) {
         assertInit();
+        const precision = options.precision != null ? options.precision : 1;
         if (options.html) {
             const save = ns.distanceFormatter.precision;
             ns.distanceFormatter.precision = precision;
@@ -452,7 +450,7 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanNumber(value, precision=0) {
+    function humanNumber(value, options={}) {
         assertInit();
         if (value == null || value === '') {
             return '';
@@ -461,15 +459,13 @@ sauce.ns('locale', ns => {
         if (Number.isNaN(n)) {
             return '';
         }
-        if (precision === null) {
-            return n.toLocaleString();
-        } else if (precision === 0) {
-            return Math.round(n).toLocaleString();
-        } else {
-            return Number(n.toFixed(precision)).toLocaleString();
-        }
+        const p = options.precision || 0;
+        return n.toLocaleString(undefined, {
+            useGrouping: n >= 10000 || n <= -10000,
+            maximumFractionDigits: p,
+            minimumFractionDigits: options.fixed ? p : undefined,
+        });
     }
-
 
     function humanElevation(meters, options={}) {
         assertInit();
@@ -491,10 +487,10 @@ sauce.ns('locale', ns => {
         assertInit();
         const metric = ns.weightFormatter.unitSystem === 'metric';
         if (metric) {
-            return humanNumber(meters, 2);
+            return humanNumber(meters, {precision: 2});
         } else {
             const feet = meters / metersPerMile * 5280;
-            return humanNumber(feet, 1);
+            return humanNumber(feet, {precision: 1});
         }
     }
 

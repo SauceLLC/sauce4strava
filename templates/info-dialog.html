@@ -54,7 +54,7 @@
                 <% if (power.elapsedWKg) { %>
                     <row "title="{{{wkg_tooltip}}}">
                         <key>{{{Watts}}}/kg</key>
-                        <value>{{power.estimate ? '~' : ''}}{{humanNumber(power.elapsedWKg, 1)}}<abbr class="unit short">w/kg</abbr></value>
+                        <value>{{power.estimate ? '~' : ''}}{{humanNumber(power.elapsedWKg, {fixed: true, precision: 1})}}<abbr class="unit short">w/kg</abbr></value>
                     </row>
                 <% } %>
                 <% if (power.np) { %>
@@ -203,7 +203,7 @@
                     <row>
                         <key>{{{grade}}}</key>
                         <value title="{{{grade_tooltip}}}">
-                            {{humanNumber(elevation.grade, 1)}}<abbr class="unit short">%</abbr>
+                            {{humanNumber(elevation.grade, {precision: 1})}}<abbr class="unit short">%</abbr>
                         </value>
                     </row>
                 <% } %>

@@ -15,7 +15,7 @@
             <td>-</td>
         <% } %>
         <% if (a.stats.distance) { %>
-            <td class="distance">{{humanDistance(a.stats.distance, 0, {suffix: true})}}</td>
+            <td class="distance">{{humanDistance(a.stats.distance, {precision: 0, suffix: true})}}</td>
         <% } else { %>
             <td>-</td>
         <% } %>

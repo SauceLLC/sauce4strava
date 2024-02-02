@@ -413,7 +413,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                     tooltipFormat: (val, idx, ds) => {
                         const datas = datasets.filter(x => x.id == ds.id).map(x => [x.stack, x.data[idx].y]);
                         return datas.map(([stack, t]) =>
-                            H.duration(t, {short: true, html: true}) + ' ' +
+                            H.duration(t, {minPeriod: 3600, precision: 1, short: true, html: true}) + ' ' +
                             (stack === 'power' ? this.powerIcon : this.hrIcon)
                         );
                     },
@@ -540,7 +540,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                             suggestedMax: 5 * 3600,
                             stepSize: 3600,
                             maxTicksLimit: 7,
-                            callback: v => H.duration(v, {maxPeriod: 3600, minPeriod: 3600}),
+                            callback: v => H.duration(v, {maxPeriod: 3600, minPeriod: 3600, short: true}),
                         }
                     }, {
                         id: 'distance',
@@ -550,7 +550,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                             min: 0,
                             stepSize: distStepSize,
                             maxTicksLimit: 7,
-                            callback: v => H.distance(v, 0, {suffix: true}),
+                            callback: v => H.distance(v, {precision: 0, suffix: true}),
                         },
                     }, {
                         id: 'energy',
@@ -644,10 +644,10 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'duration',
                 stack: 'duration',
                 tooltipFormat: (x, i) => {
-                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true})];
+                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true})];
                     if (predictions && i === metricData.length - 1) {
                         const pdur = H.duration(predictions.duration[i].y + x,
-                            {maxPeriod: 3600, minPeriod: 3600, digits: 1, html: true});
+                            {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true});
                         tips.push(`${this.LM('predicted')}: <b>~${pdur}</b>`);
                     }
                     return tips;
@@ -666,10 +666,10 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'distance',
                 stack: 'distance',
                 tooltipFormat: (x, i) => {
-                    const tips = [H.distance(x, 0, {suffix: true, html: true})];
+                    const tips = [H.distance(x, {precision: 0, suffix: true, html: true})];
                     if (predictions && i === metricData.length - 1) {
-                        const pdist = H.distance(predictions.distance[i].y + x, 0,
-                            {suffix: true, html: true});
+                        const pdist = H.distance(predictions.distance[i].y + x,
+                                                 {precision: 0, suffix: true, html: true});
                         tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
                     }
                     return tips;
@@ -888,7 +888,7 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'weight',
                 backgroundColor: '#16a7',
                 borderColor: '#059f',
-                tooltipFormat: x => x ? H.weight(x, {precision: 2, suffix: true, html: true}) : '-',
+                tooltipFormat: x => x ? H.weight(x, {suffix: true, html: true}) : '-',
                 data: this.metricData.map(b => {
                     return {
                         b,

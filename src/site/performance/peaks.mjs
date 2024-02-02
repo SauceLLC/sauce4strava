@@ -45,7 +45,7 @@ function getPeaksUnit(streamType) {
 function getPeaksValueFormatter(streamType) {
     return {
         power: H.number,
-        power_wkg: (x, prec=1) => x != null ? x.toFixed(prec) : '',
+        power_wkg: x => H.number(x, {fixed: true, precision: 1}),
         np: H.number,
         xp: H.number,
         hr: H.number,
@@ -400,7 +400,7 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
                             maxTicksLimit: 7,
                             callback: x => {
                                 const prefs = this.getPrefs();
-                                return `${getPeaksValueFormatter(prefs.type)(x, 0)} ${getPeaksUnit(prefs.type)}`;
+                                return `${getPeaksValueFormatter(prefs.type)(x)} ${getPeaksUnit(prefs.type)}`;
                             }
                         },
                     }]
