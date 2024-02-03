@@ -18,7 +18,7 @@
     <% } else { %>
         <select name="time" class="pref">
             <% for (const x of peakRanges.periods) { %>
-                <option value="{{x.value}}" {{panelPrefs.time === x.value ? 'selected' : ''}}>{{humanDuration(x.value)}}</option>
+                <option value="{{x.value}}" {{panelPrefs.time === x.value ? 'selected' : ''}}>{{humanPeakPeriod(x.value)}}</option>
             <% } %>
         </select>
     <% } %>

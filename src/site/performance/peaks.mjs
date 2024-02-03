@@ -380,10 +380,14 @@ export class PeaksChartView extends charts.ActivityTimeRangeChartView {
             disablePeriod: true,
         });
         this.availableDatasets = {
-            ...Object.fromEntries(this.peakRanges.periods.map(x =>
-                [`p${x.value}`, {period: x.value, type: 'period', label: `${H.duration(x.value)}`}])),
-            ...Object.fromEntries(this.peakRanges.distances.map(x =>
-                [`d${x.value}`, {period: x.value, type: 'distance', label: `${H.raceDistance(x.value)}`}])),
+            ...Object.fromEntries(this.peakRanges.periods.map(x => [
+                `p${x.value}`,
+                {period: x.value, type: 'period', label: `${H.peakPeriod(x.value)}`}
+            ])),
+            ...Object.fromEntries(this.peakRanges.distances.map(x => [
+                `d${x.value}`,
+                {period: x.value, type: 'distance', label: `${H.raceDistance(x.value)}`}
+            ])),
         };
         this.setChartConfig({
             options: {

@@ -227,7 +227,7 @@ export class PeaksPeriodsView extends PeaksRangesView {
     onInput(ev) {
         const seconds = Number(ev.currentTarget.value);
         const el = ev.currentTarget.closest('.mutable-data-entry').querySelector('value');
-        el.textContent = sauce.locale.human.duration(seconds);
+        el.textContent = sauce.locale.human.peakPeriod(seconds);
     }
 }
 

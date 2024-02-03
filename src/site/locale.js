@@ -248,6 +248,13 @@ sauce.ns('locale', ns => {
     }
 
 
+    function humanPeakPeriod(time, options={}) {
+        const minPeriod = time > 3600 && (time % 300 === 0) ? 3600 : undefined;
+        const precision = minPeriod ? 1 : undefined;
+        return humanDuration(time, {minPeriod, precision, ...options});
+    }
+
+
     function humanRaceDistance(value) {
         let label;
         if (value < 1000) {
@@ -535,6 +542,7 @@ sauce.ns('locale', ns => {
         distanceUnconvert,
         human: {
             duration: humanDuration,
+            peakPeriod: humanPeakPeriod,
             relTime: humanRelTime,
             weight: humanWeight,
             elevation: humanElevation,
@@ -551,6 +559,7 @@ sauce.ns('locale', ns => {
         },
         templateHelpers: {
             humanDuration,
+            humanPeakPeriod,
             humanRelTime,
             humanWeight,
             humanElevation,

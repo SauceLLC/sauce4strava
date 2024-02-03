@@ -56,7 +56,7 @@ function getPeaksKeyFormatter(streamType) {
     if (getPeaksRangeTypeForStream(streamType) === 'distances') {
         return H.raceDistance;
     } else {
-        return H.duration;
+        return H.peakPeriod;
     }
 }
 

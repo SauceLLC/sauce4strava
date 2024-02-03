@@ -3370,7 +3370,7 @@ sauce.ns('analysis', ns => {
         ns.allPeriodRanges = await sauce.peaks.getForActivityType('periods', ns.activityType);
         ns.allDistRanges = await sauce.peaks.getForActivityType('distances', ns.activityType);
         for (const range of ns.allPeriodRanges) {
-            range.label = H.duration(range.value);
+            range.label = H.peakPeriod(range.value);
         }
         for (const range of ns.allDistRanges) {
             range.label = H.raceDistance(range.value);
