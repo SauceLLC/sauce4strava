@@ -250,8 +250,13 @@ sauce.ns('locale', ns => {
 
     function humanPeakPeriod(time, options={}) {
         const minPeriod = time > 3600 && (time % 300 === 0) ? 3600 : undefined;
+        const maxPeriod = time < 120 && (time % 60) ? 1 : undefined;
         const precision = minPeriod ? 1 : undefined;
-        return humanDuration(time, {minPeriod, precision, ...options});
+        const localOpts = {minPeriod, maxPeriod, precision};
+        const long = humanDuration(time, {...localOpts, ...options});
+        return (!long || long.length < 12) ?
+            long :
+            humanDuration(time, {...localOpts, short: true, ...options});
     }
 
 
