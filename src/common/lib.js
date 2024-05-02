@@ -2084,7 +2084,7 @@ sauce.ns('perf', function() {
             info.athlete_weight = sauce.data.avg(data.cp_data.map((x, i) => x.at(-1) / data.cp_data_wkg[i].at(-1)));
         }
         if (data.range_array) {
-            const zones = data.range_array.map(x => parseInt(x)); // lower bounds
+            const zones = data.range_array.map(x => parseInt(x) - 0.5); // lower bounds
             if (typeof zones[1] === 'number') {
                 info.athlete_ftp = Math.round(sauce.data.avg([
                     zones[1] / 0.55,
