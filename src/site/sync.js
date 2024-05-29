@@ -145,42 +145,49 @@ sauce.ns('sync', ns => {
 
     async function backupData(athlete, progressFn) {
         const athletes = athlete ? [athlete] : await sauce.hist.getEnabledAthletes();
-        for (const x of athletes) {
-            await backupAthleteData(x, progressFn);
-        }
+        const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
+        const name = athlete ? safeName(athlete.name) : 'SauceBackup';
+        const label = `${name}-${date}`;
+        return await backupAthletesData(label, athletes, progressFn);
     }
 
 
-    async function backupAthleteData(athlete, progressFn) {
+    async function backupAthletesData(label, athletes, progressFn) {
         let compressedBundles;
         const fflate = await import(sauce.getURL('src/common/fflate.mjs'));
-        const gzip = new fflate.Gzip();
         let page = 1;
         const mem = navigator.deviceMemory || 4;
-        const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
-        const dl = () => {
-            sauce.ui.downloadBlob(new Blob([compressedBundles]), `${safeName(athlete.name)}-${date}-${page++}.sbinz`);
-            compressedBundles = null;
+        // XXX Ick...
+        let gzip;
+        const initGzip = () => {
+            gzip = new fflate.Gzip();
+            gzip.ondata = (chunk, isLast) => {
+                compressedBundles = compressedBundles ? sauce.concatBuffers(compressedBundles, chunk) : chunk;
+                if (isLast) {
+                    const blob = new Blob([compressedBundles]);
+                    compressedBundles = null;
+                    initGzip();
+                    sauce.ui.downloadBlob(blob, `${label}-${page++}.sbinz`);
+                }
+            };
         };
-        const dataEx = new sauce.hist.DataExchange(athlete.id);
-        gzip.ondata = (chunk, isLast) => {
-            compressedBundles = compressedBundles ? sauce.concatBuffers(compressedBundles, chunk) : chunk;
-            if (isLast) {
-                dl();
-            }
-        };
-        dataEx.addEventListener('data', async ev => {
-            gzip.push(sauce.encodeBundle(ev.data));
-            if (progressFn) {
-                progressFn(page, compressedBundles.length);
-            } else {
-                console.debug(page, compressedBundles.byteLength);
-            }
-            if (compressedBundles.byteLength >= Math.min(mem * 0.25, 1) * GB) {
-                gzip.push(new Uint8Array(), true);
-            }
-        });
-        await dataEx.export();
+        initGzip();
+        for (const athlete of athletes) {
+            const dataEx = new sauce.hist.DataExchange(athlete.id);
+            dataEx.addEventListener('data', async ev => {
+                gzip.push(sauce.encodeBundle(ev.data));
+                if (progressFn) {
+                    progressFn(page, compressedBundles.length);
+                } else {
+                    console.debug(`Building backup file ${page}:`,
+                        (compressedBundles.byteLength / 1024 / 1024).toFixed(1) + ' MB');
+                }
+                if (compressedBundles.byteLength >= Math.min(mem * 0.25, 1) * GB) {
+                    gzip.push(new Uint8Array(), true);
+                }
+            });
+            await dataEx.export();
+        }
         if (compressedBundles) {
             gzip.push(new Uint8Array(), true);
         }
