@@ -115,7 +115,7 @@ class WorkerInterface {
 class WorkerExecutor {
     constructor(url, options={}) {
         this.url = url;
-        this.maxWorkers = Math.min(options.maxWorkers || navigator.hardwareConcurrency || 2, 64);
+        this.maxWorkers = Math.min(options.maxWorkers || navigator.hardwareConcurrency || 2, 8);
         this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
         this._idle = new Set();

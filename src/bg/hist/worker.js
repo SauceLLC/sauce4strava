@@ -8,6 +8,18 @@ importScripts('/src/bg/hist/db.js');
 importScripts('/src/common/lib.js');
 
 
+const workerId = (Math.random() * Date.now() >>> 0) % 1e6;
+const logPrefix = `[Worker ${workerId.toString().padStart(6, '0')}]`;
+
+
+function withTimeout(promise, delay) {
+    const timeoutError = new Error(`timeout (${delay})`);
+    const sleep = new Promise((_, rej) => setTimeout(() => rej(timeoutError), delay));
+    sleep.catch(() => undefined);  // stop unhandled promise warnings
+    return Promise.race([promise, sleep]);
+}
+
+
 class SimpleEvent {
     constructor() {
         this._reset();
@@ -46,7 +58,7 @@ async function getActivitiesStreams(activities, streamsDesc) {
         }
         actStreams.set(a.id, {});
     }
-    for (const x of await streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true})) {
+    for (const x of await withTimeout(streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true}), 120000)) {
         if (x) {
             actStreams.get(x.activity)[x.stream] = x.data;
         }
@@ -77,11 +89,11 @@ class WorkerProcessor {
 
     async _onIncoming({seq, op, data}) {
         if (this._lastSeq && seq - this._lastSeq !== 1) {
-            console.error("Worker message is out of sequence", this._lastSeq, seq);
+            console.error(logPrefix, "Message is out of sequence", this._lastSeq, seq);
         }
         try {
             if (this.stopping) {
-                console.error("Worker recieved message after stop request", {seq, op});
+                console.error(logPrefix, "Recieved message after stop request", {seq, op});
                 throw new Error('worker is stopping/stopped');
             }
             await this.__onIncoming({data, op});
@@ -95,11 +107,12 @@ class WorkerProcessor {
         if (op === 'data') {
             for (const x of data) {
                 this.incoming.push(x);
-                // XXX Wake event surely?
             }
             this.wakeEvent.set();
         } else if (op === 'stop') {
-            await this.stop();
+            console.debug(logPrefix, "stopping...");
+            await withTimeout(this.stop(), 30000);
+            console.debug(logPrefix, "stopped.");
         } else {
             throw new Error('Invalid worker channel operation');
         }
@@ -150,15 +163,19 @@ class FindPeaks extends WorkerProcessor {
     async processor() {
         // NOTE: The spec requires that 8 is the max mem value returned, so this is
         // just a low mem device check at best.
-        const maxBatch = navigator.deviceMemory < 8 ? 50 : 200;
+        const maxBatch = navigator.deviceMemory < 8 ? 20 : 100;
+        console.debug(logPrefix, 'Processor loop starting...');
         while (!this.stopping) {
             while (this.incoming.length) {
                 const batch = this.incoming.splice(0, maxBatch);
-                const errors = await this.findPeaks(batch);
+                console.debug(logPrefix, 'Processing incoming batch:', batch.length);
+                const errors = await withTimeout(this.findPeaks(batch), 600000);
                 this.send({done: batch.map(x => x.id), errors});
             }
-            await this.wakeEvent.wait();
+            console.debug(logPrefix, 'Waiting for more data...');
+            await withTimeout(this.wakeEvent.wait(), 300000);
         }
+        console.debug(logPrefix, 'Processor loop ended.');
     }
 
     getRankLevel(period, p, wp, weight) {
