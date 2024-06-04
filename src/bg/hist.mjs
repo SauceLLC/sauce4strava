@@ -1429,6 +1429,7 @@ class SyncJob extends EventTarget {
                             photos: a.mapAndPhotos && a.mapAndPhotos.photoList ?
                                 a.mapAndPhotos.photoList.map(p => p && p.large).filter(p => p).map(url => ({url})) :
                                 undefined,
+                            //kudos: await (await fetch(`https://www.strava.com/feed/activity/${a.id}/kudos`)).json(),
                         }));
                     } else if (x.entity === 'GroupActivity') {
                         for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
@@ -1443,6 +1444,7 @@ class SyncJob extends EventTarget {
                                 commute: a.is_commute,
                                 map: a.activity_map && a.activity_map.url,
                                 photos: a.photos ? this.groupPhotosToDatabase(a.photos) : undefined,
+                                //kudos: await (await fetch(`https://www.strava.com/feed/activity/${a.activity_id}/kudos`)).json(),
                             }));
                         }
                     }
@@ -1660,10 +1662,10 @@ class SyncJob extends EventTarget {
                 console.debug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
                     `activities (${rate}/s)`);
             }
-            if (proc.done() && !proc.available) {
+            if (proc.stopped && !proc.available) {
                 // It is fulfilled but we need to pickup any errors.
                 try {
-                    await proc;
+                    await proc.runPromise;
                     if (proc.pending || proc.available) {
                         throw new Error("Processor prematurely stopped: " + m.name);
                     }
@@ -1710,12 +1712,8 @@ class SyncJob extends EventTarget {
                     incoming.push(procQueue.wait());
                 }
                 const offFinWaiters = Array.from(offloaded).map(x => x.waitFinished());
-                try {
-                    await Promise.race([...offFinWaiters, ...incoming, ...offloaded]);
-                } catch(e) {
-                    console.warn('Top level waiter or offloaded processor error');
-                    // Offloaded proc error handling still happens next...
-                }
+                const offloadedDone = Array.from(offloaded).map(x => x.runPromise.catch(e => undefined));
+                await Promise.race([...offFinWaiters, ...incoming, ...offloadedDone]);
                 for (const f of offFinWaiters) {
                     if (!f.done()) {
                         f.cancel();
@@ -1771,12 +1769,11 @@ class SyncJob extends EventTarget {
                             // The processor can remain in the offloaded set until it's fully drained
                             // in the upper queue mgmt section, but we need to remove it from the active
                             // set immediately so we don't requeue data to it.
-                            proc.finally(() => {
+                            proc.start().catch(e => undefined).finally(() => {;
                                 if (offloadedActive.get(processor) === proc) {
                                     offloadedActive.delete(processor);
                                 }
                             });
-                            proc.start();
                         }
                         await proc.putIncoming(activities);
                         for (const a of activities) {

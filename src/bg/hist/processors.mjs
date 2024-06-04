@@ -27,23 +27,28 @@ async function getActivitiesStreams(activities, streams) {
 }
 
 
-class WorkerInterface {
-    constructor({id, worker, executor}) {
+class WorkerJob extends EventTarget {
+    constructor({id, worker}) {
+        super();
         this.id = id;
         const sendCh = new MessageChannel();
         const recvCh = new MessageChannel();
         [this._outgoingPort, this._theirIncomingPort] = [sendCh.port1, sendCh.port2];
         [this._incomingPort, this._theirOutgoingPort] = [recvCh.port1, recvCh.port2];
         this._worker = worker;
-        this._executor = executor;
         this._seq = 1;
         this._sending = new Map();
+        this._stopping = null;
+        this._started = false;
         this.doneQueue = new queues.Queue();
         this._outgoingPort.addEventListener('message', ev => this._onSendAck(ev.data));
         this._incomingPort.addEventListener('message', ev => this.doneQueue.put(ev.data));
     }
 
     start(processor, options={}) {
+        if (this._stopping || this._started) {
+            throw new Error('invalid state');
+        }
         this._worker.postMessage({
             id: this.id,
             processor,
@@ -54,6 +59,7 @@ class WorkerInterface {
         }, [this._theirIncomingPort, this._theirOutgoingPort]);
         this._outgoingPort.start();
         this._incomingPort.start();
+        this._started = true;
     }
 
     _onSendAck({seq, success, error}) {
@@ -94,21 +100,30 @@ class WorkerInterface {
     }
 
     detach() {
-        this._outgoingPort.close();
-        this._incomingPort.close();
-        this._executor = null;
+        const [op, ip, worker] = [this._outgoingPort, this._incomingPort, this._worker];
+        this._outgoingPort = null;
+        this._incomingPort = null;
         this._worker = null;
+        if (op) {
+            op.close();
+        }
+        if (ip) {
+            ip.close();
+        }
+        const ev = new Event('detach');
+        ev.data = {
+            job: this,
+            worker,
+        };
+        this.dispatchEvent(ev);
     }
 
     async stop() {
-        try {
-            await this._send('stop', {timeout: 600000});
-        } finally {
-            if (this._executor) {
-                this._executor.free(this);
-            }
+        if (!this._stopping) {
+            this._stopping = this._send('stop', {timeout: 600000}).finally(() => this.detach());
         }
-    }
+        await this._stopping;
+   }
 }
 
 
@@ -119,26 +134,20 @@ class WorkerExecutor {
         this._sem = new locks.Semaphore(this.maxWorkers);
         this._id = 0;
         this._idle = new Set();
+        this._workers = new Set();
     }
 
     _make() {
         const worker = new Worker(this.url);
+        this._workers.add(worker);
         worker.addEventListener('error', ev => {
-            console.error(`Generic worker error: ${ev.message}`);
-            // Being pretty paranoid here, just cover all the states as if
-            // we had programming errors for now.
-            if (worker._wi) {
-                worker._wi.detach();
-                worker._wi = null;
-                this._sem.release();
+            if (this._workers.has(worker)) {
+                console.error(`Generic worker error: ${ev.message}`);
+                if (!this._idle.has(worker)) {
+                    this._sem.release();
+                }
+                this.kill(worker);
             }
-            if (this._idle.has(worker)) {
-                this._idle.delete(worker);
-            }
-            if (worker._gc) {
-                clearTimeout(worker._gc);
-            }
-            worker.terminate();
         });
         return worker;
     }
@@ -169,12 +178,13 @@ class WorkerExecutor {
                 } else {
                     worker = this._make();
                 }
-                worker._wi = new WorkerInterface({id, worker, executor: this});
-                f.setResult(worker._wi);
+                const job = new WorkerJob({id, worker});
+                job.addEventListener('detach', () => this.release(worker));
+                f.setResult(job);
             } catch(e) {
                 this._sem.release();
                 if (worker) {
-                    worker.terminate();
+                    this.kill(worker);
                 }
                 f.setError(e);
             }
@@ -182,32 +192,32 @@ class WorkerExecutor {
         return f;
     }
 
-    free(wi) {
-        const worker = wi._worker;
-        if (!worker) {
-            return;  // already detached, probably by our error handler.
-        }
-        wi.detach();
-        worker._gc = setTimeout(() => {
-            this._idle.delete(worker);
-            worker.terminate();
-        }, 15000);
-        worker._wi = null;
+    release(worker) {
+        worker._gc = setTimeout(() => this.kill(worker), 5000);
         this._idle.add(worker);
         this._sem.release();
+    }
+
+    kill(worker) {
+        this._idle.delete(worker);
+        this._workers.delete(worker);
+        worker.terminate();
+        clearTimeout(worker._gc);
     }
 }
 
 const workerExec = new WorkerExecutor(browser.runtime.getURL(`src/bg/hist/worker.js?version=${sauce.version}`));
 
 
-export class OffloadProcessor extends futures.Future {
+export class OffloadProcessor {
     constructor({manifest, athlete, cancelEvent}) {
-        super();
         this.manifest = manifest;
         this.athlete = athlete;
+        this.started = false;
+        this.stopping = false;
+        this.stopped = false;
+        this.runPromise = null;
         this._inflight = new Set();
-        this._stopping = false;
         this._incoming = new queues.PriorityQueue();
         this._finished = new queues.Queue();
         this._flushEvent = new locks.Event();
@@ -215,12 +225,17 @@ export class OffloadProcessor extends futures.Future {
         cancelEvent.wait().then(() => this._stop());
     }
 
-    start() {
-        this._runProcessor();
-    }
-
     flush() {
         this._flushEvent.set();
+    }
+
+    start() {
+        if (this.started) {
+            throw new Error('Already started');
+        }
+        this.started = true;
+        this.runPromise = this._run().finally(() => this.stopped = true);
+        return this.runPromise;
     }
 
     stop() {
@@ -231,7 +246,7 @@ export class OffloadProcessor extends futures.Future {
     }
 
     _stop() {
-        this._stopping = true;
+        this.stopping = true;
         this._stopEvent.set();
     }
 
@@ -244,7 +259,7 @@ export class OffloadProcessor extends futures.Future {
     }
 
     drainAll() {
-        if (!this._stopping) {
+        if (!this.stopping) {
             throw new Error("Invalid state for drainAll");
         }
         const items = [];
@@ -262,7 +277,7 @@ export class OffloadProcessor extends futures.Future {
     }
 
     putIncoming(activities) {
-        if (this._stopping) {
+        if (this.stopping) {
             throw new Error("Invalid state for putIncoming");
         }
         for (const a of activities) {
@@ -300,7 +315,7 @@ export class OffloadProcessor extends futures.Future {
         const maxSize = options.maxSize || 1;
         let deadline = maxWait && Date.now() + maxWait;
         const stop = this._stopEvent.wait();
-        while (!this._stopping) {
+        while (!this.stopping) {
             const timeouts = [];
             if (minWait && maxWait) {
                 timeouts.push(sauce.sleep(Math.min(minWait, deadline - Date.now())));
@@ -343,14 +358,13 @@ export class OffloadProcessor extends futures.Future {
         }
     }
 
-    async _runProcessor() {
+    async _run() {
         try {
-            await this.processor().finally(() => this._stopping = true);
-            await this._incoming.join();
-            this.setResult();
-        } catch(e) {
-            this.setError(e);
+            await this.processor();
+        } finally {
+            this._stop();
         }
+        await this._incoming.join();
     }
 
     async processor() {
@@ -814,7 +828,7 @@ export class PeaksProcessor extends OffloadProcessor {
     }
 
     async _producer() {
-        while (!this._stopping) {
+        while (!this.stopping) {
             const activities = await this.getAllIncoming();
             if (!activities) {
                 continue;
@@ -837,7 +851,8 @@ export class PeaksProcessor extends OffloadProcessor {
 
     async _consumer(producer) {
         const stop = this._stopEvent.wait();
-        while (!this._stopping) {
+        producer.catch(() => this._stop());
+        while (!this.stopping) {
             const workers = Array.from(this.workers);
             if (!workers.some(x => x.doneQueue.size)) {
                 const dataWaits = workers.map(x => x.doneQueue.wait());
@@ -850,10 +865,13 @@ export class PeaksProcessor extends OffloadProcessor {
             this.drainWorkerResults();
         }
         console.info("Stopping peaks processor...");
-        await producer;
-        await Promise.all(Array.from(this.workers).map(x => x.stop()));
-        this.workers.clear();
-        console.info("Stopped peaks processor");
+        try {
+            await producer;
+        } finally {
+            await Promise.all(Array.from(this.workers).map(x => x.stop()));
+            this.workers.clear();
+            console.info("Stopped peaks processor");
+        }
     }
 
     async getWorker() {
@@ -897,7 +915,7 @@ export class TrainingLoadProcessor extends OffloadProcessor {
         const minWait = 1 * 1000; // Throttles high ingest rate.
         const maxSize = 50; // Controls max batching during high ingest rate.
         const maxWait = 30 * 1000; // Controls latency
-        while (!this._stopping) {
+        while (!this.stopping) {
             const activities = await this.getAllIncoming({minWait, maxWait, maxSize});
             if (activities) {
                 activities.sort((a, b) => a.get('ts') - b.get('ts'));  // oldest -> newest
