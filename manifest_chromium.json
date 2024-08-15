@@ -1,8 +1,5 @@
 {
-    "minimum_chrome_version": "76",
-    "background": {
-        "persistent": false
-    },
+    "minimum_chrome_version": "120",
     "permissions": [
         "declarativeContent"
     ]

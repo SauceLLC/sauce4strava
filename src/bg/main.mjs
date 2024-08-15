@@ -1,5 +1,17 @@
 /* global browser, sauce */
 
+import "/src/ext/webext.js";
+import "/src/common/base.js";
+import "/src/common/base_init.js";
+import "/src/common/proxy.js";
+import "/src/bg/proxy.js";
+import "/src/common/lib.js";
+import "/src/common/storage.js";
+import "/src/bg/migrate.js";
+import "/src/bg/menu.js";
+import "/src/bg/trailforks.js";
+import "/src/bg/hist/db.js";
+
 import * as patron from '/src/bg/patron.mjs';
 import * as hist from '/src/bg/hist.mjs';
 
@@ -10,16 +22,19 @@ sauce.ns('hist', () => Object.fromEntries(Object.entries(hist))); // For console
 // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
 // to try migrations every startup.
 const migrationsRun = sauce.migrate.runMigrations();
-self.currentUser = Number(localStorage.getItem('currentUser')) || undefined;
+// XXX migrate to browser.storage.local (will need async refactor (if even possible)
+//self.currentUser = Number(localStorage.getItem('currentUser')) || undefined;
 
 
 function setCurrentUser(id) {
     if (id != null) {
         console.info("Current user updated:", id);
-        localStorage.setItem('currentUser', id);
+// XXX migrate to browser.storage.local (will need async refactor (if even possible)
+//        localStorage.setItem('currentUser', id);
     } else {
         console.warn("Current user logged out");
-        localStorage.removeItem('currentUser');
+// XXX migrate to browser.storage.local (will need async refactor (if even possible)
+//        localStorage.removeItem('currentUser');
     }
     self.currentUser = id;
     const ev = new Event('currentUserUpdate');

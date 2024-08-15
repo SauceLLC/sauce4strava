@@ -1,5 +1,6 @@
 /* global sauce */
 
+console.warn("hi?", self.browser);
 // NOTE: Must be assigned to self and have matching name for FF
 self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
     'use strict';
@@ -97,6 +98,9 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
                 script.defer = !!options.defer;
             }
             script.async = !!options.async;  // Defaults to true.
+            if (options.params) {
+                script.dataset.params = options.params; // XXX Meh, probably not
+            }
             loading.push(new Promise((resolve, reject) => {
                 script.addEventListener('load', resolve);
                 script.addEventListener('error', ev => {

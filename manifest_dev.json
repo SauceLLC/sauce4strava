@@ -12,7 +12,7 @@
         "256": "images/icon256-dev.png"
     },
 
-    "page_action": {
+    "action": {
         "default_icon": {
             "19": "images/icon19-dev.png",
             "38": "images/icon38-dev.png",

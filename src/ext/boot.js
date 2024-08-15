@@ -319,12 +319,13 @@ function handleAttributionDialog() {
         }
         const manifest = browser.runtime.getManifest();
         const extUrl = browser.runtime.getURL('');
-        sauce.insertScript([
+        /* sauce.insertScript([
             self.sauceBaseInit.toString(),
             self.saucePreloaderInit.toString(),
             `sauceBaseInit('${browser.runtime.id}', '${extUrl}', ${JSON.stringify(manifest)});`,
             `saucePreloaderInit();`,
-        ].join('\n'));
+        ].join('\n')); */
+        document.documentElement.dataset.sauceBaseInitParams = JSON.stringify({extId: browser.runtime.id, extUrl, manifest});
         const config = await sauce.storage.get(null);
         const options = config.options;
         self.currentUser = config.currentUser;
@@ -343,11 +344,13 @@ function handleAttributionDialog() {
             options['hide-upsells'] &&
             options['hide-sauce-bonus-features']);
         Object.assign(sauce, patronVars);
-        sauce.insertScript(`
+        sauce.loadScripts([`${extUrl}src/site/set_options.js`],
+            {params: JSON.stringify({options: options || {}, patronVars})});
+        /*sauce.insertScript(`
             self.sauce = self.sauce || {};
             sauce.options = ${JSON.stringify(options || {})};
             Object.assign(sauce, ${JSON.stringify(patronVars)});
-        `);
+        `);*/
         const loading = [];
         for (const m of matchingManifests) {
             if (m.name) {

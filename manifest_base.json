@@ -1,5 +1,5 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "default_locale": "en",
 
     "name": "Sauce for Strava™",
@@ -26,10 +26,11 @@
     },
 
     "background": {
-        "page": "pages/bg.html"
+        "service_worker": "src/bg/main.mjs",
+        "type": "module"
     },
 
-    "page_action": {
+    "action": {
         "default_icon": {
             "19": "images/icon19.png",
             "38": "images/icon38.png",
@@ -61,7 +62,6 @@
             "src/ext/proxy.js",
             "src/common/storage.js",
             "src/ext/locale.js",
-            "src/site/preloader.js",
             "src/ext/boot.js"
         ]
     }, {
@@ -70,15 +70,27 @@
         "css": [
             "css/site/repurpose.css"
         ]
+    }, {
+        "run_at": "document_start",
+        "matches": ["https://www.strava.com/*"],
+        "world": "MAIN",
+        "js": [
+            "src/common//base.js",
+            "src/site/preloader.js",
+            "src/site/base_init.js"
+        ]
     }],
 
-    "web_accessible_resources": [
-        "build.json",
-        "src/*",
-        "lib/*",
-        "css/*",
-        "templates/*",
-        "images/*",
-        "pages/*"
-    ]
+    "web_accessible_resources": [{
+        "resources": [
+            "build.json",
+            "src/*",
+            "lib/*",
+            "css/*",
+            "templates/*",
+            "images/*",
+            "pages/*"
+        ],
+        "matches": ["*://*/*"]
+    }]
 }
