@@ -2226,7 +2226,11 @@ async function setStoragePersistent() {
     if (navigator.storage && navigator.storage.persisted) {
         let isPersisted = await navigator.storage.persisted();
         if (!isPersisted) {
-            isPersisted = await navigator.storage.persist();
+            if (navigator.storage.persist) {
+                isPersisted = await navigator.storage.persist();
+            } else {
+                console.warn("Browser thinks this context is not secure, probably Chrome v3 manifest. :sadface:");
+            }
         }
         if (!isPersisted) {
             console.debug(`Persisted storage not granted`);
