@@ -17,11 +17,11 @@
   },
   "homepage": "https://github.com/SauceLLC/sauce4strava#readme",
   "devDependencies": {
-    "eslint": "8.7.0",
+    "eslint": "8.57.0",
     "fflate": "0.7.3",
     "jscoop": "https://github.com/mayfield/jscoop.git#f9649be95db7830190a9a4511bce9709a1c0999a",
     "jsfit": "https://github.com/mayfield/jsfit.git#6fffb00fcf887a726d4ef662714054c0ae8921e7",
-    "sass": "1.49.0",
+    "sass": "1.74.1",
     "sauce-chartjs": "https://github.com/SauceLLC/Chart.js.git#79a3f8ed1b1581c35bbae61626f0a453273d0734",
     "sauce-terser": "https://github.com/mayfield/terser.git#35dbaf580ac94e1b899314acb9df47b69159c84a",
     "webextension-locale-translator": "0.0.0"
