@@ -34,6 +34,8 @@ sauce.ns('proxy', ns => {
             }
         };
         port.onMessage.addListener(handleBackgroundProxyCall);
-        port.onDisconnect.addListener(() => void (port = null)); // Not reliable on chrome.
+        port.onDisconnect.addListener(() => {
+            console.debug("page/ext proxy port disconnected..."); // XXX
+            return void (port = null);}); // Not reliable on chrome.
     });
 });

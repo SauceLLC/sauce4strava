@@ -4,25 +4,34 @@ sauce.ns('proxy', ns => {
     'use strict';
 
     let proxyId = -2;  // ext context goes negative, site context goes positive.
-    const mainBGPort = browser.runtime.connect({name: `sauce-proxy-port`});
+    let mainBGPort;
     const inflight = new Map();
 
-    ns.isConnected = false;
-
-    mainBGPort.onMessage.addListener(msg => {
-        const resolve = inflight.get(msg.pid);
-        inflight.delete(msg.pid);
-        resolve(msg);
-    });
-
-    ns.connected = (new Promise(resolve => inflight.set(-1, resolve))).then(x => {
-        for (const desc of x.exports) {
-            ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
-        }
-        ns.bindExports(x.exports, buildProxyFunc);
-        ns.isConnected = true;
-    });
-    mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: -1});
+    function connectBackground(skipBind) {
+        ns.isConnected = false;
+        const connectPid = proxyId--;
+        ns.connected = (new Promise(resolve => inflight.set(connectPid, resolve))).then(x => {
+            if (!skipBind) {
+                for (const desc of x.exports) {
+                    ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
+                }
+                ns.bindExports(x.exports, buildProxyFunc);
+            }
+            ns.isConnected = true;
+        });
+        mainBGPort = browser.runtime.connect({name: `sauce-proxy-port`});
+        mainBGPort.onMessage.addListener(msg => {
+            const resolve = inflight.get(msg.pid);
+            inflight.delete(msg.pid);
+            resolve(msg);
+        });
+        mainBGPort.onDisconnect.addListener(port => {
+            console.warn("Main bg port disconnected");
+            ns.isConnected = false;
+            ns.connected = new Promise(() => 0); // XXX make callable and trigger reconnect (probably not used often this way (ever?) but shd support
+        });
+        mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: connectPid});
+    }
 
 
     function buildProxyFunc(name, desc) {
@@ -54,6 +63,7 @@ sauce.ns('proxy', ns => {
             if (port) {
                 // Make a unique port for this invocation that both sides can
                 // continue to use after the call exec.
+                console.warn("XXX check if we need to impl sw reviver herre...");
                 const bgPort = browser.runtime.connect({name: `sauce-proxy-port`});
                 port.addEventListener('message', ev => bgPort.postMessage(ev.data));
                 port.start();
@@ -72,6 +82,10 @@ sauce.ns('proxy', ns => {
                 });
                 return response;
             } else {
+                if (!ns.isConnected) {
+                    console.warn("Restarting background connection/worker...");
+                    connectBackground(false);
+                }
                 const response = new Promise(resolve => inflight.set(pid, resolve));
                 mainBGPort.postMessage({desc, args, pid});
                 return response;
@@ -121,5 +135,8 @@ sauce.ns('proxy', ns => {
             responsePortIndex: transfer.indexOf(respChannel.port2),
         }, transfer);
     }
+
+
+    connectBackground();
     self.addEventListener('message', onMessageEstablishChannel);
 });
