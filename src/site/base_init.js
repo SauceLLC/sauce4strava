@@ -1,8 +1,6 @@
 (function() {
-    console.warn("base init");
     const params = JSON.parse(document.documentElement.dataset.sauceBaseInitParams);
-    console.warn("asdfasdf", params);
-    self.sauceBaseInit(params.extId, params.extUrl, params.manifest);
+    delete document.documentElement.dataset.sauceBaseInitParams;
+    self.sauceBaseInit(params.extId, params.extUrl, params.name, params.version);
     self.saucePreloaderInit();
-    console.warn("base init done", self.sauce);
 })();
