@@ -1,16 +1,15 @@
 /* global sauce */
 
-console.warn("hi?", self.browser);
 // NOTE: Must be assigned to self and have matching name for FF
-self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
+self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
     'use strict';
 
     self.sauce = self.sauce || {};
 
     sauce.extId = extId;
     sauce.extUrl = extUrl;
-    sauce.name = extManifest.name;
-    sauce.version = extManifest.version;
+    sauce.name = name;
+    sauce.version = version;
     sauce.isDev = sauce.name.endsWith('[DEV]');
     sauce.fetch = self.nativeFetch = fetch.bind(self);  // Sentry monkey patch is buggy (breaks CORS)
 
@@ -895,6 +894,47 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, extManifest) {
             idbStore.commitOwn();
             try {
                 await p;
+            } finally {
+                this.invalidateCaches();
+            }
+            return requests.length;
+        }
+
+        async trim(query, len, options={}) {
+            if (len == null || typeof len !== 'number') {
+                throw new Error('len argument required');
+            }
+            if (!this._started) {
+                await this._start();
+            }
+            const idbStore = this._getIDBStore('readwrite', options);
+            const ifc = options.index ? idbStore.index(options.index) : idbStore;
+            const curLen = await this._request(ifc.count(query));
+            let delRem = curLen - len;
+            if (!delRem || delRem < 0) {
+                return 0;
+            }
+            const cursorReq = ifc.openKeyCursor(query, options.direction);
+            const requests = [];
+            await new Promise((resolve, reject) => {
+                cursorReq.addEventListener('error', ev => {
+                    reject(new Error(ev.target.error));
+                });
+                cursorReq.addEventListener('success', ev => {
+                    const c = ev.target.result;
+                    if (c) {
+                        requests.push(this._request(idbStore.delete(c.primaryKey)));
+                        if (--delRem) {
+                            c.continue();
+                            return;
+                        }
+                    }
+                    resolve();
+                });
+            });
+            idbStore.commitOwn();
+            try {
+                await Promise.all(requests);
             } finally {
                 this.invalidateCaches();
             }
