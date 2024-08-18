@@ -340,6 +340,29 @@ sauce.ns('sync', ns => {
             extraButtons,
         });
         const $buttons = $modal.siblings('.ui-dialog-buttonpane');
+        const $logs = $modal.find('section.sync-logs .logs');
+
+        const curLogs = [];
+        async function appendLogs(records) {
+            for (const record of records) {
+                if (!curLogs.find(x => x.ts === record.ts && x.message == record.message)) {
+                    curLogs.push(record);
+                } else {
+                    debugger;
+                }
+            }
+            curLogs.sort((a, b) => b.ts - a.ts);
+            const $cleaner = jQuery('<div></div>');
+            $logs.html(curLogs.map(x => `<div class="log-entry" data-level="${x.level}">
+                <div class="time">${H.time(x.ts)}</div>
+                <div class="level">${x.level.toUpperCase()}</div>
+                <div class="message">${$cleaner.text(x.message).html()}</div>
+            </div>`).join('\n'));
+        }
+
+        async function updateHRZones() {
+            $modal.find('.hr-zones-panel').html(await hrZonesTpl({athlete}));
+        }
 
         let _ftpView, _weightView;
         async function setAthlete(_athlete) {
@@ -354,11 +377,8 @@ sauce.ns('sync', ns => {
                 athlete,
                 el: $modal.find('.entry.history.weight')
             });
+            syncController.getLogs().then(appendLogs);  // bg okay
             await Promise.all([_ftpView.render(), _weightView.render(), updateHRZones()]);
-        }
-
-        async function updateHRZones() {
-            $modal.find('.hr-zones-panel').html(await hrZonesTpl({athlete}));
         }
 
         const bgRender = setAthlete(athlete);
@@ -377,10 +397,13 @@ sauce.ns('sync', ns => {
             const $synced = $modal.find('.entry.synced');
             $synced.attr('title', title);
             $synced.find('progress').attr('value', synced / total);
+            const $syncedDetails = $synced.find('.active-details');
             if (synced === total) {
                 $synced.find('.text').html(`100% | ${synced.toLocaleString()} ${locale.activities}`);
+                $syncedDetails.html('');
             } else {
                 $synced.find('.text').html(`${synced.toLocaleString()} of ${total.toLocaleString()} ${locale.activities}`);
+                $syncedDetails.html(title);
             }
         }
 
@@ -432,6 +455,7 @@ sauce.ns('sync', ns => {
             "enable": ev => void ($modal.find('input[name="enable"]')[0].checked = true),
             "disable": ev => void ($modal.find('input[name="enable"]')[0].checked = false),
             "importing-athlete": ev => void setAthlete(ev.data),
+            "log": ev => appendLogs([ev.data]),
         };
         for (const [event, cb] of Object.entries(listeners)) {
             syncController.addEventListener(event, cb);

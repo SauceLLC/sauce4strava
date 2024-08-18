@@ -12,6 +12,7 @@ const {
     StreamsStore,
     AthletesStore,
     PeaksStore,
+    SyncLogsStore,
     ActivityModel
 } = sauce.hist.db;
 
@@ -27,6 +28,7 @@ export const actsStore = ActivitiesStore.singleton();
 export const streamsStore = StreamsStore.singleton();
 export const athletesStore = AthletesStore.singleton();
 export const peaksStore = PeaksStore.singleton();
+export const syncLogsStore = SyncLogsStore.singleton();
 
 sauce.proxy.export(dataExchange.DataExchange, {namespace});
 
@@ -668,7 +670,7 @@ export async function integrityCheck(athleteId, options={}) {
     if (options.repair) {
         const localManifests = ActivityModel.getSyncManifests('local');
         for (const id of missingStreamsFor) {
-            console.warn('Repairing activity with missing streams:', id);
+            syncLogsStore.logWarn(athleteId, 'Repairing activity with missing streams:', id);
             const a = activities.get(id);
             a.clearSyncState(streamManifest);
             for (const m of localManifests) {
@@ -677,7 +679,7 @@ export async function integrityCheck(athleteId, options={}) {
             await a.save();
         }
         for (const id of inFalseErrorState) {
-            console.warn('Repairing activity with false-error state:', id);
+            syncLogsStore.logWarn(athleteId, 'Repairing activity with false-error state:', id);
             const a = activities.get(id);
             a.setSyncSuccess(streamManifest);
             for (const m of localManifests) {
@@ -687,9 +689,10 @@ export async function integrityCheck(athleteId, options={}) {
         }
         for (const id of haveStreamsFor) {
             if (!options.prune) {
-                console.warn('Ignoring missing activity repair (use "prune" to override):', id);
+                syncLogsStore.logWarn(athleteId,
+                    'Ignoring missing activity repair (use "prune" to override):', id);
             } else {
-                console.warn('Removing detached stream for activity:', id);
+                syncLogsStore.logWarn(athleteId, 'Removing detached stream for activity:', id);
                 await streamsStore.delete(id, {index: 'activity'});
             }
         }
@@ -1073,6 +1076,29 @@ class SyncJob extends EventTarget {
         this.setStatus('init');
     }
 
+    log(level, ...messages) {
+        const record = syncLogsStore.log(level, this.athlete.pk, ...messages);
+        const ev = new Event('log');
+        ev.data = record;
+        this.dispatchEvent(ev);
+    }
+
+    logDebug(...messages) {
+        return this.log('debug', ...messages);
+    }
+
+    logInfo(...messages) {
+        return this.log('info', ...messages);
+    }
+
+    logWarn(...messages) {
+        return this.log('warn', ...messages);
+    }
+
+    logError(...messages) {
+        return this.log('error', ...messages);
+    }
+
     async wait() {
         await this._runPromise;
     }
@@ -1096,13 +1122,13 @@ class SyncJob extends EventTarget {
     async _run(options={}) {
         if (options.delay) {
             this.setStatus('deferred');
-            console.debug(`Deferring sync job [${Math.round(options.delay / 1000)}s] for: ` + this.athlete);
+            this.logDebug(`Deferring sync job [${Math.round(options.delay / 1000)}s] for: ` + this.athlete);
             await Promise.race([sauce.sleep(options.delay), this._cancelEvent.wait()]);
         }
         if (this._cancelEvent.isSet()) {
             return;
         }
-        console.info('Starting sync job for: ' + this.athlete);
+        this.logInfo('Starting sync job for: ' + this.athlete);
         const start = Date.now();
         this.setStatus('checking-network');
         await Promise.race([networkOnline(), this._cancelEvent.wait()]);
@@ -1127,7 +1153,7 @@ class SyncJob extends EventTarget {
         }
         this.setStatus('complete');
         const duration = Math.round((Date.now() - start) / 1000);
-        console.info(`Sync completed in ${duration.toLocaleString()} seconds for: ` + this.athlete);
+        this.logInfo(`Sync completed in ${duration.toLocaleString()} seconds for: ` + this.athlete);
     }
 
     emit(name, data) {
@@ -1212,10 +1238,10 @@ class SyncJob extends EventTarget {
             }
             batch = batch.filter(x => x);
             if (forceUpdate) {
-                console.info(`Updating ${batch.length} activities`);
+                this.logInfo(`Updating ${batch.length} activities`);
                 await actsStore.updateMany(new Map(batch.map(x => [x.id, x])));
             } else {
-                console.info(`Adding ${batch.length} new activities`);
+                this.logInfo(`Adding ${batch.length} new activities`);
                 await actsStore.putMany(batch);
             }
         }
@@ -1298,10 +1324,10 @@ class SyncJob extends EventTarget {
             // syncing some activities.  A full resync will be required to recover.
             if (adding.length) {
                 if (forceUpdate) {
-                    console.info(`Updating ${adding.length} activities`);
+                    this.logInfo(`Updating ${adding.length} activities`);
                     await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
                 } else {
-                    console.info(`Adding ${adding.length} new activities`);
+                    this.logInfo(`Adding ${adding.length} new activities`);
                     await actsStore.putMany(adding);
                 }
             } else if (knownIds.size >= total) {
@@ -1342,12 +1368,12 @@ class SyncJob extends EventTarget {
 
     activityToDatabase({id, ts, type, name, ...extra}) {
         if (!id) {
-            console.error('Invalid activity id for athlete: ' + this.athlete.pk);
+            this.logError('Invalid activity id for athlete: ' + this.athlete.pk);
             return;
         }
         let basetype = type && sauce.model.getActivityBaseType(type);
         if (!basetype) {
-            console.error('Unknown activity type for: ' + id);
+            this.logError('Unknown activity type for: ' + id);
             basetype = 'workout';
         }
         const data = {
@@ -1383,7 +1409,7 @@ class SyncJob extends EventTarget {
             // In some cases Strava just returns 500 for a month.  I suspect it's when the only
             // activity data in a month is private, but it's an upstream problem and we need to
             // treat it like an empty response.
-            console.error(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`);
+            this.logError(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`);
             return [];
         }
         // Desc seems to be wrapped in a <p> but I'm not sure if this is 100% of the time and doing
@@ -1408,7 +1434,7 @@ class SyncJob extends EventTarget {
                 }
             }
         } catch(e) {
-            console.error('Parse activity feed props error:', e);
+            this.logError('Parse activity feed props error:', e);
         }
         if (feedEntries) {
             try {
@@ -1450,10 +1476,10 @@ class SyncJob extends EventTarget {
                     }
                 }
             } catch(e) {
-                console.error('Error processing activity props:', e);
+                this.logError('Error processing activity props:', e);
             }
         } else {
-            console.warn("No feed entries were found, upstream change?");
+            this.logWarn("No feed entries were found, upstream change?");
         }
         return batch.filter(x => x);
     }
@@ -1497,10 +1523,10 @@ class SyncJob extends EventTarget {
             }
             if (adding.length) {
                 if (forceUpdate) {
-                    console.info(`Updating ${adding.length} activities`);
+                    this.logInfo(`Updating ${adding.length} activities`);
                     await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
                 } else {
-                    console.info(`Adding ${adding.length} new activities`);
+                    this.logInfo(`Adding ${adding.length} new activities`);
                     await actsStore.putMany(adding);
                 }
             } else if (empty >= minEmpty) {
@@ -1552,13 +1578,13 @@ class SyncJob extends EventTarget {
             }
         }
         if (deferCount) {
-            console.warn(`Deferring sync of ${deferCount} activities due to error`);
+            this.logWarn(`Deferring sync of ${deferCount} activities due to error`);
         }
         const workers = [];
         if (unfetched.length && !options.noStreamsFetch) {
             workers.push(this._fetchStreamsWorker(unfetched));
         } else if (!this._procQueue.size) {
-            console.debug("No activity sync required for: " + this.athlete);
+            this.logDebug("No activity sync required for: " + this.athlete);
             return;
         } else {
             this._procQueue.putNoWait(null);  // sentinel
@@ -1594,11 +1620,11 @@ class SyncJob extends EventTarget {
             try {
                 data = await this._fetchStreams(activity, q);
             } catch(e) {
-                console.warn("Fetch streams error (will retry later):", e);
+                this.logWarn("Fetch streams error (will retry later):", e);
                 error = e;
             }
             if (this._cancelEvent.isSet()) {
-                console.info('Sync streams cancelled');
+                this.logInfo('Sync streams cancelled');
                 return count;
             }
             if (data) {
@@ -1621,11 +1647,11 @@ class SyncJob extends EventTarget {
             }
             await activity.save();
         }
-        console.info("Completed streams fetch for: " + this.athlete);
+        this.logInfo("Completed streams fetch for: " + this.athlete);
     }
 
     _localSetSyncError(activities, manifest, e) {
-        console.error(`Top level local processing error (${manifest.name}) v${manifest.version}`, e);
+        this.logError(`Top level local processing error (${manifest.name}) v${manifest.version}`, e);
         for (const a of activities) {
             a.setSyncError(manifest, e);
         }
@@ -1659,7 +1685,7 @@ class SyncJob extends EventTarget {
                 this._localSetSyncDone(finished, m);
                 const elapsed = Math.round(totTime / finished.length).toLocaleString();
                 const rate = Math.round(finished.length / (totTime / finished.length / 1000)).toLocaleString();
-                console.debug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
+                this.logDebug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
                     `activities (${rate}/s)`);
             }
             if (proc.stopped && !proc.available) {
@@ -1679,7 +1705,7 @@ class SyncJob extends EventTarget {
                 } finally {
                     offloaded.delete(proc);
                 }
-                console.info("Offload processor finished:", m.name);
+                this.logInfo("Offload processor finished:", m.name);
             }
         }
     }
@@ -1701,10 +1727,10 @@ class SyncJob extends EventTarget {
                     const anyPending = Array.from(offloaded).some(x => x.pending);
                     for (const x of offloaded) {
                         if (!anyPending) {
-                            console.info('Requesting offload processor stop:', x.manifest.name);
+                            this.logInfo('Requesting offload processor stop:', x.manifest.name);
                             x.stop();
                         } else if (x.pending) {
-                            console.debug('Requesting offload processor flush:', x.manifest.name);
+                            this.logDebug('Requesting offload processor flush:', x.manifest.name);
                             x.flush();
                         }
                     }
@@ -1758,7 +1784,7 @@ class SyncJob extends EventTarget {
                     if (issubclass(processor, processors.OffloadProcessor)) {
                         let proc = offloadedActive.get(processor);
                         if (!proc || proc.stopping) {
-                            console.debug("Creating new offload processor:", m.name);
+                            this.logDebug("Creating new offload processor:", m.name);
                             proc = new processor({
                                 manifest: m,
                                 athlete: this.athlete,
@@ -1794,7 +1820,7 @@ class SyncJob extends EventTarget {
                         }
                         const elapsed = Math.round((Date.now() - s)).toLocaleString();
                         const rate = Math.round(activities.length / ((Date.now() - s) / 1000)).toLocaleString();
-                        console.debug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} ` +
+                        this.logDebug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} ` +
                             `activities (${rate}/s)`);
                     }
                     await sauce.sleep(0); // Run in next task for better offloaded latency
@@ -1841,10 +1867,10 @@ class SyncJob extends EventTarget {
             const impendingSuspend = this._rateLimiters.willSuspendFor();
             const minRateLimit = 10000;
             if (impendingSuspend > minRateLimit) {
-                console.info(`Rate limited for ${Math.round(impendingSuspend / 60 / 1000)} minutes`);
+                this.logInfo(`Rate limited for ${Math.round(impendingSuspend / 60 / 1000)} minutes`);
                 for (const x of this._rateLimiters) {
                     if (x.willSuspendFor()) {
-                        console.debug('' + x);
+                        this.logDebug('' + x);
                     }
                 }
                 this.emit('ratelimiter', {
@@ -1860,7 +1886,7 @@ class SyncJob extends EventTarget {
                 this.emit('ratelimiter', {suspended: false});
             }
             const localeDate = (new Date(activity.get('ts'))).toLocaleDateString();
-            console.debug(`Fetching streams for activity: ${activity.pk} [${localeDate}]`);
+            this.logDebug(`Fetching streams for activity: ${activity.pk} [${localeDate}]`);
             try {
                 const resp = await this.retryFetch(`/activities/${activity.pk}/streams?${q}`);
                 return await resp.json();
@@ -1944,7 +1970,7 @@ class SyncManager extends EventTarget {
             try {
                 await this._refresh(syncHash);
             } catch(e) {
-                console.error('Sync refresh error:', e);
+                this.logError('Sync refresh error:', e);
                 await aggressiveSleep(errorBackoff *= 1.5);
             }
             this._refreshEvent.clear();
@@ -1992,7 +2018,8 @@ class SyncManager extends EventTarget {
                     delay: requested ? 0 : delay,
                 }, this._refreshRequests.get(a.pk));
                 this._refreshRequests.delete(a.pk);
-                this.runSyncJob(a, options).catch(e => console.error('Sync job error:', e));
+                this.runSyncJob(a, options).catch(e =>
+                    syncLogsStore.logError(a.id, 'Outer run sync job error:', e));
                 delay = Math.min((delay + 90000) * 1.10, 3600 * 1000);
             }
         }
@@ -2017,13 +2044,14 @@ class SyncManager extends EventTarget {
         syncJob.addEventListener('status', ev => this.emitForAthlete(athlete, 'status', ev.data));
         syncJob.addEventListener('progress', ev => this.emitForAthlete(athlete, 'progress', ev.data));
         syncJob.addEventListener('ratelimiter', ev => this.emitForAthlete(athlete, 'ratelimiter', ev.data));
+        syncJob.addEventListener('log', ev => this.emitForAthlete(athlete, 'log', ev.data));
         this.emitForAthlete(athlete, 'active', {active: true, athlete: athlete.data});
         this.activeJobs.set(athleteId, syncJob);
         syncJob.run(options);
         try {
             await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
         } catch(e) {
-            console.error('Sync job run error:', e);
+            syncJob.logError('Sync job error:', e);
             athlete.set('lastSyncError', Date.now());
             this.emitForAthlete(athlete, 'error', {error: e.message});
         } finally {
@@ -2033,7 +2061,7 @@ class SyncManager extends EventTarget {
                 // job hanging indefinitely.   NOTE: it will be more common that this is
                 // triggered by initial sync jobs that hit the large rate limiter delays.
                 // There is no issue here since we just reschedule the job in either case.
-                console.info('Sync job timeout for: ' + athlete);
+                syncJob.logWarn('Sync job timeout');
                 syncJob.cancel();
                 await syncJob.wait();
                 this._refreshRequests.set(athleteId, {});
@@ -2148,6 +2176,7 @@ class SyncController extends sauce.proxy.Eventing {
         this._setupEventRelay('progress');
         this._setupEventRelay('ratelimiter');
         this._setupEventRelay('importing-athlete');
+        this._setupEventRelay('log');
     }
 
     delete() {
@@ -2215,6 +2244,10 @@ class SyncController extends sauce.proxy.Eventing {
 
     getState() {
         return this.state;
+    }
+
+    async getLogs() {
+        return await syncLogsStore.getLogs(this.athleteId);
     }
 }
 sauce.proxy.export(SyncController, {namespace});

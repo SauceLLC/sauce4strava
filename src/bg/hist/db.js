@@ -91,6 +91,13 @@ sauce.ns('hist.db', ns => {
                     store.deleteIndex('type-period-value', ['type', 'period', 'value']);
                     next();
                 }
+            }, {
+                version: 30,
+                migrate: (idb, t, next) => {
+                    const store = idb.createObjectStore("sync-logs", {autoIncrement: true});
+                    store.createIndex('athlete-ts', ['athlete', 'ts']);
+                    next();
+                }
             }];
         }
     }
@@ -731,12 +738,74 @@ sauce.ns('hist.db', ns => {
     }
 
 
+    class SyncLogsStore extends sauce.db.DBStore {
+        constructor() {
+            super(histDatabase, 'sync-logs');
+        }
+
+        async getLogs(athleteId, {limit=100}={}) {
+            let q;
+            if (athleteId != null) {
+                q = IDBKeyRange.bound([athleteId, -Infinity], [athleteId, Infinity]);
+            } else {
+                q = IDBKeyRange.bound([-Infinity, -Infinity], [Infinity, Infinity]);
+            }
+            const logs = [];
+            for await (const x of this.values(q, {index: 'athlete-ts', limit, direction: 'prev'})) {
+                logs.push(x);
+                if (limit && logs.length >= limit) {
+                    break;
+                }
+            }
+            return logs;
+        }
+
+        async trimLogs(athleteId, len) {
+            let q;
+            if (athleteId != null) {
+                q = IDBKeyRange.bound([athleteId, -Infinity], [athleteId, Infinity]);
+            } else {
+                q = IDBKeyRange.bound([-Infinity, -Infinity], [Infinity, Infinity]);
+            }
+            return await this.trim(q, len, {index: 'athlete-ts'});
+        }
+
+        log(level, athleteId, ...messages) {
+            if (!['debug', 'info', 'warn', 'error'].includes(level)) {
+                throw new TypeError("Invalid log level argument");
+            }
+            console[level](`Sync Log (${athleteId}):`, ...messages);
+            const message = messages.join(' ');
+            const record = {athlete: athleteId, ts: Date.now(), message, level};
+            this.put(record);  // bg okay
+            return record;
+        }
+
+        logDebug(athleteId, ...messages) {
+            return this.log('debug', athleteId, ...messages);
+        }
+
+        logInfo(athleteId, ...messages) {
+            return this.log('info', athleteId, ...messages);
+        }
+
+        logWarn(athleteId, ...messages) {
+            return this.log('warn', athleteId, ...messages);
+        }
+
+        logError(athleteId, ...messages) {
+            return this.log('error', athleteId, ...messages);
+        }
+    }
+
+
     return {
         HistDatabase,
         ActivitiesStore,
         StreamsStore,
         PeaksStore,
         AthletesStore,
+        SyncLogsStore,
         ActivityModel,
         AthleteModel,
     };

@@ -107,6 +107,63 @@
             }
         }
 
+        .sync-logs {
+            .logs {
+                max-height: 14em;
+                overflow: auto;
+                font-size: 0.86em;
+                padding: 0.4em 0.5em;
+                background-color: #333; // break theme so colors always work
+                color: #fff;
+                border-radius: 0.3em;
+                margin: 0 0.2em 0 1em;
+                display: grid;
+                grid-template-columns: min-content min-content 1fr;
+                align-items: baseline;
+                line-height: 1.4;
+
+                .log-entry {
+                    display: contents;
+
+                    .time,
+                    .level {
+                        font-weight: 600;
+                        font-size: 0.86em;
+                        padding-right: 0.5em;
+                        white-space: nowrap;
+                    }
+
+                    &[data-level="debug"] {
+                        .level,
+                        .message {
+                            font-weight: 100;
+                        }
+                    }
+                    &[data-level="info"] {
+                    }
+                    &[data-level="warn"] {
+                        .level {
+                            font-weight: 600;
+                            color: #e1d018;
+                        }
+                        .level,
+                        .message {
+                            font-weight: 600;
+                        }
+                    }
+                    &[data-level="error"] {
+                        .level {
+                            color: #d10808;
+                        }
+                        .level,
+                        .message {
+                            font-weight: 800;
+                        }
+                    }
+                }
+            }
+        }
+
         .ui-dialog-content {
             flex-wrap: wrap;
             flex-direction: row;
@@ -235,6 +292,10 @@
                 }
             }
 
+            .enabled-only {
+                display: contents;
+            }
+
             &.sync-disabled {
                 .enabled-only {
                     display: none !important;
@@ -262,13 +323,14 @@
 
             .entry {
                 flex-wrap: wrap;
+                padding-top: 0.4rem;
+                padding-bottom: 0.4em;
 
                 .sub-entry {
                     font-size: 0.9em;
                     flex: 1 0 100%;
                     display: flex;
-                    padding-top: 1rem;
-                    padding-bottom: 0.5rem;
+                    padding-top: 0.65rem;
 
                     key {
                         padding-left: 1em;
@@ -287,6 +349,17 @@
 
                     value {
                         margin-right: 1em;
+                    }
+
+                    .active-details {
+                        &:empty {
+                            display: none;
+                        }
+
+                        margin-top: 0.3em;
+                        flex-basis: 100%;
+                        padding: 1em;
+                        font-size: 0.9em;
                     }
                 }
             }

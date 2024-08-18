@@ -49,6 +49,7 @@
                      title="{{{sync_start_tooltip}}}">{{=icon play-circle-regular=}}</div>
                 <div class="btn btn-sm sync-recompute"
                      title="{{{sync_recompute_tooltip}}}">{{=icon redo-solid=}}</div>
+                <div class="active-details"></div>
             </div>
 
             <div class="entry synced">
@@ -104,6 +105,12 @@
                                   {{athlete.estCyclingPeaks ? 'checked' : ''}}/></value>
                 </div>
             </div>
+        </section>
+
+        <section class="sync-logs">
+            <h4>{{{sync_logs}}}</h4>
+
+            <div class="logs"></div>
         </section>
     </div>
 </form>
