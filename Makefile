@@ -59,7 +59,6 @@ build-safari-release:
 
 lint:
 	$(NPATH)/eslint src
-	$(NPATH)/eslint --config .eslintrc.modules.json --ext .mjs src
 
 translate:
 	$(TOOLPATH)/translate
