@@ -1,12 +1,15 @@
 {
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es2021": true
+    },
+    "extends": [
+        "eslint:recommended"
+    ],
     "parserOptions": {
         "ecmaVersion": 2022
     },
-    "env": {
-        "browser": true,
-        "es6": true
-    },
-    "extends": "eslint:recommended",
     "rules": {
         "quotes": "off",
         "no-console": "off",
@@ -16,11 +19,11 @@
             "unix"
         ],
         "semi": [
-            "error",
+            "warn",
             "always"
         ],
         "no-unused-vars": [
-            "error",
+            "warn",
             {
                 "args": "none"
             }
@@ -30,6 +33,48 @@
             {
                 "checkLoops": false
             }
-        ]
-    }
+        ],
+        "no-constant-binary-expression": "warn",
+        "no-constructor-return": "error",
+        "no-new-native-nonconstructor": "error",
+        "no-unreachable-loop": "error",
+        "no-use-before-define": ["warn", "nofunc"],
+        "complexity": ["warn", 60],
+        "max-len": ["warn", {
+            "code": 110,
+            "ignoreComments": false,
+            "ignoreTrailingComments": false,
+            "ignoreStrings": false,
+            "ignoreTemplateLiterals": false,
+            "ignoreRegExpLiterals": false
+        }],
+        "max-nested-callbacks": ["warn", 3],
+        "max-depth": ["warn", 8],
+        "curly": "warn",
+        "eqeqeq": ["error", "always", {"null": "ignore"}],
+        "no-implicit-globals": "error",
+        "no-throw-literal": "error",
+        "no-var": "error",
+        "no-unreachable": "warn",
+        "no-warning-comments": "off",
+        "prefer-const": ["warn", {"destructuring": "all"}],
+        "require-await": "warn",
+        "func-call-spacing": "warn",
+        "indent": ["warn", 4, {
+            "CallExpression": {"arguments": "first"},
+            "FunctionDeclaration": {"parameters": "first"},
+            "FunctionExpression": {"parameters": "first"},
+            "ObjectExpression": "first",
+            "ArrayExpression": 1,
+            "SwitchCase": 1
+        }],
+        "no-trailing-spaces": "warn"
+    },
+    "overrides": [{
+        "files": ["*.mjs"],
+        "parserOptions": {
+            "sourceType": "module",
+            "allowImportExportEverywhere": true
+        }
+    }]
 }
