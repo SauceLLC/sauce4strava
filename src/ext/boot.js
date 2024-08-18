@@ -319,13 +319,12 @@ function handleAttributionDialog() {
         }
         const manifest = browser.runtime.getManifest();
         const extUrl = browser.runtime.getURL('');
-        /* sauce.insertScript([
-            self.sauceBaseInit.toString(),
-            self.saucePreloaderInit.toString(),
-            `sauceBaseInit('${browser.runtime.id}', '${extUrl}', ${JSON.stringify(manifest)});`,
-            `saucePreloaderInit();`,
-        ].join('\n')); */
-        document.documentElement.dataset.sauceBaseInitParams = JSON.stringify({extId: browser.runtime.id, extUrl, manifest});
+        document.documentElement.dataset.sauceBaseInitParams = JSON.stringify({
+            extId: browser.runtime.id,
+            extUrl,
+            name: manifest.name,
+            version: manifest.version,
+        });
         const config = await sauce.storage.get(null);
         const options = config.options;
         self.currentUser = config.currentUser;
@@ -346,11 +345,6 @@ function handleAttributionDialog() {
         Object.assign(sauce, patronVars);
         sauce.loadScripts([`${extUrl}src/site/set_options.js`],
             {params: JSON.stringify({options: options || {}, patronVars})});
-        /*sauce.insertScript(`
-            self.sauce = self.sauce || {};
-            sauce.options = ${JSON.stringify(options || {})};
-            Object.assign(sauce, ${JSON.stringify(patronVars)});
-        `);*/
         const loading = [];
         for (const m of matchingManifests) {
             if (m.name) {
