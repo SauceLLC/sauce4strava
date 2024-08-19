@@ -9,16 +9,32 @@ const peaksStore = sauce.hist.db.PeaksStore.singleton();
 const streamsStore = sauce.hist.db.StreamsStore.singleton();
 
 
-async function getActivitiesStreams(activities, streams) {
+function withTimeout(promise, delay) {
+    const timeoutError = new Error(`timeout (${delay})`);
+    const sleep = new Promise((_, rej) => setTimeout(() => rej(timeoutError), delay));
+    sleep.catch(() => undefined);  // stop unhandled promise warnings
+    return Promise.race([promise, sleep]);
+}
+
+
+async function getActivitiesStreams(activities, streamsDesc) {
     const streamKeys = [];
     const actStreams = new Map();
     for (const a of activities) {
+        let streams;
+        if (Array.isArray(streamsDesc)) {
+            streams = streamsDesc;
+        } else {
+            const type = a.get('basetype');
+            streams = streamsDesc[type === 'run' ? 'run' : type === 'ride' ? 'ride' : 'other'];
+        }
         for (const stream of streams) {
             streamKeys.push([a.pk, stream]);
         }
         actStreams.set(a.pk, {});
     }
-    for (const x of await streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true})) {
+    const getStreams = streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true});
+    for (const x of await withTimeout(getStreams, 120000)) {
         if (x) {
             actStreams.get(x.activity)[x.stream] = x.data;
         }
@@ -123,7 +139,7 @@ class WorkerJob extends EventTarget {
             this._stopping = this._send('stop', {timeout: 600000}).finally(() => this.detach());
         }
         await this._stopping;
-   }
+    }
 }
 
 
@@ -206,7 +222,56 @@ class WorkerExecutor {
     }
 }
 
-const workerExec = new WorkerExecutor(browser.runtime.getURL(`src/bg/hist/worker.js?version=${sauce.version}`));
+const workerExec = new WorkerExecutor(
+    browser.runtime.getURL(`src/bg/hist/worker.js?version=${sauce.version}`));
+
+
+class OffscreenDocumentProxy {
+
+    static async factory() {
+        const url = browser.runtime.getURL('pages/offscreen.html');
+        await browser.offscreen.createDocument({
+            url,
+            reasons: ['WORKERS'],
+            justification: 'XXX ???? required but undocumented justification field '
+        });
+        // XXX is this racey or does await of createDocument wait?
+        const instance = new this();
+        instance.port = await browser.runtime.connect({name: 'sauce-offscreen-proxy-port'});
+        instance.port.onMessage.addListener(instance._onPortMessage.bind(instance));
+        return instance;
+    }
+
+    constructor() {
+        this._pending = new Map();
+        this._callIdCounter = 1;
+    }
+
+    call(args) {
+        let resolve, reject;
+        const id = this._callIdCounter++;
+        const promise = new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
+        this._pending.set(id, {resolve, reject});
+        this.port.postMessage({
+            op: 'call',
+            args,
+            id
+        });
+        return promise;
+    }
+
+    _onPortMessage(msg) {
+        const {resolve, reject} = this._pending.get(msg.id);
+        this._pending.delete(msg.id);
+        if (msg.success) {
+            resolve(msg.value);
+        } else {
+            reject(new Error(msg.error));
+        }
+    }
+}
+
+//const offscreenProxy = await OffscreenDocumentProxy.factory();
 
 
 export class OffloadProcessor {
@@ -368,9 +433,10 @@ export class OffloadProcessor {
     }
 
     async processor() {
-        throw new TypeError("Pure virutal method");
         /* Subclass should keep this alive for the duration of their execution.
          * It is also their job to monitor flushEvent and stopEvent. */
+        await undefined;  // lint
+        throw new TypeError("Pure virutal method");
     }
 }
 
@@ -451,7 +517,12 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
                         const data = sauce.pace.createWattsStream(streams.time, gad, weight);
                         if (!sauce.data.isArrayEqual(data, streams.watts_calc)) {
                             streams.watts_calc = data;
-                            upStreams.push({activity: activity.pk, athlete: athlete.pk, stream: 'watts_calc', data});
+                            upStreams.push({
+                                activity: activity.pk,
+                                athlete: athlete.pk,
+                                stream: 'watts_calc',
+                                data
+                            });
                         }
                     } catch(e) {
                         console.error("Failed to create running watts stream for: " + activity, e);
@@ -607,12 +678,19 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                         prevT = t;
                         if (gap && gap > 0 && hr && active) {
                             // Unrolled for speed.
-                            if (hr <= zones.z1) stats.hrZonesTime[0] += gap;
-                            else if (hr <= zones.z2) stats.hrZonesTime[1] += gap;
-                            else if (hr <= zones.z3) stats.hrZonesTime[2] += gap;
-                            else if (hr <= zones.z4) stats.hrZonesTime[3] += gap;
-                            else if (hr <= zones.z5) stats.hrZonesTime[4] += gap;
-                            else throw new TypeError("Unexpected power zone");
+                            if (hr <= zones.z1) {
+                                stats.hrZonesTime[0] += gap;
+                            } else if (hr <= zones.z2) {
+                                stats.hrZonesTime[1] += gap;
+                            } else if (hr <= zones.z3) {
+                                stats.hrZonesTime[2] += gap;
+                            } else if (hr <= zones.z4) {
+                                stats.hrZonesTime[3] += gap;
+                            } else if (hr <= zones.z5) {
+                                stats.hrZonesTime[4] += gap;
+                            } else {
+                                throw new TypeError("Unexpected power zone");
+                            }
                         }
                     }
                 } catch(e) {
@@ -658,14 +736,23 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                             prevT = t;
                             if (gap && gap > 0 && w) {  // !!w is because z1 is "active" recovery
                                 // Unrolled for speed, make sure we have enough for all systems.
-                                if (w <= powerZones.z1) stats.powerZonesTime[0] += gap;
-                                else if (w <= powerZones.z2) stats.powerZonesTime[1] += gap;
-                                else if (w <= powerZones.z3) stats.powerZonesTime[2] += gap;
-                                else if (w <= powerZones.z4) stats.powerZonesTime[3] += gap;
-                                else if (w <= powerZones.z5) stats.powerZonesTime[4] += gap;
-                                else if (w <= powerZones.z6) stats.powerZonesTime[5] += gap;
-                                else if (w <= powerZones.z7) stats.powerZonesTime[6] += gap;
-                                else throw new TypeError("Unexpected power zone");
+                                if (w <= powerZones.z1) {
+                                    stats.powerZonesTime[0] += gap;
+                                } else if (w <= powerZones.z2) {
+                                    stats.powerZonesTime[1] += gap;
+                                } else if (w <= powerZones.z3) {
+                                    stats.powerZonesTime[2] += gap;
+                                } else if (w <= powerZones.z4) {
+                                    stats.powerZonesTime[3] += gap;
+                                } else if (w <= powerZones.z5) {
+                                    stats.powerZonesTime[4] += gap;
+                                } else if (w <= powerZones.z6) {
+                                    stats.powerZonesTime[5] += gap;
+                                } else if (w <= powerZones.z7) {
+                                    stats.powerZonesTime[6] += gap;
+                                } else {
+                                    throw new TypeError("Unexpected power zone");
+                                }
                             }
                         }
                         stats.tss = sauce.power.calcTSS(stats.np || stats.power, stats.activeTime, ftp);
@@ -902,6 +989,187 @@ export class PeaksProcessor extends OffloadProcessor {
         }
     }
 
+}
+
+
+export class PeaksProcessorNoWorkerSupport extends OffloadProcessor {
+
+    constructor(...args) {
+        super(...args);
+        this.useEstWatts = this.athlete.get('estCyclingWatts') && this.athlete.get('estCyclingPeaks');
+        this.gender = this.athlete.get('gender') || 'male';
+    }
+
+    async processor() {
+        this.periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
+        this.distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
+        // NOTE: The spec requires that 8 is the max mem value returned, so this is
+        // just a low mem device check at best.
+        const maxBatch = navigator.deviceMemory < 8 ? 20 : 50;
+        while (!this.stopping) {
+            const activities = await this.getAllIncoming();
+            if (!activities) {
+                continue;
+            }
+            for (let i = 0; i < activities.length;) {
+                const batch = activities.slice(i, (i += maxBatch));
+                await this._process(batch);
+                this.putFinished(batch);
+            }
+        }
+    }
+
+    getRankLevel(period, p, wp, weight) {
+        const rank = sauce.power.rankLevel(period, p, wp, weight, this.gender);
+        if (rank.level > 0) {
+            return rank;
+        }
+    }
+
+    async _process(activities) {
+        const actStreams = await getActivitiesStreams(activities, {
+            run: ['time', 'active', 'heartrate', 'distance', 'grade_adjusted_distance'],
+            ride: ['time', 'active', 'heartrate', 'watts', 'watts_calc'].filter(x =>
+                x !== 'watts_calc' || this.useEstWatts),
+            other: ['time', 'active', 'heartrate', 'watts'],
+        });
+        const upPeaks = [];
+        let ts = Date.now();
+        for (const activity of activities) {
+            if (Date.now() - ts > 400) {
+                // Reduce message ACK latency by defering for one task iteration.
+                await sauce.sleep(0);
+                ts = Date.now();
+            }
+            if (activity.get('peaksExclude')) {
+                continue;  // cleanup happens in finalizer proc.
+            }
+            const basetype = activity.get('basetype');
+            const isRun = basetype === 'run';
+            const isRide = basetype === 'ride';
+            const streams = actStreams.get(activity.pk);
+            const addPeak = (a1, a2, a3, a4, extra) => {
+                const entry = sauce.peaks.createStoreEntry(a1, a2, a3, a4, streams.time, activity, extra);
+                if (entry) {
+                    upPeaks.push(entry);
+                }
+            };
+            if (streams.heartrate) {
+                try {
+                    for (const period of this.periods) {
+                        const roll = sauce.data.peakAverage(period, streams.time, streams.heartrate,
+                            {active: true, ignoreZeros: true, activeStream: streams.active});
+                        if (roll) {
+                            addPeak('hr', period, roll.avg(), roll);
+                        }
+                    }
+                } catch(e) {
+                    // XXX make this better than a big try/catch
+                    console.error("Failed to create peaks for: " + activity, e);
+                    activity.setSyncError(this.manifest, e);
+                }
+            }
+            const watts = streams.watts || streams.watts_calc;
+            if (watts && !isRun) { // Runs have their own processor for this.
+                const estimate = !streams.watts;
+                const weight = this.athlete.getWeightAt(activity.get('ts'));
+                try {
+                    for (const period of this.periods) {
+                        if (estimate && period < 300) {
+                            continue;
+                        }
+                        const rp = sauce.power.correctedRollingPower(streams.time, period);
+                        if (!rp) {
+                            continue;
+                        }
+                        const leadCloneOpts = {inlineXP: false, inlineNP: false};
+                        const wrp = (!estimate && period >= 300) ?
+                            rp.clone({active: true, inlineNP: true, inlineXP: true}) :
+                            undefined;
+                        const leaders = {};
+                        // Instead of using peakPower, peakNP, we do our own reduction to save
+                        // repeative iterations on the same dataset; it's about 50% faster.
+                        for (let i = 0; i < streams.time.length; i++) {
+                            const t = streams.time[i];
+                            const w = watts[i];
+                            const a = streams.active[i];
+                            rp.add(t, w, a);
+                            if (wrp) {
+                                wrp.resize();
+                            }
+                            if (rp.full()) {
+                                const power = rp.avg();
+                                if (power && (!leaders.power || power >= leaders.power.value)) {
+                                    leaders.power = {roll: rp.clone(), value: power, np: wrp && wrp.np()};
+                                }
+                            }
+                            if (wrp && wrp.full()) {
+                                const np = wrp.np();
+                                if (np && (!leaders.np || np >= leaders.np.value)) {
+                                    leaders.np = {roll: wrp.clone(leadCloneOpts), value: np};
+                                }
+                                const xp = wrp.xp();
+                                if (xp && (!leaders.xp || xp >= leaders.xp.value)) {
+                                    leaders.xp = {roll: wrp.clone(leadCloneOpts), value: xp};
+                                }
+                            }
+                        }
+                        if (leaders.power) {
+                            const l = leaders.power;
+                            const rankLevel = isRide ?
+                                this.getRankLevel(l.roll.active(), l.value, l.np, weight) :
+                                undefined;
+                            addPeak('power', period, l.value, l.roll, {wp: l.np, estimate, rankLevel});
+                        }
+                        if (leaders.np) {
+                            const l = leaders.np;
+                            const np = l.roll.np({external: true});
+                            const power = l.roll.avg({active: false});
+                            const rankLevel = isRide ?
+                                this.getRankLevel(l.roll.active(), power, np, weight) :
+                                undefined;
+                            addPeak('np', period, np, l.roll, {power, estimate, rankLevel});
+                        }
+                        if (leaders.xp) {
+                            const l = leaders.xp;
+                            const xp = l.roll.xp({external: true});
+                            const power = l.roll.avg({active: false});
+                            const rankLevel = isRide ?
+                                this.getRankLevel(l.roll.active(), power, xp, weight) :
+                                undefined;
+                            addPeak('xp', period, xp, l.roll, {power, estimate, rankLevel});
+                        }
+                    }
+                } catch(e) {
+                    // XXX make this better than a big try/catch
+                    console.error("Failed to create peaks for: " + activity, e);
+                    activity.setSyncError(this.manifest, e);
+                }
+            }
+            if (isRun && streams.distance) {
+                try {
+                    for (const distance of this.distances) {
+                        let roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
+                        if (roll) {
+                            addPeak('pace', distance, roll.avg(), roll);
+                        }
+                        if (streams.grade_adjusted_distance) {
+                            roll = sauce.pace.bestPace(distance, streams.time,
+                                streams.grade_adjusted_distance);
+                            if (roll) {
+                                addPeak('gap', distance, roll.avg(), roll);
+                            }
+                        }
+                    }
+                } catch(e) {
+                    // XXX make this better than a big try/catch
+                    console.error("Failed to create peaks for: " + activity, e);
+                    activity.setSyncError(this.manifest, e);
+                }
+            }
+        }
+        await peaksStore.putMany(upPeaks);
+    }
 }
 
 

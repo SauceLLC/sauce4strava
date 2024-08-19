@@ -1,19 +1,19 @@
 /* global browser, sauce */
 
-import "/src/ext/webext.js";
-import "/src/common/base.js";
-import "/src/common/base_init.js";
-import "/src/common/proxy.js";
-import "/src/bg/proxy.js";
-import "/src/common/lib.js";
-import "/src/common/storage.js";
-import "/src/bg/migrate.js";
-import "/src/bg/menu.js";
-import "/src/bg/trailforks.js";
-import "/src/bg/hist/db.js";
+import "../ext/webext.js";
+import "../common/base.js";
+import "../common/base_init.js";
+import "../common/proxy.js";
+import "./proxy.js";
+import "../common/lib.js";
+import "../common/storage.js";
+import "./migrate.js";
+import "./menu.js";
+import "./trailforks.js";
+import "./hist/db.js";
 
-import * as patron from '/src/bg/patron.mjs';
-import * as hist from '/src/bg/hist.mjs';
+import * as patron from './patron.mjs';
+import * as hist from './hist.mjs';
 
 patron.initProxyExports();
 
@@ -133,7 +133,7 @@ browser.runtime.onInstalled.addListener(async details => {
     }
 });
 
-browser.runtime.onMessage.addListener(async msg => {
+browser.runtime.onMessage.addListener(msg => {
     if (msg && msg.source === 'ext/boot') {
         if (msg.op === 'setCurrentUser') {
             const id = msg.currentUser || undefined;
@@ -146,7 +146,7 @@ browser.runtime.onMessage.addListener(async msg => {
 
 if (browser.declarativeContent) {
     // Chromium...
-    browser.runtime.onInstalled.addListener(async details => {
+    browser.runtime.onInstalled.addListener(details => {
         browser.declarativeContent.onPageChanged.removeRules(undefined, () => {
             browser.declarativeContent.onPageChanged.addRules([{
                 actions: [new browser.declarativeContent.ShowPageAction()],

@@ -216,8 +216,8 @@ class FindPeaks extends WorkerProcessor {
             if (streams.heartrate) {
                 try {
                     for (const period of this.periods) {
-                        const roll = sauce.data.peakAverage(period, streams.time,
-                            streams.heartrate, {active: true, ignoreZeros: true, activeStream: streams.active});
+                        const roll = sauce.data.peakAverage(period, streams.time, streams.heartrate,
+                            {active: true, ignoreZeros: true, activeStream: streams.active});
                         if (roll) {
                             addPeak('hr', period, roll.avg(), roll);
                         }
@@ -275,21 +275,27 @@ class FindPeaks extends WorkerProcessor {
                         }
                         if (leaders.power) {
                             const l = leaders.power;
-                            const rankLevel = isRide ? this.getRankLevel(l.roll.active(), l.value, l.np, weight) : undefined;
+                            const rankLevel = isRide ?
+                                this.getRankLevel(l.roll.active(), l.value, l.np, weight) :
+                                undefined;
                             addPeak('power', period, l.value, l.roll, {wp: l.np, estimate, rankLevel});
                         }
                         if (leaders.np) {
                             const l = leaders.np;
                             const np = l.roll.np({external: true});
                             const power = l.roll.avg({active: false});
-                            const rankLevel = isRide ? this.getRankLevel(l.roll.active(), power, np, weight) : undefined;
+                            const rankLevel = isRide ?
+                                this.getRankLevel(l.roll.active(), power, np, weight) :
+                                undefined;
                             addPeak('np', period, np, l.roll, {power, estimate, rankLevel});
                         }
                         if (leaders.xp) {
                             const l = leaders.xp;
                             const xp = l.roll.xp({external: true});
                             const power = l.roll.avg({active: false});
-                            const rankLevel = isRide ? this.getRankLevel(l.roll.active(), power, xp, weight) : undefined;
+                            const rankLevel = isRide ?
+                                this.getRankLevel(l.roll.active(), power, xp, weight) :
+                                undefined;
                             addPeak('xp', period, xp, l.roll, {power, estimate, rankLevel});
                         }
                     }
@@ -307,7 +313,8 @@ class FindPeaks extends WorkerProcessor {
                             addPeak('pace', distance, roll.avg(), roll);
                         }
                         if (streams.grade_adjusted_distance) {
-                            roll = sauce.pace.bestPace(distance, streams.time, streams.grade_adjusted_distance);
+                            roll = sauce.pace.bestPace(distance, streams.time,
+                                streams.grade_adjusted_distance);
                             if (roll) {
                                 addPeak('gap', distance, roll.avg(), roll);
                             }

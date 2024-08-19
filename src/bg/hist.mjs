@@ -106,7 +106,7 @@ ActivityModel.addSyncManifest({
     name: 'peaks',
     version: 13, // Updated np and xp (simplified and true)
     depends: ['extra-streams'],
-    data: {processor: processors.PeaksProcessor}
+    data: {processor: processors.PeaksProcessorNoWorkerSupport}
 });
 
 ActivityModel.addSyncManifest({
@@ -2257,16 +2257,9 @@ async function setStoragePersistent() {
     // This only works in some cases and may have no effect with unlimitedStorage
     // but it's evolving on all the browers and it's a good thing to ask for.
     if (navigator.storage && navigator.storage.persisted) {
-        let isPersisted = await navigator.storage.persisted();
-        if (!isPersisted) {
-            if (navigator.storage.persist) {
-                isPersisted = await navigator.storage.persist();
-            } else {
-                console.warn("Browser thinks this context is not secure, probably Chrome v3 manifest. :sadface:");
-            }
-        }
-        if (!isPersisted) {
-            console.debug(`Persisted storage not granted`);
+        const isPersisted = await navigator.storage.persisted();
+        if (!isPersisted && navigator.storage.persist) {
+            await navigator.storage.persist();
         }
     }
 }

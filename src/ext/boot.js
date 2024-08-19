@@ -56,6 +56,7 @@ function handleAttributionDialog() {
                 }
                 const root = document.documentElement;
                 browser.runtime.onMessage.addListener(msg => {
+                    debugger;
                     if (msg && msg.op === 'options-change') {
                         if (msg.key === 'font-custom-family') {
                             root.classList.toggle('sauce-font-custom-family', !!msg.value);

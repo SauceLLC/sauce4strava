@@ -13,7 +13,8 @@
         "storage",
         "unlimitedStorage",
         "contextMenus",
-        "alarms"
+        "alarms",
+        "offscreen"
     ],
 
     "icons": {
