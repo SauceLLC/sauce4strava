@@ -1863,41 +1863,39 @@ class SyncJob extends EventTarget {
     }
 
     async _fetchStreams(activity, q) {
-        for (let i = 1;; i++) {
-            const impendingSuspend = this._rateLimiters.willSuspendFor();
-            const minRateLimit = 10000;
-            if (impendingSuspend > minRateLimit) {
-                this.logInfo(`Rate limited for ${Math.round(impendingSuspend / 60 / 1000)} minutes`);
-                for (const x of this._rateLimiters) {
-                    if (x.willSuspendFor()) {
-                        this.logDebug('' + x);
-                    }
+        const impendingSuspend = this._rateLimiters.willSuspendFor();
+        const minRateLimit = 10000;
+        if (impendingSuspend > minRateLimit) {
+            this.logInfo(`Rate limited for ${Math.round(impendingSuspend / 60 / 1000)} minutes`);
+            for (const x of this._rateLimiters) {
+                if (x.willSuspendFor()) {
+                    this.logDebug('' + x);
                 }
-                this.emit('ratelimiter', {
-                    suspended: true,
-                    until: Date.now() + impendingSuspend
-                });
             }
-            await Promise.race([this._rateLimiters.wait(), this._cancelEvent.wait()]);
-            if (this._cancelEvent.isSet()) {
-                return;
-            }
-            if (impendingSuspend > minRateLimit) {
-                this.emit('ratelimiter', {suspended: false});
-            }
-            const localeDate = (new Date(activity.get('ts'))).toLocaleDateString();
-            this.logDebug(`Fetching streams for activity: ${activity.pk} [${localeDate}]`);
-            try {
-                const resp = await this.retryFetch(`/activities/${activity.pk}/streams?${q}`);
-                return await resp.json();
-            } catch(e) {
-                if (!e.resp) {
-                    throw e;
-                } else if (e.resp.status === 404) {
-                    return null;
-                } else {
-                    throw e;
-                }
+            this.emit('ratelimiter', {
+                suspended: true,
+                until: Date.now() + impendingSuspend
+            });
+        }
+        await Promise.race([this._rateLimiters.wait(), this._cancelEvent.wait()]);
+        if (this._cancelEvent.isSet()) {
+            return;
+        }
+        if (impendingSuspend > minRateLimit) {
+            this.emit('ratelimiter', {suspended: false});
+        }
+        const localeDate = (new Date(activity.get('ts'))).toLocaleDateString();
+        this.logDebug(`Fetching streams for activity: ${activity.pk} [${localeDate}]`);
+        try {
+            const resp = await this.retryFetch(`/activities/${activity.pk}/streams?${q}`);
+            return await resp.json();
+        } catch(e) {
+            if (!e.resp) {
+                throw e;
+            } else if (e.resp.status === 404) {
+                return null;
+            } else {
+                throw e;
             }
         }
     }
@@ -1929,6 +1927,7 @@ class SyncManager extends EventTarget {
         this._refreshEvent.set();
         await this.join();
         this.stopped = true;
+        console.debug("Sync Manager stopped for:", this.currentUser);
     }
 
     start() {
@@ -2281,16 +2280,25 @@ export function startSyncManager(id) {
 }
 
 
+const _syncManagerLock = new locks.Lock();
 export async function stopSyncManager() {
+    await _syncManagerLock.acquire();
+    try {
+        await _stopSyncManager();
+    } finally {
+        await _syncManagerLock.release();
+    }
+}
+
+
+async function _stopSyncManager() {
     if (!syncManager) {
-        return false;
+        return;
     }
     console.info("Stopping Sync Manager...");
     const mgr = syncManager;
     syncManager = null;
     await mgr.stop();
-    console.debug("Sync Manager stopped.");
-    return true;
 }
 
 
@@ -2299,15 +2307,20 @@ export function hasSyncManager() {
 }
 
 
-addEventListener('currentUserUpdate', async ev => {
-    if (syncManager) {
-        if (syncManager.currentUser === ev.id) {
-            return;
+export async function restartSyncManager(id) {
+    await _syncManagerLock.acquire();
+    try {
+        if (syncManager) {
+            if (syncManager.currentUser === id) {
+                return;
+            }
+            console.info("Current user changed:", syncManager.currentUser, '->', id);
+            await _stopSyncManager();
         }
-        console.info("Current user changed:", syncManager.currentUser, '->', ev.id);
-        await stopSyncManager();
+        if (id != null) {
+            startSyncManager(id);
+        }
+    } finally {
+        await _syncManagerLock.release();
     }
-    if (ev.id) {
-        startSyncManager(ev.id);
-    }
-});
+}

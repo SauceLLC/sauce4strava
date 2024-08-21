@@ -22,31 +22,25 @@ sauce.ns('hist', () => Object.fromEntries(Object.entries(hist))); // For console
 // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
 // to try migrations every startup.
 const migrationsRun = sauce.migrate.runMigrations();
-// XXX migrate to browser.storage.local (will need async refactor (if even possible)
-//self.currentUser = Number(localStorage.getItem('currentUser')) || undefined;
+self.currentUser = undefined;
 
 
-function setCurrentUser(id) {
+let _started;
+async function setCurrentUser(id) {
     if (id != null) {
-        console.info("Current user updated:", id);
-// XXX migrate to browser.storage.local (will need async refactor (if even possible)
-//        localStorage.setItem('currentUser', id);
+        if (self.currentUser != null) {
+            console.info("Current user updated:", id);
+        }
     } else {
         console.warn("Current user logged out");
-// XXX migrate to browser.storage.local (will need async refactor (if even possible)
-//        localStorage.removeItem('currentUser');
     }
     self.currentUser = id;
-    const ev = new Event('currentUserUpdate');
-    ev.id = id;
-    self.dispatchEvent(ev);
-}
-
-
-async function maybeStartSyncManager() {
+    const first = !_started;
+    _started = true;
     await migrationsRun;
-    if (self.currentUser && !hist.hasSyncManager()) {
-        hist.startSyncManager(self.currentUser);
+    await hist.restartSyncManager(id);
+    if (first) {
+        sauce.proxy.startBackgroundHandler();
     }
 }
 
@@ -114,15 +108,9 @@ sauce.suspendSafeSleep = function(ms) {
 };
 
 
-if (browser.runtime.getURL('').startsWith('safari-web-extension:')) {
-    // Workaround for visibiltyState = 'prerender' causing GA to pause until unload
-    Object.defineProperty(document, 'visibilityState', {value: 'hidden'});
-    document.dispatchEvent(new Event('visibilitychange'));
-}
-
 // Required to make site start with alarms API
-browser.alarms.onAlarm.addListener(() =>
-    void maybeStartSyncManager().catch(console.error)); // pur pot hack. :/
+// XXX verify this works with service works and with a naked arrow func
+browser.alarms.onAlarm.addListener(() => void 0);  // pur pot hack
 
 browser.runtime.onInstalled.addListener(async details => {
     if (['install', 'update'].includes(details.reason) && !details.temporary) {
@@ -174,4 +162,4 @@ if (browser.declarativeContent) {
     });
 }
 
-maybeStartSyncManager();
+sauce.storage.get('currentUser').then(id => setCurrentUser(id));

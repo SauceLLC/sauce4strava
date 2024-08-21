@@ -55,9 +55,14 @@ function handleAttributionDialog() {
                         `sauce-theme-${theme}`);
                 }
                 const root = document.documentElement;
-                browser.runtime.onMessage.addListener(msg => {
-                    debugger;
-                    if (msg && msg.op === 'options-change') {
+                browser.runtime.onMessage.addListener(async msg => {
+                    if (!msg) {
+                        return;
+                    }
+                    if (msg.op === 'background-sw-revived') {
+                        console.info("Background worker revive");
+                        await sauce.proxy.ensureConnected();
+                    } else if (msg.op === 'options-change') {
                         if (msg.key === 'font-custom-family') {
                             root.classList.toggle('sauce-font-custom-family', !!msg.value);
                             if (msg.value) {
@@ -329,7 +334,7 @@ function handleAttributionDialog() {
         const config = await sauce.storage.get(null);
         const options = config.options;
         self.currentUser = config.currentUser;
-        sauce.proxy.connected.then(() => sauce.patron.updatePatronLevelNames());  // bg okay
+        sauce.proxy.ensureConnected().then(() => sauce.patron.updatePatronLevelNames());  // bg okay
         const patronVars = {};
         if ((config.patronLevelExpiration || 0) > Date.now()) {
             patronVars.patronLegacy = config.patronLegacy == null ?
@@ -337,7 +342,7 @@ function handleAttributionDialog() {
             patronVars.patronLevel = config.patronLevel || 0;
         } else {
             [patronVars.patronLevel, patronVars.patronLegacy] =
-                await sauce.proxy.connected.then(() =>
+                await sauce.proxy.ensureConnected().then(() =>
                     sauce.patron.updatePatronLevel(self.currentUser));
         }
         patronVars.hideBonusFeatures = (patronVars.patronLevel || 0) < 10 && !!(options &&

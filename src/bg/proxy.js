@@ -3,16 +3,43 @@
 sauce.ns('proxy', ns => {
     'use strict';
 
+    const connectedTabs = new Set();
+
+    let _ready;
+    const ready = new Promise(resolve => {
+        ns.startBackgroundHandler = () => {
+            _ready = true;
+            resolve();
+            // Notify our other tabs that we are back so they don't miss any events.
+            browser.tabs.query({active: true}).then(tabs => {
+                for (const tab of tabs) {
+                    if (!connectedTabs.has(tab.id)) {
+                        browser.tabs.sendMessage(tab.id, {op: 'background-sw-revived'}).catch(e => {
+                            if (!e.message.match(/Receiving end does not exist/)) {
+                                console.error("Error sending revival message to tab:", e);
+                            }
+                        });
+                    }
+                }
+            });
+        };
+    });
+
     browser.runtime.onConnect.addListener(port => {
         if (port.name !== 'sauce-proxy-port') {
             console.warn("Unexpected extension port usage");
             return;
         }
+        console.debug("Accepting new connection from tab:", port.sender.tab.id);
+        connectedTabs.add(port.sender.tab.id);
         const handleBackgroundProxyCall = async data => {
             if (data.type && data.type === 'sauce-proxy-establish-port') {
                 port.onMessage.removeListener(handleBackgroundProxyCall);
             }
             data.port = port;
+            if (!_ready) {
+                await ready;
+            }
             let result;
             if (data.desc.call === 'sauce-proxy-init') {
                 while (sauce._pendingAsyncExports.length) {
@@ -35,7 +62,8 @@ sauce.ns('proxy', ns => {
         };
         port.onMessage.addListener(handleBackgroundProxyCall);
         port.onDisconnect.addListener(() => {
-            console.debug("page/ext proxy port disconnected..."); // XXX
+            console.debug("Tab disconnected:", port.sender.tab.id);
+            connectedTabs.delete(port.sender.tab.id);
             return void (port = null);}); // Not reliable on chrome.
     });
 });

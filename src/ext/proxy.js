@@ -6,18 +6,39 @@ sauce.ns('proxy', ns => {
     let proxyId = -2;  // ext context goes negative, site context goes positive.
     let mainBGPort;
     const inflight = new Map();
+    const disconnected = new Set();
+    let exportsBound;
+    let bgConnecting;
 
-    function connectBackground(skipBind) {
-        ns.isConnected = false;
+    ns.isConnected = false;
+
+    ns.ensureConnected = async function() {
+        if (ns.isConnected) {
+            return;
+        }
+        if (bgConnecting) {
+            return bgConnecting;
+        }
         const connectPid = proxyId--;
-        ns.connected = (new Promise(resolve => inflight.set(connectPid, resolve))).then(x => {
-            if (!skipBind) {
-                for (const desc of x.exports) {
-                    ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
+        console.info("Connecting to background worker...");
+        bgConnecting = new Promise(resolve => {
+            inflight.set(connectPid, msg => {
+                if (!exportsBound) {
+                    for (const desc of msg.exports) {
+                        ns.exports.set(desc.call, {desc, exec: makeBackgroundExec(desc)});
+                    }
+                    ns.bindExports(msg.exports, buildProxyFunc);
+                    exportsBound = true;
                 }
-                ns.bindExports(x.exports, buildProxyFunc);
-            }
-            ns.isConnected = true;
+                ns.isConnected = true;
+                bgConnecting = null;
+                console.info("Connection to background established");
+                for (const cb of Array.from(disconnected)) {
+                    disconnected.delete(cb);
+                    cb().catch(e => void console.error("Failed to wake up bg proxy port:", e));
+                }
+                resolve();
+            });
         });
         mainBGPort = browser.runtime.connect({name: `sauce-proxy-port`});
         mainBGPort.onMessage.addListener(msg => {
@@ -26,12 +47,14 @@ sauce.ns('proxy', ns => {
             resolve(msg);
         });
         mainBGPort.onDisconnect.addListener(port => {
-            console.warn("Main bg port disconnected");
+            console.info("Background worker disconnected");
             ns.isConnected = false;
-            ns.connected = new Promise(() => 0); // XXX make callable and trigger reconnect (probably not used often this way (ever?) but shd support
+            mainBGPort = null;
+            bgConnecting = null;
         });
         mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: connectPid});
-    }
+        await bgConnecting;
+    };
 
 
     function buildProxyFunc(name, desc) {
@@ -63,31 +86,52 @@ sauce.ns('proxy', ns => {
             if (port) {
                 // Make a unique port for this invocation that both sides can
                 // continue to use after the call exec.
-                console.warn("XXX check if we need to impl sw reviver herre...");
-                const bgPort = browser.runtime.connect({name: `sauce-proxy-port`});
-                port.addEventListener('message', ev => bgPort.postMessage(ev.data));
-                port.start();
-                const response = new Promise(resolve => {
-                    const onAck = msg => {
-                        // The first message back is the response to the exec call.
-                        // After that it's up to the user how they use the port.
-                        bgPort.onMessage.removeListener(onAck);
-                        resolve(msg);
-                        // Safari will send THIS event to any handlers registered in
-                        // the same microtask, but only sometimes;  Register new listener outside. :(
-                        queueMicrotask(() => bgPort.onMessage.addListener(port.postMessage.bind(port)));
-                    };
-                    bgPort.onMessage.addListener(onAck);
-                    bgPort.postMessage({desc, args, pid, type: 'sauce-proxy-establish-port'});
+                let bgPort;
+                let connecting;
+                const connectBackgroundProxyPort = () => {
+                    bgPort = browser.runtime.connect({name: `sauce-proxy-port`});
+                    bgPort.onDisconnect.addListener(p => {
+                        console.warn('bg proxy port shutdown (sw is probably dead)', pid, args);
+                        bgPort = null;
+                        disconnected.add(connectBackgroundProxyPort);
+                    });
+                    connecting = new Promise(resolve => {
+                        const onAck = msg => {
+                            // The first message back is the response to the exec call.
+                            // After that it's up to the user how they use the port.
+                            bgPort.onMessage.removeListener(onAck);
+                            // Safari will send THIS event to any handlers registered in
+                            // the same microtask, but only sometimes;  Register new listener outside. :(
+                            queueMicrotask(() => {
+                                bgPort.onMessage.addListener(port.postMessage.bind(port));
+                                connecting = null;
+                                resolve(msg);
+                            });
+                        };
+                        bgPort.onMessage.addListener(onAck);
+                        bgPort.postMessage({desc, args, pid, type: 'sauce-proxy-establish-port'});
+                    });
+                    return connecting;
+                };
+                port.addEventListener('message', async ev => {
+                    if (!bgPort) {
+                        // Unlikely: The background page should have revived us.
+                        console.warn("Restarting background connection/worker [from proxy port]...");
+                        debugger;
+                        disconnected.delete(connectBackgroundProxyPort);
+                        await connectBackgroundProxyPort();
+                    } else if (connecting) {
+                        // Very unlikely...
+                        debugger;
+                        await connecting;
+                    }
+                    bgPort.postMessage(ev.data);
                 });
-                return response;
+                port.start();
+                return connectBackgroundProxyPort();
             } else {
-                if (!ns.isConnected) {
-                    console.warn("Restarting background connection/worker...");
-                    connectBackground(false);
-                }
                 const response = new Promise(resolve => inflight.set(pid, resolve));
-                mainBGPort.postMessage({desc, args, pid});
+                ns.ensureConnected().then(() => void mainBGPort.postMessage({desc, args, pid}));
                 return response;
             }
         };
@@ -122,7 +166,7 @@ sauce.ns('proxy', ns => {
         });
         requestPort.addEventListener('messageerror', ev => console.error("Message Error:", ev));
         requestPort.start();
-        await ns.connected;
+        await ns.ensureConnected();
         while (sauce._pendingAsyncExports.length) {
             const pending = Array.from(sauce._pendingAsyncExports);
             sauce._pendingAsyncExports.length = 0;
@@ -137,6 +181,6 @@ sauce.ns('proxy', ns => {
     }
 
 
-    connectBackground();
+    ns.ensureConnected();
     self.addEventListener('message', onMessageEstablishChannel);
 });

@@ -281,16 +281,12 @@
 
 
     function handleCustomActions() {
-        if (!isPopup) {
-            return;
-        }
         const family = document.querySelector('[name="font-custom-family"]');
         const size = document.querySelector('[name="font-custom-size"]');
         family.addEventListener('input', ev => optionsChange('font-custom-family', family.value));
         size.addEventListener('input', ev => optionsChange('font-custom-size', size.value));
     }
 
-    // XXX I don't think firefox will allow this.. move to bg page I think
     const supP = fetch('https://www.sauce.llc/supporters-v2.json').then(x => x.json());
     document.addEventListener('DOMContentLoaded', main);
 })();
