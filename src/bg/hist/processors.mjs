@@ -1,4 +1,4 @@
-/* global sauce, browser */
+/* global sauce */
 
 import * as queues from '/src/common/jscoop/queues.mjs';
 import * as locks from '/src/common/jscoop/locks.mjs';
