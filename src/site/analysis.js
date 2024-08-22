@@ -638,7 +638,6 @@ sauce.ns('analysis', ns => {
     async function rotateFoodReward(kj) {
         const foods = await foodsPromise;
         const id = await sauce.storage.getPref('rewardFoodId');
-        debugger; // XXX
         const prevIdx = foods.findIndex(x => x.id === id) || 0;
         const nextFood = foods[prevIdx + 1] || foods[0];
         await sauce.storage.setPref('rewardFoodId', nextFood.id);
@@ -651,7 +650,6 @@ sauce.ns('analysis', ns => {
     async function getFoodReward(kj) {
         const foods = await foodsPromise;
         const id = await sauce.storage.getPref('rewardFoodId');
-        debugger; // XXX
         const food = foods.find(x => x.id === id) || foods[0];
         return _makeFoodReward(food, kj);
     }
