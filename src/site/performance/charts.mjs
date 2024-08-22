@@ -535,9 +535,8 @@ export class ActivityTimeRangeChart extends SauceChart {
             const d = new Date(tick.value);
             const m = d.getMonth();
             const y = d.getFullYear();
-            debugger;
-            const showMonth = lastMonth != null && lastMonth != m;
-            const showYear = lastYear != null && lastYear != y;
+            const showMonth = lastMonth != null && lastMonth !== m;
+            const showYear = lastYear != null && lastYear !== y;
             lastMonth = m;
             lastYear = y;
             Object.assign(tick, {

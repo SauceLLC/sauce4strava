@@ -412,8 +412,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                     stack: spec.group,
                     tooltipFormatExtraLines: 'same',
                     tooltipFormat: (val, idx, ds) => {
-                        debugger;
-                        const datas = datasets.filter(x => x.id == ds.id).map(x => [x.stack, x.data[idx].y]);
+                        const datas = datasets.filter(x => x.id === ds.id).map(x => [x.stack, x.data[idx].y]);
                         return datas.map(([stack, t]) =>
                             H.duration(t, {minPeriod: 3600, precision: 1, short: true, html: true}) + ' ' +
                             (stack === 'power' ? this.powerIcon : this.hrIcon)
