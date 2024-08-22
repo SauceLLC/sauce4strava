@@ -42,54 +42,6 @@ async function getActivitiesStreams(activities, streamsDesc) {
 }
 
 
-class OffscreenDocumentProxy {
-
-    static async factory() {
-        const url = browser.runtime.getURL('pages/offscreen.html');
-        await browser.offscreen.createDocument({
-            url,
-            reasons: ['WORKERS'],
-            justification: 'XXX ???? required but undocumented justification field '
-        });
-        // XXX is this racey or does await of createDocument wait?
-        const instance = new this();
-        instance.port = await browser.runtime.connect({name: 'sauce-offscreen-proxy-port'});
-        instance.port.onMessage.addListener(instance._onPortMessage.bind(instance));
-        return instance;
-    }
-
-    constructor() {
-        this._pending = new Map();
-        this._callIdCounter = 1;
-    }
-
-    call(args) {
-        let resolve, reject;
-        const id = this._callIdCounter++;
-        const promise = new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
-        this._pending.set(id, {resolve, reject});
-        this.port.postMessage({
-            op: 'call',
-            args,
-            id
-        });
-        return promise;
-    }
-
-    _onPortMessage(msg) {
-        const {resolve, reject} = this._pending.get(msg.id);
-        this._pending.delete(msg.id);
-        if (msg.success) {
-            resolve(msg.value);
-        } else {
-            reject(new Error(msg.error));
-        }
-    }
-}
-
-//const offscreenProxy = await OffscreenDocumentProxy.factory();
-
-
 export class OffloadProcessor {
     constructor({manifest, athlete, cancelEvent}) {
         this.manifest = manifest;

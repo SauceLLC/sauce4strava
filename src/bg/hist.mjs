@@ -1,4 +1,4 @@
-/* global sauce */
+/* global sauce, browser */
 
 import * as jobs from '/src/common/jscoop/jobs.mjs';
 import * as queues from '/src/common/jscoop/queues.mjs';
@@ -144,6 +144,64 @@ class FetchError extends Error {
 
 
 class Timeout extends Error {}
+
+
+class OffscreenDocumentProxy {
+
+    static async factory() {
+        const url = browser.runtime.getURL('pages/offscreen.html');
+        const existing = await browser.runtime.getContexts({
+            contextTypes: ['OFFSCREEN_DOCUMENT'],
+            documentUrls: [url],
+        });
+        if (!existing.length) {
+            console.info("Creating new offscreen document...");
+            await browser.offscreen.createDocument({
+                url,
+                reasons: ['DOM_PARSER'],
+                justification: 'Safely parse HTML'
+            });
+        } else {
+            console.info("Using existing offscreen document...");
+        }
+        const instance = new this();
+        instance.port = await browser.runtime.connect({name: 'sauce-offscreen-proxy-port'});
+        instance.port.onMessage.addListener(instance._onPortMessage.bind(instance));
+        return instance;
+    }
+
+    constructor() {
+        this._pending = new Map();
+        this._callIdCounter = 1;
+    }
+
+    invoke(name, ...args) {
+        let resolve, reject;
+        const id = this._callIdCounter++;
+        const promise = new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
+        this._pending.set(id, {resolve, reject});
+        this.port.postMessage({
+            op: 'call',
+            name,
+            args,
+            id
+        });
+        return promise;
+    }
+
+    _onPortMessage(msg) {
+        const {resolve, reject} = this._pending.get(msg.id);
+        this._pending.delete(msg.id);
+        if (msg.success) {
+            resolve(msg.value);
+        } else {
+            console.error("Offscreen document error:", msg.error);
+            reject(new Error(msg.error.message));
+        }
+    }
+}
+
+const offscreenProxyPromise = OffscreenDocumentProxy.factory();
 
 
 async function networkOnline(timeout) {
@@ -1347,16 +1405,8 @@ class SyncJob extends EventTarget {
         }
     }
 
-    parseRawReactProps(raw) {
-        const frag = document.createElement('div');
-        // Unescapes html entities, ie. "&quot;"
-        const htmlEntitiesKey = String.fromCharCode(...[33, 39, 36, 30, 46, 5, 10, 2, 12]
-            .map((x, i) => (x ^ i) + 72));
-        frag[htmlEntitiesKey] = raw;
-        return JSON.parse(frag[htmlEntitiesKey]
-            .replace(/\\\\/g, '\\')
-            .replace(/\\\$/g, '$')
-            .replace(/\\`/g, '`'));
+    async parseRawReactProps(raw) {
+        return await (await offscreenProxyPromise).invoke('parseRawReactProps', raw);
     }
 
     groupPhotosToDatabase(stravaData) {
@@ -1417,7 +1467,9 @@ class SyncJob extends EventTarget {
         }
         // Desc seems to be wrapped in a <p> but I'm not sure if this is 100% of the time and doing
         // other html sanitizing is inconsistent with how other html chars are escaped (or not escaped).
-        const unwrapDesc = x => x && x.replace(/^\s*?<p>/, '').replace(/<\/p>\s*?$/, '');
+        const unwrapDesc = x => x && x.replace(/^\s*?<p>/, '')
+            .replace(/<\/p>\s*?$/, '')
+            .replace(/<\/p>(\s*)<p>/, '\n$1');
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
         const rawProps = raw.match(
@@ -1425,14 +1477,14 @@ class SyncJob extends EventTarget {
         let feedEntries;
         try {
             if (rawProps) {
-                const data = this.parseRawReactProps(rawProps[1]);
+                const data = await this.parseRawReactProps(rawProps[1]);
                 feedEntries = data.appContext.preFetchedEntries;
             } else {
                 // Legacy as of 03-2023, remove in future release.
                 const legacyRawProps = raw.match(
                     /data-react-class=\\['"]FeedRouter\\['"] data-react-props=\\['"](.+?)\\['"]/);
                 if (legacyRawProps) {
-                    const data = this.parseRawReactProps(legacyRawProps[1]);
+                    const data = await this.parseRawReactProps(legacyRawProps[1]);
                     feedEntries = data.preFetchedEntries;
                 }
             }
