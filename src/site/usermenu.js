@@ -107,7 +107,8 @@
             list.appendChild(item);
         }
 
-        const options = document.querySelector('#global-header .global-nav [data-log-category="training"] .options');
+        const options = document.querySelector(
+            '#global-header .global-nav [data-log-category="training"] .options');
         if (options) {
             const refEl = options.querySelector('li.premium');
             if (refEl) {

@@ -235,7 +235,7 @@ async function _aggregatePeaks(work, options={}) {
 }
 
 
-async function _makePeaksFilterOptions(options={}) {
+function _makePeaksFilterOptions(options={}) {
     const filter = options.filter;
     if (!filter || filter === 'all') {
         return options;
@@ -259,7 +259,7 @@ async function _makePeaksFilterOptions(options={}) {
 
 export async function getPeaksForAthlete(athleteId, type, periods, options={}) {
     periods = Array.isArray(periods) ? periods : [periods];
-    options = await _makePeaksFilterOptions(options);
+    options = _makePeaksFilterOptions(options);
     return await _aggregatePeaks(periods.map(x =>
         peaksStore.getForAthlete(athleteId, type, x, options)), options);
 }
@@ -268,7 +268,7 @@ sauce.proxy.export(getPeaksForAthlete, {namespace});
 
 export async function getPeaksFor(type, periods, options={}) {
     periods = Array.isArray(periods) ? periods : [periods];
-    options = await _makePeaksFilterOptions(options);
+    options = _makePeaksFilterOptions(options);
     return await _aggregatePeaks(periods.map(x =>
         peaksStore.getFor(type, x, options)), options);
 }
@@ -284,7 +284,7 @@ sauce.proxy.export(getPeaksRelatedToActivityId, {namespace});
 
 export async function getPeaksRelatedToActivity(activity, type, periods, options={}) {
     periods = Array.isArray(periods) ? periods : [periods];
-    options = await _makePeaksFilterOptions({filterTS: activity.ts, ...options});
+    options = _makePeaksFilterOptions({filterTS: activity.ts, ...options});
     const results = [];
     for (const period of periods) {
         const peaks = await peaksStore.getForAthlete(activity.athlete, type, period,
@@ -447,7 +447,7 @@ export async function fetchAthleteStatsHistory(athleteId) {
     const minSearch = 14 * 86400 * 1000;
     const stats = new Map();
     function same(a, b) {
-        return (a && a.weight) == (b && b.weight) && (a && a.ftp) == (b && b.ftp);
+        return (a && a.weight) === (b && b.weight) && (a && a.ftp) === (b && b.ftp);
     }
     async function search(batch, seeds={}) {
         let leftStats = seeds.leftStats;
@@ -713,7 +713,7 @@ export async function danglingAthletes(options={}) {
             syncDisabledFor.push({athlete: x.id, name: x.name});
         }
     }
-    let pruned = [];
+    const pruned = [];
     if (options.prune) {
         await athletesStore.deleteMany(syncDisabledFor.map(x => x.athlete));
         pruned.push(...syncDisabledFor);
@@ -1208,7 +1208,10 @@ class SyncJob extends EventTarget {
                             map: a.mapAndPhotos && a.mapAndPhotos.activityMap ?
                                 a.mapAndPhotos.activityMap.url : undefined,
                             photos: a.mapAndPhotos && a.mapAndPhotos.photoList ?
-                                a.mapAndPhotos.photoList.map(p => p && p.large).filter(p => p).map(url => ({url})) :
+                                a.mapAndPhotos.photoList
+                                    .map(p => p && p.large)
+                                    .filter(p => p)
+                                    .map(url => ({url})) :
                                 undefined,
                         }));
                     }
@@ -1453,9 +1456,11 @@ class SyncJob extends EventTarget {
                             map: a.mapAndPhotos && a.mapAndPhotos.activityMap ?
                                 a.mapAndPhotos.activityMap.url : undefined,
                             photos: a.mapAndPhotos && a.mapAndPhotos.photoList ?
-                                a.mapAndPhotos.photoList.map(p => p && p.large).filter(p => p).map(url => ({url})) :
+                                a.mapAndPhotos.photoList
+                                    .map(p => p && p.large)
+                                    .filter(p => p)
+                                    .map(url => ({url})) :
                                 undefined,
-                            //kudos: await (await fetch(`https://www.strava.com/feed/activity/${a.id}/kudos`)).json(),
                         }));
                     } else if (x.entity === 'GroupActivity') {
                         for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
@@ -1470,7 +1475,6 @@ class SyncJob extends EventTarget {
                                 commute: a.is_commute,
                                 map: a.activity_map && a.activity_map.url,
                                 photos: a.photos ? this.groupPhotosToDatabase(a.photos) : undefined,
-                                //kudos: await (await fetch(`https://www.strava.com/feed/activity/${a.activity_id}/kudos`)).json(),
                             }));
                         }
                     }
@@ -1684,7 +1688,8 @@ class SyncJob extends EventTarget {
                 }
                 this._localSetSyncDone(finished, m);
                 const elapsed = Math.round(totTime / finished.length).toLocaleString();
-                const rate = Math.round(finished.length / (totTime / finished.length / 1000)).toLocaleString();
+                const rate = Math.round(finished.length / (totTime / finished.length / 1000))
+                    .toLocaleString();
                 this.logDebug(`Proc batch [${m.name}]: ${elapsed}ms (avg), ${finished.length} ` +
                     `activities (${rate}/s)`);
             }
@@ -1795,7 +1800,7 @@ class SyncJob extends EventTarget {
                             // The processor can remain in the offloaded set until it's fully drained
                             // in the upper queue mgmt section, but we need to remove it from the active
                             // set immediately so we don't requeue data to it.
-                            proc.start().catch(e => undefined).finally(() => {;
+                            proc.start().catch(e => undefined).finally(() => {
                                 if (offloadedActive.get(processor) === proc) {
                                     offloadedActive.delete(processor);
                                 }
@@ -1819,7 +1824,8 @@ class SyncJob extends EventTarget {
                             this._localSetSyncError(activities, m, e);
                         }
                         const elapsed = Math.round((Date.now() - s)).toLocaleString();
-                        const rate = Math.round(activities.length / ((Date.now() - s) / 1000)).toLocaleString();
+                        const rate = Math.round(activities.length / ((Date.now() - s) / 1000))
+                            .toLocaleString();
                         this.logDebug(`Proc batch [${m.name}]: ${elapsed}ms, ${activities.length} ` +
                             `activities (${rate}/s)`);
                     }

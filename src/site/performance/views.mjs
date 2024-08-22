@@ -24,7 +24,7 @@ function hasSyncController(athleteId) {
 }
 
 
-let _peakRanges = {};
+const _peakRanges = {};
 export async function getPeakRanges(type) {
     if (!_peakRanges[type]) {
         _peakRanges[type] = await sauce.peaks.getRanges(type);
@@ -206,13 +206,13 @@ export class ResizablePerfView extends PerfView {
         const origPageY = ev.pageY;
         this.$el.height(origHeight);
         this.$el.addClass('fixed-height');
+        const onDrag = ev => {
+            this.$el.height(origHeight + (ev.pageY - origPageY));
+        };
         const onDragDone = () => {
             removeEventListener('pointermove', onDrag);
             removeEventListener('pointerup', onDragDone);
             removeEventListener('pointercancel', onDragDone);
-        };
-        const onDrag = ev => {
-            this.$el.height(origHeight + (ev.pageY - origPageY));
         };
         addEventListener('pointermove', onDrag);
         addEventListener('pointerup', onDragDone);
@@ -221,9 +221,280 @@ export class ResizablePerfView extends PerfView {
 }
 
 
+export class ActivityStreamGraphsView extends PerfView {
+    static tpl = 'performance/activity-stream-graphs.html';
+
+    renderAttrs() {
+        return {
+            activity: this.activity,
+        };
+    }
+
+    async setActivity(activity) {
+        this.activity = activity;
+        if (activity) {
+            this.streams = await sauce.hist.getStreamsForActivity(activity.id);
+        } else {
+            this.streams = null;
+        }
+        await this.render();
+    }
+
+    async render() {
+        await super.render();
+        if (this.streams && this.streams.time) {
+            const options = {
+                streams: {...this.streams},
+                width: '100%',
+                height: 64,
+                paceType: this.activity.basetype === 'run' ? 'pace' : 'speed',
+                activityType: this.activity.basetype,
+            };
+            let watts;
+            if (this.activity.basetype === 'run') {
+                if (!this.pageView.athlete.disableRunWatts) {
+                    watts = this.streams.watts;
+                }
+                if (!watts && this.pageView.athlete.estRunWatts) {
+                    watts = this.streams.watts_calc;
+                }
+            } else {
+                watts = this.streams.watts;
+            }
+            if (watts) {
+                options.streams.watts = watts;
+                await sauce.ui.createStreamGraphs(this.$('.power-graph'),
+                    {graphs: ['power'], ...options});
+            }
+            if (this.streams.heartrate) {
+                await sauce.ui.createStreamGraphs(this.$('.hr-graph'), {graphs: ['hr'], ...options});
+            }
+            if (this.streams.distance) {
+                const graphs = ['pace'];
+                if (this.activity.basetype === 'run') {
+                    graphs.push('gap');
+                }
+                await sauce.ui.createStreamGraphs(this.$('.pace-graph'), {graphs, ...options});
+            }
+            if (this.streams.altitude) {
+                await sauce.ui.createStreamGraphs(this.$('.elevation-graph'),
+                    {graphs: ['elevation', 'vam'], ...options});
+            }
+        }
+    }
+}
+
+
+export class ActivityTableView extends PerfView {
+    static tpl = 'performance/activity-table.html';
+
+    get events() {
+        return {
+            ...super.events,
+            'click tbody tr[data-id]': 'onDataRowClick',
+            'click tbody tr.load-more': 'onLoadMoreClick',
+            'click thead th[data-sort-id]': 'onSortClick',
+            'click .btn.collapse-activity': 'onCollapseActivityClick',
+            'click .btn.expand-activity': 'onExpandActivityClick',
+            'click .btn.edit-activity': 'onEditActivityClick',
+        };
+    }
+
+    async init({pageView, mode, sortBy, sortDesc, ...options}) {
+        this.mode = mode;
+        this.activities = Array.from(options.activities || []);
+        this.streamsView = new ActivityStreamGraphsView({pageView});
+        this.rowPageSize = 50;
+        this.sortBy = sortBy || 'date';
+        this.sortDesc = sortDesc != null ? sortDesc : true;
+        this.rowLimit = this.rowPageSize;
+        this.expandedRow;
+        await super.init({pageView, ...options});
+    }
+
+    async setActivities(activities) {
+        this.rowLimit = this.rowPageSize;
+        this.activities = Array.from(activities || []);
+        this.sort();
+        await this.render();
+    }
+
+    async setMode(mode) {
+        this.mode = mode;
+        await this.render();
+    }
+
+    renderAttrs() {
+        return {
+            entryTpl: 'performance/activity-table-entry.html',
+            activities: this.activities,
+            mode: this.mode,
+            rowLimit: this.rowLimit,
+            sortBy: this.sortBy,
+            sortDesc: this.sortDesc,
+        };
+    }
+
+    async render() {
+        await super.render();
+        this.streamsView.setElement(this.$('tr.activity-streams td'));
+    }
+
+    sort() {
+        const sortKeys = {
+            name: x => x.name.toLowerCase(),
+            date: x => x.ts,
+            type: x => x.type || x.basetype,
+            duration: x => x.stats && x.stats.activeTime || 0,
+            distance: x => x.stats && x.stats.distance || 0,
+            pace: x => ((x.stats.activeTime && x.stats.distance) ? x.stats.distance / x.stats.activeTime : 0),
+            elevation: x => x.stats && x.stats.altitudeGain || 0,
+            tss: x => sauce.model.getActivityTSS(x) || 0,
+            exclude_peaks: x => !!x.peaksExclude,
+        };
+        const sortRev = {
+            name: true,
+            type: true,
+        };
+        const keyFn = sortKeys[this.sortBy];
+        const sortDir = (this.sortDesc ? 1 : -1) * (sortRev[this.sortBy] ? -1 : 1);
+        this.activities.sort((a, b) => keyFn(a) < keyFn(b) ? sortDir : -sortDir);
+    }
+
+    async onSortClick(ev) {
+        const id = ev.currentTarget.dataset.sortId;
+        if (id === this.sortBy) {
+            this.sortDesc = !this.sortDesc;
+        } else {
+            this.sortBy = id;
+        }
+        this.sort();
+        this.trigger('sort', {sortBy: id, sortDesc: this.sortDesc});
+        await this.render();
+    }
+
+    async onLoadMoreClick(ev) {
+        const loadMore = ev.currentTarget;
+        loadMore.classList.add('loading');
+        try {
+            const tpl = await sauce.template.getTemplate('performance/activity-table-entry.html',
+                'performance');
+            const attrs = this.renderAttrs();
+            const moreActs = this.activities.slice(this.rowLimit, this.rowLimit += this.rowPageSize);
+            const newRows = await Promise.all(moreActs.map(a => tpl({a, ...attrs})));
+            sauce.adjacentNodeContents(loadMore, 'beforebegin', newRows.join('\n'));
+        } finally {
+            if (this.activities.length <= this.rowLimit) {
+                loadMore.classList.add('hidden');
+            }
+            loadMore.classList.remove('loading');
+        }
+    }
+
+    async onDataRowClick(ev) {
+        const id = Number(ev.currentTarget.dataset.id);
+        const activity = await sauce.hist.getActivity(id);
+        await this.pageView.detailsView.setActivities([activity]);
+    }
+
+    async onCollapseActivityClick(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.expandedRow.classList.remove('expanded');
+        this.expandedRow = null;
+        await this.streamsView.setActivity(null);
+    }
+
+    async onExpandActivityClick(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const row = ev.currentTarget.closest('tr[data-id]');
+        if (this.expandedRow) {
+            this.expandedRow.classList.remove('expanded');
+        }
+        this.expandedRow = row;
+        row.classList.add('expanded');
+        row.insertAdjacentElement('afterend', this.streamsView.el.closest('tr'));
+        this.streamsView.$('.loading-mask').addClass('loading');
+        try {
+            const activity = await sauce.hist.getActivity(Number(row.dataset.id));
+            await this.streamsView.setActivity(activity);
+        } finally {
+            this.streamsView.$('.loading-mask').removeClass('loading');
+        }
+    }
+
+    async onEditActivityClick(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
+        const activity = await sauce.hist.getActivity(id);
+        editActivityDialogXXX(activity, this.pageView);
+    }
+}
+
+
+export class BulkActivityEditDialog extends PerfView {
+    static localeKeys = ['/save', 'edit_activities'];
+
+    async init({activities, pageView, ...options}) {
+        this.athletes = new Set(activities.map(x => x.athlete));
+        this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
+        this.activityTable = new ActivityTableView({activities, pageView, mode: 'readwrite', ...options});
+        await super.init({pageView, ...options});
+    }
+
+    async render() {
+        this.$el.addClass('activity-table');
+        await super.render();
+        await this.activityTable.setElement(this.$el).render();
+    }
+
+    show() {
+        sauce.ui.modal({
+            title: this.LM('edit_activities'),
+            el: this.$el,
+            flex: true,
+            width: '60em',
+            icon: this.icon,
+            dialogClass: 'sauce-edit-activities-dialog',
+            extraButtons: [{
+                text: this.LM('save'),
+                click: async ev => {
+                    const updates = {};
+                    for (const tr of this.$('table tbody tr[data-id]')) {
+                        updates[Number(tr.dataset.id)] = {
+                            tssOverride: Number(tr.querySelector('input[name="tss"]').value) || null,
+                            peaksExclude: tr.querySelector('input[name="peaks_exclude"]').checked,
+                        };
+                    }
+                    ev.currentTarget.disabled = true;
+                    ev.currentTarget.classList.add('sauce-loading');
+                    try {
+                        await sauce.hist.updateActivities(updates);
+                        for (const id of Object.keys(updates)) {
+                            await sauce.hist.invalidateActivitySyncState(Number(id), 'local', null,
+                                {disableSync: true});
+                        }
+                        for (const x of this.athletes) {
+                            await sauce.hist.syncAthlete(x);
+                        }
+                    } finally {
+                        ev.currentTarget.classList.remove('sauce-loading');
+                        ev.currentTarget.disabled = false;
+                    }
+                    this.$el.dialog('destroy');
+                }
+            }]
+        });
+    }
+}
+
+
 export class SummaryView extends PerfView {
     static tpl = 'performance/summary.html';
-    static localeKeys = ['rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim', 'ski', 'workout'];
+    static localeKeys = ['rides', 'runs', 'swims', 'skis', 'workouts', 'ride', 'run', 'swim',
+        'ski', 'workout'];
 
     get defaultPrefs() {
         return {
@@ -481,7 +752,7 @@ export class DetailsView extends PerfView {
         return r;
     }
 
-    async renderAttrs(obj) {
+    renderAttrs(obj) {
         let hasNewer;
         let hasOlder;
         if (this.activities && this.activities.length && this.pageView.newest) {
@@ -563,7 +834,7 @@ export class DetailsView extends PerfView {
         await this.toggleCollapsed(true);
     }
 
-    async onEditActivityClick(ev) {
+    onEditActivityClick(ev) {
         const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
         let activity;
         for (const a of this.activities) {
@@ -642,72 +913,8 @@ export class DetailsView extends PerfView {
         }
     }
 
-    async onCompressRowClick(ev) {
+    onCompressRowClick(ev) {
         ev.currentTarget.closest('row').classList.remove('expanded');
-    }
-}
-
-
-export class ActivityStreamGraphsView extends PerfView {
-    static tpl = 'performance/activity-stream-graphs.html';
-
-    renderAttrs() {
-        return {
-            activity: this.activity,
-        };
-    }
-
-    async setActivity(activity) {
-        this.activity = activity;
-        if (activity) {
-            this.streams = await sauce.hist.getStreamsForActivity(activity.id);
-        } else {
-            this.streams = null;
-        }
-        await this.render();
-    }
-
-    async render() {
-        await super.render();
-        if (this.streams && this.streams.time) {
-            const options = {
-                streams: {...this.streams},
-                width: '100%',
-                height: 64,
-                paceType: this.activity.basetype === 'run' ? 'pace' : 'speed',
-                activityType: this.activity.basetype,
-            };
-            let watts;
-            if (this.activity.basetype === 'run') {
-                if (!this.pageView.athlete.disableRunWatts) {
-                    watts = this.streams.watts;
-                }
-                if (!watts && this.pageView.athlete.estRunWatts) {
-                    watts = this.streams.watts_calc;
-                }
-            } else {
-                watts = this.streams.watts;
-            }
-            if (watts) {
-                options.streams.watts = watts;
-                await sauce.ui.createStreamGraphs(this.$('.power-graph'),
-                    {graphs: ['power'], ...options});
-            }
-            if (this.streams.heartrate) {
-                await sauce.ui.createStreamGraphs(this.$('.hr-graph'), {graphs: ['hr'], ...options});
-            }
-            if (this.streams.distance) {
-                const graphs = ['pace'];
-                if (this.activity.basetype === 'run') {
-                    graphs.push('gap');
-                }
-                await sauce.ui.createStreamGraphs(this.$('.pace-graph'), {graphs, ...options});
-            }
-            if (this.streams.altitude) {
-                await sauce.ui.createStreamGraphs(this.$('.elevation-graph'),
-                    {graphs: ['elevation', 'vam'], ...options});
-            }
-        }
     }
 }
 
@@ -722,7 +929,8 @@ export class ActivityTablePanelView extends ResizablePerfView {
     async init({pageView, ...options}) {
         await super.init({pageView, ...options});
         const {sortBy, sortDesc} = this.getPrefs();
-        this.activityTable = new ActivityTableView({pageView, mode: 'readonly', sortBy, sortDesc, ...options});
+        this.activityTable = new ActivityTableView({pageView, mode: 'readonly', sortBy, sortDesc,
+            ...options});
         this.listenTo(this.activityTable, 'sort', this.onTableSort);
         this.listenTo(pageView, 'before-update-activities', () =>
             this.$('.loading-mask').addClass('loading'));
@@ -755,211 +963,6 @@ export class ActivityTablePanelView extends ResizablePerfView {
         } finally {
             this.$('.loading-mask').removeClass('loading');
         }
-    }
-}
-
-
-export class ActivityTableView extends PerfView {
-    static tpl = 'performance/activity-table.html';
-
-    get events() {
-        return {
-            ...super.events,
-            'click tbody tr[data-id]': 'onDataRowClick',
-            'click tbody tr.load-more': 'onLoadMoreClick',
-            'click thead th[data-sort-id]': 'onSortClick',
-            'click .btn.collapse-activity': 'onCollapseActivityClick',
-            'click .btn.expand-activity': 'onExpandActivityClick',
-            'click .btn.edit-activity': 'onEditActivityClick',
-        };
-    }
-
-    async init({pageView, mode, sortBy, sortDesc, ...options}) {
-        this.mode = mode;
-        this.activities = Array.from(options.activities || []);
-        this.streamsView = new ActivityStreamGraphsView({pageView});
-        this.rowPageSize = 50;
-        this.sortBy = sortBy || 'date';
-        this.sortDesc = sortDesc != null ? sortDesc : true;
-        this.rowLimit = this.rowPageSize;
-        this.expandedRow;
-        await super.init({pageView, ...options});
-    }
-
-    async setActivities(activities) {
-        this.rowLimit = this.rowPageSize;
-        this.activities = Array.from(activities || []);
-        this.sort();
-        await this.render();
-    }
-
-    async setMode(mode) {
-        this.mode = mode;
-        await this.render();
-    }
-
-    renderAttrs() {
-        return {
-            entryTpl: 'performance/activity-table-entry.html',
-            activities: this.activities,
-            mode: this.mode,
-            rowLimit: this.rowLimit,
-            sortBy: this.sortBy,
-            sortDesc: this.sortDesc,
-        };
-    }
-
-    async render() {
-        await super.render();
-        this.streamsView.setElement(this.$('tr.activity-streams td'));
-    }
-
-    sort() {
-        const sortKeys = {
-            name: x => x.name.toLowerCase(),
-            date: x => x.ts,
-            type: x => x.type || x.basetype,
-            duration: x => x.stats && x.stats.activeTime || 0,
-            distance: x => x.stats && x.stats.distance || 0,
-            pace: x => ((x.stats.activeTime && x.stats.distance) ? x.stats.distance / x.stats.activeTime : 0),
-            elevation: x => x.stats && x.stats.altitudeGain || 0,
-            tss: x => sauce.model.getActivityTSS(x) || 0,
-            exclude_peaks: x => !!x.peaksExclude,
-        };
-        const sortRev = {
-            name: true,
-            type: true,
-        };
-        const keyFn = sortKeys[this.sortBy];
-        const sortDir = (this.sortDesc ? 1 : -1) * (sortRev[this.sortBy] ? -1 : 1);
-        this.activities.sort((a, b) => keyFn(a) < keyFn(b) ? sortDir : -sortDir);
-    }
-
-    async onSortClick(ev) {
-        const id = ev.currentTarget.dataset.sortId;
-        if (id === this.sortBy) {
-            this.sortDesc = !this.sortDesc;
-        } else {
-            this.sortBy = id;
-        }
-        this.sort();
-        this.trigger('sort', {sortBy: id, sortDesc: this.sortDesc});
-        await this.render();
-    }
-
-    async onLoadMoreClick(ev) {
-        const loadMore = ev.currentTarget;
-        loadMore.classList.add('loading');
-        try {
-            const tpl = await sauce.template.getTemplate('performance/activity-table-entry.html', 'performance');
-            const attrs = this.renderAttrs();
-            const moreActs = this.activities.slice(this.rowLimit, this.rowLimit += this.rowPageSize);
-            const newRows = await Promise.all(moreActs.map(a => tpl({a, ...attrs})));
-            sauce.adjacentNodeContents(loadMore, 'beforebegin', newRows.join('\n'));
-        } finally {
-            if (this.activities.length <= this.rowLimit) {
-                loadMore.classList.add('hidden');
-            }
-            loadMore.classList.remove('loading');
-        }
-    }
-
-    async onDataRowClick(ev) {
-        const id = Number(ev.currentTarget.dataset.id);
-        const activity = await sauce.hist.getActivity(id);
-        await this.pageView.detailsView.setActivities([activity]);
-    }
-
-    async onCollapseActivityClick(ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        this.expandedRow.classList.remove('expanded');
-        this.expandedRow = null;
-        await this.streamsView.setActivity(null);
-    }
-
-    async onExpandActivityClick(ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        const row = ev.currentTarget.closest('tr[data-id]');
-        if (this.expandedRow) {
-            this.expandedRow.classList.remove('expanded');
-        }
-        this.expandedRow = row;
-        row.classList.add('expanded');
-        row.insertAdjacentElement('afterend', this.streamsView.el.closest('tr'));
-        this.streamsView.$('.loading-mask').addClass('loading');
-        try {
-            const activity = await sauce.hist.getActivity(Number(row.dataset.id));
-            await this.streamsView.setActivity(activity);
-        } finally {
-            this.streamsView.$('.loading-mask').removeClass('loading');
-        }
-    }
-
-    async onEditActivityClick(ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        const id = Number(ev.currentTarget.closest('[data-id]').dataset.id);
-        const activity = await sauce.hist.getActivity(id);
-        editActivityDialogXXX(activity, this.pageView);
-    }
-}
-
-
-export class BulkActivityEditDialog extends PerfView {
-    static localeKeys = ['/save', 'edit_activities'];
-
-    async init({activities, pageView, ...options}) {
-        this.athletes = new Set(activities.map(x => x.athlete));
-        this.icon = await sauce.ui.getImage('fa/list-duotone.svg');
-        this.activityTable = new ActivityTableView({activities, pageView, mode: 'readwrite', ...options});
-        await super.init({pageView, ...options});
-    }
-
-    async render() {
-        this.$el.addClass('activity-table');
-        await super.render();
-        await this.activityTable.setElement(this.$el).render();
-    }
-
-    show() {
-        sauce.ui.modal({
-            title: this.LM('edit_activities'),
-            el: this.$el,
-            flex: true,
-            width: '60em',
-            icon: this.icon,
-            dialogClass: 'sauce-edit-activities-dialog',
-            extraButtons: [{
-                text: this.LM('save'),
-                click: async ev => {
-                    const updates = {};
-                    for (const tr of this.$('table tbody tr[data-id]')) {
-                        updates[Number(tr.dataset.id)] = {
-                            tssOverride: Number(tr.querySelector('input[name="tss"]').value) || null,
-                            peaksExclude: tr.querySelector('input[name="peaks_exclude"]').checked,
-                        };
-                    }
-                    ev.currentTarget.disabled = true;
-                    ev.currentTarget.classList.add('sauce-loading');
-                    try {
-                        await sauce.hist.updateActivities(updates);
-                        for (const id of Object.keys(updates)) {
-                            await sauce.hist.invalidateActivitySyncState(Number(id), 'local', null,
-                                {disableSync: true});
-                        }
-                        for (const x of this.athletes) {
-                            await sauce.hist.syncAthlete(x);
-                        }
-                    } finally {
-                        ev.currentTarget.classList.remove('sauce-loading');
-                        ev.currentTarget.disabled = false;
-                    }
-                    this.$el.dialog('destroy');
-                }
-            }]
-        });
     }
 }
 

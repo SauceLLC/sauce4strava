@@ -370,7 +370,8 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                             const ceil = H.number(zones[zone.id]);
                             const floor = H.number(zones[`z${zone.z - 1}`] || 1);
                             pendingFooter = `\n${floor}${units} -> ${ceil}${units}`;
-                            return `${zone.label} ${group === 'power' ? this.powerIcon : this.hrIcon}: ${val}`;
+                            return `${zone.label} ${group === 'power' ?
+                                this.powerIcon : this.hrIcon}: ${val}`;
                         },
                         afterBody: () => pendingFooter
                     }
@@ -411,6 +412,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                     stack: spec.group,
                     tooltipFormatExtraLines: 'same',
                     tooltipFormat: (val, idx, ds) => {
+                        debugger;
                         const datas = datasets.filter(x => x.id == ds.id).map(x => [x.stack, x.data[idx].y]);
                         return datas.map(([stack, t]) =>
                             H.duration(t, {minPeriod: 3600, precision: 1, short: true, html: true}) + ' ' +
@@ -430,7 +432,9 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                                     return height > 16 ? 'auto' : false;
                                 },
                                 formatter: (value, ctx) =>
-                                    H.number(value.y / sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b[dataKey]) * 100) + '%',
+                                    H.number(value.y /
+                                        sauce.data.sum(ctx.dataset.data[ctx.dataIndex].b[dataKey]) * 100) +
+                                        '%',
                                 color: x => [0, 1, 2, 7, 8, 9].includes(x.datasetIndex) ? '#0009' : '#fffc',
                                 font: {size: metricLen >= 12 ? 9 : 10},
                             },
@@ -476,9 +480,11 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
                     group: spec.group,
                     zones,
                     backgroundColor: zones.map(x => this.getZoneColor(x.z, 0, -3, 2 + spec.lightShift, 0.8)),
-                    hoverBackgroundColor: zones.map(x => this.getZoneColor(x.z, 0, 3, -2 + spec.lightShift, 0.9)),
+                    hoverBackgroundColor: zones.map(x =>
+                        this.getZoneColor(x.z, 0, 3, -2 + spec.lightShift, 0.9)),
                     borderColor: zones.map(x => this.getZoneColor(x.z, 0, -3, -10 + spec.lightShift, 0.9)),
-                    hoverBorderColor: zones.map(x => this.getZoneColor(x.z, 0, 3, -20 + spec.lightShift, 0.9)),
+                    hoverBorderColor: zones.map(x =>
+                        this.getZoneColor(x.z, 0, 3, -20 + spec.lightShift, 0.9)),
                     borderWidth: 1,
                     data: zones.map(x => data[dataKey][x.z - 1] || 0),
                 });
@@ -644,7 +650,9 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'duration',
                 stack: 'duration',
                 tooltipFormat: (x, i) => {
-                    const tips = [H.duration(x, {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true})];
+                    const tips = [
+                        H.duration(x, {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true})
+                    ];
                     if (predictions && i === metricData.length - 1) {
                         const pdur = H.duration(predictions.duration[i].y + x,
                             {maxPeriod: 3600, minPeriod: 3600, precision: 1, html: true});
@@ -669,7 +677,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                     const tips = [H.distance(x, {precision: 0, suffix: true, html: true})];
                     if (predictions && i === metricData.length - 1) {
                         const pdist = H.distance(predictions.distance[i].y + x,
-                                                 {precision: 0, suffix: true, html: true});
+                            {precision: 0, suffix: true, html: true});
                         tips.push(`${this.LM('predicted')}: <b>~${pdist}</b>`);
                     }
                     return tips;

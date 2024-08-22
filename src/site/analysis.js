@@ -1,4 +1,4 @@
-/* global Strava, sauce, jQuery, pageView, BigInt */
+/* global Strava, sauce, jQuery, pageView */
 
 sauce.ns('analysis', ns => {
     'use strict';
@@ -195,20 +195,22 @@ sauce.ns('analysis', ns => {
         const $input = $field.find('input');
         const $link = $field.find('a');
         $input.on('keyup', async ev => {
-            if (ev.keyCode == 27 /* escape */) {
+            if (ev.keyCode === 27 /* escape */) {
                 $field.removeClass('editing');
                 return;
-            } else if (ev.keyCode != 13 /* enter */) {
+            } else if (ev.keyCode !== 13 /* enter */) {
                 return;
             }
             let cleanValue;
             try {
                 cleanValue = options.validator($input.val());
-            } catch(invalid) {
-                sauce.ui.modal({
-                    title: invalid.title,
-                    body: invalid.message
-                });
+            } catch(e) {
+                if (e.reason) {
+                    sauce.ui.modal({
+                        title: e.reason.title,
+                        body: e.reason.message
+                    });
+                }
                 return;
             }
             $link.text('...');
@@ -274,7 +276,8 @@ sauce.ns('analysis', ns => {
                 }
                 const n = parseInt(rawValue);
                 if (!n || n <= 0 || n > 600) {
-                    throw {
+                    const e = new Error('invalid');
+                    e.reason = {
                         title: 'Invalid FTP Wattage',
                         message: `
                             <b>${rawValue} is not a valid FTP.</b><br/>
@@ -282,6 +285,7 @@ sauce.ns('analysis', ns => {
                             Acceptable range: 1 - 600 watts.
                         `
                     };
+                    throw e;
                 } else {
                     return n;
                 }
@@ -312,7 +316,8 @@ sauce.ns('analysis', ns => {
                 }
                 const n = Number(rawValue);
                 if (!n || n <= 0 || n > 10000) {
-                    throw {
+                    const e = new Error('invalid');
+                    e.reason = {
                         title: 'Invalid Weight',
                         message: `
                             <b>${rawValue} is not a valid weight.</b><br/>
@@ -320,6 +325,7 @@ sauce.ns('analysis', ns => {
                             Acceptable range: 1 - 10000.
                         `
                     };
+                    throw e;
                 } else {
                     return n;
                 }
@@ -356,7 +362,8 @@ sauce.ns('analysis', ns => {
         const $stats = jQuery(await template(attrs));
         if (ns.syncAthlete) {
             $stats.on('click', '.sauce-editable-field', async ev => {
-                const {FTPHistoryView, WeightHistoryView} = await import(sauce.getURL('/src/site/data-views.mjs'));
+                const {FTPHistoryView, WeightHistoryView} =
+                    await import(sauce.getURL('/src/site/data-views.mjs'));
                 const isFTP = ev.currentTarget.classList.contains('ftp');
                 let view;
                 if (isFTP) {
@@ -372,7 +379,7 @@ sauce.ns('analysis', ns => {
                     width: '25em',
                     height: 250,
                 });
-                $modal.on('dialogclose', async () => {
+                $modal.on('dialogclose', () => {
                     if (!view.edited) {
                         return;
                     }
@@ -521,7 +528,8 @@ sauce.ns('analysis', ns => {
                         };
                         descs.set(intersect, desc);
                     }
-                    const [segStart, segEnd] = pageView.chartContext().convertStreamIndices(x.segment.indices());
+                    const [segStart, segEnd] = pageView.chartContext()
+                        .convertStreamIndices(x.segment.indices());
                     for (let i = segStart; i <= segEnd; i++) {
                         const trailIndex = match.streamPathMap[i];
                         if (trailIndex != null) {
@@ -630,7 +638,8 @@ sauce.ns('analysis', ns => {
     async function rotateFoodReward(kj) {
         const foods = await foodsPromise;
         const id = await sauce.storage.getPref('rewardFoodId');
-        const prevIdx = foods.findIndex(x => x.id == id) || 0;
+        debugger; // XXX
+        const prevIdx = foods.findIndex(x => x.id === id) || 0;
         const nextFood = foods[prevIdx + 1] || foods[0];
         await sauce.storage.setPref('rewardFoodId', nextFood.id);
         if (kj) {
@@ -642,7 +651,8 @@ sauce.ns('analysis', ns => {
     async function getFoodReward(kj) {
         const foods = await foodsPromise;
         const id = await sauce.storage.getPref('rewardFoodId');
-        const food = foods.find(x => x.id == id) || foods[0];
+        debugger; // XXX
+        const food = foods.find(x => x.id === id) || foods[0];
         return _makeFoodReward(food, kj);
     }
 
@@ -768,9 +778,11 @@ sauce.ns('analysis', ns => {
                             attrs.isWattEstimate = isWattEstimate;
                         }
                         const prefix = attrs.isWattEstimate ? '~' : '';
-                        const ranges = periodRanges.filter(x => !attrs.isWattEstimate || x.value >= minWattEstTime);
+                        const ranges = periodRanges.filter(x =>
+                            !attrs.isWattEstimate || x.value >= minWattEstTime);
                         for (const range of ranges) {
-                            const roll = sauce.power.peakPower(range.value, timeStream, dataStream, {activeStream});
+                            const roll = sauce.power.peakPower(range.value, timeStream, dataStream,
+                                {activeStream});
                             if (roll) {
                                 if (source === 'peak_power_wkg') {
                                     const native = roll.avg() / ns.weight;
@@ -804,7 +816,8 @@ sauce.ns('analysis', ns => {
                             peak_xp: {peakSearch: sauce.power.peakXP, rollMethod: 'xp'},
                         }[source];
                         for (const range of periodRanges.filter(x => x.value >= minPowerPotentialTime)) {
-                            const roll = calcs.peakSearch(range.value, timeStream, wattsStream, {activeStream});
+                            const roll = calcs.peakSearch(range.value, timeStream, wattsStream,
+                                {activeStream});
                             // Use external NP/XP method for consistency.  There are tiny differences because
                             // the peak functions use a continuous rolling avg vs the external method that
                             // only examines the trimmed date set.
@@ -884,7 +897,7 @@ sauce.ns('analysis', ns => {
 
 
     function attachInfo($el) {
-        async function placeInfo(isMobile) {
+        function placeInfo(isMobile) {
             if (isMobile) {
                 const parent = document.getElementById('heading');
                 parent.insertAdjacentElement('afterend', $el[0]);
@@ -1134,8 +1147,10 @@ sauce.ns('analysis', ns => {
         const endIdx = getStreamTimeIndex(endTime);
         let gap;
         if (ns.activityType === 'run') {
-            streams.grade_adjusted_distance = streams.distance && await fetchGradeDistStream({startTime, endTime});
-            gap = streams.grade_adjusted_distance && streamDelta(streams.grade_adjusted_distance) / elapsedTime;
+            streams.grade_adjusted_distance = streams.distance &&
+                await fetchGradeDistStream({startTime, endTime});
+            gap = streams.grade_adjusted_distance &&
+                streamDelta(streams.grade_adjusted_distance) / elapsedTime;
         }
         const heading = await LM(source);
         const textLabel = jQuery(`<div>${label}</div>`).text();
@@ -1265,14 +1280,14 @@ sauce.ns('analysis', ns => {
                 if (!split && i !== x.rank - 1) {
                     markSplit = (split = true);
                 }
+                const titleExtra = x.activity.description ? '\n\n' + x.activity.description : '';
                 return `
                     <tr class="${markSplit ? 'split' : ''} ${x.activity.id === id ? 'self' : ''}">
                         <td class="rank">${x.rank}</td>
                         <td>${locale.fmt(x.value)}<abbr class="short unit">${locale.unit}</abbr></td>
                         <td class="activity-name">
                             <a href="/activities/${x.activity.id}/analysis/${x.start}/${x.end}"
-                               title="${x.activity.name}${x.activity.description ? '\n\n' + x.activity.description : ''}"
-                               >${x.activity.name}</a>
+                               title="${x.activity.name}${titleExtra}">${x.activity.name}</a>
                         </td>
                         <td class="date">${H.date(x.activity.ts)}</td>
                     </tr>
@@ -1378,7 +1393,7 @@ sauce.ns('analysis', ns => {
             ev.currentTarget.classList.add('hidden');
             reload = true;
         });
-        $modal.on('dialogclose', async ev => {
+        $modal.on('dialogclose', ev => {
             if (reload) {
                 if (ns.syncAthlete) {
                     sauce.hist.invalidateSyncState('local', 'peaks');  // bg required
@@ -1540,9 +1555,11 @@ sauce.ns('analysis', ns => {
                     fillColor: '#0007',
                     chartRangeMin,
                     chartRangeMax,
-                    tooltipFormatter: (_, __, data) => `
-                        Top level: ${H.number(data.y, {fixed: true, precision: 1})}<abbr class="unit short">W/kg</abbr>
-                        ${wattsTooltip(data.y)}`
+                    tooltipFormatter: (_, __, data) => {
+                        const k = H.number(data.y, {fixed: true, precision: 1});
+                        return `Top level: ${k}<abbr class="unit short">W/kg</abbr> ` +
+                            wattsTooltip(data.y);
+                    }
                 });
                 $graph.sparkline(requirements[gender].map(({high, low}) => (minPct * (high - low)) + low), {
                     composite: true,
@@ -1552,9 +1569,11 @@ sauce.ns('analysis', ns => {
                     lineColor: 'black',
                     chartRangeMin,
                     chartRangeMax,
-                    tooltipFormatter: (_, __, data) => `
-                        Bottom level: ${H.number(data.y, {fixed: true, precision: 1})}<abbr class="unit short">W/kg</abbr>
-                        ${wattsTooltip(data.y)}`
+                    tooltipFormatter: (_, __, data) => {
+                        const k = H.number(data.y, {fixed: true, precision: 1});
+                        return `Bottom level: ${k}<abbr class="unit short">W/kg</abbr> ` +
+                            wattsTooltip(data.y);
+                    }
                 });
 
             }
@@ -1705,7 +1724,7 @@ sauce.ns('analysis', ns => {
         });
         jQuery('.activity-summary').append($comments);
         // Inject the react based mentionable-comment component...
-        $comments.on('submit', 'form', async ev => {
+        $comments.on('submit', 'form', ev => {
             ev.preventDefault();
             const $input = $comments.find('form input[name="comment"]');
             const comment = $input.val();
@@ -1726,7 +1745,7 @@ sauce.ns('analysis', ns => {
             const details = pageView.segmentEffortDetails().get(id);
             await showLiveSegmentDialog(details);
         });
-        jQuery(document).on('click', `${segView} .sauce-button.perf-predictor`, async ev => {
+        jQuery(document).on('click', `${segView} .sauce-button.perf-predictor`, ev => {
             const id = ev.currentTarget.dataset.segmentId;
             const details = pageView.segmentEffortDetails().get(id);
             const [start, end] = pageView.chartContext().convertStreamIndices(details.indices());
@@ -1761,6 +1780,7 @@ sauce.ns('analysis', ns => {
             hasPatronRequirement,
             useTrial,
         });
+        let $dialog = undefined;
         const extraButtons = [];
         if (hasPatronRequirement || useTrial) {
             extraButtons.push({
@@ -1813,7 +1833,7 @@ sauce.ns('analysis', ns => {
             });
         }
         const trialTitle = useTrial ? ` - Trial ${trialCount + 1} / ${maxTrials}` : '';
-        const $dialog = sauce.ui.modal({
+        $dialog = sauce.ui.modal({
             title: `Live Segment ${locale.creator}${trialTitle}`,
             icon,
             body,
@@ -1923,7 +1943,8 @@ sauce.ns('analysis', ns => {
             nameCol.setAttribute('colspan', '1');
             nameCol.insertAdjacentElement('afterend', th);
         }
-        const rows = Array.from(document.querySelectorAll('table.segments > tbody > tr[data-segment-effort-id]'));
+        const rows = Array.from(document.querySelectorAll(
+            'table.segments > tbody > tr[data-segment-effort-id]'));
         for (const row of rows) {
             addTrailforksRow(row).catch(console.error);
         }
@@ -1993,6 +2014,7 @@ sauce.ns('analysis', ns => {
 
     async function showTrailforksModal(descs) {
         const extUrlIcon = await sauce.ui.getImage('fa/external-link-duotone.svg');
+        let tabs = undefined;
         function selectedTab() {
             for (const t of tabs) {
                 if (t.selected) {
@@ -2030,7 +2052,7 @@ sauce.ns('analysis', ns => {
                 }
             }]
         });
-        const tabs = descs.map((desc, i) => ({
+        tabs = descs.map((desc, i) => ({
             selector: `li.trail-${desc.trail.id}`,
             trailId: desc.trail.id,
             renderer: new (self.Backbone.View.extend({
@@ -2169,7 +2191,8 @@ sauce.ns('analysis', ns => {
                 // Workaround for missing templates when activity doesn't have photos of its own.
                 const tplResp = await sauce.fetch(`${tplUrl}/photo-lightbox-template-backup.html`);
                 self.JST['#photo-lightbox-template'] = self._.template(await tplResp.text());
-                self.JST['#reporting-modal-template'] = self._.template('<div style="display: none;" id="reporting-modal"><form/></div>');
+                self.JST['#reporting-modal-template'] =
+                    self._.template('<div style="display: none;" id="reporting-modal"><form/></div>');
             }
             let selected;
             for (const photo of photosCollection.models) {
@@ -2202,7 +2225,8 @@ sauce.ns('analysis', ns => {
             _loadingPowerCtrl = undefined;
         } else {
             // Note: be careful with Deferred objects which have a `.then()` return value.
-            _loadingPowerCtrl = new Promise(resolve => powerCtrl.deferred.always(() => resolve())).then(() => {
+            _loadingPowerCtrl = new Promise(resolve =>
+                powerCtrl.deferred.always(() => resolve())).then(() => {
                 if (!powerCtrl.has('athlete_ftp') && !powerCtrl.has('athlete_weight')) {
                     powerCtrl.set(sauce.perf.inferPowerDataAthleteInfo(powerCtrl.attributes));
                 }
@@ -2477,7 +2501,8 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
-        const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start), getStreamIndexTime(end));
+        const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start),
+            getStreamIndexTime(end));
         const activeTime = getActiveTime(start, end);
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
@@ -2521,7 +2546,8 @@ sauce.ns('analysis', ns => {
                     const activeStream = await fetchStream('active', start, end);
                     const maxHR = sauce.perf.estimateMaxHR(zones);
                     const restingHR = ns.ftp ? sauce.perf.estimateRestingHR(ns.ftp) : 60;
-                    tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ns.gender);
+                    tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR,
+                        ns.gender);
                 }
             }
             tplData.energy = {
@@ -2840,7 +2866,8 @@ sauce.ns('analysis', ns => {
         const buf = fitParser.encode();
         const leaderInitials = leaderName.trim().split(/\s+/).map(x => x.substr(0, 1)).join('');
         const fname = `SauceLiveSegment-${segmentName.substr(0, 22)}-${leaderInitials}`;
-        sauce.ui.downloadBlob(new File([buf], fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
+        sauce.ui.downloadBlob(new File([buf],
+            fname.trim().replace(/\s/g, '_').replace(/[^\w_-]/g, '') + '.fit'));
     }
 
 
@@ -2848,7 +2875,8 @@ sauce.ns('analysis', ns => {
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
-        const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start), getStreamIndexTime(end));
+        const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start),
+            getStreamIndexTime(end));
         const origTime = streamDelta(timeStream);
         const origDistance = streamDelta(distStream);
         const origVelocity = origDistance / origTime;
@@ -2995,13 +3023,16 @@ sauce.ns('analysis', ns => {
                                     slope, weight: groupWeight, crr, cda: draftCda, el, wind});
                                 minP = Math.min(youPosEst.watts, themPosEst.watts, minP);
                                 maxP = Math.max(youPosEst.watts, themPosEst.watts, maxP);
-                                const j = (youPosEst.watts * time * pct) + (themPosEst.watts * time * (1 - pct));
+                                const j = (youPosEst.watts * time * pct) +
+                                    (themPosEst.watts * time * (1 - pct));
                                 joules += j;
                                 jQuery(icon.querySelector('label')).html(
                                     `${Math.round(youPosEst.watts).toLocaleString()}w` +
                                     (useSameWeight ?
                                         '' :
-                                        `<br/><small>(${Math.round(themPosEst.watts).toLocaleString()}w)</small>`
+                                        '<br/><small>(' +
+                                        Math.round(themPosEst.watts).toLocaleString() +
+                                        'w)</small>'
                                     )
                                 );
                                 icon.style.setProperty('--draft-power', j / time);
@@ -3332,7 +3363,7 @@ sauce.ns('analysis', ns => {
             // in the future due to upstream changes..
             console.error('Error while looking for weight of FTP:', e);
         }
-        if (athleteInfo.gender != ns.gender) {
+        if (athleteInfo.gender !== ns.gender) {
             updateAthleteInfo({gender: ns.gender});  // bg okay
         }
         ns.wPrime = athleteInfo.wPrime || 20000;
@@ -3720,7 +3751,8 @@ sauce.ns('analysis', ns => {
             $view.on('mouseenter', '#basic-analysis section.chart', ev => {
                 if (document.activeElement !== ev.currentTarget) {
                     ev.currentTarget.classList.add('sauce-keyboard-events');
-                    document.removeEventListener('keydown', onChartKeyDown, {capture: true}); // dedup from focus
+                    // dedup from focus..
+                    document.removeEventListener('keydown', onChartKeyDown, {capture: true});
                     document.addEventListener('keydown', onChartKeyDown, {capture: true});
                 }
             });

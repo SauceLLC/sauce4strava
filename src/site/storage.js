@@ -5,8 +5,8 @@ sauce.ns('storage', ns => {
     'use strict';
 
     let _prefs;
-    let _prefsCache = new Map();
     let _fastPrefsReadyInvoked;  // catch API misuse with this.
+    const _prefsCache = new Map();
 
     const _fastPrefInit = (async () => {
         if (!sauce.proxy.isConnected) {

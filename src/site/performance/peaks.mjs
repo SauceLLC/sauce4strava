@@ -278,7 +278,7 @@ export class PeaksTableView extends views.ResizablePerfView {
         }
     }
 
-    async onFilterClick(ev) {
+    onFilterClick(ev) {
         const input = ev.currentTarget.parentElement.querySelector('input.filter');
         input.classList.toggle('visible');
         if (input.classList.contains('visible')) {

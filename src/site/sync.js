@@ -40,7 +40,7 @@ sauce.ns('sync', ns => {
         controller.addEventListener('error', ev => {
             setStatus(`Sync error: ${ev.data.error}`);
         });
-        controller.addEventListener('progress', async ev => {
+        controller.addEventListener('progress', ev => {
             const counts = ev.data.counts;
             const synced = counts.processed;
             const total = counts.total - counts.unavailable - counts.unprocessable;
@@ -104,7 +104,8 @@ sauce.ns('sync', ns => {
                     } else {
                         buf = ab;
                     }
-                    const [batch, remBuf] = sauce.decodeBundle(pendingBuf ? sauce.concatBuffers(pendingBuf, buf) : buf);
+                    const finalBuf = pendingBuf ? sauce.concatBuffers(pendingBuf, buf) : buf;
+                    const [batch, remBuf] = sauce.decodeBundle(finalBuf);
                     for (let i = 0; i < batch.length; i += stride) {
                         await importingQueue.put(dataEx.import(batch.slice(i, i + stride)));
                     }
@@ -174,7 +175,7 @@ sauce.ns('sync', ns => {
         initGzip();
         for (const athlete of athletes) {
             const dataEx = new sauce.hist.DataExchange(athlete.id);
-            dataEx.addEventListener('data', async ev => {
+            dataEx.addEventListener('data', ev => {
                 gzip.push(sauce.encodeBundle(ev.data));
                 if (progressFn) {
                     progressFn(page, compressedBundles.length);
@@ -211,10 +212,10 @@ sauce.ns('sync', ns => {
         let page = 1;
         const date = (new Date()).toISOString().replace(/[-T:]/g, '_').split('.')[0];
         const dataEx = new sauce.hist.DataExchange(athlete.id);
-        dataEx.addEventListener('url', async ev => {
+        dataEx.addEventListener('url', ev => {
             sauce.downloadExtBlobURL(ev.data, `${safeName(athlete.name)}-${date}-${page++}.zip`);
         });
-        dataEx.addEventListener('progress', async ev => {
+        dataEx.addEventListener('progress', ev => {
             if (progressFn) {
                 progressFn(page, ev.data);
             } else {
@@ -270,6 +271,8 @@ sauce.ns('sync', ns => {
             text: locale.restore_data,
             class: 'btn sauce-restore',
             click: async ev => {
+                const btn = ev.currentTarget;
+                const origText = btn.textContent;
                 const {started, completed} = restoreData((state, fileNum, numFiles, progress) => {
                     const fileDesc = numFiles > 1 ?
                         `file ${fileNum} of ${numFiles}` : 'file';
@@ -282,8 +285,6 @@ sauce.ns('sync', ns => {
                     }
                 });
                 await started;  // Will not resolve if they hit cancel.
-                const btn = ev.currentTarget;
-                const origText = btn.textContent;
                 btn.classList.add('sauce-loading', 'disabled');
                 try {
                     await completed;
@@ -343,12 +344,10 @@ sauce.ns('sync', ns => {
         const $logs = $modal.find('section.sync-logs .logs');
 
         const curLogs = [];
-        async function appendLogs(records) {
+        function appendLogs(records) {
             for (const record of records) {
-                if (!curLogs.find(x => x.ts === record.ts && x.message == record.message)) {
+                if (!curLogs.find(x => x.ts === record.ts && x.message === record.message)) {
                     curLogs.push(record);
-                } else {
-                    debugger;
                 }
             }
             curLogs.sort((a, b) => b.ts - a.ts);
@@ -402,7 +401,8 @@ sauce.ns('sync', ns => {
                 $synced.find('.text').html(`100% | ${synced.toLocaleString()} ${locale.activities}`);
                 $syncedDetails.html('');
             } else {
-                $synced.find('.text').html(`${synced.toLocaleString()} of ${total.toLocaleString()} ${locale.activities}`);
+                $synced.find('.text').html(
+                    `${synced.toLocaleString()} of ${total.toLocaleString()} ${locale.activities}`);
                 $syncedDetails.html(title);
             }
         }
@@ -447,7 +447,7 @@ sauce.ns('sync', ns => {
 
         const listeners = {
             "active": ev => void setActive(ev.data.active),
-            "error": async ev => {
+            "error": ev => {
                 $modal.addClass('has-error');
                 $modal.find('.entry.status value').text(ev.data.error);
             },
@@ -490,9 +490,7 @@ sauce.ns('sync', ns => {
             await sauce.hist.updateAthlete(athlete.id, athlete);
             dirty = true;
         });
-        $modal.on('click', '.perf-promo .btn.enable', async ev => {
-            $modal.find('input[name="enable"]').click();
-        });
+        $modal.on('click', '.perf-promo .btn.enable', ev => void $modal.find('input[name="enable"]').click());
         $modal.on('click', '.perf-promo .nav-left', ev => {
             const $promo = jQuery(ev.currentTarget.closest('.perf-promo'));
             const $selected = $promo.find('.selected');

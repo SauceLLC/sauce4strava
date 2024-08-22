@@ -373,7 +373,8 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                 pos = pos || this.position;
                 const mod = d === "absolute" ? 1 : -1;
                 const useOffsetParent = this.cssPosition === "absolute" &&
-                    (this.scrollParent[0] === this.document[0] || !$.contains(this.scrollParent[0], this.offsetParent[0]));
+                    (this.scrollParent[0] === this.document[0] ||
+                     !$.contains(this.scrollParent[0], this.offsetParent[0]));
                 const scroll = useOffsetParent ? this.offsetParent : this.scrollParent;
                 const scrollIsRootNode = useOffsetParent && (/(html|body)/i).test(scroll[0].nodeName);
                 if (!this.offset.scroll) {
@@ -387,14 +388,16 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     (scrollIsRootNode ? 0 : this.offset.scroll.left);
                 return {
                     top: pos.top + this.offset.relative.top * mod + this.offset.parent.top * mod - scrollTop,
-                    left: pos.left + this.offset.relative.left * mod + this.offset.parent.left * mod - scrollLeft
+                    left: pos.left + this.offset.relative.left * mod +
+                        this.offset.parent.left * mod - scrollLeft
                 };
             },
             _generatePosition: function(ev) {
                 let top;
                 let left;
                 const useOffsetParent = this.cssPosition === "absolute" &&
-                    (this.scrollParent[0] === this.document[0] || !$.contains(this.scrollParent[0], this.offsetParent[0]));
+                    (this.scrollParent[0] === this.document[0] ||
+                     !$.contains(this.scrollParent[0], this.offsetParent[0]));
                 const scroll = useOffsetParent ? this.offsetParent : this.scrollParent;
                 const scrollIsRootNode = useOffsetParent && (/(html|body)/i).test(scroll[0].nodeName);
                 let pageX = ev.pageX;
@@ -432,20 +435,26 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     const o = this.options;
                     if (o.grid) {
                         top = o.grid[1] ?
-                            this.originalPageY + Math.round((pageY - this.originalPageY) / o.grid[1]) * o.grid[1] :
+                            this.originalPageY +
+                                Math.round((pageY - this.originalPageY) / o.grid[1]) * o.grid[1] :
                             this.originalPageY;
                         pageY = containment ?
-                            ((top - this.offset.click.top >= containment[1] || top - this.offset.click.top > containment[3]) ?
+                            ((top - this.offset.click.top >= containment[1] ||
+                              top - this.offset.click.top > containment[3]) ?
                                 top :
-                                ((top - this.offset.click.top >= containment[1]) ? top - o.grid[1] : top + o.grid[1])) :
+                                ((top - this.offset.click.top >= containment[1]) ?
+                                    top - o.grid[1] : top + o.grid[1])) :
                             top;
                         left = o.grid[0] ?
-                            this.originalPageX + Math.round((pageX - this.originalPageX) / o.grid[0]) * o.grid[0] :
+                            this.originalPageX +
+                                Math.round((pageX - this.originalPageX) / o.grid[0]) * o.grid[0] :
                             this.originalPageX;
                         pageX = containment ?
-                            ((left - this.offset.click.left >= containment[0] || left - this.offset.click.left > containment[2]) ?
+                            ((left - this.offset.click.left >= containment[0] ||
+                              left - this.offset.click.left > containment[2]) ?
                                 left :
-                                ((left - this.offset.click.left >= containment[0]) ? left - o.grid[0] : left + o.grid[0])) :
+                                ((left - this.offset.click.left >= containment[0]) ?
+                                    left - o.grid[0] : left + o.grid[0])) :
                             left;
                     }
                 }
@@ -456,8 +465,10 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                     -this.scrollParent.scrollLeft() :
                     (scrollIsRootNode ? 0 : this.offset.scroll.left);
                 return {
-                    top: pageY - this.offset.click.top - this.offset.relative.top - this.offset.parent.top + scrollTop,
-                    left: pageX - this.offset.click.left - this.offset.relative.left - this.offset.parent.left + scrollLeft
+                    top: pageY - this.offset.click.top - this.offset.relative.top -
+                        this.offset.parent.top + scrollTop,
+                    left: pageX - this.offset.click.left - this.offset.relative.left -
+                        this.offset.parent.left + scrollLeft
                 };
             }
         });
@@ -592,7 +603,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
                              style="background-image: url(${dlIconUrl});"></div>
                     </button>
                 `);
-                this.$el.on('click', 'button.sauce-download', async ev => {
+                this.$el.on('click', 'button.sauce-download', ev => {
                     const url = this.$('.photo-slideshow-content .image-wrapper img').attr('src');
                     window.open(url, '_blank');
                 });
@@ -602,7 +613,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
     }, {once: true});
 
 
-    sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', async Klass => {
+    sauce.propDefined('Strava.Labs.Activities.SegmentEffortDetailView', Klass => {
         const renderSave = Klass.prototype.render;
         async function addButton(segmentId, label, tip, extraCls, icon) {
             const runSegmentsView = this.options.pageView.chartContext().activity().get('type') === 'Run';

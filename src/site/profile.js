@@ -12,7 +12,8 @@ sauce.ns('profile', ns => {
             self.currentAthlete && self.currentAthlete.isLoggedIn()) {
             const $name = jQuery('.profile-heading .athlete-name');
             const name = $name.text().trim();
-            const genderGuess = document.querySelector('#athlete-profile .main a.tab[href$="/segments/leader"]');
+            const genderGuess = document.querySelector(
+                '#athlete-profile .main a.tab[href$="/segments/leader"]');
             const gender = (genderGuess && genderGuess.textContent.match(/QOMs/)) ? 'female' : undefined;
             const $btn = await sauce.sync.createSyncButton(athleteId, {name, gender});
             const $buttonBox = $name.siblings('.follow-action');

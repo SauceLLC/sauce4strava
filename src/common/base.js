@@ -82,7 +82,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
 
 
     const _loadedScripts = new Set();
-    sauce.loadScripts = async function(urls, options={}) {
+    sauce.loadScripts = function(urls, options={}) {
         const loading = [];
         const frag = document.createDocumentFragment();
         for (const url of urls) {
@@ -523,7 +523,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                     const req = indexedDB.open(this.name, latestVersion);
                     req.addEventListener('error', ev => reject(req.error));
                     req.addEventListener('success', ev => resolve(req.result));
-                    req.addEventListener('blocked', ev => reject(new Error('Blocked by existing DB connection')));
+                    req.addEventListener('blocked', ev => reject(new Error('DB blocked')));
                     req.addEventListener('upgradeneeded', ev => {
                         console.info(`Upgrading DB from v${ev.oldVersion} to v${ev.newVersion}`);
                         const idb = req.result;
@@ -756,7 +756,8 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 } catch(e) {
                     if (i <= 10 && e.code === 0 && e.message === 'Failed to read large IndexedDB value') {
                         const e = new Error(); // DOMException does not have an e.stack
-                        console.warn(`IDB retry for for chromium IDB bug: ${i}/10`, queries.length, e.message, e.stack);
+                        console.warn(`IDB retry for for chromium IDB bug: ${i}/10`, queries.length,
+                            e.message, e.stack);
                         await new Promise(resolve => setTimeout(resolve, i * 100));
                     } else {
                         throw e;
@@ -971,7 +972,8 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         }
 
         async *values(query, options={}) {
-            const cacheKeyPrefix = !options._skipCache && this._queryCacheKey(query, {...options, cursor: true});
+            const cacheKeyPrefix = !options._skipCache &&
+                this._queryCacheKey(query, {...options, cursor: true});
             let iter;
             let i = 0;
             const cachePageSize = 64;

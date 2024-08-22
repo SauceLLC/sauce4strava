@@ -19,7 +19,8 @@ export class MutableDataView extends SauceView {
 
     async init(options) {
         this.$el.addClass('mutable-data-view');
-        this._entryTpl = await sauce.template.getTemplate(this.constructor.entryTpl, this.constructor.localeNS);
+        this._entryTpl = await sauce.template.getTemplate(this.constructor.entryTpl,
+            this.constructor.localeNS);
         this.attrs = {
             localeHelpKey: null,
             localeTitleKey: null,
@@ -198,7 +199,7 @@ class PeaksRangesView extends MutableDataView {
 
     parseEntry(entry) {
         const rawValue = entry.querySelector('input[type="number"]').value;
-        let value = rawValue ? Number(rawValue) : NaN;
+        const value = rawValue ? Number(rawValue) : NaN;
         if (!isNaN(value)) {
             return {value};
         }

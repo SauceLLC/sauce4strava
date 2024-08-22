@@ -75,8 +75,10 @@ export class GPXSerializer extends DOMSerializer {
         this.rootNode.setAttribute('xmlns:tpx1', 'http://www.garmin.com/xmlschemas/TrackPointExtension/v1');
         this.rootNode.setAttributeNS('http://www.w3.org/2001/XMLSchema-instance', 'xsi:schemaLocation', [
             'http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd',
-            'http://www.garmin.com/xmlschemas/GpxExtensions/v3 https://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
-            'http://www.garmin.com/xmlschemas/TrackPointExtension/v1 https://www8.garmin.com/xmlschemas/TrackPointExtensionv1.xsd',
+            'http://www.garmin.com/xmlschemas/GpxExtensions/v3 ' +
+                'https://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd',
+            'http://www.garmin.com/xmlschemas/TrackPointExtension/v1 ' +
+                'https://www8.garmin.com/xmlschemas/TrackPointExtensionv1.xsd',
         ].join(' '));
     }
 
@@ -140,9 +142,12 @@ export class TCXSerializer extends DOMSerializer {
         // NOTE: This must be 'ns3' to support Strava's broken parser.
         this.rootNode.setAttribute('xmlns:ns3', 'http://www.garmin.com/xmlschemas/ActivityExtension/v2');
         this.rootNode.setAttributeNS('http://www.w3.org/2001/XMLSchema-instance', 'xsi:schemaLocation', [
-            'http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 https://www8.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd',
-            'http://www.garmin.com/xmlschemas/UserProfile/v2 https://www8.garmin.com/xmlschemas/UserProfileExtensionv2.xsd',
-            'http://www.garmin.com/xmlschemas/ActivityExtension/v2 https://www8.garmin.com/xmlschemas/ActivityExtensionv2.xsd',
+            'http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 ' +
+                'https://www8.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd',
+            'http://www.garmin.com/xmlschemas/UserProfile/v2 ' +
+                'https://www8.garmin.com/xmlschemas/UserProfileExtensionv2.xsd',
+            'http://www.garmin.com/xmlschemas/ActivityExtension/v2 ' +
+                'https://www8.garmin.com/xmlschemas/ActivityExtensionv2.xsd',
         ].join(' '));
         const author = this.addNodeTo(this.rootNode, 'Author');
         author.setAttribute('xsi:type', 'Application_t');
@@ -314,7 +319,8 @@ export class FITSerializer extends Serializer {
             }
             const elapsed = streams.time[end] - streams.time[start];
             const active = streams.active ?
-                sauce.data.activeTime(streams.time.slice(start, end + 1), streams.active.slice(start, end + 1)) :
+                sauce.data.activeTime(streams.time.slice(start, end + 1),
+                    streams.active.slice(start, end + 1)) :
                 elapsed;
             const lap = {
                 message_index: lapNumber++,

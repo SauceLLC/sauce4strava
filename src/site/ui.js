@@ -21,7 +21,7 @@ sauce.ns('ui', ns => {
         };
     };
 
- 
+
     ns.downloadBlob = function(blob, name) {
         const url = URL.createObjectURL(blob);
         try {
@@ -195,7 +195,8 @@ sauce.ns('ui', ns => {
                 const label = await LM(labelKey);
                 specs.push({
                     data: streams.velocity_smooth || smoothVelocity('distance', streams),
-                    formatter: x => `${label}: ${H.pace(x, {velocity: true, html: true, suffix: true, type: paceType})}`,
+                    formatter: x =>
+                        `${label}: ${H.pace(x, {velocity: true, html: true, suffix: true, type: paceType})}`,
                     colorSteps: ns.hslValueGradientSteps(thresholds,
                         {hStart: 216, sStart: 100, lStart: 84, lEnd: 20}),
                 });
@@ -211,13 +212,15 @@ sauce.ns('ui', ns => {
                 specs.push({
                     data: streams.cadence,
                     formatter: x => `${label}: ${format(x)} <abbr class="unit short">${unit}</abbr>`,
-                    colorSteps: ns.hslValueGradientSteps(thresholds, {hStart: 60, hEnd: 80, sStart: 95, lStart: 50}),
+                    colorSteps: ns.hslValueGradientSteps(thresholds,
+                        {hStart: 60, hEnd: 80, sStart: 95, lStart: 50}),
                 });
             } else if (g === 'gap') {
                 const label = await LM('gap');
                 specs.push({
                     data: smoothVelocity('grade_adjusted_distance', streams),
-                    formatter: x => `${label}: ${H.pace(x, {velocity: true, html: true, suffix: true, type: paceType})}`,
+                    formatter: x =>
+                        `${label}: ${H.pace(x, {velocity: true, html: true, suffix: true, type: paceType})}`,
                     colorSteps: ns.hslValueGradientSteps([0.5, 2, 5, 10], {
                         hStart: 216, // XXX Change a bit
                         sStart: 100,
@@ -236,7 +239,7 @@ sauce.ns('ui', ns => {
                 });
             } else if (g === 'vam') {
                 specs.push({
-                    data: sauce.geo.createVAMStream(streams.time, streams.altitude).slice(1),  // first entry is always 0
+                    data: sauce.geo.createVAMStream(streams.time, streams.altitude).slice(1),
                     formatter: x => `VAM: ${H.number(x)} <abbr class="unit short">Vm/h</abbr>`,
                     colorSteps: ns.hslValueGradientSteps([-500, 500, 1000, 2000],
                         {hStart: 260, sStart: 65, sEnd: 100, lStart: 75, lend: 50}),
@@ -293,7 +296,8 @@ sauce.ns('ui', ns => {
                     chartRangeMin: dataMin - (range * minMargin),
                     chartRangeMax: dataMax + (range * maxMargin),
                     tooltipFormatter: (_, __, data) => {
-                        const legendColor = data.fillColor.steps[Math.floor(data.fillColor.steps.length / 2)].color;
+                        const idx = Math.floor(data.fillColor.steps.length / 2);
+                        const legendColor = data.fillColor.steps[idx].color;
                         return `
                             <div class="jqs-legend" style="background-color: ${legendColor};"></div>
                             ${spec.formatter(data.y)}

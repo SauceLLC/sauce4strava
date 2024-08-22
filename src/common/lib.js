@@ -181,7 +181,7 @@ sauce.ns('data', function() {
     }
 
 
-    let _timeGapsCache = new WeakMap();
+    const _timeGapsCache = new WeakMap();
     function recommendedTimeGaps(timeStream) {
         const hash = `${timeStream.length}-${timeStream[0]}-${timeStream[timeStream.length - 1]}`;
         if (!_timeGapsCache.has(timeStream) || _timeGapsCache.get(timeStream).hash !== hash) {
@@ -275,7 +275,7 @@ sauce.ns('data', function() {
         }
         // Hand optimized for V8...
         let i = 0;
-        for (; i < len && (a[i] === b[i] || (Number.isNaN(a[i]) && Number.isNaN(b[i]))); i++);
+        for (; i < len && (a[i] === b[i] || (Number.isNaN(a[i]) && Number.isNaN(b[i]))); i++) {/*no-pragma*/}
         return i === len;
     }
 
@@ -2081,7 +2081,8 @@ sauce.ns('perf', function() {
     function inferPowerDataAthleteInfo(data) {
         const info = {};
         if (data.cp_data_wkg && data.cp_data) {
-            info.athlete_weight = sauce.data.avg(data.cp_data.map((x, i) => x.at(-1) / data.cp_data_wkg[i].at(-1)));
+            info.athlete_weight = sauce.data.avg(data.cp_data.map((x, i) => x.at(-1) /
+                data.cp_data_wkg[i].at(-1)));
         }
         if (data.range_array) {
             const zones = data.range_array.map(x => parseInt(x) - 0.5); // lower bounds

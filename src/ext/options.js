@@ -5,6 +5,7 @@
 
     const isSafari = sauce.isSafari();
     const isPopup = (new URLSearchParams(window.location.search)).get('popup') !== null;
+    const supP = fetch('https://www.sauce.llc/supporters-v2.json').then(x => x.json());
     if (isPopup) {
         document.documentElement.classList.add('popup');
     }
@@ -192,7 +193,7 @@
         renderActivityFilters(actFilters, options);
     }
 
- 
+
     async function getBuildInfo() {
         const resp = await fetch('/build.json');
         return await resp.json();
@@ -287,6 +288,5 @@
         size.addEventListener('input', ev => optionsChange('font-custom-size', size.value));
     }
 
-    const supP = fetch('https://www.sauce.llc/supporters-v2.json').then(x => x.json());
     document.addEventListener('DOMContentLoaded', main);
 })();

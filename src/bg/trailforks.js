@@ -233,7 +233,7 @@ sauce.ns('trailforks', ns => {
         let xDelta;
         let accum = 0;
         let bits = 0;
-        for (var i = 0; i < encoded.length; i++) {
+        for (let i = 0; i < encoded.length; i++) {
             const byte = encoded.charCodeAt(i) - 63;
             accum |= (byte & 0x1f) << bits;
             bits += 5;
@@ -271,7 +271,8 @@ sauce.ns('trailforks', ns => {
             physicalRating: enums.physicalRatings[data.physical_rating],
             seasonType: enums.seasonTypes[data.season_type],
             ttfs: data.ttfs ? data.ttfs.split(',').map(x => enums.ttfs[x]) : [],
-            description: data.description.replace(/\[L=(.*?)\](.*?)\[\/L\]/g, '<a href="$1" target="_blank">$2</a>')
+            description: data.description.replace(/\[L=(.*?)\](.*?)\[\/L\]/g,
+                '<a href="$1" target="_blank">$2</a>')
         };
         return Object.assign({}, {expanded}, data);
     }
@@ -700,7 +701,7 @@ sauce.ns('trailforks', ns => {
     }
     sauce.proxy.export(photos, {namespace});
 
-    
+
     async function videos(trailId, options={}) {
         options.pageSize = 6;  // MUST be 6!!!
         return await fetchPagedTrailResource('videos', trailId, options);

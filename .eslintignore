@@ -1,4 +1,6 @@
 src/ext/webext.js
 src/site/chartjs/
 src/site/sparkline.js
+src/common/jsfit/
+src/common/jscoop/
 src/common/fflate.mjs

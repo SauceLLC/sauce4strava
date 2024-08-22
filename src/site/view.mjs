@@ -36,7 +36,7 @@ export class SauceView extends Backbone.View {
         }
     }
 
-    async renderAttrs(options={}) {
+    renderAttrs(options={}) {
         return options;
     }
 

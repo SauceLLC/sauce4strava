@@ -36,7 +36,7 @@ function handleAttributionDialog() {
 }
 
 
-(async function() {
+(function() {
     'use strict';
 
     const manifests = [{

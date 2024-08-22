@@ -163,7 +163,7 @@ sauce.ns('dashboard', function(ns) {
         return Number(v);
     }
 
-    
+
     function parseStatParts(v) {
         // Parse the formatted html of a stat metric into it's parts that we can
         // then interpret using FormatterTranslations and Locales.DICTIONARY.
@@ -279,7 +279,7 @@ sauce.ns('dashboard', function(ns) {
 
 
     function _passesCriteria(stats, criteria) {
-        const parseStat = criteria.startsWith('time-') ? parseLocaleStatTime : 
+        const parseStat = criteria.startsWith('time-') ? parseLocaleStatTime :
             criteria.startsWith('dist-') ? parseLocaleStatDist : null;
         if (!parseStat) {
             console.warn("Unexpected critiera type", criteria);
@@ -448,9 +448,11 @@ sauce.ns('dashboard', function(ns) {
                 } else if (props.entity === 'GroupActivity') {
                     for (const [kcId, kcSpec] of Object.entries(props.kudosAndComments)) {
                         if (kcSpec.canKudo) {
-                            // kudosAndComments is unordered and we need to cross ref the rowData index with the
-                            // DOM rendering of the activities withing the group to select the correct kudo btn.
-                            const index = props.rowData.activities.findIndex(x => ('' + x.activity_id) === kcId);
+                            // kudosAndComments are unordered and we need to cross ref the rowData index
+                            // with the DOM rendering of the activities withing the group to select the
+                            // correct kudo btn.
+                            const index = props.rowData.activities
+                                .findIndex(x => ('' + x.activity_id) === kcId);
                             const btn = card.querySelectorAll('button[data-testid="kudos_button"]')[index];
                             if (btn) {
                                 kudoButtons.push(btn);

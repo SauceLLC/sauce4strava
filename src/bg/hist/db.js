@@ -1,4 +1,5 @@
 /* global sauce */
+/* eslint no-unreachable-loop: off */
 
 sauce.ns('hist.db', ns => {
 
@@ -16,6 +17,304 @@ sauce.ns('hist.db', ns => {
         }
         return union;
     }
+
+
+    class ActivityModel extends sauce.db.Model {
+        static addSyncManifest(manifest) {
+            if (!this._syncManifests) {
+                this._syncManifests = {};
+            }
+            if (!this._syncManifests[manifest.processor]) {
+                this._syncManifests[manifest.processor] = {};
+            }
+            this._syncManifests[manifest.processor][manifest.name] = Object.assign({
+                errorBackoff: defaultSyncErrorBackoff,
+            }, manifest);
+        }
+
+        static getSyncManifests(processor, name) {
+            if (!processor) {
+                throw new TypeError("processor required");
+            }
+            const proc = this._syncManifests[processor];
+            if (name) {
+                const m = proc[name];
+                return m ? [m] : [];
+            } else {
+                return Object.values(proc);
+            }
+        }
+
+        static getSyncManifest(processor, name) {
+            if (!processor || !name) {
+                throw new TypeError("processor and name required");
+            }
+            return this.getSyncManifests(processor, name)[0];
+        }
+
+        // Who we depends ON...
+        static requiredManifests(processor, name) {
+            const manifests = new Set();
+            const bubble = deps => {
+                console.count('requiredManfiests');
+                for (const x of deps) {
+                    const m = this.getSyncManifest(processor, x);
+                    manifests.add(m);
+                    if (m.depends) {
+                        bubble(m.depends);
+                    }
+                }
+            };
+            const root = this.getSyncManifest(processor, name);
+            if (root.depends) {
+                bubble(root.depends);
+            }
+            return [...manifests];
+        }
+
+        // Who depends on US...
+        static dependantManifests(processor, name) {
+            if (!this._dependantManifestsCache) {
+                this._dependantManifestsCache = new Map();
+            }
+            const cacheKey = processor + name;
+            if (this._dependantManifestsCache.has(cacheKey)) {
+                return this._dependantManifestsCache.get(cacheKey);
+            }
+            const allManifests = this.getSyncManifests(processor);
+            const manifests = new Set();
+            const cascade = _name => {
+                for (const x of allManifests) {
+                    if (x.depends && x.depends.includes(_name)) {
+                        manifests.add(x);
+                        cascade(x.name);
+                    }
+                }
+            };
+            cascade(name);
+            const r = Object.freeze(Array.from(manifests));
+            this._dependantManifestsCache.set(cacheKey, r);
+            return r;
+        }
+
+        toString() {
+            if (this.data && this.data.ts) {
+                return `<Activity (${this.pk}) - ${(new Date(this.data.ts)).toLocaleDateString()}>`;
+            } else {
+                return `<Activity (${this.pk})>`;
+            }
+        }
+
+        getLocaleDay() {
+            return sauce.date.toLocaleDayDate(this.data.ts);
+        }
+
+        getTSS() {
+            return sauce.model.getActivityTSS(this.data);
+        }
+
+        _getSyncState(manifest) {
+            const processor = manifest.processor;
+            const name = manifest.name;
+            if (!processor || !name) {
+                throw new TypeError("processor and name required");
+            }
+            return this.data.syncState &&
+                this.data.syncState[processor] &&
+                this.data.syncState[processor][name];
+        }
+
+        _setSyncState(manifest, state, options={}) {
+            const processor = manifest.processor;
+            const name = manifest.name;
+            if (!processor || !name) {
+                throw new TypeError("processor and name required");
+            }
+            const hasError = state.error && state.error.ts;
+            if (hasError && !state.version) {
+                throw new TypeError("Cannot set 'error' without 'version'");
+            }
+            if (!options.noRecurse) {
+                for (const dep of this.constructor.dependantManifests(manifest.processor, manifest.name)) {
+                    // It might be safe to clear deps in error state too, but I'm being
+                    // paranoid for now in the offchance that I'm missing a way that this
+                    // could break backoff handling (i.e. runaway processing).
+                    if (!this.hasSyncError(dep)) {
+                        this.clearSyncState(dep);
+                    }
+                }
+            }
+            const sync = this.data.syncState = this.data.syncState || {};
+            const proc = sync[processor] = sync[processor] || {};
+            proc[name] = state;
+            this._updated.add('syncState');
+        }
+
+        setSyncSuccess(manifest) {
+            const state = this._getSyncState(manifest) || {};
+            if (state.error && state.error.ts) {
+                throw new TypeError("'clearSyncState' not used before 'setSyncSuccess'");
+            }
+            delete state.error;
+            state.version = manifest.version;
+            this._setSyncState(manifest, state);
+        }
+
+        setSyncError(manifest, e) {
+            const state = this._getSyncState(manifest) || {};
+            state.version = manifest.version;
+            const error = state.error = state.error || {count: 0};
+            error.count++;
+            error.ts = Date.now();
+            error.message = e.message;
+            this._setSyncState(manifest, state);
+        }
+
+        hasSyncSuccess(manifest) {
+            const state = this._getSyncState(manifest);
+            return !!(state && state.version === manifest.version && !(state.error && state.error.ts));
+        }
+
+        getSyncError(manifest) {
+            const state = this._getSyncState(manifest);
+            const error = state && state.error;
+            return (error && error.ts) ? (error.message || 'error') : undefined;
+        }
+
+        hasSyncError(manifest) {
+            const state = this._getSyncState(manifest);
+            return !!(state && state.error && state.error.ts);
+        }
+
+        hasAnySyncErrors(processor) {
+            const manifests = this.constructor.getSyncManifests(processor);
+            return manifests.some(m => this.hasSyncError(m));
+        }
+
+        clearSyncState(manifest) {
+            const state = this._getSyncState(manifest);
+            if (state) {
+                let altered;
+                if (state.error && state.error.ts) {
+                    // NOTE: Do not delete error.count.  We need this to perform backoff
+                    delete state.error.ts;
+                    delete state.error.message;
+                    altered = true;
+                }
+                if (state.version) {
+                    delete state.version;
+                    altered = true;
+                }
+                if (altered) {
+                    this._setSyncState(manifest, state);
+                }
+            }
+        }
+
+        nextAvailManifest(processor) {
+            const manifests = this.constructor.getSyncManifests(processor);
+            if (!manifests) {
+                throw new TypeError("Invalid sync processor");
+            }
+            const states = new Map(manifests.map(m => [m.name, this._getSyncState(m)]));
+            const completed = new Set();
+            const pending = new Set();
+            // Pass 1: Compile completed and pending sets without dep evaluation.
+            for (const m of manifests) {
+                const state = states.get(m.name);
+                if (state && state.version === m.version && (!state.error || !state.error.ts)) {
+                    completed.add(m.name);
+                } else {
+                    pending.add(m.name);
+                }
+            }
+            if (!pending.size) {
+                return;
+            }
+            const manifestsMap = new Map(manifests.map(x => [x.name, x]));
+            const tainted = new Set();
+            let idle;
+            do {
+                idle = true;
+                // Pass 2: Triage the deps until no further taints are discovered...
+                for (const name of setUnion(completed, pending)) {
+                    const manifest = manifestsMap.get(name);
+                    if (!manifest.depends) {
+                        continue;
+                    }
+                    for (const x of setUnion(pending, tainted)) {
+                        if (manifest.depends.includes(x)) {
+                            completed.delete(name);
+                            pending.delete(name);
+                            tainted.add(name);
+                            idle = false;
+                            break;
+                        }
+                    }
+                }
+            } while (!idle);
+            for (const name of pending) {
+                const m = manifestsMap.get(name);
+                const state = states.get(name);
+                const e = state && state.error;
+                if (e && e.ts && Date.now() - e.ts < m.errorBackoff * (2 ** e.count)) {
+                    debugger; // XXX can we continue and see if another pending is acceptable?
+                    return;  // Unavailable until error backoff expires.
+                } else {
+                    return m;
+                }
+            }
+        }
+
+        isSyncComplete(processor) {
+            const manifests = this.constructor.getSyncManifests(processor);
+            for (const m of manifests) {
+                const state = this._getSyncState(m);
+                if (!state || state.version !== m.version || (state.error && state.error.ts)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+
+    class AthleteModel extends sauce.db.Model {
+        toString() {
+            if (this.data && this.data.name) {
+                return `<${this.data.name} (${this.pk})>`;
+            } else {
+                return `<Athlete (${this.pk})>`;
+            }
+        }
+
+        setHistoryValues(key, values) {
+            values.sort((a, b) => b.ts - a.ts);
+            this.set(key + 'History', values);
+            return values;
+        }
+
+        isEnabled() {
+            return !!this.data.sync;
+        }
+
+        getFTPAt(ts) {
+            return sauce.model.getAthleteHistoryValueAt(this.data.ftpHistory, ts);
+        }
+
+        getWeightAt(ts) {
+            return sauce.model.getAthleteHistoryValueAt(this.data.weightHistory, ts);
+        }
+
+        setFTPHistory(data) {
+            return this.setHistoryValues('ftp', data);
+        }
+
+        setWeightHistory(data) {
+            return this.setHistoryValues('weight', data);
+        }
+    }
+
 
 
     class HistDatabase extends sauce.db.Database {
@@ -62,8 +361,10 @@ sauce.ns('hist.db', ns => {
                     store.createIndex('activity', 'activity');
                     store.createIndex('athlete-type-period-value', ['athlete', 'type', 'period', 'value']);
                     store.createIndex('type-period-value', ['type', 'period', 'value']);
-                    store.createIndex('athlete-activitytype-type-period-value', ['athlete', 'activityType', 'type', 'period', 'value']);
-                    store.createIndex('activitytype-type-period-value', ['activityType', 'type', 'period', 'value']);
+                    store.createIndex('athlete-activitytype-type-period-value',
+                        ['athlete', 'activityType', 'type', 'period', 'value']);
+                    store.createIndex('activitytype-type-period-value',
+                        ['activityType', 'type', 'period', 'value']);
                     next();
                 }
             }, {
@@ -441,301 +742,6 @@ sauce.ns('hist.db', ns => {
         }
     }
 
-
-    class ActivityModel extends sauce.db.Model {
-        static addSyncManifest(manifest) {
-            if (!this._syncManifests) {
-                this._syncManifests = {};
-            }
-            if (!this._syncManifests[manifest.processor]) {
-                this._syncManifests[manifest.processor] = {};
-            }
-            this._syncManifests[manifest.processor][manifest.name] = Object.assign({
-                errorBackoff: defaultSyncErrorBackoff,
-            }, manifest);
-        }
-
-        static getSyncManifests(processor, name) {
-            if (!processor) {
-                throw new TypeError("processor required");
-            }
-            const proc = this._syncManifests[processor];
-            if (name) {
-                const m = proc[name];
-                return m ? [m] : [];
-            } else {
-                return Object.values(proc);
-            }
-        }
-
-        static getSyncManifest(processor, name) {
-            if (!processor || !name) {
-                throw new TypeError("processor and name required");
-            }
-            return this.getSyncManifests(processor, name)[0];
-        }
-
-        // Who we depends ON...
-        static requiredManifests(processor, name) {
-            const manifests = new Set();
-            const bubble = deps => {
-                console.count('requiredManfiests');
-                for (const x of deps) {
-                    const m = this.getSyncManifest(processor, x);
-                    manifests.add(m);
-                    if (m.depends) {
-                        bubble(m.depends);
-                    }
-                }
-            };
-            const root = this.getSyncManifest(processor, name);
-            if (root.depends) {
-                bubble(root.depends);
-            }
-            return [...manifests];
-        }
-
-        // Who depends on US...
-        static dependantManifests(processor, name) {
-            if (!this._dependantManifestsCache) {
-                this._dependantManifestsCache = new Map();
-            }
-            const cacheKey = processor + name;
-            if (this._dependantManifestsCache.has(cacheKey)) {
-                return this._dependantManifestsCache.get(cacheKey);
-            }
-            const allManifests = this.getSyncManifests(processor);
-            const manifests = new Set();
-            const cascade = _name => {
-                for (const x of allManifests) {
-                    if (x.depends && x.depends.includes(_name)) {
-                        manifests.add(x);
-                        cascade(x.name);
-                    }
-                }
-            };
-            cascade(name);
-            const r = Object.freeze(Array.from(manifests));
-            this._dependantManifestsCache.set(cacheKey, r);
-            return r;
-        }
-
-        toString() {
-            if (this.data && this.data.ts) {
-                return `<Activity (${this.pk}) - ${(new Date(this.data.ts)).toLocaleDateString()}>`;
-            } else {
-                return `<Activity (${this.pk})>`;
-            }
-        }
-
-        getLocaleDay() {
-            return sauce.date.toLocaleDayDate(this.data.ts);
-        }
-
-        getTSS() {
-            return sauce.model.getActivityTSS(this.data);
-        }
-
-        _getSyncState(manifest) {
-            const processor = manifest.processor;
-            const name = manifest.name;
-            if (!processor || !name) {
-                throw new TypeError("processor and name required");
-            }
-            return this.data.syncState &&
-                this.data.syncState[processor] &&
-                this.data.syncState[processor][name];
-        }
-
-        _setSyncState(manifest, state, options={}) {
-            const processor = manifest.processor;
-            const name = manifest.name;
-            if (!processor || !name) {
-                throw new TypeError("processor and name required");
-            }
-            const hasError = state.error && state.error.ts;
-            if (hasError && !state.version) {
-                throw new TypeError("Cannot set 'error' without 'version'");
-            }
-            if (!options.noRecurse) {
-                for (const dep of this.constructor.dependantManifests(manifest.processor, manifest.name)) {
-                    // It might be safe to clear deps in error state too, but I'm being
-                    // paranoid for now in the offchance that I'm missing a way that this
-                    // could break backoff handling (i.e. runaway processing).
-                    if (!this.hasSyncError(dep)) {
-                        this.clearSyncState(dep);
-                    }
-                }
-            }
-            const sync = this.data.syncState = this.data.syncState || {};
-            const proc = sync[processor] = sync[processor] || {};
-            proc[name] = state;
-            this._updated.add('syncState');
-        }
-
-        setSyncSuccess(manifest) {
-            const state = this._getSyncState(manifest) || {};
-            if (state.error && state.error.ts) {
-                throw new TypeError("'clearSyncState' not used before 'setSyncSuccess'");
-            }
-            delete state.error;
-            state.version = manifest.version;
-            this._setSyncState(manifest, state);
-        }
-
-        setSyncError(manifest, e) {
-            const state = this._getSyncState(manifest) || {};
-            state.version = manifest.version;
-            const error = state.error = state.error || {count: 0};
-            error.count++;
-            error.ts = Date.now();
-            error.message = e.message;
-            this._setSyncState(manifest, state);
-        }
-
-        hasSyncSuccess(manifest) {
-            const state = this._getSyncState(manifest);
-            return !!(state && state.version === manifest.version && !(state.error && state.error.ts));
-        }
-
-        getSyncError(manifest) {
-            const state = this._getSyncState(manifest);
-            const error = state && state.error;
-            return (error && error.ts) ? (error.message || 'error') : undefined;
-        }
-
-        hasSyncError(manifest) {
-            const state = this._getSyncState(manifest);
-            return !!(state && state.error && state.error.ts);
-        }
-
-        hasAnySyncErrors(processor) {
-            const manifests = this.constructor.getSyncManifests(processor);
-            return manifests.some(m => this.hasSyncError(m));
-        }
-
-        clearSyncState(manifest) {
-            const state = this._getSyncState(manifest);
-            if (state) {
-                let altered;
-                if (state.error && state.error.ts) {
-                    // NOTE: Do not delete error.count.  We need this to perform backoff
-                    delete state.error.ts;
-                    delete state.error.message;
-                    altered = true;
-                }
-                if (state.version) {
-                    delete state.version;
-                    altered = true;
-                }
-                if (altered) {
-                    this._setSyncState(manifest, state);
-                }
-            }
-        }
-
-        nextAvailManifest(processor) {
-            const manifests = this.constructor.getSyncManifests(processor);
-            if (!manifests) {
-                throw new TypeError("Invalid sync processor");
-            }
-            const states = new Map(manifests.map(m => [m.name, this._getSyncState(m)]));
-            const completed = new Set();
-            const pending = new Set();
-            // Pass 1: Compile completed and pending sets without dep evaluation.
-            for (const m of manifests) {
-                const state = states.get(m.name);
-                if (state && state.version === m.version && (!state.error || !state.error.ts)) {
-                    completed.add(m.name);
-                } else {
-                    pending.add(m.name);
-                }
-            }
-            if (!pending.size) {
-                return;
-            }
-            const manifestsMap = new Map(manifests.map(x => [x.name, x]));
-            const tainted = new Set();
-            let idle;
-            do {
-                idle = true;
-                // Pass 2: Triage the deps until no further taints are discovered...
-                for (const name of setUnion(completed, pending)) {
-                    const manifest = manifestsMap.get(name);
-                    if (!manifest.depends) {
-                        continue;
-                    }
-                    for (const x of setUnion(pending, tainted)) {
-                        if (manifest.depends.includes(x)) {
-                            completed.delete(name);
-                            pending.delete(name);
-                            tainted.add(name);
-                            idle = false;
-                            break;
-                        }
-                    }
-                }
-            } while (!idle);
-            for (const name of pending) {
-                const m = manifestsMap.get(name);
-                const state = states.get(name);
-                const e = state && state.error;
-                if (e && e.ts && Date.now() - e.ts < m.errorBackoff * (2 ** e.count)) {
-                    return;  // Unavailable until error backoff expires.
-                } else {
-                    return m;
-                }
-            }
-        }
-
-        isSyncComplete(processor) {
-            const manifests = this.constructor.getSyncManifests(processor);
-            for (const m of manifests) {
-                const state = this._getSyncState(m);
-                if (!state || state.version !== m.version || (state.error && state.error.ts)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-
-
-    class AthleteModel extends sauce.db.Model {
-        toString() {
-            if (this.data && this.data.name) {
-                return `<${this.data.name} (${this.pk})>`;
-            } else {
-                return `<Athlete (${this.pk})>`;
-            }
-        }
-
-        setHistoryValues(key, values) {
-            values.sort((a, b) => b.ts - a.ts);
-            this.set(key + 'History', values);
-            return values;
-        }
-
-        isEnabled() {
-            return !!this.data.sync;
-        }
-
-        getFTPAt(ts) {
-            return sauce.model.getAthleteHistoryValueAt(this.data.ftpHistory, ts);
-        }
-
-        getWeightAt(ts) {
-            return sauce.model.getAthleteHistoryValueAt(this.data.weightHistory, ts);
-        }
-
-        setFTPHistory(data) {
-            return this.setHistoryValues('ftp', data);
-        }
-
-        setWeightHistory(data) {
-            return this.setHistoryValues('weight', data);
-        }
-    }
 
 
     class SyncLogsStore extends sauce.db.DBStore {

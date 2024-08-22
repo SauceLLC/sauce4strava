@@ -100,7 +100,8 @@ sauce.ns('template', ns => {
             evaluate: /<%([\s\S]+?)%>/g,
             localePrefix: '',
         }, settingsOverrides);
-        settings.helpers = Object.fromEntries(Object.entries(ns.helpers).map(([k, fn]) => ([k, fn.bind({settings})])));
+        settings.helpers = Object.fromEntries(Object.entries(ns.helpers).map(([k, fn]) =>
+            ([k, fn.bind({settings})])));
         const noMatch = /(.)^/;
         // Combine delimiters into one regular expression via alternation.
         const matcher = RegExp([
@@ -125,7 +126,9 @@ sauce.ns('template', ns => {
         let index = 0;
         const localeKeys = [];
         const staticCalls = [];
-        text.replace(matcher, (match, localeLookup, locale, shName, shArg, escape, interpolate, evaluate, offset) => {
+        text.replace(matcher, (
+            match, localeLookup, locale, shName, shArg, escape, interpolate, evaluate, offset
+        ) => {
             code.push(`__p.push('${text.slice(index, offset).replace(escapeRegExp, escapeChar)}');\n`);
             index = offset + match.length;
             if (localeLookup) {

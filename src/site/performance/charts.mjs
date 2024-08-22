@@ -295,7 +295,7 @@ class SauceChart extends Chart {
 
 export class ActivityTimeRangeChart extends SauceChart {
     constructor(ctx, view, config) {
-        let _this;
+        let _this = undefined;
         config = config || {};
         setDefault(config, 'type', 'line');
         setDefault(config, 'plugins[]', new ChartVisibilityPlugin(config, view));
@@ -381,7 +381,7 @@ export class ActivityTimeRangeChart extends SauceChart {
             return [ds, i];
         }).filter(([ds, i]) => ds && ds.data && ds.label && typeof i === 'number' && i >= 0);
         // Interrogate valid highlighted datasets first...
-        for (let [ds, idx] of adjHiTuples) {
+        for (const [ds, idx] of adjHiTuples) {
             const data = ds.data[idx];
             if (!data || !data.b) {
                 continue;
@@ -535,6 +535,7 @@ export class ActivityTimeRangeChart extends SauceChart {
             const d = new Date(tick.value);
             const m = d.getMonth();
             const y = d.getFullYear();
+            debugger;
             const showMonth = lastMonth != null && lastMonth != m;
             const showYear = lastYear != null && lastYear != y;
             lastMonth = m;
@@ -625,7 +626,7 @@ export class ChartView extends views.PerfView {
         }
     }
 
-    async onChartClick(ev) {
+    onChartClick(ev) {
         const box = this.chart.chartArea;
         if (!box ||
             ev.offsetX < box.left ||

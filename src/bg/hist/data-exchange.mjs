@@ -78,7 +78,7 @@ export class DataExchange extends sauce.proxy.Eventing {
         // Use a size estimate scheme to try and stay within platform limits.
         let sizeEstimate = 0;
         const sizeLimit = 4 * 1024 * 1024;
-        let batch = [];
+        const batch = [];
         const dispatch = () => {
             const ev = new Event('data');
             ev.data = batch.map(JSON.stringify);
@@ -222,8 +222,8 @@ export class DataExchange extends sauce.proxy.Eventing {
         const dir = athleteName.replace(/[^a-zA-Z0-9]/g, '');
         for (let offt = 0; offt < activities.length; offt += step) {
             const actsBatch = activities.slice(offt, offt + step);
-            const streamsBatch = await streamsStore.getManyForActivities(actsBatch.map(x => x.id), {index: 'activity',
-                _skipClone: true, _skipCache: true});
+            const streamsBatch = await streamsStore.getManyForActivities(actsBatch.map(x => x.id),
+                {index: 'activity', _skipClone: true, _skipCache: true});
             console.debug("Adding FIT files to ZIP archive", offt + actsBatch.length, activities.length);
             for (const [i, streams] of streamsBatch.entries()) {
                 const act = actsBatch[i];
@@ -245,7 +245,8 @@ export class DataExchange extends sauce.proxy.Eventing {
                 serializer.start();
                 serializer.loadStreams(streams);
                 const file = serializer.toFile();
-                if (zip.size + file.size > maxSize) {  // file.size is uncompressed but we don't want to go over.
+                // file.size is uncompressed but we don't want to go over..
+                if (zip.size + file.size > maxSize) {
                     this.dispatchBlobURL(zip.getBlob());
                     zip = new SauceZip();
                 }
