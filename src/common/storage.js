@@ -4,9 +4,15 @@ sauce.ns('storage', ns => {
     "use strict";
 
 
+    function isServiceWorker() {
+        const Klass = self.ServiceWorkerGlobalScope;
+        return Klass && self instanceof Klass;
+    }
+
+
     function maybeExport(fn, options) {
         // storage is used in ext pages where proxy is not used.
-        if (sauce.proxy && sauce.proxy.export && !browser.runtime.getBackgroundPage) {
+        if (sauce.proxy && sauce.proxy.export && !isServiceWorker()) {
             sauce.proxy.export(fn, {namespace: 'storage', ...options});
         }
     }
