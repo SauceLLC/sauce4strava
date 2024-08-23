@@ -1154,6 +1154,9 @@
         "message": "同步设置",
         "description": "IMMUTABLE"
     },
+    "sync_control_panel_sync_logs": {
+        "message": "同步日志"
+    },
     "sync_control_panel_enable_sync_and_get_started": {
         "message": "启用同步并开始使用！",
         "description": "IMMUTABLE"

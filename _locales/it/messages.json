@@ -905,6 +905,9 @@
     "sync_control_panel_sync_settings": {
         "message": "Impostazioni di sincronizzazione"
     },
+    "sync_control_panel_sync_logs": {
+        "message": "Sincronizzazione dei registri"
+    },
     "sync_control_panel_enable_sync_and_get_started": {
         "message": "Attiva la sincronizzazione e inizia!"
     },

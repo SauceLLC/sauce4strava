@@ -920,6 +920,9 @@
     "sync_control_panel_sync_settings": {
         "message": "Synchronisierungseinstellungen"
     },
+    "sync_control_panel_sync_logs": {
+        "message": "Synchronisierungsprotokolle"
+    },
     "sync_control_panel_enable_sync_and_get_started": {
         "message": "Synchronisierung aktivieren und loslegen!"
     },

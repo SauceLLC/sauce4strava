@@ -914,6 +914,9 @@
     "sync_control_panel_sync_settings": {
         "message": "Paramètres de synchronisation"
     },
+    "sync_control_panel_sync_logs": {
+        "message": "Synchroniser les journaux"
+    },
     "sync_control_panel_enable_sync_and_get_started": {
         "message": "Activez la synchronisation et lancez-vous !"
     },

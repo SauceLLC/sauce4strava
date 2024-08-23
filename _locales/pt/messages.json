@@ -996,6 +996,9 @@
     "sync_control_panel_sync_settings": {
         "message": "Configurações de sincronização"
     },
+    "sync_control_panel_sync_logs": {
+        "message": "Sincronizar Logs"
+    },
     "sync_control_panel_enable_sync_and_get_started": {
         "message": "Ative a sincronização e inicie!",
         "description": "IMMUTABLE"
