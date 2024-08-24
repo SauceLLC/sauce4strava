@@ -2133,7 +2133,6 @@ class SyncManager extends EventTarget {
             } else {
                 athlete.set('lastSyncVersionHash', options.syncHash);
                 athlete.set('lastSync', Date.now());
-                console.error("set last sync, ie. push off next sync for half a day");
             }
             await this._athleteLock.acquire();
             try {

@@ -91,7 +91,7 @@ sauce.ns('proxy', ns => {
                 const connectBackgroundProxyPort = () => {
                     bgPort = browser.runtime.connect({name: `sauce-proxy-port`});
                     bgPort.onDisconnect.addListener(p => {
-                        console.warn('bg proxy port shutdown (sw is probably dead)', pid, args);
+                        console.info('Background proxy port shutdown (sw is probably dead)', pid, args);
                         bgPort = null;
                         disconnected.add(connectBackgroundProxyPort);
                     });
@@ -117,12 +117,10 @@ sauce.ns('proxy', ns => {
                     if (!bgPort) {
                         // Unlikely: The background page should have revived us.
                         console.warn("Restarting background connection/worker [from proxy port]...");
-                        debugger;
                         disconnected.delete(connectBackgroundProxyPort);
                         await connectBackgroundProxyPort();
                     } else if (connecting) {
                         // Very unlikely...
-                        debugger;
                         await connecting;
                     }
                     bgPort.postMessage(ev.data);

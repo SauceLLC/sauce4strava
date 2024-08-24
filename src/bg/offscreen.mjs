@@ -40,7 +40,7 @@ browser.runtime.onConnect.addListener(port => {
     port.onDisconnect.addListener((...args) => {
         // WARNING: We must close when the SW dies to prevent bugs with other runtime
         // based message happening betweeen the SW and the content scripts.
-        console.warn("Service worker connection terminated: Closing...");
+        console.info("Service worker connection terminated: Closing...");
         close();
     });
 });

@@ -258,7 +258,7 @@ sauce.ns('hist.db', ns => {
                 const state = states.get(name);
                 const e = state && state.error;
                 if (e && e.ts && Date.now() - e.ts < m.errorBackoff * (2 ** e.count)) {
-                    debugger; // XXX can we continue and see if another pending is acceptable?
+                    // XXX can we continue and see if another pending is acceptable?
                     return;  // Unavailable until error backoff expires.
                 } else {
                     return m;
