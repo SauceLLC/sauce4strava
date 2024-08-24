@@ -2104,6 +2104,14 @@ class SyncManager extends EventTarget {
         syncJob.addEventListener('log', ev => this.emitForAthlete(athlete, 'log', ev.data));
         this.emitForAthlete(athlete, 'active', {active: true, athlete: athlete.data});
         this.activeJobs.set(athleteId, syncJob);
+        await this._athleteLock.acquire();
+        try {
+            // Reset lastSync value so any restarts of the worker will pick back up immediately.
+            // See nextSyncDeadline for details.
+            await athlete.save({lastSync: 0});
+        } finally {
+            this._athleteLock.release();
+        }
         syncJob.run(options);
         try {
             await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
@@ -2125,6 +2133,7 @@ class SyncManager extends EventTarget {
             } else {
                 athlete.set('lastSyncVersionHash', options.syncHash);
                 athlete.set('lastSync', Date.now());
+                console.error("set last sync, ie. push off next sync for half a day");
             }
             await this._athleteLock.acquire();
             try {
