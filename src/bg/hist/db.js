@@ -749,7 +749,7 @@ sauce.ns('hist.db', ns => {
             super(histDatabase, 'sync-logs');
         }
 
-        async getLogs(athleteId, {limit=100}={}) {
+        async getLogs(athleteId, {limit}={}) {
             let q;
             if (athleteId != null) {
                 q = IDBKeyRange.bound([athleteId, -Infinity], [athleteId, Infinity]);

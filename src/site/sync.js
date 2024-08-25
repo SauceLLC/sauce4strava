@@ -342,6 +342,14 @@ sauce.ns('sync', ns => {
         });
         const $buttons = $modal.siblings('.ui-dialog-buttonpane');
         const $logs = $modal.find('section.sync-logs .logs');
+        $modal.find('.download-logs').on('click', async ev => {
+            const fullLogs = await syncController.getLogs({limit: null});
+            const blob = new Blob([fullLogs.map(x =>
+                `${(new Date(x.ts)).toISOString()} ` +
+                `[${x.level.toUpperCase().padEnd(5, ' ')}] ` +
+                `${x.message}`).join('\n')]);
+            sauce.ui.downloadBlob(blob, `sauce-sync-${athlete.id}.log`);
+        });
 
         const curLogs = [];
         function appendLogs(records) {
@@ -353,7 +361,7 @@ sauce.ns('sync', ns => {
             curLogs.sort((a, b) => b.ts - a.ts);
             const $cleaner = jQuery('<div></div>');
             $logs.html(curLogs.map(x => `<div class="log-entry" data-level="${x.level}">
-                <div class="time">${H.time(x.ts)}</div>
+                <div class="time">${H.datetime(x.ts, {concise: true, style: 'short'})}</div>
                 <div class="level">${x.level.toUpperCase()}</div>
                 <div class="message">${$cleaner.text(x.message).html()}</div>
             </div>`).join('\n'));
@@ -376,7 +384,7 @@ sauce.ns('sync', ns => {
                 athlete,
                 el: $modal.find('.entry.history.weight')
             });
-            syncController.getLogs().then(appendLogs);  // bg okay
+            syncController.getLogs({limit: 1000}).then(appendLogs);  // bg okay
             await Promise.all([_ftpView.render(), _weightView.render(), updateHRZones()]);
         }
 
@@ -386,24 +394,22 @@ sauce.ns('sync', ns => {
             counts = counts || await sauce.hist.activityCounts(athlete.id);
             const total = counts.total - counts.unavailable;
             const synced = counts.processed;
-            const title =
-                `${locale.total}: ${counts.total}\n` +
-                `${locale.imported}: ${counts.imported}\n` +
-                `${locale.unavailable}: ${counts.unavailable}\n` +
-                `${locale.remaining}: ${counts.total - counts.unavailable - counts.imported}\n` +
-                `${locale.processed}: ${counts.processed}\n` +
-                `${locale.unprocessable}: ${counts.unprocessable}\n`;
+            const details = [
+                [locale.total, H.number(counts.total)],
+                [locale.imported, H.number(counts.imported)],
+                [locale.unavailable, H.number(counts.unavailable)],
+                [locale.remaining, H.number(counts.total - counts.unavailable - counts.imported)],
+                [locale.processed, H.number(counts.processed)],
+                [locale.unprocessable, H.number(counts.unprocessable)]
+            ];
             const $synced = $modal.find('.entry.synced');
-            $synced.attr('title', title);
+            $synced.attr('title', details.map(x => x.join(': ')).join('\n'));
             $synced.find('progress').attr('value', synced / total);
-            const $syncedDetails = $synced.find('.active-details');
             if (synced === total) {
                 $synced.find('.text').html(`100% | ${synced.toLocaleString()} ${locale.activities}`);
-                $syncedDetails.html('');
             } else {
                 $synced.find('.text').html(
                     `${synced.toLocaleString()} of ${total.toLocaleString()} ${locale.activities}`);
-                $syncedDetails.html(title);
             }
         }
 

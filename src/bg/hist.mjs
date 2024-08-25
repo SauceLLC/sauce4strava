@@ -1212,6 +1212,7 @@ class SyncJob extends EventTarget {
         this.setStatus('complete');
         const duration = Math.round((Date.now() - start) / 1000);
         this.logInfo(`Sync completed in ${duration.toLocaleString()} seconds for: ` + this.athlete);
+        await syncLogsStore.trimLogs(this.athlete.pk, 5000);
     }
 
     emit(name, data) {
@@ -2311,8 +2312,8 @@ class SyncController extends sauce.proxy.Eventing {
         return this.state;
     }
 
-    async getLogs() {
-        return await syncLogsStore.getLogs(this.athleteId);
+    async getLogs(options) {
+        return await syncLogsStore.getLogs(this.athleteId, options);
     }
 }
 sauce.proxy.export(SyncController, {namespace});
