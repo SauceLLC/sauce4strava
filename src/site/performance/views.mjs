@@ -1312,8 +1312,8 @@ export class PageView extends PerfView {
         this.syncButtons = new Map();
         const f = router.filters;
         this.schedUpdateActivities = sauce.debounced(this._schedUpdateActivities);
-        await this.setAthleteId(f.athleteId);
         this._setRangeFromRouter();
+        await this.setAthleteId(f.athleteId);
         this.summaryView = new SummaryView({pageView: this});
         this.mainView = new MainView({pageView: this});
         this.detailsView = new DetailsView({pageView: this});
