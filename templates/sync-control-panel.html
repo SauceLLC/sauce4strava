@@ -38,17 +38,18 @@
             <div class="entry enable">
                 <key>{{{enabled}}}:</key>
                 <value><input name="enable" type="checkbox" {{athlete.sync ? 'checked' : ''}}/></value>
-            </div>
-
-            <div class="entry status">
-                <key>{{{status}}}:</key>
-                <value></value>
                 <div class="btn btn-sm sync-stop"
                      title="{{{sync_stop_tooltip}}}">{{=icon stop-circle-regular=}}</div>
                 <div class="btn btn-sm sync-start"
                      title="{{{sync_start_tooltip}}}">{{=icon play-circle-regular=}}</div>
                 <div class="btn btn-sm sync-recompute"
                      title="{{{sync_recompute_tooltip}}}">{{=icon redo-solid=}}</div>
+            </div>
+
+            <div class="entry status">
+                <key>{{{status}}}:</key>
+                <value></value>
+                <div class="job-status"></div>
             </div>
 
             <div class="entry synced">
