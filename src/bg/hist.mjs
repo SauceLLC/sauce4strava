@@ -2304,8 +2304,7 @@ class SyncController extends sauce.proxy.Eventing {
     }
 
     getState() {
-        console.warn("DEPRECATED: SyncController::getState");
-        debugger;// XXX dangerous. can become out of congruence with syncManager
+        // XXX dangerous. Can become out of congruence with syncManager
         return this.state;
     }
 
