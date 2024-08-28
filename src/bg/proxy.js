@@ -30,8 +30,12 @@ sauce.ns('proxy', ns => {
             console.warn("Unexpected extension port usage");
             return;
         }
-        console.debug("Accepting new connection from tab:", port.sender.tab.id);
-        connectedTabs.add(port.sender.tab.id);
+        const tabId = port.sender.tab?.id;
+        const senderType = tabId != null ? 'tab' : 'other';
+        console.debug(`Accepting new proxy connection [${senderType}]:`, tabId);
+        if (tabId != null) {
+            connectedTabs.add(tabId);
+        }
         const handleBackgroundProxyCall = async data => {
             if (data.type && data.type === 'sauce-proxy-establish-port') {
                 port.onMessage.removeListener(handleBackgroundProxyCall);
@@ -62,8 +66,8 @@ sauce.ns('proxy', ns => {
         };
         port.onMessage.addListener(handleBackgroundProxyCall);
         port.onDisconnect.addListener(() => {
-            console.debug("Tab disconnected:", port.sender.tab.id);
-            connectedTabs.delete(port.sender.tab.id);
+            console.debug("Proxy client disconnected:", tabId);
+            connectedTabs.delete(tabId);
             return void (port = null);}); // Not reliable on chrome.
     });
 });

@@ -115,8 +115,7 @@ sauce.ns('proxy', ns => {
                 };
                 port.addEventListener('message', async ev => {
                     if (!bgPort) {
-                        // Unlikely: The background page should have revived us.
-                        console.warn("Restarting background connection/worker [from proxy port]...");
+                        console.info("Restarting background connection/worker [from proxy port]...");
                         disconnected.delete(connectBackgroundProxyPort);
                         await connectBackgroundProxyPort();
                     } else if (connecting) {
