@@ -32,7 +32,7 @@ sauce.ns('proxy', ns => {
                 }
                 ns.isConnected = true;
                 bgConnecting = null;
-                console.info("Connection to background established");
+                console.info("Connection to background worker established");
                 for (const cb of Array.from(disconnected)) {
                     disconnected.delete(cb);
                     cb().catch(e => void console.error("Failed to wake up bg proxy port:", e));
