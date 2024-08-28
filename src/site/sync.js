@@ -54,7 +54,7 @@ sauce.ns('sync', ns => {
             $btn.removeClass('enabled sync-active');
             setStatus('Sync disabled', {timeout: 5000});
         });
-        controller.isActiveSync().then(x => $btn.toggleClass('sync-active', x));
+        controller.isSyncActive().then(x => $btn.toggleClass('sync-active', x));
         return controller;
     }
 
@@ -342,6 +342,7 @@ sauce.ns('sync', ns => {
         });
         const $buttons = $modal.siblings('.ui-dialog-buttonpane');
         const $logs = $modal.find('section.sync-logs .logs');
+        const $jobStatus = $modal.find('.entry.status .job-status');
         $modal.find('.download-logs').on('click', async ev => {
             const fullLogs = await syncController.getLogs({limit: null});
             const blob = new Blob([fullLogs.map(x =>
@@ -366,6 +367,11 @@ sauce.ns('sync', ns => {
                 <div class="message">${$cleaner.text(x.message).html()}</div>
             </div>`).join('\n'));
         }
+
+        function setJobStatus(status, ) {
+            $jobStatus.text(status);
+        }
+
 
         async function updateHRZones() {
             $modal.find('.hr-zones-panel').html(await hrZonesTpl({athlete}));
@@ -424,31 +430,34 @@ sauce.ns('sync', ns => {
 
         let rateLimiterInterval;
         async function setActive(active) {
+            clearInterval(rateLimiterInterval);
             if (active) {
                 $modal.addClass('sync-active');
                 $buttons.addClass('sync-active');
                 $modal.removeClass('has-error');
-                $modal.find('.entry.status value').text('Running...');
+                $modal.find('.entry.status value').text('Running');
                 $modal.find('.entry.last-sync value').empty();
                 $modal.find('.entry.next-sync value').empty();
                 $modal.find('.entry.synced progress').removeAttr('value');
                 $modal.find('.entry.synced .text').empty();
-                clearInterval(rateLimiterInterval);
+                setJobStatus(await syncController.getStatus());
                 rateLimiterInterval = setInterval(async () => {
                     const resumes = await syncController.rateLimiterResumes();
                     if (resumes && resumes - Date.now() > 10000) {
                         const resumesLocale = H.datetime(resumes, {concise: true});
-                        $modal.find('.entry.status value').text(`${locale.delayed_until}: ${resumesLocale}`);
+                        $modal.find('.entry.status value')
+                            .text(`${locale.delayed_until}: ${resumesLocale}`);
                     }
                 }, 2000);
             } else {
-                clearInterval(rateLimiterInterval);
                 $modal.removeClass('sync-active');
                 $buttons.removeClass('sync-active');
                 $modal.find('.entry.status value').text('Idle');
+                // Pull in latests athlete values like ftp, weight, hr zones..
                 athlete = await sauce.hist.getAthlete(athleteId);
-                await Promise.all([updateSyncCounts(), updateSyncTimes(), updateHRZones()]);
+                await updateHRZones();
             }
+            await Promise.all([updateSyncCounts(), updateSyncTimes()]);
         }
 
         const listeners = {
@@ -461,7 +470,8 @@ sauce.ns('sync', ns => {
             "enable": ev => void ($modal.find('input[name="enable"]')[0].checked = true),
             "disable": ev => void ($modal.find('input[name="enable"]')[0].checked = false),
             "importing-athlete": ev => void setAthlete(ev.data),
-            "log": ev => appendLogs([ev.data]),
+            "log": ev => void appendLogs([ev.data]),
+            "status": ev => void setJobStatus(ev.data),
         };
         for (const [event, cb] of Object.entries(listeners)) {
             syncController.addEventListener(event, cb);
@@ -565,12 +575,7 @@ sauce.ns('sync', ns => {
             }
         });
         if (initiallyEnabled) {
-            await Promise.all([updateSyncCounts(), updateSyncTimes()]);
-            if (await syncController.isActiveSync()) {
-                setActive(true);
-            } else {
-                $modal.find('.entry.status value').text('Idle');
-            }
+            await setActive(await syncController.isSyncActive());
         } else {
             $modal.addClass('sync-disabled');
         }
