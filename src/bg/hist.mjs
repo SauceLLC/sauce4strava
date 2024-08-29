@@ -1198,9 +1198,9 @@ class SyncJob extends EventTarget {
                 await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
             }
         }
-        this.setStatus('data-sync');
+        this.setStatus('data-processing');
         try {
-            await this._syncData();
+            await this._processData();
         } catch(e) {
             this.setStatus('error');
             throw e;
@@ -1237,8 +1237,8 @@ class SyncJob extends EventTarget {
                 data = await resp.json();
             } catch(e) {
                 // If the credentials are not valid Strava returns HTML
-                // This would seem impossible, but with addons like Facebook Containers
-                // it can happen and has happend to some users.
+                // This would seem impossible, but with add-ons like Facebook Containers
+                // it can happen and has happened to some users.
                 break;
             }
             let batch = [];
@@ -1335,8 +1335,8 @@ class SyncJob extends EventTarget {
                         return await resp.json();
                     } catch(e) {
                         // If the credentials are not valid Strava returns HTML
-                        // This would seem impossible, but with addons like Facebook Containers
-                        // it can happen and has happend to some users.
+                        // This would seem impossible, but with add-ons like Facebook Containers
+                        // it can happen and has happened to some users.
                         return;
                     }
                 })());
@@ -1599,7 +1599,7 @@ class SyncJob extends EventTarget {
         }
     }
 
-    async _syncData() {
+    async _processData() {
         const activities = await actsStore.getAllForAthlete(this.athlete.pk, {models: true});
         this.allActivities = new Map(activities.map(x => [x.pk, x]));
         const unfetched = [];
@@ -2020,7 +2020,7 @@ class SyncManager extends EventTarget {
 
     runningJobsCount() {
         let c = 0;
-        for (const x of this.activeJobs) {
+        for (const x of this.activeJobs.values()) {
             if (x.running) {
                 c++;
             }
