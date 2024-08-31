@@ -4,7 +4,7 @@ sauce.ns('proxy', ns => {
     'use strict';
 
     const connectedTabs = new Set();
-    let localConnIdSeq = 0;
+    let localConnIdSeq = 1;
 
     let _ready;
     const ready = new Promise(resolve => {
