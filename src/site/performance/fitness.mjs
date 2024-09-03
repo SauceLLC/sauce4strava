@@ -14,10 +14,11 @@ const D = sauce.date;
 
 function humanKJ(kj, options={}) {
     let val, unit;
-    if (kj >= 10000000) {
+    const minUnit = Math.max(kj, options.minUnit || 0);
+    if (minUnit >= 10000000) {
         val = H.number(kj / 1000000);
         unit = 'gJ';
-    } else if (kj >= 100000) {
+    } else if (minUnit >= 100000) {
         val = H.number(kj / 1000);
         unit = 'mJ';
     } else {
@@ -502,7 +503,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_activity_stats_name';
     static descLocaleKey = 'performance_activity_stats_desc';
     static localeKeys = [
-        'predicted', '/analysis_time', '/analysis_distance', '/analysis_energy',
+        'predicted', '/analysis_time', '/analysis_distance', '/analysis_energy', 'elevation_gain',
         ...super.localeKeys
     ];
 
@@ -511,6 +512,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
             ...super.defaultPrefs,
             disabledDatasets: {
                 energy: true,
+                elevation: true,
             },
         };
     }
@@ -522,8 +524,13 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
             'duration': {label: this.LM('analysis_time')},
             'distance': {label: this.LM('analysis_distance')},
             'energy': {label: this.LM('analysis_energy')},
+            'elevation': {label: this.LM('elevation_gain')},
         };
         const distStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
+        const elevationStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 3048 : 1000;
+        const available = Object.keys(this.availableDatasets);
+        const disabled = this.getPrefs('disabledDatasets', {});
+        const enabled = available.filter(x => !disabled[x]);
         this.setChartConfig({
             type: 'bar',
             options: {
@@ -532,14 +539,16 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                         stacked: true,
                         offset: true,
                     }],
+                    // Thinks looks bad if we have more than one left xAxis..
                     yAxes: [{
                         id: 'tss',
+                        position: enabled.indexOf('tss') === 0 ? 'left' : 'right',
                         scaleLabel: {labelString: 'TSS®'},
                         ticks: {min: 0, maxTicksLimit: 6},
                     }, {
                         id: 'duration',
-                        position: 'right',
-                        gridLines: {display: false},
+                        position: enabled.indexOf('duration') === 0 ? 'left' : 'right',
+                        gridLines: {display: enabled.indexOf('duration') === 0},
                         ticks: {
                             min: 0,
                             suggestedMax: 5 * 3600,
@@ -549,8 +558,8 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                         }
                     }, {
                         id: 'distance',
-                        position: 'right',
-                        gridLines: {display: false},
+                        position: enabled.indexOf('distance') === 0 ? 'left' : 'right',
+                        gridLines: {display: enabled.indexOf('distance') === 0},
                         ticks: {
                             min: 0,
                             stepSize: distStepSize,
@@ -559,12 +568,22 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                         },
                     }, {
                         id: 'energy',
-                        position: 'right',
-                        gridLines: {display: false},
+                        position: enabled.indexOf('energy') === 0 ? 'left' : 'right',
+                        gridLines: {display: enabled.indexOf('energy') === 0},
                         ticks: {
                             min: 0,
                             maxTicksLimit: 6,
-                            callback: v => humanKJ(v),
+                            callback: v => humanKJ(v, {minUnit: 100000}),
+                        },
+                    }, {
+                        id: 'elevation',
+                        position: enabled.indexOf('elevation') === 0 ? 'left' : 'right',
+                        gridLines: {display: enabled.indexOf('elevation') === 0},
+                        ticks: {
+                            min: 0,
+                            maxTicksLimit: 5,
+                            stepSize: elevationStepSize,
+                            callback: v =>  H.elevation(v) + '⛰'
                         },
                     }]
                 }
@@ -586,6 +605,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
             const avgTSS = sauce.perf.expWeightedAvg(weighting, this.daily.map(x => x.tss));
             const avgDuration = sauce.perf.expWeightedAvg(weighting, this.daily.map(x => x.duration));
             const avgDistance = sauce.perf.expWeightedAvg(weighting, this.daily.map(x => x.distance));
+            const avgElevation = sauce.perf.expWeightedAvg(weighting, this.daily.map(x => x.altGain));
             predictions = {
                 tss: !disabled.tss && metricData.map((b, i) => ({
                     b,
@@ -606,6 +626,11 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                     b,
                     x: b.date,
                     y: i === metricData.length - 1 ? avgKJ * remaining : null,
+                })),
+                elevation: !disabled.elevation && metricData.map((b, i) => ({
+                    b,
+                    x: b.date,
+                    y: i === metricData.length - 1 ? avgElevation * remaining : null,
                 }))
             };
         }
@@ -708,6 +733,27 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                 data: metricData.map((b, i) => ({b, x: b.date, y: b.kj})),
             });
         }
+        if (!disabled.elevation) {
+            datasets.push({
+                id: 'elevation',
+                label: this.availableDatasets.elevation.label,
+                backgroundColor: '#cb9',
+                borderColor: '#777',
+                hoverBackgroundColor: '#ba8',
+                hoverBorderColor: '#666',
+                yAxisID: 'elevation',
+                stack: 'elevation',
+                tooltipFormat: (x, i) => {
+                    const tips = [`${H.elevation(x, {html: true})}`];
+                    if (predictions && i === metricData.length - 1) {
+                        const pEl = predictions.elevation[i].y + x;
+                        tips.push(`${this.LM('predicted')}: <b>~${H.elevation(pEl, {html: true})}</b>`);
+                    }
+                    return tips;
+                },
+                data: metricData.map((b, i) => ({b, x: b.date, y: b.altGain})),
+            });
+        }
         if (predictions && predictions.tss) {
             datasets.push({
                 id: 'tss',
@@ -754,6 +800,18 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
                 yAxisID: 'energy',
                 stack: 'energy',
                 data: predictions.energy,
+            });
+        }
+        if (predictions && predictions.elevation) {
+            datasets.push({
+                id: 'elevation',
+                backgroundColor: '#cb97',
+                borderColor: '#7777',
+                hoverBackgroundColor: '#ba89',
+                hoverBorderColor: '#6669',
+                yAxisID: 'elevation',
+                stack: 'elevation',
+                data: predictions.elevation,
             });
         }
         this.chart.data.datasets = datasets.map(x => Object.assign({}, commonOptions, x));
