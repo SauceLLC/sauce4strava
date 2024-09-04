@@ -1312,8 +1312,8 @@ export class PageView extends PerfView {
         this.syncButtons = new Map();
         const f = router.filters;
         this.schedUpdateActivities = sauce.debounced(this._schedUpdateActivities);
-        this._setRangeFromRouter();
         await this.setAthleteId(f.athleteId);
+        this._setRangeFromRouter();
         this.summaryView = new SummaryView({pageView: this});
         this.mainView = new MainView({pageView: this});
         this.detailsView = new DetailsView({pageView: this});
@@ -1423,10 +1423,12 @@ export class PageView extends PerfView {
         // we need to treat updated activities from about 42 days before our range
         // start as an update to our activities, because it's very possible the
         // ATL/CTL seed values will be forward propagated into our activity range.
-        const rangeStart = +this._range.start - (42 * 86400 * 1000);
-        if (done.oldest <= this._range.end && done.newest >= rangeStart) {
-            await this.schedUpdateActivities();
-            await this.refreshNewestAndOldest();
+        if (this._range && this._range.start && this._range.end) {
+            const rangeStart = +this._range.start - (42 * 86400 * 1000);
+            if (done.oldest <= this._range.end && done.newest >= rangeStart) {
+                await this.schedUpdateActivities();
+                await this.refreshNewestAndOldest();
+            }
         }
     }
 
