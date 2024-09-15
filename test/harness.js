@@ -69,7 +69,10 @@ function assertEqualArray(a, b, failMessage) {
 }
 
 
-function assertNear(a, b, failMessage, options) {
+function assertNear(a, b, options, failMessage) {
+    if (typeof options !== 'object' && failMessage === undefined) {
+        failMessage = options;
+    }
     options = options || {};
     const epsilon = options.epsilon == null ? 0.000001 : options.epsilon;
     if (Math.abs(a - b) > epsilon) {
@@ -148,21 +151,22 @@ class Runner {
                 const testStart = Date.now();
                 count++;
                 try {
-                    await test();
+                    const ret = test();
                     const elapsed = (Date.now() - testStart).toLocaleString();
                     console.info(`${test.name}: PASS (${elapsed}ms)`);
                     infoLog(`<b>[${count}] ${test.name}</b>: <span style="color: green">PASS</span> (${elapsed}ms)`);
                 } catch(e) {
-                    console.error(`${test.name}: FAIL`);
+                    console.error(`${test.name}: FAIL\n`, e.stack);
                     errorLog(`<b>[${count}] ${test.name}</b>: <span style="color: red">FAIL</span> - ${e.message} ` +
                              `<pre class="stack">${e.stack}</pre>`);
                     throw e;
                 }
+                await new Promise(r => setTimeout(r, 0));
             }
         } finally {
             this._running = false;
         }
-        const elapsed = (((Date.now() - runnerStart) / 1000).toFixed(2)).toLocaleString();
+        const elapsed = (((Date.now() - runnerStart) / 1000).toFixed(3)).toLocaleString();
         console.info(`Ran ${count} tests in ${elapsed}ms`);
         infoLog(`<br/><h2>Ran ${count} tests in ${elapsed}s</h2>`);
     }
