@@ -125,8 +125,12 @@
         <select name="type">
             <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
             <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
-            <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}><attr for="tp">NP®</attr></option>
-            <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
+            <% if (!disableNP) { %>
+                <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}><attr for="tp">NP®</attr></option>
+            <% } %>
+            <% if (!disableXP) { %>
+                <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
+            <% } %>
             <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>
             <option value="gap" {{prefs.type === 'gap' ? 'selected' : ''}}>{{{/analysis_gap}}}</option>
             <option value="hr" {{prefs.type === 'hr' ? 'selected' : ''}}>{{{/analysis_heartrate}}}</option>

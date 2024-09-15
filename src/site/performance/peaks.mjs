@@ -104,10 +104,13 @@ class PeaksControlsView extends views.PerfView {
     }
 
     renderAttrs() {
+        const gOptions = this.panelView.pageView.globalOptions;
         return {
             ...this.attrs,
             peakRanges: this.peakRanges,
             panelPrefs: this.panelView.getPrefs(),
+            disableNP: !!gOptions['analysis-disable-np'],
+            disableXP: !!gOptions['analysis-disable-xp'],
         };
     }
 
@@ -562,7 +565,7 @@ class PeaksMainView extends views.MainView {
 }
 
 
-export default async function load({athletes, router, $page}) {
-    self.pv = new views.PageView({athletes, router, MainView: PeaksMainView, el: $page});
+export default async function load(options) {
+    self.pv = new views.PageView({...options, MainView: PeaksMainView});
     await self.pv.render();
 }

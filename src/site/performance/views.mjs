@@ -573,6 +573,8 @@ export class SummaryView extends PerfView {
             peaks: await this.findPeaks(),
             mostFreqType: this.mostFreqType,
             mostFreqLocaleKey: this.mostFreqType ? this.mostFreqType.type + 's' : null,
+            disableNP: !!this.pageView.globalOptions['analysis-disable-np'],
+            disableXP: !!this.pageView.globalOptions['analysis-disable-xp'],
         };
         return r;
     }
@@ -1305,10 +1307,11 @@ export class PageView extends PerfView {
         };
     }
 
-    async init({router, MainView, athletes, ...options}) {
+    async init({router, MainView, athletes, globalOptions, ...options}) {
         this.router = router;
         this.onSyncProgress = this._onSyncProgress.bind(this);
         this.athletes = athletes;
+        this.globalOptions = globalOptions;
         this.syncButtons = new Map();
         const f = router.filters;
         this.schedUpdateActivities = sauce.debounced(this._schedUpdateActivities);

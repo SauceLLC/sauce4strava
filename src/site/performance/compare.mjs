@@ -13,7 +13,7 @@ class CompareMainView extends views.MainView {
 }
 
 
-export default async function load({athletes, router, $page}) {
-    self.pv = new views.PageView({athletes, router, MainView: CompareMainView, el: $page});
+export default async function load(options) {
+    self.pv = new views.PageView({...options, MainView: CompareMainView});
     await self.pv.render();
 }

@@ -1029,7 +1029,7 @@ class FitnessMainView extends views.MainView {
 }
 
 
-export default async function load({athletes, router, $page}) {
-    self.pv = new views.PageView({athletes, router, MainView: FitnessMainView, el: $page});
+export default async function load(options) {
+    self.pv = new views.PageView({...options, MainView: FitnessMainView});
     await self.pv.render();
 }

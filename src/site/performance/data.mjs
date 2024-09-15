@@ -25,7 +25,6 @@ export function activitiesByDay(acts, start, end, atl=0, ctl=0) {
         const ts = date.getTime();
         const daily = [];
         if (i < acts.length - 1 && acts[i].ts < ts) {
-            debugger;
             throw new Error('Internal Error');
         }
         while (i < acts.length && +D.toLocaleDayDate(acts[i].ts) === ts) {
