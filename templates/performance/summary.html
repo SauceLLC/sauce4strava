@@ -125,10 +125,10 @@
         <select name="type">
             <option value="power" {{prefs.type === 'power' ? 'selected' : ''}}>{{{/analysis_power}}}</option>
             <option value="power_wkg" {{prefs.type === 'power_wkg' ? 'selected' : ''}}>{{{/analysis_power}}} (w/kg)</option>
-            <% if (!disableNP) { %>
-                <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}><attr for="tp">NP®</attr></option>
+            <% if (!sauce.options['analysis-disable-np']) { %>
+                <option value="np" {{prefs.type === 'np' ? 'selected' : ''}}>NP®</option>
             <% } %>
-            <% if (!disableXP) { %>
+            <% if (!sauce.options['analysis-disable-xp']) { %>
                 <option value="xp" {{prefs.type === 'xp' ? 'selected' : ''}}>xPower</option>
             <% } %>
             <option value="pace" {{prefs.type === 'pace' ? 'selected' : ''}}>{{{/analysis_pace}}}</option>

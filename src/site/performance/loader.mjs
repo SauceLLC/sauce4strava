@@ -30,7 +30,6 @@ async function init() {
     let RangeRouter;
     let pageLoad;
     let pageTitle;
-    let globalOptions;
     let enAthletes;
     await Promise.all([
         import('./router.mjs').then(x => RangeRouter = x.default),
@@ -40,7 +39,6 @@ async function init() {
             pageTitle = `${l[menuTitleKey]} | Sauce ${l.performance}`),
         sauce.proxy.connected.then(() => Promise.all([
             sauce.storage.fastPrefsReady(),
-            sauce.storage.get('options').then(x => (globalOptions = x)),
             sauce.hist.getEnabledAthletes().then(x => (enAthletes = x)),
         ])),
     ]);
@@ -48,7 +46,7 @@ async function init() {
     const athletes = new Map(isAvailable ? enAthletes.map(x => [x.id, x]) : []);
     const router = new RangeRouter(urn, pageTitle);
     Backbone.history.start({pushState: true});
-    const args = {athletes, router, pageLoad, globalOptions};
+    const args = {athletes, router, pageLoad};
     if (['interactive', 'complete'].indexOf(document.readyState) === -1) {
         addEventListener('DOMContentLoaded', () => load(args));
     } else {
@@ -57,7 +55,7 @@ async function init() {
 }
 
 
-async function load({athletes, router, pageLoad, globalOptions}) {
+async function load({athletes, router, pageLoad}) {
     for (const x of document.querySelectorAll('body > [data-react-class], body > link')) {
         x.remove();
     }
@@ -70,7 +68,7 @@ async function load({athletes, router, pageLoad, globalOptions}) {
         const view = new views.OnboardingView({el: $page});
         await view.render();
     } else {
-        await pageLoad({athletes, router, el: $page, globalOptions});
+        await pageLoad({athletes, router, el: $page});
     }
 }
 

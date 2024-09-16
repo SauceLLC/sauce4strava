@@ -104,13 +104,10 @@ class PeaksControlsView extends views.PerfView {
     }
 
     renderAttrs() {
-        const gOptions = this.panelView.pageView.globalOptions;
         return {
             ...this.attrs,
             peakRanges: this.peakRanges,
             panelPrefs: this.panelView.getPrefs(),
-            disableNP: !!gOptions['analysis-disable-np'],
-            disableXP: !!gOptions['analysis-disable-xp'],
         };
     }
 
