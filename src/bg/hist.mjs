@@ -107,6 +107,7 @@ ActivityModel.addSyncManifest({
     version: 13, // Updated np and xp (simplified and true)
     depends: ['extra-streams'],
     data: {processor: processors.PeaksProcessorNoWorkerSupport}
+    //data: {processor: processors.PeaksProcessor}
 });
 
 ActivityModel.addSyncManifest({
@@ -148,7 +149,16 @@ class Timeout extends Error {}
 
 class OffscreenDocumentProxy {
 
-    static async factory() {
+    constructor() {
+        this.idleTimeout = 2000 && 1e9;
+        this._pending = new Map();
+        this._callIdCounter = 1;
+        this._connecting = null;
+        this._port = null;
+        this._idleKillId = null;
+    }
+
+    async _connect() {
         const url = browser.runtime.getURL('pages/offscreen.html');
         const existing = await browser.runtime.getContexts({
             contextTypes: ['OFFSCREEN_DOCUMENT'],
@@ -162,30 +172,55 @@ class OffscreenDocumentProxy {
                 justification: 'Safely parse HTML'
             });
         } else {
+            debugger;
             console.info("Using existing offscreen document...");
         }
-        const instance = new this();
-        instance.port = await browser.runtime.connect({name: 'sauce-offscreen-proxy-port'});
-        instance.port.onMessage.addListener(instance._onPortMessage.bind(instance));
-        return instance;
+        this._port = await browser.runtime.connect({name: 'sauce-offscreen-proxy-port'});
+        this._port.onMessage.addListener(this._onPortMessage.bind(this));
+        this._port.onDisconnect.addListener(port => {
+            if (this._port === port) {
+                this._port = null;
+            }
+        });
+        this._connecting = null;
     }
 
-    constructor() {
-        this._pending = new Map();
-        this._callIdCounter = 1;
+    _deferKill() {
+        clearTimeout(this._idleKillId);
+        this._idleKillId = setTimeout(async () => {
+            this._port = null;
+            console.info("Closing idle offscreen document...");
+            this._killing = browser.offscreen.closeDocument();
+            try {
+                await this._killing;
+            } finally {
+                this._killing = null;
+            }
+        }, this.idleTimeout);
     }
 
-    invoke(name, ...args) {
+    async invoke(name, ...args) {
+        if (!this._port) {
+            if (this._killing) {
+                debugger;
+                await this._killing;
+            }
+            if (!this._connecting) {
+                this._connecting = this._connect();
+            }
+            await this._connecting;
+        }
         let resolve, reject;
         const id = this._callIdCounter++;
         const promise = new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
         this._pending.set(id, {resolve, reject});
-        this.port.postMessage({
+        this._port.postMessage({
             op: 'call',
             name,
             args,
             id
         });
+        this._deferKill();
         return promise;
     }
 
@@ -200,8 +235,7 @@ class OffscreenDocumentProxy {
         }
     }
 }
-
-const offscreenProxyPromise = OffscreenDocumentProxy.factory();
+export const offscreenProxy = new OffscreenDocumentProxy();
 
 
 async function networkOnline(timeout) {
@@ -1198,7 +1232,7 @@ class SyncJob extends EventTarget {
                 await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
             }
         }
-        this.setStatus('data-processing');
+        this.setStatus('processing');
         try {
             await this._processData();
         } catch(e) {
@@ -1398,7 +1432,7 @@ class SyncJob extends EventTarget {
     }
 
     async parseRawReactProps(raw) {
-        return await (await offscreenProxyPromise).invoke('parseRawReactProps', raw);
+        return await offscreenProxy.invoke('parseRawReactProps', raw);
     }
 
     groupPhotosToDatabase(stravaData) {
@@ -1623,13 +1657,13 @@ class SyncJob extends EventTarget {
             }
         }
         if (deferCount) {
-            this.logWarn(`Deferring sync of ${deferCount} activities due to error`);
+            this.logWarn(`Deferring processing of ${deferCount} activities due to error`);
         }
         const workers = [];
         if (unfetched.length && !this.options.noStreamsFetch) {
             workers.push(this._fetchStreamsWorker(unfetched));
         } else if (!this._procQueue.size) {
-            this.logDebug("No activity sync required for: " + this.athlete);
+            this.logDebug("No data processing required for: " + this.athlete);
             return;
         } else {
             this._procQueue.putNoWait(null);  // sentinel
@@ -1757,7 +1791,7 @@ class SyncJob extends EventTarget {
     }
 
     async _localProcessWorker() {
-        this.batchLimit = 20;
+        this.batchLimit = 10;
         this.needSave = new Set();
         const done = new Set();
         const batch = new Set();
@@ -1806,7 +1840,7 @@ class SyncJob extends EventTarget {
                 }
             }
             await this._localDrainOffloaded(offloaded, batch);
-            this.batchLimit = Math.min(500, Math.ceil(this.batchLimit * 1.8));
+            this.batchLimit = Math.min(300, Math.ceil(this.batchLimit * 1.5));
             while (batch.size && !this._cancelEvent.isSet()) {
                 const manifestBatches = new Map();
                 for (const a of batch) {
@@ -1956,7 +1990,7 @@ class SyncManager extends EventTarget {
         this.refreshInterval = 12 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 4 * 60 * 60 * 1000;
-        this.maxSyncJobs = 2;
+        this.maxSyncJobs = 10;
         this.currentUser = currentUser;
         this.activeJobs = new Map();
         this.stopping = false;
@@ -2052,14 +2086,8 @@ class SyncManager extends EventTarget {
                 await this._refreshEvent.wait();
             } else {
                 const nextSyncDeadline = Math.min(...athletes.map(x => this.nextSyncDeadline(x)));
-                let deadline = Infinity;
-                for (const athlete of athletes) {
-                    deadline = Math.min(deadline, this.nextSyncDeadline(athlete));
-                }
-                const next = Math.round(deadline / 1000 / 60).toLocaleString();
-                const next2 = Math.round(nextSyncDeadline / 1000 / 60).toLocaleString();
-                console.info(`Next Sync Manager refresh in ${next} minute(s)`);
-                console.info(`Next Sync Manager refresh in ${next2} minute(s)...`);
+                const next = Math.round(nextSyncDeadline / 1000 / 60).toLocaleString();
+                console.info(`Next Sync Manager refresh in ${next} minute(s)...`);
                 await Promise.race([aggressiveSleep(nextSyncDeadline), this._refreshEvent.wait()]);
             }
         }
