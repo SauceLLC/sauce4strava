@@ -1,14 +1,12 @@
-/* global sauce, importScripts */
+/* global sauce */
 
-importScripts('/src/common/base.js');
-self.sauceBaseInit('no-id', 'no-url', 'no-name', '0.0.0');
-importScripts('/src/common/lib.js');
-importScripts('/src/bg/hist/db.js');
-
+import "../../common/base.js";
+import "../../common/base_init.js";
+import "../../common/lib.js";
+import "./db.js";
 import {peaksProcessor} from '/src/bg/hist/peaks.mjs';
 
 
-const minEstPeakPowerPeriod = 300;
 const streamsStore = sauce.hist.db.StreamsStore.singleton();
 
 
@@ -55,7 +53,7 @@ async function processor(athlete, activities, options) {
             x !== 'watts_calc' || options.useEstWatts),
         other: ['time', 'active', 'heartrate', 'watts'],
     });
-    return peaksProcessor(actStreams, athlete, activites, options);
+    return peaksProcessor(actStreams, athlete, activities, options);
 }
 
 

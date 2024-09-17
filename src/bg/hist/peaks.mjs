@@ -101,9 +101,6 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                 hrRoll.add(t, streams.heartrate[i], a);
                 for (let i = 0; i < hrPeriods.length; i++) {
                     const x = hrPeriods[i];
-                    if (t < x.roll.period) {
-                        //continue; // XXX 
-                    }
                     x.roll.resize();
                     if (x.roll.full()) {
                         const value = x.roll.avg();
@@ -118,9 +115,6 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                 const cloneOpts = {inlineNP: false, inlineXP: false};
                 for (let i = 0; i < powerPeriods.length; i++) {
                     const x = powerPeriods[i];
-                    if (t < x.roll.period) {
-                        //continue; // XXX 
-                    }
                     const wr = x.weightedRoll;
                     let np;
                     if (wr) {
@@ -149,9 +143,6 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                 paceRoll.add(t, streams.distance[i]);
                 for (let i = 0; i < pacePeriods.length; i++) {
                     const x = pacePeriods[i];
-                    if (streams.distance[i] < x.roll.period) {
-                        //continue; // XXX 
-                    }
                     x.roll.resize();
                     if (x.roll.full()) {
                         const value = x.roll.avg();
@@ -164,9 +155,6 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                     gapRoll.add(t, streams.grade_adjusted_distance[i]);
                     for (let i = 0; i < gapPeriods.length; i++) {
                         const x = gapPeriods[i];
-                        if (streams.grade_adjusted_distance[i] < x.roll.period) {
-                            //continue; // XXX
-                        }
                         x.roll.resize();
                         if (x.roll.full()) {
                             const value = x.roll.avg();
@@ -196,11 +184,6 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
             }
             if (x.npLeader) {
                 const l = x.npLeader;
-                const npExt = l.roll.np({external: true}); // XXX remove after testing remove after testing remove after testing remove after testing
-                if (Math.abs(l.value - npExt) > 1e-9) {
-                    console.error("different np", l.value, npExt);
-                    debugger;
-                }
                 const power = l.roll.avg({active: false});
                 const rankLevel = isRide ?
                     getRankLevel(l.roll.active(), power, l.value, weight, athlete) :
