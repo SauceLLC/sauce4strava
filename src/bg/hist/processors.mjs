@@ -2,17 +2,22 @@
 
 import * as queues from '/src/common/jscoop/queues.mjs';
 import * as locks from '/src/common/jscoop/locks.mjs';
+import {offscreenProxy} from '/src/bg/hist.mjs';
 
 const actsStore = sauce.hist.db.ActivitiesStore.singleton();
 const peaksStore = sauce.hist.db.PeaksStore.singleton();
 const streamsStore = sauce.hist.db.StreamsStore.singleton();
 
+const minEstPeakPowerPeriod = 300;
+
 
 function withTimeout(promise, delay) {
-    const timeoutError = new Error(`timeout (${delay})`);
-    const sleep = new Promise((_, rej) => setTimeout(() => rej(timeoutError), delay));
-    sleep.catch(() => undefined);  // stop unhandled promise warnings
-    return Promise.race([promise, sleep]);
+    let timeoutId;
+    const timeout = new Promise((_, rej) => {
+        timeoutId = setTimeout(() => rej(new Error(`Promise timeout (${delay})`)), delay);
+    });
+    promise.finally(() => clearTimeout(timeoutId));
+    return Promise.race([promise, timeout]);
 }
 
 
@@ -27,10 +32,10 @@ async function getActivitiesStreams(activities, streamsDesc) {
             const type = a.get('basetype');
             streams = streamsDesc[type === 'run' ? 'run' : type === 'ride' ? 'ride' : 'other'];
         }
+        actStreams.set(a.pk, {});
         for (const stream of streams) {
             streamKeys.push([a.pk, stream]);
         }
-        actStreams.set(a.pk, {});
     }
     const getStreams = streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true});
     for (const x of await withTimeout(getStreams, 120000)) {
@@ -148,6 +153,7 @@ export class OffloadProcessor {
         const maxSize = options.maxSize || 1;
         let deadline = maxWait && Date.now() + maxWait;
         const stop = this._stopEvent.wait();
+        console.warn('getAllIncoming', this, {minWait, maxWait, maxSize, deadline, stop});
         while (!this.stopping) {
             const timeouts = [];
             if (minWait && maxWait) {
@@ -158,17 +164,22 @@ export class OffloadProcessor {
                 timeouts.push(sauce.sleep(maxWait));
             }
             const dataWait = this._incoming.wait({size: maxSize});
+            console.warn('getAllIncoming await race...', this,
+                {minWait, maxWait, maxSize, deadline, stop, timeouts, dataWait});
             await Promise.race([stop, dataWait, this._flushEvent.wait(), ...timeouts]);
             const moreData = dataWait.done();
             if (!moreData) {
+                console.warn('getall', {moreData}, this);
                 dataWait.cancel();
             }
             if (this._stopEvent.isSet()) {
+                console.warn('getall stop event', this);
                 return;
             }
             const size = this._incoming.size;
             const flush = this._flushEvent.isSet();
             if (flush) {
+                console.warn('getall flush (so clear)', {size}, this);
                 this._flushEvent.clear();
                 if (!size) {
                     // We're just waiting for out-of-band work to finish.
@@ -177,13 +188,17 @@ export class OffloadProcessor {
             } else if (moreData && size < maxSize && Date.now() < deadline) {
                 // We are still within the constraints and have a positive ingest rate.
                 // Continue waiting for stagnation or other events.
+                console.warn('getall fcontineut to wait because we think there is more.l.',
+                    {moreData, size, maxSize, deadline}, this);
                 continue;
             }
             deadline = maxWait && Date.now() + maxWait;
             if (!size) {
+                console.warn('getall no size continue...', {size, deadline}, this);
                 continue;
             }
             const items = this._incoming.getAllNoWait();
+            console.warn('getall DO IT!!!!!!!!!!', {items}, this);
             for (const x of items) {
                 this._inflight.add(x);
             }
@@ -370,7 +385,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
         }
         if (watts) {
             try {
-                for (const period of periods.filter(x => !!streams.watts || x >= 300)) {
+                for (const period of periods.filter(x => !!streams.watts || x >= minEstPeakPowerPeriod)) {
                     const rp = sauce.power.peakPower(period, streams.time, watts,
                         {activeStream: streams.active});
                     if (rp) {
@@ -436,7 +451,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                     const restingHR = ftp ? sauce.perf.estimateRestingHR(ftp) : 60;
                     stats.tTss = sauce.perf.tTSS(streams.heartrate, streams.time, streams.active,
                         ltHR, restingHR, maxHR, athlete.get('gender'));
-                    const zones = {...hrZones, z5: Infinity}; // XXX Z5 was always just implied.
+                    const zones = {...hrZones, z5: Infinity}; // Z5 was always just implied.
                     stats.hrZonesTime = Object.keys(zones).map(() => 0);
                     let prevT;
                     for (const [i, hr] of streams.heartrate.entries()) {
@@ -559,6 +574,9 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
         peaksStore.getForActivities(ids, {type: 'gap', _skipClone: true, _skipCache: true}),
         peaksStore.getForActivities(ids, {type: 'hr', _skipClone: true, _skipCache: true}),
     ]);
+    const options = await sauce.storage.get('options');
+    const disableNP = !!options['analysis-disable-np'];
+    const disableXP = !!options['analysis-disable-xp'];
     const validPeriods = new Set((await sauce.peaks.getRanges('periods')).map(x => x.value));
     const validDistances = new Set((await sauce.peaks.getRanges('distances')).map(x => x.value));
     const gender = athlete.get('gender') || 'male';
@@ -574,7 +592,7 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
     const allowEstPowerPeaks = actData =>
         (actData.basetype === 'run' && useEstPowerRunPeaks) ||
         (actData.basetype === 'ride' && useEstPowerCyclingPeaks);
-    const peaks = [];
+    const upPeaks = [];
     const deleting = new Set();
     for (const [index, activity] of activities.entries()) {
         const actData = activity.data;
@@ -584,9 +602,15 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
         // Cleanup: Remove estimated powers and/or obsolete periods/distances...
         for (const peaks of [powers, nps, xps, wkgs]) {
             for (const x of peaks[index]) {
-                if (deleteAll || !validPeriods.has(x.period) ||
-                    ((deleteEstimates && x.estimate) ||
-                     (!x.estimate && disableRunWatts && actData.basetype === 'run'))) {
+                if (deleteAll ||
+                    !validPeriods.has(x.period) ||
+                    (deleteEstimates && x.estimate) ||
+                    (disableRunWatts && actData.basetype === 'run' && !x.estimate) ||
+                    (x.estimate && x.period < minEstPeakPowerPeriod) ||
+                    (peaks === nps && x.period < sauce.power.npMinTime) ||
+                    (peaks === xps && x.period < sauce.power.xpMinTime) ||
+                    (peaks === nps && disableNP) ||
+                    (peaks === xps && disableXP)) {
                     deleting.add(x);
                 }
             }
@@ -617,7 +641,7 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
             const rankLevel = isRide ? getRankLevel(x.activeTime, x.value, x.wp, weight) : undefined;
             const wkgPeak = {...x, rankLevel, type: 'power_wkg', value: x.value / weight};
             if (rankUpdated(rankLevel, x.rankLevel)) {
-                peaks.push({...x, rankLevel}, wkgPeak);
+                upPeaks.push({...x, rankLevel}, wkgPeak);
             } else {
                 // Even if rank didn't change we could have a wkg change..
                 const existing = wkgs[index].find(xx => xx.period === x.period);
@@ -627,7 +651,7 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
                     if (deleting.has(existing)) {
                         deleting.delete(existing);  // legacy value, but we're overwriting it.
                     }
-                    peaks.push(wkgPeak);
+                    upPeaks.push(wkgPeak);
                 }
             }
         }
@@ -637,7 +661,7 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
             }
             const rankLevel = isRide ? getRankLevel(x.activeTime, x.power, x.value, weight) : undefined;
             if (rankUpdated(rankLevel, x.rankLevel)) {
-                peaks.push({...x, rankLevel});
+                upPeaks.push({...x, rankLevel});
             }
         }
     }
@@ -645,12 +669,65 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
         console.warn("Cleaning up obsolete peaks:", deleting.size);
         await peaksStore.deleteMany(Array.from(deleting).map(x => [x.activity, x.type, x.period]));
     }
-    if (peaks.length) {
-        console.info("Adding/updating peaks:", peaks.length);
-        await peaksStore.putMany(peaks);
+    if (upPeaks.length) {
+        console.info("Adding/updating peaks:", upPeaks.length);
+        await peaksStore.putMany(upPeaks);
     }
 }
 
+
+export class PeaksProcessor extends OffloadProcessor {
+
+    constructor(...args) {
+        super(...args);
+    }
+
+    async processor() {
+        this.periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
+        this.distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
+        const options = await sauce.storage.get('options');
+        this.disableNP = !!options['analysis-disable-np'];
+        this.disableXP = !!options['analysis-disable-xp'];
+        this.useEstWatts = this.athlete.get('estCyclingWatts') && this.athlete.get('estCyclingPeaks');
+        // NOTE: The spec requires that 8 is the max mem value returned, so this is
+        // just a low mem device check at best.
+        const maxBatch = navigator.deviceMemory < 8 ? 20 : 50;
+        while (!this.stopping) {
+            const activities = await this.getAllIncoming();
+            if (!activities) {
+                continue;
+            }
+            const jobs = [];
+            for (let i = 0; i < activities.length;) {
+                const batch = activities.slice(i, (i += maxBatch));
+                jobs.push(this._process(batch.map(x => x.data)).then(() => this.putFinished(batch)));
+                jobs.at(-1).batch = batch.length;
+            }
+            console.error("JOBS", jobs);
+            await Promise.all(jobs);
+        }
+    }
+
+    getRankLevel(period, p, wp, weight) {
+        const rank = sauce.power.rankLevel(period, p, wp, weight, this.gender);
+        if (rank.level > 0) {
+            return rank;
+        }
+    }
+
+    async _process(activities) {
+        const s = Date.now();
+        const peaks = await offscreenProxy.invoke('peaksProcessor', this.athlete.data, activities, {
+            periods: this.periods,
+            distances: this.distances,
+            disableNP: this.disableNP,
+            disableXP: this.disableXP,
+            useEstWatts: this.useEstWatts,
+        });
+        console.info("back from offscreen/worker ...", Date.now() - s, peaks);
+        await peaksStore.putMany(peaks);
+    }
+}
 
 export class PeaksProcessorNoWorkerSupport extends OffloadProcessor {
 
@@ -663,6 +740,9 @@ export class PeaksProcessorNoWorkerSupport extends OffloadProcessor {
     async processor() {
         this.periods = (await sauce.peaks.getRanges('periods')).map(x => x.value);
         this.distances = (await sauce.peaks.getRanges('distances')).map(x => x.value);
+        const options = await sauce.storage.get('options');
+        this.disableNP = !!options['analysis-disable-np'];
+        this.disableXP = !!options['analysis-disable-xp'];
         // NOTE: The spec requires that 8 is the max mem value returned, so this is
         // just a low mem device check at best.
         const maxBatch = navigator.deviceMemory < 8 ? 20 : 50;
@@ -694,137 +774,214 @@ export class PeaksProcessorNoWorkerSupport extends OffloadProcessor {
             other: ['time', 'active', 'heartrate', 'watts'],
         });
         const upPeaks = [];
-        let ts = Date.now();
         for (const activity of activities) {
-            if (Date.now() - ts > 400) {
-                // Reduce message ACK latency by defering for one task iteration.
-                await sauce.sleep(0);
-                ts = Date.now();
-            }
             if (activity.get('peaksExclude')) {
                 continue;  // cleanup happens in finalizer proc.
+            }
+            const streams = actStreams.get(activity.pk);
+            if (!streams.time) {
+                continue;
             }
             const basetype = activity.get('basetype');
             const isRun = basetype === 'run';
             const isRide = basetype === 'ride';
-            const streams = actStreams.get(activity.pk);
+            const wattsStream = streams.watts || streams.watts_calc;
+            const estPower = !streams.watts;
+            const totalTime = streams.time[streams.time.length - 1] - streams.time[0];
+            const weight = this.athlete.getWeightAt(activity.get('ts'));
             const addPeak = (a1, a2, a3, a4, extra) => {
                 const entry = sauce.peaks.createStoreEntry(a1, a2, a3, a4, streams.time, activity, extra);
                 if (entry) {
                     upPeaks.push(entry);
                 }
             };
+
+            // Prepare the rolls and periodized rolls [cheap]...
+            let paceRoll, gapRoll, powerRoll, hrRoll;
+            const hrPeriods = [];
+            const pacePeriods = [];
+            const gapPeriods = [];
+            const powerPeriods = [];
+
             if (streams.heartrate) {
-                try {
+                hrRoll = sauce.data.correctedRollingAverage(streams.time, null,
+                    {active: true, ignoreZeros: true});
+                if (hrRoll) {
                     for (const period of this.periods) {
-                        const roll = sauce.data.peakAverage(period, streams.time, streams.heartrate,
-                            {active: true, ignoreZeros: true, activeStream: streams.active});
-                        if (roll) {
-                            addPeak('hr', period, roll.avg(), roll);
+                        if (period <= totalTime) {
+                            hrPeriods.push({roll: hrRoll.clone({period})});
                         }
                     }
-                } catch(e) {
-                    // XXX make this better than a big try/catch
-                    console.error("Failed to create peaks for: " + activity, e);
-                    activity.setSyncError(this.manifest, e);
                 }
             }
-            const watts = streams.watts || streams.watts_calc;
-            if (watts && !isRun) { // Runs have their own processor for this.
-                const estimate = !streams.watts;
-                const weight = this.athlete.getWeightAt(activity.get('ts'));
-                try {
-                    for (const period of this.periods) {
-                        if (estimate && period < 300) {
-                            continue;
+            if (isRun) {
+                if (streams.distance) {
+                    const gad = streams.grade_adjusted_distance;
+                    paceRoll = new sauce.pace.RollingPace();
+                    gapRoll = gad && new sauce.pace.RollingPace();
+                    for (const period of this.distances) {
+                        if (period <= streams.distance[streams.distance.length - 1]) {
+                            pacePeriods.push({roll: paceRoll.clone({period})});
                         }
-                        const rp = sauce.power.correctedRollingPower(streams.time, period);
-                        if (!rp) {
-                            continue;
-                        }
-                        const leadCloneOpts = {inlineXP: false, inlineNP: false};
-                        const wrp = (!estimate && period >= 300) ?
-                            rp.clone({active: true, inlineNP: true, inlineXP: true}) :
-                            undefined;
-                        const leaders = {};
-                        // Instead of using peakPower, peakNP, we do our own reduction to save
-                        // repeative iterations on the same dataset; it's about 50% faster.
-                        for (let i = 0; i < streams.time.length; i++) {
-                            const t = streams.time[i];
-                            const w = watts[i];
-                            const a = streams.active[i];
-                            rp.add(t, w, a);
-                            if (wrp) {
-                                wrp.resize();
-                            }
-                            if (rp.full()) {
-                                const power = rp.avg();
-                                if (power && (!leaders.power || power >= leaders.power.value)) {
-                                    leaders.power = {roll: rp.clone(), value: power, np: wrp && wrp.np()};
-                                }
-                            }
-                            if (wrp && wrp.full()) {
-                                const np = wrp.np();
-                                if (np && (!leaders.np || np >= leaders.np.value)) {
-                                    leaders.np = {roll: wrp.clone(leadCloneOpts), value: np};
-                                }
-                                const xp = wrp.xp();
-                                if (xp && (!leaders.xp || xp >= leaders.xp.value)) {
-                                    leaders.xp = {roll: wrp.clone(leadCloneOpts), value: xp};
-                                }
-                            }
-                        }
-                        if (leaders.power) {
-                            const l = leaders.power;
-                            const rankLevel = isRide ?
-                                this.getRankLevel(l.roll.active(), l.value, l.np, weight) :
-                                undefined;
-                            addPeak('power', period, l.value, l.roll, {wp: l.np, estimate, rankLevel});
-                        }
-                        if (leaders.np) {
-                            const l = leaders.np;
-                            const np = l.roll.np({external: true});
-                            const power = l.roll.avg({active: false});
-                            const rankLevel = isRide ?
-                                this.getRankLevel(l.roll.active(), power, np, weight) :
-                                undefined;
-                            addPeak('np', period, np, l.roll, {power, estimate, rankLevel});
-                        }
-                        if (leaders.xp) {
-                            const l = leaders.xp;
-                            const xp = l.roll.xp({external: true});
-                            const power = l.roll.avg({active: false});
-                            const rankLevel = isRide ?
-                                this.getRankLevel(l.roll.active(), power, xp, weight) :
-                                undefined;
-                            addPeak('xp', period, xp, l.roll, {power, estimate, rankLevel});
+                        if (gad && period <= gad[gad.length - 1]) {
+                            gapPeriods.push({roll: gapRoll.clone({period})});
                         }
                     }
-                } catch(e) {
-                    // XXX make this better than a big try/catch
-                    console.error("Failed to create peaks for: " + activity, e);
-                    activity.setSyncError(this.manifest, e);
+                }
+            } else if (wattsStream) {  // Runs have their own processor for peak power
+                powerRoll = sauce.power.correctedRollingPower(streams.time, null,
+                    {inlineNP: !estPower && !this.disableNP, inlineXP: !estPower && !this.disableXP});
+                if (powerRoll) {
+                    for (const period of this.periods) {
+                        if (period > totalTime || (estPower && period < minEstPeakPowerPeriod)) {
+                            continue;
+                        }
+                        const inlineNP = !estPower && !this.disableNP && period >= sauce.power.npMinTime;
+                        const inlineXP = !estPower && !this.disableXP && period >= sauce.power.xpMinTime;
+                        let weightedRoll;
+                        if (inlineNP || inlineXP) {
+                            weightedRoll = powerRoll.clone({period, inlineNP, inlineXP, active: true});
+                            weightedRoll.hasNP = inlineNP;
+                            weightedRoll.hasXP = inlineXP;
+                        }
+                        powerPeriods.push({
+                            roll: powerRoll.clone({period, inlineNP: false, inlineXP: false}),
+                            weightedRoll
+                        });
+                    }
                 }
             }
-            if (isRun && streams.distance) {
-                try {
-                    for (const distance of this.distances) {
-                        let roll = sauce.pace.bestPace(distance, streams.time, streams.distance);
-                        if (roll) {
-                            addPeak('pace', distance, roll.avg(), roll);
+
+            // Do the calcs [expensive]...
+            for (let i = 0; i < streams.time.length; i++) {
+                const t = streams.time[i];
+                const a = streams.active[i];
+                if (hrRoll) {
+                    hrRoll.add(t, streams.heartrate[i], a);
+                    for (let i = 0; i < hrPeriods.length; i++) {
+                        const x = hrPeriods[i];
+                        if (t < x.roll.period) {
+                            // continue; // XXX
                         }
-                        if (streams.grade_adjusted_distance) {
-                            roll = sauce.pace.bestPace(distance, streams.time,
-                                streams.grade_adjusted_distance);
-                            if (roll) {
-                                addPeak('gap', distance, roll.avg(), roll);
+                        x.roll.resize();
+                        if (x.roll.full()) {
+                            const value = x.roll.avg();
+                            if (value && (!x.leader || value >= x.leader.value)) {
+                                x.leader = {roll: x.roll.clone(), value};
                             }
                         }
                     }
-                } catch(e) {
-                    // XXX make this better than a big try/catch
-                    console.error("Failed to create peaks for: " + activity, e);
-                    activity.setSyncError(this.manifest, e);
+                }
+                if (powerRoll) {
+                    powerRoll.add(t, wattsStream[i], a);
+                    const cloneOpts = {inlineNP: false, inlineXP: false};
+                    for (let i = 0; i < powerPeriods.length; i++) {
+                        const x = powerPeriods[i];
+                        if (t < x.roll.period) {
+                            // continue; // XXX
+                        }
+                        const wr = x.weightedRoll;
+                        let np;
+                        if (wr) {
+                            wr.resize();
+                            if (wr.full()) {
+                                np = wr.hasNP && wr.period >= sauce.power.npMinTime && wr.np();
+                                if (np && (!x.npLeader || np >= x.npLeader.value)) {
+                                    x.npLeader = {roll: wr.clone(cloneOpts), value: np};
+                                }
+                                const xp = wr.hasXP && wr.period >= sauce.power.xpMinTime && wr.xp();
+                                if (xp && (!x.xpLeader || xp >= x.xpLeader.value)) {
+                                    x.xpLeader = {roll: wr.clone(cloneOpts), value: xp};
+                                }
+                            }
+                        }
+                        x.roll.resize();
+                        if (x.roll.full()) {
+                            const power = x.roll.avg();
+                            if (power && (!x.leader || power >= x.leader.value)) {
+                                x.leader = {roll: x.roll.clone(cloneOpts), value: power, np};
+                            }
+                        }
+                    }
+                }
+                if (paceRoll) {
+                    paceRoll.add(t, streams.distance[i]);
+                    for (let i = 0; i < pacePeriods.length; i++) {
+                        const x = pacePeriods[i];
+                        if (streams.distance[i] < x.roll.period) {
+                            // continue; // XXX
+                        }
+                        x.roll.resize();
+                        if (x.roll.full()) {
+                            const value = x.roll.avg();
+                            if (value && (!x.leader || value >= x.leader.value)) {
+                                x.leader = {roll: x.roll.clone(), value};
+                            }
+                        }
+                    }
+                    if (gapRoll) {
+                        gapRoll.add(t, streams.grade_adjusted_distance[i]);
+                        for (let i = 0; i < gapPeriods.length; i++) {
+                            const x = gapPeriods[i];
+                            if (streams.grade_adjusted_distance[i] < x.roll.period) {
+                                // continue; // XXX
+                            }
+                            x.roll.resize();
+                            if (x.roll.full()) {
+                                const value = x.roll.avg();
+                                if (value && (!x.leader || value >= x.leader.value)) {
+                                    x.leader = {roll: x.roll.clone(), value};
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Queue the final leaders for save...
+            for (const x of hrPeriods) {
+                if (x.leader) {
+                    addPeak('hr', x.roll.period, x.leader.value, x.leader.roll);
+                }
+            }
+            for (const x of powerPeriods) {
+                if (x.leader) {
+                    const l = x.leader;
+                    const rankLevel = isRide ?
+                        this.getRankLevel(l.roll.active(), l.value, l.np, weight) :
+                        undefined;
+                    addPeak('power', x.roll.period, l.value, l.roll,
+                        {wp: l.np, estimate: estPower, rankLevel});
+                }
+                if (x.npLeader) {
+                    const l = x.npLeader;
+                    const power = l.roll.avg({active: false});
+                    const rankLevel = isRide ?
+                        this.getRankLevel(l.roll.active(), power, l.value, weight) :
+                        undefined;
+                    addPeak('np', x.roll.period, l.value, l.roll,
+                        {power, estimate: estPower, rankLevel});
+                }
+                if (x.xpLeader) {
+                    const l = x.xpLeader;
+                    // XP is more sensitive to leading data variance, so use external for consistency
+                    // with other UI that doesn't have leading context and must use external method.
+                    const xp = l.roll.xp({external: true});
+                    const power = l.roll.avg({active: false});
+                    const rankLevel = isRide ?
+                        this.getRankLevel(l.roll.active(), power, xp, weight) :
+                        undefined;
+                    addPeak('xp', x.roll.period, xp, l.roll, {power, estimate: estPower, rankLevel});
+                }
+            }
+            for (const x of pacePeriods) {
+                if (x.leader) {
+                    addPeak('pace', x.roll.period, x.leader.value, x.leader.roll);
+                }
+            }
+            for (const x of gapPeriods) {
+                if (x.leader) {
+                    addPeak('gap', x.roll.period, x.leader.value, x.leader.roll);
                 }
             }
         }
