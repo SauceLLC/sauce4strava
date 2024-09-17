@@ -40,7 +40,23 @@ function handleAttributionDialog() {
     'use strict';
 
     const manifests = [{
-        pathExclude: /^\/($|subscribe|login|register|legal|dashboard|routes\/new|.+?\/heatmaps\/|.+?\/training\/log|segments\/.+?\/local-legend)(\/.*|\b|$)/,
+        pathExcludes: [
+            /^\/dashboard(\/.*|\b|$)/,
+            /^\/routes\/new(\/.*|\b|$)/,
+            /^\/maps\/(\/.*|\b|$)/,
+            /^\/challenges(\/.*|\b|$)/,
+            /^\/segments\/.+?\/local-legend\/(\/.*|\b|$)/,
+            /^\/athlete\/fitness(\/.*|\b|$)/,
+            /^\/athletes\/.+?\/training\/log(\/.*|\b|$)/,
+            /^\/athletes\/.+?\/posts\/new(\/.*|\b|$)/,
+            /^\/subscribe(\/.*|\b|$)/,
+            /^\/subscription\/perks(\/.*|\b|$)/,
+            /^\/login(\/.*|\b|$)/,
+            /^\/register(\/.*|\b|$)/,
+            /^\/legal(\/.*|\b|$)/,
+            /^\/.+?\/heatmaps\/(\/.*|\b|$)/,
+            /^\/$/,
+        ],
         stylesheets: ['site/theme.css'],
         callbacks: [
             handleAttributionDialog,
@@ -111,6 +127,7 @@ function handleAttributionDialog() {
     }, {
         name: 'Analysis',
         pathMatch: /^\/activities\/.*/,
+        pathExclude: /^\/activities\/.*?\/truncate/,
         stylesheets: ['site/analysis.css'],
         cssClass: 'sauce-analysis',
         scripts: [
@@ -315,8 +332,9 @@ function handleAttributionDialog() {
         }
         document.documentElement.classList.add('sauce-enabled');  // legacy
         const matchingManifests = manifests.filter(m =>
-            !((m.pathMatch && !location.pathname.match(m.pathMatch)) ||
-              (m.pathExclude && location.pathname.match(m.pathExclude))));
+            (!m.pathMatch || location.pathname.match(m.pathMatch)) &&
+            (!m.pathExclude || !location.pathname.match(m.pathExclude)) &&
+            (!m.pathExcludes || !m.pathExcludes.some(re => location.pathname.match(re))));
         for (const x of matchingManifests) {
             if (x.cssClass) {
                 document.documentElement.classList.add(...(typeof x.cssClass === 'string' ?
