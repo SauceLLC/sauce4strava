@@ -147,7 +147,7 @@ class FetchError extends Error {
 class Timeout extends Error {}
 
 
-class OffscreenDocumentProxy {
+class OffscreenDocumentRPC {
 
     constructor() {
         this.idleTimeout = 2000 && 1e9;
@@ -235,7 +235,10 @@ class OffscreenDocumentProxy {
         }
     }
 }
-export const offscreenProxy = new OffscreenDocumentProxy();
+
+export const offscreenProxy = new Proxy(new OffscreenDocumentRPC(), {
+    get: (target, prop) => (...args) => target.invoke(prop, ...args)
+});
 
 
 async function networkOnline(timeout) {
@@ -1432,7 +1435,7 @@ class SyncJob extends EventTarget {
     }
 
     async parseRawReactProps(raw) {
-        return await offscreenProxy.invoke('parseRawReactProps', raw);
+        return await offscreenProxy.parseRawReactProps(raw);
     }
 
     groupPhotosToDatabase(stravaData) {
@@ -2065,6 +2068,7 @@ class SyncManager extends EventTarget {
     async refreshLoop() {
         let errorBackoff = 1000;
         const syncHash = await this.syncVersionHash();
+        let activeTimerStart;
         while (!this.stopping) {
             this._refreshEvent.clear();
             const athletes = await athletesStore.getEnabled({models: true});
@@ -2074,6 +2078,9 @@ class SyncManager extends EventTarget {
                 console.error('Sync job creation error:', e);
                 await aggressiveSleep(errorBackoff *= 1.5);
             }
+            if (this.activeJobs.size && !activeTimerStart) {
+                activeTimerStart = Date.now();
+            }
             for (const x of this.activeJobs.values()) {
                 if (this.runningJobsCount() >= this.maxSyncJobs) {
                     break;
@@ -2082,9 +2089,14 @@ class SyncManager extends EventTarget {
                 }
             }
             if (this.activeJobs.size || !athletes.length) {
-                console.info("Sync Manager waiting new activity...");
+                console.info("Sync Manager waiting for new activity...");
                 await this._refreshEvent.wait();
             } else {
+                if (activeTimerStart) {
+                    const elapsed = Math.round((Date.now() - activeTimerStart) / 1000);
+                    console.info(`Sync engine reached idle after: ${elapsed.toLocaleString()} seconds`);
+                    activeTimerStart = null;
+                }
                 const nextSyncDeadline = Math.min(...athletes.map(x => this.nextSyncDeadline(x)));
                 const next = Math.round(nextSyncDeadline / 1000 / 60).toLocaleString();
                 console.info(`Next Sync Manager refresh in ${next} minute(s)...`);
