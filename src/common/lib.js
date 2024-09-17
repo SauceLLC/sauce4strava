@@ -330,7 +330,7 @@ sauce.ns('data', function() {
         }
 
         avg(options={}) {
-            const active = options.active != null ? options.active : this._active;
+            const active = options.active === undefined ? this._active : options.active;
             return this._valuesAcc / (active ? this.active() : this.elapsed());
         }
 
@@ -389,8 +389,8 @@ sauce.ns('data', function() {
 
         active(options={}) {
             let t = this._activeAcc;
-            const predicate = options.predicate || 0;
             if (options.offt) {
+                const predicate = options.predicate || 0;
                 const lim = Math.min(this._length, this._offt + options.offt);
                 for (let i = this._offt; i < lim && t >= predicate; i++) {
                     if (this._isActiveValue(this._values[i + 1])) {
@@ -448,7 +448,7 @@ sauce.ns('data', function() {
         _add(ts, value) {
             this._times.push(ts);
             this._values.push(value);
-            this.resize(1);
+            this.resize();
             return value;
         }
 
@@ -461,7 +461,7 @@ sauce.ns('data', function() {
             }
         }
 
-        processShift(i) {
+        _processShift(i) {
             // Somewhat counterintuitively we care about the value and index after the one
             // being shifted off because index 0 is always just a reference point and our
             // new state will have the `this._offt + 1` as the new ref point whose value
@@ -474,7 +474,7 @@ sauce.ns('data', function() {
             }
         }
 
-        processPop(i) {
+        _processPop(i) {
             const value = i >= this._offt ? this._values[i] : null;
             if (this._isActiveValue(value)) {
                 const gap = i ? this._times[i] - this._times[i - 1] : 0;
@@ -483,12 +483,8 @@ sauce.ns('data', function() {
             }
         }
 
-        resize(size) {
-            const length = size ? this._length + size : this._values.length;
-            if (length > this._values.length) {
-                throw new Error('resize underflow');
-            }
-            for (let i = this._length; i < length; i++) {
+        resize() {
+            for (let i = this._length; i < this._values.length; i++) {
                 this.processAdd(i);
                 this._length++;
                 if (this.period) {
@@ -554,18 +550,18 @@ sauce.ns('data', function() {
         }
 
         shift() {
-            this.processShift(this._offt++);
+            this._processShift(this._offt++);
         }
 
         pop() {
-            this.processPop(--this._length);
+            this._processPop(--this._length);
         }
 
         full(options={}) {
-            const offt = options.offt;
-            const active = options.active != null ? options.active : this._active;
-            const fn = active ? this.active : this.elapsed;
-            const time = fn.call(this, {offt, predicate: this.period});
+            const args = {offt: options.offt, predicate: this.period};
+            const time = (options.active === undefined ? this._active : options.active) ?
+                this.active(args) :
+                this.elapsed(args);
             return time >= this.period;
         }
     }
@@ -637,9 +633,6 @@ sauce.ns('data', function() {
             t -= buf[i % period];
             sValues[sIndex++] = t / (period - 1 - (i - len));
         }
-        if (sValues.length !== len) {
-            debugger;
-        }
         return sValues;
     }
 
@@ -672,6 +665,7 @@ sauce.ns('data', function() {
         Zero,
         Pad,
         correctedAverage,
+        correctedRollingAverage,
         peakAverage,
         smooth,
         overlap,
@@ -720,6 +714,7 @@ sauce.ns('power', function() {
 
     const npMinTime = 300;  // Andy says 20, but we're rebels.
     const xpMinTime = 300;
+    const xpSeedRequirement = 2;  // n * exp_factor
 
     const rankLevels = [{
         levelRequirement: 7 / 8,
@@ -834,11 +829,11 @@ sauce.ns('power', function() {
     class RollingPower extends sauce.data.RollingAverage {
         constructor(period, options={}) {
             super(period, options);
+            const sampleRate = 1 / (this.idealGap || 1);
             if (options.inlineNP) {
-                const sampleRate = 1 / this.idealGap;
                 const rollSize = Math.round(30 * sampleRate);
+                this._inlineNPSaved = [];
                 this._inlineNP = {
-                    saved: [],
                     rollSize,
                     slot: 0,
                     roll: new Array(rollSize),
@@ -848,27 +843,24 @@ sauce.ns('power', function() {
                 };
             }
             if (options.inlineXP) {
-                const samplesPerWindow = 25 / this.idealGap;
+                this._inlineXPSaved = [];
                 this._inlineXP = {
-                    saved: [],
-                    samplesPerWindow,
-                    attenuation: samplesPerWindow / (samplesPerWindow + this.idealGap),
-                    sampleWeight: this.idealGap / (samplesPerWindow + this.idealGap),
-                    prevTime: 0,
-                    weighted: 0,
+                    seedSize: (25 * sampleRate * xpSeedRequirement),
+                    decay: sampleRate === 1 ? 0.9607894391523232 : Math.exp(-1 / (25 * sampleRate)),
+                    weighted: null,
                     count: 0,
                     total: 0,
                 };
             }
         }
 
-        processAdd(i) {
-            const value = this._values[i];
-            const nValue = +value;
+        _add(ts, value) {
             if (this._inlineNP) {
+                const idx = this._length;
+                const nValue = +value;
                 const state = this._inlineNP;
-                const slot = i % state.rollSize;
-                const size = i + 1 - this._offt;
+                const slot = idx % state.rollSize;
+                const size = idx + 1 - this._offt;
                 state.rollSum += nValue;
                 state.rollSum -= state.roll[slot] || 0;
                 state.roll[slot] = nValue;
@@ -876,90 +868,109 @@ sauce.ns('power', function() {
                     const npa = state.rollSum / state.rollSize;
                     if (!npa && value instanceof sauce.data.Zero) {
                         // Drained already and we're looking at pad values, don't increment count.
-                        state.saved.push(undefined);
+                        this._inlineNPSaved.push(undefined);
                     } else {
                         const qnpa = npa * npa * npa * npa;  // unrolled for perf
-                        state.total += qnpa;
-                        state.saved.push(qnpa);
-                        state.count++;
+                        this._inlineNPSaved.push(qnpa);
                     }
                 }
             }
             if (this._inlineXP) {
+                const idx = this._length;
                 const state = this._inlineXP;
-                const epsilon = 0.1;
                 const negligible = 0.1;
-                const time = i * this.idealGap;
                 let count = 0;
-                while ((state.weighted > negligible) &&
-                       time > state.prevTime + this.idealGap + epsilon) {
-                    state.weighted *= state.attenuation;
-                    state.prevTime += this.idealGap;
+                if (state.weighted === null) {
+                    state.weighted = value;
+                }
+                state.weighted = (state.weighted * state.decay) + (value * (1 - state.decay));
+                // Divergent: GC has no seed requirements
+                if (idx - this._offt >= state.seedSize - 1) {
                     const w = state.weighted;
-                    state.total += w * w * w * w;  // unroll for perf
-                    count++;
+                    const qw = w * w * w * w;  // unrolled for perf
+                    if (w > negligible || !(value instanceof sauce.data.Zero)) {
+                        count++;
+                    }
+                    this._inlineXPSaved.push({
+                        value: qw,
+                        count,
+                    });
                 }
-                state.weighted *= state.attenuation;
-                state.weighted += state.sampleWeight * nValue;
-                state.prevTime = time;
-                const w = state.weighted;
-                const qw = w * w * w * w;  // unrolled for perf
-                state.total += qw;
-                if (w > negligible || !(value instanceof sauce.data.Zero)) {
-                    count++;
-                }
-                state.count += count;
-                state.saved.push({
-                    value: qw,
-                    count: count,
-                });
             }
-            super.processAdd(i);
+            return super._add(ts, value);
         }
 
-        processShift(i) {
-            super.processShift(i);
+        processAdd(i) {
             if (this._inlineNP) {
-                const state = this._inlineNP;
-                const save = state.saved[i];
-                state.total -= save || 0;
-                state.count -= save !== undefined ? 1 : 0;
+                const qnpa = this._inlineNPSaved[i - (this._inlineNP.rollSize - 1)];
+                if (qnpa !== undefined) {
+                    this._inlineNP.total += qnpa;
+                    this._inlineNP.count++;
+                }
             }
             if (this._inlineXP) {
-                const state = this._inlineXP;
-                const save = state.saved[i];
-                state.total -= save.value || 0;
-                state.count -= save.count || 0;
+                const entry = this._inlineXPSaved[i - (this._inlineXP.seedSize - 1)];
+                if (entry) {
+                    this._inlineXP.total += entry.value;
+                    this._inlineXP.count += entry.count;
+                }
+            }
+            return super.processAdd(i);
+        }
+
+        _processShift(i) {
+            super._processShift(i);
+            if (this._inlineNP) {
+                const qnpa = this._inlineNPSaved[i];
+                if (qnpa !== undefined) {
+                    this._inlineNP.count--;
+                    this._inlineNP.total -= qnpa;
+                    if (this._inlineNP.total < 0) {
+                        // ieee754 error compensation...
+                        this._inlineNP.total = 0;
+                    }
+                }
+            }
+            if (this._inlineXP) {
+                const entry = this._inlineXPSaved[i];
+                if (entry !== undefined) {
+                    this._inlineXP.count -= entry.count;
+                    this._inlineXP.total -= entry.value;
+                    if (this._inlineXP.total < 0) {
+                        // ieee754 error compensation...
+                        this._inlineXP.total = 0;
+                    }
+                }
             }
         }
 
-        processPop(i) {
+        _processPop(i) {
             if (this._inlineNP || this._inlineXP) {
                 throw new Error("Unsupported");
             }
-            super.processPop(i);
+            super._processPop(i);
         }
 
         np(options={}) {
             if (this._inlineNP && !options.external) {
-                if (this.active() < npMinTime && !options.force) {
+                if (!options.force && this.active() < npMinTime) {
                     return;
                 }
                 const state = this._inlineNP;
-                return state.count ? (state.total / state.count) ** 0.25 : undefined;
-            } else {
+                return state.total > 1 ? (state.total / state.count) ** 0.25 : state.count ? 0 : undefined;
+            } else if (options.external !== false) {
                 return calcNP(this.values(), 1 / this.idealGap, options);
             }
         }
 
         xp(options={}) {
             if (this._inlineXP && !options.external) {
-                if (this.active() < xpMinTime && !options.force) {
+                if (!options.force && this.active() < xpMinTime) {
                     return;
                 }
                 const state = this._inlineXP;
-                return state.count ? (state.total / state.count) ** 0.25 : undefined;
-            } else {
+                return state.total > 1 ? (state.total / state.count) ** 0.25 : state.count ? 0 : undefined;
+            } else if (options.external !== false) {
                 return calcXP(this.values(), 1 / this.idealGap, options);
             }
         }
@@ -970,22 +981,23 @@ sauce.ns('power', function() {
 
         clone(options={}) {
             const instance = super.clone(options);
-            if (this._inlineNP && options.inlineNP !== false) {
-                this._copyInlineState('_inlineNP', instance);
+            if (options.inlineNP !== false && this._inlineNP) {
+                instance._inlineNP = {
+                    count: this._inlineNP.count,
+                    total: this._inlineNP.total,
+                    rollSize: this._inlineNP.rollSize,
+                };
+                instance._inlineNPSaved = this._inlineNPSaved;
             }
-            if (this._inlineXP && options.inlineXP !== false) {
-                this._copyInlineState('_inlineXP', instance);
+            if (options.inlineXP !== false && this._inlineXP) {
+                instance._inlineXP = {
+                    count: this._inlineXP.count,
+                    total: this._inlineXP.total,
+                    seedSize: this._inlineXP.seedSize,
+                };
+                instance._inlineXPSaved = this._inlineXPSaved;
             }
             return instance;
-        }
-
-        _copyInlineState(key, target) {
-            const src = this[key];
-            target[key] = {
-                ...src,
-                saved: Array.from(src.saved),
-                roll: src.roll && Array.from(src.roll),
-            };
         }
     }
 
@@ -1024,7 +1036,7 @@ sauce.ns('power', function() {
             return;
         }
         return roll.importReduce(timeStream, wattsStream, options.activeStream, x => x.np(),
-            (cur, lead) => cur >= lead, {inlineNP: false});
+            (cur, lead) => cur >= lead, {inlineNP: true});
     }
 
 
@@ -1052,6 +1064,7 @@ sauce.ns('power', function() {
     function calcNP(data, sampleRate, options={}) {
         /* Coggan doesn't recommend NP for less than 20 mins, but we're outlaws
          * and we go as low as 5 mins now! (10-08-2020) */
+        // XXX we should interpolate gaps.
         sampleRate = sampleRate || 1;
         if (!options.force) {
             const elapsed = data.length / sampleRate;
@@ -1082,7 +1095,7 @@ sauce.ns('power', function() {
                 }
             }
         }
-        return count ? (total / count) ** 0.25 : undefined;
+        return total > 1 ? (total / count) ** 0.25 : count ? 0 : undefined;
     }
 
 
@@ -1097,35 +1110,25 @@ sauce.ns('power', function() {
                 return;
             }
         }
-        const epsilon = 0.1;
         const negligible = 0.1;
-        const sampleInterval = 1 / sampleRate;
-        const samplesPerWindow = 25 / sampleInterval;
-        const attenuation = samplesPerWindow / (samplesPerWindow + sampleInterval);
-        const sampleWeight = sampleInterval / (samplesPerWindow + sampleInterval);
-        let prevTime = 0;
-        let weighted = 0;
+        const decay = sampleRate === 1 ? 0.9607894391523232 : Math.exp(-1 / (25 * sampleRate));
+        const seedSize = (25 * sampleRate * xpSeedRequirement);
+        let weighted = data[0]; // Divergent: GC starts with 0
         let count = 0;
         let total = 0;
         for (let i = 0, len = data.length; i < len; i++) {
             const watts = data[i];
-            const time = i * sampleInterval;
-            while ((weighted > negligible) && time > prevTime + sampleInterval + epsilon) {
-                weighted *= attenuation;
-                prevTime += sampleInterval;
+            weighted *= decay;
+            weighted += watts * (1 - decay);
+            // Divergent: GC has no seed requirements
+            if (i >= seedSize - 1) {
                 total += weighted * weighted * weighted * weighted;  // unrolled for perf
-                count++;
-            }
-            weighted *= attenuation;
-            weighted += sampleWeight * watts;
-            prevTime = time;
-            const qw = weighted * weighted * weighted * weighted;  // unrolled for perf
-            total += qw;
-            if (weighted > negligible || !(watts instanceof sauce.data.Zero)) {
-                count++;
+                if (weighted > negligible || !(watts instanceof sauce.data.Zero)) {
+                    count++;
+                }
             }
         }
-        return count ? (total / count) ** 0.25 : 0;
+        return count ? (total / count) ** 0.25 : undefined;
     }
 
 
@@ -1430,9 +1433,6 @@ sauce.ns('power', function() {
             const wPrimeExpended = aboveCP * sr;
             sum += wPrimeExpended * Math.E ** (t * sr / tau);
             wPrimeBal.push(wPrime - sum * Math.E ** (-t * sr / tau));
-            if (wPrimeBal[wPrimeBal.length - 1] < 0) {
-                debugger;
-            }
         }
         return wPrimeBal;
     }
@@ -1460,9 +1460,6 @@ sauce.ns('power', function() {
                 const pNum = p || 0;  // convert null and undefined to 0.
                 wBal += pNum < cp ? (cp - pNum) * (wPrime - wBal) / wPrime : cp - pNum;
             }
-            if (wBal > wPrime) {
-                debugger;  // XXX shouldn't be possible.
-            }
             if (!(p instanceof sauce.data.Pad)) {
                 // Our output stream should align with the input stream, not the corrected
                 // one used for calculations, so skip pad based values.
@@ -1487,9 +1484,6 @@ sauce.ns('power', function() {
         const firstHalfRatio = np1 / sauce.data.avg(hrStream.slice(0, midHRIndex));
         const secondHalfRatio = np2 / sauce.data.avg(hrStream.slice(midHRIndex));
         const r = (firstHalfRatio - secondHalfRatio) / firstHalfRatio;
-        if (Number.isNaN(r)) {
-            debugger;
-        }
         return r;
     }
 
@@ -1540,6 +1534,8 @@ sauce.ns('power', function() {
         cyclingPowerVelocitySearchMultiPosition,
         cyclingDraftDragReduction,
         RollingPower,
+        npMinTime,
+        xpMinTime,
     };
 });
 
@@ -1604,6 +1600,7 @@ sauce.ns('pace', function() {
         bestPace,
         work,
         createWattsStream,
+        RollingPace,
     };
 });
 
@@ -2156,15 +2153,17 @@ sauce.ns('perf', function() {
     const acuteTrainingLoadConstant = 7;
 
     function _makeExpWeightedCalc(size) {
-        const c = 1 - Math.exp(-1 / size);
+        const decay = Math.exp(-1 / size);
+        const c = 1 - decay;
         return function(data, seed=0) {
             let v = seed;
             for (const x of data) {
-                v = (v * (1 - c)) + (x * c);
+                v = (v * decay) + (x * c);
             }
             return v;
         };
     }
+
 
     const calcCTL = _makeExpWeightedCalc(chronicTrainingLoadConstant);
     const calcATL = _makeExpWeightedCalc(acuteTrainingLoadConstant);
