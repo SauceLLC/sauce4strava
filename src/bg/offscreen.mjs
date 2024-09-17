@@ -4,12 +4,25 @@ import '../ext/webext.js';
 
 
 const idleWorkers = [];
+const workers = new Set();
 
 
 async function peaksProcessor(athlete, activities, options) {
-    const worker = idleWorkers.length ?
-        idleWorkers.shift() :
-        new Worker('/src/bg/hist/peaks_processor_worker.js');
+    let worker;
+    while (!worker) {
+        if (idleWorkers.length) {
+            console.info("Claiming idle web worker");
+            worker = idleWorkers.shift();
+        } else if (workers.size >= navigator.hardwareConcurrency * 2) {
+            // Cheapout on sleep lock..
+            await new Promise(r => setTimeout(r, 200));
+            continue;
+        } else {
+            console.info("Creating new web worker:", workers.size + 1);
+            worker = new Worker('/src/bg/hist/peaks-worker.mjs', {type: 'module'});
+            workers.add(worker);
+        }
+    }
     if (worker.idleTimeout) {
         clearTimeout(worker.idleTimeout);
     }
@@ -17,12 +30,11 @@ async function peaksProcessor(athlete, activities, options) {
     const ourPort = ch.port1;
     const theirPort = ch.port2;
     const p = new Promise((resolve, reject) => {
-        const onError = ev => reject(new Error('generic worker error'));
+        const onError = ev => reject(new Error(ev.message));
         worker.addEventListener('error', onError, {once: true});
         ourPort.addEventListener('message', ev => {
             worker.removeEventListener('error', onError);
             if (ev.data.success) {
-                console.info("WE GOT IT!!", ev);
                 resolve(ev.data.value);
             } else {
                 console.error("peaks processor worker error:", ev.data.error);
@@ -42,11 +54,14 @@ async function peaksProcessor(athlete, activities, options) {
                 idleWorkers.splice(idx, 1);
             }
             worker.terminate();
+            workers.delete(worker);
+            console.info(`Terminating idle web worker: idle:${idleWorkers.length} total:${workers.size}`);
         }, 5000);
         idleWorkers.push(worker);
         return ret;
     } catch(e) {
         worker.terminate();
+        workers.delete(worker);
         throw e;
     } finally {
         ourPort.close();
