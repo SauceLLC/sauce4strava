@@ -150,7 +150,7 @@ class Timeout extends Error {}
 class OffscreenDocumentRPC {
 
     constructor() {
-        this.idleTimeout = 2000;
+        this.idleTimeout = 5000;
         this._pending = new Map();
         this._callIdCounter = 1;
         this._connecting = null;
@@ -188,6 +188,10 @@ class OffscreenDocumentRPC {
     _deferKill() {
         clearTimeout(this._idleKillId);
         this._idleKillId = setTimeout(async () => {
+            if (this._pending.size) {
+                this._deferKill();
+                return;
+            }
             this._port = null;
             console.info("Closing idle offscreen document...");
             this._killing = browser.offscreen.closeDocument();
@@ -202,7 +206,6 @@ class OffscreenDocumentRPC {
     async invoke(name, ...args) {
         if (!this._port) {
             if (this._killing) {
-                debugger;
                 await this._killing;
             }
             if (!this._connecting) {
