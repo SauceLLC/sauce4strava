@@ -106,8 +106,8 @@ ActivityModel.addSyncManifest({
     name: 'peaks',
     version: 13, // Updated np and xp (simplified and true)
     depends: ['extra-streams'],
-    data: {processor: processors.PeaksProcessorNoWorkerSupport}
-    //data: {processor: processors.PeaksProcessor}
+    //data: {processor: processors.PeaksProcessorNoWorkerSupport}
+    data: {processor: processors.PeaksProcessor}
 });
 
 ActivityModel.addSyncManifest({
