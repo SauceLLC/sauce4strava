@@ -160,4 +160,44 @@ addTests([
             assertEqual(peak.xp({external: true}), 1000);
         }
     },
+    function test_np_clone() {
+        const times = Array.from(new Array(200)).map((x, i) => i);
+        const values = times.map(x => 100 + x);
+        const roll = new sauce.power.correctedPower(times, values, {inlineNP: true});
+        const clone = roll.clone();
+        const clone2 = clone.clone();
+        assertEqual(roll.np({force: true, external: false}), clone.np({force: true, external: false}));
+        roll.add(210, 1000000);
+        clone.resize();
+        clone2.resize();
+        assertEqual(roll.np({force: true, external: false}), clone.np({force: true, external: false}));
+        assertEqual(roll.np({force: true, external: false}), clone2.np({force: true, external: false}));
+    },
+    function test_xp_clone() {
+        const times = Array.from(new Array(200)).map((x, i) => i);
+        const values = times.map(x => 100 + x);
+        const roll = new sauce.power.correctedPower(times, values, {inlineXP: true});
+        const clone = roll.clone();
+        const clone2 = clone.clone();
+        assertEqual(roll.xp({force: true, external: false}), clone.xp({force: true, external: false}));
+        roll.add(210, 1000000);
+        clone.resize();
+        clone2.resize();
+        assertEqual(roll.xp({force: true, external: false}), clone.xp({force: true, external: false}));
+        assertEqual(roll.xp({force: true, external: false}), clone2.xp({force: true, external: false}));
+    },
+    function test_np_noclone() {
+        const times = Array.from(new Array(200)).map((x, i) => i);
+        const values = times.map(x => 100 + x);
+        const roll = new sauce.power.correctedPower(times, values, {inlineNP: true});
+        const clone = roll.clone({inlineNP: false});
+        assertEqual(clone.np({force: true, external: false}), undefined);
+    },
+    function test_xp_noclone() {
+        const times = Array.from(new Array(200)).map((x, i) => i);
+        const values = times.map(x => 100 + x);
+        const roll = new sauce.power.correctedPower(times, values, {inlineXP: true});
+        const clone = roll.clone({inlineXP: false});
+        assertEqual(clone.xp({force: true, external: false}), undefined);
+    },
 ]);
