@@ -150,7 +150,7 @@ class Timeout extends Error {}
 class OffscreenDocumentRPC {
 
     constructor() {
-        this.idleTimeout = 2000 && 1e9;
+        this.idleTimeout = 2000;
         this._pending = new Map();
         this._callIdCounter = 1;
         this._connecting = null;
