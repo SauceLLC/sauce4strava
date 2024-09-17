@@ -154,7 +154,7 @@ export class OffloadProcessor {
         const maxSize = options.maxSize || 1;
         let deadline = maxWait && Date.now() + maxWait;
         const stop = this._stopEvent.wait();
-        console.warn('getAllIncoming', this, {minWait, maxWait, maxSize, deadline, stop});
+        console.debug('getAllIncoming', this, {minWait, maxWait, maxSize, deadline, stop}); // XXX
         while (!this.stopping) {
             const timeouts = [];
             if (minWait && maxWait) {
@@ -165,22 +165,22 @@ export class OffloadProcessor {
                 timeouts.push(sauce.sleep(maxWait));
             }
             const dataWait = this._incoming.wait({size: maxSize});
-            console.warn('getAllIncoming await race...', this,
-                {minWait, maxWait, maxSize, deadline, stop, timeouts, dataWait});
+            console.debug('getAllIncoming await race...', this,
+                {minWait, maxWait, maxSize, deadline, stop, timeouts, dataWait}); // XXX
             await Promise.race([stop, dataWait, this._flushEvent.wait(), ...timeouts]);
             const moreData = dataWait.done();
             if (!moreData) {
-                console.warn('getall', {moreData}, this);
+                console.debug('getall', {moreData}, this); // XXX
                 dataWait.cancel();
             }
             if (this._stopEvent.isSet()) {
-                console.warn('getall stop event', this);
+                console.debug('getall stop event', this); // XXX
                 return;
             }
             const size = this._incoming.size;
             const flush = this._flushEvent.isSet();
             if (flush) {
-                console.warn('getall flush (so clear)', {size}, this);
+                console.debug('getall flush (so clear)', {size}, this); // XXX
                 this._flushEvent.clear();
                 if (!size) {
                     // We're just waiting for out-of-band work to finish.
@@ -189,17 +189,17 @@ export class OffloadProcessor {
             } else if (moreData && size < maxSize && Date.now() < deadline) {
                 // We are still within the constraints and have a positive ingest rate.
                 // Continue waiting for stagnation or other events.
-                console.warn('getall fcontineut to wait because we think there is more.l.',
-                    {moreData, size, maxSize, deadline}, this);
+                console.debug('getall continue to wait because we think there is more..',
+                    {moreData, size, maxSize, deadline}, this); // XXX
                 continue;
             }
             deadline = maxWait && Date.now() + maxWait;
             if (!size) {
-                console.warn('getall no size continue...', {size, deadline}, this);
+                console.debug('getall no size continue...', {size, deadline}, this); // XXX
                 continue;
             }
             const items = this._incoming.getAllNoWait();
-            console.warn('getall DO IT!!!!!!!!!!', {items}, this);
+            console.debug('getAllNoWait returned', {items}, this); // XXX
             for (const x of items) {
                 this._inflight.add(x);
             }
@@ -220,7 +220,7 @@ export class OffloadProcessor {
         /* Subclass should keep this alive for the duration of their execution.
          * It is also their job to monitor flushEvent and stopEvent. */
         await undefined;  // lint
-        throw new TypeError("Pure virutal method");
+        throw new TypeError("Pure virtual method");
     }
 }
 
@@ -699,17 +699,13 @@ export class PeaksProcessor extends OffloadProcessor {
             for (let i = 0; i < activities.length;) {
                 const batch = activities.slice(i, (i += maxBatch));
                 jobs.push(this._process(batch.map(x => x.data)).then(() => this.putFinished(batch)));
-                jobs.at(-1).batch = batch.length; // XXX 
             }
-            console.error("JOBS", jobs);
             await Promise.all(jobs);
         }
     }
 
     async _process(activities) {
-        const s = Date.now();
         const peaks = await offscreenProxy.peaksProcessor(this.athlete.data, activities, this.options);
-        console.error("back from offscreen/worker ...", Date.now() - s, peaks);
         await peaksStore.putMany(peaks);
     }
 }
