@@ -997,3 +997,22 @@ html.sauce-responsive,
         @include mobile.segment-compare;
     }
 }
+
+
+.sauce-responsive.sauce-segment-view {
+    .row {
+        margin-left: unset;
+        margin-right: unset;
+    }
+
+    body > .container {
+        width: initial;
+    }
+
+    #map_canvas {
+        min-height: 300px;
+        height: 25vh;
+        max-height: initial;
+        resize: vertical;
+    }
+}
