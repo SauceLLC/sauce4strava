@@ -178,12 +178,6 @@
         }
     }
 
-    &.sauce-route-builder {
-        [aria-labelledby~="surfaceType"] img[class*="Sidebar--image-icon"] {
-            filter: invert(1);
-        }
-    }
-
     // Background image must be inverted for fullscreen icon.
     #map-control-container #toggle-fullscreen {
         background-color: #d6d6d6;

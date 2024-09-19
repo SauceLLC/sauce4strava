@@ -152,9 +152,9 @@ function handleAttributionDialog() {
             'src/site/segment-compare.js',
         ],
     }, {
-        name: 'Route Builder',
-        pathMatch: /^\/routes\/new\b/,
-        cssClass: 'sauce-route-builder',
+        name: 'Segment View',
+        pathMatch: /^\/segments\/[0-9]+\/?$/,
+        cssClass: 'sauce-segment-view',
     }, {
         name: 'Sauce Performance - Legacy Redirect',
         pathMatch: /^\/sauce\/performance(\/)?$/,
