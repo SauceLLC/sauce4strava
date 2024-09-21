@@ -1826,7 +1826,7 @@ class SyncJob extends EventTarget {
                 const offFinWaiters = Array.from(offloaded).map(x => x.waitFinished());
                 const offloadedDone = Array.from(offloaded).map(x => x.runPromise.catch(e => undefined));
                 await Promise.race([...offFinWaiters, ...incoming, ...offloadedDone]);
-                for (const f of offFinWaiters) {
+                for (const f of [...offFinWaiters, ...incoming]) {
                     if (!f.done()) {
                         f.cancel();
                     }
