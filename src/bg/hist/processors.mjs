@@ -154,7 +154,6 @@ export class OffloadProcessor {
         const maxSize = options.maxSize || 1;
         let deadline = maxWait && Date.now() + maxWait;
         const stop = this._stopEvent.wait();
-        console.debug('getAllIncoming', this, {minWait, maxWait, maxSize, deadline, stop}); // XXX
         while (!this.stopping) {
             const timeouts = [];
             if (minWait && maxWait) {
@@ -165,22 +164,17 @@ export class OffloadProcessor {
                 timeouts.push(sauce.sleep(maxWait));
             }
             const dataWait = this._incoming.wait({size: maxSize});
-            console.debug('getAllIncoming await race...', this,
-                {minWait, maxWait, maxSize, deadline, stop, timeouts, dataWait}); // XXX
             await Promise.race([stop, dataWait, this._flushEvent.wait(), ...timeouts]);
             const moreData = dataWait.done();
             if (!moreData) {
-                console.debug('getall', {moreData}, this); // XXX
                 dataWait.cancel();
             }
             if (this._stopEvent.isSet()) {
-                console.debug('getall stop event', this); // XXX
                 return;
             }
             const size = this._incoming.size;
             const flush = this._flushEvent.isSet();
             if (flush) {
-                console.debug('getall flush (so clear)', {size}, this); // XXX
                 this._flushEvent.clear();
                 if (!size) {
                     // We're just waiting for out-of-band work to finish.
@@ -189,17 +183,13 @@ export class OffloadProcessor {
             } else if (moreData && size < maxSize && Date.now() < deadline) {
                 // We are still within the constraints and have a positive ingest rate.
                 // Continue waiting for stagnation or other events.
-                console.debug('getall continue to wait because we think there is more..',
-                    {moreData, size, maxSize, deadline}, this); // XXX
                 continue;
             }
             deadline = maxWait && Date.now() + maxWait;
             if (!size) {
-                console.debug('getall no size continue...', {size, deadline}, this); // XXX
                 continue;
             }
             const items = this._incoming.getAllNoWait();
-            console.debug('getAllNoWait returned', {items}, this); // XXX
             for (const x of items) {
                 this._inflight.add(x);
             }
