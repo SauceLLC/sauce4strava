@@ -3,7 +3,7 @@
     let id;
     let url;
     let manifest;
-    if (self.browser && browser.runtime.getManifest) {
+    if (globalThis.browser && browser.runtime.getManifest) {
         id = browser.runtime.id;
         url = browser.runtime.getURL('');
         manifest = browser.runtime.getManifest();
