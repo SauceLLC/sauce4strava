@@ -24,7 +24,7 @@
         }
         await browser.contextMenus.removeAll();
         for (const [id, obj] of Object.entries(pageActions)) {
-            browser.contextMenus.create({id, title: obj.title, contexts: ['page_action']});
+            browser.contextMenus.create({id, title: obj.title, contexts: ['action']});
         }
         browser.contextMenus.onClicked.addListener(ev => {
             const cb = pageActions[ev.menuItemId].onClick;
