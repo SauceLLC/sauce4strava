@@ -82,7 +82,7 @@ function parseRawReactProps(raw) {
 }
 
 
-const calls = {
+export const calls = {
     parseRawReactProps,
     peaksProcessor,
 };
