@@ -1,7 +1,7 @@
 /* global sauce */
 
 import "../../common/base.js";
-import "../../common/base_init.js";
+import "../worker_base_init.js";
 import "../../common/lib.js";
 import "./db.js";
 import {peaksProcessor} from '/src/bg/hist/peaks.mjs';
