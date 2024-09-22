@@ -2,6 +2,10 @@
     "name": "Sauce for Strava™ [ALPHA]",
     "minimum_chrome_version": "120",
     "permissions": [
-        "declarativeContent"
-    ]
+        "offscreen"
+    ],
+    "background": {
+        "service_worker": "src/bg/main.mjs",
+        "type": "module"
+    }
 }

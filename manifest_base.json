@@ -13,8 +13,7 @@
         "storage",
         "unlimitedStorage",
         "contextMenus",
-        "alarms",
-        "offscreen"
+        "alarms"
     ],
 
     "icons": {
@@ -24,11 +23,6 @@
         "64": "images/icon64.png",
         "128": "images/icon128.png",
         "256": "images/icon256.png"
-    },
-
-    "background": {
-        "service_worker": "src/bg/main.mjs",
-        "type": "module"
     },
 
     "action": {

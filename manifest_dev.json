@@ -1,7 +1,6 @@
 {
     "name": "Sauce for Strava™ [DEV]",
     "short_name": "Sauce [DEV]",
-    "author": "Sauce, LLC",
 
     "icons": {
         "16": "images/icon16-dev.png",
