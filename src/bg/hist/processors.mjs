@@ -2,7 +2,7 @@
 
 import * as queues from '/src/common/jscoop/queues.mjs';
 import * as locks from '/src/common/jscoop/locks.mjs';
-import {offscreenProxy} from '/src/bg/hist.mjs';
+import {specialProxy} from '/src/bg/hist.mjs';
 import {peaksProcessor} from '/src/bg/hist/peaks.mjs';
 
 const actsStore = sauce.hist.db.ActivitiesStore.singleton();
@@ -695,7 +695,7 @@ export class PeaksProcessor extends OffloadProcessor {
     }
 
     async _process(activities) {
-        const peaks = await offscreenProxy.peaksProcessor(this.athlete.data, activities, this.options);
+        const peaks = await specialProxy.peaksProcessor(this.athlete.data, activities, this.options);
         await peaksStore.putMany(peaks);
     }
 }

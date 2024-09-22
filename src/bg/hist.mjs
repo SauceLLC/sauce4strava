@@ -239,9 +239,34 @@ class OffscreenDocumentRPC {
     }
 }
 
-export const offscreenProxy = new Proxy(new OffscreenDocumentRPC(), {
-    get: (target, prop) => (...args) => target.invoke(prop, ...args)
-});
+
+class PseudoDocumentRPC {
+    constructor() {
+        this._importing = import('./offscreen.mjs').then(m => this._calls = m.calls);
+    }
+
+    async _connect() {
+    }
+
+    async invoke(name, ...args) {
+        if (!this._calls) {
+            await this._importing;
+        }
+        if (!Object.prototype.hasOwnProperty.call(this._calls, name)) {
+            throw new TypeError(`Invalid RPC call: ${name}`);
+        }
+        return this._calls[name](...args);
+    }
+}
+
+
+// In chromium we are in a service worker without DOM but also without the ability to start
+// web workers unless we use their maligned offscreen-document API.  Firefox does not support
+// service workers for extenstions but does have background pages which support all the APIs
+// we need.  Ergo we need a "special" proxy..
+export const specialProxy = new Proxy(
+    browser.offscreen ? new OffscreenDocumentRPC() : new PseudoDocumentRPC(),
+    {get: (target, prop) => (...args) => target.invoke(prop, ...args)});
 
 
 async function networkOnline(timeout) {
@@ -1438,7 +1463,7 @@ class SyncJob extends EventTarget {
     }
 
     async parseRawReactProps(raw) {
-        return await offscreenProxy.parseRawReactProps(raw);
+        return await specialProxy.parseRawReactProps(raw);
     }
 
     groupPhotosToDatabase(stravaData) {
