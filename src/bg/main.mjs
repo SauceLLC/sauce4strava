@@ -108,9 +108,9 @@ sauce.suspendSafeSleep = function(ms) {
 };
 
 
-// Required to make site start with alarms API
-// XXX verify this works with service works and with a naked arrow func
-browser.alarms.onAlarm.addListener(() => void 0);  // pur pot hack
+// Required for alarms API to actually wake us up.
+// Actual work commences without instigation.
+browser.alarms.onAlarm.addListener(() => undefined);
 
 browser.runtime.onInstalled.addListener(async details => {
     if (['install', 'update'].includes(details.reason) && !details.temporary) {
@@ -132,34 +132,5 @@ browser.runtime.onMessage.addListener(msg => {
     }
 });
 
-if (browser.declarativeContent) {
-    // Chromium...
-    browser.runtime.onInstalled.addListener(details => {
-        browser.declarativeContent.onPageChanged.removeRules(undefined, () => {
-            browser.declarativeContent.onPageChanged.addRules([{
-                actions: [new browser.declarativeContent.ShowPageAction()],
-                conditions: [new browser.declarativeContent.PageStateMatcher({
-                    pageUrl: {
-                        hostSuffix: 'www.strava.com',
-                        schemes: ['https']
-                    }
-                })],
-            }]);
-        });
-    });
-} else {
-    // Firefox, Safari, etc...
-    const showing = new Set();
-    browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-        const url = new URL(tab.url);
-        if (url.origin.match(/^https:\/\/www\.strava\.com$/i)) {
-            browser.pageAction.show(tabId);
-            showing.add(tabId);
-        } else if (showing.has(tabId)) {
-            browser.pageAction.hide(tabId);
-            showing.delete(tabId);
-        }
-    });
-}
 
 sauce.storage.get('currentUser').then(id => setCurrentUser(id));

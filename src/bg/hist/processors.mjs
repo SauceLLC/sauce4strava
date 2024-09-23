@@ -38,7 +38,7 @@ async function getActivitiesStreams(activities, streamsDesc) {
             streamKeys.push([a.pk, stream]);
         }
     }
-    const getStreams = streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true});
+    const getStreams = streamsStore.getMany(streamKeys);
     for (const x of await withTimeout(getStreams, 180000)) {
         if (x) {
             actStreams.get(x.activity)[x.stream] = x.data;
@@ -557,13 +557,13 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
     // Add/update w/kg peaks and do cleanup for unused entries.
     const ids = activities.map(x => x.pk);
     const [wkgs, powers, nps, xps, paces, gaps, hrs] = await Promise.all([
-        peaksStore.getForActivities(ids, {type: 'power_wkg', _skipClone: true, _skipCache: true}),
-        peaksStore.getForActivities(ids, {type: 'power', _skipClone: true, _skipCache: true}),
-        peaksStore.getForActivities(ids, {type: 'np', _skipClone: true, _skipCache: true}),
-        peaksStore.getForActivities(ids, {type: 'xp', _skipClone: true, _skipCache: true}),
-        peaksStore.getForActivities(ids, {type: 'pace', _skipClone: true, _skipCache: true}),
-        peaksStore.getForActivities(ids, {type: 'gap', _skipClone: true, _skipCache: true}),
-        peaksStore.getForActivities(ids, {type: 'hr', _skipClone: true, _skipCache: true}),
+        peaksStore.getForActivities(ids, {type: 'power_wkg'}),
+        peaksStore.getForActivities(ids, {type: 'power'}),
+        peaksStore.getForActivities(ids, {type: 'np'}),
+        peaksStore.getForActivities(ids, {type: 'xp'}),
+        peaksStore.getForActivities(ids, {type: 'pace'}),
+        peaksStore.getForActivities(ids, {type: 'gap'}),
+        peaksStore.getForActivities(ids, {type: 'hr'}),
     ]);
     const options = await sauce.storage.get('options');
     const disableNP = !!options['analysis-disable-np'];

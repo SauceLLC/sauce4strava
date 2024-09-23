@@ -97,8 +97,8 @@ export class DataExchange extends sauce.proxy.Eventing {
         }
         const actsWork = (async () => {
             const iter = this.athleteId ?
-                actsStore.byAthlete(this.athleteId, {_skipCache: true}) :
-                actsStore.values(null, {_skipCache: true});
+                actsStore.byAthlete(this.athleteId) :
+                actsStore.values(null);
             for await (const data of iter) {
                 // We want a clean slate on restore.
                 if (data.syncState && data.syncState.local) {
@@ -113,8 +113,8 @@ export class DataExchange extends sauce.proxy.Eventing {
         })();
         const streamsWork = (async () => {
             const iter = this.athleteId ?
-                streamsStore.byAthlete(this.athleteId, null, {_skipClone: true, _skipCache: true}) :
-                streamsStore.values(null, {_skipClone: true, _skipCache: true});
+                streamsStore.byAthlete(this.athleteId, null) :
+                streamsStore.values(null);
             const estSizePerArrayEntry = 6.4;  // Tuned on my data + headroom.
             for await (const data of iter) {
                 batch.push({store: 'streams', data});
@@ -212,8 +212,7 @@ export class DataExchange extends sauce.proxy.Eventing {
             gpx: GPXSerializer,
         }[type];
         const athlete = await athletesStore.get(this.athleteId, {model: true});
-        const activities = await actsStore.getAllForAthlete(this.athleteId,
-            {_skipClone: true, _skipCache: true});
+        const activities = await actsStore.getAllForAthlete(this.athleteId);
         const athleteName = athlete.get('name');
         const gender = athlete.get('gender');
         let zip = new SauceZip();
@@ -223,7 +222,7 @@ export class DataExchange extends sauce.proxy.Eventing {
         for (let offt = 0; offt < activities.length; offt += step) {
             const actsBatch = activities.slice(offt, offt + step);
             const streamsBatch = await streamsStore.getManyForActivities(actsBatch.map(x => x.id),
-                {index: 'activity', _skipClone: true, _skipCache: true});
+                {index: 'activity'});
             console.debug("Adding FIT files to ZIP archive", offt + actsBatch.length, activities.length);
             for (const [i, streams] of streamsBatch.entries()) {
                 const act = actsBatch[i];

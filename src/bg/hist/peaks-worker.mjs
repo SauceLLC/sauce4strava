@@ -36,7 +36,7 @@ async function getActivitiesStreams(activities, streamsDesc) {
             streamKeys.push([a.id, stream]);
         }
     }
-    const getStreams = streamsStore.getMany(streamKeys, {_skipClone: true, _skipCache: true});
+    const getStreams = streamsStore.getMany(streamKeys);
     for (const x of await withTimeout(getStreams, 120000)) {
         if (x) {
             actStreams.get(x.activity)[x.stream] = x.data;
