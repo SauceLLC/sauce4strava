@@ -39,6 +39,9 @@ sauce.ns('proxy', ns => {
             connectedTabs.add(tabId);
         }
         const handleBackgroundProxyCall = async data => {
+            if (data.type === 'keepalive') {
+                return;
+            }
             if (data.type && data.type === 'sauce-proxy-establish-port') {
                 port.onMessage.removeListener(handleBackgroundProxyCall);
             }

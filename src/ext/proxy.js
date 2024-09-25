@@ -9,6 +9,7 @@ sauce.ns('proxy', ns => {
     const disconnected = new Set();
     let exportsBound;
     let bgConnecting;
+    let keepaliveInterval;
 
     ns.isConnected = false;
 
@@ -21,6 +22,7 @@ sauce.ns('proxy', ns => {
         }
         const connectPid = proxyId--;
         console.info("Connecting to background worker...");
+        clearInterval(keepaliveInterval);
         bgConnecting = new Promise(resolve => {
             inflight.set(connectPid, msg => {
                 if (!exportsBound) {
@@ -51,9 +53,15 @@ sauce.ns('proxy', ns => {
             ns.isConnected = false;
             mainBGPort = null;
             bgConnecting = null;
+            clearInterval(keepaliveInterval);
         });
         mainBGPort.postMessage({desc: {call: 'sauce-proxy-init'}, pid: connectPid});
         await bgConnecting;
+        keepaliveInterval = setInterval(() => {
+            if (mainBGPort && !document.hidden) {
+                mainBGPort.postMessage({type: 'keepalive', ts: Date.now()});
+            }
+        }, 15000);
     };
 
 
