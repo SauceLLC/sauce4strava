@@ -46,9 +46,6 @@
     "content_scripts": [{
         "run_at": "document_start",
         "matches": ["https://www.strava.com/*"],
-        "css": [
-            "css/site/common.css"
-        ],
         "js": [
             "src/ext/webext.js",
             "src/common/base.js",
@@ -61,18 +58,24 @@
         ]
     }, {
         "run_at": "document_start",
-        "matches": ["https://www.strava.com/sauce/*"],
-        "css": [
-            "css/site/repurpose.css"
-        ]
-    }, {
-        "run_at": "document_start",
         "matches": ["https://www.strava.com/*"],
         "world": "MAIN",
         "js": [
             "src/common//base.js",
             "src/site/preloader.js",
             "src/site/base_init.js"
+        ]
+    }, {
+        "run_at": "document_start",
+        "matches": ["https://www.strava.com/*"],
+        "css": [
+            "css/site/common.css"
+        ]
+    }, {
+        "run_at": "document_start",
+        "matches": ["https://www.strava.com/sauce/*"],
+        "css": [
+            "css/site/repurpose.css"
         ]
     }],
 
