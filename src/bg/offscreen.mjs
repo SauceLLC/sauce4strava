@@ -82,8 +82,18 @@ function parseRawReactProps(raw) {
 }
 
 
+function stripHTML(raw) {
+    const frag = document.createElement('div');
+    const htmlEntitiesKey = String.fromCharCode(...[33, 39, 36, 30, 46, 5, 10, 2, 12]
+        .map((x, i) => (x ^ i) + 72));
+    frag[htmlEntitiesKey] = raw;
+    return frag.textContent;
+}
+
+
 export const calls = {
     parseRawReactProps,
+    stripHTML,
     peaksProcessor,
 };
 

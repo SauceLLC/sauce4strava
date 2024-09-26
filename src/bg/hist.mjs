@@ -1235,7 +1235,7 @@ class SyncJob extends EventTarget {
         }
         if (!this.options.noActivityScan) {
             this.setStatus('activity-scan');
-            const updateFn = this.isSelf ? this.updateSelfActivities : this.updatePeerActivities;
+            const updateFn = this.isSelf ? this.updateSelfActivitiesV2 : this.updatePeerActivities;
             try {
                 await updateFn.call(this, {forceUpdate: this.options.forceActivityUpdate});
             } finally {
@@ -1289,42 +1289,13 @@ class SyncJob extends EventTarget {
             for (const x of data.entries) {
                 if (x.entity === 'Activity') {
                     const a = x.activity;
-                    const id = Number(a.id);
-                    if (!knownIds.has(id)) {
-                        batch.push(this.activityToDatabase({
-                            id,
-                            ts: x.cursorData.updated_at * 1000,
-                            type: a.type,
-                            name: a.activityName,
-                            description: a.description,
-                            virtual: a.isVirtual,
-                            trainer: a.isVirtual ? true : undefined,
-                            commute: a.isCommute,
-                            map: a.mapAndPhotos && a.mapAndPhotos.activityMap ?
-                                a.mapAndPhotos.activityMap.url : undefined,
-                            photos: a.mapAndPhotos && a.mapAndPhotos.photoList ?
-                                a.mapAndPhotos.photoList
-                                    .map(p => p && p.large)
-                                    .filter(p => p)
-                                    .map(url => ({url})) :
-                                undefined,
-                        }));
+                    if (!knownIds.has(Number(a.id))) {
+                        batch.push(this.activityToDatabase(await this.parseFeedActivity(a, x.cursorData)));
                     }
                 } else if (x.entity === 'GroupActivity') {
                     for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
                         if (!knownIds.has(a.activity_id)) {
-                            batch.push(this.activityToDatabase({
-                                id: a.activity_id,
-                                ts: (new Date(a.start_date)).getTime(),
-                                type: a.type,
-                                name: a.name,
-                                description: a.description,
-                                virtual: a.is_virtual,
-                                trainer: a.is_virtual ? true : undefined,
-                                commute: a.is_commute,
-                                map: a.activity_map && a.activity_map.url,
-                                photos: a.photos ? this.groupPhotosToDatabase(a.photos) : undefined,
-                            }));
+                            batch.push(this.activityToDatabase(await this.parseFeedGroupActivity(a)));
                         }
                     }
                 }
@@ -1445,16 +1416,6 @@ class SyncJob extends EventTarget {
         return await specialProxy.parseRawReactProps(raw);
     }
 
-    groupPhotosToDatabase(stravaData) {
-        if (stravaData) {
-            return stravaData.map(x => {
-                const bySize = Object.entries(x.urls);
-                bySize.sort((a, b) => b[0] - a[0]);
-                return {url: bySize[0][1]};
-            });
-        }
-    }
-
     activityToDatabase({id, ts, type, name, ...extra}) {
         if (!id) {
             this.logError('Invalid activity id for athlete: ' + this.athlete.pk);
@@ -1475,6 +1436,60 @@ class SyncJob extends EventTarget {
             ...extra,
         };
         return data;
+    }
+
+    async parseFeedActivity(a, cursorData) {
+        if (a.mapAndPhotos?.photoList?.length) {
+            if (a.mapAndPhotos.photoList.some(x => !x.thumbnail)) {debugger; }
+        }
+        return {
+            id: Number(a.id),
+            ts: a.startDate ?
+                (new Date(a.startDate)).getTime() :
+                (cursorData.updated_at - (a.elapsedTime || 0)) * 1000,
+            type: a.type,
+            name: a.activityName,
+            description: a.description ? await specialProxy.stripHTML(a.description) : undefined,
+            virtual: a.isVirtual,
+            trainer: a.isVirtual ? true : undefined,
+            commute: a.isCommute,
+            map: a.mapAndPhotos?.activityMap ? {url: a.mapAndPhotos.activityMap.url} : undefined,
+            media: a.mapAndPhotos?.photoList?.length ?
+                a.mapAndPhotos.photoList
+                    .filter(x => x?.thumbnail && (x?.large || x?.video))
+                    .map(x => ({
+                        // Swaping the HLS (m3u8) ext with /high.mp4 is a mux.com magic trick.
+                        // It may not last forever by HLS is overly complicated and not natively
+                        // supported.  Not worth the effort for 30 second clips.
+                        type: x.video ? 'video' : 'image',
+                        url: x.video ? x.video.replace(/.m3u8$/, '/high.mp4') : x.large,
+                        thumbnail: x.thumbnail,
+                    })) :
+                undefined,
+        };
+    }
+
+    async parseFeedGroupActivity(a) {
+        if (!a.start_date) { debugger; }
+        return {
+            id: a.activity_id,
+            ts: (new Date(a.start_date)).getTime(),
+            type: a.type,
+            name: a.name,
+            description: a.description ? await specialProxy.stripHTML(a.description) : undefined,
+            virtual: a.is_virtual,
+            trainer: a.is_virtual ? true : undefined,
+            commute: a.is_commute,
+            map: a.activity_map ? {url: a.activity_map.url} : undefined,
+            media: a.photos?.length ? a.photos.map(x => {
+                const urlsBySize = Object.entries(x.urls).toSorted((a, b) => a[0] - b[0]).map(x => x[1]);
+                return {
+                    type: x.static_video_url ? 'video' : 'image',
+                    url: x.static_video_url || urlsBySize.at(-1),
+                    thumbnail: urlsBySize[0],
+                };
+            }) : undefined,
+        };
     }
 
     async fetchMonth(year, month) {
@@ -1498,11 +1513,6 @@ class SyncJob extends EventTarget {
             this.logError(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`);
             return [];
         }
-        // Desc seems to be wrapped in a <p> but I'm not sure if this is 100% of the time and doing
-        // other html sanitizing is inconsistent with how other html chars are escaped (or not escaped).
-        const unwrapDesc = x => x && x.replace(/^\s*?<p>/, '')
-            .replace(/<\/p>\s*?$/, '')
-            .replace(/<\/p>(\s*)<p>/, '\n$1');
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
         const batch = [];
         const rawProps = raw.match(
@@ -1529,38 +1539,10 @@ class SyncJob extends EventTarget {
                 for (const x of feedEntries) {
                     if (x.entity === 'Activity') {
                         const a = x.activity;
-                        batch.push(this.activityToDatabase({
-                            id: Number(a.id),
-                            ts: x.cursorData.updated_at * 1000,
-                            type: a.type,
-                            name: a.activityName,
-                            description: unwrapDesc(a.description),
-                            virtual: a.isVirtual,
-                            trainer: a.isVirtual ? true : undefined,
-                            commute: a.isCommute,
-                            map: a.mapAndPhotos && a.mapAndPhotos.activityMap ?
-                                a.mapAndPhotos.activityMap.url : undefined,
-                            photos: a.mapAndPhotos && a.mapAndPhotos.photoList ?
-                                a.mapAndPhotos.photoList
-                                    .map(p => p && p.large)
-                                    .filter(p => p)
-                                    .map(url => ({url})) :
-                                undefined,
-                        }));
+                        batch.push(this.activityToDatabase(await this.parseFeedActivity(a, x.cursorData)));
                     } else if (x.entity === 'GroupActivity') {
                         for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
-                            batch.push(this.activityToDatabase({
-                                id: a.activity_id,
-                                ts: (new Date(a.start_date)).getTime(),
-                                type: a.type,
-                                name: a.name,
-                                description: unwrapDesc(a.description),
-                                virtual: a.is_virtual,
-                                trainer: a.is_virtual ? true : undefined,
-                                commute: a.is_commute,
-                                map: a.activity_map && a.activity_map.url,
-                                photos: a.photos ? this.groupPhotosToDatabase(a.photos) : undefined,
-                            }));
+                            batch.push(this.activityToDatabase(await this.parseFeedGroupActivity(a)));
                         }
                     }
                 }
@@ -2000,7 +1982,7 @@ class SyncManager extends EventTarget {
         this.refreshInterval = 12 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 4 * 60 * 60 * 1000;
-        this.maxSyncJobs = 10;
+        this.maxSyncJobs = 4;
         this.currentUser = currentUser;
         this.activeJobs = new Map();
         this.stopping = false;
