@@ -1,8 +1,7 @@
 {
     "minimum_chrome_version": "120",
     "permissions": [
-        "offscreen",
-        "declarativeContent"
+        "offscreen"
     ],
     "background": {
         "service_worker": "src/bg/main.mjs",
