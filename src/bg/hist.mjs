@@ -1439,9 +1439,6 @@ class SyncJob extends EventTarget {
     }
 
     async parseFeedActivity(a, cursorData) {
-        if (a.mapAndPhotos?.photoList?.length) {
-            if (a.mapAndPhotos.photoList.some(x => !x.thumbnail)) {debugger; }
-        }
         return {
             id: Number(a.id),
             ts: a.startDate ?
@@ -1470,7 +1467,6 @@ class SyncJob extends EventTarget {
     }
 
     async parseFeedGroupActivity(a) {
-        if (!a.start_date) { debugger; }
         return {
             id: a.activity_id,
             ts: (new Date(a.start_date)).getTime(),
