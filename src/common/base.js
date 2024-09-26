@@ -736,7 +736,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
             const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
             const data = await this._request(ifc.get(query));
-            const updated = Object.assign({}, data, updates);
+            const updated = {...data, ...updates};
             const p = this._request(idbStore.put(updated));
             idbStore.commitOwn();
             await p;
@@ -768,7 +768,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                     const get = ifc.get(key);
                     get.addEventListener('error', onAnyError);
                     get.addEventListener('success', () => {
-                        const put = idbStore.put(Object.assign({}, get.result, updates));
+                        const put = idbStore.put({...get.result, ...updates});
                         put.addEventListener('error', onAnyError);
                         put.addEventListener('success', onPutSuccess);
                         if (!--getsRemaining) {
