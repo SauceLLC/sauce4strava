@@ -110,6 +110,21 @@
                     <% if (a.description) { %>
                         <p class="activity-desc">{{a.description}}</p>
                     <% } %>
+                    <% if (a.media) { %>
+                        <div class="activity-media">
+                            <% for (const x of a.media) { %>
+                                <a class="detail-media" href="{{x.url}}" target="_blank">
+                                    <% if (x.type === 'image') { %>
+                                        <img src="{{x.thumbnail}}"/>
+                                    <% } else { %>
+                                        <video disablepictureinpicture disableremoteplayback playsinline loop
+                                               onmouseover="this.play()" onmouseout="this.pause()"
+                                               src="{{x.url}}"></video>
+                                    <% } %>
+                                </a>
+                            <% } %>
+                        </div>
+                    <% } %>
                     <% if (sauce.model.getActivityTSS(a) != null) { %>
                         <row>
                             <key><attr for="tp">TSS®</attr>:</key>
