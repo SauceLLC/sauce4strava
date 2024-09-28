@@ -1,24 +1,38 @@
-/* global browser */
+/* global browser, sauce */
 
 import '../ext/webext.js';
 
 
+globalThis.sauce = {};
 const idleWorkers = [];
 const workers = new Set();
+
+
+function _setOptions(options) {
+    sauce.options = options;
+    for (const x of idleWorkers) {
+        x.terminate();
+        workers.delete(x);
+    }
+    idleWorkers.length = 0;
+    for (const x of workers) {
+        x.tainted = true;
+    }
+}
 
 
 async function peaksProcessor(athlete, activities, options) {
     let worker;
     while (!worker) {
         if (idleWorkers.length) {
-            console.info("Claiming idle web worker");
+            console.debug("Claiming idle web worker", idleWorkers.length);
             worker = idleWorkers.shift();
         } else if (workers.size >= navigator.hardwareConcurrency * 2) {
             // Cheapout on sleep lock..
             await new Promise(r => setTimeout(r, 200));
             continue;
         } else {
-            console.info("Creating new web worker:", workers.size + 1);
+            console.debug("Creating new web worker:", workers.size + 1);
             worker = new Worker('/src/bg/hist/peaks-worker.mjs', {type: 'module'});
             workers.add(worker);
         }
@@ -45,19 +59,25 @@ async function peaksProcessor(athlete, activities, options) {
         });
     });
     ourPort.start();
-    worker.postMessage({athlete, activities, options, port: theirPort}, [theirPort]);
+    const sauceConfig = {options: sauce.options};
+    worker.postMessage({athlete, activities, options, port: theirPort, sauceConfig}, [theirPort]);
     try {
         const ret = await p;
-        worker.idleTimeout = setTimeout(() => {
-            const idx = idleWorkers.indexOf(worker);
-            if (idx !== -1) {
-                idleWorkers.splice(idx, 1);
-            }
+        if (worker.tainted) {
             worker.terminate();
             workers.delete(worker);
-            console.info(`Terminating idle web worker: idle:${idleWorkers.length} total:${workers.size}`);
-        }, 5000);
-        idleWorkers.push(worker);
+        } else {
+            worker.idleTimeout = setTimeout(() => {
+                const idx = idleWorkers.indexOf(worker);
+                if (idx !== -1) {
+                    idleWorkers.splice(idx, 1);
+                }
+                worker.terminate();
+                workers.delete(worker);
+                console.info(`Terminating idle web worker: idle:${idleWorkers.length} total:${workers.size}`);
+            }, 5000);
+            idleWorkers.push(worker);
+        }
         return ret;
     } catch(e) {
         worker.terminate();
@@ -92,6 +112,7 @@ function stripHTML(raw) {
 
 
 export const calls = {
+    _setOptions,
     parseRawReactProps,
     stripHTML,
     peaksProcessor,

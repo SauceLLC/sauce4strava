@@ -22,10 +22,25 @@ sauce.ns('hist', () => Object.fromEntries(Object.entries(hist))); // For console
 // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
 // to try migrations every startup.
 const migrationsRun = sauce.migrate.runMigrations();
+let _starting = undefined;
 self.currentUser = undefined;
 
 
-let _started;
+async function start() {
+    await migrationsRun;
+    sauce.storage.addListener((key, value) => {
+        if (key === 'options') {
+            sauce.options = value;
+        }
+    });
+    const config = await sauce.storage.get(null);
+    sauce.options = config.options;
+    self.currentUser = config.currentUser;
+    await hist.startSyncManager(self.currentUser);
+    sauce.proxy.startBackgroundHandler();
+}
+
+
 async function setCurrentUser(id) {
     if (id != null) {
         if (self.currentUser != null) {
@@ -34,13 +49,10 @@ async function setCurrentUser(id) {
     } else {
         console.warn("Current user logged out");
     }
-    self.currentUser = id;
-    const first = !_started;
-    _started = true;
-    await migrationsRun;
-    await hist.restartSyncManager(id);
-    if (first) {
-        sauce.proxy.startBackgroundHandler();
+    if (self.currentUser !== id) {
+        self.currentUser = id;
+        await _starting;
+        await hist.restartSyncManager(id);
     }
 }
 
@@ -132,5 +144,4 @@ browser.runtime.onMessage.addListener(msg => {
     }
 });
 
-
-sauce.storage.get('currentUser').then(id => setCurrentUser(id));
+_starting = start();

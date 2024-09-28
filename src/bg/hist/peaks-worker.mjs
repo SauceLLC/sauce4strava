@@ -58,6 +58,9 @@ async function processor(athlete, activities, options) {
 
 
 addEventListener('message', async ev => {
+    if (!sauce.options) {
+        sauce.options = ev.data.sauceConfig.options;
+    }
     const port = ev.data.port;
     try {
         port.postMessage({

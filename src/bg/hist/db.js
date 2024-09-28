@@ -20,16 +20,22 @@ sauce.ns('hist.db', ns => {
 
 
     class ActivityModel extends sauce.db.Model {
-        static addSyncManifest(manifest) {
+
+        static addSyncManifest(desc) {
             if (!this._syncManifests) {
                 this._syncManifests = {};
             }
-            if (!this._syncManifests[manifest.processor]) {
-                this._syncManifests[manifest.processor] = {};
+            if (!this._syncManifests[desc.processor]) {
+                this._syncManifests[desc.processor] = {};
             }
-            this._syncManifests[manifest.processor][manifest.name] = Object.assign({
+            const manifest = this._syncManifests[desc.processor][desc.name] = {
                 errorBackoff: defaultSyncErrorBackoff,
-            }, manifest);
+                ...desc,
+            };
+            if (sauce.options) {
+                this.updateSyncManifestStorageOptionsHash(manifest);
+            }
+            return manifest;
         }
 
         static getSyncManifests(processor, name) {
@@ -52,11 +58,19 @@ sauce.ns('hist.db', ns => {
             return this.getSyncManifests(processor, name)[0];
         }
 
-        // Who we depends ON...
+        static updateSyncManifestStorageOptionsHash(manifest) {
+            if (manifest.storageOptionTriggers) {
+                const bundle = manifest.storageOptionTriggers.map(x => [x, sauce.options[x]]);
+                manifest.storageOptionHash = sauce.hash(JSON.stringify(bundle));
+            } else {
+                manifest.storageOptionHash = null;
+            }
+        }
+
+        // Who we depend on...
         static requiredManifests(processor, name) {
             const manifests = new Set();
             const bubble = deps => {
-                console.count('requiredManfiests');
                 for (const x of deps) {
                     const m = this.getSyncManifest(processor, x);
                     manifests.add(m);
@@ -72,7 +86,7 @@ sauce.ns('hist.db', ns => {
             return [...manifests];
         }
 
-        // Who depends on US...
+        // Who depends on us...
         static dependantManifests(processor, name) {
             if (!this._dependantManifestsCache) {
                 this._dependantManifestsCache = new Map();
@@ -157,6 +171,7 @@ sauce.ns('hist.db', ns => {
             }
             delete state.error;
             state.version = manifest.version;
+            state.storageOptionHash = manifest.storageOptionHash;
             this._setSyncState(manifest, state);
         }
 
@@ -171,6 +186,8 @@ sauce.ns('hist.db', ns => {
         }
 
         hasSyncSuccess(manifest) {
+            // WARNING this is different than asking if the sync is dirty.
+            // This only asks if it HAS succeeded.
             const state = this._getSyncState(manifest);
             return !!(state && state.version === manifest.version && !(state.error && state.error.ts));
         }
@@ -211,21 +228,29 @@ sauce.ns('hist.db', ns => {
             }
         }
 
+        isSyncStateDirty(manifest) {
+            const state = this._getSyncState(manifest);
+            return !!(
+                !state ||
+                state.error?.ts ||
+                state.version !== manifest.version ||
+                state.storageOptionHash !== manifest.storageOptionHash
+            );
+        }
+
         nextAvailManifest(processor) {
             const manifests = this.constructor.getSyncManifests(processor);
             if (!manifests) {
                 throw new TypeError("Invalid sync processor");
             }
-            const states = new Map(manifests.map(m => [m.name, this._getSyncState(m)]));
             const completed = new Set();
             const pending = new Set();
             // Pass 1: Compile completed and pending sets without dep evaluation.
             for (const m of manifests) {
-                const state = states.get(m.name);
-                if (state && state.version === m.version && (!state.error || !state.error.ts)) {
-                    completed.add(m.name);
-                } else {
+                if (this.isSyncStateDirty(m)) {
                     pending.add(m.name);
+                } else {
+                    completed.add(m.name);
                 }
             }
             if (!pending.size) {
@@ -255,10 +280,9 @@ sauce.ns('hist.db', ns => {
             } while (!idle);
             for (const name of pending) {
                 const m = manifestsMap.get(name);
-                const state = states.get(name);
+                const state = this._getSyncState(m);
                 const e = state && state.error;
                 if (e && e.ts && Date.now() - e.ts < m.errorBackoff * (2 ** e.count)) {
-                    // XXX can we continue and see if another pending is acceptable?
                     return;  // Unavailable until error backoff expires.
                 } else {
                     return m;
@@ -268,13 +292,7 @@ sauce.ns('hist.db', ns => {
 
         isSyncComplete(processor) {
             const manifests = this.constructor.getSyncManifests(processor);
-            for (const m of manifests) {
-                const state = this._getSyncState(m);
-                if (!state || state.version !== m.version || (state.error && state.error.ts)) {
-                    return false;
-                }
-            }
-            return true;
+            return manifests.every(x => !this.isSyncStateDirty(x));
         }
     }
 

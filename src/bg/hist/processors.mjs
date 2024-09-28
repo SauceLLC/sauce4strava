@@ -400,10 +400,6 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
 }
 
 
-export async function activityAthleteStatsProcessor({manifest, activities, athlete}) {
-}
-
-
 export async function activityStatsProcessor({manifest, activities, athlete}) {
     const actStreams = await getActivitiesStreams(activities,
         ['time', 'heartrate', 'active', 'watts', 'watts_calc', 'altitude', 'distance']);
@@ -565,9 +561,8 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
         peaksStore.getForActivities(ids, {type: 'gap'}),
         peaksStore.getForActivities(ids, {type: 'hr'}),
     ]);
-    const options = await sauce.storage.get('options');
-    const disableNP = !!options['analysis-disable-np'];
-    const disableXP = !!options['analysis-disable-xp'];
+    const disableNP = !!sauce.options['analysis-disable-np'];
+    const disableXP = !!sauce.options['analysis-disable-xp'];
     const validPeriods = new Set((await sauce.peaks.getRanges('periods')).map(x => x.value));
     const validDistances = new Set((await sauce.peaks.getRanges('distances')).map(x => x.value));
     const gender = athlete.get('gender') || 'male';
@@ -669,12 +664,11 @@ export async function peaksFinalizerProcessor({manifest, activities, athlete}) {
 
 export class PeaksProcessor extends OffloadProcessor {
     async processor() {
-        const sauceOptions = await sauce.storage.get('options');
         this.options = {
             periods: (await sauce.peaks.getRanges('periods')).map(x => x.value),
             distances: (await sauce.peaks.getRanges('distances')).map(x => x.value),
-            disableNP: !!sauceOptions['analysis-disable-np'],
-            disableXP: !!sauceOptions['analysis-disable-xp'],
+            disableNP: !!sauce.options['analysis-disable-np'],
+            disableXP: !!sauce.options['analysis-disable-xp'],
             useEstWatts: this.athlete.get('estCyclingWatts') && this.athlete.get('estCyclingPeaks'),
         };
         // NOTE: The spec requires that 8 is the max mem value returned, so this is
@@ -704,12 +698,11 @@ export class PeaksProcessor extends OffloadProcessor {
 export class PeaksProcessorNoWorkerSupport extends OffloadProcessor {
     async processor() {
         this.useEstWatts = this.athlete.get('estCyclingWatts') && this.athlete.get('estCyclingPeaks');
-        const sauceOptions = await sauce.storage.get('options');
         this.options = {
             periods: (await sauce.peaks.getRanges('periods')).map(x => x.value),
             distances: (await sauce.peaks.getRanges('distances')).map(x => x.value),
-            disableNP: !!sauceOptions['analysis-disable-np'],
-            disableXP: !!sauceOptions['analysis-disable-xp'],
+            disableNP: !!sauce.options['analysis-disable-np'],
+            disableXP: !!sauce.options['analysis-disable-xp'],
         };
         // NOTE: The spec requires that 8 is the max mem value returned, so this is
         // just a low mem device check at best.

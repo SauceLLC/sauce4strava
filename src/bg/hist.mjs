@@ -96,17 +96,19 @@ ActivityModel.addSyncManifest({
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'activity-stats',
-    version: 4,  // add hr zones, fix manual entries
+    version: 5,  // TSS prefer trimp
     depends: ['extra-streams', 'athlete-settings', 'run-power'],
+    storageOptionTriggers: ['analysis-prefer-estimated-power-tss'],
     data: {processor: processors.activityStatsProcessor}
 });
 
 ActivityModel.addSyncManifest({
     processor: 'local',
     name: 'peaks',
-    version: 13, // Updated np and xp (simplified and true)
+    version: 14, // Updated np and xp (again)
     depends: ['extra-streams'],
-    //data: {processor: processors.PeaksProcessorNoWorkerSupport}
+    storageOptionTriggers: ['analysis-disable-np', 'analysis-disable-xp'],
+    //data: {processor: processors.PtimatedeaksProcessorNoWorkerSupport}
     data: {processor: processors.PeaksProcessor}
 });
 
@@ -115,6 +117,7 @@ ActivityModel.addSyncManifest({
     name: 'peaks-finalizer',
     version: 1,
     depends: ['athlete-settings', 'run-power', 'peaks'],
+    storageOptionTriggers: ['analysis-disable-np', 'analysis-disable-xp'],
     data: {processor: processors.peaksFinalizerProcessor}
 });
 
@@ -125,13 +128,6 @@ ActivityModel.addSyncManifest({
     depends: ['activity-stats'],
     data: {processor: processors.TrainingLoadProcessor}
 });
-
-/*ActivityModel.addSyncManifest({
-    processor: 'local',
-    name: 'activity-athlete-stats',
-    version: 1,
-    data: {processor: processors.activityAthleteStatsProcessor}
-});*/
 
 
 class FetchError extends Error {
@@ -156,6 +152,11 @@ class OffscreenDocumentRPC {
         this._connecting = null;
         this._port = null;
         this._idleKillId = null;
+        sauce.storage.addListener(async (key, value) => {
+            if (key === 'options' && this._port && !this._connecting) {
+                await this._invoke('_setOptions', [value]);
+            }
+        });
     }
 
     async _connect() {
@@ -172,8 +173,8 @@ class OffscreenDocumentRPC {
                 justification: 'Safely parse HTML'
             });
         } else {
-            debugger;
-            console.info("Using existing offscreen document...");
+            // Unlikely, possibly browser bug...
+            console.warn("Unexpected use of existing offscreen document...");
         }
         this._port = await browser.runtime.connect({name: 'sauce-offscreen-proxy-port'});
         this._port.onMessage.addListener(this._onPortMessage.bind(this));
@@ -182,6 +183,7 @@ class OffscreenDocumentRPC {
                 this._port = null;
             }
         });
+        await this._invoke('_setOptions', [sauce.options]);
         this._connecting = null;
     }
 
@@ -213,16 +215,15 @@ class OffscreenDocumentRPC {
             }
             await this._connecting;
         }
+        return this._invoke(name, args);
+    }
+
+    _invoke(name, args) {
         let resolve, reject;
         const id = this._callIdCounter++;
         const promise = new Promise((_resolve, _reject) => (resolve = _resolve, reject = _reject));
         this._pending.set(id, {resolve, reject});
-        this._port.postMessage({
-            op: 'call',
-            name,
-            args,
-            id
-        });
+        this._port.postMessage({op: 'call', name, args, id});
         this._deferKill();
         return promise;
     }
@@ -1978,7 +1979,7 @@ class SyncManager extends EventTarget {
         this.refreshInterval = 12 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 4 * 60 * 60 * 1000;
-        this.maxSyncJobs = 4;
+        this.maxSyncJobs = navigator.hardwareConcurrency >= 8 ? 4 : 2;
         this.currentUser = currentUser;
         this.activeJobs = new Map();
         this.stopping = false;
@@ -1987,6 +1988,25 @@ class SyncManager extends EventTarget {
         this._refreshRequests = new Map();
         this._refreshEvent = new locks.Event();
         this._refreshLoop = null;
+        sauce.storage.addListener(async (key, newValue, oldValue) => {
+            if (this.stopping || key !== 'options') {
+                return;
+            }
+            const manifests = ActivityModel.getSyncManifests('local');
+            const keys = Array.from(new Set([].concat(...manifests.map(x => x.storageOptionTriggers || []))));
+            const oldSig = JSON.stringify(keys.map(x => [x, oldValue && oldValue[x]]));
+            const newSig = JSON.stringify(keys.map(x => [x, newValue && newValue[x]]));
+            if (oldSig !== newSig) {
+                console.info("Sauce options change triggering refresh...");
+                for (const m of manifests) {
+                    ActivityModel.updateSyncManifestStorageOptionsHash(m);
+                }
+                const athletes = await athletesStore.getEnabled();
+                for (const x of athletes) {
+                    this.refreshRequest(x.id, {noActivityScan: true});
+                }
+            }
+        });
     }
 
     async stop() {
@@ -2006,6 +2026,10 @@ class SyncManager extends EventTarget {
         }
         this.stopped = false;
         this.stopping = false;
+        const manifests = ActivityModel.getSyncManifests('local');
+        for (const m of manifests) {
+            ActivityModel.updateSyncManifestStorageOptionsHash(m);
+        }
         this._refreshLoop = this.refreshLoop();
     }
 
@@ -2074,7 +2098,6 @@ class SyncManager extends EventTarget {
                 }
             }
             if (this.activeJobs.size || !athletes.length) {
-                console.info("Sync Manager waiting for new activity...");
                 await this._refreshEvent.wait();
             } else {
                 if (activeTimerStart) {
@@ -2249,20 +2272,22 @@ class SyncController extends sauce.proxy.Eventing {
             status: job ? job.status : undefined,
             error: null
         };
-        this._setupEventRelay('active', ev => {
-            this.state.active = ev.data;
-            if (this.state.active) {
-                this.state.error = null;
-            }
-        });
-        this._setupEventRelay('status', ev => this.state.status = ev.data);
-        this._setupEventRelay('error', ev => this.state.error = ev.data.error);
-        this._setupEventRelay('enable');
-        this._setupEventRelay('disable');
-        this._setupEventRelay('progress');
-        this._setupEventRelay('ratelimiter');
-        this._setupEventRelay('importing-athlete');
-        this._setupEventRelay('log');
+        if (syncManager) {
+            this._setupEventRelay('active', ev => {
+                this.state.active = ev.data;
+                if (this.state.active) {
+                    this.state.error = null;
+                }
+            });
+            this._setupEventRelay('status', ev => this.state.status = ev.data);
+            this._setupEventRelay('error', ev => this.state.error = ev.data.error);
+            this._setupEventRelay('enable');
+            this._setupEventRelay('disable');
+            this._setupEventRelay('progress');
+            this._setupEventRelay('ratelimiter');
+            this._setupEventRelay('importing-athlete');
+            this._setupEventRelay('log');
+        }
     }
 
     delete() {

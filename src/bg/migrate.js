@@ -5,22 +5,27 @@ const namespace = 'migrate';
 sauce.ns(namespace, ns => {
     'use strict';
 
+
+    async function setDefaultConfigOptions(config, defaultOptions) {
+        const options = config.options || {};
+        for (const [key, value] of Object.entries(defaultOptions)) {
+            if (options[key] === undefined) {
+                options[key] = value;
+            }
+        }
+        await sauce.storage.set({options});
+    }
+
+
     const migrations = [{
         version: 1,
         name: 'options',
         migrate: async config => {
-            const defaultOptions = {
+            await setDefaultConfigOptions(config, {
                 "analysis-segment-badges": true,
                 "analysis-cp-chart": true,
                 "activity-hide-promotions": true
-            };
-            const options = config.options || {};
-            for (const [key, value] of Object.entries(defaultOptions)) {
-                if (options[key] === undefined) {
-                    options[key] = value;
-                }
-            }
-            await sauce.storage.set({options});
+            });
         }
     }, {
         version: 2,
@@ -124,16 +129,17 @@ sauce.ns(namespace, ns => {
         version: 9,
         name: 'run-power-disable',
         migrate: async config => {
-            const defaultOptions = {
+            await setDefaultConfigOptions(config, {
                 "analysis-disable-run-watts": true,
-            };
-            const options = config.options || {};
-            for (const [key, value] of Object.entries(defaultOptions)) {
-                if (options[key] === undefined) {
-                    options[key] = value;
-                }
-            }
-            await sauce.storage.set({options});
+            });
+        }
+    }, {
+        version: 10,
+        name: 'prefer-trimp-tss',
+        migrate: async config => {
+            await setDefaultConfigOptions(config, {
+                "analysis-prefer-estimated-power-tss": false,
+            });
         }
     }];
 
