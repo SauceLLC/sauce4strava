@@ -147,4 +147,15 @@ sauce.ns('storage', ns => {
         }
     };
     maybeExport(ns.update);
+
+
+    ns.addListener = function(callback, options={}) {
+        const store = options.sync ? browser.storage.sync : browser.storage.local;
+        store.onChanged.addListener(changes => {
+            // The format of `changes` is a bit convoluted..  Make it a little easier to parse through...
+            for (const [key, {oldValue, newValue}] of Object.entries(changes)) {
+                callback(key, newValue, oldValue);
+            }
+        });
+    };
 });
