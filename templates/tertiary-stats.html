@@ -19,18 +19,25 @@
         </li>
     <% } %>
 
-    <% if (obj.tss) { %>
-        <li title="{{{tss_tooltip}}}">
-            <strong>{{humanNumber(tss)}}</strong>
-            <div class="label"><attr for="tp">TSS®</attr></div>
-        </li>
-    <% } else if (obj.tTss) { %>
-        <li title="{{{trimp_tss_tooltip}}}">
-            <strong>{{humanNumber(tTss)}}</strong>
-            <div class="label"><attr for="tp">tTSS®</attr></div>
-        </li>
-    <% } %>
-
+    <% const tooltipKey = `${tssType}_tss_tooltip`; %>
+    <li title="{{{[tooltipKey]}}}">
+        <strong class="sauce-editable-field tss">
+            <a title="{{{tss_link_tooltip}}}">{{humanNumber(tss) || '-'}}</a><!--
+         --><input data-width="5ch" type="number" value="{{Math.round(tss) || ''}}"
+                   title="{{{tss_input_tooltip}}}"/>
+        </strong>
+        <div class="label">
+            <% if (tssType === 'trimp') { %>
+                <attr for="tp">tTSS®</attr>
+            <% } else if (tssType === 'estimate') { %>
+                <attr for="tp">eTSS®</attr>
+            <% } else if (tssType === 'override') { %>
+                <attr for="tp">mTSS®</attr></div>
+            <% } else { %>
+                <attr for="tp">TSS®</attr>
+            <% } %>
+        </div>
+    </li>
 
     <div class="divider"></div>
 
@@ -39,7 +46,7 @@
             <a class="origin-{{ftpOrigin}}"
                title="{{{ftp_link_tooltip}}}">{{ftp ? humanNumber(ftp) : '?'}}</a><!--
             --><input data-width="5ch" type="text" value="{{ftp || ''}}"
-                   title="{{{ftp_input_tooltip}}}"/><!--
+                      title="{{{ftp_input_tooltip}}}"/><!--
             --><abbr class="unit" title="Watts">W</abbr>
         </strong>
         <div class="label">FTP</div>
@@ -50,7 +57,7 @@
             <a class="origin-{{weightOrigin}}"
                title="{{{weight_link_tooltip}}}">{{weightNorm || '?'}}</a><!--
             --><input data-width="6ch" type="text" value="{{weight || ''}}"
-                   title="{{{weight_input_tooltip}}}"/><!--
+                      title="{{{weight_input_tooltip}}}"/><!--
             --><abbr class="unit" title="Weight">{{weightUnit}}</abbr>
         </strong>
         <div class="label">{{{weight}}}</div>

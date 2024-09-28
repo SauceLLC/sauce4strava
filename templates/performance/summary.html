@@ -89,6 +89,13 @@
             </row>
         <% } %>
 
+        <% if (missingActivity.length) { %>
+            <row class="warning">
+                <key>{{=icon exclamation-triangle-duotone=}}{{{missing}}} <attr for="tp">Activity</attr>:</key>
+                <value><a href="javascript:void(0);" class="missing-activity">{{missingActivity.length}} {{{activities}}}</a></value>
+            </row>
+        <% } %>
+
         <% if (tssAvg) { %>
             <row>
                 <key>{{{/analysis_avg}}} <attr for="tp">TSS®</attr>:</key>

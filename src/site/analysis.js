@@ -343,6 +343,41 @@ sauce.ns('analysis', ns => {
     }
 
 
+    function attachEditableTSS($parent) {
+        const $field = $parent.find('.sauce-editable-field.tss');
+        async function save(tssOverride) {
+            await sauce.hist.updateActivity(pageView.activityId(), {tssOverride});
+        }
+        editableField($field, {
+            validator: rawValue => {
+                if (rawValue === '') {
+                    return null;  // Reset to default value.
+                }
+                const n = parseInt(rawValue);
+                if (isNaN(n) || n < 0) {
+                    const e = new Error('invalid');
+                    e.reason = {
+                        title: 'Invalid TSS',
+                        message: `<b>${rawValue} is not a valid TSS.</b>`
+                    };
+                    throw e;
+                } else {
+                    return n;
+                }
+            },
+            onBlur: save,
+            onSubmit: async v => {
+                await save(v);
+                sauce.ui.modal({
+                    title: 'Reloading...',
+                    body: '<b>Reloading page to reflect TSS change.</b>'
+                });
+                location.reload();
+            }
+        });
+    }
+
+
     function navHeightAdjustments() {
         // The main site's side nav is absolute positioned, so if the primary view is too short
         // the footer will overflow and mess everything up.  Add a min-height to the view to
@@ -361,7 +396,7 @@ sauce.ns('analysis', ns => {
         }
         const $stats = jQuery(await template(attrs));
         if (ns.syncAthlete) {
-            $stats.on('click', '.sauce-editable-field', async ev => {
+            $stats.on('click', '.sauce-editable-field.ftp,.sauce-editable-field.weight', async ev => {
                 const {FTPHistoryView, WeightHistoryView} =
                     await import(sauce.getURL('/src/site/data-views.mjs'));
                 const isFTP = ev.currentTarget.classList.contains('ftp');
@@ -390,6 +425,7 @@ sauce.ns('analysis', ns => {
                     location.reload();
                 });
             });
+            attachEditableTSS($stats);
         } else {
             attachEditableFTP($stats);
             attachEditableWeight($stats);
@@ -681,7 +717,9 @@ sauce.ns('analysis', ns => {
         const activeStream = _getStream('active');
         const distance = streamDelta(distStream);
         const activeTime = getActiveTime();
-        let tss, tTss, np, intensity, power;
+        let tss;
+        let tssType;
+        let localTss, localTrimpTss, np, intensity, power;
         let kj = pageView.activity().get('kilojoules');
         if (wattsStream && hasAccurateWatts()) {
             const powerRoll = sauce.power.correctedPower(timeStream, wattsStream, {activeStream});
@@ -690,19 +728,36 @@ sauce.ns('analysis', ns => {
                 power = powerRoll.avg({active: true});
                 np = supportsNP() ? powerRoll.np() : null;
                 if (ns.ftp) {
-                    tss = sauce.power.calcTSS(np || power, activeTime, ns.ftp);
+                    localTss = sauce.power.calcTSS(np || power, activeTime, ns.ftp);
                     intensity = (np || power) / ns.ftp;
                 }
             }
         }
-        if (!tss && hrStream) {
+        if (hrStream) {
             const zones = await getHRZones();
             if (zones) {
                 const ltHR = (zones.z4 + zones.z3) / 2;
                 const maxHR = sauce.perf.estimateMaxHR(zones);
                 const restingHR = ns.ftp ? sauce.perf.estimateRestingHR(ns.ftp) : 60;
-                tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR, ns.gender);
+                localTrimpTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR,
+                    restingHR, maxHR, ns.gender);
             }
+        }
+        if (ns.syncActivity?.tssOverride != null) {
+            tss = ns.syncActivity.tssOverride;
+            tssType = 'override';
+        } else if (localTss != null && !isWattEstimate) {
+            tss = localTss;
+            tssType = 'power';
+        } else if (localTrimpTss != null) {
+            tss = localTrimpTss;
+            tssType = 'trimp';
+        } else if (localTss != null) {
+            tss = localTss;
+            tssType = 'power';
+        } else {
+            tss = 0;
+            tssType = 'override';
         }
         assignTrailforksToSegments().catch(console.error);
         const localeWeight = ns.weight ? L.weightFormatter.convert(ns.weight) : undefined;
@@ -715,7 +770,7 @@ sauce.ns('analysis', ns => {
             ftpOrigin: ns.ftpOrigin || 'default',
             intensity,
             tss,
-            tTss,
+            tssType,
             np,
             kj,
             power,

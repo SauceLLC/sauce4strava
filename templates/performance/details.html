@@ -125,34 +125,44 @@
                             <% } %>
                         </div>
                     <% } %>
-                    <% if (sauce.model.getActivityTSS(a) != null) { %>
+                    <% const tssObj = sauce.model.getActivityTSSMeta(a); %>
+                    <% if (tssObj.tss != null) { %>
+                        <% const tooltipKey = `/analysis_${tssObj.type}_tss_tooltip`; %>
                         <row>
-                            <key><attr for="tp">TSS®</attr>:</key>
-                            <value>{{humanNumber(sauce.model.getActivityTSS(a))}}</value>
-                            <div class="btn btn-icon-only btn-unstyled expand"
-                                 title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
-                            <div class="btn btn-icon-only btn-unstyled compress"
-                                 title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
-                            <div class="expanded-details">
-                                <% if (a.tssOverride != null) { %>
-                                    <row>
-                                        <key><attr for="tp">TSS®</attr> {{{override}}}:</key>
-                                        <value>{{humanNumber(a.tssOverride)}}</value>
-                                    </row>
-                                <% } %>
-                                <% if (a.stats && a.stats.tss != null) { %>
-                                    <row>
-                                        <key><attr for="tp">TSS®</attr> {{{/analysis_power}}}:</key>
-                                        <value>{{humanNumber(a.stats.tss)}}</value>
-                                    </row>
-                                <% } %>
-                                <% if (a.stats && a.stats.tTss != null) { %>
-                                    <row>
-                                        <key><attr for="tp">tTSS®</attr>:</key>
-                                        <value>{{humanNumber(a.stats.tTss)}}</value>
-                                    </row>
-                                <% } %>
-                            </div>
+                            <key>
+                                <attr for="tp" title="{{{[tooltipKey]}}}">{{({trimp: 't', override: 'm', estimate: 'e'}[tssObj.type]) || ''}}TSS®</attr>:
+                            </key>
+                            <value>{{humanNumber(tssObj.tss)}}</value>
+                            <% if ([a.tssOverride, a.stats?.tss, a.stats?.tTss].filter(x => x != null).length > 1) { %>
+                                <div class="btn btn-icon-only btn-unstyled expand"
+                                     title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
+                                <div class="btn btn-icon-only btn-unstyled compress"
+                                     title="{{{/analysis_compress_tooltip}}}">{{=icon minus-square-duotone=}}</div>
+                                <div class="expanded-details">
+                                    <% if (a.tssOverride != null) { %>
+                                        <row>
+                                            <key><attr for="tp" title="{{{/analysis_override_tss_tooltip}}}">mTSS®</attr>:</key>
+                                            <value>{{humanNumber(a.tssOverride)}}</value>
+                                        </row>
+                                    <% } %>
+                                    <% if (a.stats && a.stats.tss != null) { %>
+                                        <row>
+                                            <% if (a.stats.estimate) { %>
+                                                <key><attr for="tp" title="{{{/analysis_estimate_tss_tooltip}}}">eTSS®</attr>:</key>
+                                            <% } else { %>
+                                                <key><attr for="tp" title="{{{/analysis_power_tss_tooltip}}}">TSS®</attr>:</key>
+                                            <% } %>
+                                            <value>{{humanNumber(a.stats.tss)}}</value>
+                                        </row>
+                                    <% } %>
+                                    <% if (a.stats && a.stats.tTss != null) { %>
+                                        <row>
+                                            <key><attr for="tp" title="{{{/analysis_trimp_tss_tooltip}}}">tTSS®</attr>:</key>
+                                            <value>{{humanNumber(a.stats.tTss)}}</value>
+                                        </row>
+                                    <% } %>
+                                </div>
+                            <% } %>
                         </row>
                     <% } else { %>
                         <row>
@@ -207,10 +217,18 @@
                                 <value>{{humanTimer(a.stats.activeTime)}}</value>
                             </row>
                         <% } %>
-                        <% if (a.stats.power) { %>
+                        <% if (a.stats.np || a.stats.xp || a.stats.power) { %>
                             <row class="power" data-expand-mode="peaks" data-peak-type="power">
-                                <key>{{{/analysis_power}}}:</key>
-                                <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
+                                <% if (a.stats.np) { %>
+                                    <key><attr for="np">NP®</attr>:</key>
+                                    <value>{{humanNumber(a.stats.np)}}<abbr class="unit short">w</abbr></value>
+                                <% } else if (a.stats.xp) { %>
+                                    <key>xPower:</key>
+                                    <value>{{humanNumber(a.stats.xp)}}<abbr class="unit short">w</abbr></value>
+                                <% } else { %>
+                                    <key>{{{/analysis_power}}}:</key>
+                                    <value>{{humanNumber(a.stats.power)}}<abbr class="unit short">w</abbr></value>
+                                <% } %>
                                 <div class="btn btn-icon-only btn-unstyled expand"
                                      title="{{{/analysis_expand_tooltip}}}">{{=icon plus-square-duotone=}}</div>
                                 <div class="btn btn-icon-only btn-unstyled compress"
