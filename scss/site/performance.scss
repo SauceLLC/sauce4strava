@@ -455,11 +455,11 @@ table.activity-table {
         flex-wrap: wrap;
         --colorwheel-conic-turn: 0;
 
-        .patron-link, .btn.enable {
+        .patron-init, .btn.enable {
             margin-top: 1rem;
         }
 
-        .patron-link {
+        .patron-init {
             display: flex;
 
             a {
@@ -479,6 +479,11 @@ table.activity-table {
                     width: auto;
                 }
             }
+        }
+
+        .patron-link {
+            margin-top: 2em;
+            margin-bottom: -1em;
         }
 
         .section-wrap {
