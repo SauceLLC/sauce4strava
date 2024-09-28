@@ -2,8 +2,8 @@
 
 import '../ext/webext.js';
 
+self.sauce = self.sauce || {};
 
-globalThis.sauce = {};
 const idleWorkers = [];
 const workers = new Set();
 
