@@ -1,3 +1,4 @@
+<% const isPatron = sauce.patronLevel >= 10; %>
 <% if (sauce.isSafari()) { %>
     <div class="safari-disclaimor">Sorry but Safari is not supported due to a broken IndexedDB implementation. Email <a href="mailto:support@sauce.llc" target="_blank">support@sauce.llc</a> for more information.</div>
 <% } %>
@@ -6,12 +7,15 @@
         <section class="cols">
             <div class="col-left">
                 <img src="https://www.sauce.llc/images/perf-promo/2.png"/>
-                <% if (sauce.patronLevel >= 10) { %>
-                    <div class="btn btn-xl btn-primary enable">Activate Sauce Performance!</div>
+                <% if (isPatron) { %>
+                    <div class="btn btn-xl btn-primary enable">Start using Sauce Performance!</div>
                 <% } else { %>
-                    <div class="patron-link">
+                    <div class="patron-init">
                         <a href="https://www.patreon.com/bePatron?u=32064618"
                            target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                    </div>
+                    <div class="patron-link">
+                        Already a member? <a href="https://www.sauce.llc/patreon-oauth" target="_blank">Link to Patreon</a>
                     </div>
                 <% } %>
             </div>
@@ -36,12 +40,15 @@
         <section class="cols">
             <div class="col-left">
                 <img src="https://www.sauce.llc/images/perf-promo/3.png"/>
-                <% if (sauce.patronLevel >= 10) { %>
+                <% if (isPatron) { %>
                     <div class="btn btn-xl btn-primary enable">Enable right meow!</div>
                 <% } else { %>
-                    <div class="patron-link">
+                    <div class="patron-init">
                         <a href="https://www.patreon.com/bePatron?u=32064618"
                            target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                    </div>
+                    <div class="patron-link">
+                        Already a member? <a href="https://www.sauce.llc/patreon-oauth" target="_blank">Link to Patreon</a>
                     </div>
                 <% } %>
             </div>
@@ -59,12 +66,15 @@
         <section class="cols">
             <div class="col-left">
                 <img src="https://www.sauce.llc/images/perf-promo/1.png"/>
-                <% if (sauce.patronLevel >= 10) { %>
+                <% if (isPatron) { %>
                     <div class="btn btn-xl btn-primary enable">Start synchronization!</div>
                 <% } else { %>
-                    <div class="patron-link">
+                    <div class="patron-init">
                         <a href="https://www.patreon.com/bePatron?u=32064618"
                            target="_blank"><img src="{{sauce.extUrl}}images/become_a_patron_button@2x.png"/></a>
+                    </div>
+                    <div class="patron-link">
+                        Already a member? <a href="https://www.sauce.llc/patreon-oauth" target="_blank">Link to Patreon</a>
                     </div>
                 <% } %>
             </div>
