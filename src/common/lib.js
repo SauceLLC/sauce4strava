@@ -2460,17 +2460,32 @@ sauce.ns('model', function() {
         }
     }
 
-
-    function getActivityTSS(a) {
+    function getActivityTSSMeta(a) {
+        const preferEstPower = !!sauce?.options['analysis-prefer-estimated-power-tss'];
+        let type;
+        let tss;
         if (a.tssOverride != null) {
-            return a.tssOverride;
+            type = 'override';
+            tss = a.tssOverride;
         } else if (a.stats) {
             if (a.stats.tss != null) {
-                return a.stats.tss;
+                if (!preferEstPower && (a.stats.estimate && a.stats.tTss != null)) {
+                    tss = a.stats.tTss;
+                    type = 'trimp';
+                } else {
+                    tss = a.stats.tss;
+                    type = a.stats.estimate ? 'estimate' : 'power';
+                }
             } else if (a.stats.tTss != null) {
-                return a.stats.tTss;
+                tss = a.stats.tTss;
+                type = 'trimp';
             }
         }
+        return {tss, type};
+    }
+
+    function getActivityTSS(a, options) {
+        return getActivityTSSMeta(a, options).tss;
     }
 
 
@@ -2509,6 +2524,7 @@ sauce.ns('model', function() {
     return {
         getAthleteHistoryValueAt,
         getActivityTSS,
+        getActivityTSSMeta,
         getActivityBaseType,
         getActivitySyncErrors,
     };
