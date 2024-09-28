@@ -53,6 +53,7 @@
             "src/common/proxy.js",
             "src/ext/proxy.js",
             "src/common/storage.js",
+            "src/ext/storage.js",
             "src/ext/locale.js",
             "src/ext/boot.js"
         ]
