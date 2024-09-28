@@ -50,6 +50,13 @@ function aggressiveSleep(ms) {
 }
 
 
+class CancelledError extends Error {
+    constructor() {
+        super("cancelled");
+    }
+}
+
+
 ActivityModel.addSyncManifest({
     processor: 'streams',
     name: 'fetch',
@@ -1135,7 +1142,7 @@ async function retryFetch(urn, options={}) {
             if (options.cancelEvent) {
                 await Promise.race([sleeping, options.cancelEvent.wait()]);
                 if (options.cancelEvent.isSet()) {
-                    throw new Error('cancelled');
+                    throw new CancelledError();
                 }
             } else {
                 await sleeping;
@@ -1152,7 +1159,7 @@ async function retryFetch(urn, options={}) {
             if (options.cancelEvent) {
                 await Promise.race([sleep(delay), options.cancelEvent.wait()]);
                 if (options.cancelEvent.isSet()) {
-                    throw new Error('cancelled');
+                    throw new CancelledError();
                 }
             } else {
                 await sleep(delay);
@@ -1239,9 +1246,18 @@ class SyncJob extends EventTarget {
             const updateFn = this.isSelf ? this.updateSelfActivitiesV2 : this.updatePeerActivities;
             try {
                 await updateFn.call(this, {forceUpdate: this.options.forceActivityUpdate});
+            } catch(e) {
+                if (!(e instanceof CancelledError)) {
+                    throw e;
+                }
             } finally {
                 await this.athlete.save({lastSyncActivityListVersion: activityListVersion});
             }
+        }
+        if (this._cancelEvent.isSet()) {
+            this.setStatus('cancelled');
+            this.logInfo(`Sync cancelled for: ` + this.athlete);
+            return;
         }
         this.setStatus('processing');
         try {
@@ -1275,7 +1291,7 @@ class SyncJob extends EventTarget {
         const forceUpdate = options.forceUpdate;
         const knownIds = new Set(forceUpdate ?  [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
         const q = new URLSearchParams({feed_type: 'my_activity'});
-        while (true) {
+        while (!this._cancelEvent.isSet()) {
             const resp = await this.retryFetch(`/dashboard/feed?${q}`);
             let data;
             try {
@@ -1345,8 +1361,7 @@ class SyncJob extends EventTarget {
                     const q = new URLSearchParams();
                     q.set('new_activity_only', 'false');
                     q.set('page', page);
-                    const resp = await this.retryFetch(`/athlete/training_activities?${q}`,
-                        {cancelEvent: this._cancelEvent});
+                    const resp = await this.retryFetch(`/athlete/training_activities?${q}`);
                     try {
                         return await resp.json();
                     } catch(e) {
@@ -1500,14 +1515,15 @@ class SyncJob extends EventTarget {
         q.set('interval', '' + year +  month.toString().padStart(2, '0'));
         let data;
         try {
-            const resp = await this.retryFetch(`/athletes/${this.athlete.pk}/interval?${q}`,
-                {cancelEvent: this._cancelEvent});
+            const resp = await this.retryFetch(`/athletes/${this.athlete.pk}/interval?${q}`);
             data = await resp.text();
         } catch(e) {
-            // In some cases Strava just returns 500 for a month.  I suspect it's when the only
-            // activity data in a month is private, but it's an upstream problem and we need to
-            // treat it like an empty response.
-            this.logError(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`);
+            if (!(e instanceof CancelledError)) {
+                // In some cases Strava just returns 500 for a month.  I suspect it's when the only
+                // activity data in a month is private, but it's an upstream problem and we need to
+                // treat it like an empty response.
+                this.logError(`Upstream activity fetch error: ${this.athlete.pk} [${q}]`);
+            }
             return [];
         }
         const raw = data.match(/jQuery\('#interval-rides'\)\.html\((.*)\)/)[1];
@@ -1692,7 +1708,6 @@ class SyncJob extends EventTarget {
                 error = e;
             }
             if (this._cancelEvent.isSet()) {
-                this.logInfo('Sync streams cancelled');
                 return count;
             }
             if (data) {
