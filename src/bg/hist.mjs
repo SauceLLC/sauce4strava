@@ -1289,7 +1289,7 @@ class SyncJob extends EventTarget {
 
     async updateSelfActivitiesV2(options={}) {
         const forceUpdate = options.forceUpdate;
-        const knownIds = new Set(forceUpdate ?  [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
+        const knownIds = new Set(forceUpdate ? [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
         const q = new URLSearchParams({feed_type: 'my_activity'});
         while (!this._cancelEvent.isSet()) {
             const resp = await this.retryFetch(`/dashboard/feed?${q}`);
@@ -1318,10 +1318,10 @@ class SyncJob extends EventTarget {
                 }
                 q.set('before', x.cursorData.updated_at);
             }
+            batch = batch.filter(x => x);
             if (!batch.length) {
                 break;
             }
-            batch = batch.filter(x => x);
             if (forceUpdate) {
                 this.logInfo(`Updating ${batch.length} activities`);
                 await actsStore.updateMany(new Map(batch.map(x => [x.id, x])));
@@ -1350,7 +1350,7 @@ class SyncJob extends EventTarget {
             'static_map',
             'twitter_msg',
         ];
-        const knownIds = new Set(forceUpdate ?  [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
+        const knownIds = new Set(forceUpdate ? [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
         for (let concurrency = 1, page = 1, pageCount, total;; concurrency = Math.min(concurrency * 2, 25)) {
             if (this._cancelEvent.isSet()) {
                 break;
@@ -1627,8 +1627,7 @@ class SyncJob extends EventTarget {
 
     async updatePeerActivities(options={}) {
         const forceUpdate = options.forceUpdate;
-        const knownIds = new Set(forceUpdate
-            ? [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
+        const knownIds = new Set(forceUpdate ? [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
         await this._batchImport(new Date(), knownIds, forceUpdate);
         const sentinel = await this.athlete.get('activitySentinel');
         if (!sentinel) {
