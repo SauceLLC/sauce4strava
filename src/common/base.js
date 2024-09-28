@@ -723,7 +723,9 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
             if (!this._started) {
                 await this._start();
             }
-            for (let i = 1;; i++) {
+            const retryLimit = 20;
+            let retryId;
+            for (let i = 1; i <= retryLimit; i++) {
                 const idbStore = this._getIDBStore('readonly', options);
                 const p = Promise.all(queries.map(q =>
                     this._readQuery(getter, q, {...options, idbStore}).then(x =>
@@ -732,14 +734,15 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 try {
                     const resp = await p;
                     if (i > 1) {
-                        console.info("RESOLVED WITH RETRY!!!", i, queries.length);
+                        console.warn(`IDB retry successfully recovered: ${i}/${retryLimit} [${retryId}]`);
                     }
                     return resp;
                 } catch(e) {
-                    if (i <= 10 && e.code === 0 && e.message === 'Failed to read large IndexedDB value') {
-                        const e = new Error(); // DOMException does not have an e.stack
-                        console.warn(`IDB retry for for chromium IDB bug: ${i}/10`, queries.length,
-                            e.message, e.stack);
+                    if (i <= retryLimit && e.code === 0 &&
+                        e.message === 'Failed to read large IndexedDB value') {
+                        const stack = (new Error()).stack; // DOMException does not have an e.stack
+                        retryId = performance.now();
+                        console.warn(`IDB retry scheduled: ${i}/${retryLimit} [${retryId}]`, stack);
                         await new Promise(resolve => setTimeout(resolve, i * 100));
                     } else {
                         throw e;
