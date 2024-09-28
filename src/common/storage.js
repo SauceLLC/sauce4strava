@@ -4,20 +4,6 @@ sauce.ns('storage', ns => {
     "use strict";
 
 
-    function isServiceWorker() {
-        const Klass = self.ServiceWorkerGlobalScope;
-        return Klass && self instanceof Klass;
-    }
-
-
-    function maybeExport(fn, options) {
-        // storage is used in ext pages where proxy is not used.
-        if (sauce.proxy && sauce.proxy.export && !isServiceWorker()) {
-            sauce.proxy.export(fn, {namespace: 'storage', ...options});
-        }
-    }
-
-
     async function storeSetOrRemove(store, data) {
         // Handle {foo: undefined} which by default will act like a noop to `set()`.
         const removes = Object.entries(data).filter(([_, v]) => v === undefined);
@@ -38,7 +24,6 @@ sauce.ns('storage', ns => {
         const store = options.sync ? browser.storage.sync : browser.storage.local;
         return await storeSetOrRemove(store, data);
     };
-    maybeExport(ns.set);
 
 
     ns.get = async function get(key, options={}) {
@@ -46,21 +31,18 @@ sauce.ns('storage', ns => {
         const o = await store.get(key);
         return typeof key === 'string' ? o[key] : o;
     };
-    maybeExport(ns.get);
 
 
     ns.remove = async function remove(key, options={}) {
         const store = options.sync ? browser.storage.sync : browser.storage.local;
         return await store.remove(key);
     };
-    maybeExport(ns.remove);
 
 
     ns.clear = async function clear(options={}) {
         const store = options.sync ? browser.storage.sync : browser.storage.local;
         return await store.clear();
     };
-    maybeExport(ns.clear);
 
 
     ns.getAthleteInfo = async function getAthleteInfo(id) {
@@ -69,13 +51,11 @@ sauce.ns('storage', ns => {
             return athlete_info[id];
         }
     };
-    maybeExport(ns.getAthleteInfo);
 
 
     ns.updateAthleteInfo = async function updateAthleteInfo(id, updates) {
         return await ns.update(`athlete_info.${id}`, updates);
     };
-    maybeExport(ns.updateAthleteInfo);
 
 
     ns.getPref = async function getPref(path) {
@@ -89,7 +69,6 @@ sauce.ns('storage', ns => {
         }
         return ref;
     };
-    maybeExport(ns.getPref);
 
 
     ns.setPref = async function setPref(path, value) {
@@ -108,7 +87,6 @@ sauce.ns('storage', ns => {
         }
         await ns.update(fqPath, o);
     };
-    maybeExport(ns.setPref, {name: '_setPref'});
 
 
     let _activeUpdate;
@@ -146,7 +124,6 @@ sauce.ns('storage', ns => {
             }
         }
     };
-    maybeExport(ns.update);
 
 
     ns.addListener = function(callback, options={}) {
