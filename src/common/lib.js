@@ -2112,14 +2112,18 @@ sauce.ns('perf', function() {
     function tTSS(hrStream, timeStream, activeStream, ltHR, minHR, maxHR, gender) {
         let t = 0;
         let lastTime = timeStream[0];
+        const hrErrorLow = minHR * 0.7;
+        const hrErrorHigh = maxHR * 1.5;
         for (let i = 1; i < timeStream.length; i++) {
-            if (!activeStream[i]) {
-                lastTime = timeStream[i];
+            const time = timeStream[i];
+            const hr = hrStream[i];
+            if (!activeStream[i] || !hr || hr < hrErrorLow || hr > hrErrorHigh) {
+                lastTime = time;
                 continue;
             }
-            const dur = timeStream[i] - lastTime;
-            lastTime = timeStream[i];
-            const hrr = (hrStream[i] - minHR) / (maxHR - minHR);
+            const dur = time - lastTime;
+            lastTime = time;
+            const hrr = (hr - minHR) / (maxHR - minHR);
             t += calcTRIMP(dur, hrr, gender);
         }
         const tHourAtLT = calcTRIMP(3600, (ltHR - minHR) / (maxHR - minHR), gender);
