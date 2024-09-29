@@ -473,12 +473,18 @@ sauce.ns('locale', ns => {
             return '';
         }
         const p = options.precision || 0;
-        return n.toLocaleString(undefined, {
+        const v = n.toLocaleString(undefined, {
             useGrouping: n >= 10000 || n <= -10000,
             maximumFractionDigits: p,
             minimumFractionDigits: options.fixed ? p : undefined,
         });
+        const sep = options.suffix && options.separator || '';
+        const suffix = options.suffix ?
+            options.html ? `<abbr class="unit">${options.suffix}</abbr>` : options.suffix :
+            '';
+        return (v === '-0' ? '0' : v) + sep + suffix;
     }
+
 
     function humanElevation(meters, options={}) {
         assertInit();
