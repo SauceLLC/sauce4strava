@@ -1,3 +1,4 @@
+<% const hMetric = (x, suffix, options) => humanNumber(x, {html: true, suffix, ...options}); %>
 <div class="sauce-brand-sidebar">
     <div class="sauce-label sauce-title">Sauce</div>
     <div class="sauce-logo"><img src="{{logo}}"/></div>
@@ -53,9 +54,7 @@
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{active_power_tooltip}}}">
             <key>{{{power}}}</key>
-            <value>
-                {{power.estimate ? '~' : ''}}{{humanNumber(power.activeAvg)}}<abbr class="unit">w</abbr>
-            </value>
+            <value>{{power.estimate ? '~' : ''}}{-hMetric(power.activeAvg, 'w')-}</value>
         </line>
 
         <% if (power.activeWKg) { %>
@@ -68,31 +67,28 @@
         <% if (obj.power.np) { %>
             <line title="{{{np_tooltip}}}">
                 <key><attr for="tp">NP®</attr></key>
-                <value>{{humanNumber(power.np)}}<abbr class="unit">w</abbr></value>
+                <value>{-hMetric(power.np, 'w')-}</value>
             </line>
         <% } %>
 
         <% if (obj.power.xp) { %>
             <line title="{{{xp_tooltip}}}">
                 <key>xPower</key>
-                <value>{{humanNumber(power.xp)}}<abbr class="unit">w</abbr></value>
+                <value>{-hMetric(power.xp, 'w')-}</value>
             </line>
         <% } %>
 
         <% if (power.elapsedAvg && Math.round(power.elapsedAvg) !== Math.round(power.activeAvg)) { %>
             <line title="{{{elapsed_power_tooltip}}}">
                 <key>{{{elapsed}}}</key>
-                <value>{{power.estimate ? '~' : ''}}{{humanNumber(power.elapsedAvg)}}<abbr class="unit">w</abbr></value>
+                <value>{{power.estimate ? '~' : ''}}{-hMetric(power.elapsedAvg, 'w')-}</value>
             </line>
         <% } %>
 
         <% if (obj.power.activeSP) { %>
             <line title="{{{sp_tooltip}}}">
                 <key>SP</key>
-                <value>{{humanNumber(power.activeSP)}}<abbr class="unit">w</abbr>
-                    <sup class="sauce-positive"
-                         title="{{{sp_adjust_tooltip}}}">+{{humanNumber((power.activeSPAdjust - 1) * 100, {precision: 1})}}%</sup>
-                </value>
+                <value>{-hMetric(power.activeSP, 'w')-}</value>
             </line>
         <% } %>
     </div>
@@ -103,7 +99,7 @@
     <div class="sauce-data-tuple">
         <line class="heading" title="{{{energy_tooltip}}}">
             <key>{{{energy}}}</key>
-            <value>{{humanNumber(energy.kj)}}<abbr class="unit">kJ</abbr></value>
+            <value>{-hMetric(energy.kj, 'kJ')-}</value>
         </line>
 
         <% if (energy.tss) { %>
@@ -111,7 +107,9 @@
                 <key><attr for="tp">TSS®</attr></key>
                 <value>{{humanNumber(energy.tss)}}</value>
             </line>
-        <% } else if (energy.tTss) { %>
+        <% } %>
+
+        <% if (energy.tTss) { %>
             <line title="{{{trimp_tss_tooltip}}}">
                 <key><attr for="tp">tTSS®</attr></key>
                 <value>{{humanNumber(energy.tTss)}}</value>
@@ -122,19 +120,21 @@
             <line title="{{{pwhr_tooltip}}}">
                 <key>Pw:Hr</key>
                 <value class="{{energy.pwhr < 0 ? 'sauce-positive' : 'sauce-negative'}}"
-                    >{{humanNumber(energy.pwhr * 100, {precision: 1})}}<abbr class="unit">%</abbr></value>
+                    >{-hMetric(energy.pwhr * 100, '%', {precision: 1})-}</value>
             </line>
         <% } %>
 
-        <line title="{{{energy_rate_tooltip}}}">
-            <key>{{{rate}}}</key>
-            <value>{{humanNumber(energy.kjHour)}}<abbr class="unit">kJ/h</abbr></value>
-        </line>
+        <% if (energy.kjHour) { %>
+            <line title="{{{energy_rate_tooltip}}}">
+                <key>{{{rate}}}</key>
+                <value>{-hMetric(energy.kjHour, 'kJ/h')-}</value>
+            </line>
+        <% } %>
 
         <% if (energy.intensity) { %>
             <line title="{{{intensity_tooltip}}}">
                 <key><attr for="tp">IF®</attr></key>
-                <value>{{humanNumber(energy.intensity * 100)}}<abbr class="unit">%</abbr></value>
+                <value>{-hMetric(energy.intensity * 100, '%')-}</value>
             </line>
         <% } %>
     </div>
@@ -155,49 +155,30 @@
         <% if (elevation.vam && elevation.vam >= 1) { %>
             <line title='"Velocità Ascensionale Media": {{{vam_tooltip}}}'>
                 <key>VAM</key>
-                <value>
-                    {{humanNumber(elevation.vam)}}<abbr class="unit">Vm/h</abbr>
-                </value>
+                <value>{-hMetric(elevation.vam, 'Vm/h')-}</value>
             </line>
         <% } %>
 
         <% if (elevation.gain && elevation.loss && elevation.grade < -1) { %>
             <line title="{{{elevation_loss_tooltip}}}">
                 <key>{{{loss}}}</key>
-                <value>
-                    <span class="sauce-negative">
-                        -{{elevation.loss}}<abbr class="unit">{{elUnit}}</abbr>
-                    </span>
-                </value>
+                <value><span class="sauce-negative">-{-hMetric(elevation.loss, elUnit)-}</span></value>
             </line>
             <line title="{{{elevation_gain_tooltip}}}">
                 <key>{{{gain}}}</key>
-                <value>
-                    <span class="sauce-positive">
-                        +{{elevation.gain}}<abbr class="unit">{{elUnit}}</abbr>
-                    </span>
-                </value>
+                <value><span class="sauce-positive">+{-hMetric(elevation.gain, elUnit)-}</span></value>
             </line>
         <% } else { %>
             <% if (elevation.gain) { %>
                 <line title="{{{elevation_gain_tooltip}}}">
                     <key>{{{gain}}}</key>
-                    <value>
-                        <span class="sauce-positive">
-                            +{{elevation.gain}}<abbr class="unit">{{elUnit}}</abbr>
-                        </span>
-                    </value>
+                    <value><span class="sauce-positive">+{-hMetric(elevation.gain, elUnit)-}</span></value>
                 </line>
             <% } %>
-
             <% if (elevation.loss) { %>
                 <line title="{{{elevation_loss_tooltip}}}">
                     <key>{{{loss}}}</key>
-                    <value>
-                        <span class="sauce-negative">
-                            -{{elevation.loss}}<abbr class="unit">{{elUnit}}</abbr>
-                        </span>
-                    </value>
+                    <value><span class="sauce-negative">-{-hMetric(elevation.loss, elUnit)-}</span></value>
                 </line>
             <% } %>
         <% } %>
@@ -238,7 +219,7 @@
     <div class="sauce-data-tuple sauce-rank-badge">
         <line class="heading">
             <key>{{{rank}}}</key>
-            <value>{{humanNumber(power.rank.level * 100)}}%</value>
+            <value>{-hMetric(power.rank.level * 100, '%')-}</value>
         </line>
         <% if (power.rank.badge) { %>
             <img src="{{power.rank.badge}}" class="sauce-rank" data-cat="{{power.rank.cat}}"
