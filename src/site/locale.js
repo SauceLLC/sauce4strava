@@ -185,20 +185,43 @@ sauce.ns('locale', ns => {
         let f;
         if (options.type) {
             f = {
-                swim: ns.swimPaceFormatter,
                 speed: ns.speedFormatter,
-                pace: ns.paceFormatter
+                pace: ns.paceFormatter,
+                swim: ns.swimPaceFormatter,
             }[options.type];
         } else if (options.activityType) {
             f = {
-                swim: ns.swimPaceFormatter,
                 ride: ns.speedFormatter,
                 workout: ns.speedFormatter,
                 ski: ns.speedFormatter,
                 run: ns.paceFormatter,
+                swim: ns.swimPaceFormatter,
             }[options.activityType];
+        } else {
+            if (self.pageView && self.pageView.activity) {
+                const activity = self.pageView.activity();
+                if (activity) {
+                    const su = activity.get('speedUnit');
+                    if (su === 'mph') {
+                        f = ns.speedFormatter;
+                    } else if (su === 'mpm') {
+                        f = ns.paceFormatter;
+                    } else if (su === 'mp100m') {
+                        f = ns.swimPaceFormatter;
+                    } else {
+                        // Unlikely...
+                        if (activity.isRide()) {
+                            f = ns.speedFormatter;
+                        } else if (activity.isRun()) {
+                            f = ns.paceFormatter;
+                        } else if (activity.isSwim()) {
+                            f = ns.swimPaceFormatter;
+                        }
+                    }
+                }
+            }
         }
-        return f || ns.paceFormatter;
+        return f || ns.speedFormatter;
     }
 
 
@@ -463,6 +486,56 @@ sauce.ns('locale', ns => {
     }
 
 
+    function humanTemp(temp, options={}) {
+        assertInit();
+        const precision = options.precision != null ? options.precision :
+            ns.tempFormatter.unitSystem === 'metric' ? 1 : 0;
+        if (options.html) {
+            const save = ns.tempFormatter.precision;
+            ns.tempFormatter.precision = precision;
+            try {
+                return ns.tempFormatter.abbreviated(temp, precision);
+            } finally {
+                ns.tempFormatter.precision = save;
+            }
+        } else if (options.suffix) {
+            return ns.tempFormatter.formatShort(temp, precision);
+        } else {
+            return ns.tempFormatter.format(temp, precision);
+        }
+    }
+
+
+    function humanCadence(hz, options={}) {
+        assertInit();
+        let formatter = ns.cadenceFormatter;
+        if (!options.type) {
+            if (self.pageView && self.pageView.activity) {
+                const activity = self.pageView.activity();
+                if (activity && activity.isRun()) {
+                    formatter = ns.cadenceFormatterRun;
+                } else if (activity && activity.isSwim()) {
+                    formatter = ns.cadenceFormatterSwim;
+                }
+            }
+        }
+        const precision = options.precision != null ? options.precision : 0;
+        if (options.html) {
+            const save = formatter.precision;
+            formatter.precision = precision;
+            try {
+                return formatter.abbreviated(hz, precision);
+            } finally {
+                formatter.precision = save;
+            }
+        } else if (options.suffix) {
+            return formatter.formatShort(hz, precision);
+        } else {
+            return formatter.format(hz, precision);
+        }
+    }
+
+
     function humanNumber(value, options={}) {
         assertInit();
         if (value == null || value === '') {
@@ -502,14 +575,15 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanStride(meters) {
+    function humanStride(meters, options={}) {
         assertInit();
-        const metric = ns.weightFormatter.unitSystem === 'metric';
+        const metric = ns.distanceFormatter.unitSystem === 'metric';
+        const suffix = options.suffix && metric ? 'm' : 'ft';
         if (metric) {
-            return humanNumber(meters, {precision: 2});
+            return humanNumber(meters, {precision: 2, ...options, suffix});
         } else {
             const feet = meters / metersPerMile * 5280;
-            return humanNumber(feet, {precision: 1});
+            return humanNumber(feet, {precision: 1, ...options, suffix});
         }
     }
 
@@ -558,6 +632,8 @@ sauce.ns('locale', ns => {
             relTime: humanRelTime,
             weight: humanWeight,
             elevation: humanElevation,
+            temp: humanTemp,
+            cadence: humanCadence,
             number: humanNumber,
             pace: humanPace,
             dayOfWeek: humanDayOfWeek,
@@ -575,6 +651,8 @@ sauce.ns('locale', ns => {
             humanRelTime,
             humanWeight,
             humanElevation,
+            humanTemp,
+            humanCadence,
             humanNumber,
             humanPace,
             humanDayOfWeek,
