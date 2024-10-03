@@ -1631,9 +1631,11 @@ class SyncJob extends EventTarget {
         await this._batchImport(new Date(), knownIds, forceUpdate);
         const sentinel = await this.athlete.get('activitySentinel');
         if (!sentinel) {
-            // We never finished a prior sync so find where we left off..
+            // We may have never finished a prior sync so find where we left off..
             const last = await actsStore.getOldestForAthlete(this.athlete.pk);
-            await this._batchImport(new Date(last.ts), knownIds, forceUpdate);
+            if (last) {
+                await this._batchImport(new Date(last.ts), knownIds, forceUpdate);
+            }
         }
     }
 
