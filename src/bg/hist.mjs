@@ -990,11 +990,17 @@ export async function invalidateAthleteSyncState(athleteId, processor, name, opt
         throw new TypeError("'athleteId' and 'processor' are required args");
     }
     let athlete;
+    let noActivityScan = true;
+    let noStreamsFetch = processor === 'local';
     if (!options.disableSync) {
         athlete = await athletesStore.get(athleteId, {model: true});
         if (athlete.isEnabled() && syncManager) {
             const job = syncManager.activeJobs.get(athleteId);
             if (job) {
+                const scanDone = job.statusHistory.some((x, i) =>
+                    x.status === 'activity-scan' && i < job.statusHistory.length - 1);
+                noActivityScan = !!job.options.noActivityScan || scanDone;
+                noStreamsFetch = !!job.options.noStreamsFetch;
                 job.cancel();
                 await job.wait();
             }
@@ -1002,11 +1008,7 @@ export async function invalidateAthleteSyncState(athleteId, processor, name, opt
     }
     await actsStore.invalidateForAthleteWithSync(athleteId, processor, name);
     if (!options.disableSync && athlete.isEnabled() && syncManager) {
-        await syncAthlete(athleteId, {
-            noActivityScan: true,
-            noStreamsFetch: processor === 'local',
-            ...options
-        });
+        await syncAthlete(athleteId, {noActivityScan, noStreamsFetch, ...options});
     }
 }
 sauce.proxy.export(invalidateAthleteSyncState, {namespace});
@@ -1173,7 +1175,7 @@ async function retryFetch(urn, options={}) {
 
 
 class SyncJob extends EventTarget {
-    constructor(athlete, isSelf, options) {
+    constructor(athlete, isSelf, options={}) {
         super();
         this.athlete = athlete;
         this.isSelf = isSelf;
@@ -1183,6 +1185,9 @@ class SyncJob extends EventTarget {
         this._procQueue = new queues.Queue();
         this.running = false;
         this.started = false;
+        this.status = undefined;
+        this.statusTimestamp = undefined;
+        this.statusHistory = [];
         this.niceSaveActivities = sauce.debounced(this.saveActivities);
         this.niceSendProgressEvent = sauce.debounced(this.sendProgressEvent);
         this.setStatus('init');
@@ -1279,7 +1284,10 @@ class SyncJob extends EventTarget {
     }
 
     setStatus(status) {
+        const ts = Date.now();
         this.status = status;
+        this.statusTimestamp = ts;
+        this.statusHistory.push({status, ts});
         this.emit('status', status);
     }
 
