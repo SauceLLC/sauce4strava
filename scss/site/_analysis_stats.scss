@@ -53,6 +53,10 @@
         }
     }
 
+    [data-icon] {
+        height: 0.9em;
+    }
+
     .expander {
         position: absolute;
         bottom: 0;
@@ -120,8 +124,9 @@
     }
 
     .sauce-data-divider {
-        margin: $pad 0;
+        margin: 0.8em 0;
         border-right: var(--sauce-thin-border);
+        opacity: 0.7;
     }
 
     .sauce-data-tuple {
@@ -129,6 +134,7 @@
         flex-direction: column;
         margin: $pad 0.22em;
         position: relative;
+        min-width: 5em; // stablize when scrolling
 
         line {
             display: flex;
@@ -167,13 +173,18 @@
             }
 
             value {
-                display: block;
-                margin-left: 0.2em;
-                white-space: nowrap;
+                // flex with baseline removes whitespace between strava formatters
+                display: flex;
+                align-items: baseline;
+                font-variant-numeric: tabular-nums;
 
                 sup {
                     font-size: 0.8em;
                 }
+            }
+
+            key:not(:empty) + value {
+                margin-left: 0.2em;
             }
         }
 
