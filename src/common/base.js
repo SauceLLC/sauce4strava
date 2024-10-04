@@ -765,6 +765,9 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
             }
             const idbStore = this._getIDBStore('readwrite', options);
             const ifc = options.index ? idbStore.index(options.index) : idbStore;
+            if (options.index) {
+                console.warn("DEPRECATED use of index for DB update", this, ifc, idbStore);
+            }
             const data = await this._request(ifc.get(query));
             const updated = {...data, ...updates};
             const p = this._request(idbStore.put(updated));
@@ -788,6 +791,9 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 let getsRemaining = putsRemaining;
                 const idbStore = this._getIDBStore('readwrite', options);
                 const ifc = options.index ? idbStore.index(options.index) : idbStore;
+                if (options.index) {
+                    console.warn("DEPRECATED use of index for DB updateMany", this, ifc, idbStore);
+                }
                 const onAnyError = ev => reject(ev.target.error);
                 const onPutSuccess = () => {
                     if (!--putsRemaining) {
@@ -811,19 +817,22 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
         }
 
         async put(data, options={}) {
+            if (options.index) {
+                throw new Error("DEPRECATED");
+            }
             if (!this._started) {
                 await this._start();
             }
             const idbStore = this._getIDBStore('readwrite', options);
-            if (options.index) {
-                throw new Error("DEPRECATED");  // Don't use autoIncrement
-            }
             const p = this._request(idbStore.put(data));
             idbStore.commitOwn();
             await p;
         }
 
         async putMany(datas, options={}) {
+            if (options.index) {
+                throw new Error("DEPRECATED");
+            }
             if (!datas.length) {
                 return;
             }
@@ -831,7 +840,7 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
                 await this._start();
             }
             const idbStore = this._getIDBStore('readwrite', options);
-            const index = options.index && idbStore.index(options.index);
+            const index = options.index && idbStore.index(options.index); // XXX deprecate
             let remaining = datas.length;
             await Promise.all(datas.map(async data => {
                 let key;
