@@ -258,8 +258,7 @@ export async function athleteSettingsProcessor({manifest, activities, athlete}) 
     }
     if (invalidate) {
         console.info("Athlete settings updated for:", athlete.pk, athlete.get('name'));
-        sauce.hist.invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name,
-            {noStreamsFetch: false}).catch(e =>
+        sauce.hist.invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name).catch(e =>
             console.error("Failed to force resync during athlete settings update:", e));
     }
 }
