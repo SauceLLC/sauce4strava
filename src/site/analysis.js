@@ -721,7 +721,7 @@ sauce.ns('analysis', ns => {
         let tssType;
         let localTss, localTrimpTss, np, intensity, power;
         let kj = pageView.activity().get('kilojoules');
-        if (wattsStream && hasAccurateWatts()) {
+        if (wattsStream) {
             const powerRoll = sauce.power.correctedPower(timeStream, wattsStream, {activeStream});
             if (powerRoll) {
                 kj = powerRoll.joules() / 1000;
@@ -746,18 +746,17 @@ sauce.ns('analysis', ns => {
         if (ns.syncActivity?.tssOverride != null) {
             tss = ns.syncActivity.tssOverride;
             tssType = 'override';
-        } else if (localTss != null && !isWattEstimate) {
-            tss = localTss;
-            tssType = 'power';
+        } else if (localTss != null) {
+            if (isWattEstimate && !sauce.options['analysis-prefer-estimated-power-tss'] && localTrimpTss) {
+                tss = localTrimpTss;
+                tssType = 'trimp';
+            } else {
+                tss = localTss;
+                tssType = isWattEstimate ? 'estimate' : 'power';
+            }
         } else if (localTrimpTss != null) {
             tss = localTrimpTss;
             tssType = 'trimp';
-        } else if (localTss != null) {
-            tss = localTss;
-            tssType = 'power';
-        } else {
-            tss = 0;
-            tssType = 'override';
         }
         assignTrailforksToSegments().catch(console.error);
         const localeWeight = ns.weight ? L.weightFormatter.convert(ns.weight) : undefined;
@@ -774,6 +773,7 @@ sauce.ns('analysis', ns => {
             np,
             kj,
             power,
+            isSyncAthlete: !!ns.syncAthlete,
         }).catch(console.error);
         if (sauce.options['analysis-cp-chart']) {
             const menu = [/*locale keys*/];
@@ -1190,20 +1190,17 @@ sauce.ns('analysis', ns => {
             const paceStream = await fetchStreamTimeRange('pace', startTime, endTime);
             streams.velocity_smooth = paceStream.map(x => 1 / x);
         }
-        const hrRoll = await correctedRollTimeRange('heartrate', wallStartTime, wallEndTime,
-            {active: true, ignoreZeros: true});
         const cadenceRoll = await correctedRollTimeRange('cadence', wallStartTime, wallEndTime,
+            {active: true, ignoreZeros: true});
+        const hrRoll = await correctedRollTimeRange('heartrate', wallStartTime, wallEndTime,
             {active: true, ignoreZeros: true});
         const tempStream = await fetchStreamTimeRange('temp', startTime, endTime);
         const distance = streamDelta(streams.distance);
         const startIdx = getStreamTimeIndex(startTime);
         const endIdx = getStreamTimeIndex(endTime);
-        let gap;
         if (ns.activityType === 'run') {
             streams.grade_adjusted_distance = streams.distance &&
                 await fetchGradeDistStream({startTime, endTime});
-            gap = streams.grade_adjusted_distance &&
-                streamDelta(streams.grade_adjusted_distance) / elapsedTime;
         }
         const heading = await LM(source);
         const textLabel = jQuery(`<div>${label}</div>`).text();
@@ -1221,8 +1218,8 @@ sauce.ns('analysis', ns => {
         const overlappingSegments = getOverlappingSegments(startIdx, endIdx);
         const hasSegments = overlappingSegments && overlappingSegments.length;
         const body = await template({
-            startsAt: H.timer(wallStartTime),
-            elapsed: H.timer(elapsedTime),
+            startsAt: wallStartTime,
+            elapsed: elapsedTime,
             power: powerRoll && powerData(powerRoll, streams.altitude, {
                 max: sauce.data.max(powerRoll.values()),
                 np: supportsNP() ? powerRoll.np() : null,
@@ -1231,27 +1228,27 @@ sauce.ns('analysis', ns => {
                 activeTime,
             }),
             pace: distance && {
-                avg: humanPace(distance / elapsedTime, {velocity: true}),
-                max: humanPace(sauce.data.max(streams.velocity_smooth), {velocity: true}),
-                gap: gap && humanPace(gap, {velocity: true}),
+                avg: 1 / (distance / elapsedTime),
+                max: 1 / sauce.data.max(streams.velocity_smooth),
+                gap: streams.grade_adjusted_distance &&
+                    (1 / (streamDelta(streams.grade_adjusted_distance) / elapsedTime)),
             },
-            isSpeed: ns.paceMode === 'speed',
-            hr: hrInfo(hrRoll),
-            hrUnit: L.hrFormatter.shortUnitKey(),
-            cadence: cadenceRoll && ns.cadenceFormatter.format(cadence),
-            cadenceUnit: ns.cadenceFormatter.shortUnitKey(),
-            distance: distance && H.distance(distance),
-            distanceUnit: L.distanceFormatter.shortUnitKey(),
-            stride: stride && H.stride(stride),
-            strideUnit: L.elevationFormatter.shortUnitKey(),  // for meters/feet
+            hr: hrRoll && {
+                min: sauce.data.min(hrRoll.values().filter(x => +x)),
+                avg: hrRoll.avg(),
+                max: sauce.data.max(hrRoll.values()),
+            },
             elevation: elevationData(streams.altitude, elapsedTime, distance),
-            elevationUnit: L.elevationFormatter.shortUnitKey(),
+            cadence,
+            distance,
+            stride,
+            temp: sauce.data.avg(tempStream), // XXX check gap handling
+            hrUnit: L.hrFormatter.shortUnitKey(),
             elevationUnitLong: L.elevationFormatter.longUnitKey(),
-            temp: tempStream && L.tempFormatter.format(sauce.data.avg(tempStream)), // XXX check gap handling
-            tempUnit: L.tempFormatter.shortUnitKey(),
             paceUnit: ns.paceFormatter.shortUnitKey(),
             source,
             supportsRanks,
+            isSpeed: ns.paceMode === 'speed',
             isDistanceRange,
             overlappingSegments,
             hasSegments,
@@ -2461,24 +2458,11 @@ sauce.ns('analysis', ns => {
         if (altStream && elapsed && distance) {
             const {gain, loss} = sauce.geo.altitudeChanges(altStream);
             return {
-                gain: gain > 1 ? H.elevation(gain) : 0,
-                loss: loss && H.elevation(loss),
-                grade: ((gain - loss) / distance) * 100,
-                vam: elapsed >= minVAMTime ? (gain / elapsed) * 3600 : 0,
-                avg: H.elevation(sauce.data.avg(altStream))
-            };
-        }
-    }
-
-
-    function hrInfo(hrRoll) {
-        if (hrRoll) {
-            const fmt = L.hrFormatter;
-            const hrStream = hrRoll.values().filter(x => +x);
-            return {
-                min: fmt.format(sauce.data.min(hrStream)),
-                avg: fmt.format(hrRoll.avg()),
-                max: fmt.format(sauce.data.max(hrStream)),
+                gain: gain > 1 ? gain : null,
+                loss: loss > 1 ? loss : null,
+                grade: ((gain - loss) / distance),
+                vam: elapsed >= minVAMTime ? (gain / elapsed) * 3600 : null,
+                avg: sauce.data.avg(altStream)
             };
         }
     }
@@ -2496,7 +2480,7 @@ sauce.ns('analysis', ns => {
                 elapsedSP = elapsedAvg && sauce.power.seaLevelPower(elapsedAvg, avgEl);
             }
         }
-        return Object.assign({
+        return {
             activeAvg,
             elapsedAvg,
             activeSP,
@@ -2508,7 +2492,8 @@ sauce.ns('analysis', ns => {
             rank: (ns.weight && elapsedAvg) &&
                 sauce.power.rank(extra.activeTime || powerRoll.active(), elapsedAvg,
                     extra.np, ns.weight, ns.gender),
-        }, extra);
+            ...extra
+        };
     }
 
 
@@ -2544,68 +2529,67 @@ sauce.ns('analysis', ns => {
     function supportsPeaksRanks(type) {
         return !!(type && (
             ['np', 'xp', 'hr'].includes(type) ||
-            (type.startsWith('power') && hasAccurateWatts()) ||
+            (type.startsWith('power') && (hasAccurateWatts() || true)) ||
             (['pace', 'gap'].includes(type) && pageView.isRun())
         ));
     }
 
 
     async function _updateAnalysisStats(start, end) {
+        const activeStream = await fetchStream('active', start, end);
         const timeStream = await fetchStream('time', start, end);
         const distStream = await fetchStream('distance', start, end);
+        const hrStream = await fetchStream('heartrate', start, end);
         const altStream = await fetchSmoothStream('altitude', null, start, end);
         const powerRoll = await correctedRollTimeRange('watts', getStreamIndexTime(start),
-            getStreamIndexTime(end));
+            getStreamIndexTime(end));  // Can be watts_calc too
         const activeTime = getActiveTime(start, end);
         const elapsedTime = streamDelta(timeStream);
         const distance = streamDelta(distStream);
-        const pausedTime = elapsedTime - activeTime;
         const tplData = {
             logo: sauce.getURL('images/logo_vert_48x128.png'),
             supportsRankBadge: pageView.activity().isRide(),
             supportsPerfPredictor: !!(pageView.activity().isRide() && distance && altStream),
-            elapsed: H.timer(elapsedTime),
-            active: H.timer(activeTime),
-            paused: L.timeFormatter.abbreviatedNoTags(pausedTime, null, false),
+            elapsed: elapsedTime,
+            active: activeTime,
             stops: getStopCount(start, end),
             weight: ns.weight,
-            elUnit: L.elevationFormatter.shortUnitKey(),
             isSpeed: ns.paceMode === 'speed',
-            paceUnit: ns.paceFormatter.shortUnitKey(),
             samples: timeStream.length,
             elevation: elevationData(altStream, elapsedTime, distance)
         };
+        let kj, tss, tTss, intensity, pwhr;
         if (powerRoll) {
-            const j = powerRoll.joules();
-            let tss, tTss, intensity, pwhr;
-            const np = supportsNP() ? powerRoll.np() : null;
-            tplData.power = powerData(powerRoll, altStream, {np, activeTime});
-            const hrStream = await fetchStream('heartrate', start, end);
-            if (hasAccurateWatts()) {
-                tplData.power.np = np;
-                tplData.power.xp = supportsXP() ? powerRoll.xp() : null;
-                if (ns.ftp) {
-                    const power = tplData.power.np || tplData.power.activeAvg;
-                    tss = sauce.power.calcTSS(power, activeTime, ns.ftp);
-                    intensity = power / ns.ftp;
-                }
-                if (hrStream) {
-                    pwhr = sauce.power.calcPwHrDecouplingFromRoll(powerRoll, hrStream);
-                }
-            } else {
-                const zones = await getHRZones();
-                if (zones && hrStream) {
-                    const ltHR = (zones.z4 + zones.z3) / 2;
-                    const activeStream = await fetchStream('active', start, end);
-                    const maxHR = sauce.perf.estimateMaxHR(zones);
-                    const restingHR = ns.ftp ? sauce.perf.estimateRestingHR(ns.ftp) : 60;
-                    tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR,
-                        ns.gender);
-                }
+            tplData.power = powerData(powerRoll, altStream, {
+                np: supportsNP() ? powerRoll.np() : null,
+                xp: supportsXP() ? powerRoll.xp() : null,
+                activeTime,
+                estimate: !hasRealWatts(),
+            });
+            if (ns.ftp) {
+                const power = tplData.power.np || tplData.power.activeAvg;
+                tss = sauce.power.calcTSS(power, activeTime, ns.ftp);
+                intensity = power / ns.ftp;
             }
+            if (hasAccurateWatts() && hrStream) {
+                pwhr = sauce.power.calcPwHrDecouplingFromRoll(powerRoll, hrStream);
+            }
+            kj = powerRoll.joules() / 1000;
+        }
+        if (hrStream) {
+            const zones = await getHRZones();
+            if (zones) {
+                const ltHR = (zones.z4 + zones.z3) / 2;
+                const maxHR = sauce.perf.estimateMaxHR(zones);
+                const restingHR = ns.ftp ? sauce.perf.estimateRestingHR(ns.ftp) : 60;
+                tTss = sauce.perf.tTSS(hrStream, timeStream, activeStream, ltHR, restingHR, maxHR,
+                    ns.gender);
+            }
+        }
+        if (kj || tTss) {
             tplData.energy = {
-                kj: j / 1000,
-                kjHour: j / 1000 / activeTime * 3600,
+                kj,
+                kjHour: kj && (kj / activeTime * 3600),
                 tss,
                 tTss,
                 intensity,
@@ -2614,11 +2598,11 @@ sauce.ns('analysis', ns => {
         }
         if (distance) {
             const gradeDistStream = await fetchGradeDistStream({start, end});
-            const gradeDistance = streamDelta(gradeDistStream);
+            const gradeDistance = gradeDistStream && streamDelta(gradeDistStream);
             tplData.pace = {
-                elapsed: humanPace(distance / elapsedTime, {velocity: true}),
-                active: humanPace(distance / activeTime, {velocity: true}),
-                gap: gradeDistance && humanPace(gradeDistance / activeTime, {velocity: true}),
+                elapsed: 1 / (distance / elapsedTime),
+                active: 1 / (distance / activeTime),
+                gap: gradeDistance && (1 / (gradeDistance / activeTime)),
             };
         }
         const tpl = await getTemplate('analysis-stats.html');

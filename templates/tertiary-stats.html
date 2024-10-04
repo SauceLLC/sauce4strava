@@ -19,27 +19,33 @@
         </li>
     <% } %>
 
-    <% const tooltipKey = `${tssType}_tss_tooltip`; %>
-    <li title="{{{[tooltipKey]}}}">
-        <strong class="sauce-editable-field tss">
-            <a title="{{{tss_link_tooltip}}}">{{humanNumber(tss) || '-'}}</a><!--
-         --><input data-width="5ch" type="number" value="{{Math.round(tss) || ''}}"
-                   title="{{{tss_input_tooltip}}}"/>
-        </strong>
-        <div class="label">
-            <% if (tssType === 'trimp') { %>
-                <attr for="tp">tTSS®</attr>
-            <% } else if (tssType === 'estimate') { %>
-                <attr for="tp">eTSS®</attr>
-            <% } else if (tssType === 'override') { %>
-                <attr for="tp">mTSS®</attr></div>
+    <% if (tss || isSyncAthlete) { %>
+        <% const tooltipKey = `${tssType || 'power'}_tss_tooltip`; %>
+        <li title="{{{[tooltipKey]}}}">
+            <% if (isSyncAthlete) { %>
+                <strong class="sauce-editable-field tss">
+                    <a title="{{{tss_link_tooltip}}}">{{humanNumber(tss) || '-'}}</a><!--
+                 --><input data-width="5ch" type="number" value="{{Math.round(tss) || ''}}"
+                           title="{{{tss_input_tooltip}}}"/>
+                </strong>
             <% } else { %>
-                <attr for="tp">TSS®</attr>
+                <strong>{{humanNumber(tss)}}</strong>
             <% } %>
-        </div>
-    </li>
+            <div class="label">
+                <% if (tssType === 'trimp') { %>
+                    <attr for="tp">tTSS®</attr>
+                <% } else if (tssType === 'estimate') { %>
+                    <attr for="tp">eTSS®</attr>
+                <% } else if (tssType === 'override') { %>
+                    <attr for="tp">mTSS®</attr></div>
+                <% } else { %>
+                    <attr for="tp">TSS®</attr>
+                <% } %>
+            </div>
+        </li>
 
-    <div class="divider"></div>
+        <div class="divider"></div>
+    <% } %>
 
     <li>
         <strong class="sauce-editable-field ftp">
