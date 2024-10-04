@@ -2941,7 +2941,7 @@ sauce.ns('analysis', ns => {
             power: power && Math.round(power),
             hasWeight: !!ns.weight,
             wkg: power && ns.weight && H.number(power / ns.weight, {fixed: true, precision: 1}),
-            bodyWeight: L.weightFormatter.convert(ns.weight).toFixed(1),
+            bodyWeight: ns.weight && L.weightFormatter.convert(ns.weight).toFixed(1),
             gearWeight: L.weightFormatter.convert(bikeDefaults.gearWeight).toFixed(1),
             slope: (slope * 100).toFixed(1),
             distance: L.distanceFormatter.convert(origDistance).toFixed(3),
