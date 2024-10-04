@@ -742,9 +742,7 @@ async function setAthleteHistoryValues(athleteId, key, data, options={}) {
     }
     const clean = athlete.setHistoryValues(key, data);
     await athlete.save();
-    if (!options.disableSync) {
-        await invalidateAthleteSyncState(athleteId, 'local', 'athlete-settings');
-    }
+    await invalidateAthleteSyncState(athleteId, 'local', 'athlete-settings');
     return clean;
 }
 sauce.proxy.export(setAthleteHistoryValues, {namespace});
@@ -985,41 +983,57 @@ export async function dangling(options={}) {
 sauce.proxy.export(dangling, {namespace});
 
 
+async function _invalidateSyncStateEnter(athleteId, processor, options) {
+    if (!syncManager) {
+        return;
+    }
+    let defaultSyncOptions;
+    const job = syncManager.activeJobs.get(athleteId);
+    if (job) {
+        defaultSyncOptions = {
+            noActivityScan: !!job.options.noActivityScan || job.statusHistory.some((x, i) =>
+                x.status === 'activity-scan' && i !== job.statusHistory.length - 1),
+            noStreamsFetch: !!job.options.noStreamsFetch,
+        };
+        job.cancel();
+        await job.wait();
+    } else {
+        defaultSyncOptions = {
+            noActivityScan: true,
+            noStreamsFetch: processor === 'local'
+        };
+    }
+    if (!options.disableSync) {
+        const athlete = await athletesStore.get(athleteId, {model: true});
+        if (athlete && athlete.isEnabled()) {
+            return {
+                athleteId,
+                defaultSyncOptions,
+                options,
+            };
+        }
+    }
+}
+
+
+async function _invalidateSyncStateExit(state) {
+    if (!state) {
+        return;
+    }
+    await syncAthlete(state.athleteId, {...state.defaultSyncOptions, ...state.options});
+}
+
+
 export async function invalidateAthleteSyncState(athleteId, processor, name, options={}) {
     if (!athleteId || !processor) {
         throw new TypeError("'athleteId' and 'processor' are required args");
     }
-    let athlete;
-    let noActivityScan = true;
-    let noStreamsFetch = processor === 'local';
-    if (!options.disableSync) {
-        athlete = await athletesStore.get(athleteId, {model: true});
-        if (athlete.isEnabled() && syncManager) {
-            const job = syncManager.activeJobs.get(athleteId);
-            if (job) {
-                const scanDone = job.statusHistory.some((x, i) =>
-                    x.status === 'activity-scan' && i < job.statusHistory.length - 1);
-                noActivityScan = !!job.options.noActivityScan || scanDone;
-                noStreamsFetch = !!job.options.noStreamsFetch;
-                job.cancel();
-                await job.wait();
-            }
-        }
-    }
+    const state = await _invalidateSyncStateEnter(athleteId, processor, options);
     await actsStore.invalidateForAthleteWithSync(athleteId, processor, name);
-    if (!options.disableSync && athlete.isEnabled() && syncManager) {
-        await syncAthlete(athleteId, {noActivityScan, noStreamsFetch, ...options});
-    }
+    await _invalidateSyncStateExit(state);
 }
 sauce.proxy.export(invalidateAthleteSyncState, {namespace});
 
-
-export async function invalidateSyncState(...args) {
-    for (const athlete of await athletesStore.getEnabled()) {
-        await invalidateAthleteSyncState(athlete.id, ...args);
-    }
-}
-sauce.proxy.export(invalidateSyncState, {namespace});
 
 
 export async function invalidateActivitySyncState(activityId, processor, name, options={}) {
@@ -1031,30 +1045,23 @@ export async function invalidateActivitySyncState(activityId, processor, name, o
         throw new TypeError('Invalid sync processor/name');
     }
     const activity = await actsStore.get(activityId, {model: true});
-    let athlete;
-    if (!options.disableSync) {
-        athlete = await athletesStore.get(activity.get('athlete'), {model: true});
-        if (athlete.isEnabled() && syncManager) {
-            const job = syncManager.activeJobs.get(athlete.pk);
-            if (job) {
-                job.cancel();
-                await job.wait();
-            }
-        }
-    }
+    const athleteId = activity.get('athlete');
+    const state = await _invalidateSyncStateEnter(athleteId, processor, options);
     for (const m of manifests) {
         activity.clearSyncState(m);
     }
     await activity.save();
-    if (!options.disableSync && athlete.isEnabled() && syncManager) {
-        await syncAthlete(athlete.pk, {
-            noActivityScan: true,
-            noStreamsFetch: processor === 'local',
-            ...options
-        });
-    }
+    await _invalidateSyncStateExit(state);
 }
 sauce.proxy.export(invalidateActivitySyncState, {namespace});
+
+
+export async function invalidateSyncState(...args) {
+    for (const athlete of await athletesStore.getEnabled()) {
+        await invalidateAthleteSyncState(athlete.id, ...args);
+    }
+}
+sauce.proxy.export(invalidateSyncState, {namespace});
 
 
 export async function activityCounts(athleteId, activities) {
@@ -1239,7 +1246,12 @@ class SyncJob extends EventTarget {
     }
 
     async _run() {
-        this.logInfo('Starting sync job for: ' + this.athlete);
+        const tags = [
+            this.options.noActivityScan && 'no-activity-scan',
+            this.options.noStreamsFetch && 'no-streams-fetch',
+        ].filter(x => x);
+        const tagsStr = tags.length ? ` [${tags.join(', ')}]` : '';
+        this.logInfo(`Starting sync job${tagsStr}: ${this.athlete}`);
         const start = Date.now();
         this.setStatus('checking-network');
         await Promise.race([networkOnline(), this._cancelEvent.wait()]);
@@ -1337,6 +1349,7 @@ class SyncJob extends EventTarget {
                 this.logInfo(`Adding ${batch.length} new activities`);
                 await actsStore.putMany(batch);
             }
+            await this.niceSendProgressEvent();
         }
     }
 
@@ -1630,6 +1643,7 @@ class SyncJob extends EventTarget {
                 // Entire work set was redundant.  Don't refetch any more.
                 break;
             }
+            await this.niceSendProgressEvent();
         }
     }
 
@@ -1935,7 +1949,9 @@ class SyncJob extends EventTarget {
     }
 
     async sendProgressEvent(done) {
-        const counts = await activityCounts(this.athlete.pk, [...this.allActivities.values()]);
+        done = done || new Set();
+        const activities = this.allActivities ? Array.from(this.allActivities.values()) : undefined;
+        const counts = await activityCounts(this.athlete.pk, activities);
         const progressHash = JSON.stringify(counts);
         if (progressHash === this._lastProgressHash && !done.size) {
             return;

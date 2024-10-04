@@ -351,6 +351,7 @@ sauce.ns('sync', ns => {
                 `${x.message}`).join('\n')]);
             sauce.ui.downloadBlob(blob, `sauce-sync-${athlete.id}.log`);
         });
+        let syncJobStatus;
 
         const curLogs = [];
         function appendLogs(records) {
@@ -368,8 +369,12 @@ sauce.ns('sync', ns => {
             </div>`).join('\n'));
         }
 
-        function setJobStatus(status, ) {
-            $jobStatus.text(status);
+        function setJobStatus(status) {
+            syncJobStatus = status;
+            if (status && !['processing', 'complete'].includes(status)) {
+                $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
+            }
+            $jobStatus.text(status || '');
         }
 
 
@@ -410,9 +415,11 @@ sauce.ns('sync', ns => {
             ];
             const $synced = $modal.find('.entry.synced');
             $synced.attr('title', details.map(x => x.join(': ')).join('\n'));
-            $synced.find('progress').attr('value', synced / total);
+            if (!syncJobStatus || ['processing', 'complete'].includes(syncJobStatus)) {
+                $synced.find('progress').attr('value', synced / total);
+            }
             if (synced === total) {
-                $synced.find('.text').html(`100% | ${synced.toLocaleString()} ${locale.activities}`);
+                $synced.find('.text').html(`${synced.toLocaleString()} ${locale.activities}`);
             } else {
                 $synced.find('.text').html(
                     `${synced.toLocaleString()} of ${total.toLocaleString()} ${locale.activities}`);
@@ -429,7 +436,7 @@ sauce.ns('sync', ns => {
         }
 
         let rateLimiterInterval;
-        async function setActive(active) {
+        async function setActive(active, {passive}={}) {
             clearInterval(rateLimiterInterval);
             if (active) {
                 $modal.addClass('sync-active');
@@ -438,7 +445,6 @@ sauce.ns('sync', ns => {
                 $modal.find('.entry.status value').text('Running');
                 $modal.find('.entry.last-sync value').empty();
                 $modal.find('.entry.next-sync value').empty();
-                $modal.find('.entry.synced progress').removeAttr('value');
                 $modal.find('.entry.synced .text').empty();
                 setJobStatus(await syncController.getStatus());
                 rateLimiterInterval = setInterval(async () => {
@@ -457,7 +463,9 @@ sauce.ns('sync', ns => {
                 athlete = await sauce.hist.getAthlete(athleteId);
                 await updateHRZones();
             }
-            await Promise.all([updateSyncCounts(), updateSyncTimes()]);
+            if (!passive) {
+                await Promise.all([updateSyncCounts(), updateSyncTimes()]);
+            }
         }
 
         const listeners = {
@@ -543,25 +551,18 @@ sauce.ns('sync', ns => {
             syncController.cancel();
         });
         $modal.on('click', '.sync-recompute.btn', async ev => {
-            $modal.addClass('sync-active');
-            $buttons.addClass('sync-active');
-            $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
-            $modal.find('.entry.synced .text').empty();
+            setActive(true, {passive: true});  // responsive UI feedback
             await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local');
         });
         $modal.on('click', '.sync-hr-zones.btn', async ev => {
-            $modal.addClass('sync-active');
-            $buttons.addClass('sync-active');
-            $modal.find('.entry.synced progress').removeAttr('value');  // make it indeterminate
-            $modal.find('.entry.synced .text').empty();
+            setActive(true, {passive: true});  // responsive UI feedback
             await sauce.hist.updateAthlete(athlete.id, {hrZonesTS: null});
             athlete.hrZonesTS = null;
             await updateHRZones();
             await sauce.hist.invalidateAthleteSyncState(athlete.id, 'local', 'athlete-settings');
         });
         $modal.on('click', '.sync-start.btn', async ev => {
-            $modal.addClass('sync-active');
-            $buttons.addClass('sync-active');
+            setActive(true, {passive: true});  // responsive UI feedback
             await sauce.hist.syncAthlete(athlete.id);
         });
         $modal.on('dialogclose', () => {
