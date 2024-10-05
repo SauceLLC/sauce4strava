@@ -165,11 +165,17 @@
     "analysis_vam_tooltip": {
         "message": "Metri di salita all'ora"
     },
-    "analysis_tss_tooltip": {
+    "analysis_power_tss_tooltip": {
         "message": "Training Stress Score®: un indicatore del carico di stress basato sulla potenza"
     },
     "analysis_trimp_tss_tooltip": {
         "message": "Training Stress Score® basato su TRIMP (TRaining IMPulse): un indicatore del carico di stress basato sulla riserva di frequenza cardiaca"
+    },
+    "analysis_estimate_tss_tooltip": {
+        "message": "Estimated Training Stress Score®: indicatore di carico di stress basato sulla potenza stimata"
+    },
+    "analysis_override_tss_tooltip": {
+        "message": "Sostituzione manuale per Training Stress Score®"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "Differenza di tempo dall'inizio di questo sforzo"
@@ -205,11 +211,17 @@
     "analysis_compress_tooltip": {
         "message": "Fare clic per comprimere"
     },
+    "analysis_tss_link_tooltip": {
+        "message": "Fare clic per impostare il valore"
+    },
     "analysis_ftp_link_tooltip": {
         "message": "Fare clic per impostare il valore"
     },
     "analysis_weight_link_tooltip": {
         "message": "Fare clic per impostare il valore"
+    },
+    "analysis_tss_input_tooltip": {
+        "message": "Inserisci un TSS® di override manuale per questa attività."
     },
     "analysis_ftp_input_tooltip": {
         "message": "Immettere l'FTP (Functional Threshold Power) stimato per questo atleta e premere Invio. FTP è la media massima dei watt sostenuti per 1 ora. Se l'atleta ha già un valore impostato nel proprio profilo, questo sovrascriverà tale impostazione. Per reimpostare il valore inserire un valore vuoto."

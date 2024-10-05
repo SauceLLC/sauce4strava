@@ -211,12 +211,18 @@
         "message": "每小时海拔爬升",
         "description": "IMMUTABLE"
     },
-    "analysis_tss_tooltip": {
+    "analysis_power_tss_tooltip": {
         "message": "训练压力指数®：基于功率的压力负荷指示器",
         "description": "IMMUTABLE"
     },
     "analysis_trimp_tss_tooltip": {
         "message": "基于 TRIMP（TRAining IMPulse）的 Training Stress Score®：基于心率储备的压力负荷指标"
+    },
+    "analysis_estimate_tss_tooltip": {
+        "message": "预估训练压力分数®：基于预估功率的压力负荷指标"
+    },
+    "analysis_override_tss_tooltip": {
+        "message": "训练压力评分® 的手动控制"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "开始努力的时间偏移",
@@ -262,6 +268,9 @@
         "message": "点击折叠",
         "description": "IMMUTABLE"
     },
+    "analysis_tss_link_tooltip": {
+        "message": "点击设置值"
+    },
     "analysis_ftp_link_tooltip": {
         "message": "点击设置值",
         "description": "IMMUTABLE"
@@ -269,6 +278,9 @@
     "analysis_weight_link_tooltip": {
         "message": "点击设置值",
         "description": "IMMUTABLE"
+    },
+    "analysis_tss_input_tooltip": {
+        "message": "为此活动输入手动覆盖 TSS®。"
     },
     "analysis_ftp_input_tooltip": {
         "message": "输入该运动员的估计 FTP（功能阈值功率），然后按回车。FTP 是持续 1 小时的最大平均功率。如果运动员的个人资料中已经设置了一个值，则它将覆盖该设置。要重置该值，请输入一个空白值。",

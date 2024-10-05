@@ -171,11 +171,17 @@
     "analysis_vam_tooltip": {
         "message": "Subiendo metros por hora"
     },
-    "analysis_tss_tooltip": {
+    "analysis_power_tss_tooltip": {
         "message": "Training Stress Score®: un indicador de carga de estrés basado en la potencia"
     },
     "analysis_trimp_tss_tooltip": {
         "message": "Training Stress Score® basado en TRIMP (TRAining IMPulse): un indicador de carga de estrés basado en la reserva de frecuencia cardíaca"
+    },
+    "analysis_estimate_tss_tooltip": {
+        "message": "Estimated Training Stress Score®: Indicador de carga de estrés basado en potencia estimada"
+    },
+    "analysis_override_tss_tooltip": {
+        "message": "Anulación manual del Training Stress Score®"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "Desplazamiento de tiempo al inicio de este esfuerzo"
@@ -212,11 +218,17 @@
     "analysis_compress_tooltip": {
         "message": "Haga clic para colapsar"
     },
+    "analysis_tss_link_tooltip": {
+        "message": "Haga clic para establecer el valor"
+    },
     "analysis_ftp_link_tooltip": {
         "message": "Haga clic para establecer el valor"
     },
     "analysis_weight_link_tooltip": {
         "message": "Haga clic para establecer el valor"
+    },
+    "analysis_tss_input_tooltip": {
+        "message": "Introduzca un TSS® de anulación manual para esta actividad."
     },
     "analysis_ftp_input_tooltip": {
         "message": "Ingrese el FTP estimado (Umbral de potencia funcional) para este atleta y presione Enter. FTP es el promedio de vatios máximo sostenido durante 1 hora. Si el atleta ya tiene un valor establecido en su perfil, esto anulará esa configuración. Para restablecer el valor, introduzca un valor en blanco."

@@ -163,11 +163,17 @@
     "analysis_vam_tooltip": {
         "message": "Klettermeter pro Stunde"
     },
-    "analysis_tss_tooltip": {
+    "analysis_power_tss_tooltip": {
         "message": "Training Stress Score®: Ein leistungsbasierter Stressbelastungsindikator"
     },
     "analysis_trimp_tss_tooltip": {
         "message": "TRIMP (Training IMPulse) basierter Training Stress Score®: Ein auf der Herzfrequenzreserve basierender Stressbelastungsindikator"
+    },
+    "analysis_estimate_tss_tooltip": {
+        "message": "Estimated Training Stress Score®: Geschätzter, leistungsbasierter Belastungsindikator"
+    },
+    "analysis_override_tss_tooltip": {
+        "message": "Manuelle Übersteuerung für den Training Stress Score®"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "Zeitversatz zum Beginn dieser Anstrengung"
@@ -203,11 +209,17 @@
     "analysis_compress_tooltip": {
         "message": "Zum Ausblenden klicken"
     },
+    "analysis_tss_link_tooltip": {
+        "message": "Klicken Sie, um den Wert festzulegen"
+    },
     "analysis_ftp_link_tooltip": {
         "message": "Klicken Sie, um den Wert festzulegen"
     },
     "analysis_weight_link_tooltip": {
         "message": "Klicken Sie, um den Wert festzulegen"
+    },
+    "analysis_tss_input_tooltip": {
+        "message": "Geben Sie für diese Aktivität eine manuelle TSS®-Übersteuerung ein."
     },
     "analysis_ftp_input_tooltip": {
         "message": "Geben Sie den geschätzten FTP (Functional Threshold Power) für diesen Athleten ein und drücken Sie die Eingabetaste. FTP ist der maximale Wattdurchschnitt, der eine Stunde lang aufrechterhalten wird. Wenn der Athlet in seinem Profil bereits einen Wert festgelegt hat, wird diese Einstellung dadurch überschrieben. Um den Wert zurückzusetzen, geben Sie einen leeren Wert ein."

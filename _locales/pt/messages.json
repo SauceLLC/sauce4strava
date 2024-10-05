@@ -184,13 +184,18 @@
         "message": "Velocidade ascencional média em metros por hora",
         "description": "IMMUTABLE"
     },
-    "analysis_tss_tooltip": {
-        "message": "Training Stress Score®: Um indicador de carga de treinamento baseado em potência",
-        "description": "IMMUTABLE"
+    "analysis_power_tss_tooltip": {
+        "message": "Training Stress Score®: Um indicador de carga de estresse baseado em potência"
     },
     "analysis_trimp_tss_tooltip": {
         "message": "TRIMP (TRaining IMPulse) baseado no Training Stress Score®: Um indicador de carga de treinamento em frequência cardíaca de reserva",
         "description": "IMMUTABLE"
+    },
+    "analysis_estimate_tss_tooltip": {
+        "message": "Estimated Training Stress Score®: Indicador de carga de estresse com base na potência estimada"
+    },
+    "analysis_override_tss_tooltip": {
+        "message": "Substituição manual para Training Stress Score®"
     },
     "analysis_start_of_effort_tooltip": {
         "message": "Deslocamento de tempo para o início deste esforço"
@@ -226,11 +231,17 @@
     "analysis_compress_tooltip": {
         "message": "Clique para recolher"
     },
+    "analysis_tss_link_tooltip": {
+        "message": "Clique para definir o valor"
+    },
     "analysis_ftp_link_tooltip": {
         "message": "Clique para definir o valor"
     },
     "analysis_weight_link_tooltip": {
         "message": "Clique para definir o valor"
+    },
+    "analysis_tss_input_tooltip": {
+        "message": "Insira um TSS® de substituição manual para esta atividade."
     },
     "analysis_ftp_input_tooltip": {
         "message": "Insira o FTP estimado (Potência Limiar Funcional) para este atleta e pressione Enter. FTP é a média máxima de potência sustentada por aproximadamente 1 hora. Se o atleta já tiver um valor definido em seu perfil, isso substituirá essa configuração. Para redefinir o valor, insira um valor em branco.",
