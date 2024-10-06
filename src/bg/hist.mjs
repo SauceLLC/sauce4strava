@@ -995,8 +995,7 @@ async function _invalidateSyncStateEnter(athleteId, processor, options) {
                 x.status === 'activity-scan' && i !== job.statusHistory.length - 1),
             noStreamsFetch: !!job.options.noStreamsFetch,
         };
-        job.cancel();
-        await job.wait();
+        await job.cancel();
     } else {
         defaultSyncOptions = {
             noActivityScan: true,
@@ -1143,7 +1142,7 @@ async function retryFetch(urn, options={}) {
             return resp;
         }
         if ((!resp || (resp.status >= 500 && resp.status < 600)) && r <= maxErrors) {
-            console.info(`Server error for: ${urn} - Retry: ${r}/${maxErrors}`);
+            console.info(`Server error: ${urn} - Retry: ${r}/${maxErrors}`);
             // To avoid triggering Anti-DDoS HTTP Throttling of Extension-Originated Requests
             // perform a cool down before relinquishing control. Ie. do one last sleep.
             // See: http://dev.chromium.org/throttling
@@ -1198,6 +1197,7 @@ class SyncJob extends EventTarget {
         this.niceSaveActivities = sauce.debounced(this.saveActivities);
         this.niceSendProgressEvent = sauce.debounced(this.sendProgressEvent);
         this.setStatus('init');
+        this.logDebug(`Sync initialized: ${this.athlete}`);
     }
 
     log(level, ...messages) {
@@ -1227,8 +1227,12 @@ class SyncJob extends EventTarget {
         await this._runPromise;
     }
 
-    cancel() {
+    async cancel() {
+        this.setStatus('cancelling');
+        this.logWarn('Cancelling sync job:', this.athlete);
+        await this.athlete.save({lastSync: Date.now()});  // Prevent immediate restart.
         this._cancelEvent.set();
+        await this.wait();
         if (syncManager) {
             syncManager.cancelRefreshRequest(this.athlete.pk);
         }
@@ -1239,20 +1243,27 @@ class SyncJob extends EventTarget {
     }
 
     run() {
-        this.started = true;
-        this.running = true;
-        this._runPromise = this._run().finally(() => this.running = false);
-        return this._runPromise;
-    }
-
-    async _run() {
+        if (this.started) {
+            throw new Error("already started");
+        }
+        const start = Date.now();
         const tags = [
             this.options.noActivityScan && 'no-activity-scan',
             this.options.noStreamsFetch && 'no-streams-fetch',
         ].filter(x => x);
         const tagsStr = tags.length ? ` [${tags.join(', ')}]` : '';
         this.logInfo(`Starting sync job${tagsStr}: ${this.athlete}`);
-        const start = Date.now();
+        this.started = true;
+        this.running = true;
+        this._runPromise = this._run().finally(() => {
+            this.running = false;
+            const duration = Math.round((Date.now() - start) / 1000);
+            this.logInfo(`Sync completed [${duration.toLocaleString()}s]: ${this.athlete}`);
+        });
+        return this._runPromise;
+    }
+
+    async _run() {
         this.setStatus('checking-network');
         await Promise.race([networkOnline(), this._cancelEvent.wait()]);
         if (this._cancelEvent.isSet()) {
@@ -1272,8 +1283,6 @@ class SyncJob extends EventTarget {
             }
         }
         if (this._cancelEvent.isSet()) {
-            this.setStatus('cancelled');
-            this.logInfo(`Sync cancelled for: ` + this.athlete);
             return;
         }
         this.setStatus('processing');
@@ -1284,8 +1293,6 @@ class SyncJob extends EventTarget {
             throw e;
         }
         this.setStatus('complete');
-        const duration = Math.round((Date.now() - start) / 1000);
-        this.logInfo(`Sync completed in ${duration.toLocaleString()} seconds for: ` + this.athlete);
         await syncLogsStore.trimLogs(this.athlete.pk, 5000);
     }
 
@@ -1455,12 +1462,12 @@ class SyncJob extends EventTarget {
 
     activityToDatabase({id, ts, type, name, ...extra}) {
         if (!id) {
-            this.logError('Invalid activity id for athlete: ' + this.athlete.pk);
+            this.logError(`Invalid activity id for athlete: ${this.athlete.pk}`);
             return;
         }
         let basetype = type && sauce.model.getActivityBaseType(type);
         if (!basetype) {
-            this.logError('Unknown activity type for: ' + id);
+            this.logError('Unknown activity type: ' + id);
             basetype = 'workout';
         }
         const data = {
@@ -1691,7 +1698,7 @@ class SyncJob extends EventTarget {
         if (unfetched.length && !this.options.noStreamsFetch) {
             workers.push(this._fetchStreamsWorker(unfetched));
         } else if (!this._procQueue.size) {
-            this.logDebug("No data processing required for: " + this.athlete);
+            this.logDebug(`No data processing required: ${this.athlete}`);
             return;
         } else {
             this._procQueue.putNoWait(null);  // sentinel
@@ -1753,7 +1760,7 @@ class SyncJob extends EventTarget {
             }
             await activity.save();
         }
-        this.logInfo("Completed streams fetch for: " + this.athlete);
+        this.logInfo(`Completed streams fetch: ${this.athlete}`);
     }
 
     _localSetSyncError(activities, manifest, e) {
@@ -2015,7 +2022,7 @@ class SyncJob extends EventTarget {
 class SyncManager extends EventTarget {
     constructor(currentUser) {
         super();
-        console.info(`Starting Sync Manager for:`, currentUser);
+        console.info(`Starting Sync Manager:`, currentUser);
         this.refreshInterval = 12 * 3600 * 1000;
         this.refreshErrorBackoff = 1 * 3600 * 1000;
         this.syncJobTimeout = 4 * 60 * 60 * 1000;
@@ -2057,7 +2064,7 @@ class SyncManager extends EventTarget {
         this._refreshEvent.set();
         await this.join();
         this.stopped = true;
-        console.debug("Sync Manager stopped for:", this.currentUser);
+        console.debug("Sync Manager stopped:", this.currentUser);
     }
 
     start() {
@@ -2119,13 +2126,19 @@ class SyncManager extends EventTarget {
         const syncHash = await this.syncVersionHash();
         let activeTimerStart;
         while (!this.stopping) {
-            this._refreshEvent.clear();
             const athletes = await athletesStore.getEnabled({models: true});
+            for (const x of Array.from(this.activeJobs.values())) {
+                if (!x.running && (x.cancelled() || x.started)) {
+                    this._removeSyncJob(x);
+                }
+            }
+            this._refreshEvent.clear();
             try {
                 this._enqueueJobs(athletes, syncHash);
             } catch(e) {
                 console.error('Sync job creation error:', e);
                 await aggressiveSleep(errorBackoff *= 1.5);
+                continue;
             }
             if (this.activeJobs.size && !activeTimerStart) {
                 activeTimerStart = Date.now();
@@ -2133,7 +2146,7 @@ class SyncManager extends EventTarget {
             for (const x of this.activeJobs.values()) {
                 if (this.runningJobsCount() >= this.maxSyncJobs) {
                     break;
-                } else if (!x.started) {
+                } else if (!x.started && !x.cancelled()) {
                     this._runSyncJob(x, syncHash).catch(e => console.error('Sync job run error:', e));
                 }
             }
@@ -2161,19 +2174,16 @@ class SyncManager extends EventTarget {
                 continue;
             }
             const forceActivityUpdate = a.get('lastSyncActivityListVersion') !== activityListVersion;
-            const shouldRun =
-                !!refreshRequest ||
+            if (!!refreshRequest ||
                 a.get('lastSyncVersionHash') !== syncHash ||
                 forceActivityUpdate ||
-                this.nextSyncDeadline(a) <= 0;
-            if (shouldRun) {
-                const job = this._createSyncJob(a, {forceActivityUpdate, ...refreshRequest});
-                this.activeJobs.set(a.pk, job);
+                this.nextSyncDeadline(a) <= 0) {
+                this._addSyncJob(a, {forceActivityUpdate, ...refreshRequest});
             }
         }
     }
 
-    _createSyncJob(athlete, options) {
+    _addSyncJob(athlete, options) {
         const isSelf = this.currentUser === athlete.pk;
         const syncJob = new SyncJob(athlete, isSelf, options);
         syncJob.addEventListener('status', ev => this.emitForAthlete(athlete, 'status', ev.data));
@@ -2181,14 +2191,28 @@ class SyncManager extends EventTarget {
         syncJob.addEventListener('ratelimiter', ev => this.emitForAthlete(athlete, 'ratelimiter', ev.data));
         syncJob.addEventListener('log', ev => this.emitForAthlete(athlete, 'log', ev.data));
         syncJob.setStatus('queued');
+        this.activeJobs.set(athlete.pk, syncJob);
         this.emitForAthlete(athlete, 'active', {active: true, athlete: athlete.data});
-        // Reset lastSync value so any restarts of the worker will pick back up immediately.
-        this.saveAthleteModel(athlete, {lastSync: 0});  // bg okay
         return syncJob;
+    }
+
+    _removeSyncJob(syncJob) {
+        const key = syncJob.athlete.pk;
+        if (!this.activeJobs.has(key)) {
+            return;
+        }
+        const assertSameJob = this.activeJobs.get(key);
+        if (syncJob !== assertSameJob) {
+            throw new Error('sync job life cycle internal error');
+        }
+        this.activeJobs.delete(key);
+        this.emitForAthlete(syncJob.athlete, 'active', {active: false, athlete: syncJob.athlete.data});
     }
 
     async _runSyncJob(syncJob, syncHash) {
         const athlete = syncJob.athlete;
+        // Clear lastSync so any runtime terminations will resume immediately on restart.
+        await this.saveAthleteModel(athlete, {lastSync: 0});
         syncJob.run();
         try {
             await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
@@ -2204,17 +2228,14 @@ class SyncManager extends EventTarget {
                 // triggered by initial sync jobs that hit the large rate limiter delays.
                 // There is no issue here since we just reschedule the job in either case.
                 syncJob.logWarn('Sync job timeout');
-                syncJob.cancel();
-                await syncJob.wait();
-                this._refreshRequests.set(athlete.pk, {});
+                await syncJob.cancel();
+                this._refreshRequests.set(athlete.pk, {});  // retry...
             } else {
                 athlete.set('lastSyncVersionHash', syncHash);
-                athlete.set('lastSync', Date.now());
             }
+            athlete.set('lastSync', Date.now());
             await this.saveAthleteModel(athlete);
-            this.activeJobs.delete(athlete.pk);
             this._refreshEvent.set();
-            this.emitForAthlete(athlete, 'active', {active: false, athlete: athlete.data});
         }
     }
 
@@ -2242,6 +2263,7 @@ class SyncManager extends EventTarget {
             throw new TypeError('Athlete ID arg required');
         }
         this._refreshRequests.delete(id);
+        this._refreshEvent.set();
     }
 
     async updateAthlete(id, obj) {
@@ -2293,7 +2315,7 @@ class SyncManager extends EventTarget {
         await this.updateAthlete(id, {sync: DBFalse});
         if (this.activeJobs.has(id)) {
             const syncJob = this.activeJobs.get(id);
-            syncJob.cancel();
+            await syncJob.cancel();
         }
         this._refreshEvent.set();
         this.emitForAthleteId(id, 'disable');
@@ -2361,8 +2383,7 @@ class SyncController extends sauce.proxy.Eventing {
         if (syncManager) {
             const job = syncManager.activeJobs.get(this.athleteId);
             if (job) {
-                job.cancel();
-                await job.wait();
+                await job.cancel();
                 return true;
             }
         }

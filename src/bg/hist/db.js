@@ -300,7 +300,7 @@ sauce.ns('hist.db', ns => {
     class AthleteModel extends sauce.db.Model {
         toString() {
             if (this.data && this.data.name) {
-                return `<${this.data.name} (${this.pk})>`;
+                return `<${this.data.name.trim()} (${this.pk})>`;
             } else {
                 return `<Athlete (${this.pk})>`;
             }
