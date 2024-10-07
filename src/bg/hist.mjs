@@ -2078,6 +2078,8 @@ class SyncManager extends EventTarget {
             ActivityModel.updateSyncManifestStorageOptionsHash(m);
         }
         this._refreshLoop = this.refreshLoop();
+        this._refreshLoop.catch(e =>
+            console.error('Unexpected sync engine refresh loop error:', e.stack));
     }
 
     async join() {
@@ -2147,7 +2149,8 @@ class SyncManager extends EventTarget {
                 if (this.runningJobsCount() >= this.maxSyncJobs) {
                     break;
                 } else if (!x.started && !x.cancelled()) {
-                    this._runSyncJob(x, syncHash).catch(e => console.error('Sync job run error:', e));
+                    const {promise} = await this._createSyncJobRunner(x, syncHash);
+                    promise.catch(e => console.error('Sync job run error:', e));
                 }
             }
             if (this.activeJobs.size || !athletes.length) {
@@ -2209,34 +2212,37 @@ class SyncManager extends EventTarget {
         this.emitForAthlete(syncJob.athlete, 'active', {active: false, athlete: syncJob.athlete.data});
     }
 
-    async _runSyncJob(syncJob, syncHash) {
+    async _createSyncJobRunner(syncJob, syncHash) {
         const athlete = syncJob.athlete;
-        // Clear lastSync so any runtime terminations will resume immediately on restart.
+        // Clear lastSync so runtime terminations will resume immediately on next startup.
         await this.saveAthleteModel(athlete, {lastSync: 0});
         syncJob.run();
-        try {
-            await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
-        } catch(e) {
-            syncJob.logError('Sync job error:', e);
-            athlete.set('lastSyncError', Date.now());
-            this.emitForAthlete(athlete, 'error', {error: e.message});
-        } finally {
-            if (syncJob.running) {
-                // Timeout hit, just cancel and reschedule soon.  This is a paranoia based
-                // protection for future mistakes or edge cases that might lead to a sync
-                // job hanging indefinitely.   NOTE: it will be more common that this is
-                // triggered by initial sync jobs that hit the large rate limiter delays.
-                // There is no issue here since we just reschedule the job in either case.
-                syncJob.logWarn('Sync job timeout');
-                await syncJob.cancel();
-                this._refreshRequests.set(athlete.pk, {});  // retry...
-            } else {
-                athlete.set('lastSyncVersionHash', syncHash);
+        const promise = (async () => {
+            try {
+                await Promise.race([sleep(this.syncJobTimeout), syncJob.wait()]);
+            } catch(e) {
+                syncJob.logError('Sync job error:', e);
+                athlete.set('lastSyncError', Date.now());
+                this.emitForAthlete(athlete, 'error', {error: e.message});
+            } finally {
+                if (syncJob.running) {
+                    // Timeout hit, just cancel and reschedule soon.  This is a paranoia based
+                    // protection for future mistakes or edge cases that might lead to a sync
+                    // job hanging indefinitely.   NOTE: it will be more common that this is
+                    // triggered by initial sync jobs that hit the large rate limiter delays.
+                    // There is no issue here since we just reschedule the job in either case.
+                    syncJob.logWarn('Sync job timeout');
+                    await syncJob.cancel();
+                    this._refreshRequests.set(athlete.pk, {});  // retry...
+                } else {
+                    athlete.set('lastSyncVersionHash', syncHash);
+                }
+                athlete.set('lastSync', Date.now());
+                await this.saveAthleteModel(athlete);
+                this._refreshEvent.set();
             }
-            athlete.set('lastSync', Date.now());
-            await this.saveAthleteModel(athlete);
-            this._refreshEvent.set();
-        }
+        })();
+        return {promise};  // must wrap to avoid Promise chaining
     }
 
     emitForAthlete(athlete, ...args) {
