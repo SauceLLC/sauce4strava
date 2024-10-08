@@ -749,8 +749,30 @@ export class DetailsView extends PerfView {
 
     setElement(el, ...args) {
         const r = super.setElement(el, ...args);
+        if (this.intersectionObserver) {
+            this.intersectionObserver.disconnect();
+        }
+        if (el[0]) {
+            this.intersectionObserver = new IntersectionObserver(this.onIntersection.bind(this),
+                {trackVisibility: true, delay: 2000});
+        } else  {
+            this.intersectionObserver = undefined;
+        }
         this.toggleCollapsed(this.getPrefs('collapsed'), {noSave: true});
         return r;
+    }
+
+    onIntersection(entries) {
+        for (const x of entries) {
+            if (!x.target.dataset.fullResUrl) {
+                continue;
+            }
+            if (x.isVisible) {
+                x.target.src = x.target.dataset.fullResUrl;
+                delete x.target.dataset.fullResUrl;
+                this.intersectionObserver.unobserve(x.target);
+            }
+        }
     }
 
     renderAttrs(obj) {
@@ -770,6 +792,16 @@ export class DetailsView extends PerfView {
             debug: !!location.search.match(/debug/),
             ...obj,
         };
+    }
+
+    async render(...args) {
+        const ret = await super.render(...args);
+        if (this.intersectionObserver) {
+            for (const x of this.el.querySelectorAll('.activity-media img[data-full-res-url]')) {
+                this.intersectionObserver.observe(x);
+            }
+        }
+        return ret;
     }
 
     async _onSyncProgress(ev) {

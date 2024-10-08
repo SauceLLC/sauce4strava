@@ -1456,6 +1456,7 @@ table.activity-table {
                                       #{color.shade(bg, 95%)} 0.8em,
                                       #{color.shade(bg, 90%)});
         background-image: $bg-gradient;
+        container: details-panel / inline-size;
 
         &.collapsed {
             flex-basis: 0;
@@ -1484,20 +1485,65 @@ table.activity-table {
 
         .activity-media {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             align-items: stretch;
             justify-items: stretch;
             gap: 0.4em;
             padding: 0 0.2em 0.4em;
 
+            @container details-panel (width < 400px) {
+                & {
+                    grid-template-columns: repeat(6, 1fr);
+                }
+
+                .detail-media {
+                    &:not(.wide) {
+                        grid-column: span 3;
+                    }
+
+                    &.wide {
+                        grid-column: span 6;
+                        aspect-ratio: 2 / 1;
+                    }
+                }
+
+                .detail-media:not(.wide):nth-child(1) + .detail-media.wide {
+                    aspect-ratio: 1 / 1;
+                    grid-column: span 3;
+                }
+
+                .detail-media.wide:nth-child(1) + .detail-media,
+                .detail-media:nth-child(n + 3) {
+                    &:not(.wide) {
+                        grid-column: span 2;
+                    }
+
+                    &.wide {
+                        grid-column: span 4;
+                        aspect-ratio: 2 / 1;
+                    }
+                }
+            }
+
+            @container details-panel (width >= 400px) {
+                & {
+                    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                }
+
+                .detail-media {
+                    &:not(.wide) {
+                        grid-column: span 1;
+                    }
+
+                    &.wide {
+                        grid-column: span 2;
+                        aspect-ratio: 2 / 1;
+                    }
+                }
+            }
+
             .detail-media {
                 display: flex;  // block doesn't constrain properly.
                 aspect-ratio: 1 / 1;
-
-                &.wide {
-                    grid-column: span 2;
-                    aspect-ratio: 2 / 1;
-                }
 
                 img, video {
                     width: 100%;

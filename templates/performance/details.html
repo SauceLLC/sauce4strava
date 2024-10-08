@@ -121,7 +121,7 @@
                             <% for (const x of (a.media || []).filter(x => x?.url && x?.thumbnail)) { %>
                                 <a class="detail-media" href="{{x.url}}" target="sauce_perf_media">
                                     <% if (x.type === 'image') { %>
-                                        <img src="{{x.thumbnail}}"
+                                        <img src="{{x.thumbnail}}" data-full-res-url="{{x.url}}"
                                              onload="this.parentElement.classList.toggle('wide', this.naturalWidth / this.naturalHeight > 1.5)"/>
                                     <% } else { %>
                                         <video disablepictureinpicture disableremoteplayback playsinline loop
