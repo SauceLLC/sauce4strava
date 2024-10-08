@@ -22,8 +22,8 @@
             <% if (multiple) { %>
                 <div class="entry day {{highlightClass}}">
                     <header class="title">
-                        <small>{{humanDate(day.date, {style: 'weekday'})}}</small><br/>
-                        {{day.activities.length}} Activities
+                        <small>{{humanDate(day.date, {style: 'weekdayYear'})}}</small>
+                        <small>{{day.activities.length}} Activities</small>
                     </header>
                     <% if (day.tss) { %>
                         <row>
@@ -110,16 +110,23 @@
                     <% if (a.description) { %>
                         <p class="activity-desc">{{a.description}}</p>
                     <% } %>
-                    <% if (a.media) { %>
+                    <% if (a.media || (a.map?.url)) { %>
                         <div class="activity-media">
-                            <% for (const x of a.media) { %>
-                                <a class="detail-media" href="{{x.url}}" target="_blank">
+                            <% if (a.map?.url) { %>
+                                <a class="detail-media map" href="{{a.map.url}}" target="sauce_perf_media">
+                                    <img src="{{a.map.url}}"
+                                         onload="this.parentElement.classList.toggle('wide', this.naturalWidth / this.naturalHeight > 1.5)"/>
+                                </a>
+                            <% } %>
+                            <% for (const x of (a.media || []).filter(x => x?.url && x?.thumbnail)) { %>
+                                <a class="detail-media" href="{{x.url}}" target="sauce_perf_media">
                                     <% if (x.type === 'image') { %>
-                                        <img src="{{x.thumbnail}}"/>
+                                        <img src="{{x.thumbnail}}"
+                                             onload="this.parentElement.classList.toggle('wide', this.naturalWidth / this.naturalHeight > 1.5)"/>
                                     <% } else { %>
                                         <video disablepictureinpicture disableremoteplayback playsinline loop
-                                               onmouseover="this.play()" onmouseout="this.pause()"
-                                               src="{{x.url}}"></video>
+                                               onmouseover="this.play()" onmouseout="this.pause()" src="{{x.url}}"
+                                               onloadedmetadata="this.parentElement.classList.toggle('wide', this.videoWidth / this.videoHeight > 1.5)"/>
                                     <% } %>
                                 </a>
                             <% } %>

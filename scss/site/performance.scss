@@ -1483,25 +1483,29 @@ table.activity-table {
         }
 
         .activity-media {
-            display: flex;
-            flex-wrap: wrap;
-            padding-bottom: 0.2em;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            align-items: stretch;
+            justify-items: stretch;
+            gap: 0.4em;
+            padding: 0 0.2em 0.4em;
 
             .detail-media {
-                --margin: 0.2em;
-                margin: var(--margin);
-                flex: 0 1 calc(50% - 2 * var(--margin));
-                max-height: 110px;
-                max-width: 110px;
+                display: flex;  // block doesn't constrain properly.
                 aspect-ratio: 1 / 1;
-                border-radius: 0.38em;
-                overflow: hidden;
-                box-shadow: 1.5px 1.5px 5px 1px #0006;
+
+                &.wide {
+                    grid-column: span 2;
+                    aspect-ratio: 2 / 1;
+                }
 
                 img, video {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
+                    border-radius: 0.38em;
+                    overflow: hidden;
+                    box-shadow: 1.5px 1.5px 5px 1px #0006;
                 }
             }
         }
@@ -1559,6 +1563,11 @@ table.activity-table {
                 padding: 0.65em 0.85em;
 
                 &.day {
+                    > header.title {
+                        display: flex;
+                        justify-content: space-between;
+                    }
+
                     .activity {
                         margin: 0.5em -0.2em;
                         padding: inherit;

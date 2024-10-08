@@ -76,6 +76,7 @@ function getPeaksValueFormatter(streamType) {
 
 export async function editActivityDialogXXX(activity, pageView) {
     // XXX replace this trash with a view and module
+    console.debug("Activity:", activity);
     const tss = sauce.model.getActivityTSS(activity);
     const $modal = await sauce.ui.modal({
         title: 'Edit Activity', // XXX localize

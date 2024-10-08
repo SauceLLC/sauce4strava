@@ -365,8 +365,9 @@ sauce.ns('locale', ns => {
         'month': new Intl.DateTimeFormat([], {month: 'short'}),
         'monthDay': new Intl.DateTimeFormat([], {month: 'short', day: 'numeric'}),
         'weekday': new Intl.DateTimeFormat([], {weekday: 'short', month: 'short', day: 'numeric'}),
-        'weekdayYear': new Intl.DateTimeFormat([],
-            {weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'}),
+        'weekdayYear': new Intl.DateTimeFormat([], {
+            year: 'numeric', weekday: 'short', month: 'short', day: 'numeric'
+        }),
         'year': new Intl.DateTimeFormat([], {year: 'numeric'}),
     };
     function humanDate(date, options={}) {
