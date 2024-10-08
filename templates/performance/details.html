@@ -125,7 +125,8 @@
                                              onload="this.parentElement.classList.toggle('wide', this.naturalWidth / this.naturalHeight > 1.5)"/>
                                     <% } else { %>
                                         <video disablepictureinpicture disableremoteplayback playsinline loop
-                                               onmouseover="this.play()" onmouseout="this.pause()" src="{{x.url}}"
+                                               src="{{x.url}}" poster="{{x.thumbnail}}"
+                                               onmouseover="this.play()" onmouseout="this.pause()"
                                                onloadedmetadata="this.parentElement.classList.toggle('wide', this.videoWidth / this.videoHeight > 1.5)"/>
                                     <% } %>
                                 </a>
