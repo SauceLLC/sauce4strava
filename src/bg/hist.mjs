@@ -17,7 +17,7 @@ const {
 } = sauce.hist.db;
 
 
-const activityListVersion = 2;  // Increment to force full update of activities.
+const activityListVersion = 3;  // Increment to force full update of activities.
 const namespace = 'hist';
 const DBTrue = 1;
 const DBFalse = 0;
