@@ -1483,6 +1483,53 @@ class SyncJob extends EventTarget {
     }
 
     async parseFeedActivity(a, cursorData) {
+        const media = [];
+        if (a.mapAndPhotos?.photoList?.length) {
+            for (const x of a.mapAndPhotos.photoList) {
+                if (!x || !x.thumbnail) {
+                    continue;
+                }
+                if (x.video) {
+                    // See: https://docs.mux.com/guides/enable-static-mp4-renditions
+                    //      https://docs.mux.com/guides/get-images-from-a-video
+                    const m = x.video.match(/:\/\/stream.mux.com\/(.*?)\.m3u8/);
+                    const id = m && m[1];
+                    if (!id) {
+                        console.warn("Unexpected video URL format:", x.video);
+                        return;
+                    }
+                    // NOTE: The one problem with not using HLS is that we don't have enough
+                    // info to know if the video is only available as low or medium mp4 file.
+                    let url;
+                    let quality;
+                    for (quality of ['high', 'medium', 'low']) {
+                        const testUrl = `https://stream.mux.com/${id}/${quality}.mp4`;
+                        const r = await fetch(testUrl, {method: 'HEAD'});
+                        if (r.ok) {
+                            url = testUrl;
+                            break;
+                        }
+                    }
+                    if (url) {
+                        media.push({
+                            type: 'video',
+                            url,
+                            thumbnail: x.thumbnail,
+                            muxId: id,
+                            muxQuality: quality,
+                        });
+                    } else {
+                        console.warn("No acceptable static video URL found:", x.video);
+                    }
+                } else if (x.large) {
+                    media.push({
+                        type: 'image',
+                        url: x.large,
+                        thumbnail: x.thumbnail,
+                    });
+                }
+            }
+        }
         return {
             id: Number(a.id),
             ts: a.startDate ?
@@ -1495,18 +1542,7 @@ class SyncJob extends EventTarget {
             trainer: a.isVirtual ? true : undefined,
             commute: a.isCommute,
             map: a.mapAndPhotos?.activityMap ? {url: a.mapAndPhotos.activityMap.url} : undefined,
-            media: a.mapAndPhotos?.photoList?.length ?
-                a.mapAndPhotos.photoList
-                    .filter(x => x?.thumbnail && (x?.large || x?.video))
-                    .map(x => ({
-                        // Swaping the HLS (m3u8) ext with /high.mp4 is a mux.com magic trick.
-                        // It may not last forever by HLS is overly complicated and not natively
-                        // supported.  Not worth the effort for 30 second clips.
-                        type: x.video ? 'video' : 'image',
-                        url: x.video ? x.video.replace(/.m3u8$/, '/high.mp4') : x.large,
-                        thumbnail: x.thumbnail,
-                    })) :
-                undefined,
+            media: media.length ? media : undefined,
         };
     }
 
