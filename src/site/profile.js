@@ -25,6 +25,14 @@ sauce.ns('profile', ns => {
                 $name.parent().append($btn);
             }
         }
+        const avatar = document.querySelector('.avatar-content img.avatar-img');
+        if (avatar) {
+            if (avatar.src.match(/.*(large|medium)\.jpg$/)) {
+                avatar.addEventListener('click', () => {
+                    window.open(avatar.src.replace(/(large|medium)\.jpg$/, 'full.jpg'));
+                });
+            }
+        }
     }
 
 
