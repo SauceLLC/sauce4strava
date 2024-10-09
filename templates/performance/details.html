@@ -113,7 +113,7 @@
                     <% if (a.media || (a.map?.url)) { %>
                         <div class="activity-media">
                             <% if (a.map?.url) { %>
-                                <a class="detail-media map" href="{{a.map.url}}" target="sauce_perf_media">
+                                <a class="detail-media map wide" href="{{a.map.url}}" target="sauce_perf_media">
                                     <img src="{{a.map.url}}"
                                          onload="this.parentElement.classList.toggle('wide', this.naturalWidth / this.naturalHeight > 1.5)"/>
                                 </a>

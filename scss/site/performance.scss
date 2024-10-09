@@ -1490,6 +1490,16 @@ table.activity-table {
             gap: 0.4em;
             padding: 0 0.2em 0.4em;
 
+            .detail-media {
+                img {
+                    background-image: linear-gradient(135deg, #928681, #fff);
+                }
+
+                &.map img {
+                    background-image: linear-gradient(135deg, #e2e3e4, #2c8e6d);
+                }
+            }
+
             @container details-panel (width < 400px) {
                 & {
                     grid-template-columns: repeat(6, 1fr);

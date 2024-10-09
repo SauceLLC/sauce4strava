@@ -738,6 +738,8 @@ export class DetailsView extends PerfView {
     }
 
     async init({pageView, ...options}) {
+        this._observing = new Map();
+        this._intersectionObserver = new IntersectionObserver(this.onIntersection.bind(this));
         this.onSyncProgress = this._onSyncProgress.bind(this);
         this.listenTo(pageView, 'change-athlete', this.onChangeAthlete);
         this.listenTo(pageView, 'select-activities', this.setActivities);
@@ -749,15 +751,6 @@ export class DetailsView extends PerfView {
 
     setElement(el, ...args) {
         const r = super.setElement(el, ...args);
-        if (this.intersectionObserver) {
-            this.intersectionObserver.disconnect();
-        }
-        if (el[0]) {
-            this.intersectionObserver = new IntersectionObserver(this.onIntersection.bind(this),
-                {trackVisibility: true, delay: 2000});
-        } else  {
-            this.intersectionObserver = undefined;
-        }
         this.toggleCollapsed(this.getPrefs('collapsed'), {noSave: true});
         return r;
     }
@@ -767,10 +760,18 @@ export class DetailsView extends PerfView {
             if (!x.target.dataset.fullResUrl) {
                 continue;
             }
-            if (x.isVisible) {
-                x.target.src = x.target.dataset.fullResUrl;
-                delete x.target.dataset.fullResUrl;
-                this.intersectionObserver.unobserve(x.target);
+            clearTimeout(this._observing.get(x.target));
+            if (x.isIntersecting) {
+                this._observing.set(x.target, setTimeout(() => {
+                    if (!x.target.isConnected) {
+                        return;
+                    }
+                    x.target.fetchPriority = 'low';
+                    x.target.src = x.target.dataset.fullResUrl;
+                    delete x.target.dataset.fullResUrl;
+                    this._intersectionObserver.unobserve(x.target);
+                    this._observing.delete(x.target);
+                }, 2000));
             }
         }
     }
@@ -795,11 +796,15 @@ export class DetailsView extends PerfView {
     }
 
     async render(...args) {
+        for (const [el, promoteTimeout] of this._observing.entries()) {
+            this._intersectionObserver.unobserve(el);
+            clearTimeout(promoteTimeout);
+        }
+        this._observing.clear();
         const ret = await super.render(...args);
-        if (this.intersectionObserver) {
-            for (const x of this.el.querySelectorAll('.activity-media img[data-full-res-url]')) {
-                this.intersectionObserver.observe(x);
-            }
+        for (const el of this.el.querySelectorAll('.activity-media img[data-full-res-url]')) {
+            this._intersectionObserver.observe(el);
+            this._observing.set(el, undefined);
         }
         return ret;
     }
