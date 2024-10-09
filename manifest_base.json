@@ -68,6 +68,13 @@
         ]
     }, {
         "run_at": "document_start",
+        "matches": ["https://www.strava.com/activities/*"],
+        "world": "MAIN",
+        "js": [
+            "src/site/export_activity_photos.js"
+        ]
+    }, {
+        "run_at": "document_start",
         "matches": ["https://www.strava.com/*"],
         "css": [
             "css/site/common.css"
