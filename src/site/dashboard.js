@@ -29,6 +29,22 @@ sauce.ns('dashboard', function(ns) {
         }
     }
 
+    // Group activities appear to be mechanistically translated to snake case (or vice versa).
+    function snakeToCamelCase(input) {
+        if (Array.isArray(input)) {
+            return input.map(snakeToCamelCase);
+        } else if (input !== null && typeof input === 'object') {
+            return Object.fromEntries(Object.entries(input).map(([k, v]) => [
+                k.split('_')
+                    .map((x, i) => (x && i) ? x.substr(0, 1).toUpperCase() + x.substr(1) : x)
+                    .join(''),
+                snakeToCamelCase(v)
+            ]));
+        } else {
+            return input;
+        }
+    }
+
 
     const _cardPropCache = new Map();
     function getCardProps(cardEl) {
@@ -38,6 +54,21 @@ sauce.ns('dashboard', function(ns) {
                     if (k.startsWith('__reactEventHandlers$')) {
                         const props = _findActivityProps(o);
                         if (props) {
+                            // Normalize activities...
+                            if (props.entity === 'GroupActivity') {
+                                props.activities = props.rowData.activities.map(snakeToCamelCase).map(x => ({
+                                    ...x,
+                                    commentsCount: x.numComments,
+                                    achievementsCount: x.achievements.length,
+                                }));
+                            } else if (props.entity === 'Activity') {
+                                Object.assign(props.activity, {
+                                    kudosCount: props.activity.kudosAndComments?.kudosCount,
+                                    commentsCount: props.activity.kudosAndComments?.comments?.length,
+                                    achievementsCount: props.activity.segAndBestEffortAchievements?.length,
+                                });
+                                props.activities = [props.activity];
+                            }
                             _cardPropCache.set(cardEl, props);
                         } else {
                             console.warn("Could not find props for:", cardEl);
@@ -55,12 +86,23 @@ sauce.ns('dashboard', function(ns) {
     }
 
 
-    function isSelfActivity(props) {
+    function isSelfEntity(props) {
         // Note we can't share the viewing/cur athlete ID var as the types are different.
+        const selfId = +props.viewingAthlete.id;
+        if (!selfId) {
+            console.error("Self ID could not be determined"); // Not known to be possible.
+            return;
+        }
         if (props.entity === 'Activity') {
-            return props.activity.athlete.athleteId === props.viewingAthlete.id;
+            return +props.activity.athlete.athleteId === selfId;
         } else if (props.entity === 'GroupActivity') {
-            return props.rowData.activities.some(x => x.athlete_id === x.current_athlete_id);
+            return props.rowData.activities.some(x => x.athlete_id === selfId);
+        } else if (props.entity === 'Challenge') {
+            return props.rowData.challenge_entries.some(x => x.athlete_id === selfId);
+        } else if (props.entity === 'Club') {
+            return props.rowData.club_entries.some(x => x.athlete_id === selfId);
+        } else {
+            console.warn("Unexpected entity type:", props.entity); // No known cases of this
         }
     }
 
@@ -69,41 +111,29 @@ sauce.ns('dashboard', function(ns) {
         const tags = (tag && tag !== '*') ?
             [tag] :
             ['zwift', 'trainerroad', 'peloton', 'virtual', 'whoop', 'wahoo systm'];
-        if (!isSelfActivity(props)) {
-            if (props.entity === 'Activity') {
-                if ((!tag || tag === '*') && props.activity.isVirtual) {
-                    return true;
-                } else if (props.activity.mapAndPhotos && props.activity.mapAndPhotos.photoList) {
-                    // Catch the ones that don't claim to be virtual (but are).
-                    for (const x of props.activity.mapAndPhotos.photoList) {
-                        if (x.enhanced_photo && tags.includes(x.enhanced_photo.name.toLowerCase())) {
-                            return true;
-                        }
+        if (props.entity === 'Activity') {
+            if ((!tag || tag === '*') && props.activity.isVirtual) {
+                return true;
+            } else if (props.activity.mapAndPhotos && props.activity.mapAndPhotos.photoList) {
+                // Catch the ones that don't claim to be virtual (but are).
+                for (const x of props.activity.mapAndPhotos.photoList) {
+                    if (x.enhanced_photo && tags.includes(x.enhanced_photo.name.toLowerCase())) {
+                        return true;
                     }
                 }
-            } else if (props.entity === 'GroupActivity') {
-                if ((!tag || tag === '*') && props.rowData.activities.every(x => x.is_virtual)) {
-                    return true;
-                }
             }
+            return false;
+        } else if (props.entity === 'GroupActivity') {
+            if ((!tag || tag === '*') && props.rowData.activities.every(x => x.is_virtual)) {
+                return true;
+            }
+            return false;
         }
-        return false;
     }
 
 
-    function isCommute(props) {
-        if (!isSelfActivity(props)) {
-            if (props.entity === 'Activity') {
-                if (props.activity.isCommute) {
-                    return true;
-                }
-            } else if (props.entity === 'GroupActivity') {
-                if (props.rowData.activities.every(x => x.is_commute)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    function isCommute({activities}) {
+        return activities && activities.every(x => x.isCommute);
     }
 
 
@@ -115,35 +145,45 @@ sauce.ns('dashboard', function(ns) {
             row: /row/i,
             ski: /ski|snowboard/i,
         };
-        if (!isSelfActivity(props)) {
-            const sports = getSports(props);
-            if (sports) {
-                return sports.every(s => (sport === 'other') ?
-                    Object.values(regexps).every(x => !s.match(x)) :
-                    !!s.match(regexps[sport]));
-            }
+        const sports = getSports(props);
+        if (sports) {
+            return sports.some(s => (sport === 'other') ?
+                Object.values(regexps).every(x => !s.match(x)) :
+                !!s.match(regexps[sport]));
         }
-        return false;
     }
 
 
     function isSport(props, sport) {
-        if (!isSelfActivity(props)) {
-            const sports = getSports(props);
-            if (sports) {
-                return sports.every(x => x === sport);
-            }
+        const sports = getSports(props);
+        if (sports) {
+            return sports.some(x => x === sport);
         }
-        return false;
     }
 
 
     function getSports(props) {
-        if (props.entity === 'Activity') {
-            return [props.activity.type];
-        } else if (props.entity === 'GroupActivity') {
-            return props.rowData.activities.map(x => x.type);
-        }
+        return props.activities && props.activities.map(x => x.type);
+    }
+
+
+    function hasAchievements({activities}) {
+        return activities && activities.some(x => x.achievementsCount);
+    }
+
+
+    function hasComments({activities}) {
+        return activities && activities.some(x => x.commentsCount);
+    }
+
+
+    function hasKudos({activities}) {
+        return activities && activities.some(x => x.kudosCount);
+    }
+
+
+    function hasDescription({activities}) {
+        return activities && activities.some(x => x.description);
     }
 
 
@@ -265,30 +305,36 @@ sauce.ns('dashboard', function(ns) {
 
 
     function passesCriteria(props, criteria) {
-        if (!criteria || criteria === '*') {
+        if (!criteria || criteria === '*' || criteria === '!') {
             return true;
         }
-        if (!props.activity || !props.activity.stats) {
-            if (props.entity === 'GroupActivity') {
-                return props.rowData.activities.every(x => _passesCriteria(x.stats, criteria));
-            }
-            return false;
-        }
-        return _passesCriteria(props.activity.stats, criteria);
+        return props.activities && props.activities.some(x => _passesCriteria(x, criteria));
     }
 
 
-    function _passesCriteria(stats, criteria) {
-        const parseStat = criteria.startsWith('time-') ? parseLocaleStatTime :
-            criteria.startsWith('dist-') ? parseLocaleStatDist : null;
+    function _passesCriteria(activity, criteria) {
+        const type = criteria.split('-')[0];
+        const parseStat = {
+            time: parseLocaleStatTime,
+            dist: parseLocaleStatDist,
+        }[type];
         if (!parseStat) {
             console.warn("Unexpected critiera type", criteria);
-            return false;
+            return false; // XXX maybe return undefined when that means something special (i.e. noop)
         }
-        const value = parseStat(stats);
+        let value;
+        if (type === 'time') {
+            value = activity.elapsedTime;
+            if (!value) {
+                console.warn("Elapsed time not found:", activity);
+            }
+        }
+        if (value == null) {
+            value = parseStat(activity.stats);
+        }
         if (isNaN(value)) {
             if (Number.isNaN(value)) {
-                console.error("agh bummer", value, stats); // XXX
+                console.error("Unable to parse locale based time/distance", activity);
             }
             return false;
         }
@@ -312,7 +358,7 @@ sauce.ns('dashboard', function(ns) {
         }
         const handlers = {
             '*': () => true,
-            'cat-promotion': x => !!(x.entity && x.entity.match && x.entity.match(/Promo/)),
+            'cat-promotion': x => !!x.entity?.match(/Promo/),
             'cat-challenge': x => x.entity === 'Challenge',
             'cat-club': x => x.entity === 'Club',
             'cat-club-post': x => x.entity === 'Post' && !!x.post.club_id,
@@ -321,17 +367,31 @@ sauce.ns('dashboard', function(ns) {
             'virtual': isVirtual,
             'base': isBaseType,
             'sport': isSport,
+            'social-achievements': hasAchievements,
+            'social-comments': hasComments,
+            'social-kudos': hasKudos,
+            'social-description': hasDescription,
         };
         const actions = [];
         for (const card of feedEl.querySelectorAll(cardSelector + ':not(.sauce-checked)')) {
             card.classList.add('sauce-checked');
             const props = getCardProps(card);
+            if (isSelfEntity(props)) {
+                continue;
+            }
             for (const {type, criteria, action} of filters) {
                 const [typePrefix, typeArg] = type.split('-', 2);
                 const handler = handlers[type] || handlers[typePrefix];
                 try {
-                    if (handler(props, typeArg) && passesCriteria(props, criteria)) {
-                        actions.push({card, action});
+                    let matches = handler(props, typeArg);
+                    if (matches === undefined) {
+                        continue;
+                    }
+                    if (criteria === '!') {
+                        matches = !matches;
+                    }
+                    if (matches && passesCriteria(props, criteria)) {
+                        actions.push({card, action, type, criteria});
                     }
                 } catch(e) {
                     console.error('Internal feed filter error:', e);
@@ -339,11 +399,22 @@ sauce.ns('dashboard', function(ns) {
             }
         }
         if (actions.length) {
-            for (const {card, action} of actions) {
+            for (const {card, action, criteria, type} of actions) {
                 if (action === 'hide') {
                     card.classList.add('hidden-by-sauce');
                 } else if (action === 'highlight') {
                     card.classList.add('highlight-by-sauce');
+                    /*
+                    if (!card.testing) {
+                        card.style.position = 'relative';
+                        card.innerHTML += '<div class="testing" style="position: absolute; top: 0; ' +
+                            'z-index: 1000000; background: #24fc; color: white; padding: 1em;"></div>';
+                        card.offsetWidth;
+                        card.testing = card.querySelector('.testing');
+                    }
+                    card.testing.innerHTML += `<div>${criteria === '!' ? 'NOT' : criteria} :: ${type}</div>`;
+                    */
+                    criteria, type; // XXX lint testing
                 } else if (action === 'hide-images') {
                     card.classList.add('hide-images-by-sauce');
                 } else if (action === 'hide-media') {

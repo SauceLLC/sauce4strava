@@ -194,6 +194,12 @@
                                         <option value="cat-club" title="Messages about joining a club">Club Join</option>
                                         <option value="cat-promotion">Promotion</option>
                                     </optgroup>
+                                    <optgroup label="Social">
+                                        <option value="social-achievements">Has Achievements</option>
+                                        <option value="social-kudos">Has Kudos</option>
+                                        <option value="social-comments">Has Comments</option>
+                                        <option value="social-description">Has Description</option>
+                                    </optgroup>
                                     <optgroup label="Type">
                                         <option value="base-ride">Cycling</option>
                                         <option value="base-run">Running</option>
@@ -257,7 +263,8 @@
                             </td><td>
                                 <a title="Click to edit" class="select-toggle"><i>Any</i></a>
                                 <select data-filter-property="criteria" class="custom">
-                                    <option value="*">Any</option>
+                                    <option value="*">All</option>
+                                    <option value="!">None</option>
                                     <optgroup label="Time">
                                         <option value="time-600">&lt; 10 minutes</option>
                                         <option value="time-1800">&lt; 30 minutes</option>

@@ -354,6 +354,7 @@ table.activity-filters {
                     cursor: pointer;
                     opacity: 0.8;
                     transition: text-decoration-color 200ms, opacity 200ms;
+                    white-space: nowrap;
 
                     &:hover {
                         opacity: 1;
