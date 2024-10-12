@@ -704,10 +704,27 @@ self.sauceBaseInit = function sauceBaseInit(extId, extUrl, name, version) {
             if (!options.indexKey) {
                 return await this._readQuery('getAllKeys', query, options, options.limit);
             } else {
-                const keys = [];
-                for await (const k of this.keys(query, options)) {
-                    keys.push(k);
+                if (!this._started) {
+                    await this._start();
                 }
+                const req = this._cursorRequest(query, options);
+                const keys = [];
+                await new Promise((resolve, reject) => {
+                    req.addEventListener('error', ev => reject(req.error));
+                    req.addEventListener('success', () => {
+                        const cursor = req.result;
+                        if (!cursor) {
+                            resolve();
+                        } else {
+                            keys.push(cursor.key);
+                            if (options.limit && keys.length >= options.limit) {
+                                resolve();
+                            } else {
+                                cursor.continue();
+                            }
+                        }
+                    });
+                });
                 return keys;
             }
         }
