@@ -645,6 +645,59 @@ sauce.ns('data', function() {
     }
 
 
+    async function compress(data, format='gzip') {
+        const b = new Blob([data]);
+        return await b.stream().pipeThrough(new CompressionStream(format));
+    }
+
+
+    async function decompress(data, format='gzip') {
+        const b = new Blob([data]);
+        return await b.stream().pipeThrough(new DecompressionStream(format));
+    }
+
+
+    function varint(v) {
+        if (v > Number.MAX_SAFE_INTEGER) {
+            throw new RangeError('invalid value');
+        }
+        const bytes = [];
+        while (v >= 0x80000000) {
+            bytes.push((v & 0xff) | 0x80);
+            v /= 0x80;
+        }
+        const moreBits = ~0x7f;
+        while (v & moreBits) {
+            bytes.push((v & 0xff) | 0x80);
+            v >>>= 7;
+        }
+        bytes.push(v | 0);
+        return new Uint8Array(bytes);
+    }
+
+
+    function devarint(buf) {
+        let v = 0;
+        for (let i = 0, shift = 0, b; i < buf.length; i++, shift += 7) {
+            if (shift > 49) {
+                throw new RangeError('invalid value');
+            }
+            b = buf[i];
+            v += shift < 28 ? (b & 0x7f) << shift : (b & 0x7f) * (2 ** shift);
+        }
+        return v;
+    }
+
+
+    function zigzag(v) {
+        return (v << 1) ^ (v >> 31);
+    }
+
+
+    function dezigzag(v) {
+        return (v >>> 1) ^ -(v & 1);
+    }
+
     return {
         sum,
         avg,
@@ -669,6 +722,12 @@ sauce.ns('data', function() {
         peakAverage,
         smooth,
         overlap,
+        compress,
+        decompress,
+        varint,
+        devarint,
+        zigzag,
+        dezigzag,
     };
 });
 
