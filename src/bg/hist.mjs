@@ -383,8 +383,8 @@ class SauceRateLimiter extends jobs.RateLimiter {
 
     async setState(state) {
         const encodedState = await this._encodeState(state);
-        console.warn('rate limit set state', this, encodedState, state); // XXX
         this._lastSavedHash = sauce.hash(JSON.stringify(encodedState));
+        console.warn('rate limit set state', this, encodedState, state, this._lastSavedHash); // XXX
         await sauce.storage.set(this._storeKey, encodedState, {sync: true});
     }
 
@@ -1525,8 +1525,16 @@ class SyncJob extends EventTarget {
     }
 
     async fetchSelfActivity(id) {
-        const resp = await this.retryFetch(`/athlete/training_activities/${id}`);
-        return await resp.json();
+        try {
+            const resp = await this.retryFetch(`/athlete/training_activities/${id}`);
+            return await resp.json();
+        } catch(e) {
+            if (e.resp && e.resp.status === 404) {
+                return null;
+            } else {
+                throw e;
+            }
+        }
     }
 
     // DEPRECATED...
@@ -1891,19 +1899,28 @@ class SyncJob extends EventTarget {
                 count++;
             } else if (data === null) {
                 if (this.isSelf) {
-                    const data = await this.fetchSelfActivity(activity.pk);
-                    activity.set('statsFallback', {
-                        activeTime: data.moving_time_raw,
-                        altitudeGain: data.elevation_gain_raw,
-                        distance: data.distance_raw,
-                    });
-                    console.log("coolio, got some stats", activity.get('statsFallback')); // XXX
+                    try {
+                        const data = await this.fetchSelfActivity(activity.pk);
+                        if (data) {
+                            this.logDebug(`Using fallback stats for no-streams activity: ${activity.pk}`);
+                            activity.set('statsFallback', {
+                                activeTime: data.moving_time_raw,
+                                altitudeGain: data.elevation_gain_raw,
+                                distance: data.distance_raw,
+                            });
+                        }
+                    } catch(e) {
+                        this.logWarn("Fetch self activity stats error:", e);
+                        error = e;
+                    }
                 }
-                activity.setSyncError(manifest, new Error('no-streams-v2'));
-                this._procQueue.putNoWait(activity);
-                count++;
-            } else if (error) {
-                // Often this is an activity converted to private.
+                if (!error) {
+                    activity.setSyncError(manifest, new Error('no-streams-v2'));
+                    this._procQueue.putNoWait(activity);
+                    count++;
+                }
+            }
+            if (error) {
                 activity.setSyncError(manifest, error);
             }
             await activity.save();
