@@ -314,7 +314,7 @@ class SauceRateLimiter extends jobs.RateLimiter {
         super(name, spec, {sleep: aggressiveSleep});
         sauce.storage.addListener((key, value) => {
             if (key === this._storeKey && sauce.hash(JSON.stringify(value)) !== this._lastSavedHash) {
-                this._mergeExternalState(value);
+                this._mergeExternalState(value);  // bg okay
             }
         }, {sync: true});
     }
@@ -388,8 +388,8 @@ class SauceRateLimiter extends jobs.RateLimiter {
         await sauce.storage.set(this._storeKey, encodedState, {sync: true});
     }
 
-    _mergeExternalState(encodedState) {
-        const state = this._decodeState(encodedState);
+    async _mergeExternalState(encodedState) {
+        const state = await this._decodeState(encodedState);
         let count = 0;
         for (const x of state.bucket) {
             if (!this.state.bucket.includes(x)) {
