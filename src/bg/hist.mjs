@@ -313,7 +313,7 @@ class SauceRateLimiter extends jobs.RateLimiter {
     constructor(name, spec) {
         super(name, spec, {sleep: aggressiveSleep});
         sauce.storage.addListener((key, value) => {
-            if (key === this._storeKey && value !== this._lastSavedState) {
+            if (key === this._storeKey && sauce.hash(JSON.stringify(value)) !== this._lastSavedHash) {
                 this._mergeExternalState(value);
             }
         }, {sync: true});
@@ -324,32 +324,34 @@ class SauceRateLimiter extends jobs.RateLimiter {
         return `hist-rate-limiter-${this.label}`;
     }
 
-    async getState() {
-        const state = await sauce.storage.get(this._storeKey, {sync: true});
-        if (state && state.zBucketV1) {
+    async _decodeState(state) {
+        if (!state) {
+            return state;
+        }
+        const clone = structuredClone(state);
+        if (state.zBucketV1) {
+            delete clone.zBucketV1;
             const deltas = sauce.data.fromVarintArray(
                 await sauce.data.decompress(
                     sauce.data.fromBase64(state.zBucketV1.zDeltas),
                     'deflate-raw'));
             const start = state.zBucketV1.start;
-            state.bucket = [start];
+            clone.bucket = [start];
             for (const x of deltas) {
-                state.bucket.push(x + state.bucket[state.bucket.length - 1]);
+                clone.bucket.push(x + clone.bucket[clone.bucket.length - 1]);
             }
-            delete state.zBucketV1;
         }
-        if (state && !state.bucket) {
-            console.warn("rate limiter bucket is missing");
-            state.bucket = [];
-        }
-        console.warn('rate limit GET state', this, state); // XXX
-        return state;
+        return clone;
     }
 
-    async setState(state) {
+    async _encodeState(state) {
         // Compact the state so it fits inside of QUOTA_BYTES_PER_ITEM
-        const clone = {...state};
-        if (state && state.bucket && state.bucket.length > 1) {
+        if (!state) {
+            return state;
+        }
+        const clone = structuredClone(state);
+        if (state.bucket && state.bucket.length > 1) {
+            delete clone.bucket;
             const start = state.bucket[0];
             let prev = start;
             const deltas = [];
@@ -364,15 +366,43 @@ class SauceRateLimiter extends jobs.RateLimiter {
                         sauce.data.toVarintArray(deltas),
                         'deflate-raw')),
             };
-            delete clone.bucket;
         }
-        console.warn('rate limit set state', this, clone); // XXX
-        this._lastSavedState = clone;
-        await sauce.storage.set(this._storeKey, clone, {sync: true});
+        return clone;
     }
 
-    _mergeExternalState(state) {
-        debugger;
+    async getState() {
+        const state = await this._decodeState(await sauce.storage.get(this._storeKey, {sync: true}));
+        if (state && !state.bucket) {
+            console.error("rate limiter bucket is missing"); // XXX remove I think
+            debugger;
+            state.bucket = [];
+        }
+        console.warn('rate limit GET state', this, state); // XXX
+        return state;
+    }
+
+    async setState(state) {
+        const encodedState = await this._encodeState(state);
+        console.warn('rate limit set state', this, encodedState, state); // XXX
+        this._lastSavedHash = sauce.hash(JSON.stringify(encodedState));
+        await sauce.storage.set(this._storeKey, encodedState, {sync: true});
+    }
+
+    _mergeExternalState(encodedState) {
+        const state = this._decodeState(encodedState);
+        let count = 0;
+        for (const x of state.bucket) {
+            if (!this.state.bucket.includes(x)) {
+                console.warn("adding new rate lim entry:", x, new Date(x).toLocaleString());
+                this.state.bucket.push(x);
+                this.state.bucket.sort();
+                this._drain();
+                count++;
+            }
+        }
+        if (count) {
+            console.info(`Merged ${count} external uses: ${this}`);
+        }
     }
 }
 
