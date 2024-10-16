@@ -309,37 +309,70 @@ async function networkOnline(timeout) {
 
 
 class SauceRateLimiter extends jobs.RateLimiter {
+
     constructor(name, spec) {
         super(name, spec, {sleep: aggressiveSleep});
+        sauce.storage.addListener((key, value) => {
+            if (key === this._storeKey && value !== this._lastSavedState) {
+                this._mergeExternalState(value);
+            }
+        }, {sync: true});
+    }
+
+    // hack to avoid race with early loadState called via constructor
+    get _storeKey() {
+        return `hist-rate-limiter-${this.label}`;
     }
 
     async getState() {
-        console.warn('rate limit GET state', this);
-        const storeKey = `hist-rate-limiter-${this.label}`;
-        const state = await sauce.storage.get(storeKey, {sync: true}); // XXX
-        if (state && state.zBucket) {
-            state.bucket = state.zBucket.values.map(x => x * 100 + state.zBucket.start);
-            debugger;
-            delete state.zBucket;
+        const state = await sauce.storage.get(this._storeKey, {sync: true});
+        if (state && state.zBucketV1) {
+            const deltas = sauce.data.fromVarintArray(
+                await sauce.data.decompress(
+                    sauce.data.fromBase64(state.zBucketV1.zDeltas),
+                    'deflate-raw'));
+            const start = state.zBucketV1.start;
+            state.bucket = [start];
+            for (const x of deltas) {
+                state.bucket.push(x + state.bucket[state.bucket.length - 1]);
+            }
+            delete state.zBucketV1;
         }
+        if (state && !state.bucket) {
+            console.warn("rate limiter bucket is missing");
+            state.bucket = [];
+        }
+        console.warn('rate limit GET state', this, state); // XXX
         return state;
     }
 
     async setState(state) {
-        const storeKey = `hist-rate-limiter-${this.label}`;
         // Compact the state so it fits inside of QUOTA_BYTES_PER_ITEM
         const clone = {...state};
         if (state && state.bucket && state.bucket.length > 1) {
             const start = state.bucket[0];
-            clone.zBucket = {
+            let prev = start;
+            const deltas = [];
+            for (const x of state.bucket.slice(1)) {
+                deltas.push(x - prev);
+                prev = x;
+            }
+            clone.zBucketV1 = {
                 start,
-                values: state.bucket.map(x => Math.round((x - start) / 100)),
+                zDeltas: sauce.data.toBase64(
+                    await sauce.data.compress(
+                        sauce.data.toVarintArray(deltas),
+                        'deflate-raw')),
             };
             delete clone.bucket;
-            debugger;
         }
-        console.warn('rate limit set state', this, state);
-        await sauce.storage.set(storeKey, clone, {sync: true});
+        console.warn('rate limit set state', this, clone); // XXX
+        this._lastSavedState = clone;
+        await sauce.storage.set(this._storeKey, clone, {sync: true});
+    }
+
+    _mergeExternalState(state) {
+        debugger;
     }
 }
 
