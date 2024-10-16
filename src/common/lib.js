@@ -695,7 +695,20 @@ sauce.ns('data', function() {
     }
 
 
-    function fromVarint(buf, outOfft) {
+    function _ensureUint8Array(buf) {
+        if (!(buf instanceof Uint8Array)) {
+            if (ArrayBuffer.isView(buf)) {
+                return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+            } else if (buf instanceof ArrayBuffer) {
+                return new Uint8Array(buf);
+            }
+            throw new TypeError('invalid buf argument');
+        }
+        return buf;
+    }
+
+
+    function _fromVarint(buf, outOfft) {
         let v = 0;
         let i = 0;
         for (let shift = 0, b; i < buf.length; i++, shift += 7) {
@@ -715,13 +728,19 @@ sauce.ns('data', function() {
     }
 
 
+    function fromVarint(buf, outOfft) {
+        return _fromVarint(_ensureUint8Array(buf), outOfft);
+    }
+
+
     function fromVarintArray(buf) {
+        buf = _ensureUint8Array(buf);
         let pos = 0;
         const values = [];
+        const offtIn = [];
         while (pos < buf.length) {
-            const offtArr = [];
-            values.push(fromVarint(buf.subarray(pos), offtArr));
-            pos += offtArr[0];
+            values.push(_fromVarint(buf.subarray(pos), offtIn));
+            pos += offtIn[0];
         }
         return values;
     }
@@ -738,16 +757,8 @@ sauce.ns('data', function() {
 
 
     function toBase64(buf) {
-        if (!(buf instanceof Uint8Array)) {
-            if (ArrayBuffer.isView(buf)) {
-                buf = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-            } else if (buf instanceof ArrayBuffer) {
-                buf = new Uint8Array(buf);
-            } else {
-                throw new TypeError('invalid buf argument');
-            }
-        }
-        const strArr = new Array(buf.length); // XXX check if works and fast?
+        buf = _ensureUint8Array(buf);
+        const strArr = new Array(buf.length);
         for (let i = 0; i < buf.length; i++) {
             strArr[i] = String.fromCharCode(buf[i]);
         }
