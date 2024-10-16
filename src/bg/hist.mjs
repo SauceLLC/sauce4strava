@@ -32,8 +32,6 @@ export const syncLogsStore = SyncLogsStore.singleton();
 
 sauce.proxy.export(dataExchange.DataExchange, {namespace});
 
-globalThis.foo = actsStore; // XXX
-
 
 function issubclass(A, B) {
     return A && B && (A.prototype instanceof B || A === B);
@@ -371,20 +369,12 @@ class SauceRateLimiter extends jobs.RateLimiter {
     }
 
     async getState() {
-        const state = await this._decodeState(await sauce.storage.get(this._storeKey, {sync: true}));
-        if (state && !state.bucket) {
-            console.error("rate limiter bucket is missing"); // XXX remove I think
-            debugger;
-            state.bucket = [];
-        }
-        console.warn('rate limit GET state', this, state); // XXX
-        return state;
+        return await this._decodeState(await sauce.storage.get(this._storeKey, {sync: true}));
     }
 
     async setState(state) {
         const encodedState = await this._encodeState(state);
         this._lastSavedHash = sauce.hash(JSON.stringify(encodedState));
-        console.warn('rate limit set state', this, encodedState, state, this._lastSavedHash); // XXX
         await sauce.storage.set(this._storeKey, encodedState, {sync: true});
     }
 
@@ -393,14 +383,13 @@ class SauceRateLimiter extends jobs.RateLimiter {
         let count = 0;
         for (const x of state.bucket) {
             if (!this.state.bucket.includes(x)) {
-                console.warn("adding new rate lim entry:", x, new Date(x).toLocaleString());
                 this.state.bucket.push(x);
-                this.state.bucket.sort();
-                this._drain();
                 count++;
             }
         }
         if (count) {
+            this.state.bucket.sort();
+            this._drain();
             console.info(`Merged ${count} external uses: ${this}`);
         }
     }
@@ -856,7 +845,6 @@ async function syncAthlete(athleteId, options={}) {
     await syncDone;
 }
 sauce.proxy.export(syncAthlete, {namespace});
-globalThis.bar = syncAthlete; // XXX
 
 
 export async function integrityCheck(athleteId, options={}) {
