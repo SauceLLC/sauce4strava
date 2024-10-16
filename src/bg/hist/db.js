@@ -417,6 +417,15 @@ sauce.ns('hist.db', ns => {
                     store.createIndex('athlete-ts', ['athlete', 'ts']);
                     next();
                 }
+            },
+            // Version 31 was deprecated in dev.
+            {
+                version: 32,
+                migrate: (idb, t, next) => {
+                    const store = t.objectStore("activities");
+                    store.createIndex('athlete-id-hash', ['athlete', 'id', 'hash']);
+                    next();
+                }
             }];
         }
     }
@@ -650,6 +659,12 @@ sauce.ns('hist.db', ns => {
 
         async getAllKeysForAthlete(athlete, options={}) {
             return await this.getAllKeys(...this._queryForAthlete(athlete, options));
+        }
+
+        async getAllHashesForAthlete(athlete, options={}) {
+            const q = IDBKeyRange.bound([athlete, -Infinity, -Infinity], [athlete, Infinity, Infinity]);
+            const keys = await this.getAllKeys(q, {index: 'athlete-id-hash', indexKey: true});
+            return new Map(keys.map(x => [x[1], x[2]]));
         }
 
         async getAllForAthlete(athlete, options={}) {

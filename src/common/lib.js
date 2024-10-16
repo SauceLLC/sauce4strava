@@ -645,19 +645,21 @@ sauce.ns('data', function() {
     }
 
 
-    async function compress(data, format='gzip') {
+    async function compress(data, format='deflate') {
         const b = new Blob([data]);
-        return await b.stream().pipeThrough(new CompressionStream(format));
+        const resp = new Response(await b.stream().pipeThrough(new CompressionStream(format)));
+        return await resp.arrayBuffer();
     }
 
 
-    async function decompress(data, format='gzip') {
+    async function decompress(data, format='deflate') {
         const b = new Blob([data]);
-        return await b.stream().pipeThrough(new DecompressionStream(format));
+        const resp = new Response(await b.stream().pipeThrough(new DecompressionStream(format)));
+        return await resp.arrayBuffer();
     }
 
 
-    function varint(v) {
+    function _toVarint(v) {
         if (v > Number.MAX_SAFE_INTEGER) {
             throw new RangeError('invalid value');
         }
@@ -672,30 +674,94 @@ sauce.ns('data', function() {
             v >>>= 7;
         }
         bytes.push(v | 0);
-        return new Uint8Array(bytes);
+        return bytes;
     }
 
 
-    function devarint(buf) {
+    function toVarint(v) {
+        return new Uint8Array(_toVarint(v));
+    }
+
+
+    function toVarintArray(arr) {
+        let offt = 0;
+        const bytes = new Uint8Array(arr.length * 8);
+        for (let i = 0; i < arr.length; i++) {
+            const v = _toVarint(arr[i]);
+            bytes.set(v, offt);
+            offt += v.length;
+        }
+        return bytes.subarray(0, offt);
+    }
+
+
+    function fromVarint(buf, outOfft) {
         let v = 0;
-        for (let i = 0, shift = 0, b; i < buf.length; i++, shift += 7) {
+        let i = 0;
+        for (let shift = 0, b; i < buf.length; i++, shift += 7) {
             if (shift > 49) {
                 throw new RangeError('invalid value');
             }
             b = buf[i];
             v += shift < 28 ? (b & 0x7f) << shift : (b & 0x7f) * (2 ** shift);
+            if (b < 0x80) {
+                break;
+            }
+        }
+        if (outOfft) {
+            outOfft[0] = i + 1;
         }
         return v;
     }
 
 
-    function zigzag(v) {
+    function fromVarintArray(buf) {
+        let pos = 0;
+        const values = [];
+        while (pos < buf.length) {
+            const offtArr = [];
+            values.push(fromVarint(buf.subarray(pos), offtArr));
+            pos += offtArr[0];
+        }
+        return values;
+    }
+
+
+    function toZigZag(v) {
         return (v << 1) ^ (v >> 31);
     }
 
 
-    function dezigzag(v) {
+    function fromZigZag(v) {
         return (v >>> 1) ^ -(v & 1);
+    }
+
+
+    function toBase64(buf) {
+        if (!(buf instanceof Uint8Array)) {
+            if (ArrayBuffer.isView(buf)) {
+                buf = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+            } else if (buf instanceof ArrayBuffer) {
+                buf = new Uint8Array(buf);
+            } else {
+                throw new TypeError('invalid buf argument');
+            }
+        }
+        const strArr = new Array(buf.length); // XXX check if works and fast?
+        for (let i = 0; i < buf.length; i++) {
+            strArr[i] = String.fromCharCode(buf[i]);
+        }
+        return btoa(strArr.join(''));
+    }
+
+
+    function fromBase64(b64) {
+        const binStr = atob(b64);
+        const bytes = new Uint8Array(binStr.length);
+        for (let i = 0; i < binStr.length; i++) {
+            bytes[i] = binStr.charCodeAt(i);
+        }
+        return bytes;
     }
 
     return {
@@ -724,10 +790,14 @@ sauce.ns('data', function() {
         overlap,
         compress,
         decompress,
-        varint,
-        devarint,
-        zigzag,
-        dezigzag,
+        toVarint,
+        fromVarint,
+        toVarintArray,
+        fromVarintArray,
+        toZigZag,
+        fromZigZag,
+        toBase64,
+        fromBase64,
     };
 });
 

@@ -405,11 +405,6 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
     const hrZones = athlete.get('hrZones');
     const ltHR = hrZones && (hrZones.z4 + hrZones.z3) / 2;
     const maxHR = hrZones && sauce.perf.estimateMaxHR(hrZones);
-    const rawAttrMap = {
-        activeTime: 'moving_time_raw',
-        distance: 'distance_raw',
-        altitudeGain: 'elevation_gain_raw',
-    };
     const upActs = [];
     let powerZones;
     let powerZonesFTP;
@@ -420,12 +415,6 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
     for (const activity of activities) {
         const streams = actStreams.get(activity.pk);
         const stats = {};
-        for (const [statKey, rawKey] of Object.entries(rawAttrMap)) {
-            const rawVal = activity.get(rawKey);
-            if (rawVal != null) {
-                stats[statKey] = rawVal;
-            }
-        }
         if (streams.time && streams.active) {
             stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
             if (streams.distance && stats.distance == null && streams.distance.length > 1) {
@@ -467,6 +456,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                     continue;
                 }
             }
+            stats.activeTime = sauce.data.activeTime(streams.time, streams.active);
             if (streams.altitude && stats.altitudeGain == null) {
                 stats.altitudeGain = sauce.geo.altitudeChanges(streams.altitude).gain;
             }
@@ -532,6 +522,8 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                     continue;
                 }
             }
+        } else if (activity.get('statsFallback')) {
+            Object.assign(stats, activity.get('statsFallback'));
         }
         const prevStats = activity.get('stats');
         if ((prevStats && JSON.stringify(prevStats)) !== (stats && JSON.stringify(stats))) {

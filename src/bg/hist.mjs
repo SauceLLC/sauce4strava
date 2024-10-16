@@ -32,6 +32,8 @@ export const syncLogsStore = SyncLogsStore.singleton();
 
 sauce.proxy.export(dataExchange.DataExchange, {namespace});
 
+globalThis.foo = actsStore; // XXX
+
 
 function issubclass(A, B) {
     return A && B && (A.prototype instanceof B || A === B);
@@ -312,13 +314,32 @@ class SauceRateLimiter extends jobs.RateLimiter {
     }
 
     async getState() {
+        console.warn('rate limit GET state', this);
         const storeKey = `hist-rate-limiter-${this.label}`;
-        return await sauce.storage.get(storeKey);
+        const state = await sauce.storage.get(storeKey, {sync: true}); // XXX
+        if (state && state.zBucket) {
+            state.bucket = state.zBucket.values.map(x => x * 100 + state.zBucket.start);
+            debugger;
+            delete state.zBucket;
+        }
+        return state;
     }
 
     async setState(state) {
         const storeKey = `hist-rate-limiter-${this.label}`;
-        await sauce.storage.set(storeKey, state);
+        // Compact the state so it fits inside of QUOTA_BYTES_PER_ITEM
+        const clone = {...state};
+        if (state && state.bucket && state.bucket.length > 1) {
+            const start = state.bucket[0];
+            clone.zBucket = {
+                start,
+                values: state.bucket.map(x => Math.round((x - start) / 100)),
+            };
+            delete clone.bucket;
+            debugger;
+        }
+        console.warn('rate limit set state', this, state);
+        await sauce.storage.set(storeKey, clone, {sync: true});
     }
 }
 
@@ -772,6 +793,7 @@ async function syncAthlete(athleteId, options={}) {
     await syncDone;
 }
 sauce.proxy.export(syncAthlete, {namespace});
+globalThis.bar = syncAthlete; // XXX
 
 
 export async function integrityCheck(athleteId, options={}) {
@@ -1271,9 +1293,8 @@ class SyncJob extends EventTarget {
         }
         if (!this.options.noActivityScan) {
             this.setStatus('activity-scan');
-            const updateFn = this.isSelf ? this.updateSelfActivitiesV2 : this.updatePeerActivities;
             try {
-                await updateFn.call(this, {forceUpdate: this.options.forceActivityUpdate});
+                await this._scanActivities({forceUpdate: this.options.forceActivityUpdate});
             } catch(e) {
                 if (!(e instanceof CancelledError)) {
                     throw e;
@@ -1314,9 +1335,32 @@ class SyncJob extends EventTarget {
         return await retryFetch(urn, {cancelEvent: this._cancelEvent, ...options});
     }
 
-    async updateSelfActivitiesV2(options={}) {
-        const forceUpdate = options.forceUpdate;
-        const knownIds = new Set(forceUpdate ? [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
+    async _scanActivities() {
+        const forceUpdate = this.options.forceActivityUpdate;
+        const known = forceUpdate ? new Map() : await actsStore.getAllHashesForAthlete(this.athlete.pk);
+        const iter = this.isSelf ? this._scanSelfActivitiesIter : this._scanPeerActivitiesIter;
+        for await (const batch of iter.call(this, {known})) {
+            let adding = 0;
+            let updating = 0;
+            for (const x of batch) {
+                if (known.has(x.id)) {
+                    updating++;
+                } else {
+                    adding++;
+                }
+            }
+            if (adding) {
+                this.logInfo(`Adding ${adding} new activities`);
+            }
+            if (updating) {
+                this.logInfo(`Updating ${updating} existing activities`);
+            }
+            await actsStore.updateMany(new Map(batch.map(x => [x.id, x])));
+            await this.niceSendProgressEvent();
+        }
+    }
+
+    async *_scanSelfActivitiesIter({known}) {
         const q = new URLSearchParams({feed_type: 'my_activity'});
         while (!this._cancelEvent.isSet()) {
             const resp = await this.retryFetch(`/dashboard/feed?${q}`);
@@ -1329,38 +1373,101 @@ class SyncJob extends EventTarget {
                 // it can happen and has happened to some users.
                 break;
             }
-            let batch = [];
+            const batch = [];
             for (const x of data.entries) {
                 if (x.entity === 'Activity') {
-                    const a = x.activity;
-                    if (!knownIds.has(Number(a.id))) {
-                        batch.push(this.activityToDatabase(await this.parseFeedActivity(a, x.cursorData)));
+                    const entry = this.activityToDatabase(await this.parseFeedActivity(x));
+                    if (entry && (!known.has(entry.id) || known.get(entry.id) !== entry.hash)) {
+                        batch.push(entry);
                     }
                 } else if (x.entity === 'GroupActivity') {
                     for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
-                        if (!knownIds.has(a.activity_id)) {
-                            batch.push(this.activityToDatabase(await this.parseFeedGroupActivity(a)));
+                        const entry = this.activityToDatabase(await this.parseFeedGroupActivity(a));
+                        if (entry && (!known.has(entry.id) || known.get(entry.id) !== entry.hash)) {
+                            batch.push(entry);
                         }
                     }
                 }
                 q.set('before', x.cursorData.updated_at);
             }
-            batch = batch.filter(x => x);
             if (!batch.length) {
                 break;
             }
-            if (forceUpdate) {
-                this.logInfo(`Updating ${batch.length} activities`);
-                await actsStore.updateMany(new Map(batch.map(x => [x.id, x])));
-            } else {
-                this.logInfo(`Adding ${batch.length} new activities`);
-                await actsStore.putMany(batch);
-            }
-            await this.niceSendProgressEvent();
+            yield batch;
         }
     }
 
-    async updateSelfActivities(options={}) {
+    async *_scanPeerActivitiesIter({known}) {
+        yield* this._scanPeerActivitiesFromIter(new Date(), known);
+        const sentinel = await this.athlete.get('activitySentinel');
+        if (!sentinel) {
+            // We may have never finished a prior sync so find where we left off..
+            const last = await actsStore.getOldestForAthlete(this.athlete.pk);
+            if (last) {
+                yield* this._scanPeerActivitiesFromIter(new Date(last.ts), known);
+            }
+        }
+    }
+
+    async *_scanPeerActivitiesFromIter(startDate, known) {
+        const minEmpty = known.size ? 2 : 16;
+        const minRedundant = 2;
+        const maxConcurrent = 10;
+        const iter = this._yearMonthRange(startDate);
+        let empty = 0;
+        let redundant = 0;
+        for (let concurrency = 1;; concurrency = Math.min(maxConcurrent, concurrency * 2)) {
+            if (this._cancelEvent.isSet()) {
+                break;
+            }
+            const work = new jobs.UnorderedWorkQueue({maxPending: maxConcurrent});
+            for (let i = 0; i < concurrency; i++) {
+                const [year, month] = iter.next().value;
+                await work.put(this._fetchFeedMonth(year, month));
+            }
+            const batch = [];
+            for await (const data of work) {
+                if (!data.length) {
+                    empty++;
+                    continue;
+                }
+                empty = 0;
+                for (const x of data) {
+                    if (!known.has(x.id) || x.hash !== known.get(x.id)) {
+                        if (batch.find(xx => xx.id === x.id)) {
+                            debugger;
+                        }
+                        batch.push(x);
+                        //known.set(x.id, x.hash);
+                    }
+                }
+                if (!batch.length) {
+                    redundant++;
+                } else {
+                    redundant = 0;
+                }
+            }
+            if (batch.length) {
+                yield batch;
+            } else if (empty >= minEmpty) {
+                const [year, month] = iter.next().value;
+                const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
+                await this.athlete.save({activitySentinel: date.getTime()});
+                break;
+            } else if (redundant >= minRedundant) {
+                // Entire work set was redundant.  Don't refetch any more.
+                break;
+            }
+        }
+    }
+
+    async fetchSelfActivity(id) {
+        const resp = await this.retryFetch(`/athlete/training_activities/${id}`);
+        return await resp.json();
+    }
+
+    // DEPRECATED...
+    async _scanSelfActivitiesLegacy(options={}) {
         const forceUpdate = options.forceUpdate;
         const filteredKeys = [
             'activity_url',
@@ -1478,14 +1585,16 @@ class SyncJob extends EventTarget {
             athlete: this.athlete.pk,
             name,
             ...extra,
+            hash: 0,
         };
+        data.hash = sauce.hash(JSON.stringify(data));
         return data;
     }
 
-    async parseFeedActivity(a, cursorData) {
+    async parseFeedActivity({activity, cursorData}) {
         const media = [];
-        if (a.mapAndPhotos?.photoList?.length) {
-            for (const x of a.mapAndPhotos.photoList) {
+        if (activity.mapAndPhotos?.photoList?.length) {
+            for (const x of activity.mapAndPhotos.photoList) {
                 if (!x || !x.thumbnail) {
                     continue;
                 }
@@ -1531,18 +1640,23 @@ class SyncJob extends EventTarget {
             }
         }
         return {
-            id: Number(a.id),
-            ts: a.startDate ?
-                (new Date(a.startDate)).getTime() :
-                (cursorData.updated_at - (a.elapsedTime || 0)) * 1000,
-            type: a.type,
-            name: a.activityName,
-            description: a.description ? await specialProxy.stripHTML(a.description) : undefined,
-            virtual: a.isVirtual,
-            trainer: a.isVirtual ? true : undefined,
-            commute: a.isCommute,
-            map: a.mapAndPhotos?.activityMap ? {url: a.mapAndPhotos.activityMap.url} : undefined,
+            id: Number(activity.id),
+            ts: activity.startDate ?
+                (new Date(activity.startDate)).getTime() :
+                (cursorData.updated_at - (activity.elapsedTime || 0)) * 1000,
+            type: activity.type,
+            name: activity.activityName,
+            description: activity.description ?
+                await specialProxy.stripHTML(activity.description) :
+                undefined,
+            virtual: activity.isVirtual,
+            trainer: activity.isVirtual ? true : undefined,
+            commute: activity.isCommute,
+            map: activity.mapAndPhotos?.activityMap ?
+                {url: activity.mapAndPhotos.activityMap.url} :
+                undefined,
             media: media.length ? media : undefined,
+            elapsedTime: activity.elapsedTime,
         };
     }
 
@@ -1565,13 +1679,11 @@ class SyncJob extends EventTarget {
                     thumbnail: urlsBySize[0],
                 };
             }) : undefined,
+            elapsedTime: a.elapsed_time,
         };
     }
 
-    async fetchMonth(year, month) {
-        // Welcome to hell.  It gets really ugly in here in an effort to avoid
-        // any eval usage which is required to render this HTML into a DOM node.
-        // So are doing horrible HTML parsing with regexps..
+    async _fetchFeedMonth(year, month) {
         const q = new URLSearchParams();
         q.set('interval_type', 'month');
         q.set('chart_type', 'hours');
@@ -1600,6 +1712,7 @@ class SyncJob extends EventTarget {
                 const data = await this.parseRawReactProps(rawProps[1]);
                 feedEntries = data.appContext.preFetchedEntries;
             } else {
+                debugger;
                 // Legacy as of 03-2023, remove in future release.
                 const legacyRawProps = raw.match(
                     /data-react-class=\\['"]FeedRouter\\['"] data-react-props=\\['"](.+?)\\['"]/);
@@ -1615,8 +1728,7 @@ class SyncJob extends EventTarget {
             try {
                 for (const x of feedEntries) {
                     if (x.entity === 'Activity') {
-                        const a = x.activity;
-                        batch.push(this.activityToDatabase(await this.parseFeedActivity(a, x.cursorData)));
+                        batch.push(this.activityToDatabase(await this.parseFeedActivity(x)));
                     } else if (x.entity === 'GroupActivity') {
                         for (const a of x.rowData.activities.filter(x => x.athlete_id === this.athlete.pk)) {
                             batch.push(this.activityToDatabase(await this.parseFeedGroupActivity(a)));
@@ -1632,78 +1744,6 @@ class SyncJob extends EventTarget {
         return batch.filter(x => x);
     }
 
-    async _batchImport(startDate, knownIds, forceUpdate) {
-        const minEmpty = knownIds.size ? 2 : 16;
-        const minRedundant = 2;
-        const maxConcurrent = 10;
-        const iter = this._yearMonthRange(startDate);
-        let empty = 0;
-        let redundant = 0;
-        for (let concurrency = 1;; concurrency = Math.min(maxConcurrent, concurrency * 2)) {
-            if (this._cancelEvent.isSet()) {
-                break;
-            }
-            const work = new jobs.UnorderedWorkQueue({maxPending: maxConcurrent});
-            for (let i = 0; i < concurrency; i++) {
-                const [year, month] = iter.next().value;
-                await work.put(this.fetchMonth(year, month));
-            }
-            const adding = [];
-            for await (const data of work) {
-                if (!data.length) {
-                    empty++;
-                    continue;
-                }
-                empty = 0;
-                let foundNew;
-                for (const x of data) {
-                    if (!knownIds.has(x.id)) {
-                        adding.push(x);
-                        knownIds.add(x.id);
-                        foundNew = true;
-                    }
-                }
-                if (!foundNew) {
-                    redundant++;
-                } else {
-                    redundant = 0;
-                }
-            }
-            if (adding.length) {
-                if (forceUpdate) {
-                    this.logInfo(`Updating ${adding.length} activities`);
-                    await actsStore.updateMany(new Map(adding.map(x => [x.id, x])));
-                } else {
-                    this.logInfo(`Adding ${adding.length} new activities`);
-                    await actsStore.putMany(adding);
-                }
-            } else if (empty >= minEmpty) {
-                const [year, month] = iter.next().value;
-                const date = new Date(`${month === 12 ? year + 1 : year}-${month === 12 ? 1 : month + 1}`);
-                await this.athlete.save({activitySentinel: date.getTime()});
-                break;
-            } else if (redundant >= minRedundant) {
-                // Entire work set was redundant.  Don't refetch any more.
-                break;
-            }
-            await this.niceSendProgressEvent();
-        }
-    }
-
-    async updatePeerActivities(options={}) {
-        const forceUpdate = options.forceUpdate;
-        const knownIds = new Set(forceUpdate ? [] : await actsStore.getAllKeysForAthlete(this.athlete.pk));
-        await this._batchImport(new Date(), knownIds, forceUpdate);
-        const sentinel = await this.athlete.get('activitySentinel');
-        if (!sentinel) {
-            // We may have never finished a prior sync so find where we left off..
-            const last = await actsStore.getOldestForAthlete(this.athlete.pk);
-            if (last) {
-                await this._batchImport(new Date(last.ts), knownIds, forceUpdate);
-            }
-        }
-    }
-
     async _processData() {
         const activities = await actsStore.getAllForAthlete(this.athlete.pk, {models: true});
         this.allActivities = new Map(activities.map(x => [x.pk, x]));
@@ -1711,7 +1751,7 @@ class SyncJob extends EventTarget {
         let deferCount = 0;
         const streamManifest = ActivityModel.getSyncManifest('streams', 'fetch');
         for (const a of activities) {
-            if (a.isSyncComplete('streams') || a.getSyncError(streamManifest) === 'no-streams') {
+            if (a.isSyncComplete('streams') || a.getSyncError(streamManifest) === 'no-streams-v2') {
                 if (!a.isSyncComplete('local')) {
                     if (a.nextAvailManifest('local')) {
                         this._procQueue.putNoWait(a);
@@ -1787,7 +1827,16 @@ class SyncJob extends EventTarget {
                 this._procQueue.putNoWait(activity);
                 count++;
             } else if (data === null) {
-                activity.setSyncError(manifest, new Error('no-streams'));
+                if (this.isSelf) {
+                    const data = await this.fetchSelfActivity(activity.pk);
+                    activity.set('statsFallback', {
+                        activeTime: data.moving_time_raw,
+                        altitudeGain: data.elevation_gain_raw,
+                        distance: data.distance_raw,
+                    });
+                    console.log("coolio, got some stats", activity.get('statsFallback')); // XXX
+                }
+                activity.setSyncError(manifest, new Error('no-streams-v2'));
                 this._procQueue.putNoWait(activity);
                 count++;
             } else if (error) {
