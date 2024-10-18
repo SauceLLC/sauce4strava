@@ -44,7 +44,6 @@ async function start() {
 async function setStoragePersistent() {
     // This only works in some cases and may have no effect with unlimitedStorage
     // but it's evolving on all the browers and it's a good thing to ask for.
-    debugger;
     if (navigator.storage && navigator.storage.persisted) {
         const isPersisted = await navigator.storage.persisted();
         if (!isPersisted && navigator.storage.persist) {
