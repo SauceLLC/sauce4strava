@@ -217,45 +217,57 @@ export class OffloadProcessor {
 
 export async function athleteSettingsProcessor({manifest, activities, athlete}) {
     let invalidate;
+    // The HR zones API is based on activities, so technically it is historical but
+    // this leads to a lot of complications so we simply look for the latest values.
+    // If the zones are updated we need to trigger an invalidation of all activities.
     const hrTS = athlete.get('hrZonesTS');
-    if (hrTS == null || Date.now() - hrTS > 86400 * 1000) {
-        // The HR zones API is based on activities, so technically it is historical but
-        // this leads to a lot of complications so we simply look for the latest values.
-        // If the zones are updated we need to trigger an invalidation of all activities.
-        const origZones = athlete.get('hrZones');
-        const origHash = origZones ? JSON.stringify(origZones) : null;
-        let recentActivity = await actsStore.getNewestForAthlete(athlete.pk);
-        let remainingAttempts = 10;
-        while (recentActivity && remainingAttempts--) {
-            const zones = await sauce.perf.fetchHRZones(recentActivity.id);
-            if (!zones) {
-                recentActivity = await actsStore.getPrevSibling(recentActivity);
-                continue;
+    const hrZones = athlete.get('hrZones');
+    const hrHash = hrZones ? JSON.stringify(hrZones) : null;
+    // Ignore argument based activities for HR zones.  We only care about latest and
+    // want to avoid spurious invalidations if processing from oldest to newest i.e. a recompute.
+    // We'll mark activities as we go and only attempt a few fetches to spread out the work
+    // in case the athlete has thousands of activities without HR.
+    let remainingFetches = 10;
+    let activity = await actsStore.getNewestForAthlete(athlete.pk, {model: true});
+    while (remainingFetches && activity) {
+        if (hrTS && activity.get('ts') <= hrTS) {
+            break;
+        }
+        let zones = activity.get('hrZones');
+        if (zones === undefined) {
+            remainingFetches--;
+            zones = await sauce.perf.fetchHRZones(activity.pk);
+            await activity.save({hrZones: zones || null});
+        }
+        if (zones) {
+            if (JSON.stringify(zones) !== hrHash) {
+                athlete.set('hrZones', zones);
+                invalidate = true;
             }
-            invalidate = !origHash || JSON.stringify(zones) !== origHash;
-            athlete.set('hrZones', zones);
-            athlete.set('hrZonesTS', Date.now());
+            athlete.set('hrZonesTS', activity.get('ts'));
             await athlete.save();
             break;
         }
+        activity = await actsStore.getPrevSibling(activity, {model: true});
     }
+
     const gender = athlete.get('gender');
     if (!gender) {
-        let remainingAttempts = 10;
+        let remainingFetches = 5;
         for (const activity of activities) {
             const gender = await sauce.perf.fetchPeerGender(activity.pk);
-            if (!gender) {
-                if (--remainingAttempts) {
-                    console.error("Unable to to learn gender");
-                    break;
-                }
-                continue;
+            if (gender) {
+                await athlete.save({gender});
+                invalidate = true;
+                break;
             }
-            athlete.set('gender', gender);
-            await athlete.save();
-            invalidate = true;
+            if (!--remainingFetches) {
+                console.warn("Unable to to learn gender");
+                break;
+            }
         }
     }
+
     if (invalidate) {
         console.info("Athlete settings updated for:", athlete.pk, athlete.get('name'));
         sauce.hist.invalidateAthleteSyncState(athlete.pk, manifest.processor, manifest.name).catch(e =>
@@ -299,7 +311,7 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
                         }
                     } catch(e) {
                         console.error("Failed to create running watts stream for: " + activity, e);
-                        activity.setSyncError(manifest, e);
+                        activity.setManifestSyncError(manifest, e);
                     }
                 }
                 // Real watts can still take prio unless disableRunWatts is active.
@@ -317,7 +329,7 @@ export async function extraStreamsProcessor({manifest, activities, athlete}) {
             }
         } catch(e) {
             console.error("Failed to create active stream for: " + activity, e);
-            activity.setSyncError(manifest, e);
+            activity.setManifestSyncError(manifest, e);
         }
     }
     await streamsStore.putMany(upStreams);
@@ -357,7 +369,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                 }
             } catch(e) {
                 console.error("Failed to create running watts stream for: " + activity, e);
-                activity.setSyncError(manifest, e);
+                activity.setManifestSyncError(manifest, e);
             }
         }
         if (activity.get('peaksExclude')) {
@@ -388,7 +400,7 @@ export async function runPowerProcessor({manifest, activities, athlete}) {
                 }
             } catch(e) {
                 console.error("Failed to create peaks for: " + activity, e);
-                activity.setSyncError(manifest, e);
+                activity.setManifestSyncError(manifest, e);
             }
         }
     }
@@ -452,7 +464,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                         }
                     }
                 } catch(e) {
-                    activity.setSyncError(manifest, e);
+                    activity.setManifestSyncError(manifest, e);
                     continue;
                 }
             }
@@ -518,7 +530,7 @@ export async function activityStatsProcessor({manifest, activities, athlete}) {
                         stats.intensity = (stats.np || stats.power) / ftp;
                     }
                 } catch(e) {
-                    activity.setSyncError(manifest, e);
+                    activity.setManifestSyncError(manifest, e);
                     continue;
                 }
             }

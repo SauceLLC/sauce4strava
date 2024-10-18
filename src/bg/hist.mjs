@@ -18,6 +18,7 @@ const {
 
 
 const activityListVersion = 3;  // Increment to force full update of activities.
+const noStreamsTag = 'no-streams-v2'; // Increment if no stream handling is updated.
 const namespace = 'hist';
 const DBTrue = 1;
 const DBFalse = 0;
@@ -859,12 +860,12 @@ export async function integrityCheck(athleteId, options={}) {
         .map(x => [x.pk, x]));
     for (const a of activities.values()) {
         if (haveStreamsFor.has(a.pk)) {
-            if (a.hasAnySyncErrors('streams')) {
+            if (a.hasSyncErrors('streams')) {
                 inFalseErrorState.push(a.pk);
             }
             haveStreamsFor.delete(a.pk);
         } else {
-            if (a.hasSyncSuccess(streamManifest)) {
+            if (a.hasManifestSyncSuccess(streamManifest)) {
                 missingStreamsFor.push(a.pk);
             }
         }
@@ -874,18 +875,18 @@ export async function integrityCheck(athleteId, options={}) {
         for (const id of missingStreamsFor) {
             syncLogsStore.logWarn(athleteId, 'Repairing activity with missing streams:', id);
             const a = activities.get(id);
-            a.clearSyncState(streamManifest);
+            a.clearManifestSyncState(streamManifest);
             for (const m of localManifests) {
-                a.clearSyncState(m);
+                a.clearManifestSyncState(m);
             }
             await a.save();
         }
         for (const id of inFalseErrorState) {
             syncLogsStore.logWarn(athleteId, 'Repairing activity with false-error state:', id);
             const a = activities.get(id);
-            a.setSyncSuccess(streamManifest);
+            a.setManifestSyncSuccess(streamManifest);
             for (const m of localManifests) {
-                a.clearSyncState(m);
+                a.clearManifestSyncState(m);
             }
             await a.save();
         }
@@ -1120,7 +1121,7 @@ export async function invalidateActivitySyncState(activityId, processor, name, o
     const athleteId = activity.get('athlete');
     const state = await _invalidateSyncStateEnter(athleteId, processor, options);
     for (const m of manifests) {
-        activity.clearSyncState(m);
+        activity.clearManifestSyncState(m);
     }
     await activity.save();
     await _invalidateSyncStateExit(state);
@@ -1148,10 +1149,10 @@ export async function activityCounts(athleteId, activities) {
     for (const a of activities) {
         let successes = 0;
         for (const m of streamManifests) {
-            if (a.hasSyncError(m)) {
+            if (a.hasManifestSyncError(m)) {
                 successes = -1;
                 break;
-            } else if (a.hasSyncSuccess(m)) {
+            } else if (a.hasManifestSyncSuccess(m)) {
                 successes++;
             }
         }
@@ -1165,10 +1166,10 @@ export async function activityCounts(athleteId, activities) {
         }
         successes = 0;
         for (const m of localManifests) {
-            if (a.hasSyncError(m)) {
+            if (a.hasManifestSyncError(m)) {
                 successes = -1;
                 break;
-            } else if (a.hasSyncSuccess(m)) {
+            } else if (a.hasManifestSyncSuccess(m)) {
                 successes++;
             }
         }
@@ -1810,16 +1811,16 @@ class SyncJob extends EventTarget {
         let deferCount = 0;
         const streamManifest = ActivityModel.getSyncManifest('streams', 'fetch');
         for (const a of activities) {
-            if (a.isSyncComplete('streams') || a.getSyncError(streamManifest) === 'no-streams-v2') {
+            if (a.isSyncComplete('streams') || a.getManifestSyncError(streamManifest) === noStreamsTag) {
                 if (!a.isSyncComplete('local')) {
-                    if (a.nextAvailManifest('local')) {
+                    if (!a.hasSyncErrors('local', {blocking: true})) {
                         this._procQueue.putNoWait(a);
                     } else {
                         deferCount++;
                     }
                 }
-            } else if (a.nextAvailManifest('streams')) {
-                if (a.nextAvailManifest('streams')) {
+            } else {
+                if (!a.hasSyncErrors('streams', {blocking: true})) {
                     unfetched.push(a);
                 } else {
                     deferCount++;
@@ -1860,20 +1861,19 @@ class SyncJob extends EventTarget {
         }
         let count = 0;
         for (const activity of activities) {
+            if (this._cancelEvent.isSet()) {
+                return count;
+            }
             let error;
             let data;
-            activity.clearSyncState(manifest);
+            activity.clearManifestSyncState(manifest);
             for (const m of localManifests) {
-                activity.clearSyncState(m);
+                activity.clearManifestSyncState(m);
             }
             try {
                 data = await this._fetchStreams(activity, q);
             } catch(e) {
-                this.logWarn("Fetch streams error (will retry later):", e);
                 error = e;
-            }
-            if (this._cancelEvent.isSet()) {
-                return count;
             }
             if (data) {
                 await streamsStore.putMany(Object.entries(data).map(([stream, data]) => ({
@@ -1882,7 +1882,7 @@ class SyncJob extends EventTarget {
                     stream,
                     data
                 })));
-                activity.setSyncSuccess(manifest);
+                activity.setManifestSyncSuccess(manifest);
                 this._procQueue.putNoWait(activity);
                 count++;
             } else if (data === null) {
@@ -1898,18 +1898,18 @@ class SyncJob extends EventTarget {
                             });
                         }
                     } catch(e) {
-                        this.logWarn("Fetch self activity stats error:", e);
                         error = e;
                     }
                 }
                 if (!error) {
-                    activity.setSyncError(manifest, new Error('no-streams-v2'));
+                    activity.setManifestSyncError(manifest, new Error(noStreamsTag));
                     this._procQueue.putNoWait(activity);
                     count++;
                 }
             }
-            if (error) {
-                activity.setSyncError(manifest, error);
+            if (error && !(error instanceof CancelledError)) {
+                this.logWarn("Fetch streams error (will retry later):", error);
+                activity.setManifestSyncError(manifest, error);
             }
             await activity.save();
         }
@@ -1919,19 +1919,19 @@ class SyncJob extends EventTarget {
     _localSetSyncError(activities, manifest, e) {
         this.logError(`Top level local processing error (${manifest.name}) v${manifest.version}`, e);
         for (const a of activities) {
-            a.setSyncError(manifest, e);
+            a.setManifestSyncError(manifest, e);
         }
     }
 
     _localSetSyncDone(activities, manifest) {
-        // NOTE: The processor is free to use setSyncError(), but we really can't
-        // trust them to consistently use setSyncSuccess().  Failing to do so would
+        // NOTE: The processor is free to use setManifestSyncError(), but we really can't
+        // trust them to consistently use setManifestSyncSuccess().  Failing to do so would
         // be a disaster, so we handle that here.  The model is: Optionally tag the
         // activity as having a sync error otherwise we assume it worked or does
         // not need further processing, so mark it as done (success).
         for (const a of activities) {
-            if (!a.hasSyncError(manifest)) {
-                a.setSyncSuccess(manifest);
+            if (!a.hasManifestSyncError(manifest)) {
+                a.setManifestSyncSuccess(manifest);
             }
         }
     }
@@ -2043,7 +2043,7 @@ class SyncJob extends EventTarget {
                     }
                     const manifestBatch = manifestBatches.get(m);
                     manifestBatch.push(a);
-                    a.clearSyncState(m);
+                    a.clearManifestSyncState(m);
                 }
                 for (const [m, activities] of manifestBatches.entries()) {
                     const processor = m.data.processor;

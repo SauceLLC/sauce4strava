@@ -127,7 +127,7 @@ sauce.ns('hist.db', ns => {
             return sauce.model.getActivityTSS(this.data);
         }
 
-        _getSyncState(manifest) {
+        _getManifestSyncState(manifest) {
             const processor = manifest.processor;
             const name = manifest.name;
             if (!processor || !name) {
@@ -138,7 +138,7 @@ sauce.ns('hist.db', ns => {
                 this.data.syncState[processor][name];
         }
 
-        _setSyncState(manifest, state, options={}) {
+        _setManifestSyncState(manifest, state, options={}) {
             const processor = manifest.processor;
             const name = manifest.name;
             if (!processor || !name) {
@@ -153,8 +153,8 @@ sauce.ns('hist.db', ns => {
                     // It might be safe to clear deps in error state too, but I'm being
                     // paranoid for now in the offchance that I'm missing a way that this
                     // could break backoff handling (i.e. runaway processing).
-                    if (!this.hasSyncError(dep)) {
-                        this.clearSyncState(dep);
+                    if (!this.hasManifestSyncError(dep)) {
+                        this.clearManifestSyncState(dep);
                     }
                 }
             }
@@ -164,52 +164,59 @@ sauce.ns('hist.db', ns => {
             this._updated.add('syncState');
         }
 
-        setSyncSuccess(manifest) {
-            const state = this._getSyncState(manifest) || {};
+        setManifestSyncSuccess(manifest) {
+            const state = this._getManifestSyncState(manifest) || {};
             if (state.error && state.error.ts) {
-                throw new TypeError("'clearSyncState' not used before 'setSyncSuccess'");
+                throw new TypeError("'clearManifestSyncState' not used before 'setManifestSyncSuccess'");
             }
             delete state.error;
             state.version = manifest.version;
             state.storageOptionHash = manifest.storageOptionHash;
-            this._setSyncState(manifest, state);
+            this._setManifestSyncState(manifest, state);
         }
 
-        setSyncError(manifest, e) {
-            const state = this._getSyncState(manifest) || {};
+        setManifestSyncError(manifest, e) {
+            const state = this._getManifestSyncState(manifest) || {};
             state.version = manifest.version;
             const error = state.error = state.error || {count: 0};
             error.count++;
             error.ts = Date.now();
             error.message = e.message;
-            this._setSyncState(manifest, state);
+            this._setManifestSyncState(manifest, state);
         }
 
-        hasSyncSuccess(manifest) {
+        hasManifestSyncSuccess(manifest) {
             // WARNING this is different than asking if the sync is dirty.
             // This only asks if it HAS succeeded.
-            const state = this._getSyncState(manifest);
+            const state = this._getManifestSyncState(manifest);
             return !!(state && state.version === manifest.version && !(state.error && state.error.ts));
         }
 
-        getSyncError(manifest) {
-            const state = this._getSyncState(manifest);
+        getManifestSyncError(manifest) {
+            const state = this._getManifestSyncState(manifest);
             const error = state && state.error;
             return (error && error.ts) ? (error.message || 'error') : undefined;
         }
 
-        hasSyncError(manifest) {
-            const state = this._getSyncState(manifest);
-            return !!(state && state.error && state.error.ts);
+        hasManifestSyncError(manifest, {blocking}={}) {
+            const state = this._getManifestSyncState(manifest);
+            const error = state && state.error;
+            if (error && error.ts) {
+                if (blocking) {
+                    const backoff = manifest.errorBackoff * (2 ** error.count);
+                    const deferredUntil = error.ts + backoff;
+                    if (Date.now() < deferredUntil) {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        hasAnySyncErrors(processor) {
-            const manifests = this.constructor.getSyncManifests(processor);
-            return manifests.some(m => this.hasSyncError(m));
-        }
-
-        clearSyncState(manifest) {
-            const state = this._getSyncState(manifest);
+        clearManifestSyncState(manifest) {
+            const state = this._getManifestSyncState(manifest);
             if (state) {
                 let altered;
                 if (state.error && state.error.ts) {
@@ -223,19 +230,24 @@ sauce.ns('hist.db', ns => {
                     altered = true;
                 }
                 if (altered) {
-                    this._setSyncState(manifest, state);
+                    this._setManifestSyncState(manifest, state);
                 }
             }
         }
 
-        isSyncStateDirty(manifest) {
-            const state = this._getSyncState(manifest);
+        isManifestSyncStateDirty(manifest) {
+            const state = this._getManifestSyncState(manifest);
             return !!(
                 !state ||
                 state.error?.ts ||
                 state.version !== manifest.version ||
                 state.storageOptionHash !== manifest.storageOptionHash
             );
+        }
+
+        hasSyncErrors(processor, options) {
+            const manifests = this.constructor.getSyncManifests(processor);
+            return manifests.some(m => this.hasManifestSyncError(m, options));
         }
 
         nextAvailManifest(processor) {
@@ -247,7 +259,7 @@ sauce.ns('hist.db', ns => {
             const pending = new Set();
             // Pass 1: Compile completed and pending sets without dep evaluation.
             for (const m of manifests) {
-                if (this.isSyncStateDirty(m)) {
+                if (this.isManifestSyncStateDirty(m)) {
                     pending.add(m.name);
                 } else {
                     completed.add(m.name);
@@ -280,9 +292,7 @@ sauce.ns('hist.db', ns => {
             } while (!idle);
             for (const name of pending) {
                 const m = manifestsMap.get(name);
-                const state = this._getSyncState(m);
-                const e = state && state.error;
-                if (e && e.ts && Date.now() - e.ts < m.errorBackoff * (2 ** e.count)) {
+                if (this.hasManifestSyncError(m, {blocking: true})) {
                     return;  // Unavailable until error backoff expires.
                 } else {
                     return m;
@@ -292,7 +302,7 @@ sauce.ns('hist.db', ns => {
 
         isSyncComplete(processor) {
             const manifests = this.constructor.getSyncManifests(processor);
-            return manifests.every(x => !this.isSyncStateDirty(x));
+            return manifests.every(x => !this.isManifestSyncStateDirty(x));
         }
     }
 
@@ -696,13 +706,14 @@ sauce.ns('hist.db', ns => {
         }
 
         async getNextSibling(actThing, options={}) {
-            for await (const x of this.siblings(actThing, options)) {
+            for await (const x of this.siblings(actThing, {models: options.model, ...options})) {
                 return x;
             }
         }
 
         async getPrevSibling(actThing, options={}) {
-            for await (const x of this.siblings(actThing, {direction: 'prev', ...options})) {
+            for await (const x of this.siblings(actThing,
+                {direction: 'prev', models: options.model, ...options})) {
                 return x;
             }
         }
@@ -712,20 +723,21 @@ sauce.ns('hist.db', ns => {
             const manifests = this.Model.getSyncManifests(processor, name);
             for (const a of activities) {
                 for (const m of manifests) {
-                    a.clearSyncState(m);
+                    a.clearManifestSyncState(m);
                 }
             }
             await this.saveModels(activities);
         }
 
         async getOldestForAthlete(athlete, options={}) {
-            for await (const x of this.byAthlete(athlete, options)) {
+            for await (const x of this.byAthlete(athlete, {models: options.model, ...options})) {
                 return x;
             }
         }
 
         async getNewestForAthlete(athlete, options={}) {
-            for await (const x of this.byAthlete(athlete, {direction: 'prev', ...options})) {
+            for await (const x of this.byAthlete(athlete,
+                {direction: 'prev', models: options.model, ...options})) {
                 return x;
             }
         }
