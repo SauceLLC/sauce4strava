@@ -19,15 +19,15 @@ patron.initProxyExports();
 
 sauce.ns('hist', () => Object.fromEntries(Object.entries(hist))); // For console debugging only.
 
-// Sadly 'onInstalled' callbacks are not reliable on Safari so we need
-// to try migrations every startup.
-const migrationsRun = sauce.migrate.runMigrations();
 let _starting = undefined;
-self.currentUser = undefined;
+self.currentUser = null;
 
 
 async function start() {
-    await migrationsRun;
+    await setStoragePersistent();
+    // Sadly 'onInstalled' callbacks are not reliable on Safari so we need
+    // to try migrations every startup.
+    await sauce.migrate.runMigrations();
     sauce.storage.addListener((key, value) => {
         if (key === 'options') {
             sauce.options = value;
@@ -35,24 +35,21 @@ async function start() {
     });
     const config = await sauce.storage.get(null);
     sauce.options = config.options;
-    self.currentUser = config.currentUser;
+    self.currentUser = config.currentUser || null;
     await hist.startSyncManager(self.currentUser);
     sauce.proxy.startBackgroundHandler();
 }
 
 
-async function setCurrentUser(id) {
-    if (id != null) {
-        if (self.currentUser != null) {
-            console.info("Current user updated:", id);
+async function setStoragePersistent() {
+    // This only works in some cases and may have no effect with unlimitedStorage
+    // but it's evolving on all the browers and it's a good thing to ask for.
+    debugger;
+    if (navigator.storage && navigator.storage.persisted) {
+        const isPersisted = await navigator.storage.persisted();
+        if (!isPersisted && navigator.storage.persist) {
+            await navigator.storage.persist();
         }
-    } else {
-        console.warn("Current user logged out");
-    }
-    if (self.currentUser !== id) {
-        self.currentUser = id;
-        await _starting;
-        await hist.restartSyncManager(id);
     }
 }
 
@@ -133,12 +130,14 @@ browser.runtime.onInstalled.addListener(async details => {
     }
 });
 
-browser.runtime.onMessage.addListener(msg => {
+browser.runtime.onMessage.addListener(async msg => {
     if (msg && msg.source === 'ext/boot') {
         if (msg.op === 'setCurrentUser') {
-            const id = msg.currentUser || undefined;
-            if (self.currentUser !== id) {
-                setCurrentUser(id);
+            await _starting;
+            const id = msg.currentUser || null;
+            if (id !== self.currentUser) {
+                self.currentUser = id;
+                await hist.restartSyncManager(id);
             }
         }
     }

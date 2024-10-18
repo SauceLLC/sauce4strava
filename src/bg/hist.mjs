@@ -2281,18 +2281,18 @@ class SyncManager extends EventTarget {
         const syncHash = await this.syncVersionHash();
         let activeTimerStart;
         while (!this.stopping) {
+            this._refreshEvent.clear();
             const athletes = await athletesStore.getEnabled({models: true});
             for (const x of Array.from(this.activeJobs.values())) {
                 if (!x.running && (x.cancelled() || x.started)) {
                     this._removeSyncJob(x);
                 }
             }
-            this._refreshEvent.clear();
             try {
                 this._enqueueJobs(athletes, syncHash);
             } catch(e) {
                 console.error('Sync job creation error:', e);
-                await aggressiveSleep(errorBackoff *= 1.5);
+                await Promise.race([aggressiveSleep(errorBackoff *= 1.5), this._refreshEvent.wait()]);
                 continue;
             }
             if (this.activeJobs.size && !activeTimerStart) {
@@ -2590,28 +2590,11 @@ class SyncController extends sauce.proxy.Eventing {
 sauce.proxy.export(SyncController, {namespace});
 
 
-async function setStoragePersistent() {
-    // This only works in some cases and may have no effect with unlimitedStorage
-    // but it's evolving on all the browers and it's a good thing to ask for.
-    if (navigator.storage && navigator.storage.persisted) {
-        const isPersisted = await navigator.storage.persisted();
-        if (!isPersisted && navigator.storage.persist) {
-            await navigator.storage.persist();
-        }
-    }
-}
-
-
-let _setStoragePersistent;
 export function startSyncManager(id) {
     if (syncManager) {
         throw new Error("SyncManager already exists");
     }
     if (id) {
-        if (!_setStoragePersistent) {
-            _setStoragePersistent = true;
-            setTimeout(setStoragePersistent, 0);  // Run out of ctx to avoid startup races.
-        }
         syncManager = new SyncManager(id);
         syncManager.start();
     }
@@ -2624,7 +2607,7 @@ export async function stopSyncManager() {
     try {
         await _stopSyncManager();
     } finally {
-        await _syncManagerLock.release();
+        _syncManagerLock.release();
     }
 }
 
@@ -2645,6 +2628,11 @@ export function hasSyncManager() {
 }
 
 
+export function getSyncManager() {
+    return syncManager;
+}
+
+
 export async function restartSyncManager(id) {
     await _syncManagerLock.acquire();
     try {
@@ -2659,6 +2647,6 @@ export async function restartSyncManager(id) {
             startSyncManager(id);
         }
     } finally {
-        await _syncManagerLock.release();
+        _syncManagerLock.release();
     }
 }
