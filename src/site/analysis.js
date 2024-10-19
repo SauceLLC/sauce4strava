@@ -3352,13 +3352,30 @@ sauce.ns('analysis', ns => {
             // Check for updates out of band to disaffect page load.
             sauce.sleep(2000).then(async () => {
                 const fullAct = await fetchFullActivity();
+                let actData;
                 if (!fullAct) {
-                    return;
+                    actData = {};
+                    // Hacks from here...
+                    if (self.lightboxData) {
+                        if (self.lightboxData.title) {
+                            actData.name = self.lightboxData.title;
+                        }
+                        if (self.lightboxData.activity_type) {
+                            actData.type = self.lightboxData.activity_type;
+                        }
+                    }
+                    const descEl = document.querySelector('.activity-description .content');
+                    if (descEl) {
+                        actData.description = descEl.textContent;
+                    }
+                } else {
+                    actData = fullAct.attributes;
                 }
                 const updates = {};
                 for (const x of ['type', 'name', 'description']) {
-                    if (fullAct.get(x) !== ret.syncActivity[x]) {
-                        updates[x] = fullAct.get(x);
+                    const val = actData[x];
+                    if (val && val !== ret.syncActivity[x]) {
+                        updates[x] = val;
                     }
                 }
                 if (updates.type) {
@@ -3368,10 +3385,11 @@ sauce.ns('analysis', ns => {
                     }
                 }
                 if (Object.keys(updates).length) {
+                    console.info("Updating activity DB entry:", updates);
                     await sauce.hist.updateActivity(activity.id, updates);
                     Object.assign(ret.syncActivity, updates);
                     if (updates.basetype) {
-                        await sauce.hist.deletePeaksForActivity(activity.id);
+                        await sauce.hist.deletePeaksForActivity(activity.id); // XXX might be redundant now
                         await sauce.hist.invalidateActivitySyncState(activity.id, 'local', null,
                             {wait: true});
                         setSyncDone();
