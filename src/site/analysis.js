@@ -1534,16 +1534,14 @@ sauce.ns('analysis', ns => {
             const laps = await getLaps();
             exportActivity('fit', {laps}).catch(console.error);
         });
-        if (!$menu.find('a[href$="/export_gpx"]').length) {
-            $menu.find('.sauce-group ul').append(jQuery(`
-                <li><a title="NOTE: GPX files do not support power data (watts)."
-                       class="gpx">${exportLocale} GPX</a></li>
-            `));
-            $menu.find('a.gpx').on('click', async () => {
-                const laps = await getLaps();
-                exportActivity('gpx', {laps}).catch(console.error);
-            });
-        }
+        $menu.find('.sauce-group ul').append(jQuery(`
+            <li><a title="NOTE: GPX files do not support power data (watts)."
+                   class="gpx">${exportLocale} GPX</a></li>
+        `));
+        $menu.find('a.gpx').on('click', async () => {
+            const laps = await getLaps();
+            exportActivity('gpx', {laps}).catch(console.error);
+        });
     }
 
 
