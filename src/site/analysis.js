@@ -3381,6 +3381,18 @@ sauce.ns('analysis', ns => {
                 }
             });
         }
+        const athleteUpdates = {};
+        const name = ns.athlete.get('display_name');
+        const gender = ns.gender;
+        if (name && name !== ret.syncAthlete.name) {
+            athleteUpdates.name = name;
+        }
+        if (gender && gender !== ret.syncAthlete.gender) {
+            athleteUpdates.gender = gender;
+        }
+        if (Object.keys(athleteUpdates).length) {
+            await sauce.hist.updateAthlete(ns.athlete.id, athleteUpdates);
+        }
         return ret;
     }
 
