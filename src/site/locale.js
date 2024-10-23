@@ -221,6 +221,9 @@ sauce.ns('locale', ns => {
                 }
             }
         }
+        if (!f) {
+            console.warn("pace formatter defaulting to speed");
+        }
         return f || ns.speedFormatter;
     }
 
@@ -283,21 +286,30 @@ sauce.ns('locale', ns => {
     }
 
 
-    function humanRaceDistance(value) {
-        let label;
+    function humanRaceDistance(value, options={}) {
         if (value < 1000) {
-            label = `${value} m`;
-        } else {
-            const miles = value / metersPerMile;
-            if (isRoughlyEqual(miles, 13.1) ||
-                isRoughlyEqual(miles, 26.2) ||
-                isRoughlyEqual(miles, Math.round(miles))) {
-                label = ns.imperialDistanceFormatter.formatShort(value);
-            } else {
-                label = ns.metricDistanceFormatter.formatShort(value);
-            }
+            return humanNumber(value, {...options, suffix: 'm', separator: options.html ? '' : ' '});
         }
-        return label.replace(/\.0 /, ' ');
+        let formatter;
+        const miles = value / metersPerMile;
+        if (isRoughlyEqual(miles, 13.1) ||
+            isRoughlyEqual(miles, 26.2) ||
+            isRoughlyEqual(miles, Math.round(miles))) {
+            formatter = ns.imperialDistanceFormatter;
+        } else {
+            formatter = ns.metricDistanceFormatter;
+        }
+        const savedPrecision = formatter.precision;
+        formatter.precision = 0;
+        try {
+            if (options.html) {
+                return formatter.abbreviatedNoWhitespace(value);
+            } else {
+                return formatter.formatShort(value);
+            }
+        } finally {
+            formatter.precision = savedPrecision;
+        }
     }
 
 
@@ -334,7 +346,7 @@ sauce.ns('locale', ns => {
             const save = ns.weightFormatter.precision;
             ns.weightFormatter.precision = precision;
             try {
-                return ns.weightFormatter.abbreviated(kg);
+                return ns.weightFormatter.abbreviatedNoWhitespace(kg);
             } finally {
                 ns.weightFormatter.precision = save;
             }
@@ -443,12 +455,15 @@ sauce.ns('locale', ns => {
 
     function humanDistance(meters, options={}) {
         assertInit();
+        if (meters == null || meters === '') {
+            return '';
+        }
         const precision = options.precision != null ? options.precision : 1;
         if (options.html) {
             const save = ns.distanceFormatter.precision;
             ns.distanceFormatter.precision = precision;
             try {
-                return ns.distanceFormatter.abbreviated(meters, precision);
+                return ns.distanceFormatter.abbreviatedNoWhitespace(meters);
             } finally {
                 ns.distanceFormatter.precision = save;
             }
@@ -462,6 +477,9 @@ sauce.ns('locale', ns => {
 
     function humanPace(raw, options={}) {
         assertInit();
+        if (raw == null || raw === '') {
+            return '';
+        }
         const mps = options.velocity ? raw : 1 / raw;
         const formatter = getPaceFormatter(options);
         const minPace = 0.1;  // About 4.5 hours / mile
@@ -471,7 +489,7 @@ sauce.ns('locale', ns => {
                 if (mps < minPace) {
                     return '<abbr class="unit short" title="Stopped">-</abbr>';
                 }
-                return formatter.abbreviated(mps);
+                return formatter.abbreviatedNoWhitespace(mps);
             } else {
                 if (mps < minPace) {
                     return '-';
@@ -495,7 +513,7 @@ sauce.ns('locale', ns => {
             const save = ns.tempFormatter.precision;
             ns.tempFormatter.precision = precision;
             try {
-                return ns.tempFormatter.abbreviated(temp, precision);
+                return ns.tempFormatter.abbreviatedNoWhitespace(temp);
             } finally {
                 ns.tempFormatter.precision = save;
             }
@@ -525,7 +543,7 @@ sauce.ns('locale', ns => {
             const save = formatter.precision;
             formatter.precision = precision;
             try {
-                return formatter.abbreviated(hz, precision);
+                return formatter.abbreviatedNoWhitespace(hz);
             } finally {
                 formatter.precision = save;
             }
@@ -562,8 +580,11 @@ sauce.ns('locale', ns => {
 
     function humanElevation(meters, options={}) {
         assertInit();
+        if (meters == null || meters === '') {
+            return '';
+        }
         if (options.html) {
-            return ns.elevationFormatter.abbreviated(meters);
+            return ns.elevationFormatter.abbreviatedNoWhitespace(meters);
         } else if (options.suffix) {
             if (options.longSuffix) {
                 return ns.elevationFormatter.formatLong(meters);

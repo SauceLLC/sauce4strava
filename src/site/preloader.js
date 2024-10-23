@@ -134,7 +134,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     sauce.propDefined('Strava.Charts.Activities.BasicAnalysisStacked', Klass => {
         let minLocale = 'Min';
-        booted.then(async () => void (minLocale = await sauce.locale.getMessage('analysis_min')));
+        booted.then(async () => void (minLocale = await sauce.locale.getMessage('min')));
         const paceMaxLabel = (data, labelBox, start, end) => {
             const stream = labelBox.builder().context.getStream(data.streamType)
                 .slice(+start, end == null ? undefined : +end);
@@ -620,7 +620,7 @@ self.saucePreloaderInit = function saucePreloaderInit() {
             const selector = runSegmentsView ? '.bottomless.inset' : '.effort-actions';
             let $btns = this.$(`${selector} .sauce-buttons`);
             if (!$btns.length) {
-                const toolsLocale = await sauce.locale.getMessage('analysis_tools');
+                const toolsLocale = await sauce.locale.getMessage('tools');
                 this.$(selector).append(jQuery(`
                     <div class="sauce-btn-group btn-block">
                         <label>Sauce ${toolsLocale}</label>
@@ -854,4 +854,25 @@ self.saucePreloaderInit = function saucePreloaderInit() {
 
     sauce.propDefined('StravaSentry', x => x.enabled = false, {once: true});
     window.__SENTRY_TRACING__ = false;
+
+
+    sauce.propDefined('Strava.I18n.UnitSystemFormatter', Klass => {
+        Klass.prototype.abbreviatedNoWhitespace = function(value) {
+            const fmt = Strava.I18n.FormatterTranslations[this.key][this.unitSystem].abbr
+                .replace(/ <abbr /, '<abbr ');
+            return Strava.I18n.MessageFormatter.format(fmt, {
+                value: this.format(value, this.precision)
+            });
+        };
+    }, {once: true});
+
+
+    sauce.propDefined('Strava.I18n.ScalarFormatter', Klass => {
+        Klass.prototype.abbreviatedNoWhitespace = function(value) {
+            const fmt = Strava.I18n.FormatterTranslations[this.key].abbr.replace(/ <abbr /, '<abbr ');
+            return Strava.I18n.MessageFormatter.format(fmt, {
+                value: this.format(value, this.precision)
+            });
+        };
+    }, {once: true});
 };
