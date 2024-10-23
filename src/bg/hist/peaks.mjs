@@ -146,7 +146,7 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                     x.roll.resize();
                     if (x.roll.full()) {
                         const value = x.roll.avg();
-                        if (value && (!x.leader || value >= x.leader.value)) {
+                        if (value && (!x.leader || value <= x.leader.value)) {
                             x.leader = {roll: x.roll.clone(), value};
                         }
                     }
@@ -158,7 +158,7 @@ export function peaksProcessor(actStreams, athlete, activities, {periods, distan
                         x.roll.resize();
                         if (x.roll.full()) {
                             const value = x.roll.avg();
-                            if (value && (!x.leader || value >= x.leader.value)) {
+                            if (value && (!x.leader || value <= x.leader.value)) {
                                 x.leader = {roll: x.roll.clone(), value};
                             }
                         }
