@@ -15,7 +15,7 @@ sauce.ns('analysis', ns => {
     const tplUrl = sauce.getURL('templates');
     const L = sauce.locale;
     const H = sauce.locale.human;
-    const LM = m => L.getMessage(`analysis_${m}`);
+    const LM = m => L.getMessage(m[0] === '/' ? m.substr(1) : `analysis_${m}`);
     const _localeInit = sauce.locale.init();  // preload micro opt.
 
     const minVAMTime = 60;
@@ -441,6 +441,8 @@ sauce.ns('analysis', ns => {
                 // Only editable fields nest event listeners on dom nodes we just replaced..
                 attachEditableFTP($stats);
                 attachEditableWeight($stats);
+            } else {
+                attachEditableTSS($stats);
             }
         });
     }
@@ -2760,7 +2762,7 @@ sauce.ns('analysis', ns => {
             width: `calc(${initialWidth}ch + 4em)`,
             dialogClass: 'sauce-big-data',
             extraButtons: [{
-                text: await LM('download'),
+                text: await LM('/download'),
                 click: () => {
                     const range = start && end ? `-${start}-${end}` : '';
                     const name = `${pageView.activity().id}${range}.csv`;
@@ -2976,7 +2978,7 @@ sauce.ns('analysis', ns => {
         }
         const locale = await L.getMessagesObject([
             'faster', 'slower', 'power_details_rr', 'power_details_gravity', 'power_details_aero',
-            'position', 'time', 'power',
+            'position', '/time', '/power',
         ], 'perf_predictor');
         let lazySaveTimeout;
         const $output = $dialog.find('.output');
@@ -3382,10 +3384,18 @@ sauce.ns('analysis', ns => {
                     const basetype = sauce.model.getActivityBaseType(updates.type);
                     if (basetype && basetype !== ret.syncActivity.basetype) {
                         updates.basetype = basetype;
+                    } else {
+                        // The detailed activity type info is better from the feed data (sync).  To
+                        // avoid losing this granularity, only update 'type' if 'basetype' is also
+                        // changed (i.e. the user actually changed it).
+                        delete updates.type;
                     }
                 }
                 if (Object.keys(updates).length) {
-                    console.info("Updating activity DB entry:", updates);
+                    const origValues = Object.fromEntries(Object.keys(updates).map(x =>
+                        [x, ret.syncActivity[x]]));
+                    console.info("Updating activity DB entry:", JSON.stringify(origValues),
+                        JSON.stringify(updates));
                     await sauce.hist.updateActivity(activity.id, updates);
                     Object.assign(ret.syncActivity, updates);
                     if (updates.basetype) {
