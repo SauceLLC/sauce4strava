@@ -79,15 +79,15 @@
         "message": "活动比较",
         "description": "IMMUTABLE"
     },
-    "analysis_options": {
+    "options": {
         "message": "选项",
         "description": "IMMUTABLE"
     },
-    "analysis_tools": {
+    "tools": {
         "message": "工具",
         "description": "IMMUTABLE"
     },
-    "analysis_time": {
+    "time": {
         "message": "时间",
         "description": "IMMUTABLE"
     },
@@ -95,7 +95,7 @@
         "message": "计时",
         "description": "IMMUTABLE"
     },
-    "analysis_gap": {
+    "gap": {
         "message": "GAP",
         "description": "IMMUTABLE"
     },
@@ -107,27 +107,27 @@
         "message": "下降",
         "description": "IMMUTABLE"
     },
-    "analysis_avg": {
+    "avg": {
         "message": "平均",
         "description": "IMMUTABLE"
     },
-    "analysis_min": {
+    "min": {
         "message": "最小",
         "description": "IMMUTABLE"
     },
-    "analysis_max": {
+    "max": {
         "message": "最大",
         "description": "IMMUTABLE"
     },
-    "analysis_lowest": {
+    "lowest": {
         "message": "最低",
         "description": "IMMUTABLE"
     },
-    "analysis_highest": {
+    "highest": {
         "message": "最高",
         "description": "IMMUTABLE"
     },
-    "analysis_elapsed": {
+    "elapsed": {
         "message": "经过",
         "description": "IMMUTABLE"
     },
@@ -211,17 +211,17 @@
         "message": "每小时海拔爬升",
         "description": "IMMUTABLE"
     },
-    "analysis_power_tss_tooltip": {
+    "power_tss_tooltip": {
         "message": "训练压力指数®：基于功率的压力负荷指示器",
         "description": "IMMUTABLE"
     },
-    "analysis_trimp_tss_tooltip": {
+    "trimp_tss_tooltip": {
         "message": "基于 TRIMP（TRAining IMPulse）的 Training Stress Score®：基于心率储备的压力负荷指标"
     },
-    "analysis_estimate_tss_tooltip": {
+    "estimate_tss_tooltip": {
         "message": "预估训练压力分数®：基于预估功率的压力负荷指标"
     },
-    "analysis_override_tss_tooltip": {
+    "override_tss_tooltip": {
         "message": "训练压力评分® 的手动控制"
     },
     "analysis_start_of_effort_tooltip": {
@@ -260,11 +260,11 @@
         "message": "最高配速",
         "description": "IMMUTABLE"
     },
-    "analysis_expand_tooltip": {
+    "expand_tooltip": {
         "message": "点击展开",
         "description": "IMMUTABLE"
     },
-    "analysis_compress_tooltip": {
+    "compress_tooltip": {
         "message": "点击折叠",
         "description": "IMMUTABLE"
     },
@@ -345,7 +345,7 @@
         "message": "空闲",
         "description": "IMMUTABLE"
     },
-    "analysis_active": {
+    "active": {
         "message": "活跃",
         "description": "IMMUTABLE"
     },
@@ -353,7 +353,7 @@
         "message": "统计资料",
         "description": "IMMUTABLE"
     },
-    "analysis_energy": {
+    "energy": {
         "message": "能耗",
         "description": "IMMUTABLE"
     },
@@ -365,7 +365,7 @@
         "message": "速率",
         "description": "IMMUTABLE"
     },
-    "analysis_elevation": {
+    "elevation": {
         "message": "海拔",
         "description": "IMMUTABLE"
     },
@@ -373,19 +373,19 @@
         "message": "环境",
         "description": "IMMUTABLE"
     },
-    "analysis_grade": {
+    "grade": {
         "message": "坡度",
         "description": "IMMUTABLE"
     },
-    "analysis_estimated": {
+    "estimated": {
         "message": "估计的",
         "description": "IMMUTABLE"
     },
-    "analysis_data": {
+    "data": {
         "message": "数据",
         "description": "IMMUTABLE"
     },
-    "analysis_rank": {
+    "rank": {
         "message": "排名",
         "description": "IMMUTABLE"
     },
@@ -409,23 +409,23 @@
         "message": "预测的骑行运动表现。",
         "description": "IMMUTABLE"
     },
-    "analysis_pace": {
+    "pace": {
         "message": "配速",
         "description": "IMMUTABLE"
     },
-    "analysis_speed": {
+    "speed": {
         "message": "速度",
         "description": "IMMUTABLE"
     },
-    "analysis_distance": {
+    "distance": {
         "message": "距离",
         "description": "IMMUTABLE"
     },
-    "analysis_samples": {
+    "samples": {
         "message": "采样",
         "description": "IMMUTABLE"
     },
-    "analysis_beta": {
+    "beta": {
         "message": "测试版",
         "description": "IMMUTABLE"
     },
@@ -433,27 +433,27 @@
         "message": "开始努力",
         "description": "IMMUTABLE"
     },
-    "analysis_elapsed_time": {
+    "elapsed_time": {
         "message": "经过时间",
         "description": "IMMUTABLE"
     },
-    "analysis_heartrate": {
+    "heartrate": {
         "message": "心率",
         "description": "IMMUTABLE"
     },
-    "analysis_hr": {
+    "hr": {
         "message": "心率",
         "description": "IMMUTABLE"
     },
-    "analysis_temp": {
+    "temp": {
         "message": "温度",
         "description": "IMMUTABLE"
     },
-    "analysis_cadence": {
+    "cadence": {
         "message": "踏频",
         "description": "IMMUTABLE"
     },
-    "analysis_stride": {
+    "stride": {
         "message": "步幅",
         "description": "IMMUTABLE"
     },
@@ -497,29 +497,29 @@
         "message": "最佳GAP",
         "description": "IMMUTABLE"
     },
-    "analysis_watts": {
+    "watts": {
         "message": "瓦数",
         "description": "IMMUTABLE"
     },
-    "analysis_power": {
+    "power": {
         "message": "功率",
         "description": "IMMUTABLE"
     },
-    "analysis_sea_power": {
+    "sea_power": {
         "message": "海平面调整功率",
         "description": "IMMUTABLE"
     },
-    "analysis_weight": {
+    "weight": {
         "message": "重量",
         "description": "IMMUTABLE"
     },
-    "analysis_segments": {
+    "segments": {
         "message": "段"
     },
     "analysis_empty_info_aside": {
         "message": "此范围没有段或其他数据。"
     },
-    "analysis_best_performances": {
+    "best_performances": {
         "message": "最佳表现",
         "description": "IMMUTABLE"
     },
@@ -546,15 +546,15 @@
     "analysis_change": {
         "message": "改变"
     },
-    "analysis_gain": {
+    "gain": {
         "message": "上升",
         "description": "IMMUTABLE"
     },
-    "analysis_loss": {
+    "loss": {
         "message": "下降",
         "description": "IMMUTABLE"
     },
-    "analysis_view": {
+    "view": {
         "message": "视图",
         "description": "IMMUTABLE"
     },
@@ -630,11 +630,11 @@
         "message": "值",
         "description": "IMMUTABLE"
     },
-    "analysis_activity": {
+    "activity": {
         "message": "活动",
         "description": "IMMUTABLE"
     },
-    "analysis_date": {
+    "date": {
         "message": "日期",
         "description": "IMMUTABLE"
     },
@@ -665,7 +665,7 @@
         "message": "点击更改",
         "description": "IMMUTABLE"
     },
-    "analysis_download": {
+    "download": {
         "message": "下载",
         "description": "IMMUTABLE"
     },
