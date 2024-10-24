@@ -264,10 +264,20 @@ html .ui-dialog {
         }
 
         .heading {
-            font-weight: bold;
-            margin: 0.3em $default-h-pad 0.2em;;
-            padding-bottom: 0.2em;
-            border-bottom: 1px solid color.shade(fg, 0%, 0.2);
+            font-weight: 600;
+            font-size: 1.1em;
+            margin: 0.3rem calc($default-h-pad - 0.05em) 0.5rem;
+            padding-top: 0.5rem;
+            padding-bottom: 0.1rem;
+            border-bottom: 1px solid color.shade(bg, 15%);
+        }
+
+        .sub-heading {
+            font-weight: 600;
+            opacity: 0.88;
+            font-size: 1em;
+            margin-top: 0.1rem;
+            margin-bottom: 0.5rem;
         }
 
         label {
@@ -280,7 +290,7 @@ html .ui-dialog {
         }
 
         .entry {
-            padding: 0.5rem $default-h-pad;
+            padding: 0.4rem $default-h-pad;
             position: relative;
 
             &.flex {
