@@ -283,7 +283,7 @@ export class ZoneTimeChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_zonetime_name';
     static descLocaleKey = 'performance_zonetime_desc';
     static localeKeys = [
-        'power_zones', 'hr_zones', '/analysis_hr', '/analysis_power', ...super.localeKeys
+        'power_zones', 'hr_zones', '/hr', '/power', ...super.localeKeys
     ];
 
     async init(options) {
@@ -512,7 +512,7 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
     static nameLocaleKey = 'performance_activity_stats_name';
     static descLocaleKey = 'performance_activity_stats_desc';
     static localeKeys = [
-        'predicted', '/analysis_time', '/analysis_distance', '/analysis_energy', 'elevation_gain',
+        'predicted', '/time', '/distance', '/energy', 'elevation_gain',
         ...super.localeKeys
     ];
 
@@ -530,9 +530,9 @@ export class ActivityStatsChartView extends charts.ActivityTimeRangeChartView {
         await super.init(options);
         this.availableDatasets = {
             'tss': {label: 'TSS®'},
-            'duration': {label: this.LM('analysis_time')},
-            'distance': {label: this.LM('analysis_distance')},
-            'energy': {label: this.LM('analysis_energy')},
+            'duration': {label: this.LM('time')},
+            'distance': {label: this.LM('distance')},
+            'energy': {label: this.LM('energy')},
             'elevation': {label: this.LM('elevation_gain')},
         };
         const distStepSize = L.distanceFormatter.unitSystem === 'imperial' ? 1609.344 * 10 : 10000;
@@ -835,14 +835,14 @@ export class ElevationChartView extends charts.ActivityTimeRangeChartView {
     static typeLocaleKey = 'performance_elevation_type';
     static nameLocaleKey = 'performance_elevation_name';
     static descLocaleKey = 'performance_elevation_desc';
-    static localeKeys = ['/analysis_gain', ...super.localeKeys];
+    static localeKeys = ['/gain', ...super.localeKeys];
 
     async init(options) {
         const thousandFeet = 1609.344 / 5280 * 100;
         const stepSize = L.elevationFormatter.unitSystem === 'imperial' ? thousandFeet : 1000;
         await super.init(options);
         this.availableDatasets = {
-            'elevation': {label: this.LM('analysis_gain')},
+            'elevation': {label: this.LM('gain')},
         };
         this.setChartConfig({
             options: {
@@ -857,7 +857,7 @@ export class ElevationChartView extends charts.ActivityTimeRangeChartView {
                 scales: {
                     yAxes: [{
                         id: 'elevation',
-                        scaleLabel: {labelString: this.LM('analysis_gain')},
+                        scaleLabel: {labelString: this.LM('gain')},
                         ticks: {
                             min: 0,
                             maxTicksLimit: 8,
@@ -904,12 +904,12 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
     static typeLocaleKey = 'performance_athlete_chart_type';
     static nameLocaleKey = 'performance_athlete_chart_name';
     static descLocaleKey = 'performance_athlete_chart_desc';
-    static localeKeys = ['/analysis_weight', ...super.localeKeys];
+    static localeKeys = ['/weight', ...super.localeKeys];
 
     async init(options) {
         await super.init(options);
         this.availableDatasets = {
-            'weight': {label: this.LM('analysis_weight')},
+            'weight': {label: this.LM('weight')},
             'ftp': {label: 'FTP'},
         };
         this.setChartConfig({
@@ -925,7 +925,7 @@ export class AthleteStatsChartView extends charts.ActivityTimeRangeChartView {
                 scales: {
                     yAxes: [{
                         id: 'weight',
-                        scaleLabel: {labelString: this.LM('analysis_weight'), display: true},
+                        scaleLabel: {labelString: this.LM('weight'), display: true},
                         ticks: {
                             maxTicksLimit: 7,
                             stepSize: L.weightFormatter.unitSystem === 'imperial' ? 10 / 2.20462 : 10,
